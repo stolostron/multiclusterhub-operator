@@ -1,0 +1,22 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: mcm-controller
+  labels:
+    app: mcm-controller
+spec:
+  selector:
+    matchLabels:
+      app: mcm-controller
+  template:
+    metadata:
+      labels:
+        app: mcm-controller
+    spec:
+      serviceAccountName: hub-sa
+      containers:
+      - name: mcm-controller
+        image: multicloud-manager
+        args:
+          - "/mcm-controller"
+          - "--leader-elect=true"

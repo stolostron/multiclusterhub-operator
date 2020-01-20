@@ -1,0 +1,47 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: mcm-apiserver
+  labels:
+    app: mcm-apiserver
+spec:
+  selector:
+    matchLabels:
+      app: mcm-apiserver
+  template:
+    metadata:
+      labels:
+        app: mcm-apiserver
+    spec:
+      serviceAccountName: hub-sa
+      volumes: []
+      containers:
+      - name: mcm-apiserver
+        image: multicloud-manager
+        volumeMounts: []
+        env:
+        - name: MYHUBNAME
+          value: hub0
+        args:
+          - "/mcm-apiserver"
+          - "--mongo-database=mcm"
+          - "--enable-admission-plugins=HCMUserIdentity,KlusterletCA,NamespaceLifecycle"
+          - "--secure-port=6443"
+          - "--tls-cert-file=/var/run/apiserver/tls.crt"
+          - "--tls-private-key-file=/var/run/apiserver/tls.key"
+          - "--klusterlet-cafile=/var/run/klusterlet/ca.crt"
+          - "--klusterlet-certfile=/var/run/klusterlet/tls.crt"
+          - "--klusterlet-keyfile=/var/run/klusterlet/tls.key"
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            scheme: HTTPS
+            port: 6443
+          initialDelaySeconds: 2
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            scheme: HTTPS
+            port: 6443
+          initialDelaySeconds: 2

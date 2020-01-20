@@ -1,0 +1,5 @@
+resources:
+- clusterrole.yaml
+- clusterrolebinding-account.yaml
+- clusterrolebinding-group.yaml
+- serviceaccount.yaml

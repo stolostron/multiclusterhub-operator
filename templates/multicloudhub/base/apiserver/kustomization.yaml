@@ -1,0 +1,5 @@
+resources:
+- apiservice-apiserver.yaml
+- apiservice-clusterregistry.yaml
+- deplolyment.yaml
+- service.yaml

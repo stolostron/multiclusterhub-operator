@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: multicloudhub-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: multicloudhub-operator
+  template:
+    metadata:
+      labels:
+        name: multicloudhub-operator
+    spec:
+      serviceAccountName: multicloudhub-operator
+      containers:
+        - name: multicloudhub-operator
+          image: multicloudhub-operator:latest
+          imagePullPolicy: Always
+          command:
+          - multicloudhub-operator
+          env:
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: OPERATOR_NAME
+              value: "multicloudhub-operator"
+            - name: USER
+              value: "multicloudhub-operator"
+            - name: TEMPLATES_PATH
+              value: "/usr/local/templates"

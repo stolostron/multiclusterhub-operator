@@ -1,0 +1,13 @@
+namespace: multicloud-system
+
+images:
+- name: multicloudhub-operator
+  newName: quay.io/rhibmcollab/multicloudhub-operator
+  newTag: latest
+
+resources:
+- crds/operators.multicloud.ibm.com_multicloudhubs_crd.yaml
+- role.yaml
+- role_binding.yaml
+- service_account.yaml
+- operator.yaml

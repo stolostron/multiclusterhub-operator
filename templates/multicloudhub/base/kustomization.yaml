@@ -1,0 +1,4 @@
+resources:
+- rbac
+- apiserver
+- controller
