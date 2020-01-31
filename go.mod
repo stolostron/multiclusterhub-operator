@@ -1,4 +1,4 @@
-module github.ibm.com/IBMPrivateCloud/multicloudhub-operator
+module github.com/open-cluster-management/multicloudhub-operator
 
 go 1.13
 
@@ -6,6 +6,7 @@ require (
 	github.com/go-openapi/spec v0.19.2
 	github.com/operator-framework/operator-sdk v0.12.0
 	github.com/spf13/pflag v1.0.5
+	github.ibm.com/IBMPrivateCloud/multicloudhub-operator v0.0.0-00010101000000-000000000000
 	k8s.io/api v0.0.0
 	k8s.io/apimachinery v0.0.0
 	k8s.io/client-go v11.0.0+incompatible
@@ -18,6 +19,8 @@ require (
 
 // Pinned to kubernetes-1.15.4
 replace (
+	github.com/openshift/api => github.com/openshift/api v0.0.0-20190424152011-77b8897ec79a
+	github.ibm.com/IBMPrivateCloud/multicloudhub-operator => ./
 	k8s.io/api => k8s.io/api v0.0.0-20190918195907-bd6ac527cfd2
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20190918201827-3de75813f604
 	k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20190817020851-f2f3a405f61d
