@@ -3,11 +3,17 @@ package rendering
 import (
 	"fmt"
 
-	operatorsv1alpha1 "github.ibm.com/IBMPrivateCloud/multicloudhub-operator/pkg/apis/operators/v1alpha1"
-	"github.ibm.com/IBMPrivateCloud/multicloudhub-operator/pkg/rendering/patching"
-	"github.ibm.com/IBMPrivateCloud/multicloudhub-operator/pkg/rendering/templates"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/kustomize/v3/pkg/resource"
+
+	operatorsv1alpha1 "github.com/rh-ibm-synergy/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"github.com/rh-ibm-synergy/multicloudhub-operator/pkg/rendering/patching"
+	"github.com/rh-ibm-synergy/multicloudhub-operator/pkg/rendering/templates"
+	"github.com/rh-ibm-synergy/multicloudhub-operator/pkg/utils"
+)
+
+const (
+	apiserviceName = "mcm-apiserver"
 )
 
 type renderFn func(*resource.Resource) (*unstructured.Unstructured, error)
@@ -20,11 +26,16 @@ type Renderer struct {
 func NewRenderer(multipleCloudHub *operatorsv1alpha1.MultiCloudHub) *Renderer {
 	renderer := &Renderer{cr: multipleCloudHub}
 	renderer.renderFns = map[string]renderFn{
-		"APIService":         renderer.renderAPIServices,
-		"Deployment":         renderer.renderDeployments,
-		"Service":            renderer.renderNamespace,
-		"ServiceAccount":     renderer.renderNamespace,
-		"ClusterRoleBinding": renderer.renderClusterRoleBinding,
+		"APIService":                   renderer.renderAPIServices,
+		"Deployment":                   renderer.renderDeployments,
+		"Service":                      renderer.renderNamespace,
+		"ServiceAccount":               renderer.renderNamespace,
+		"ClusterRoleBinding":           renderer.renderClusterRoleBinding,
+		"MutatingWebhookConfiguration": renderer.renderMutatingWebhookConfiguration,
+		"Secret":                       renderer.renderSecret,
+		"Subscription":                 renderer.renderBaseMetadataNamespace,
+		"EtcdCluster":                  renderer.renderBaseMetadataNamespace,
+		"StatefulSet":                  renderer.renderBaseMetadataNamespace,
 	}
 	return renderer
 }
@@ -99,6 +110,10 @@ func (r *Renderer) renderDeployments(res *resource.Resource) (*unstructured.Unst
 			return nil, err
 		}
 		return &unstructured.Unstructured{Object: res.Map()}, nil
+	case "webhook-core-webhook":
+		return &unstructured.Unstructured{Object: res.Map()}, nil
+	case "multicloud-operators-cluster-controller":
+		return &unstructured.Unstructured{Object: res.Map()}, nil
 	default:
 		return nil, fmt.Errorf("unknown MultipleCloudHub deployment component %s", name)
 	}
@@ -116,5 +131,78 @@ func (r *Renderer) renderClusterRoleBinding(res *resource.Resource) (*unstructur
 		return u, nil
 	}
 	subject["namespace"] = r.cr.Namespace
+	return u, nil
+}
+
+func (r *Renderer) renderMutatingWebhookConfiguration(res *resource.Resource) (*unstructured.Unstructured, error) {
+	u := &unstructured.Unstructured{Object: res.Map()}
+	webooks, ok := u.Object["webhooks"].([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to find webhooks spec field")
+	}
+	webhook := webooks[0].(map[string]interface{})
+	clientConfig := webhook["clientConfig"].(map[string]interface{})
+	service := clientConfig["service"].(map[string]interface{})
+
+	service["namespace"] = r.cr.Namespace
+	return u, nil
+}
+
+func (r *Renderer) renderBaseMetadataNamespace(res *resource.Resource) (*unstructured.Unstructured, error) {
+	u := &unstructured.Unstructured{Object: res.Map()}
+	metadata, ok := u.Object["metadata"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to find metadata field")
+	}
+
+	metadata["namespace"] = r.cr.Namespace
+	return u, nil
+}
+
+func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructured, error) {
+	u := &unstructured.Unstructured{Object: res.Map()}
+	metadata, ok := u.Object["metadata"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to find metadata field")
+	}
+	data, ok := u.Object["data"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to find data field")
+	}
+
+	metadata["namespace"] = r.cr.Namespace
+
+	name := res.GetName()
+
+	if name == "mcm-apiserver-self-signed-secrets" {
+		ca, err := utils.GenerateSelfSignedCACert("multicloudhub-api")
+		if err != nil {
+			return nil, err
+		}
+		alternateDNS := []string{
+			fmt.Sprintf("%s.%s", apiserviceName, r.cr.Namespace),
+			fmt.Sprintf("%s.%s.svc", apiserviceName, r.cr.Namespace),
+		}
+		cert, err := utils.GenerateSignedCert(apiserviceName, alternateDNS, ca)
+		if err != nil {
+			return nil, err
+		}
+		data["ca.crt"] = []byte(ca.Cert)
+		data["tls.crt"] = []byte(cert.Cert)
+		data["tls.key"] = []byte(cert.Key)
+	} else if name == "mcm-klusterlet-self-signed-secrets" {
+		ca, err := utils.GenerateSelfSignedCACert("multicloudhub-klusterlet")
+		if err != nil {
+			return nil, err
+		}
+		cert, err := utils.GenerateSignedCert("multicloudhub-klusterlet", []string{}, ca)
+		if err != nil {
+			return nil, err
+		}
+		data["ca.crt"] = []byte(ca.Cert)
+		data["tls.crt"] = []byte(cert.Cert)
+		data["tls.key"] = []byte(cert.Key)
+	}
+
 	return u, nil
 }

@@ -7,15 +7,7 @@ import (
 	"os"
 	"runtime"
 
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	"k8s.io/client-go/rest"
-
-	"github.ibm.com/IBMPrivateCloud/multicloudhub-operator/pkg/apis"
-	"github.ibm.com/IBMPrivateCloud/multicloudhub-operator/pkg/controller"
-	"github.ibm.com/IBMPrivateCloud/multicloudhub-operator/pkg/webhook"
-	"github.ibm.com/IBMPrivateCloud/multicloudhub-operator/version"
-
+	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	kubemetrics "github.com/operator-framework/operator-sdk/pkg/kube-metrics"
 	"github.com/operator-framework/operator-sdk/pkg/leader"
@@ -26,10 +18,17 @@ import (
 	"github.com/spf13/pflag"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+
+	"github.com/rh-ibm-synergy/multicloudhub-operator/pkg/apis"
+	"github.com/rh-ibm-synergy/multicloudhub-operator/pkg/controller"
+	"github.com/rh-ibm-synergy/multicloudhub-operator/pkg/webhook"
+	"github.com/rh-ibm-synergy/multicloudhub-operator/version"
 )
 
 // Change below variables to serve metrics on different host or port.
@@ -97,6 +96,7 @@ func main() {
 		MapperProvider:     restmapper.NewDynamicRESTMapper,
 		MetricsBindAddress: fmt.Sprintf("%s:%d", metricsHost, metricsPort),
 	})
+
 	if err != nil {
 		log.Error(err, "")
 		os.Exit(1)
@@ -106,6 +106,11 @@ func main() {
 
 	// Setup Scheme for all resources
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Error(err, "")
+		os.Exit(1)
+	}
+
+	if err := v1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Error(err, "")
 		os.Exit(1)
 	}

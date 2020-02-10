@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: connection-manager-configmap
+  namespace: multicloud-system
+data:
+  myname: hub0
+

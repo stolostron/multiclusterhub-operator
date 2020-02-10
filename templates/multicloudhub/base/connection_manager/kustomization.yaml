@@ -1,0 +1,3 @@
+resources:
+- cm_config.yaml
+- cm_deployment.yaml

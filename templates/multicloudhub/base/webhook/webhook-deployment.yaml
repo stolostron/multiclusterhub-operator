@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: core
+    release: webhook
+    component: "mcm-webhook"
+    app.kubernetes.io/instance: webhook
+    app.kubernetes.io/name: core
+  name: webhook-core-webhook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: core
+      release: webhook
+      component: "mcm-webhook"
+  template:
+    metadata:
+      labels:
+        app: core
+        component: "mcm-webhook"
+        release: webhook
+        app.kubernetes.io/instance: webhook
+        app.kubernetes.io/name: core
+    spec:
+      serviceAccountName: hub-sa
+      hostNetwork: false
+      hostPID: false
+      hostIPC: false
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: component
+                  operator: In
+                  values:
+                  - mcm-webhook
+              topologyKey: failure-domain.beta.kubernetes.io/zone
+      tolerations:
+        - key: dedicated
+          operator: Exists
+          effect: NoSchedule
+      containers:
+      - name: mcm-webhook
+        image: mcm-api:3.3.0
+        imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: 500m
+            memory: 2048Mi
+          requests:
+            cpu: 200m
+            memory: 256Mi
+        ports:
+          - containerPort: 8000
+        args:
+          - "/mcm-webhook"
+          - "--tls-cert-file=/var/run/mcm-webhook/tls.crt"
+          - "--tls-private-key-file=/var/run/mcm-webhook/tls.key"
+        livenessProbe:
+          exec:
+            command:
+            - ls
+          initialDelaySeconds: 15
+          periodSeconds: 15
+        readinessProbe:
+          exec:
+            command:
+            - ls
+          initialDelaySeconds: 15
+          periodSeconds: 15
+        volumeMounts:
+          - name: webhook-cert
+            mountPath: /var/run/mcm-webhook
+      volumes:
+        - name: webhook-cert
+          secret:
+            secretName: webhook-core-webhook-secrets
+

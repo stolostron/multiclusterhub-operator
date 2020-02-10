@@ -22,12 +22,13 @@ import (
 	"path/filepath"
 	"time"
 
-	operatorsv1alpha1 "github.ibm.com/IBMPrivateCloud/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	operatorsv1alpha1 "github.com/rh-ibm-synergy/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 )
 
 type certificate struct {
@@ -52,7 +53,7 @@ func GenerateWebhookCerts(certDir string) (string, []byte, error) {
 		return "", nil, err
 	}
 
-	ca, err := generateSelfSignedCACert("multicloudhub-webhook")
+	ca, err := GenerateSelfSignedCACert("multicloudhub-webhook")
 	if err != nil {
 		return "", nil, err
 	}
@@ -61,7 +62,7 @@ func GenerateWebhookCerts(certDir string) (string, []byte, error) {
 		fmt.Sprintf("%s.%s", WebhookServiceName, namespace),
 		fmt.Sprintf("%s.%s.svc", WebhookServiceName, namespace),
 	}
-	cert, err := generateSignedCert(WebhookServiceName, alternateDNS, ca)
+	cert, err := GenerateSignedCert(WebhookServiceName, alternateDNS, ca)
 	if err != nil {
 		return "", nil, err
 	}
@@ -92,7 +93,7 @@ func GenerateAPIServerSecret(client runtimeclient.Client, multiCloudHub *operato
 	err = client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: namespace}, &corev1.Secret{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			ca, err := generateSelfSignedCACert("multicloudhub-api")
+			ca, err := GenerateSelfSignedCACert("multicloudhub-api")
 			if err != nil {
 				return err
 			}
@@ -101,7 +102,7 @@ func GenerateAPIServerSecret(client runtimeclient.Client, multiCloudHub *operato
 				fmt.Sprintf("%s.%s", apiserviceName, namespace),
 				fmt.Sprintf("%s.%s.svc", apiserviceName, namespace),
 			}
-			cert, err := generateSignedCert(apiserviceName, alternateDNS, ca)
+			cert, err := GenerateSignedCert(apiserviceName, alternateDNS, ca)
 			if err != nil {
 				return err
 			}
@@ -136,11 +137,11 @@ func GenerateKlusterletSecret(client runtimeclient.Client, multiCloudHub *operat
 	err = client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: namespace}, &corev1.Secret{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			ca, err := generateSelfSignedCACert("multicloudhub-klusterlet")
+			ca, err := GenerateSelfSignedCACert("multicloudhub-klusterlet")
 			if err != nil {
 				return err
 			}
-			cert, err := generateSignedCert("multicloudhub-klusterlet", []string{}, ca)
+			cert, err := GenerateSignedCert("multicloudhub-klusterlet", []string{}, ca)
 			if err != nil {
 				return err
 			}
@@ -163,7 +164,7 @@ func GenerateKlusterletSecret(client runtimeclient.Client, multiCloudHub *operat
 	return nil
 }
 
-func generateSelfSignedCACert(cn string) (certificate, error) {
+func GenerateSelfSignedCACert(cn string) (certificate, error) {
 	ca := certificate{}
 
 	template, err := generateBaseTemplateCert(cn, []string{})
@@ -186,7 +187,7 @@ func generateSelfSignedCACert(cn string) (certificate, error) {
 	return ca, err
 }
 
-func generateSignedCert(cn string, alternateDNS []string, ca certificate) (certificate, error) {
+func GenerateSignedCert(cn string, alternateDNS []string, ca certificate) (certificate, error) {
 	cert := certificate{}
 
 	decodedSignerCert, _ := pem.Decode([]byte(ca.Cert))

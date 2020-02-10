@@ -5,8 +5,8 @@ import (
 	"path"
 	"testing"
 
-	operatorsv1alpha1 "github.ibm.com/IBMPrivateCloud/multicloudhub-operator/pkg/apis/operators/v1alpha1"
-	"github.ibm.com/IBMPrivateCloud/multicloudhub-operator/pkg/rendering/templates"
+	operatorsv1alpha1 "github.com/rh-ibm-synergy/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"github.com/rh-ibm-synergy/multicloudhub-operator/pkg/rendering/templates"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

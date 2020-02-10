@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"time"
 
-	operatorsv1alpha1 "github.ibm.com/IBMPrivateCloud/multicloudhub-operator/pkg/apis/operators/v1alpha1"
-	"github.ibm.com/IBMPrivateCloud/multicloudhub-operator/pkg/utils"
+	operatorsv1alpha1 "github.com/rh-ibm-synergy/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"github.com/rh-ibm-synergy/multicloudhub-operator/pkg/utils"
 	admissionregistration "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
