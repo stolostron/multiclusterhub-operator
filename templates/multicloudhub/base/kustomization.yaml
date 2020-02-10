@@ -2,3 +2,9 @@ resources:
 - rbac
 - apiserver
 - controller
+- etcd
+- mongodb
+- webhook
+- cluster_controller
+- certificates
+# - connection_manager

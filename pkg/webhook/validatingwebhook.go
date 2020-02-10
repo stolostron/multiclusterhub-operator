@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	operatorsv1alpha1 "github.ibm.com/IBMPrivateCloud/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )

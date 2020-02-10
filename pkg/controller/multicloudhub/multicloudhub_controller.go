@@ -4,10 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	operatorsv1alpha1 "github.ibm.com/IBMPrivateCloud/multicloudhub-operator/pkg/apis/operators/v1alpha1"
-	"github.ibm.com/IBMPrivateCloud/multicloudhub-operator/pkg/deploying"
-	"github.ibm.com/IBMPrivateCloud/multicloudhub-operator/pkg/rendering"
-	"github.ibm.com/IBMPrivateCloud/multicloudhub-operator/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -19,6 +15,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/deploying"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering"
 )
 
 var log = logf.Log.WithName("controller_multicloudhub")
@@ -106,15 +106,6 @@ func (r *ReconcileMultiCloudHub) Reconcile(request reconcile.Request) (reconcile
 	toDeploy, err := renderer.Render()
 	if err != nil {
 		reqLogger.Error(err, "Failed to render MultiCloudHub templates")
-		return reconcile.Result{}, err
-	}
-	// Generate secrets if necessary
-	if err := utils.GenerateAPIServerSecret(r.client, multiCloudHub); err != nil {
-		reqLogger.Error(err, "Failed to generate apiserver secret")
-		return reconcile.Result{}, err
-	}
-	if err := utils.GenerateKlusterletSecret(r.client, multiCloudHub); err != nil {
-		reqLogger.Error(err, "Failed to generate klusterlet secret")
 		return reconcile.Result{}, err
 	}
 	//Deploy the resources

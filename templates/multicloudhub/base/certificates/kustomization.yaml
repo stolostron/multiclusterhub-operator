@@ -1,0 +1,3 @@
+resources:
+- mcm-apiserver-self-signed-secrets.yaml
+- mcm-klusterlet-self-signed-secrets.yaml

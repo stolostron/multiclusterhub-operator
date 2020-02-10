@@ -2,25 +2,26 @@ apiVersion: operators.multicloud.ibm.com/v1alpha1
 kind: MultiCloudHub
 metadata:
   name: example-multicloudhub
+  namespace: default
 spec:
-  # version: latest
-  # imageRepository: quay.io/rhibmcollab
-  # imagePullPolicy: Always
-  # imagePullSecret: mcm-docker-registry
-  # foundation:
-  #   apiserver:
-  #     configuration:
-  #       http2-max-streams-per-connection: "1000"
-  #     replicas: 1
-  #     apiserverSecret: ""
-  #     klusterletSecret: ""
-  #   controller:
-  #     configuration:
-  #       enable-rbac: "true"
-  #       enable-service-registry: "true"
-  #     replicas: 1
+  version: latest
+  imageRepository: quay.io/rhibmcollab
+  imagePullPolicy: Always
+  imagePullSecret: quay-secret
+  foundation:
+    apiserver:
+      configuration:
+        http2-max-streams-per-connection: "1000"
+      replicas: 1
+      apiserverSecret: "mcm-apiserver-self-signed-secrets"
+      klusterletSecret: "mcm-klusterlet-self-signed-secrets"
+    controller:
+      configuration:
+        enable-rbac: "true"
+        enable-service-registry: "true"
+      replicas: 1
   etcd:
-    endpoints: http://example-client.multicloud-storage.svc.cluster.local:2379
+    endpoints: http://etcd-0.etcd.default:2379
   mongo:
-    endpoints: mongo-0.mongo.multicloud-storage
+    endpoints: mongo-0.mongo.default
     replicaSet: rs0

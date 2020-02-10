@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"github.ibm.com/IBMPrivateCloud/multicloudhub-operator/pkg/controller/multicloudhub"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/controller/multicloudhub"
 )
 
 func init() {

@@ -1,7 +1,7 @@
 package apis
 
 import (
-	"github.ibm.com/IBMPrivateCloud/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 )
 
 func init() {

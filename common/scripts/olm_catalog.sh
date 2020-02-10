@@ -18,15 +18,16 @@ listCSV() {
 
 DEPLOYDIR=${DIR:-$(cd "$(dirname "$0")"/../../deploy && pwd)}
 
-\cp "${DEPLOYDIR}"/operator.yaml "${DEPLOYDIR}"/operator.yaml.bak
+cp "${DEPLOYDIR}"/operator.yaml "${DEPLOYDIR}"/operator.yaml.bak
 if [ "$(uname)" = "Darwin" ]; then
   sed -i "" "s|multicloudhub-operator:latest|${IMAGE}|g" "${DEPLOYDIR}"/operator.yaml
 else
   sed -i "s|multicloudhub-operator:latest|${IMAGE}|g" "${DEPLOYDIR}"/operator.yaml
 fi
 operator-sdk olm-catalog gen-csv --csv-channel "${CSV_CHANNEL}" --csv-version "${CSV_VERSION}" >/dev/null 2>&1
-\cp "${DEPLOYDIR}"/operator.yaml.bak "${DEPLOYDIR}"/operator.yaml
+cp "${DEPLOYDIR}"/operator.yaml.bak "${DEPLOYDIR}"/operator.yaml
 rm -f "${DEPLOYDIR}"/operator.yaml.bak
+
 
 BUILDDIR=${DIR:-$(cd "$(dirname "$0")"/../../build && pwd)}
 OLMOUTPUTDIR="${BUILDDIR}"/_output/olm
@@ -63,7 +64,6 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
   name: $NAME
-  namespace: $NAMESPACE
 spec:
   configMap: $NAME
   displayName: $DISPLAYNAME
@@ -74,7 +74,6 @@ kind: ConfigMap
 apiVersion: v1
 metadata:
   name: $NAME
-  namespace: $NAMESPACE
 data:
   customResourceDefinitions: |-
 $CRD

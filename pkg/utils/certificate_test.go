@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	operatorsv1alpha1 "github.ibm.com/IBMPrivateCloud/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	k8scertutil "k8s.io/client-go/util/cert"
