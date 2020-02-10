@@ -13,7 +13,10 @@ import (
 )
 
 const (
-	apiserviceName = "mcm-apiserver"
+	apiserviceName        = "mcm-apiserver"
+	controllerName        = "mcm-controller"
+	webhookName           = "webhook-core-webhook"
+	clusterControllerName = "multicloud-operators-cluster-controller"
 )
 
 type renderFn func(*resource.Resource) (*unstructured.Unstructured, error)
@@ -80,7 +83,7 @@ func (r *Renderer) renderAPIServices(res *resource.Resource) (*unstructured.Unst
 	}
 	spec["service"] = map[string]interface{}{
 		"namespace": r.cr.Namespace,
-		"name":      "mcm-apiserver",
+		"name":      apiserviceName,
 	}
 	return u, nil
 }
@@ -100,19 +103,19 @@ func (r *Renderer) renderDeployments(res *resource.Resource) (*unstructured.Unst
 
 	name := res.GetName()
 	switch name {
-	case "mcm-apiserver":
+	case apiserviceName:
 		if err := patching.ApplyAPIServerPatches(res, r.cr); err != nil {
 			return nil, err
 		}
 		return &unstructured.Unstructured{Object: res.Map()}, nil
-	case "mcm-controller":
+	case controllerName:
 		if err := patching.ApplyControllerPatches(res, r.cr); err != nil {
 			return nil, err
 		}
 		return &unstructured.Unstructured{Object: res.Map()}, nil
-	case "webhook-core-webhook":
+	case webhookName:
 		return &unstructured.Unstructured{Object: res.Map()}, nil
-	case "multicloud-operators-cluster-controller":
+	case clusterControllerName:
 		return &unstructured.Unstructured{Object: res.Map()}, nil
 	default:
 		return nil, fmt.Errorf("unknown MultipleCloudHub deployment component %s", name)
