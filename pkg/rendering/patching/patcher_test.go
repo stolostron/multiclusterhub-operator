@@ -3,7 +3,7 @@ package patching
 import (
 	"testing"
 
-	operatorsv1alpha1 "github.com/rh-ibm-synergy/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/kustomize/v3/k8sdeps/kunstruct"

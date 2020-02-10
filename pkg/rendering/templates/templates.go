@@ -18,7 +18,7 @@ import (
 	"sigs.k8s.io/kustomize/v3/pkg/resource"
 	"sigs.k8s.io/kustomize/v3/pkg/target"
 
-	operatorsv1alpha1 "github.com/rh-ibm-synergy/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 )
 
 const TemplatesPathEnvVar = "TEMPLATES_PATH"

@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	operatorsv1alpha1 "github.com/rh-ibm-synergy/multicloudhub-operator/pkg/apis/operators/v1alpha1"
-	"github.com/rh-ibm-synergy/multicloudhub-operator/pkg/utils"
+	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"

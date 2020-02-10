@@ -16,9 +16,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	operatorsv1alpha1 "github.com/rh-ibm-synergy/multicloudhub-operator/pkg/apis/operators/v1alpha1"
-	"github.com/rh-ibm-synergy/multicloudhub-operator/pkg/deploying"
-	"github.com/rh-ibm-synergy/multicloudhub-operator/pkg/rendering"
+	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/deploying"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering"
 )
 
 var log = logf.Log.WithName("controller_multicloudhub")

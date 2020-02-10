@@ -6,10 +6,10 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/kustomize/v3/pkg/resource"
 
-	operatorsv1alpha1 "github.com/rh-ibm-synergy/multicloudhub-operator/pkg/apis/operators/v1alpha1"
-	"github.com/rh-ibm-synergy/multicloudhub-operator/pkg/rendering/patching"
-	"github.com/rh-ibm-synergy/multicloudhub-operator/pkg/rendering/templates"
-	"github.com/rh-ibm-synergy/multicloudhub-operator/pkg/utils"
+	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/patching"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 )
 
 const (

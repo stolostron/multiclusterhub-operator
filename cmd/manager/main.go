@@ -25,10 +25,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 
-	"github.com/rh-ibm-synergy/multicloudhub-operator/pkg/apis"
-	"github.com/rh-ibm-synergy/multicloudhub-operator/pkg/controller"
-	"github.com/rh-ibm-synergy/multicloudhub-operator/pkg/webhook"
-	"github.com/rh-ibm-synergy/multicloudhub-operator/version"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/apis"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/controller"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/webhook"
+	"github.com/open-cluster-management/multicloudhub-operator/version"
 )
 
 // Change below variables to serve metrics on different host or port.
