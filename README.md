@@ -1,8 +1,44 @@
 # MultiCloudHub Operator
 
-**THIS IS THE RHACM INSTALL BRANCH**
-
 Build with [operator-sdk](https://github.com/operator-framework/operator-sdk) [v0.13.0+](https://github.com/operator-framework/operator-sdk/releases)
+
+## Quick Install Instructions
+
+### Declare Required Variables
+
+```bash
+export QUAY_USER=<QUAY_USER>
+export QUAY_TOKEN=<QUAY_TOKEN>
+export QUAY_EMAIL=<QUAY_EMAIL>
+```
+
+### Optional
+
+```bash
+export CONTAINER_ENGINE=<CONTAINER_ENGINE>
+```
+
+### Install Dependencies and Subscribe
+
+```bash
+make deps subscribe
+```
+
+### Install Manually
+
+Before running the command below, update the namespace in the following file [deploy/kustomization.yaml](deploy/kustomization.yaml) to reflect your targeted namespace.
+
+```bash
+make deps subscribe
+```
+
+## All Make Targets
+
+## Download Dependancies
+
+```bash
+make deps
+```
 
 ## Test
 
@@ -14,6 +50,24 @@ make test
 
 ```bash
 make image
+```
+
+## Subscribe to Operator on OperatorHub
+
+```bash
+make subscribe
+```
+
+## Manually Install Operator
+
+```bash
+make install
+```
+
+## Run Operator Locally
+
+```bash
+make local
 ```
 
 ## Deploy MultiCloudHub operator
