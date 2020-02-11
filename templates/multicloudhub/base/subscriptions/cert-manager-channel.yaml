@@ -1,0 +1,10 @@
+apiVersion: app.ibm.com/v1alpha1
+kind: Channel
+metadata:
+  name: multicloud-charts
+  namespace: default
+spec:
+  type: HelmRepo
+  pathname: https://raw.githubusercontent.com/rh-ibm-synergy/multicloudhub-repo/master/multicloudhub/charts
+  secretRef:
+    name: multicloud-charts-secret

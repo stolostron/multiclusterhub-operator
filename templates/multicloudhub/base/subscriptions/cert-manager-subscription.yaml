@@ -1,0 +1,42 @@
+apiVersion: app.ibm.com/v1alpha1
+kind: Subscription
+metadata:
+  name: cert-manager
+  namespace: default
+spec:
+  channel: default/multicloud-charts
+  name: cert-manager
+  placement:
+    local: true
+  packageFilter:
+    version: =3.5.0
+  packageOverrides:
+    - packageName: ibm-cert-manager
+      packageAlias: cert-man
+      packageOverrides:
+        - path: spec.values
+          value: |
+            global:
+              isOpenshift: true
+            tolerations:
+              - effect: NoSchedule
+                key: dedicated
+                operator: Exists
+              - key: CriticalAddonsOnly
+                operator: Exists
+              - effect: NoSchedule
+                key: node.kubernetes.io/not-ready
+                operator: Exists
+            nodeSelector:
+              master: true
+            image:
+              repository: "quay.io/rhibmcollab/icp-cert-manager-controller"
+            solver:
+              repository: "quay.io/rhibmcollab/icp-cert-manager-acmesolver"
+            serviceAccount:
+              create: false
+              name:   "default"
+            clusterResourceNamespace: "default"
+            controller:
+              image:
+                repository: "quay.io/rhibmcollab/icp-cert-policy-controller"
