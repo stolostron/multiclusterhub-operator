@@ -5,9 +5,10 @@ import (
 	"path"
 	"testing"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestRender(t *testing.T) {

@@ -74,3 +74,7 @@ unsubscribe:
 	@oc delete catalogsource multicloudhub-operator-registry| true
 
 resubscribe: unsubscribe subscribe
+
+
+deps:
+	./common/scripts/install_dependancies.sh
