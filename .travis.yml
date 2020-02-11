@@ -35,7 +35,8 @@ jobs:
       script:
         - if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then export COMPONENT_TAG_EXTENSION="-PR${TRAVIS_PULL_REQUEST}-${TRAVIS_COMMIT}"; fi;
         - |
-          make deps image
+          make deps
+          make image
     - stage: unit-test
       name: "Deploy the image to a cluster and run e2e tests"
       if: type = pull_request
