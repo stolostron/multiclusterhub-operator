@@ -15,6 +15,7 @@ export QUAY_EMAIL=<QUAY_EMAIL>
 ### Optional
 
 ```bash
+export CONTAINER_ENGINE=<CONTAINER_ENGINE>
 ```
 
 ### Install Dependencies and Subscribe
