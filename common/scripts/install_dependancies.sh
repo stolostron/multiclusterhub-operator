@@ -11,3 +11,10 @@ if ! [ -x "$(command -v operator-sdk)" ]; then
     chmod +x operator-sdk
     sudo mv operator-sdk /usr/local/bin/operator-sdk
 fi
+
+echo "HERE"
+type go
+
+go version
+echo "$PATH\n"
+echo "$GOPATH\n"
