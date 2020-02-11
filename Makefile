@@ -30,11 +30,7 @@ include common/Makefile.common.mk
 lint: lint-all
 
 image:
-	@operator-sdk build --image-builder $(CONTAINER_ENGINE) $(REGISTRY)/$(IMG):latest
-	@$(CONTAINER_ENGINE) tag $(REGISTRY)/$(IMG):latest $(REGISTRY)/$(IMG):$(GIT_VERSION)
-	@$(CONTAINER_ENGINE) tag $(REGISTRY)/$(IMG):latest $(REGISTRY)/$(IMG):$(VERSION)
-	@$(CONTAINER_ENGINE) push $(REGISTRY)/$(IMG):latest
-	@$(CONTAINER_ENGINE) push $(REGISTRY)/$(IMG):$(GIT_VERSION)
+	@operator-sdk build --image-builder $(CONTAINER_ENGINE) $(REGISTRY)/$(IMG):$(VERSION)
 	@$(CONTAINER_ENGINE) push $(REGISTRY)/$(IMG):$(VERSION)
 
 olm-catalog: clean
@@ -45,16 +41,14 @@ clean::
 	rm -f cover.out
 
 install: image
-	@kubectl create namespace multicloud-system | true
-	@kubectl create secret docker-registry quay-secret --docker-server=$(REGISTRY) --docker-username=$(QUAY_USER) --docker-password=$(QUAY_TOKEN) --docker-email=$(QUAY_EMAIL) | true
-	@kubectl apply -k deploy | true
-	@kubectl apply -f deploy/crds/operators.multicloud.ibm.com_v1alpha1_multicloudhub_cr.yaml | true
+	@kubectl create secret docker-registry quay-secret --docker-server=$(REGISTRY) --docker-username=$(QUAY_USER) --docker-password=$(QUAY_TOKEN) --docker-email=$(QUAY_EMAIL) || true
+	@kubectl apply -k deploy || true
+	@kubectl apply -f deploy/crds/operators.multicloud.ibm.com_v1alpha1_multicloudhub_cr.yaml || true
 
 uninstall:
-	@kubectl delete -f deploy/crds/operators.multicloud.ibm.com_v1alpha1_multicloudhub_cr.yaml | true
-	@kubectl delete -k deploy | true
-	@kubectl delete deploy etcd-operator | true
-	@kubectl delete  namespace multicloud-system | true
+	@kubectl delete -f deploy/crds/operators.multicloud.ibm.com_v1alpha1_multicloudhub_cr.yaml || true
+	@kubectl delete -k deploy || true
+	@kubectl delete deploy etcd-operator || true
 
 reinstall: uninstall install
 
@@ -62,7 +56,6 @@ local:
 	@operator-sdk up local --namespace="" --operator-flags="--zap-devel=true"
 
 subscribe: image olm-catalog
-	@kubectl create namespace | true
 	@kubectl create secret docker-registry quay-secret --docker-server=$(REGISTRY) --docker-username=$(QUAY_USER) --docker-password=$(QUAY_TOKEN) --docker-email=$(QUAY_EMAIL) | true
 	@oc apply -f build/_output/olm/multicloudhub.resources.yaml
 
@@ -78,3 +71,4 @@ resubscribe: unsubscribe subscribe
 
 deps:
 	./common/scripts/install_dependancies.sh
+	go mod tidy

@@ -24,7 +24,7 @@ if [ "$(uname)" = "Darwin" ]; then
 else
   sed -i "s|multicloudhub-operator:latest|${IMAGE}|g" "${DEPLOYDIR}"/operator.yaml
 fi
-operator-sdk olm-catalog gen-csv --csv-channel "${CSV_CHANNEL}" --csv-version "${CSV_VERSION}" >/dev/null 2>&1
+operator-sdk generate csv --csv-channel "${CSV_CHANNEL}" --csv-version "${CSV_VERSION}" >/dev/null 2>&1
 cp "${DEPLOYDIR}"/operator.yaml.bak "${DEPLOYDIR}"/operator.yaml
 rm -f "${DEPLOYDIR}"/operator.yaml.bak
 

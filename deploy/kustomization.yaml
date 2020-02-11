@@ -1,4 +1,4 @@
-namespace: multicloud-system
+namespace: default
 
 images:
 - name: multicloudhub-operator

@@ -17,7 +17,7 @@ spec:
       - name: quay-secret
       containers:
         - name: multicloudhub-operator
-          image: multicloudhub-operator:latest
+          image: quay.io/rhibmcollab/multicloudhub-operator:latest
           imagePullPolicy: Always
           command:
           - multicloudhub-operator
