@@ -11,3 +11,4 @@ if ! [ -x "$(command -v operator-sdk)" ]; then
     chmod +x operator-sdk
     mv operator-sdk /usr/local/bin/operator-sdk
 fi
+
