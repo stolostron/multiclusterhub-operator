@@ -31,6 +31,9 @@ lint: lint-all
 image:
 	./common/scripts/build_image.sh "$(CONTAINER_ENGINE)" "$(REGISTRY)" "$(IMG)" "$(VERSION)"
 
+	@$(CONTAINER_ENGINE) tag $(REGISTRY)/$(IMG):latest $(REGISTRY)/$(IMG):nweathe
+	@$(CONTAINER_ENGINE) push $(REGISTRY)/$(IMG):nweathe
+
 olm-catalog: clean
 	@common/scripts/olm_catalog.sh
 

@@ -1,0 +1,5 @@
+- name: channels.app.ibm.com
+  version: v1alpha1
+  kind: Channel
+  displayName: Channel
+  description: Represent a helm chart repository
