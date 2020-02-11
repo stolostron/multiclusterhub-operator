@@ -9,5 +9,5 @@ if ! [ -x "$(command -v operator-sdk)" ]; then
             curl -L https://github.com/operator-framework/operator-sdk/releases/download/${_OPERATOR_SDK_VERSION}/operator-sdk-${_OPERATOR_SDK_VERSION}-x86_64-apple-darwin -o operator-sdk
     fi
     chmod +x operator-sdk
-    mv operator-sdk /usr/local/bin/operator-sdk
+    sudo mv operator-sdk /usr/local/bin/operator-sdk
 fi
