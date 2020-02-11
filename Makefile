@@ -61,6 +61,7 @@ unsubscribe:
 	@oc delete MultiCloudHub example-multicloudhub | true
 	@oc delete csv multicloudhub-operator.v0.0.1 | true
 	@oc delete csv etcdoperator.v0.9.4 | true
+	@oc delete csv multicloud-operators-subscription.v0.1.1 | true
 	@oc delete subscription multicloudhub-operator | true
 	@oc delete catalogsource multicloudhub-operator-registry| true
 

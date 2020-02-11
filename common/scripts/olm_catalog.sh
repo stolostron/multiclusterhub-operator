@@ -16,6 +16,12 @@ listCSV() {
   done
 }
 
+addReqCRDs() {
+  echo "required:" | sed 's/^/    /' >> ${DEPLOYDIR}/req_crds.yaml.bak
+  for f in ${DEPLOYDIR}/req_crds/*; do ( cat "${f}"; echo) | sed 's/^/    /' >> ${DEPLOYDIR}/req_crds.yaml.bak; done
+  sed -i'' -e "/customresourcedefinitions:/r ${DEPLOYDIR}/req_crds.yaml.bak" "${CSVFILE}"
+}
+
 DEPLOYDIR=${DIR:-$(cd "$(dirname "$0")"/../../deploy && pwd)}
 
 cp "${DEPLOYDIR}"/operator.yaml "${DEPLOYDIR}"/operator.yaml.bak
@@ -24,10 +30,11 @@ if [ "$(uname)" = "Darwin" ]; then
 else
   sed -i "s|multicloudhub-operator:latest|${IMAGE}|g" "${DEPLOYDIR}"/operator.yaml
 fi
-operator-sdk olm-catalog gen-csv --csv-channel "${CSV_CHANNEL}" --csv-version "${CSV_VERSION}" >/dev/null 2>&1
+
+operator-sdk generate csv --csv-channel "${CSV_CHANNEL}" --csv-version "${CSV_VERSION}" >/dev/null 2>&1
+
 cp "${DEPLOYDIR}"/operator.yaml.bak "${DEPLOYDIR}"/operator.yaml
 rm -f "${DEPLOYDIR}"/operator.yaml.bak
-
 
 BUILDDIR=${DIR:-$(cd "$(dirname "$0")"/../../build && pwd)}
 OLMOUTPUTDIR="${BUILDDIR}"/_output/olm
@@ -43,6 +50,8 @@ CSVFILE="${PKGDIR}"/"${CSV_VERSION}"/multicloudhub-operator.v"${CSV_VERSION}".cl
 # remove replaces field
 sed -ie '/replaces:/d' "${CSVFILE}"
 
+addReqCRDs
+rm -f "${DEPLOYDIR}"/req_crds.yaml.bak
 # disable all namespaces supported, see https://github.com/operator-framework/operator-sdk/issues/2173 
 index=$(grep -n "type: AllNamespaces" "${CSVFILE}" | cut -d ":" -f 1)
 index=$((index - 1))

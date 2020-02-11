@@ -108,3 +108,9 @@ rules:
   verbs:
   - get
   - create
+- apiGroups:
+  - app.ibm.com
+  resources:
+  - '*'
+  verbs:
+  - '*'
