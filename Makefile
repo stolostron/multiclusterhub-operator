@@ -31,9 +31,6 @@ lint: lint-all
 image:
 	./common/scripts/build_image.sh "$(CONTAINER_ENGINE)" "$(REGISTRY)" "$(IMG)" "$(VERSION)"
 
-	@$(CONTAINER_ENGINE) tag $(REGISTRY)/$(IMG):latest $(REGISTRY)/$(IMG):nweathe
-	@$(CONTAINER_ENGINE) push $(REGISTRY)/$(IMG):nweathe
-
 olm-catalog: clean
 	@common/scripts/olm_catalog.sh
 
@@ -65,6 +62,14 @@ unsubscribe:
 	@oc delete csv multicloudhub-operator.v0.0.1 | true
 	@oc delete csv etcdoperator.v0.9.4 | true
 	@oc delete csv multicloud-operators-subscription.v0.1.1 | true
+	@oc delete crd multicloudhubs.operators.multicloud.ibm.com | true
+	@oc delete crd channels.app.ibm.com | true
+	@oc delete crd deployables.app.ibm.com | true
+	@oc delete crd helmreleases.app.ibm.com | true
+	@oc delete crd subscriptions.app.ibm.com | true
+	@oc delete crd etcdbackups.etcd.database.coreos.com | true
+	@oc delete crd etcdclusters.etcd.database.coreos.com | true
+	@oc delete crd etcdrestores.etcd.database.coreos.com | true
 	@oc delete subscription multicloudhub-operator | true
 	@oc delete catalogsource multicloudhub-operator-registry| true
 
