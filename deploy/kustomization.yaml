@@ -3,7 +3,7 @@ namespace: multicloud-system
 images:
 - name: multicloudhub-operator
   newName: quay.io/rhibmcollab/multicloudhub-operator
-  newTag: nweathe
+  newTag: latest
 
 resources:
 - crds/operators.multicloud.ibm.com_multicloudhubs_crd.yaml
