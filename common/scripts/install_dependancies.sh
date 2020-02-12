@@ -13,6 +13,8 @@ if ! [ -x "$(command -v operator-sdk)" ]; then
 fi
 
 echo "HERE"
+export GOPATH="$HOME/go"
+export $PATH="$PATH:$GOPATH"
 type go
 
 go version
