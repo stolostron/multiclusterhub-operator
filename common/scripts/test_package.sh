@@ -21,6 +21,7 @@ go test -cover -covermode=atomic -coverprofile=cover.tmp "$_package"
 
 # Merge coverage files
 if [ -a cover.tmp ]; then
+    go get -v github.com/wadey/gocovmerge
     gocovmerge cover.tmp cover.out > cover.all
     mv cover.all cover.out
 fi

@@ -6,6 +6,7 @@ require (
 	github.com/go-openapi/spec v0.19.2
 	github.com/operator-framework/operator-sdk v0.12.0
 	github.com/spf13/pflag v1.0.5
+	github.com/wadey/gocovmerge v0.0.0-20160331181800-b5bfa59ec0ad // indirect
 	k8s.io/api v0.0.0
 	k8s.io/apimachinery v0.0.0
 	k8s.io/client-go v11.0.0+incompatible
