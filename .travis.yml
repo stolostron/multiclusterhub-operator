@@ -48,20 +48,20 @@ jobs:
         # Bootstrap the build harness, pull test image, and run unit tests.  
         - | 
           make test
-    - stage: test-e2e
-      name: "Deploy the image to a cluster and run e2e tests"
-      if: type = pull_request
-      script:
-        #Check out a clusterpool, set up oc, deploy, run e2e tests, and return clusterpool cluster
-        - if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then export COMPONENT_TAG_EXTENSION="-PR${TRAVIS_PULL_REQUEST}-${TRAVIS_COMMIT}"; fi;
-        - |
-          make 
-          make component/pull 
-          make component/test/e2e
-    - stage: publish
-      name: "Publish the image to quay with an official version/sha tag and publish entry to integration pipeline stage"
-      if: type = push AND branch =~ /^release-[0-9]+\..*$/
-      script:
-        - |
-          make 
-          make pipeline-manifest/update PIPELINE_MANIFEST_COMPONENT_SHA256=${TRAVIS_COMMIT} PIPELINE_MANIFEST_COMPONENT_REPO=${TRAVIS_REPO_SLUG} PIPELINE_MANIFEST_BRANCH=${TRAVIS_BRANCH}
+    # - stage: test-e2e
+    #   name: "Deploy the image to a cluster and run e2e tests"
+    #   if: type = pull_request
+    #   script:
+    #     #Check out a clusterpool, set up oc, deploy, run e2e tests, and return clusterpool cluster
+    #     - if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then export COMPONENT_TAG_EXTENSION="-PR${TRAVIS_PULL_REQUEST}-${TRAVIS_COMMIT}"; fi;
+    #     - |
+    #       make 
+    #       make component/pull 
+    #       make component/test/e2e
+    # - stage: publish
+    #   name: "Publish the image to quay with an official version/sha tag and publish entry to integration pipeline stage"
+    #   if: type = push AND branch =~ /^release-[0-9]+\..*$/
+    #   script:
+    #     - |
+    #       make 
+    #       make pipeline-manifest/update PIPELINE_MANIFEST_COMPONENT_SHA256=${TRAVIS_COMMIT} PIPELINE_MANIFEST_COMPONENT_REPO=${TRAVIS_REPO_SLUG} PIPELINE_MANIFEST_BRANCH=${TRAVIS_BRANCH}
