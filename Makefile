@@ -30,8 +30,7 @@ include common/Makefile.common.mk
 lint: lint-all
 
 image:
-	sudo operator-sdk build --image-builder $(CONTAINER_ENGINE) $(REGISTRY)/$(IMG):$(VERSION) --verbose 
-	@$(CONTAINER_ENGINE) push $(REGISTRY)/$(IMG):$(VERSION)
+	./common/scripts/build_image.sh "$(CONTAINER_ENGINE)" "$(REGISTRY)" "$(IMG)" "$(VERSION)"
 
 olm-catalog: clean
 	@common/scripts/olm_catalog.sh

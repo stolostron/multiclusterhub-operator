@@ -11,12 +11,3 @@ if ! [ -x "$(command -v operator-sdk)" ]; then
     chmod +x operator-sdk
     sudo mv operator-sdk /usr/local/bin/operator-sdk
 fi
-
-echo "HERE\n"
-export GOPATH="$(which -a go)"
-echo "GOPATH: $GOPATH\n"
-export $PATH="$PATH:$GOPATH"
-echo "GOPATH: $GOPATH\n"
-type go
-
-go version
