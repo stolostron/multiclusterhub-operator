@@ -7,5 +7,4 @@ resources:
 - webhook
 - cluster_controller
 - certificates
-- subscriptions
 # - connection_manager
