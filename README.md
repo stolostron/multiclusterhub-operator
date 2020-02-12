@@ -7,9 +7,8 @@ Build with [operator-sdk](https://github.com/operator-framework/operator-sdk) [v
 ### Declare Required Variables
 
 ```bash
-export QUAY_USER=<QUAY_USER>
-export QUAY_TOKEN=<QUAY_TOKEN>
-export QUAY_EMAIL=<QUAY_EMAIL>
+export DOCKER_USER=<DOCKER_USER>
+export DOCKER_PASS=<DOCKER_PASS>
 ```
 
 ### Optional

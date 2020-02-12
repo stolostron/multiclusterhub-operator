@@ -9,7 +9,7 @@ VERSION=$4
 
 echo $DOCKER_USER
 
-docker login "REGISTRY" -u "$DOCKER_USER" -p "$DOCKER_PASS"
+docker login "$REGISTRY" -u "$DOCKER_USER" -p "$DOCKER_PASS"
 
-operator-sdk build --image-builder "$CONTAINER_ENGINE" "$REGISTRY"/"$IMG":"$VERSION" --verbose 
+operator-sdk build --image-builder "$CONTAINER_ENGINE" "$REGISTRY"/"$IMG":"$VERSION"
 "$CONTAINER_ENGINE" push "$REGISTRY"/"$IMG":"$VERSION"
