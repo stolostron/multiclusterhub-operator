@@ -1,3 +1,0 @@
-resources:
-- cert-manager-channel.yaml
-- cert-manager-subscription.yaml
