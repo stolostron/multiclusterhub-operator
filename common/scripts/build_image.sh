@@ -1,13 +1,9 @@
 #!/bin/bash
 
-set -x
-
 CONTAINER_ENGINE=$1
 REGISTRY=$2
 IMG=$3
 VERSION=$4
-
-echo $DOCKER_USER
 
 docker login "$REGISTRY" -u "$DOCKER_USER" -p "$DOCKER_PASS"
 
