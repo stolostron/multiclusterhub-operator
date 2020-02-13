@@ -36,7 +36,10 @@ include common/Makefile.common.mk
 lint: lint-all
 
 image:
-	./common/scripts/build_image.sh "$(CONTAINER_ENGINE)" "$(REGISTRY)" "$(IMG)" "$(VERSION)"
+	./cicd-scripts/build.sh "$(REGISTRY)/$(IMG):$(VERSION)"
+
+push:
+	./common/scripts/push.sh "$(REGISTRY)/$(IMG):$(VERSION)"
 
 olm-catalog: clean
 	@common/scripts/olm_catalog.sh
@@ -45,15 +48,22 @@ clean::
 	rm -rf $(BUILD_DIR)/_output
 	rm -f cover.out
 
-install: image
+install: image push subscribe
 	@kubectl create secret docker-registry quay-secret --docker-server=$(REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
 	@kubectl apply -k deploy || true
+	@oc apply -f ./build/_output/olm/multicloudhub.resources.yaml || true
+	@oc apply -f ./build/_output/olm/multicloudhub.csv.yaml || true
+	@oc apply -f ./build/_output/olm/multicloudhub.crd.yaml || true
 	@kubectl apply -f deploy/crds/operators.multicloud.ibm.com_v1alpha1_multicloudhub_cr.yaml || true
 
-uninstall:
+uninstall: unsubscribe
 	@kubectl delete -f deploy/crds/operators.multicloud.ibm.com_v1alpha1_multicloudhub_cr.yaml || true
+	@oc delete -f ./build/_output/olm/multicloudhub.csv.yaml || true
+	@oc delete -f ./build/_output/olm/multicloudhub.crd.yaml || true
+	@oc delete -f ./build/_output/olm/multicloudhub.resources.yaml || true
 	@kubectl delete -k deploy || true
 	@kubectl delete deploy etcd-operator || true
+
 
 reinstall: uninstall install
 
@@ -84,5 +94,5 @@ resubscribe: unsubscribe subscribe
 
 
 deps:
-	./common/scripts/install_dependancies.sh
+	./cicd-scripts/install-dependencies.sh
 	go mod tidy
