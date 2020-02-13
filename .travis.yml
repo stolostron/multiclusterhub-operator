@@ -15,7 +15,7 @@ addons:
   sonarcloud:
     organization: "open-cluster-management"
     token:
-      secure: "${SONARCLOUD_TOKEN}"
+      secure: "jIXCU35RxGIgHlPhGRTWa+zxraNfrdJDIYl/I3sTmNfEkEQd95UUiz56mOv9LRy4poVlUDqinGPYaG1tqw8bheqs7a7k9JxefeOU8pNGYHvzcHCu0g/THsELfS+edFaFQ98vz6BvuOgWdQ2JDGmfNb5TXQYsQRkV53BsH/H0R7qYN9yq85mHW4z0xaVqwZO85XF4vkrurzBjnLYxa7/s4c+E6fqzUXV/7VzlQLTKjZAxJQcUUJj5b16RzRz7rqBw+HWjSgIDR5xtxr6r9d3oEPbWQSKBXT/JNefn3qPLHb1nTaNFwICr5N0jYZyViQDF/TL4AkfD/C8lTTrctV59aBjn2tBeGDu37Rt4EowWGFzdZKmwugDft7RSCqCyjjUm2ePhabq6F/ERm4Qh7oNzSd413LIla+QMC714ViMCwzCIjHrR0DK33Ir/tO7GksRRouPw5kk+UUxyrvEESkM6bdYooEVihmX+kNM9/1wyUGs03YtQKbU0R0gq2CiPmCnsJjq1GdUUzttGHZCFAMc/379eme/HkVaXmnPDnSdZeI0MSl7bpUV8sayNUSfObXGcSU/XkM18+NNWftaSQczsm6yD+xHNA5opKy34ivKfnK55Mn1IueSmRV1jNDFEre5u5S+gOpbWOKSLFTLS9akWyUw6Zga5PC3cHKOajFZ9qRI="
 
 env:
   global:
