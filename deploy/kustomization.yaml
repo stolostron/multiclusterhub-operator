@@ -6,8 +6,10 @@ images:
   newTag: latest
 
 resources:
-- crds/operators.multicloud.ibm.com_multicloudhubs_crd.yaml
-- role.yaml
-- role_binding.yaml
-- service_account.yaml
+- operator_group.yaml
+# - crds/operators.multicloud.ibm.com_multicloudhubs_crd.yaml
+# - role.yaml
+# - role_binding.yaml
+# - service_account.yaml
 - operator.yaml
+- subscription.yaml
