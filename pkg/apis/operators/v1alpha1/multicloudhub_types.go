@@ -35,6 +35,9 @@ type MultiCloudHubSpec struct {
 	// Spec of etcd
 	Etcd `json:"etcd"`
 
+	// Spec of hive
+	Hive `json:"hive"`
+
 	// Spec of mongo
 	Mongo `json:"mongo"`
 }
@@ -103,6 +106,57 @@ type Etcd struct {
 	// Secret of etcd
 	// +optional
 	Secret string `json:"secret,omitempty"`
+}
+
+// Hive defines the desired state of Hive
+type Hive struct {
+	// list of references to secrets in the namespace that contain an additional Certificate Authority to use when communicating with target clusters
+	AdditionalCertificateAuthoritiesSecretRef map[string]string `json:"additionalCertificateAuthoritiesSecretRef,omitempty"`
+
+	Backup `json:"backup,omitempty"`
+
+	FailedProvisionConfig `json:"failedProvisionConfig,omitempty"`
+
+	GlobalPullSecretRef map[string]string `json:"globalPullSecretRef,omitempty"`
+
+	HiveAPIEnabled bool `json:"hiveAPIEnabled,omitempty"`
+
+	LogLevel string `json:"logLevel,omitempty"`
+
+	MaintenanceMode bool `json:"maintenanceMode,omitempty"`
+
+	ManagedDomains []ManagedDomains `json:"managedDomains,omitempty"`
+
+	SyncSetReapplyInterval string `json:"syncSetReapplyInterval,omitempty"`
+}
+
+type ManagedDomains struct {
+	AWS     `json:"aws,omitempty"`
+	Domains map[string]string `json:"domains,omitempty"`
+	GCP     `json:"gcp,omitempty"`
+}
+
+type GCP struct {
+	CredentialsSecretRef map[string]string `json:"credentialsSecretRef,omitempty"`
+}
+
+type AWS struct {
+	CredentialsSecretRef map[string]string `json:"credentialsSecretRef,omitempty"`
+}
+
+type FailedProvisionConfig struct {
+	SkipGatherLogs bool `json:"skipGatherLogs,omitempty"`
+}
+
+// Backup defines the configuration for Hive backup integration.
+type Backup struct {
+	MinBackupPeriodSeconds *int32 `json:"minBackupPeriodSeconds,omitempty"`
+	Velero                 `json:"velero,omitempty"`
+}
+
+// Velero specifies configuration for the Velero backup integration.
+type Velero struct {
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // Mongo defines the desired state of mongo

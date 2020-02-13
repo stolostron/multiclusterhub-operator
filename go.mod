@@ -3,7 +3,9 @@ module github.com/open-cluster-management/multicloudhub-operator
 go 1.13
 
 require (
+	github.com/fatih/structs v1.1.0
 	github.com/go-openapi/spec v0.19.2
+	github.com/operator-framework/operator-lifecycle-manager v0.0.0-20190605231540-b8a4faf68e36
 	github.com/operator-framework/operator-sdk v0.12.0
 	github.com/spf13/pflag v1.0.5
 	github.com/wadey/gocovmerge v0.0.0-20160331181800-b5bfa59ec0ad // indirect

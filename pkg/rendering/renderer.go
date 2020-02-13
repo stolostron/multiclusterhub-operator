@@ -5,7 +5,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/kustomize/v3/pkg/resource"
-
+	"github.com/fatih/structs"
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/patching"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
@@ -39,6 +39,8 @@ func NewRenderer(multipleCloudHub *operatorsv1alpha1.MultiCloudHub) *Renderer {
 		"Subscription":                 renderer.renderBaseMetadataNamespace,
 		"EtcdCluster":                  renderer.renderBaseMetadataNamespace,
 		"StatefulSet":                  renderer.renderBaseMetadataNamespace,
+		"ClusterServiceVersion":        renderer.renderBaseMetadataNamespace,
+		"HiveConfig":                   renderer.renderHiveConfig,
 	}
 	return renderer
 }
@@ -207,5 +209,16 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 		data["tls.key"] = []byte(cert.Key)
 	}
 
+	return u, nil
+}
+
+func (r *Renderer) renderHiveConfig(res *resource.Resource) (*unstructured.Unstructured, error) {
+	u := &unstructured.Unstructured{Object: res.Map()}
+	// u.Object["spec"] = structs.Map(r.cr.Spec.Hive)
+
+	// fmt.Println("HERE")
+
+	// fmt.Printf("\n%+v\n", u)
+	
 	return u, nil
 }

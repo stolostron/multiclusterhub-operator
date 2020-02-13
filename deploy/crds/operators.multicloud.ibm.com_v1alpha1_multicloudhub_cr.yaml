@@ -25,3 +25,6 @@ spec:
   mongo:
     endpoints: mongo-0.mongo.default
     replicaSet: rs0
+  hive:
+    additionalCertificateAuthoritiesSecretRef: []
+    globalPullSecretRef: []
