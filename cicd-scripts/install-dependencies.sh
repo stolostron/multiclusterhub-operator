@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "INSTALL DEPENDENCIES GOES HERE!"
+
 _OPERATOR_SDK_VERSION=v0.15.1
 
 if ! [ -x "$(command -v operator-sdk)" ]; then
