@@ -17,6 +17,7 @@ const (
 	controllerName        = "mcm-controller"
 	webhookName           = "webhook-core-webhook"
 	clusterControllerName = "multicloud-operators-cluster-controller"
+	metadataErr           = "failed to find metadata field"
 )
 
 type renderFn func(*resource.Resource) (*unstructured.Unstructured, error)
@@ -157,7 +158,7 @@ func (r *Renderer) renderBaseMetadataNamespace(res *resource.Resource) (*unstruc
 	u := &unstructured.Unstructured{Object: res.Map()}
 	metadata, ok := u.Object["metadata"].(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("failed to find metadata field")
+		return nil, fmt.Errorf(metadataErr)
 	}
 
 	metadata["namespace"] = r.cr.Namespace
@@ -172,7 +173,7 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 	}
 	data, ok := u.Object["data"].(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("failed to find data field")
+		return nil, fmt.Errorf(metadataErr)
 	}
 
 	metadata["namespace"] = r.cr.Namespace
@@ -216,7 +217,7 @@ func (r *Renderer) renderHiveConfig(res *resource.Resource) (*unstructured.Unstr
 	u := &unstructured.Unstructured{Object: res.Map()}
 	metadata, ok := u.Object["metadata"].(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("failed to find metadata field")
+		return nil, fmt.Errorf(metadataErr)
 	}
 
 	metadata["namespace"] = r.cr.Namespace
