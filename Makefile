@@ -7,7 +7,7 @@ GITHUB_TOKEN ?=
 
 BUILD_DIR ?= build
 
-VERSION ?= zk-latest
+VERSION ?= latest
 IMG ?= multicloudhub-operator
 REGISTRY ?= quay.io/rhibmcollab
 GIT_VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
