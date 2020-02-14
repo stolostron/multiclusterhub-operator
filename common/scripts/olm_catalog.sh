@@ -28,13 +28,23 @@ unindent(){
   local INDENT="    "
   local INDENT1S="- "
 
-  sed -i '' -e "s/^${INDENT}//" "${FILENAME}"
-  sed -i '' -e "s/^${INDENT1S}/  /" "${FILENAME}"
+  if [[ "$OSTYPE" == "linux-gnu" ]]; then
+    sed -e "s/^${INDENT}//" "${FILENAME}"
+    sed -e "s/^${INDENT1S}/  /" "${FILENAME}"
+  elif [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' -e "s/^${INDENT}//" "${FILENAME}"
+    sed -i '' -e "s/^${INDENT1S}/  /" "${FILENAME}"
+  fi
 }
 
 removeNamespacePlaceholder(){
   local FILENAME=$1
-  sed -i '' -e '/namespace: placeholder/d' "${FILENAME}"
+  if [[ "$OSTYPE" == "linux-gnu" ]]; then
+    sed -e '/namespace: placeholder/d' "${FILENAME}"
+  elif [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' -e '/namespace: placeholder/d' "${FILENAME}"
+  fi
+  
 }
 
 DEPLOYDIR=${DIR:-$(cd "$(dirname "$0")"/../../deploy && pwd)}
