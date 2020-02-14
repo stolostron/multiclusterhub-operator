@@ -214,6 +214,12 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 
 func (r *Renderer) renderHiveConfig(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
+	metadata, ok := u.Object["metadata"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to find metadata field")
+	}
+
+	metadata["namespace"] = r.cr.Namespace
 	u.Object["spec"] = structs.Map(r.cr.Spec.Hive)
 
 	return u, nil
