@@ -3,7 +3,7 @@ kind: HiveConfig
 metadata:
   name: hive
 spec:
-  additionalCertificateAuthoritiesSecretRef:
+  additionalCertificateAuthorities:
   - name: letsencrypt-ca
   managedDomains:
   - aws:
@@ -11,5 +11,5 @@ spec:
         name: external-dns-route53-admin
     domains:
     - s1.openshiftapps.com
-  globalPullSecretRef:
+  globalPullSecret:
     name: private-secret

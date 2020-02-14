@@ -214,11 +214,7 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 
 func (r *Renderer) renderHiveConfig(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
-	// u.Object["spec"] = structs.Map(r.cr.Spec.Hive)
+	u.Object["spec"] = structs.Map(r.cr.Spec.Hive)
 
-	// fmt.Println("HERE")
-
-	// fmt.Printf("\n%+v\n", u)
-	
 	return u, nil
 }
