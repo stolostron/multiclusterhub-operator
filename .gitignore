@@ -12,5 +12,4 @@ cover.out
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
-# Operator output directory
-_output
+*.build-harness-bootstrap
