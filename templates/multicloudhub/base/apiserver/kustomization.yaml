@@ -1,5 +1,6 @@
 resources:
-- apiservice-apiserver.yaml
+- apiservice-apiserver_v1alpha1.yaml
+- apiservice-apiserver_v1beta1.yaml
 - apiservice-clusterregistry.yaml
 - deplolyment.yaml
 - service.yaml

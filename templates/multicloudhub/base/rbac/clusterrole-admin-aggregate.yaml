@@ -1,0 +1,28 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-admin: "true"
+  name: mcm-admin-aggregate
+rules:
+- apiGroups: ["mcm.ibm.com"]
+  resources: ["resourceviews", "resourceviews/status", "works", "works/status", "worksets", "worksets/status"]
+  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+- apiGroups: ["mcm.ibm.com"]
+  resources: ["clusterstatuses", "helmrepos", "helmrepos/status"]
+  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+- apiGroups: ["clusterregistry.k8s.io"]
+  resources: ["clusters", "clusters/status"]
+  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+- apiGroups: ["mcm.ibm.com"]
+  resources: ["deployables", "deployables/status", "placementbindings", "placementpolicies", "placementpolicies/status", "deployableoverrides", "deployableoverrides/status", "applicationrelationships", "applicationrelatioships/status"]
+  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+- apiGroups: ["app.ibm.com"]
+  resources: [ "deployables", "deployables/status", "placementrules", "placementrules/status", "channels", "channels/status", "subscriptions", "subscriptions/status"]
+  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+- apiGroups: ["app.k8s.io"]
+  resources: [ "applications", "applications/status"]
+  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+- apiGroups: ["policy.mcm.ibm.com"]
+  resources: ["policies"]
+  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
