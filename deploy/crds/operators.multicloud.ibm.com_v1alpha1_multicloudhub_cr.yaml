@@ -25,3 +25,12 @@ spec:
   mongo:
     endpoints: mongo-0.mongo.default
     replicaSet: rs0
+  hive:
+    additionalCertificateAuthorities:
+    - name: letsencrypt-ca
+    managedDomains:
+    - s1.openshiftapps.com
+    globalPullSecret:
+      name: private-secret
+    failedProvisionConfig:
+      skipGatherLogs: false

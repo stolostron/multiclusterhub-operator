@@ -5,7 +5,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/kustomize/v3/pkg/resource"
-
+	"github.com/fatih/structs"
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/patching"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
@@ -17,6 +17,7 @@ const (
 	controllerName        = "mcm-controller"
 	webhookName           = "webhook-core-webhook"
 	clusterControllerName = "multicloud-operators-cluster-controller"
+	metadataErr           = "failed to find metadata field"
 )
 
 type renderFn func(*resource.Resource) (*unstructured.Unstructured, error)
@@ -39,6 +40,8 @@ func NewRenderer(multipleCloudHub *operatorsv1alpha1.MultiCloudHub) *Renderer {
 		"Subscription":                 renderer.renderBaseMetadataNamespace,
 		"EtcdCluster":                  renderer.renderBaseMetadataNamespace,
 		"StatefulSet":                  renderer.renderBaseMetadataNamespace,
+		"ClusterServiceVersion":        renderer.renderBaseMetadataNamespace,
+		"HiveConfig":                   renderer.renderHiveConfig,
 	}
 	return renderer
 }
@@ -155,7 +158,7 @@ func (r *Renderer) renderBaseMetadataNamespace(res *resource.Resource) (*unstruc
 	u := &unstructured.Unstructured{Object: res.Map()}
 	metadata, ok := u.Object["metadata"].(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("failed to find metadata field")
+		return nil, fmt.Errorf(metadataErr)
 	}
 
 	metadata["namespace"] = r.cr.Namespace
@@ -170,7 +173,7 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 	}
 	data, ok := u.Object["data"].(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("failed to find data field")
+		return nil, fmt.Errorf(metadataErr)
 	}
 
 	metadata["namespace"] = r.cr.Namespace
@@ -206,6 +209,19 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 		data["tls.crt"] = []byte(cert.Cert)
 		data["tls.key"] = []byte(cert.Key)
 	}
+
+	return u, nil
+}
+
+func (r *Renderer) renderHiveConfig(res *resource.Resource) (*unstructured.Unstructured, error) {
+	u := &unstructured.Unstructured{Object: res.Map()}
+	metadata, ok := u.Object["metadata"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf(metadataErr)
+	}
+
+	metadata["namespace"] = r.cr.Namespace
+	u.Object["spec"] = structs.Map(r.cr.Spec.Hive)
 
 	return u, nil
 }
