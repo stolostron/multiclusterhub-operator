@@ -7,11 +7,10 @@ GITHUB_TOKEN ?=
 
 BUILD_DIR ?= build
 
-VERSION ?= 1.0.0
+VERSION ?= latest
 IMG ?= multicloudhub-operator
-REGISTRY ?= quay.io/rhibmcollab
 SECRET_REGISTRY ?= quay.io 
-DEV_REGISTRY ?= quay.io/rhibmcollab
+REGISTRY ?= quay.io/rhibmcollab
 GIT_VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
                  git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8)
 
@@ -41,8 +40,7 @@ image:
 	./cicd-scripts/build.sh "$(REGISTRY)/$(IMG):$(VERSION)"
 
 push:
-	docker tag "$(REGISTRY)/$(IMG):$(VERSION)" "$(DEV_REGISTRY)/$(IMG):$(VERSION)"
-	./common/scripts/push.sh "$(DEV_REGISTRY)/$(IMG):$(VERSION)"
+	./common/scripts/push.sh "$(REGISTRY)/$(IMG):$(VERSION)"
 
 olm-catalog: clean
 	@common/scripts/olm_catalog.sh
@@ -56,7 +54,7 @@ install: olm-catalog image push
 	@oc create secret docker-registry quay-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
 	@oc apply -k ./build/_output/olm || true
 
-uninstall:
+uninstall: unsubscribe
 	@ oc delete -k ./build/_output/olm || true
 
 reinstall: uninstall install
@@ -76,7 +74,7 @@ unsubscribe:
 	@oc delete crd multicloudhubs.operators.multicloud.ibm.com || true
 	@oc delete crd channels.app.ibm.com || true
 	@oc delete crd deployables.app.ibm.com || true
-	# @oc delete crd helmreleases.app.ibm.com || true # this line is taking forever
+	@oc delete crd helmreleases.app.ibm.com || true
 	@oc delete crd subscriptions.app.ibm.com || true
 	@oc delete crd etcdbackups.etcd.database.coreos.com || true
 	@oc delete crd etcdclusters.etcd.database.coreos.com || true
