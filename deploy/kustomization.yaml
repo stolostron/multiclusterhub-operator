@@ -1,4 +1,4 @@
-namespace: multicloud-system
+namespace: default
 
 images:
 - name: multicloudhub-operator
@@ -6,9 +6,9 @@ images:
   newTag: latest
 
 resources:
-# - crds/operators.multicloud.ibm.com_multicloudhubs_crd.yaml
-# - role.yaml
-# - role_binding.yaml
-# - service_account.yaml
+- crds/operators.multicloud.ibm.com_multicloudhubs_crd.yaml
+- role.yaml
+- role_binding.yaml
+- service_account.yaml
 - operator.yaml
 - subscription.yaml
