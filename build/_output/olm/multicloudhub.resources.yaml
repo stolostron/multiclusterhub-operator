@@ -109,6 +109,9 @@ data:
                   imageRepository:
                     description: Repository of the MultiCloud hub images
                     type: string
+                  imageTagPostfix:
+                    description: Postfix tag of the Multicloud hub images
+                    type: string
                   mongo:
                     description: Spec of mongo
                     properties:
@@ -297,7 +300,8 @@ data:
                   },
                   "imagePullPolicy": "Always",
                   "imagePullSecret": "quay-secret",
-                  "imageRepository": "quay.io/rhibmcollab",
+                  "imageRepository": "quay.io/open-cluster-management",
+                  "imageTagPostfix": "202002170800",
                   "mongo": {
                     "endpoints": "mongo-0.mongo.default",
                     "replicaSet": "rs0"
@@ -496,7 +500,7 @@ data:
                         value: multicloudhub-operator
                       - name: TEMPLATES_PATH
                         value: /usr/local/templates
-                      image: quay.io/rhibmcollab/multicloudhub-operator:latest
+                      image: quay.io/rhibmcollab/multicloudhub-operator:1.0.0
                       imagePullPolicy: Always
                       name: multicloudhub-operator
                       resources: {}

@@ -94,6 +94,7 @@ func (r *Renderer) renderNamespace(res *resource.Resource) (*unstructured.Unstru
 }
 
 func (r *Renderer) renderDeployments(res *resource.Resource) (*unstructured.Unstructured, error) {
+	fmt.Printf("*********************renderDeployments CR: %+v \n", r.cr)
 	err := patching.ApplyGlobalPatches(res, r.cr)
 	if err != nil {
 		return nil, err

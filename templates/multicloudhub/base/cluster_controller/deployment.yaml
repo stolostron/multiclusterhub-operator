@@ -16,7 +16,7 @@ spec:
       serviceAccountName: multicloud-operators-cluster-controller
       containers:
         - name: multicloud-operators-cluster-controller
-          image: multicloud-operators-cluster-controller:latest
+          image: multicloud-operators-cluster-controller:0.0.1
           command:
           - multicloud-operators-cluster-controller
           imagePullPolicy: Always
