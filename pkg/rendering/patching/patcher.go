@@ -17,7 +17,6 @@ import (
 type patchGenerateFn func(res *resource.Resource, multipleCloudHub *operatorsv1alpha1.MultiCloudHub) (ifc.Kunstructured, error)
 
 func ApplyGlobalPatches(res *resource.Resource, multipleCloudHub *operatorsv1alpha1.MultiCloudHub) error {
-	fmt.Printf("*********************ApplyGlobalPatches CR: %+v \n", multipleCloudHub)
 
 	for _, generate := range []patchGenerateFn{
 		generateImagePatch,
