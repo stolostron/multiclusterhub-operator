@@ -23,7 +23,7 @@ spec:
         - name: MYHUBNAME
           value: hub0
         args:
-          - "/mcm-apiserver"
+          - "/multicloud-manager"
           - "--mongo-database=mcm"
           - "--enable-admission-plugins=HCMUserIdentity,KlusterletCA,NamespaceLifecycle"
           - "--secure-port=6443"

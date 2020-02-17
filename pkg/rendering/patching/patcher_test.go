@@ -52,7 +52,7 @@ func TestApplyGlobalPatches(t *testing.T) {
 		TypeMeta:   metav1.TypeMeta{Kind: "MultiCloudHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1alpha1.MultiCloudHubSpec{
-			ImageRepository: "quay.io/rhibmcollab",
+			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: "Always",
 			ImagePullSecret: "test",
 			NodeSelector: &operatorsv1alpha1.NodeSelector{
