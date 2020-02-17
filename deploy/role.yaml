@@ -114,3 +114,20 @@ rules:
   - '*'
   verbs:
   - '*'
+- apiGroups:
+  - operators.coreos.com
+  resources:
+  - hive-catalog
+  - catalogsources
+  - clusterserviceversions
+  - hiveconfig
+  verbs:
+  - get
+  - create
+- apiGroups:
+  - hive.openshift.io
+  resources:
+  - hiveconfigs
+  verbs:
+  - get
+  - create

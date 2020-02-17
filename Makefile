@@ -56,34 +56,34 @@ install: olm-catalog image push
 	@oc create secret docker-registry quay-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
 	@oc apply -k ./build/_output/olm || true
 
-uninstall: unsubscribe
+uninstall:
 	@ oc delete -k ./build/_output/olm || true
-
 
 reinstall: uninstall install
 
 local: 
-	@operator-sdk up local --namespace="" --operator-flags="--zap-devel=true"
+	@operator-sdk run --local --namespace="" --operator-flags="--zap-devel=true"
 
 subscribe: image olm-catalog
 	# @kubectl create secret docker-registry quay-secret --docker-server=$(REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
 	@oc apply -f build/_output/olm/multicloudhub.resources.yaml
 
 unsubscribe:
-	@oc delete MultiCloudHub example-multicloudhub | true
-	@oc delete csv multicloudhub-operator.v0.0.1 | true
-	@oc delete csv etcdoperator.v0.9.4 | true
-	@oc delete csv multicloud-operators-subscription.v0.1.1 | true
-	@oc delete crd multicloudhubs.operators.multicloud.ibm.com | true
-	@oc delete crd channels.app.ibm.com | true
-	@oc delete crd deployables.app.ibm.com | true
-	@oc delete crd helmreleases.app.ibm.com | true
-	@oc delete crd subscriptions.app.ibm.com | true
-	@oc delete crd etcdbackups.etcd.database.coreos.com | true
-	@oc delete crd etcdclusters.etcd.database.coreos.com | true
-	@oc delete crd etcdrestores.etcd.database.coreos.com | true
-	@oc delete subscription multicloudhub-operator | true
-	@oc delete catalogsource multicloudhub-operator-registry| true
+	@oc delete MultiCloudHub example-multicloudhub || true
+	@oc delete csv multicloudhub-operator.v0.0.1 || true
+	@oc delete csv etcdoperator.v0.9.4 || true
+	@oc delete csv multicloud-operators-subscription.v0.1.1 || true
+	@oc delete crd multicloudhubs.operators.multicloud.ibm.com || true
+	@oc delete crd channels.app.ibm.com || true
+	@oc delete crd deployables.app.ibm.com || true
+	# @oc delete crd helmreleases.app.ibm.com || true # this line is taking forever
+	@oc delete crd subscriptions.app.ibm.com || true
+	@oc delete crd etcdbackups.etcd.database.coreos.com || true
+	@oc delete crd etcdclusters.etcd.database.coreos.com || true
+	@oc delete crd etcdrestores.etcd.database.coreos.com || true
+	@oc delete crd multicloudhubs.operators.multicloud.ibm.com || true
+	@oc delete subscription multicloudhub-operator || true
+	@oc delete catalogsource multicloudhub-operator-registry || true
 
 resubscribe: unsubscribe subscribe
 

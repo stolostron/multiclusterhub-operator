@@ -1,0 +1,11 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: hive-catalog
+spec:
+  sourceType: grpc
+  image: registry.svc.ci.openshift.org/openshift/hive-v4.0:hive
+  displayName: Hive Test Registry
+  publisher: Hive Developer
+  secrets:
+  - private-secret
