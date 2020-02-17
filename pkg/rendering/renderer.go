@@ -3,13 +3,13 @@ package rendering
 import (
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"sigs.k8s.io/kustomize/v3/pkg/resource"
 	"github.com/fatih/structs"
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/patching"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"sigs.k8s.io/kustomize/v3/pkg/resource"
 )
 
 const (

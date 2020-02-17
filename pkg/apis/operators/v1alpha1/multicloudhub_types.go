@@ -18,6 +18,9 @@ type MultiCloudHubSpec struct {
 	// Repository of the MultiCloud hub images
 	ImageRepository string `json:"imageRepository"`
 
+	// ImageTagPostfix of the MultiCloud hub images
+	ImageTagPostfix string `json:"imageTagPostfix"`
+
 	// Pull policy of the MultiCloud hub images
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy"`
 

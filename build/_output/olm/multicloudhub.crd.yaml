@@ -215,6 +215,9 @@
               imageRepository:
                 description: Repository of the MultiCloud hub images
                 type: string
+              imageTagPostfix:
+                description: Postfix tag of the Multicloud hub images
+                type: string
               mongo:
                 description: Spec of mongo
                 properties:

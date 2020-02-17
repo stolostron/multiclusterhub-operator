@@ -17,6 +17,7 @@ import (
 type patchGenerateFn func(res *resource.Resource, multipleCloudHub *operatorsv1alpha1.MultiCloudHub) (ifc.Kunstructured, error)
 
 func ApplyGlobalPatches(res *resource.Resource, multipleCloudHub *operatorsv1alpha1.MultiCloudHub) error {
+
 	for _, generate := range []patchGenerateFn{
 		generateImagePatch,
 		generateImagePullSecretsPatch,
@@ -211,16 +212,20 @@ func generateMongoSecrets(mch *operatorsv1alpha1.MultiCloudHub) ([]corev1.EnvVar
 }
 
 func generateImagePatch(res *resource.Resource, mch *operatorsv1alpha1.MultiCloudHub) (ifc.Kunstructured, error) {
-	image, err := res.GetString("spec.template.spec.containers[0].image")
+	imageFromTemplate, err := res.GetString("spec.template.spec.containers[0].image") // need to loop through all images
 	if err != nil {
 		return nil, err
 	}
+	imageRepo := mch.Spec.ImageRepository
+	imageTagPostfix := mch.Spec.ImageTagPostfix
+	if imageTagPostfix != "" {
+		imageTagPostfix = "-" + imageTagPostfix
+	}
+	generatedImage := fmt.Sprintf("%s/%s%s", imageRepo, imageFromTemplate, imageTagPostfix)
 
-	image = fmt.Sprintf("%s/%s", mch.Spec.ImageRepository, image)
-
-	container, _ := res.GetFieldValue("spec.template.spec.containers[0]")
+	container, _ := res.GetFieldValue("spec.template.spec.containers[0]") // need to loop through all images
 	containerMap, _ := container.(map[string]interface{})
-	containerMap["image"] = image
+	containerMap["image"] = generatedImage
 	containerMap["imagePullPolicy"] = mch.Spec.ImagePullPolicy
 
 	return kunstruct.NewKunstructuredFactoryImpl().FromMap(map[string]interface{}{

@@ -50,7 +50,8 @@ metadata:
             },
             "imagePullPolicy": "Always",
             "imagePullSecret": "quay-secret",
-            "imageRepository": "quay.io/rhibmcollab",
+            "imageRepository": "quay.io/open-cluster-management",
+            "imageTagPostfix": "",
             "mongo": {
               "endpoints": "mongo-0.mongo.default",
               "replicaSet": "rs0"

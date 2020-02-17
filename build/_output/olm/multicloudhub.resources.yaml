@@ -234,6 +234,9 @@ data:
                   imageRepository:
                     description: Repository of the MultiCloud hub images
                     type: string
+                  imageTagPostfix:
+                    description: Postfix tag of the Multicloud hub images
+                    type: string
                   mongo:
                     description: Spec of mongo
                     properties:
@@ -439,7 +442,8 @@ data:
                   },
                   "imagePullPolicy": "Always",
                   "imagePullSecret": "quay-secret",
-                  "imageRepository": "quay.io/rhibmcollab",
+                  "imageRepository": "quay.io/open-cluster-management",
+                  "imageTagPostfix": "",
                   "mongo": {
                     "endpoints": "mongo-0.mongo.default",
                     "replicaSet": "rs0"

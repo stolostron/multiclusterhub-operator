@@ -9,6 +9,7 @@ BUILD_DIR ?= build
 
 VERSION ?= latest
 IMG ?= multicloudhub-operator
+SECRET_REGISTRY ?= quay.io 
 REGISTRY ?= quay.io/rhibmcollab
 GIT_VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
                  git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8)
@@ -48,22 +49,13 @@ clean::
 	rm -rf $(BUILD_DIR)/_output
 	rm -f cover.out
 
-install: image push subscribe
-	@kubectl create secret docker-registry quay-secret --docker-server=$(REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
-	@kubectl apply -k deploy || true
-	@oc apply -f ./build/_output/olm/multicloudhub.resources.yaml || true
-	@oc apply -f ./build/_output/olm/multicloudhub.csv.yaml || true
-	@oc apply -f ./build/_output/olm/multicloudhub.crd.yaml || true
-	@kubectl apply -f deploy/crds/operators.multicloud.ibm.com_v1alpha1_multicloudhub_cr.yaml || true
+install: olm-catalog image push
+	# need to check for operator group
+	@oc create secret docker-registry quay-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
+	@oc apply -k ./build/_output/olm || true
 
 uninstall: unsubscribe
-	@kubectl delete -f deploy/crds/operators.multicloud.ibm.com_v1alpha1_multicloudhub_cr.yaml || true
-	@oc delete -f ./build/_output/olm/multicloudhub.csv.yaml || true
-	@oc delete -f ./build/_output/olm/multicloudhub.crd.yaml || true
-	@oc delete -f ./build/_output/olm/multicloudhub.resources.yaml || true
-	@kubectl delete -k deploy || true
-	@kubectl delete deploy etcd-operator || true
-
+	@ oc delete -k ./build/_output/olm || true
 
 reinstall: uninstall install
 
@@ -71,7 +63,7 @@ local:
 	@operator-sdk run --local --namespace="" --operator-flags="--zap-devel=true"
 
 subscribe: image olm-catalog
-	@kubectl create secret docker-registry quay-secret --docker-server=$(REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
+	# @kubectl create secret docker-registry quay-secret --docker-server=$(REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
 	@oc apply -f build/_output/olm/multicloudhub.resources.yaml
 
 unsubscribe:

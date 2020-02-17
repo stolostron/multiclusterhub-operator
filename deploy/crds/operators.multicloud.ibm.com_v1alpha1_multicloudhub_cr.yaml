@@ -5,7 +5,8 @@ metadata:
   namespace: default
 spec:
   version: latest
-  imageRepository: quay.io/rhibmcollab
+  imageRepository: quay.io/open-cluster-management
+  imageTagPostfix: ""
   imagePullPolicy: Always
   imagePullSecret: quay-secret
   foundation:
