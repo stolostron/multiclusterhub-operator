@@ -19,11 +19,9 @@ spec:
       - name: mcm-apiserver
         image: multicloud-manager:0.0.1
         volumeMounts: []
-        env:
-        - name: MYHUBNAME
-          value: hub0
+        env: []
         args:
-          - "/multicloud-manager"
+          - "/mcm-apiserver"
           - "--mongo-database=mcm"
           - "--enable-admission-plugins=HCMUserIdentity,KlusterletCA,NamespaceLifecycle"
           - "--secure-port=6443"
