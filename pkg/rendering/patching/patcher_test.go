@@ -192,3 +192,66 @@ func TestApplyControllerPatches(t *testing.T) {
 		t.Fatalf("failed to apply controller patches %v", err)
 	}
 }
+
+var topology = `
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: mcm-topology-aggregator
+  labels:
+    app: "mcm-topology-aggregator"
+spec:
+  template:
+    spec:
+      containers:
+      - name: mcm-topology-aggregator
+        image: "mcm-topology-aggregator"
+        env: []
+        volumeMounts:
+          - name: tmp
+            mountPath: "/tmp"
+        args:
+          - "/topology-aggregator"
+          - "--mongo-database=mcm"
+      volumes:
+        - name: tmp
+          emptyDir: {}
+`
+
+func TestApplyTopologyAggregatorPatches(t *testing.T){
+	json, err := yaml.YAMLToJSON([]byte(topology))
+	if err != nil {
+		t.Fatalf("failed to apply topology patches %v", err)
+	}
+	var u unstructured.Unstructured
+	u.UnmarshalJSON(json)
+	topology := factory.FromMap(u.Object)
+
+	var replicas int32 = 1
+	mchcr := &operatorsv1alpha1.MultiCloudHub{
+		TypeMeta:   metav1.TypeMeta{Kind: "MultiCloudHub"},
+		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
+		Spec: operatorsv1alpha1.MultiCloudHubSpec{
+			Foundation: operatorsv1alpha1.Foundation{
+				Controller: operatorsv1alpha1.Controller{
+					Replicas: &replicas,
+					Configuration: map[string]string{
+						"test": "test",
+					},
+				},
+			},
+			Mongo: operatorsv1alpha1.Mongo{
+				Endpoints:  "test",
+				ReplicaSet: "test",
+				UserSecret: "test",
+				CASecret:   "test",
+				TLSSecret:  "test",
+			},
+		},
+	}
+
+	err = ApplyTopologyAggregatorPatches(topology, mchcr)
+	if err != nil {
+		t.Fatalf("failed to apply topology patches %v", err)
+	}
+}

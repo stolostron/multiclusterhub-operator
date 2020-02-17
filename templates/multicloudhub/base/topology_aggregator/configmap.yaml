@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mcm-topology-aggregator
+  labels:
+    config: mcm-aggregator
+    app: mcm-topology-aggregator
+data:
+  service: "mcm-topology-aggregator"
+  port: "4000"
+  path: "/data/cluster/"
+  sub-resource: "/topology"
+  use-id: "true"
+  secret: "mcm-topology-aggregator-secret"
