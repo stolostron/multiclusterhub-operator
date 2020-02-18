@@ -1,9 +1,9 @@
 apiVersion: app.ibm.com/v1alpha1
 kind: Channel
 metadata:
-  name: entitled-registry
+  name: charts-v1
 spec:
   type: HelmRepo
   pathname: https://raw.githubusercontent.com/open-cluster-management/multicloudhub-repo/master/multicloudhub/charts
   secretRef:
-    name: ibmplatform-chart-secret
+    name: chart-secret

@@ -3,7 +3,7 @@ kind: Subscription
 metadata:
   name: nginx-sub
 spec:
-  channel: entitled-registry
+  channel: charts-v1
   name: nginx
   placement:
     local: true 
