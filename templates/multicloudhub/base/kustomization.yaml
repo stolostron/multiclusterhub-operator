@@ -8,4 +8,5 @@ resources:
 - cluster_controller
 - certificates
 - hive
+- repo
 # - connection_manager

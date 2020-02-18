@@ -17,6 +17,7 @@ const (
 	controllerName        = "mcm-controller"
 	webhookName           = "webhook-core-webhook"
 	clusterControllerName = "multicloud-operators-cluster-controller"
+	helmRepoName					= "multicloudhub-repo"
 	metadataErr           = "failed to find metadata field"
 )
 
@@ -119,6 +120,8 @@ func (r *Renderer) renderDeployments(res *resource.Resource) (*unstructured.Unst
 	case webhookName:
 		return &unstructured.Unstructured{Object: res.Map()}, nil
 	case clusterControllerName:
+		return &unstructured.Unstructured{Object: res.Map()}, nil
+	case helmRepoName:
 		return &unstructured.Unstructured{Object: res.Map()}, nil
 	default:
 		return nil, fmt.Errorf("unknown MultipleCloudHub deployment component %s", name)
