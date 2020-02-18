@@ -17,6 +17,7 @@ const (
 	controllerName        = "mcm-controller"
 	webhookName           = "webhook-core-webhook"
 	clusterControllerName = "multicloud-operators-cluster-controller"
+	topologyAggregatorName   = "topology-aggregator"
 	metadataErr           = "failed to find metadata field"
 )
 
@@ -120,6 +121,11 @@ func (r *Renderer) renderDeployments(res *resource.Resource) (*unstructured.Unst
 		return &unstructured.Unstructured{Object: res.Map()}, nil
 	case clusterControllerName:
 		return &unstructured.Unstructured{Object: res.Map()}, nil
+	case topologyAggregatorName:
+		if err := patching.ApplyTopologyAggregatorPatches(res,r.cr); err != nil{
+			return nil, err
+		}
+		return &unstructured.Unstructured{Object: res.Map()}, nil
 	default:
 		return nil, fmt.Errorf("unknown MultipleCloudHub deployment component %s", name)
 	}
@@ -180,7 +186,8 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 
 	name := res.GetName()
 
-	if name == "mcm-apiserver-self-signed-secrets" {
+	switch name {
+	case "mcm-apiserver-self-signed-secrets":
 		ca, err := utils.GenerateSelfSignedCACert("multicloudhub-api")
 		if err != nil {
 			return nil, err
@@ -196,7 +203,9 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 		data["ca.crt"] = []byte(ca.Cert)
 		data["tls.crt"] = []byte(cert.Cert)
 		data["tls.key"] = []byte(cert.Key)
-	} else if name == "mcm-klusterlet-self-signed-secrets" {
+
+		return u, nil
+	case "mcm-klusterlet-self-signed-secrets":
 		ca, err := utils.GenerateSelfSignedCACert("multicloudhub-klusterlet")
 		if err != nil {
 			return nil, err
@@ -208,7 +217,26 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 		data["ca.crt"] = []byte(ca.Cert)
 		data["tls.crt"] = []byte(cert.Cert)
 		data["tls.key"] = []byte(cert.Key)
+		return u, nil
+	case "topology-aggregator-secret":
+		ca, err := utils.GenerateSelfSignedCACert("topology-aggregator")
+		if err != nil {
+			return nil, err
+		}
+		alternateDNS := []string{
+			fmt.Sprintf("%s.%s", topologyAggregatorName, r.cr.Namespace),
+			fmt.Sprintf("%s.%s.svc", topologyAggregatorName, r.cr.Namespace),
+		}
+		cert, err := utils.GenerateSignedCert(topologyAggregatorName, alternateDNS, ca)
+		if err != nil {
+			return nil, err
+		}
+		data["ca.crt"] = []byte(ca.Cert)
+		data["tls.crt"] = []byte(cert.Cert)
+		data["tls.key"] = []byte(cert.Key)
+		return u, nil
 	}
+
 
 	return u, nil
 }
