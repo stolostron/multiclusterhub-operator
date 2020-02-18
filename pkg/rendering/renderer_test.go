@@ -25,7 +25,7 @@ func TestRender(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1alpha1.MultiCloudHubSpec{
 			Version:         "latest",
-			ImageRepository: "quay.io/rhibmcollab",
+			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: "Always",
 			ImagePullSecret: "test",
 			NodeSelector: &operatorsv1alpha1.NodeSelector{
