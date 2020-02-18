@@ -17,7 +17,7 @@ const (
 	controllerName        = "mcm-controller"
 	webhookName           = "webhook-core-webhook"
 	clusterControllerName = "multicloud-operators-cluster-controller"
-	topologyAggregatorName   = "mcm-topology-aggregator"
+	topologyAggregatorName   = "topology-aggregator"
 	metadataErr           = "failed to find metadata field"
 )
 
@@ -218,8 +218,8 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 		data["tls.crt"] = []byte(cert.Cert)
 		data["tls.key"] = []byte(cert.Key)
 		return u, nil
-	case "mcm-topology-aggregator-secret":
-		ca, err := utils.GenerateSelfSignedCACert("mcm-topology-aggregator")
+	case "topology-aggregator-secret":
+		ca, err := utils.GenerateSelfSignedCACert("topology-aggregator")
 		if err != nil {
 			return nil, err
 		}

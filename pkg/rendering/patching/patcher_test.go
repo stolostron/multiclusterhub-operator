@@ -197,15 +197,15 @@ var topology = `
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: mcm-topology-aggregator
+  name: topology-aggregator
   labels:
-    app: "mcm-topology-aggregator"
+    app: "topology-aggregator"
 spec:
   template:
     spec:
       containers:
-      - name: mcm-topology-aggregator
-        image: "mcm-topology-aggregator"
+      - name: topology-aggregator
+        image: "topology-aggregator"
         env: []
         volumeMounts:
           - name: tmp

@@ -137,7 +137,7 @@ func ApplyTopologyAggregatorPatches(res *resource.Resource, multipleCloudHub *op
 		[]corev1.Volume{{
 			Name: "topology-aggregator-certs",
 			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{SecretName: "mcm-topology-aggregator-secret"},
+				Secret: &corev1.SecretVolumeSource{SecretName: "topology-aggregator-secret"},
 			},
 		}},
 		[]corev1.VolumeMount{{
