@@ -142,7 +142,7 @@ func ApplyTopologyAggregatorPatches(res *resource.Resource, multipleCloudHub *op
 			},
 		}},
 		[]corev1.VolumeMount{{
-			Name: "topology-aggregator-certs",
+			Name:      "topology-aggregator-certs",
 			MountPath: "/certs",
 		}},
 	); err != nil {

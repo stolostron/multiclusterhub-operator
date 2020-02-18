@@ -16,7 +16,7 @@ spec:
       serviceAccountName: hub-sa
       containers:
         - name: topology-aggregator
-          image: topology-aggregator
+          image: topology-aggregator:0.0.1
           env: []
           ports:
             - containerPort: 4000
