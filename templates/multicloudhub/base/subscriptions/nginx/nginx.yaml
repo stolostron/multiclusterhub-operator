@@ -1,0 +1,9 @@
+apiVersion: app.ibm.com/v1alpha1
+kind: Subscription
+metadata:
+  name: nginx-sub
+spec:
+  channel: default/entitled-registry
+  name: nginx
+  placement:
+    local: true 
