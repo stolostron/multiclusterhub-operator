@@ -3,7 +3,7 @@ kind: Subscription
 metadata:
   name: nginx-sub
 spec:
-  channel: default/entitled-registry
+  channel: entitled-registry
   name: nginx
   placement:
     local: true 

@@ -10,6 +10,7 @@ import (
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/kustomize/v3/pkg/resource"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -20,6 +21,8 @@ const (
 	topologyAggregatorName   = "topology-aggregator"
 	metadataErr           = "failed to find metadata field"
 )
+
+var log = logf.Log.WithName("renderer")
 
 type renderFn func(*resource.Resource) (*unstructured.Unstructured, error)
 
@@ -38,10 +41,11 @@ func NewRenderer(multipleCloudHub *operatorsv1alpha1.MultiCloudHub) *Renderer {
 		"ClusterRoleBinding":           renderer.renderClusterRoleBinding,
 		"MutatingWebhookConfiguration": renderer.renderMutatingWebhookConfiguration,
 		"Secret":                       renderer.renderSecret,
-		"Subscription":                 renderer.renderBaseMetadataNamespace,
+		"Subscription":                 renderer.renderSubscription,
 		"EtcdCluster":                  renderer.renderBaseMetadataNamespace,
 		"StatefulSet":                  renderer.renderBaseMetadataNamespace,
 		"ClusterServiceVersion":        renderer.renderBaseMetadataNamespace,
+		"Channel":        							renderer.renderBaseMetadataNamespace,
 		"HiveConfig":                   renderer.renderHiveConfig,
 	}
 	return renderer
@@ -168,6 +172,32 @@ func (r *Renderer) renderBaseMetadataNamespace(res *resource.Resource) (*unstruc
 	}
 
 	metadata["namespace"] = r.cr.Namespace
+	return u, nil
+}
+
+func (r *Renderer) renderSubscription(res *resource.Resource) (*unstructured.Unstructured, error) {
+	u := &unstructured.Unstructured{Object: res.Map()}
+
+	// Default to base renderFunc if not an IBM subscription
+	if u.GetAPIVersion() != "app.ibm.com/v1alpha1" {
+		return r.renderBaseMetadataNamespace(res)
+	}
+
+	// IBM subscription handling
+	metadata, ok := u.Object["metadata"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf(metadataErr)
+	}
+
+	metadata["namespace"] = r.cr.Namespace
+
+	// Update channel to prepend the CRs namespace
+	spec, ok := u.Object["spec"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to find ibm subscription spec field")
+	}
+	spec["channel"] = fmt.Sprintf("%s/%s", r.cr.Namespace, spec["channel"])
+
 	return u, nil
 }
 

@@ -1,13 +1,14 @@
 resources:
-- rbac
-- apiserver
-- controller
-- etcd
-- mongodb
-- webhook
-- cluster_controller
-- certificates
-- topology_aggregator
-- hive
-- subscriptions
+# - rbac
+# - apiserver
+# - controller
+# - etcd
+# - mongodb
+# - webhook
+# - cluster_controller
+# - certificates
+# - topology_aggregator
+# - hive
+- nginx
+- channel
 # - connection_manager
