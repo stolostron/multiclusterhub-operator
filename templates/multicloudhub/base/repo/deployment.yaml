@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: multicloudhub-repo
-        image: multicloudhub-repo:1.0.0-140da3abc5aaa60e4768ca94a5560c0e7f931bd2
+        image: multicloudhub-repo:1.0.0
         ports:
           - containerPort: 3000
         resources:
@@ -26,5 +26,3 @@ spec:
           requests:
             cpu: 50m
             memory: 30Mi
-      imagePullSecrets:
-      - name: quay-secret
