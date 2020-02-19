@@ -52,7 +52,7 @@ clean::
 install: olm-catalog image push
 	# need to check for operator group
 	@oc create secret docker-registry quay-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
-	@oc create secret generic chart-secret --from-literal=password=$(GITHUB_TOKEN) || true
+	@oc create secret generic chart-secret --from-literal=user=unused --from-literal=password=$(GITHUB_TOKEN) || true
 	@oc apply -k ./build/_output/olm || true
 
 uninstall: unsubscribe
