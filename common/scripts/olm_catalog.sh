@@ -127,8 +127,8 @@ removeNamespacePlaceholder "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
 \cp -r "${PKGDIR}" "${OLMOUTPUTDIR}"
 rm -rf "${DEPLOYDIR}"/olm-catalog
 
-rm ${OLMOUTPUTDIR}/*/*/*.yamle
-rm ${OLMOUTPUTDIR}/*/*/*.yaml-e
+rm -f ${OLMOUTPUTDIR}/*/*/*.yamle
+rm -f ${OLMOUTPUTDIR}/*/*/*.yaml-e 
 
 cp "${DEPLOYDIR}"/role.yaml "${OLMOUTPUTDIR}"
 cp "${DEPLOYDIR}"/role_binding.yaml "${OLMOUTPUTDIR}"
