@@ -15,23 +15,16 @@ if [[ "$force_flag" == "-f" ]] || [[ "$force_flag" == "--force" ]]; then
     force=true
 fi
 
-export CSV_CHANNEL=alpha
-export CSV_VERSION=0.0.1
-operatorSDKVersion=$(operator-sdk version | cut -d, -f 1 | tr -d '"' | cut -d ' ' -f 3)
-
-if [[ "$operatorSDKVersion" != "v0.15.1" ]]; then
-    echo "Must install operator-sdk v0.15.1"
-    exit 1
-fi
-
 if [ -z ${GITHUB_USER+x} ]; then 
+    echo "Define variable - GITHUB_USER to avoid being prompted"
     while [[ $GITHUB_USER == '' ]] # While string is different or empty...
-    do
+    do 
         read -p "Enter your Github (github.com) username: " GITHUB_USER
     done 
 fi
 
 if [ -z ${GITHUB_TOKEN+x} ]; then 
+    echo "Define variable - GITHUB_TOKEN to avoid being prompted"
     while [[ $GITHUB_TOKEN == '' ]] # While string is different or empty...
     do
         read -p "Enter your Github (github.com) password or token: " GITHUB_TOKEN
@@ -39,6 +32,7 @@ if [ -z ${GITHUB_TOKEN+x} ]; then
 fi
 
 if [ -z ${DOCKER_USER+x} ]; then 
+    echo "Define variable - DOCKER_USER to avoid being prompted"
     while [[ $DOCKER_USER == '' ]] # While string is different or empty...
     do
         read -p "Enter your Docker (quay.io) username: " DOCKER_USER
@@ -46,6 +40,7 @@ if [ -z ${DOCKER_USER+x} ]; then
 fi
 
 if [ -z ${DOCKER_PASS+x} ]; then 
+    echo "Define variable - DOCKER_PASS to avoid being prompted"
     while [[ $DOCKER_PASS == '' ]] # While string is different or empty...
     do
         read -p "Enter your Docker (quay.io) password or token: " DOCKER_PASS
@@ -53,22 +48,39 @@ if [ -z ${DOCKER_PASS+x} ]; then
 fi
 
 if [ -z ${NAMESPACE+x} ]; then 
+    echo "Define variable - NAMESPACE to avoid being prompted"
     while [[ $NAMESPACE == '' ]] # While string is different or empty...
     do
         read -p "Enter your namespace to install the operator and operands: " NAMESPACE
     done 
 fi
 
-export GITHUB_USER
-export GITHUB_TOKEN
-export DOCKER_USER
-export DOCKER_PASS
+export GITHUB_USER=$GITHUB_USER
+export GITHUB_TOKEN=$GITHUB_TOKEN
+export DOCKER_USER=$DOCKER_USER
+export DOCKER_PASS=$DOCKER_PASS
+export NAMESPACE=$NAMESPACE
 
+operatorSDKVersion=$(operator-sdk version | cut -d, -f 1 | tr -d '"' | cut -d ' ' -f 3)
+if [[ "$operatorSDKVersion" != "v0.15.1" ]]; then
+    echo "Must install operator-sdk v0.15.1."
+    while [[ "$_install" != "Y" ]] && [[ "$_install" != "N" ]] # While string is different or empty...
+    do
+        read -p "Install operator-sdk v0.15.1? (Y/N): " _install
+    done
+    if [[ "$_install" == "Y" ]]; then
+        echo "Installing operator-sdk v0.15.1 ..."
+        make deps
+    else
+        echo "Must install operator-sdk v0.15.1 ... Exiting"
+        exit 1
+    fi
+fi
 
 ## 2. Test Docker Login
 
 _output=$(docker login quay.io -u $DOCKER_USER -p $DOCKER_PASS)
-if [[ "$_output" != "Login Succeeded" ]]; then
+if [[ "$_output" != *"Login Succeeded"* ]]; then
     echo "Incorrect Docker Credentials provided. Check your 'DOCKER_USER' and 'DOCKER_PASS' environmental variables"
     exit 1
 fi
