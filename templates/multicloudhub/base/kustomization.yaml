@@ -9,4 +9,5 @@ resources:
 - certificates
 - topology_aggregator
 - hive
+- repo
 # - connection_manager
