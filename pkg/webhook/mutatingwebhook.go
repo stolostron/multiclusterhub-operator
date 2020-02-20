@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	DefaultRepository = "quay.io/default-repo"
+	DefaultRepository = "quay.io/open-cluster-management"
 	LatestVerison     = "latest"
 )
 
