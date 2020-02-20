@@ -14,12 +14,13 @@ import (
 )
 
 const (
-	apiserviceName        = "mcm-apiserver"
-	controllerName        = "mcm-controller"
-	webhookName           = "webhook-core-webhook"
-	clusterControllerName = "multicloud-operators-cluster-controller"
-	topologyAggregatorName   = "topology-aggregator"
-	metadataErr           = "failed to find metadata field"
+	apiserviceName         = "mcm-apiserver"
+	controllerName         = "mcm-controller"
+	webhookName            = "webhook-core-webhook"
+	clusterControllerName  = "multicloud-operators-cluster-controller"
+	helmRepoName           = "multicloudhub-repo"
+	topologyAggregatorName = "topology-aggregator"
+	metadataErr            = "failed to find metadata field"
 )
 
 var log = logf.Log.WithName("renderer")
@@ -125,8 +126,10 @@ func (r *Renderer) renderDeployments(res *resource.Resource) (*unstructured.Unst
 		return &unstructured.Unstructured{Object: res.Map()}, nil
 	case clusterControllerName:
 		return &unstructured.Unstructured{Object: res.Map()}, nil
+	case helmRepoName:
+		return &unstructured.Unstructured{Object: res.Map()}, nil
 	case topologyAggregatorName:
-		if err := patching.ApplyTopologyAggregatorPatches(res,r.cr); err != nil{
+		if err := patching.ApplyTopologyAggregatorPatches(res, r.cr); err != nil {
 			return nil, err
 		}
 		return &unstructured.Unstructured{Object: res.Map()}, nil
@@ -266,7 +269,6 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 		data["tls.key"] = []byte(cert.Key)
 		return u, nil
 	}
-
 
 	return u, nil
 }
