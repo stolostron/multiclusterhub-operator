@@ -9,4 +9,5 @@ resources:
 - cluster_controller
 - certificates
 - topology_aggregator
+- repo
 # - connection_manager

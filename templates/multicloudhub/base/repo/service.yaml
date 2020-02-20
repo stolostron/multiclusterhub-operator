@@ -1,0 +1,11 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: multicloudhub-repo
+spec:
+  selector:
+    app: multicloudhub-repo
+  ports:
+  - protocol: TCP
+    port: 3000
+    targetPort: 3000
