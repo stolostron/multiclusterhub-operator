@@ -2,12 +2,12 @@ resources:
 - rbac
 - apiserver
 - controller
+- hive
 - etcd
 - mongodb
 - webhook
 - cluster_controller
 - certificates
 - topology_aggregator
-- hive
 - repo
 # - connection_manager
