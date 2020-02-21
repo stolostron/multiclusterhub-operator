@@ -12,4 +12,5 @@ resources:
 - nginx
 - channel
 - repo
+- management_ingress
 # - connection_manager

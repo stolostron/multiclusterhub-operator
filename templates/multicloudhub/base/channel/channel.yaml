@@ -4,6 +4,4 @@ metadata:
   name: charts-v1
 spec:
   type: HelmRepo
-  pathname: https://raw.githubusercontent.com/open-cluster-management/multicloudhub-repo/master/multicloudhub/charts
-  secretRef:
-    name: chart-secret
+  pathname: http://multicloudhub-repo:3000/charts
