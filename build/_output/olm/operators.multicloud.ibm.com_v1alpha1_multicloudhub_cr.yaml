@@ -2,7 +2,7 @@ apiVersion: operators.multicloud.ibm.com/v1alpha1
 kind: MultiCloudHub
 metadata:
   name: example-multicloudhub
-  namespace: next
+  namespace: default
 spec:
   version: latest
   imageRepository: quay.io/open-cluster-management
@@ -22,9 +22,9 @@ spec:
         enable-service-registry: "true"
       replicas: 1
   etcd:
-    endpoints: http://etcd-cluster.next.svc.cluster.local:2379
+    endpoints: http://etcd-cluster.default.svc.cluster.local:2379
   mongo:
-    endpoints: mongo-0.mongo.next
+    endpoints: mongo-0.mongo.default
     replicaSet: rs0
   hive:
     additionalCertificateAuthorities:
