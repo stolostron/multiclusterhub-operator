@@ -2,6 +2,7 @@ resources:
 - rbac
 - apiserver
 - controller
+- hive
 - etcd
 - mongodb
 - webhook

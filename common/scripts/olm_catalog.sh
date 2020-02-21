@@ -29,8 +29,8 @@ unindent(){
   local INDENT1S="- "
 
   if [[ "$OSTYPE" == "linux-gnu" ]]; then
-    sed -e "s/^${INDENT}//" "${FILENAME}"
-    sed -e "s/^${INDENT1S}/  /" "${FILENAME}"
+    sed -i -e "1 s/${INDENT1S}/  /" "${FILENAME}"
+    sed -i -e "s/${INDENT}//" "${FILENAME}"
   elif [[ "$OSTYPE" == "darwin"* ]]; then
     sed -i '' -e "s/^${INDENT}//" "${FILENAME}"
     sed -i '' -e "s/^${INDENT1S}/  /" "${FILENAME}"
@@ -48,6 +48,8 @@ removeNamespacePlaceholder(){
 }
 
 DEPLOYDIR=${DIR:-$(cd "$(dirname "$0")"/../../deploy && pwd)}
+export CSV_CHANNEL=alpha
+export CSV_VERSION=0.0.1
 
 cp "${DEPLOYDIR}"/operator.yaml "${DEPLOYDIR}"/operator.yaml.bak
 if [ "$(uname)" = "Darwin" ]; then
