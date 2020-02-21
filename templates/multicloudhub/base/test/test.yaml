@@ -1,0 +1,21 @@
+apiVersion: app.ibm.com/v1alpha1
+kind: Subscription
+metadata:
+  name: sub-kui
+  namespace: default
+spec:
+  channel: dev-helmrepo
+  name: kui-web-terminal
+  placement:
+    local: true
+  packageOverrides:
+    - packageName: kui-web-terminal
+      packageAlias: kui
+      packageOverrides:
+      - path: spec.values
+        value: |
+          global:
+            imageTagPostfix: {{POSTFIX}}
+          proxy:
+            image:
+              repository: "test-repository"

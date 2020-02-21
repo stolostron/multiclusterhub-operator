@@ -8,8 +8,8 @@ resources:
 - webhook
 - cluster_controller
 - certificates
+- test
 - topology_aggregator
-- hive
 - channel
 - repo
 # - connection_manager

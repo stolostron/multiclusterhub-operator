@@ -2,6 +2,7 @@ package rendering
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/fatih/structs"
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
@@ -201,6 +202,20 @@ func (r *Renderer) renderSubscription(res *resource.Resource) (*unstructured.Uns
 	}
 	spec["channel"] = fmt.Sprintf("%s/%s", r.cr.Namespace, spec["channel"])
 
+	// Check if contains a packageOverrides
+	packageOverrides, ok := spec["packageOverrides"].([]interface{})
+	if ok {
+		for i := 0; i < len(packageOverrides); i++ {
+			packageOverride, ok := packageOverrides[i].(map[string]interface{})
+			if ok {
+				override := packageOverride["packageOverrides"].([]interface{})
+				for j := 0; j < len(override); j++ {
+					packageData, _ := override[j].(map[string]interface{})
+					packageData["value"] = strings.Replace(packageData["value"].(string), "{{POSTFIX}}", r.cr.Spec.ImageTagPostfix, -1)
+				}
+			}
+		}
+	}
 	return u, nil
 }
 
