@@ -28,16 +28,28 @@ unindent(){
   local INDENT="    "
   local INDENT1S="- "
 
-  sed -i '' -e "s/^${INDENT}//" "${FILENAME}"
-  sed -i '' -e "s/^${INDENT1S}/  /" "${FILENAME}"
+  if [[ "$OSTYPE" == "linux-gnu" ]]; then
+    sed -i -e "1 s/${INDENT1S}/  /" "${FILENAME}"
+    sed -i -e "s/${INDENT}//" "${FILENAME}"
+  elif [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' -e "s/^${INDENT}//" "${FILENAME}"
+    sed -i '' -e "s/^${INDENT1S}/  /" "${FILENAME}"
+  fi
 }
 
 removeNamespacePlaceholder(){
   local FILENAME=$1
-  sed -i '' -e '/namespace: placeholder/d' "${FILENAME}"
+  if [[ "$OSTYPE" == "linux-gnu" ]]; then
+    sed -e '/namespace: placeholder/d' "${FILENAME}"
+  elif [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' -e '/namespace: placeholder/d' "${FILENAME}"
+  fi
+  
 }
 
 DEPLOYDIR=${DIR:-$(cd "$(dirname "$0")"/../../deploy && pwd)}
+export CSV_CHANNEL=alpha
+export CSV_VERSION=0.0.1
 
 cp "${DEPLOYDIR}"/operator.yaml "${DEPLOYDIR}"/operator.yaml.bak
 if [ "$(uname)" = "Darwin" ]; then
@@ -117,7 +129,24 @@ removeNamespacePlaceholder "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
 \cp -r "${PKGDIR}" "${OLMOUTPUTDIR}"
 rm -rf "${DEPLOYDIR}"/olm-catalog
 
-echo "Created ${OLMOUTPUTDIR}/olm-catalog/multicloudhub-operator"
+rm -f ${OLMOUTPUTDIR}/*/*/*.yamle
+rm -f ${OLMOUTPUTDIR}/*/*/*.yaml-e 
+
+cp "${DEPLOYDIR}"/role.yaml "${OLMOUTPUTDIR}"
+cp "${DEPLOYDIR}"/role_binding.yaml "${OLMOUTPUTDIR}"
+cp "${DEPLOYDIR}"/service_account.yaml "${OLMOUTPUTDIR}"
+cp "${DEPLOYDIR}"/subscription.yaml "${OLMOUTPUTDIR}"
+cp "${DEPLOYDIR}"/operator.yaml "${OLMOUTPUTDIR}"
+cp "${DEPLOYDIR}"/crds/*_cr.yaml "${OLMOUTPUTDIR}"
+cp "${DEPLOYDIR}"/kustomization.yaml "${OLMOUTPUTDIR}"
+
+echo "Created ${OLMOUTPUTDIR}/multicloudhub-operator"
 echo "Created ${OLMOUTPUTDIR}/multicloudhub.resources.yaml"
 echo "Created ${OLMOUTPUTDIR}/multicloudhub.crd.yaml"
 echo "Created ${OLMOUTPUTDIR}/multicloudhub.csv.yaml"
+echo "Created ${OLMOUTPUTDIR}/operator.yaml"
+echo "Created ${OLMOUTPUTDIR}/subscription.yaml"
+echo "Created ${OLMOUTPUTDIR}/service_account.yaml"
+echo "Created ${OLMOUTPUTDIR}/role.yaml"
+echo "Created ${OLMOUTPUTDIR}/role_binding.yaml"
+echo "Created ${OLMOUTPUTDIR}/kustomization.yaml"

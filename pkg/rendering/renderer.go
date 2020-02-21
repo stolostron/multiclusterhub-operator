@@ -3,21 +3,27 @@ package rendering
 import (
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"sigs.k8s.io/kustomize/v3/pkg/resource"
-
+	"github.com/fatih/structs"
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/patching"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"sigs.k8s.io/kustomize/v3/pkg/resource"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
-	apiserviceName        = "mcm-apiserver"
-	controllerName        = "mcm-controller"
-	webhookName           = "webhook-core-webhook"
-	clusterControllerName = "multicloud-operators-cluster-controller"
+	apiserviceName         = "mcm-apiserver"
+	controllerName         = "mcm-controller"
+	webhookName            = "webhook-core-webhook"
+	clusterControllerName  = "multicloud-operators-cluster-controller"
+	helmRepoName           = "multicloudhub-repo"
+	topologyAggregatorName = "topology-aggregator"
+	metadataErr            = "failed to find metadata field"
 )
+
+var log = logf.Log.WithName("renderer")
 
 type renderFn func(*resource.Resource) (*unstructured.Unstructured, error)
 
@@ -36,9 +42,12 @@ func NewRenderer(multipleCloudHub *operatorsv1alpha1.MultiCloudHub) *Renderer {
 		"ClusterRoleBinding":           renderer.renderClusterRoleBinding,
 		"MutatingWebhookConfiguration": renderer.renderMutatingWebhookConfiguration,
 		"Secret":                       renderer.renderSecret,
-		"Subscription":                 renderer.renderBaseMetadataNamespace,
+		"Subscription":                 renderer.renderSubscription,
 		"EtcdCluster":                  renderer.renderBaseMetadataNamespace,
 		"StatefulSet":                  renderer.renderBaseMetadataNamespace,
+		"ClusterServiceVersion":        renderer.renderBaseMetadataNamespace,
+		"Channel":        							renderer.renderBaseMetadataNamespace,
+		"HiveConfig":                   renderer.renderHiveConfig,
 	}
 	return renderer
 }
@@ -117,6 +126,13 @@ func (r *Renderer) renderDeployments(res *resource.Resource) (*unstructured.Unst
 		return &unstructured.Unstructured{Object: res.Map()}, nil
 	case clusterControllerName:
 		return &unstructured.Unstructured{Object: res.Map()}, nil
+	case helmRepoName:
+		return &unstructured.Unstructured{Object: res.Map()}, nil
+	case topologyAggregatorName:
+		if err := patching.ApplyTopologyAggregatorPatches(res, r.cr); err != nil {
+			return nil, err
+		}
+		return &unstructured.Unstructured{Object: res.Map()}, nil
 	default:
 		return nil, fmt.Errorf("unknown MultipleCloudHub deployment component %s", name)
 	}
@@ -155,10 +171,36 @@ func (r *Renderer) renderBaseMetadataNamespace(res *resource.Resource) (*unstruc
 	u := &unstructured.Unstructured{Object: res.Map()}
 	metadata, ok := u.Object["metadata"].(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("failed to find metadata field")
+		return nil, fmt.Errorf(metadataErr)
 	}
 
 	metadata["namespace"] = r.cr.Namespace
+	return u, nil
+}
+
+func (r *Renderer) renderSubscription(res *resource.Resource) (*unstructured.Unstructured, error) {
+	u := &unstructured.Unstructured{Object: res.Map()}
+
+	// Default to base renderFunc if not an IBM subscription
+	if u.GetAPIVersion() != "app.ibm.com/v1alpha1" {
+		return r.renderBaseMetadataNamespace(res)
+	}
+
+	// IBM subscription handling
+	metadata, ok := u.Object["metadata"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf(metadataErr)
+	}
+
+	metadata["namespace"] = r.cr.Namespace
+
+	// Update channel to prepend the CRs namespace
+	spec, ok := u.Object["spec"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to find ibm subscription spec field")
+	}
+	spec["channel"] = fmt.Sprintf("%s/%s", r.cr.Namespace, spec["channel"])
+
 	return u, nil
 }
 
@@ -170,14 +212,15 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 	}
 	data, ok := u.Object["data"].(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("failed to find data field")
+		return nil, fmt.Errorf(metadataErr)
 	}
 
 	metadata["namespace"] = r.cr.Namespace
 
 	name := res.GetName()
 
-	if name == "mcm-apiserver-self-signed-secrets" {
+	switch name {
+	case "mcm-apiserver-self-signed-secrets":
 		ca, err := utils.GenerateSelfSignedCACert("multicloudhub-api")
 		if err != nil {
 			return nil, err
@@ -193,7 +236,9 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 		data["ca.crt"] = []byte(ca.Cert)
 		data["tls.crt"] = []byte(cert.Cert)
 		data["tls.key"] = []byte(cert.Key)
-	} else if name == "mcm-klusterlet-self-signed-secrets" {
+
+		return u, nil
+	case "mcm-klusterlet-self-signed-secrets":
 		ca, err := utils.GenerateSelfSignedCACert("multicloudhub-klusterlet")
 		if err != nil {
 			return nil, err
@@ -205,7 +250,38 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 		data["ca.crt"] = []byte(ca.Cert)
 		data["tls.crt"] = []byte(cert.Cert)
 		data["tls.key"] = []byte(cert.Key)
+		return u, nil
+	case "topology-aggregator-secret":
+		ca, err := utils.GenerateSelfSignedCACert("topology-aggregator")
+		if err != nil {
+			return nil, err
+		}
+		alternateDNS := []string{
+			fmt.Sprintf("%s.%s", topologyAggregatorName, r.cr.Namespace),
+			fmt.Sprintf("%s.%s.svc", topologyAggregatorName, r.cr.Namespace),
+		}
+		cert, err := utils.GenerateSignedCert(topologyAggregatorName, alternateDNS, ca)
+		if err != nil {
+			return nil, err
+		}
+		data["ca.crt"] = []byte(ca.Cert)
+		data["tls.crt"] = []byte(cert.Cert)
+		data["tls.key"] = []byte(cert.Key)
+		return u, nil
 	}
+
+	return u, nil
+}
+
+func (r *Renderer) renderHiveConfig(res *resource.Resource) (*unstructured.Unstructured, error) {
+	u := &unstructured.Unstructured{Object: res.Map()}
+	metadata, ok := u.Object["metadata"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf(metadataErr)
+	}
+
+	metadata["namespace"] = r.cr.Namespace
+	u.Object["spec"] = structs.Map(r.cr.Spec.Hive)
 
 	return u, nil
 }

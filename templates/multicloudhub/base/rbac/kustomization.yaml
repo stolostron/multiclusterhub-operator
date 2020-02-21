@@ -3,3 +3,7 @@ resources:
 - clusterrolebinding-account.yaml
 - clusterrolebinding-group.yaml
 - serviceaccount.yaml
+- clusterrole-admin-aggregate.yaml
+- clusterrole-edit-aggregate.yaml
+- clusterrole-operate-aggregate.yaml
+- clusterrole-view-aggregate.yaml

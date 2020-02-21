@@ -17,6 +17,7 @@ import (
 type patchGenerateFn func(res *resource.Resource, multipleCloudHub *operatorsv1alpha1.MultiCloudHub) (ifc.Kunstructured, error)
 
 func ApplyGlobalPatches(res *resource.Resource, multipleCloudHub *operatorsv1alpha1.MultiCloudHub) error {
+
 	for _, generate := range []patchGenerateFn{
 		generateImagePatch,
 		generateImagePullSecretsPatch,
@@ -120,6 +121,46 @@ func ApplyControllerPatches(res *resource.Resource, multipleCloudHub *operatorsv
 	return res.Patch(argsPatch)
 }
 
+func ApplyTopologyAggregatorPatches(res *resource.Resource, multipleCloudHub *operatorsv1alpha1.MultiCloudHub) error {
+	replicasPatch := generateReplicasPatch(*multipleCloudHub.Spec.Foundation.Controller.Replicas)
+	if err := res.Patch(replicasPatch); err != nil {
+		return err
+	}
+
+	envVars, volumes, volumeMounts := generateMongoSecrets(multipleCloudHub)
+	if err := applySecretPatches(res, envVars, volumes, volumeMounts); err != nil {
+		return err
+	}
+
+	if err := applySecretPatches(
+		res,
+		[]corev1.EnvVar{},
+		[]corev1.Volume{{
+			Name: "topology-aggregator-certs",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{SecretName: "topology-aggregator-secret"},
+			},
+		}},
+		[]corev1.VolumeMount{{
+			Name:      "topology-aggregator-certs",
+			MountPath: "/certs",
+		}},
+	); err != nil {
+		return err
+	}
+
+	args := map[string]string{}
+	args["mongo-host"] = multipleCloudHub.Spec.Mongo.Endpoints
+	args["mongo-replicaset"] = multipleCloudHub.Spec.Mongo.ReplicaSet
+	args["aggregator-tls-cert"] = "/certs/tls.crt"
+	args["aggregator-tls-key"] = "/certs/tls.key"
+	argsPatch, err := generateContainerArgsPatch(res, args)
+	if err != nil {
+		return err
+	}
+	return res.Patch(argsPatch)
+}
+
 func applySecretPatches(
 	res *resource.Resource, envVars []corev1.EnvVar, volumes []corev1.Volume, volumeMounts []corev1.VolumeMount) error {
 	if len(envVars) > 0 {
@@ -211,16 +252,20 @@ func generateMongoSecrets(mch *operatorsv1alpha1.MultiCloudHub) ([]corev1.EnvVar
 }
 
 func generateImagePatch(res *resource.Resource, mch *operatorsv1alpha1.MultiCloudHub) (ifc.Kunstructured, error) {
-	image, err := res.GetString("spec.template.spec.containers[0].image")
+	imageFromTemplate, err := res.GetString("spec.template.spec.containers[0].image") // need to loop through all images
 	if err != nil {
 		return nil, err
 	}
+	imageRepo := mch.Spec.ImageRepository
+	imageTagPostfix := mch.Spec.ImageTagPostfix
+	if imageTagPostfix != "" {
+		imageTagPostfix = "-" + imageTagPostfix
+	}
+	generatedImage := fmt.Sprintf("%s/%s%s", imageRepo, imageFromTemplate, imageTagPostfix)
 
-	image = fmt.Sprintf("%s/%s", mch.Spec.ImageRepository, image)
-
-	container, _ := res.GetFieldValue("spec.template.spec.containers[0]")
+	container, _ := res.GetFieldValue("spec.template.spec.containers[0]") // need to loop through all images
 	containerMap, _ := container.(map[string]interface{})
-	containerMap["image"] = image
+	containerMap["image"] = generatedImage
 	containerMap["imagePullPolicy"] = mch.Spec.ImagePullPolicy
 
 	return kunstruct.NewKunstructuredFactoryImpl().FromMap(map[string]interface{}{

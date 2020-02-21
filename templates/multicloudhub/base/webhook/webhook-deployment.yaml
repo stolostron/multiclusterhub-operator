@@ -46,7 +46,7 @@ spec:
           effect: NoSchedule
       containers:
       - name: mcm-webhook
-        image: mcm-api:3.3.0
+        image: mcm-api:1.0.0
         imagePullPolicy: Always
         resources:
           limits:

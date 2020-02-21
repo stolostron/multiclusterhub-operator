@@ -32,9 +32,26 @@
                   "replicas": 1
                 }
               },
+              "hive": {
+                "additionalCertificateAuthorities": [
+                  {
+                    "name": "letsencrypt-ca"
+                  }
+                ],
+                "failedProvisionConfig": {
+                  "skipGatherLogs": false
+                },
+                "globalPullSecret": {
+                  "name": "private-secret"
+                },
+                "managedDomains": [
+                  "s1.openshiftapps.com"
+                ]
+              },
               "imagePullPolicy": "Always",
               "imagePullSecret": "quay-secret",
-              "imageRepository": "quay.io/rhibmcollab",
+              "imageRepository": "quay.io/open-cluster-management",
+              "imageTagPostfix": "",
               "mongo": {
                 "endpoints": "mongo-0.mongo.default",
                 "replicaSet": "rs0"
@@ -196,6 +213,23 @@
             - '*'
             verbs:
             - '*'
+          - apiGroups:
+            - operators.coreos.com
+            resources:
+            - hive-catalog
+            - catalogsources
+            - clusterserviceversions
+            - hiveconfig
+            verbs:
+            - get
+            - create
+          - apiGroups:
+            - hive.openshift.io
+            resources:
+            - hiveconfigs
+            verbs:
+            - get
+            - create
           serviceAccountName: multicloudhub-operator
         deployments:
         - name: multicloudhub-operator

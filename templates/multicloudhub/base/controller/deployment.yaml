@@ -16,7 +16,7 @@ spec:
       serviceAccountName: hub-sa
       containers:
       - name: mcm-controller
-        image: multicloud-manager
+        image: multicloud-manager:0.0.1
         args:
           - "/mcm-controller"
           - "--leader-elect=true"

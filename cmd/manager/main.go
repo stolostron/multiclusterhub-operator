@@ -24,7 +24,6 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
-
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/apis"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/controller"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/webhook"

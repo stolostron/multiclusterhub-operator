@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	DefaultRepository = "quay.io/rhibmcollab"
+	DefaultRepository = "quay.io/open-cluster-management"
 	LatestVerison     = "latest"
 )
 

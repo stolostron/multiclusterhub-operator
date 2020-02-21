@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: topology-aggregator
+  labels:
+    app: topology-aggregator
+spec:
+  type: ClusterIP
+  ports:
+    - port: 4000
+      targetPort: 4000
+      protocol: TCP
+      name: https
+  selector:
+    app: topology-aggregator
