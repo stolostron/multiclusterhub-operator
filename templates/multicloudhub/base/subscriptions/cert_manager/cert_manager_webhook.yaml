@@ -13,7 +13,7 @@ spec:
       packageOverrides:
       - path: spec.values
         value: |
-          imageTagPostfix: "-202002170800"
+          imageTagPostfix: "{{POSTFIX}}"
           image:
             repository: quay.io/open-cluster-management
             pullPolicy: Always

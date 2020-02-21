@@ -13,11 +13,11 @@ spec:
       packageOverrides:
       - path: spec.values
         value: |
-          imageTagPostfix: 6c3af5b4024ed29341e98ea138ac491affb476b6
+          imageTagPostfix: "{{POSTFIX}}"
           image:
             repository: quay.io/open-cluster-management
             pullPolicy: Always
           oauth_client:
-            callback_url: "https://multicloud-console.apps.fusia.os.fyre.ibm.com/oauth/callback"
+            callback_url: "https://multicloud-console.apps.{{OCPHOST}}/oauth/callback"
           console_route:
-            host: "multicloud-console.apps.fusia.os.fyre.ibm.com"
+            host: "multicloud-console.apps.{{OCPHOST}}"

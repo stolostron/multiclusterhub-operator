@@ -1,0 +1,4 @@
+resources:
+- cert_manager.yaml 
+- cert_manager_webhook.yaml 
+- configmap_watcher.yaml 
