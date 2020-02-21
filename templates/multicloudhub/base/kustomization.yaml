@@ -9,8 +9,6 @@ resources:
 - certificates
 - topology_aggregator
 - hive
-- nginx
 - channel
 - repo
-- management_ingress
 # - connection_manager
