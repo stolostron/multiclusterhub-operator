@@ -1,5 +1,8 @@
 resources:
 - rbac
+- repo
+- channel
+- hive
 - apiserver
 - controller
 - etcd
@@ -7,8 +10,5 @@ resources:
 - webhook
 - cluster_controller
 - certificates
+- subscriptions
 - topology_aggregator
-- hive
-- channel
-- repo
-# - connection_manager
