@@ -79,7 +79,21 @@ fi
 
 ## 2. Test Docker Login
 
-_output=$(docker login quay.io -u $DOCKER_USER -p $DOCKER_PASS)
+podmanAvailable=$(podman -v 2>/dev/null)
+dockerAvailable=$(docker -v 2>/dev/null)
+
+if [ ! -z "$podmanAvailable" ]
+then
+  containerCli=$(which podman)
+elif [ ! -z "$dockerAvailable" ]
+then
+  containerCli=$(which docker) 
+else
+  echo "Must install docker or podman ... Exiting"
+  exit 1
+fi
+
+_output=$($containerCli login quay.io -u $DOCKER_USER -p $DOCKER_PASS)
 if [[ "$_output" != *"Login Succeeded"* ]]; then
     echo "Incorrect Docker Credentials provided. Check your 'DOCKER_USER' and 'DOCKER_PASS' environmental variables"
     exit 1
