@@ -659,7 +659,7 @@ data:
                         value: multicloudhub-operator
                       - name: TEMPLATES_PATH
                         value: /usr/local/templates
-                      image: quay.io/rhibmcollab/multicloudhub-operator:latest
+                      image: quay.io/open-cluster-management/multicloudhub-operator:latest
                       imagePullPolicy: Always
                       name: multicloudhub-operator
                       resources: {}

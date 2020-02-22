@@ -161,6 +161,32 @@ func ApplyTopologyAggregatorPatches(res *resource.Resource, multipleCloudHub *op
 	return res.Patch(argsPatch)
 }
 
+func ApplyWebhookPatches(res *resource.Resource, multipleCloudHub *operatorsv1alpha1.MultiCloudHub) error {
+	replicasPatch := generateReplicasPatch(*multipleCloudHub.Spec.Foundation.Controller.Replicas)
+	if err := res.Patch(replicasPatch); err != nil {
+		return err
+	}
+
+	if err := applySecretPatches(
+		res,
+		[]corev1.EnvVar{},
+		[]corev1.Volume{{
+			Name: "webhook-cert",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{SecretName: "mcm-webhook-secret"},
+			},
+		}},
+		[]corev1.VolumeMount{{
+			Name:      "webhook-cert",
+			MountPath: "/var/run/mcm-webhook",
+		}},
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func applySecretPatches(
 	res *resource.Resource, envVars []corev1.EnvVar, volumes []corev1.Volume, volumeMounts []corev1.VolumeMount) error {
 	if len(envVars) > 0 {

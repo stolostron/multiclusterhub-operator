@@ -2,7 +2,7 @@ namespace: default
 
 images: # updates operator.yaml with the dev image
 - name: multicloudhub-operator
-  newName: quay.io/rhibmcollab/multicloudhub-operator
+  newName: quay.io/open-cluster-management/multicloudhub-operator
   newTag: latest
 
 resources:

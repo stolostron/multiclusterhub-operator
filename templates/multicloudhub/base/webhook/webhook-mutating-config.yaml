@@ -1,13 +1,9 @@
 apiVersion: admissionregistration.k8s.io/v1beta1
 kind: MutatingWebhookConfiguration
 metadata:
-  name: webhook-core-mutating-webhook
+  name: mcm-mutating-webhook
   labels:
-    app: core
-    release: webhook
-    component: "mcm-webhook"
-    app.kubernetes.io/instance: webhook
-    app.kubernetes.io/name: core
+    app: mcm-webhook
 webhooks:
 - name: mcm.webhook.admission.cloud.ibm.com
   rules:
@@ -33,6 +29,5 @@ webhooks:
     - applications
   clientConfig:
     service:
-      name: webhook-core-webhook-service
-      namespace: test
-    caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUMrRENDQWVDZ0F3SUJBZ0lRRDcwSHBKYktuekFYMlFhdGVIKzJUREFOQmdrcWhraUc5dzBCQVFzRkFEQVcKTVJRd0VnWURWUVFERXd0dFkyMHRkMlZpYUc5dmF6QWVGdzB5TURBeU1EVXhOVE0zTlRaYUZ3MHpNREF5TURJeApOVE0zTlRaYU1CWXhGREFTQmdOVkJBTVRDMjFqYlMxM1pXSm9iMjlyTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGCkFBT0NBUThBTUlJQkNnS0NBUUVBdzdQdTNVUk9sU1FiOHp3MnBBcHA3T2RKWmZrZkxOcVlQTVVNcm52bVU3dTkKaHhpM0FocHZadnFQSVRPZUZhV3FneGlPV21XSTFBakxtTDBOL2FjS0hEMXFjeW1IK1ZuY09Yc1VaejVQSE9qVwpwdDZyOGpZMldaRnlYdnJmVkZhcGNIUkQraW9mUjhSTTNZazc1TkJtZkV1eElFanRKeVRrRk9EYy9yU01DTHNuCmV2UzBkTXp0eWg0RkNWVFY1a0cxTVc0U2ttSytGejI5S250TzJHUlpxWTE5aTJiNnltbG1uZ0p5QlpuWmhHc20KMkk0RDJ3VW11NjhJMnZnd1ZRK2dvVzlHaTY2Tm0yQUdCelVVbWZSV1RzMjJQdUZqa3RBSVZBci9XSElBQnRDNwpMSnM0dXJON2dqWnRPS0tJK0lEWUJpaFJxcDF5YkNVbVJ3TVZySkl3UVFJREFRQUJvMEl3UURBT0JnTlZIUThCCkFmOEVCQU1DQXFRd0hRWURWUjBsQkJZd0ZBWUlLd1lCQlFVSEF3RUdDQ3NHQVFVRkJ3TUNNQThHQTFVZEV3RUIKL3dRRk1BTUJBZjh3RFFZSktvWklodmNOQVFFTEJRQURnZ0VCQUFaUC9YczRoQTZZMGRRbUxScWdQeUlxUm4yNQphOHFLdTRqQmI5UTY5cXNYOGZUS3RmVElxZWhFZHZjVmozK1ZlVnJLNHJFSU16dkhaQ0o1SVR6UnFCL04rbmFIClVndENETU5jN3ppL3pROUJya3k4YmlpTnd4MkxYdWxKK2dtcG9tbEdRSUlMQmlUUFJsdnFvSEZUQkRURDlUTFcKUXFmU3JONkFxQytGbVZIM0w1OEJoTjFlb2dLVGZmNXhXdC91WExLaFhRaWd5MSsyaDZXMEs2RW4rR2UvUXBMQQo3NW1QcDF0SVMvWThPMzRJR3NISnVyTnZCUjZWeHMxaEVob2VaTXVyUi9iNExrcndRU3dkcXBSRFFLUnVra1U2CmE4NUtFZW91U2NFeDc1ZDJ6dHNHV2cxQTMzUDZ0V3VMR25HVEtpV2FqNEsxNVVwbGoxWGNtVHg3cTNjPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+      name: mcm-webhook-service
+    caBundle: abc
