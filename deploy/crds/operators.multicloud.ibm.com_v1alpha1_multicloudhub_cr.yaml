@@ -6,7 +6,7 @@ metadata:
 spec:
   version: latest
   imageRepository: quay.io/open-cluster-management
-  imageTagPostfix: "202002170800"
+  imageTagPostfix: ""
   imagePullPolicy: Always
   imagePullSecret: quay-secret
   foundation:
