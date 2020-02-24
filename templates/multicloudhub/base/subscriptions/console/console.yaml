@@ -1,0 +1,35 @@
+apiVersion: app.ibm.com/v1alpha1
+kind: Subscription
+metadata:
+  name: console-sub
+spec:
+  channel: charts-v1
+  name: console
+  placement:
+    local: true 
+  packageOverrides:
+    - packageName: console
+      packageAlias: console
+      packageOverrides:
+      - path: spec.values
+        value: |
+          imageTagPostfix: "{{POSTFIX}}"
+          pullSecret: null
+          consoleui:
+            image:
+              repository: quay.io/open-cluster-management/console-ui
+              tag: 1.0.0
+              pullPolicy: Always
+          consoleapi:
+            image:
+              repository: quay.io/open-cluster-management/console-api
+              tag: 1.0.0
+              pullPolicy: Always
+          mongo:
+            servers: mongodb
+            dbName: mcm
+            usersecret: icp-mongodb-admin
+            tlssecret: cluster-ca-cert
+            casecret: cluster-ca-cert
+            replicaSet: rs0
+          cfcRouterUrl: "https://icp-management-ingress:443"

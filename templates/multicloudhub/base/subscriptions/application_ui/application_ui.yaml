@@ -1,0 +1,22 @@
+apiVersion: app.ibm.com/v1alpha1
+kind: Subscription
+metadata:
+  name: app-ui-sub
+spec:
+  channel: charts-v1
+  name: mcmapplicationui
+  placement:
+    local: true 
+  packageOverrides:
+    - packageName: mcmapplicationui
+      packageAlias: application-ui
+      packageOverrides:
+      - path: spec.values
+        value: |
+          imageTagPostfix: "{{POSTFIX}}"
+          pullSecret: null
+          mcmapplicationui:
+            image:
+              repository: quay.io/open-cluster-management
+              tag: 3.5.0
+              pullPolicy: Always
