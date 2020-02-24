@@ -47,6 +47,7 @@ jobs:
           make
           make component/build
           make component/push
+          make security/scans
     - stage: unit-test
       name: "Run unit tests"
       if: type = pull_request
