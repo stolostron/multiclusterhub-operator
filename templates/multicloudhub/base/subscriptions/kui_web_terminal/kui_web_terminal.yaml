@@ -18,7 +18,7 @@ spec:
             imageTagPostfix: "{{POSTFIX}}"
           proxy:
             image:
-              repository: "quay.io/open-cluster-management"
+              repository: "{{IMAGEREPO}}"
               name: "kui-web-terminal"
               tag: 3.5.0
             clusterIP: "icp-management-ingress"

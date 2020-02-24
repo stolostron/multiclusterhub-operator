@@ -54,8 +54,11 @@ install: olm-catalog image push
 	@oc create secret docker-registry quay-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
 	@oc apply -k ./build/_output/olm || true
 
-uninstall: unsubscribe
+directuninstall:
 	@ oc delete -k ./build/_output/olm || true
+
+uninstall: directuninstall unsubscribe
+	
 
 reinstall: uninstall install
 

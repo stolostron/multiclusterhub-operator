@@ -15,7 +15,7 @@ spec:
         value: |
           imageTagPostfix: "{{POSTFIX}}"
           image:
-            repository: quay.io/open-cluster-management
+            repository: "{{IMAGEREPO}}"
             pullPolicy: Always
           oauth_client:
             callback_url: "https://multicloud-console.apps.{{OCPHOST}}/oauth/callback"

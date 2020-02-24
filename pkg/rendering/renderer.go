@@ -213,6 +213,7 @@ func (r *Renderer) renderSubscription(res *resource.Resource) (*unstructured.Uns
 				for j := 0; j < len(override); j++ {
 					packageData, _ := override[j].(map[string]interface{})
 					packageData["value"] = strings.Replace(packageData["value"].(string), "{{POSTFIX}}", r.cr.Spec.ImageTagPostfix, -1)
+					packageData["value"] = strings.Replace(packageData["value"].(string), "{{IMAGEREPO}}", r.cr.Spec.ImageRepository, -1)
 				}
 			}
 		}

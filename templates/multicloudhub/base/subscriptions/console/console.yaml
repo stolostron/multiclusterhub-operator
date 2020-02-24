@@ -17,12 +17,12 @@ spec:
           pullSecret: null
           consoleui:
             image:
-              repository: quay.io/open-cluster-management/console-ui
+              repository: "{{IMAGEREPO}}/console-ui"
               tag: 1.0.0
               pullPolicy: Always
           consoleapi:
             image:
-              repository: quay.io/open-cluster-management/console-api
+              repository: "{{IMAGEREPO}}/console-api"
               tag: 1.0.0
               pullPolicy: Always
           mongo:
