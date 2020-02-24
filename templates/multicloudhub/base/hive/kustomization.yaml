@@ -14,5 +14,3 @@ resources:
 - crds/hive_v1_syncset.yaml
 - hive-operator.yaml
 - hive-config.yaml
-# - hive-subscription.yaml
-# - hive-catalogsource.yaml
