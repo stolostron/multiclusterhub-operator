@@ -16,13 +16,13 @@ spec:
           imageTagPostfix: "{{POSTFIX}}"
           clusterController:
             image:
-              repository: quay.io/open-cluster-management
+              repository: "{{IMAGEREPO}}"
               tag: 1.0.0
               pullPolicy: Always
               pullSecret: null
           clusterLifecycle:
             image:
-              repository: quay.io/open-cluster-management
+              repository: "{{IMAGEREPO}}"
               tag: 1.0.0
               pullPolicy: Always
               pullSecret: null

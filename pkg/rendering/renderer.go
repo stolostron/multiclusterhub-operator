@@ -2,6 +2,7 @@ package rendering
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/fatih/structs"
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
@@ -9,8 +10,8 @@ import (
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"sigs.k8s.io/kustomize/v3/pkg/resource"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/kustomize/v3/pkg/resource"
 )
 
 const (
@@ -39,6 +40,7 @@ func NewRenderer(multipleCloudHub *operatorsv1alpha1.MultiCloudHub) *Renderer {
 		"Deployment":                   renderer.renderDeployments,
 		"Service":                      renderer.renderNamespace,
 		"ServiceAccount":               renderer.renderNamespace,
+		"ConfigMap":                    renderer.renderNamespace,
 		"ClusterRoleBinding":           renderer.renderClusterRoleBinding,
 		"MutatingWebhookConfiguration": renderer.renderMutatingWebhookConfiguration,
 		"Secret":                       renderer.renderSecret,
@@ -46,7 +48,7 @@ func NewRenderer(multipleCloudHub *operatorsv1alpha1.MultiCloudHub) *Renderer {
 		"EtcdCluster":                  renderer.renderBaseMetadataNamespace,
 		"StatefulSet":                  renderer.renderBaseMetadataNamespace,
 		"ClusterServiceVersion":        renderer.renderBaseMetadataNamespace,
-		"Channel":        							renderer.renderBaseMetadataNamespace,
+		"Channel":                      renderer.renderBaseMetadataNamespace,
 		"HiveConfig":                   renderer.renderHiveConfig,
 	}
 	return renderer
@@ -201,6 +203,21 @@ func (r *Renderer) renderSubscription(res *resource.Resource) (*unstructured.Uns
 	}
 	spec["channel"] = fmt.Sprintf("%s/%s", r.cr.Namespace, spec["channel"])
 
+	// Check if contains a packageOverrides
+	packageOverrides, ok := spec["packageOverrides"].([]interface{})
+	if ok {
+		for i := 0; i < len(packageOverrides); i++ {
+			packageOverride, ok := packageOverrides[i].(map[string]interface{})
+			if ok {
+				override := packageOverride["packageOverrides"].([]interface{})
+				for j := 0; j < len(override); j++ {
+					packageData, _ := override[j].(map[string]interface{})
+					packageData["value"] = strings.Replace(packageData["value"].(string), "{{POSTFIX}}", r.cr.Spec.ImageTagPostfix, -1)
+					packageData["value"] = strings.Replace(packageData["value"].(string), "{{IMAGEREPO}}", r.cr.Spec.ImageRepository, -1)
+				}
+			}
+		}
+	}
 	return u, nil
 }
 

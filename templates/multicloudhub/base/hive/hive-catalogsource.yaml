@@ -4,7 +4,7 @@ metadata:
   name: hive-catalog
 spec:
   sourceType: grpc
-  image: registry.svc.ci.openshift.org/openshift/hive-v4.0:hive
+  image: quay.io/rhibmcollab/hive:2020-02-20-2e16aa24
   displayName: Hive Test Registry
   publisher: Hive Developer
   secrets:

@@ -15,5 +15,5 @@ spec:
         value: |
           imageTagPostfix: "{{POSTFIX}}"
           image:
-            repository: quay.io/open-cluster-management
+            repository: "{{IMAGEREPO}}"
             pullPolicy: Always

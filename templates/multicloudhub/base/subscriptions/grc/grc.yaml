@@ -16,13 +16,13 @@ spec:
           imageTagPostfix: "{{POSTFIX}}"
           grcuiapi:
             image:
-              repository: quay.io/open-cluster-management
+              repository: "{{IMAGEREPO}}"
               pullPolicy: Always
           grcui:
             image:
-              repository: quay.io/open-cluster-management
+              repository: "{{IMAGEREPO}}"
               pullPolicy: Always
           compliance:
             image:
-              repository: quay.io/open-cluster-management
+              repository: "{{IMAGEREPO}}"
               pullPolicy: Always
