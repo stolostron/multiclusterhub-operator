@@ -4,7 +4,7 @@ metadata:
   name: example-multicloudhub
   namespace: default
 spec:
-  version: v0.0.1
+  version: latest
   imageRepository: quay.io/open-cluster-management
   imageTagPostfix: ""
   imagePullPolicy: Always

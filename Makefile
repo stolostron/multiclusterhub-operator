@@ -10,7 +10,7 @@ BUILD_DIR ?= build
 VERSION ?= latest
 IMG ?= multicloudhub-operator
 SECRET_REGISTRY ?= quay.io 
-REGISTRY ?= quay.io/open-cluster-management
+REGISTRY ?= quay.io/rhibmcollab
 GIT_VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
                  git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8)
 
