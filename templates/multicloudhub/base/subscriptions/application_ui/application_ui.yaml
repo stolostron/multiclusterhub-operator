@@ -9,14 +9,12 @@ spec:
     local: true 
   packageOverrides:
     - packageName: mcmapplicationui
-      packageAlias: application-ui
       packageOverrides:
       - path: spec.values
         value: |
           imageTagPostfix: "{{POSTFIX}}"
-          pullSecret: null
+          pullSecret: "{{PULLSECRET}}"
           mcmapplicationui:
             image:
               repository: "{{IMAGEREPO}}"
-              tag: 3.5.0
-              pullPolicy: Always
+              pullPolicy: "{{PULLPOLICY}}"
