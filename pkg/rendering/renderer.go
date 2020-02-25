@@ -17,7 +17,7 @@ import (
 const (
 	apiserviceName         = "mcm-apiserver"
 	controllerName         = "mcm-controller"
-	webhookName            = "webhook-core-webhook"
+	webhookName            = "mcm-webhook"
 	clusterControllerName  = "multicloud-operators-cluster-controller"
 	helmRepoName           = "multicloudhub-repo"
 	topologyAggregatorName = "topology-aggregator"
@@ -82,8 +82,13 @@ func (r *Renderer) renderTemplates(templates []*resource.Resource) ([]*unstructu
 			continue
 		}
 		uobjs = append(uobjs, uobj)
+
 	}
-	return uobjs, nil
+
+	// mcm-mutating-webhook has a section `webhooks.clientConfig.caBundle` created in secret mcm-webhook-secrets.
+	// Current render mechanism cannot handle this dependence scenario. So re-render template dependence in the end.
+	uobjs, err := reRenderDependence(uobjs)
+	return uobjs, err
 }
 
 func (r *Renderer) renderAPIServices(res *resource.Resource) (*unstructured.Unstructured, error) {
@@ -125,6 +130,9 @@ func (r *Renderer) renderDeployments(res *resource.Resource) (*unstructured.Unst
 		}
 		return &unstructured.Unstructured{Object: res.Map()}, nil
 	case webhookName:
+		if err := patching.ApplyWebhookPatches(res, r.cr); err != nil {
+			return nil, err
+		}
 		return &unstructured.Unstructured{Object: res.Map()}, nil
 	case clusterControllerName:
 		return &unstructured.Unstructured{Object: res.Map()}, nil
@@ -285,6 +293,19 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 		data["tls.crt"] = []byte(cert.Cert)
 		data["tls.key"] = []byte(cert.Key)
 		return u, nil
+	case "mcm-webhook-secret":
+		ca, err := utils.GenerateSelfSignedCACert("mcm-webhook")
+		if err != nil {
+			return nil, err
+		}
+		cert, err := utils.GenerateSignedCert(webhookName, []string{}, ca)
+		if err != nil {
+			return nil, err
+		}
+		data["ca.crt"] = []byte(ca.Cert)
+		data["tls.crt"] = []byte(cert.Cert)
+		data["tls.key"] = []byte(cert.Key)
+		return u, nil
 	}
 
 	return u, nil
@@ -301,4 +322,34 @@ func (r *Renderer) renderHiveConfig(res *resource.Resource) (*unstructured.Unstr
 	u.Object["spec"] = structs.Map(r.cr.Spec.Hive)
 
 	return u, nil
+}
+
+func reRenderDependence(objs []*unstructured.Unstructured) ([]*unstructured.Unstructured, error) {
+	var ca interface{}
+	var mutatingConfig *unstructured.Unstructured
+	for _, obj := range objs {
+		if obj.GetKind() == "Secret" && obj.GetName() == "mcm-webhook-secret" {
+			data, ok := obj.Object["data"].(map[string]interface{})
+			if !ok {
+				return nil, fmt.Errorf("failed to get ca in mcm-webhook-secrets")
+			}
+			ca = data["ca.crt"]
+		}
+
+		if obj.GetKind() == "MutatingWebhookConfiguration" && obj.GetName() == "mcm-mutating-webhook" {
+			mutatingConfig = obj
+		}
+	}
+
+	if ca != nil && mutatingConfig != nil {
+		webooks, ok := mutatingConfig.Object["webhooks"].([]interface{})
+		if !ok {
+			return nil, fmt.Errorf("failed to find webhooks spec field")
+		}
+		webhook := webooks[0].(map[string]interface{})
+		clientConfig := webhook["clientConfig"].(map[string]interface{})
+		clientConfig["caBundle"] = ca
+	}
+
+	return objs, nil
 }

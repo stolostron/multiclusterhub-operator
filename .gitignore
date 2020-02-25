@@ -13,3 +13,4 @@ cover.out
 *.out
 
 *.build-harness-bootstrap
+.idea/
