@@ -1,0 +1,28 @@
+apiVersion: app.ibm.com/v1alpha1
+kind: Subscription
+metadata:
+  name: rcm-sub
+spec:
+  channel: charts-v1
+  name: rcm
+  placement:
+    local: true 
+  packageOverrides:
+    - packageName: rcm
+      packageAlias: rcm
+      packageOverrides:
+      - path: spec.values
+        value: |
+          imageTagPostfix: "{{POSTFIX}}"
+          clusterController:
+            image:
+              repository: "{{IMAGEREPO}}"
+              tag: 1.0.0
+              pullPolicy: Always
+              pullSecret: null
+          clusterLifecycle:
+            image:
+              repository: "{{IMAGEREPO}}"
+              tag: 1.0.0
+              pullPolicy: Always
+              pullSecret: null
