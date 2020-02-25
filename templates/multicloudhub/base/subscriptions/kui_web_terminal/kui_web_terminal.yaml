@@ -19,4 +19,3 @@ spec:
               pullPolicy: "{{PULLPOLICY}}"
             clusterIP: "icp-management-ingress"
             clusterPort: "{{ router_https_port }}"
-            clusterDomain: "{{ cluster_CA_domain }}"
