@@ -10,6 +10,7 @@ spec:
     local: true
   packageOverrides:
     - packageName: kui-web-terminal
+      packageOverrides:
       - path: spec.values
         value: |
           imageTagPostfix: "{{POSTFIX}}"
