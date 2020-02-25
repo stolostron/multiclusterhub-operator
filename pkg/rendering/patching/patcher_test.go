@@ -218,7 +218,7 @@ spec:
           emptyDir: {}
 `
 
-func TestApplyTopologyAggregatorPatches(t *testing.T){
+func TestApplyTopologyAggregatorPatches(t *testing.T) {
 	json, err := yaml.YAMLToJSON([]byte(topology))
 	if err != nil {
 		t.Fatalf("failed to apply topology patches %v", err)
@@ -253,5 +253,53 @@ func TestApplyTopologyAggregatorPatches(t *testing.T){
 	err = ApplyTopologyAggregatorPatches(topology, mchcr)
 	if err != nil {
 		t.Fatalf("failed to apply topology patches %v", err)
+	}
+}
+
+var webhook = `
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: mcm-webhook
+  labels:
+    app: "mcm-webhook"
+spec:
+  template:
+    spec:
+      containers:
+      - name: mcm-webhook
+        image: "multicloud-manager:0.0.1"
+        volumeMounts: []
+      volumes: []
+`
+
+func TestApplyWebhookPatches(t *testing.T) {
+	json, err := yaml.YAMLToJSON([]byte(topology))
+	if err != nil {
+		t.Fatalf("failed to apply webhook patches %v", err)
+	}
+	var u unstructured.Unstructured
+	u.UnmarshalJSON(json)
+	webhook := factory.FromMap(u.Object)
+
+	var replicas int32 = 1
+	mchcr := &operatorsv1alpha1.MultiCloudHub{
+		TypeMeta:   metav1.TypeMeta{Kind: "MultiCloudHub"},
+		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
+		Spec: operatorsv1alpha1.MultiCloudHubSpec{
+			Foundation: operatorsv1alpha1.Foundation{
+				Controller: operatorsv1alpha1.Controller{
+					Replicas: &replicas,
+					Configuration: map[string]string{
+						"test": "test",
+					},
+				},
+			},
+		},
+	}
+
+	err = ApplyWebhookPatches(webhook, mchcr)
+	if err != nil {
+		t.Fatalf("failed to apply webhook patches %v", err)
 	}
 }
