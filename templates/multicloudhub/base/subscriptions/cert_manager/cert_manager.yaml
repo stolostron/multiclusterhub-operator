@@ -9,16 +9,21 @@ spec:
     local: true 
   packageOverrides:
     - packageName: cert-manager
-      packageAlias: cert-manager
       packageOverrides:
       - path: spec.values
         value: |
           imageTagPostfix: "{{POSTFIX}}"
+          clusterResourceNamespace: "{{NAMESPACE}}"
           global:
             isOpenshift: true
-          clusterResourceNamespace: default
+            imagePullSecrets:
+              - name: "{{PULLSECRET}}"
           image:
             repository: "{{IMAGEREPO}}"
-            pullPolicy: Always
+            pullPolicy: "{{PULLPOLICY}}"
+          serviceAccount:
+            create: false
+            name: default
           solver:
             repository: "{{IMAGEREPO}}"
+            

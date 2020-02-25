@@ -9,11 +9,15 @@ spec:
     local: true 
   packageOverrides:
     - packageName: configmap-watcher
-      packageAlias: configmap-watcher
       packageOverrides:
       - path: spec.values
         value: |
           imageTagPostfix: "{{POSTFIX}}"
+          imagePullSecrets:
+            - name: "{{PULLSECRET}}"
           image:
             repository: "{{IMAGEREPO}}"
-            pullPolicy: Always
+            pullPolicy: "{{PULLPOLICY}}"
+          serviceAccount:
+            create: false
+            name: default
