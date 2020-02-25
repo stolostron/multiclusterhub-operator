@@ -13,12 +13,12 @@ spec:
       - path: spec.values
         value: |
           imageTagPostfix: "{{POSTFIX}}"
-          pullSecret: "{{PULL_SECRET}}"
+          pullSecret: "{{PULLSECRET}}"
           ui:
             image:
-              repository: quay.io/open-cluster-management
-              pullPolicy: Always
+              repository: "{{IMAGEREPO}}"
+              pullPolicy: "{{PULLPOLICY}}"
           api:
             image:
-              repository: quay.io/open-cluster-management
-              pullPolicy: Always
+              repository: "{{IMAGEREPO}}"
+              pullPolicy: "{{PULLPOLICY}}"

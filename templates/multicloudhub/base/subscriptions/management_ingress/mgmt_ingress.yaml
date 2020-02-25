@@ -9,14 +9,13 @@ spec:
     local: true 
   packageOverrides:
     - packageName: management-ingress
-      packageAlias: mgmt-ingress
       packageOverrides:
       - path: spec.values
         value: |
           imageTagPostfix: "{{POSTFIX}}"
           image:
             repository: "{{IMAGEREPO}}"
-            pullPolicy: Always
+            pullPolicy: "{{PULLPOLICY}}"
           oauth_client:
             callback_url: "https://multicloud-console.apps.{{OCPHOST}}/oauth/callback"
           console_route:

@@ -14,25 +14,25 @@ spec:
         value: |
           imageTagPostfix: "{{POSTFIX}}"
           global:
-            pullSecret: "{{PULL_SECRET}}"
+            pullSecret: "{{PULLSECRET}}"
           kubectl:
-            repository: quay.io/open-cluster-management
-            pullPolicy: IfNotPresent
+            repository: "{{IMAGEREPO}}"
+            pullPolicy: "{{PULLPOLICY}}"
           search:
             aggregator:
               image:
-                repository: quay.io/open-cluster-management
-                pullPolicy: Always
+                repository: "{{IMAGEREPO}}"
+                pullPolicy: "{{PULLPOLICY}}"
             collector:
               image:
-                repository: quay.io/open-cluster-management
-                pullPolicy: Always
+                repository: "{{IMAGEREPO}}"
+                pullPolicy: "{{PULLPOLICY}}"
             searchapi:
               image:
-                repository: quay.io/open-cluster-management
-                pullPolicy: Always
+                repository: "{{IMAGEREPO}}"
+                pullPolicy: "{{PULLPOLICY}}"
             redisgraph:
               image:
-                repository: quay.io/open-cluster-management
-                pullPolicy: Always
+                repository: "{{IMAGEREPO}}"
+                pullPolicy: "{{PULLPOLICY}}"
 

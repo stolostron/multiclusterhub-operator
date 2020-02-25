@@ -9,11 +9,27 @@ spec:
     local: true 
   packageOverrides:
     - packageName: cert-manager-webhook
-      packageAlias: cert-manager-webhook
       packageOverrides:
       - path: spec.values
         value: |
           imageTagPostfix: "{{POSTFIX}}"
+          global:
+            imagePullSecrets:
+              - name: "{{PULLSECRET}}"
+          cainjector:
+            imageTagPostfix: "{{POSTFIX}}"
+            image:
+              repository: "{{IMAGEREPO}}"
+            serviceAccount:
+              create: false
+              name: default
           image:
             repository: "{{IMAGEREPO}}"
-            pullPolicy: Always
+          serviceAccount:
+            create: false
+            name: default
+          watcher:
+            configmap:
+              name: extension-apiserver-authentication
+              namespace: "{{NAMESPACE}}"
+            optIn: true

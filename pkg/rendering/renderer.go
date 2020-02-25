@@ -220,8 +220,11 @@ func (r *Renderer) renderSubscription(res *resource.Resource) (*unstructured.Uns
 				override := packageOverride["packageOverrides"].([]interface{})
 				for j := 0; j < len(override); j++ {
 					packageData, _ := override[j].(map[string]interface{})
-					packageData["value"] = strings.Replace(packageData["value"].(string), "{{POSTFIX}}", r.cr.Spec.ImageTagPostfix, -1)
-					packageData["value"] = strings.Replace(packageData["value"].(string), "{{IMAGEREPO}}", r.cr.Spec.ImageRepository, -1)
+					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{POSTFIX}}", fmt.Sprintf("-%s", r.cr.Spec.ImageTagPostfix))
+					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{IMAGEREPO}}", r.cr.Spec.ImageRepository)
+					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{PULLSECRET}}", r.cr.Spec.ImagePullSecret)
+					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{NAMESPACE}}", r.cr.Namespace)
+					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{PULLPOLICY}}", string(r.cr.Spec.ImagePullPolicy))
 				}
 			}
 		}

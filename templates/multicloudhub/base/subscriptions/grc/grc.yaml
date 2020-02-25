@@ -9,7 +9,6 @@ spec:
     local: true 
   packageOverrides:
     - packageName: grc
-      packageAlias: grc
       packageOverrides:
       - path: spec.values
         value: |
@@ -17,12 +16,12 @@ spec:
           grcuiapi:
             image:
               repository: "{{IMAGEREPO}}"
-              pullPolicy: Always
+              pullPolicy: "{{PULLPOLICY}}"
           grcui:
             image:
               repository: "{{IMAGEREPO}}"
-              pullPolicy: Always
+              pullPolicy: "{{PULLPOLICY}}"
           compliance:
             image:
               repository: "{{IMAGEREPO}}"
-              pullPolicy: Always
+              pullPolicy: "{{PULLPOLICY}}"
