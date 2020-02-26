@@ -85,6 +85,7 @@ unsubscribe:
 	@oc delete crd multicloudhubs.operators.multicloud.ibm.com || true
 	@oc delete subscription multicloudhub-operator || true
 	@oc delete catalogsource multicloudhub-operator-registry || true
+	@oc delete scc multicloud-scc || true
 
 resubscribe: unsubscribe subscribe
 

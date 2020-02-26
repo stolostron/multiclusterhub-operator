@@ -11,7 +11,7 @@ defaultAddCapabilities: null
 fsGroup:
   type: RunAsAny
 users:
-  - system:serviceaccount:namespace:default
+  - user_override_here
 kind: SecurityContextConstraints
 metadata:
   name: multicloud-scc
