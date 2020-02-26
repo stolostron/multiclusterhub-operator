@@ -50,6 +50,7 @@ func NewRenderer(multipleCloudHub *operatorsv1alpha1.MultiCloudHub) *Renderer {
 		"ClusterServiceVersion":        renderer.renderBaseMetadataNamespace,
 		"Channel":                      renderer.renderBaseMetadataNamespace,
 		"HiveConfig":                   renderer.renderHiveConfig,
+		"SecurityContextConstraints":   renderer.renderSecContextConstraints,
 	}
 	return renderer
 }
@@ -211,7 +212,6 @@ func (r *Renderer) renderSubscription(res *resource.Resource) (*unstructured.Uns
 	}
 	spec["channel"] = fmt.Sprintf("%s/%s", r.cr.Namespace, spec["channel"])
 
-
 	imageTagPostfix := r.cr.Spec.ImageTagPostfix
 	if imageTagPostfix != "" {
 		imageTagPostfix = "-" + imageTagPostfix
@@ -361,4 +361,15 @@ func reRenderDependence(objs []*unstructured.Unstructured) ([]*unstructured.Unst
 	}
 
 	return objs, nil
+}
+
+func (r *Renderer) renderSecContextConstraints(res *resource.Resource) (*unstructured.Unstructured, error) {
+	u := &unstructured.Unstructured{Object: res.Map()}
+	users, ok := u.Object["users"].([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to find users field")
+	}
+	ns := r.cr.Namespace
+	users[0] = fmt.Sprintf("system:serviceaccount:%s:default", ns)
+	return u, nil
 }

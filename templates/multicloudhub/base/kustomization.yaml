@@ -1,5 +1,6 @@
 resources:
 - rbac
+- security_compliance_constraints
 - repo
 - channel
 - hive
@@ -8,7 +9,7 @@ resources:
 - etcd
 - mongodb
 - webhook
-- cluster_controller
+# - cluster_controller
 - certificates
 # - subscriptions
 - topology_aggregator
