@@ -211,6 +211,12 @@ func (r *Renderer) renderSubscription(res *resource.Resource) (*unstructured.Uns
 	}
 	spec["channel"] = fmt.Sprintf("%s/%s", r.cr.Namespace, spec["channel"])
 
+
+	imageTagPostfix := r.cr.Spec.ImageTagPostfix
+	if imageTagPostfix != "" {
+		imageTagPostfix = "-" + imageTagPostfix
+	}
+
 	// Check if contains a packageOverrides
 	packageOverrides, ok := spec["packageOverrides"].([]interface{})
 	if ok {
@@ -220,7 +226,7 @@ func (r *Renderer) renderSubscription(res *resource.Resource) (*unstructured.Uns
 				override := packageOverride["packageOverrides"].([]interface{})
 				for j := 0; j < len(override); j++ {
 					packageData, _ := override[j].(map[string]interface{})
-					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{POSTFIX}}", fmt.Sprintf("-%s", r.cr.Spec.ImageTagPostfix))
+					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{POSTFIX}}", imageTagPostfix)
 					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{IMAGEREPO}}", r.cr.Spec.ImageRepository)
 					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{PULLSECRET}}", r.cr.Spec.ImagePullSecret)
 					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{NAMESPACE}}", r.cr.Namespace)
