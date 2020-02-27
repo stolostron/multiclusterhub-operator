@@ -11,5 +11,5 @@ resources:
 - webhook
 # - cluster_controller
 - certificates
-# - subscriptions
+- subscriptions
 - topology_aggregator
