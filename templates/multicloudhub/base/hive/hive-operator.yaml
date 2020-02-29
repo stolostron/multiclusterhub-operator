@@ -202,7 +202,7 @@ spec:
           - update
           - patch
           - delete
-        serviceAccountName: hub-sa
+        serviceAccountName: hive-operator
       - rules:
         - apiGroups:
           - batch
@@ -491,7 +491,7 @@ spec:
           - backups
           verbs:
           - create
-        serviceAccountName: hub-sa
+        serviceAccountName: default
       - rules:
         - apiGroups:
           - admission.hive.openshift.io
@@ -530,7 +530,7 @@ spec:
           - subjectaccessreviews
           verbs:
           - create
-        serviceAccountName: hub-sa
+        serviceAccountName: hiveadmission
       deployments:
       - name: hive-operator
         spec:
@@ -571,7 +571,7 @@ spec:
                 volumeMounts:
                 - mountPath: /var/cache/kubectl
                   name: kubectl-cache
-              serviceAccountName: hub-sa
+              serviceAccountName: hive-operator
               terminationGracePeriodSeconds: 10
               volumes:
               - emptyDir: {}

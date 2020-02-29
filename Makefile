@@ -85,6 +85,10 @@ unsubscribe:
 	@oc delete crd multicloudhubs.operators.multicloud.ibm.com || true
 	@oc delete subscription multicloudhub-operator || true
 	@oc delete catalogsource multicloudhub-operator-registry || true
+	@oc delete deploy -n hive hive-controllers || true
+	@oc delete deploy -n hive hiveadmission || true
+	@oc delete apiservice v1.admission.hive.openshift.io || true
+	@oc delete ns hive || true
 
 resubscribe: unsubscribe subscribe
 

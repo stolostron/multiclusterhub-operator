@@ -51,7 +51,7 @@
               "imagePullPolicy": "Always",
               "imagePullSecret": "quay-secret",
               "imageRepository": "quay.io/open-cluster-management",
-              "imageTagPostfix": "",
+              "imageTagPostfix": "202002170800",
               "mongo": {
                 "endpoints": "mongo-0.mongo.default",
                 "replicaSet": "rs0"

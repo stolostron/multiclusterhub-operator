@@ -15,3 +15,5 @@ cover.out
 *.build-harness-bootstrap
 build/_output/bin/multicloudhub-operator
 .idea/
+build-harness/
+build-harness-extensions/

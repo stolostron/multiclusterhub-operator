@@ -2,16 +2,18 @@ package rendering
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/fatih/structs"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/kustomize/v3/pkg/resource"
+
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/patching"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/kustomize/v3/pkg/resource"
 )
 
 const (
@@ -45,10 +47,9 @@ func NewRenderer(multipleCloudHub *operatorsv1alpha1.MultiCloudHub) *Renderer {
 		"MutatingWebhookConfiguration": renderer.renderMutatingWebhookConfiguration,
 		"Secret":                       renderer.renderSecret,
 		"Subscription":                 renderer.renderSubscription,
-		"EtcdCluster":                  renderer.renderBaseMetadataNamespace,
-		"StatefulSet":                  renderer.renderBaseMetadataNamespace,
-		"ClusterServiceVersion":        renderer.renderBaseMetadataNamespace,
-		"Channel":                      renderer.renderBaseMetadataNamespace,
+		"EtcdCluster":                  renderer.renderNamespace,
+		"StatefulSet":                  renderer.renderNamespace,
+		"Channel":                      renderer.renderNamespace,
 		"HiveConfig":                   renderer.renderHiveConfig,
 	}
 	return renderer
@@ -105,7 +106,20 @@ func (r *Renderer) renderAPIServices(res *resource.Resource) (*unstructured.Unst
 }
 
 func (r *Renderer) renderNamespace(res *resource.Resource) (*unstructured.Unstructured, error) {
-	res.SetNamespace(r.cr.Namespace)
+	u := &unstructured.Unstructured{Object: res.Map()}
+	metadata, ok := u.Object["metadata"].(map[string]interface{})
+	updateNamespace := true
+	if ok {
+		annotations, ok := metadata["annotations"].(map[string]interface{})
+		if ok {
+			if annotations["update-namespace"] != "" {
+				updateNamespace, _ = strconv.ParseBool(annotations["update-namespace"].(string))
+			}
+		}
+	}
+	if updateNamespace {
+		res.SetNamespace(r.cr.Namespace)
+	}
 	return &unstructured.Unstructured{Object: res.Map()}, nil
 }
 
@@ -150,6 +164,18 @@ func (r *Renderer) renderDeployments(res *resource.Resource) (*unstructured.Unst
 
 func (r *Renderer) renderClusterRoleBinding(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
+
+	metadata, ok := u.Object["metadata"].(map[string]interface{})
+	updateNamespace := true
+	if ok {
+		annotations, ok := metadata["annotations"].(map[string]interface{})
+		if ok {
+			if annotations["update-namespace"] != "" {
+				updateNamespace, _ = strconv.ParseBool(annotations["update-namespace"].(string))
+			}
+		}
+	}
+
 	subjects, ok := u.Object["subjects"].([]interface{})
 	if !ok {
 		return nil, fmt.Errorf("failed to find clusterrolebinding subjects field")
@@ -159,7 +185,10 @@ func (r *Renderer) renderClusterRoleBinding(res *resource.Resource) (*unstructur
 	if kind == "Group" {
 		return u, nil
 	}
-	subject["namespace"] = r.cr.Namespace
+	if updateNamespace {
+		subject["namespace"] = r.cr.Namespace
+	}
+
 	return u, nil
 }
 
@@ -177,23 +206,12 @@ func (r *Renderer) renderMutatingWebhookConfiguration(res *resource.Resource) (*
 	return u, nil
 }
 
-func (r *Renderer) renderBaseMetadataNamespace(res *resource.Resource) (*unstructured.Unstructured, error) {
-	u := &unstructured.Unstructured{Object: res.Map()}
-	metadata, ok := u.Object["metadata"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf(metadataErr)
-	}
-
-	metadata["namespace"] = r.cr.Namespace
-	return u, nil
-}
-
 func (r *Renderer) renderSubscription(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
 
 	// Default to base renderFunc if not an IBM subscription
 	if u.GetAPIVersion() != "app.ibm.com/v1alpha1" {
-		return r.renderBaseMetadataNamespace(res)
+		return r.renderNamespace(res)
 	}
 
 	// IBM subscription handling
@@ -210,7 +228,6 @@ func (r *Renderer) renderSubscription(res *resource.Resource) (*unstructured.Uns
 		return nil, fmt.Errorf("failed to find ibm subscription spec field")
 	}
 	spec["channel"] = fmt.Sprintf("%s/%s", r.cr.Namespace, spec["channel"])
-
 
 	imageTagPostfix := r.cr.Spec.ImageTagPostfix
 	if imageTagPostfix != "" {
@@ -322,14 +339,7 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 
 func (r *Renderer) renderHiveConfig(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
-	metadata, ok := u.Object["metadata"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf(metadataErr)
-	}
-
-	metadata["namespace"] = r.cr.Namespace
 	u.Object["spec"] = structs.Map(r.cr.Spec.Hive)
-
 	return u, nil
 }
 

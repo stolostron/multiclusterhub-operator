@@ -1,0 +1,11 @@
+namespace: hive
+
+resources:
+- hiveadmission-role.yaml
+- hiveadmission-rolebinding.yaml
+- hiveadmission-sa.yaml
+- hiveoperator-role.yaml
+- hiveoperator-rolebinding.yaml
+- hiveoperator-sa.yaml
+- hivecontrollers-role.yaml
+- hivecontrollers-rolebinding.yaml
