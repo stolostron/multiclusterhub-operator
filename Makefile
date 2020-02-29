@@ -92,6 +92,7 @@ unsubscribe:
 	@oc delete deploy -n hive hiveadmission || true
 	@oc delete apiservice v1.admission.hive.openshift.io || true
 	@oc delete ns hive || true
+	@oc delete scc multicloud-scc || true
 
 resubscribe: unsubscribe subscribe
 

@@ -51,6 +51,7 @@ func NewRenderer(multipleCloudHub *operatorsv1alpha1.MultiCloudHub) *Renderer {
 		"StatefulSet":                  renderer.renderNamespace,
 		"Channel":                      renderer.renderNamespace,
 		"HiveConfig":                   renderer.renderHiveConfig,
+		"SecurityContextConstraints":   renderer.renderSecContextConstraints,
 	}
 	return renderer
 }
@@ -353,6 +354,17 @@ func reRenderDependence(objs []*unstructured.Unstructured) ([]*unstructured.Unst
 	}
 
 	return objs, nil
+}
+
+func (r *Renderer) renderSecContextConstraints(res *resource.Resource) (*unstructured.Unstructured, error) {
+	u := &unstructured.Unstructured{Object: res.Map()}
+	users, ok := u.Object["users"].([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to find users field")
+	}
+	ns := r.cr.Namespace
+	users[0] = fmt.Sprintf("system:serviceaccount:%s:default", ns)
+	return u, nil
 }
 
 // UpdateNamespace checks for annotiation to update NS
