@@ -107,19 +107,11 @@ func (r *Renderer) renderAPIServices(res *resource.Resource) (*unstructured.Unst
 
 func (r *Renderer) renderNamespace(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
-	metadata, ok := u.Object["metadata"].(map[string]interface{})
-	updateNamespace := true
-	if ok {
-		annotations, ok := metadata["annotations"].(map[string]interface{})
-		if ok {
-			if annotations["update-namespace"] != "" {
-				updateNamespace, _ = strconv.ParseBool(annotations["update-namespace"].(string))
-			}
-		}
-	}
-	if updateNamespace {
+
+	if UpdateNamespace(u) {
 		res.SetNamespace(r.cr.Namespace)
 	}
+
 	return &unstructured.Unstructured{Object: res.Map()}, nil
 }
 
@@ -165,17 +157,6 @@ func (r *Renderer) renderDeployments(res *resource.Resource) (*unstructured.Unst
 func (r *Renderer) renderClusterRoleBinding(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
 
-	metadata, ok := u.Object["metadata"].(map[string]interface{})
-	updateNamespace := true
-	if ok {
-		annotations, ok := metadata["annotations"].(map[string]interface{})
-		if ok {
-			if annotations["update-namespace"] != "" {
-				updateNamespace, _ = strconv.ParseBool(annotations["update-namespace"].(string))
-			}
-		}
-	}
-
 	subjects, ok := u.Object["subjects"].([]interface{})
 	if !ok {
 		return nil, fmt.Errorf("failed to find clusterrolebinding subjects field")
@@ -185,7 +166,8 @@ func (r *Renderer) renderClusterRoleBinding(res *resource.Resource) (*unstructur
 	if kind == "Group" {
 		return u, nil
 	}
-	if updateNamespace {
+
+	if UpdateNamespace(u) {
 		subject["namespace"] = r.cr.Namespace
 	}
 
@@ -371,4 +353,19 @@ func reRenderDependence(objs []*unstructured.Unstructured) ([]*unstructured.Unst
 	}
 
 	return objs, nil
+}
+
+// UpdateNamespace checks for annotiation to update NS
+func UpdateNamespace(u *unstructured.Unstructured) bool {
+	metadata, ok := u.Object["metadata"].(map[string]interface{})
+	updateNamespace := true
+	if ok {
+		annotations, ok := metadata["annotations"].(map[string]interface{})
+		if ok {
+			if annotations["update-namespace"] != "" {
+				updateNamespace, _ = strconv.ParseBool(annotations["update-namespace"].(string))
+			}
+		}
+	}
+	return updateNamespace
 }

@@ -73,6 +73,7 @@ unsubscribe:
 	@oc delete MultiCloudHub example-multicloudhub || true
 	@oc delete csv multicloudhub-operator.v0.0.1 || true
 	@oc delete csv etcdoperator.v0.9.4 || true
+	@oc delete csv multicloud-operators-subscription.v0.1.2 || true
 	@oc delete csv multicloud-operators-subscription.v0.1.1 || true
 	@oc delete crd multicloudhubs.operators.multicloud.ibm.com || true
 	@oc delete crd channels.app.ibm.com || true
@@ -84,6 +85,8 @@ unsubscribe:
 	@oc delete crd etcdrestores.etcd.database.coreos.com || true
 	@oc delete crd multicloudhubs.operators.multicloud.ibm.com || true
 	@oc delete subscription multicloudhub-operator || true
+	@oc delete subscription etcdoperator.v0.9.4 || true
+	@oc delete subscription multicloud-operators-subscription.v0.1.2 || true
 	@oc delete catalogsource multicloudhub-operator-registry || true
 	@oc delete deploy -n hive hive-controllers || true
 	@oc delete deploy -n hive hiveadmission || true
