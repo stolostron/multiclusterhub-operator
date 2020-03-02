@@ -6,7 +6,7 @@ spec:
   channel: charts-v1
   name: cert-manager-webhook
   placement:
-    local: true 
+    local: true
   packageOverrides:
     - packageName: cert-manager-webhook
       packageOverrides:
@@ -27,7 +27,7 @@ spec:
             repository: "{{IMAGEREPO}}"
           serviceAccount:
             create: false
-            name: default
+            name: cert-manager
           watcher:
             configmap:
               name: extension-apiserver-authentication

@@ -1,10 +1,10 @@
 resources:
 - cert_manager
-- management_ingress
-- application_ui
-- console
-- grc
-- kui_web_terminal
+# - management_ingress
 - rcm
-- search
-- topology
+# - application_ui
+# - console
+# - grc
+# - kui_web_terminal
+# - search
+# - topology
