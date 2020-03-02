@@ -58,7 +58,6 @@ directuninstall:
 	@ oc delete -k ./build/_output/olm || true
 
 uninstall: directuninstall unsubscribe
-	
 
 reinstall: uninstall install
 
