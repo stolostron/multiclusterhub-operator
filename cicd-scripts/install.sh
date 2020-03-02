@@ -127,7 +127,17 @@ fi
 
 _output=$(oc create ns hive)
 
-make install
+_output=$(make install)
+while [[ $_output != "multicloudhub.operators.multicloud.ibm.com/example-multicloudhub created" ]] # While string is different or empty...
+do
+    echo "Waiting for Operator to come online ..."
+    _output=$(oc apply -f deploy/crds/operators.multicloud.ibm.com_v1alpha1_multicloudhub_cr.yaml)
+    sleep 10
+    echo ""
+done 
+
+echo ""
+echo "Operator online. MultiCloudHub CR applied."
 
 ## 6. Validate Install
 
@@ -169,7 +179,7 @@ do
         _hivePodsTotal=$((_hivePodsTotal + ${_deployTotalsHive:2:3}))
     done <<< "$_outputHive"
 
-    if [[ ( "$_podsReady" != "$_totalPods" || "$_hivePodsReady" != "$_hivePodsTotal" || "$_hivePodsTotal" < 1 || "$_totalPods" < 1 ) ]]; then
+    if [[ ( "$_podsReady" != "$_totalPods" || "$_hivePodsReady" != "$_hivePodsTotal" || "$_hivePodsTotal" < 3 || "$_totalPods" < 3 ) ]]; then
         echo -ne "---    Attempt $_totalAttempts/$_maxAttempts: Namespace: $NAMESPACE - $_podsReady/$_totalPods | Namespace: Hive - $_hivePodsReady/$_hivePodsTotal    ---\r"
         sleep 10
     else

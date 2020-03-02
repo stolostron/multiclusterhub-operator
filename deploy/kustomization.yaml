@@ -9,11 +9,9 @@ resources:
 - role.yaml
 - role_binding.yaml
 - service_account.yaml
-- operator.yaml
-- subscription.yaml
 - multicloudhub.resources.yaml
-- multicloudhub.csv.yaml
-- multicloudhub.crd.yaml
+- subscription.yaml
+- operator.yaml
 - operators.multicloud.ibm.com_v1alpha1_multicloudhub_cr.yaml
 
 

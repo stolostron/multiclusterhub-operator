@@ -1,0 +1,29 @@
+apiVersion: app.ibm.com/v1alpha1
+kind: Subscription
+metadata:
+  name: cert-manager-sub
+spec:
+  channel: charts-v1
+  name: cert-manager
+  placement:
+    local: true 
+  packageOverrides:
+    - packageName: cert-manager
+      packageOverrides:
+      - path: spec.values
+        value: |
+          imageTagPostfix: "{{POSTFIX}}"
+          clusterResourceNamespace: "{{NAMESPACE}}"
+          global:
+            isOpenshift: true
+            imagePullSecrets:
+              - name: "{{PULLSECRET}}"
+          image:
+            repository: "{{IMAGEREPO}}"
+            pullPolicy: "{{PULLPOLICY}}"
+          serviceAccount:
+            create: false
+            name: default
+          solver:
+            repository: "{{IMAGEREPO}}"
+            

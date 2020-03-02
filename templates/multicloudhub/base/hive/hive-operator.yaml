@@ -4,10 +4,8 @@ metadata:
   annotations:
     categories: A list of comma separated categories that your operator falls under.
     certified: 'false'
-    containerImage: quay.io/dgoodwin/hive:latest
-    createdAt: '2020-02-12T10:23:03Z'
+    containerImage: quay.io/rhibmcollab/hive:2020-02-20-2e16aa24
     description: OpenShift cluster provisioning and management at scale.
-    support: Devan Goodwin
   name: hive-operator.v0.1.1646-908a8f4a
   namespace: hive
 spec:
@@ -204,7 +202,7 @@ spec:
           - update
           - patch
           - delete
-        serviceAccountName: hub-sa
+        serviceAccountName: hive-operator
       - rules:
         - apiGroups:
           - batch
@@ -493,7 +491,7 @@ spec:
           - backups
           verbs:
           - create
-        serviceAccountName: hub-sa
+        serviceAccountName: default
       - rules:
         - apiGroups:
           - admission.hive.openshift.io
@@ -532,7 +530,7 @@ spec:
           - subjectaccessreviews
           verbs:
           - create
-        serviceAccountName: hub-sa
+        serviceAccountName: hiveadmission
       deployments:
       - name: hive-operator
         spec:
@@ -556,7 +554,7 @@ spec:
                 env:
                 - name: CLI_CACHE_DIR
                   value: /var/cache/kubectl
-                image: registry.svc.ci.openshift.org/openshift/hive-v4.0:hive
+                image: quay.io/rhibmcollab/hive:2020-02-20-2e16aa24
                 imagePullPolicy: Always
                 livenessProbe:
                   failureThreshold: 1
@@ -573,7 +571,7 @@ spec:
                 volumeMounts:
                 - mountPath: /var/cache/kubectl
                   name: kubectl-cache
-              serviceAccountName: hub-sa
+              serviceAccountName: hive-operator
               terminationGracePeriodSeconds: 10
               volumes:
               - emptyDir: {}

@@ -1,0 +1,9 @@
+---
+# to be able to assign powers to the hiveadmission process
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: hive
+  annotations:
+    update-namespace: "false"
+  name: hiveadmission

@@ -1,6 +1,7 @@
 package rendering
 
 import (
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"os"
 	"path"
 	"testing"
@@ -56,8 +57,16 @@ func TestRender(t *testing.T) {
 	}
 
 	renderer := NewRenderer(mchcr)
-	_, err = renderer.Render()
+	objs, err := renderer.Render()
 	if err != nil {
 		t.Fatalf("failed to render multicloudhub %v", err)
+	}
+
+	printObjs(t,objs)
+}
+
+func printObjs (t *testing.T, objs []*unstructured.Unstructured){
+	for _, obj := range objs{
+		t.Log(obj)
 	}
 }

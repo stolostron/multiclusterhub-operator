@@ -1,14 +1,15 @@
 resources:
 - rbac
+- security_context_constraints
+- repo
+- channel
+- hive
 - apiserver
 - controller
 - etcd
 - mongodb
 - webhook
-- cluster_controller
+# - cluster_controller
 - certificates
+- subscriptions
 - topology_aggregator
-- hive
-- channel
-- repo
-# - connection_manager
