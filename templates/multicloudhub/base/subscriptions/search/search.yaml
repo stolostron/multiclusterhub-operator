@@ -15,9 +15,6 @@ spec:
           imageTagPostfix: "{{POSTFIX}}"
           global:
             pullSecret: "{{PULLSECRET}}"
-          kubectl:
-            repository: "{{IMAGEREPO}}"
-            pullPolicy: "{{PULLPOLICY}}"
           search:
             aggregator:
               image:
@@ -32,6 +29,10 @@ spec:
                 repository: "{{IMAGEREPO}}"
                 pullPolicy: "{{PULLPOLICY}}"
             redisgraph:
+              image:
+                repository: "{{IMAGEREPO}}"
+                pullPolicy: "{{PULLPOLICY}}"
+            operator: 
               image:
                 repository: "{{IMAGEREPO}}"
                 pullPolicy: "{{PULLPOLICY}}"
