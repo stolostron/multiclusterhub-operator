@@ -22,11 +22,4 @@ spec:
             image:
               repository: "{{IMAGEREPO}}/console-api"
               pullPolicy: "{{PULLPOLICY}}"
-          mongo:
-            servers: mongodb
-            dbName: mcm
-            usersecret: icp-mongodb-admin
-            tlssecret: cluster-ca-cert
-            casecret: cluster-ca-cert
-            replicaSet: rs0
           cfcRouterUrl: "https://icp-management-ingress:443"
