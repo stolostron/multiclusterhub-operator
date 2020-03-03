@@ -13,6 +13,7 @@ spec:
       - path: spec.values
         value: |
           imageTagPostfix: "{{POSTFIX}}"
+          pullSecret: "{{PULLSECRET}}"
           proxy:
             image:
               repository: "{{IMAGEREPO}}"

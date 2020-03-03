@@ -13,10 +13,16 @@ spec:
       - path: spec.values
         value: |
           imageTagPostfix: "{{POSTFIX}}"
+          pullSecret: "{{PULLSECRET}}"
           image:
             repository: "{{IMAGEREPO}}"
             pullPolicy: "{{PULLPOLICY}}"
           oauth_client:
-            callback_url: "https://multicloud-console.apps.{{OCPHOST}}/oauth/callback"
+            callback_url: "https://multicloud-console.apps.harmless-bluejay.aws.red-chesterfield.com/oauth/callback"
           console_route:
-            host: "multicloud-console.apps.{{OCPHOST}}"
+            host: "multicloud-console.apps.harmless-bluejay.aws.red-chesterfield.com"
+          cert:
+            issuer:
+              name: multicloud-ca-issuer
+              kind: Issuer
+            ca: multicloud-ca-cert
