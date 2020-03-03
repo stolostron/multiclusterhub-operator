@@ -13,8 +13,8 @@ spec:
       - path: spec.values
         value: |
           imageTagPostfix: "{{POSTFIX}}"
-          imagePullSecrets:
-            - name: "{{PULLSECRET}}"
+          global:
+            pullSecret: "{{PULLSECRET}}"
           image:
             repository: "{{IMAGEREPO}}"
             pullPolicy: "{{PULLPOLICY}}"

@@ -16,8 +16,7 @@ spec:
           clusterResourceNamespace: "{{NAMESPACE}}"
           global:
             isOpenshift: true
-            imagePullSecrets:
-              - name: "{{PULLSECRET}}"
+            pullSecret: "{{PULLSECRET}}"
           image:
             repository: "{{IMAGEREPO}}"
             pullPolicy: "{{PULLPOLICY}}"

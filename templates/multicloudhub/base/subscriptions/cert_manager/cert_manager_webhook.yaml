@@ -14,8 +14,7 @@ spec:
         value: |
           imageTagPostfix: "{{POSTFIX}}"
           global:
-            imagePullSecrets:
-              - name: "{{PULLSECRET}}"
+            pullSecret: "{{PULLSECRET}}"
           cainjector:
             imageTagPostfix: "{{POSTFIX}}"
             image:
