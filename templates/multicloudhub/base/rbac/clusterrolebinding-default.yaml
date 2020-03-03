@@ -1,12 +1,11 @@
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: default-sa-crb
-subjects:
-- kind: ServiceAccount
-  name: default
-  namespace: default
+  name: bind-to-default
 roleRef:
   kind: ClusterRole
   name: cluster-admin
   apiGroup: ""
+subjects:
+  - kind: ServiceAccount
+    name: default
