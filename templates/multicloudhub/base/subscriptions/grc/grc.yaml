@@ -13,6 +13,7 @@ spec:
       - path: spec.values
         value: |
           imageTagPostfix: "{{POSTFIX}}"
+          pullSecret: "{{PULLSECRET}}"
           grcuiapi:
             image:
               repository: "{{IMAGEREPO}}"
