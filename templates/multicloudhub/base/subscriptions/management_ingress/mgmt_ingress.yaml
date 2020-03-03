@@ -18,11 +18,6 @@ spec:
             repository: "{{IMAGEREPO}}"
             pullPolicy: "{{PULLPOLICY}}"
           oauth_client:
-            callback_url: "https://multicloud-console.apps.harmless-bluejay.aws.red-chesterfield.com/oauth/callback"
+            callback_url: "https://multicloud-console.apps.{{OCPHOST}}/oauth/callback"
           console_route:
-            host: "multicloud-console.apps.harmless-bluejay.aws.red-chesterfield.com"
-          cert:
-            issuer:
-              name: multicloud-ca-issuer
-              kind: Issuer
-            ca: multicloud-ca-cert
+            host: "multicloud-console.apps.{{OCPHOST}}"
