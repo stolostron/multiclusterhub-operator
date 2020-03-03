@@ -216,7 +216,7 @@
                 description: Repository of the MultiCloud hub images
                 type: string
               imageTagPostfix:
-                description: Postfix tag of the Multicloud hub images
+                description: ImageTagPostfix of the MultiCloud hub images
                 type: string
               mongo:
                 description: Spec of mongo
@@ -253,6 +253,9 @@
                     description: Spec of OS
                     type: string
                 type: object
+              ocpHost:
+                description: Hostname postion of OCP Domauin
+                type: string
               version:
                 description: Version of the MultiCloud hub
                 type: string
@@ -262,6 +265,7 @@
             - hive
             - imagePullPolicy
             - imageRepository
+            - imageTagPostfix
             - mongo
             - version
             type: object
