@@ -235,7 +235,7 @@ data:
                     description: Repository of the MultiCloud hub images
                     type: string
                   imageTagPostfix:
-                    description: Postfix tag of the Multicloud hub images
+                    description: ImageTagPostfix of the MultiCloud hub images
                     type: string
                   mongo:
                     description: Spec of mongo
@@ -272,6 +272,9 @@ data:
                         description: Spec of OS
                         type: string
                     type: object
+                  ocpHost:
+                    description: Hostname portion of OCP Domain
+                    type: string
                   version:
                     description: Version of the MultiCloud hub
                     type: string
@@ -281,6 +284,7 @@ data:
                 - hive
                 - imagePullPolicy
                 - imageRepository
+                - imageTagPostfix
                 - mongo
                 - version
                 type: object
@@ -448,6 +452,7 @@ data:
                     "endpoints": "mongo-0.mongo.default",
                     "replicaSet": "rs0"
                   },
+                  "ocpHost": "",
                   "version": "latest"
                 }
               }

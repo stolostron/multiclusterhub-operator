@@ -28,6 +28,10 @@ type MultiCloudHubSpec struct {
 	// +optional
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
 
+	// Hostname portion of OCP Domain
+	// +optional
+	OCPHOST string `json:"ocpHost,omitempty"`
+
 	// Spec of NodeSelector
 	// +optional
 	NodeSelector *NodeSelector `json:"nodeSelector,omitempty"`
