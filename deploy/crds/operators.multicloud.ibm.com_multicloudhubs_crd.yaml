@@ -254,7 +254,7 @@ spec:
                   type: string
               type: object
             ocpHost:
-              description: Hostname postion of OCP Domauin
+              description: Hostname portion of OCP Domain
               type: string
             version:
               description: Version of the MultiCloud hub

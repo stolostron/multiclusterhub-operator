@@ -28,7 +28,7 @@ type MultiCloudHubSpec struct {
 	// +optional
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
 
-	// Hostname postion of OCP Domauin
+	// Hostname portion of OCP Domain
 	// +optional
 	OCPHOST string `json:"ocpHost,omitempty"`
 
