@@ -56,6 +56,7 @@ metadata:
               "endpoints": "mongo-0.mongo.default",
               "replicaSet": "rs0"
             },
+            "ocpHost": "",
             "version": "latest"
           }
         }
