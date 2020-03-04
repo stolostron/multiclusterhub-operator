@@ -9,6 +9,11 @@ spec:
     local: true 
   packageOverrides:
     - packageName: console-chart
+  name: console
+  placement:
+    local: true 
+  packageOverrides:
+    - packageName: console
       packageOverrides:
       - path: spec.values
         value: |

@@ -6,7 +6,7 @@ spec:
   channel: charts-v1
   name: cert-manager
   placement:
-    local: true
+    local: true 
   packageOverrides:
     - packageName: cert-manager
       packageOverrides:
