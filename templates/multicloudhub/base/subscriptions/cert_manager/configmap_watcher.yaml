@@ -20,4 +20,4 @@ spec:
             pullPolicy: "{{PULLPOLICY}}"
           serviceAccount:
             create: false
-            name: cert-manager
+            name: default

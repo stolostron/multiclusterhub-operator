@@ -21,7 +21,7 @@ spec:
             repository: "{{IMAGEREPO}}"
             pullPolicy: "{{PULLPOLICY}}"
           serviceAccount:
-            create: true
-            name: cert-manager
+            create: false
+            name: default
           solver:
             repository: "{{IMAGEREPO}}"
