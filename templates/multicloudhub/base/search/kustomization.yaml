@@ -1,0 +1,2 @@
+resources:
+  - crds/search.acm.com_searchservices_crd.yaml
