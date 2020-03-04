@@ -23,3 +23,7 @@ spec:
               repository: "{{IMAGEREPO}}/console-api"
               pullPolicy: "{{PULLPOLICY}}"
           cfcRouterUrl: "https://management-ingress:443"
+          consoleheader:
+            image:
+              repository: "{{IMAGEREPO}}/console-header"
+              pullPolicy: "{{PULLPOLICY}}"

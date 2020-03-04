@@ -12,6 +12,7 @@ spec:
       packageOverrides:
       - path: spec.values
         value: |
+          allowed_host_headers: "multicloud-console.apps.{{OCPHOST}} 127.0.0.1 management-ingress"
           imageTagPostfix: "{{POSTFIX}}"
           pullSecret: "{{PULLSECRET}}"
           image:
