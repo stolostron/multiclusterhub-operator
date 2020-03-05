@@ -126,7 +126,6 @@ $(cat "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml)
 $PKG
 EOF
 
-
 if [ ! -z ${TRAVIS_BRANCH+x} ]; then
 cat <<EOF > "${OLMOUTPUTDIR}"/annotations.yaml
 annotations:
@@ -159,7 +158,6 @@ EOF
 
 fi
 
-
 unindent "${OLMOUTPUTDIR}"/multicloudhub.crd.yaml
 unindent "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
 removeNamespacePlaceholder "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
@@ -189,4 +187,3 @@ echo "Created ${OLMOUTPUTDIR}/service_account.yaml"
 echo "Created ${OLMOUTPUTDIR}/role.yaml"
 echo "Created ${OLMOUTPUTDIR}/role_binding.yaml"
 echo "Created ${OLMOUTPUTDIR}/kustomization.yaml"
-
