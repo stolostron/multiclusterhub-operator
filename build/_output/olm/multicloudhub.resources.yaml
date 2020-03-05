@@ -495,6 +495,34 @@ data:
             kind: MultiCloudHub
             name: multicloudhubs.operators.multicloud.ibm.com
             version: v1alpha1
+          required:
+          - description: Represent a helm chart repository
+            displayName: Channel
+            kind: Channel
+            name: channels.app.ibm.com
+            version: v1alpha1
+          - description: Contain a k8s resource template for deployment, for internal use
+              only.
+            displayName: Deployable
+            kind: Deployable
+            name: deployables.app.ibm.com
+            version: v1alpha1
+          - description: Represents a cluster of etcd nodes.
+            displayName: etcd Cluster
+            kind: EtcdCluster
+            name: etcdclusters.etcd.database.coreos.com
+            version: v1beta2
+          - description: Represent a helm chart selected by the subscription, for internal
+              use only.
+            displayName: Helm Release
+            kind: HelmRelease
+            name: helmreleases.app.ibm.com
+            version: v1alpha1
+          - description: Subscribe resources from a channel according to its package filters
+            displayName: Subscription
+            kind: Subscription
+            name: subscriptions.app.ibm.com
+            version: v1alpha1
         description: Placeholder description
         displayName: Multicloudhub Operator
         install:

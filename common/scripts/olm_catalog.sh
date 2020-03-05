@@ -51,8 +51,9 @@ removeNamespacePlaceholder(){
 DEPLOYDIR=${DIR:-$(cd "$(dirname "$0")"/../../deploy && pwd)}
 BUNDLE_REGISTRY=$1
 IMG=$2
-VERSION=$3
+BUNDLE_VERSION=$(cat COMPONENT_VERSION)
 IMAGE_REGISTRY=$4
+echo $BUNDLE_VERSION
 export CSV_CHANNEL=alpha
 export CSV_VERSION=0.0.1
 
@@ -127,6 +128,8 @@ $(cat "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml)
 $PKG
 EOF
 
+
+if [ ! -z ${TRAVIS_BRANCH+x} ]; then
 cat <<EOF > "${OLMOUTPUTDIR}"/annotations.yaml
 annotations:
   operators.operatorframework.io.bundle.mediatype.v1: "registry+v1"
@@ -137,22 +140,24 @@ annotations:
   operators.operatorframework.io.bundle.channel.default.v1: "$CSV_CHANNEL"
 EOF
 
-_IMAGE_REFERENCE=$IMAGE_REGISTRY/$IMG:$VERSION
-_SHA_IMAGE_REFERENCE=$(docker inspect --format='{{index .RepoDigests 0}}' $_IMAGE_REFERENCE)
-if [ "$(uname)" = "Darwin" ]; then
-  sed -i "" "s|${_IMAGE_REFERENCE}|${_SHA_IMAGE_REFERENCE}|g" "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
-else
-  sed -i "s|${_IMAGE_REFERENCE}|${_SHA_IMAGE_REFERENCE}|g" "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
+  _IMAGE_REFERENCE=$IMAGE_REGISTRY/$IMG:$BUNDLE_VERSION-$COMPONENT_TAG_EXTENSION
+  _SHA_IMAGE_REFERENCE=$(docker inspect --format='{{index .RepoDigests 0}}' $_IMAGE_REFERENCE)
+  if [ "$(uname)" = "Darwin" ]; then
+    sed -i "" "s|${_IMAGE_REFERENCE}|${_SHA_IMAGE_REFERENCE}|g" "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
+  else
+    sed -i "s|${_IMAGE_REFERENCE}|${_SHA_IMAGE_REFERENCE}|g" "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
+  fi
+
+
+  docker build --file "${BUILDDIR}"/Dockerfile.bundle \
+    --build-arg OPERATOR_NAME=$IMG \
+    --build-arg OPERATOR_CHANNELS=$CSV_CHANNEL \
+    --build-arg OPERATOR_DEFAULT_CHANNEL=$CSV_CHANNEL \
+    --build-arg OPERATOR_CRD="_output/olm/multicloudhub.crd.yaml" \
+    --build-arg OPERATOR_CSV="_output/olm/multicloudhub.csv.yaml" \
+    --build-arg ANNOTATION_YML="_output/olm/annotations.yaml" "${BUILDDIR}" -t $BUNDLE_REGISTRY/$IMG-bundle:$BUNDLE_VERSION-$COMPONENT_TAG_EXTENSION
+
 fi
-
-
-docker build --file "${BUILDDIR}"/Dockerfile.bundle \
-  --build-arg OPERATOR_NAME=$IMG \
-  --build-arg OPERATOR_CHANNELS=$CSV_CHANNEL \
-  --build-arg OPERATOR_DEFAULT_CHANNEL=$CSV_CHANNEL \
-  --build-arg OPERATOR_CRD="_output/olm/multicloudhub.crd.yaml" \
-  --build-arg OPERATOR_CSV="_output/olm/multicloudhub.csv.yaml" \
-  --build-arg ANNOTATION_YML="_output/olm/annotations.yaml" "${BUILDDIR}" -t $BUNDLE_REGISTRY/$IMG-bundle:$VERSION
 
 
 unindent "${OLMOUTPUTDIR}"/multicloudhub.crd.yaml
