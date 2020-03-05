@@ -4,3 +4,5 @@ echo "BUILD GOES HERE!"
 echo "<repo>/<component>:<tag> : $1"
 
 operator-sdk build $1
+
+make olm-catalog

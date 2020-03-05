@@ -39,7 +39,7 @@ metadata:
                 }
               ],
               "failedProvisionConfig": {
-                "skipGatherLogs": false
+                "skipGatherLogs": true
               },
               "globalPullSecret": {
                 "name": "private-secret"

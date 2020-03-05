@@ -50,8 +50,6 @@ clean::
 	rm -rf $(BUILD_DIR)/_output
 	rm -f cover.out
 
-bundle: image olm-catalog
-
 install: image push olm-catalog 
 	# need to check for operator group
 	@oc create secret docker-registry quay-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
