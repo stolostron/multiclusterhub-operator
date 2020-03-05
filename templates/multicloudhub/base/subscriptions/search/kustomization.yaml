@@ -1,2 +1,3 @@
 resources:
 - search.yaml 
+- crd.yaml
