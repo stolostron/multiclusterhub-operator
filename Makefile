@@ -11,6 +11,7 @@ VERSION ?= latest
 IMG ?= multicloudhub-operator
 SECRET_REGISTRY ?= quay.io 
 REGISTRY ?= quay.io/rhibmcollab
+BUNDLE_REGISTRY ?= quay.io/open-cluster-management
 GIT_VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
                  git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8)
 
@@ -43,16 +44,18 @@ push:
 	./common/scripts/push.sh "$(REGISTRY)/$(IMG):$(VERSION)"
 
 olm-catalog: clean
-	@common/scripts/olm_catalog.sh
+	@common/scripts/olm_catalog.sh "$(BUNDLE_REGISTRY)" "$(IMG)" "$(VERSION)" "$(REGISTRY)"
 
 clean::
 	rm -rf $(BUILD_DIR)/_output
 	rm -f cover.out
 
-install: olm-catalog image push
+bundle: image olm-catalog
+
+install: image push olm-catalog 
 	# need to check for operator group
 	@oc create secret docker-registry quay-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
-	@oc apply -k ./build/_output/olm || true
+	# @oc apply -k ./build/_output/olm || true
 
 directuninstall:
 	@ oc delete -k ./build/_output/olm || true

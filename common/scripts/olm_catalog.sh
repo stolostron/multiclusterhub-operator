@@ -48,6 +48,10 @@ removeNamespacePlaceholder(){
 }
 
 DEPLOYDIR=${DIR:-$(cd "$(dirname "$0")"/../../deploy && pwd)}
+BUNDLE_REGISTRY=$1
+IMG=$2
+VERSION=$3
+IMAGE_REGISTRY=$4
 export CSV_CHANNEL=alpha
 export CSV_VERSION=0.0.1
 
@@ -122,6 +126,35 @@ $(cat "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml)
 $PKG
 EOF
 
+cat <<EOF > "${OLMOUTPUTDIR}"/annotations.yaml
+annotations:
+  operators.operatorframework.io.bundle.mediatype.v1: "registry+v1"
+  operators.operatorframework.io.bundle.manifests.v1: "manifests/"
+  operators.operatorframework.io.bundle.metadata.v1: "metadata/"
+  operators.operatorframework.io.bundle.package.v1: "$IMG-bundle"
+  operators.operatorframework.io.bundle.channels.v1: "$CSV_CHANNEL"
+  operators.operatorframework.io.bundle.channel.default.v1: "$CSV_CHANNEL"
+EOF
+
+_IMAGE_REFERENCE=$IMAGE_REGISTRY/$IMG:$VERSION
+_SHA_IMAGE_REFERENCE=$(docker inspect --format='{{index .RepoDigests 0}}' $_IMAGE_REFERENCE)
+echo $_SHA_IMAGE_REFERENCE
+if [ "$(uname)" = "Darwin" ]; then
+  sed -i "" "s|${_IMAGE_REFERENCE}|${_SHA_IMAGE_REFERENCE}|g" "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
+else
+  sed -i "s|${_IMAGE_REFERENCE}|${_SHA_IMAGE_REFERENCE}|g" "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
+fi
+
+
+docker build --file "${BUILDDIR}"/Dockerfile.bundle \
+  --build-arg OPERATOR_NAME=$IMG \
+  --build-arg OPERATOR_CHANNELS=$CSV_CHANNEL \
+  --build-arg OPERATOR_DEFAULT_CHANNEL=$CSV_CHANNEL \
+  --build-arg OPERATOR_CRD="_output/olm/multicloudhub.crd.yaml" \
+  --build-arg OPERATOR_CSV="_output/olm/multicloudhub.csv.yaml" \
+  --build-arg ANNOTATION_YML="_output/olm/annotations.yaml" "${BUILDDIR}" -t $BUNDLE_REGISTRY/$IMG-bundle:$VERSION
+
+
 unindent "${OLMOUTPUTDIR}"/multicloudhub.crd.yaml
 unindent "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
 removeNamespacePlaceholder "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
@@ -140,6 +173,7 @@ cp "${DEPLOYDIR}"/operator.yaml "${OLMOUTPUTDIR}"
 cp "${DEPLOYDIR}"/crds/*_cr.yaml "${OLMOUTPUTDIR}"
 cp "${DEPLOYDIR}"/kustomization.yaml "${OLMOUTPUTDIR}"
 
+echo "Created ${OLMOUTPUTDIR}/annotations.yaml"
 echo "Created ${OLMOUTPUTDIR}/multicloudhub-operator"
 echo "Created ${OLMOUTPUTDIR}/multicloudhub.resources.yaml"
 echo "Created ${OLMOUTPUTDIR}/multicloudhub.crd.yaml"
@@ -150,3 +184,6 @@ echo "Created ${OLMOUTPUTDIR}/service_account.yaml"
 echo "Created ${OLMOUTPUTDIR}/role.yaml"
 echo "Created ${OLMOUTPUTDIR}/role_binding.yaml"
 echo "Created ${OLMOUTPUTDIR}/kustomization.yaml"
+
+docker push $BUNDLE_REGISTRY/$IMG-bundle:$VERSION
+
