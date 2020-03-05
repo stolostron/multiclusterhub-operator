@@ -273,7 +273,7 @@
                     value: multicloudhub-operator
                   - name: TEMPLATES_PATH
                     value: /usr/local/templates
-                  image: quay.io/rhibmcollab/multicloudhub-operator:latest
+                  image: quay.io/rhibmcollab/multicloudhub-operator@sha256:8a723eaf6bb54fa4c81c2463cc9ba0b268a1cec2342e63da73554a530fd40733
                   imagePullPolicy: Always
                   name: multicloudhub-operator
                   resources: {}
