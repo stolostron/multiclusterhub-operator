@@ -140,6 +140,7 @@ annotations:
 EOF
 
   _IMAGE_REFERENCE=$BUNDLE_REGISTRY/$IMG:$BUNDLE_VERSION$COMPONENT_TAG_EXTENSION
+  docker login $BUNDLE_REGISTRY -u $DOCKER_USER -p $DOCKER_PASS
   docker push $_IMAGE_REFERENCE
   docker inspect $_IMAGE_REFERENCE
   docker images --digests
