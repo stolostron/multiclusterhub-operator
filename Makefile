@@ -44,7 +44,7 @@ push:
 	./common/scripts/push.sh "$(REGISTRY)/$(IMG):$(VERSION)"
 
 olm-catalog: clean
-	@common/scripts/olm_catalog.sh "$(BUNDLE_REGISTRY)" "$(IMG)" "$(VERSION)" "$(REGISTRY)"
+	@common/scripts/olm_catalog.sh "$(BUNDLE_REGISTRY)" "$(IMG)" "$(VERSION)"
 
 clean::
 	rm -rf $(BUILD_DIR)/_output

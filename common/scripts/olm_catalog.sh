@@ -52,8 +52,7 @@ DEPLOYDIR=${DIR:-$(cd "$(dirname "$0")"/../../deploy && pwd)}
 BUNDLE_REGISTRY=$1
 IMG=$2
 BUNDLE_VERSION=$(cat COMPONENT_VERSION)
-IMAGE_REGISTRY=$4
-echo $BUNDLE_VERSION
+
 export CSV_CHANNEL=alpha
 export CSV_VERSION=0.0.1
 
@@ -140,7 +139,7 @@ annotations:
   operators.operatorframework.io.bundle.channel.default.v1: "$CSV_CHANNEL"
 EOF
 
-  _IMAGE_REFERENCE=$IMAGE_REGISTRY/$IMG:$BUNDLE_VERSION$COMPONENT_TAG_EXTENSION
+  _IMAGE_REFERENCE=$BUNDLE_REGISTRY/$IMG:$BUNDLE_VERSION$COMPONENT_TAG_EXTENSION
   _SHA_IMAGE_REFERENCE=$(docker inspect --format='{{index .RepoDigests 0}}' $_IMAGE_REFERENCE)
   if [ "$(uname)" = "Darwin" ]; then
     sed -i "" "s|${_IMAGE_REFERENCE}|${_SHA_IMAGE_REFERENCE}|g" "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
