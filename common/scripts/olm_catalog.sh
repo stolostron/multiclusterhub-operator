@@ -140,7 +140,7 @@ annotations:
   operators.operatorframework.io.bundle.channel.default.v1: "$CSV_CHANNEL"
 EOF
 
-  _IMAGE_REFERENCE=$IMAGE_REGISTRY/$IMG:$BUNDLE_VERSION-$COMPONENT_TAG_EXTENSION
+  _IMAGE_REFERENCE=$IMAGE_REGISTRY/$IMG:$BUNDLE_VERSION$COMPONENT_TAG_EXTENSION
   _SHA_IMAGE_REFERENCE=$(docker inspect --format='{{index .RepoDigests 0}}' $_IMAGE_REFERENCE)
   if [ "$(uname)" = "Darwin" ]; then
     sed -i "" "s|${_IMAGE_REFERENCE}|${_SHA_IMAGE_REFERENCE}|g" "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
@@ -155,7 +155,7 @@ EOF
     --build-arg OPERATOR_DEFAULT_CHANNEL=$CSV_CHANNEL \
     --build-arg OPERATOR_CRD="_output/olm/multicloudhub.crd.yaml" \
     --build-arg OPERATOR_CSV="_output/olm/multicloudhub.csv.yaml" \
-    --build-arg ANNOTATION_YML="_output/olm/annotations.yaml" "${BUILDDIR}" -t $BUNDLE_REGISTRY/$IMG-bundle:$BUNDLE_VERSION-$COMPONENT_TAG_EXTENSION
+    --build-arg ANNOTATION_YML="_output/olm/annotations.yaml" "${BUILDDIR}" -t $BUNDLE_REGISTRY/$IMG-bundle:$BUNDLE_VERSION$COMPONENT_TAG_EXTENSION
 
 fi
 
