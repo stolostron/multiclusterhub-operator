@@ -140,6 +140,8 @@ annotations:
 EOF
 
   _IMAGE_REFERENCE=$BUNDLE_REGISTRY/$IMG:$BUNDLE_VERSION$COMPONENT_TAG_EXTENSION
+  docker inspect $_IMAGE_REFERENCE
+  docker images --digests
   _SHA_IMAGE_REFERENCE=$(docker inspect --format='{{index .RepoDigests 0}}' $_IMAGE_REFERENCE)
   if [ "$(uname)" = "Darwin" ]; then
     sed -i "" "s|${_IMAGE_REFERENCE}|${_SHA_IMAGE_REFERENCE}|g" "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
