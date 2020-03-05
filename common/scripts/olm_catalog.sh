@@ -184,10 +184,3 @@ echo "Created ${OLMOUTPUTDIR}/role.yaml"
 echo "Created ${OLMOUTPUTDIR}/role_binding.yaml"
 echo "Created ${OLMOUTPUTDIR}/kustomization.yaml"
 
-
-if [[ ( "$TRAVIS_BRANCH" = "release"* ) ]]; then
-  docker push $BUNDLE_REGISTRY/$IMG-bundle:$VERSION
-fi
-
-
-
