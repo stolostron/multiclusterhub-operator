@@ -35,4 +35,4 @@ spec:
     globalPullSecret:
       name: private-secret
     failedProvisionConfig:
-      skipGatherLogs: false
+      skipGatherLogs: true
