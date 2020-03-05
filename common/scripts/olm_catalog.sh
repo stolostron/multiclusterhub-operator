@@ -138,7 +138,6 @@ EOF
 
 _IMAGE_REFERENCE=$IMAGE_REGISTRY/$IMG:$VERSION
 _SHA_IMAGE_REFERENCE=$(docker inspect --format='{{index .RepoDigests 0}}' $_IMAGE_REFERENCE)
-echo $_SHA_IMAGE_REFERENCE
 if [ "$(uname)" = "Darwin" ]; then
   sed -i "" "s|${_IMAGE_REFERENCE}|${_SHA_IMAGE_REFERENCE}|g" "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
 else
@@ -185,5 +184,10 @@ echo "Created ${OLMOUTPUTDIR}/role.yaml"
 echo "Created ${OLMOUTPUTDIR}/role_binding.yaml"
 echo "Created ${OLMOUTPUTDIR}/kustomization.yaml"
 
-docker push $BUNDLE_REGISTRY/$IMG-bundle:$VERSION
+
+if [[ ( "$TRAVIS_BRANCH" = "release"* ) ]]; then
+  docker push $BUNDLE_REGISTRY/$IMG-bundle:$VERSION
+fi
+
+
 
