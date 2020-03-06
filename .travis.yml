@@ -48,6 +48,9 @@ jobs:
           make
           make component/build
           make component/push
+          COMPONENT_NAME=multicloudhub-operator-bundle
+          make component/build
+          make component/push
           make security/scans
     - stage: unit-test
       name: "Run unit tests"
