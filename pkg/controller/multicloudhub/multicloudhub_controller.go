@@ -198,7 +198,10 @@ func (r *ReconcileMultiCloudHub) mongoAuthSecret(v *operatorsv1alpha1.MultiCloud
 			"password": generatePass(16),
 		},
 	}
-	controllerutil.SetControllerReference(v, secret, r.scheme)
+
+	if err := controllerutil.SetControllerReference(v, secret, r.scheme); err != nil {
+		log.Error(err, "Failed to set controller reference", "Secret.Namespace", v.Namespace, "Secret.Name", v.Name)
+	}
 	return secret
 }
 
