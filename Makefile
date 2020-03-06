@@ -44,13 +44,11 @@ push:
 	./common/scripts/push.sh "$(REGISTRY)/$(IMG):$(VERSION)"
 
 olm-catalog: clean
-	@common/scripts/olm_catalog.sh "$(BUNDLE_REGISTRY)" "$(IMG)" "$(VERSION)" "$(REGISTRY)"
+	@common/scripts/olm_catalog.sh "$(BUNDLE_REGISTRY)" "$(IMG)" "$(VERSION)"
 
 clean::
 	rm -rf $(BUILD_DIR)/_output
 	rm -f cover.out
-
-bundle: image olm-catalog
 
 install: image push olm-catalog 
 	# need to check for operator group

@@ -2,11 +2,16 @@ package multicloudhub
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
+	"math/big"
 
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -101,6 +106,12 @@ func (r *ReconcileMultiCloudHub) Reconcile(request reconcile.Request) (reconcile
 		return reconcile.Result{}, err
 	}
 
+	var result *reconcile.Result
+	result, err = r.ensureSecret(request, multiCloudHub, r.mongoAuthSecret(multiCloudHub))
+	if result != nil {
+		return *result, err
+	}
+
 	//Render the templates with a specified CR
 	renderer := rendering.NewRenderer(multiCloudHub)
 	toDeploy, err := renderer.Render()
@@ -142,4 +153,67 @@ func (r *ReconcileMultiCloudHub) Reconcile(request reconcile.Request) (reconcile
 		return reconcile.Result{}, err
 	}
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileMultiCloudHub) ensureSecret(request reconcile.Request,
+	instance *operatorsv1alpha1.MultiCloudHub,
+	s *corev1.Secret,
+) (*reconcile.Result, error) {
+	found := &corev1.Secret{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{
+		Name:      s.Name,
+		Namespace: instance.Namespace,
+	}, found)
+	if err != nil && errors.IsNotFound(err) {
+		// Create the secret
+		log.Info("Creating a new secret", "Secret.Namespace", s.Namespace, "Secret.Name", s.Name)
+		err = r.client.Create(context.TODO(), s)
+
+		if err != nil {
+			// Creation failed
+			log.Error(err, "Failed to create new Secret", "Secret.Namespace", s.Namespace, "Secret.Name", s.Name)
+			return &reconcile.Result{}, err
+		}
+		// Creation was successful
+		return nil, nil
+
+	} else if err != nil {
+		// Error that isn't due to the secret not existing
+		log.Error(err, "Failed to get Secret")
+		return &reconcile.Result{}, err
+	}
+
+	return nil, nil
+}
+
+func (r *ReconcileMultiCloudHub) mongoAuthSecret(v *operatorsv1alpha1.MultiCloudHub) *corev1.Secret {
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "mongodb-admin",
+			Namespace: v.Namespace,
+		},
+		Type: "Opaque",
+		StringData: map[string]string{
+			"user":     "some@example.com",
+			"password": generatePass(16),
+		},
+	}
+
+	if err := controllerutil.SetControllerReference(v, secret, r.scheme); err != nil {
+		log.Error(err, "Failed to set controller reference", "Secret.Namespace", v.Namespace, "Secret.Name", v.Name)
+	}
+	return secret
+}
+
+func generatePass(length int) string {
+	chars := "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+		"abcdefghijklmnopqrstuvwxyz" +
+		"0123456789"
+
+	buf := make([]byte, length)
+	for i := 0; i < length; i++ {
+		nBig, _ := rand.Int(rand.Reader, big.NewInt(int64(len(chars))))
+		buf[i] = chars[nBig.Int64()]
+	}
+	return string(buf)
 }
