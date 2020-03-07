@@ -1,6 +1,9 @@
 package multicloudhub
 
-import "testing"
+import (
+	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"testing"
+)
 
 func Test_generatePass(t *testing.T) {
 	t.Run("Test length", func(t *testing.T) {
@@ -17,4 +20,23 @@ func Test_generatePass(t *testing.T) {
 			t.Errorf("generatePass() did not generate a unique password")
 		}
 	})
+}
+
+func Test_checkMultiCloudHubConfig(t *testing.T) {
+	mch := &operatorsv1alpha1.MultiCloudHub{
+		Spec: operatorsv1alpha1.MultiCloudHubSpec{
+			Mongo: operatorsv1alpha1.Mongo{
+				Endpoints: "",
+			},
+		},
+	}
+	checkMultiCloudHubConfig(mch)
+
+	if mch.Spec.Mongo.Endpoints != "multicloud-mongodb" ||
+		mch.Spec.Mongo.ReplicaSet != "rs0" ||
+		mch.Spec.Mongo.UserSecret != "mongodb-admin" ||
+		mch.Spec.Mongo.CASecret != "multicloud-ca-cert" ||
+		mch.Spec.Mongo.TLSSecret != "multicloud-mongodb-client-cert" {
+		t.Errorf("checkMultiCloudHubConfig test fail")
+	}
 }

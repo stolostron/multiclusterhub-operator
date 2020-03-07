@@ -112,6 +112,7 @@ func (r *ReconcileMultiCloudHub) Reconcile(request reconcile.Request) (reconcile
 		return *result, err
 	}
 
+	checkMultiCloudHubConfig(multiCloudHub)
 	//Render the templates with a specified CR
 	renderer := rendering.NewRenderer(multiCloudHub)
 	toDeploy, err := renderer.Render()
@@ -216,4 +217,28 @@ func generatePass(length int) string {
 		buf[i] = chars[nBig.Int64()]
 	}
 	return string(buf)
+}
+
+func checkMultiCloudHubConfig(multiCloudHub *operatorsv1alpha1.MultiCloudHub) {
+	if multiCloudHub.Spec.Mongo.Endpoints == "" {
+		multiCloudHub.Spec.Mongo.Endpoints = "multicloud-mongodb"
+	}
+
+	if multiCloudHub.Spec.Mongo.Endpoints == "multicloud-mongodb" {
+		if multiCloudHub.Spec.Mongo.ReplicaSet == "" {
+			multiCloudHub.Spec.Mongo.ReplicaSet = "rs0"
+		}
+
+		if multiCloudHub.Spec.Mongo.UserSecret == "" {
+			multiCloudHub.Spec.Mongo.UserSecret = "mongodb-admin"
+		}
+
+		if multiCloudHub.Spec.Mongo.CASecret == "" {
+			multiCloudHub.Spec.Mongo.CASecret = "multicloud-ca-cert"
+		}
+
+		if multiCloudHub.Spec.Mongo.TLSSecret == "" {
+			multiCloudHub.Spec.Mongo.TLSSecret = "multicloud-mongodb-client-cert"
+		}
+	}
 }

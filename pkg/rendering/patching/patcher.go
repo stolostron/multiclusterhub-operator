@@ -228,27 +228,30 @@ func generateMongoSecrets(mch *operatorsv1alpha1.MultiCloudHub) ([]corev1.EnvVar
 	envs := []corev1.EnvVar{}
 	volumeMounts := []corev1.VolumeMount{}
 	volumes := []corev1.Volume{}
-	envs = append(envs, corev1.EnvVar{
-		Name: "MONGO_USERNAME",
-		ValueFrom: &corev1.EnvVarSource{
-			SecretKeyRef: &corev1.SecretKeySelector{
-				Key: "user",
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: "mongodb-admin",
+	if mch.Spec.Mongo.UserSecret != "" {
+		envs = append(envs, corev1.EnvVar{
+			Name: "MONGO_ROOT_USERNAME",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					Key: "user",
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: mch.Spec.Mongo.UserSecret,
+					},
 				},
 			},
-		},
-	}, corev1.EnvVar{
-		Name: "MONGO_PASSWORD",
-		ValueFrom: &corev1.EnvVarSource{
-			SecretKeyRef: &corev1.SecretKeySelector{
-				Key: "password",
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: "mongodb-admin",
+		}, corev1.EnvVar{
+			Name: "MONGO_ROOT_PASSWORD",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					Key: "password",
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: mch.Spec.Mongo.UserSecret,
+					},
 				},
 			},
-		},
-	})
+		})
+	}
+
 	if mch.Spec.Mongo.CASecret != "" {
 		envs = append(envs, corev1.EnvVar{Name: "MONGO_SSLCA", Value: "/certs/mongodb-ca/tls.crt"})
 		volumes = append(volumes, corev1.Volume{
