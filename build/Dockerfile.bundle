@@ -14,6 +14,6 @@ LABEL operators.operatorframework.io.bundle.package.v1=$OPERATOR_BUNDLE_NAME
 LABEL operators.operatorframework.io.bundle.channels.v1=$OPERATOR_CHANNELS
 LABEL operators.operatorframework.io.bundle.channel.default.v1=$OPERATOR_DEFAULT_CHANNEL
 
-ADD $OPERATOR_CRD /manifests
-ADD $OPERATOR_CSV /manifests
-ADD $ANNOTATION_YML /metadata
+ADD $OPERATOR_CRD /manifests/
+ADD $OPERATOR_CSV /manifests/
+ADD $ANNOTATION_YML /metadata/
