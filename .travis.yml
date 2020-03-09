@@ -59,17 +59,11 @@ jobs:
         # Set the image tag differently for PRs
         - if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then export COMPONENT_TAG_EXTENSION="-PR${TRAVIS_PULL_REQUEST}-${TRAVIS_COMMIT}"; fi;
         # Bootstrap the build harness, pull test image, and run unit tests.  
-        - make 
-        - make component/pull 
-        - make component/test/unit
-        - echo ">>>> Install gosec" ; curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $GOPATH/bin
-        - echo ">>>> Running go test " ; go test -coverprofile=coverage.out -json ./... > report.json
-        - echo ">>>> report.json" ; cat report.json
-        - echo ">>>> coverage.out" ; cat coverage.out
-        - echo ">>>> Running gosec" ; gosec -fmt sonarqube -out gosec.json -no-fail ./...
-        - echo "$SONARQUBE_SCANNER_PARAMS"
-        - echo ">>>> Running sonar" ; sonar-scanner --debug
-        - # make sonar/go
+        - |
+          make 
+          make component/pull 
+          make component/test/unit
+          make sonar/go
     - stage: test-e2e
       name: "Deploy the image to a cluster and run e2e tests"
       if: type = pull_request
