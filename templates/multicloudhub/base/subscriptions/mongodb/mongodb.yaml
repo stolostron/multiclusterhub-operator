@@ -1,0 +1,34 @@
+apiVersion: app.ibm.com/v1alpha1
+kind: Subscription
+metadata:
+  name: mongodb-sub
+spec:
+  channel: charts-v1
+  name: mongodb-chart
+  placement:
+    local: true 
+  packageOverrides:
+    - packageName: multicloud-mongodb
+      packageOverrides:
+      - path: spec.values
+        value: |
+          imageTagPostfix: "{{POSTFIX}}"
+          auth:
+            enabled: true
+            existingAdminSecret: mongodb-admin
+          image:
+            pullPolicy: "{{PULLPOLICY}}"
+            repository: {{IMAGEREPO}}/multicloud-mongodb
+          installImage:
+            pullPolicy: "{{PULLPOLICY}}"
+            repository: {{IMAGEREPO}}/multicloud-mongodb-init
+          persistentVolume:
+            accessModes:
+            - ReadWriteOnce
+            enabled: true
+            size: 20Gi
+            storageClass: mongodb-storage
+          replicas: "1"
+          tls:
+            casecret: multicloud-ca-cert
+            enabled: true
