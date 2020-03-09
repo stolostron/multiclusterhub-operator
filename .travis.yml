@@ -62,15 +62,13 @@ jobs:
         - make 
         - make component/pull 
         - make component/test/unit
-        - echo Install gosec
-        - curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $GOPATH/bin
-        - echo Running go test
-        - go test -coverprofile=coverage.out -json ./... > report.json
-        - echo Done with go test
-        - cat coverage.out
-        - gosec -fmt sonarqube -out gosec.json -no-fail ./...
+        - echo ">>>> Install gosec" ; curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $GOPATH/bin
+        - echo ">>>> Running go test " ; go test -coverprofile=coverage.out -json ./... > report.json
+        - echo ">>>> report.json" ; cat report.json
+        - echo ">>>> coverage.out" ; cat coverage.out
+        - echo ">>>> Running gosec" ; gosec -fmt sonarqube -out gosec.json -no-fail ./...
         - echo "$SONARQUBE_SCANNER_PARAMS"
-        - sonar-scanner --debug
+        - echo ">>>> Running sonar" ; sonar-scanner --debug
         - # make sonar/go
     - stage: test-e2e
       name: "Deploy the image to a cluster and run e2e tests"
