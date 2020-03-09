@@ -63,6 +63,8 @@ jobs:
           make 
           make component/pull 
           make component/test/unit
+          echo Install gosec
+          curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $(GOPATH)/bin
           echo Running go test
           go test -coverprofile=coverage.out -json ./...
           echo Done with go test
