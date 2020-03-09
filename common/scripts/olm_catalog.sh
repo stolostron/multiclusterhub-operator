@@ -126,6 +126,10 @@ $(cat "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml)
 $PKG
 EOF
 
+unindent "${OLMOUTPUTDIR}"/multicloudhub.crd.yaml
+unindent "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
+removeNamespacePlaceholder "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
+
 if [ ! -z ${TRAVIS_BRANCH+x} ]; then
 cat <<EOF > "${OLMOUTPUTDIR}"/annotations.yaml
 annotations:
@@ -157,10 +161,6 @@ EOF
     --build-arg ANNOTATION_YML="_output/olm/annotations.yaml" "${BUILDDIR}" -t $BUNDLE_REGISTRY/$IMG-bundle:$BUNDLE_VERSION$COMPONENT_TAG_EXTENSION
 
 fi
-
-unindent "${OLMOUTPUTDIR}"/multicloudhub.crd.yaml
-unindent "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
-removeNamespacePlaceholder "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
 
 \cp -r "${PKGDIR}" "${OLMOUTPUTDIR}"
 rm -rf "${DEPLOYDIR}"/olm-catalog
