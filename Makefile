@@ -71,8 +71,8 @@ subscribe: image olm-catalog
 
 unsubscribe:
 	@oc delete MultiCloudHub example-multicloudhub || true
-	@oc delete helmreleases --all
-	@oc get helmreleases -oyaml | sed 's/\- app\.ibm\.com\/helmrelease//g' | oc apply -f -
+	@oc get helmreleases -o yaml | sed 's/\- app\.ibm\.com\/helmrelease//g' | oc apply -f - || true
+	@oc delete helmreleases --all || true
 	@oc delete csv multicloudhub-operator.v0.0.1 || true
 	@oc delete csv etcdoperator.v0.9.4 || true
 	@oc delete csv multicloud-operators-subscription.v0.1.2 || true
