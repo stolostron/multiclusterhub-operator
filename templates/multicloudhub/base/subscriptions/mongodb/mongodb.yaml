@@ -30,6 +30,6 @@ spec:
             storageClass: mongodb-storage
           replicas: "1"
           tls:
-            casecret: cluster-ca-cert
+            casecret: multicloud-ca-cert
             enabled: true
     

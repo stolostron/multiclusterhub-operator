@@ -7,7 +7,6 @@ resources:
 - apiserver
 - controller
 - etcd
-- mongodb
 - webhook
 # - cluster_controller
 - certificates
