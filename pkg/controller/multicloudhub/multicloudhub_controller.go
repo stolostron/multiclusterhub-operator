@@ -11,7 +11,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -112,6 +111,16 @@ func (r *ReconcileMultiCloudHub) Reconcile(request reconcile.Request) (reconcile
 		return *result, err
 	}
 
+	result, err = r.ensureDeployment(request, multiCloudHub, r.repoDeployment(multiCloudHub))
+	if result != nil {
+		return *result, err
+	}
+
+	result, err = r.ensureService(request, multiCloudHub, r.repoService(multiCloudHub))
+	if result != nil {
+		return *result, err
+	}
+
 	//Render the templates with a specified CR
 	renderer := rendering.NewRenderer(multiCloudHub)
 	toDeploy, err := renderer.Render()
@@ -153,37 +162,6 @@ func (r *ReconcileMultiCloudHub) Reconcile(request reconcile.Request) (reconcile
 		return reconcile.Result{}, err
 	}
 	return reconcile.Result{}, nil
-}
-
-func (r *ReconcileMultiCloudHub) ensureSecret(request reconcile.Request,
-	instance *operatorsv1alpha1.MultiCloudHub,
-	s *corev1.Secret,
-) (*reconcile.Result, error) {
-	found := &corev1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{
-		Name:      s.Name,
-		Namespace: instance.Namespace,
-	}, found)
-	if err != nil && errors.IsNotFound(err) {
-		// Create the secret
-		log.Info("Creating a new secret", "Secret.Namespace", s.Namespace, "Secret.Name", s.Name)
-		err = r.client.Create(context.TODO(), s)
-
-		if err != nil {
-			// Creation failed
-			log.Error(err, "Failed to create new Secret", "Secret.Namespace", s.Namespace, "Secret.Name", s.Name)
-			return &reconcile.Result{}, err
-		}
-		// Creation was successful
-		return nil, nil
-
-	} else if err != nil {
-		// Error that isn't due to the secret not existing
-		log.Error(err, "Failed to get Secret")
-		return &reconcile.Result{}, err
-	}
-
-	return nil, nil
 }
 
 func (r *ReconcileMultiCloudHub) mongoAuthSecret(v *operatorsv1alpha1.MultiCloudHub) *corev1.Secret {
