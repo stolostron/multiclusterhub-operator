@@ -5,7 +5,7 @@ metadata:
     categories: A list of comma separated categories that your operator falls under.
     certified: 'false'
     containerImage: quay.io/rhibmcollab/hive:2020-03-06-6cbebcb8
-    description: OpenShift cluster provisioning and management at scale.
+    description: OpenShift cluster provisioning and management at scale. 
   name: hive-operator.v0.1.1646-908a8f4a
   namespace: hive
 spec:
