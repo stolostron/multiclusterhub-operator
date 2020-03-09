@@ -63,6 +63,10 @@ jobs:
           make 
           make component/pull 
           make component/test/unit
+          echo Running go test
+          go test -coverprofile=coverage.out -json ./...
+          echo Done with go test
+          cat coverage.out
           make sonar/go
     - stage: test-e2e
       name: "Deploy the image to a cluster and run e2e tests"
