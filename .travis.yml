@@ -59,7 +59,7 @@ jobs:
         # Set the image tag differently for PRs
         - if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then export COMPONENT_TAG_EXTENSION="-PR${TRAVIS_PULL_REQUEST}-${TRAVIS_COMMIT}"; fi;
         # Bootstrap the build harness, pull test image, and run unit tests.  
-        - | 
+        - |
           make 
           make component/pull 
           make component/test/unit
