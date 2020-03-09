@@ -69,7 +69,9 @@ jobs:
           go test -coverprofile=coverage.out -json ./...
           echo Done with go test
           cat coverage.out
-          make sonar/go
+          gosec -fmt sonarqube -out gosec.json -no-fail ./...
+          sonar-scanner --debug
+          # make sonar/go
     - stage: test-e2e
       name: "Deploy the image to a cluster and run e2e tests"
       if: type = pull_request
