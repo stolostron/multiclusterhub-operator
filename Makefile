@@ -9,7 +9,7 @@ BUILD_DIR ?= build
 
 VERSION ?= latest
 IMG ?= multicloudhub-operator
-SECRET_REGISTRY ?= quay.io 
+SECRET_REGISTRY ?= quay.io
 REGISTRY ?= quay.io/rhibmcollab
 BUNDLE_REGISTRY ?= quay.io/open-cluster-management
 GIT_VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
@@ -50,7 +50,7 @@ clean::
 	rm -rf $(BUILD_DIR)/_output
 	rm -f cover.out
 
-install: image push olm-catalog 
+install: image push olm-catalog
 	# need to check for operator group
 	@oc create secret docker-registry quay-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
 	@oc apply -k ./build/_output/olm || true
@@ -62,7 +62,7 @@ uninstall: directuninstall unsubscribe
 
 reinstall: uninstall install
 
-local: 
+local:
 	@operator-sdk run --local --namespace="" --operator-flags="--zap-devel=true"
 
 subscribe: image olm-catalog
@@ -71,6 +71,8 @@ subscribe: image olm-catalog
 
 unsubscribe:
 	@oc delete MultiCloudHub example-multicloudhub || true
+	@oc get helmreleases -o yaml | sed 's/\- app\.ibm\.com\/helmrelease//g' | oc apply -f - || true
+	@oc delete helmreleases --all || true
 	@oc delete csv multicloudhub-operator.v0.0.1 || true
 	@oc delete csv etcdoperator.v0.9.4 || true
 	@oc delete csv multicloud-operators-subscription.v0.1.2 || true
@@ -91,6 +93,9 @@ unsubscribe:
 	@oc delete deploy -n hive hive-controllers || true
 	@oc delete deploy -n hive hiveadmission || true
 	@oc delete apiservice v1.admission.hive.openshift.io || true
+	@oc delete apiservice v1.hive.openshift.io || true
+	@oc delete apiservice v1beta1.webhook.certmanager.k8s.io
+	# Wrong syntax for Makefile @for webhook in $(oc get validatingwebhookconfiguration | grep hive | cut -f 1 -d ' '); do oc delete validatingwebhookconfiguration $webhook; done
 	@oc delete ns hive || true
 	@oc delete scc multicloud-scc || true
 
