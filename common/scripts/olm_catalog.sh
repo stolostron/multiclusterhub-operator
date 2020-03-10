@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+set -x
 
 indent() {
   local INDENT="      "
@@ -150,6 +151,8 @@ EOF
   else
     sed -i "s|${_IMAGE_REFERENCE}|${_SHA_IMAGE_REFERENCE}|g" "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
   fi
+
+  cat "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
 
 
   docker build --file "${BUILDDIR}"/Dockerfile.bundle \
