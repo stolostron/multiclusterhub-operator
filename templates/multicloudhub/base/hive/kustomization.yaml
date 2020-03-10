@@ -16,6 +16,7 @@ resources:
 - crds/hive_v1_selectorsyncset.yaml
 - crds/hive_v1_syncidentityprovider.yaml
 - crds/hive_v1_syncset.yaml
+- crds/hive_v1_syncsetinstance.yaml
 - hive-operatorgroup.yaml
 - hive-operator.yaml
 - hive-config.yaml
