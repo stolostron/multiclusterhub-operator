@@ -146,11 +146,12 @@ EOF
   docker push $_IMAGE_REFERENCE
   _SHA_IMAGE_REFERENCE=$(docker inspect --format='{{index .RepoDigests 0}}' $_IMAGE_REFERENCE)
   if [ "$(uname)" = "Darwin" ]; then
-    sed -i "" "s|${_IMAGE_REFERENCE}|${_SHA_IMAGE_REFERENCE}|g" "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
+    sed -i "" "s|quay.io/rhibmcollab/multicloudhub-operator:latest|${_SHA_IMAGE_REFERENCE}|g" "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
   else
-    sed -i "s|${_IMAGE_REFERENCE}|${_SHA_IMAGE_REFERENCE}|g" "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
+    sed -i "s|quay.io/rhibmcollab/multicloudhub-operator:latest|${_SHA_IMAGE_REFERENCE}|g" "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
   fi
 
+  cat "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
 
   docker build --file "${BUILDDIR}"/Dockerfile.bundle \
     --build-arg OPERATOR_NAME=$IMG \
