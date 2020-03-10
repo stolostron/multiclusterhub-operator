@@ -4,7 +4,7 @@ metadata:
   name: mongodb-sub
 spec:
   channel: charts-v1
-  name: mongodb-chart
+  name: multicloud-mongodb
   placement:
     local: true 
   packageOverrides:
