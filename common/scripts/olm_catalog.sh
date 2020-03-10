@@ -1,7 +1,6 @@
 #!/bin/bash
 
 set -e
-set -x
 
 indent() {
   local INDENT="      "
@@ -153,7 +152,6 @@ EOF
   fi
 
   cat "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
-
 
   docker build --file "${BUILDDIR}"/Dockerfile.bundle \
     --build-arg OPERATOR_NAME=$IMG \
