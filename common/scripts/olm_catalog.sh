@@ -126,6 +126,10 @@ $(cat "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml)
 $PKG
 EOF
 
+unindent "${OLMOUTPUTDIR}"/multicloudhub.crd.yaml
+unindent "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
+removeNamespacePlaceholder "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
+
 if [ ! -z ${TRAVIS_BRANCH+x} ]; then
 cat <<EOF > "${OLMOUTPUTDIR}"/annotations.yaml
 annotations:
@@ -142,11 +146,12 @@ EOF
   docker push $_IMAGE_REFERENCE
   _SHA_IMAGE_REFERENCE=$(docker inspect --format='{{index .RepoDigests 0}}' $_IMAGE_REFERENCE)
   if [ "$(uname)" = "Darwin" ]; then
-    sed -i "" "s|${_IMAGE_REFERENCE}|${_SHA_IMAGE_REFERENCE}|g" "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
+    sed -i "" "s|quay.io/rhibmcollab/multicloudhub-operator:latest|${_SHA_IMAGE_REFERENCE}|g" "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
   else
-    sed -i "s|${_IMAGE_REFERENCE}|${_SHA_IMAGE_REFERENCE}|g" "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
+    sed -i "s|quay.io/rhibmcollab/multicloudhub-operator:latest|${_SHA_IMAGE_REFERENCE}|g" "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
   fi
 
+  cat "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
 
   docker build --file "${BUILDDIR}"/Dockerfile.bundle \
     --build-arg OPERATOR_NAME=$IMG \
@@ -157,10 +162,6 @@ EOF
     --build-arg ANNOTATION_YML="_output/olm/annotations.yaml" "${BUILDDIR}" -t $BUNDLE_REGISTRY/$IMG-bundle:$BUNDLE_VERSION$COMPONENT_TAG_EXTENSION
 
 fi
-
-unindent "${OLMOUTPUTDIR}"/multicloudhub.crd.yaml
-unindent "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
-removeNamespacePlaceholder "${OLMOUTPUTDIR}"/multicloudhub.csv.yaml
 
 \cp -r "${PKGDIR}" "${OLMOUTPUTDIR}"
 rm -rf "${DEPLOYDIR}"/olm-catalog

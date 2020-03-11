@@ -4,4 +4,4 @@ metadata:
   name: default
 spec:
   targetNamespaces:
-  - test2
+  - acm-install
