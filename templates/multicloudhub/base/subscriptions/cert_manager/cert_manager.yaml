@@ -14,9 +14,9 @@ spec:
         value: |
           imageTagPostfix: "{{POSTFIX}}"
           clusterResourceNamespace: "{{NAMESPACE}}"
+          imagePullSecret: "{{PULLSECRET}}"
           global:
             isOpenshift: true
-            pullSecret: "{{PULLSECRET}}"
           image:
             repository: "{{IMAGEREPO}}"
             pullPolicy: "{{PULLPOLICY}}"
