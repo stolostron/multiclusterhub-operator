@@ -51,12 +51,12 @@
               "imagePullPolicy": "Always",
               "imagePullSecret": "quay-secret",
               "imageRepository": "quay.io/open-cluster-management",
-              "imageTagPostfix": "SNAPSHOT-2020-03-11-16-11-42",
+              "imageTagPostfix": "",
               "mongo": {
                 "endpoints": "mongo-0.mongo.default",
                 "replicaSet": "rs0"
               },
-              "ocpHost": "holy-pheasant.dev01.red-chesterfield.com",
+              "ocpHost": "",
               "version": "latest"
             }
           }
