@@ -5,7 +5,7 @@ metadata:
     alm-examples: |-
       [
         {
-          "apiVersion": "operators.multicloud.ibm.com/v1alpha1",
+          "apiVersion": "operators.open-cluster-management.io/v1alpha1",
           "kind": "MultiCloudHub",
           "metadata": {
             "name": "example-multicloudhub",
@@ -51,12 +51,12 @@ metadata:
             "imagePullPolicy": "Always",
             "imagePullSecret": "quay-secret",
             "imageRepository": "quay.io/open-cluster-management",
-            "imageTagPostfix": "",
+            "imageTagPostfix": "SNAPSHOT-2020-03-11-16-11-42",
             "mongo": {
               "endpoints": "mongo-0.mongo.default",
               "replicaSet": "rs0"
             },
-            "ocpHost": "",
+            "ocpHost": "holy-pheasant.dev01.red-chesterfield.com",
             "version": "latest"
           }
         }
@@ -97,7 +97,7 @@ spec:
     - description: MultiCloudHub is the Schema for the multicloudhubs API
       displayName: Multicloudhub Operator
       kind: MultiCloudHub
-      name: multicloudhubs.operators.multicloud.ibm.com
+      name: multicloudhubs.operators.open-cluster-management.io
       version: v1alpha1
   description: Placeholder description
   displayName: Multicloudhub Operator
@@ -164,7 +164,7 @@ spec:
           verbs:
           - '*'
         - apiGroups:
-          - operators.multicloud.ibm.com
+          - operators.open-cluster-management.io
           resources:
           - '*'
           verbs:
@@ -274,7 +274,7 @@ spec:
                   value: multicloudhub-operator
                 - name: TEMPLATES_PATH
                   value: /usr/local/templates
-                image: quay.io/rhibmcollab/multicloudhub-operator:latest
+                image: quay.io/rhibmcollab/quay.io/rhibmcollab/multicloudhub-operator:latest
                 imagePullPolicy: Always
                 name: multicloudhub-operator
                 resources: {}

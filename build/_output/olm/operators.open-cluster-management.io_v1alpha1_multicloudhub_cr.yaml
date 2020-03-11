@@ -1,4 +1,4 @@
-apiVersion: operators.multicloud.ibm.com/v1alpha1
+apiVersion: operators.open-cluster-management.io/v1alpha1
 kind: MultiCloudHub
 metadata:
   name: example-multicloudhub
@@ -6,10 +6,10 @@ metadata:
 spec:
   version: latest
   imageRepository: "quay.io/open-cluster-management"
-  imageTagPostfix: ""
+  imageTagPostfix: "SNAPSHOT-2020-03-11-16-11-42"
   imagePullPolicy: Always
   imagePullSecret: quay-secret
-  ocpHost: ""
+  ocpHost: "holy-pheasant.dev01.red-chesterfield.com"
   foundation:
     apiserver:
       configuration:

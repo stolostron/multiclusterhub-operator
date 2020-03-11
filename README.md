@@ -108,5 +108,5 @@ or after the `multicloudhub.resources.yaml` is applied, deploy the operator in O
 > Note: the etcd and mongo need to be installed in advance
 
 ```bash
-kubectl -n multicloud-system apply -f deploy/crds/operators.multicloud.ibm.com_v1alpha1_multicloudhub_cr.yaml
+kubectl -n multicloud-system apply -f deploy/crds/operators.open-cluster-management.io_v1alpha1_multicloudhub_cr.yaml
 ```

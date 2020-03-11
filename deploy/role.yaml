@@ -63,7 +63,7 @@ rules:
   verbs:
   - '*'
 - apiGroups:
-  - operators.multicloud.ibm.com
+  - operators.open-cluster-management.io
   resources:
   - '*'
   verbs:

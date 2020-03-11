@@ -9,7 +9,6 @@ resources:
 - etcd
 - mongodb
 - webhook
-# - cluster_controller
 - certificates
 - subscriptions
 - topology_aggregator

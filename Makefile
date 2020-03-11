@@ -84,7 +84,7 @@ unsubscribe:
 	@oc delete crd etcdbackups.etcd.database.coreos.com || true
 	@oc delete crd etcdclusters.etcd.database.coreos.com || true
 	@oc delete crd etcdrestores.etcd.database.coreos.com || true
-	@oc delete crd multicloudhubs.operators.multicloud.ibm.com || true
+	@oc delete crd multicloudhubs.operators.open-cluster-management.io || true
 	@oc delete subscription multicloudhub-operator || true
 	@oc delete subscription etcdoperator.v0.9.4 || true
 	@oc delete subscription multicloud-operators-subscription.v0.1.2 || true

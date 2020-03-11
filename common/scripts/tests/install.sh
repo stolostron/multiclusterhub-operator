@@ -104,12 +104,12 @@ echo ""
 
 ## 4. Update Namespace
 
-sed -i -e "s/namespace:.*/namespace: $NAMESPACE/g" deploy/crds/operators.multicloud.ibm.com_v1alpha1_multicloudhub_cr.yaml
-sed -i -e "s/endpoints: mongo-0.mongo.*/endpoints: mongo-0.mongo.$NAMESPACE/g" deploy/crds/operators.multicloud.ibm.com_v1alpha1_multicloudhub_cr.yaml
-sed -i -e "s/endpoints: http:\/\/etcd-cluster.*/endpoints: http:\/\/etcd-cluster.$NAMESPACE.svc.cluster.local:2379/g" deploy/crds/operators.multicloud.ibm.com_v1alpha1_multicloudhub_cr.yaml
+sed -i -e "s/namespace:.*/namespace: $NAMESPACE/g" deploy/crds/operators.open-cluster-management.io_v1alpha1_multicloudhub_cr.yaml
+sed -i -e "s/endpoints: mongo-0.mongo.*/endpoints: mongo-0.mongo.$NAMESPACE/g" deploy/crds/operators.open-cluster-management.io_v1alpha1_multicloudhub_cr.yaml
+sed -i -e "s/endpoints: http:\/\/etcd-cluster.*/endpoints: http:\/\/etcd-cluster.$NAMESPACE.svc.cluster.local:2379/g" deploy/crds/operators.open-cluster-management.io_v1alpha1_multicloudhub_cr.yaml
 sed -i -e "s/namespace:.*/namespace: $NAMESPACE/g" deploy/kustomization.yaml
 sed -i -e "s/sourceNamespace:.*/sourceNamespace: $NAMESPACE/g" deploy/subscription.yaml
-rm -rf deploy/crds/operators.multicloud.ibm.com_v1alpha1_multicloudhub_cr.yaml-e
+rm -rf deploy/crds/operators.open-cluster-management.io_v1alpha1_multicloudhub_cr.yaml-e
 rm -rf deploy/kustomization.yaml-e
 rm -rf deploy/subscription.yaml-e
 
@@ -119,7 +119,7 @@ if [[ "$force" != "true" ]]; then
     echo ""
     echo "Ensure the file(s) below are correctly configured -"
     echo ""
-    echo "- 'deploy/crds/operators.multicloud.ibm.com_v1alpha1_multicloudhub_cr.yaml'"
+    echo "- 'deploy/crds/operators.open-cluster-management.io_v1alpha1_multicloudhub_cr.yaml'"
     echo "-- Ensure 'spec.imageTagPostfix' is accurately set. (Ex- SNAPSHOT-YYYY-MM-DD-hh-mm-ss)."
     echo "-- Apply any changes to the CR if necessary"
     echo ""
@@ -139,10 +139,10 @@ echo "Beginning installation ..."
 _output=$(make install 2>/dev/null)
 echo ""
 
-while [[ $_output != "multicloudhub.operators.multicloud.ibm.com/example-multicloudhub created" ]] # While string is different or empty...
+while [[ $_output != "multicloudhub.operators.open-cluster-management.io/example-multicloudhub created" ]] # While string is different or empty...
 do
     echo "Waiting for Operator to come online ..."
-    _output=$(oc apply -f deploy/crds/operators.multicloud.ibm.com_v1alpha1_multicloudhub_cr.yaml 2>/dev/null)
+    _output=$(oc apply -f deploy/crds/operators.open-cluster-management.io_v1alpha1_multicloudhub_cr.yaml 2>/dev/null)
     sleep 10
 done 
 

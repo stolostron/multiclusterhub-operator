@@ -27,9 +27,9 @@ var log = logf.Log.WithName("multicloudhub_webhook")
 const (
 	resourceName          = "multicloudhubs"
 	operatorName          = "multicloudhub-operator"
-	mutatingWebhookName   = "multicloudhub.mutating-webhook.multicloud.ibm.com"
+	mutatingWebhookName   = "multicloudhub.mutating-webhook.open-cluster-management.io"
 	mutatingCfgName       = "multicloudhub-operator-mutating-webhook"
-	validatingWebhookName = "multicloudhub.validating-webhook.multicloud.ibm.com"
+	validatingWebhookName = "multicloudhub.validating-webhook.open-cluster-management.io"
 	validatingCfgName     = "multicloudhub-operator-validating-webhook"
 )
 
