@@ -71,6 +71,9 @@ subscribe: image olm-catalog
 	@oc apply -f build/_output/olm/multicloudhub.resources.yaml
 
 unsubscribe:
+	@oc delete MultiCloudHub example-multicloudhub || true
+	@oc get helmreleases -o yaml | sed 's/\- app\.ibm\.com\/helmrelease//g' | oc apply -f - || true
+	@oc delete helmreleases --all || true
 	@oc delete csv multicloudhub-operator.v0.0.1 || true
 	@oc delete csv etcdoperator.v0.9.4 || true
 	@oc delete csv multicloud-operators-subscription.v0.1.2 || true
@@ -93,8 +96,6 @@ unsubscribe:
 	@oc delete apiservice v1.admission.hive.openshift.io || true
 	@oc delete apiservice v1.hive.openshift.io || true
 	@oc delete apiservice v1beta1.webhook.certmanager.k8s.io || true
-	@oc delete helmreleases --all || true
-	@oc delete crd helmreleases.app.ibm.com || true
 	# Wrong syntax for Makefile @for webhook in $(oc get validatingwebhookconfiguration | grep hive | cut -f 1 -d ' '); do oc delete validatingwebhookconfiguration $webhook; done
 	@oc delete ns hive || true
 	@oc delete scc multicloud-scc || true
