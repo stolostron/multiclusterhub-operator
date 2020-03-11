@@ -14,7 +14,7 @@ spec:
     spec:
       serviceAccountName: multicloudhub-operator
       imagePullSecrets:
-      - name: quay-secret
+      - name: multiclusterhub-operator-pull-secret
       containers:
         - name: multicloudhub-operator
           image: multicloudhub-operator:latest
