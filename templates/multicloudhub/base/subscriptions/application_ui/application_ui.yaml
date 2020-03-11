@@ -14,7 +14,7 @@ spec:
         value: |
           imageTagPostfix: "{{POSTFIX}}"
           pullSecret: "{{PULLSECRET}}"
-          mcmapplicationui:
+          applicationui:
             image:
               repository: "{{IMAGEREPO}}"
               pullPolicy: "{{PULLPOLICY}}"
