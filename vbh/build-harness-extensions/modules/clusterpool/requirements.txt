@@ -1,0 +1,4 @@
+gitpython
+paramiko
+travispy
+python-dateutil
