@@ -6,7 +6,11 @@ import (
 	"strings"
 
 	"github.com/fatih/structs"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/rest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/kustomize/v3/pkg/resource"
 
@@ -381,4 +385,35 @@ func UpdateNamespace(u *unstructured.Unstructured) bool {
 		}
 	}
 	return updateNamespace
+}
+
+// GetOCPHost discovers the OCP host url value from the kubernetes api
+func GetOCPHost() (string, error) {
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return "", err
+	}
+
+	dynClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return "", err
+	}
+
+	infraRes := schema.GroupVersionResource{Group: "config.openshift.io", Version: "v1", Resource: "infrastructures"}
+	crdClient := dynClient.Resource(infraRes)
+
+	crd, err := crdClient.Get("cluster", metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	ocpHost, ok, err := unstructured.NestedString(crd.UnstructuredContent(), "status", "etcdDiscoveryDomain")
+	if err != nil {
+		return "", err
+	}
+	if !ok {
+		return "", fmt.Errorf("Cluster content did not contain the nested value 'status.etcdDiscoveryDomain'")
+	}
+
+	return ocpHost, nil
 }

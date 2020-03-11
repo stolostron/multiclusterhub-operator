@@ -106,6 +106,15 @@ func (r *ReconcileMultiCloudHub) Reconcile(request reconcile.Request) (reconcile
 		return reconcile.Result{}, err
 	}
 
+	if multiCloudHub.Spec.OCPHOST == "" {
+		ocpHost, err := rendering.GetOCPHost()
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+		reqLogger.Info("OCPHOST not provided, resolving value", "ocpHost", ocpHost)
+		multiCloudHub.Spec.OCPHOST = ocpHost
+	}
+
 	var result *reconcile.Result
 	result, err = r.ensureSecret(request, multiCloudHub, r.mongoAuthSecret(multiCloudHub))
 	if result != nil {
