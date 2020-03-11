@@ -24,7 +24,14 @@ endif
 ## WARNING: OPERATOR-SDK - IMAGE_DESCRIPTION & DOCKER_BUILD_OPTS MUST NOT CONTAIN ANY SPACES
 IMAGE_DESCRIPTION ?= RCM_Controller
 DOCKER_FILE        = $(BUILD_DIR)/Dockerfile
-@@ -38,11 +52,6 @@ DOCKER_BUILD_OPTS  = --build-arg "VCS_REF=$(VCS_REF)" \
+DOCKER_REGISTRY   ?= quay.io
+DOCKER_NAMESPACE  ?= open-cluster-management
+DOCKER_IMAGE      ?= $(COMPONENT_NAME)
+DOCKER_BUILD_TAG  ?= latest
+DOCKER_TAG        ?= $(shell whoami)
+DOCKER_BUILD_OPTS  = --build-arg "VCS_REF=$(VCS_REF)" \
+	--build-arg "VCS_URL=$(GIT_REMOTE_URL)" \
+	--build-arg "IMAGE_NAME=$(DOCKER_IMAGE)" \
 	--build-arg "IMAGE_DESCRIPTION=$(IMAGE_DESCRIPTION)" \
 	--build-arg "ARCH_TYPE=$(ARCH_TYPE)"
 
