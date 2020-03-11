@@ -14,12 +14,6 @@ else
 -include vbh/.build-harness-vendorized
 endif
 
-# Only use git commands if it exists
-ifdef GIT
-GIT_COMMIT      = $(shell git rev-parse --short HEAD)
-GIT_REMOTE_URL  = $(shell git config --get remote.origin.url)
-VCS_REF     = $(if $(shell git status --porcelain),$(GIT_COMMIT)-$(BUILD_DATE),$(GIT_COMMIT))
-endif
 
 ## WARNING: OPERATOR-SDK - IMAGE_DESCRIPTION & DOCKER_BUILD_OPTS MUST NOT CONTAIN ANY SPACES
 IMAGE_DESCRIPTION ?= RCM_Controller
