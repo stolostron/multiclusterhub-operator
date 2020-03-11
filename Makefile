@@ -52,6 +52,7 @@ clean::
 
 install: image push olm-catalog
 	# need to check for operator group
+	@oc create secret docker-registry multiclusterhub-operator-pull-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
 	@oc create secret docker-registry quay-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
 	@oc apply -k ./build/_output/olm || true
 
