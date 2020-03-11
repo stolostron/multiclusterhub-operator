@@ -169,9 +169,6 @@ rm -rf "${DEPLOYDIR}"/olm-catalog
 rm -f ${OLMOUTPUTDIR}/*/*/*.yamle
 rm -f ${OLMOUTPUTDIR}/*/*/*.yaml-e 
 
-cp "${DEPLOYDIR}"/role.yaml "${OLMOUTPUTDIR}"
-cp "${DEPLOYDIR}"/role_binding.yaml "${OLMOUTPUTDIR}"
-cp "${DEPLOYDIR}"/service_account.yaml "${OLMOUTPUTDIR}"
 cp "${DEPLOYDIR}"/subscription.yaml "${OLMOUTPUTDIR}"
 cp "${DEPLOYDIR}"/operator.yaml "${OLMOUTPUTDIR}"
 cp "${DEPLOYDIR}"/crds/*_cr.yaml "${OLMOUTPUTDIR}"
@@ -184,7 +181,4 @@ echo "Created ${OLMOUTPUTDIR}/multicloudhub.crd.yaml"
 echo "Created ${OLMOUTPUTDIR}/multicloudhub.csv.yaml"
 echo "Created ${OLMOUTPUTDIR}/operator.yaml"
 echo "Created ${OLMOUTPUTDIR}/subscription.yaml"
-echo "Created ${OLMOUTPUTDIR}/service_account.yaml"
-echo "Created ${OLMOUTPUTDIR}/role.yaml"
-echo "Created ${OLMOUTPUTDIR}/role_binding.yaml"
 echo "Created ${OLMOUTPUTDIR}/kustomization.yaml"

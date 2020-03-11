@@ -675,7 +675,7 @@ data:
                       name: multicloudhub-operator
                       resources: {}
                     imagePullSecrets:
-                    - name: quay-secret
+                    - name: multiclusterhub-operator-pull-secret
                     serviceAccountName: multicloudhub-operator
           strategy: deployment
         installModes:

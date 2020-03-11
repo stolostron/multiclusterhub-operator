@@ -6,9 +6,6 @@ images: # updates operator.yaml with the dev image
   newTag: latest
 
 resources:
-- role.yaml
-- role_binding.yaml
-- service_account.yaml
 - multicloudhub.resources.yaml
 - subscription.yaml
 - operator.yaml
