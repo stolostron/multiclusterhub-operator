@@ -4,4 +4,4 @@ metadata:
   name: default
 spec:
   targetNamespaces:
-  - default
+    - default

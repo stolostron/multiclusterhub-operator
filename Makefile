@@ -8,7 +8,7 @@ GITHUB_TOKEN ?=
 BUILD_DIR ?= build
 
 VERSION ?= latest
-IMG ?= multicloudhub-operator
+IMG ?= multiclusterhub-operator
 SECRET_REGISTRY ?= quay.io
 REGISTRY ?= quay.io/rhibmcollab
 BUNDLE_REGISTRY ?= quay.io/open-cluster-management
@@ -68,27 +68,27 @@ local:
 
 subscribe: image olm-catalog
 	# @kubectl create secret docker-registry quay-secret --docker-server=$(REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
-	@oc apply -f build/_output/olm/multicloudhub.resources.yaml
+	@oc apply -f build/_output/olm/multiclusterhub.resources.yaml
 
 unsubscribe:
-	@oc delete MultiCloudHub example-multicloudhub || true
+	@oc delete MultiClusterHub example-multiclusterhub || true
 	@oc get helmreleases -o yaml | sed 's/\- app\.ibm\.com\/helmrelease//g' | oc apply -f - || true
-	@oc delete csv multicloudhub-operator.v0.0.1 || true
+	@oc delete csv multiclusterhub-operator.v0.0.1 || true
 	@oc delete csv etcdoperator.v0.9.4 || true
 	@oc delete csv multicloud-operators-subscription.v0.1.2 || true
 	@oc delete csv multicloud-operators-subscription.v0.1.1 || true
-	@oc delete MultiCloudHub example-multicloudhub || true
+	@oc delete MultiClusterHub example-multiclusterhub || true
 	@oc delete crd channels.app.ibm.com || true
 	@oc delete crd deployables.app.ibm.com || true
 	@oc delete crd subscriptions.app.ibm.com || true
 	@oc delete crd etcdbackups.etcd.database.coreos.com || true
 	@oc delete crd etcdclusters.etcd.database.coreos.com || true
 	@oc delete crd etcdrestores.etcd.database.coreos.com || true
-	@oc delete crd multicloudhubs.operators.open-cluster-management.io || true
-	@oc delete subscription multicloudhub-operator || true
+	@oc delete crd multiclusterhubs.operators.open-cluster-management.io || true
+	@oc delete subscription multiclusterhub-operator || true
 	@oc delete subscription etcdoperator.v0.9.4 || true
 	@oc delete subscription multicloud-operators-subscription.v0.1.2 || true
-	@oc delete catalogsource multicloudhub-operator-registry || true
+	@oc delete catalogsource multiclusterhub-operator-registry || true
 	@oc delete deploy -n hive hive-controllers || true
 	@oc delete deploy -n hive hiveadmission || true
 	@oc delete apiservice v1.admission.hive.openshift.io || true

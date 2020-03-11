@@ -6,9 +6,9 @@ metadata:
       [
         {
           "apiVersion": "operators.open-cluster-management.io/v1alpha1",
-          "kind": "MultiCloudHub",
+          "kind": "MultiClusterHub",
           "metadata": {
-            "name": "example-multicloudhub",
+            "name": "example-multiclusterhub",
             "namespace": "default"
           },
           "spec": {
@@ -62,7 +62,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-  name: multicloudhub-operator.v0.0.1
+  name: multiclusterhub-operator.v0.0.1
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -94,13 +94,13 @@ spec:
       displayName: Subscription
       description: Subscribe resources from a channel according to its package filters
     owned:
-    - description: MultiCloudHub is the Schema for the multicloudhubs API
-      displayName: Multicloudhub Operator
-      kind: MultiCloudHub
-      name: multicloudhubs.operators.open-cluster-management.io
+    - description: MultiClusterHub is the Schema for the multiclusterhubs API
+      displayName: MultiClusterHub Operator
+      kind: MultiClusterHub
+      name: multiclusterhubs.operators.open-cluster-management.io
       version: v1alpha1
   description: Placeholder description
-  displayName: Multicloudhub Operator
+  displayName: Multiclusterhub Operator
   install:
     spec:
       clusterPermissions:
@@ -139,7 +139,7 @@ spec:
         - apiGroups:
           - apps
           resourceNames:
-          - multicloudhub-operator
+          - multiclusterhub-operator
           resources:
           - deployments/finalizers
           verbs:
@@ -238,23 +238,23 @@ spec:
           - securitycontextconstraints
           verbs:
           - '*'
-        serviceAccountName: multicloudhub-operator
+        serviceAccountName: multiclusterhub-operator
       deployments:
-      - name: multicloudhub-operator
+      - name: multiclusterhub-operator
         spec:
           replicas: 1
           selector:
             matchLabels:
-              name: multicloudhub-operator
+              name: multiclusterhub-operator
           strategy: {}
           template:
             metadata:
               labels:
-                name: multicloudhub-operator
+                name: multiclusterhub-operator
             spec:
               containers:
               - command:
-                - multicloudhub-operator
+                - multiclusterhub-operator
                 env:
                 - name: WATCH_NAMESPACE
                   valueFrom:
@@ -269,18 +269,18 @@ spec:
                     fieldRef:
                       fieldPath: metadata.namespace
                 - name: OPERATOR_NAME
-                  value: multicloudhub-operator
+                  value: multiclusterhub-operator
                 - name: USER
-                  value: multicloudhub-operator
+                  value: multiclusterhub-operator
                 - name: TEMPLATES_PATH
                   value: /usr/local/templates
-                image: quay.io/rhibmcollab/multicloudhub-operator:latest
+                image: quay.io/rhibmcollab/multiclusterhub-operator:latest
                 imagePullPolicy: Always
-                name: multicloudhub-operator
+                name: multiclusterhub-operator
                 resources: {}
               imagePullSecrets:
               - name: multiclusterhub-operator-pull-secret
-              serviceAccountName: multicloudhub-operator
+              serviceAccountName: multiclusterhub-operator
     strategy: deployment
   installModes:
   - supported: true

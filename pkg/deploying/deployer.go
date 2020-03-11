@@ -47,7 +47,7 @@ func ListDeployments(c runtimeclient.Client, namespace string) (bool, []appsv1.D
 	}
 	ready := true
 	for _, deploy := range deployList.Items {
-		if deploy.Name == "multicloudhub-operator" {
+		if deploy.Name == "multiclusterhub-operator" {
 			continue
 		}
 		if deploy.Status.UnavailableReplicas != 0 {

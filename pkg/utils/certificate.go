@@ -32,7 +32,7 @@ type certificate struct {
 }
 
 const (
-	WebhookServiceName   = "multicloudhub-operator-webhook"
+	WebhookServiceName   = "multiclusterhub-operator-webhook"
 	APIServerSecretName  = "mcm-apiserver-self-signed-secrets"
 	KlusterletSecretName = "mcm-klusterlet-self-signed-secrets"
 
@@ -48,7 +48,7 @@ func GenerateWebhookCerts(certDir string) (string, []byte, error) {
 		return "", nil, err
 	}
 
-	ca, err := GenerateSelfSignedCACert("multicloudhub-webhook")
+	ca, err := GenerateSelfSignedCACert("multiclusterhub-webhook")
 	if err != nil {
 		return "", nil, err
 	}
@@ -76,8 +76,8 @@ func GenerateWebhookCerts(certDir string) (string, []byte, error) {
 	return namespace, []byte(ca.Cert), nil
 }
 
-func GenerateAPIServerSecret(client runtimeclient.Client, multiCloudHub *operatorsv1alpha1.MultiCloudHub) error {
-	name := multiCloudHub.Spec.Apiserver.ApiserverSecret
+func GenerateAPIServerSecret(client runtimeclient.Client, multiClusterHub *operatorsv1alpha1.MultiClusterHub) error {
+	name := multiClusterHub.Spec.Apiserver.ApiserverSecret
 	if name != APIServerSecretName {
 		return nil
 	}
@@ -88,7 +88,7 @@ func GenerateAPIServerSecret(client runtimeclient.Client, multiCloudHub *operato
 	err = client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: namespace}, &corev1.Secret{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			ca, err := GenerateSelfSignedCACert("multicloudhub-api")
+			ca, err := GenerateSelfSignedCACert("multiclusterhub-api")
 			if err != nil {
 				return err
 			}
@@ -106,7 +106,7 @@ func GenerateAPIServerSecret(client runtimeclient.Client, multiCloudHub *operato
 					Name:      name,
 					Namespace: namespace,
 					OwnerReferences: []metav1.OwnerReference{
-						*metav1.NewControllerRef(multiCloudHub, multiCloudHub.GetObjectKind().GroupVersionKind())},
+						*metav1.NewControllerRef(multiClusterHub, multiClusterHub.GetObjectKind().GroupVersionKind())},
 				},
 				Data: map[string][]byte{
 					"ca.crt":  []byte(ca.Cert),
@@ -120,8 +120,8 @@ func GenerateAPIServerSecret(client runtimeclient.Client, multiCloudHub *operato
 	return nil
 }
 
-func GenerateKlusterletSecret(client runtimeclient.Client, multiCloudHub *operatorsv1alpha1.MultiCloudHub) error {
-	name := multiCloudHub.Spec.Apiserver.KlusterletSecret
+func GenerateKlusterletSecret(client runtimeclient.Client, multiClusterHub *operatorsv1alpha1.MultiClusterHub) error {
+	name := multiClusterHub.Spec.Apiserver.KlusterletSecret
 	if name != KlusterletSecretName {
 		return nil
 	}
@@ -132,11 +132,11 @@ func GenerateKlusterletSecret(client runtimeclient.Client, multiCloudHub *operat
 	err = client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: namespace}, &corev1.Secret{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			ca, err := GenerateSelfSignedCACert("multicloudhub-klusterlet")
+			ca, err := GenerateSelfSignedCACert("multiclusterhub-klusterlet")
 			if err != nil {
 				return err
 			}
-			cert, err := GenerateSignedCert("multicloudhub-klusterlet", []string{}, ca)
+			cert, err := GenerateSignedCert("multiclusterhub-klusterlet", []string{}, ca)
 			if err != nil {
 				return err
 			}
@@ -145,7 +145,7 @@ func GenerateKlusterletSecret(client runtimeclient.Client, multiCloudHub *operat
 					Name:      name,
 					Namespace: namespace,
 					OwnerReferences: []metav1.OwnerReference{
-						*metav1.NewControllerRef(multiCloudHub, multiCloudHub.GetObjectKind().GroupVersionKind())},
+						*metav1.NewControllerRef(multiClusterHub, multiClusterHub.GetObjectKind().GroupVersionKind())},
 				},
 				Data: map[string][]byte{
 					"ca.crt":  []byte(ca.Cert),

@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: multicloudhub-repo
+  name: multiclusterhub-repo
   labels:
-    app: multicloudhub-repo
+    app: multiclusterhub-repo
 spec:
   selector:
     matchLabels:
-      app: multicloudhub-repo
+      app: multiclusterhub-repo
   replicas: 1
   template:
     metadata:
       labels:
-        app: multicloudhub-repo
+        app: multiclusterhub-repo
     spec:
       containers:
-      - name: multicloudhub-repo
+      - name: multiclusterhub-repo
         image: multicloudhub-repo:1.0.0
         ports:
           - containerPort: 3000
