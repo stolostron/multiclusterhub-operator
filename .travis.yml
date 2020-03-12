@@ -22,7 +22,7 @@ env:
     # Required
     - OS=linux
     - COMPONENT_TAG_EXTENSION="-${TRAVIS_COMMIT}"
-    - COMPONENT_NAME=multicloudhub-operator
+    - COMPONENT_NAME=multiclusterhub-operator
 
     # Component Specific
     - COMPONENT_INIT_COMMAND=${TRAVIS_BUILD_DIR}/cicd-scripts/install-dependencies.sh
@@ -48,7 +48,7 @@ jobs:
           make
           make component/build
           make component/push
-          COMPONENT_NAME=multicloudhub-operator-bundle
+          COMPONENT_NAME=multiclusterhub-operator-bundle
           make component/build
           make component/push
           make security/scans
@@ -82,5 +82,5 @@ jobs:
           make 
           make pipeline-manifest/update PIPELINE_MANIFEST_COMPONENT_SHA256=${TRAVIS_COMMIT} PIPELINE_MANIFEST_COMPONENT_REPO=${TRAVIS_REPO_SLUG} PIPELINE_MANIFEST_BRANCH=${TRAVIS_BRANCH}
           rm -rf pipeline
-          COMPONENT_NAME=multicloudhub-operator-bundle
+          COMPONENT_NAME=multiclusterhub-operator-bundle
           make pipeline-manifest/update PIPELINE_MANIFEST_COMPONENT_SHA256=${TRAVIS_COMMIT} PIPELINE_MANIFEST_COMPONENT_REPO=${TRAVIS_REPO_SLUG} PIPELINE_MANIFEST_BRANCH=${TRAVIS_BRANCH}

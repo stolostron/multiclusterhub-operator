@@ -1,20 +1,20 @@
   apiVersion: apiextensions.k8s.io/v1beta1
   kind: CustomResourceDefinition
   metadata:
-    name: multicloudhubs.operators.multicloud.ibm.com
+    name: multiclusterhubs.operators.open-cluster-management.io
   spec:
-    group: operators.multicloud.ibm.com
+    group: operators.open-cluster-management.io
     names:
-      kind: MultiCloudHub
-      listKind: MultiCloudHubList
-      plural: multicloudhubs
-      singular: multicloudhub
+      kind: MultiClusterHub
+      listKind: MultiClusterHubList
+      plural: multiclusterhubs
+      singular: multiclusterhub
     scope: Namespaced
     subresources:
       status: {}
     validation:
       openAPIV3Schema:
-        description: MultiCloudHub is the Schema for the multicloudhubs API
+        description: MultiClusterHub is the Schema for the multiclusterhubs API
         properties:
           apiVersion:
             description:
@@ -31,7 +31,7 @@
           metadata:
             type: object
           spec:
-            description: MultiCloudHubSpec defines the desired state of MultiCloudHub
+            description: MultiClusterHubSpec defines the desired state of MultiClusterHub
             properties:
               etcd:
                 description: Spec of etcd
@@ -231,13 +231,13 @@
                   - failedProvisionConfig
                 type: object
               imagePullPolicy:
-                description: Pull policy of the MultiCloud hub images
+                description: Pull policy of the MultiCluster hub images
                 type: string
               imagePullSecret:
-                description: Pull secret of the MultiCloud hub images
+                description: Pull secret of the MultiCluster hub images
                 type: string
               imageRepository:
-                description: Repository of the MultiCloud hub images
+                description: Repository of the MultiCluster hub images
                 type: string
               imageTagSuffix:
                 description: ImageTagSuffix of the MultiCloud hub images
@@ -281,7 +281,7 @@
                 description: Hostname portion of OCP Domain
                 type: string
               version:
-                description: Version of the MultiCloud hub
+                description: Version of the MultiCluster hub
                 type: string
             required:
               - etcd
@@ -294,7 +294,7 @@
               - version
             type: object
           status:
-            description: MultiCloudHubStatus defines the observed state of MultiCloudHub
+            description: MultiClusterHubStatus defines the observed state of MultiClusterHub
             properties:
               deployments:
                 description: Represents the status of each deployment
@@ -397,7 +397,7 @@
                   type: object
                 type: array
               phase:
-                description: Represents the running phase of the MultiCloudHub
+                description: Represents the running phase of the MultiClusterHub
                 type: string
             required:
               - phase

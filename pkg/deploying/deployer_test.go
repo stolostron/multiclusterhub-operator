@@ -10,7 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -53,7 +52,7 @@ func TestUpdateDeployment(t *testing.T) {
 
 func TestListDeployments(t *testing.T) {
 	fakeclient := fake.NewFakeClient()
-	fakeclient.Create(context.TODO(), newDeployment("multicloudhub-operator", "ns", 1))
+	fakeclient.Create(context.TODO(), newDeployment("multiclusterhub-operator", "ns", 1))
 	fakeclient.Create(context.TODO(), newDeployment("dep1", "ns", 1))
 	fakeclient.Create(context.TODO(), newDeployment("dep2", "ns", 1))
 	fakeclient.Create(context.TODO(), newDeployment("dep3", "ns1", 1))

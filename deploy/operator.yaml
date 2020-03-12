@@ -1,26 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: multicloudhub-operator
+  name: multiclusterhub-operator
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: multicloudhub-operator
+      name: multiclusterhub-operator
   template:
     metadata:
       labels:
-        name: multicloudhub-operator
+        name: multiclusterhub-operator
     spec:
-      serviceAccountName: multicloudhub-operator
+      serviceAccountName: multiclusterhub-operator
       imagePullSecrets:
       - name: multiclusterhub-operator-pull-secret
       containers:
-        - name: multicloudhub-operator
-          image: multicloudhub-operator:latest
+        - name: multiclusterhub-operator
+          image: multiclusterhub-operator:latest
           imagePullPolicy: Always
           command:
-          - multicloudhub-operator
+          - multiclusterhub-operator
           env:
             - name: WATCH_NAMESPACE
               valueFrom:
@@ -35,8 +35,8 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: OPERATOR_NAME
-              value: "multicloudhub-operator"
+              value: "multiclusterhub-operator"
             - name: USER
-              value: "multicloudhub-operator"
+              value: "multiclusterhub-operator"
             - name: TEMPLATES_PATH
               value: "/usr/local/templates"

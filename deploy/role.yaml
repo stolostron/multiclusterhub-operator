@@ -2,7 +2,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   creationTimestamp: null
-  name: multicloudhub-operator
+  name: multiclusterhub-operator
 rules:
 - apiGroups:
   - ""
@@ -38,7 +38,7 @@ rules:
 - apiGroups:
   - apps
   resourceNames:
-  - multicloudhub-operator
+  - multiclusterhub-operator
   resources:
   - deployments/finalizers
   verbs:
@@ -63,7 +63,7 @@ rules:
   verbs:
   - '*'
 - apiGroups:
-  - operators.multicloud.ibm.com
+  - operators.open-cluster-management.io
   resources:
   - '*'
   verbs:

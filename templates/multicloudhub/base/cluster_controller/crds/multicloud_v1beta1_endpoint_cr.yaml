@@ -1,7 +1,0 @@
-apiVersion: multicloud.ibm.com/v1beta1
-kind: Endpoint
-metadata:
-  name: example-endpoint
-spec:
-  # Add fields here
-  size: 3
