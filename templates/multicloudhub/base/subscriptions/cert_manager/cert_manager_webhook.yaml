@@ -13,6 +13,7 @@ spec:
       - path: spec.values
         value: |
           imageTagPostfix: "{{POSTFIX}}"
+          pkiNamespace: "{{NAMESPACE}}"
           global:
             pullSecret: "{{PULLSECRET}}"
           cainjector:
