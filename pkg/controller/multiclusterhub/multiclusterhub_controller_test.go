@@ -1,4 +1,4 @@
-package multicloudhub
+package multiclusterhub
 
 import "testing"
 

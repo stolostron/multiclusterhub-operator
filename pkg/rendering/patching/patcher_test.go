@@ -3,12 +3,13 @@ package patching
 import (
 	"testing"
 
-	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/kustomize/v3/k8sdeps/kunstruct"
 	"sigs.k8s.io/kustomize/v3/pkg/resource"
 	"sigs.k8s.io/yaml"
+
+	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 )
 
 var apiserver = `
@@ -48,10 +49,10 @@ func TestApplyGlobalPatches(t *testing.T) {
 	u.UnmarshalJSON(json)
 	apiserver := factory.FromMap(u.Object)
 
-	mchcr := &operatorsv1alpha1.MultiCloudHub{
-		TypeMeta:   metav1.TypeMeta{Kind: "MultiCloudHub"},
+	mchcr := &operatorsv1alpha1.MultiClusterHub{
+		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1alpha1.MultiCloudHubSpec{
+		Spec: operatorsv1alpha1.MultiClusterHubSpec{
 			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: "Always",
 			ImagePullSecret: "test",
@@ -79,10 +80,10 @@ func TestApplyAPIServerPatches(t *testing.T) {
 	apiserver := factory.FromMap(u.Object)
 
 	var replicas int32 = 1
-	mchcr := &operatorsv1alpha1.MultiCloudHub{
-		TypeMeta:   metav1.TypeMeta{Kind: "MultiCloudHub"},
+	mchcr := &operatorsv1alpha1.MultiClusterHub{
+		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1alpha1.MultiCloudHubSpec{
+		Spec: operatorsv1alpha1.MultiClusterHubSpec{
 			Foundation: operatorsv1alpha1.Foundation{
 				Apiserver: operatorsv1alpha1.Apiserver{
 					Replicas: &replicas,
@@ -115,10 +116,10 @@ func TestApplyAPIServerPatchesWithSecret(t *testing.T) {
 	apiserver := factory.FromMap(u.Object)
 
 	var replicas int32 = 1
-	mchcr := &operatorsv1alpha1.MultiCloudHub{
-		TypeMeta:   metav1.TypeMeta{Kind: "MultiCloudHub"},
+	mchcr := &operatorsv1alpha1.MultiClusterHub{
+		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1alpha1.MultiCloudHubSpec{
+		Spec: operatorsv1alpha1.MultiClusterHubSpec{
 			Foundation: operatorsv1alpha1.Foundation{
 				Apiserver: operatorsv1alpha1.Apiserver{
 					Replicas: &replicas,
@@ -172,10 +173,10 @@ func TestApplyControllerPatches(t *testing.T) {
 	controller := factory.FromMap(u.Object)
 
 	var replicas int32 = 1
-	mchcr := &operatorsv1alpha1.MultiCloudHub{
-		TypeMeta:   metav1.TypeMeta{Kind: "MultiCloudHub"},
+	mchcr := &operatorsv1alpha1.MultiClusterHub{
+		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1alpha1.MultiCloudHubSpec{
+		Spec: operatorsv1alpha1.MultiClusterHubSpec{
 			Foundation: operatorsv1alpha1.Foundation{
 				Controller: operatorsv1alpha1.Controller{
 					Replicas: &replicas,
@@ -228,10 +229,10 @@ func TestApplyTopologyAggregatorPatches(t *testing.T) {
 	topology := factory.FromMap(u.Object)
 
 	var replicas int32 = 1
-	mchcr := &operatorsv1alpha1.MultiCloudHub{
-		TypeMeta:   metav1.TypeMeta{Kind: "MultiCloudHub"},
+	mchcr := &operatorsv1alpha1.MultiClusterHub{
+		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1alpha1.MultiCloudHubSpec{
+		Spec: operatorsv1alpha1.MultiClusterHubSpec{
 			Foundation: operatorsv1alpha1.Foundation{
 				Controller: operatorsv1alpha1.Controller{
 					Replicas: &replicas,
@@ -268,7 +269,7 @@ spec:
     spec:
       containers:
       - name: mcm-webhook
-        image: "multicloud-manager:0.0.1"
+        image: "multicluster-manager:0.0.1"
         volumeMounts: []
       volumes: []
 `
@@ -283,10 +284,10 @@ func TestApplyWebhookPatches(t *testing.T) {
 	webhook := factory.FromMap(u.Object)
 
 	var replicas int32 = 1
-	mchcr := &operatorsv1alpha1.MultiCloudHub{
-		TypeMeta:   metav1.TypeMeta{Kind: "MultiCloudHub"},
+	mchcr := &operatorsv1alpha1.MultiClusterHub{
+		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1alpha1.MultiCloudHubSpec{
+		Spec: operatorsv1alpha1.MultiClusterHubSpec{
 			Foundation: operatorsv1alpha1.Foundation{
 				Controller: operatorsv1alpha1.Controller{
 					Replicas: &replicas,

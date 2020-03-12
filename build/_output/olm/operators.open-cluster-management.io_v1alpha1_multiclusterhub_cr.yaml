@@ -1,7 +1,7 @@
-apiVersion: operators.multicloud.ibm.com/v1alpha1
-kind: MultiCloudHub
+apiVersion: operators.open-cluster-management.io/v1alpha1
+kind: MultiClusterHub
 metadata:
-  name: example-multicloudhub
+  name: example-multiclusterhub
   namespace: default
 spec:
   version: latest
@@ -29,9 +29,9 @@ spec:
     replicaSet: rs0
   hive:
     additionalCertificateAuthorities:
-    - name: letsencrypt-ca
+      - name: letsencrypt-ca
     managedDomains:
-    - s1.openshiftapps.com
+      - s1.openshiftapps.com
     globalPullSecret:
       name: private-secret
     failedProvisionConfig:

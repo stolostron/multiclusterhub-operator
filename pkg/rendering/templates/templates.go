@@ -45,10 +45,10 @@ func GetTemplateRenderer() *TemplateRenderer {
 	return templateRenderer
 }
 
-func (r *TemplateRenderer) GetTemplates(multicloudHub *operatorsv1alpha1.MultiCloudHub) ([]*resource.Resource, error) {
+func (r *TemplateRenderer) GetTemplates(multiclusterhub *operatorsv1alpha1.MultiClusterHub) ([]*resource.Resource, error) {
 	var err error
-	kind := strings.ToLower(multicloudHub.Kind)
-	version := multicloudHub.Spec.Version
+	kind := strings.ToLower(multiclusterhub.Kind)
+	version := multiclusterhub.Spec.Version
 	key := fmt.Sprintf("%s-%s", kind, version)
 	resMap, ok := r.templates[key]
 	if !ok {
