@@ -5,11 +5,12 @@ import (
 	"os"
 	"testing"
 
-	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	k8scertutil "k8s.io/client-go/util/cert"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 )
 
 func TestGenerateSignedWebhookCertificates(t *testing.T) {
@@ -45,8 +46,8 @@ func TestGenerateAPIServerSecret(t *testing.T) {
 	defer os.Unsetenv(podNamespaceEnvVar)
 
 	fakeclient := fake.NewFakeClient()
-	err := GenerateAPIServerSecret(fakeclient, &operatorsv1alpha1.MultiCloudHub{
-		Spec: operatorsv1alpha1.MultiCloudHubSpec{
+	err := GenerateAPIServerSecret(fakeclient, &operatorsv1alpha1.MultiClusterHub{
+		Spec: operatorsv1alpha1.MultiClusterHubSpec{
 			Foundation: operatorsv1alpha1.Foundation{
 				Apiserver: operatorsv1alpha1.Apiserver{
 					ApiserverSecret: "test",
@@ -58,8 +59,8 @@ func TestGenerateAPIServerSecret(t *testing.T) {
 		t.Errorf("Expected nil, but failed %v", err)
 	}
 
-	err = GenerateAPIServerSecret(fakeclient, &operatorsv1alpha1.MultiCloudHub{
-		Spec: operatorsv1alpha1.MultiCloudHubSpec{
+	err = GenerateAPIServerSecret(fakeclient, &operatorsv1alpha1.MultiClusterHub{
+		Spec: operatorsv1alpha1.MultiClusterHubSpec{
 			Foundation: operatorsv1alpha1.Foundation{
 				Apiserver: operatorsv1alpha1.Apiserver{
 					ApiserverSecret: APIServerSecretName,
@@ -83,8 +84,8 @@ func TestGenerateKlusterletSecret(t *testing.T) {
 	defer os.Unsetenv(podNamespaceEnvVar)
 
 	fakeclient := fake.NewFakeClient()
-	err := GenerateKlusterletSecret(fakeclient, &operatorsv1alpha1.MultiCloudHub{
-		Spec: operatorsv1alpha1.MultiCloudHubSpec{
+	err := GenerateKlusterletSecret(fakeclient, &operatorsv1alpha1.MultiClusterHub{
+		Spec: operatorsv1alpha1.MultiClusterHubSpec{
 			Foundation: operatorsv1alpha1.Foundation{
 				Apiserver: operatorsv1alpha1.Apiserver{
 					ApiserverSecret: "test",
@@ -96,8 +97,8 @@ func TestGenerateKlusterletSecret(t *testing.T) {
 		t.Errorf("Expected nil, but failed %v", err)
 	}
 
-	err = GenerateKlusterletSecret(fakeclient, &operatorsv1alpha1.MultiCloudHub{
-		Spec: operatorsv1alpha1.MultiCloudHubSpec{
+	err = GenerateKlusterletSecret(fakeclient, &operatorsv1alpha1.MultiClusterHub{
+		Spec: operatorsv1alpha1.MultiClusterHubSpec{
 			Foundation: operatorsv1alpha1.Foundation{
 				Apiserver: operatorsv1alpha1.Apiserver{
 					KlusterletSecret: KlusterletSecretName,

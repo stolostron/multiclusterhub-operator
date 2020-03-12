@@ -9,22 +9,22 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// MultiCloudHubSpec defines the desired state of MultiCloudHub
+// MultiClusterHubSpec defines the desired state of MultiClusterHub
 // +k8s:openapi-gen=true
-type MultiCloudHubSpec struct {
-	// Version of the MultiCloud hub
+type MultiClusterHubSpec struct {
+	// Version of the MultiCluster hub
 	Version string `json:"version"`
 
-	// Repository of the MultiCloud hub images
+	// Repository of the MultiCluster hub images
 	ImageRepository string `json:"imageRepository"`
 
-	// ImageTagPostfix of the MultiCloud hub images
+	// ImageTagPostfix of the MultiCluster hub images
 	ImageTagPostfix string `json:"imageTagPostfix"`
 
-	// Pull policy of the MultiCloud hub images
+	// Pull policy of the MultiCluster hub images
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy"`
 
-	// Pull secret of the MultiCloud hub images
+	// Pull secret of the MultiCluster hub images
 	// +optional
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
 
@@ -64,7 +64,7 @@ type NodeSelector struct {
 	CustomLabelValue string `json:"customLabelValue,omitempty"`
 }
 
-// Foundation defines the desired state of MultiCloudHub foundation components
+// Foundation defines the desired state of MultiClusterHub foundation components
 type Foundation struct {
 	// Spec of apiserver
 	// +optional
@@ -252,10 +252,10 @@ type Mongo struct {
 	CASecret string `json:"caSecret,omitempty"`
 }
 
-// MultiCloudHubStatus defines the observed state of MultiCloudHub
+// MultiClusterHubStatus defines the observed state of MultiClusterHub
 // +k8s:openapi-gen=true
-type MultiCloudHubStatus struct {
-	// Represents the running phase of the MultiCloudHub
+type MultiClusterHubStatus struct {
+	// Represents the running phase of the MultiClusterHub
 	Phase string `json:"phase"`
 
 	// Represents the status of each deployment
@@ -274,28 +274,28 @@ type DeploymentResult struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// MultiCloudHub is the Schema for the multicloudhubs API
+// MultiClusterHub is the Schema for the multiclusterhubs API
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:path=multicloudhubs,scope=Namespaced
-// +operator-sdk:gen-csv:customresourcedefinitions.displayName="Multicloudhub Operator"
-type MultiCloudHub struct {
+// +kubebuilder:resource:path=multiclusterhubs,scope=Namespaced
+// +operator-sdk:gen-csv:customresourcedefinitions.displayName="MultiClusterHub Operator"
+type MultiClusterHub struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   MultiCloudHubSpec   `json:"spec,omitempty"`
-	Status MultiCloudHubStatus `json:"status,omitempty"`
+	Spec   MultiClusterHubSpec   `json:"spec,omitempty"`
+	Status MultiClusterHubStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// MultiCloudHubList contains a list of MultiCloudHub
-type MultiCloudHubList struct {
+// MultiClusterHubList contains a list of MultiClusterHub
+type MultiClusterHubList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []MultiCloudHub `json:"items"`
+	Items           []MultiClusterHub `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&MultiCloudHub{}, &MultiCloudHubList{})
+	SchemeBuilder.Register(&MultiClusterHub{}, &MultiClusterHubList{})
 }

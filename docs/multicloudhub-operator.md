@@ -1,39 +1,39 @@
-# MulticloudHub Operator
+# MultiClusterHub Operator
 
 There are two proposals to deploy the multicloud hub with operators in OpenShift
 
 ## Proposal #1
 
-For enterprise user, we provide an operator (MultiCloudHub Operator) to deploy all of multicloud hub components, and we also provide an operator (MultiCloud Foundation Operator) to deploy the multicloud hub opensource components (`core`, `application` and `grc`), community user can use this operator to deploy community multicloud hub
+For enterprise user, we provide an operator (MultiClusterHub Operator) to deploy all of multicloud hub components, and we also provide an operator (MultiCloud Foundation Operator) to deploy the multicloud hub opensource components (`core`, `application` and `grc`), community user can use this operator to deploy community multicloud hub
 
-![](images/multicloudhub-operator1.png)
+![](images/multiclusterhub-operator1.png)
 
-### MultiCloudHub Operator
+### MultiClusterHub Operator
 
-The MultiCloudHub Operator is implemented by using [Operator SDK](https://github.com/operator-framework/operator-sdk/blob/master/doc/user-guide.md), we bundle the CRD and `ClusterServiceVersion` of this operator to a package (see [operator-registry](https://github.com/operator-framework/operator-registry#operator-registry)) and publish it to [OpenShift OperatorHub](https://docs.openshift.com/container-platform/4.2/operators/olm-understanding-operatorhub.html). User can define an OpenShift Operator Lifecycle Manager (OLM) `Subscription` to deploy this operator, e.g.
+The MultiClusterHub Operator is implemented by using [Operator SDK](https://github.com/operator-framework/operator-sdk/blob/master/doc/user-guide.md), we bundle the CRD and `ClusterServiceVersion` of this operator to a package (see [operator-registry](https://github.com/operator-framework/operator-registry#operator-registry)) and publish it to [OpenShift OperatorHub](https://docs.openshift.com/container-platform/4.2/operators/olm-understanding-operatorhub.html). User can define an OpenShift Operator Lifecycle Manager (OLM) `Subscription` to deploy this operator, e.g.
 
 ```yaml
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
-  name: multicloudhub-subscription
+  name: multiclusterhub-subscription
   namespace: multicloud-system
 spec:
   channel: stable
-  name: multicloudhub
+  name: multiclusterhub
   source: certified-operators
   sourceNamespace: openshift-marketplace
-  startingCSV: multicloudhub.v1.0.0
+  startingCSV: multiclusterhub.v1.0.0
 ```
 
-After the operator was installed by OLM, user uses `MultiCloudHub` CRD to define the multicloud hub deployment configuration, its corresponding CR looks like
+After the operator was installed by OLM, user uses `MultiClusterHub` CRD to define the multicloud hub deployment configuration, its corresponding CR looks like
 
 ```yaml
-apiVersion: operators.multicloud.ibm.com/v1alpha1
-kind: MultiCloudHub
+apiVersion: operators.open-cluster-management.io/v1alpha1
+kind: MultiClusterHub
 metadata:
   name: myhub
-  namespace: mutilcloud-system
+  namespace: multicluster-system
 spec:
   version: 3.3.0
   dockerRepository: "ibmcom"
@@ -90,25 +90,25 @@ spec:
 As an easiest way, user use a default CR to deploy the multicloud hub, e.g.
 
 ```yaml
-apiVersion: operators.multicloud.ibm.com/v1alpha1
-kind: MultiCloudHub
+apiVersion: operators.open-cluster-management.io/v1alpha1
+kind: MultiClusterHub
 metadata:
   name: myhub
   namespace: mutilcloud-system
 spec: {}
 ```
 
-Then the MultiCloudHub operator will deploy the multicloud hub to namespace `mutilcloud-system`, it will follow below steps
+Then the MultiClusterHub operator will deploy the multicloud hub to namespace `mutilcloud-system`, it will follow below steps
 
 - For mongo and etcd, if user does not configure the external servers for them, the operator will deploy their operators with OLM subscriptions, then the operator creates the corresponding CR with the defined configuration to deploy them
 - Deploy the multicloud foundation operator, hive operator, and [subscription operator](https://github.com/open-cluster-management/cp4mcm-manifest/tree/master/base/subscription-operator) with their OLM subscription, then the operator creates the corresponding CR with the defined configuration to deploy them
 - For subscription operator, the operator creates helm channel and subscription CR with the defined configuration, the subscription operator deploys the `console`, `topology`, `security_advisor`, `rcm` and `security_advisor` components with the helm channel and subscription CR (If each component has its own operator in OperatorHub, we can replace this step by deploying the component with OLM subscription directly)
 
-After user apply the MultiCloudHub CR, user can query the CR to get the defualt configuration and status
+After user apply the MultiClusterHub CR, user can query the CR to get the defualt configuration and status
 
 ```yaml
-apiVersion: operators.multicloud.ibm.com/v1alpha1
-kind: MultiCloudHub
+apiVersion: operators.open-cluster-management.io/v1alpha1
+kind: MultiClusterHub
 metadata:
   name: myhub
   namespace: mutilcloud-system
@@ -170,7 +170,7 @@ status:
 The MultiCloudFoundation Operator is implemented by using [Operator SDK](https://github.com/operator-framework/operator-sdk/blob/master/doc/user-guide.md), with this operator we can rotate the certifacate and manage the secrets in the operator, this operator deploy the multicloud foundation components, includes: mcm `core`, `application` and `grc`, user can use this operator to deploy community multicloud hub, its corresponding CR looks like
 
 ```yaml
-apiVersion: operators.multicloud.ibm.com/v1alpha1
+apiVersion: operators.open-cluster-management.io/v1alpha1
 kind: MultiCloudFoundation
 metadata:
   name: myhub
@@ -217,7 +217,7 @@ To install a community version multicloud hub, user follow below steps
     apiVersion: operators.coreos.com/v1alpha1
     kind: Subscription
     metadata:
-      name: multicloudhub-subscription
+      name: multiclusterhub-subscription
       namespace: multicloud-system
     spec:
       channel: stable
@@ -230,7 +230,7 @@ To install a community version multicloud hub, user follow below steps
 3. After the OLM installs the MultiCloudFoundation operator with the `Subscription`, user defines a CR to describe the multicloud hub configuration, e.g.
 
     ```yaml
-    apiVersion: operators.multicloud.ibm.com/v1alpha1
+    apiVersion: operators.open-cluster-management.io/v1alpha1
     kind: MultiCloudFoundation
     metadata:
       name: myhub
@@ -243,12 +243,12 @@ To install a community version multicloud hub, user follow below steps
         replicaSet: rs0
     ```
 
-Then the MultiCloudHub operator will deploy the multiCloud hub to namespace `mutilcloud-system`, after user apply the MultiCloudHub CR, user can query it to get the defualt configuration and status
+Then the MultiClusterHub operator will deploy the multiCloud hub to namespace `multicluster-system`, after user apply the MultiClusterHub CR, user can query it to get the default configuration and status
 
 ## Proposal #2
 
-For enterprise user, we provide an operator (MultiCloudHub Operator) to deploy all of multicloud hub components, and we also package the [subscription operator](https://github.com/open-cluster-management/cp4mcm-manifest/tree/master/base/subscription-operator) and publish it to OpenShift OperatorHub, in this operator package (`packagemanifests`), we define two channels, one is `community` and the other is `enterprise`, user can define an OLM `Subscription` to subscribe `community` channel to install community multicloud hub.
+For enterprise user, we provide an operator (MultiClusterHub Operator) to deploy all of multicloud hub components, and we also package the [subscription operator](https://github.com/open-cluster-management/cp4mcm-manifest/tree/master/base/subscription-operator) and publish it to OpenShift OperatorHub, in this operator package (`packagemanifests`), we define two channels, one is `community` and the other is `enterprise`, user can define an OLM `Subscription` to subscribe `community` channel to install community multicloud hub.
 
-![](images/multicloudhub-operator2.png)
+![](images/multiclusterhub-operator2.png)
 
 For enterprise user, same with the proposal #1, user define the OLM `Subscription` and corresponding CR to deploy all of the multicloud hub components, For community user, user define the OLM `Subscription` for multicloud subscription operator to deploy the multicloud subscription operator, then user prepare `etcd` and `mongo` and define the helm channel and subscription CR to deploy the community multicloud hub (we need opensource the helm chart).

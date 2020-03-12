@@ -4,36 +4,36 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: multicloudhub-operator-registry
+  name: multiclusterhub-operator-registry
 spec:
-  configMap: multicloudhub-operator-registry
-  displayName: multicloudhub-operator
+  configMap: multiclusterhub-operator-registry
+  displayName: multiclusterhub-operator
   publisher: Red Hat
   sourceType: configmap
 ---
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: multicloudhub-operator-registry
+  name: multiclusterhub-operator-registry
 data:
   customResourceDefinitions: |-
     - apiVersion: apiextensions.k8s.io/v1beta1
       kind: CustomResourceDefinition
       metadata:
-        name: multicloudhubs.operators.multicloud.ibm.com
+        name: multiclusterhubs.operators.open-cluster-management.io
       spec:
-        group: operators.multicloud.ibm.com
+        group: operators.open-cluster-management.io
         names:
-          kind: MultiCloudHub
-          listKind: MultiCloudHubList
-          plural: multicloudhubs
-          singular: multicloudhub
+          kind: MultiClusterHub
+          listKind: MultiClusterHubList
+          plural: multiclusterhubs
+          singular: multiclusterhub
         scope: Namespaced
         subresources:
           status: {}
         validation:
           openAPIV3Schema:
-            description: MultiCloudHub is the Schema for the multicloudhubs API
+            description: MultiClusterHub is the Schema for the multiclusterhubs API
             properties:
               apiVersion:
                 description: 'APIVersion defines the versioned schema of this representation
@@ -48,7 +48,7 @@ data:
               metadata:
                 type: object
               spec:
-                description: MultiCloudHubSpec defines the desired state of MultiCloudHub
+                description: MultiClusterHubSpec defines the desired state of MultiClusterHub
                 properties:
                   etcd:
                     description: Spec of etcd
@@ -226,16 +226,16 @@ data:
                     - failedProvisionConfig
                     type: object
                   imagePullPolicy:
-                    description: Pull policy of the MultiCloud hub images
+                    description: Pull policy of the MultiCluster hub images
                     type: string
                   imagePullSecret:
-                    description: Pull secret of the MultiCloud hub images
+                    description: Pull secret of the MultiCluster hub images
                     type: string
                   imageRepository:
-                    description: Repository of the MultiCloud hub images
+                    description: Repository of the MultiCluster hub images
                     type: string
                   imageTagPostfix:
-                    description: ImageTagPostfix of the MultiCloud hub images
+                    description: ImageTagPostfix of the MultiCluster hub images
                     type: string
                   mongo:
                     description: Spec of mongo
@@ -276,7 +276,7 @@ data:
                     description: Hostname portion of OCP Domain
                     type: string
                   version:
-                    description: Version of the MultiCloud hub
+                    description: Version of the MultiCluster hub
                     type: string
                 required:
                 - etcd
@@ -289,7 +289,7 @@ data:
                 - version
                 type: object
               status:
-                description: MultiCloudHubStatus defines the observed state of MultiCloudHub
+                description: MultiClusterHubStatus defines the observed state of MultiClusterHub
                 properties:
                   deployments:
                     description: Represents the status of each deployment
@@ -382,7 +382,7 @@ data:
                       type: object
                     type: array
                   phase:
-                    description: Represents the running phase of the MultiCloudHub
+                    description: Represents the running phase of the MultiClusterHub
                     type: string
                 required:
                 - phase
@@ -401,10 +401,10 @@ data:
           alm-examples: |-
             [
               {
-                "apiVersion": "operators.multicloud.ibm.com/v1alpha1",
-                "kind": "MultiCloudHub",
+                "apiVersion": "operators.open-cluster-management.io/v1alpha1",
+                "kind": "MultiClusterHub",
                 "metadata": {
-                  "name": "example-multicloudhub",
+                  "name": "example-multiclusterhub",
                   "namespace": "default"
                 },
                 "spec": {
@@ -458,7 +458,7 @@ data:
               }
             ]
           capabilities: Basic Install
-        name: multicloudhub-operator.v0.0.1
+        name: multiclusterhub-operator.v0.0.1
         namespace: placeholder
       spec:
         apiservicedefinitions: {}
@@ -490,13 +490,13 @@ data:
             displayName: Subscription
             description: Subscribe resources from a channel according to its package filters
           owned:
-          - description: MultiCloudHub is the Schema for the multicloudhubs API
-            displayName: Multicloudhub Operator
-            kind: MultiCloudHub
-            name: multicloudhubs.operators.multicloud.ibm.com
+          - description: MultiClusterHub is the Schema for the multiclusterhubs API
+            displayName: MultiClusterHub Operator
+            kind: MultiClusterHub
+            name: multiclusterhubs.operators.open-cluster-management.io
             version: v1alpha1
         description: Placeholder description
-        displayName: Multicloudhub Operator
+        displayName: Multiclusterhub Operator
         install:
           spec:
             clusterPermissions:
@@ -535,7 +535,7 @@ data:
               - apiGroups:
                 - apps
                 resourceNames:
-                - multicloudhub-operator
+                - multiclusterhub-operator
                 resources:
                 - deployments/finalizers
                 verbs:
@@ -560,7 +560,7 @@ data:
                 verbs:
                 - '*'
               - apiGroups:
-                - operators.multicloud.ibm.com
+                - operators.open-cluster-management.io
                 resources:
                 - '*'
                 verbs:
@@ -634,23 +634,23 @@ data:
                 - securitycontextconstraints
                 verbs:
                 - '*'
-              serviceAccountName: multicloudhub-operator
+              serviceAccountName: multiclusterhub-operator
             deployments:
-            - name: multicloudhub-operator
+            - name: multiclusterhub-operator
               spec:
                 replicas: 1
                 selector:
                   matchLabels:
-                    name: multicloudhub-operator
+                    name: multiclusterhub-operator
                 strategy: {}
                 template:
                   metadata:
                     labels:
-                      name: multicloudhub-operator
+                      name: multiclusterhub-operator
                   spec:
                     containers:
                     - command:
-                      - multicloudhub-operator
+                      - multiclusterhub-operator
                       env:
                       - name: WATCH_NAMESPACE
                         valueFrom:
@@ -665,18 +665,18 @@ data:
                           fieldRef:
                             fieldPath: metadata.namespace
                       - name: OPERATOR_NAME
-                        value: multicloudhub-operator
+                        value: multiclusterhub-operator
                       - name: USER
-                        value: multicloudhub-operator
+                        value: multiclusterhub-operator
                       - name: TEMPLATES_PATH
                         value: /usr/local/templates
-                      image: quay.io/rhibmcollab/multicloudhub-operator:latest
+                      image: quay.io/rhibmcollab/multiclusterhub-operator:latest
                       imagePullPolicy: Always
-                      name: multicloudhub-operator
+                      name: multiclusterhub-operator
                       resources: {}
                     imagePullSecrets:
                     - name: multiclusterhub-operator-pull-secret
-                    serviceAccountName: multicloudhub-operator
+                    serviceAccountName: multiclusterhub-operator
           strategy: deployment
         installModes:
         - supported: true
@@ -692,7 +692,7 @@ data:
         version: 0.0.1
   packages: |-
     - channels:
-      - currentCSV: multicloudhub-operator.v0.0.1
+      - currentCSV: multiclusterhub-operator.v0.0.1
         name: alpha
       defaultChannel: alpha
-      packageName: multicloudhub-operator
+      packageName: multiclusterhub-operator

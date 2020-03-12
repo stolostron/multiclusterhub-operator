@@ -1,14 +1,15 @@
 package rendering
 
 import (
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"os"
 	"path"
 	"testing"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestRender(t *testing.T) {
@@ -21,10 +22,10 @@ func TestRender(t *testing.T) {
 	defer os.Unsetenv(templates.TemplatesPathEnvVar)
 
 	var replicas int32 = 1
-	mchcr := &operatorsv1alpha1.MultiCloudHub{
-		TypeMeta:   metav1.TypeMeta{Kind: "MultiCloudHub"},
+	mchcr := &operatorsv1alpha1.MultiClusterHub{
+		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1alpha1.MultiCloudHubSpec{
+		Spec: operatorsv1alpha1.MultiClusterHubSpec{
 			Version:         "latest",
 			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: "Always",
@@ -59,14 +60,14 @@ func TestRender(t *testing.T) {
 	renderer := NewRenderer(mchcr)
 	objs, err := renderer.Render()
 	if err != nil {
-		t.Fatalf("failed to render multicloudhub %v", err)
+		t.Fatalf("failed to render multiclusterhub %v", err)
 	}
 
-	printObjs(t,objs)
+	printObjs(t, objs)
 }
 
-func printObjs (t *testing.T, objs []*unstructured.Unstructured){
-	for _, obj := range objs{
+func printObjs(t *testing.T, objs []*unstructured.Unstructured) {
+	for _, obj := range objs {
 		t.Log(obj)
 	}
 }
