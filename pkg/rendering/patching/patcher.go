@@ -5,13 +5,14 @@ import (
 	"sort"
 	"strings"
 
-	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/kustomize/v3/k8sdeps/kunstruct"
 	"sigs.k8s.io/kustomize/v3/pkg/ifc"
 	"sigs.k8s.io/kustomize/v3/pkg/resource"
 	"sigs.k8s.io/yaml"
+
+	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 )
 
 type patchGenerateFn func(res *resource.Resource, multipleCloudHub *operatorsv1alpha1.MultiCloudHub) (ifc.Kunstructured, error)
@@ -282,11 +283,11 @@ func generateImagePatch(res *resource.Resource, mch *operatorsv1alpha1.MultiClou
 		return nil, err
 	}
 	imageRepo := mch.Spec.ImageRepository
-	imageTagPostfix := mch.Spec.ImageTagPostfix
-	if imageTagPostfix != "" {
-		imageTagPostfix = "-" + imageTagPostfix
+	imageTagSuffix := mch.Spec.ImageTagSuffix
+	if imageTagSuffix != "" {
+		imageTagSuffix = "-" + imageTagSuffix
 	}
-	generatedImage := fmt.Sprintf("%s/%s%s", imageRepo, imageFromTemplate, imageTagPostfix)
+	generatedImage := fmt.Sprintf("%s/%s%s", imageRepo, imageFromTemplate, imageTagSuffix)
 
 	container, _ := res.GetFieldValue("spec.template.spec.containers[0]") // need to loop through all images
 	containerMap, _ := container.(map[string]interface{})
