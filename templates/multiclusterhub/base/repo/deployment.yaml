@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: multiclusterhub-repo
-        image: multicloudhub-repo:1.0.0
+        image: multiclusterhub-repo:1.0.0
         ports:
           - containerPort: 3000
         resources:
