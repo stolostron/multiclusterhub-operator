@@ -17,3 +17,8 @@ build/_output/bin/multiclusterhub-operator
 .idea/
 build-harness/
 build-harness-extensions/
+
+# override build harness vendoring
+!vbh/.build-harness-vendorized
+!vbh/build-harness
+!vbh/build-harness-extensions
