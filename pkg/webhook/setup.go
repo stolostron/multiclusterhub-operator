@@ -6,8 +6,6 @@ import (
 	"path/filepath"
 	"time"
 
-	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	admissionregistration "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -20,17 +18,20 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 )
 
-var log = logf.Log.WithName("multicloudhub_webhook")
+var log = logf.Log.WithName("multiclusterhub_webhook")
 
 const (
-	resourceName          = "multicloudhubs"
-	operatorName          = "multicloudhub-operator"
-	mutatingWebhookName   = "multicloudhub.mutating-webhook.multicloud.ibm.com"
-	mutatingCfgName       = "multicloudhub-operator-mutating-webhook"
-	validatingWebhookName = "multicloudhub.validating-webhook.multicloud.ibm.com"
-	validatingCfgName     = "multicloudhub-operator-validating-webhook"
+	resourceName          = "multiclusterhubs"
+	operatorName          = "multiclusterhub-operator"
+	mutatingWebhookName   = "multiclusterhub.mutating-webhook.open-cluster-management.io"
+	mutatingCfgName       = "multiclusterhub-operator-mutating-webhook"
+	validatingWebhookName = "multiclusterhub.validating-webhook.open-cluster-management.io"
+	validatingCfgName     = "multiclusterhub-operator-validating-webhook"
 )
 
 func Setup(mgr manager.Manager) error {
@@ -51,10 +52,10 @@ func Setup(mgr manager.Manager) error {
 	}
 
 	log.Info("Registering webhooks to the webhook server.")
-	mutatingPath := "/mutate-v1alpha1-multicloudhub"
-	hookServer.Register(mutatingPath, &webhook.Admission{Handler: &multiCloudHubMutator{}})
-	validatingPath := "/validate-v1alpha1-multicloudhub"
-	hookServer.Register(validatingPath, &webhook.Admission{Handler: &multiCloudHubValidator{}})
+	mutatingPath := "/mutate-v1alpha1-multiclusterhub"
+	hookServer.Register(mutatingPath, &webhook.Admission{Handler: &multiClusterHubMutator{}})
+	validatingPath := "/validate-v1alpha1-multiclusterhub"
+	hookServer.Register(validatingPath, &webhook.Admission{Handler: &multiClusterHubValidator{}})
 
 	go createWebhookService(mgr.GetClient(), ns)
 	go createOrUpdateMutatingWebhook(mgr.GetClient(), ns, mutatingPath, ca)

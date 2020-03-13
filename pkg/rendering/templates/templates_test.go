@@ -5,8 +5,9 @@ import (
 	"path"
 	"testing"
 
-	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 )
 
 func TestGetCoreTemplates(t *testing.T) {
@@ -18,10 +19,10 @@ func TestGetCoreTemplates(t *testing.T) {
 	os.Setenv(TemplatesPathEnvVar, templatesPath)
 	defer os.Unsetenv(TemplatesPathEnvVar)
 
-	mchcr := &operatorsv1alpha1.MultiCloudHub{
-		TypeMeta:   metav1.TypeMeta{Kind: "MultiCloudHub"},
+	mchcr := &operatorsv1alpha1.MultiClusterHub{
+		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec:       operatorsv1alpha1.MultiCloudHubSpec{Version: "latest"},
+		Spec:       operatorsv1alpha1.MultiClusterHubSpec{Version: "latest"},
 	}
 	_, err = GetTemplateRenderer().GetTemplates(mchcr)
 

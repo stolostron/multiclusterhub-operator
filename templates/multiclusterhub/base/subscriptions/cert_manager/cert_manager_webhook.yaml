@@ -1,0 +1,35 @@
+apiVersion: app.ibm.com/v1alpha1
+kind: Subscription
+metadata:
+  name: cert-webhook-sub
+spec:
+  channel: charts-v1
+  name: cert-manager-webhook
+  placement:
+    local: true
+  packageOverrides:
+    - packageName: cert-manager-webhook
+      packageOverrides:
+      - path: spec.values
+        value: |
+          imageTagPostfix: "{{SUFFIX}}"
+          pkiNamespace: "{{NAMESPACE}}"
+          global:
+            pullSecret: "{{PULLSECRET}}"
+          cainjector:
+            imageTagPostfix: "{{SUFFIX}}"
+            image:
+              repository: "{{IMAGEREPO}}"
+            serviceAccount:
+              create: false
+              name: default
+          image:
+            repository: "{{IMAGEREPO}}"
+          serviceAccount:
+            create: false
+            name: default
+          watcher:
+            configmap:
+              name: extension-apiserver-authentication
+              namespace: "{{NAMESPACE}}"
+            optIn: true

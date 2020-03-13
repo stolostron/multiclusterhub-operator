@@ -1,7 +1,0 @@
-apiVersion: app.ibm.com/v1alpha1
-kind: Channel
-metadata:
-  name: charts-v1
-spec:
-  type: HelmRepo
-  pathname: http://multicloudhub-repo:3000/charts

@@ -5,25 +5,26 @@ import (
 	"sort"
 	"strings"
 
-	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/kustomize/v3/k8sdeps/kunstruct"
 	"sigs.k8s.io/kustomize/v3/pkg/ifc"
 	"sigs.k8s.io/kustomize/v3/pkg/resource"
 	"sigs.k8s.io/yaml"
+
+	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 )
 
-type patchGenerateFn func(res *resource.Resource, multipleCloudHub *operatorsv1alpha1.MultiCloudHub) (ifc.Kunstructured, error)
+type patchGenerateFn func(res *resource.Resource, multipleClusterHub *operatorsv1alpha1.MultiClusterHub) (ifc.Kunstructured, error)
 
-func ApplyGlobalPatches(res *resource.Resource, multipleCloudHub *operatorsv1alpha1.MultiCloudHub) error {
+func ApplyGlobalPatches(res *resource.Resource, multipleClusterHub *operatorsv1alpha1.MultiClusterHub) error {
 
 	for _, generate := range []patchGenerateFn{
 		generateImagePatch,
 		generateImagePullSecretsPatch,
 		generateNodeSelectorPatch,
 	} {
-		patch, err := generate(res, multipleCloudHub)
+		patch, err := generate(res, multipleClusterHub)
 		if err != nil {
 			return err
 		}
@@ -37,15 +38,15 @@ func ApplyGlobalPatches(res *resource.Resource, multipleCloudHub *operatorsv1alp
 	return nil
 }
 
-func ApplyAPIServerPatches(res *resource.Resource, multipleCloudHub *operatorsv1alpha1.MultiCloudHub) error {
-	replicasPatch := generateReplicasPatch(*multipleCloudHub.Spec.Foundation.Apiserver.Replicas)
+func ApplyAPIServerPatches(res *resource.Resource, multipleClusterHub *operatorsv1alpha1.MultiClusterHub) error {
+	replicasPatch := generateReplicasPatch(*multipleClusterHub.Spec.Foundation.Apiserver.Replicas)
 	if err := res.Patch(replicasPatch); err != nil {
 		return err
 	}
 
-	args := multipleCloudHub.Spec.Foundation.Apiserver.Configuration
-	args["etcd-servers"] = multipleCloudHub.Spec.Etcd.Endpoints
-	if multipleCloudHub.Spec.Etcd.Secret != "" {
+	args := multipleClusterHub.Spec.Foundation.Apiserver.Configuration
+	args["etcd-servers"] = multipleClusterHub.Spec.Etcd.Endpoints
+	if multipleClusterHub.Spec.Etcd.Secret != "" {
 		args["etcd-cafile"] = "/etc/etcd/ca.crt"
 		args["etcd-certfile"] = "/etc/etcd/tls.crt"
 		args["etcd-keyfile"] = "/etc/etcd/tls.key"
@@ -56,7 +57,7 @@ func ApplyAPIServerPatches(res *resource.Resource, multipleCloudHub *operatorsv1
 			[]corev1.Volume{{
 				Name: "etcd-certs",
 				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{SecretName: multipleCloudHub.Spec.Etcd.Secret},
+					Secret: &corev1.SecretVolumeSource{SecretName: multipleClusterHub.Spec.Etcd.Secret},
 				},
 			}},
 			[]corev1.VolumeMount{{Name: "etcd-certs", MountPath: "/etc/etcd"}},
@@ -65,9 +66,9 @@ func ApplyAPIServerPatches(res *resource.Resource, multipleCloudHub *operatorsv1
 		}
 	}
 
-	args["mongo-host"] = multipleCloudHub.Spec.Mongo.Endpoints
-	args["mongo-replicaset"] = multipleCloudHub.Spec.Mongo.ReplicaSet
-	envVars, volumes, volumeMounts := generateMongoSecrets(multipleCloudHub)
+	args["mongo-host"] = multipleClusterHub.Spec.Mongo.Endpoints
+	args["mongo-replicaset"] = multipleClusterHub.Spec.Mongo.ReplicaSet
+	envVars, volumes, volumeMounts := generateMongoSecrets(multipleClusterHub)
 	if err := applySecretPatches(res, envVars, volumes, volumeMounts); err != nil {
 		return err
 	}
@@ -78,7 +79,7 @@ func ApplyAPIServerPatches(res *resource.Resource, multipleCloudHub *operatorsv1
 		[]corev1.Volume{{
 			Name: "apiserver-certs",
 			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{SecretName: multipleCloudHub.Spec.Apiserver.ApiserverSecret},
+				Secret: &corev1.SecretVolumeSource{SecretName: multipleClusterHub.Spec.Apiserver.ApiserverSecret},
 			},
 		}},
 		[]corev1.VolumeMount{{Name: "apiserver-certs", MountPath: "/var/run/apiserver"}},
@@ -92,7 +93,7 @@ func ApplyAPIServerPatches(res *resource.Resource, multipleCloudHub *operatorsv1
 		[]corev1.Volume{{
 			Name: "klusterlet-certs",
 			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{SecretName: multipleCloudHub.Spec.Apiserver.KlusterletSecret},
+				Secret: &corev1.SecretVolumeSource{SecretName: multipleClusterHub.Spec.Apiserver.KlusterletSecret},
 			},
 		}},
 		[]corev1.VolumeMount{{Name: "klusterlet-certs", MountPath: "/var/run/klusterlet"}},
@@ -107,13 +108,13 @@ func ApplyAPIServerPatches(res *resource.Resource, multipleCloudHub *operatorsv1
 	return res.Patch(argsPatch)
 }
 
-func ApplyControllerPatches(res *resource.Resource, multipleCloudHub *operatorsv1alpha1.MultiCloudHub) error {
-	replicasPatch := generateReplicasPatch(*multipleCloudHub.Spec.Foundation.Controller.Replicas)
+func ApplyControllerPatches(res *resource.Resource, multipleClusterHub *operatorsv1alpha1.MultiClusterHub) error {
+	replicasPatch := generateReplicasPatch(*multipleClusterHub.Spec.Foundation.Controller.Replicas)
 	if err := res.Patch(replicasPatch); err != nil {
 		return err
 	}
 
-	args := multipleCloudHub.Spec.Foundation.Controller.Configuration
+	args := multipleClusterHub.Spec.Foundation.Controller.Configuration
 	argsPatch, err := generateContainerArgsPatch(res, args)
 	if err != nil {
 		return err
@@ -121,13 +122,13 @@ func ApplyControllerPatches(res *resource.Resource, multipleCloudHub *operatorsv
 	return res.Patch(argsPatch)
 }
 
-func ApplyTopologyAggregatorPatches(res *resource.Resource, multipleCloudHub *operatorsv1alpha1.MultiCloudHub) error {
-	replicasPatch := generateReplicasPatch(*multipleCloudHub.Spec.Foundation.Controller.Replicas)
+func ApplyTopologyAggregatorPatches(res *resource.Resource, multipleClusterHub *operatorsv1alpha1.MultiClusterHub) error {
+	replicasPatch := generateReplicasPatch(*multipleClusterHub.Spec.Foundation.Controller.Replicas)
 	if err := res.Patch(replicasPatch); err != nil {
 		return err
 	}
 
-	envVars, volumes, volumeMounts := generateMongoSecrets(multipleCloudHub)
+	envVars, volumes, volumeMounts := generateMongoSecrets(multipleClusterHub)
 	if err := applySecretPatches(res, envVars, volumes, volumeMounts); err != nil {
 		return err
 	}
@@ -150,8 +151,8 @@ func ApplyTopologyAggregatorPatches(res *resource.Resource, multipleCloudHub *op
 	}
 
 	args := map[string]string{}
-	args["mongo-host"] = multipleCloudHub.Spec.Mongo.Endpoints
-	args["mongo-replicaset"] = multipleCloudHub.Spec.Mongo.ReplicaSet
+	args["mongo-host"] = multipleClusterHub.Spec.Mongo.Endpoints
+	args["mongo-replicaset"] = multipleClusterHub.Spec.Mongo.ReplicaSet
 	args["aggregator-tls-cert"] = "/certs/tls.crt"
 	args["aggregator-tls-key"] = "/certs/tls.key"
 	argsPatch, err := generateContainerArgsPatch(res, args)
@@ -161,8 +162,8 @@ func ApplyTopologyAggregatorPatches(res *resource.Resource, multipleCloudHub *op
 	return res.Patch(argsPatch)
 }
 
-func ApplyWebhookPatches(res *resource.Resource, multipleCloudHub *operatorsv1alpha1.MultiCloudHub) error {
-	replicasPatch := generateReplicasPatch(*multipleCloudHub.Spec.Foundation.Controller.Replicas)
+func ApplyWebhookPatches(res *resource.Resource, multipleClusterHub *operatorsv1alpha1.MultiClusterHub) error {
+	replicasPatch := generateReplicasPatch(*multipleClusterHub.Spec.Foundation.Controller.Replicas)
 	if err := res.Patch(replicasPatch); err != nil {
 		return err
 	}
@@ -222,7 +223,7 @@ func applySecretPatches(
 	return nil
 }
 
-func generateMongoSecrets(mch *operatorsv1alpha1.MultiCloudHub) ([]corev1.EnvVar, []corev1.Volume, []corev1.VolumeMount) {
+func generateMongoSecrets(mch *operatorsv1alpha1.MultiClusterHub) ([]corev1.EnvVar, []corev1.Volume, []corev1.VolumeMount) {
 
 	var mode int32 = 420
 	envs := []corev1.EnvVar{}
@@ -276,17 +277,17 @@ func generateMongoSecrets(mch *operatorsv1alpha1.MultiCloudHub) ([]corev1.EnvVar
 	return envs, volumes, volumeMounts
 }
 
-func generateImagePatch(res *resource.Resource, mch *operatorsv1alpha1.MultiCloudHub) (ifc.Kunstructured, error) {
+func generateImagePatch(res *resource.Resource, mch *operatorsv1alpha1.MultiClusterHub) (ifc.Kunstructured, error) {
 	imageFromTemplate, err := res.GetString("spec.template.spec.containers[0].image") // need to loop through all images
 	if err != nil {
 		return nil, err
 	}
 	imageRepo := mch.Spec.ImageRepository
-	imageTagPostfix := mch.Spec.ImageTagPostfix
-	if imageTagPostfix != "" {
-		imageTagPostfix = "-" + imageTagPostfix
+	imageTagSuffix := mch.Spec.ImageTagSuffix
+	if imageTagSuffix != "" {
+		imageTagSuffix = "-" + imageTagSuffix
 	}
-	generatedImage := fmt.Sprintf("%s/%s%s", imageRepo, imageFromTemplate, imageTagPostfix)
+	generatedImage := fmt.Sprintf("%s/%s%s", imageRepo, imageFromTemplate, imageTagSuffix)
 
 	container, _ := res.GetFieldValue("spec.template.spec.containers[0]") // need to loop through all images
 	containerMap, _ := container.(map[string]interface{})
@@ -313,7 +314,7 @@ spec:
       - name: __pullsecrets__
 `
 
-func generateImagePullSecretsPatch(res *resource.Resource, mch *operatorsv1alpha1.MultiCloudHub) (ifc.Kunstructured, error) {
+func generateImagePullSecretsPatch(res *resource.Resource, mch *operatorsv1alpha1.MultiClusterHub) (ifc.Kunstructured, error) {
 	pullSecret := mch.Spec.ImagePullSecret
 	if pullSecret == "" {
 		return nil, nil
@@ -337,7 +338,7 @@ spec:
       nodeSelector: {__selector__}
 `
 
-func generateNodeSelectorPatch(res *resource.Resource, mch *operatorsv1alpha1.MultiCloudHub) (ifc.Kunstructured, error) {
+func generateNodeSelectorPatch(res *resource.Resource, mch *operatorsv1alpha1.MultiClusterHub) (ifc.Kunstructured, error) {
 	nodeSelectorOptions := mch.Spec.NodeSelector
 	if nodeSelectorOptions == nil {
 		return nil, nil

@@ -13,7 +13,7 @@ cover.out
 *.out
 
 *.build-harness-bootstrap
-build/_output/bin/multicloudhub-operator
+build/_output/bin/multiclusterhub-operator
 .idea/
 build-harness/
 build-harness-extensions/

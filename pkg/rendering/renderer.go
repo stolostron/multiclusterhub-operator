@@ -20,8 +20,8 @@ const (
 	apiserviceName         = "mcm-apiserver"
 	controllerName         = "mcm-controller"
 	webhookName            = "mcm-webhook"
-	clusterControllerName  = "multicloud-operators-cluster-controller"
-	helmRepoName           = "multicloudhub-repo"
+	clusterControllerName  = "multicluster-operators-cluster-controller"
+	helmRepoName           = "multiclusterhub-repo"
 	topologyAggregatorName = "topology-aggregator"
 	metadataErr            = "failed to find metadata field"
 )
@@ -31,12 +31,12 @@ var log = logf.Log.WithName("renderer")
 type renderFn func(*resource.Resource) (*unstructured.Unstructured, error)
 
 type Renderer struct {
-	cr        *operatorsv1alpha1.MultiCloudHub
+	cr        *operatorsv1alpha1.MultiClusterHub
 	renderFns map[string]renderFn
 }
 
-func NewRenderer(multipleCloudHub *operatorsv1alpha1.MultiCloudHub) *Renderer {
-	renderer := &Renderer{cr: multipleCloudHub}
+func NewRenderer(multipleClusterHub *operatorsv1alpha1.MultiClusterHub) *Renderer {
+	renderer := &Renderer{cr: multipleClusterHub}
 	renderer.renderFns = map[string]renderFn{
 		"APIService":                   renderer.renderAPIServices,
 		"Deployment":                   renderer.renderDeployments,
@@ -151,7 +151,7 @@ func (r *Renderer) renderDeployments(res *resource.Resource) (*unstructured.Unst
 		}
 		return &unstructured.Unstructured{Object: res.Map()}, nil
 	default:
-		return nil, fmt.Errorf("unknown MultipleCloudHub deployment component %s", name)
+		return nil, fmt.Errorf("unknown MultipleClusterHub deployment component %s", name)
 	}
 }
 
@@ -212,9 +212,9 @@ func (r *Renderer) renderSubscription(res *resource.Resource) (*unstructured.Uns
 	}
 	spec["channel"] = fmt.Sprintf("%s/%s", r.cr.Namespace, spec["channel"])
 
-	imageTagPostfix := r.cr.Spec.ImageTagPostfix
-	if imageTagPostfix != "" {
-		imageTagPostfix = "-" + imageTagPostfix
+	imageTagSuffix := r.cr.Spec.ImageTagSuffix
+	if imageTagSuffix != "" {
+		imageTagSuffix = "-" + imageTagSuffix
 	}
 
 	// Check if contains a packageOverrides
@@ -226,7 +226,7 @@ func (r *Renderer) renderSubscription(res *resource.Resource) (*unstructured.Uns
 				override := packageOverride["packageOverrides"].([]interface{})
 				for j := 0; j < len(override); j++ {
 					packageData, _ := override[j].(map[string]interface{})
-					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{POSTFIX}}", imageTagPostfix)
+					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{SUFFIX}}", imageTagSuffix)
 					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{IMAGEREPO}}", r.cr.Spec.ImageRepository)
 					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{PULLSECRET}}", r.cr.Spec.ImagePullSecret)
 					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{NAMESPACE}}", r.cr.Namespace)
@@ -256,7 +256,7 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 
 	switch name {
 	case "mcm-apiserver-self-signed-secrets":
-		ca, err := utils.GenerateSelfSignedCACert("multicloudhub-api")
+		ca, err := utils.GenerateSelfSignedCACert("multiclusterhub-api")
 		if err != nil {
 			return nil, err
 		}
@@ -274,11 +274,11 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 
 		return u, nil
 	case "mcm-klusterlet-self-signed-secrets":
-		ca, err := utils.GenerateSelfSignedCACert("multicloudhub-klusterlet")
+		ca, err := utils.GenerateSelfSignedCACert("multiclusterhub-klusterlet")
 		if err != nil {
 			return nil, err
 		}
-		cert, err := utils.GenerateSignedCert("multicloudhub-klusterlet", []string{}, ca)
+		cert, err := utils.GenerateSignedCert("multicluterhub-klusterlet", []string{}, ca)
 		if err != nil {
 			return nil, err
 		}

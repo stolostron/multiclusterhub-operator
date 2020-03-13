@@ -1,0 +1,14 @@
+resources:
+- rbac
+- security_context_constraints
+- repo
+- channel
+- hive
+- apiserver
+- controller
+- etcd
+- mongodb
+- webhook
+- certificates
+- subscriptions
+- topology_aggregator

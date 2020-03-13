@@ -1,10 +1,10 @@
 package controller
 
 import (
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/controller/multicloudhub"
+	multiclusterhub "github.com/open-cluster-management/multicloudhub-operator/pkg/controller/multiclusterhub"
 )
 
 func init() {
 	// AddToManagerFuncs is a list of functions to create controllers and add them to a manager.
-	AddToManagerFuncs = append(AddToManagerFuncs, multicloudhub.Add)
+	AddToManagerFuncs = append(AddToManagerFuncs, multiclusterhub.Add)
 }

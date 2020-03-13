@@ -1,10 +1,10 @@
 FROM scratch
 
-ARG OPERATOR_BUNDLE_NAME=multicloudhub-operator
+ARG OPERATOR_BUNDLE_NAME=multiclusterhub-operator
 ARG OPERATOR_CHANNELS=alpha
 ARG OPERATOR_DEFAULT_CHANNEL=alpha
-ARG OPERATOR_CRD=_output/olm/multicloudhub.crd.yaml
-ARG OPERATOR_CSV=_output/olm/multicloudhub.csv.yaml
+ARG OPERATOR_CRD=_output/olm/multiclusterhub.crd.yaml
+ARG OPERATOR_CSV=_output/olm/multiclusterhub.csv.yaml
 ARG ANNOTATION_YML=_output/olm/annotations.yaml
 
 LABEL operators.operatorframework.io.bundle.mediatype.v1=registry+v1

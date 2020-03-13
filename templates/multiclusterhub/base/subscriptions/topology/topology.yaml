@@ -1,0 +1,24 @@
+apiVersion: app.ibm.com/v1alpha1
+kind: Subscription
+metadata:
+  name: topology-sub
+spec:
+  channel: charts-v1
+  name: topology
+  placement:
+    local: true 
+  packageOverrides:
+    - packageName: topology
+      packageOverrides:
+      - path: spec.values
+        value: |
+          imageTagPostfix: "{{SUFFIX}}"
+          pullSecret: "{{PULLSECRET}}"
+          ui:
+            image:
+              repository: "{{IMAGEREPO}}"
+              pullPolicy: "{{PULLPOLICY}}"
+          api:
+            image:
+              repository: "{{IMAGEREPO}}"
+              pullPolicy: "{{PULLPOLICY}}"

@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: multiclusterhub-repo
+  labels:
+    app: multiclusterhub-repo
+spec:
+  selector:
+    matchLabels:
+      app: multiclusterhub-repo
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: multiclusterhub-repo
+    spec:
+      containers:
+      - name: multiclusterhub-repo
+        image: multiclusterhub-repo:1.0.0
+        ports:
+          - containerPort: 3000
+        resources:
+          limits:
+            cpu: 50m
+            memory: 30Mi
+          requests:
+            cpu: 50m
+            memory: 30Mi
