@@ -15,6 +15,7 @@ spec:
           imageTagPostfix: "{{POSTFIX}}"
           imagePullSecrets:
           - "{{PULLSECRET}}"
+          network_ip_version: ipv4
           auth:
             enabled: true
             existingAdminSecret: mongodb-admin
