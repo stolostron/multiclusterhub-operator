@@ -92,7 +92,6 @@ func TestApplyAPIServerPatches(t *testing.T) {
 					},
 				},
 			},
-			Etcd: operatorsv1alpha1.Etcd{Endpoints: "test"},
 			Mongo: operatorsv1alpha1.Mongo{
 				Endpoints:  "test",
 				ReplicaSet: "test",
@@ -128,7 +127,6 @@ func TestApplyAPIServerPatchesWithSecret(t *testing.T) {
 					},
 				},
 			},
-			Etcd: operatorsv1alpha1.Etcd{Endpoints: "test", Secret: "test"},
 			Mongo: operatorsv1alpha1.Mongo{
 				Endpoints:  "test",
 				ReplicaSet: "test",

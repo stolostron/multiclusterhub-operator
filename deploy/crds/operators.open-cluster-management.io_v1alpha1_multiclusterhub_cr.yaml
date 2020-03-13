@@ -22,8 +22,6 @@ spec:
         enable-rbac: "true"
         enable-service-registry: "true"
       replicas: 1
-  etcd:
-    endpoints: http://etcd-cluster.default.svc.cluster.local:2379
   mongo:
     endpoints: mongo-0.mongo.default
     replicaSet: rs0

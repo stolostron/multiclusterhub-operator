@@ -33,18 +33,6 @@ spec:
         spec:
           description: MultiClusterHubSpec defines the desired state of MultiClusterHub
           properties:
-            etcd:
-              description: Spec of etcd
-              properties:
-                endpoints:
-                  description: Endpoints of etcd
-                  type: string
-                secret:
-                  description: Secret of etcd
-                  type: string
-              required:
-                - endpoints
-              type: object
             foundation:
               description: Spec of foundation
               properties:
@@ -284,7 +272,6 @@ spec:
               description: Version of the MultiCluster hub
               type: string
           required:
-            - etcd
             - foundation
             - hive
             - imagePullPolicy
