@@ -106,7 +106,6 @@ echo ""
 
 sed -i -e "s/namespace:.*/namespace: $NAMESPACE/g" deploy/crds/operators.open-cluster-management.io_v1alpha1_multiclusterhub_cr.yaml
 sed -i -e "s/endpoints: mongo-0.mongo.*/endpoints: mongo-0.mongo.$NAMESPACE/g" deploy/crds/operators.open-cluster-management.io_v1alpha1_multiclusterhub_cr.yaml
-sed -i -e "s/endpoints: http:\/\/etcd-cluster.*/endpoints: http:\/\/etcd-cluster.$NAMESPACE.svc.cluster.local:2379/g" deploy/crds/operators.open-cluster-management.io_v1alpha1_multiclusterhub_cr.yaml
 sed -i -e "s/namespace:.*/namespace: $NAMESPACE/g" deploy/kustomization.yaml
 sed -i -e "s/sourceNamespace:.*/sourceNamespace: $NAMESPACE/g" deploy/subscription.yaml
 rm -rf deploy/crds/operators.open-cluster-management.io_v1alpha1_multiclusterhub_cr.yaml-e
@@ -120,7 +119,7 @@ if [[ "$force" != "true" ]]; then
     echo "Ensure the file(s) below are correctly configured -"
     echo ""
     echo "- 'deploy/crds/operators.open-cluster-management.io_v1alpha1_multiclusterhub_cr.yaml'"
-    echo "-- Ensure 'spec.imageTagPostfix' is accurately set. (Ex- SNAPSHOT-YYYY-MM-DD-hh-mm-ss)."
+    echo "-- Ensure 'spec.imageTagSuffix' is accurately set. (Ex- SNAPSHOT-YYYY-MM-DD-hh-mm-ss)."
     echo "-- Apply any changes to the CR if necessary"
     echo ""
 

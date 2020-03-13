@@ -12,7 +12,7 @@ spec:
       packageOverrides:
       - path: spec.values
         value: |
-          imageTagPostfix: "{{POSTFIX}}"
+          imageTagPostfix: "{{SUFFIX}}"
           pullSecret: "{{PULLSECRET}}"
           proxy:
             image:

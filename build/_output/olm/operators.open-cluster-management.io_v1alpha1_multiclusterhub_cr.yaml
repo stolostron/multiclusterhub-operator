@@ -6,10 +6,10 @@ metadata:
 spec:
   version: latest
   imageRepository: "quay.io/open-cluster-management"
-  imageTagPostfix: "SNAPSHOT-2020-03-13-12-45-06"
+  imageTagSuffix: ""
   imagePullPolicy: Always
   imagePullSecret: quay-secret
-  ocpHost: "holy-pheasant.dev01.red-chesterfield.com"
+  ocpHost: ""
   foundation:
     apiserver:
       configuration:

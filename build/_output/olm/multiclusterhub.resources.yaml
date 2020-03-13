@@ -222,8 +222,8 @@ data:
                   imageRepository:
                     description: Repository of the MultiCluster hub images
                     type: string
-                  imageTagPostfix:
-                    description: ImageTagPostfix of the MultiCluster hub images
+                  imageTagSuffix:
+                    description: ImageTagSuffix of the MultiCluster hub images
                     type: string
                   mongo:
                     description: Spec of mongo
@@ -271,7 +271,7 @@ data:
                 - hive
                 - imagePullPolicy
                 - imageRepository
-                - imageTagPostfix
+                - imageTagSuffix
                 - mongo
                 - version
                 type: object
@@ -431,12 +431,12 @@ data:
                   "imagePullPolicy": "Always",
                   "imagePullSecret": "quay-secret",
                   "imageRepository": "quay.io/open-cluster-management",
-                  "imageTagPostfix": "SNAPSHOT-2020-03-13-12-45-06",
+                  "imageTagSuffix": "",
                   "mongo": {
                     "endpoints": "mongo-0.mongo.open-cluster-management",
                     "replicaSet": "rs0"
                   },
-                  "ocpHost": "holy-pheasant.dev01.red-chesterfield.com",
+                  "ocpHost": "",
                   "version": "latest"
                 }
               }
