@@ -50,18 +50,6 @@ data:
               spec:
                 description: MultiClusterHubSpec defines the desired state of MultiClusterHub
                 properties:
-                  etcd:
-                    description: Spec of etcd
-                    properties:
-                      endpoints:
-                        description: Endpoints of etcd
-                        type: string
-                      secret:
-                        description: Secret of etcd
-                        type: string
-                    required:
-                    - endpoints
-                    type: object
                   foundation:
                     description: Spec of foundation
                     properties:
@@ -279,7 +267,6 @@ data:
                     description: Version of the MultiCluster hub
                     type: string
                 required:
-                - etcd
                 - foundation
                 - hive
                 - imagePullPolicy
@@ -405,12 +392,9 @@ data:
                 "kind": "MultiClusterHub",
                 "metadata": {
                   "name": "example-multiclusterhub",
-                  "namespace": "default"
+                  "namespace": "open-cluster-management"
                 },
                 "spec": {
-                  "etcd": {
-                    "endpoints": "http://etcd-cluster.default.svc.cluster.local:2379"
-                  },
                   "foundation": {
                     "apiserver": {
                       "apiserverSecret": "mcm-apiserver-self-signed-secrets",
@@ -447,12 +431,12 @@ data:
                   "imagePullPolicy": "Always",
                   "imagePullSecret": "quay-secret",
                   "imageRepository": "quay.io/open-cluster-management",
-                  "imageTagPostfix": "",
+                  "imageTagPostfix": "SNAPSHOT-2020-03-13-12-45-06",
                   "mongo": {
-                    "endpoints": "mongo-0.mongo.default",
+                    "endpoints": "mongo-0.mongo.open-cluster-management",
                     "replicaSet": "rs0"
                   },
-                  "ocpHost": "",
+                  "ocpHost": "holy-pheasant.dev01.red-chesterfield.com",
                   "version": "latest"
                 }
               }

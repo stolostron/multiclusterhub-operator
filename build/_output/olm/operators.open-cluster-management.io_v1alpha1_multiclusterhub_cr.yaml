@@ -2,14 +2,14 @@ apiVersion: operators.open-cluster-management.io/v1alpha1
 kind: MultiClusterHub
 metadata:
   name: example-multiclusterhub
-  namespace: default
+  namespace: open-cluster-management
 spec:
   version: latest
   imageRepository: "quay.io/open-cluster-management"
-  imageTagPostfix: ""
+  imageTagPostfix: "SNAPSHOT-2020-03-13-12-45-06"
   imagePullPolicy: Always
   imagePullSecret: quay-secret
-  ocpHost: ""
+  ocpHost: "holy-pheasant.dev01.red-chesterfield.com"
   foundation:
     apiserver:
       configuration:
@@ -22,10 +22,8 @@ spec:
         enable-rbac: "true"
         enable-service-registry: "true"
       replicas: 1
-  etcd:
-    endpoints: http://etcd-cluster.default.svc.cluster.local:2379
   mongo:
-    endpoints: mongo-0.mongo.default
+    endpoints: mongo-0.mongo.open-cluster-management
     replicaSet: rs0
   hive:
     additionalCertificateAuthorities:

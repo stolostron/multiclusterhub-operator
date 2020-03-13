@@ -45,27 +45,28 @@ func ApplyAPIServerPatches(res *resource.Resource, multipleClusterHub *operators
 	}
 
 	etcdServer := fmt.Sprintf("http://etcd-cluster.%s.svc.cluster.local:2379", multipleClusterHub.Namespace)
+	fmt.Printf("ETCDServer: %s\n", etcdServer)
 	args := multipleClusterHub.Spec.Foundation.Apiserver.Configuration
 	args["etcd-servers"] = etcdServer
-	if multipleClusterHub.Spec.Etcd.Secret != "" {
-		args["etcd-cafile"] = "/etc/etcd/ca.crt"
-		args["etcd-certfile"] = "/etc/etcd/tls.crt"
-		args["etcd-keyfile"] = "/etc/etcd/tls.key"
+	// if multipleClusterHub.Spec.Etcd.Secret != "" {
+	// 	args["etcd-cafile"] = "/etc/etcd/ca.crt"
+	// 	args["etcd-certfile"] = "/etc/etcd/tls.crt"
+	// 	args["etcd-keyfile"] = "/etc/etcd/tls.key"
 
-		if err := applySecretPatches(
-			res,
-			[]corev1.EnvVar{},
-			[]corev1.Volume{{
-				Name: "etcd-certs",
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{SecretName: multipleClusterHub.Spec.Etcd.Secret},
-				},
-			}},
-			[]corev1.VolumeMount{{Name: "etcd-certs", MountPath: "/etc/etcd"}},
-		); err != nil {
-			return err
-		}
-	}
+	// 	if err := applySecretPatches(
+	// 		res,
+	// 		[]corev1.EnvVar{},
+	// 		[]corev1.Volume{{
+	// 			Name: "etcd-certs",
+	// 			VolumeSource: corev1.VolumeSource{
+	// 				Secret: &corev1.SecretVolumeSource{SecretName: multipleClusterHub.Spec.Etcd.Secret},
+	// 			},
+	// 		}},
+	// 		[]corev1.VolumeMount{{Name: "etcd-certs", MountPath: "/etc/etcd"}},
+	// 	); err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	args["mongo-host"] = multipleClusterHub.Spec.Mongo.Endpoints
 	args["mongo-replicaset"] = multipleClusterHub.Spec.Mongo.ReplicaSet
