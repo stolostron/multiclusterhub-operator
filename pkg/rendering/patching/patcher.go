@@ -44,8 +44,9 @@ func ApplyAPIServerPatches(res *resource.Resource, multipleClusterHub *operators
 		return err
 	}
 
+	etcdServer := fmt.Sprintf("http://etcd-cluster.%s.svc.cluster.local:2379", multipleClusterHub.Namespace)
 	args := multipleClusterHub.Spec.Foundation.Apiserver.Configuration
-	args["etcd-servers"] = multipleClusterHub.Spec.Etcd.Endpoints
+	args["etcd-servers"] = etcdServer
 	if multipleClusterHub.Spec.Etcd.Secret != "" {
 		args["etcd-cafile"] = "/etc/etcd/ca.crt"
 		args["etcd-certfile"] = "/etc/etcd/tls.crt"
