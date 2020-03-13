@@ -13,15 +13,17 @@ spec:
       - path: spec.values
         value: |
           imageTagPostfix: "{{POSTFIX}}"
+          imagePullSecrets:
+          - "{{PULLSECRET}}"
           auth:
             enabled: true
             existingAdminSecret: mongodb-admin
           image:
             pullPolicy: "{{PULLPOLICY}}"
-            repository: {{IMAGEREPO}}/multicloud-mongodb
+            repository: {{IMAGEREPO}}
           installImage:
             pullPolicy: "{{PULLPOLICY}}"
-            repository: {{IMAGEREPO}}/multicloud-mongodb-init
+            repository: {{IMAGEREPO}}
           persistentVolume:
             accessModes:
             - ReadWriteOnce
