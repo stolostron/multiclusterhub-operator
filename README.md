@@ -72,7 +72,7 @@ make local
 ## Deploy MultiClusterHub operator
 
 ```bash
-kubectl create namespace multicloud-system
+kubectl create namespace multicluster-system
 
 kubectl -k deploy
 ```
@@ -82,11 +82,11 @@ kubectl -k deploy
 ```bash
 make olm-catalog
 
-oc create namespace multicloud-system
+oc create namespace multicluster-system
 
 oc apply -f build/_output/olm/multiclusterhub.resources.yaml
 
-cat <<EOF | oc -n multicloud-system apply -f -
+cat <<EOF | oc -n multicluster-system apply -f -
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
@@ -96,7 +96,7 @@ spec:
   installPlanApproval: Automatic
   name: multiclusterhub-operator
   source: multiclusterhub-operator-registry
-  sourceNamespace: multicloud-system
+  sourceNamespace: multicluster-system
   startingCSV: multiclusterhub-operator.v0.0.1
 EOF
 ```
@@ -108,5 +108,5 @@ or after the `multiclusterhub.resources.yaml` is applied, deploy the operator in
 > Note: the etcd and mongo need to be installed in advance
 
 ```bash
-kubectl -n multicloud-system apply -f deploy/crds/operators.open-cluster-management.io_v1alpha1_multiclusterhub_cr.yaml
+kubectl -n multicluster-system apply -f deploy/crds/operators.open-cluster-management.io_v1alpha1_multiclusterhub_cr.yaml
 ```

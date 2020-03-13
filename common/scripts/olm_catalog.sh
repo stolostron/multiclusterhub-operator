@@ -93,7 +93,7 @@ else
 fi
 
 NAME=${NAME:-multiclusterhub-operator-registry}
-NAMESPACE=${NAMESPACE:-multicloud-system}
+NAMESPACE=${NAMESPACE:-multicluster-system}
 DISPLAYNAME=${DISPLAYNAME:-multiclusterhub-operator}
 
 cat <<< "$CRD" > "${OLMOUTPUTDIR}"/multiclusterhub.crd.yaml
