@@ -215,8 +215,8 @@ spec:
             imageRepository:
               description: Repository of the MultiCluster hub images
               type: string
-            imageTagPostfix:
-              description: ImageTagPostfix of the MultiCluster hub images
+            imageTagSuffix:
+              description: ImageTagSuffix of the MultiCluster hub images
               type: string
             mongo:
               description: Spec of mongo
@@ -265,7 +265,7 @@ spec:
           - hive
           - imagePullPolicy
           - imageRepository
-          - imageTagPostfix
+          - imageTagSuffix
           - mongo
           - version
           type: object

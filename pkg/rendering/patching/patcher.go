@@ -283,11 +283,11 @@ func generateImagePatch(res *resource.Resource, mch *operatorsv1alpha1.MultiClus
 		return nil, err
 	}
 	imageRepo := mch.Spec.ImageRepository
-	imageTagPostfix := mch.Spec.ImageTagPostfix
-	if imageTagPostfix != "" {
-		imageTagPostfix = "-" + imageTagPostfix
+	imageTagSuffix := mch.Spec.ImageTagSuffix
+	if imageTagSuffix != "" {
+		imageTagSuffix = "-" + imageTagSuffix
 	}
-	generatedImage := fmt.Sprintf("%s/%s%s", imageRepo, imageFromTemplate, imageTagPostfix)
+	generatedImage := fmt.Sprintf("%s/%s%s", imageRepo, imageFromTemplate, imageTagSuffix)
 
 	container, _ := res.GetFieldValue("spec.template.spec.containers[0]") // need to loop through all images
 	containerMap, _ := container.(map[string]interface{})

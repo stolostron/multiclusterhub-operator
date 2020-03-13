@@ -18,8 +18,8 @@ type MultiClusterHubSpec struct {
 	// Repository of the MultiCluster hub images
 	ImageRepository string `json:"imageRepository"`
 
-	// ImageTagPostfix of the MultiCluster hub images
-	ImageTagPostfix string `json:"imageTagPostfix"`
+	// ImageTagSuffix of the MultiCluster hub images
+	ImageTagSuffix string `json:"imageTagSuffix"`
 
 	// Pull policy of the MultiCluster hub images
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy"`

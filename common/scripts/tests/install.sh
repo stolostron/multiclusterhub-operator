@@ -120,7 +120,7 @@ if [[ "$force" != "true" ]]; then
     echo "Ensure the file(s) below are correctly configured -"
     echo ""
     echo "- 'deploy/crds/operators.open-cluster-management.io_v1alpha1_multiclusterhub_cr.yaml'"
-    echo "-- Ensure 'spec.imageTagPostfix' is accurately set. (Ex- SNAPSHOT-YYYY-MM-DD-hh-mm-ss)."
+    echo "-- Ensure 'spec.imageTagSuffix' is accurately set. (Ex- SNAPSHOT-YYYY-MM-DD-hh-mm-ss)."
     echo "-- Apply any changes to the CR if necessary"
     echo ""
 

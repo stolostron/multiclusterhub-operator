@@ -12,12 +12,12 @@ spec:
       packageOverrides:
       - path: spec.values
         value: |
-          imageTagPostfix: "{{POSTFIX}}"
+          imageTagPostfix: "{{SUFFIX}}"
           pkiNamespace: "{{NAMESPACE}}"
           global:
             pullSecret: "{{PULLSECRET}}"
           cainjector:
-            imageTagPostfix: "{{POSTFIX}}"
+            imageTagPostfix: "{{SUFFIX}}"
             image:
               repository: "{{IMAGEREPO}}"
             serviceAccount:
