@@ -12,9 +12,6 @@
               "namespace": "default"
             },
             "spec": {
-              "etcd": {
-                "endpoints": "http://etcd-cluster.default.svc.cluster.local:2379"
-              },
               "foundation": {
                 "apiserver": {
                   "apiserverSecret": "mcm-apiserver-self-signed-secrets",

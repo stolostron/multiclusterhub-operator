@@ -106,7 +106,6 @@ echo ""
 
 sed -i -e "s/namespace:.*/namespace: $NAMESPACE/g" deploy/crds/operators.open-cluster-management.io_v1alpha1_multiclusterhub_cr.yaml
 sed -i -e "s/endpoints: mongo-0.mongo.*/endpoints: mongo-0.mongo.$NAMESPACE/g" deploy/crds/operators.open-cluster-management.io_v1alpha1_multiclusterhub_cr.yaml
-sed -i -e "s/endpoints: http:\/\/etcd-cluster.*/endpoints: http:\/\/etcd-cluster.$NAMESPACE.svc.cluster.local:2379/g" deploy/crds/operators.open-cluster-management.io_v1alpha1_multiclusterhub_cr.yaml
 sed -i -e "s/namespace:.*/namespace: $NAMESPACE/g" deploy/kustomization.yaml
 sed -i -e "s/sourceNamespace:.*/sourceNamespace: $NAMESPACE/g" deploy/subscription.yaml
 rm -rf deploy/crds/operators.open-cluster-management.io_v1alpha1_multiclusterhub_cr.yaml-e
