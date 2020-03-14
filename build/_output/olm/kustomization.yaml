@@ -1,4 +1,4 @@
-namespace: winespring
+namespace: default
 
 images: # updates operator.yaml with the dev image
 - name: multiclusterhub-operator

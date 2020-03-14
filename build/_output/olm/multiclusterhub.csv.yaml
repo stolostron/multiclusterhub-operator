@@ -9,11 +9,11 @@
             "kind": "MultiClusterHub",
             "metadata": {
               "name": "example-multiclusterhub",
-              "namespace": "winespring"
+              "namespace": "default"
             },
             "spec": {
               "etcd": {
-                "endpoints": "http://etcd-cluster.winespring.svc.cluster.local:2379"
+                "endpoints": "http://etcd-cluster.default.svc.cluster.local:2379"
               },
               "foundation": {
                 "apiserver": {
@@ -51,12 +51,12 @@
               "imagePullPolicy": "Always",
               "imagePullSecret": "quay-secret",
               "imageRepository": "quay.io/open-cluster-management",
-              "imageTagSuffix": "SNAPSHOT-2020-03-13-19-54-25",
+              "imageTagSuffix": "",
               "mongo": {
-                "endpoints": "mongo-0.mongo.winespring",
+                "endpoints": "mongo-0.mongo.default",
                 "replicaSet": "rs0"
               },
-              "ocpHost": "two-rivers.dev01.red-chesterfield.com",
+              "ocpHost": "",
               "version": "latest"
             }
           }
@@ -235,6 +235,12 @@
             - security.openshift.io
             resources:
             - securitycontextconstraints
+            verbs:
+            - '*'
+          - apiGroups:
+            - storage.k8s.io
+            resources:
+            - storageclasses
             verbs:
             - '*'
           serviceAccountName: multiclusterhub-operator

@@ -46,9 +46,6 @@ push:
 olm-catalog: clean
 	@common/scripts/olm_catalog.sh "$(BUNDLE_REGISTRY)" "$(IMG)" "$(VERSION)"
 
-good-install:
-	@common/scripts/tests/install.sh
-
 clean::
 	rm -rf $(BUILD_DIR)/_output
 	rm -f cover.out

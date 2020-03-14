@@ -2,15 +2,15 @@ apiVersion: operators.open-cluster-management.io/v1alpha1
 kind: MultiClusterHub
 metadata:
   name: example-multiclusterhub
-  namespace: winespring
+  namespace: default
 spec:
   version: latest
   imageRepository: "quay.io/open-cluster-management"
   # storageClass: "gp2"
-  imageTagSuffix: "SNAPSHOT-2020-03-13-19-54-25"
+  imageTagSuffix: ""
   imagePullPolicy: Always
   imagePullSecret: quay-secret
-  ocpHost: "two-rivers.dev01.red-chesterfield.com"
+  ocpHost: ""
   foundation:
     apiserver:
       configuration:
@@ -24,9 +24,9 @@ spec:
         enable-service-registry: "true"
       replicas: 1
   etcd:
-    endpoints: http://etcd-cluster.winespring.svc.cluster.local:2379
+    endpoints: http://etcd-cluster.default.svc.cluster.local:2379
   mongo:
-    endpoints: mongo-0.mongo.winespring
+    endpoints: mongo-0.mongo.default
     replicaSet: rs0
   hive:
     additionalCertificateAuthorities:

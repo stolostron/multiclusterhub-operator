@@ -58,7 +58,7 @@ func TestRender(t *testing.T) {
 	}
 
 	renderer := NewRenderer(mchcr)
-	objs, err := renderer.Render()
+	objs, err := renderer.Render(nil)
 	if err != nil {
 		t.Fatalf("failed to render multiclusterhub %v", err)
 	}
