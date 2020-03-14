@@ -246,6 +246,9 @@ data:
                   imageRepository:
                     description: Repository of the MultiCluster hub images
                     type: string
+                  StorageClass:
+                    description: StorageClass for MultiCluster hub components
+                    type: string
                   imageTagSuffix:
                     description: ImageTagSuffix of the MultiCluster hub images
                     type: string
@@ -650,6 +653,12 @@ data:
                 - security.openshift.io
                 resources:
                 - securitycontextconstraints
+                verbs:
+                - '*'
+              - apiGroups:
+                - storage.k8s.io
+                resources:
+                - storageclasses
                 verbs:
                 - '*'
               serviceAccountName: multiclusterhub-operator

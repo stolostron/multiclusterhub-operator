@@ -234,6 +234,12 @@
             - securitycontextconstraints
             verbs:
             - '*'
+          - apiGroups:
+            - storage.k8s.io
+            resources:
+            - storageclasses
+            verbs:
+            - '*'
           serviceAccountName: multiclusterhub-operator
         deployments:
         - name: multiclusterhub-operator

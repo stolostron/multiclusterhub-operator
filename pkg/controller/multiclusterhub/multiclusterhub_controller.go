@@ -114,7 +114,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 
 	//Render the templates with a specified CR
 	renderer := rendering.NewRenderer(multiClusterHub)
-	toDeploy, err := renderer.Render()
+	toDeploy, err := renderer.Render(r.client)
 	if err != nil {
 		reqLogger.Error(err, "Failed to render MultiClusterHub templates")
 		return reconcile.Result{}, err

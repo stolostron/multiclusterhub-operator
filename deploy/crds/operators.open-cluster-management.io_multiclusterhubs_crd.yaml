@@ -227,6 +227,9 @@ spec:
             imageRepository:
               description: Repository of the MultiCluster hub images
               type: string
+            StorageClass:
+              description: StorageClass for MultiCluster hub components
+              type: string
             imageTagSuffix:
               description: ImageTagSuffix of the MultiCluster hub images
               type: string

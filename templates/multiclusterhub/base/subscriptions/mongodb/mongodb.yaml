@@ -12,7 +12,7 @@ spec:
       packageOverrides:
       - path: spec.values
         value: |
-          imageTagPostfix: "{{POSTFIX}}"
+          imageTagPostfix: "{{SUFFIX}}"
           imagePullSecrets:
           - "{{PULLSECRET}}"
           network_ip_version: ipv4
@@ -22,15 +22,17 @@ spec:
           image:
             pullPolicy: "{{PULLPOLICY}}"
             repository: {{IMAGEREPO}}
+            tag: 3.6.8
           installImage:
             pullPolicy: "{{PULLPOLICY}}"
             repository: {{IMAGEREPO}}
+            tag: 3.6.8
           persistentVolume:
             accessModes:
             - ReadWriteOnce
             enabled: true
             size: 20Gi
-            storageClass: mongodb-storage
+            storageClass: {{STORAGECLASS}}
           replicas: "1"
           tls:
             casecret: multicloud-ca-cert
