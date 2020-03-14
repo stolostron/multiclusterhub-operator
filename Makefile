@@ -46,6 +46,9 @@ push:
 olm-catalog: clean
 	@common/scripts/olm_catalog.sh "$(BUNDLE_REGISTRY)" "$(IMG)" "$(VERSION)"
 
+good-install:
+	@common/scripts/tests/install.sh
+
 clean::
 	rm -rf $(BUILD_DIR)/_output
 	rm -f cover.out
@@ -98,6 +101,8 @@ unsubscribe:
 	# Wrong syntax for Makefile @for webhook in $(oc get validatingwebhookconfiguration | grep hive | cut -f 1 -d ' '); do oc delete validatingwebhookconfiguration $webhook; done
 	@oc delete ns hive || true
 	@oc delete scc multicloud-scc || true
+	@oc delete clusterrole multicloud-mongodb
+	@oc delete clusterrolebinding multicloud-mongodb
 
 resubscribe: unsubscribe subscribe
 

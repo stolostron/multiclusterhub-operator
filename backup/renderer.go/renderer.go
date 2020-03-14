@@ -1,6 +1,7 @@
 package rendering
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/patching"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
+	storv1 "k8s.io/api/storage/v1"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -218,33 +220,33 @@ func (r *Renderer) renderSubscription(c runtimeclient.Client, res *resource.Reso
 		imageTagSuffix = "-" + imageTagSuffix
 	}
 
-	// fmt.Println("############	NW DEBUG A")
-	// storageClass := r.cr.Spec.StorageClass
-	// fmt.Println("############	NW DEBUG B")
-	// if storageClass == "" {
-	// 	fmt.Println("############	NW DEBUG C")
-	// 	scList := &storv1.StorageClassList{}
-	// 	fmt.Println("############	NW DEBUG D")
-	// 	if err := c.List(context.TODO(), scList); err != nil {
-	// 		fmt.Println("############	NW DEBUG E")
-	// 		return nil, err
-	// 	}
-	// 	fmt.Println("############	NW DEBUG F")
-	// 	for _, sc := range scList.Items {
-	// 		fmt.Println("############	NW DEBUG G")
-	// 		if sc.Annotations["storageclass.kubernetes.io/is-default-class"] == "true" {
-	// 			fmt.Println("############	NW DEBUG H")
-	// 			storageClass = sc.GetName()
-	// 			fmt.Println("############	NW DEBUG I")
-	// 		}
-	// 	}
-	// }
-	// fmt.Println("############	NW DEBUG J")
-	// // edge case (hopefully)
-	// if storageClass == "" {
-	// 	fmt.Println("############	NW DEBUG K")
-	// 	return nil, fmt.Errorf("failed to find storage class")
-	// }
+	fmt.Println("############	NW DEBUG A")
+	storageClass := r.cr.Spec.StorageClass
+	fmt.Println("############	NW DEBUG B")
+	if storageClass == "" {
+		fmt.Println("############	NW DEBUG C")
+		scList := &storv1.StorageClassList{}
+		fmt.Println("############	NW DEBUG D")
+		if err := c.List(context.TODO(), scList); err != nil {
+			fmt.Println("############	NW DEBUG E")
+			return nil, err
+		}
+		fmt.Println("############	NW DEBUG F")
+		for _, sc := range scList.Items {
+			fmt.Println("############	NW DEBUG G")
+			if sc.Annotations["storageclass.kubernetes.io/is-default-class"] == "true" {
+				fmt.Println("############	NW DEBUG H")
+				storageClass = sc.GetName()
+				fmt.Println("############	NW DEBUG I")
+			}
+		}
+	}
+	fmt.Println("############	NW DEBUG J")
+	// edge case (hopefully)
+	if storageClass == "" {
+		fmt.Println("############	NW DEBUG K")
+		return nil, fmt.Errorf("failed to find storage class")
+	}
 
 	// Check if contains a packageOverrides
 	packageOverrides, ok := spec["packageOverrides"].([]interface{})
@@ -255,7 +257,7 @@ func (r *Renderer) renderSubscription(c runtimeclient.Client, res *resource.Reso
 				override := packageOverride["packageOverrides"].([]interface{})
 				for j := 0; j < len(override); j++ {
 					packageData, _ := override[j].(map[string]interface{})
-					// packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{STORAGECLASS}}", storageClass)
+					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{STORAGECLASS}}", storageClass)
 					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{SUFFIX}}", imageTagSuffix)
 					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{IMAGEREPO}}", r.cr.Spec.ImageRepository)
 					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{PULLSECRET}}", r.cr.Spec.ImagePullSecret)

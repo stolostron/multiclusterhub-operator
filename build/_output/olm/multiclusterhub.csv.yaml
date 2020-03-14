@@ -9,11 +9,11 @@
             "kind": "MultiClusterHub",
             "metadata": {
               "name": "example-multiclusterhub",
-              "namespace": "default"
+              "namespace": "winespring"
             },
             "spec": {
               "etcd": {
-                "endpoints": "http://etcd-cluster.default.svc.cluster.local:2379"
+                "endpoints": "http://etcd-cluster.winespring.svc.cluster.local:2379"
               },
               "foundation": {
                 "apiserver": {
@@ -51,12 +51,12 @@
               "imagePullPolicy": "Always",
               "imagePullSecret": "quay-secret",
               "imageRepository": "quay.io/open-cluster-management",
-              "imageTagSuffix": "",
+              "imageTagSuffix": "SNAPSHOT-2020-03-13-19-54-25",
               "mongo": {
-                "endpoints": "mongo-0.mongo.default",
+                "endpoints": "mongo-0.mongo.winespring",
                 "replicaSet": "rs0"
               },
-              "ocpHost": "",
+              "ocpHost": "two-rivers.dev01.red-chesterfield.com",
               "version": "latest"
             }
           }
