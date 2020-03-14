@@ -42,9 +42,6 @@ type MultiClusterHubSpec struct {
 	// Spec of foundation
 	Foundation `json:"foundation"`
 
-	// Spec of etcd
-	Etcd `json:"etcd"`
-
 	// Spec of hive
 	Hive HiveConfigSpec `json:"hive"`
 
@@ -106,16 +103,6 @@ type Controller struct {
 	// Configuration of the pod
 	// +optional
 	Configuration map[string]string `json:"configuration,omitempty"`
-}
-
-// Etcd defines the desired state of etcd
-type Etcd struct {
-	// Endpoints of etcd
-	Endpoints string `json:"endpoints"`
-
-	// Secret of etcd
-	// +optional
-	Secret string `json:"secret,omitempty"`
 }
 
 type HiveConfigSpec struct {
