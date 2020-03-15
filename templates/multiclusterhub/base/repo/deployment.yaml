@@ -22,7 +22,22 @@ spec:
         resources:
           limits:
             cpu: 50m
-            memory: 30Mi
+            memory: 100Mi
           requests:
             cpu: 50m
-            memory: 30Mi
+            memory: 50Mi
+        livenessProbe:
+          httpGet:
+            path: "/liveness"
+            scheme: HTTP
+            port: 3000
+        readinessProbe:
+          httpGet:
+            path: "/readiness"
+            scheme: HTTP
+            port: 3000
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
