@@ -11,6 +11,7 @@ resources:
 - crds/hive_v1_dnszone.yaml
 - crds/hive_v1_hiveconfig.yaml
 - crds/hive_v1_machinepool.yaml
+- crds/hive_v1_machinepoolnamelease.yaml
 - crds/hive_v1_selectorsyncidentityprovider.yaml
 - crds/hive_v1_selectorsyncset.yaml
 - crds/hive_v1_syncidentityprovider.yaml

@@ -115,6 +115,10 @@ spec:
                           parent ManageDNSConfig object. Secret should have AWS keys
                           named 'aws_access_key_id' and 'aws_secret_access_key'.
                         type: object
+                      region:
+                        description: Region is the AWS region to use for route53 operations.
+                          This defaults to us-east-1. For AWS China, use cn-northwest-1.
+                        type: string
                     type: object
                   domains:
                     description: Domains is the list of domains that hive will be
@@ -149,6 +153,15 @@ spec:
                 client CA configmap data from the openshift-config-managed namespace.
                 When the configmap changes, admission is redeployed.
               type: string
+            configApplied:
+              description: ConfigApplied will be set by the hive operator to indicate
+                whether or not the LastGenerationObserved was successfully reconciled.
+              type: boolean
+            observedGeneration:
+              description: ObservedGeneration will record the most recently processed
+                HiveConfig object's generation.
+              format: int64
+              type: integer
           type: object
   version: v1
 status:

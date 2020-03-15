@@ -76,6 +76,8 @@ rules:
   - dnszones
   - dnsendpoints
   - machinepools
+  - machinepoolnameleases
+  - machinepoolnameleases/status
   - selectorsyncidentityproviders
   - selectorsyncsets
   - syncidentityproviders
@@ -84,6 +86,8 @@ rules:
   - syncsets
   - clusterimagesets
   - clusterdeprovisions
+  # TODO: remove once v1alpha1 compat removed
+  - clusterdeprovisionrequests
   - clusterstates
   - clusterstates/status
   verbs:
@@ -152,10 +156,6 @@ rules:
   - get
   - list
   - watch
-  - create
-  - update
-  - patch
-  - delete
 - apiGroups:
   - ""
   resources:
