@@ -9,3 +9,6 @@ resources:
 - hiveoperator-sa.yaml
 - hivecontrollers-role.yaml
 - hivecontrollers-rolebinding.yaml
+- hive_frontend_role.yaml
+- hive_frontend_role_binding.yaml
+- hive_frontend_serviceaccount.yaml
