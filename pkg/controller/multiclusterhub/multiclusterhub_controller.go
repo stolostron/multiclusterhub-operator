@@ -10,8 +10,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -111,6 +115,12 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	if result != nil {
 		return *result, err
 	}
+
+	result, err = r.ingressDomain(multiClusterHub)
+	if result != nil {
+		return *result, err
+	}
+	return reconcile.Result{}, nil
 
 	//Render the templates with a specified CR
 	renderer := rendering.NewRenderer(multiClusterHub)
@@ -216,4 +226,47 @@ func generatePass(length int) string {
 		buf[i] = chars[nBig.Int64()]
 	}
 	return string(buf)
+}
+
+// ingressDomain is discovered from Openshift cluster configuration resources
+func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1alpha1.MultiClusterHub) (*reconcile.Result, error) {
+	if m.Spec.IngressDomain != "" {
+		return nil, nil
+	}
+
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		log.Error(err, "Failed API host discovery/authentication", "ingressDomain", m.Spec.IngressDomain)
+		return &reconcile.Result{}, err
+	}
+
+	dynClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		log.Error(err, "Failed to create dynamic client", "ingressDomain", m.Spec.IngressDomain)
+		return &reconcile.Result{}, err
+	}
+
+	schema := schema.GroupVersionResource{Group: "config.openshift.io", Version: "v1", Resource: "ingresses"}
+	crdClient := dynClient.Resource(schema)
+
+	crd, err := crdClient.Get("cluster", metav1.GetOptions{})
+	if err != nil {
+		log.Error(err, "Failed to get resource", "resource", "config.openshift.io/v1/ingresses/cluster")
+		return &reconcile.Result{}, err
+	}
+
+	domain, ok, err := unstructured.NestedString(crd.UnstructuredContent(), "spec", "domain")
+	if err != nil {
+		log.Error(err, "Error parsing resource", "resource", "config.openshift.io/v1/ingresses/cluster", "value", "spec.domain")
+		return &reconcile.Result{}, err
+	}
+	if !ok {
+		err = fmt.Errorf("field not found")
+		log.Error(err, "Ingress config did not contain expected value", "resource", "config.openshift.io/v1/ingresses/cluster", "value", "spec.domain")
+		return &reconcile.Result{}, err
+	}
+
+	log.Info("Ingress domain not set, resolving value", "ingressDomain", domain)
+	m.Spec.IngressDomain = domain
+	return nil, nil
 }

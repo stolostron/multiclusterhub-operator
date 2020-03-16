@@ -231,7 +231,7 @@ func (r *Renderer) renderSubscription(res *resource.Resource) (*unstructured.Uns
 					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{PULLSECRET}}", r.cr.Spec.ImagePullSecret)
 					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{NAMESPACE}}", r.cr.Namespace)
 					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{PULLPOLICY}}", string(r.cr.Spec.ImagePullPolicy))
-					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{OCPHOST}}", string(r.cr.Spec.OCPHOST))
+					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{OCPHOST}}", string(r.cr.Spec.IngressDomain))
 				}
 			}
 		}
