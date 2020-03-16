@@ -97,45 +97,6 @@ spec:
                 be needed. Sets replicas to 0 for the hive-controllers deployment
                 to accomplish this.
               type: boolean
-            managedDomains:
-              description: 'ManagedDomains is the list of DNS domains that are managed
-                by the Hive cluster When specifying ''managedDNS: true'' in a ClusterDeployment,
-                the ClusterDeployment''s baseDomain should be a direct child of one
-                of these domains, otherwise the ClusterDeployment creation will result
-                in a validation error.'
-              items:
-                properties:
-                  aws:
-                    description: AWS contains AWS-specific settings for external DNS
-                    properties:
-                      credentialsSecretRef:
-                        description: CredentialsSecretRef references a secret that
-                          will be used to authenticate with AWS Route53. It will need
-                          permission to manage entries for the domain listed in the
-                          parent ManageDNSConfig object. Secret should have AWS keys
-                          named 'aws_access_key_id' and 'aws_secret_access_key'.
-                        type: object
-                    type: object
-                  domains:
-                    description: Domains is the list of domains that hive will be
-                      managing entries for with the provided credentials.
-                    items:
-                      type: string
-                    type: array
-                  gcp:
-                    description: GCP contains GCP-specific settings for external DNS
-                    properties:
-                      credentialsSecretRef:
-                        description: CredentialsSecretRef references a secret that
-                          will be used to authenticate with GCP DNS. It will need
-                          permission to manage entries in each of the managed domains
-                          for this cluster. listed in the parent ManageDNSConfig object.
-                          Secret should have a key named 'osServiceAccount.json'.
-                          The credentials must specify the project to use.
-                        type: object
-                    type: object
-                type: object
-              type: array
             syncSetReapplyInterval:
               description: SyncSetReapplyInterval is a string duration indicating
                 how much time must pass before SyncSet resources will be reapplied.
