@@ -28,8 +28,3 @@ spec:
           serviceAccount:
             create: false
             name: default
-          watcher:
-            configmap:
-              name: extension-apiserver-authentication
-              namespace: "{{NAMESPACE}}"
-            optIn: true
