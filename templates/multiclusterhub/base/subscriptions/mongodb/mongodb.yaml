@@ -22,11 +22,9 @@ spec:
           image:
             pullPolicy: "{{PULLPOLICY}}"
             repository: {{IMAGEREPO}}
-            tag: 3.6.8
           installImage:
             pullPolicy: "{{PULLPOLICY}}"
             repository: {{IMAGEREPO}}
-            tag: 3.6.8
           persistentVolume:
             accessModes:
             - ReadWriteOnce
