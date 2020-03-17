@@ -120,7 +120,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	if result != nil {
 		return *result, err
 	}
-	return reconcile.Result{}, nil
 
 	//Render the templates with a specified CR
 	renderer := rendering.NewRenderer(multiClusterHub)
@@ -236,13 +235,13 @@ func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1alpha1.MultiClust
 
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		log.Error(err, "Failed API host discovery/authentication", "ingressDomain", m.Spec.IngressDomain)
+		log.Error(err, "Failed to get cluster config for API host discovery/authentication")
 		return &reconcile.Result{}, err
 	}
 
 	dynClient, err := dynamic.NewForConfig(config)
 	if err != nil {
-		log.Error(err, "Failed to create dynamic client", "ingressDomain", m.Spec.IngressDomain)
+		log.Error(err, "Failed to create dynamic client from cluster config")
 		return &reconcile.Result{}, err
 	}
 
@@ -251,22 +250,28 @@ func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1alpha1.MultiClust
 
 	crd, err := crdClient.Get("cluster", metav1.GetOptions{})
 	if err != nil {
-		log.Error(err, "Failed to get resource", "resource", "config.openshift.io/v1/ingresses/cluster")
+		log.Error(err, "Failed to get resource", "resource", schema.GroupResource().String())
 		return &reconcile.Result{}, err
 	}
 
 	domain, ok, err := unstructured.NestedString(crd.UnstructuredContent(), "spec", "domain")
 	if err != nil {
-		log.Error(err, "Error parsing resource", "resource", "config.openshift.io/v1/ingresses/cluster", "value", "spec.domain")
+		log.Error(err, "Error parsing resource", "resource", schema.GroupResource().String(), "value", "spec.domain")
 		return &reconcile.Result{}, err
 	}
 	if !ok {
 		err = fmt.Errorf("field not found")
-		log.Error(err, "Ingress config did not contain expected value", "resource", "config.openshift.io/v1/ingresses/cluster", "value", "spec.domain")
+		log.Error(err, "Ingress config did not contain expected value", "resource", schema.GroupResource().String(), "value", "spec.domain")
 		return &reconcile.Result{}, err
 	}
 
-	log.Info("Ingress domain not set, resolving value", "ingressDomain", domain)
+	log.Info("Ingress domain not set, updating value in spec", "MultiClusterHub.Namespace", m.Namespace, "MultiClusterHub.Name", m.Name, "ingressDomain", domain)
 	m.Spec.IngressDomain = domain
+	err = r.client.Update(context.TODO(), m)
+	if err != nil {
+		log.Error(err, "Failed to update MultiClusterHub", "MultiClusterHub.Namespace", m.Namespace, "MultiClusterHub.Name", m.Name)
+		return &reconcile.Result{}, err
+	}
+
 	return nil, nil
 }
