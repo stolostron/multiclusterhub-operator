@@ -212,7 +212,7 @@ func generateMongoSecrets(mch *operatorsv1alpha1.MultiClusterHub) ([]corev1.EnvV
 	volumeMounts := []corev1.VolumeMount{}
 	volumes := []corev1.Volume{}
 	envs = append(envs, corev1.EnvVar{
-		Name: "MONGO_USERNAME",
+		Name: "MONGO_ROOT_USERNAME",
 		ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
 				Key: "user",
@@ -222,7 +222,7 @@ func generateMongoSecrets(mch *operatorsv1alpha1.MultiClusterHub) ([]corev1.EnvV
 			},
 		},
 	}, corev1.EnvVar{
-		Name: "MONGO_PASSWORD",
+		Name: "MONGO_ROOT_PASSWORD",
 		ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
 				Key: "password",
