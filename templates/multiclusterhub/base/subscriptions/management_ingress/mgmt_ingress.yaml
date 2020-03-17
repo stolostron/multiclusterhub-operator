@@ -12,13 +12,9 @@ spec:
       packageOverrides:
       - path: spec.values
         value: |
-          allowed_host_headers: "multicloud-console.{{OCPHOST}} 127.0.0.1 management-ingress"
           imageTagPostfix: "{{SUFFIX}}"
           pullSecret: "{{PULLSECRET}}"
           image:
             repository: "{{IMAGEREPO}}"
             pullPolicy: "{{PULLPOLICY}}"
-          oauth_client:
-            callback_url: "https://multicloud-console.{{OCPHOST}}/oauth/callback"
-          console_route:
-            host: "multicloud-console.{{OCPHOST}}"
+          cluster_basedomain: "{{OCPHOST}}"

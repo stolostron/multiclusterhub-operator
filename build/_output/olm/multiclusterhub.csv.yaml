@@ -40,10 +40,7 @@
                 },
                 "globalPullSecret": {
                   "name": "private-secret"
-                },
-                "managedDomains": [
-                  "s1.openshiftapps.com"
-                ]
+                }
               },
               "imagePullPolicy": "Always",
               "imagePullSecret": "quay-secret",

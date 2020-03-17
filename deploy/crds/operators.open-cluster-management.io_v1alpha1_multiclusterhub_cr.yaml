@@ -27,8 +27,6 @@ spec:
   hive:
     additionalCertificateAuthorities:
       - name: letsencrypt-ca
-    managedDomains:
-      - s1.openshiftapps.com
     globalPullSecret:
       name: private-secret
     failedProvisionConfig:

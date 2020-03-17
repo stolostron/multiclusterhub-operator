@@ -5,11 +5,5 @@ metadata:
 spec:
   additionalCertificateAuthorities:
   - name: letsencrypt-ca
-  managedDomains:
-  - aws:
-      credentialsSecretRef:
-        name: external-dns-route53-admin
-    domains:
-    - s1.openshiftapps.com
   globalPullSecret:
     name: private-secret

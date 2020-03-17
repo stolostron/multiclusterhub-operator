@@ -205,16 +205,6 @@
                       rarely be needed. Sets replicas to 0 for the hive-controllers
                       deployment to accomplish this.
                     type: boolean
-                  managedDomains:
-                    description:
-                      "ManagedDomains is the list of DNS domains that are
-                      allowed to be used by the 'managedDNS' feature. When specifying
-                      'managedDNS: true' in a ClusterDeployment, the ClusterDeployment's
-                      baseDomain must be a direct child of one of these domains, otherwise
-                      the ClusterDeployment creation will result in a validation error."
-                    items:
-                      type: string
-                    type: array
                 required:
                   - failedProvisionConfig
                 type: object

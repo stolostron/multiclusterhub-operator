@@ -1,0 +1,73 @@
+# hive-frontend is a role intended for integrating applications acting as a frontend
+# to Hive. These applications will need quite powerful permissions in the Hive cluster
+# to create namespaces to organize clusters, as well as all the required objects in those
+# clusters.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: hive-frontend
+rules:
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - pods/log
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  - configmaps
+  - events
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - hive.openshift.io
+  resources:
+  - clusterdeployments
+  - clusterprovisions
+  - dnszones
+  - machinepools
+  - selectorsyncidentityproviders
+  - syncidentityproviders
+  - selectorsyncsets
+  - syncsets
+  - clusterdeprovisions
+  # TODO: remove once v1alpha1 compat removed
+  - clusterdeprovisionrequests
+  - clusterstates
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - hive.openshift.io
+  resources:
+  - clusterimagesets
+  - hiveconfigs
+  verbs:
+  - get
+  - list
+  - watch
