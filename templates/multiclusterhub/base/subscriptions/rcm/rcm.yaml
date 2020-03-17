@@ -6,13 +6,15 @@ spec:
   channel: charts-v1
   name: rcm
   placement:
-    local: true 
+    local: true
   packageOverrides:
     - packageName: rcm
       packageOverrides:
       - path: spec.values
         value: |
           imageTagPostfix: "{{SUFFIX}}"
+          imageRepository: "{{IMAGEREPO}}"
+          imagePullSecret: "{{PULLSECRET}}"
           clusterController:
             image:
               repository: "{{IMAGEREPO}}"
