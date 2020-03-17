@@ -121,7 +121,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	}
 	//Deploy the resources
 	for _, res := range toDeploy {
-		if res.GetNamespace() == multiClusterHub.Namespace || res.GetNamespace() == "" {
+		if res.GetNamespace() == multiClusterHub.Namespace {
 			if err := controllerutil.SetControllerReference(multiClusterHub, res, r.scheme); err != nil {
 				reqLogger.Error(err, "Failed to set controller reference")
 			}
