@@ -28,9 +28,9 @@ type MultiClusterHubSpec struct {
 	// +optional
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
 
-	// Hostname portion of OCP Domain
+	// Default domain for routes
 	// +optional
-	OCPHOST string `json:"ocpHost,omitempty"`
+	IngressDomain string `json:"ingressDomain,omitempty"`
 
 	// Spec of NodeSelector
 	// +optional
@@ -258,7 +258,7 @@ type DeploymentResult struct {
 // MultiClusterHub is the Schema for the multiclusterhubs API
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:path=multiclusterhubs,scope=Namespaced
+// +kubebuilder:resource:path=multiclusterhubs,scope=Namespaced,shortName=mch
 // +operator-sdk:gen-csv:customresourcedefinitions.displayName="MultiClusterHub Operator"
 type MultiClusterHub struct {
 	metav1.TypeMeta   `json:",inline"`

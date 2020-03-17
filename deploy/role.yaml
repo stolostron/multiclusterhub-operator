@@ -137,3 +137,9 @@ rules:
   - securitycontextconstraints
   verbs:
   - '*'
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - ingresses
+  verbs:
+  - get

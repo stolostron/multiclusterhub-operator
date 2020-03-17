@@ -50,7 +50,6 @@ metadata:
               "endpoints": "mongo-0.mongo.default",
               "replicaSet": "rs0"
             },
-            "ocpHost": "",
             "version": "latest"
           }
         }
@@ -232,6 +231,12 @@ spec:
           - securitycontextconstraints
           verbs:
           - '*'
+        - apiGroups:
+          - config.openshift.io
+          resources:
+          - ingresses
+          verbs:
+          - get
         serviceAccountName: multiclusterhub-operator
       deployments:
       - name: multiclusterhub-operator

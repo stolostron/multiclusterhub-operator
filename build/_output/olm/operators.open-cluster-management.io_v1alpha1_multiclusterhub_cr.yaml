@@ -9,7 +9,6 @@ spec:
   imageTagSuffix: ""
   imagePullPolicy: Always
   imagePullSecret: quay-secret
-  ocpHost: ""
   foundation:
     apiserver:
       configuration:
