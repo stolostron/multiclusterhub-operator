@@ -50,6 +50,8 @@ func ApplyAPIServerPatches(res *resource.Resource, multipleClusterHub *operators
 
 	args["mongo-host"] = multipleClusterHub.Spec.Mongo.Endpoints
 	args["mongo-replicaset"] = multipleClusterHub.Spec.Mongo.ReplicaSet
+	args["aggregator-host"] = "https://search-aggregator:3010"
+	args["aggregator-secrets"] = fmt.Sprintf("%s/search-aggregator-secrets", res.GetNamespace())
 	envVars, volumes, volumeMounts := generateMongoSecrets(multipleClusterHub)
 	if err := applySecretPatches(res, envVars, volumes, volumeMounts); err != nil {
 		return err
