@@ -1,7 +1,9 @@
 namespace: hive
 
+bases:
+  - ./rbac
+
 resources:
-- rbac
 - crds/hive_v1_checkpoint.yaml
 - crds/hive_v1_clusterdeployment.yaml
 - crds/hive_v1_clusterdeprovision.yaml
