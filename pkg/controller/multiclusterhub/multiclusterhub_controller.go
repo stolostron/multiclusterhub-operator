@@ -10,8 +10,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -108,6 +112,11 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 
 	var result *reconcile.Result
 	result, err = r.ensureSecret(request, multiClusterHub, r.mongoAuthSecret(multiClusterHub))
+	if result != nil {
+		return *result, err
+	}
+
+	result, err = r.ingressDomain(multiClusterHub)
 	if result != nil {
 		return *result, err
 	}
@@ -218,4 +227,53 @@ func generatePass(length int) string {
 		buf[i] = chars[nBig.Int64()]
 	}
 	return string(buf)
+}
+
+// ingressDomain is discovered from Openshift cluster configuration resources
+func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1alpha1.MultiClusterHub) (*reconcile.Result, error) {
+	if m.Spec.IngressDomain != "" {
+		return nil, nil
+	}
+
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		log.Error(err, "Failed to get cluster config for API host discovery/authentication")
+		return &reconcile.Result{}, err
+	}
+
+	dynClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		log.Error(err, "Failed to create dynamic client from cluster config")
+		return &reconcile.Result{}, err
+	}
+
+	schema := schema.GroupVersionResource{Group: "config.openshift.io", Version: "v1", Resource: "ingresses"}
+	crdClient := dynClient.Resource(schema)
+
+	crd, err := crdClient.Get("cluster", metav1.GetOptions{})
+	if err != nil {
+		log.Error(err, "Failed to get resource", "resource", schema.GroupResource().String())
+		return &reconcile.Result{}, err
+	}
+
+	domain, ok, err := unstructured.NestedString(crd.UnstructuredContent(), "spec", "domain")
+	if err != nil {
+		log.Error(err, "Error parsing resource", "resource", schema.GroupResource().String(), "value", "spec.domain")
+		return &reconcile.Result{}, err
+	}
+	if !ok {
+		err = fmt.Errorf("field not found")
+		log.Error(err, "Ingress config did not contain expected value", "resource", schema.GroupResource().String(), "value", "spec.domain")
+		return &reconcile.Result{}, err
+	}
+
+	log.Info("Ingress domain not set, updating value in spec", "MultiClusterHub.Namespace", m.Namespace, "MultiClusterHub.Name", m.Name, "ingressDomain", domain)
+	m.Spec.IngressDomain = domain
+	err = r.client.Update(context.TODO(), m)
+	if err != nil {
+		log.Error(err, "Failed to update MultiClusterHub", "MultiClusterHub.Namespace", m.Namespace, "MultiClusterHub.Name", m.Name)
+		return &reconcile.Result{}, err
+	}
+
+	return nil, nil
 }

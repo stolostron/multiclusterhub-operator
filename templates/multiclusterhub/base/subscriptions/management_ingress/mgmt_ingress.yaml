@@ -17,4 +17,4 @@ spec:
           image:
             repository: "{{IMAGEREPO}}"
             pullPolicy: "{{PULLPOLICY}}"
-          cluster_basedomain: "{{OCPHOST}}"
+          cluster_basedomain: "{{DOMAIN}}"
