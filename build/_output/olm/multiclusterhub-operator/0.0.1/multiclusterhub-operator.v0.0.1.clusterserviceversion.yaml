@@ -12,9 +12,6 @@ metadata:
             "namespace": "default"
           },
           "spec": {
-            "etcd": {
-              "endpoints": "http://etcd-cluster.default.svc.cluster.local:2379"
-            },
             "foundation": {
               "apiserver": {
                 "apiserverSecret": "mcm-apiserver-self-signed-secrets",
@@ -43,15 +40,12 @@ metadata:
               },
               "globalPullSecret": {
                 "name": "private-secret"
-              },
-              "managedDomains": [
-                "s1.openshiftapps.com"
-              ]
+              }
             },
             "imagePullPolicy": "Always",
             "imagePullSecret": "quay-secret",
             "imageRepository": "quay.io/open-cluster-management",
-            "imageTagPostfix": "",
+            "imageTagSuffix": "",
             "mongo": {
               "endpoints": "mongo-0.mongo.default",
               "replicaSet": "rs0"

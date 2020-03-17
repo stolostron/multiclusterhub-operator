@@ -49,7 +49,6 @@ func TestRender(t *testing.T) {
 					},
 				},
 			},
-			Etcd: operatorsv1alpha1.Etcd{Endpoints: "test"},
 			Mongo: operatorsv1alpha1.Mongo{
 				Endpoints:  "test",
 				ReplicaSet: "test",

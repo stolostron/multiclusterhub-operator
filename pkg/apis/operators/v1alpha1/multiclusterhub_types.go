@@ -18,8 +18,8 @@ type MultiClusterHubSpec struct {
 	// Repository of the MultiCluster hub images
 	ImageRepository string `json:"imageRepository"`
 
-	// ImageTagPostfix of the MultiCluster hub images
-	ImageTagPostfix string `json:"imageTagPostfix"`
+	// ImageTagSuffix of the MultiCluster hub images
+	ImageTagSuffix string `json:"imageTagSuffix"`
 
 	// Pull policy of the MultiCluster hub images
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy"`
@@ -38,9 +38,6 @@ type MultiClusterHubSpec struct {
 
 	// Spec of foundation
 	Foundation `json:"foundation"`
-
-	// Spec of etcd
-	Etcd `json:"etcd"`
 
 	// Spec of hive
 	Hive HiveConfigSpec `json:"hive"`
@@ -105,23 +102,7 @@ type Controller struct {
 	Configuration map[string]string `json:"configuration,omitempty"`
 }
 
-// Etcd defines the desired state of etcd
-type Etcd struct {
-	// Endpoints of etcd
-	Endpoints string `json:"endpoints"`
-
-	// Secret of etcd
-	// +optional
-	Secret string `json:"secret,omitempty"`
-}
-
 type HiveConfigSpec struct {
-	// ManagedDomains is the list of DNS domains that are allowed to be used by the 'managedDNS' feature.
-	// When specifying 'managedDNS: true' in a ClusterDeployment, the ClusterDeployment's
-	// baseDomain must be a direct child of one of these domains, otherwise the
-	// ClusterDeployment creation will result in a validation error.
-	// +optional
-	ManagedDomains []string `json:"managedDomains,omitempty"`
 
 	// ExternalDNS specifies configuration for external-dns if it is to be deployed by
 	// Hive. If absent, external-dns will not be deployed.
