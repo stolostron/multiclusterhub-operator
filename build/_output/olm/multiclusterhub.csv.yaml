@@ -9,9 +9,14 @@
             "kind": "MultiClusterHub",
             "metadata": {
               "name": "example-multiclusterhub",
-              "namespace": "open-cluster-management"
+              "namespace": "default"
             },
             "spec": {
+              "etcd": {
+                "size": 3,
+                "storage": "1Gi",
+                "storageclass": "gp2"
+              },
               "foundation": {
                 "apiserver": {
                   "apiserverSecret": "mcm-apiserver-self-signed-secrets",
@@ -47,7 +52,7 @@
               "imageRepository": "quay.io/open-cluster-management",
               "imageTagSuffix": "",
               "mongo": {
-                "endpoints": "mongo-0.mongo.open-cluster-management",
+                "endpoints": "mongo-0.mongo.default",
                 "replicaSet": "rs0"
               },
               "version": "latest"

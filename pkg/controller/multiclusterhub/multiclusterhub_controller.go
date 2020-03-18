@@ -122,7 +122,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	result, err = r.storageClass(multiClusterHub)
+	result, err = r.configureEtcd(multiClusterHub)
 	if result != nil {
 		return *result, err
 	}
@@ -235,25 +235,38 @@ func generatePass(length int) string {
 	return string(buf)
 }
 
-func (r *ReconcileMultiClusterHub) storageClass(m *operatorsv1alpha1.MultiClusterHub) (*reconcile.Result, error) {
-	storageClass := m.Spec.StorageClass
-	if storageClass == "" {
-		scList := &storv1.StorageClassList{}
-		if err := r.client.List(context.TODO(), scList); err != nil {
-			return nil, err
+func (r *ReconcileMultiClusterHub) configureEtcd(m *operatorsv1alpha1.MultiClusterHub) (*reconcile.Result, error) {
+	if m.Spec.Etcd.StorageClass == "" {
+		storageClass, err := r.getStorageClass(m)
+		if err != nil {
+			return &reconcile.Result{}, err
 		}
-		for _, sc := range scList.Items {
-			if sc.Annotations["storageclass.kubernetes.io/is-default-class"] == "true" {
-				m.Spec.StorageClass = sc.GetName()
-				break
-			}
-		}
+		m.Spec.Etcd.StorageClass = storageClass
+	}
+	if m.Spec.Etcd.Size == nil {
+		m.Spec.Etcd.Size = &(&struct{ x int32 }{3}).x
+	}
+	if m.Spec.Etcd.Storage == "" {
+		m.Spec.Etcd.Storage = "1Gi"
 	}
 	// edge case (hopefully)
 	if m.Spec.StorageClass == "" {
 		return &reconcile.Result{}, fmt.Errorf("failed to find storage class")
 	}
 	return nil, nil
+}
+
+func (r *ReconcileMultiClusterHub) getStorageClass(m *operatorsv1alpha1.MultiClusterHub) (string, error) {
+	scList := &storv1.StorageClassList{}
+	if err := r.client.List(context.TODO(), scList); err != nil {
+		return "", err
+	}
+	for _, sc := range scList.Items {
+		if sc.Annotations["storageclass.kubernetes.io/is-default-class"] == "true" {
+			return sc.GetName(), nil
+		}
+	}
+	return "", fmt.Errorf("failed to find default storageclass")
 }
 
 // ingressDomain is discovered from Openshift cluster configuration resources

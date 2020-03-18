@@ -391,6 +391,8 @@ func (r *Renderer) renderEtcdCluster(res *resource.Resource) (*unstructured.Unst
 		return nil, fmt.Errorf("failed to find Etcd spec field")
 	}
 
+	spec["size"] = r.cr.Spec.Size
+
 	pod, ok := spec["pod"].(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("failed to find Etcd spec pod field")
@@ -400,5 +402,15 @@ func (r *Renderer) renderEtcdCluster(res *resource.Resource) (*unstructured.Unst
 		return nil, fmt.Errorf("failed to find Etcd spec pod persistentVolumeClaimSpec field")
 	}
 	persistentVolumeClaimSpec["storageClassName"] = r.cr.Spec.StorageClass
+
+	resources, ok := persistentVolumeClaimSpec["resources"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to find Etcd spec pod persistentVolumeClaimSpec resources field")
+	}
+	requests, ok := resources["requests"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to find Etcd spec pod persistentVolumeClaimSpec resources requests field")
+	}
+	requests["storage"] = r.cr.Spec.Etcd.Storage
 	return u, nil
 }

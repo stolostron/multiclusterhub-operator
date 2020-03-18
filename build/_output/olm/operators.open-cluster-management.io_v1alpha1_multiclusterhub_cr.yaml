@@ -2,14 +2,13 @@ apiVersion: operators.open-cluster-management.io/v1alpha1
 kind: MultiClusterHub
 metadata:
   name: example-multiclusterhub
-  namespace: open-cluster-management
+  namespace: default
 spec:
   version: latest
   imageRepository: "quay.io/open-cluster-management"
   imageTagSuffix: ""
   imagePullPolicy: Always
   imagePullSecret: quay-secret
-  # storageClass: "gp3"
   foundation:
     apiserver:
       configuration:
@@ -23,7 +22,7 @@ spec:
         enable-service-registry: "true"
       replicas: 1
   mongo:
-    endpoints: mongo-0.mongo.open-cluster-management
+    endpoints: mongo-0.mongo.default
     replicaSet: rs0
   hive:
     additionalCertificateAuthorities:
@@ -32,3 +31,7 @@ spec:
       name: private-secret
     failedProvisionConfig:
       skipGatherLogs: true
+  etcd:
+    storageclass: gp2
+    size: 3
+    storage: "1Gi"

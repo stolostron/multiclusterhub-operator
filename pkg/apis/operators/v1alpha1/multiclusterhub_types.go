@@ -18,10 +18,6 @@ type MultiClusterHubSpec struct {
 	// Repository of the MultiCluster hub images
 	ImageRepository string `json:"imageRepository"`
 
-	// StorageClass for MultiCluster hub components
-	// +optional
-	StorageClass string `json:"storageClass"`
-
 	// ImageTagSuffix of the MultiCluster hub images
 	ImageTagSuffix string `json:"imageTagSuffix"`
 
@@ -48,6 +44,25 @@ type MultiClusterHubSpec struct {
 
 	// Spec of mongo
 	Mongo `json:"mongo"`
+
+	// Spec of Etcd
+	// +optional
+	Etcd `json:"etcd,omitempty"`
+}
+
+// Etcd defines the desired state of Etcd
+type Etcd struct {
+	// StorageClass for MultiCluster hub components
+	// +optional
+	StorageClass string `json:"storageClass,omitempty"`
+
+	// Replicas of Etcd
+	// +optional
+	Size *int32 `json:"size,omitempty"`
+
+	// StorageSize for MultiCluster hub components (ex. 1Gi)
+	// +optional
+	Storage string `json:"storage,omiteempty"`
 }
 
 // NodeSelector defines the desired state of NodeSelector
