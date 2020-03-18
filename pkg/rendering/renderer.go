@@ -211,50 +211,19 @@ func stringValueReplace(to_replace string, cr *operatorsv1alpha1.MultiClusterHub
 	return replaced
 }
 
-// func stringValueReplace(values map[string]interface{}, key string, cr *operatorsv1alpha1.MultiClusterHub) {
-
-// 	// ONLY DO REPLACE IF VALUE IS STRING-- WILL NEED TO UPDATE IF/WHEN BOOLEANS&NUMBERS NEED OVERWRITTEN
-// 	if reflect.TypeOf(values[key]).String() == "string" {
-
-// 		imageTagSuffix := cr.Spec.ImageTagSuffix
-// 		if imageTagSuffix != "" {
-// 			imageTagSuffix = "-" + imageTagSuffix
-// 		}
-
-// 		values[key] = strings.ReplaceAll(values[key].(string), "{{SUFFIX}}", string(imageTagSuffix))
-// 		values[key] = strings.ReplaceAll(values[key].(string), "{{IMAGEREPO}}", string(cr.Spec.ImageRepository))
-// 		values[key] = strings.ReplaceAll(values[key].(string), "{{PULLSECRET}}", string(cr.Spec.ImagePullSecret))
-// 		values[key] = strings.ReplaceAll(values[key].(string), "{{NAMESPACE}}", string(cr.Namespace))
-// 		values[key] = strings.ReplaceAll(values[key].(string), "{{PULLPOLICY}}", string(cr.Spec.ImagePullPolicy))
-// 		values[key] = strings.ReplaceAll(values[key].(string), "{{DOMAIN}}", string(cr.Spec.IngressDomain))
-// 		values[key] = strings.ReplaceAll(values[key].(string), "{{STORAGECLASS}}", string(cr.Spec.StorageClass))
-// 	}
-// }
-
 func replaceInValues(values map[string]interface{}, cr *operatorsv1alpha1.MultiClusterHub) error {
-	fmt.Println(">>>>>>>>>> replaceInValues START values: ", values)
 	for in_key := range values {
-		fmt.Println(">>>>>>>>>> replaceInValues: in_key: ", in_key)
-		fmt.Println(">>>>>>>>>> replaceInValues: values[in_key]: ", values[in_key])
-		fmt.Println(">>>>>>>>>> replaceInValues: reflect.TypeOf(values[in_key]).String(): ", reflect.TypeOf(values[in_key]).String())
-		fmt.Println(">>>>>>>>>> replaceInValues: reflect.TypeOf(values[in_key]).Kind().String(): ", reflect.TypeOf(values[in_key]).Kind().String())
 		isPrimitiveType := reflect.TypeOf(values[in_key]).String() == "string" || reflect.TypeOf(values[in_key]).String() == "bool" || reflect.TypeOf(values[in_key]).String() == "int"
-		fmt.Println(">>>>>>>>>> replaceInValues: isPrimitiveType", isPrimitiveType)
 		if isPrimitiveType {
 			if reflect.TypeOf(values[in_key]).String() == "string" {
-				fmt.Println(">>>>>>>>>> replaceInValues: is a string, replacing")
 				values[in_key] = stringValueReplace(values[in_key].(string), cr)
 			} // add other options for other primitives when required
-		} else if reflect.TypeOf(values[in_key]).Kind().String() == "slice" { // assumes only slices of strings
-			fmt.Println(">>>>>>>>>> replaceInValues: is slice: reflect.TypeOf(values[in_key]).Kind().String() = ", reflect.TypeOf(values[in_key]).Kind().String())
+		} else if reflect.TypeOf(values[in_key]).Kind().String() == "slice" {
 			string_slice := values[in_key].([]interface{})
-			fmt.Println(">>>>>>>>>> replaceInValues: is slice: string_slice = ", string_slice)
 			for i := range string_slice {
-				fmt.Println(">>>>>>>>>> replaceInValues: is slice: string_slice[i] = ", string_slice[i])
-				string_slice[i] = stringValueReplace(string_slice[i].(string), cr)
+				string_slice[i] = stringValueReplace(string_slice[i].(string), cr) // assumes only slices of strings, which is OK for now
 			}
 		} else { // reflect.TypeOf(values[in_key]).Kind().String() == "map"
-			fmt.Println(">>>>>>>>>> replaceInValues: is map: reflect.TypeOf(values[in_key]).Kind().String() = ", reflect.TypeOf(values[in_key]).Kind().String())
 			in_value, ok := values[in_key].(map[string]interface{})
 			if !ok {
 				return fmt.Errorf("failed to map values")
@@ -271,7 +240,7 @@ func replaceInValues(values map[string]interface{}, cr *operatorsv1alpha1.MultiC
 func (r *Renderer) renderSubscription(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
 
-	// Default to base renderFunc if not an IBM subscription
+	// Default to base renderFunc if not an apps.open-cluster-management.io/v1 subscription
 	if u.GetAPIVersion() != "apps.open-cluster-management.io/v1" {
 		return r.renderNamespace(res)
 	}
