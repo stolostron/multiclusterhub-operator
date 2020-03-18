@@ -194,6 +194,7 @@ func stringValueReplace(values map[string]interface{}, key string, cr *operators
 
 	// ONLY DO REPLACE IF VALUE IS STRING-- WILL NEED TO UPDATE IF/WHEN BOOLEANS&NUMBERS NEED OVERWRITTEN
 	if reflect.TypeOf(values[key]).String() == "string" {
+
 		imageTagSuffix := cr.Spec.ImageTagSuffix
 		if imageTagSuffix != "" {
 			imageTagSuffix = "-" + imageTagSuffix
@@ -209,27 +210,16 @@ func stringValueReplace(values map[string]interface{}, key string, cr *operators
 }
 
 func replaceInValues(values map[string]interface{}, cr *operatorsv1alpha1.MultiClusterHub) error {
-	// fmt.Println("^^^^^^^^^^^ INTRO key:", key, "=>", "values:", values)
-	// values, _ := values[key].(map[string]interface{})
+
 	for in_key := range values {
-		fmt.Println("^^^^^^^^^^^ in_key:", in_key, "values:", values)
-		// in_value, ok := values[in_key].(map[string]interface{})
-		// if !ok { // then it's a string?
-		// 	in_value :=
-		// }
-		// fmt.Println("^^^^^^^^^^^ in_key:", in_key, "=>", "in_value:", in_value)
 		isPrimitiveType := reflect.TypeOf(values[in_key]).String() == "string" || reflect.TypeOf(values[in_key]).String() == "bool" || reflect.TypeOf(values[in_key]).String() == "int"
 		if isPrimitiveType {
-			fmt.Println("^^^^^^^^^^^ values[in_key] IS TYPEOF STRING OR BOOL")
-			fmt.Println("^^^^^^^^^^^ in_key:", in_key, "=>", "values[in_key]:", values[in_key], "IS A STRING!!!")
 			stringValueReplace(values, in_key, cr)
 		} else {
-			fmt.Println("^^^^^^^^^^^", values[in_key], " IS A MAP-- MAPPING")
 			in_value, ok := values[in_key].(map[string]interface{})
 			if !ok {
 				return fmt.Errorf("failed to map values")
 			}
-			fmt.Println("^^^^^^^^^^^ in_key:", in_key, "=>", "in_value:", in_value, "HAS BEEN MAPPED! CALL RECURSIVELY!")
 			err := replaceInValues(in_value, cr)
 			if err != nil {
 				return err
@@ -262,11 +252,6 @@ func (r *Renderer) renderSubscription(res *resource.Resource) (*unstructured.Uns
 	}
 	spec["channel"] = fmt.Sprintf("%s/%s", r.cr.Namespace, spec["channel"])
 
-	// imageTagSuffix := r.cr.Spec.ImageTagSuffix
-	// if imageTagSuffix != "" {
-	// 	imageTagSuffix = "-" + imageTagSuffix
-	// }
-
 	// Check if contains a packageOverrides
 	packageOverrides, ok := spec["packageOverrides"].([]interface{})
 	if ok {
@@ -281,31 +266,6 @@ func (r *Renderer) renderSubscription(res *resource.Resource) (*unstructured.Uns
 					if err != nil {
 						return nil, err
 					}
-
-					//^ real stuff
-					// iterateOnValues(in_key, object)
-					/*
-
-
-						values, _ := packageData[in_key].(map[string]interface{})
-						keys = {get some keys}(key i of keys)
-						if values[i] == type string{
-							try to replace stuff
-						}
-						else{
-							iterateOnValue()
-						}
-						take in map[string]interface{} --> packageData
-
-
-					*/
-
-					// packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{SUFFIX}}", imageTagSuffix)
-					// packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{IMAGEREPO}}", r.cr.Spec.ImageRepository)
-					// packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{PULLSECRET}}", r.cr.Spec.ImagePullSecret)
-					// packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{NAMESPACE}}", r.cr.Namespace)
-					// packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{PULLPOLICY}}", string(r.cr.Spec.ImagePullPolicy))
-					// packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{OCPHOST}}", string(r.cr.Spec.OCPHOST))
 				}
 			}
 		}

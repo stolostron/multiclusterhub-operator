@@ -385,7 +385,7 @@ data:
                 "kind": "MultiClusterHub",
                 "metadata": {
                   "name": "example-multiclusterhub",
-                  "namespace": "fire"
+                  "namespace": "default"
                 },
                 "spec": {
                   "foundation": {
@@ -421,9 +421,9 @@ data:
                   "imagePullPolicy": "Always",
                   "imagePullSecret": "quay-secret",
                   "imageRepository": "quay.io/open-cluster-management",
-                  "imageTagSuffix": "SNAPSHOT-2020-03-18-02-33-16",
+                  "imageTagSuffix": "",
                   "mongo": {
-                    "endpoints": "mongo-0.mongo.fire",
+                    "endpoints": "mongo-0.mongo.default",
                     "replicaSet": "rs0"
                   },
                   "version": "latest"
