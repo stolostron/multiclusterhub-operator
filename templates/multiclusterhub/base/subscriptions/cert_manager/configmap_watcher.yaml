@@ -1,4 +1,4 @@
-apiVersion: app.ibm.com/v1alpha1
+apiVersion: apps.open-cluster-management.io/v1
 kind: Subscription
 metadata:
   name: configmap-watcher-sub
@@ -10,8 +10,8 @@ spec:
   packageOverrides:
     - packageName: configmap-watcher
       packageOverrides:
-      - path: spec.values
-        value: |
+      - path: spec
+        value:
           imageTagPostfix: "{{SUFFIX}}"
           global:
             pullSecret: "{{PULLSECRET}}"

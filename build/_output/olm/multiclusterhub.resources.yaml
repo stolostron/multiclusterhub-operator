@@ -437,28 +437,23 @@ data:
         apiservicedefinitions: {}
         customresourcedefinitions:
           required:
-          - name: channels.app.ibm.com
-            version: v1alpha1
+          - name: channels.apps.open-cluster-management.io
+            version: v1
             kind: Channel
             displayName: Channel
             description: Represent a helm chart repository
-          - name: deployables.app.ibm.com
-            version: v1alpha1
-            kind: Deployable
-            displayName: Deployable
-            description: 'Contain a k8s resource template for deployment, for internal use only.'
           - name: etcdclusters.etcd.database.coreos.com
             version: v1beta2
             kind: EtcdCluster
             displayName: etcd Cluster
             description: Represents a cluster of etcd nodes.
-          - name: helmreleases.app.ibm.com
-            version: v1alpha1
+          - name: helmreleases.apps.open-cluster-management.io
+            version: v1
             kind: HelmRelease
             displayName: Helm Release
             description: Represent a helm chart selected by the subscription, for internal use only.
-          - name: subscriptions.app.ibm.com
-            version: v1alpha1
+          - name: subscriptions.apps.open-cluster-management.io
+            version: v1
             kind: Subscription
             displayName: Subscription
             description: Subscribe resources from a channel according to its package filters
@@ -579,7 +574,7 @@ data:
                 - get
                 - create
               - apiGroups:
-                - app.ibm.com
+                - apps.open-cluster-management.io
                 resources:
                 - '*'
                 verbs:
