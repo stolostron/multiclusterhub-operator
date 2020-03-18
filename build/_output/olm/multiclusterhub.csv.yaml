@@ -40,20 +40,18 @@
                 },
                 "globalPullSecret": {
                   "name": "private-secret"
-                },
-                "managedDomains": [
-                  "s1.openshiftapps.com"
-                ]
+                }
               },
               "imagePullPolicy": "Always",
               "imagePullSecret": "quay-secret",
               "imageRepository": "quay.io/open-cluster-management",
               "imageTagSuffix": "",
               "mongo": {
-                "endpoints": "mongo-0.mongo.default",
-                "replicaSet": "rs0"
+                "caSecret": "multicloud-ca-cert",
+                "endpoints": "multicloud-mongodb",
+                "replicaSet": "rs0",
+                "tlsSecret": "multicloud-mongodb-client-cert"
               },
-              "ocpHost": "",
               "version": "latest"
             }
           }
@@ -64,28 +62,23 @@
     apiservicedefinitions: {}
     customresourcedefinitions:
       required:
-      - name: channels.app.ibm.com
-        version: v1alpha1
+      - name: channels.apps.open-cluster-management.io
+        version: v1
         kind: Channel
         displayName: Channel
         description: Represent a helm chart repository
-      - name: deployables.app.ibm.com
-        version: v1alpha1
-        kind: Deployable
-        displayName: Deployable
-        description: 'Contain a k8s resource template for deployment, for internal use only.'
       - name: etcdclusters.etcd.database.coreos.com
         version: v1beta2
         kind: EtcdCluster
         displayName: etcd Cluster
         description: Represents a cluster of etcd nodes.
-      - name: helmreleases.app.ibm.com
-        version: v1alpha1
+      - name: helmreleases.apps.open-cluster-management.io
+        version: v1
         kind: HelmRelease
         displayName: Helm Release
         description: Represent a helm chart selected by the subscription, for internal use only.
-      - name: subscriptions.app.ibm.com
-        version: v1alpha1
+      - name: subscriptions.apps.open-cluster-management.io
+        version: v1
         kind: Subscription
         displayName: Subscription
         description: Subscribe resources from a channel according to its package filters
@@ -206,7 +199,7 @@
             - get
             - create
           - apiGroups:
-            - app.ibm.com
+            - apps.open-cluster-management.io
             resources:
             - '*'
             verbs:
@@ -240,6 +233,12 @@
             - storageclasses
             verbs:
             - '*'
+          - apiGroups:
+            - config.openshift.io
+            resources:
+            - ingresses
+            verbs:
+            - get
           serviceAccountName: multiclusterhub-operator
         deployments:
         - name: multiclusterhub-operator

@@ -10,7 +10,6 @@ spec:
   imageTagSuffix: ""
   imagePullPolicy: Always
   imagePullSecret: quay-secret
-  ocpHost: ""
   foundation:
     apiserver:
       configuration:
@@ -24,13 +23,13 @@ spec:
         enable-service-registry: "true"
       replicas: 1
   mongo:
-    endpoints: mongo-0.mongo.default
+    endpoints: multicloud-mongodb
     replicaSet: rs0
+    tlsSecret: multicloud-mongodb-client-cert
+    caSecret: multicloud-ca-cert
   hive:
     additionalCertificateAuthorities:
       - name: letsencrypt-ca
-    managedDomains:
-      - s1.openshiftapps.com
     globalPullSecret:
       name: private-secret
     failedProvisionConfig:
