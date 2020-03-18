@@ -23,8 +23,10 @@ spec:
         enable-service-registry: "true"
       replicas: 1
   mongo:
-    endpoints: mongo-0.mongo.default
+    endpoints: multicloud-mongodb
     replicaSet: rs0
+    tlsSecret: multicloud-mongodb-client-cert
+    caSecret: multicloud-ca-cert
   hive:
     additionalCertificateAuthorities:
       - name: letsencrypt-ca

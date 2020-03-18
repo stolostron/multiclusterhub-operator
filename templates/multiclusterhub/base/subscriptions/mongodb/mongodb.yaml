@@ -1,4 +1,4 @@
-apiVersion: app.ibm.com/v1alpha1
+apiVersion: apps.open-cluster-management.io/v1
 kind: Subscription
 metadata:
   name: mongodb-sub
@@ -10,28 +10,28 @@ spec:
   packageOverrides:
     - packageName: multicloud-mongodb
       packageOverrides:
-      - path: spec.values
-        value: |
+      - path: spec
+        value: 
           imageTagPostfix: "{{SUFFIX}}"
           imagePullSecrets:
           - "{{PULLSECRET}}"
-          network_ip_version: ipv4
+          network_ip_version: "ipv4"
           auth:
             enabled: true
-            existingAdminSecret: mongodb-admin
+            existingAdminSecret: "mongodb-admin"
           image:
             pullPolicy: "{{PULLPOLICY}}"
-            repository: {{IMAGEREPO}}
+            repository: "{{IMAGEREPO}}"
           installImage:
             pullPolicy: "{{PULLPOLICY}}"
-            repository: {{IMAGEREPO}}
+            repository: "{{IMAGEREPO}}"
           persistentVolume:
             accessModes:
             - ReadWriteOnce
             enabled: true
-            size: 20Gi
-            storageClass: {{STORAGECLASS}}
+            size: "20Gi"
+            storageClass: "{{STORAGECLASS}}"
           replicas: "1"
           tls:
-            casecret: multicloud-ca-cert
+            casecret: "multicloud-ca-cert"
             enabled: true
