@@ -15,44 +15,44 @@ if [[ "$force_flag" == "-f" ]] || [[ "$force_flag" == "--force" ]]; then
     force=true
 fi
 
-if [ -z ${GITHUB_USER+x} ]; then 
+if [ -z ${GITHUB_USER+x} ]; then
     echo "Define variable - GITHUB_USER to avoid being prompted"
     while [[ $GITHUB_USER == '' ]] # While string is different or empty...
-    do 
+    do
         read -p "Enter your Github (github.com) username: " GITHUB_USER
-    done 
+    done
 fi
 
-if [ -z ${GITHUB_TOKEN+x} ]; then 
+if [ -z ${GITHUB_TOKEN+x} ]; then
     echo "Define variable - GITHUB_TOKEN to avoid being prompted"
     while [[ $GITHUB_TOKEN == '' ]] # While string is different or empty...
     do
         read -p "Enter your Github (github.com) password or token: " GITHUB_TOKEN
-    done 
+    done
 fi
 
-if [ -z ${DOCKER_USER+x} ]; then 
+if [ -z ${DOCKER_USER+x} ]; then
     echo "Define variable - DOCKER_USER to avoid being prompted"
     while [[ $DOCKER_USER == '' ]] # While string is different or empty...
     do
         read -p "Enter your Docker (quay.io) username: " DOCKER_USER
-    done 
+    done
 fi
 
-if [ -z ${DOCKER_PASS+x} ]; then 
+if [ -z ${DOCKER_PASS+x} ]; then
     echo "Define variable - DOCKER_PASS to avoid being prompted"
     while [[ $DOCKER_PASS == '' ]] # While string is different or empty...
     do
         read -p "Enter your Docker (quay.io) password or token: " DOCKER_PASS
-    done 
+    done
 fi
 
-if [ -z ${NAMESPACE+x} ]; then 
+if [ -z ${NAMESPACE+x} ]; then
     echo "Define variable - NAMESPACE to avoid being prompted"
     while [[ $NAMESPACE == '' ]] # While string is different or empty...
     do
         read -p "Enter your namespace to install the operator and operands: " NAMESPACE
-    done 
+    done
 fi
 
 export GITHUB_USER=$GITHUB_USER
@@ -60,6 +60,9 @@ export GITHUB_TOKEN=$GITHUB_TOKEN
 export DOCKER_USER=$DOCKER_USER
 export DOCKER_PASS=$DOCKER_PASS
 export NAMESPACE=$NAMESPACE
+
+# Ensure the default namespace is the one we are going to be working in
+oc project $NAMESPACE
 
 operatorSDKVersion=$(operator-sdk version | cut -d, -f 1 | tr -d '"' | cut -d ' ' -f 3)
 if [[ "$operatorSDKVersion" != "v0.15.1" ]]; then
@@ -143,7 +146,7 @@ do
     echo "Waiting for Operator to come online ..."
     _output=$(oc apply -f deploy/crds/operators.open-cluster-management.io_v1alpha1_multiclusterhub_cr.yaml 2>/dev/null)
     sleep 10
-done 
+done
 
 echo ""
 echo "Operator online. MultiClusterHub CR applied."

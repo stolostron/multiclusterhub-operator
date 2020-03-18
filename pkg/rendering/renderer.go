@@ -1,8 +1,8 @@
 package rendering
 
 import (
-	"context"
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -15,7 +15,6 @@ import (
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/patching"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
-	storv1 "k8s.io/api/storage/v1"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -31,7 +30,7 @@ const (
 
 var log = logf.Log.WithName("renderer")
 
-type renderFn func(runtimeclient.Client, *resource.Resource) (*unstructured.Unstructured, error)
+type renderFn func(*resource.Resource) (*unstructured.Unstructured, error)
 
 type Renderer struct {
 	cr        *operatorsv1alpha1.MultiClusterHub
@@ -64,14 +63,14 @@ func (r *Renderer) Render(c runtimeclient.Client) ([]*unstructured.Unstructured,
 	if err != nil {
 		return nil, err
 	}
-	resources, err := r.renderTemplates(c, templates)
+	resources, err := r.renderTemplates(templates)
 	if err != nil {
 		return nil, err
 	}
 	return resources, nil
 }
 
-func (r *Renderer) renderTemplates(c runtimeclient.Client, templates []*resource.Resource) ([]*unstructured.Unstructured, error) {
+func (r *Renderer) renderTemplates(templates []*resource.Resource) ([]*unstructured.Unstructured, error) {
 	uobjs := []*unstructured.Unstructured{}
 	for _, template := range templates {
 		render, ok := r.renderFns[template.GetKind()]
@@ -79,7 +78,7 @@ func (r *Renderer) renderTemplates(c runtimeclient.Client, templates []*resource
 			uobjs = append(uobjs, &unstructured.Unstructured{Object: template.Map()})
 			continue
 		}
-		uobj, err := render(c, template.DeepCopy())
+		uobj, err := render(template.DeepCopy())
 		if err != nil {
 			return []*unstructured.Unstructured{}, err
 		}
@@ -96,7 +95,7 @@ func (r *Renderer) renderTemplates(c runtimeclient.Client, templates []*resource
 	return uobjs, err
 }
 
-func (r *Renderer) renderAPIServices(c runtimeclient.Client, res *resource.Resource) (*unstructured.Unstructured, error) {
+func (r *Renderer) renderAPIServices(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
 	spec, ok := u.Object["spec"].(map[string]interface{})
 	if !ok {
@@ -109,7 +108,7 @@ func (r *Renderer) renderAPIServices(c runtimeclient.Client, res *resource.Resou
 	return u, nil
 }
 
-func (r *Renderer) renderNamespace(c runtimeclient.Client, res *resource.Resource) (*unstructured.Unstructured, error) {
+func (r *Renderer) renderNamespace(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
 
 	if UpdateNamespace(u) {
@@ -119,7 +118,7 @@ func (r *Renderer) renderNamespace(c runtimeclient.Client, res *resource.Resourc
 	return &unstructured.Unstructured{Object: res.Map()}, nil
 }
 
-func (r *Renderer) renderDeployments(c runtimeclient.Client, res *resource.Resource) (*unstructured.Unstructured, error) {
+func (r *Renderer) renderDeployments(res *resource.Resource) (*unstructured.Unstructured, error) {
 	err := patching.ApplyGlobalPatches(res, r.cr)
 	if err != nil {
 		return nil, err
@@ -158,7 +157,7 @@ func (r *Renderer) renderDeployments(c runtimeclient.Client, res *resource.Resou
 	}
 }
 
-func (r *Renderer) renderClusterRoleBinding(c runtimeclient.Client, res *resource.Resource) (*unstructured.Unstructured, error) {
+func (r *Renderer) renderClusterRoleBinding(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
 
 	subjects, ok := u.Object["subjects"].([]interface{})
@@ -178,7 +177,7 @@ func (r *Renderer) renderClusterRoleBinding(c runtimeclient.Client, res *resourc
 	return u, nil
 }
 
-func (r *Renderer) renderMutatingWebhookConfiguration(c runtimeclient.Client, res *resource.Resource) (*unstructured.Unstructured, error) {
+func (r *Renderer) renderMutatingWebhookConfiguration(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
 	webooks, ok := u.Object["webhooks"].([]interface{})
 	if !ok {
@@ -192,15 +191,60 @@ func (r *Renderer) renderMutatingWebhookConfiguration(c runtimeclient.Client, re
 	return u, nil
 }
 
-func (r *Renderer) renderSubscription(c runtimeclient.Client, res *resource.Resource) (*unstructured.Unstructured, error) {
+func stringValueReplace(values map[string]interface{}, key string, cr *operatorsv1alpha1.MultiClusterHub) {
+
+	// ONLY DO REPLACE IF VALUE IS STRING-- WILL NEED TO UPDATE IF/WHEN BOOLEANS&NUMBERS NEED OVERWRITTEN
+	if reflect.TypeOf(values[key]).String() == "string" {
+
+		// edge case (hopefully)
+		if storageClass == "" {
+			return fmt.Errorf("failed to find storage class")
+		}
+
+		imageTagSuffix := cr.Spec.ImageTagSuffix
+		if imageTagSuffix != "" {
+			imageTagSuffix = "-" + imageTagSuffix
+		}
+
+		values[key] = strings.ReplaceAll(values[key].(string), "{{SUFFIX}}", string(imageTagSuffix))
+		values[key] = strings.ReplaceAll(values[key].(string), "{{IMAGEREPO}}", string(cr.Spec.ImageRepository))
+		values[key] = strings.ReplaceAll(values[key].(string), "{{PULLSECRET}}", string(cr.Spec.ImagePullSecret))
+		values[key] = strings.ReplaceAll(values[key].(string), "{{NAMESPACE}}", string(cr.Namespace))
+		values[key] = strings.ReplaceAll(values[key].(string), "{{PULLPOLICY}}", string(cr.Spec.ImagePullPolicy))
+		values[key] = strings.ReplaceAll(values[key].(string), "{{DOMAIN}}", string(cr.Spec.IngressDomain))
+		values[key] = strings.ReplaceAll(values[key].(string), "{{STORAGECLASS}}", string(cr.Spec.StorageClass))
+	}
+}
+
+func replaceInValues(values map[string]interface{}, cr *operatorsv1alpha1.MultiClusterHub) error {
+
+	for in_key := range values {
+		isPrimitiveType := reflect.TypeOf(values[in_key]).String() == "string" || reflect.TypeOf(values[in_key]).String() == "bool" || reflect.TypeOf(values[in_key]).String() == "int"
+		if isPrimitiveType {
+			stringValueReplace(values, in_key, cr)
+		} else {
+			in_value, ok := values[in_key].(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("failed to map values")
+			}
+			err := replaceInValues(in_value, cr)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (r *Renderer) renderSubscription(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
 
 	// Default to base renderFunc if not an IBM subscription
-	if u.GetAPIVersion() != "app.ibm.com/v1alpha1" {
-		return r.renderNamespace(c, res)
+	if u.GetAPIVersion() != "apps.open-cluster-management.io/v1" {
+		return r.renderNamespace(res)
 	}
 
-	// IBM subscription handling
+	// apps.open-cluster-management.io/v1 subscription handling
 	metadata, ok := u.Object["metadata"].(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf(metadataErr)
@@ -211,31 +255,9 @@ func (r *Renderer) renderSubscription(c runtimeclient.Client, res *resource.Reso
 	// Update channel to prepend the CRs namespace
 	spec, ok := u.Object["spec"].(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("failed to find ibm subscription spec field")
+		return nil, fmt.Errorf("failed to find subscription spec field")
 	}
 	spec["channel"] = fmt.Sprintf("%s/%s", r.cr.Namespace, spec["channel"])
-
-	imageTagSuffix := r.cr.Spec.ImageTagSuffix
-	if imageTagSuffix != "" {
-		imageTagSuffix = "-" + imageTagSuffix
-	}
-
-	storageClass := r.cr.Spec.StorageClass
-	if storageClass == "" {
-		scList := &storv1.StorageClassList{}
-		if err := c.List(context.TODO(), scList); err != nil {
-			return nil, err
-		}
-		for _, sc := range scList.Items {
-			if sc.Annotations["storageclass.kubernetes.io/is-default-class"] == "true" {
-				storageClass = sc.GetName()
-			}
-		}
-	}
-	// edge case (hopefully)
-	if storageClass == "" {
-		return nil, fmt.Errorf("failed to find storage class")
-	}
 
 	// Check if contains a packageOverrides
 	packageOverrides, ok := spec["packageOverrides"].([]interface{})
@@ -246,13 +268,11 @@ func (r *Renderer) renderSubscription(c runtimeclient.Client, res *resource.Reso
 				override := packageOverride["packageOverrides"].([]interface{})
 				for j := 0; j < len(override); j++ {
 					packageData, _ := override[j].(map[string]interface{})
-					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{STORAGECLASS}}", storageClass)
-					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{SUFFIX}}", imageTagSuffix)
-					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{IMAGEREPO}}", r.cr.Spec.ImageRepository)
-					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{PULLSECRET}}", r.cr.Spec.ImagePullSecret)
-					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{NAMESPACE}}", r.cr.Namespace)
-					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{PULLPOLICY}}", string(r.cr.Spec.ImagePullPolicy))
-					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{OCPHOST}}", string(r.cr.Spec.OCPHOST))
+					values, _ := packageData["value"].(map[string]interface{})
+					err := replaceInValues(values, r.cr)
+					if err != nil {
+						return nil, err
+					}
 				}
 			}
 		}
@@ -260,7 +280,7 @@ func (r *Renderer) renderSubscription(c runtimeclient.Client, res *resource.Reso
 	return u, nil
 }
 
-func (r *Renderer) renderSecret(c runtimeclient.Client, res *resource.Resource) (*unstructured.Unstructured, error) {
+func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
 	metadata, ok := u.Object["metadata"].(map[string]interface{})
 	if !ok {
@@ -342,7 +362,7 @@ func (r *Renderer) renderSecret(c runtimeclient.Client, res *resource.Resource) 
 	return u, nil
 }
 
-func (r *Renderer) renderHiveConfig(c runtimeclient.Client, res *resource.Resource) (*unstructured.Unstructured, error) {
+func (r *Renderer) renderHiveConfig(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
 	u.Object["spec"] = structs.Map(r.cr.Spec.Hive)
 	return u, nil
@@ -378,7 +398,7 @@ func reRenderDependence(objs []*unstructured.Unstructured) ([]*unstructured.Unst
 	return objs, nil
 }
 
-func (r *Renderer) renderSecContextConstraints(c runtimeclient.Client, res *resource.Resource) (*unstructured.Unstructured, error) {
+func (r *Renderer) renderSecContextConstraints(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
 	users, ok := u.Object["users"].([]interface{})
 	if !ok {

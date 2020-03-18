@@ -1,4 +1,4 @@
-apiVersion: app.ibm.com/v1alpha1
+apiVersion: apps.open-cluster-management.io/v1
 kind: Subscription
 metadata:
   name: mgmt-ingress-sub
@@ -10,15 +10,11 @@ spec:
   packageOverrides:
     - packageName: management-ingress
       packageOverrides:
-      - path: spec.values
-        value: |
-          allowed_host_headers: "multicloud-console.apps.{{OCPHOST}} 127.0.0.1 management-ingress"
+      - path: spec
+        value:
           imageTagPostfix: "{{SUFFIX}}"
           pullSecret: "{{PULLSECRET}}"
           image:
             repository: "{{IMAGEREPO}}"
             pullPolicy: "{{PULLPOLICY}}"
-          oauth_client:
-            callback_url: "https://multicloud-console.apps.{{OCPHOST}}/oauth/callback"
-          console_route:
-            host: "multicloud-console.apps.{{OCPHOST}}"
+          cluster_basedomain: "{{DOMAIN}}"

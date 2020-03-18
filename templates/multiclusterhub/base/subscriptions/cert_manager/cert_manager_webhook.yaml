@@ -1,4 +1,4 @@
-apiVersion: app.ibm.com/v1alpha1
+apiVersion: apps.open-cluster-management.io/v1
 kind: Subscription
 metadata:
   name: cert-webhook-sub
@@ -10,8 +10,8 @@ spec:
   packageOverrides:
     - packageName: cert-manager-webhook
       packageOverrides:
-      - path: spec.values
-        value: |
+      - path: spec
+        value:
           imageTagPostfix: "{{SUFFIX}}"
           pkiNamespace: "{{NAMESPACE}}"
           global:
@@ -28,8 +28,3 @@ spec:
           serviceAccount:
             create: false
             name: default
-          watcher:
-            configmap:
-              name: extension-apiserver-authentication
-              namespace: "{{NAMESPACE}}"
-            optIn: true

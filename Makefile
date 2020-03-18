@@ -98,7 +98,13 @@ unsubscribe:
 	@oc delete deploy -n hive hiveadmission || true
 	@oc delete apiservice v1.admission.hive.openshift.io || true
 	@oc delete apiservice v1.hive.openshift.io || true
+	@oc delete apiservice v1alpha1.clusterregistry.k8s.io || true
+	@oc delete apiservice v1alpha1.mcm.ibm.com || true
+	@oc delete apiservice v1beta1.mcm.ibm.com || true
 	@oc delete apiservice v1beta1.webhook.certmanager.k8s.io || true
+	@oc delete -k templates/multiclusterhub/base/hive/ || true
+	@oc delete clusterrole hive-admin || true
+	@oc delete clusterrole hive-reader || true
 	@oc delete helmreleases --all || true
 	# Wrong syntax for Makefile @for webhook in $(oc get validatingwebhookconfiguration | grep hive | cut -f 1 -d ' '); do oc delete validatingwebhookconfiguration $webhook; done
 	@oc delete ns hive || true

@@ -31,9 +31,9 @@ type MultiClusterHubSpec struct {
 	// +optional
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
 
-	// Hostname portion of OCP Domain
+	// Default domain for routes
 	// +optional
-	OCPHOST string `json:"ocpHost,omitempty"`
+	IngressDomain string `json:"ingressDomain,omitempty"`
 
 	// Spec of NodeSelector
 	// +optional
@@ -106,12 +106,6 @@ type Controller struct {
 }
 
 type HiveConfigSpec struct {
-	// ManagedDomains is the list of DNS domains that are allowed to be used by the 'managedDNS' feature.
-	// When specifying 'managedDNS: true' in a ClusterDeployment, the ClusterDeployment's
-	// baseDomain must be a direct child of one of these domains, otherwise the
-	// ClusterDeployment creation will result in a validation error.
-	// +optional
-	ManagedDomains []string `json:"managedDomains,omitempty"`
 
 	// ExternalDNS specifies configuration for external-dns if it is to be deployed by
 	// Hive. If absent, external-dns will not be deployed.
@@ -267,7 +261,7 @@ type DeploymentResult struct {
 // MultiClusterHub is the Schema for the multiclusterhubs API
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:path=multiclusterhubs,scope=Namespaced
+// +kubebuilder:resource:path=multiclusterhubs,scope=Namespaced,shortName=mch
 // +operator-sdk:gen-csv:customresourcedefinitions.displayName="MultiClusterHub Operator"
 type MultiClusterHub struct {
 	metav1.TypeMeta   `json:",inline"`

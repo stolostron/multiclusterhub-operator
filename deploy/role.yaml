@@ -109,7 +109,7 @@ rules:
   - get
   - create
 - apiGroups:
-  - app.ibm.com
+  - apps.open-cluster-management.io
   resources:
   - '*'
   verbs:
@@ -143,3 +143,9 @@ rules:
   - storageclasses
   verbs:
   - '*'
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - ingresses
+  verbs:
+  - get
