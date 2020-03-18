@@ -1,5 +1,0 @@
-- name: deployables.app.ibm.com
-  version: v1alpha1
-  kind: Deployable
-  displayName: Deployable
-  description: 'Contain a k8s resource template for deployment, for internal use only.'

@@ -17,7 +17,7 @@ rules:
 - apiGroups: ["mcm.ibm.com"]
   resources: ["deployables", "deployables/status", "placementbindings", "placementpolicies", "placementpolicies/status", "deployableoverrides", "deployableoverrides/status", "applicationrelationships", "applicationrelatioships/status"]
   verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
-- apiGroups: ["app.ibm.com"]
+- apiGroups: ["apps.open-cluster-management.io"]
   resources: [ "deployables", "deployables/status", "placementrules", "placementrules/status", "channels", "channels/status", "subscriptions", "subscriptions/status"]
   verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
 - apiGroups: ["app.k8s.io"]
