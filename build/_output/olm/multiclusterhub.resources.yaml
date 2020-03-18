@@ -256,6 +256,9 @@ data:
                         description: Spec of OS
                         type: string
                     type: object
+                  storageClass:
+                    description: StorageClass for MultiCluster hub components
+                    type: string
                   version:
                     description: Version of the MultiCluster hub
                     type: string
@@ -385,7 +388,7 @@ data:
                 "kind": "MultiClusterHub",
                 "metadata": {
                   "name": "example-multiclusterhub",
-                  "namespace": "default"
+                  "namespace": "open-cluster-management"
                 },
                 "spec": {
                   "foundation": {
@@ -423,7 +426,7 @@ data:
                   "imageRepository": "quay.io/open-cluster-management",
                   "imageTagSuffix": "",
                   "mongo": {
-                    "endpoints": "mongo-0.mongo.default",
+                    "endpoints": "mongo-0.mongo.open-cluster-management",
                     "replicaSet": "rs0"
                   },
                   "version": "latest"
@@ -612,7 +615,13 @@ data:
                 resources:
                 - ingresses
                 verbs:
-                - get
+                - '*'
+              - apiGroups:
+                - storage.k8s.io
+                resources:
+                - storageclasses
+                verbs:
+                - '*'
               serviceAccountName: multiclusterhub-operator
             deployments:
             - name: multiclusterhub-operator

@@ -47,7 +47,7 @@ func NewRenderer(multipleClusterHub *operatorsv1alpha1.MultiClusterHub) *Rendere
 		"MutatingWebhookConfiguration": renderer.renderMutatingWebhookConfiguration,
 		"Secret":                       renderer.renderSecret,
 		"Subscription":                 renderer.renderSubscription,
-		"EtcdCluster":                  renderer.renderNamespace,
+		"EtcdCluster":                  renderer.renderEtcdCluster,
 		"StatefulSet":                  renderer.renderNamespace,
 		"Channel":                      renderer.renderNamespace,
 		"HiveConfig":                   renderer.renderHiveConfig,
@@ -381,4 +381,24 @@ func UpdateNamespace(u *unstructured.Unstructured) bool {
 		}
 	}
 	return updateNamespace
+}
+
+func (r *Renderer) renderEtcdCluster(res *resource.Resource) (*unstructured.Unstructured, error) {
+	r.renderNamespace(res)
+	u := &unstructured.Unstructured{Object: res.Map()}
+	spec, ok := u.Object["spec"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to find Etcd spec field")
+	}
+
+	pod, ok := spec["pod"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to find Etcd spec pod field")
+	}
+	persistentVolumeClaimSpec, ok := pod["persistentVolumeClaimSpec"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to find Etcd spec pod persistentVolumeClaimSpec field")
+	}
+	persistentVolumeClaimSpec["storageClassName"] = r.cr.Spec.StorageClass
+	return u, nil
 }

@@ -237,6 +237,9 @@ spec:
                   description: Spec of OS
                   type: string
               type: object
+            storageClass:
+              description: StorageClass for MultiCluster hub components
+              type: string
             version:
               description: Version of the MultiCluster hub
               type: string

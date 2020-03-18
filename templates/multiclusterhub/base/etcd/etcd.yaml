@@ -6,3 +6,11 @@ metadata:
 spec:
   size: 3
   version: 3.2.13
+  pod:
+    persistentVolumeClaimSpec:
+      storageClassName: "{{STORAGECLASS}}"
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi

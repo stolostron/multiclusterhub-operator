@@ -8,6 +8,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	storv1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -121,6 +122,11 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
+	result, err = r.storageClass(multiClusterHub)
+	if result != nil {
+		return *result, err
+	}
+
 	//Render the templates with a specified CR
 	renderer := rendering.NewRenderer(multiClusterHub)
 	toDeploy, err := renderer.Render()
@@ -227,6 +233,27 @@ func generatePass(length int) string {
 		buf[i] = chars[nBig.Int64()]
 	}
 	return string(buf)
+}
+
+func (r *ReconcileMultiClusterHub) storageClass(m *operatorsv1alpha1.MultiClusterHub) (*reconcile.Result, error) {
+	storageClass := m.Spec.StorageClass
+	if storageClass == "" {
+		scList := &storv1.StorageClassList{}
+		if err := r.client.List(context.TODO(), scList); err != nil {
+			return nil, err
+		}
+		for _, sc := range scList.Items {
+			if sc.Annotations["storageclass.kubernetes.io/is-default-class"] == "true" {
+				m.Spec.StorageClass = sc.GetName()
+				break
+			}
+		}
+	}
+	// edge case (hopefully)
+	if m.Spec.StorageClass == "" {
+		return &reconcile.Result{}, fmt.Errorf("failed to find storage class")
+	}
+	return nil, nil
 }
 
 // ingressDomain is discovered from Openshift cluster configuration resources

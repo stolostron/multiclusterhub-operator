@@ -9,7 +9,7 @@ metadata:
           "kind": "MultiClusterHub",
           "metadata": {
             "name": "example-multiclusterhub",
-            "namespace": "default"
+            "namespace": "open-cluster-management"
           },
           "spec": {
             "foundation": {
@@ -47,7 +47,7 @@ metadata:
             "imageRepository": "quay.io/open-cluster-management",
             "imageTagSuffix": "",
             "mongo": {
-              "endpoints": "mongo-0.mongo.default",
+              "endpoints": "mongo-0.mongo.open-cluster-management",
               "replicaSet": "rs0"
             },
             "version": "latest"
@@ -236,7 +236,13 @@ spec:
           resources:
           - ingresses
           verbs:
-          - get
+          - '*'
+        - apiGroups:
+          - storage.k8s.io
+          resources:
+          - storageclasses
+          verbs:
+          - '*'
         serviceAccountName: multiclusterhub-operator
       deployments:
       - name: multiclusterhub-operator
