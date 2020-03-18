@@ -8,9 +8,9 @@ webhooks:
 - name: mcm.webhook.admission.cloud.ibm.com
   rules:
   - apiGroups:
-    - 'app.ibm.com'
+    - 'apps.open-cluster-management.io'
     apiVersions:
-    - 'v1alpha1'
+    - 'v1'
     operations:
     - CREATE
     resources:

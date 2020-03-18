@@ -1,4 +1,4 @@
-apiVersion: app.ibm.com/v1alpha1
+apiVersion: apps.open-cluster-management.io/v1
 kind: Subscription
 metadata:
   name: rcm-sub
@@ -10,8 +10,8 @@ spec:
   packageOverrides:
     - packageName: rcm
       packageOverrides:
-      - path: spec.values
-        value: |
+      - path: spec
+        value:
           imageTagPostfix: "{{SUFFIX}}"
           imageRepository: "{{IMAGEREPO}}"
           imagePullSecret: "{{PULLSECRET}}"

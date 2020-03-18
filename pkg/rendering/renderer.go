@@ -2,6 +2,7 @@ package rendering
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -189,15 +190,54 @@ func (r *Renderer) renderMutatingWebhookConfiguration(res *resource.Resource) (*
 	return u, nil
 }
 
+func stringValueReplace(values map[string]interface{}, key string, cr *operatorsv1alpha1.MultiClusterHub) {
+
+	// ONLY DO REPLACE IF VALUE IS STRING-- WILL NEED TO UPDATE IF/WHEN BOOLEANS&NUMBERS NEED OVERWRITTEN
+	if reflect.TypeOf(values[key]).String() == "string" {
+
+		imageTagSuffix := cr.Spec.ImageTagSuffix
+		if imageTagSuffix != "" {
+			imageTagSuffix = "-" + imageTagSuffix
+		}
+
+		values[key] = strings.ReplaceAll(values[key].(string), "{{SUFFIX}}", string(imageTagSuffix))
+		values[key] = strings.ReplaceAll(values[key].(string), "{{IMAGEREPO}}", string(cr.Spec.ImageRepository))
+		values[key] = strings.ReplaceAll(values[key].(string), "{{PULLSECRET}}", string(cr.Spec.ImagePullSecret))
+		values[key] = strings.ReplaceAll(values[key].(string), "{{NAMESPACE}}", string(cr.Namespace))
+		values[key] = strings.ReplaceAll(values[key].(string), "{{PULLPOLICY}}", string(cr.Spec.ImagePullPolicy))
+		values[key] = strings.ReplaceAll(values[key].(string), "{{DOMAIN}}", string(cr.Spec.IngressDomain))
+	}
+}
+
+func replaceInValues(values map[string]interface{}, cr *operatorsv1alpha1.MultiClusterHub) error {
+
+	for in_key := range values {
+		isPrimitiveType := reflect.TypeOf(values[in_key]).String() == "string" || reflect.TypeOf(values[in_key]).String() == "bool" || reflect.TypeOf(values[in_key]).String() == "int"
+		if isPrimitiveType {
+			stringValueReplace(values, in_key, cr)
+		} else {
+			in_value, ok := values[in_key].(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("failed to map values")
+			}
+			err := replaceInValues(in_value, cr)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func (r *Renderer) renderSubscription(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
 
 	// Default to base renderFunc if not an IBM subscription
-	if u.GetAPIVersion() != "app.ibm.com/v1alpha1" {
+	if u.GetAPIVersion() != "apps.open-cluster-management.io/v1" {
 		return r.renderNamespace(res)
 	}
 
-	// IBM subscription handling
+	// apps.open-cluster-management.io/v1 subscription handling
 	metadata, ok := u.Object["metadata"].(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf(metadataErr)
@@ -208,14 +248,9 @@ func (r *Renderer) renderSubscription(res *resource.Resource) (*unstructured.Uns
 	// Update channel to prepend the CRs namespace
 	spec, ok := u.Object["spec"].(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("failed to find ibm subscription spec field")
+		return nil, fmt.Errorf("failed to find subscription spec field")
 	}
 	spec["channel"] = fmt.Sprintf("%s/%s", r.cr.Namespace, spec["channel"])
-
-	imageTagSuffix := r.cr.Spec.ImageTagSuffix
-	if imageTagSuffix != "" {
-		imageTagSuffix = "-" + imageTagSuffix
-	}
 
 	// Check if contains a packageOverrides
 	packageOverrides, ok := spec["packageOverrides"].([]interface{})
@@ -226,12 +261,11 @@ func (r *Renderer) renderSubscription(res *resource.Resource) (*unstructured.Uns
 				override := packageOverride["packageOverrides"].([]interface{})
 				for j := 0; j < len(override); j++ {
 					packageData, _ := override[j].(map[string]interface{})
-					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{SUFFIX}}", imageTagSuffix)
-					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{IMAGEREPO}}", r.cr.Spec.ImageRepository)
-					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{PULLSECRET}}", r.cr.Spec.ImagePullSecret)
-					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{NAMESPACE}}", r.cr.Namespace)
-					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{PULLPOLICY}}", string(r.cr.Spec.ImagePullPolicy))
-					packageData["value"] = strings.ReplaceAll(packageData["value"].(string), "{{DOMAIN}}", string(r.cr.Spec.IngressDomain))
+					values, _ := packageData["value"].(map[string]interface{})
+					err := replaceInValues(values, r.cr)
+					if err != nil {
+						return nil, err
+					}
 				}
 			}
 		}
