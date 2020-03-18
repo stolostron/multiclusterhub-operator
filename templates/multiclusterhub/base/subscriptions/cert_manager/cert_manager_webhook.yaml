@@ -21,10 +21,10 @@ spec:
             image:
               repository: "{{IMAGEREPO}}"
             serviceAccount:
-              create: "false"
-              name: "default"
+              create: false
+              name: default
           image:
             repository: "{{IMAGEREPO}}"
           serviceAccount:
-            create: "false"
-            name: "default"
+            create: false
+            name: default

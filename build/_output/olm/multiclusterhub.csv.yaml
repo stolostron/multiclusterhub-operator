@@ -9,7 +9,7 @@
             "kind": "MultiClusterHub",
             "metadata": {
               "name": "example-multiclusterhub",
-              "namespace": "snuffles"
+              "namespace": "fire"
             },
             "spec": {
               "foundation": {
@@ -45,9 +45,9 @@
               "imagePullPolicy": "Always",
               "imagePullSecret": "quay-secret",
               "imageRepository": "quay.io/open-cluster-management",
-              "imageTagSuffix": "SNAPSHOT-2020-03-17-16-21-10",
+              "imageTagSuffix": "SNAPSHOT-2020-03-18-02-33-16",
               "mongo": {
-                "endpoints": "mongo-0.mongo.snuffles",
+                "endpoints": "mongo-0.mongo.fire",
                 "replicaSet": "rs0"
               },
               "version": "latest"

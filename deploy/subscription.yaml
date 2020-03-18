@@ -8,5 +8,5 @@ spec:
   installPlanApproval: Automatic
   name: multiclusterhub-operator
   source: multiclusterhub-operator-registry
-  sourceNamespace: default
+  sourceNamespace: fire
   startingCSV: multiclusterhub-operator.v0.0.1

@@ -19,5 +19,5 @@ spec:
             repository: "{{IMAGEREPO}}"
             pullPolicy: "{{PULLPOLICY}}"
           serviceAccount:
-            create: "false"
-            name: "default"
+            create: false
+            name: default

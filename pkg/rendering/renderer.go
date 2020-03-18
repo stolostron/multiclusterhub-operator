@@ -192,17 +192,20 @@ func (r *Renderer) renderMutatingWebhookConfiguration(res *resource.Resource) (*
 
 func stringValueReplace(values map[string]interface{}, key string, cr *operatorsv1alpha1.MultiClusterHub) {
 
-	imageTagSuffix := cr.Spec.ImageTagSuffix
-	if imageTagSuffix != "" {
-		imageTagSuffix = "-" + imageTagSuffix
-	}
+	// ONLY DO REPLACE IF VALUE IS STRING-- WILL NEED TO UPDATE IF/WHEN BOOLEANS&NUMBERS NEED OVERWRITTEN
+	if reflect.TypeOf(values[key]).String() == "string" {
+		imageTagSuffix := cr.Spec.ImageTagSuffix
+		if imageTagSuffix != "" {
+			imageTagSuffix = "-" + imageTagSuffix
+		}
 
-	values[key] = strings.ReplaceAll(values[key].(string), "{{SUFFIX}}", string(imageTagSuffix))
-	values[key] = strings.ReplaceAll(values[key].(string), "{{IMAGEREPO}}", string(cr.Spec.ImageRepository))
-	values[key] = strings.ReplaceAll(values[key].(string), "{{PULLSECRET}}", string(cr.Spec.ImagePullSecret))
-	values[key] = strings.ReplaceAll(values[key].(string), "{{NAMESPACE}}", string(cr.Namespace))
-	values[key] = strings.ReplaceAll(values[key].(string), "{{PULLPOLICY}}", string(cr.Spec.ImagePullPolicy))
-	values[key] = strings.ReplaceAll(values[key].(string), "{{DOMAIN}}", string(cr.Spec.IngressDomain))
+		values[key] = strings.ReplaceAll(values[key].(string), "{{SUFFIX}}", string(imageTagSuffix))
+		values[key] = strings.ReplaceAll(values[key].(string), "{{IMAGEREPO}}", string(cr.Spec.ImageRepository))
+		values[key] = strings.ReplaceAll(values[key].(string), "{{PULLSECRET}}", string(cr.Spec.ImagePullSecret))
+		values[key] = strings.ReplaceAll(values[key].(string), "{{NAMESPACE}}", string(cr.Namespace))
+		values[key] = strings.ReplaceAll(values[key].(string), "{{PULLPOLICY}}", string(cr.Spec.ImagePullPolicy))
+		values[key] = strings.ReplaceAll(values[key].(string), "{{DOMAIN}}", string(cr.Spec.IngressDomain))
+	}
 }
 
 func replaceInValues(values map[string]interface{}, cr *operatorsv1alpha1.MultiClusterHub) error {
@@ -215,8 +218,9 @@ func replaceInValues(values map[string]interface{}, cr *operatorsv1alpha1.MultiC
 		// 	in_value :=
 		// }
 		// fmt.Println("^^^^^^^^^^^ in_key:", in_key, "=>", "in_value:", in_value)
-		if reflect.TypeOf(values[in_key]).String() == "string" {
-			fmt.Println("^^^^^^^^^^^ values[in_key] IS TYPEOF STRING")
+		isPrimitiveType := reflect.TypeOf(values[in_key]).String() == "string" || reflect.TypeOf(values[in_key]).String() == "bool" || reflect.TypeOf(values[in_key]).String() == "int"
+		if isPrimitiveType {
+			fmt.Println("^^^^^^^^^^^ values[in_key] IS TYPEOF STRING OR BOOL")
 			fmt.Println("^^^^^^^^^^^ in_key:", in_key, "=>", "values[in_key]:", values[in_key], "IS A STRING!!!")
 			stringValueReplace(values, in_key, cr)
 		} else {

@@ -16,12 +16,12 @@ spec:
           imagePullSecret: "{{PULLSECRET}}"
           clusterResourceNamespace: "{{NAMESPACE}}"
           global:
-            isOpenshift: "true"
+            isOpenshift: true
           image:
             repository: "{{IMAGEREPO}}"
             pullPolicy: "{{PULLPOLICY}}"
           serviceAccount:
-            create: "false"
-            name: "default"
+            create: false
+            name: default
           solver:
             repository: "{{IMAGEREPO}}"
