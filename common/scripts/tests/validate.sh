@@ -39,6 +39,7 @@ do
         while [ $SECONDS -lt $END_SECONDS ]; do
             _seconds_left=$((END_SECONDS - SECONDS))
             echo -ne "---    Iteration $_totalAttempts of $_maxAttempts: Namespace: $NAMESPACE - $_podsReady/$_totalPods | Namespace: Hive - $_hivePodsReady/$_hivePodsTotal    --- Retrying in ${_seconds_left:0:1}\r"
+            sleep 1
         done
     else
         echo ""
