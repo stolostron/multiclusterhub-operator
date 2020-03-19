@@ -4,11 +4,11 @@ metadata:
   name: mongodb-sub
 spec:
   channel: charts-v1
-  name: multicloud-mongodb
+  name: multicluster-mongodb
   placement:
     local: true 
   packageOverrides:
-    - packageName: multicloud-mongodb
+    - packageName: multicluster-mongodb
       packageOverrides:
       - path: spec
         value: 
@@ -34,4 +34,5 @@ spec:
           replicas: "1"
           tls:
             casecret: "multicloud-ca-cert"
+            issuer: "multicloud-ca-issuer"
             enabled: true
