@@ -48,9 +48,9 @@
               "imageTagSuffix": "",
               "mongo": {
                 "caSecret": "multicloud-ca-cert",
-                "endpoints": "multicloud-mongodb",
+                "endpoints": "multicluster-mongodb",
                 "replicaSet": "rs0",
-                "tlsSecret": "multicloud-mongodb-client-cert"
+                "tlsSecret": "multicluster-mongodb-client-cert"
               },
               "version": "latest"
             }
