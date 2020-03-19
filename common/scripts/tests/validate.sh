@@ -12,7 +12,7 @@ echo ""
 
 while true
 do
-    _totalPods=45
+    _totalPods=44
     _podsReady=0
     _hivePodsReady=0
     _hivePodsTotal=4

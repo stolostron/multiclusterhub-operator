@@ -77,11 +77,8 @@ subscribe: image olm-catalog
 
 unsubscribe:
 	@oc delete MultiClusterHub example-multiclusterhub || true
-	@oc get helmreleases -o yaml | sed 's/\- app\.ibm\.com\/helmrelease//g' | oc apply -f - || true
-	@oc delete csv multiclusterhub-operator.v0.0.1 || true
-	@oc delete csv etcdoperator.v0.9.4 || true
-	@oc delete csv multicloud-operators-subscription.v0.1.2 || true
-	@oc delete csv multicloud-operators-subscription.v0.1.1 || true
+	@oc delete appsub --all || true
+	@oc delete helmrelease --all || true
 	@oc delete MultiClusterHub example-multiclusterhub || true
 	@oc delete crd channels.app.ibm.com || true
 	@oc delete crd deployables.app.ibm.com || true
@@ -90,6 +87,9 @@ unsubscribe:
 	@oc delete crd etcdclusters.etcd.database.coreos.com || true
 	@oc delete crd etcdrestores.etcd.database.coreos.com || true
 	@oc delete crd multiclusterhubs.operators.open-cluster-management.io || true
+	@oc delete csv multiclusterhub-operator.v0.0.1 || true
+	@oc delete csv etcdoperator.v0.9.4 || true
+	@oc delete csv multicluster-operators-subscription.v0.1.0 || true
 	@oc delete subscription multiclusterhub-operator || true
 	@oc delete subscription etcdoperator.v0.9.4 || true
 	@oc delete subscription multicloud-operators-subscription.v0.1.2 || true
@@ -105,6 +105,7 @@ unsubscribe:
 	@oc delete -k templates/multiclusterhub/base/hive/ || true
 	@oc delete clusterrole hive-admin || true
 	@oc delete clusterrole hive-reader || true
+	@oc delete service multicluster-operators-subscription || true
 	@oc delete helmreleases --all || true
 	# Wrong syntax for Makefile @for webhook in $(oc get validatingwebhookconfiguration | grep hive | cut -f 1 -d ' '); do oc delete validatingwebhookconfiguration $webhook; done
 	@oc delete ns hive || true
