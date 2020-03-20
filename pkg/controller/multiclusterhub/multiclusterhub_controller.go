@@ -13,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -27,6 +26,7 @@ import (
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/deploying"
+	subscription "github.com/open-cluster-management/multicloudhub-operator/pkg/deploying/subscription"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering"
 )
 
@@ -110,13 +110,62 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return reconcile.Result{}, err
 	}
 
+	dynClient, config, err := createDynamicClient()
+	if err != nil {
+		return reconcile.Result{}, nil
+	}
+
 	var result *reconcile.Result
-	result, err = r.ensureSecret(request, multiClusterHub, r.mongoAuthSecret(multiClusterHub))
+	result, err = r.ensureDeployment(request, multiClusterHub, r.helmRepoDeployment(multiClusterHub))
+	if result != nil {
+		return *result, err
+	}
+
+	result, err = r.ensureService(request, multiClusterHub, r.repoService(multiClusterHub))
+	if result != nil {
+		return *result, err
+	}
+
+	result, err = r.ensureChannel(multiClusterHub, *dynClient)
+	if result != nil {
+		return *result, err
+	}
+
+	dynClient, config, err = createDynamicClient()
+	if err != nil {
+		return reconcile.Result{}, nil
+	}
+
+	result, err = r.ensureSubscription(multiClusterHub, *dynClient, subscription.CertManager(multiClusterHub))
+	if result != nil {
+		return *result, err
+	}
+
+	certGV := schema.GroupVersion{Group: "certmanager.k8s.io", Version: "v1alpha1"}
+	result, err = r.apiReady(config, certGV)
+	if result != nil {
+		return *result, err
+	}
+
+	result, err = r.ensureSubscription(multiClusterHub, *dynClient, subscription.CertWebhook(multiClusterHub))
+	if result != nil {
+		return *result, err
+	}
+
+	result, err = r.ensureSubscription(multiClusterHub, *dynClient, subscription.ConfigWatcher(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}
 
 	result, err = r.ingressDomain(multiClusterHub)
+	if result != nil {
+		return *result, err
+	}
+
+	// return early
+	return reconcile.Result{}, nil
+
+	result, err = r.ensureSecret(request, multiClusterHub, r.mongoAuthSecret(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}
@@ -164,37 +213,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return reconcile.Result{}, err
 	}
 	return reconcile.Result{}, nil
-}
-
-func (r *ReconcileMultiClusterHub) ensureSecret(request reconcile.Request,
-	instance *operatorsv1alpha1.MultiClusterHub,
-	s *corev1.Secret,
-) (*reconcile.Result, error) {
-	found := &corev1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{
-		Name:      s.Name,
-		Namespace: instance.Namespace,
-	}, found)
-	if err != nil && errors.IsNotFound(err) {
-		// Create the secret
-		log.Info("Creating a new secret", "Secret.Namespace", s.Namespace, "Secret.Name", s.Name)
-		err = r.client.Create(context.TODO(), s)
-
-		if err != nil {
-			// Creation failed
-			log.Error(err, "Failed to create new Secret", "Secret.Namespace", s.Namespace, "Secret.Name", s.Name)
-			return &reconcile.Result{}, err
-		}
-		// Creation was successful
-		return nil, nil
-
-	} else if err != nil {
-		// Error that isn't due to the secret not existing
-		log.Error(err, "Failed to get Secret")
-		return &reconcile.Result{}, err
-	}
-
-	return nil, nil
 }
 
 func (r *ReconcileMultiClusterHub) mongoAuthSecret(v *operatorsv1alpha1.MultiClusterHub) *corev1.Secret {
