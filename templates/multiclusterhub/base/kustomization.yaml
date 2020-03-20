@@ -5,7 +5,6 @@ resources:
 - apiserver
 - controller
 - etcd
-- mongodb
 - webhook
 - certificates
 - subscriptions

@@ -215,6 +215,9 @@ data:
                   imageRepository:
                     description: Repository of the MultiCluster hub images
                     type: string
+                  StorageClass:
+                    description: StorageClass for MultiCluster hub components
+                    type: string
                   imageTagSuffix:
                     description: ImageTagSuffix of the MultiCluster hub images
                     type: string
@@ -423,8 +426,10 @@ data:
                   "imageRepository": "quay.io/open-cluster-management",
                   "imageTagSuffix": "",
                   "mongo": {
-                    "endpoints": "mongo-0.mongo.default",
-                    "replicaSet": "rs0"
+                    "caSecret": "multicloud-ca-cert",
+                    "endpoints": "multicluster-mongodb",
+                    "replicaSet": "rs0",
+                    "tlsSecret": "multicluster-mongodb-client-cert"
                   },
                   "version": "latest"
                 }
@@ -600,6 +605,12 @@ data:
                 - security.openshift.io
                 resources:
                 - securitycontextconstraints
+                verbs:
+                - '*'
+              - apiGroups:
+                - storage.k8s.io
+                resources:
+                - storageclasses
                 verbs:
                 - '*'
               - apiGroups:
