@@ -147,12 +147,12 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	result, err = r.ensureSubscription(multiClusterHub, *dynClient, subscription.CertWebhook(multiClusterHub))
+	result, err = r.ensureSubscription(multiClusterHub, *subClient, subscription.CertWebhook(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}
 
-	result, err = r.ensureSubscription(multiClusterHub, *dynClient, subscription.ConfigWatcher(multiClusterHub))
+	result, err = r.ensureSubscription(multiClusterHub, *subClient, subscription.ConfigWatcher(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}
