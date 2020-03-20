@@ -1,8 +1,6 @@
 resources:
 - rbac
 - security_context_constraints
-- repo
-- channel
 - hive
 - apiserver
 - controller
