@@ -110,6 +110,8 @@ unsubscribe:
 	# Wrong syntax for Makefile @for webhook in $(oc get validatingwebhookconfiguration | grep hive | cut -f 1 -d ' '); do oc delete validatingwebhookconfiguration $webhook; done
 	@oc delete ns hive || true
 	@oc delete scc multicloud-scc || true
+	@oc delete clusterrole multicluster-mongodb
+	@oc delete clusterrolebinding multicluster-mongodb
 
 resubscribe: unsubscribe subscribe
 

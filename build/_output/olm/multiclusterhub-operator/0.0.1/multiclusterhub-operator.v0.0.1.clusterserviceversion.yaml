@@ -47,8 +47,10 @@ metadata:
             "imageRepository": "quay.io/open-cluster-management",
             "imageTagSuffix": "",
             "mongo": {
-              "endpoints": "mongo-0.mongo.default",
-              "replicaSet": "rs0"
+              "caSecret": "multicloud-ca-cert",
+              "endpoints": "multicluster-mongodb",
+              "replicaSet": "rs0",
+              "tlsSecret": "multicluster-mongodb-client-cert"
             },
             "version": "latest"
           }
@@ -224,6 +226,12 @@ spec:
           - security.openshift.io
           resources:
           - securitycontextconstraints
+          verbs:
+          - '*'
+        - apiGroups:
+          - storage.k8s.io
+          resources:
+          - storageclasses
           verbs:
           - '*'
         - apiGroups:
