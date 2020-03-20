@@ -31,6 +31,10 @@ spec:
             enabled: true
             size: "20Gi"
             storageClass: "{{STORAGECLASS}}"
+          curl:
+            image:
+              pullPolicy: "{{PULLPOLICY}}"
+              repository: "{{IMAGEREPO}}"
           replicas: "1"
           tls:
             casecret: "multicloud-ca-cert"
