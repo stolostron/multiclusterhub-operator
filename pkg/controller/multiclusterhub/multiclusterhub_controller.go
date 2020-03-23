@@ -262,7 +262,7 @@ func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1alpha1.MultiClust
 		return nil, nil
 	}
 
-	config, err := rest.InClusterConfig()
+	config, err := config.GetConfig()
 	if err != nil {
 		log.Error(err, "Failed to get cluster config for API host discovery/authentication")
 		return &reconcile.Result{}, err
