@@ -112,12 +112,12 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	}
 
 	var result *reconcile.Result
-	result, err = r.ensureDeployment(request, multiClusterHub, r.helmRepoDeployment(multiClusterHub))
+	result, err = r.ensureDeployment(multiClusterHub, r.helmRepoDeployment(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}
 
-	result, err = r.ensureService(request, multiClusterHub, r.repoService(multiClusterHub))
+	result, err = r.ensureService(multiClusterHub, r.repoService(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}
@@ -157,7 +157,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	result, err = r.ensureSecret(request, multiClusterHub, r.mongoAuthSecret(multiClusterHub))
+	result, err = r.ensureSecret(multiClusterHub, r.mongoAuthSecret(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}

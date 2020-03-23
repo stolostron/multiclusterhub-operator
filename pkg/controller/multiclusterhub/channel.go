@@ -13,7 +13,8 @@ import (
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 )
 
-var channelName = "charts-v1"
+// ChannelName is the name of the open-cluster-management.io channel
+var ChannelName = "charts-v1"
 
 // build Helm pathname from repo name and port
 func channelURL(m *operatorsv1alpha1.MultiClusterHub) string {
@@ -26,7 +27,7 @@ func (r *ReconcileMultiClusterHub) ensureChannel(m *operatorsv1alpha1.MultiClust
 			"apiVersion": "apps.open-cluster-management.io/v1",
 			"kind":       "Channel",
 			"metadata": map[string]interface{}{
-				"name": channelName,
+				"name": ChannelName,
 			},
 			"spec": map[string]interface{}{
 				"type":     "HelmRepo",
@@ -42,14 +43,14 @@ func (r *ReconcileMultiClusterHub) ensureChannel(m *operatorsv1alpha1.MultiClust
 	schema := schema.GroupVersionResource{Group: "apps.open-cluster-management.io", Version: "v1", Resource: "channels"}
 
 	// Try to get API group instance
-	_, err := dc.Resource(schema).Namespace(m.Namespace).Get(channelName, metav1.GetOptions{})
+	_, err := dc.Resource(schema).Namespace(m.Namespace).Get(ChannelName, metav1.GetOptions{})
 	if err != nil && errors.IsNotFound(err) {
 
 		// Create the resource
 		result, err := dc.Resource(schema).Namespace(m.Namespace).Create(channel, metav1.CreateOptions{})
 		if err != nil {
 			// Creation failed
-			log.Error(err, "Failed to create new Channel", "Channel.Namespace", m.Namespace, "Channel.Name", channelName)
+			log.Error(err, "Failed to create new Channel", "Channel.Namespace", m.Namespace, "Channel.Name", ChannelName)
 			return &reconcile.Result{}, err
 		}
 

@@ -11,7 +11,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
@@ -20,16 +19,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func (r *ReconcileMultiClusterHub) ensureDeployment(request reconcile.Request,
-	instance *operatorsv1alpha1.MultiClusterHub,
-	dep *appsv1.Deployment,
-) (*reconcile.Result, error) {
-
+func (r *ReconcileMultiClusterHub) ensureDeployment(m *operatorsv1alpha1.MultiClusterHub, dep *appsv1.Deployment) (*reconcile.Result, error) {
 	// See if deployment already exists and create if it doesn't
 	found := &appsv1.Deployment{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{
 		Name:      dep.Name,
-		Namespace: instance.Namespace,
+		Namespace: m.Namespace,
 	}, found)
 	if err != nil && errors.IsNotFound(err) {
 
@@ -54,14 +49,11 @@ func (r *ReconcileMultiClusterHub) ensureDeployment(request reconcile.Request,
 	return nil, nil
 }
 
-func (r *ReconcileMultiClusterHub) ensureService(request reconcile.Request,
-	instance *operatorsv1alpha1.MultiClusterHub,
-	s *corev1.Service,
-) (*reconcile.Result, error) {
+func (r *ReconcileMultiClusterHub) ensureService(m *operatorsv1alpha1.MultiClusterHub, s *corev1.Service) (*reconcile.Result, error) {
 	found := &corev1.Service{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{
 		Name:      s.Name,
-		Namespace: instance.Namespace,
+		Namespace: m.Namespace,
 	}, found)
 	if err != nil && errors.IsNotFound(err) {
 
@@ -87,14 +79,11 @@ func (r *ReconcileMultiClusterHub) ensureService(request reconcile.Request,
 	return nil, nil
 }
 
-func (r *ReconcileMultiClusterHub) ensureSecret(request reconcile.Request,
-	instance *operatorsv1alpha1.MultiClusterHub,
-	s *corev1.Secret,
-) (*reconcile.Result, error) {
+func (r *ReconcileMultiClusterHub) ensureSecret(m *operatorsv1alpha1.MultiClusterHub, s *corev1.Secret) (*reconcile.Result, error) {
 	found := &corev1.Secret{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{
 		Name:      s.Name,
-		Namespace: instance.Namespace,
+		Namespace: m.Namespace,
 	}, found)
 	if err != nil && errors.IsNotFound(err) {
 
@@ -119,55 +108,9 @@ func (r *ReconcileMultiClusterHub) ensureSecret(request reconcile.Request,
 	return nil, nil
 }
 
-func createDynamicClient() (*dynamic.Interface, *rest.Config, error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		log.Error(err, "Failed to get cluster config for API host discovery/authentication")
-		return nil, nil, err
-	}
-
-	dynClient, err := dynamic.NewForConfig(config)
-	if err != nil {
-		log.Error(err, "Failed to create dynamic client from cluster config")
-		return nil, nil, err
-	}
-	return &dynClient, config, err
-}
-
 func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1alpha1.MultiClusterHub, dc dynamic.Interface, s *subscription.Subscription) (*reconcile.Result, error) {
 	schema := schema.GroupVersionResource{Group: "apps.open-cluster-management.io", Version: "v1", Resource: "subscriptions"}
-	sub := &unstructured.Unstructured{
-		Object: map[string]interface{}{
-			"apiVersion": "apps.open-cluster-management.io/v1",
-			"kind":       "Subscription",
-			"metadata": map[string]interface{}{
-				"name":      s.Name + "-sub",
-				"namespace": s.Namespace,
-			},
-			"spec": map[string]interface{}{
-				"channel": m.Namespace + "/" + channelName,
-				"name":    s.Name,
-				"placement": map[string]interface{}{
-					"local": true,
-				},
-				"packageOverrides": []map[string]interface{}{
-					{
-						"packageName": s.Name,
-						"packageOverrides": []map[string]interface{}{
-							{
-								"path":  "spec",
-								"value": s.Overrides,
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-
-	sub.SetOwnerReferences([]metav1.OwnerReference{
-		*metav1.NewControllerRef(m, m.GetObjectKind().GroupVersionKind()),
-	})
+	sub := s.NewSubscription(m)
 
 	_, err := dc.Resource(schema).Namespace(sub.GetNamespace()).Get(sub.GetName(), metav1.GetOptions{})
 	if err != nil && errors.IsNotFound(err) {
@@ -190,6 +133,21 @@ func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1alpha1.Multi
 	}
 
 	return nil, nil
+}
+
+func createDynamicClient() (*dynamic.Interface, *rest.Config, error) {
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		log.Error(err, "Failed to get cluster config for API host discovery/authentication")
+		return nil, nil, err
+	}
+
+	dynClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		log.Error(err, "Failed to create dynamic client from cluster config")
+		return nil, nil, err
+	}
+	return &dynClient, config, err
 }
 
 func (r *ReconcileMultiClusterHub) apiReady(cfg *rest.Config, gv schema.GroupVersion) (*reconcile.Result, error) {
