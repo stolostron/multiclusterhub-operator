@@ -33,6 +33,20 @@
           spec:
             description: MultiClusterHubSpec defines the desired state of MultiClusterHub
             properties:
+              etcd:
+                description: Spec of Etcd
+                properties:
+                  size:
+                    description: Replicas of Etcd
+                    format: int32
+                    type: integer
+                  storage:
+                    description: StorageSize for MultiCluster hub components (ex. 1Gi)
+                    type: string
+                  storageClass:
+                    description: StorageClass for MultiCluster hub components
+                    type: string
+                type: object
               foundation:
                 description: Spec of foundation
                 properties:

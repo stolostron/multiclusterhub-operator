@@ -52,6 +52,20 @@ data:
               spec:
                 description: MultiClusterHubSpec defines the desired state of MultiClusterHub
                 properties:
+                  etcd:
+                    description: Spec of Etcd
+                    properties:
+                      size:
+                        description: Replicas of Etcd
+                        format: int32
+                        type: integer
+                      storage:
+                        description: StorageSize for MultiCluster hub components (ex. 1Gi)
+                        type: string
+                      storageClass:
+                        description: StorageClass for MultiCluster hub components
+                        type: string
+                    type: object
                   foundation:
                     description: Spec of foundation
                     properties:
@@ -391,6 +405,11 @@ data:
                   "namespace": "default"
                 },
                 "spec": {
+                  "etcd": {
+                    "size": 3,
+                    "storage": "1Gi",
+                    "storageclass": "gp2"
+                  },
                   "foundation": {
                     "apiserver": {
                       "apiserverSecret": "mcm-apiserver-self-signed-secrets",
@@ -618,7 +637,13 @@ data:
                 resources:
                 - ingresses
                 verbs:
-                - get
+                - '*'
+              - apiGroups:
+                - storage.k8s.io
+                resources:
+                - storageclasses
+                verbs:
+                - '*'
               serviceAccountName: multiclusterhub-operator
             deployments:
             - name: multiclusterhub-operator

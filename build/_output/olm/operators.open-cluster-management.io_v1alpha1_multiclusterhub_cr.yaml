@@ -34,3 +34,7 @@ spec:
       name: private-secret
     failedProvisionConfig:
       skipGatherLogs: true
+  etcd:
+    storageclass: gp2
+    size: 3
+    storage: "1Gi"

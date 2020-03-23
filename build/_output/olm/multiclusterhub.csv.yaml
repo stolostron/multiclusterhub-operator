@@ -12,6 +12,11 @@
               "namespace": "default"
             },
             "spec": {
+              "etcd": {
+                "size": 3,
+                "storage": "1Gi",
+                "storageclass": "gp2"
+              },
               "foundation": {
                 "apiserver": {
                   "apiserverSecret": "mcm-apiserver-self-signed-secrets",
@@ -238,7 +243,13 @@
             resources:
             - ingresses
             verbs:
-            - get
+            - '*'
+          - apiGroups:
+            - storage.k8s.io
+            resources:
+            - storageclasses
+            verbs:
+            - '*'
           serviceAccountName: multiclusterhub-operator
         deployments:
         - name: multiclusterhub-operator
