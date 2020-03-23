@@ -6,7 +6,7 @@ metadata:
 spec:
   version: latest
   imageRepository: "quay.io/open-cluster-management"
-  # storageClass: "gp2"
+  ingressDomain: "apps.absolute-hen.dev01.red-chesterfield.com"
   imageTagSuffix: ""
   imagePullPolicy: Always
   imagePullSecret: quay-secret
@@ -27,6 +27,7 @@ spec:
     replicaSet: rs0
     tlsSecret: multicluster-mongodb-client-cert
     caSecret: multicloud-ca-cert
+    storageClass: "gp2"
   hive:
     additionalCertificateAuthorities:
       - name: letsencrypt-ca
@@ -36,5 +37,4 @@ spec:
       skipGatherLogs: true
   etcd:
     storageclass: gp2
-    size: 3
     storage: "1Gi"

@@ -13,7 +13,6 @@ metadata:
           },
           "spec": {
             "etcd": {
-              "size": 3,
               "storage": "1Gi",
               "storageclass": "gp2"
             },
@@ -51,10 +50,12 @@ metadata:
             "imagePullSecret": "quay-secret",
             "imageRepository": "quay.io/open-cluster-management",
             "imageTagSuffix": "",
+            "ingressDomain": "apps.absolute-hen.dev01.red-chesterfield.com",
             "mongo": {
               "caSecret": "multicloud-ca-cert",
               "endpoints": "multicluster-mongodb",
               "replicaSet": "rs0",
+              "storageClass": "gp2",
               "tlsSecret": "multicluster-mongodb-client-cert"
             },
             "version": "latest"
@@ -244,13 +245,7 @@ spec:
           resources:
           - ingresses
           verbs:
-          - '*'
-        - apiGroups:
-          - storage.k8s.io
-          resources:
-          - storageclasses
-          verbs:
-          - '*'
+          - get
         serviceAccountName: multiclusterhub-operator
       deployments:
       - name: multiclusterhub-operator
