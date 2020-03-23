@@ -439,7 +439,6 @@ data:
                   "imagePullSecret": "quay-secret",
                   "imageRepository": "quay.io/open-cluster-management",
                   "imageTagSuffix": "",
-                  "ingressDomain": "apps.absolute-hen.dev01.red-chesterfield.com",
                   "mongo": {
                     "caSecret": "multicloud-ca-cert",
                     "endpoints": "multicluster-mongodb",
