@@ -122,37 +122,30 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	chClient, config, err := createDynamicClient()
-	if err != nil {
-		return reconcile.Result{}, nil
-	}
-	result, err = r.ensureChannel(multiClusterHub, *chClient)
+	result, err = r.ensureChannel(multiClusterHub, r.helmChannel(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}
 
-	subClient, config, err := createDynamicClient()
-	if err != nil {
-		return reconcile.Result{}, nil
-	}
+	return reconcile.Result{}, nil
 
-	result, err = r.ensureSubscription(multiClusterHub, *subClient, subscription.CertManager(multiClusterHub))
+	result, err = r.ensureSubscription(multiClusterHub, subscription.CertManager(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}
 
 	certGV := schema.GroupVersion{Group: "certmanager.k8s.io", Version: "v1alpha1"}
-	result, err = r.apiReady(config, certGV)
+	result, err = r.apiReady(certGV)
 	if result != nil {
 		return *result, err
 	}
 
-	result, err = r.ensureSubscription(multiClusterHub, *subClient, subscription.CertWebhook(multiClusterHub))
+	result, err = r.ensureSubscription(multiClusterHub, subscription.CertWebhook(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}
 
-	result, err = r.ensureSubscription(multiClusterHub, *subClient, subscription.ConfigWatcher(multiClusterHub))
+	result, err = r.ensureSubscription(multiClusterHub, subscription.ConfigWatcher(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}

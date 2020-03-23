@@ -2,10 +2,11 @@ package subscription
 
 import (
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
-	mch "github.com/open-cluster-management/multicloudhub-operator/pkg/controller/multiclusterhub"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
+
+var channelName = "charts-v1"
 
 // Subscription represents the unique elements of a Multicluster subscription object
 type Subscription struct {
@@ -25,7 +26,7 @@ func (s *Subscription) NewSubscription(m *operatorsv1alpha1.MultiClusterHub) *un
 				"namespace": s.Namespace,
 			},
 			"spec": map[string]interface{}{
-				"channel": m.Namespace + "/" + mch.ChannelName,
+				"channel": m.Namespace + "/" + channelName,
 				"name":    s.Name,
 				"placement": map[string]interface{}{
 					"local": true,

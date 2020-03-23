@@ -15,7 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -108,15 +108,21 @@ func (r *ReconcileMultiClusterHub) ensureSecret(m *operatorsv1alpha1.MultiCluste
 	return nil, nil
 }
 
-func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1alpha1.MultiClusterHub, dc dynamic.Interface, s *subscription.Subscription) (*reconcile.Result, error) {
+func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1alpha1.MultiClusterHub, s *subscription.Subscription) (*reconcile.Result, error) {
 	schema := schema.GroupVersionResource{Group: "apps.open-cluster-management.io", Version: "v1", Resource: "subscriptions"}
 	sub := s.NewSubscription(m)
 
-	_, err := dc.Resource(schema).Namespace(sub.GetNamespace()).Get(sub.GetName(), metav1.GetOptions{})
+	dc, err := createDynamicClient()
+	if err != nil {
+		log.Error(err, "Failed to create dynamic client")
+		return &reconcile.Result{}, nil
+	}
+
+	_, err = dc.Resource(schema).Namespace(sub.GetNamespace()).Get(sub.GetName(), metav1.GetOptions{})
 	if err != nil && errors.IsNotFound(err) {
 
 		// Create the resource
-		_, err := dc.Resource(schema).Namespace(sub.GetNamespace()).Create(sub, metav1.CreateOptions{})
+		_, err = dc.Resource(schema).Namespace(sub.GetNamespace()).Create(sub, metav1.CreateOptions{})
 		if err != nil {
 			// Creation failed
 			log.Error(err, "Failed to create new Subscription", "Subscription.Namespace", sub.GetNamespace(), "Subscription.Name", sub.GetName())
@@ -135,22 +141,27 @@ func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1alpha1.Multi
 	return nil, nil
 }
 
-func createDynamicClient() (*dynamic.Interface, *rest.Config, error) {
-	config, err := rest.InClusterConfig()
+func createDynamicClient() (dynamic.Interface, error) {
+	config, err := config.GetConfig()
 	if err != nil {
-		log.Error(err, "Failed to get cluster config for API host discovery/authentication")
-		return nil, nil, err
+		return nil, err
 	}
 
 	dynClient, err := dynamic.NewForConfig(config)
 	if err != nil {
-		log.Error(err, "Failed to create dynamic client from cluster config")
-		return nil, nil, err
+		return nil, err
 	}
-	return &dynClient, config, err
+
+	return dynClient, err
 }
 
-func (r *ReconcileMultiClusterHub) apiReady(cfg *rest.Config, gv schema.GroupVersion) (*reconcile.Result, error) {
+func (r *ReconcileMultiClusterHub) apiReady(gv schema.GroupVersion) (*reconcile.Result, error) {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		log.Error(err, "Failed to create rest config")
+		return &reconcile.Result{}, err
+	}
+
 	c, err := discovery.NewDiscoveryClientForConfig(cfg)
 	if err != nil {
 		log.Error(err, "Failed to create discovery client")
