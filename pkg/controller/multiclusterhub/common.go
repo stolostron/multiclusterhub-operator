@@ -115,7 +115,7 @@ func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1alpha1.Multi
 	dc, err := createDynamicClient()
 	if err != nil {
 		log.Error(err, "Failed to create dynamic client")
-		return &reconcile.Result{}, nil
+		return &reconcile.Result{}, err
 	}
 
 	_, err = dc.Resource(schema).Namespace(sub.GetNamespace()).Get(sub.GetName(), metav1.GetOptions{})

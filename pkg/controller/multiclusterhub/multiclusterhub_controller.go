@@ -14,8 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -274,27 +272,22 @@ func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1alpha1.MultiClust
 		return nil, nil
 	}
 
-	config, err := rest.InClusterConfig()
+	// Create dynamic client
+	dc, err := createDynamicClient()
 	if err != nil {
-		log.Error(err, "Failed to get cluster config for API host discovery/authentication")
+		log.Error(err, "Failed to create dynamic client")
 		return &reconcile.Result{}, err
 	}
 
-	dynClient, err := dynamic.NewForConfig(config)
-	if err != nil {
-		log.Error(err, "Failed to create dynamic client from cluster config")
-		return &reconcile.Result{}, err
-	}
-
+	// Find resource
 	schema := schema.GroupVersionResource{Group: "config.openshift.io", Version: "v1", Resource: "ingresses"}
-	crdClient := dynClient.Resource(schema)
-
-	crd, err := crdClient.Get("cluster", metav1.GetOptions{})
+	crd, err := dc.Resource(schema).Get("cluster", metav1.GetOptions{})
 	if err != nil {
 		log.Error(err, "Failed to get resource", "resource", schema.GroupResource().String())
 		return &reconcile.Result{}, err
 	}
 
+	// Parse resource for domain value
 	domain, ok, err := unstructured.NestedString(crd.UnstructuredContent(), "spec", "domain")
 	if err != nil {
 		log.Error(err, "Error parsing resource", "resource", schema.GroupResource().String(), "value", "spec.domain")
@@ -306,6 +299,7 @@ func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1alpha1.MultiClust
 		return &reconcile.Result{}, err
 	}
 
+	// Update spec with value
 	log.Info("Ingress domain not set, updating value in spec", "MultiClusterHub.Namespace", m.Namespace, "MultiClusterHub.Name", m.Name, "ingressDomain", domain)
 	m.Spec.IngressDomain = domain
 	err = r.client.Update(context.TODO(), m)
