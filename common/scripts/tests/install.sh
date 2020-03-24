@@ -62,7 +62,7 @@ export DOCKER_PASS=$DOCKER_PASS
 export NAMESPACE=$NAMESPACE
 
 # Ensure the namespace exists
-oc get ns $NAMESPACE 2>/dev/null
+oc get ns $NAMESPACE > /dev/null 2>&1
 if [ $? -ne 0 ]; then
    echo "Namespace $NAMESPACE does not exist"
    exit 1
