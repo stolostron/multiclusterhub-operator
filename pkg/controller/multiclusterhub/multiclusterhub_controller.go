@@ -248,6 +248,9 @@ func (r *ReconcileMultiClusterHub) configureMongo(m *operatorsv1alpha1.MultiClus
 		}
 		m.Spec.Mongo.StorageClass = storageClass
 	}
+	if m.Spec.Mongo.Storage == "" {
+		m.Spec.Mongo.Storage = "1Gi"
+	}
 	// edge case (hopefully)
 	if m.Spec.Mongo.StorageClass == "" {
 		return &reconcile.Result{}, fmt.Errorf("failed to find storage class")

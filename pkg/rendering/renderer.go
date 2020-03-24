@@ -207,6 +207,7 @@ func stringValueReplace(to_replace string, cr *operatorsv1alpha1.MultiClusterHub
 	replaced = strings.ReplaceAll(replaced, "{{PULLPOLICY}}", string(cr.Spec.ImagePullPolicy))
 	replaced = strings.ReplaceAll(replaced, "{{DOMAIN}}", string(cr.Spec.IngressDomain))
 	replaced = strings.ReplaceAll(replaced, "{{STORAGECLASS}}", string(cr.Spec.Mongo.StorageClass)) //Assuming this is specifically for Mongo.
+	replaced = strings.ReplaceAll(replaced, "{{STORAGE}}", string(cr.Spec.Mongo.Storage))
 
 	return replaced
 }

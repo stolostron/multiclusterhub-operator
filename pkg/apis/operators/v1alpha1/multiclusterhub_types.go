@@ -250,6 +250,10 @@ type Mongo struct {
 	// StorageClass for MultiCluster hub components
 	// +optional
 	StorageClass string `json:"storageClass"`
+
+	// StorageSize for MultiCluster hub components (ex. 1Gi)
+	// +optional
+	Storage string `json:"storage,omiteempty"`
 }
 
 // MultiClusterHubStatus defines the observed state of MultiClusterHub

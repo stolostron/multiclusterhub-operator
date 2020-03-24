@@ -29,7 +29,7 @@ spec:
             accessModes:
             - ReadWriteOnce
             enabled: true
-            size: "20Gi"
+            size: "{{STORAGE}}"
             storageClass: "{{STORAGECLASS}}"
           curl:
             image:

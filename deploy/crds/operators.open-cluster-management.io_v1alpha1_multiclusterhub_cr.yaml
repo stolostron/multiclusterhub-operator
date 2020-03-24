@@ -26,7 +26,6 @@ spec:
     replicaSet: rs0
     tlsSecret: multicluster-mongodb-client-cert
     caSecret: multicloud-ca-cert
-    storageClass: "gp2"
   hive:
     additionalCertificateAuthorities:
       - name: letsencrypt-ca

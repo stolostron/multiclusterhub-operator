@@ -54,7 +54,6 @@
                 "caSecret": "multicloud-ca-cert",
                 "endpoints": "multicluster-mongodb",
                 "replicaSet": "rs0",
-                "storageClass": "gp2",
                 "tlsSecret": "multicluster-mongodb-client-cert"
               },
               "version": "latest"
