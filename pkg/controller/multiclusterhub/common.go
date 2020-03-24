@@ -5,12 +5,10 @@ import (
 	"time"
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
-	subscription "github.com/open-cluster-management/multicloudhub-operator/pkg/deploying/subscription"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
@@ -102,39 +100,6 @@ func (r *ReconcileMultiClusterHub) ensureSecret(m *operatorsv1alpha1.MultiCluste
 	} else if err != nil {
 		// Error that isn't due to the secret not existing
 		log.Error(err, "Failed to get Secret", "Secret.Namespace", s.Namespace, "Secret.Name", s.Name)
-		return &reconcile.Result{}, err
-	}
-
-	return nil, nil
-}
-
-func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1alpha1.MultiClusterHub, s *subscription.Subscription) (*reconcile.Result, error) {
-	schema := schema.GroupVersionResource{Group: "apps.open-cluster-management.io", Version: "v1", Resource: "subscriptions"}
-	sub := s.NewSubscription(m)
-
-	dc, err := createDynamicClient()
-	if err != nil {
-		log.Error(err, "Failed to create dynamic client")
-		return &reconcile.Result{}, err
-	}
-
-	_, err = dc.Resource(schema).Namespace(sub.GetNamespace()).Get(sub.GetName(), metav1.GetOptions{})
-	if err != nil && errors.IsNotFound(err) {
-
-		// Create the resource
-		_, err = dc.Resource(schema).Namespace(sub.GetNamespace()).Create(sub, metav1.CreateOptions{})
-		if err != nil {
-			// Creation failed
-			log.Error(err, "Failed to create new Subscription", "Subscription.Namespace", sub.GetNamespace(), "Subscription.Name", sub.GetName())
-			return &reconcile.Result{}, err
-		}
-		// Creation was successful
-		log.Info("Created a new Subscription", "Subscription.Namespace", sub.GetNamespace(), "Subscription.Name", sub.GetName())
-		return nil, nil
-
-	} else if err != nil {
-		// Error that isn't due to the resource not existing
-		log.Error(err, "Failed to get resource", "resource", schema.GroupResource().String())
 		return &reconcile.Result{}, err
 	}
 

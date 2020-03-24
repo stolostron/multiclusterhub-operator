@@ -25,8 +25,8 @@ import (
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/deploying"
-	subscription "github.com/open-cluster-management/multicloudhub-operator/pkg/deploying/subscription"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
 )
 
 var log = logf.Log.WithName("controller_multiclusterhub")
@@ -124,8 +124,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	if result != nil {
 		return *result, err
 	}
-
-	return reconcile.Result{}, nil
 
 	result, err = r.ensureSubscription(multiClusterHub, subscription.CertManager(multiClusterHub))
 	if result != nil {

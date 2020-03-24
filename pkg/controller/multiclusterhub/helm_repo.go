@@ -101,7 +101,9 @@ func (r *ReconcileMultiClusterHub) helmRepoDeployment(m *operatorsv1alpha1.Multi
 		},
 	}
 
-	controllerutil.SetControllerReference(m, dep, r.scheme)
+	if err := controllerutil.SetControllerReference(m, dep, r.scheme); err != nil {
+		log.Error(err, "Failed to set controller reference", "Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
+	}
 	return dep
 }
 
@@ -124,39 +126,8 @@ func (r *ReconcileMultiClusterHub) repoService(m *operatorsv1alpha1.MultiCluster
 		},
 	}
 
-	controllerutil.SetControllerReference(m, s, r.scheme)
+	if err := controllerutil.SetControllerReference(m, s, r.scheme); err != nil {
+		log.Error(err, "Failed to set controller reference", "Service.Namespace", s.Namespace, "Service.Name", s.Name)
+	}
 	return s
 }
-
-// func (r *ReconcileMultiClusterHub) updateRepoStatus(v *operatorsv1alpha1.MultiClusterHub) error {
-// 	v.Status.BackendImage = backendImage
-// 	err := r.client.Status().Update(context.TODO(), v)
-// 	return err
-// }
-
-// func (r *ReconcileMultiClusterHub) handleBackendChanges(v *operatorsv1alpha1.MultiClusterHub) (*reconcile.Result, error) {
-// 	found := &appsv1.Deployment{}
-// 	err := r.client.Get(context.TODO(), types.NamespacedName{
-// 		Name:      backendDeploymentName(v),
-// 		Namespace: v.Namespace,
-// 	}, found)
-// 	if err != nil {
-// 		// The deployment may not have been created yet, so requeue
-// 		return &reconcile.Result{RequeueAfter: 5 * time.Second}, err
-// 	}
-
-// 	size := v.Spec.Size
-
-// 	if size != *found.Spec.Replicas {
-// 		found.Spec.Replicas = &size
-// 		err = r.client.Update(context.TODO(), found)
-// 		if err != nil {
-// 			log.Error(err, "Failed to update Deployment.", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
-// 			return &reconcile.Result{}, err
-// 		}
-// 		// Spec updated - return and requeue
-// 		return &reconcile.Result{Requeue: true}, nil
-// 	}
-
-// 	return nil, nil
-// }
