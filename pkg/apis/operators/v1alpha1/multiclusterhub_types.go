@@ -28,21 +28,11 @@ type MultiClusterHubSpec struct {
 	// +optional
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
 
-	// Default domain for routes
-	// +optional
-	IngressDomain string `json:"ingressDomain,omitempty"`
-
-	// Spec of NodeSelector
-	// +optional
-	NodeSelector *NodeSelector `json:"nodeSelector,omitempty"`
-
-	// Spec of foundation
-	Foundation `json:"foundation"`
-
 	// Spec of hive
 	Hive HiveConfigSpec `json:"hive"`
 
 	// Spec of mongo
+	// +optional
 	Mongo `json:"mongo"`
 
 	// Spec of Etcd
@@ -59,62 +49,6 @@ type Etcd struct {
 	// StorageSize for MultiCluster hub components (ex. 1Gi)
 	// +optional
 	Storage string `json:"storage,omiteempty"`
-}
-
-// NodeSelector defines the desired state of NodeSelector
-type NodeSelector struct {
-	// Spec of OS
-	// +optional
-	OS string `json:"os,omitempty"`
-
-	// Spec of CustomLabelSelector
-	// +optional
-	CustomLabelSelector string `json:"customLabelSelector,omitempty"`
-
-	// Spec of CustomLabelValue
-	// +optional
-	CustomLabelValue string `json:"customLabelValue,omitempty"`
-}
-
-// Foundation defines the desired state of MultiClusterHub foundation components
-type Foundation struct {
-	// Spec of apiserver
-	// +optional
-	Apiserver `json:"apiserver,omitempty"`
-
-	// Spec of controller
-	// +optional
-	Controller `json:"controller,omitempty"`
-}
-
-type Apiserver struct {
-	// Number of desired pods. This is a pointer to distinguish between explicit
-	// zero and not specified. Defaults to 1
-	// +optional
-	Replicas *int32 `json:"replicas,omitempty"`
-
-	// Certificates of API server
-	// +optional
-	ApiserverSecret string `json:"apiserverSecret,omitempty"`
-
-	// Certificates of Klusterlet
-	// +optional
-	KlusterletSecret string `json:"klusterletSecret,omitempty"`
-
-	// Configuration of the pod
-	// +optional
-	Configuration map[string]string `json:"configuration,omitempty"`
-}
-
-type Controller struct {
-	// Number of desired pods. This is a pointer to distinguish between explicit
-	// zero and not specified. Defaults to 1
-	// +optional
-	Replicas *int32 `json:"replicas,omitempty"`
-
-	// Configuration of the pod
-	// +optional
-	Configuration map[string]string `json:"configuration,omitempty"`
 }
 
 type HiveConfigSpec struct {
@@ -229,24 +163,6 @@ type ExternalDNSGCPConfig struct {
 
 // Mongo defines the desired state of mongo
 type Mongo struct {
-	// Endpoints of mongo
-	Endpoints string `json:"endpoints"`
-
-	// Replica set of mongo
-	ReplicaSet string `json:"replicaSet"`
-
-	// User secret of mongo
-	// +optional
-	UserSecret string `json:"userSecret,omitempty"`
-
-	// TLS secret of mongo
-	// +optional
-	TLSSecret string `json:"tlsSecret,omitempty"`
-
-	// CA secret of mongo
-	// +optional
-	CASecret string `json:"caSecret,omitempty"`
-
 	// StorageClass for MultiCluster hub components
 	// +optional
 	StorageClass string `json:"storageClass"`

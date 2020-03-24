@@ -10,6 +10,7 @@ import (
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 )
 
 func TestRender(t *testing.T) {
@@ -21,7 +22,6 @@ func TestRender(t *testing.T) {
 	os.Setenv(templates.TemplatesPathEnvVar, templatesPath)
 	defer os.Unsetenv(templates.TemplatesPathEnvVar)
 
-	var replicas int32 = 1
 	mchcr := &operatorsv1alpha1.MultiClusterHub{
 		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
@@ -30,33 +30,11 @@ func TestRender(t *testing.T) {
 			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: "Always",
 			ImagePullSecret: "test",
-			NodeSelector: &operatorsv1alpha1.NodeSelector{
-				OS:                  "test",
-				CustomLabelSelector: "test",
-				CustomLabelValue:    "test",
-			},
-			Foundation: operatorsv1alpha1.Foundation{
-				Apiserver: operatorsv1alpha1.Apiserver{
-					Replicas: &replicas,
-					Configuration: map[string]string{
-						"test": "test",
-					},
-				},
-				Controller: operatorsv1alpha1.Controller{
-					Replicas: &replicas,
-					Configuration: map[string]string{
-						"test": "test",
-					},
-				},
-			},
-			Mongo: operatorsv1alpha1.Mongo{
-				Endpoints:  "test",
-				ReplicaSet: "test",
-			},
+			Mongo:           operatorsv1alpha1.Mongo{},
 		},
 	}
 
-	renderer := NewRenderer(mchcr)
+	renderer := NewRenderer(mchcr, utils.CacheSpec{})
 	objs, err := renderer.Render(nil)
 	if err != nil {
 		t.Fatalf("failed to render multiclusterhub %v", err)

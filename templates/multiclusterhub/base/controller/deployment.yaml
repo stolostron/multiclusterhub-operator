@@ -5,6 +5,7 @@ metadata:
   labels:
     app: mcm-controller
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app: mcm-controller
@@ -20,3 +21,5 @@ spec:
         args:
           - "/mcm-controller"
           - "--leader-elect=true"
+          - "--enable-rbac=true"
+          - "--enable-service-registry=true"

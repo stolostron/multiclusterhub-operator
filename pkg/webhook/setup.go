@@ -169,7 +169,7 @@ func setOwnerReferences(c client.Client, namespace string, obj metav1.Object) {
 	key := types.NamespacedName{Name: operatorName, Namespace: namespace}
 	owner := &appsv1.Deployment{}
 	if err := c.Get(context.TODO(), key, owner); err != nil {
-		log.Error(err, fmt.Sprintf("Failed to set ownew references for %s", obj.GetName()))
+		log.Error(err, fmt.Sprintf("Failed to set owner references for %s", obj.GetName()))
 		return
 	}
 

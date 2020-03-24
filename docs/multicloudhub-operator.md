@@ -39,19 +39,11 @@ spec:
   dockerRepository: "ibmcom"
   imagePullPolicy: Always
   imagePullSecret: ""
-  nodeSelector: |
-    os: ""
-    customLabelSelector: ""
-    customLabelValue: ""
   foundation:
     apiserver:
-      replicas: 1
-      apiserverSecret: ""
-      klusterletSecret: ""
       configuration:
         http2-max-streams-per-connection: 1000
     controller:
-      replicas: 1
       configuration:
         enable-rbac: true
         enable-service-registry: true
@@ -111,16 +103,13 @@ apiVersion: operators.open-cluster-management.io/v1alpha1
 kind: MultiClusterHub
 metadata:
   name: myhub
-  namespace: mutilcloud-system
+  namespace: open-cluster-management
 spec:
   version: 3.3.0
-  dockerRepository: "ibmcom"
+  dockerRepository: "quay.io/open-cluster-managment"
   imagePullPolicy: Always
   foundation:
     apiserver:
-      replicas: 1
-      apiserverSecret: "mcm-apiserver-secret"
-      klusterletSecret: "mcm-apiserver-klusterlet-secret"
       configuration:
         http2-max-streams-per-connection: 1000
     controller:
@@ -180,19 +169,11 @@ spec:
   imageRepository: "quay.io/rhibmcollab"
   imagePullPolicy: Always
   imagePullSecret: ""
-  nodeSelector: |
-    os: ""
-    customLabelSelector: ""
-    customLabelValue: ""
   foundation:
     apiserver:
-      replicas: 1
-      apiserverSecret: ""
-      klusterletSecret: ""
       configuration:
         http2-max-streams-per-connection: 1000
     controller:
-      replicas: 1
       configuration:
         enable-rbac: true
         enable-service-registry: true
