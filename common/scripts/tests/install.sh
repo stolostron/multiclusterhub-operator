@@ -61,6 +61,13 @@ export DOCKER_USER=$DOCKER_USER
 export DOCKER_PASS=$DOCKER_PASS
 export NAMESPACE=$NAMESPACE
 
+# Ensure the namespace exists
+oc get ns $NAMESPACE 2>/dev/null
+if [ $? -ne 0 ]; then
+   echo "Namespace $NAMESPACE does not exist"
+   exit 1
+fi
+
 # Ensure the default namespace is the one we are going to be working in
 oc project $NAMESPACE
 
