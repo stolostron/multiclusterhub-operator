@@ -4,9 +4,9 @@ metadata:
   annotations:
     categories: A list of comma separated categories that your operator falls under.
     certified: 'false'
-    containerImage: quay.io/rhibmcollab/hive:2020-03-23-2154ceae
+    containerImage: quay.io/rhibmcollab/hive:2020-03-24-2ea0bcc0
     description: OpenShift cluster provisioning and management at scale.
-  name: hive-operator.v0.1.1774-2154ceae
+  name: hive-operator.v0.1.1775-2ea0bcc0
   namespace: hive
 spec:
   customresourcedefinitions:
@@ -585,7 +585,7 @@ spec:
                 env:
                 - name: CLI_CACHE_DIR
                   value: /var/cache/kubectl
-                image: quay.io/rhibmcollab/hive:2020-03-23-2154ceae
+                image: quay.io/rhibmcollab/hive:2020-03-24-2ea0bcc0
                 imagePullPolicy: Always
                 livenessProbe:
                   failureThreshold: 1
@@ -625,5 +625,4 @@ spec:
   maturity: alpha
   provider:
     name: Red Hat, Inc
-  version: 0.1.1774-2154ceae
-
+  version: 0.1.1775-2ea0bcc0

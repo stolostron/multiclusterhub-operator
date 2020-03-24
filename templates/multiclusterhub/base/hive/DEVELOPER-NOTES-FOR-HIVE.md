@@ -209,10 +209,11 @@ to:
 Update the `DEPLOY_IMG` for the https://quay.io/repository/rhibmcollab/hive?tab=tags image you are going to upgrade to
 ```
 #NOTE: Update this for the new image
-export DEPLOY_IMG="quay.io/rhibmcollab/hive:2020-03-23-2154ceae"
+#export DEPLOY_IMG="quay.io/rhibmcollab/hive:2020-03-23-2154ceae"
+export DEPLOY_IMG="quay.io/rhibmcollab/hive:2020-03-24-2ea0bcc0"
 
 #NOTE: You can use your shortname at the end
-export REGISTRY_IMG="quay.io/rhibmcollab/multiclusterhub-operator:cahl3"
+export REGISTRY_IMG="quay.io/rhibmcollab/multiclusterhub-operator:cahl4"
 
 #NOTE:
 hack/olm-registry-deploy.sh
