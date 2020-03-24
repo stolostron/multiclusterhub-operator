@@ -30,7 +30,6 @@ func TestRender(t *testing.T) {
 			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: "Always",
 			ImagePullSecret: "test",
-			StorageClass: "test",
 			NodeSelector: &operatorsv1alpha1.NodeSelector{
 				OS:                  "test",
 				CustomLabelSelector: "test",

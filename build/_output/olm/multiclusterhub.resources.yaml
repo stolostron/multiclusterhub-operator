@@ -52,6 +52,16 @@ data:
               spec:
                 description: MultiClusterHubSpec defines the desired state of MultiClusterHub
                 properties:
+                  etcd:
+                    description: Spec of Etcd
+                    properties:
+                      storage:
+                        description: StorageSize for MultiCluster hub components (ex. 1Gi)
+                        type: string
+                      storageClass:
+                        description: StorageClass for MultiCluster hub components
+                        type: string
+                    type: object
                   foundation:
                     description: Spec of foundation
                     properties:
@@ -215,9 +225,6 @@ data:
                   imageRepository:
                     description: Repository of the MultiCluster hub images
                     type: string
-                  StorageClass:
-                    description: StorageClass for MultiCluster hub components
-                    type: string
                   imageTagSuffix:
                     description: ImageTagSuffix of the MultiCluster hub images
                     type: string
@@ -235,6 +242,9 @@ data:
                         type: string
                       replicaSet:
                         description: Replica set of mongo
+                        type: string
+                      storageClass:
+                        description: StorageClass for MultiCluster hub components
                         type: string
                       tlsSecret:
                         description: TLS secret of mongo
@@ -391,6 +401,10 @@ data:
                   "namespace": "default"
                 },
                 "spec": {
+                  "etcd": {
+                    "storage": "1Gi",
+                    "storageclass": "gp2"
+                  },
                   "foundation": {
                     "apiserver": {
                       "apiserverSecret": "mcm-apiserver-self-signed-secrets",

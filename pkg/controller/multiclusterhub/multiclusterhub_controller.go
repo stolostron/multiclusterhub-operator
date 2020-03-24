@@ -16,8 +16,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -122,7 +122,12 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	result, err = r.storageClass(multiClusterHub)
+	result, err = r.configureMongo(multiClusterHub)
+	if result != nil {
+		return *result, err
+	}
+
+	result, err = r.configureEtcd(multiClusterHub)
 	if result != nil {
 		return *result, err
 	}
@@ -235,25 +240,53 @@ func generatePass(length int) string {
 	return string(buf)
 }
 
-func (r *ReconcileMultiClusterHub) storageClass(m *operatorsv1alpha1.MultiClusterHub) (*reconcile.Result, error) {
-	storageClass := m.Spec.StorageClass
-	if storageClass == "" {
-		scList := &storv1.StorageClassList{}
-		if err := r.client.List(context.TODO(), scList); err != nil {
-			return nil, err
+func (r *ReconcileMultiClusterHub) configureMongo(m *operatorsv1alpha1.MultiClusterHub) (*reconcile.Result, error) {
+	if m.Spec.Mongo.StorageClass == "" {
+		storageClass, err := r.getStorageClass(m)
+		if err != nil {
+			return &reconcile.Result{}, err
 		}
-		for _, sc := range scList.Items {
-			if sc.Annotations["storageclass.kubernetes.io/is-default-class"] == "true" {
-				m.Spec.StorageClass = sc.GetName()
-				break
-			}
-		}
+		m.Spec.Mongo.StorageClass = storageClass
+	}
+	if m.Spec.Mongo.Storage == "" {
+		m.Spec.Mongo.Storage = "1Gi"
 	}
 	// edge case (hopefully)
-	if m.Spec.StorageClass == "" {
+	if m.Spec.Mongo.StorageClass == "" {
 		return &reconcile.Result{}, fmt.Errorf("failed to find storage class")
 	}
 	return nil, nil
+}
+
+func (r *ReconcileMultiClusterHub) configureEtcd(m *operatorsv1alpha1.MultiClusterHub) (*reconcile.Result, error) {
+	if m.Spec.Etcd.StorageClass == "" {
+		storageClass, err := r.getStorageClass(m)
+		if err != nil {
+			return &reconcile.Result{}, err
+		}
+		m.Spec.Etcd.StorageClass = storageClass
+	}
+	if m.Spec.Etcd.Storage == "" {
+		m.Spec.Etcd.Storage = "1Gi"
+	}
+	// edge case (hopefully)
+	if m.Spec.Etcd.StorageClass == "" {
+		return &reconcile.Result{}, fmt.Errorf("failed to find storage class")
+	}
+	return nil, nil
+}
+
+func (r *ReconcileMultiClusterHub) getStorageClass(m *operatorsv1alpha1.MultiClusterHub) (string, error) {
+	scList := &storv1.StorageClassList{}
+	if err := r.client.List(context.TODO(), scList); err != nil {
+		return "", err
+	}
+	for _, sc := range scList.Items {
+		if sc.Annotations["storageclass.kubernetes.io/is-default-class"] == "true" {
+			return sc.GetName(), nil
+		}
+	}
+	return "", fmt.Errorf("failed to find default storageclass")
 }
 
 // ingressDomain is discovered from Openshift cluster configuration resources
@@ -262,7 +295,7 @@ func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1alpha1.MultiClust
 		return nil, nil
 	}
 
-	config, err := rest.InClusterConfig()
+	config, err := config.GetConfig()
 	if err != nil {
 		log.Error(err, "Failed to get cluster config for API host discovery/authentication")
 		return &reconcile.Result{}, err
