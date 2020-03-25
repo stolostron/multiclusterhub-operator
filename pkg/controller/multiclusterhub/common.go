@@ -18,6 +18,8 @@ import (
 )
 
 func (r *ReconcileMultiClusterHub) ensureDeployment(m *operatorsv1alpha1.MultiClusterHub, dep *appsv1.Deployment) (*reconcile.Result, error) {
+	log = log.WithValues("Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
+
 	// See if deployment already exists and create if it doesn't
 	found := &appsv1.Deployment{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{
@@ -30,17 +32,17 @@ func (r *ReconcileMultiClusterHub) ensureDeployment(m *operatorsv1alpha1.MultiCl
 		err = r.client.Create(context.TODO(), dep)
 		if err != nil {
 			// Deployment failed
-			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
+			log.Error(err, "Failed to create new Deployment")
 			return &reconcile.Result{}, err
 		}
 
 		// Deployment was successful
-		log.Info("Created a new Deployment", "Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
+		log.Info("Created a new Deployment")
 		return nil, nil
 
 	} else if err != nil {
 		// Error that isn't due to the deployment not existing
-		log.Error(err, "Failed to get Deployment", "Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
+		log.Error(err, "Failed to get Deployment")
 		return &reconcile.Result{}, err
 	}
 
@@ -48,6 +50,8 @@ func (r *ReconcileMultiClusterHub) ensureDeployment(m *operatorsv1alpha1.MultiCl
 }
 
 func (r *ReconcileMultiClusterHub) ensureService(m *operatorsv1alpha1.MultiClusterHub, s *corev1.Service) (*reconcile.Result, error) {
+	log = log.WithValues("Service.Namespace", s.Namespace, "Service.Name", s.Name)
+
 	found := &corev1.Service{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{
 		Name:      s.Name,
@@ -60,12 +64,12 @@ func (r *ReconcileMultiClusterHub) ensureService(m *operatorsv1alpha1.MultiClust
 
 		if err != nil {
 			// Creation failed
-			log.Error(err, "Failed to create new Service", "Service.Namespace", s.Namespace, "Service.Name", s.Name)
+			log.Error(err, "Failed to create new Service")
 			return &reconcile.Result{}, err
 		}
 
 		// Creation was successful
-		log.Info("Created a new Service", "Service.Namespace", s.Namespace, "Service.Name", s.Name)
+		log.Info("Created a new Service")
 		return nil, nil
 
 	} else if err != nil {
@@ -78,6 +82,8 @@ func (r *ReconcileMultiClusterHub) ensureService(m *operatorsv1alpha1.MultiClust
 }
 
 func (r *ReconcileMultiClusterHub) ensureSecret(m *operatorsv1alpha1.MultiClusterHub, s *corev1.Secret) (*reconcile.Result, error) {
+	log = log.WithValues("Secret.Namespace", s.Namespace, "Secret.Name", s.Name)
+
 	found := &corev1.Secret{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{
 		Name:      s.Name,
@@ -89,17 +95,17 @@ func (r *ReconcileMultiClusterHub) ensureSecret(m *operatorsv1alpha1.MultiCluste
 		err = r.client.Create(context.TODO(), s)
 		if err != nil {
 			// Creation failed
-			log.Error(err, "Failed to create new Secret", "Secret.Namespace", s.Namespace, "Secret.Name", s.Name)
+			log.Error(err, "Failed to create new Secret")
 			return &reconcile.Result{}, err
 		}
 
 		// Creation was successful
-		log.Info("Created a new secret", "Secret.Namespace", s.Namespace, "Secret.Name", s.Name)
+		log.Info("Created a new secret")
 		return nil, nil
 
 	} else if err != nil {
 		// Error that isn't due to the secret not existing
-		log.Error(err, "Failed to get Secret", "Secret.Namespace", s.Namespace, "Secret.Name", s.Name)
+		log.Error(err, "Failed to get Secret")
 		return &reconcile.Result{}, err
 	}
 
