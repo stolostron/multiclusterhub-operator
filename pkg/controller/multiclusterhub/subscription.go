@@ -49,10 +49,11 @@ func newSubscription(m *operatorsv1alpha1.MultiClusterHub, s *subscription.Subsc
 func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1alpha1.MultiClusterHub, s *subscription.Subscription) (*reconcile.Result, error) {
 	schema := schema.GroupVersionResource{Group: "apps.open-cluster-management.io", Version: "v1", Resource: "subscriptions"}
 	sub := newSubscription(m, s)
+	sublog := log.WithValues("Subscription.Namespace", sub.GetNamespace(), "Subscription.Name", sub.GetName())
 
 	dc, err := createDynamicClient()
 	if err != nil {
-		log.Error(err, "Failed to create dynamic client")
+		sublog.Error(err, "Failed to create dynamic client")
 		return &reconcile.Result{}, err
 	}
 
@@ -63,16 +64,16 @@ func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1alpha1.Multi
 		_, err = dc.Resource(schema).Namespace(sub.GetNamespace()).Create(sub, metav1.CreateOptions{})
 		if err != nil {
 			// Creation failed
-			log.Error(err, "Failed to create new Subscription", "Subscription.Namespace", sub.GetNamespace(), "Subscription.Name", sub.GetName())
+			sublog.Error(err, "Failed to create new Subscription")
 			return &reconcile.Result{}, err
 		}
 		// Creation was successful
-		log.Info("Created a new Subscription", "Subscription.Namespace", sub.GetNamespace(), "Subscription.Name", sub.GetName())
+		sublog.Info("Created a new Subscription")
 		return nil, nil
 
 	} else if err != nil {
 		// Error that isn't due to the resource not existing
-		log.Error(err, "Failed to get resource", "resource", schema.GroupResource().String())
+		sublog.Error(err, "Failed to get resource", "Resource", schema.GroupResource().String())
 		return &reconcile.Result{}, err
 	}
 
