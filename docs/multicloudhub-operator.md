@@ -32,51 +32,24 @@ After the operator was installed by OLM, user uses `MultiClusterHub` CRD to defi
 apiVersion: operators.open-cluster-management.io/v1alpha1
 kind: MultiClusterHub
 metadata:
-  name: myhub
-  namespace: multicluster-system
+  name: example-multiclusterhub
+  namespace: open-cluster-management
 spec:
-  version: 3.3.0
+  version: latest
   dockerRepository: "ibmcom"
   imagePullPolicy: Always
   imagePullSecret: ""
-  foundation:
-    apiserver:
-      configuration:
-        http2-max-streams-per-connection: 1000
-    controller:
-      configuration:
-        enable-rbac: true
-        enable-service-registry: true
-  console:
-    enabled: true
-  topology:
-    enabled: true
-  security_advisor:
-    enabled: true
-  cluster-api-provider:
-    enabled: true
+  nodeSelector:
+    os: ""
+    customLabelSelector: ""
+    customLabelValue: ""
   # cam, cem and hive can be added here
   etcd:
-    replicas: 1
-    storage:
-      type: ephemeral/persistence # default is ephemeral
-      storageClass: ""
-      capacity: "1Gi"
-    externalServers:
-      endpoints: null
-      secret: null
+    storageClass: gp2
+    storage: "1Gi"
   mongo:
-    replicas: 1
-    storage:
-      type: ephemeral/persistence # default is ephemeral
-      storageClass: ""
-      capacity: "10Gi"
-    externalServers:
-      endpoints: mongodb
-      replicaSet: rs0
-      userSecret: icp-mongodb-admin
-      tlsSecret: cluster-ca-cert
-      caSecret: cluster-ca-cert
+    storageClass: gp2
+    storage: "1Gi"
 ```
 
 As an easiest way, user use a default CR to deploy the multicloud hub, e.g.
@@ -169,23 +142,11 @@ spec:
   imageRepository: "quay.io/rhibmcollab"
   imagePullPolicy: Always
   imagePullSecret: ""
-  foundation:
-    apiserver:
-      configuration:
-        http2-max-streams-per-connection: 1000
-    controller:
-      configuration:
-        enable-rbac: true
-        enable-service-registry: true
-  etcd:
-    endpoints: null
-    secret: null
-  mongo:
-    endpoints: null
-    replicaSet: null
-    userSecret: null
-    tlsSecret: null
-    caSecret: null
+  nodeSelector:
+    os: ""
+    customLabelSelector: ""
+    customLabelValue: ""
+
 ```
 
 To install a community version multicloud hub, user follow below steps

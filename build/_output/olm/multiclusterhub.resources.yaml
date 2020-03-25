@@ -200,6 +200,19 @@ data:
                         description: StorageClass for MultiCluster hub components
                         type: string
                     type: object
+                  nodeSelector:
+                    description: Spec of NodeSelector
+                    properties:
+                      customLabelSelector:
+                        description: Spec of CustomLabelSelector
+                        type: string
+                      customLabelValue:
+                        description: Spec of CustomLabelValue
+                        type: string
+                      os:
+                        description: Spec of OS
+                        type: string
+                    type: object
                   version:
                     description: Version of the MultiCluster hub
                     type: string

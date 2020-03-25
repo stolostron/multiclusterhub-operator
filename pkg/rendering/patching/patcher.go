@@ -23,6 +23,7 @@ func ApplyGlobalPatches(res *resource.Resource, multipleClusterHub *operatorsv1a
 	for _, generate := range []patchGenerateFn{
 		generateImagePatch,
 		generateImagePullSecretsPatch,
+		generateNodeSelectorPatch,
 	} {
 		patch, err := generate(res, multipleClusterHub)
 		if err != nil {
@@ -320,6 +321,44 @@ func generateContainerArgsPatch(r *resource.Resource, newArgs map[string]string)
 			},
 		},
 	}), nil
+}
+
+const nodeSelectorTemplate = `
+kind: __kind__
+spec:
+  template:
+    spec:
+      nodeSelector: {__selector__}
+`
+
+func generateNodeSelectorPatch(res *resource.Resource, mch *operatorsv1alpha1.MultiClusterHub) (ifc.Kunstructured, error) {
+	nodeSelectorOptions := mch.Spec.NodeSelector
+	if nodeSelectorOptions == nil {
+		return nil, nil
+	}
+	template := strings.Replace(nodeSelectorTemplate, "__kind__", res.GetKind(), 1)
+	selectormap := map[string]string{}
+	if nodeSelectorOptions.OS != "" {
+		selectormap["beta.kubernetes.io/os"] = nodeSelectorOptions.OS
+	}
+	if nodeSelectorOptions.CustomLabelSelector != "" && nodeSelectorOptions.CustomLabelValue != "" {
+		selectormap[nodeSelectorOptions.CustomLabelSelector] = nodeSelectorOptions.CustomLabelValue
+	}
+	if len(selectormap) == 0 {
+		return nil, nil
+	}
+	selectors := []string{}
+	for k, v := range selectormap {
+		selectors = append(selectors, fmt.Sprintf("\"%s\":\"%s\"", k, v))
+	}
+	template = strings.Replace(template, "__selector__", strings.Join(selectors, ","), 1)
+	json, err := yaml.YAMLToJSON([]byte(template))
+	if err != nil {
+		return nil, err
+	}
+	var u unstructured.Unstructured
+	err = u.UnmarshalJSON(json)
+	return &kunstruct.UnstructAdapter{Unstructured: u}, err
 }
 
 func generateEnvVarsPatch(r *resource.Resource, newEnvs []corev1.EnvVar) (ifc.Kunstructured, error) {

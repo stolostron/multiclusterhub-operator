@@ -28,6 +28,10 @@ type MultiClusterHubSpec struct {
 	// +optional
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
 
+	// Spec of NodeSelector
+	// +optional
+	NodeSelector *NodeSelector `json:"nodeSelector,omitempty"`
+
 	// Spec of hive
 	Hive HiveConfigSpec `json:"hive"`
 
@@ -49,6 +53,21 @@ type Etcd struct {
 	// StorageSize for MultiCluster hub components (ex. 1Gi)
 	// +optional
 	Storage string `json:"storage,omiteempty"`
+}
+
+// NodeSelector defines the desired state of NodeSelector
+type NodeSelector struct {
+	// Spec of OS
+	// +optional
+	OS string `json:"os,omitempty"`
+
+	// Spec of CustomLabelSelector
+	// +optional
+	CustomLabelSelector string `json:"customLabelSelector,omitempty"`
+
+	// Spec of CustomLabelValue
+	// +optional
+	CustomLabelValue string `json:"customLabelValue,omitempty"`
 }
 
 type HiveConfigSpec struct {
