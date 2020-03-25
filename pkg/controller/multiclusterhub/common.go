@@ -18,7 +18,7 @@ import (
 )
 
 func (r *ReconcileMultiClusterHub) ensureDeployment(m *operatorsv1alpha1.MultiClusterHub, dep *appsv1.Deployment) (*reconcile.Result, error) {
-	dplog = log.WithValues("Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
+	dplog := log.WithValues("Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
 
 	// See if deployment already exists and create if it doesn't
 	found := &appsv1.Deployment{}
@@ -82,7 +82,7 @@ func (r *ReconcileMultiClusterHub) ensureService(m *operatorsv1alpha1.MultiClust
 }
 
 func (r *ReconcileMultiClusterHub) ensureSecret(m *operatorsv1alpha1.MultiClusterHub, s *corev1.Secret) (*reconcile.Result, error) {
-	selog = log.WithValues("Secret.Namespace", s.Namespace, "Secret.Name", s.Name)
+	selog := log.WithValues("Secret.Namespace", s.Namespace, "Secret.Name", s.Name)
 
 	found := &corev1.Secret{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{
