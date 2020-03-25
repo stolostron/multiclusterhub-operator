@@ -201,6 +201,11 @@ func stringValueReplace(to_replace string, renderer Renderer) string {
 		imageTagSuffix = "-" + imageTagSuffix
 	}
 
+	mongoNetworkIPVersion := "ipv4"
+	if renderer.cr.Spec.IPv6 {
+		mongoNetworkIPVersion = "ipv6"
+	}
+
 	replaced = strings.ReplaceAll(replaced, "{{SUFFIX}}", string(imageTagSuffix))
 	replaced = strings.ReplaceAll(replaced, "{{IMAGEREPO}}", string(renderer.cr.Spec.ImageRepository))
 	replaced = strings.ReplaceAll(replaced, "{{PULLSECRET}}", string(renderer.cr.Spec.ImagePullSecret))
@@ -209,6 +214,7 @@ func stringValueReplace(to_replace string, renderer Renderer) string {
 	replaced = strings.ReplaceAll(replaced, "{{DOMAIN}}", string(renderer.cacheSpec.IngressDomain))
 	replaced = strings.ReplaceAll(replaced, "{{STORAGECLASS}}", string(renderer.cr.Spec.Mongo.StorageClass)) //Assuming this is specifically for Mongo.
 	replaced = strings.ReplaceAll(replaced, "{{STORAGE}}", string(renderer.cr.Spec.Mongo.Storage))
+	replaced = strings.ReplaceAll(replaced, "{{NETWORK_IP_VERSION}}", string(mongoNetworkIPVersion))
 
 	return replaced
 }

@@ -28,6 +28,10 @@ type MultiClusterHubSpec struct {
 	// +optional
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
 
+	// Flag for IPv6
+	// +optional
+	IPv6 bool `json:"ipv6"`
+
 	// Spec of NodeSelector
 	// +optional
 	NodeSelector *NodeSelector `json:"nodeSelector,omitempty"`
@@ -52,7 +56,7 @@ type Etcd struct {
 
 	// StorageSize for MultiCluster hub components (ex. 1Gi)
 	// +optional
-	Storage string `json:"storage,omiteempty"`
+	Storage string `json:"storage,omitempty"`
 }
 
 // NodeSelector defines the desired state of NodeSelector
@@ -188,7 +192,7 @@ type Mongo struct {
 
 	// StorageSize for MultiCluster hub components (ex. 1Gi)
 	// +optional
-	Storage string `json:"storage,omiteempty"`
+	Storage string `json:"storage,omitempty"`
 }
 
 // MultiClusterHubStatus defines the observed state of MultiClusterHub

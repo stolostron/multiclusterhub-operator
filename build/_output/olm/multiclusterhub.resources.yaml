@@ -190,6 +190,9 @@ data:
                   imageTagSuffix:
                     description: ImageTagSuffix of the MultiCluster hub images
                     type: string
+                  ipv6:
+                    description: Cluster is IPv6 environment
+                    type: boolean
                   mongo:
                     description: Spec of mongo
                     properties:
