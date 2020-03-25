@@ -202,12 +202,15 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	err = r.client.Status().Update(context.TODO(), multiClusterHub)
 	if err != nil {
 		if errors.IsConflict(err) {
+			// Error from object being modified is normal behavior and should not be treated like an error
 			reqLogger.Info("Failed to update status", "Reason", "Object has been modified")
-		} else {
-			reqLogger.Error(err, fmt.Sprintf("Failed to update %s/%s status ", multiClusterHub.Namespace, multiClusterHub.Name))
+			return reconcile.Result{Requeue: true}, nil
 		}
+
+		reqLogger.Error(err, fmt.Sprintf("Failed to update %s/%s status ", multiClusterHub.Namespace, multiClusterHub.Name))
 		return reconcile.Result{}, err
 	}
+
 	return reconcile.Result{}, nil
 }
 
