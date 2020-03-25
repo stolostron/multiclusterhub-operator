@@ -3,13 +3,13 @@ package rendering
 import (
 	"os"
 	"path"
+	"reflect"
 	"testing"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 func TestRender(t *testing.T) {
@@ -30,7 +30,7 @@ func TestRender(t *testing.T) {
 			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: "Always",
 			ImagePullSecret: "test",
-			StorageClass: "test",
+			StorageClass:    "test",
 			NodeSelector: &operatorsv1alpha1.NodeSelector{
 				OS:                  "test",
 				CustomLabelSelector: "test",
@@ -70,4 +70,49 @@ func printObjs(t *testing.T, objs []*unstructured.Unstructured) {
 	for _, obj := range objs {
 		t.Log(obj)
 	}
+}
+
+func Test_addInstallerLabel(t *testing.T) {
+	installer := "example-installer"
+
+	t.Run("Should add label when none exist", func(t *testing.T) {
+		u := &unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"apiVersion": "apps.open-cluster-management.io/v1",
+				"kind":       "Channel",
+			},
+		}
+		want := map[string]string{
+			"installer": installer,
+		}
+
+		addInstallerLabel(u, installer)
+		if got := u.GetLabels(); !reflect.DeepEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	t.Run("Should not replace existing labels", func(t *testing.T) {
+		u := &unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"apiVersion": "apps.open-cluster-management.io/v1",
+				"kind":       "Channel",
+				"metadata": map[string]interface{}{
+					"name": "channelName",
+					"labels": map[string]interface{}{
+						"hello": "world",
+					},
+				},
+			},
+		}
+		want := map[string]string{
+			"hello":     "world",
+			"installer": installer,
+		}
+
+		addInstallerLabel(u, installer)
+		if got := u.GetLabels(); !reflect.DeepEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
 }

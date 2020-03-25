@@ -366,7 +366,18 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 func (r *Renderer) renderHiveConfig(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
 	u.Object["spec"] = structs.Map(r.cr.Spec.Hive)
+	addInstallerLabel(u, r.cr.GetName())
 	return u, nil
+}
+
+func addInstallerLabel(u *unstructured.Unstructured, name string) {
+	labels := make(map[string]string)
+	for key, value := range u.GetLabels() {
+		labels[key] = value
+	}
+	labels["installer"] = name
+
+	u.SetLabels(labels)
 }
 
 func reRenderDependence(objs []*unstructured.Unstructured) ([]*unstructured.Unstructured, error) {

@@ -26,10 +26,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	"github.com/go-logr/logr"
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/deploying"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering"
 )
+
+const hubFinalizer = "finalizer.cache.example.com"
 
 var log = logf.Log.WithName("controller_multiclusterhub")
 
@@ -109,6 +112,36 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		// Error reading the object - requeue the request.
 		reqLogger.Error(err, "Failed to get MultiClusterHub CR")
 		return reconcile.Result{}, err
+	}
+
+	// Check if the multiClusterHub instance is marked to be deleted, which is
+	// indicated by the deletion timestamp being set.
+	isHubMarkedToBeDeleted := multiClusterHub.GetDeletionTimestamp() != nil
+	if isHubMarkedToBeDeleted {
+		if contains(multiClusterHub.GetFinalizers(), hubFinalizer) {
+			// Run finalization logic. If the finalization
+			// logic fails, don't remove the finalizer so
+			// that we can retry during the next reconciliation.
+			if err := r.finalizeHub(reqLogger, multiClusterHub); err != nil {
+				return reconcile.Result{}, err
+			}
+
+			// Remove hubFinalizer. Once all finalizers have been
+			// removed, the object will be deleted.
+			multiClusterHub.SetFinalizers(remove(multiClusterHub.GetFinalizers(), hubFinalizer))
+			err := r.client.Update(context.TODO(), multiClusterHub)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+		}
+		return reconcile.Result{}, nil
+	}
+
+	// Add finalizer for this CR
+	if !contains(multiClusterHub.GetFinalizers(), hubFinalizer) {
+		if err := r.addFinalizer(reqLogger, multiClusterHub); err != nil {
+			return reconcile.Result{}, err
+		}
 	}
 
 	var result *reconcile.Result
@@ -303,4 +336,78 @@ func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1alpha1.MultiClust
 	}
 
 	return nil, nil
+}
+
+func (r *ReconcileMultiClusterHub) finalizeHub(reqLogger logr.Logger, m *operatorsv1alpha1.MultiClusterHub) error {
+	hiveConfigRes := schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "hiveconfigs"}
+
+	config, err := config.GetConfig()
+	if err != nil {
+		return err
+	}
+	dc, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return err
+	}
+
+	deletePolicy := metav1.DeletePropagationForeground
+	deleteOptions := metav1.DeleteOptions{
+		PropagationPolicy: &deletePolicy,
+	}
+	listOptions := metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("installer=%s", m.GetName()),
+	}
+
+	hiveResList, err := dc.Resource(hiveConfigRes).List(listOptions)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			reqLogger.Info("Hiveconfig resource not found. Finalizing.")
+			return nil
+		}
+
+		reqLogger.Error(err, "Error while listing hiveconfig instances")
+		return err
+	}
+
+	for _, hiveRes := range hiveResList.Items {
+		reqLogger.Info("Deleting hiveconfig", "Resource.Name", hiveRes.GetName())
+		if err := dc.Resource(hiveConfigRes).Delete(hiveRes.GetName(), &deleteOptions); err != nil {
+			reqLogger.Error(err, "Error while deleting hiveconfig instances")
+			return err
+		}
+	}
+
+	reqLogger.Info("Successfully finalized multiClusterHub")
+	return nil
+}
+
+func (r *ReconcileMultiClusterHub) addFinalizer(reqLogger logr.Logger, m *operatorsv1alpha1.MultiClusterHub) error {
+	reqLogger.Info("Adding Finalizer for the multiClusterHub")
+	m.SetFinalizers(append(m.GetFinalizers(), hubFinalizer))
+
+	// Update CR
+	err := r.client.Update(context.TODO(), m)
+	if err != nil {
+		reqLogger.Error(err, "Failed to update MultiClusterHub with finalizer")
+		return err
+	}
+	return nil
+}
+
+func contains(list []string, s string) bool {
+	for _, v := range list {
+		if v == s {
+			return true
+		}
+	}
+	return false
+}
+
+func remove(list []string, s string) []string {
+	for i, v := range list {
+		if v == s {
+			list = append(list[:i], list[i+1:]...)
+		}
+	}
+	return list
 }
