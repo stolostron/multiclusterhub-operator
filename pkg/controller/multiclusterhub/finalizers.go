@@ -11,16 +11,15 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 func (r *ReconcileMultiClusterHub) cleanupHiveConfigs(reqLogger logr.Logger, m *operatorsv1alpha1.MultiClusterHub) error {
 	hiveConfigRes := schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "hiveconfigs"}
 
-	dc := createDynamicClient()
+	dc, err := createDynamicClient()
 	if err != nil {
-		log.Error(err, "Failed to create dynamic client")
-		return &reconcile.Result{}, err
+		reqLogger.Error(err, "Failed to create dynamic client")
+		return err
 	}
 
 	deletePolicy := metav1.DeletePropagationForeground
