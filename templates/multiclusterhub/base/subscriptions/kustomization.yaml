@@ -1,5 +1,4 @@
 resources:
-- cert_manager
 - management_ingress
 - rcm
 - application_ui
