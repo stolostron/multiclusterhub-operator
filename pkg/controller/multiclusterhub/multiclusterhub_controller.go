@@ -16,13 +16,16 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -30,6 +33,7 @@ import (
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/deploying"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering"
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 )
 
 const hubFinalizer = "finalizer.cache.example.com"
@@ -71,6 +75,35 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		IsController: true,
 		OwnerType:    &operatorsv1alpha1.MultiClusterHub{},
 	})
+	if err != nil {
+		return err
+	}
+
+	// Watch for apiService deletions
+	pred := predicate.Funcs{
+		CreateFunc:  func(e event.CreateEvent) bool { return false },
+		GenericFunc: func(e event.GenericEvent) bool { return false },
+		UpdateFunc:  func(e event.UpdateEvent) bool { return false },
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			labels := e.Meta.GetLabels()
+			_, nameExists := labels["installer.name"]
+			_, namespaceExists := labels["installer.name"]
+			return nameExists && namespaceExists
+		},
+	}
+	err = c.Watch(
+		&source.Kind{Type: &apiregistrationv1.APIService{}},
+		handler.Funcs{
+			DeleteFunc: func(e event.DeleteEvent, q workqueue.RateLimitingInterface) {
+				labels := e.Meta.GetLabels()
+				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
+					Name:      labels["installer.name"],
+					Namespace: labels["installer.namespace"],
+				}})
+			},
+		},
+		pred,
+	)
 	if err != nil {
 		return err
 	}
@@ -129,11 +162,13 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 			// Remove hubFinalizer. Once all finalizers have been
 			// removed, the object will be deleted.
 			multiClusterHub.SetFinalizers(remove(multiClusterHub.GetFinalizers(), hubFinalizer))
+
 			err := r.client.Update(context.TODO(), multiClusterHub)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
 		}
+
 		return reconcile.Result{}, nil
 	}
 
@@ -339,42 +374,11 @@ func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1alpha1.MultiClust
 }
 
 func (r *ReconcileMultiClusterHub) finalizeHub(reqLogger logr.Logger, m *operatorsv1alpha1.MultiClusterHub) error {
-	hiveConfigRes := schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "hiveconfigs"}
-
-	config, err := config.GetConfig()
-	if err != nil {
+	if err := r.cleanupHiveConfigs(reqLogger, m); err != nil {
 		return err
 	}
-	dc, err := dynamic.NewForConfig(config)
-	if err != nil {
+	if err := r.cleanupAPIServices(reqLogger, m); err != nil {
 		return err
-	}
-
-	deletePolicy := metav1.DeletePropagationForeground
-	deleteOptions := metav1.DeleteOptions{
-		PropagationPolicy: &deletePolicy,
-	}
-	listOptions := metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("installer=%s", m.GetName()),
-	}
-
-	hiveResList, err := dc.Resource(hiveConfigRes).List(listOptions)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			reqLogger.Info("Hiveconfig resource not found. Finalizing.")
-			return nil
-		}
-
-		reqLogger.Error(err, "Error while listing hiveconfig instances")
-		return err
-	}
-
-	for _, hiveRes := range hiveResList.Items {
-		reqLogger.Info("Deleting hiveconfig", "Resource.Name", hiveRes.GetName())
-		if err := dc.Resource(hiveConfigRes).Delete(hiveRes.GetName(), &deleteOptions); err != nil {
-			reqLogger.Error(err, "Error while deleting hiveconfig instances")
-			return err
-		}
 	}
 
 	reqLogger.Info("Successfully finalized multiClusterHub")
