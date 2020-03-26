@@ -62,6 +62,10 @@ spec:
                       type: boolean
                   type: object
               type: object
+            deprovisionsDisabled:
+              description: DeprovisionsDisabled can be set to true to block deprovision
+                jobs from running.
+              type: boolean
             failedProvisionConfig:
               description: FailedProvisionConfig is used to configure settings related
                 to handling provision failures.
@@ -85,6 +89,10 @@ spec:
               description: HiveAPIEnabled is a boolean controlling whether or not
                 the Hive operator will start up the v1alpha1 aggregated API server.
               type: boolean
+            imageExtractionCLIImage:
+              description: ImageExtractionCLIImage can be set to override the location
+                of the image with the oc command line tool.
+              type: string
             logLevel:
               description: LogLevel is the level of logging to use for the Hive controllers.
                 Acceptable levels, from coarsest to finest, are panic, fatal, error,
@@ -97,6 +105,49 @@ spec:
                 be needed. Sets replicas to 0 for the hive-controllers deployment
                 to accomplish this.
               type: boolean
+            managedDomains:
+              description: 'ManagedDomains is the list of DNS domains that are managed
+                by the Hive cluster When specifying ''managedDNS: true'' in a ClusterDeployment,
+                the ClusterDeployment''s baseDomain should be a direct child of one
+                of these domains, otherwise the ClusterDeployment creation will result
+                in a validation error.'
+              items:
+                properties:
+                  aws:
+                    description: AWS contains AWS-specific settings for external DNS
+                    properties:
+                      credentialsSecretRef:
+                        description: CredentialsSecretRef references a secret that
+                          will be used to authenticate with AWS Route53. It will need
+                          permission to manage entries for the domain listed in the
+                          parent ManageDNSConfig object. Secret should have AWS keys
+                          named 'aws_access_key_id' and 'aws_secret_access_key'.
+                        type: object
+                      region:
+                        description: Region is the AWS region to use for route53 operations.
+                          This defaults to us-east-1. For AWS China, use cn-northwest-1.
+                        type: string
+                    type: object
+                  domains:
+                    description: Domains is the list of domains that hive will be
+                      managing entries for with the provided credentials.
+                    items:
+                      type: string
+                    type: array
+                  gcp:
+                    description: GCP contains GCP-specific settings for external DNS
+                    properties:
+                      credentialsSecretRef:
+                        description: CredentialsSecretRef references a secret that
+                          will be used to authenticate with GCP DNS. It will need
+                          permission to manage entries in each of the managed domains
+                          for this cluster. listed in the parent ManageDNSConfig object.
+                          Secret should have a key named 'osServiceAccount.json'.
+                          The credentials must specify the project to use.
+                        type: object
+                    type: object
+                type: object
+              type: array
             syncSetReapplyInterval:
               description: SyncSetReapplyInterval is a string duration indicating
                 how much time must pass before SyncSet resources will be reapplied.
