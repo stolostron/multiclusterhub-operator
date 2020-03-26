@@ -227,7 +227,7 @@ func (r *ReconcileMultiClusterHub) mongoAuthSecret(v *operatorsv1alpha1.MultiClu
 		},
 		Type: "Opaque",
 		StringData: map[string]string{
-			"user":     "some@example.com",
+			"user":     "admin",
 			"password": generatePass(16),
 		},
 	}
