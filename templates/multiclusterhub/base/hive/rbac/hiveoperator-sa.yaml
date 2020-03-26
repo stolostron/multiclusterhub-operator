@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: hive-operator
-  annotations:
-    update-namespace: "false"
-  namespace: hive

@@ -81,6 +81,11 @@
         kind: HelmRelease
         displayName: Helm Release
         description: Represent a helm chart selected by the subscription, for internal use only.
+      - name: hiveconfigs.hive.openshift.io
+        version: v1
+        kind: HiveConfig
+        displayName: Hive Config
+        description: Configuration for the Hive Operator
       - name: subscriptions.apps.open-cluster-management.io
         version: v1
         kind: Subscription
