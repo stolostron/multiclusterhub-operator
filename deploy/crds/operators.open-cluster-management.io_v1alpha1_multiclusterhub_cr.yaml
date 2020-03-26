@@ -9,10 +9,3 @@ spec:
   imageTagSuffix: ""
   imagePullPolicy: Always
   imagePullSecret: quay-secret
-  hive:
-    additionalCertificateAuthorities:
-      - name: letsencrypt-ca
-    globalPullSecret:
-      name: private-secret
-    failedProvisionConfig:
-      skipGatherLogs: true

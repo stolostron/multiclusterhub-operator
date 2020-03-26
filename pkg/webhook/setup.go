@@ -52,13 +52,12 @@ func Setup(mgr manager.Manager) error {
 	}
 
 	log.Info("Registering webhooks to the webhook server.")
-	mutatingPath := "/mutate-v1alpha1-multiclusterhub"
-	hookServer.Register(mutatingPath, &webhook.Admission{Handler: &multiClusterHubMutator{}})
+	// mutatingPath := "/mutate-v1alpha1-multiclusterhub"
+	// hookServer.Register(mutatingPath, &webhook.Admission{Handler: &multiClusterHubMutator{}})
 	validatingPath := "/validate-v1alpha1-multiclusterhub"
 	hookServer.Register(validatingPath, &webhook.Admission{Handler: &multiClusterHubValidator{}})
 
 	go createWebhookService(mgr.GetClient(), ns)
-	go createOrUpdateMutatingWebhook(mgr.GetClient(), ns, mutatingPath, ca)
 	go createOrUpdateValiatingWebhook(mgr.GetClient(), ns, validatingPath, ca)
 
 	return nil
@@ -89,42 +88,6 @@ func createWebhookService(c client.Client, namespace string) {
 			}
 		}
 		log.Info(fmt.Sprintf("%s/%s service is found", namespace, utils.WebhookServiceName))
-		return
-	}
-}
-
-func createOrUpdateMutatingWebhook(c client.Client, namespace, path string, ca []byte) {
-	mutator := &admissionregistration.MutatingWebhookConfiguration{}
-	key := types.NamespacedName{Name: mutatingCfgName}
-	for {
-		if err := c.Get(context.TODO(), key, mutator); err != nil {
-			if errors.IsNotFound(err) {
-				cfg := newMutatingWebhookCfg(namespace, path, ca)
-				setOwnerReferences(c, namespace, cfg)
-				if err := c.Create(context.TODO(), cfg); err != nil {
-					log.Error(err, fmt.Sprintf("Failed to create mutating webhook %s", mutatingCfgName))
-					return
-				}
-				log.Info(fmt.Sprintf("Create mutating webhook %s", mutatingCfgName))
-				return
-			}
-			switch err.(type) {
-			case *cache.ErrCacheNotStarted:
-				time.Sleep(time.Second)
-				continue
-			default:
-				log.Error(err, fmt.Sprintf("Failed to get mutating webhook %s", mutatingCfgName))
-				return
-			}
-		}
-
-		mutator.Webhooks[0].ClientConfig.Service.Namespace = namespace
-		mutator.Webhooks[0].ClientConfig.CABundle = ca
-		if err := c.Update(context.TODO(), mutator); err != nil {
-			log.Error(err, fmt.Sprintf("Failed to update mutating webhook %s", mutatingCfgName))
-			return
-		}
-		log.Info(fmt.Sprintf("Update mutating webhook %s", mutatingCfgName))
 		return
 	}
 }

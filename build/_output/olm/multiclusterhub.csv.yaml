@@ -12,19 +12,6 @@
               "namespace": "default"
             },
             "spec": {
-              "hive": {
-                "additionalCertificateAuthorities": [
-                  {
-                    "name": "letsencrypt-ca"
-                  }
-                ],
-                "failedProvisionConfig": {
-                  "skipGatherLogs": true
-                },
-                "globalPullSecret": {
-                  "name": "private-secret"
-                }
-              },
               "imagePullPolicy": "Always",
               "imagePullSecret": "quay-secret",
               "imageRepository": "quay.io/open-cluster-management",

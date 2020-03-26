@@ -12,6 +12,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/kustomize/v3/pkg/resource"
 
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/patching"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
@@ -373,7 +374,10 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 
 func (r *Renderer) renderHiveConfig(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
-	u.Object["spec"] = structs.Map(r.cr.Spec.Hive)
+	HiveConfig := v1alpha1.HiveConfigSpec{}
+	if !reflect.DeepEqual(structs.Map(r.cr.Spec.Hive), structs.Map(HiveConfig)) {
+		u.Object["spec"] = structs.Map(r.cr.Spec.Hive)
+	}
 	return u, nil
 }
 

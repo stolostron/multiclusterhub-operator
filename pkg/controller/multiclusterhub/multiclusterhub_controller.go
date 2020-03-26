@@ -5,9 +5,12 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
+	"reflect"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+
+	storv1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -25,6 +28,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	"github.com/fatih/structs"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/deploying"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering"
@@ -113,14 +118,26 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	}
 
 	var result *reconcile.Result
+	if !utils.MchIsValid(multiClusterHub) {
+		log.Info("MultiClusterHub is Invalid. Updating with proper defaults")
+		result, err = r.SetDefaults(multiClusterHub)
+		if result != nil {
+			return *result, err
+		}
+		log.Info("MultiClusterHub successfully updated")
+		// return reconcile.Result{}, nil
+	}
+
 	result, err = r.ensureSecret(request, multiClusterHub, r.mongoAuthSecret(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}
 
-	result, err = r.ingressDomain(multiClusterHub)
-	if result != nil {
-		return *result, err
+	if r.CacheSpec.IngressDomain == "" {
+		result, err = r.ingressDomain(multiClusterHub)
+		if result != nil {
+			return *result, err
+		}
 	}
 
 	//Render the templates with a specified CR
@@ -229,6 +246,76 @@ func generatePass(length int) string {
 		buf[i] = chars[nBig.Int64()]
 	}
 	return string(buf)
+}
+
+// SetDefaults Updates MultiClusterHub resource with proper defaults
+func (r *ReconcileMultiClusterHub) SetDefaults(m *operatorsv1alpha1.MultiClusterHub) (*reconcile.Result, error) {
+	if m.Spec.Version == "" {
+		m.Spec.Version = utils.LatestVerison
+	}
+
+	if m.Spec.ImageRepository == "" {
+		m.Spec.ImageRepository = utils.DefaultRepository
+	}
+
+	if m.Spec.ImagePullPolicy == "" {
+		m.Spec.ImagePullPolicy = corev1.PullAlways
+	}
+
+	if m.Spec.Mongo.Storage == "" {
+		m.Spec.Mongo.Storage = "1Gi"
+	}
+
+	if m.Spec.Mongo.StorageClass == "" {
+		storageClass, err := r.getStorageClass()
+		if err != nil {
+			return &reconcile.Result{}, err
+		}
+		m.Spec.Mongo.StorageClass = storageClass
+	}
+
+	if m.Spec.Etcd.Storage == "" {
+		m.Spec.Etcd.Storage = "1Gi"
+	}
+
+	if m.Spec.Etcd.StorageClass == "" {
+		storageClass, err := r.getStorageClass()
+		if err != nil {
+			return &reconcile.Result{}, err
+		}
+		m.Spec.Etcd.StorageClass = storageClass
+	}
+
+	if reflect.DeepEqual(structs.Map(m.Spec.Hive), structs.Map(v1alpha1.HiveConfigSpec{})) {
+		m.Spec.Hive = v1alpha1.HiveConfigSpec{
+			AdditionalCertificateAuthorities: []corev1.LocalObjectReference{
+				corev1.LocalObjectReference{
+					Name: "letsencrypt-ca",
+				},
+			},
+			FailedProvisionConfig: v1alpha1.FailedProvisionConfig{
+				SkipGatherLogs: true,
+			},
+			GlobalPullSecret: &corev1.LocalObjectReference{
+				Name: "private-secret",
+			},
+		}
+	}
+	return nil, nil
+}
+
+// getStorageClass retrieves the default storage class if it exists
+func (r *ReconcileMultiClusterHub) getStorageClass() (string, error) {
+	scList := &storv1.StorageClassList{}
+	if err := r.client.List(context.TODO(), scList); err != nil {
+		return "", err
+	}
+	for _, sc := range scList.Items {
+		if sc.Annotations["storageclass.kubernetes.io/is-default-class"] == "true" {
+			return sc.GetName(), nil
+		}
+	}
+	return "", fmt.Errorf("failed to find default storageclass")
 }
 
 // ingressDomain is discovered from Openshift cluster configuration resources

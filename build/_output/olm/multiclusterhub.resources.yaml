@@ -191,7 +191,7 @@ data:
                     description: ImageTagSuffix of the MultiCluster hub images
                     type: string
                   ipv6:
-                    description: Cluster is IPv6 environment
+                    description: Flag for IPv6
                     type: boolean
                   mongo:
                     description: Spec of mongo
@@ -220,7 +220,6 @@ data:
                     description: Version of the MultiCluster hub
                     type: string
                 required:
-                - hive
                 - imagePullPolicy
                 - imageRepository
                 - imageTagSuffix
@@ -346,19 +345,6 @@ data:
                   "namespace": "default"
                 },
                 "spec": {
-                  "hive": {
-                    "additionalCertificateAuthorities": [
-                      {
-                        "name": "letsencrypt-ca"
-                      }
-                    ],
-                    "failedProvisionConfig": {
-                      "skipGatherLogs": true
-                    },
-                    "globalPullSecret": {
-                      "name": "private-secret"
-                    }
-                  },
                   "imagePullPolicy": "Always",
                   "imagePullSecret": "quay-secret",
                   "imageRepository": "quay.io/open-cluster-management",

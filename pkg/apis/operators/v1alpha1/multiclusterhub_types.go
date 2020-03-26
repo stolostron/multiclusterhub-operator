@@ -37,6 +37,7 @@ type MultiClusterHubSpec struct {
 	NodeSelector *NodeSelector `json:"nodeSelector,omitempty"`
 
 	// Spec of hive
+	// +optional
 	Hive HiveConfigSpec `json:"hive"`
 
 	// Spec of mongo
