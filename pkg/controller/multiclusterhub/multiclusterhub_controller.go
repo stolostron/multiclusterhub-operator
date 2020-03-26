@@ -35,7 +35,7 @@ import (
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 )
 
-const hubFinalizer = "finalizer.cache.example.com"
+const hubFinalizer = "finalizer.operators.open-cluster-management.io"
 
 var log = logf.Log.WithName("controller_multiclusterhub")
 
