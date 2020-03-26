@@ -9,22 +9,18 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 func (r *ReconcileMultiClusterHub) cleanupHiveConfigs(reqLogger logr.Logger, m *operatorsv1alpha1.MultiClusterHub) error {
 	hiveConfigRes := schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "hiveconfigs"}
 
-	config, err := config.GetConfig()
+	dc := createDynamicClient()
 	if err != nil {
-		return err
-	}
-	dc, err := dynamic.NewForConfig(config)
-	if err != nil {
-		return err
+		log.Error(err, "Failed to create dynamic client")
+		return &reconcile.Result{}, err
 	}
 
 	deletePolicy := metav1.DeletePropagationForeground
@@ -35,17 +31,19 @@ func (r *ReconcileMultiClusterHub) cleanupHiveConfigs(reqLogger logr.Logger, m *
 		LabelSelector: fmt.Sprintf("installer.name=%s", m.GetName()),
 	}
 
+	// Find all resources created by installer based on label
 	hiveResList, err := dc.Resource(hiveConfigRes).List(listOptions)
 	if err != nil {
 		if errors.IsNotFound(err) {
+			// If Hiveconfig resource doesn't exist then move on
 			reqLogger.Info("Hiveconfig resource not found. Continuing.")
 			return nil
 		}
-
 		reqLogger.Error(err, "Error while listing hiveconfig instances")
 		return err
 	}
 
+	// Delete all identified instances
 	for _, hiveRes := range hiveResList.Items {
 		reqLogger.Info("Deleting hiveconfig", "Resource.Name", hiveRes.GetName())
 		if err := dc.Resource(hiveConfigRes).Delete(hiveRes.GetName(), &deleteOptions); err != nil {
@@ -73,7 +71,6 @@ func (r *ReconcileMultiClusterHub) cleanupAPIServices(reqLogger logr.Logger, m *
 			reqLogger.Info("No matching API services to finalize. Continuing.")
 			return nil
 		}
-
 		reqLogger.Error(err, "Error while deleting API services")
 		return err
 	}
