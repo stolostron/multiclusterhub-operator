@@ -38,3 +38,9 @@ spec:
             - ls
           initialDelaySeconds: 15
           periodSeconds: 15
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"

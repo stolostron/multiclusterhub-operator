@@ -104,45 +104,6 @@ func ApplyControllerPatches(res *resource.Resource, multipleClusterHub *operator
 	return res.Patch(argsPatch)
 }
 
-func ApplyTopologyAggregatorPatches(res *resource.Resource, multipleClusterHub *operatorsv1alpha1.MultiClusterHub) error {
-	replicasPatch := generateReplicasPatch(*multipleClusterHub.Spec.Foundation.Controller.Replicas)
-	if err := res.Patch(replicasPatch); err != nil {
-		return err
-	}
-
-	envVars, volumes, volumeMounts := generateMongoSecrets(multipleClusterHub)
-	if err := applySecretPatches(res, envVars, volumes, volumeMounts); err != nil {
-		return err
-	}
-
-	if err := applySecretPatches(
-		res,
-		[]corev1.EnvVar{},
-		[]corev1.Volume{{
-			Name: "topology-aggregator-certs",
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{SecretName: "topology-aggregator-secret"},
-			},
-		}},
-		[]corev1.VolumeMount{{
-			Name:      "topology-aggregator-certs",
-			MountPath: "/certs",
-		}},
-	); err != nil {
-		return err
-	}
-
-	args := map[string]string{}
-	args["mongo-host"] = multipleClusterHub.Spec.Mongo.Endpoints
-	args["mongo-replicaset"] = multipleClusterHub.Spec.Mongo.ReplicaSet
-	args["aggregator-tls-cert"] = "/certs/tls.crt"
-	args["aggregator-tls-key"] = "/certs/tls.key"
-	argsPatch, err := generateContainerArgsPatch(res, args)
-	if err != nil {
-		return err
-	}
-	return res.Patch(argsPatch)
-}
 
 func ApplyWebhookPatches(res *resource.Resource, multipleClusterHub *operatorsv1alpha1.MultiClusterHub) error {
 	replicasPatch := generateReplicasPatch(*multipleClusterHub.Spec.Foundation.Controller.Replicas)

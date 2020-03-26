@@ -24,7 +24,6 @@ const (
 	webhookName            = "mcm-webhook"
 	clusterControllerName  = "multicluster-operators-cluster-controller"
 	helmRepoName           = "multiclusterhub-repo"
-	topologyAggregatorName = "topology-aggregator"
 	metadataErr            = "failed to find metadata field"
 )
 
@@ -146,11 +145,6 @@ func (r *Renderer) renderDeployments(res *resource.Resource) (*unstructured.Unst
 	case clusterControllerName:
 		return &unstructured.Unstructured{Object: res.Map()}, nil
 	case helmRepoName:
-		return &unstructured.Unstructured{Object: res.Map()}, nil
-	case topologyAggregatorName:
-		if err := patching.ApplyTopologyAggregatorPatches(res, r.cr); err != nil {
-			return nil, err
-		}
 		return &unstructured.Unstructured{Object: res.Map()}, nil
 	default:
 		return nil, fmt.Errorf("unknown MultipleClusterHub deployment component %s", name)
@@ -328,23 +322,6 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 			return nil, err
 		}
 		cert, err := utils.GenerateSignedCert("multicluterhub-klusterlet", []string{}, ca)
-		if err != nil {
-			return nil, err
-		}
-		data["ca.crt"] = []byte(ca.Cert)
-		data["tls.crt"] = []byte(cert.Cert)
-		data["tls.key"] = []byte(cert.Key)
-		return u, nil
-	case "topology-aggregator-secret":
-		ca, err := utils.GenerateSelfSignedCACert("topology-aggregator")
-		if err != nil {
-			return nil, err
-		}
-		alternateDNS := []string{
-			fmt.Sprintf("%s.%s", topologyAggregatorName, r.cr.Namespace),
-			fmt.Sprintf("%s.%s.svc", topologyAggregatorName, r.cr.Namespace),
-		}
-		cert, err := utils.GenerateSignedCert(topologyAggregatorName, alternateDNS, ca)
 		if err != nil {
 			return nil, err
 		}
