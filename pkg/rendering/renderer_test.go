@@ -3,7 +3,6 @@ package rendering
 import (
 	"os"
 	"path"
-	"reflect"
 	"testing"
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
@@ -72,22 +71,21 @@ func printObjs(t *testing.T, objs []*unstructured.Unstructured) {
 }
 
 func Test_addInstallerLabel(t *testing.T) {
-	installer := "example-installer"
+	name := "example-installer"
+	ns := "default"
 
-	t.Run("Should add label when none exist", func(t *testing.T) {
+	t.Run("Should add labels when none exist", func(t *testing.T) {
 		u := &unstructured.Unstructured{
 			Object: map[string]interface{}{
 				"apiVersion": "apps.open-cluster-management.io/v1",
 				"kind":       "Channel",
 			},
 		}
-		want := map[string]string{
-			"installer": installer,
-		}
+		want := 2
 
-		addInstallerLabel(u, installer)
-		if got := u.GetLabels(); !reflect.DeepEqual(got, want) {
-			t.Errorf("got %v, want %v", got, want)
+		addInstallerLabel(u, name, ns)
+		if got := len(u.GetLabels()); got != want {
+			t.Errorf("got %v labels, want %v", got, want)
 		}
 	})
 
@@ -104,14 +102,11 @@ func Test_addInstallerLabel(t *testing.T) {
 				},
 			},
 		}
-		want := map[string]string{
-			"hello":     "world",
-			"installer": installer,
-		}
+		want := 3
 
-		addInstallerLabel(u, installer)
-		if got := u.GetLabels(); !reflect.DeepEqual(got, want) {
-			t.Errorf("got %v, want %v", got, want)
+		addInstallerLabel(u, name, ns)
+		if got := len(u.GetLabels()); got != want {
+			t.Errorf("got %v labels, want %v", got, want)
 		}
 	})
 }
