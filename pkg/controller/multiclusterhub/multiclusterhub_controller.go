@@ -30,8 +30,8 @@ import (
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/deploying"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 )
 
 var log = logf.Log.WithName("controller_multiclusterhub")
@@ -124,6 +124,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		}
 		log.Info("MultiClusterHub successfully updated")
 		// return reconcile.Result{}, nil
+	}
 	result, err = r.ensureDeployment(multiClusterHub, r.helmRepoDeployment(multiClusterHub))
 	if result != nil {
 		return *result, err
@@ -161,11 +162,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	}
 
 	result, err = r.ensureSecret(multiClusterHub, r.mongoAuthSecret(multiClusterHub))
-	if result != nil {
-		return *result, err
-	}
-
-	result, err = r.ensureSecret(request, multiClusterHub, r.mongoAuthSecret(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}
