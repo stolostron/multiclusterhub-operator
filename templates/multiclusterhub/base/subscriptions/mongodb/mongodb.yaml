@@ -15,7 +15,7 @@ spec:
           imageTagPostfix: "{{SUFFIX}}"
           imagePullSecrets:
           - "{{PULLSECRET}}"
-          network_ip_version: "ipv4"
+          network_ip_version: "{{NETWORK_IP_VERSION}}"
           auth:
             enabled: true
             existingAdminSecret: "mongodb-admin"
@@ -29,7 +29,7 @@ spec:
             accessModes:
             - ReadWriteOnce
             enabled: true
-            size: "20Gi"
+            size: "{{STORAGE}}"
             storageClass: "{{STORAGECLASS}}"
           curl:
             image:

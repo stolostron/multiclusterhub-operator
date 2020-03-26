@@ -18,9 +18,6 @@ type MultiClusterHubSpec struct {
 	// Repository of the MultiCluster hub images
 	ImageRepository string `json:"imageRepository"`
 
-	// StorageClass for MultiCluster hub components
-	StorageClass string `json:"storageClass"`
-
 	// ImageTagSuffix of the MultiCluster hub images
 	ImageTagSuffix string `json:"imageTagSuffix"`
 
@@ -35,6 +32,10 @@ type MultiClusterHubSpec struct {
 	// +optional
 	IngressDomain string `json:"ingressDomain,omitempty"`
 
+	// Flag for IPv6
+	// +optional
+	IPv6 bool `json:"ipv6"`
+
 	// Spec of NodeSelector
 	// +optional
 	NodeSelector *NodeSelector `json:"nodeSelector,omitempty"`
@@ -47,6 +48,21 @@ type MultiClusterHubSpec struct {
 
 	// Spec of mongo
 	Mongo `json:"mongo"`
+
+	// Spec of Etcd
+	// +optional
+	Etcd `json:"etcd,omitempty"`
+}
+
+// Etcd defines the desired state of Etcd
+type Etcd struct {
+	// StorageClass for MultiCluster hub components
+	// +optional
+	StorageClass string `json:"storageClass,omitempty"`
+
+	// StorageSize for MultiCluster hub components (ex. 1Gi)
+	// +optional
+	Storage string `json:"storage,omitempty"`
 }
 
 // NodeSelector defines the desired state of NodeSelector
@@ -234,6 +250,14 @@ type Mongo struct {
 	// CA secret of mongo
 	// +optional
 	CASecret string `json:"caSecret,omitempty"`
+
+	// StorageClass for MultiCluster hub components
+	// +optional
+	StorageClass string `json:"storageClass"`
+
+	// StorageSize for MultiCluster hub components (ex. 1Gi)
+	// +optional
+	Storage string `json:"storage,omitempty"`
 }
 
 // MultiClusterHubStatus defines the observed state of MultiClusterHub

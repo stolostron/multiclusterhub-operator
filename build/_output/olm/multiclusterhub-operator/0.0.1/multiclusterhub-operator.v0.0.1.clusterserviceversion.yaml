@@ -12,6 +12,10 @@ metadata:
             "namespace": "default"
           },
           "spec": {
+            "etcd": {
+              "storage": "1Gi",
+              "storageclass": "gp2"
+            },
             "foundation": {
               "apiserver": {
                 "apiserverSecret": "mcm-apiserver-self-signed-secrets",

@@ -8,6 +8,7 @@ import (
 
 	"github.com/fatih/structs"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/kustomize/v3/pkg/resource"
 
@@ -15,7 +16,6 @@ import (
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/patching"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
-	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -49,7 +49,7 @@ func NewRenderer(multipleClusterHub *operatorsv1alpha1.MultiClusterHub) *Rendere
 		"MutatingWebhookConfiguration": renderer.renderMutatingWebhookConfiguration,
 		"Secret":                       renderer.renderSecret,
 		"Subscription":                 renderer.renderSubscription,
-		"EtcdCluster":                  renderer.renderNamespace,
+		"EtcdCluster":                  renderer.renderEtcdCluster,
 		"StatefulSet":                  renderer.renderNamespace,
 		"Channel":                      renderer.renderNamespace,
 		"HiveConfig":                   renderer.renderHiveConfig,
@@ -201,13 +201,20 @@ func stringValueReplace(to_replace string, cr *operatorsv1alpha1.MultiClusterHub
 		imageTagSuffix = "-" + imageTagSuffix
 	}
 
+	mongoNetworkIPVersion := "ipv4"
+	if cr.Spec.IPv6 {
+		mongoNetworkIPVersion = "ipv6"
+	}
+
 	replaced = strings.ReplaceAll(replaced, "{{SUFFIX}}", string(imageTagSuffix))
 	replaced = strings.ReplaceAll(replaced, "{{IMAGEREPO}}", string(cr.Spec.ImageRepository))
 	replaced = strings.ReplaceAll(replaced, "{{PULLSECRET}}", string(cr.Spec.ImagePullSecret))
 	replaced = strings.ReplaceAll(replaced, "{{NAMESPACE}}", string(cr.Namespace))
 	replaced = strings.ReplaceAll(replaced, "{{PULLPOLICY}}", string(cr.Spec.ImagePullPolicy))
 	replaced = strings.ReplaceAll(replaced, "{{DOMAIN}}", string(cr.Spec.IngressDomain))
-	replaced = strings.ReplaceAll(replaced, "{{STORAGECLASS}}", string(cr.Spec.StorageClass))
+	replaced = strings.ReplaceAll(replaced, "{{STORAGECLASS}}", string(cr.Spec.Mongo.StorageClass)) //Assuming this is specifically for Mongo.
+	replaced = strings.ReplaceAll(replaced, "{{STORAGE}}", string(cr.Spec.Mongo.Storage))
+	replaced = strings.ReplaceAll(replaced, "{{NETWORK_IP_VERSION}}", string(mongoNetworkIPVersion))
 
 	return replaced
 }
@@ -436,4 +443,34 @@ func UpdateNamespace(u *unstructured.Unstructured) bool {
 		}
 	}
 	return updateNamespace
+}
+
+func (r *Renderer) renderEtcdCluster(res *resource.Resource) (*unstructured.Unstructured, error) {
+	r.renderNamespace(res)
+	u := &unstructured.Unstructured{Object: res.Map()}
+	spec, ok := u.Object["spec"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to find Etcd spec field")
+	}
+
+	pod, ok := spec["pod"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to find Etcd spec pod field")
+	}
+	persistentVolumeClaimSpec, ok := pod["persistentVolumeClaimSpec"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to find Etcd spec pod persistentVolumeClaimSpec field")
+	}
+	persistentVolumeClaimSpec["storageClassName"] = r.cr.Spec.Etcd.StorageClass
+
+	resources, ok := persistentVolumeClaimSpec["resources"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to find Etcd spec pod persistentVolumeClaimSpec resources field")
+	}
+	requests, ok := resources["requests"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to find Etcd spec pod persistentVolumeClaimSpec resources requests field")
+	}
+	requests["storage"] = r.cr.Spec.Etcd.Storage
+	return u, nil
 }
