@@ -8,3 +8,4 @@ resources:
 - certificates
 - subscriptions
 - topology_aggregator
+# - hive/hiveconfig.yaml

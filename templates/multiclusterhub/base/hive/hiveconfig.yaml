@@ -1,0 +1,9 @@
+apiVersion: hive.openshift.io/v1
+kind: HiveConfig
+metadata:
+  name: mch-hive
+spec:
+  additionalCertificateAuthorities:
+  - name: letsencrypt-ca
+  globalPullSecret:
+    name: private-secret

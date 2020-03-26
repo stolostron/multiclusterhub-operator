@@ -401,7 +401,7 @@ data:
                 "kind": "MultiClusterHub",
                 "metadata": {
                   "name": "example-multiclusterhub",
-                  "namespace": "default"
+                  "namespace": "hive"
                 },
                 "spec": {
                   "etcd": {
@@ -441,7 +441,7 @@ data:
                   "imagePullPolicy": "Always",
                   "imagePullSecret": "quay-secret",
                   "imageRepository": "quay.io/open-cluster-management",
-                  "imageTagSuffix": "",
+                  "imageTagSuffix": "SNAPSHOT-2020-03-26-17-17-14",
                   "mongo": {
                     "caSecret": "multicloud-ca-cert",
                     "endpoints": "multicluster-mongodb",
