@@ -14,10 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -29,6 +26,7 @@ import (
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/deploying"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
 )
 
 var log = logf.Log.WithName("controller_multiclusterhub")
@@ -112,12 +110,43 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	}
 
 	var result *reconcile.Result
-	result, err = r.ensureSecret(request, multiClusterHub, r.mongoAuthSecret(multiClusterHub))
+	result, err = r.ensureDeployment(multiClusterHub, r.helmRepoDeployment(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}
 
-	result, err = r.ingressDomain(multiClusterHub)
+	result, err = r.ensureService(multiClusterHub, r.repoService(multiClusterHub))
+	if result != nil {
+		return *result, err
+	}
+
+	result, err = r.ensureChannel(multiClusterHub, r.helmChannel(multiClusterHub))
+	if result != nil {
+		return *result, err
+	}
+
+	result, err = r.ensureSubscription(multiClusterHub, subscription.CertManager(multiClusterHub))
+	if result != nil {
+		return *result, err
+	}
+
+	certGV := schema.GroupVersion{Group: "certmanager.k8s.io", Version: "v1alpha1"}
+	result, err = r.apiReady(certGV)
+	if result != nil {
+		return *result, err
+	}
+
+	result, err = r.ensureSubscription(multiClusterHub, subscription.CertWebhook(multiClusterHub))
+	if result != nil {
+		return *result, err
+	}
+
+	result, err = r.ensureSubscription(multiClusterHub, subscription.ConfigWatcher(multiClusterHub))
+	if result != nil {
+		return *result, err
+	}
+
+	result, err = r.ensureSecret(multiClusterHub, r.mongoAuthSecret(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}
@@ -128,6 +157,11 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	}
 
 	result, err = r.configureEtcd(multiClusterHub)
+	if result != nil {
+		return *result, err
+	}
+
+	result, err = r.ingressDomain(multiClusterHub)
 	if result != nil {
 		return *result, err
 	}
@@ -153,7 +187,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	}
 
 	// Update the CR status
-	multiClusterHub.Status.Phase = "Failed"
+	multiClusterHub.Status.Phase = "Pending"
 	ready, deployments, err := deploying.ListDeployments(r.client, multiClusterHub.Namespace)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -169,43 +203,20 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		})
 	}
 	multiClusterHub.Status.Deployments = statedDeployments
+
 	err = r.client.Status().Update(context.TODO(), multiClusterHub)
 	if err != nil {
+		if errors.IsConflict(err) {
+			// Error from object being modified is normal behavior and should not be treated like an error
+			reqLogger.Info("Failed to update status", "Reason", "Object has been modified")
+			return reconcile.Result{Requeue: true}, nil
+		}
+
 		reqLogger.Error(err, fmt.Sprintf("Failed to update %s/%s status ", multiClusterHub.Namespace, multiClusterHub.Name))
 		return reconcile.Result{}, err
 	}
+
 	return reconcile.Result{}, nil
-}
-
-func (r *ReconcileMultiClusterHub) ensureSecret(request reconcile.Request,
-	instance *operatorsv1alpha1.MultiClusterHub,
-	s *corev1.Secret,
-) (*reconcile.Result, error) {
-	found := &corev1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{
-		Name:      s.Name,
-		Namespace: instance.Namespace,
-	}, found)
-	if err != nil && errors.IsNotFound(err) {
-		// Create the secret
-		log.Info("Creating a new secret", "Secret.Namespace", s.Namespace, "Secret.Name", s.Name)
-		err = r.client.Create(context.TODO(), s)
-
-		if err != nil {
-			// Creation failed
-			log.Error(err, "Failed to create new Secret", "Secret.Namespace", s.Namespace, "Secret.Name", s.Name)
-			return &reconcile.Result{}, err
-		}
-		// Creation was successful
-		return nil, nil
-
-	} else if err != nil {
-		// Error that isn't due to the secret not existing
-		log.Error(err, "Failed to get Secret")
-		return &reconcile.Result{}, err
-	}
-
-	return nil, nil
 }
 
 func (r *ReconcileMultiClusterHub) mongoAuthSecret(v *operatorsv1alpha1.MultiClusterHub) *corev1.Secret {
@@ -295,27 +306,22 @@ func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1alpha1.MultiClust
 		return nil, nil
 	}
 
-	config, err := config.GetConfig()
+	// Create dynamic client
+	dc, err := createDynamicClient()
 	if err != nil {
-		log.Error(err, "Failed to get cluster config for API host discovery/authentication")
+		log.Error(err, "Failed to create dynamic client")
 		return &reconcile.Result{}, err
 	}
 
-	dynClient, err := dynamic.NewForConfig(config)
-	if err != nil {
-		log.Error(err, "Failed to create dynamic client from cluster config")
-		return &reconcile.Result{}, err
-	}
-
+	// Find resource
 	schema := schema.GroupVersionResource{Group: "config.openshift.io", Version: "v1", Resource: "ingresses"}
-	crdClient := dynClient.Resource(schema)
-
-	crd, err := crdClient.Get("cluster", metav1.GetOptions{})
+	crd, err := dc.Resource(schema).Get("cluster", metav1.GetOptions{})
 	if err != nil {
 		log.Error(err, "Failed to get resource", "resource", schema.GroupResource().String())
 		return &reconcile.Result{}, err
 	}
 
+	// Parse resource for domain value
 	domain, ok, err := unstructured.NestedString(crd.UnstructuredContent(), "spec", "domain")
 	if err != nil {
 		log.Error(err, "Error parsing resource", "resource", schema.GroupResource().String(), "value", "spec.domain")
@@ -327,6 +333,7 @@ func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1alpha1.MultiClust
 		return &reconcile.Result{}, err
 	}
 
+	// Update spec with value
 	log.Info("Ingress domain not set, updating value in spec", "MultiClusterHub.Namespace", m.Namespace, "MultiClusterHub.Name", m.Name, "ingressDomain", domain)
 	m.Spec.IngressDomain = domain
 	err = r.client.Update(context.TODO(), m)

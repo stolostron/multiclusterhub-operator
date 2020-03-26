@@ -212,6 +212,9 @@ spec:
             ingressDomain:
               description: Default domain for routes
               type: string
+            ipv6:
+              description: Cluster is IPv6 environment
+              type: boolean
             mongo:
               description: Spec of mongo
               properties:
