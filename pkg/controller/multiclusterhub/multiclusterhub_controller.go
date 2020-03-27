@@ -421,6 +421,12 @@ func (r *ReconcileMultiClusterHub) finalizeHub(reqLogger logr.Logger, m *operato
 	if err := r.cleanupAPIServices(reqLogger, m); err != nil {
 		return err
 	}
+	if err := r.cleanupClusterRoles(reqLogger, m); err != nil {
+		return err
+	}
+	if err := r.cleanupClusterRoleBindings(reqLogger, m); err != nil {
+		return err
+	}
 
 	reqLogger.Info("Successfully finalized multiClusterHub")
 	return nil

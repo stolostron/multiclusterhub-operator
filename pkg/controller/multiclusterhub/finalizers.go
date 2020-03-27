@@ -9,8 +9,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/kubernetes"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 func (r *ReconcileMultiClusterHub) cleanupHiveConfigs(reqLogger logr.Logger, m *operatorsv1alpha1.MultiClusterHub) error {
@@ -75,5 +77,65 @@ func (r *ReconcileMultiClusterHub) cleanupAPIServices(reqLogger logr.Logger, m *
 	}
 
 	reqLogger.Info("API services finalized")
+	return nil
+}
+
+func (r *ReconcileMultiClusterHub) cleanupClusterRoles(reqLogger logr.Logger, m *operatorsv1alpha1.MultiClusterHub) error {
+	config, err := config.GetConfig()
+	if err != nil {
+		return err
+	}
+
+	clientset, err := kubernetes.NewForConfig(config)
+	labelSelector := fmt.Sprintf("installer.name=%s, installer.namespace=%s", m.GetName(), m.GetNamespace())
+	listOptions := metav1.ListOptions{
+		LabelSelector: labelSelector,
+	}
+	deletePolicy := metav1.DeletePropagationForeground
+	deleteOptions := metav1.DeleteOptions{
+		PropagationPolicy: &deletePolicy,
+	}
+	err = clientset.RbacV1().ClusterRoles().DeleteCollection(&deleteOptions, listOptions)
+
+	if err != nil {
+		if errors.IsNotFound(err) {
+			reqLogger.Info("No matching clusterroles to finalize. Continuing.")
+			return nil
+		}
+		reqLogger.Error(err, "Error while deleting clusterroles")
+		return err
+	}
+
+	reqLogger.Info("Clusterroles finalized")
+	return nil
+}
+
+func (r *ReconcileMultiClusterHub) cleanupClusterRoleBindings(reqLogger logr.Logger, m *operatorsv1alpha1.MultiClusterHub) error {
+	config, err := config.GetConfig()
+	if err != nil {
+		return err
+	}
+
+	clientset, err := kubernetes.NewForConfig(config)
+	labelSelector := fmt.Sprintf("installer.name=%s, installer.namespace=%s", m.GetName(), m.GetNamespace())
+	listOptions := metav1.ListOptions{
+		LabelSelector: labelSelector,
+	}
+	deletePolicy := metav1.DeletePropagationForeground
+	deleteOptions := metav1.DeleteOptions{
+		PropagationPolicy: &deletePolicy,
+	}
+	err = clientset.RbacV1().ClusterRoleBindings().DeleteCollection(&deleteOptions, listOptions)
+
+	if err != nil {
+		if errors.IsNotFound(err) {
+			reqLogger.Info("No matching clusterrolebindings to finalize. Continuing.")
+			return nil
+		}
+		reqLogger.Error(err, "Error while deleting clusterrolebindings")
+		return err
+	}
+
+	reqLogger.Info("Clusterrolebindings finalized")
 	return nil
 }

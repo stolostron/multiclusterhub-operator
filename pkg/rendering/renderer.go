@@ -46,6 +46,7 @@ func NewRenderer(multipleClusterHub *operatorsv1alpha1.MultiClusterHub) *Rendere
 		"ServiceAccount":               renderer.renderNamespace,
 		"ConfigMap":                    renderer.renderNamespace,
 		"ClusterRoleBinding":           renderer.renderClusterRoleBinding,
+		"ClusterRole":                  renderer.renderClusterRole,
 		"MutatingWebhookConfiguration": renderer.renderMutatingWebhookConfiguration,
 		"Secret":                       renderer.renderSecret,
 		"Subscription":                 renderer.renderSubscription,
@@ -158,6 +159,12 @@ func (r *Renderer) renderDeployments(res *resource.Resource) (*unstructured.Unst
 	}
 }
 
+func (r *Renderer) renderClusterRole(res *resource.Resource) (*unstructured.Unstructured, error) {
+	u := &unstructured.Unstructured{Object: res.Map()}
+	addInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
+	return u, nil
+}
+
 func (r *Renderer) renderClusterRoleBinding(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
 
@@ -175,6 +182,7 @@ func (r *Renderer) renderClusterRoleBinding(res *resource.Resource) (*unstructur
 		subject["namespace"] = r.cr.Namespace
 	}
 
+	addInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
 	return u, nil
 }
 
