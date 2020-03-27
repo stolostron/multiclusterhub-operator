@@ -213,7 +213,7 @@
                 description: Default domain for routes
                 type: string
               ipv6:
-                description: Cluster is IPv6 environment
+                description: Flag for IPv6
                 type: boolean
               mongo:
                 description: Spec of mongo
@@ -226,6 +226,9 @@
                     type: string
                   replicaSet:
                     description: Replica set of mongo
+                    type: string
+                  storage:
+                    description: StorageSize for MultiCluster hub components (ex. 1Gi)
                     type: string
                   storageClass:
                     description: StorageClass for MultiCluster hub components

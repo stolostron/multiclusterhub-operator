@@ -130,7 +130,9 @@ rules:
   - hiveconfigs
   verbs:
   - get
-  - create 
+  - create
+  - list
+  - delete
 - apiGroups:
   - security.openshift.io
   resources:

@@ -14,20 +14,28 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	"github.com/go-logr/logr"
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/deploying"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 )
+
+const hubFinalizer = "finalizer.operators.open-cluster-management.io"
 
 var log = logf.Log.WithName("controller_multiclusterhub")
 
@@ -70,6 +78,35 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	// Watch for apiService deletions
+	pred := predicate.Funcs{
+		CreateFunc:  func(e event.CreateEvent) bool { return false },
+		GenericFunc: func(e event.GenericEvent) bool { return false },
+		UpdateFunc:  func(e event.UpdateEvent) bool { return false },
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			labels := e.Meta.GetLabels()
+			_, nameExists := labels["installer.name"]
+			_, namespaceExists := labels["installer.namespace"]
+			return nameExists && namespaceExists
+		},
+	}
+	err = c.Watch(
+		&source.Kind{Type: &apiregistrationv1.APIService{}},
+		handler.Funcs{
+			DeleteFunc: func(e event.DeleteEvent, q workqueue.RateLimitingInterface) {
+				labels := e.Meta.GetLabels()
+				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
+					Name:      labels["installer.name"],
+					Namespace: labels["installer.namespace"],
+				}})
+			},
+		},
+		pred,
+	)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -107,6 +144,38 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		// Error reading the object - requeue the request.
 		reqLogger.Error(err, "Failed to get MultiClusterHub CR")
 		return reconcile.Result{}, err
+	}
+
+	// Check if the multiClusterHub instance is marked to be deleted, which is
+	// indicated by the deletion timestamp being set.
+	isHubMarkedToBeDeleted := multiClusterHub.GetDeletionTimestamp() != nil
+	if isHubMarkedToBeDeleted {
+		if contains(multiClusterHub.GetFinalizers(), hubFinalizer) {
+			// Run finalization logic. If the finalization
+			// logic fails, don't remove the finalizer so
+			// that we can retry during the next reconciliation.
+			if err := r.finalizeHub(reqLogger, multiClusterHub); err != nil {
+				return reconcile.Result{}, err
+			}
+
+			// Remove hubFinalizer. Once all finalizers have been
+			// removed, the object will be deleted.
+			multiClusterHub.SetFinalizers(remove(multiClusterHub.GetFinalizers(), hubFinalizer))
+
+			err := r.client.Update(context.TODO(), multiClusterHub)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+		}
+
+		return reconcile.Result{}, nil
+	}
+
+	// Add finalizer for this CR
+	if !contains(multiClusterHub.GetFinalizers(), hubFinalizer) {
+		if err := r.addFinalizer(reqLogger, multiClusterHub); err != nil {
+			return reconcile.Result{}, err
+		}
 	}
 
 	var result *reconcile.Result
@@ -343,4 +412,53 @@ func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1alpha1.MultiClust
 	}
 
 	return nil, nil
+}
+
+func (r *ReconcileMultiClusterHub) finalizeHub(reqLogger logr.Logger, m *operatorsv1alpha1.MultiClusterHub) error {
+	if err := r.cleanupHiveConfigs(reqLogger, m); err != nil {
+		return err
+	}
+	if err := r.cleanupAPIServices(reqLogger, m); err != nil {
+		return err
+	}
+	if err := r.cleanupClusterRoles(reqLogger, m); err != nil {
+		return err
+	}
+	if err := r.cleanupClusterRoleBindings(reqLogger, m); err != nil {
+		return err
+	}
+
+	reqLogger.Info("Successfully finalized multiClusterHub")
+	return nil
+}
+
+func (r *ReconcileMultiClusterHub) addFinalizer(reqLogger logr.Logger, m *operatorsv1alpha1.MultiClusterHub) error {
+	reqLogger.Info("Adding Finalizer for the multiClusterHub")
+	m.SetFinalizers(append(m.GetFinalizers(), hubFinalizer))
+
+	// Update CR
+	err := r.client.Update(context.TODO(), m)
+	if err != nil {
+		reqLogger.Error(err, "Failed to update MultiClusterHub with finalizer")
+		return err
+	}
+	return nil
+}
+
+func contains(list []string, s string) bool {
+	for _, v := range list {
+		if v == s {
+			return true
+		}
+	}
+	return false
+}
+
+func remove(list []string, s string) []string {
+	for i, v := range list {
+		if v == s {
+			list = append(list[:i], list[i+1:]...)
+		}
+	}
+	return list
 }

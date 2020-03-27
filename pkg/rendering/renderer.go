@@ -46,6 +46,7 @@ func NewRenderer(multipleClusterHub *operatorsv1alpha1.MultiClusterHub) *Rendere
 		"ServiceAccount":               renderer.renderNamespace,
 		"ConfigMap":                    renderer.renderNamespace,
 		"ClusterRoleBinding":           renderer.renderClusterRoleBinding,
+		"ClusterRole":                  renderer.renderClusterRole,
 		"MutatingWebhookConfiguration": renderer.renderMutatingWebhookConfiguration,
 		"Secret":                       renderer.renderSecret,
 		"Subscription":                 renderer.renderSubscription,
@@ -105,6 +106,7 @@ func (r *Renderer) renderAPIServices(res *resource.Resource) (*unstructured.Unst
 		"namespace": r.cr.Namespace,
 		"name":      apiserviceName,
 	}
+	addInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
 	return u, nil
 }
 
@@ -157,6 +159,12 @@ func (r *Renderer) renderDeployments(res *resource.Resource) (*unstructured.Unst
 	}
 }
 
+func (r *Renderer) renderClusterRole(res *resource.Resource) (*unstructured.Unstructured, error) {
+	u := &unstructured.Unstructured{Object: res.Map()}
+	addInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
+	return u, nil
+}
+
 func (r *Renderer) renderClusterRoleBinding(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
 
@@ -164,6 +172,8 @@ func (r *Renderer) renderClusterRoleBinding(res *resource.Resource) (*unstructur
 	if !ok {
 		return nil, fmt.Errorf("failed to find clusterrolebinding subjects field")
 	}
+	addInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
+
 	subject := subjects[0].(map[string]interface{})
 	kind := subject["kind"]
 	if kind == "Group" {
@@ -373,7 +383,19 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 func (r *Renderer) renderHiveConfig(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
 	u.Object["spec"] = structs.Map(r.cr.Spec.Hive)
+	addInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
 	return u, nil
+}
+
+func addInstallerLabel(u *unstructured.Unstructured, name string, ns string) {
+	labels := make(map[string]string)
+	for key, value := range u.GetLabels() {
+		labels[key] = value
+	}
+	labels["installer.name"] = name
+	labels["installer.namespace"] = ns
+
+	u.SetLabels(labels)
 }
 
 func reRenderDependence(objs []*unstructured.Unstructured) ([]*unstructured.Unstructured, error) {

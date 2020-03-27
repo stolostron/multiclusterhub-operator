@@ -225,6 +225,8 @@
             verbs:
             - get
             - create
+            - list
+            - delete
           - apiGroups:
             - security.openshift.io
             resources:

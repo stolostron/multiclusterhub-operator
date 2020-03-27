@@ -5,11 +5,10 @@ import (
 	"path"
 	"testing"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 func TestRender(t *testing.T) {
@@ -69,4 +68,45 @@ func printObjs(t *testing.T, objs []*unstructured.Unstructured) {
 	for _, obj := range objs {
 		t.Log(obj)
 	}
+}
+
+func Test_addInstallerLabel(t *testing.T) {
+	name := "example-installer"
+	ns := "default"
+
+	t.Run("Should add labels when none exist", func(t *testing.T) {
+		u := &unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"apiVersion": "apps.open-cluster-management.io/v1",
+				"kind":       "Channel",
+			},
+		}
+		want := 2
+
+		addInstallerLabel(u, name, ns)
+		if got := len(u.GetLabels()); got != want {
+			t.Errorf("got %v labels, want %v", got, want)
+		}
+	})
+
+	t.Run("Should not replace existing labels", func(t *testing.T) {
+		u := &unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"apiVersion": "apps.open-cluster-management.io/v1",
+				"kind":       "Channel",
+				"metadata": map[string]interface{}{
+					"name": "channelName",
+					"labels": map[string]interface{}{
+						"hello": "world",
+					},
+				},
+			},
+		}
+		want := 3
+
+		addInstallerLabel(u, name, ns)
+		if got := len(u.GetLabels()); got != want {
+			t.Errorf("got %v labels, want %v", got, want)
+		}
+	})
 }
