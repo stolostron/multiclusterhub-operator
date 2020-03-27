@@ -24,12 +24,13 @@ func (r *ReconcileMultiClusterHub) cleanupHiveConfigs(reqLogger logr.Logger, m *
 		return err
 	}
 
+	labelSelector := fmt.Sprintf("installer.name=%s, installer.namespace=%s", m.GetName(), m.GetNamespace())
+	listOptions := metav1.ListOptions{
+		LabelSelector: labelSelector,
+	}
 	deletePolicy := metav1.DeletePropagationForeground
 	deleteOptions := metav1.DeleteOptions{
 		PropagationPolicy: &deletePolicy,
-	}
-	listOptions := metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("installer.name=%s", m.GetName()),
 	}
 
 	// Find all resources created by installer based on label
