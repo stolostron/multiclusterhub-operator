@@ -86,7 +86,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			labels := e.Meta.GetLabels()
 			_, nameExists := labels["installer.name"]
-			_, namespaceExists := labels["installer.name"]
+			_, namespaceExists := labels["installer.namespace"]
 			return nameExists && namespaceExists
 		},
 	}
