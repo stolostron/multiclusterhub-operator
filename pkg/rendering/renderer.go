@@ -172,6 +172,8 @@ func (r *Renderer) renderClusterRoleBinding(res *resource.Resource) (*unstructur
 	if !ok {
 		return nil, fmt.Errorf("failed to find clusterrolebinding subjects field")
 	}
+	addInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
+
 	subject := subjects[0].(map[string]interface{})
 	kind := subject["kind"]
 	if kind == "Group" {
@@ -182,7 +184,6 @@ func (r *Renderer) renderClusterRoleBinding(res *resource.Resource) (*unstructur
 		subject["namespace"] = r.cr.Namespace
 	}
 
-	addInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
 	return u, nil
 }
 
