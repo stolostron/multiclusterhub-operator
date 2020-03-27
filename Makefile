@@ -90,9 +90,11 @@ unsubscribe:
 	@oc delete csv multiclusterhub-operator.v0.0.1 || true
 	@oc delete csv etcdoperator.v0.9.4 || true
 	@oc delete csv multicluster-operators-subscription.v0.1.0 || true
-	@oc delete subscription multiclusterhub-operator || true
-	@oc delete subscription etcdoperator.v0.9.4 || true
-	@oc delete subscription multicloud-operators-subscription.v0.1.2 || true
+	
+	@oc delete subscriptions.operators.coreos.com multiclusterhub-operator || true
+	@oc delete subscriptions.operators.coreos.com etcdoperator.v0.9.4 || true
+	@oc delete subscriptions.operators.coreos.com multicloud-operators-subscription.v0.1.2 || true
+
 	@oc delete catalogsource multiclusterhub-operator-registry || true
 	@oc delete deploy -n hive hive-controllers || true
 	@oc delete deploy -n hive hiveadmission || true
