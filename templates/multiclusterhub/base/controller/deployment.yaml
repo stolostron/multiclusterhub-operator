@@ -23,3 +23,9 @@ spec:
           - "--leader-elect=true"
           - "--enable-rbac=true"
           - "--enable-service-registry=true"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "2048Mi"

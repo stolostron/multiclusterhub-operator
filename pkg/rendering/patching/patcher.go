@@ -86,41 +86,6 @@ func ApplyAPIServerPatches(res *resource.Resource, multipleClusterHub *operators
 	return res.Patch(argsPatch)
 }
 
-func ApplyTopologyAggregatorPatches(res *resource.Resource, multipleClusterHub *operatorsv1alpha1.MultiClusterHub) error {
-	envVars, volumes, volumeMounts := generateMongoSecrets(multipleClusterHub)
-	if err := applySecretPatches(res, envVars, volumes, volumeMounts); err != nil {
-		return err
-	}
-
-	if err := applySecretPatches(
-		res,
-		[]corev1.EnvVar{},
-		[]corev1.Volume{{
-			Name: "topology-aggregator-certs",
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{SecretName: "topology-aggregator-secret"},
-			},
-		}},
-		[]corev1.VolumeMount{{
-			Name:      "topology-aggregator-certs",
-			MountPath: "/certs",
-		}},
-	); err != nil {
-		return err
-	}
-
-	args := map[string]string{}
-	args["mongo-host"] = utils.MongoEndpoints
-	args["mongo-replicaset"] = utils.MongoReplicaSet
-	args["aggregator-tls-cert"] = "/certs/tls.crt"
-	args["aggregator-tls-key"] = "/certs/tls.key"
-	argsPatch, err := generateContainerArgsPatch(res, args)
-	if err != nil {
-		return err
-	}
-	return res.Patch(argsPatch)
-}
-
 func ApplyWebhookPatches(res *resource.Resource, multipleClusterHub *operatorsv1alpha1.MultiClusterHub) error {
 	if err := applySecretPatches(
 		res,

@@ -155,27 +155,6 @@ spec:
           emptyDir: {}
 `
 
-func TestApplyTopologyAggregatorPatches(t *testing.T) {
-	json, err := yaml.YAMLToJSON([]byte(topology))
-	if err != nil {
-		t.Fatalf("failed to apply topology patches %v", err)
-	}
-	var u unstructured.Unstructured
-	u.UnmarshalJSON(json)
-	topology := factory.FromMap(u.Object)
-
-	mchcr := &operatorsv1alpha1.MultiClusterHub{
-		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
-		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec:       operatorsv1alpha1.MultiClusterHubSpec{},
-	}
-
-	err = ApplyTopologyAggregatorPatches(topology, mchcr)
-	if err != nil {
-		t.Fatalf("failed to apply topology patches %v", err)
-	}
-}
-
 var webhook = `
 kind: Deployment
 apiVersion: apps/v1
@@ -194,7 +173,7 @@ spec:
 `
 
 func TestApplyWebhookPatches(t *testing.T) {
-	json, err := yaml.YAMLToJSON([]byte(topology))
+	json, err := yaml.YAMLToJSON([]byte(webhook))
 	if err != nil {
 		t.Fatalf("failed to apply webhook patches %v", err)
 	}

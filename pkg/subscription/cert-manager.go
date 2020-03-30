@@ -26,6 +26,12 @@ func CertManager(m *operatorsv1alpha1.MultiClusterHub) *Subscription {
 			"solver": map[string]interface{}{
 				"repository": m.Spec.ImageRepository,
 			},
+			"extraEnv": []map[string]interface{}{
+				{
+					"name":  "OWNED_NAMESPACE",
+					"value": m.Namespace,
+				},
+			},
 		},
 	}
 }

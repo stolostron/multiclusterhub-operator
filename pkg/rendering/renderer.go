@@ -20,13 +20,12 @@ import (
 )
 
 const (
-	apiserviceName         = "mcm-apiserver"
-	controllerName         = "mcm-controller"
-	webhookName            = "mcm-webhook"
-	clusterControllerName  = "multicluster-operators-cluster-controller"
-	helmRepoName           = "multiclusterhub-repo"
-	topologyAggregatorName = "topology-aggregator"
-	metadataErr            = "failed to find metadata field"
+	apiserviceName        = "mcm-apiserver"
+	controllerName        = "mcm-controller"
+	webhookName           = "mcm-webhook"
+	clusterControllerName = "multicluster-operators-cluster-controller"
+	helmRepoName          = "multiclusterhub-repo"
+	metadataErr           = "failed to find metadata field"
 )
 
 var log = logf.Log.WithName("renderer")
@@ -50,6 +49,7 @@ func NewRenderer(multipleClusterHub *operatorsv1alpha1.MultiClusterHub, cacheSpe
 		"ServiceAccount":               renderer.renderNamespace,
 		"ConfigMap":                    renderer.renderNamespace,
 		"ClusterRoleBinding":           renderer.renderClusterRoleBinding,
+		"ClusterRole":                  renderer.renderClusterRole,
 		"MutatingWebhookConfiguration": renderer.renderMutatingWebhookConfiguration,
 		"Secret":                       renderer.renderSecret,
 		"Subscription":                 renderer.renderSubscription,
@@ -110,6 +110,7 @@ func (r *Renderer) renderAPIServices(res *resource.Resource) (*unstructured.Unst
 		"namespace": r.cr.Namespace,
 		"name":      apiserviceName,
 	}
+	addInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
 	return u, nil
 }
 
@@ -149,14 +150,15 @@ func (r *Renderer) renderDeployments(res *resource.Resource) (*unstructured.Unst
 		return &unstructured.Unstructured{Object: res.Map()}, nil
 	case helmRepoName:
 		return &unstructured.Unstructured{Object: res.Map()}, nil
-	case topologyAggregatorName:
-		if err := patching.ApplyTopologyAggregatorPatches(res, r.cr); err != nil {
-			return nil, err
-		}
-		return &unstructured.Unstructured{Object: res.Map()}, nil
 	default:
 		return nil, fmt.Errorf("unknown MultipleClusterHub deployment component %s", name)
 	}
+}
+
+func (r *Renderer) renderClusterRole(res *resource.Resource) (*unstructured.Unstructured, error) {
+	u := &unstructured.Unstructured{Object: res.Map()}
+	addInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
+	return u, nil
 }
 
 func (r *Renderer) renderClusterRoleBinding(res *resource.Resource) (*unstructured.Unstructured, error) {
@@ -166,6 +168,8 @@ func (r *Renderer) renderClusterRoleBinding(res *resource.Resource) (*unstructur
 	if !ok {
 		return nil, fmt.Errorf("failed to find clusterrolebinding subjects field")
 	}
+	addInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
+
 	subject := subjects[0].(map[string]interface{})
 	kind := subject["kind"]
 	if kind == "Group" {
@@ -337,23 +341,6 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 		data["tls.crt"] = []byte(cert.Cert)
 		data["tls.key"] = []byte(cert.Key)
 		return u, nil
-	case "topology-aggregator-secret":
-		ca, err := utils.GenerateSelfSignedCACert("topology-aggregator")
-		if err != nil {
-			return nil, err
-		}
-		alternateDNS := []string{
-			fmt.Sprintf("%s.%s", topologyAggregatorName, r.cr.Namespace),
-			fmt.Sprintf("%s.%s.svc", topologyAggregatorName, r.cr.Namespace),
-		}
-		cert, err := utils.GenerateSignedCert(topologyAggregatorName, alternateDNS, ca)
-		if err != nil {
-			return nil, err
-		}
-		data["ca.crt"] = []byte(ca.Cert)
-		data["tls.crt"] = []byte(cert.Cert)
-		data["tls.key"] = []byte(cert.Key)
-		return u, nil
 	case "mcm-webhook-secret":
 		ca, err := utils.GenerateSelfSignedCACert("mcm-webhook")
 		if err != nil {
@@ -378,7 +365,20 @@ func (r *Renderer) renderHiveConfig(res *resource.Resource) (*unstructured.Unstr
 	if !reflect.DeepEqual(structs.Map(r.cr.Spec.Hive), structs.Map(HiveConfig)) {
 		u.Object["spec"] = structs.Map(r.cr.Spec.Hive)
 	}
+	u.Object["spec"] = structs.Map(r.cr.Spec.Hive)
+	addInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
 	return u, nil
+}
+
+func addInstallerLabel(u *unstructured.Unstructured, name string, ns string) {
+	labels := make(map[string]string)
+	for key, value := range u.GetLabels() {
+		labels[key] = value
+	}
+	labels["installer.name"] = name
+	labels["installer.namespace"] = ns
+
+	u.SetLabels(labels)
 }
 
 func reRenderDependence(objs []*unstructured.Unstructured) ([]*unstructured.Unstructured, error) {
