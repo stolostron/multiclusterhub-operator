@@ -2,14 +2,16 @@ package deploying
 
 import (
 	"context"
-	"reflect"
 
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
+
+var log = logf.Log.WithName("deployer")
 
 func Deploy(c runtimeclient.Client, obj *unstructured.Unstructured) error {
 	found := &unstructured.Unstructured{}
@@ -17,6 +19,7 @@ func Deploy(c runtimeclient.Client, obj *unstructured.Unstructured) error {
 	err := c.Get(context.TODO(), types.NamespacedName{Name: obj.GetName(), Namespace: obj.GetNamespace()}, found)
 	if err != nil {
 		if errors.IsNotFound(err) {
+			log.Info("Creating deployment", "Name", obj.GetName())
 			return c.Create(context.TODO(), obj)
 		}
 		return err
@@ -26,16 +29,20 @@ func Deploy(c runtimeclient.Client, obj *unstructured.Unstructured) error {
 		return nil
 	}
 
-	oldSpec, oldSpecFound := found.Object["spec"]
-	newSpec, newSpecFound := obj.Object["spec"]
-	if !oldSpecFound || !newSpecFound {
-		return nil
-	}
-	if !reflect.DeepEqual(oldSpec, newSpec) {
-		newObj := found.DeepCopy()
-		newObj.Object["spec"] = newSpec
-		return c.Update(context.TODO(), newObj)
-	}
+	// oldSpec, oldSpecFound := found.Object["spec"]
+	// newSpec, newSpecFound := obj.Object["spec"]
+	// if !oldSpecFound || !newSpecFound {
+	// 	log.Info("didn't find specs", "Name", obj.GetName())
+	// 	return nil
+	// }
+
+	// if !reflect.DeepEqual(oldSpec, newSpec) {
+	// 	// log.Info("Things aren't aligning", "Name", obj.GetName())
+	// 	// log.Info("Difference", "Found", oldSpec, "Want", newSpec)
+	// 	newObj := found.DeepCopy()
+	// 	newObj.Object["spec"] = newSpec
+	// 	return c.Update(context.TODO(), newObj)
+	// }
 	return nil
 }
 

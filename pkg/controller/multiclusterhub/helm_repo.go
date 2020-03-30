@@ -1,6 +1,7 @@
 package multiclusterhub
 
 import (
+	"context"
 	"fmt"
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
@@ -10,8 +11,10 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const repoName = "multiclusterhub-repo"
@@ -130,4 +133,66 @@ func (r *ReconcileMultiClusterHub) repoService(m *operatorsv1alpha1.MultiCluster
 		log.Error(err, "Failed to set controller reference", "Service.Namespace", s.Namespace, "Service.Name", s.Name)
 	}
 	return s
+}
+
+func (r *ReconcileMultiClusterHub) handleHelmRepoChanges(m *operatorsv1alpha1.MultiClusterHub) (*reconcile.Result, error) {
+	found := &appsv1.Deployment{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{
+		Name:      repoName,
+		Namespace: m.Namespace,
+	}, found)
+	if err != nil {
+		// The deployment may not have been created yet, so continue
+		return nil, nil
+	}
+
+	logc := log.WithValues("Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
+	image := repoImageName(m)
+	pod := &found.Spec.Template.Spec.Containers[0]
+	needsUpdate := false
+
+	// verify image pull secret
+	if m.Spec.ImagePullSecret != "" {
+		ps := corev1.LocalObjectReference{Name: m.Spec.ImagePullSecret}
+		if !containsPullSecret(found.Spec.Template.Spec.ImagePullSecrets, ps) {
+			logc.Info("Enforcing imagePullSecret from CR spec")
+			found.Spec.Template.Spec.ImagePullSecrets = append(found.Spec.Template.Spec.ImagePullSecrets, ps)
+			needsUpdate = true
+		}
+	}
+
+	// verify image repository and suffix
+	if pod.Image != image {
+		logc.Info("Enforcing image repo and suffix from CR spec")
+		found.Spec.Template.Spec.Containers[0].Image = image
+		needsUpdate = true
+	}
+
+	// verify image pull policy
+	if pod.ImagePullPolicy != m.Spec.ImagePullPolicy {
+		logc.Info("Enforcing imagePullPolicy from CR spec")
+		pod.ImagePullPolicy = m.Spec.ImagePullPolicy
+		needsUpdate = true
+	}
+
+	if needsUpdate {
+		err = r.client.Update(context.TODO(), found)
+		if err != nil {
+			logc.Error(err, "Failed to update Deployment.")
+			return &reconcile.Result{}, err
+		}
+		// Spec updated - return and requeue
+		return &reconcile.Result{Requeue: true}, nil
+	}
+
+	return nil, nil
+}
+
+func containsPullSecret(pullSecrets []corev1.LocalObjectReference, ps corev1.LocalObjectReference) bool {
+	for _, v := range pullSecrets {
+		if v == ps {
+			return true
+		}
+	}
+	return false
 }

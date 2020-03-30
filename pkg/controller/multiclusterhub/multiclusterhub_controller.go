@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
+	"reflect"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -55,6 +56,18 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileMultiClusterHub{client: mgr.GetClient(), scheme: mgr.GetScheme()}
 }
 
+type resourceGenerationOrFinalizerChangedPredicate struct {
+	predicate.Funcs
+}
+
+// Update implements default UpdateEvent filter for validating resource version change
+func (resourceGenerationOrFinalizerChangedPredicate) Update(e event.UpdateEvent) bool {
+	if e.MetaNew.GetGeneration() == e.MetaOld.GetGeneration() && reflect.DeepEqual(e.MetaNew.GetFinalizers(), e.MetaOld.GetFinalizers()) {
+		return false
+	}
+	return true
+}
+
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
@@ -64,7 +77,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to primary resource MultiClusterHub
-	err = c.Watch(&source.Kind{Type: &operatorsv1alpha1.MultiClusterHub{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &operatorsv1alpha1.MultiClusterHub{}}, &handler.EnqueueRequestForObject{}, resourceGenerationOrFinalizerChangedPredicate{})
 	if err != nil {
 		return err
 	}
@@ -183,6 +196,10 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	if result != nil {
 		return *result, err
 	}
+	result, err = r.handleHelmRepoChanges(multiClusterHub)
+	if result != nil {
+		return *result, err
+	}
 
 	result, err = r.ensureService(multiClusterHub, r.repoService(multiClusterHub))
 	if result != nil {
@@ -259,6 +276,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	multiClusterHub.Status.Phase = "Pending"
 	ready, deployments, err := deploying.ListDeployments(r.client, multiClusterHub.Namespace)
 	if err != nil {
+		reqLogger.Error(err, "Failed to list deployments")
 		return reconcile.Result{}, err
 	}
 	if ready {
