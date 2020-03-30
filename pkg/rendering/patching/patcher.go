@@ -228,7 +228,7 @@ spec:
     spec:
       imagePullSecrets:
       - name: __pullsecrets__
-`
+` // #nosec G101 (no actual secrets within)
 
 func generateImagePullSecretsPatch(res *resource.Resource, mch *operatorsv1alpha1.MultiClusterHub) (ifc.Kunstructured, error) {
 	pullSecret := mch.Spec.ImagePullSecret
