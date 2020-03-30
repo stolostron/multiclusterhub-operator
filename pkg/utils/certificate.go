@@ -33,8 +33,8 @@ type certificate struct {
 
 const (
 	WebhookServiceName   = "multiclusterhub-operator-webhook"
-	APIServerSecretName  = "mcm-apiserver-self-signed-secrets"
-	KlusterletSecretName = "mcm-klusterlet-self-signed-secrets"
+	APIServerSecretName  = "mcm-apiserver-self-signed-secrets"  // #nosec G101 (no actual secrets within)
+	KlusterletSecretName = "mcm-klusterlet-self-signed-secrets" // #nosec G101 (no actual secrets within)
 
 	podNamespaceEnvVar = "POD_NAMESPACE"
 	apiserviceName     = "mcm-apiserver"
