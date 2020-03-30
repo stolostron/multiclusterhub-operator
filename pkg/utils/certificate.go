@@ -26,22 +26,13 @@ import (
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 )
 
-type certificate struct {
+// Certificate ...
+type Certificate struct {
 	Cert string
 	Key  string
 }
 
-const (
-	WebhookServiceName   = "multiclusterhub-operator-webhook"
-	APIServerSecretName  = "mcm-apiserver-self-signed-secrets"  // #nosec G101 (no actual secrets within)
-	KlusterletSecretName = "mcm-klusterlet-self-signed-secrets" // #nosec G101 (no actual secrets within)
-
-	podNamespaceEnvVar = "POD_NAMESPACE"
-	apiserviceName     = "mcm-apiserver"
-	rsaKeySize         = 2048
-	duration365d       = time.Hour * 24 * 365
-)
-
+// GenerateWebhookCerts ...
 func GenerateWebhookCerts(certDir string) (string, []byte, error) {
 	namespace, err := findNamespace()
 	if err != nil {
@@ -76,16 +67,13 @@ func GenerateWebhookCerts(certDir string) (string, []byte, error) {
 	return namespace, []byte(ca.Cert), nil
 }
 
+// GenerateAPIServerSecret ...
 func GenerateAPIServerSecret(client runtimeclient.Client, multiClusterHub *operatorsv1alpha1.MultiClusterHub) error {
-	name := multiClusterHub.Spec.Apiserver.ApiserverSecret
-	if name != APIServerSecretName {
-		return nil
-	}
 	namespace, err := findNamespace()
 	if err != nil {
 		return err
 	}
-	err = client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: namespace}, &corev1.Secret{})
+	err = client.Get(context.TODO(), types.NamespacedName{Name: APIServerSecretName, Namespace: namespace}, &corev1.Secret{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			ca, err := GenerateSelfSignedCACert("multiclusterhub-api")
@@ -103,7 +91,7 @@ func GenerateAPIServerSecret(client runtimeclient.Client, multiClusterHub *opera
 			}
 			return client.Create(context.TODO(), &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      name,
+					Name:      APIServerSecretName,
 					Namespace: namespace,
 					OwnerReferences: []metav1.OwnerReference{
 						*metav1.NewControllerRef(multiClusterHub, multiClusterHub.GetObjectKind().GroupVersionKind())},
@@ -120,16 +108,13 @@ func GenerateAPIServerSecret(client runtimeclient.Client, multiClusterHub *opera
 	return nil
 }
 
+// GenerateKlusterletSecret ...
 func GenerateKlusterletSecret(client runtimeclient.Client, multiClusterHub *operatorsv1alpha1.MultiClusterHub) error {
-	name := multiClusterHub.Spec.Apiserver.KlusterletSecret
-	if name != KlusterletSecretName {
-		return nil
-	}
 	namespace, err := findNamespace()
 	if err != nil {
 		return err
 	}
-	err = client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: namespace}, &corev1.Secret{})
+	err = client.Get(context.TODO(), types.NamespacedName{Name: KlusterletSecretName, Namespace: namespace}, &corev1.Secret{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			ca, err := GenerateSelfSignedCACert("multiclusterhub-klusterlet")
@@ -142,7 +127,7 @@ func GenerateKlusterletSecret(client runtimeclient.Client, multiClusterHub *oper
 			}
 			return client.Create(context.TODO(), &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      name,
+					Name:      KlusterletSecretName,
 					Namespace: namespace,
 					OwnerReferences: []metav1.OwnerReference{
 						*metav1.NewControllerRef(multiClusterHub, multiClusterHub.GetObjectKind().GroupVersionKind())},
@@ -159,8 +144,9 @@ func GenerateKlusterletSecret(client runtimeclient.Client, multiClusterHub *oper
 	return nil
 }
 
-func GenerateSelfSignedCACert(cn string) (certificate, error) {
-	ca := certificate{}
+// GenerateSelfSignedCACert ...
+func GenerateSelfSignedCACert(cn string) (Certificate, error) {
+	ca := Certificate{}
 
 	template, err := generateBaseTemplateCert(cn, []string{})
 	if err != nil {
@@ -182,8 +168,9 @@ func GenerateSelfSignedCACert(cn string) (certificate, error) {
 	return ca, err
 }
 
-func GenerateSignedCert(cn string, alternateDNS []string, ca certificate) (certificate, error) {
-	cert := certificate{}
+// GenerateSignedCert ...
+func GenerateSignedCert(cn string, alternateDNS []string, ca Certificate) (Certificate, error) {
+	cert := Certificate{}
 
 	decodedSignerCert, _ := pem.Decode([]byte(ca.Cert))
 	if decodedSignerCert == nil {

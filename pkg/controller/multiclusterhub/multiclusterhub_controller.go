@@ -5,9 +5,11 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
+	"reflect"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+
 	storv1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,11 +29,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	"github.com/fatih/structs"
 	"github.com/go-logr/logr"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/deploying"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 )
 
@@ -117,8 +122,9 @@ var _ reconcile.Reconciler = &ReconcileMultiClusterHub{}
 type ReconcileMultiClusterHub struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client client.Client
-	scheme *runtime.Scheme
+	client    client.Client
+	CacheSpec utils.CacheSpec
+	scheme    *runtime.Scheme
 }
 
 // Reconcile reads that state of the cluster for a MultiClusterHub object and makes changes based on the state read
@@ -179,6 +185,15 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	}
 
 	var result *reconcile.Result
+	if !utils.MchIsValid(multiClusterHub) {
+		log.Info("MultiClusterHub is Invalid. Updating with proper defaults")
+		result, err = r.SetDefaults(multiClusterHub)
+		if result != nil {
+			return *result, err
+		}
+		log.Info("MultiClusterHub successfully updated")
+		// return reconcile.Result{}, nil
+	}
 	result, err = r.ensureDeployment(multiClusterHub, r.helmRepoDeployment(multiClusterHub))
 	if result != nil {
 		return *result, err
@@ -220,14 +235,11 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	result, err = r.configureMongo(multiClusterHub)
-	if result != nil {
-		return *result, err
-	}
-
-	result, err = r.configureEtcd(multiClusterHub)
-	if result != nil {
-		return *result, err
+	if r.CacheSpec.IngressDomain == "" {
+		result, err = r.ingressDomain(multiClusterHub)
+		if result != nil {
+			return *result, err
+		}
 	}
 
 	result, err = r.ingressDomain(multiClusterHub)
@@ -236,7 +248,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	}
 
 	//Render the templates with a specified CR
-	renderer := rendering.NewRenderer(multiClusterHub)
+	renderer := rendering.NewRenderer(multiClusterHub, r.CacheSpec)
 	toDeploy, err := renderer.Render(r.client)
 	if err != nil {
 		reqLogger.Error(err, "Failed to render MultiClusterHub templates")
@@ -320,43 +332,64 @@ func generatePass(length int) string {
 	return string(buf)
 }
 
-func (r *ReconcileMultiClusterHub) configureMongo(m *operatorsv1alpha1.MultiClusterHub) (*reconcile.Result, error) {
+// SetDefaults Updates MultiClusterHub resource with proper defaults
+func (r *ReconcileMultiClusterHub) SetDefaults(m *operatorsv1alpha1.MultiClusterHub) (*reconcile.Result, error) {
+	if m.Spec.Version == "" {
+		m.Spec.Version = utils.LatestVerison
+	}
+
+	if m.Spec.ImageRepository == "" {
+		m.Spec.ImageRepository = utils.DefaultRepository
+	}
+
+	if m.Spec.ImagePullPolicy == "" {
+		m.Spec.ImagePullPolicy = corev1.PullAlways
+	}
+
+	if m.Spec.Mongo.Storage == "" {
+		m.Spec.Mongo.Storage = "1Gi"
+	}
+
 	if m.Spec.Mongo.StorageClass == "" {
-		storageClass, err := r.getStorageClass(m)
+		storageClass, err := r.getStorageClass()
 		if err != nil {
 			return &reconcile.Result{}, err
 		}
 		m.Spec.Mongo.StorageClass = storageClass
 	}
-	if m.Spec.Mongo.Storage == "" {
-		m.Spec.Mongo.Storage = "1Gi"
-	}
-	// edge case (hopefully)
-	if m.Spec.Mongo.StorageClass == "" {
-		return &reconcile.Result{}, fmt.Errorf("failed to find storage class")
-	}
-	return nil, nil
-}
 
-func (r *ReconcileMultiClusterHub) configureEtcd(m *operatorsv1alpha1.MultiClusterHub) (*reconcile.Result, error) {
+	if m.Spec.Etcd.Storage == "" {
+		m.Spec.Etcd.Storage = "1Gi"
+	}
+
 	if m.Spec.Etcd.StorageClass == "" {
-		storageClass, err := r.getStorageClass(m)
+		storageClass, err := r.getStorageClass()
 		if err != nil {
 			return &reconcile.Result{}, err
 		}
 		m.Spec.Etcd.StorageClass = storageClass
 	}
-	if m.Spec.Etcd.Storage == "" {
-		m.Spec.Etcd.Storage = "1Gi"
-	}
-	// edge case (hopefully)
-	if m.Spec.Etcd.StorageClass == "" {
-		return &reconcile.Result{}, fmt.Errorf("failed to find storage class")
+
+	if reflect.DeepEqual(structs.Map(m.Spec.Hive), structs.Map(v1alpha1.HiveConfigSpec{})) {
+		m.Spec.Hive = v1alpha1.HiveConfigSpec{
+			AdditionalCertificateAuthorities: []corev1.LocalObjectReference{
+				corev1.LocalObjectReference{
+					Name: "letsencrypt-ca",
+				},
+			},
+			FailedProvisionConfig: v1alpha1.FailedProvisionConfig{
+				SkipGatherLogs: true,
+			},
+			GlobalPullSecret: &corev1.LocalObjectReference{
+				Name: "private-secret",
+			},
+		}
 	}
 	return nil, nil
 }
 
-func (r *ReconcileMultiClusterHub) getStorageClass(m *operatorsv1alpha1.MultiClusterHub) (string, error) {
+// getStorageClass retrieves the default storage class if it exists
+func (r *ReconcileMultiClusterHub) getStorageClass() (string, error) {
 	scList := &storv1.StorageClassList{}
 	if err := r.client.List(context.TODO(), scList); err != nil {
 		return "", err
@@ -371,7 +404,7 @@ func (r *ReconcileMultiClusterHub) getStorageClass(m *operatorsv1alpha1.MultiClu
 
 // ingressDomain is discovered from Openshift cluster configuration resources
 func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1alpha1.MultiClusterHub) (*reconcile.Result, error) {
-	if m.Spec.IngressDomain != "" {
+	if r.CacheSpec.IngressDomain != "" {
 		return nil, nil
 	}
 
@@ -402,9 +435,8 @@ func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1alpha1.MultiClust
 		return &reconcile.Result{}, err
 	}
 
-	// Update spec with value
-	log.Info("Ingress domain not set, updating value in spec", "MultiClusterHub.Namespace", m.Namespace, "MultiClusterHub.Name", m.Name, "ingressDomain", domain)
-	m.Spec.IngressDomain = domain
+	log.Info("Ingress domain not set, updating value in cachespec", "MultiClusterHub.Namespace", m.Namespace, "MultiClusterHub.Name", m.Name, "ingressDomain", domain)
+	r.CacheSpec.IngressDomain = domain
 	err = r.client.Update(context.TODO(), m)
 	if err != nil {
 		log.Error(err, "Failed to update MultiClusterHub", "MultiClusterHub.Namespace", m.Namespace, "MultiClusterHub.Name", m.Name)
