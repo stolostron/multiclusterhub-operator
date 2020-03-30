@@ -8,6 +8,10 @@ import (
 	"runtime"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/apis"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/controller"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/webhook"
+	"github.com/open-cluster-management/multicloudhub-operator/version"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	kubemetrics "github.com/operator-framework/operator-sdk/pkg/kube-metrics"
 	"github.com/operator-framework/operator-sdk/pkg/leader"
@@ -20,14 +24,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/apis"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/controller"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/webhook"
-	"github.com/open-cluster-management/multicloudhub-operator/version"
 )
 
 // Change below variables to serve metrics on different host or port.
@@ -110,6 +111,11 @@ func main() {
 	}
 
 	if err := v1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Error(err, "")
+		os.Exit(1)
+	}
+
+	if err := apiregistrationv1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Error(err, "")
 		os.Exit(1)
 	}

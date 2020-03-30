@@ -12,50 +12,10 @@ metadata:
             "namespace": "default"
           },
           "spec": {
-            "etcd": {
-              "storage": "1Gi",
-              "storageclass": "gp2"
-            },
-            "foundation": {
-              "apiserver": {
-                "apiserverSecret": "mcm-apiserver-self-signed-secrets",
-                "configuration": {
-                  "http2-max-streams-per-connection": "1000"
-                },
-                "klusterletSecret": "mcm-klusterlet-self-signed-secrets",
-                "replicas": 1
-              },
-              "controller": {
-                "configuration": {
-                  "enable-rbac": "true",
-                  "enable-service-registry": "true"
-                },
-                "replicas": 1
-              }
-            },
-            "hive": {
-              "additionalCertificateAuthorities": [
-                {
-                  "name": "letsencrypt-ca"
-                }
-              ],
-              "failedProvisionConfig": {
-                "skipGatherLogs": true
-              },
-              "globalPullSecret": {
-                "name": "private-secret"
-              }
-            },
             "imagePullPolicy": "Always",
             "imagePullSecret": "quay-secret",
             "imageRepository": "quay.io/open-cluster-management",
             "imageTagSuffix": "",
-            "mongo": {
-              "caSecret": "multicloud-ca-cert",
-              "endpoints": "multicluster-mongodb",
-              "replicaSet": "rs0",
-              "tlsSecret": "multicluster-mongodb-client-cert"
-            },
             "version": "latest"
           }
         }
@@ -226,6 +186,8 @@ spec:
           verbs:
           - get
           - create
+          - list
+          - delete
         - apiGroups:
           - security.openshift.io
           resources:

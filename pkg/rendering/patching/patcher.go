@@ -13,6 +13,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 )
 
 type patchGenerateFn func(res *resource.Resource, multipleClusterHub *operatorsv1alpha1.MultiClusterHub) (ifc.Kunstructured, error)
@@ -39,17 +40,12 @@ func ApplyGlobalPatches(res *resource.Resource, multipleClusterHub *operatorsv1a
 }
 
 func ApplyAPIServerPatches(res *resource.Resource, multipleClusterHub *operatorsv1alpha1.MultiClusterHub) error {
-	replicasPatch := generateReplicasPatch(*multipleClusterHub.Spec.Foundation.Apiserver.Replicas)
-	if err := res.Patch(replicasPatch); err != nil {
-		return err
-	}
-
 	etcdServer := fmt.Sprintf("http://etcd-cluster.%s.svc.cluster.local:2379", multipleClusterHub.Namespace)
-	args := multipleClusterHub.Spec.Foundation.Apiserver.Configuration
+	args := make(map[string]string)
 	args["etcd-servers"] = etcdServer
 
-	args["mongo-host"] = multipleClusterHub.Spec.Mongo.Endpoints
-	args["mongo-replicaset"] = multipleClusterHub.Spec.Mongo.ReplicaSet
+	args["mongo-host"] = utils.MongoEndpoints
+	args["mongo-replicaset"] = utils.MongoReplicaSet
 	envVars, volumes, volumeMounts := generateMongoSecrets(multipleClusterHub)
 	if err := applySecretPatches(res, envVars, volumes, volumeMounts); err != nil {
 		return err
@@ -61,7 +57,7 @@ func ApplyAPIServerPatches(res *resource.Resource, multipleClusterHub *operators
 		[]corev1.Volume{{
 			Name: "apiserver-certs",
 			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{SecretName: multipleClusterHub.Spec.Apiserver.ApiserverSecret},
+				Secret: &corev1.SecretVolumeSource{SecretName: utils.APIServerSecretName},
 			},
 		}},
 		[]corev1.VolumeMount{{Name: "apiserver-certs", MountPath: "/var/run/apiserver"}},
@@ -75,7 +71,7 @@ func ApplyAPIServerPatches(res *resource.Resource, multipleClusterHub *operators
 		[]corev1.Volume{{
 			Name: "klusterlet-certs",
 			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{SecretName: multipleClusterHub.Spec.Apiserver.KlusterletSecret},
+				Secret: &corev1.SecretVolumeSource{SecretName: utils.KlusterletSecretName},
 			},
 		}},
 		[]corev1.VolumeMount{{Name: "klusterlet-certs", MountPath: "/var/run/klusterlet"}},
@@ -90,66 +86,7 @@ func ApplyAPIServerPatches(res *resource.Resource, multipleClusterHub *operators
 	return res.Patch(argsPatch)
 }
 
-func ApplyControllerPatches(res *resource.Resource, multipleClusterHub *operatorsv1alpha1.MultiClusterHub) error {
-	replicasPatch := generateReplicasPatch(*multipleClusterHub.Spec.Foundation.Controller.Replicas)
-	if err := res.Patch(replicasPatch); err != nil {
-		return err
-	}
-
-	args := multipleClusterHub.Spec.Foundation.Controller.Configuration
-	argsPatch, err := generateContainerArgsPatch(res, args)
-	if err != nil {
-		return err
-	}
-	return res.Patch(argsPatch)
-}
-
-func ApplyTopologyAggregatorPatches(res *resource.Resource, multipleClusterHub *operatorsv1alpha1.MultiClusterHub) error {
-	replicasPatch := generateReplicasPatch(*multipleClusterHub.Spec.Foundation.Controller.Replicas)
-	if err := res.Patch(replicasPatch); err != nil {
-		return err
-	}
-
-	envVars, volumes, volumeMounts := generateMongoSecrets(multipleClusterHub)
-	if err := applySecretPatches(res, envVars, volumes, volumeMounts); err != nil {
-		return err
-	}
-
-	if err := applySecretPatches(
-		res,
-		[]corev1.EnvVar{},
-		[]corev1.Volume{{
-			Name: "topology-aggregator-certs",
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{SecretName: "topology-aggregator-secret"},
-			},
-		}},
-		[]corev1.VolumeMount{{
-			Name:      "topology-aggregator-certs",
-			MountPath: "/certs",
-		}},
-	); err != nil {
-		return err
-	}
-
-	args := map[string]string{}
-	args["mongo-host"] = multipleClusterHub.Spec.Mongo.Endpoints
-	args["mongo-replicaset"] = multipleClusterHub.Spec.Mongo.ReplicaSet
-	args["aggregator-tls-cert"] = "/certs/tls.crt"
-	args["aggregator-tls-key"] = "/certs/tls.key"
-	argsPatch, err := generateContainerArgsPatch(res, args)
-	if err != nil {
-		return err
-	}
-	return res.Patch(argsPatch)
-}
-
 func ApplyWebhookPatches(res *resource.Resource, multipleClusterHub *operatorsv1alpha1.MultiClusterHub) error {
-	replicasPatch := generateReplicasPatch(*multipleClusterHub.Spec.Foundation.Controller.Replicas)
-	if err := res.Patch(replicasPatch); err != nil {
-		return err
-	}
-
 	if err := applySecretPatches(
 		res,
 		[]corev1.EnvVar{},
@@ -232,30 +169,27 @@ func generateMongoSecrets(mch *operatorsv1alpha1.MultiClusterHub) ([]corev1.EnvV
 			},
 		},
 	})
-	if mch.Spec.Mongo.CASecret != "" {
-		envs = append(envs, corev1.EnvVar{Name: "MONGO_SSLCA", Value: "/certs/mongodb-ca/tls.crt"})
-		volumes = append(volumes, corev1.Volume{
-			Name: "mongodb-ca-cert",
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{DefaultMode: &mode, SecretName: mch.Spec.Mongo.CASecret},
-			},
-		})
-		volumeMounts = append(volumeMounts, corev1.VolumeMount{MountPath: "/certs/mongodb-ca", Name: "mongodb-ca-cert"})
-	}
-	if mch.Spec.Mongo.TLSSecret != "" {
-		envs = append(
-			envs,
-			corev1.EnvVar{Name: "MONGO_SSLCERT", Value: "/certs/mongodb-client/tls.crt"},
-			corev1.EnvVar{Name: "MONGO_SSLKEY", Value: "/certs/mongodb-client/tls.key"},
-		)
-		volumes = append(volumes, corev1.Volume{
-			Name: "mongodb-client-cert",
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{DefaultMode: &mode, SecretName: mch.Spec.Mongo.TLSSecret},
-			},
-		})
-		volumeMounts = append(volumeMounts, corev1.VolumeMount{MountPath: "/certs/mongodb-client", Name: "mongodb-client-cert"})
-	}
+	envs = append(envs, corev1.EnvVar{Name: "MONGO_SSLCA", Value: "/certs/mongodb-ca/tls.crt"})
+	volumes = append(volumes, corev1.Volume{
+		Name: "mongodb-ca-cert",
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{DefaultMode: &mode, SecretName: utils.MongoCaSecret},
+		},
+	})
+	volumeMounts = append(volumeMounts, corev1.VolumeMount{MountPath: "/certs/mongodb-ca", Name: "mongodb-ca-cert"})
+	envs = append(
+		envs,
+		corev1.EnvVar{Name: "MONGO_SSLCERT", Value: "/certs/mongodb-client/tls.crt"},
+		corev1.EnvVar{Name: "MONGO_SSLKEY", Value: "/certs/mongodb-client/tls.key"},
+	)
+	volumes = append(volumes, corev1.Volume{
+		Name: "mongodb-client-cert",
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{DefaultMode: &mode, SecretName: utils.MongoTLSSecret},
+		},
+	})
+	volumeMounts = append(volumeMounts, corev1.VolumeMount{MountPath: "/certs/mongodb-client", Name: "mongodb-client-cert"})
+
 	return envs, volumes, volumeMounts
 }
 
@@ -294,7 +228,7 @@ spec:
     spec:
       imagePullSecrets:
       - name: __pullsecrets__
-`
+` // #nosec G101 (no actual secrets within)
 
 func generateImagePullSecretsPatch(res *resource.Resource, mch *operatorsv1alpha1.MultiClusterHub) (ifc.Kunstructured, error) {
 	pullSecret := mch.Spec.ImagePullSecret
@@ -310,52 +244,6 @@ func generateImagePullSecretsPatch(res *resource.Resource, mch *operatorsv1alpha
 	var u unstructured.Unstructured
 	err = u.UnmarshalJSON(json)
 	return &kunstruct.UnstructAdapter{Unstructured: u}, err
-}
-
-const nodeSelectorTemplate = `
-kind: __kind__
-spec:
-  template:
-    spec:
-      nodeSelector: {__selector__}
-`
-
-func generateNodeSelectorPatch(res *resource.Resource, mch *operatorsv1alpha1.MultiClusterHub) (ifc.Kunstructured, error) {
-	nodeSelectorOptions := mch.Spec.NodeSelector
-	if nodeSelectorOptions == nil {
-		return nil, nil
-	}
-	template := strings.Replace(nodeSelectorTemplate, "__kind__", res.GetKind(), 1)
-	selectormap := map[string]string{}
-	if nodeSelectorOptions.OS != "" {
-		selectormap["beta.kubernetes.io/os"] = nodeSelectorOptions.OS
-	}
-	if nodeSelectorOptions.CustomLabelSelector != "" && nodeSelectorOptions.CustomLabelValue != "" {
-		selectormap[nodeSelectorOptions.CustomLabelSelector] = nodeSelectorOptions.CustomLabelValue
-	}
-	if len(selectormap) == 0 {
-		return nil, nil
-	}
-	selectors := []string{}
-	for k, v := range selectormap {
-		selectors = append(selectors, fmt.Sprintf("\"%s\":\"%s\"", k, v))
-	}
-	template = strings.Replace(template, "__selector__", strings.Join(selectors, ","), 1)
-	json, err := yaml.YAMLToJSON([]byte(template))
-	if err != nil {
-		return nil, err
-	}
-	var u unstructured.Unstructured
-	err = u.UnmarshalJSON(json)
-	return &kunstruct.UnstructAdapter{Unstructured: u}, err
-}
-
-func generateReplicasPatch(replicas int32) ifc.Kunstructured {
-	return kunstruct.NewKunstructuredFactoryImpl().FromMap(map[string]interface{}{
-		"spec": map[string]interface{}{
-			"replicas": replicas,
-		},
-	})
 }
 
 func generateContainerArgsPatch(r *resource.Resource, newArgs map[string]string) (ifc.Kunstructured, error) {
@@ -398,6 +286,44 @@ func generateContainerArgsPatch(r *resource.Resource, newArgs map[string]string)
 			},
 		},
 	}), nil
+}
+
+const nodeSelectorTemplate = `
+kind: __kind__
+spec:
+  template:
+    spec:
+      nodeSelector: {__selector__}
+`
+
+func generateNodeSelectorPatch(res *resource.Resource, mch *operatorsv1alpha1.MultiClusterHub) (ifc.Kunstructured, error) {
+	nodeSelectorOptions := mch.Spec.NodeSelector
+	if nodeSelectorOptions == nil {
+		return nil, nil
+	}
+	template := strings.Replace(nodeSelectorTemplate, "__kind__", res.GetKind(), 1)
+	selectormap := map[string]string{}
+	if nodeSelectorOptions.OS != "" {
+		selectormap["beta.kubernetes.io/os"] = nodeSelectorOptions.OS
+	}
+	if nodeSelectorOptions.CustomLabelSelector != "" && nodeSelectorOptions.CustomLabelValue != "" {
+		selectormap[nodeSelectorOptions.CustomLabelSelector] = nodeSelectorOptions.CustomLabelValue
+	}
+	if len(selectormap) == 0 {
+		return nil, nil
+	}
+	selectors := []string{}
+	for k, v := range selectormap {
+		selectors = append(selectors, fmt.Sprintf("\"%s\":\"%s\"", k, v))
+	}
+	template = strings.Replace(template, "__selector__", strings.Join(selectors, ","), 1)
+	json, err := yaml.YAMLToJSON([]byte(template))
+	if err != nil {
+		return nil, err
+	}
+	var u unstructured.Unstructured
+	err = u.UnmarshalJSON(json)
+	return &kunstruct.UnstructAdapter{Unstructured: u}, err
 }
 
 func generateEnvVarsPatch(r *resource.Resource, newEnvs []corev1.EnvVar) (ifc.Kunstructured, error) {

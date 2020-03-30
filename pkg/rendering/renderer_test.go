@@ -5,11 +5,11 @@ import (
 	"path"
 	"testing"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 func TestRender(t *testing.T) {
@@ -21,7 +21,6 @@ func TestRender(t *testing.T) {
 	os.Setenv(templates.TemplatesPathEnvVar, templatesPath)
 	defer os.Unsetenv(templates.TemplatesPathEnvVar)
 
-	var replicas int32 = 1
 	mchcr := &operatorsv1alpha1.MultiClusterHub{
 		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
@@ -35,28 +34,11 @@ func TestRender(t *testing.T) {
 				CustomLabelSelector: "test",
 				CustomLabelValue:    "test",
 			},
-			Foundation: operatorsv1alpha1.Foundation{
-				Apiserver: operatorsv1alpha1.Apiserver{
-					Replicas: &replicas,
-					Configuration: map[string]string{
-						"test": "test",
-					},
-				},
-				Controller: operatorsv1alpha1.Controller{
-					Replicas: &replicas,
-					Configuration: map[string]string{
-						"test": "test",
-					},
-				},
-			},
-			Mongo: operatorsv1alpha1.Mongo{
-				Endpoints:  "test",
-				ReplicaSet: "test",
-			},
+			Mongo: operatorsv1alpha1.Mongo{},
 		},
 	}
 
-	renderer := NewRenderer(mchcr)
+	renderer := NewRenderer(mchcr, utils.CacheSpec{})
 	objs, err := renderer.Render(nil)
 	if err != nil {
 		t.Fatalf("failed to render multiclusterhub %v", err)
@@ -69,4 +51,45 @@ func printObjs(t *testing.T, objs []*unstructured.Unstructured) {
 	for _, obj := range objs {
 		t.Log(obj)
 	}
+}
+
+func Test_addInstallerLabel(t *testing.T) {
+	name := "example-installer"
+	ns := "default"
+
+	t.Run("Should add labels when none exist", func(t *testing.T) {
+		u := &unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"apiVersion": "apps.open-cluster-management.io/v1",
+				"kind":       "Channel",
+			},
+		}
+		want := 2
+
+		addInstallerLabel(u, name, ns)
+		if got := len(u.GetLabels()); got != want {
+			t.Errorf("got %v labels, want %v", got, want)
+		}
+	})
+
+	t.Run("Should not replace existing labels", func(t *testing.T) {
+		u := &unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"apiVersion": "apps.open-cluster-management.io/v1",
+				"kind":       "Channel",
+				"metadata": map[string]interface{}{
+					"name": "channelName",
+					"labels": map[string]interface{}{
+						"hello": "world",
+					},
+				},
+			},
+		}
+		want := 3
+
+		addInstallerLabel(u, name, ns)
+		if got := len(u.GetLabels()); got != want {
+			t.Errorf("got %v labels, want %v", got, want)
+		}
+	})
 }

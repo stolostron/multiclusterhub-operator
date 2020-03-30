@@ -14,6 +14,7 @@ spec:
         app: mcm-apiserver
     spec:
       serviceAccountName: hub-sa
+      replicas: 1
       volumes: []
       containers:
       - name: mcm-apiserver
@@ -30,6 +31,7 @@ spec:
           - "--klusterlet-cafile=/var/run/klusterlet/ca.crt"
           - "--klusterlet-certfile=/var/run/klusterlet/tls.crt"
           - "--klusterlet-keyfile=/var/run/klusterlet/tls.key"
+          - "--http2-max-streams-per-connection=1000"
         livenessProbe:
           httpGet:
             path: /healthz
@@ -43,3 +45,9 @@ spec:
             scheme: HTTPS
             port: 6443
           initialDelaySeconds: 2
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "2048Mi"
