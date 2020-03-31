@@ -7,7 +7,9 @@ import (
 	"strings"
 
 	"github.com/fatih/structs"
+	v1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/kustomize/v3/pkg/resource"
@@ -164,23 +166,47 @@ func (r *Renderer) renderClusterRole(res *resource.Resource) (*unstructured.Unst
 func (r *Renderer) renderClusterRoleBinding(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
 
-	subjects, ok := u.Object["subjects"].([]interface{})
-	if !ok {
-		return nil, fmt.Errorf("failed to find clusterrolebinding subjects field")
-	}
 	addInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
 
-	subject := subjects[0].(map[string]interface{})
-	kind := subject["kind"]
-	if kind == "Group" {
+	var clusterRoleBindding v1.ClusterRoleBinding
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.UnstructuredContent(), &clusterRoleBindding)
+	if err != nil {
+		log.Error(err, "Failed to unmarshal clusterrolebindding")
+		return nil, err
+	}
+
+	subject := clusterRoleBindding.Subjects[0]
+	if subject.Kind == "Group" {
 		return u, nil
 	}
 
 	if UpdateNamespace(u) {
-		subject["namespace"] = r.cr.Namespace
+		clusterRoleBindding.Subjects[0].Namespace = r.cr.Namespace
 	}
 
-	return u, nil
+	if r.cr.Spec.CloudPakCompatibility && clusterRoleBindding.Name == "bind-to-default" {
+		for _, subject := range clusterRoleBindding.Subjects {
+			if subject.Namespace == utils.CertManagerNamespace {
+				return nil, nil
+			}
+		}
+
+		newSubject := v1.Subject{
+			Kind:      "ServiceAccount",
+			Name:      "default",
+			Namespace: utils.CertManagerNamespace,
+		}
+
+		clusterRoleBindding.Subjects = append(clusterRoleBindding.Subjects, newSubject)
+	}
+
+	newCRB, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&clusterRoleBindding)
+	if err != nil {
+		log.Error(err, "Failed to unmarshal clusterrolebindding")
+		return nil, err
+	}
+
+	return &unstructured.Unstructured{Object: newCRB}, nil
 }
 
 func (r *Renderer) renderMutatingWebhookConfiguration(res *resource.Resource) (*unstructured.Unstructured, error) {

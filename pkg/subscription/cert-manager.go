@@ -5,10 +5,10 @@ import (
 )
 
 // CertManager overrides the cert-manager chart
-func CertManager(m *operatorsv1alpha1.MultiClusterHub) *Subscription {
+func CertManager(m *operatorsv1alpha1.MultiClusterHub, namespace string) *Subscription {
 	return &Subscription{
 		Name:      "cert-manager",
-		Namespace: m.Namespace,
+		Namespace: namespace,
 		Overrides: map[string]interface{}{
 			"imageTagPostfix": imageSuffix(m),
 			"imagePullSecret": m.Spec.ImagePullSecret,
@@ -37,10 +37,10 @@ func CertManager(m *operatorsv1alpha1.MultiClusterHub) *Subscription {
 }
 
 // CertWebhook overrides the cert-manager-webhook chart
-func CertWebhook(m *operatorsv1alpha1.MultiClusterHub) *Subscription {
+func CertWebhook(m *operatorsv1alpha1.MultiClusterHub, namespace string) *Subscription {
 	return &Subscription{
 		Name:      "cert-manager-webhook",
-		Namespace: m.Namespace,
+		Namespace: namespace,
 		Overrides: map[string]interface{}{
 			"imageTagPostfix": imageSuffix(m),
 			"pkiNamespace":    m.Namespace,
@@ -69,10 +69,10 @@ func CertWebhook(m *operatorsv1alpha1.MultiClusterHub) *Subscription {
 }
 
 // ConfigWatcher overrides the configmap-watcher chart
-func ConfigWatcher(m *operatorsv1alpha1.MultiClusterHub) *Subscription {
+func ConfigWatcher(m *operatorsv1alpha1.MultiClusterHub, namespace string) *Subscription {
 	return &Subscription{
 		Name:      "configmap-watcher",
-		Namespace: m.Namespace,
+		Namespace: namespace,
 		Overrides: map[string]interface{}{
 			"imageTagPostfix": imageSuffix(m),
 			"global": map[string]interface{}{

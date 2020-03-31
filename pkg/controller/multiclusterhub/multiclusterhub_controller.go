@@ -209,7 +209,20 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	result, err = r.ensureSubscription(multiClusterHub, subscription.CertManager(multiClusterHub))
+	certManagerNS := multiClusterHub.Namespace
+	if multiClusterHub.Spec.CloudPakCompatibility {
+		result, err = r.createCertManagerNSIfNotExist()
+		if result != nil {
+			return *result, err
+		}
+		result, err = r.copyPullSecret(multiClusterHub.Namespace, multiClusterHub.Spec.ImagePullSecret, utils.CertManagerNamespace)
+		if result != nil {
+			return *result, err
+		}
+		certManagerNS = utils.CertManagerNamespace
+	}
+
+	result, err = r.ensureSubscription(multiClusterHub, subscription.CertManager(multiClusterHub, certManagerNS))
 	if result != nil {
 		return *result, err
 	}
@@ -220,12 +233,12 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	result, err = r.ensureSubscription(multiClusterHub, subscription.CertWebhook(multiClusterHub))
+	result, err = r.ensureSubscription(multiClusterHub, subscription.CertWebhook(multiClusterHub, certManagerNS))
 	if result != nil {
 		return *result, err
 	}
 
-	result, err = r.ensureSubscription(multiClusterHub, subscription.ConfigWatcher(multiClusterHub))
+	result, err = r.ensureSubscription(multiClusterHub, subscription.ConfigWatcher(multiClusterHub, certManagerNS))
 	if result != nil {
 		return *result, err
 	}
