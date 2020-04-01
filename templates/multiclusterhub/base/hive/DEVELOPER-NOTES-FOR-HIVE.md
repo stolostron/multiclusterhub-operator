@@ -15,6 +15,24 @@ git checkout ocm-4.4.0
 git pull origin ocm-4.4.0
 ```
 
+## Publish a new hive image to quay.io
+- Ensure you have the hive repo source, as listed in the previous step.
+- From the hive subdirectory, run the following to create the image and
+push the new image to `quay.io`
+```
+export COMMIT=`git rev-parse --short HEAD`
+echo "Short hash: $COMMIT"
+export IMG=quay.io/rhibmcollab/hive:$(date +"%Y-%m-%d")-$COMMIT
+echo "Image: $IMG"
+export BUILD_CMD="docker build"
+make docker-build
+make docker-push
+docker tag $IMG quay.io/rhibmcollab/hive:latest
+docker push quay.io/rhibmcollab/hive:latest
+docker push $IMG
+```
+- The new images will be at https://quay.io/repository/rhibmcollab/hive?tab=tags
+
 ## Make sure you have the proper multicloudhub-operator to make changes to
 - Get the latest code.
 ```
@@ -206,11 +224,13 @@ to:
 ```
 
 ### Run hive script to build CSV
-Update the `DEPLOY_IMG` for the https://quay.io/repository/rhibmcollab/hive?tab=tags image you are going to upgrade to
+- Be sure to `oc login` to your OpenShift Container Platform
+- Update the `DEPLOY_IMG` for the https://quay.io/repository/rhibmcollab/hive?tab=tags image you are going to upgrade to
 ```
 #NOTE: Update this for the new image
 #export DEPLOY_IMG="quay.io/rhibmcollab/hive:2020-03-23-2154ceae"
-export DEPLOY_IMG="quay.io/rhibmcollab/hive:2020-03-24-2ea0bcc0"
+#export DEPLOY_IMG="quay.io/rhibmcollab/hive:2020-03-24-2ea0bcc0"
+export DEPLOY_IMG="quay.io/rhibmcollab/hive:2020-03-30-7e5ab546"
 
 #NOTE: You can use your shortname at the end
 export REGISTRY_IMG="quay.io/rhibmcollab/multiclusterhub-operator:cahl4"
@@ -219,7 +239,8 @@ export REGISTRY_IMG="quay.io/rhibmcollab/multiclusterhub-operator:cahl4"
 hack/olm-registry-deploy.sh
 ```
 **Ensure STEP 1,2 and 3 complete.**  STEP 4 and 5 do not need to run.
-The CSV file will be in the bundle directory.  The filename will contain the `commit id` of the new image we want to use.  For example, `bundle/0.1.1774-2154ceae/hive-operator.v0.1.1774-2154ceae.clusterserviceversion.yaml`.
+The CSV file will be in the bundle directory.  The filename will contain the `commit id` of the new image we want to use.  For example, `bundle/0.1.1774-2154ceae/hive-operator.v0.1.1774-2154ceae.clusterserviceversion.yaml`.  If you want to
+bring over all the files, you can `tar` up the results, for example ```tar cvf hive-0.1.1778-7e5ab546.tgz bundle/```
 
 ### Compare CSV file to our hive-operator.yaml
 - Make sure of the following metadata:
@@ -230,6 +251,14 @@ The CSV file will be in the bundle directory.  The filename will contain the `co
   - `namespace` make sure it remains **hive**
 ```
 $MERGE_UTIL -left ./TEMP-hive-operator.v0.1.1774-2154ceae.clusterserviceversion.yaml  -right $RIGHT_PATH/hive-operator.yaml
+
+OR
+
+# untar the hhive tgz from the RHEL vm
+export MERGE_UTIL=/Applications/Xcode.app/Contents/Applications/FileMerge.app/Contents/MacOS/FileMerge
+export LEFT_PATH=~/go/src/github.com/openshift/hive/config
+export RIGHT_PATH=~/go/src/github.com/open-cluster-management/multicloudhub-operator/templates/multiclusterhub/base/hive
+$MERGE_UTIL -left bundle/0.1.1778-7e5ab546/hive-operator.v0.1.1778-7e5ab546.clusterserviceversion.yaml -right $RIGHT_PATH/hive-operator.yaml
 ```
 
 ## Testing
