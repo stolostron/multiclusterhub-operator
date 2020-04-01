@@ -1,14 +1,19 @@
 package multiclusterhub
 
 import (
+	"context"
+	"fmt"
+
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
 
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/yaml"
 )
@@ -90,46 +95,55 @@ func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1alpha1.Multi
 	return nil, nil
 }
 
-func (r *ReconcileMultiClusterHub) createCertManagerNSIfNotExist() (*reconcile.Result, error) {
-	schema := schema.GroupVersionResource{Group: "", Version: "v1", Resource: "namespaces"}
+func (r *ReconcileMultiClusterHub) ensureNamespace() (*reconcile.Result, error) {
 	sublog := log.WithValues("Creating cert-manager namespace", utils.CertManagerNamespace, "Namespace.Name", utils.CertManagerNamespace)
 
-	dc, err := createDynamicClient()
+	json, err := yaml.YAMLToJSON([]byte(certManagerNamespaceTemplate))
 	if err != nil {
-		sublog.Error(err, "Failed to create dynamic client")
+		return &reconcile.Result{}, err
+	}
+	// var u unstructured.Unstructured
+	// err = u.UnmarshalJSON(json)
+	// if err != nil {
+	// 	return &reconcile.Result{}, err
+	// }
+
+	// var ns v1.Namespace
+	// err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.UnstructuredContent(), &ns)
+	// if err != nil {
+	// 	sublog.Error(err, "Failed to unmarshal namespace")
+	// 	return nil, err
+	// }
+
+	var ns v1.Namespace
+	err = ns.Unmarshal(json)
+	if err != nil {
 		return &reconcile.Result{}, err
 	}
 
-	// Check for Namespace
-	_, err = dc.Resource(schema).Namespace("").Get(utils.CertManagerNamespace, metav1.GetOptions{})
+	log.Info(fmt.Sprintf("Error: %+v", ns))
+
+	found := &v1.Namespace{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{
+		Name: utils.CertManagerNamespace,
+	}, found)
+
 	if err != nil && errors.IsNotFound(err) {
-
-		json, err := yaml.YAMLToJSON([]byte(certManagerNamespaceTemplate))
-		if err != nil {
-			return &reconcile.Result{}, err
-		}
-		var u unstructured.Unstructured
-		err = u.UnmarshalJSON(json)
-		if err != nil {
-			return &reconcile.Result{}, err
-		}
-
-		// Create Namespace
-		_, err = dc.Resource(schema).Namespace("").Create(&u, metav1.CreateOptions{})
+		// Create the namespace
+		sublog.Info("Creating a new namespace", "Namespace.Name", ns.Name)
+		err = r.client.Create(context.TODO(), &ns)
 		if err != nil {
 			// Creation failed
-			sublog.Error(err, "Failed to create new cert-manager namespace")
+			log.Error(err, "Failed to create new Namespace", "Namespace.Name", ns.Name)
 			return &reconcile.Result{}, err
 		}
 		// Creation was successful
-		sublog.Info("Created cert-manager namespace")
 		return nil, nil
 	} else if err != nil {
-		// Error that isn't due to the resource not existing
-		sublog.Error(err, "Failed to get namespaces")
+		// Error that isn't due to the secret not existing
+		sublog.Error(err, "Failed to get Namespace")
 		return &reconcile.Result{}, err
 	}
-
 	return nil, nil
 }
 

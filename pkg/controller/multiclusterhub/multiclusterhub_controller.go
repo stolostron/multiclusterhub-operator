@@ -211,7 +211,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 
 	certManagerNS := multiClusterHub.Namespace
 	if multiClusterHub.Spec.CloudPakCompatibility {
-		result, err = r.createCertManagerNSIfNotExist()
+		result, err = r.ensureNamespace()
 		if result != nil {
 			return *result, err
 		}

@@ -9,13 +9,14 @@
             "kind": "MultiClusterHub",
             "metadata": {
               "name": "example-multiclusterhub",
-              "namespace": "default"
+              "namespace": "open-cluster-management"
             },
             "spec": {
+              "cloudPakCompatibility": true,
               "imagePullPolicy": "Always",
               "imagePullSecret": "quay-secret",
               "imageRepository": "quay.io/open-cluster-management",
-              "imageTagSuffix": "",
+              "imageTagSuffix": "SNAPSHOT-2020-04-01-14-00-02",
               "version": "latest"
             }
           }
