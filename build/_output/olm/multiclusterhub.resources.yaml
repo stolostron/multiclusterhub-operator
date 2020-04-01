@@ -62,44 +62,6 @@ data:
                         description: StorageClass for MultiCluster hub components
                         type: string
                     type: object
-                  foundation:
-                    description: Spec of foundation
-                    properties:
-                      apiserver:
-                        description: Spec of apiserver
-                        properties:
-                          apiserverSecret:
-                            description: Certificates of API server
-                            type: string
-                          configuration:
-                            additionalProperties:
-                              type: string
-                            description: Configuration of the pod
-                            type: object
-                          klusterletSecret:
-                            description: Certificates of Klusterlet
-                            type: string
-                          replicas:
-                            description: Number of desired pods. This is a pointer to distinguish
-                              between explicit zero and not specified. Defaults to 1
-                            format: int32
-                            type: integer
-                        type: object
-                      controller:
-                        description: Spec of controller
-                        properties:
-                          configuration:
-                            additionalProperties:
-                              type: string
-                            description: Configuration of the pod
-                            type: object
-                          replicas:
-                            description: Number of desired pods. This is a pointer to distinguish
-                              between explicit zero and not specified. Defaults to 1
-                            format: int32
-                            type: integer
-                        type: object
-                    type: object
                   hive:
                     description: Spec of hive
                     properties:
@@ -228,39 +190,18 @@ data:
                   imageTagSuffix:
                     description: ImageTagSuffix of the MultiCluster hub images
                     type: string
-                  ingressDomain:
-                    description: Default domain for routes
-                    type: string
                   ipv6:
                     description: Flag for IPv6
                     type: boolean
                   mongo:
                     description: Spec of mongo
                     properties:
-                      caSecret:
-                        description: CA secret of mongo
-                        type: string
-                      endpoints:
-                        description: Endpoints of mongo
-                        type: string
-                      replicaSet:
-                        description: Replica set of mongo
-                        type: string
                       storage:
                         description: StorageSize for MultiCluster hub components (ex. 1Gi)
                         type: string
                       storageClass:
                         description: StorageClass for MultiCluster hub components
                         type: string
-                      tlsSecret:
-                        description: TLS secret of mongo
-                        type: string
-                      userSecret:
-                        description: User secret of mongo
-                        type: string
-                    required:
-                    - endpoints
-                    - replicaSet
                     type: object
                   nodeSelector:
                     description: Spec of NodeSelector
@@ -279,12 +220,9 @@ data:
                     description: Version of the MultiCluster hub
                     type: string
                 required:
-                - foundation
-                - hive
                 - imagePullPolicy
                 - imageRepository
                 - imageTagSuffix
-                - mongo
                 - version
                 type: object
               status:
@@ -407,50 +345,10 @@ data:
                   "namespace": "default"
                 },
                 "spec": {
-                  "etcd": {
-                    "storage": "1Gi",
-                    "storageclass": "gp2"
-                  },
-                  "foundation": {
-                    "apiserver": {
-                      "apiserverSecret": "mcm-apiserver-self-signed-secrets",
-                      "configuration": {
-                        "http2-max-streams-per-connection": "1000"
-                      },
-                      "klusterletSecret": "mcm-klusterlet-self-signed-secrets",
-                      "replicas": 1
-                    },
-                    "controller": {
-                      "configuration": {
-                        "enable-rbac": "true",
-                        "enable-service-registry": "true"
-                      },
-                      "replicas": 1
-                    }
-                  },
-                  "hive": {
-                    "additionalCertificateAuthorities": [
-                      {
-                        "name": "letsencrypt-ca"
-                      }
-                    ],
-                    "failedProvisionConfig": {
-                      "skipGatherLogs": true
-                    },
-                    "globalPullSecret": {
-                      "name": "private-secret"
-                    }
-                  },
                   "imagePullPolicy": "Always",
                   "imagePullSecret": "quay-secret",
                   "imageRepository": "quay.io/open-cluster-management",
                   "imageTagSuffix": "",
-                  "mongo": {
-                    "caSecret": "multicloud-ca-cert",
-                    "endpoints": "multicluster-mongodb",
-                    "replicaSet": "rs0",
-                    "tlsSecret": "multicluster-mongodb-client-cert"
-                  },
                   "version": "latest"
                 }
               }

@@ -79,24 +79,10 @@ func TestApplyAPIServerPatches(t *testing.T) {
 	u.UnmarshalJSON(json)
 	apiserver := factory.FromMap(u.Object)
 
-	var replicas int32 = 1
 	mchcr := &operatorsv1alpha1.MultiClusterHub{
 		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1alpha1.MultiClusterHubSpec{
-			Foundation: operatorsv1alpha1.Foundation{
-				Apiserver: operatorsv1alpha1.Apiserver{
-					Replicas: &replicas,
-					Configuration: map[string]string{
-						"test": "test",
-					},
-				},
-			},
-			Mongo: operatorsv1alpha1.Mongo{
-				Endpoints:  "test",
-				ReplicaSet: "test",
-			},
-		},
+		Spec:       operatorsv1alpha1.MultiClusterHubSpec{},
 	}
 
 	err = ApplyAPIServerPatches(apiserver, mchcr)
@@ -114,27 +100,10 @@ func TestApplyAPIServerPatchesWithSecret(t *testing.T) {
 	u.UnmarshalJSON(json)
 	apiserver := factory.FromMap(u.Object)
 
-	var replicas int32 = 1
 	mchcr := &operatorsv1alpha1.MultiClusterHub{
 		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1alpha1.MultiClusterHubSpec{
-			Foundation: operatorsv1alpha1.Foundation{
-				Apiserver: operatorsv1alpha1.Apiserver{
-					Replicas: &replicas,
-					Configuration: map[string]string{
-						"test": "test",
-					},
-				},
-			},
-			Mongo: operatorsv1alpha1.Mongo{
-				Endpoints:  "test",
-				ReplicaSet: "test",
-				UserSecret: "test",
-				CASecret:   "test",
-				TLSSecret:  "test",
-			},
-		},
+		Spec:       operatorsv1alpha1.MultiClusterHubSpec{},
 	}
 
 	err = ApplyAPIServerPatches(apiserver, mchcr)
@@ -161,36 +130,30 @@ spec:
           - "--leader-elect=true"
 `
 
-func TestApplyControllerPatches(t *testing.T) {
-	json, err := yaml.YAMLToJSON([]byte(controller))
-	if err != nil {
-		t.Fatalf("failed to apply controller patches %v", err)
-	}
-	var u unstructured.Unstructured
-	u.UnmarshalJSON(json)
-	controller := factory.FromMap(u.Object)
-
-	var replicas int32 = 1
-	mchcr := &operatorsv1alpha1.MultiClusterHub{
-		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
-		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1alpha1.MultiClusterHubSpec{
-			Foundation: operatorsv1alpha1.Foundation{
-				Controller: operatorsv1alpha1.Controller{
-					Replicas: &replicas,
-					Configuration: map[string]string{
-						"test": "test",
-					},
-				},
-			},
-		},
-	}
-
-	err = ApplyControllerPatches(controller, mchcr)
-	if err != nil {
-		t.Fatalf("failed to apply controller patches %v", err)
-	}
-}
+var topology = `
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: topology-aggregator
+  labels:
+    app: "topology-aggregator"
+spec:
+  template:
+    spec:
+      containers:
+      - name: topology-aggregator
+        image: "topology-aggregator"
+        env: []
+        volumeMounts:
+          - name: tmp
+            mountPath: "/tmp"
+        args:
+          - "/topology-aggregator"
+          - "--mongo-database=mcm"
+      volumes:
+        - name: tmp
+          emptyDir: {}
+`
 
 var webhook = `
 kind: Deployment
@@ -218,20 +181,10 @@ func TestApplyWebhookPatches(t *testing.T) {
 	u.UnmarshalJSON(json)
 	webhook := factory.FromMap(u.Object)
 
-	var replicas int32 = 1
 	mchcr := &operatorsv1alpha1.MultiClusterHub{
 		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1alpha1.MultiClusterHubSpec{
-			Foundation: operatorsv1alpha1.Foundation{
-				Controller: operatorsv1alpha1.Controller{
-					Replicas: &replicas,
-					Configuration: map[string]string{
-						"test": "test",
-					},
-				},
-			},
-		},
+		Spec:       operatorsv1alpha1.MultiClusterHubSpec{},
 	}
 
 	err = ApplyWebhookPatches(webhook, mchcr)

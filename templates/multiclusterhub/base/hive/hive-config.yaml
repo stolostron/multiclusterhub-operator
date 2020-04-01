@@ -4,6 +4,8 @@ metadata:
   name: hive
 spec:
   additionalCertificateAuthorities:
-  - name: letsencrypt-ca
+    - name: letsencrypt-ca
+  failedProvisionConfig:
+    skipGatherLogs: true
   globalPullSecret:
     name: private-secret

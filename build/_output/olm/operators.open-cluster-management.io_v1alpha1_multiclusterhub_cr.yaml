@@ -9,30 +9,3 @@ spec:
   imageTagSuffix: ""
   imagePullPolicy: Always
   imagePullSecret: quay-secret
-  foundation:
-    apiserver:
-      configuration:
-        http2-max-streams-per-connection: "1000"
-      replicas: 1
-      apiserverSecret: "mcm-apiserver-self-signed-secrets"
-      klusterletSecret: "mcm-klusterlet-self-signed-secrets"
-    controller:
-      configuration:
-        enable-rbac: "true"
-        enable-service-registry: "true"
-      replicas: 1
-  mongo:
-    endpoints: multicluster-mongodb
-    replicaSet: rs0
-    tlsSecret: multicluster-mongodb-client-cert
-    caSecret: multicloud-ca-cert
-  hive:
-    additionalCertificateAuthorities:
-      - name: letsencrypt-ca
-    globalPullSecret:
-      name: private-secret
-    failedProvisionConfig:
-      skipGatherLogs: true
-  etcd:
-    storageclass: gp2
-    storage: "1Gi"

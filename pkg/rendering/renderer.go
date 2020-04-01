@@ -12,6 +12,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/kustomize/v3/pkg/resource"
 
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/patching"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
@@ -19,25 +20,28 @@ import (
 )
 
 const (
-	apiserviceName         = "mcm-apiserver"
-	controllerName         = "mcm-controller"
-	webhookName            = "mcm-webhook"
-	clusterControllerName  = "multicluster-operators-cluster-controller"
-	helmRepoName           = "multiclusterhub-repo"
-	metadataErr            = "failed to find metadata field"
+	apiserviceName        = "mcm-apiserver"
+	controllerName        = "mcm-controller"
+	webhookName           = "mcm-webhook"
+	clusterControllerName = "multicluster-operators-cluster-controller"
+	helmRepoName          = "multiclusterhub-repo"
+	metadataErr           = "failed to find metadata field"
 )
 
 var log = logf.Log.WithName("renderer")
 
 type renderFn func(*resource.Resource) (*unstructured.Unstructured, error)
 
+// Renderer is a Kustomizee Renderer Factory
 type Renderer struct {
 	cr        *operatorsv1alpha1.MultiClusterHub
+	cacheSpec utils.CacheSpec
 	renderFns map[string]renderFn
 }
 
-func NewRenderer(multipleClusterHub *operatorsv1alpha1.MultiClusterHub) *Renderer {
-	renderer := &Renderer{cr: multipleClusterHub}
+// NewRenderer Initializes a Kustomize Renderer Factory
+func NewRenderer(multipleClusterHub *operatorsv1alpha1.MultiClusterHub, cacheSpec utils.CacheSpec) *Renderer {
+	renderer := &Renderer{cr: multipleClusterHub, cacheSpec: cacheSpec}
 	renderer.renderFns = map[string]renderFn{
 		"APIService":                   renderer.renderAPIServices,
 		"Deployment":                   renderer.renderDeployments,
@@ -58,6 +62,7 @@ func NewRenderer(multipleClusterHub *operatorsv1alpha1.MultiClusterHub) *Rendere
 	return renderer
 }
 
+// Render renders Templates under TEMPLATES_PATH
 func (r *Renderer) Render(c runtimeclient.Client) ([]*unstructured.Unstructured, error) {
 	templates, err := templates.GetTemplateRenderer().GetTemplates(r.cr)
 	if err != nil {
@@ -135,9 +140,6 @@ func (r *Renderer) renderDeployments(res *resource.Resource) (*unstructured.Unst
 		}
 		return &unstructured.Unstructured{Object: res.Map()}, nil
 	case controllerName:
-		if err := patching.ApplyControllerPatches(res, r.cr); err != nil {
-			return nil, err
-		}
 		return &unstructured.Unstructured{Object: res.Map()}, nil
 	case webhookName:
 		if err := patching.ApplyWebhookPatches(res, r.cr); err != nil {
@@ -195,51 +197,51 @@ func (r *Renderer) renderMutatingWebhookConfiguration(res *resource.Resource) (*
 	return u, nil
 }
 
-func stringValueReplace(to_replace string, cr *operatorsv1alpha1.MultiClusterHub) string {
+func stringValueReplace(to_replace string, renderer Renderer) string {
 
 	replaced := to_replace
 
-	imageTagSuffix := cr.Spec.ImageTagSuffix
+	imageTagSuffix := renderer.cr.Spec.ImageTagSuffix
 	if imageTagSuffix != "" {
 		imageTagSuffix = "-" + imageTagSuffix
 	}
 
 	mongoNetworkIPVersion := "ipv4"
-	if cr.Spec.IPv6 {
+	if renderer.cr.Spec.IPv6 {
 		mongoNetworkIPVersion = "ipv6"
 	}
 
 	replaced = strings.ReplaceAll(replaced, "{{SUFFIX}}", string(imageTagSuffix))
-	replaced = strings.ReplaceAll(replaced, "{{IMAGEREPO}}", string(cr.Spec.ImageRepository))
-	replaced = strings.ReplaceAll(replaced, "{{PULLSECRET}}", string(cr.Spec.ImagePullSecret))
-	replaced = strings.ReplaceAll(replaced, "{{NAMESPACE}}", string(cr.Namespace))
-	replaced = strings.ReplaceAll(replaced, "{{PULLPOLICY}}", string(cr.Spec.ImagePullPolicy))
-	replaced = strings.ReplaceAll(replaced, "{{DOMAIN}}", string(cr.Spec.IngressDomain))
-	replaced = strings.ReplaceAll(replaced, "{{STORAGECLASS}}", string(cr.Spec.Mongo.StorageClass)) //Assuming this is specifically for Mongo.
-	replaced = strings.ReplaceAll(replaced, "{{STORAGE}}", string(cr.Spec.Mongo.Storage))
+	replaced = strings.ReplaceAll(replaced, "{{IMAGEREPO}}", string(renderer.cr.Spec.ImageRepository))
+	replaced = strings.ReplaceAll(replaced, "{{PULLSECRET}}", string(renderer.cr.Spec.ImagePullSecret))
+	replaced = strings.ReplaceAll(replaced, "{{NAMESPACE}}", string(renderer.cr.Namespace))
+	replaced = strings.ReplaceAll(replaced, "{{PULLPOLICY}}", string(renderer.cr.Spec.ImagePullPolicy))
+	replaced = strings.ReplaceAll(replaced, "{{DOMAIN}}", string(renderer.cacheSpec.IngressDomain))
+	replaced = strings.ReplaceAll(replaced, "{{STORAGECLASS}}", string(renderer.cr.Spec.Mongo.StorageClass)) //Assuming this is specifically for Mongo.
+	replaced = strings.ReplaceAll(replaced, "{{STORAGE}}", string(renderer.cr.Spec.Mongo.Storage))
 	replaced = strings.ReplaceAll(replaced, "{{NETWORK_IP_VERSION}}", string(mongoNetworkIPVersion))
 
 	return replaced
 }
 
-func replaceInValues(values map[string]interface{}, cr *operatorsv1alpha1.MultiClusterHub) error {
+func replaceInValues(values map[string]interface{}, renderer *Renderer) error {
 	for in_key := range values {
 		isPrimitiveType := reflect.TypeOf(values[in_key]).String() == "string" || reflect.TypeOf(values[in_key]).String() == "bool" || reflect.TypeOf(values[in_key]).String() == "int"
 		if isPrimitiveType {
 			if reflect.TypeOf(values[in_key]).String() == "string" {
-				values[in_key] = stringValueReplace(values[in_key].(string), cr)
+				values[in_key] = stringValueReplace(values[in_key].(string), *renderer)
 			} // add other options for other primitives when required
 		} else if reflect.TypeOf(values[in_key]).Kind().String() == "slice" {
 			string_slice := values[in_key].([]interface{})
 			for i := range string_slice {
-				string_slice[i] = stringValueReplace(string_slice[i].(string), cr) // assumes only slices of strings, which is OK for now
+				string_slice[i] = stringValueReplace(string_slice[i].(string), *renderer) // assumes only slices of strings, which is OK for now
 			}
 		} else { // reflect.TypeOf(values[in_key]).Kind().String() == "map"
 			in_value, ok := values[in_key].(map[string]interface{})
 			if !ok {
 				return fmt.Errorf("failed to map values")
 			}
-			err := replaceInValues(in_value, cr)
+			err := replaceInValues(in_value, renderer)
 			if err != nil {
 				return err
 			}
@@ -281,7 +283,7 @@ func (r *Renderer) renderSubscription(res *resource.Resource) (*unstructured.Uns
 				for j := 0; j < len(override); j++ {
 					packageData, _ := override[j].(map[string]interface{})
 					values, _ := packageData["value"].(map[string]interface{})
-					err := replaceInValues(values, r.cr)
+					err := replaceInValues(values, r)
 					if err != nil {
 						return nil, err
 					}
@@ -359,6 +361,10 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 
 func (r *Renderer) renderHiveConfig(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
+	HiveConfig := v1alpha1.HiveConfigSpec{}
+	if !reflect.DeepEqual(structs.Map(r.cr.Spec.Hive), structs.Map(HiveConfig)) {
+		u.Object["spec"] = structs.Map(r.cr.Spec.Hive)
+	}
 	u.Object["spec"] = structs.Map(r.cr.Spec.Hive)
 	addInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
 	return u, nil
