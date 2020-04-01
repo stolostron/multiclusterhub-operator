@@ -31,25 +31,6 @@ func TestNewDeployment(t *testing.T) {
 	}
 }
 
-// func TestUpdateDeployment(t *testing.T) {
-// 	fakeclient := fake.NewFakeClient()
-// 	olddep, _ := toUnstructuredObj(newDeployment("dep", "ns", 1))
-// 	Deploy(fakeclient, olddep)
-
-// 	newdep, _ := toUnstructuredObj(newDeployment("dep", "ns", 2))
-// 	if err := Deploy(fakeclient, newdep); err != nil {
-// 		t.Fatalf("failed to update deployment %v", err)
-// 	}
-// 	expected := &unstructured.Unstructured{}
-// 	expected.SetGroupVersionKind(olddep.GroupVersionKind())
-// 	fakeclient.Get(context.TODO(), types.NamespacedName{Name: "dep", Namespace: "ns"}, expected)
-// 	spec, _, _ := unstructured.NestedMap(expected.Object, "spec")
-// 	replicas, _, _ := unstructured.NestedInt64(spec, "replicas")
-// 	if replicas != 2 {
-// 		t.Fatalf("expect 2, but %d", replicas)
-// 	}
-// }
-
 func TestListDeployments(t *testing.T) {
 	fakeclient := fake.NewFakeClient()
 	fakeclient.Create(context.TODO(), newDeployment("multiclusterhub-operator", "ns", 1))
