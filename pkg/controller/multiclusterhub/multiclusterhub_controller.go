@@ -60,37 +60,10 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileMultiClusterHub{client: mgr.GetClient(), scheme: mgr.GetScheme()}
 }
 
-type resourceGenerationOrFinalizerChangedPredicate struct {
-	predicate.Funcs
-}
-
-// Update implements default UpdateEvent filter for validating resource version change
-func (resourceGenerationOrFinalizerChangedPredicate) Update(e event.UpdateEvent) bool {
-	if e.MetaNew.GetGeneration() == e.MetaOld.GetGeneration() && reflect.DeepEqual(e.MetaNew.GetFinalizers(), e.MetaOld.GetFinalizers()) {
-		return false
-	}
-	return true
-}
-
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
 	c, err := controller.New("multiclusterhub-controller", mgr, controller.Options{Reconciler: r})
-	if err != nil {
-		return err
-	}
-
-	// Watch for changes to primary resource MultiClusterHub
-	err = c.Watch(&source.Kind{Type: &operatorsv1alpha1.MultiClusterHub{}}, &handler.EnqueueRequestForObject{}, resourceGenerationOrFinalizerChangedPredicate{})
-	if err != nil {
-		return err
-	}
-
-	// Watch for changes to secondary resource Pods and requeue the owner MultiClusterHub
-	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &operatorsv1alpha1.MultiClusterHub{},
-	})
 	if err != nil {
 		return err
 	}
@@ -107,6 +80,22 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 			return nameExists && namespaceExists
 		},
 	}
+
+	// Watch for changes to primary resource MultiClusterHub
+	err = c.Watch(&source.Kind{Type: &operatorsv1alpha1.MultiClusterHub{}}, &handler.EnqueueRequestForObject{}, predicate.GenerationChangedPredicate{})
+	if err != nil {
+		return err
+	}
+
+	// Watch for changes to secondary resource Pods and requeue the owner MultiClusterHub
+	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &operatorsv1alpha1.MultiClusterHub{},
+	})
+	if err != nil {
+		return err
+	}
+
 	err = c.Watch(
 		&source.Kind{Type: &apiregistrationv1.APIService{}},
 		handler.Funcs{
