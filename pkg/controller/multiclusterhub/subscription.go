@@ -15,15 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/yaml"
 )
-
-const certManagerNamespaceTemplate = `
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: cert-manager
-`
 
 // newSubscription creates a new instance of an unstructured open-cluster-management.io Subscription object
 func newSubscription(m *operatorsv1alpha1.MultiClusterHub, s *subscription.Subscription) *unstructured.Unstructured {
@@ -95,46 +87,21 @@ func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1alpha1.Multi
 	return nil, nil
 }
 
-func (r *ReconcileMultiClusterHub) ensureNamespace() (*reconcile.Result, error) {
+func (r *ReconcileMultiClusterHub) ensureNamespace(ns *unstructured.Unstructured) (*reconcile.Result, error) {
 	sublog := log.WithValues("Creating cert-manager namespace", utils.CertManagerNamespace, "Namespace.Name", utils.CertManagerNamespace)
 
-	json, err := yaml.YAMLToJSON([]byte(certManagerNamespaceTemplate))
-	if err != nil {
-		return &reconcile.Result{}, err
-	}
-	// var u unstructured.Unstructured
-	// err = u.UnmarshalJSON(json)
-	// if err != nil {
-	// 	return &reconcile.Result{}, err
-	// }
-
-	// var ns v1.Namespace
-	// err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.UnstructuredContent(), &ns)
-	// if err != nil {
-	// 	sublog.Error(err, "Failed to unmarshal namespace")
-	// 	return nil, err
-	// }
-
-	var ns v1.Namespace
-	err = ns.Unmarshal(json)
-	if err != nil {
-		return &reconcile.Result{}, err
-	}
-
-	log.Info(fmt.Sprintf("Error: %+v", ns))
-
 	found := &v1.Namespace{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{
+	err := r.client.Get(context.TODO(), types.NamespacedName{
 		Name: utils.CertManagerNamespace,
 	}, found)
 
 	if err != nil && errors.IsNotFound(err) {
 		// Create the namespace
-		sublog.Info("Creating a new namespace", "Namespace.Name", ns.Name)
-		err = r.client.Create(context.TODO(), &ns)
+		sublog.Info("Creating a new namespace", "Namespace.Name", ns.GetName())
+		err = r.client.Create(context.TODO(), ns)
 		if err != nil {
 			// Creation failed
-			log.Error(err, "Failed to create new Namespace", "Namespace.Name", ns.Name)
+			log.Error(err, "Failed to create new Namespace", "Namespace.Name", ns.GetName())
 			return &reconcile.Result{}, err
 		}
 		// Creation was successful
@@ -148,17 +115,15 @@ func (r *ReconcileMultiClusterHub) ensureNamespace() (*reconcile.Result, error) 
 }
 
 func (r *ReconcileMultiClusterHub) copyPullSecret(originNS, pullSecretName, newNS string) (*reconcile.Result, error) {
-	schema := schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}
 	sublog := log.WithValues("Copying Secret to cert-manager namespace", pullSecretName, "Namespace.Name", utils.CertManagerNamespace)
 
-	dc, err := createDynamicClient()
+	pullSecret := &v1.Secret{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{
+		Name:      pullSecretName,
+		Namespace: originNS,
+	}, pullSecret)
 	if err != nil {
-		sublog.Error(err, "Failed to create dynamic client")
-		return &reconcile.Result{}, err
-	}
-	pullSecret, err := dc.Resource(schema).Namespace(originNS).Get(pullSecretName, metav1.GetOptions{})
-	if err != nil {
-		return &reconcile.Result{}, err
+		sublog.Error(err, "Failed to get secret")
 	}
 
 	pullSecret.SetNamespace(newNS)
@@ -166,9 +131,17 @@ func (r *ReconcileMultiClusterHub) copyPullSecret(originNS, pullSecretName, newN
 	pullSecret.SetResourceVersion("")
 	pullSecret.SetUID("")
 
-	_, err = dc.Resource(schema).Namespace(newNS).Create(pullSecret, metav1.CreateOptions{})
+	err = r.client.Get(context.TODO(), types.NamespacedName{
+		Name:      pullSecretName,
+		Namespace: newNS,
+	}, pullSecret)
+
 	if err != nil && errors.IsNotFound(err) {
-		return &reconcile.Result{}, err
+		sublog.Info(fmt.Sprintf("Creating secret %s in namespace %s", pullSecretName, utils.CertManagerNamespace))
+		err = r.client.Create(context.TODO(), pullSecret)
+		if err != nil {
+			sublog.Error(err, "Failed to create secret")
+		}
 	}
 	return nil, nil
 }
