@@ -19,30 +19,11 @@ func Deploy(c runtimeclient.Client, obj *unstructured.Unstructured) error {
 	err := c.Get(context.TODO(), types.NamespacedName{Name: obj.GetName(), Namespace: obj.GetNamespace()}, found)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			log.Info("Creating deployment", "Name", obj.GetName())
+			log.Info("Creating resource", "Name", obj.GetName(), "Kind", obj.GetKind())
 			return c.Create(context.TODO(), obj)
 		}
 		return err
 	}
-
-	if found.GetKind() != "Deployment" {
-		return nil
-	}
-
-	// oldSpec, oldSpecFound := found.Object["spec"]
-	// newSpec, newSpecFound := obj.Object["spec"]
-	// if !oldSpecFound || !newSpecFound {
-	// 	log.Info("didn't find specs", "Name", obj.GetName())
-	// 	return nil
-	// }
-
-	// if !reflect.DeepEqual(oldSpec, newSpec) {
-	// 	// log.Info("Things aren't aligning", "Name", obj.GetName())
-	// 	// log.Info("Difference", "Found", oldSpec, "Want", newSpec)
-	// 	newObj := found.DeepCopy()
-	// 	newObj.Object["spec"] = newSpec
-	// 	return c.Update(context.TODO(), newObj)
-	// }
 	return nil
 }
 
