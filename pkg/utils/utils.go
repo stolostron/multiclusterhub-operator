@@ -14,6 +14,9 @@ const (
 	// KlusterletSecretName ...
 	KlusterletSecretName = "mcm-klusterlet-self-signed-secrets"
 
+	// CertManagerNamespace ...
+	CertManagerNamespace = "cert-manager"
+
 	// MongoEndpoints ...
 	MongoEndpoints = "multicluster-mongodb"
 	// MongoReplicaSet ...
@@ -37,6 +40,15 @@ const (
 // CacheSpec ...
 type CacheSpec struct {
 	IngressDomain string
+}
+
+// CertManagerNS returns the namespace to deploy cert manager objects
+func CertManagerNS(m *operatorsv1alpha1.MultiClusterHub) string {
+	if m.Spec.CloudPakCompatibility {
+		return "cert-manager"
+	}
+	return m.Namespace
+
 }
 
 // MchIsValid Checks if the optional default parameters need to be set

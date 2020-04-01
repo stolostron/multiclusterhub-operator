@@ -209,6 +209,17 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
+	if multiClusterHub.Spec.CloudPakCompatibility {
+		result, err = r.ensureNamespace(r.Namespace(utils.CertManagerNamespace))
+		if result != nil {
+			return *result, err
+		}
+		result, err = r.copyPullSecret(multiClusterHub.Namespace, multiClusterHub.Spec.ImagePullSecret, utils.CertManagerNamespace)
+		if result != nil {
+			return *result, err
+		}
+	}
+
 	result, err = r.ensureSubscription(multiClusterHub, subscription.CertManager(multiClusterHub))
 	if result != nil {
 		return *result, err

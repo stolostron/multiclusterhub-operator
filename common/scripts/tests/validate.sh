@@ -12,13 +12,12 @@ echo ""
 
 while true
 do
-    _totalPods=41
+    _totalPods=45
     _podsReady=0
-    _hivePodsReady=0
-    _hivePodsTotal=4
     _totalAttempts=$((_totalAttempts + 1))
     _output=$(oc get pods | grep Running | awk '{ print $2 }')
     _outputHive=$(oc get pods -n hive 2>/dev/null | grep Running | awk '{ print $2 }' )
+    _outputCertManager=$(oc get pods -n cert-manager 2>/dev/null | grep Running | awk '{ print $2 }' )
     while IFS= read -r line; do
         if [[ "$line" == "" ]]; then
             continue
@@ -30,15 +29,22 @@ do
         if [[ "$line" == "" ]]; then
             continue
         fi
-        _hivePodsReady=$((_hivePodsReady + ${line:0:1}))
+        _podsReady=$((_podsReady + ${line:0:1}))
     done <<< "$_outputHive"
 
+    while IFS= read -r line; do
+        if [[ "$line" == "" ]]; then
+            continue
+        fi
+        _podsReady=$((_podsReady + ${line:0:1}))
+    done <<< "$_outputCertManager"
 
-    if [[ ( "$_podsReady" != "$_totalPods" || "$_hivePodsReady" != "$_hivePodsTotal" ) ]]; then
+
+    if [[ ( "$_podsReady" != "$_totalPods" ) ]]; then
         END_SECONDS=$((SECONDS+10))
         while [ $SECONDS -lt $END_SECONDS ]; do
             _seconds_left=$((END_SECONDS - SECONDS))
-            echo -ne "---    Iteration $_totalAttempts of $_maxAttempts: Namespace: $NAMESPACE - $_podsReady/$_totalPods | Namespace: Hive - $_hivePodsReady/$_hivePodsTotal    --- Retrying in ${_seconds_left:0:1}\r"
+            echo -ne "---    Iteration $_totalAttempts of $_maxAttempts | Pods Ready - $_podsReady/$_totalPods. | Checking namespaces - $NAMESPACE, hive and cert-manager   --- Retrying in ${_seconds_left:0:1}\r"
             sleep 1
         done
     else
