@@ -19,7 +19,7 @@ func Deploy(c runtimeclient.Client, obj *unstructured.Unstructured) error {
 	err := c.Get(context.TODO(), types.NamespacedName{Name: obj.GetName(), Namespace: obj.GetNamespace()}, found)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			log.Info("Creating resource", "Name", obj.GetName(), "Kind", obj.GetKind())
+			log.Info("Creating resource", "Kind", obj.GetKind(), "Name", obj.GetName())
 			return c.Create(context.TODO(), obj)
 		}
 		return err
