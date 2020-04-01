@@ -168,24 +168,24 @@ func (r *Renderer) renderClusterRoleBinding(res *resource.Resource) (*unstructur
 
 	addInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
 
-	var clusterRoleBindding v1.ClusterRoleBinding
-	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.UnstructuredContent(), &clusterRoleBindding)
+	var clusterRoleBinding v1.ClusterRoleBinding
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.UnstructuredContent(), &clusterRoleBinding)
 	if err != nil {
 		log.Error(err, "Failed to unmarshal clusterrolebindding")
 		return nil, err
 	}
 
-	subject := clusterRoleBindding.Subjects[0]
+	subject := clusterRoleBinding.Subjects[0]
 	if subject.Kind == "Group" {
 		return u, nil
 	}
 
 	if UpdateNamespace(u) {
-		clusterRoleBindding.Subjects[0].Namespace = r.cr.Namespace
+		clusterRoleBinding.Subjects[0].Namespace = r.cr.Namespace
 	}
 
-	if r.cr.Spec.CloudPakCompatibility && clusterRoleBindding.Name == "bind-to-default" {
-		for _, subject := range clusterRoleBindding.Subjects {
+	if r.cr.Spec.CloudPakCompatibility && clusterRoleBinding.Name == "bind-to-default" {
+		for _, subject := range clusterRoleBinding.Subjects {
 			if subject.Namespace == utils.CertManagerNamespace {
 				return nil, nil
 			}
@@ -197,12 +197,12 @@ func (r *Renderer) renderClusterRoleBinding(res *resource.Resource) (*unstructur
 			Namespace: utils.CertManagerNamespace,
 		}
 
-		clusterRoleBindding.Subjects = append(clusterRoleBindding.Subjects, newSubject)
+		clusterRoleBinding.Subjects = append(clusterRoleBinding.Subjects, newSubject)
 	}
 
-	newCRB, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&clusterRoleBindding)
+	newCRB, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&clusterRoleBinding)
 	if err != nil {
-		log.Error(err, "Failed to unmarshal clusterrolebindding")
+		log.Error(err, "Failed to unmarshal clusterrolebinding")
 		return nil, err
 	}
 

@@ -107,7 +107,6 @@ unsubscribe:
 	@oc delete clusterrole hive-reader || true
 	@oc delete service multicluster-operators-subscription || true
 	@oc delete helmreleases --all || true
-	@oc delete mutatingwebhoookconfigurations --all || true
 	@oc delete validatingwebhookconfiguration cert-manager-webhook || true
 	@oc delete clusterrole cert-manager-webhook-requester || true
 	@oc delete clusterrolebinding cert-manager-webhook-auth-delegator || true
