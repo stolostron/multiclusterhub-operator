@@ -66,7 +66,7 @@ func Test_addInstallerLabel(t *testing.T) {
 		}
 		want := 2
 
-		addInstallerLabel(u, name, ns)
+		utils.AddInstallerLabel(u, name, ns)
 		if got := len(u.GetLabels()); got != want {
 			t.Errorf("got %v labels, want %v", got, want)
 		}
@@ -87,7 +87,7 @@ func Test_addInstallerLabel(t *testing.T) {
 		}
 		want := 3
 
-		addInstallerLabel(u, name, ns)
+		utils.AddInstallerLabel(u, name, ns)
 		if got := len(u.GetLabels()); got != want {
 			t.Errorf("got %v labels, want %v", got, want)
 		}

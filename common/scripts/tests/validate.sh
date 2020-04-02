@@ -44,7 +44,7 @@ do
         END_SECONDS=$((SECONDS+10))
         while [ $SECONDS -lt $END_SECONDS ]; do
             _seconds_left=$((END_SECONDS - SECONDS))
-            echo -ne "---    Iteration $_totalAttempts of $_maxAttempts | Pods Ready - $_podsReady/$_totalPods. | Checking namespaces - $NAMESPACE, hive and cert-manager   --- Retrying in ${_seconds_left:0:1}\r"
+            echo -ne "---    Iteration $_totalAttempts of $_maxAttempts | Pods Ready - $_podsReady/$_totalPods. | Checking namespaces - $NAMESPACE, hive, and cert-manager   --- Retrying in ${_seconds_left:0:1}\r"
             sleep 1
         done
     else

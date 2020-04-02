@@ -198,6 +198,7 @@ func newValidatingWebhookCfg(namespace, path string, ca []byte) *admissionregist
 				},
 				Operations: []admissionregistration.OperationType{
 					admissionregistration.Create,
+					admissionregistration.Update,
 				},
 			}},
 			ClientConfig: admissionregistration.WebhookClientConfig{

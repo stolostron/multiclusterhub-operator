@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
-	"reflect"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -29,9 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	"github.com/fatih/structs"
 	"github.com/go-logr/logr"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/deploying"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering"
@@ -215,7 +212,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	}
 
 	if multiClusterHub.Spec.CloudPakCompatibility {
-		result, err = r.copyPullSecret(multiClusterHub.Namespace, multiClusterHub.Spec.ImagePullSecret, utils.CertManagerNamespace)
+		result, err = r.copyPullSecret(multiClusterHub, utils.CertManagerNamespace)
 		if result != nil {
 			return *result, err
 		}
@@ -382,22 +379,6 @@ func (r *ReconcileMultiClusterHub) SetDefaults(m *operatorsv1alpha1.MultiCluster
 		}
 		m.Spec.Etcd.StorageClass = storageClass
 	}
-
-	if reflect.DeepEqual(structs.Map(m.Spec.Hive), structs.Map(v1alpha1.HiveConfigSpec{})) {
-		m.Spec.Hive = v1alpha1.HiveConfigSpec{
-			AdditionalCertificateAuthorities: []corev1.LocalObjectReference{
-				corev1.LocalObjectReference{
-					Name: "letsencrypt-ca",
-				},
-			},
-			FailedProvisionConfig: v1alpha1.FailedProvisionConfig{
-				SkipGatherLogs: true,
-			},
-			GlobalPullSecret: &corev1.LocalObjectReference{
-				Name: "private-secret",
-			},
-		}
-	}
 	return nil, nil
 }
 
@@ -474,6 +455,11 @@ func (r *ReconcileMultiClusterHub) finalizeHub(reqLogger logr.Logger, m *operato
 	}
 	if err := r.cleanupMutatingWebhooks(reqLogger, m); err != nil {
 		return err
+	}
+	if m.Spec.CloudPakCompatibility {
+		if err := r.cleanupPullSecret(reqLogger, m); err != nil {
+			return err
+		}
 	}
 
 	reqLogger.Info("Successfully finalized multiClusterHub")
