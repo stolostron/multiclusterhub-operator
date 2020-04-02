@@ -220,6 +220,7 @@ func (r *Renderer) renderMutatingWebhookConfiguration(res *resource.Resource) (*
 	service := clientConfig["service"].(map[string]interface{})
 
 	service["namespace"] = r.cr.Namespace
+	addInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
 	return u, nil
 }
 
