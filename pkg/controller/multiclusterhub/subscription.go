@@ -87,33 +87,6 @@ func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1alpha1.Multi
 	return nil, nil
 }
 
-func (r *ReconcileMultiClusterHub) ensureNamespace(ns *unstructured.Unstructured) (*reconcile.Result, error) {
-	sublog := log.WithValues("Creating cert-manager namespace", utils.CertManagerNamespace, "Namespace.Name", utils.CertManagerNamespace)
-
-	found := &v1.Namespace{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{
-		Name: utils.CertManagerNamespace,
-	}, found)
-
-	if err != nil && errors.IsNotFound(err) {
-		// Create the namespace
-		sublog.Info("Creating a new namespace", "Namespace.Name", ns.GetName())
-		err = r.client.Create(context.TODO(), ns)
-		if err != nil {
-			// Creation failed
-			log.Error(err, "Failed to create new Namespace", "Namespace.Name", ns.GetName())
-			return &reconcile.Result{}, err
-		}
-		// Creation was successful
-		return nil, nil
-	} else if err != nil {
-		// Error that isn't due to the secret not existing
-		sublog.Error(err, "Failed to get Namespace")
-		return &reconcile.Result{}, err
-	}
-	return nil, nil
-}
-
 func (r *ReconcileMultiClusterHub) copyPullSecret(originNS, pullSecretName, newNS string) (*reconcile.Result, error) {
 	sublog := log.WithValues("Copying Secret to cert-manager namespace", pullSecretName, "Namespace.Name", utils.CertManagerNamespace)
 
