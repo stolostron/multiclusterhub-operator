@@ -107,6 +107,10 @@ unsubscribe:
 	@oc delete clusterrole hive-reader || true
 	@oc delete service multicluster-operators-subscription || true
 	@oc delete helmreleases --all || true
+	@oc delete validatingwebhookconfiguration cert-manager-webhook || true
+	@oc delete clusterrole cert-manager-webhook-requester || true
+	@oc delete clusterrolebinding cert-manager-webhook-auth-delegator || true
+	@for crd in $(oc get crd | grep cert | cut -f 1 -d ' '); do oc delete crd $crd; done
 	# Wrong syntax for Makefile @for webhook in $(oc get validatingwebhookconfiguration | grep hive | cut -f 1 -d ' '); do oc delete validatingwebhookconfiguration $webhook; done
 	@oc delete ns hive || true
 	@oc delete scc multicloud-scc || true

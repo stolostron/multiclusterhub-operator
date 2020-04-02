@@ -2,13 +2,14 @@ package subscription
 
 import (
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 )
 
 // CertManager overrides the cert-manager chart
 func CertManager(m *operatorsv1alpha1.MultiClusterHub) *Subscription {
 	return &Subscription{
 		Name:      "cert-manager",
-		Namespace: m.Namespace,
+		Namespace: utils.CertManagerNS(m),
 		Overrides: map[string]interface{}{
 			"imageTagPostfix": imageSuffix(m),
 			"imagePullSecret": m.Spec.ImagePullSecret,
@@ -20,8 +21,8 @@ func CertManager(m *operatorsv1alpha1.MultiClusterHub) *Subscription {
 				"pullPolicy": m.Spec.ImagePullPolicy,
 			},
 			"serviceAccount": map[string]interface{}{
-				"create": false,
-				"name":   "default",
+				"create": true,
+				"name":   "cert-manager",
 			},
 			"solver": map[string]interface{}{
 				"repository": m.Spec.ImageRepository,
@@ -29,7 +30,7 @@ func CertManager(m *operatorsv1alpha1.MultiClusterHub) *Subscription {
 			"extraEnv": []map[string]interface{}{
 				{
 					"name":  "OWNED_NAMESPACE",
-					"value": m.Namespace,
+					"value": utils.CertManagerNS(m),
 				},
 			},
 		},
@@ -40,7 +41,7 @@ func CertManager(m *operatorsv1alpha1.MultiClusterHub) *Subscription {
 func CertWebhook(m *operatorsv1alpha1.MultiClusterHub) *Subscription {
 	return &Subscription{
 		Name:      "cert-manager-webhook",
-		Namespace: m.Namespace,
+		Namespace: utils.CertManagerNS(m),
 		Overrides: map[string]interface{}{
 			"imageTagPostfix": imageSuffix(m),
 			"pkiNamespace":    m.Namespace,
@@ -72,7 +73,7 @@ func CertWebhook(m *operatorsv1alpha1.MultiClusterHub) *Subscription {
 func ConfigWatcher(m *operatorsv1alpha1.MultiClusterHub) *Subscription {
 	return &Subscription{
 		Name:      "configmap-watcher",
-		Namespace: m.Namespace,
+		Namespace: utils.CertManagerNS(m),
 		Overrides: map[string]interface{}{
 			"imageTagPostfix": imageSuffix(m),
 			"global": map[string]interface{}{
@@ -83,8 +84,8 @@ func ConfigWatcher(m *operatorsv1alpha1.MultiClusterHub) *Subscription {
 				"pullPolicy": m.Spec.ImagePullPolicy,
 			},
 			"serviceAccount": map[string]interface{}{
-				"create": false,
-				"name":   "default",
+				"create": true,
+				"name":   "cert-manager-config",
 			},
 		},
 	}

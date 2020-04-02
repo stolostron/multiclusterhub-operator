@@ -68,8 +68,21 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	// Watch for apiService deletions
+	pred := predicate.Funcs{
+		CreateFunc:  func(e event.CreateEvent) bool { return false },
+		GenericFunc: func(e event.GenericEvent) bool { return false },
+		UpdateFunc:  func(e event.UpdateEvent) bool { return false },
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			labels := e.Meta.GetLabels()
+			_, nameExists := labels["installer.name"]
+			_, namespaceExists := labels["installer.namespace"]
+			return nameExists && namespaceExists
+		},
+	}
+
 	// Watch for changes to primary resource MultiClusterHub
-	err = c.Watch(&source.Kind{Type: &operatorsv1alpha1.MultiClusterHub{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &operatorsv1alpha1.MultiClusterHub{}}, &handler.EnqueueRequestForObject{}, predicate.GenerationChangedPredicate{})
 	if err != nil {
 		return err
 	}
@@ -83,18 +96,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// Watch for apiService deletions
-	pred := predicate.Funcs{
-		CreateFunc:  func(e event.CreateEvent) bool { return false },
-		GenericFunc: func(e event.GenericEvent) bool { return false },
-		UpdateFunc:  func(e event.UpdateEvent) bool { return false },
-		DeleteFunc: func(e event.DeleteEvent) bool {
-			labels := e.Meta.GetLabels()
-			_, nameExists := labels["installer.name"]
-			_, namespaceExists := labels["installer.namespace"]
-			return nameExists && namespaceExists
-		},
-	}
 	err = c.Watch(
 		&source.Kind{Type: &apiregistrationv1.APIService{}},
 		handler.Funcs{
@@ -198,6 +199,10 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	if result != nil {
 		return *result, err
 	}
+	result, err = r.handleHelmRepoChanges(multiClusterHub)
+	if result != nil {
+		return *result, err
+	}
 
 	result, err = r.ensureService(multiClusterHub, r.repoService(multiClusterHub))
 	if result != nil {
@@ -207,6 +212,13 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	result, err = r.ensureChannel(multiClusterHub, r.helmChannel(multiClusterHub))
 	if result != nil {
 		return *result, err
+	}
+
+	if multiClusterHub.Spec.CloudPakCompatibility {
+		result, err = r.copyPullSecret(multiClusterHub.Namespace, multiClusterHub.Spec.ImagePullSecret, utils.CertManagerNamespace)
+		if result != nil {
+			return *result, err
+		}
 	}
 
 	result, err = r.ensureSubscription(multiClusterHub, subscription.CertManager(multiClusterHub))
@@ -271,6 +283,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	multiClusterHub.Status.Phase = "Pending"
 	ready, deployments, err := deploying.ListDeployments(r.client, multiClusterHub.Namespace)
 	if err != nil {
+		reqLogger.Error(err, "Failed to list deployments")
 		return reconcile.Result{}, err
 	}
 	if ready {
@@ -457,6 +470,9 @@ func (r *ReconcileMultiClusterHub) finalizeHub(reqLogger logr.Logger, m *operato
 		return err
 	}
 	if err := r.cleanupClusterRoleBindings(reqLogger, m); err != nil {
+		return err
+	}
+	if err := r.cleanupMutatingWebhooks(reqLogger, m); err != nil {
 		return err
 	}
 

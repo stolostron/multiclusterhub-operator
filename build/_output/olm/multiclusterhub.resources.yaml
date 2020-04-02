@@ -52,6 +52,9 @@ data:
               spec:
                 description: MultiClusterHubSpec defines the desired state of MultiClusterHub
                 properties:
+                  cloudPakCompatibility:
+                    description: Flag to ensure install is compatible with IBM Cloud Paks
+                    type: boolean
                   etcd:
                     description: Spec of Etcd
                     properties:
