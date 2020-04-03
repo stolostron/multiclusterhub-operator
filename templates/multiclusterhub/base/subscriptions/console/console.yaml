@@ -17,14 +17,14 @@ spec:
           ocpingress: "{{DOMAIN}}"
           consoleui:
             image:
-              repository: "{{IMAGEREPO}}/console-ui"
+              repository: "{{IMAGEREPO}}"
               pullPolicy: "{{PULLPOLICY}}"
           consoleapi:
             image:
-              repository: "{{IMAGEREPO}}/console-api"
+              repository: "{{IMAGEREPO}}"
               pullPolicy: "{{PULLPOLICY}}"
           cfcRouterUrl: "https://management-ingress:443"
           consoleheader:
             image:
-              repository: "{{IMAGEREPO}}/console-header"
+              repository: "{{IMAGEREPO}}"
               pullPolicy: "{{PULLPOLICY}}"
