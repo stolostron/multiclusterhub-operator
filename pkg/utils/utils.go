@@ -10,9 +10,9 @@ const (
 	// WebhookServiceName ...
 	WebhookServiceName = "multiclusterhub-operator-webhook"
 	// APIServerSecretName ...
-	APIServerSecretName = "mcm-apiserver-self-signed-secrets"
+	APIServerSecretName = "mcm-apiserver-self-signed-secrets" // #nosec G101 (no confidential credentials)
 	// KlusterletSecretName ...
-	KlusterletSecretName = "mcm-klusterlet-self-signed-secrets"
+	KlusterletSecretName = "mcm-klusterlet-self-signed-secrets" // #nosec G101 (no confidential credentials)
 
 	// CertManagerNamespace ...
 	CertManagerNamespace = "cert-manager"
@@ -24,7 +24,7 @@ const (
 	// MongoTLSSecret ...
 	MongoTLSSecret = "multicluster-mongodb-client-cert"
 	// MongoCaSecret ...
-	MongoCaSecret = "multicloud-ca-cert"
+	MongoCaSecret = "multicloud-ca-cert" // #nosec G101 (no confidential credentials)
 
 	podNamespaceEnvVar = "POD_NAMESPACE"
 	apiserviceName     = "mcm-apiserver"
