@@ -54,8 +54,8 @@ func CertWebhook(m *operatorsv1alpha1.MultiClusterHub) *Subscription {
 					"repository": m.Spec.ImageRepository,
 				},
 				"serviceAccount": map[string]interface{}{
-					"create": true,
-					"name":   "cert-manager-webhook-cainjector",
+					"create": false,
+					"name":   "default",
 				},
 			},
 			"image": map[string]interface{}{
