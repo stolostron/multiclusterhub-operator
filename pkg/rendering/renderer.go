@@ -184,21 +184,21 @@ func (r *Renderer) renderClusterRoleBinding(res *resource.Resource) (*unstructur
 		clusterRoleBinding.Subjects[0].Namespace = r.cr.Namespace
 	}
 
-	if r.cr.Spec.CloudPakCompatibility && clusterRoleBinding.Name == "bind-to-default" {
-		for _, subject := range clusterRoleBinding.Subjects {
-			if subject.Namespace == utils.CertManagerNamespace {
-				return nil, nil
-			}
-		}
+	// if r.cr.Spec.CloudPakCompatibility && clusterRoleBinding.Name == "bind-to-default" {
+	// 	for _, subject := range clusterRoleBinding.Subjects {
+	// 		if subject.Namespace == utils.CertManagerNamespace {
+	// 			return nil, nil
+	// 		}
+	// 	}
 
-		newSubject := v1.Subject{
-			Kind:      "ServiceAccount",
-			Name:      "default",
-			Namespace: utils.CertManagerNamespace,
-		}
+	// 	newSubject := v1.Subject{
+	// 		Kind:      "ServiceAccount",
+	// 		Name:      "default",
+	// 		Namespace: utils.CertManagerNamespace,
+	// 	}
 
-		clusterRoleBinding.Subjects = append(clusterRoleBinding.Subjects, newSubject)
-	}
+	// 	clusterRoleBinding.Subjects = append(clusterRoleBinding.Subjects, newSubject)
+	// }
 
 	newCRB, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&clusterRoleBinding)
 	if err != nil {

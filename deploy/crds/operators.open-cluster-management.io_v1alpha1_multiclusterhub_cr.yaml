@@ -6,6 +6,7 @@ metadata:
 spec:
   version: latest
   imageRepository: "quay.io/open-cluster-management"
-  imageTagSuffix: ""
+  imageTagSuffix: "SNAPSHOT-2020-04-03-15-10-14"
   imagePullPolicy: Always
   imagePullSecret: quay-secret
+  cloudPakCompatibility: true

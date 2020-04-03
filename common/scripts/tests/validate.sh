@@ -12,7 +12,7 @@ echo ""
 
 while true
 do
-    _totalPods=45
+    _totalPods=44
     _podsReady=0
     _totalAttempts=$((_totalAttempts + 1))
     _output=$(oc get pods | grep Running | awk '{ print $2 }')
