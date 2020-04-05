@@ -126,8 +126,8 @@ func (r *ReconcileMultiClusterHub) cleanupClusterRoleBindings(reqLogger logr.Log
 	deleteOptions := metav1.DeleteOptions{
 		PropagationPolicy: &deletePolicy,
 	}
-	err = clientset.RbacV1().ClusterRoleBindings().DeleteCollection(&deleteOptions, listOptions)
 
+	err = clientset.RbacV1().ClusterRoleBindings().DeleteCollection(&deleteOptions, listOptions)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			reqLogger.Info("No matching clusterrolebindings to finalize. Continuing.")
@@ -138,5 +138,35 @@ func (r *ReconcileMultiClusterHub) cleanupClusterRoleBindings(reqLogger logr.Log
 	}
 
 	reqLogger.Info("Clusterrolebindings finalized")
+	return nil
+}
+
+func (r *ReconcileMultiClusterHub) cleanupMutatingWebhooks(reqLogger logr.Logger, m *operatorsv1alpha1.MultiClusterHub) error {
+	config, err := config.GetConfig()
+	if err != nil {
+		return err
+	}
+
+	clientset, err := kubernetes.NewForConfig(config)
+	labelSelector := fmt.Sprintf("installer.name=%s, installer.namespace=%s", m.GetName(), m.GetNamespace())
+	listOptions := metav1.ListOptions{
+		LabelSelector: labelSelector,
+	}
+	deletePolicy := metav1.DeletePropagationForeground
+	deleteOptions := metav1.DeleteOptions{
+		PropagationPolicy: &deletePolicy,
+	}
+
+	err = clientset.AdmissionregistrationV1beta1().MutatingWebhookConfigurations().DeleteCollection(&deleteOptions, listOptions)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			reqLogger.Info("No matching MutatingWebhookConfigurations to finalize. Continuing.")
+			return nil
+		}
+		reqLogger.Error(err, "Error while deleting MutatingWebhookConfigurations")
+		return err
+	}
+
+	reqLogger.Info("MutatingWebhookConfigurations finalized")
 	return nil
 }
