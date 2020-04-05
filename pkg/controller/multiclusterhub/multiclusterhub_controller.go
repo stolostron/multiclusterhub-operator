@@ -35,6 +35,7 @@ import (
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/deploying"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
@@ -196,16 +197,13 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		log.Info("MultiClusterHub successfully updated")
 		// return reconcile.Result{}, nil
 	}
-	result, err = r.ensureDeployment(multiClusterHub, r.helmRepoDeployment(multiClusterHub))
-	if result != nil {
-		return *result, err
-	}
-	result, err = r.handleHelmRepoChanges(multiClusterHub)
+
+	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}
 
-	result, err = r.ensureService(multiClusterHub, r.repoService(multiClusterHub))
+	result, err = r.ensureService(multiClusterHub, helmrepo.Service(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}

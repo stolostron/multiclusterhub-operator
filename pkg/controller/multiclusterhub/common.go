@@ -5,6 +5,7 @@ import (
 	"time"
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -46,6 +47,17 @@ func (r *ReconcileMultiClusterHub) ensureDeployment(m *operatorsv1alpha1.MultiCl
 		// Error that isn't due to the deployment not existing
 		dplog.Error(err, "Failed to get Deployment")
 		return &reconcile.Result{}, err
+	}
+
+	desired, needsUpdate := helmrepo.ValidateDeployment(m, found)
+	if needsUpdate {
+		err = r.client.Update(context.TODO(), desired)
+		if err != nil {
+			dplog.Error(err, "Failed to update Deployment.")
+			return &reconcile.Result{}, err
+		}
+		// Spec updated - return and requeue
+		return &reconcile.Result{Requeue: true}, nil
 	}
 
 	return nil, nil
@@ -129,7 +141,7 @@ func (r *ReconcileMultiClusterHub) ensureSecret(m *operatorsv1alpha1.MultiCluste
 }
 
 func (r *ReconcileMultiClusterHub) ensureObject(m *operatorsv1alpha1.MultiClusterHub, u *unstructured.Unstructured, schema schema.GroupVersionResource) (*reconcile.Result, error) {
-	chLog := log.WithValues("Resource.Namespace", u.GetNamespace(), "Resource.Name", u.GetName())
+	chLog := log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName(), "Kind", u.GetKind())
 
 	dc, err := createDynamicClient()
 	if err != nil {
