@@ -33,6 +33,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/deploying"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
@@ -209,10 +210,12 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	result, err = r.ensureChannel(multiClusterHub, r.helmChannel(multiClusterHub))
+	result, err = r.ensureObject(multiClusterHub, channel.Channel(multiClusterHub), channel.Schema)
 	if result != nil {
 		return *result, err
 	}
+
+	return reconcile.Result{}, nil
 
 	if multiClusterHub.Spec.CloudPakCompatibility {
 		result, err = r.copyPullSecret(multiClusterHub.Namespace, multiClusterHub.Spec.ImagePullSecret, utils.CertManagerNamespace)

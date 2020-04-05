@@ -9,6 +9,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -121,6 +122,40 @@ func (r *ReconcileMultiClusterHub) ensureSecret(m *operatorsv1alpha1.MultiCluste
 	} else if err != nil {
 		// Error that isn't due to the secret not existing
 		selog.Error(err, "Failed to get Secret")
+		return &reconcile.Result{}, err
+	}
+
+	return nil, nil
+}
+
+func (r *ReconcileMultiClusterHub) ensureObject(m *operatorsv1alpha1.MultiClusterHub, u *unstructured.Unstructured, schema schema.GroupVersionResource) (*reconcile.Result, error) {
+	chLog := log.WithValues("Resource.Namespace", u.GetNamespace(), "Resource.Name", u.GetName())
+
+	dc, err := createDynamicClient()
+	if err != nil {
+		chLog.Error(err, "Failed to create dynamic client")
+		return &reconcile.Result{}, nil
+	}
+
+	// Try to get API group instance
+	_, err = dc.Resource(schema).Namespace(u.GetNamespace()).Get(u.GetName(), metav1.GetOptions{})
+	if err != nil && errors.IsNotFound(err) {
+
+		// Create the resource
+		_, err = dc.Resource(schema).Namespace(u.GetNamespace()).Create(u, metav1.CreateOptions{})
+		if err != nil {
+			// Creation failed
+			chLog.Error(err, "Failed to create new instance")
+			return &reconcile.Result{}, err
+		}
+
+		// Creation was successful
+		chLog.Info("Created new object")
+		return nil, nil
+
+	} else if err != nil {
+		// Error that isn't due to the resource not existing
+		chLog.Error(err, "Failed to get resource", "resource", schema.GroupResource().String())
 		return &reconcile.Result{}, err
 	}
 

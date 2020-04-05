@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
 
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
@@ -28,7 +29,7 @@ func newSubscription(m *operatorsv1alpha1.MultiClusterHub, s *subscription.Subsc
 				"namespace": s.Namespace,
 			},
 			"spec": map[string]interface{}{
-				"channel": m.Namespace + "/" + channelName,
+				"channel": m.Namespace + "/" + channel.ChannelName,
 				"name":    s.Name,
 				"placement": map[string]interface{}{
 					"local": true,
