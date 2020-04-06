@@ -224,29 +224,4 @@ func (r *ReconcileMultiClusterHub) cleanupCRDs(log logr.Logger, m *operatorsv1al
 
 	log.Info("CRDs finalized")
 	return nil
-
-	// crd := &apixv1beta1.CustomResourceDefinition{}
-	// nn := types.NamespacedName{Name: name}
-
-	// err := r.client.Get(context.TODO(), nn, crd)
-	// if err != nil && errors.IsNotFound(err) {
-	// 	log.Info("No matching CRD. Continuing.", "CRD", name)
-	// 	return nil
-	// } else if err != nil {
-	// 	log.Error(err, "Error getting CRD", "CRD", name)
-	// 	return err
-	// }
-
-	// err = r.client.Delete(context.TODO(), crd, &client.DeleteOptions{})
-	// if err != nil {
-	// 	if errors.IsNotFound(err) {
-	// 		log.Info("CRD not found. Continuing.", "CRD", name)
-	// 		return nil
-	// 	}
-	// 	log.Error(err, "Error deleting CRD", "CRD", name)
-	// 	return err
-	// }
-
-	// log.Info("CRD finalized", "CRD", name)
-	// return nil
 }
