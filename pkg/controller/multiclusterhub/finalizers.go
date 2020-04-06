@@ -7,6 +7,7 @@ import (
 	"github.com/go-logr/logr"
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
+	apixv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -200,4 +201,52 @@ func (r *ReconcileMultiClusterHub) cleanupPullSecret(reqLogger logr.Logger, m *o
 
 	reqLogger.Info(fmt.Sprintf("%s secrets finalized", utils.CertManagerNS(m)))
 	return nil
+}
+
+func (r *ReconcileMultiClusterHub) cleanupCRDs(log logr.Logger, m *operatorsv1alpha1.MultiClusterHub) error {
+	err := r.client.DeleteAllOf(
+		context.TODO(),
+		&apixv1beta1.CustomResourceDefinition{},
+		client.MatchingLabels{
+			"installer.name":      m.GetName(),
+			"installer.namespace": m.GetNamespace(),
+		},
+	)
+
+	if err != nil {
+		if errors.IsNotFound(err) {
+			log.Info("No matching CRDs to finalize. Continuing.")
+			return nil
+		}
+		log.Error(err, "Error while deleting CRDs")
+		return err
+	}
+
+	log.Info("CRDs finalized")
+	return nil
+
+	// crd := &apixv1beta1.CustomResourceDefinition{}
+	// nn := types.NamespacedName{Name: name}
+
+	// err := r.client.Get(context.TODO(), nn, crd)
+	// if err != nil && errors.IsNotFound(err) {
+	// 	log.Info("No matching CRD. Continuing.", "CRD", name)
+	// 	return nil
+	// } else if err != nil {
+	// 	log.Error(err, "Error getting CRD", "CRD", name)
+	// 	return err
+	// }
+
+	// err = r.client.Delete(context.TODO(), crd, &client.DeleteOptions{})
+	// if err != nil {
+	// 	if errors.IsNotFound(err) {
+	// 		log.Info("CRD not found. Continuing.", "CRD", name)
+	// 		return nil
+	// 	}
+	// 	log.Error(err, "Error deleting CRD", "CRD", name)
+	// 	return err
+	// }
+
+	// log.Info("CRD finalized", "CRD", name)
+	// return nil
 }
