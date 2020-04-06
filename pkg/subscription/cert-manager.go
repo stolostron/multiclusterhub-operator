@@ -62,8 +62,8 @@ func CertWebhook(m *operatorsv1alpha1.MultiClusterHub) *Subscription {
 				"repository": m.Spec.ImageRepository,
 			},
 			"serviceAccount": map[string]interface{}{
-				"create": false,
-				"name":   "default",
+				"create": true,
+				"name":   "cert-manager-webhook",
 			},
 		},
 	}

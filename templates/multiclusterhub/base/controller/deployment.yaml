@@ -23,6 +23,7 @@ spec:
           - "--leader-elect=true"
           - "--enable-rbac=true"
           - "--enable-service-registry=true"
+          - "--enable-inventory=true"
         resources:
           requests:
             memory: "256Mi"

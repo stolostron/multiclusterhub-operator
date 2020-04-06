@@ -112,7 +112,7 @@ func (r *Renderer) renderAPIServices(res *resource.Resource) (*unstructured.Unst
 		"namespace": r.cr.Namespace,
 		"name":      apiserviceName,
 	}
-	addInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
+	utils.AddInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
 	return u, nil
 }
 
@@ -159,14 +159,14 @@ func (r *Renderer) renderDeployments(res *resource.Resource) (*unstructured.Unst
 
 func (r *Renderer) renderClusterRole(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
-	addInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
+	utils.AddInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
 	return u, nil
 }
 
 func (r *Renderer) renderClusterRoleBinding(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
 
-	addInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
+	utils.AddInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
 
 	var clusterRoleBinding v1.ClusterRoleBinding
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.UnstructuredContent(), &clusterRoleBinding)
@@ -182,22 +182,6 @@ func (r *Renderer) renderClusterRoleBinding(res *resource.Resource) (*unstructur
 
 	if UpdateNamespace(u) {
 		clusterRoleBinding.Subjects[0].Namespace = r.cr.Namespace
-	}
-
-	if r.cr.Spec.CloudPakCompatibility && clusterRoleBinding.Name == "bind-to-default" {
-		for _, subject := range clusterRoleBinding.Subjects {
-			if subject.Namespace == utils.CertManagerNamespace {
-				return nil, nil
-			}
-		}
-
-		newSubject := v1.Subject{
-			Kind:      "ServiceAccount",
-			Name:      "default",
-			Namespace: utils.CertManagerNamespace,
-		}
-
-		clusterRoleBinding.Subjects = append(clusterRoleBinding.Subjects, newSubject)
 	}
 
 	newCRB, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&clusterRoleBinding)
@@ -220,7 +204,7 @@ func (r *Renderer) renderMutatingWebhookConfiguration(res *resource.Resource) (*
 	service := clientConfig["service"].(map[string]interface{})
 
 	service["namespace"] = r.cr.Namespace
-	addInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
+	utils.AddInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
 	return u, nil
 }
 
@@ -393,19 +377,8 @@ func (r *Renderer) renderHiveConfig(res *resource.Resource) (*unstructured.Unstr
 		u.Object["spec"] = structs.Map(r.cr.Spec.Hive)
 	}
 	u.Object["spec"] = structs.Map(r.cr.Spec.Hive)
-	addInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
+	utils.AddInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
 	return u, nil
-}
-
-func addInstallerLabel(u *unstructured.Unstructured, name string, ns string) {
-	labels := make(map[string]string)
-	for key, value := range u.GetLabels() {
-		labels[key] = value
-	}
-	labels["installer.name"] = name
-	labels["installer.namespace"] = ns
-
-	u.SetLabels(labels)
 }
 
 func reRenderDependence(objs []*unstructured.Unstructured) ([]*unstructured.Unstructured, error) {

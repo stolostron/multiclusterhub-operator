@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-logr/logr"
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -168,5 +169,35 @@ func (r *ReconcileMultiClusterHub) cleanupMutatingWebhooks(reqLogger logr.Logger
 	}
 
 	reqLogger.Info("MutatingWebhookConfigurations finalized")
+	return nil
+}
+
+func (r *ReconcileMultiClusterHub) cleanupPullSecret(reqLogger logr.Logger, m *operatorsv1alpha1.MultiClusterHub) error {
+	config, err := config.GetConfig()
+	if err != nil {
+		return err
+	}
+
+	clientset, err := kubernetes.NewForConfig(config)
+	labelSelector := fmt.Sprintf("installer.name=%s, installer.namespace=%s", m.GetName(), m.GetNamespace())
+	listOptions := metav1.ListOptions{
+		LabelSelector: labelSelector,
+	}
+	deletePolicy := metav1.DeletePropagationForeground
+	deleteOptions := metav1.DeleteOptions{
+		PropagationPolicy: &deletePolicy,
+	}
+	err = clientset.CoreV1().Secrets(utils.CertManagerNS(m)).DeleteCollection(&deleteOptions, listOptions)
+
+	if err != nil {
+		if errors.IsNotFound(err) {
+			reqLogger.Info("No matching secrets to finalize. Continuing.")
+			return nil
+		}
+		reqLogger.Error(err, "Error while deleting secrets")
+		return err
+	}
+
+	reqLogger.Info(fmt.Sprintf("%s secrets finalized", utils.CertManagerNS(m)))
 	return nil
 }
