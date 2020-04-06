@@ -1,9 +1,12 @@
 package utils
 
 import (
+	"encoding/json"
 	"time"
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -45,10 +48,32 @@ type CacheSpec struct {
 // CertManagerNS returns the namespace to deploy cert manager objects
 func CertManagerNS(m *operatorsv1alpha1.MultiClusterHub) string {
 	if m.Spec.CloudPakCompatibility {
-		return "cert-manager"
+		return CertManagerNamespace
 	}
 	return m.Namespace
+}
 
+// AddInstallerLabel adds Installer Labels ...
+func AddInstallerLabel(u *unstructured.Unstructured, name string, ns string) {
+	labels := make(map[string]string)
+	for key, value := range u.GetLabels() {
+		labels[key] = value
+	}
+	labels["installer.name"] = name
+	labels["installer.namespace"] = ns
+
+	u.SetLabels(labels)
+}
+
+// CoreToUnstructured converts a Core Kube resource to unstructured
+func CoreToUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) {
+	content, err := json.Marshal(obj)
+	if err != nil {
+		return nil, err
+	}
+	u := &unstructured.Unstructured{}
+	err = u.UnmarshalJSON(content)
+	return u, err
 }
 
 // MchIsValid Checks if the optional default parameters need to be set

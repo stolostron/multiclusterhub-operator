@@ -88,16 +88,17 @@ func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1alpha1.Multi
 	return nil, nil
 }
 
-func (r *ReconcileMultiClusterHub) copyPullSecret(originNS, pullSecretName, newNS string) (*reconcile.Result, error) {
-	sublog := log.WithValues("Copying Secret to cert-manager namespace", pullSecretName, "Namespace.Name", utils.CertManagerNamespace)
+func (r *ReconcileMultiClusterHub) copyPullSecret(m *operatorsv1alpha1.MultiClusterHub, newNS string) (*reconcile.Result, error) {
+	sublog := log.WithValues("Copying Secret to cert-manager namespace", m.Spec.ImagePullSecret, "Namespace.Name", utils.CertManagerNamespace)
 
 	pullSecret := &v1.Secret{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{
-		Name:      pullSecretName,
-		Namespace: originNS,
+		Name:      m.Spec.ImagePullSecret,
+		Namespace: m.Namespace,
 	}, pullSecret)
 	if err != nil {
 		sublog.Error(err, "Failed to get secret")
+		return &reconcile.Result{}, err
 	}
 
 	pullSecret.SetNamespace(newNS)
@@ -105,16 +106,24 @@ func (r *ReconcileMultiClusterHub) copyPullSecret(originNS, pullSecretName, newN
 	pullSecret.SetResourceVersion("")
 	pullSecret.SetUID("")
 
+	unstructuredPullSecret, err := utils.CoreToUnstructured(pullSecret)
+	if err != nil {
+		sublog.Error(err, "Failed to unmarshal into unstructured object")
+		return &reconcile.Result{}, err
+	}
+	utils.AddInstallerLabel(unstructuredPullSecret, m.Name, m.Namespace)
+
 	err = r.client.Get(context.TODO(), types.NamespacedName{
-		Name:      pullSecretName,
+		Name:      unstructuredPullSecret.GetName(),
 		Namespace: newNS,
-	}, pullSecret)
+	}, unstructuredPullSecret)
 
 	if err != nil && errors.IsNotFound(err) {
-		sublog.Info(fmt.Sprintf("Creating secret %s in namespace %s", pullSecretName, utils.CertManagerNamespace))
-		err = r.client.Create(context.TODO(), pullSecret)
+		sublog.Info(fmt.Sprintf("Creating secret %s in namespace %s", unstructuredPullSecret.GetName(), utils.CertManagerNamespace))
+		err = r.client.Create(context.TODO(), unstructuredPullSecret)
 		if err != nil {
 			sublog.Error(err, "Failed to create secret")
+			return &reconcile.Result{}, err
 		}
 	}
 	return nil, nil

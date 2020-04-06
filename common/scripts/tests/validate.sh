@@ -12,7 +12,7 @@ echo ""
 
 while true
 do
-    _totalPods=45
+    _totalPods=44
     _podsReady=0
     _totalAttempts=$((_totalAttempts + 1))
     _output=$(oc get pods | grep Running | awk '{ print $2 }')
@@ -44,7 +44,7 @@ do
         END_SECONDS=$((SECONDS+10))
         while [ $SECONDS -lt $END_SECONDS ]; do
             _seconds_left=$((END_SECONDS - SECONDS))
-            echo -ne "---    Iteration $_totalAttempts of $_maxAttempts | Pods Ready - $_podsReady/$_totalPods. | Checking namespaces - $NAMESPACE, hive and cert-manager   --- Retrying in ${_seconds_left:0:1}\r"
+            echo -ne "---    Iteration $_totalAttempts of $_maxAttempts | Pods Ready - $_podsReady/$_totalPods. | Checking namespaces - $NAMESPACE, hive, and cert-manager   --- Retrying in ${_seconds_left:0:1}\r"
             sleep 1
         done
     else
