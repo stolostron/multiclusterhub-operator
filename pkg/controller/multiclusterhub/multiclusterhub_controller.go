@@ -213,8 +213,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	return reconcile.Result{}, nil
-
 	if multiClusterHub.Spec.CloudPakCompatibility {
 		result, err = r.copyPullSecret(multiClusterHub.Namespace, multiClusterHub.Spec.ImagePullSecret, utils.CertManagerNamespace)
 		if result != nil {
@@ -222,7 +220,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		}
 	}
 
-	result, err = r.ensureSubscription(multiClusterHub, subscription.CertManager(multiClusterHub))
+	result, err = r.ensureObject(multiClusterHub, subscription.CertManager(multiClusterHub), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
@@ -233,12 +231,12 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	result, err = r.ensureSubscription(multiClusterHub, subscription.CertWebhook(multiClusterHub))
+	result, err = r.ensureObject(multiClusterHub, subscription.CertWebhook(multiClusterHub), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
 
-	result, err = r.ensureSubscription(multiClusterHub, subscription.ConfigWatcher(multiClusterHub))
+	result, err = r.ensureObject(multiClusterHub, subscription.ConfigWatcher(multiClusterHub), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
@@ -256,6 +254,43 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	}
 
 	result, err = r.ingressDomain(multiClusterHub)
+	if result != nil {
+		return *result, err
+	}
+	// Install the rest of the subscriptions in no particular order
+	result, err = r.ensureObject(multiClusterHub, subscription.ManagementIngress(multiClusterHub, r.CacheSpec), subscription.Schema)
+	if result != nil {
+		return *result, err
+	}
+	result, err = r.ensureObject(multiClusterHub, subscription.ApplicationUI(multiClusterHub), subscription.Schema)
+	if result != nil {
+		return *result, err
+	}
+	result, err = r.ensureObject(multiClusterHub, subscription.Console(multiClusterHub, r.CacheSpec), subscription.Schema)
+	if result != nil {
+		return *result, err
+	}
+	result, err = r.ensureObject(multiClusterHub, subscription.GRC(multiClusterHub), subscription.Schema)
+	if result != nil {
+		return *result, err
+	}
+	result, err = r.ensureObject(multiClusterHub, subscription.KUIWebTerminal(multiClusterHub), subscription.Schema)
+	if result != nil {
+		return *result, err
+	}
+	result, err = r.ensureObject(multiClusterHub, subscription.MongoDB(multiClusterHub), subscription.Schema)
+	if result != nil {
+		return *result, err
+	}
+	result, err = r.ensureObject(multiClusterHub, subscription.RCM(multiClusterHub), subscription.Schema)
+	if result != nil {
+		return *result, err
+	}
+	result, err = r.ensureObject(multiClusterHub, subscription.Search(multiClusterHub), subscription.Schema)
+	if result != nil {
+		return *result, err
+	}
+	result, err = r.ensureObject(multiClusterHub, subscription.Topology(multiClusterHub), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}

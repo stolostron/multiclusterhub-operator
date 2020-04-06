@@ -3,13 +3,24 @@ package subscription
 import (
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
+var certManagerNamespace = "cert-manager"
+
+// certManagerNS returns the namespace to deploy cert manager objects
+func certManagerNS(m *operatorsv1alpha1.MultiClusterHub) string {
+	if m.Spec.CloudPakCompatibility {
+		return certManagerNamespace
+	}
+	return m.Namespace
+}
+
 // CertManager overrides the cert-manager chart
-func CertManager(m *operatorsv1alpha1.MultiClusterHub) *Subscription {
-	return &Subscription{
+func CertManager(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructured {
+	sub := &Subscription{
 		Name:      "cert-manager",
-		Namespace: utils.CertManagerNS(m),
+		Namespace: certManagerNS(m),
 		Overrides: map[string]interface{}{
 			"imageTagPostfix": imageSuffix(m),
 			"imagePullSecret": m.Spec.ImagePullSecret,
@@ -35,13 +46,14 @@ func CertManager(m *operatorsv1alpha1.MultiClusterHub) *Subscription {
 			},
 		},
 	}
+	return newSubscription(m, sub)
 }
 
 // CertWebhook overrides the cert-manager-webhook chart
-func CertWebhook(m *operatorsv1alpha1.MultiClusterHub) *Subscription {
-	return &Subscription{
+func CertWebhook(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructured {
+	sub := &Subscription{
 		Name:      "cert-manager-webhook",
-		Namespace: utils.CertManagerNS(m),
+		Namespace: certManagerNS(m),
 		Overrides: map[string]interface{}{
 			"imageTagPostfix": imageSuffix(m),
 			"pkiNamespace":    m.Namespace,
@@ -67,13 +79,14 @@ func CertWebhook(m *operatorsv1alpha1.MultiClusterHub) *Subscription {
 			},
 		},
 	}
+	return newSubscription(m, sub)
 }
 
 // ConfigWatcher overrides the configmap-watcher chart
-func ConfigWatcher(m *operatorsv1alpha1.MultiClusterHub) *Subscription {
-	return &Subscription{
+func ConfigWatcher(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructured {
+	sub := &Subscription{
 		Name:      "configmap-watcher",
-		Namespace: utils.CertManagerNS(m),
+		Namespace: certManagerNS(m),
 		Overrides: map[string]interface{}{
 			"imageTagPostfix": imageSuffix(m),
 			"global": map[string]interface{}{
@@ -89,4 +102,5 @@ func ConfigWatcher(m *operatorsv1alpha1.MultiClusterHub) *Subscription {
 			},
 		},
 	}
+	return newSubscription(m, sub)
 }
