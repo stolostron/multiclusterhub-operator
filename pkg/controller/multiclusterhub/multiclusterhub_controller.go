@@ -257,6 +257,27 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	if result != nil {
 		return *result, err
 	}
+
+	//Render the templates with a specified CR
+	renderer := rendering.NewRenderer(multiClusterHub, r.CacheSpec)
+	toDeploy, err := renderer.Render(r.client)
+	if err != nil {
+		reqLogger.Error(err, "Failed to render MultiClusterHub templates")
+		return reconcile.Result{}, err
+	}
+	//Deploy the resources
+	for _, res := range toDeploy {
+		if res.GetNamespace() == multiClusterHub.Namespace {
+			if err := controllerutil.SetControllerReference(multiClusterHub, res, r.scheme); err != nil {
+				reqLogger.Error(err, "Failed to set controller reference")
+			}
+		}
+		if err := deploying.Deploy(r.client, res); err != nil {
+			reqLogger.Error(err, fmt.Sprintf("Failed to deploy %s %s/%s", res.GetKind(), multiClusterHub.Namespace, res.GetName()))
+			return reconcile.Result{}, err
+		}
+	}
+
 	// Install the rest of the subscriptions in no particular order
 	result, err = r.ensureObject(multiClusterHub, subscription.ManagementIngress(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
@@ -293,26 +314,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	result, err = r.ensureObject(multiClusterHub, subscription.Topology(multiClusterHub), subscription.Schema)
 	if result != nil {
 		return *result, err
-	}
-
-	//Render the templates with a specified CR
-	renderer := rendering.NewRenderer(multiClusterHub, r.CacheSpec)
-	toDeploy, err := renderer.Render(r.client)
-	if err != nil {
-		reqLogger.Error(err, "Failed to render MultiClusterHub templates")
-		return reconcile.Result{}, err
-	}
-	//Deploy the resources
-	for _, res := range toDeploy {
-		if res.GetNamespace() == multiClusterHub.Namespace {
-			if err := controllerutil.SetControllerReference(multiClusterHub, res, r.scheme); err != nil {
-				reqLogger.Error(err, "Failed to set controller reference")
-			}
-		}
-		if err := deploying.Deploy(r.client, res); err != nil {
-			reqLogger.Error(err, fmt.Sprintf("Failed to deploy %s %s/%s", res.GetKind(), multiClusterHub.Namespace, res.GetName()))
-			return reconcile.Result{}, err
-		}
 	}
 
 	// Update the CR status
