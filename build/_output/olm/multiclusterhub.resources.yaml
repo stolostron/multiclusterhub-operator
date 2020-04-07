@@ -220,6 +220,12 @@ data:
                         description: Spec of OS
                         type: string
                     type: object
+                  replicaCount:
+                    default: 1
+                    description: ReplicaCount for HA supportß
+                    format: int32
+                    minimum: 1
+                    type: integer
                   version:
                     description: Version of the MultiCluster hub
                     type: string
@@ -346,13 +352,13 @@ data:
                 "kind": "MultiClusterHub",
                 "metadata": {
                   "name": "example-multiclusterhub",
-                  "namespace": "default"
+                  "namespace": "open-cluster-management"
                 },
                 "spec": {
                   "imagePullPolicy": "Always",
                   "imagePullSecret": "quay-secret",
                   "imageRepository": "quay.io/open-cluster-management",
-                  "imageTagSuffix": "",
+                  "imageTagSuffix": "SNAPSHOT-2020-04-07-16-53-34",
                   "version": "latest"
                 }
               }
@@ -392,9 +398,6 @@ data:
             version: v1alpha1
         description: Placeholder description
         displayName: Multiclusterhub Operator
-        icon:
-        - base64data: ""
-          mediatype: ""
         install:
           spec:
             clusterPermissions:
@@ -598,10 +601,6 @@ data:
           type: MultiNamespace
         - supported: false
           type: AllNamespaces
-        keywords:
-        - ""
-        maintainers:
-        - {}
         maturity: alpha
         provider: {}
         version: 0.0.1

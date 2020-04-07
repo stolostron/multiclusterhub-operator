@@ -2,10 +2,10 @@ apiVersion: operators.open-cluster-management.io/v1alpha1
 kind: MultiClusterHub
 metadata:
   name: example-multiclusterhub
-  namespace: default
+  namespace: open-cluster-management
 spec:
   version: latest
   imageRepository: "quay.io/open-cluster-management"
-  imageTagSuffix: ""
+  imageTagSuffix: "SNAPSHOT-2020-04-07-16-53-34"
   imagePullPolicy: Always
   imagePullSecret: quay-secret

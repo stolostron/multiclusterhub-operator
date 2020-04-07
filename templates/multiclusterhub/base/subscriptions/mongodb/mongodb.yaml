@@ -35,7 +35,7 @@ spec:
             image:
               pullPolicy: "{{PULLPOLICY}}"
               repository: "{{IMAGEREPO}}"
-          replicas: "1"
+          replicas: "{{REPLICAS}}"
           tls:
             casecret: "multicloud-ca-cert"
             issuer: "multicloud-ca-issuer"

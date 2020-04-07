@@ -344,6 +344,9 @@ func generatePass(length int) string {
 
 // SetDefaults Updates MultiClusterHub resource with proper defaults
 func (r *ReconcileMultiClusterHub) SetDefaults(m *operatorsv1alpha1.MultiClusterHub) (*reconcile.Result, error) {
+
+	replicas := int32(1)
+
 	if m.Spec.Version == "" {
 		m.Spec.Version = utils.LatestVerison
 	}
@@ -378,6 +381,10 @@ func (r *ReconcileMultiClusterHub) SetDefaults(m *operatorsv1alpha1.MultiCluster
 			return &reconcile.Result{}, err
 		}
 		m.Spec.Etcd.StorageClass = storageClass
+	}
+
+	if m.Spec.ReplicaCount == nil {
+		m.Spec.ReplicaCount = &replicas
 	}
 	return nil, nil
 }
@@ -454,9 +461,6 @@ func (r *ReconcileMultiClusterHub) finalizeHub(reqLogger logr.Logger, m *operato
 		return err
 	}
 	if err := r.cleanupMutatingWebhooks(reqLogger, m); err != nil {
-		return err
-	}
-	if err := r.cleanupCRDs(reqLogger, m); err != nil {
 		return err
 	}
 	if m.Spec.CloudPakCompatibility {

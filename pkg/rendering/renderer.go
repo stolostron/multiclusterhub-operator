@@ -143,6 +143,9 @@ func (r *Renderer) renderDeployments(res *resource.Resource) (*unstructured.Unst
 		}
 		return &unstructured.Unstructured{Object: res.Map()}, nil
 	case controllerName:
+		if err := patching.ApplyControllerPatches(res, r.cr); err != nil {
+			return nil, err
+		}
 		return &unstructured.Unstructured{Object: res.Map()}, nil
 	case webhookName:
 		if err := patching.ApplyWebhookPatches(res, r.cr); err != nil {
@@ -228,6 +231,7 @@ func stringValueReplace(to_replace string, renderer Renderer) string {
 	if renderer.cr.Spec.IPv6 {
 		mongoNetworkIPVersion = "ipv6"
 	}
+	replicas := renderer.cr.Spec.ReplicaCount
 
 	replaced = strings.ReplaceAll(replaced, "{{SUFFIX}}", string(imageTagSuffix))
 	replaced = strings.ReplaceAll(replaced, "{{IMAGEREPO}}", string(renderer.cr.Spec.ImageRepository))
@@ -238,6 +242,7 @@ func stringValueReplace(to_replace string, renderer Renderer) string {
 	replaced = strings.ReplaceAll(replaced, "{{STORAGECLASS}}", string(renderer.cr.Spec.Mongo.StorageClass)) //Assuming this is specifically for Mongo.
 	replaced = strings.ReplaceAll(replaced, "{{STORAGE}}", string(renderer.cr.Spec.Mongo.Storage))
 	replaced = strings.ReplaceAll(replaced, "{{NETWORK_IP_VERSION}}", string(mongoNetworkIPVersion))
+	replaced = strings.ReplaceAll(replaced, "{{REPLICAS}}", fmt.Sprintf("%+v", *replicas))
 
 	return replaced
 }
@@ -450,6 +455,10 @@ func (r *Renderer) renderEtcdCluster(res *resource.Resource) (*unstructured.Unst
 	spec, ok := u.Object["spec"].(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("failed to find Etcd spec field")
+	}
+
+	if r.cr.Spec.ReplicaCount != nil {
+		spec["size"] = r.cr.Spec.ReplicaCount
 	}
 
 	pod, ok := spec["pod"].(map[string]interface{})
