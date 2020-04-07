@@ -501,8 +501,7 @@ data:
                 resources:
                 - customresourcedefinitions
                 verbs:
-                - get
-                - create
+                - '*'
               - apiGroups:
                 - apps.open-cluster-management.io
                 resources:
