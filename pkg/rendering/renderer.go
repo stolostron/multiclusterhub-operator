@@ -60,6 +60,7 @@ func NewRenderer(multipleClusterHub *operatorsv1alpha1.MultiClusterHub, cacheSpe
 		"Channel":                      renderer.renderNamespace,
 		"HiveConfig":                   renderer.renderHiveConfig,
 		"SecurityContextConstraints":   renderer.renderSecContextConstraints,
+		"CustomResourceDefinition":     renderer.renderCRD,
 	}
 	return renderer
 }
@@ -191,6 +192,12 @@ func (r *Renderer) renderClusterRoleBinding(res *resource.Resource) (*unstructur
 	}
 
 	return &unstructured.Unstructured{Object: newCRB}, nil
+}
+
+func (r *Renderer) renderCRD(res *resource.Resource) (*unstructured.Unstructured, error) {
+	u := &unstructured.Unstructured{Object: res.Map()}
+	utils.AddInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
+	return u, nil
 }
 
 func (r *Renderer) renderMutatingWebhookConfiguration(res *resource.Resource) (*unstructured.Unstructured, error) {
