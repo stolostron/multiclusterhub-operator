@@ -34,7 +34,8 @@ spec:
           description: MultiClusterHubSpec defines the desired state of MultiClusterHub
           properties:
             cloudPakCompatibility:
-              description: Flag to ensure install is compatible with IBM Cloud Paks
+              description: Flag to install cert-manager into its own namespace for
+                IBM Cloud Pak compatibility
               type: boolean
             etcd:
               description: Spec of Etcd
