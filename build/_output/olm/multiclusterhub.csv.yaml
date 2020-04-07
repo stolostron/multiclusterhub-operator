@@ -54,6 +54,9 @@
         version: v1alpha1
     description: Placeholder description
     displayName: Multiclusterhub Operator
+    icon:
+    - base64data: ""
+      mediatype: ""
     install:
       spec:
         clusterPermissions:
@@ -160,8 +163,7 @@
             resources:
             - customresourcedefinitions
             verbs:
-            - get
-            - create
+            - '*'
           - apiGroups:
             - apps.open-cluster-management.io
             resources:
@@ -258,6 +260,10 @@
       type: MultiNamespace
     - supported: false
       type: AllNamespaces
+    keywords:
+    - ""
+    maintainers:
+    - {}
     maturity: alpha
     provider: {}
     version: 0.0.1
