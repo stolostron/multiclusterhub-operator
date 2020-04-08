@@ -5,10 +5,13 @@ import (
 	"time"
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -45,6 +48,17 @@ func (r *ReconcileMultiClusterHub) ensureDeployment(m *operatorsv1alpha1.MultiCl
 		// Error that isn't due to the deployment not existing
 		dplog.Error(err, "Failed to get Deployment")
 		return &reconcile.Result{}, err
+	}
+
+	desired, needsUpdate := helmrepo.ValidateDeployment(m, found)
+	if needsUpdate {
+		err = r.client.Update(context.TODO(), desired)
+		if err != nil {
+			dplog.Error(err, "Failed to update Deployment.")
+			return &reconcile.Result{}, err
+		}
+		// Spec updated - return and requeue
+		return &reconcile.Result{Requeue: true}, nil
 	}
 
 	return nil, nil
@@ -122,6 +136,58 @@ func (r *ReconcileMultiClusterHub) ensureSecret(m *operatorsv1alpha1.MultiCluste
 		// Error that isn't due to the secret not existing
 		selog.Error(err, "Failed to get Secret")
 		return &reconcile.Result{}, err
+	}
+
+	return nil, nil
+}
+
+func (r *ReconcileMultiClusterHub) ensureObject(m *operatorsv1alpha1.MultiClusterHub, u *unstructured.Unstructured, schema schema.GroupVersionResource) (*reconcile.Result, error) {
+	obLog := log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName(), "Kind", u.GetKind())
+
+	dc, err := createDynamicClient()
+	if err != nil {
+		obLog.Error(err, "Failed to create dynamic client")
+		return &reconcile.Result{}, nil
+	}
+
+	// Try to get API group instance
+	found, err := dc.Resource(schema).Namespace(u.GetNamespace()).Get(u.GetName(), metav1.GetOptions{})
+	if err != nil && errors.IsNotFound(err) {
+
+		// Create the resource
+		_, err = dc.Resource(schema).Namespace(u.GetNamespace()).Create(u, metav1.CreateOptions{})
+		if err != nil {
+			// Creation failed
+			obLog.Error(err, "Failed to create new instance")
+			return &reconcile.Result{}, err
+		}
+
+		// Creation was successful
+		obLog.Info("Created new object")
+		return nil, nil
+
+	} else if err != nil {
+		// Error that isn't due to the resource not existing
+		obLog.Error(err, "Failed to get resource", "resource", schema.GroupResource().String())
+		return &reconcile.Result{}, err
+	}
+
+	// Validate object based on type
+	switch kind := u.GetKind(); kind {
+	case "Subscription":
+		updated, needsUpdate := subscription.Validate(found, u)
+		if needsUpdate {
+			obLog.Info("Updating subscription")
+			// Update the resource
+			_, err = dc.Resource(schema).Namespace(u.GetNamespace()).Update(updated, metav1.UpdateOptions{})
+			if err != nil {
+				// Update failed
+				obLog.Error(err, "Failed to update object")
+				return &reconcile.Result{}, err
+			}
+			// Spec updated - return and requeue
+			return &reconcile.Result{Requeue: true}, nil
+		}
 	}
 
 	return nil, nil
