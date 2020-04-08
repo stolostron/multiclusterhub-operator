@@ -89,7 +89,7 @@ unsubscribe:
 	@oc delete crd multiclusterhubs.operators.open-cluster-management.io || true
 	@oc delete csv multiclusterhub-operator.v0.0.1 || true
 	@oc delete csv etcdoperator.v0.9.4 || true
-	@oc delete csv multicluster-operators-subscription.v0.1.4 || true
+	@oc delete csv multicluster-operators-subscription.v0.1.5 || true
 	@oc delete subscription multiclusterhub-operator || true
 	@oc delete subscription etcdoperator.v0.9.4 || true
 	@oc delete catalogsource multiclusterhub-operator-registry || true
