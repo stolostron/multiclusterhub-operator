@@ -30,7 +30,9 @@ import (
 
 	"github.com/go-logr/logr"
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/deploying"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
@@ -192,21 +194,18 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		log.Info("MultiClusterHub successfully updated")
 		// return reconcile.Result{}, nil
 	}
-	result, err = r.ensureDeployment(multiClusterHub, r.helmRepoDeployment(multiClusterHub))
-	if result != nil {
-		return *result, err
-	}
-	result, err = r.handleHelmRepoChanges(multiClusterHub)
+
+	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}
 
-	result, err = r.ensureService(multiClusterHub, r.repoService(multiClusterHub))
+	result, err = r.ensureService(multiClusterHub, helmrepo.Service(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}
 
-	result, err = r.ensureChannel(multiClusterHub, r.helmChannel(multiClusterHub))
+	result, err = r.ensureObject(multiClusterHub, channel.Channel(multiClusterHub), channel.Schema)
 	if result != nil {
 		return *result, err
 	}
@@ -218,7 +217,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		}
 	}
 
-	result, err = r.ensureSubscription(multiClusterHub, subscription.CertManager(multiClusterHub))
+	result, err = r.ensureObject(multiClusterHub, subscription.CertManager(multiClusterHub), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
@@ -229,12 +228,12 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	result, err = r.ensureSubscription(multiClusterHub, subscription.CertWebhook(multiClusterHub))
+	result, err = r.ensureObject(multiClusterHub, subscription.CertWebhook(multiClusterHub), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
 
-	result, err = r.ensureSubscription(multiClusterHub, subscription.ConfigWatcher(multiClusterHub))
+	result, err = r.ensureObject(multiClusterHub, subscription.ConfigWatcher(multiClusterHub), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
@@ -274,6 +273,44 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 			reqLogger.Error(err, fmt.Sprintf("Failed to deploy %s %s/%s", res.GetKind(), multiClusterHub.Namespace, res.GetName()))
 			return reconcile.Result{}, err
 		}
+	}
+
+	// Install the rest of the subscriptions in no particular order
+	result, err = r.ensureObject(multiClusterHub, subscription.ManagementIngress(multiClusterHub, r.CacheSpec), subscription.Schema)
+	if result != nil {
+		return *result, err
+	}
+	result, err = r.ensureObject(multiClusterHub, subscription.ApplicationUI(multiClusterHub), subscription.Schema)
+	if result != nil {
+		return *result, err
+	}
+	result, err = r.ensureObject(multiClusterHub, subscription.Console(multiClusterHub, r.CacheSpec), subscription.Schema)
+	if result != nil {
+		return *result, err
+	}
+	result, err = r.ensureObject(multiClusterHub, subscription.GRC(multiClusterHub), subscription.Schema)
+	if result != nil {
+		return *result, err
+	}
+	result, err = r.ensureObject(multiClusterHub, subscription.KUIWebTerminal(multiClusterHub), subscription.Schema)
+	if result != nil {
+		return *result, err
+	}
+	result, err = r.ensureObject(multiClusterHub, subscription.MongoDB(multiClusterHub), subscription.Schema)
+	if result != nil {
+		return *result, err
+	}
+	result, err = r.ensureObject(multiClusterHub, subscription.RCM(multiClusterHub), subscription.Schema)
+	if result != nil {
+		return *result, err
+	}
+	result, err = r.ensureObject(multiClusterHub, subscription.Search(multiClusterHub), subscription.Schema)
+	if result != nil {
+		return *result, err
+	}
+	result, err = r.ensureObject(multiClusterHub, subscription.Topology(multiClusterHub), subscription.Schema)
+	if result != nil {
+		return *result, err
 	}
 
 	// Update the CR status
@@ -357,7 +394,7 @@ func (r *ReconcileMultiClusterHub) SetDefaults(m *operatorsv1alpha1.MultiCluster
 	}
 
 	if m.Spec.Mongo.Storage == "" {
-		m.Spec.Mongo.Storage = "1Gi"
+		m.Spec.Mongo.Storage = "5Gi"
 	}
 
 	if m.Spec.Mongo.StorageClass == "" {

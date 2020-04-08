@@ -1,10 +1,10 @@
 resources:
 - rbac
 - security_context_constraints
+- crds
 - hive
 - apiserver
 - controller
 - etcd
 - webhook
 - certificates
-- subscriptions
