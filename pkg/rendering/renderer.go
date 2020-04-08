@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
-	"strings"
 
 	"github.com/fatih/structs"
 	v1 "k8s.io/api/rbac/v1"
@@ -54,7 +53,7 @@ func NewRenderer(multipleClusterHub *operatorsv1alpha1.MultiClusterHub, cacheSpe
 		"ClusterRole":                  renderer.renderClusterRole,
 		"MutatingWebhookConfiguration": renderer.renderMutatingWebhookConfiguration,
 		"Secret":                       renderer.renderSecret,
-		"Subscription":                 renderer.renderSubscription,
+		"Subscription":                 renderer.renderNamespace,
 		"EtcdCluster":                  renderer.renderEtcdCluster,
 		"StatefulSet":                  renderer.renderNamespace,
 		"Channel":                      renderer.renderNamespace,
@@ -212,103 +211,6 @@ func (r *Renderer) renderMutatingWebhookConfiguration(res *resource.Resource) (*
 
 	service["namespace"] = r.cr.Namespace
 	utils.AddInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
-	return u, nil
-}
-
-func stringValueReplace(to_replace string, renderer Renderer) string {
-
-	replaced := to_replace
-
-	imageTagSuffix := renderer.cr.Spec.ImageTagSuffix
-	if imageTagSuffix != "" {
-		imageTagSuffix = "-" + imageTagSuffix
-	}
-
-	mongoNetworkIPVersion := "ipv4"
-	if renderer.cr.Spec.IPv6 {
-		mongoNetworkIPVersion = "ipv6"
-	}
-
-	replaced = strings.ReplaceAll(replaced, "{{SUFFIX}}", string(imageTagSuffix))
-	replaced = strings.ReplaceAll(replaced, "{{IMAGEREPO}}", string(renderer.cr.Spec.ImageRepository))
-	replaced = strings.ReplaceAll(replaced, "{{PULLSECRET}}", string(renderer.cr.Spec.ImagePullSecret))
-	replaced = strings.ReplaceAll(replaced, "{{NAMESPACE}}", string(renderer.cr.Namespace))
-	replaced = strings.ReplaceAll(replaced, "{{PULLPOLICY}}", string(renderer.cr.Spec.ImagePullPolicy))
-	replaced = strings.ReplaceAll(replaced, "{{DOMAIN}}", string(renderer.cacheSpec.IngressDomain))
-	replaced = strings.ReplaceAll(replaced, "{{STORAGECLASS}}", string(renderer.cr.Spec.Mongo.StorageClass)) //Assuming this is specifically for Mongo.
-	replaced = strings.ReplaceAll(replaced, "{{STORAGE}}", string(renderer.cr.Spec.Mongo.Storage))
-	replaced = strings.ReplaceAll(replaced, "{{NETWORK_IP_VERSION}}", string(mongoNetworkIPVersion))
-
-	return replaced
-}
-
-func replaceInValues(values map[string]interface{}, renderer *Renderer) error {
-	for in_key := range values {
-		isPrimitiveType := reflect.TypeOf(values[in_key]).String() == "string" || reflect.TypeOf(values[in_key]).String() == "bool" || reflect.TypeOf(values[in_key]).String() == "int"
-		if isPrimitiveType {
-			if reflect.TypeOf(values[in_key]).String() == "string" {
-				values[in_key] = stringValueReplace(values[in_key].(string), *renderer)
-			} // add other options for other primitives when required
-		} else if reflect.TypeOf(values[in_key]).Kind().String() == "slice" {
-			string_slice := values[in_key].([]interface{})
-			for i := range string_slice {
-				string_slice[i] = stringValueReplace(string_slice[i].(string), *renderer) // assumes only slices of strings, which is OK for now
-			}
-		} else { // reflect.TypeOf(values[in_key]).Kind().String() == "map"
-			in_value, ok := values[in_key].(map[string]interface{})
-			if !ok {
-				return fmt.Errorf("failed to map values")
-			}
-			err := replaceInValues(in_value, renderer)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func (r *Renderer) renderSubscription(res *resource.Resource) (*unstructured.Unstructured, error) {
-	u := &unstructured.Unstructured{Object: res.Map()}
-
-	// Default to base renderFunc if not an apps.open-cluster-management.io/v1 subscription
-	if u.GetAPIVersion() != "apps.open-cluster-management.io/v1" {
-		return r.renderNamespace(res)
-	}
-
-	// apps.open-cluster-management.io/v1 subscription handling
-	metadata, ok := u.Object["metadata"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf(metadataErr)
-	}
-
-	metadata["namespace"] = r.cr.Namespace
-
-	// Update channel to prepend the CRs namespace
-	spec, ok := u.Object["spec"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("failed to find subscription spec field")
-	}
-	spec["channel"] = fmt.Sprintf("%s/%s", r.cr.Namespace, spec["channel"])
-
-	// Check if contains a packageOverrides
-	packageOverrides, ok := spec["packageOverrides"].([]interface{})
-	if ok {
-		for i := 0; i < len(packageOverrides); i++ {
-			packageOverride, ok := packageOverrides[i].(map[string]interface{})
-			if ok {
-				override := packageOverride["packageOverrides"].([]interface{})
-				for j := 0; j < len(override); j++ {
-					packageData, _ := override[j].(map[string]interface{})
-					values, _ := packageData["value"].(map[string]interface{})
-					err := replaceInValues(values, r)
-					if err != nil {
-						return nil, err
-					}
-				}
-			}
-		}
-	}
 	return u, nil
 }
 
