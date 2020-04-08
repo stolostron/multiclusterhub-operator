@@ -220,6 +220,9 @@ data:
                         description: Spec of OS
                         type: string
                     type: object
+                  replicaCount:
+                    description: ReplicaCount for HA support
+                    type: integer
                   version:
                     description: Version of the MultiCluster hub
                     type: string

@@ -36,6 +36,9 @@ func CertManager(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructure
 					"value": utils.CertManagerNS(m),
 				},
 			},
+			"hubconfig": map[string]interface{}{
+				"replicaCount": m.Spec.ReplicaCount,
+			},
 		},
 	}
 	return newSubscription(m, sub)
@@ -69,6 +72,9 @@ func CertWebhook(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructure
 				"create": true,
 				"name":   "cert-manager-webhook",
 			},
+			"hubconfig": map[string]interface{}{
+				"replicaCount": m.Spec.ReplicaCount,
+			},
 		},
 	}
 	return newSubscription(m, sub)
@@ -91,6 +97,9 @@ func ConfigWatcher(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructu
 			"serviceAccount": map[string]interface{}{
 				"create": true,
 				"name":   "cert-manager-config",
+			},
+			"hubconfig": map[string]interface{}{
+				"replicaCount": m.Spec.ReplicaCount,
 			},
 		},
 	}

@@ -416,6 +416,10 @@ func (r *ReconcileMultiClusterHub) SetDefaults(m *operatorsv1alpha1.MultiCluster
 		}
 		m.Spec.Etcd.StorageClass = storageClass
 	}
+
+	if m.Spec.ReplicaCount <= 0 {
+		m.Spec.ReplicaCount = 1
+	}
 	return nil, nil
 }
 

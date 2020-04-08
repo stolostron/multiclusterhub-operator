@@ -142,6 +142,9 @@ func (r *Renderer) renderDeployments(res *resource.Resource) (*unstructured.Unst
 		}
 		return &unstructured.Unstructured{Object: res.Map()}, nil
 	case controllerName:
+		if err := patching.ApplyControllerPatches(res, r.cr); err != nil {
+			return nil, err
+		}
 		return &unstructured.Unstructured{Object: res.Map()}, nil
 	case webhookName:
 		if err := patching.ApplyWebhookPatches(res, r.cr); err != nil {
@@ -353,6 +356,8 @@ func (r *Renderer) renderEtcdCluster(res *resource.Resource) (*unstructured.Unst
 	if !ok {
 		return nil, fmt.Errorf("failed to find Etcd spec field")
 	}
+
+	spec["size"] = r.cr.Spec.ReplicaCount
 
 	pod, ok := spec["pod"].(map[string]interface{})
 	if !ok {
