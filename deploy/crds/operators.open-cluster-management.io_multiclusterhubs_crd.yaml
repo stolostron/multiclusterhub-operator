@@ -202,10 +202,7 @@ spec:
                   type: string
               type: object
             replicaCount:
-              default: 1
-              description: ReplicaCount for HA supportß
-              format: int32
-              minimum: 1
+              description: ReplicaCount for HA support
               type: integer
             version:
               description: Version of the MultiCluster hub

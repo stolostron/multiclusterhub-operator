@@ -344,9 +344,6 @@ func generatePass(length int) string {
 
 // SetDefaults Updates MultiClusterHub resource with proper defaults
 func (r *ReconcileMultiClusterHub) SetDefaults(m *operatorsv1alpha1.MultiClusterHub) (*reconcile.Result, error) {
-
-	replicas := int32(1)
-
 	if m.Spec.Version == "" {
 		m.Spec.Version = utils.LatestVerison
 	}
@@ -383,8 +380,8 @@ func (r *ReconcileMultiClusterHub) SetDefaults(m *operatorsv1alpha1.MultiCluster
 		m.Spec.Etcd.StorageClass = storageClass
 	}
 
-	if m.Spec.ReplicaCount == nil {
-		m.Spec.ReplicaCount = &replicas
+	if m.Spec.ReplicaCount <= 0 {
+		m.Spec.ReplicaCount = 1
 	}
 	return nil, nil
 }

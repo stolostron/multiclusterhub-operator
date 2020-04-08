@@ -4,4 +4,4 @@ metadata:
   name: default
 spec:
   targetNamespaces:
-    - open-cluster-management
+    - default

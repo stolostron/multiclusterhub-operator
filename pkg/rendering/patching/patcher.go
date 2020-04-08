@@ -40,7 +40,7 @@ func ApplyGlobalPatches(res *resource.Resource, multipleClusterHub *operatorsv1a
 }
 
 func ApplyAPIServerPatches(res *resource.Resource, multipleClusterHub *operatorsv1alpha1.MultiClusterHub) error {
-	replicasPatch := generateReplicasPatch(*multipleClusterHub.Spec.ReplicaCount)
+	replicasPatch := generateReplicasPatch(multipleClusterHub.Spec.ReplicaCount)
 	if err := res.Patch(replicasPatch); err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func ApplyAPIServerPatches(res *resource.Resource, multipleClusterHub *operators
 }
 
 func ApplyControllerPatches(res *resource.Resource, multipleClusterHub *operatorsv1alpha1.MultiClusterHub) error {
-	replicasPatch := generateReplicasPatch(*multipleClusterHub.Spec.ReplicaCount)
+	replicasPatch := generateReplicasPatch(multipleClusterHub.Spec.ReplicaCount)
 	if err := res.Patch(replicasPatch); err != nil {
 		return err
 	}
@@ -206,7 +206,7 @@ func generateMongoSecrets(mch *operatorsv1alpha1.MultiClusterHub) ([]corev1.EnvV
 	return envs, volumes, volumeMounts
 }
 
-func generateReplicasPatch(replicas int32) ifc.Kunstructured {
+func generateReplicasPatch(replicas int) ifc.Kunstructured {
 	return kunstruct.NewKunstructuredFactoryImpl().FromMap(map[string]interface{}{
 		"spec": map[string]interface{}{
 			"replicas": replicas,

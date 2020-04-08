@@ -8,5 +8,5 @@ spec:
   installPlanApproval: Automatic
   name: multiclusterhub-operator
   source: multiclusterhub-operator-registry
-  sourceNamespace: open-cluster-management
+  sourceNamespace: default
   startingCSV: multiclusterhub-operator.v0.0.1
