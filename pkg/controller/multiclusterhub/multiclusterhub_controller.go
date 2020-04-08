@@ -497,6 +497,9 @@ func (r *ReconcileMultiClusterHub) finalizeHub(reqLogger logr.Logger, m *operato
 	if err := r.cleanupMutatingWebhooks(reqLogger, m); err != nil {
 		return err
 	}
+	if err := r.cleanupCRDs(reqLogger, m); err != nil {
+		return err
+	}
 	if m.Spec.CloudPakCompatibility {
 		if err := r.cleanupPullSecret(reqLogger, m); err != nil {
 			return err
