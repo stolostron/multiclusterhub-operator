@@ -357,7 +357,7 @@ func (r *ReconcileMultiClusterHub) SetDefaults(m *operatorsv1alpha1.MultiCluster
 	}
 
 	if m.Spec.Mongo.Storage == "" {
-		m.Spec.Mongo.Storage = "1Gi"
+		m.Spec.Mongo.Storage = "5Gi"
 	}
 
 	if m.Spec.Mongo.StorageClass == "" {
