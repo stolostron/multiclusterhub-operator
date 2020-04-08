@@ -14,8 +14,7 @@ func KUIWebTerminal(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstruct
 			"imageTagPostfix": imageSuffix(m),
 			"pullSecret":      m.Spec.ImagePullSecret,
 			"proxy": map[string]interface{}{
-				"clusterIP":   "icp-management-ingress",
-				"clusterPort": "{{ router_https_port }}",
+				"clusterIP": "icp-management-ingress",
 				"image": map[string]interface{}{
 					"repository": m.Spec.ImageRepository,
 					"pullPolicy": m.Spec.ImagePullPolicy,

@@ -59,7 +59,8 @@ func newSubscription(m *operatorsv1alpha1.MultiClusterHub, s *Subscription) *uns
 	return sub
 }
 
-// Validate returns true if an update is needed to reconcile differences with the current spec.
+// Validate returns true if an update is needed to reconcile differences with the current spec. If an update
+// is needed it returns the object with the new spec to update with.
 func Validate(found *unstructured.Unstructured, want *unstructured.Unstructured) (*unstructured.Unstructured, bool) {
 	var log = logf.Log.WithValues("Namespace", found.GetNamespace(), "Name", found.GetName(), "Kind", found.GetKind())
 

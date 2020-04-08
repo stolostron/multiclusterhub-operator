@@ -8,19 +8,11 @@ import (
 
 var certManagerNamespace = "cert-manager"
 
-// certManagerNS returns the namespace to deploy cert manager objects
-func certManagerNS(m *operatorsv1alpha1.MultiClusterHub) string {
-	if m.Spec.CloudPakCompatibility {
-		return certManagerNamespace
-	}
-	return m.Namespace
-}
-
 // CertManager overrides the cert-manager chart
 func CertManager(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "cert-manager",
-		Namespace: certManagerNS(m),
+		Namespace: utils.CertManagerNS(m),
 		Overrides: map[string]interface{}{
 			"imageTagPostfix": imageSuffix(m),
 			"imagePullSecret": m.Spec.ImagePullSecret,
@@ -53,7 +45,7 @@ func CertManager(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructure
 func CertWebhook(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "cert-manager-webhook",
-		Namespace: certManagerNS(m),
+		Namespace: utils.CertManagerNS(m),
 		Overrides: map[string]interface{}{
 			"imageTagPostfix": imageSuffix(m),
 			"pkiNamespace":    m.Namespace,
@@ -86,7 +78,7 @@ func CertWebhook(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructure
 func ConfigWatcher(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "configmap-watcher",
-		Namespace: certManagerNS(m),
+		Namespace: utils.CertManagerNS(m),
 		Overrides: map[string]interface{}{
 			"imageTagPostfix": imageSuffix(m),
 			"global": map[string]interface{}{
