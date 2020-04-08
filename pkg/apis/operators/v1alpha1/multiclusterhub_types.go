@@ -28,6 +28,10 @@ type MultiClusterHubSpec struct {
 	// +optional
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
 
+	// ReplicaCount for HA support
+	// +optional
+	ReplicaCount int `json:"replicaCount"`
+
 	// Flag for IPv6
 	// +optional
 	IPv6 bool `json:"ipv6"`

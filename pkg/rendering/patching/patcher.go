@@ -40,6 +40,11 @@ func ApplyGlobalPatches(res *resource.Resource, multipleClusterHub *operatorsv1a
 }
 
 func ApplyAPIServerPatches(res *resource.Resource, multipleClusterHub *operatorsv1alpha1.MultiClusterHub) error {
+	replicasPatch := generateReplicasPatch(multipleClusterHub.Spec.ReplicaCount)
+	if err := res.Patch(replicasPatch); err != nil {
+		return err
+	}
+
 	etcdServer := fmt.Sprintf("http://etcd-cluster.%s.svc.cluster.local:2379", multipleClusterHub.Namespace)
 	args := make(map[string]string)
 	args["etcd-servers"] = etcdServer
@@ -84,6 +89,14 @@ func ApplyAPIServerPatches(res *resource.Resource, multipleClusterHub *operators
 		return err
 	}
 	return res.Patch(argsPatch)
+}
+
+func ApplyControllerPatches(res *resource.Resource, multipleClusterHub *operatorsv1alpha1.MultiClusterHub) error {
+	replicasPatch := generateReplicasPatch(multipleClusterHub.Spec.ReplicaCount)
+	if err := res.Patch(replicasPatch); err != nil {
+		return err
+	}
+	return nil
 }
 
 func ApplyWebhookPatches(res *resource.Resource, multipleClusterHub *operatorsv1alpha1.MultiClusterHub) error {
@@ -191,6 +204,14 @@ func generateMongoSecrets(mch *operatorsv1alpha1.MultiClusterHub) ([]corev1.EnvV
 	volumeMounts = append(volumeMounts, corev1.VolumeMount{MountPath: "/certs/mongodb-client", Name: "mongodb-client-cert"})
 
 	return envs, volumes, volumeMounts
+}
+
+func generateReplicasPatch(replicas int) ifc.Kunstructured {
+	return kunstruct.NewKunstructuredFactoryImpl().FromMap(map[string]interface{}{
+		"spec": map[string]interface{}{
+			"replicas": replicas,
+		},
+	})
 }
 
 func generateImagePatch(res *resource.Resource, mch *operatorsv1alpha1.MultiClusterHub) (ifc.Kunstructured, error) {

@@ -106,5 +106,9 @@ func MchIsValid(m *operatorsv1alpha1.MultiClusterHub) bool {
 		return false
 	}
 
+	if m.Spec.ReplicaCount <= 0 {
+		return false
+	}
+
 	return true
 }

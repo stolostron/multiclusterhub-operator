@@ -72,17 +72,17 @@ fi
 oc project $NAMESPACE
 
 operatorSDKVersion=$(operator-sdk version | cut -d, -f 1 | tr -d '"' | cut -d ' ' -f 3)
-if [[ "$operatorSDKVersion" != "v0.15.1" ]]; then
-    echo "Must install operator-sdk v0.15.1."
+if [[ "$operatorSDKVersion" != "v0.16.0" ]]; then
+    echo "Must install operator-sdk v0.16.0."
     while [[ "$_install" != "Y" ]] && [[ "$_install" != "N" ]] # While string is different or empty...
     do
-        read -p "Install operator-sdk v0.15.1? (Y/N): " _install
+        read -p "Install operator-sdk v0.16.0? (Y/N): " _install
     done
     if [[ "$_install" == "Y" ]]; then
-        echo "Installing operator-sdk v0.15.1 ..."
+        echo "Installing operator-sdk v0.16.0 ..."
         make deps
     else
-        echo "Must install operator-sdk v0.15.1 ... Exiting"
+        echo "Must install operator-sdk v0.16.0 ... Exiting"
         exit 1
     fi
 fi
