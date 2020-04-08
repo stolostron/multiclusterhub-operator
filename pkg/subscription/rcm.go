@@ -28,6 +28,9 @@ func RCM(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructured {
 					"pullSecret": m.Spec.ImagePullSecret,
 				},
 			},
+			"hubconfig": map[string]interface{}{
+				"replicaCount": m.Spec.ReplicaCount,
+			},
 		},
 	}
 	return newSubscription(m, sub)

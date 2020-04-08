@@ -20,6 +20,9 @@ func KUIWebTerminal(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstruct
 					"pullPolicy": m.Spec.ImagePullPolicy,
 				},
 			},
+			"hubconfig": map[string]interface{}{
+				"replicaCount": m.Spec.ReplicaCount,
+			},
 		},
 	}
 	return newSubscription(m, sub)

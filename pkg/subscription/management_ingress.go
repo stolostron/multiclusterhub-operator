@@ -19,6 +19,9 @@ func ManagementIngress(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSp
 				"pullPolicy": m.Spec.ImagePullPolicy,
 			},
 			"cluster_basedomain": cache.IngressDomain,
+			"hubconfig": map[string]interface{}{
+				"replicaCount": m.Spec.ReplicaCount,
+			},
 		},
 	}
 	return newSubscription(m, sub)
