@@ -420,6 +420,10 @@ func (r *ReconcileMultiClusterHub) SetDefaults(m *operatorsv1alpha1.MultiCluster
 	if m.Spec.ReplicaCount <= 0 {
 		m.Spec.ReplicaCount = 1
 	}
+
+	if m.Spec.Mongo.ReplicaCount <= 0 {
+		m.Spec.Mongo.ReplicaCount = 1
+	}
 	return nil, nil
 }
 
