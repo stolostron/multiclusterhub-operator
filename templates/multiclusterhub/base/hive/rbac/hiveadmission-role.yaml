@@ -1,6 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
+  annotations:
   name: system:openshift:hive:hiveadmission
 rules:
 - apiGroups:
