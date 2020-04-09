@@ -93,8 +93,8 @@ $MERGE_UTIL -left $LEFT_PATH/hiveadmission/service-account.yaml  -right $RIGHT_P
 ```
 - controllers role
 ```
-$MERGE_UTIL -left $LEFT_PATH/rbac/hive_controllers_role.yaml  -right $RIGHT_PATH/rbac/hivecontrollers-role.yaml
-$MERGE_UTIL -left $LEFT_PATH/rbac/hive_controllers_role_binding.yaml  -right $RIGHT_PATH/rbac/hivecontrollers-rolebinding.yaml
+$MERGE_UTIL -left $LEFT_PATH/controllers/hive_controllers_role.yaml  -right $RIGHT_PATH/rbac/hivecontrollers-role.yaml
+$MERGE_UTIL -left $LEFT_PATH/controllers/hive_controllers_role_binding.yaml  -right $RIGHT_PATH/rbac/hivecontrollers-rolebinding.yaml
 ```
 keep the following diff in our copy:
 ```
@@ -138,7 +138,11 @@ Ensure kustomization file has correct file references for new files
 
 ## Update the following files with the new quay hive image tag (search for the old tag and replace):
   https://github.com/open-cluster-management/multicloudhub-operator/blob/master/templates/multicloudhub/base/hive/hive-catalogsource.yaml
+   edit $RIGHT_PATH/hive-catalogsource.yaml
+
    https://github.com/open-cluster-management/multicloudhub-operator/blob/master/templates/multicloudhub/base/hive/hive-operator.yaml
+   edit $RIGHT_PATH/hive-operator.yaml
+  NOTE: The v0.1.#### string can be found in the generated CSV (see below)
 
 ## Build hive pieces so we can get CSV file
 We will need a RedHat VM to build this.  I used Amazon Web Services AWS and provisioned a RHEL  
@@ -223,6 +227,16 @@ to:
 +full_version = "%s.%s-%s" % (VERSION_BASE, git_num_commits, git_hash)
 ```
 
+### Patch another hive file
+Edit file `hack/olm-registry-deploy.sh`, around line 35, change from:
+```
+CSV_FILE="bundle/0.1.$GIT_COMMIT_COUNT-sha$GIT_HASH/hive-operator.v0.1.$GIT_COMMIT_COUNT-sha$GIT_HASH.clusterserviceversion.yaml"
+```
+to
+```
+CSV_FILE="bundle/0.1.$GIT_COMMIT_COUNT-$GIT_HASH/hive-operator.v0.1.$GIT_COMMIT_COUNT-$GIT_HASH.clusterserviceversion.yaml"
+```
+
 ### Run hive script to build CSV
 - Be sure to `oc login` to your OpenShift Container Platform
 - Update the `DEPLOY_IMG` for the https://quay.io/repository/rhibmcollab/hive?tab=tags image you are going to upgrade to
@@ -231,10 +245,13 @@ to:
 #export DEPLOY_IMG="quay.io/rhibmcollab/hive:2020-03-23-2154ceae"
 #export DEPLOY_IMG="quay.io/rhibmcollab/hive:2020-03-24-2ea0bcc0"
 #export DEPLOY_IMG="quay.io/rhibmcollab/hive:2020-03-30-7e5ab546"
-export DEPLOY_IMG="quay.io/rhibmcollab/hive:2020-04-01-37d9c917"
+#export DEPLOY_IMG="quay.io/rhibmcollab/hive:2020-04-01-37d9c917"
+export DEPLOY_IMG="quay.io/rhibmcollab/hive:2020-04-08-520125dc"
 
 #NOTE: You can use your shortname at the end
 export REGISTRY_IMG="quay.io/rhibmcollab/multiclusterhub-operator:cahl4"
+
+oc create ns hive
 
 #NOTE: Only step 1-3 need to run
 hack/olm-registry-deploy.sh
