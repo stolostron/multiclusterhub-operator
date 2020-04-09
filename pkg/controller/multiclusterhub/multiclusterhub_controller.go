@@ -30,6 +30,7 @@ import (
 
 	"github.com/go-logr/logr"
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/apiserver"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/deploying"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
@@ -194,6 +195,13 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		log.Info("MultiClusterHub successfully updated")
 		// return reconcile.Result{}, nil
 	}
+
+	result, err = r.ensureDeployment(multiClusterHub, apiserver.Deployment(multiClusterHub))
+	if result != nil {
+		return *result, err
+	}
+
+	return reconcile.Result{}, nil
 
 	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub))
 	if result != nil {

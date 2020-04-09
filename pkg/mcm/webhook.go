@@ -1,0 +1,95 @@
+package mcm
+
+import (
+	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+// WebhookName is the name of the mcm apiserver deployment
+const WebhookName string = "mcm-webhook"
+
+// WebhookDeployment creates the deployment for the mcm webhook
+func WebhookDeployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deployment {
+	replicas := int32(m.Spec.ReplicaCount)
+
+	dep := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      WebhookName,
+			Namespace: m.Namespace,
+			Labels:    defaultLabels(WebhookName),
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: defaultLabels(WebhookName),
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: defaultLabels(WebhookName),
+				},
+				Spec: corev1.PodSpec{
+					ImagePullSecrets:   []corev1.LocalObjectReference{{Name: m.Spec.ImagePullSecret}},
+					ServiceAccountName: ServiceAccount,
+					NodeSelector:       nodeSelectors(m),
+					Volumes: []corev1.Volume{
+						{
+							Name: "webhook-certs",
+							VolumeSource: corev1.VolumeSource{
+								Secret: &corev1.SecretVolumeSource{SecretName: "mcm-webhook-secret"},
+							},
+						},
+					},
+					Containers: []corev1.Container{{
+						Image:           mcmImage(m),
+						ImagePullPolicy: m.Spec.ImagePullPolicy,
+						Name:            WebhookName,
+						Args: []string{
+							"/mcm-webhook",
+							"--tls-cert-file=/var/run/mcm-webhook/tls.crt",
+							"--tls-private-key-file=/var/run/mcm-webhook/tls.key",
+						},
+						LivenessProbe: &v1.Probe{
+							Handler: v1.Handler{
+								Exec: &v1.ExecAction{
+									Command: []string{"ls"},
+								},
+							},
+							InitialDelaySeconds: 15,
+							PeriodSeconds:       15,
+						},
+						ReadinessProbe: &v1.Probe{
+							Handler: v1.Handler{
+								Exec: &v1.ExecAction{
+									Command: []string{"ls"},
+								},
+							},
+							InitialDelaySeconds: 15,
+							PeriodSeconds:       15,
+						},
+						Resources: v1.ResourceRequirements{
+							Requests: v1.ResourceList{
+								v1.ResourceMemory: resource.MustParse("128Mi"),
+								v1.ResourceCPU:    resource.MustParse("100m"),
+							},
+							Limits: v1.ResourceList{
+								v1.ResourceMemory: resource.MustParse("256Mi"),
+							},
+						},
+						VolumeMounts: []corev1.VolumeMount{
+							{Name: "webhook-cert", MountPath: "/var/run/mcm-webhook"},
+						},
+					}},
+				},
+			},
+		},
+	}
+
+	dep.SetOwnerReferences([]metav1.OwnerReference{
+		*metav1.NewControllerRef(m, m.GetObjectKind().GroupVersionKind()),
+	})
+	return dep
+}

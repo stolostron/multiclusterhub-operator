@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -151,7 +152,7 @@ func ValidateDeployment(m *operatorsv1alpha1.MultiClusterHub, dep *appsv1.Deploy
 	// verify image pull secret
 	if m.Spec.ImagePullSecret != "" {
 		ps := corev1.LocalObjectReference{Name: m.Spec.ImagePullSecret}
-		if !containsPullSecret(found.Spec.Template.Spec.ImagePullSecrets, ps) {
+		if !utils.ContainsPullSecret(found.Spec.Template.Spec.ImagePullSecrets, ps) {
 			log.Info("Enforcing imagePullSecret from CR spec")
 			found.Spec.Template.Spec.ImagePullSecrets = append(found.Spec.Template.Spec.ImagePullSecrets, ps)
 			needsUpdate = true
