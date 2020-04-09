@@ -323,21 +323,10 @@ func generateNodeSelectorPatch(res *resource.Resource, mch *operatorsv1alpha1.Mu
 		return nil, nil
 	}
 	template := strings.Replace(nodeSelectorTemplate, "__kind__", res.GetKind(), 1)
-	selectormap := map[string]string{}
-	if nodeSelectorOptions.OS != "" {
-		selectormap["beta.kubernetes.io/os"] = nodeSelectorOptions.OS
-	}
-	if nodeSelectorOptions.CustomLabelSelector != "" && nodeSelectorOptions.CustomLabelValue != "" {
-		selectormap[nodeSelectorOptions.CustomLabelSelector] = nodeSelectorOptions.CustomLabelValue
-	}
-	if len(selectormap) == 0 {
-		return nil, nil
-	}
-	selectors := []string{}
-	for k, v := range selectormap {
-		selectors = append(selectors, fmt.Sprintf("\"%s\":\"%s\"", k, v))
-	}
-	template = strings.Replace(template, "__selector__", strings.Join(selectors, ","), 1)
+
+	nodeSelectorString := utils.GenerateNodeSelectorNotation(mch)
+
+	template = strings.Replace(template, "__selector__", nodeSelectorString, 1)
 	json, err := yaml.YAMLToJSON([]byte(template))
 	if err != nil {
 		return nil, err

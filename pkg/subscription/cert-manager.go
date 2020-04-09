@@ -100,6 +100,7 @@ func ConfigWatcher(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructu
 			},
 			"hubconfig": map[string]interface{}{
 				"replicaCount": m.Spec.ReplicaCount,
+				"nodeSelector": utils.GenerateNodeSelectorNotation(m),
 			},
 		},
 	}

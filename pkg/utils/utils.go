@@ -2,6 +2,8 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
@@ -111,4 +113,22 @@ func MchIsValid(m *operatorsv1alpha1.MultiClusterHub) bool {
 	}
 
 	return true
+}
+
+func GenerateNodeSelectorNotation(mch *operatorsv1alpha1.MultiClusterHub) string {
+	selectormap := map[string]string{}
+	if mch.Spec.NodeSelector.OS != "" {
+		selectormap["beta.kubernetes.io/os"] = mch.Spec.NodeSelector.OS
+	}
+	if mch.Spec.NodeSelector.CustomLabelSelector != "" && mch.Spec.NodeSelector.CustomLabelValue != "" {
+		selectormap[mch.Spec.NodeSelector.CustomLabelSelector] = mch.Spec.NodeSelector.CustomLabelValue
+	}
+	if len(selectormap) == 0 {
+		return ""
+	}
+	selectors := []string{}
+	for k, v := range selectormap {
+		selectors = append(selectors, fmt.Sprintf("\"%s\":\"%s\"", k, v))
+	}
+	return strings.Join(selectors, ",")
 }
