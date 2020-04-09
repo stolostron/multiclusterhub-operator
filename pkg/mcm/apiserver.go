@@ -38,7 +38,7 @@ func APIServerDeployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deploymen
 				},
 				Spec: corev1.PodSpec{
 					ImagePullSecrets:   []corev1.LocalObjectReference{{Name: m.Spec.ImagePullSecret}},
-					ServiceAccountName: "hub-sa",
+					ServiceAccountName: ServiceAccount,
 					NodeSelector:       nodeSelectors(m),
 					Volumes: []corev1.Volume{
 						{

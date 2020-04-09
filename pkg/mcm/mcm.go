@@ -10,10 +10,10 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// ImageName used by all mcm deployments
+// ImageName used by mcm deployments
 const ImageName = "multicloud-manager"
 
-// ImageVersion used by all mcm deployments
+// ImageVersion used by mcm deployments
 const ImageVersion = "0.0.1"
 
 // ServiceAccount used by mcm deployments
@@ -85,7 +85,7 @@ func ValidateDeployment(m *operatorsv1alpha1.MultiClusterHub, dep *appsv1.Deploy
 
 	// verify node selectors
 	desiredSelectors := nodeSelectors(m)
-	if contains(pod.NodeSelector, desiredSelectors) {
+	if !containsMap(pod.NodeSelector, desiredSelectors) {
 		log.Info("Enforcing node selectors from CR spec")
 		pod.NodeSelector = desiredSelectors
 		needsUpdate = true
@@ -94,8 +94,8 @@ func ValidateDeployment(m *operatorsv1alpha1.MultiClusterHub, dep *appsv1.Deploy
 	return found, needsUpdate
 }
 
-// contains returns whether the expected map entries are included in the map
-func contains(all map[string]string, expected map[string]string) bool {
+// containsMap returns whether the expected map entries are included in the map
+func containsMap(all map[string]string, expected map[string]string) bool {
 	for key, exval := range expected {
 		allval, ok := all[key]
 		if !ok || allval != exval {
