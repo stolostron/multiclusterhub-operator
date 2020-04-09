@@ -41,7 +41,7 @@
                 description: Spec of Etcd
                 properties:
                   storage:
-                    description: StorageSize for MultiCluster hub components (ex. 1Gi)
+                    description: StorageSize for MultiCluster hub components
                     type: string
                   storageClass:
                     description: StorageClass for MultiCluster hub components
@@ -185,7 +185,7 @@
                     description: ReplicaCount for HA support
                     type: integer
                   storage:
-                    description: StorageSize for MultiCluster hub components (ex. 1Gi)
+                    description: StorageSize for MultiCluster hub components
                     type: string
                   storageClass:
                     description: StorageClass for MultiCluster hub components
