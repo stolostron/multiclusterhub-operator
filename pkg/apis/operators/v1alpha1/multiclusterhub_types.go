@@ -63,7 +63,7 @@ type Etcd struct {
 	// +optional
 	StorageClass string `json:"storageClass,omitempty"`
 
-	// StorageSize for MultiCluster hub components (ex. 1Gi)
+	// StorageSize for MultiCluster hub components
 	// +optional
 	Storage string `json:"storage,omitempty"`
 }
@@ -199,7 +199,7 @@ type Mongo struct {
 	// +optional
 	StorageClass string `json:"storageClass"`
 
-	// StorageSize for MultiCluster hub components (ex. 1Gi)
+	// StorageSize for MultiCluster hub components
 	// +optional
 	Storage string `json:"storage,omitempty"`
 }
