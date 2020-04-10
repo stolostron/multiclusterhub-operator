@@ -115,6 +115,14 @@ func Test_nodeSelectors(t *testing.T) {
 		},
 	}
 	mchNoSelector := &operatorsv1alpha1.MultiClusterHub{}
+	mchEmptySelector := &operatorsv1alpha1.MultiClusterHub{
+		Spec: operatorsv1alpha1.MultiClusterHubSpec{
+			NodeSelector: &operatorsv1alpha1.NodeSelector{
+				CustomLabelSelector: "kubernetes.io/arch",
+				CustomLabelValue:    "",
+			},
+		},
+	}
 
 	type args struct {
 		mch *operatorsv1alpha1.MultiClusterHub
@@ -136,6 +144,13 @@ func Test_nodeSelectors(t *testing.T) {
 			name: "No node selector",
 			args: args{mchNoSelector},
 			want: nil,
+		},
+		{
+			name: "Empty selector value",
+			args: args{mchEmptySelector},
+			want: map[string]string{
+				"kubernetes.io/arch": "",
+			},
 		},
 	}
 	for _, tt := range tests {

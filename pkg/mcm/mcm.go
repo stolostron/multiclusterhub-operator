@@ -42,7 +42,7 @@ func nodeSelectors(mch *operatorsv1alpha1.MultiClusterHub) map[string]string {
 	if mch.Spec.NodeSelector.OS != "" {
 		selectors["kubernetes.io/os"] = mch.Spec.NodeSelector.OS
 	}
-	if mch.Spec.NodeSelector.CustomLabelSelector != "" && mch.Spec.NodeSelector.CustomLabelValue != "" {
+	if mch.Spec.NodeSelector.CustomLabelSelector != "" {
 		selectors[mch.Spec.NodeSelector.CustomLabelSelector] = mch.Spec.NodeSelector.CustomLabelValue
 	}
 	return selectors
