@@ -1,4 +1,4 @@
 resources:
 - webhook-mutating-config.yaml
-- webhook-service.yaml
-- webhook-deployment.yaml
+# - webhook-service.yaml
+# - webhook-deployment.yaml

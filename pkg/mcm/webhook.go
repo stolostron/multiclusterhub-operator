@@ -38,7 +38,7 @@ func WebhookDeployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deployment 
 					NodeSelector:       nodeSelectors(m),
 					Volumes: []corev1.Volume{
 						{
-							Name: "webhook-certs",
+							Name: "webhook-cert",
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{SecretName: "mcm-webhook-secret"},
 							},

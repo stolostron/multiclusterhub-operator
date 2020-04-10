@@ -30,10 +30,10 @@ import (
 
 	"github.com/go-logr/logr"
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/apiserver"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/deploying"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/mcm"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
@@ -196,13 +196,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		// return reconcile.Result{}, nil
 	}
 
-	result, err = r.ensureDeployment(multiClusterHub, apiserver.Deployment(multiClusterHub))
-	if result != nil {
-		return *result, err
-	}
-
-	return reconcile.Result{}, nil
-
 	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub))
 	if result != nil {
 		return *result, err
@@ -317,6 +310,31 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 	result, err = r.ensureObject(multiClusterHub, subscription.Topology(multiClusterHub), subscription.Schema)
+	if result != nil {
+		return *result, err
+	}
+
+	result, err = r.ensureDeployment(multiClusterHub, mcm.APIServerDeployment(multiClusterHub))
+	if result != nil {
+		return *result, err
+	}
+
+	result, err = r.ensureService(multiClusterHub, mcm.APIServerService(multiClusterHub))
+	if result != nil {
+		return *result, err
+	}
+
+	result, err = r.ensureDeployment(multiClusterHub, mcm.WebhookDeployment(multiClusterHub))
+	if result != nil {
+		return *result, err
+	}
+
+	result, err = r.ensureService(multiClusterHub, mcm.WebhookService(multiClusterHub))
+	if result != nil {
+		return *result, err
+	}
+
+	result, err = r.ensureDeployment(multiClusterHub, mcm.ControllerDeployment(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}
