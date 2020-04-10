@@ -28,7 +28,7 @@ type MultiClusterHubSpec struct {
 	// +optional
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
 
-	// ReplicaCount for HA support
+	// ReplicaCount for HA support. Does not affect data stores.
 	// +optional
 	ReplicaCount int `json:"replicaCount"`
 
@@ -63,7 +63,7 @@ type Etcd struct {
 	// +optional
 	StorageClass string `json:"storageClass,omitempty"`
 
-	// StorageSize for MultiCluster hub components (ex. 1Gi)
+	// StorageSize for MultiCluster hub components
 	// +optional
 	Storage string `json:"storage,omitempty"`
 }
@@ -199,9 +199,13 @@ type Mongo struct {
 	// +optional
 	StorageClass string `json:"storageClass"`
 
-	// StorageSize for MultiCluster hub components (ex. 1Gi)
+	// StorageSize for MultiCluster hub components
 	// +optional
 	Storage string `json:"storage,omitempty"`
+
+	// ReplicaCount for HA Mongo support
+	// +optional
+	ReplicaCount int `json:"replicaCount"`
 }
 
 // MultiClusterHubStatus defines the observed state of MultiClusterHub
