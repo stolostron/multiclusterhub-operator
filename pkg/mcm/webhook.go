@@ -2,6 +2,7 @@ package mcm
 
 import (
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
@@ -35,7 +36,7 @@ func WebhookDeployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deployment 
 				Spec: corev1.PodSpec{
 					ImagePullSecrets:   []corev1.LocalObjectReference{{Name: m.Spec.ImagePullSecret}},
 					ServiceAccountName: ServiceAccount,
-					NodeSelector:       nodeSelectors(m),
+					NodeSelector:       utils.NodeSelectors(m),
 					Volumes: []corev1.Volume{
 						{
 							Name: "webhook-cert",
@@ -53,9 +54,7 @@ func WebhookDeployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deployment 
 							"--tls-cert-file=/var/run/mcm-webhook/tls.crt",
 							"--tls-private-key-file=/var/run/mcm-webhook/tls.key",
 						},
-						Ports: []v1.ContainerPort{
-							v1.ContainerPort{ContainerPort: 8000},
-						},
+						Ports: []v1.ContainerPort{{ContainerPort: 8000}},
 						LivenessProbe: &v1.Probe{
 							Handler: v1.Handler{
 								Exec: &v1.ExecAction{

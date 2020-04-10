@@ -26,22 +26,22 @@ const Version = "1.0.0"
 
 // Deployment for the helm repo serving charts
 func Deployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deployment {
-	labels := labels()
-	replicas := int32(1)
+	replicas := int32(m.Spec.ReplicaCount)
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      Name,
 			Namespace: m.Namespace,
+			Labels:    labels(),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
 			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
+				MatchLabels: labels(),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: labels,
+					Labels: labels(),
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
@@ -88,6 +88,7 @@ func Deployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deployment {
 						},
 					}},
 					ImagePullSecrets: []corev1.LocalObjectReference{{Name: m.Spec.ImagePullSecret}},
+					NodeSelector:     utils.NodeSelectors(m),
 					// ServiceAccountName: "default",
 				},
 			},
@@ -146,42 +147,50 @@ func ValidateDeployment(m *operatorsv1alpha1.MultiClusterHub, dep *appsv1.Deploy
 	var log = logf.Log.WithValues("Deployment.Namespace", dep.GetNamespace(), "Deployment.Name", dep.GetName())
 	found := dep.DeepCopy()
 
-	pod := &found.Spec.Template.Spec.Containers[0]
+	pod := &found.Spec.Template.Spec
+	container := &found.Spec.Template.Spec.Containers[0]
 	needsUpdate := false
 
 	// verify image pull secret
 	if m.Spec.ImagePullSecret != "" {
 		ps := corev1.LocalObjectReference{Name: m.Spec.ImagePullSecret}
-		if !utils.ContainsPullSecret(found.Spec.Template.Spec.ImagePullSecrets, ps) {
+		if !utils.ContainsPullSecret(pod.ImagePullSecrets, ps) {
 			log.Info("Enforcing imagePullSecret from CR spec")
-			found.Spec.Template.Spec.ImagePullSecrets = append(found.Spec.Template.Spec.ImagePullSecrets, ps)
+			pod.ImagePullSecrets = append(pod.ImagePullSecrets, ps)
 			needsUpdate = true
 		}
 	}
 
 	// verify image repository and suffix
 	image := repoImageName(m)
-	if pod.Image != image {
+	if container.Image != image {
 		log.Info("Enforcing image repo and suffix from CR spec")
-		found.Spec.Template.Spec.Containers[0].Image = image
+		container.Image = image
 		needsUpdate = true
 	}
 
 	// verify image pull policy
-	if pod.ImagePullPolicy != m.Spec.ImagePullPolicy {
+	if container.ImagePullPolicy != m.Spec.ImagePullPolicy {
 		log.Info("Enforcing imagePullPolicy from CR spec")
-		pod.ImagePullPolicy = m.Spec.ImagePullPolicy
+		container.ImagePullPolicy = m.Spec.ImagePullPolicy
+		needsUpdate = true
+	}
+
+	// verify node selectors
+	desiredSelectors := utils.NodeSelectors(m)
+	if !utils.ContainsMap(pod.NodeSelector, desiredSelectors) {
+		log.Info("Enforcing node selectors from CR spec")
+		pod.NodeSelector = desiredSelectors
+		needsUpdate = true
+	}
+
+	// verify replica count
+	if *found.Spec.Replicas != int32(m.Spec.ReplicaCount) {
+		log.Info("Enforcing replicaCount from CR spec")
+		replicas := int32(m.Spec.ReplicaCount)
+		found.Spec.Replicas = &replicas
 		needsUpdate = true
 	}
 
 	return found, needsUpdate
-}
-
-func containsPullSecret(pullSecrets []corev1.LocalObjectReference, ps corev1.LocalObjectReference) bool {
-	for _, v := range pullSecrets {
-		if v == ps {
-			return true
-		}
-	}
-	return false
 }

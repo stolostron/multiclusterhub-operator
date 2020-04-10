@@ -64,6 +64,34 @@ func ContainsPullSecret(pullSecrets []corev1.LocalObjectReference, ps corev1.Loc
 	return false
 }
 
+// ContainsMap returns whether the expected map entries are included in the map
+func ContainsMap(all map[string]string, expected map[string]string) bool {
+	for key, exval := range expected {
+		allval, ok := all[key]
+		if !ok || allval != exval {
+			return false
+		}
+
+	}
+	return true
+}
+
+// NodeSelectors returns a (v1.PodSpec).NodeSelector map
+func NodeSelectors(mch *operatorsv1alpha1.MultiClusterHub) map[string]string {
+	selectors := map[string]string{}
+	if mch.Spec.NodeSelector == nil {
+		return nil
+	}
+
+	if mch.Spec.NodeSelector.OS != "" {
+		selectors["kubernetes.io/os"] = mch.Spec.NodeSelector.OS
+	}
+	if mch.Spec.NodeSelector.CustomLabelSelector != "" {
+		selectors[mch.Spec.NodeSelector.CustomLabelSelector] = mch.Spec.NodeSelector.CustomLabelValue
+	}
+	return selectors
+}
+
 // AddInstallerLabel adds Installer Labels ...
 func AddInstallerLabel(u *unstructured.Unstructured, name string, ns string) {
 	labels := make(map[string]string)

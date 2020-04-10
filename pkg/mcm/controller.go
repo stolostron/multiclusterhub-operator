@@ -2,6 +2,7 @@ package mcm
 
 import (
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
@@ -34,7 +35,7 @@ func ControllerDeployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deployme
 				Spec: corev1.PodSpec{
 					ImagePullSecrets:   []corev1.LocalObjectReference{{Name: m.Spec.ImagePullSecret}},
 					ServiceAccountName: ServiceAccount,
-					NodeSelector:       nodeSelectors(m),
+					NodeSelector:       utils.NodeSelectors(m),
 					Containers: []corev1.Container{{
 						Image:           mcmImage(m),
 						ImagePullPolicy: m.Spec.ImagePullPolicy,
