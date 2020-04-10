@@ -159,3 +159,28 @@ func APIServerDeployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deploymen
 	})
 	return dep
 }
+
+// APIServerService creates a service object for the mcm apiserver
+func APIServerService(m *operatorsv1alpha1.MultiClusterHub) *corev1.Service {
+	s := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      APIServerName,
+			Namespace: m.Namespace,
+			Labels:    defaultLabels(APIServerName),
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: defaultLabels(APIServerName),
+			Ports: []corev1.ServicePort{{
+				Name:       "secure",
+				Protocol:   corev1.ProtocolTCP,
+				Port:       443,
+				TargetPort: intstr.FromInt(6443),
+			}},
+		},
+	}
+
+	s.SetOwnerReferences([]metav1.OwnerReference{
+		*metav1.NewControllerRef(m, m.GetObjectKind().GroupVersionKind()),
+	})
+	return s
+}

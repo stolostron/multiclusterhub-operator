@@ -7,6 +7,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // WebhookName is the name of the mcm apiserver deployment
@@ -92,4 +93,27 @@ func WebhookDeployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deployment 
 		*metav1.NewControllerRef(m, m.GetObjectKind().GroupVersionKind()),
 	})
 	return dep
+}
+
+// WebhookService creates a service object for the mcm webhook
+func WebhookService(m *operatorsv1alpha1.MultiClusterHub) *corev1.Service {
+	s := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      WebhookName,
+			Namespace: m.Namespace,
+			Labels:    defaultLabels(WebhookName),
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: defaultLabels(WebhookName),
+			Ports: []corev1.ServicePort{{
+				Port:       443,
+				TargetPort: intstr.FromInt(8000),
+			}},
+		},
+	}
+
+	s.SetOwnerReferences([]metav1.OwnerReference{
+		*metav1.NewControllerRef(m, m.GetObjectKind().GroupVersionKind()),
+	})
+	return s
 }

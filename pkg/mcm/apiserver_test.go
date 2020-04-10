@@ -41,3 +41,22 @@ func TestAPIServerDeployment(t *testing.T) {
 		_ = APIServerDeployment(essentialsOnly)
 	})
 }
+
+func TestAPIServerService(t *testing.T) {
+	mch := &operatorsv1alpha1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "testName",
+			Namespace: "testNS",
+		},
+	}
+
+	t.Run("Create service", func(t *testing.T) {
+		s := APIServerService(mch)
+		if ns := s.Namespace; ns != "testNS" {
+			t.Errorf("expected namespace %s, got %s", "testNS", ns)
+		}
+		if ref := s.GetOwnerReferences(); ref[0].Name != "testName" {
+			t.Errorf("expected ownerReference %s, got %s", "testName", ref[0].Name)
+		}
+	})
+}
