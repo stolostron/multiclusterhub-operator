@@ -11,11 +11,6 @@ import (
 )
 
 func TestValidateDeployment(t *testing.T) {
-	// 2. Modified ImagePullSecret
-	// 3. Modified image
-	// 4. Modified pullPolicy
-	// 5. Modified NodeSelector
-
 	mch := &operatorsv1alpha1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1alpha1.MultiClusterHubSpec{
