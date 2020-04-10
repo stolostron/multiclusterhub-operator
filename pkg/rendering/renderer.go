@@ -15,18 +15,15 @@ import (
 
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/patching"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 )
 
 const (
-	apiserviceName        = "mcm-apiserver"
-	controllerName        = "mcm-controller"
-	webhookName           = "mcm-webhook"
-	clusterControllerName = "multicluster-operators-cluster-controller"
-	helmRepoName          = "multiclusterhub-repo"
-	metadataErr           = "failed to find metadata field"
+	apiserviceName = "mcm-apiserver"
+	controllerName = "mcm-controller"
+	webhookName    = "mcm-webhook"
+	metadataErr    = "failed to find metadata field"
 )
 
 var log = logf.Log.WithName("renderer")
@@ -45,7 +42,7 @@ func NewRenderer(multipleClusterHub *operatorsv1alpha1.MultiClusterHub, cacheSpe
 	renderer := &Renderer{cr: multipleClusterHub, cacheSpec: cacheSpec}
 	renderer.renderFns = map[string]renderFn{
 		"APIService":                   renderer.renderAPIServices,
-		"Deployment":                   renderer.renderDeployments,
+		"Deployment":                   renderer.renderNamespace,
 		"Service":                      renderer.renderNamespace,
 		"ServiceAccount":               renderer.renderNamespace,
 		"ConfigMap":                    renderer.renderNamespace,
@@ -124,40 +121,6 @@ func (r *Renderer) renderNamespace(res *resource.Resource) (*unstructured.Unstru
 	}
 
 	return &unstructured.Unstructured{Object: res.Map()}, nil
-}
-
-func (r *Renderer) renderDeployments(res *resource.Resource) (*unstructured.Unstructured, error) {
-	err := patching.ApplyGlobalPatches(res, r.cr)
-	if err != nil {
-		return nil, err
-	}
-
-	res.SetNamespace(r.cr.Namespace)
-
-	name := res.GetName()
-	switch name {
-	case apiserviceName:
-		if err := patching.ApplyAPIServerPatches(res, r.cr); err != nil {
-			return nil, err
-		}
-		return &unstructured.Unstructured{Object: res.Map()}, nil
-	case controllerName:
-		if err := patching.ApplyControllerPatches(res, r.cr); err != nil {
-			return nil, err
-		}
-		return &unstructured.Unstructured{Object: res.Map()}, nil
-	case webhookName:
-		if err := patching.ApplyWebhookPatches(res, r.cr); err != nil {
-			return nil, err
-		}
-		return &unstructured.Unstructured{Object: res.Map()}, nil
-	case clusterControllerName:
-		return &unstructured.Unstructured{Object: res.Map()}, nil
-	case helmRepoName:
-		return &unstructured.Unstructured{Object: res.Map()}, nil
-	default:
-		return nil, fmt.Errorf("unknown MultipleClusterHub deployment component %s", name)
-	}
 }
 
 func (r *Renderer) renderClusterRole(res *resource.Resource) (*unstructured.Unstructured, error) {
