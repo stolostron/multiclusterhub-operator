@@ -53,6 +53,9 @@ func WebhookDeployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deployment 
 							"--tls-cert-file=/var/run/mcm-webhook/tls.crt",
 							"--tls-private-key-file=/var/run/mcm-webhook/tls.key",
 						},
+						Ports: []v1.ContainerPort{
+							v1.ContainerPort{ContainerPort: 8000},
+						},
 						LivenessProbe: &v1.Probe{
 							Handler: v1.Handler{
 								Exec: &v1.ExecAction{
