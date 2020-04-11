@@ -117,41 +117,15 @@ func CoreToUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) 
 
 // MchIsValid Checks if the optional default parameters need to be set
 func MchIsValid(m *operatorsv1alpha1.MultiClusterHub) bool {
-	if m.Spec.Version == "" {
-		return false
-	}
+	invalid := m.Spec.Version == "" ||
+		m.Spec.ImageRepository == "" ||
+		m.Spec.ImagePullPolicy == "" ||
+		m.Spec.Mongo.Storage == "" ||
+		m.Spec.Mongo.StorageClass == "" ||
+		m.Spec.Etcd.Storage == "" ||
+		m.Spec.Etcd.StorageClass == "" ||
+		m.Spec.ReplicaCount <= 0 ||
+		m.Spec.Mongo.ReplicaCount <= 0
 
-	if m.Spec.ImageRepository == "" {
-		return false
-	}
-
-	if m.Spec.ImagePullPolicy == "" {
-		return false
-	}
-
-	if m.Spec.Mongo.Storage == "" {
-		return false
-	}
-
-	if m.Spec.Mongo.StorageClass == "" {
-		return false
-	}
-
-	if m.Spec.Etcd.Storage == "" {
-		return false
-	}
-
-	if m.Spec.Etcd.StorageClass == "" {
-		return false
-	}
-
-	if m.Spec.ReplicaCount <= 0 {
-		return false
-	}
-
-	if m.Spec.Mongo.ReplicaCount <= 0 {
-		return false
-	}
-
-	return true
+	return !invalid
 }
