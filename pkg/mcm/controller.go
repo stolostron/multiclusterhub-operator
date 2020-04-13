@@ -37,7 +37,7 @@ func ControllerDeployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deployme
 					ServiceAccountName: ServiceAccount,
 					NodeSelector:       utils.NodeSelectors(m),
 					Containers: []corev1.Container{{
-						Image:           mcmImage(m),
+						Image:           Image(m),
 						ImagePullPolicy: m.Spec.ImagePullPolicy,
 						Name:            ControllerName,
 						Args: []string{

@@ -53,13 +53,13 @@ func APIServerDeployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deploymen
 								Secret: &corev1.SecretVolumeSource{SecretName: utils.KlusterletSecretName},
 							},
 						},
-						corev1.Volume{
+						{
 							Name: "mongodb-ca-cert",
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{DefaultMode: &mode, SecretName: utils.MongoCaSecret},
 							},
 						},
-						corev1.Volume{
+						{
 							Name: "mongodb-client-cert",
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{DefaultMode: &mode, SecretName: utils.MongoTLSSecret},
@@ -67,7 +67,7 @@ func APIServerDeployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deploymen
 						},
 					},
 					Containers: []corev1.Container{{
-						Image:           mcmImage(m),
+						Image:           Image(m),
 						ImagePullPolicy: m.Spec.ImagePullPolicy,
 						Name:            APIServerName,
 						Args: []string{
