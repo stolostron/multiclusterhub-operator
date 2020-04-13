@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/mcm"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -307,9 +306,41 @@ func TestValidateDeployment(t *testing.T) {
 			Mongo: operatorsv1alpha1.Mongo{},
 		},
 	}
+	replicas := int32(1)
+	image := "quay.io/open-cluster-management/image:1.0.0-xyz"
+	dep := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+			Labels:    map[string]string{"app": "test"},
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"app": "test"},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{"app": "test"},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{
+						Image:           image,
+						ImagePullPolicy: mch.Spec.ImagePullPolicy,
+						Name:            "test",
+						Ports: []corev1.ContainerPort{{
+							ContainerPort: 8443,
+							Name:          "helmrepo",
+						}},
+					}},
+					ImagePullSecrets: []corev1.LocalObjectReference{{Name: mch.Spec.ImagePullSecret}},
+					NodeSelector:     NodeSelectors(mch),
+				},
+			},
+		},
+	}
+
 	// 1. Valid mch
-	dep := mcm.ControllerDeployment(mch)
-	image := mcm.Image(mch)
 
 	// 2. Modified ImagePullSecret
 	dep1 := dep.DeepCopy()
