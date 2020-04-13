@@ -124,19 +124,8 @@ func GenerateNodeSelectorNotation(mch *operatorsv1alpha1.MultiClusterHub) string
 	if nodeSelectorOptions == nil {
 		return ""
 	}
-
-	selectormap := map[string]string{}
-	if nodeSelectorOptions.OS != "" {
-		selectormap["beta.kubernetes.io/os"] = nodeSelectorOptions.OS
-	}
-	if nodeSelectorOptions.CustomLabelSelector != "" && nodeSelectorOptions.CustomLabelValue != "" {
-		selectormap[nodeSelectorOptions.CustomLabelSelector] = nodeSelectorOptions.CustomLabelValue
-	}
-	if len(selectormap) == 0 {
-		return ""
-	}
 	selectors := []string{}
-	for k, v := range selectormap {
+	for k, v := range nodeSelectorOptions {
 		selectors = append(selectors, fmt.Sprintf("\"%s\":\"%s\"", k, v))
 	}
 
