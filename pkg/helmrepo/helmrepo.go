@@ -66,13 +66,12 @@ func Deployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deployment {
 							Name:          "helmrepo",
 						}},
 						Resources: v1.ResourceRequirements{
-							Limits: v1.ResourceList{
-								v1.ResourceCPU:    resource.MustParse("50m"),
-								v1.ResourceMemory: resource.MustParse("100Mi"),
-							},
 							Requests: v1.ResourceList{
 								v1.ResourceCPU:    resource.MustParse("50m"),
 								v1.ResourceMemory: resource.MustParse("50Mi"),
+							},
+							Limits: v1.ResourceList{
+								v1.ResourceMemory: resource.MustParse("100Mi"),
 							},
 						},
 						LivenessProbe: &v1.Probe{
