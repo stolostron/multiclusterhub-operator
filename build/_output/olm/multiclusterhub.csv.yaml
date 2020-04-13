@@ -246,7 +246,13 @@
                   image: quay.io/rhibmcollab/multiclusterhub-operator:latest
                   imagePullPolicy: Always
                   name: multiclusterhub-operator
-                  resources: {}
+                  resources:
+                    limits:
+                      cpu: 500m
+                      memory: 2Gi
+                    requests:
+                      cpu: 100m
+                      memory: 128Mi
                 imagePullSecrets:
                 - name: multiclusterhub-operator-pull-secret
                 serviceAccountName: multiclusterhub-operator
