@@ -74,8 +74,8 @@ func (r *ReconcileMultiClusterHub) ensureDeployment(m *operatorsv1alpha1.MultiCl
 			dplog.Error(err, "Failed to update Deployment.")
 			return &reconcile.Result{}, err
 		}
-		// Spec updated - return and requeue
-		return &reconcile.Result{Requeue: true}, nil
+		// Spec updated - return
+		return nil, nil
 	}
 	return nil, nil
 }
@@ -201,8 +201,8 @@ func (r *ReconcileMultiClusterHub) ensureObject(m *operatorsv1alpha1.MultiCluste
 				obLog.Error(err, "Failed to update object")
 				return &reconcile.Result{}, err
 			}
-			// Spec updated - return and requeue
-			return &reconcile.Result{Requeue: true}, nil
+			// Spec updated - return
+			return nil, nil
 		}
 	}
 
