@@ -248,10 +248,8 @@
                   name: multiclusterhub-operator
                   resources:
                     limits:
-                      cpu: 500m
                       memory: 2Gi
                     requests:
-                      cpu: 100m
                       memory: 128Mi
                 imagePullSecrets:
                 - name: multiclusterhub-operator-pull-secret
