@@ -182,7 +182,7 @@
                 description: Spec of mongo
                 properties:
                   replicaCount:
-                    description: ReplicaCount for HA support
+                    description: ReplicaCount for HA Mongo support
                     type: integer
                   storage:
                     description: StorageSize for MultiCluster hub components
@@ -205,7 +205,7 @@
                     type: string
                 type: object
               replicaCount:
-                description: ReplicaCount for HA support
+                description: ReplicaCount for HA support. Does not affect data stores.
                 type: integer
               version:
                 description: Version of the MultiCluster hub
