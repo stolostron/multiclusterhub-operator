@@ -1,97 +1,12 @@
 package utils
 
 import (
-	"reflect"
 	"testing"
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
-
-func TestNodeSelectors(t *testing.T) {
-	mch := &operatorsv1alpha1.MultiClusterHub{
-		Spec: operatorsv1alpha1.MultiClusterHubSpec{
-			NodeSelector: map[string]string{
-				"kubernetes.io/os":   "linux",
-				"kubernetes.io/arch": "amd64",
-			},
-		},
-	}
-	mchNoSelector := &operatorsv1alpha1.MultiClusterHub{}
-
-	type args struct {
-		mch *operatorsv1alpha1.MultiClusterHub
-	}
-	tests := []struct {
-		name string
-		args args
-		want map[string]string
-	}{
-		{
-			name: "With node selectors",
-			args: args{mch},
-			want: map[string]string{
-				"kubernetes.io/os":   "linux",
-				"kubernetes.io/arch": "amd64",
-			},
-		},
-		{
-			name: "No node selector",
-			args: args{mchNoSelector},
-			want: nil,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.args.mch; !reflect.DeepEqual(got.Spec.NodeSelector, tt.want) {
-				t.Errorf("nodeSelectors() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestAddInstallerLabel(t *testing.T) {
-	name := "example-installer"
-	ns := "default"
-
-	t.Run("Should add labels when none exist", func(t *testing.T) {
-		u := &unstructured.Unstructured{
-			Object: map[string]interface{}{
-				"apiVersion": "apps.open-cluster-management.io/v1",
-				"kind":       "Channel",
-			},
-		}
-		want := 2
-
-		AddInstallerLabel(u, name, ns)
-		if got := len(u.GetLabels()); got != want {
-			t.Errorf("got %v labels, want %v", got, want)
-		}
-	})
-
-	t.Run("Should not replace existing labels", func(t *testing.T) {
-		u := &unstructured.Unstructured{
-			Object: map[string]interface{}{
-				"apiVersion": "apps.open-cluster-management.io/v1",
-				"kind":       "Channel",
-				"metadata": map[string]interface{}{
-					"name": "channelName",
-					"labels": map[string]interface{}{
-						"hello": "world",
-					},
-				},
-			},
-		}
-		want := 3
-
-		AddInstallerLabel(u, name, ns)
-		if got := len(u.GetLabels()); got != want {
-			t.Errorf("got %v labels, want %v", got, want)
-		}
-	})
-}
 
 func TestContainsPullSecret(t *testing.T) {
 	superset := []corev1.LocalObjectReference{{Name: "foo"}, {Name: "bar"}}
