@@ -20,6 +20,9 @@ func TestValidateDeployment(t *testing.T) {
 			ImagePullSecret: "test",
 			ReplicaCount:    1,
 			Mongo:           operatorsv1alpha1.Mongo{},
+			NodeSelector: map[string]string{
+				"test": "test",
+			},
 		},
 	}
 
