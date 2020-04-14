@@ -2,14 +2,18 @@ package multiclusterhub
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/mcm"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -50,17 +54,29 @@ func (r *ReconcileMultiClusterHub) ensureDeployment(m *operatorsv1alpha1.MultiCl
 		return &reconcile.Result{}, err
 	}
 
-	desired, needsUpdate := helmrepo.ValidateDeployment(m, found)
+	// Validate object based on name
+	var desired *appsv1.Deployment
+	var needsUpdate bool
+
+	switch found.Name {
+	case helmrepo.Name:
+		desired, needsUpdate = helmrepo.ValidateDeployment(m, found)
+	case mcm.APIServerName, mcm.ControllerName, mcm.WebhookName:
+		desired, needsUpdate = mcm.ValidateDeployment(m, found)
+	default:
+		dplog.Info("Could not validate deployment; unknown name")
+		return nil, nil
+	}
+
 	if needsUpdate {
 		err = r.client.Update(context.TODO(), desired)
 		if err != nil {
 			dplog.Error(err, "Failed to update Deployment.")
 			return &reconcile.Result{}, err
 		}
-		// Spec updated - return and requeue
-		return &reconcile.Result{Requeue: true}, nil
+		// Spec updated - return
+		return nil, nil
 	}
-
 	return nil, nil
 }
 
@@ -185,8 +201,8 @@ func (r *ReconcileMultiClusterHub) ensureObject(m *operatorsv1alpha1.MultiCluste
 				obLog.Error(err, "Failed to update object")
 				return &reconcile.Result{}, err
 			}
-			// Spec updated - return and requeue
-			return &reconcile.Result{Requeue: true}, nil
+			// Spec updated - return
+			return nil, nil
 		}
 	}
 
@@ -225,6 +241,47 @@ func (r *ReconcileMultiClusterHub) apiReady(gv schema.GroupVersion) (*reconcile.
 		// Wait a little and try again
 		log.Info("Waiting for API group to be available", "API group", gv)
 		return &reconcile.Result{RequeueAfter: time.Second * 10}, nil
+	}
+	return nil, nil
+}
+
+func (r *ReconcileMultiClusterHub) copyPullSecret(m *operatorsv1alpha1.MultiClusterHub, newNS string) (*reconcile.Result, error) {
+	sublog := log.WithValues("Copying Secret to cert-manager namespace", m.Spec.ImagePullSecret, "Namespace.Name", utils.CertManagerNamespace)
+
+	pullSecret := &v1.Secret{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{
+		Name:      m.Spec.ImagePullSecret,
+		Namespace: m.Namespace,
+	}, pullSecret)
+	if err != nil {
+		sublog.Error(err, "Failed to get secret")
+		return &reconcile.Result{}, err
+	}
+
+	pullSecret.SetNamespace(newNS)
+	pullSecret.SetSelfLink("")
+	pullSecret.SetResourceVersion("")
+	pullSecret.SetUID("")
+
+	unstructuredPullSecret, err := utils.CoreToUnstructured(pullSecret)
+	if err != nil {
+		sublog.Error(err, "Failed to unmarshal into unstructured object")
+		return &reconcile.Result{}, err
+	}
+	utils.AddInstallerLabel(unstructuredPullSecret, m.Name, m.Namespace)
+
+	err = r.client.Get(context.TODO(), types.NamespacedName{
+		Name:      unstructuredPullSecret.GetName(),
+		Namespace: newNS,
+	}, unstructuredPullSecret)
+
+	if err != nil && errors.IsNotFound(err) {
+		sublog.Info(fmt.Sprintf("Creating secret %s in namespace %s", unstructuredPullSecret.GetName(), utils.CertManagerNamespace))
+		err = r.client.Create(context.TODO(), unstructuredPullSecret)
+		if err != nil {
+			sublog.Error(err, "Failed to create secret")
+			return &reconcile.Result{}, err
+		}
 	}
 	return nil, nil
 }

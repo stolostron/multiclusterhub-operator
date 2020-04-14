@@ -2,7 +2,6 @@ package subscription
 
 import (
 	"bytes"
-	"fmt"
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
@@ -75,35 +74,12 @@ func Validate(found *unstructured.Unstructured, want *unstructured.Unstructured)
 
 	if res := bytes.Compare(desired, current); res != 0 {
 		// Return current object with adjusted spec, preserving metadata
-		log.Info("Subscription doesn't match spec", "Want", want.Object["spec"], "Have", found.Object["spec"])
+		log.V(1).Info("Subscription doesn't match spec", "Want", want.Object["spec"], "Have", found.Object["spec"])
 		found.Object["spec"] = want.Object["spec"]
 		return found, true
 	}
 
 	return nil, false
-}
-
-// step through unstructured object to get to overrides value
-func getOverrides(sub *unstructured.Unstructured) (map[string]interface{}, error) {
-	spec, ok := sub.Object["spec"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("failed parsing object at %s", "spec")
-	}
-	packageOverrides, ok := spec["packageOverrides"].([]map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("failed parsing object at %s", "first packageOverrides")
-	}
-	packageOverride := packageOverrides[0]
-	packageOverrides, ok = packageOverride["packageOverrides"].([]map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("failed parsing object at %s", "second packageOverrides")
-	}
-	packageOverride = packageOverrides[0]
-	values, ok := packageOverride["value"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("failed parsing object at %s", "values")
-	}
-	return values, nil
 }
 
 func imageSuffix(m *operatorsv1alpha1.MultiClusterHub) (s string) {

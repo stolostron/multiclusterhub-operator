@@ -27,6 +27,7 @@ func Topology(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructured {
 			},
 			"hubconfig": map[string]interface{}{
 				"replicaCount": m.Spec.ReplicaCount,
+				"nodeSelector": m.Spec.NodeSelector,
 			},
 		},
 	}
