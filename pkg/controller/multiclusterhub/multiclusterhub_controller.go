@@ -118,6 +118,10 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 // blank assignment to verify that ReconcileMultiClusterHub implements reconcile.Reconciler
 var _ reconcile.Reconciler = &ReconcileMultiClusterHub{}
 
+// NW NOT GREAT; ASK ABOUT THIS
+
+var attemptManifestFile bool
+
 // ReconcileMultiClusterHub reconciles a MultiClusterHub object
 type ReconcileMultiClusterHub struct {
 	// This client, initialized using mgr.Client() above, is a split client
@@ -193,6 +197,31 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		}
 		log.Info("MultiClusterHub successfully updated")
 		// return reconcile.Result{}, nil
+	}
+
+	if !attemptManifestFile { // NW THERE MUST BE A BETTER WAY TO DO THIS, ASK
+		attemptManifestFile = true // only run this conditional branch once
+
+		componentVersion, err := r.readComponentVersion()
+
+		if err != nil {
+			log.Error(err, "could not get component version")
+			return reconcile.Result{}, err
+		}
+
+		if r.ManifestFileExists(componentVersion) {
+
+			imageShaDigests, err := r.GetImageShaDigest(componentVersion)
+
+			if err != nil {
+				log.Error(err, "manifest file exists for given component version, but could not get image sha digests")
+				return reconcile.Result{}, err
+			}
+
+			r.CacheSpec.ImageShaDigests = imageShaDigests
+
+			fmt.Printf("\n\n>>>>>>>>>> NW imageShaDigests: \n %v \n\n", r.CacheSpec.ImageShaDigests)
+		} // NW else use tags
 	}
 
 	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub))

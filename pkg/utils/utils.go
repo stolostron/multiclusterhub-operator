@@ -38,11 +38,15 @@ const (
 	DefaultRepository = "quay.io/open-cluster-management"
 	// LatestVerison ...
 	LatestVerison = "latest"
+
+	// directory housing image manifests (also specified in Dockerfile)
+	ImageManifestsDir = "image-manifests"
 )
 
 // CacheSpec ...
 type CacheSpec struct {
-	IngressDomain string
+	IngressDomain   string
+	ImageShaDigests map[string]string
 }
 
 // CertManagerNS returns the namespace to deploy cert manager objects

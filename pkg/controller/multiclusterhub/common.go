@@ -2,6 +2,9 @@ package multiclusterhub
 
 import (
 	"context"
+	err "errors"
+	"io/ioutil"
+	"os"
 	"time"
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
@@ -227,4 +230,31 @@ func (r *ReconcileMultiClusterHub) apiReady(gv schema.GroupVersion) (*reconcile.
 		return &reconcile.Result{RequeueAfter: time.Second * 10}, nil
 	}
 	return nil, nil
+}
+
+func fileExists(path string) bool {
+	info, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
+}
+
+func readFileRaw(path string) ([]byte, error) {
+	if !fileExists(path) {
+		err := err.New("File" + path + "does not exist")
+		log.Error(err, "File reading error")
+		return nil, err
+	}
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		log.Error(err, "File reading error")
+		return nil, err
+	}
+	return data, nil
+}
+
+// NW HARDCODE FOR INIT TESTS WITH IMAGE SHAS
+func (r *ReconcileMultiClusterHub) readComponentVersion() (string, error) {
+	return "1.0.0", nil
 }
