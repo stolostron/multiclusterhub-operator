@@ -20,9 +20,6 @@ func TestNodeSelectors(t *testing.T) {
 		},
 	}
 	mchNoSelector := &operatorsv1alpha1.MultiClusterHub{}
-	mchEmptySelector := &operatorsv1alpha1.MultiClusterHub{
-		Spec: operatorsv1alpha1.MultiClusterHubSpec{},
-	}
 
 	type args struct {
 		mch *operatorsv1alpha1.MultiClusterHub
@@ -45,17 +42,10 @@ func TestNodeSelectors(t *testing.T) {
 			args: args{mchNoSelector},
 			want: nil,
 		},
-		{
-			name: "Empty selector value",
-			args: args{mchEmptySelector},
-			want: map[string]string{
-				"kubernetes.io/arch": "",
-			},
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.args.mch; !reflect.DeepEqual(got, tt.want) {
+			if got := tt.args.mch; !reflect.DeepEqual(got.Spec.NodeSelector, tt.want) {
 				t.Errorf("nodeSelectors() = %v, want %v", got, tt.want)
 			}
 		})
