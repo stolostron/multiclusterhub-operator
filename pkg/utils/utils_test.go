@@ -13,21 +13,15 @@ import (
 func TestNodeSelectors(t *testing.T) {
 	mch := &operatorsv1alpha1.MultiClusterHub{
 		Spec: operatorsv1alpha1.MultiClusterHubSpec{
-			NodeSelector: &operatorsv1alpha1.NodeSelector{
-				OS:                  "linux",
-				CustomLabelSelector: "kubernetes.io/arch",
-				CustomLabelValue:    "amd64",
+			NodeSelector: map[string]string{
+				"kubernetes.io/os":   "linux",
+				"kubernetes.io/arch": "amd64",
 			},
 		},
 	}
 	mchNoSelector := &operatorsv1alpha1.MultiClusterHub{}
 	mchEmptySelector := &operatorsv1alpha1.MultiClusterHub{
-		Spec: operatorsv1alpha1.MultiClusterHubSpec{
-			NodeSelector: &operatorsv1alpha1.NodeSelector{
-				CustomLabelSelector: "kubernetes.io/arch",
-				CustomLabelValue:    "",
-			},
-		},
+		Spec: operatorsv1alpha1.MultiClusterHubSpec{},
 	}
 
 	type args struct {
@@ -61,7 +55,7 @@ func TestNodeSelectors(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NodeSelectors(tt.args.mch); !reflect.DeepEqual(got, tt.want) {
+			if got := tt.args.mch; !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("nodeSelectors() = %v, want %v", got, tt.want)
 			}
 		})
@@ -229,11 +223,6 @@ func TestMchIsValid(t *testing.T) {
 			ImagePullPolicy: "Always",
 			ImagePullSecret: "test",
 			ReplicaCount:    1,
-			NodeSelector: &operatorsv1alpha1.NodeSelector{
-				OS:                  "test",
-				CustomLabelSelector: "test",
-				CustomLabelValue:    "test",
-			},
 			Mongo: operatorsv1alpha1.Mongo{
 				Storage:      "mongoStorage",
 				StorageClass: "mongoStorageClass",

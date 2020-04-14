@@ -21,12 +21,7 @@ func TestValidate(t *testing.T) {
 			ImagePullPolicy: corev1.PullAlways,
 			ImagePullSecret: "test",
 			ReplicaCount:    1,
-			NodeSelector: &operatorsv1alpha1.NodeSelector{
-				OS:                  "test",
-				CustomLabelSelector: "test",
-				CustomLabelValue:    "test",
-			},
-			Mongo: operatorsv1alpha1.Mongo{},
+			Mongo:           operatorsv1alpha1.Mongo{},
 		},
 	}
 	// 1. Valid mch
@@ -115,12 +110,7 @@ func TestSubscriptions(t *testing.T) {
 			ImagePullPolicy: corev1.PullAlways,
 			ImagePullSecret: "test",
 			ReplicaCount:    1,
-			NodeSelector: &operatorsv1alpha1.NodeSelector{
-				OS:                  "test",
-				CustomLabelSelector: "test",
-				CustomLabelValue:    "test",
-			},
-			Mongo: operatorsv1alpha1.Mongo{},
+			Mongo:           operatorsv1alpha1.Mongo{},
 		},
 	}
 

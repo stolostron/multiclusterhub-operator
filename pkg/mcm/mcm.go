@@ -68,7 +68,7 @@ func ValidateDeployment(m *operatorsv1alpha1.MultiClusterHub, dep *appsv1.Deploy
 	}
 
 	// verify node selectors
-	desiredSelectors := utils.NodeSelectors(m)
+	desiredSelectors := m.Spec.NodeSelector
 	if !utils.ContainsMap(pod.NodeSelector, desiredSelectors) {
 		log.Info("Enforcing node selectors from CR spec")
 		pod.NodeSelector = desiredSelectors

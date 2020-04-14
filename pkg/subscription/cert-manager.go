@@ -36,7 +36,7 @@ func CertManager(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructure
 			},
 			"hubconfig": map[string]interface{}{
 				"replicaCount": m.Spec.ReplicaCount,
-				"nodeSelector": utils.GenerateNodeSelectorNotation(m),
+				"nodeSelector": m.Spec.NodeSelector,
 			},
 		},
 	}
@@ -73,7 +73,7 @@ func CertWebhook(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructure
 			},
 			"hubconfig": map[string]interface{}{
 				"replicaCount": m.Spec.ReplicaCount,
-				"nodeSelector": utils.GenerateNodeSelectorNotation(m),
+				"nodeSelector": m.Spec.NodeSelector,
 			},
 		},
 	}
@@ -100,7 +100,7 @@ func ConfigWatcher(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructu
 			},
 			"hubconfig": map[string]interface{}{
 				"replicaCount": m.Spec.ReplicaCount,
-				"nodeSelector": utils.GenerateNodeSelectorNotation(m),
+				"nodeSelector": m.Spec.NodeSelector,
 			},
 		},
 	}

@@ -19,12 +19,7 @@ func TestValidateDeployment(t *testing.T) {
 			ImagePullPolicy: "Always",
 			ImagePullSecret: "test",
 			ReplicaCount:    1,
-			NodeSelector: &operatorsv1alpha1.NodeSelector{
-				OS:                  "test",
-				CustomLabelSelector: "test",
-				CustomLabelValue:    "test",
-			},
-			Mongo: operatorsv1alpha1.Mongo{},
+			Mongo:           operatorsv1alpha1.Mongo{},
 		},
 	}
 

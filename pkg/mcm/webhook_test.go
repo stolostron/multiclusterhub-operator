@@ -16,12 +16,7 @@ func TestWebhookDeployment(t *testing.T) {
 			ImagePullPolicy: "",
 			ImagePullSecret: "",
 			ImageTagSuffix:  "",
-			NodeSelector: &operatorsv1alpha1.NodeSelector{
-				OS:                  "",
-				CustomLabelSelector: "",
-				CustomLabelValue:    "",
-			},
-			Mongo: operatorsv1alpha1.Mongo{},
+			Mongo:           operatorsv1alpha1.Mongo{},
 		},
 	}
 	t.Run("MCH with empty fields", func(t *testing.T) {
