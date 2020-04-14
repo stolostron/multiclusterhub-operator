@@ -100,6 +100,10 @@ func ApplyControllerPatches(res *resource.Resource, multipleClusterHub *operator
 }
 
 func ApplyWebhookPatches(res *resource.Resource, multipleClusterHub *operatorsv1alpha1.MultiClusterHub) error {
+	replicasPatch := generateReplicasPatch(multipleClusterHub.Spec.ReplicaCount)
+	if err := res.Patch(replicasPatch); err != nil {
+		return err
+	}
 	if err := applySecretPatches(
 		res,
 		[]corev1.EnvVar{},
