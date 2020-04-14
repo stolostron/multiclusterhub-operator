@@ -192,17 +192,9 @@ spec:
                   type: string
               type: object
             nodeSelector:
+              additionalProperties:
+                type: string
               description: Spec of NodeSelector
-              properties:
-                customLabelSelector:
-                  description: Spec of CustomLabelSelector
-                  type: string
-                customLabelValue:
-                  description: Spec of CustomLabelValue
-                  type: string
-                os:
-                  description: Spec of OS
-                  type: string
               type: object
             replicaCount:
               description: ReplicaCount for HA support. Does not affect data stores.

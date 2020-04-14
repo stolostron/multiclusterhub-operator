@@ -21,6 +21,7 @@ func ApplicationUI(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructu
 			},
 			"hubconfig": map[string]interface{}{
 				"replicaCount": m.Spec.ReplicaCount,
+				"nodeSelector": m.Spec.NodeSelector,
 			},
 		},
 	}

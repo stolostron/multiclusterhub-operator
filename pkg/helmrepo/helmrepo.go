@@ -101,7 +101,7 @@ func Deployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deployment {
 						},
 					}},
 					ImagePullSecrets: []corev1.LocalObjectReference{{Name: m.Spec.ImagePullSecret}},
-					NodeSelector:     utils.NodeSelectors(m),
+					NodeSelector:     m.Spec.NodeSelector,
 					// ServiceAccountName: "default",
 				},
 			},
@@ -175,7 +175,7 @@ func ValidateDeployment(m *operatorsv1alpha1.MultiClusterHub, dep *appsv1.Deploy
 	}
 
 	// verify node selectors
-	desiredSelectors := utils.NodeSelectors(m)
+	desiredSelectors := m.Spec.NodeSelector
 	if !utils.ContainsMap(pod.NodeSelector, desiredSelectors) {
 		log.Info("Enforcing node selectors from CR spec")
 		pod.NodeSelector = desiredSelectors

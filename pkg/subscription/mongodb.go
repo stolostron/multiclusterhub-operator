@@ -50,6 +50,7 @@ func MongoDB(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructured {
 			},
 			"hubconfig": map[string]interface{}{
 				"replicaCount": m.Spec.Mongo.ReplicaCount,
+				"nodeSelector": m.Spec.NodeSelector,
 			},
 		},
 	}
