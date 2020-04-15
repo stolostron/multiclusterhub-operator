@@ -8,7 +8,7 @@
             "apiVersion": "operators.open-cluster-management.io/v1alpha1",
             "kind": "MultiClusterHub",
             "metadata": {
-              "name": "example-multiclusterhub",
+              "name": "multiclusterhub",
               "namespace": "default"
             },
             "spec": {

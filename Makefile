@@ -118,6 +118,9 @@ unsubscribe:
 	@oc delete scc multicloud-scc || true
 	@oc delete clusterrole multicluster-mongodb
 	@oc delete clusterrolebinding multicluster-mongodb
+	@oc delete sub etcd-singlenamespace-alpha-community-operators-openshift-marketplace	
+	@oc delete sub multicluster-operators-subscription-alpha-community-operators-openshift-marketplace	
+	@oc delete sub multiclusterhub-operator
 
 resubscribe: unsubscribe subscribe
 
