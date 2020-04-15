@@ -2,11 +2,12 @@ package subscription
 
 import (
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 // Search overrides the search-prod chart
-func Search(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructured {
+func Search(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "search-prod",
 		Namespace: m.Namespace,
@@ -49,6 +50,7 @@ func Search(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructured {
 				"hubconfig": map[string]interface{}{
 					"replicaCount": m.Spec.ReplicaCount,
 				},
+				"imageShaDigests": cache.ImageShaDigests,
 			},
 		},
 	}

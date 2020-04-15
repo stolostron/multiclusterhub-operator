@@ -22,6 +22,7 @@ func ManagementIngress(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSp
 			"hubconfig": map[string]interface{}{
 				"replicaCount": m.Spec.ReplicaCount,
 			},
+			"imageShaDigests": cache.ImageShaDigests,
 		},
 	}
 	return newSubscription(m, sub)

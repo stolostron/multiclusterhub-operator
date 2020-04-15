@@ -246,7 +246,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		}
 	}
 
-	result, err = r.ensureObject(multiClusterHub, subscription.CertManager(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.CertManager(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
@@ -257,12 +257,12 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	result, err = r.ensureObject(multiClusterHub, subscription.CertWebhook(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.CertWebhook(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
 
-	result, err = r.ensureObject(multiClusterHub, subscription.ConfigWatcher(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.ConfigWatcher(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
@@ -309,7 +309,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.ApplicationUI(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.ApplicationUI(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
@@ -317,27 +317,27 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.GRC(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.GRC(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.KUIWebTerminal(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.KUIWebTerminal(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.MongoDB(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.MongoDB(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.RCM(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.RCM(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.Search(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.Search(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.Topology(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.Topology(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}

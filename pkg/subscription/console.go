@@ -37,6 +37,7 @@ func Console(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *unstr
 			"hubconfig": map[string]interface{}{
 				"replicaCount": m.Spec.ReplicaCount,
 			},
+			"imageShaDigests": cache.ImageShaDigests,
 		},
 	}
 	return newSubscription(m, sub)

@@ -9,7 +9,7 @@ import (
 var certManagerNamespace = "cert-manager"
 
 // CertManager overrides the cert-manager chart
-func CertManager(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructured {
+func CertManager(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "cert-manager",
 		Namespace: utils.CertManagerNS(m),
@@ -39,13 +39,14 @@ func CertManager(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructure
 			"hubconfig": map[string]interface{}{
 				"replicaCount": m.Spec.ReplicaCount,
 			},
+			"imageShaDigests": cache.ImageShaDigests,
 		},
 	}
 	return newSubscription(m, sub)
 }
 
 // CertWebhook overrides the cert-manager-webhook chart
-func CertWebhook(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructured {
+func CertWebhook(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "cert-manager-webhook",
 		Namespace: utils.CertManagerNS(m),
@@ -75,13 +76,14 @@ func CertWebhook(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructure
 			"hubconfig": map[string]interface{}{
 				"replicaCount": m.Spec.ReplicaCount,
 			},
+			"imageShaDigests": cache.ImageShaDigests,
 		},
 	}
 	return newSubscription(m, sub)
 }
 
 // ConfigWatcher overrides the configmap-watcher chart
-func ConfigWatcher(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructured {
+func ConfigWatcher(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "configmap-watcher",
 		Namespace: utils.CertManagerNS(m),
@@ -101,6 +103,7 @@ func ConfigWatcher(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructu
 			"hubconfig": map[string]interface{}{
 				"replicaCount": m.Spec.ReplicaCount,
 			},
+			"imageShaDigests": cache.ImageShaDigests,
 		},
 	}
 	return newSubscription(m, sub)
