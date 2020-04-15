@@ -64,6 +64,11 @@ func CertWebhook(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *u
 					"create": false,
 					"name":   "default",
 				},
+				"hubconfig": map[string]interface{}{
+					"replicaCount": m.Spec.ReplicaCount,
+					"nodeSelector": m.Spec.NodeSelector,
+				},
+				"imageShaDigests": cache.ImageShaDigests,
 			},
 			"image": map[string]interface{}{
 				"repository": m.Spec.ImageRepository,

@@ -119,9 +119,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 // blank assignment to verify that ReconcileMultiClusterHub implements reconcile.Reconciler
 var _ reconcile.Reconciler = &ReconcileMultiClusterHub{}
 
-// NW NOT GREAT; ASK ABOUT THIS
-
-var attemptManifestFile bool
+var attemptManifestFile bool // NW NOT GREAT APPROACH FOR ONE-TIME RUN, ASK ABOUT THIS (MOVE TO MAIN.GO?)
 
 // ReconcileMultiClusterHub reconciles a MultiClusterHub object
 type ReconcileMultiClusterHub struct {
@@ -200,7 +198,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		// return reconcile.Result{}, nil
 	}
 
-	if !attemptManifestFile { // NW THERE MUST BE A BETTER WAY TO DO THIS, ASK
+	if !attemptManifestFile { // NW THERE MUST BE A BETTER WAY TO DO THIS
 		attemptManifestFile = true // only run this conditional branch once
 
 		componentVersion, err := r.readComponentVersion()
@@ -211,18 +209,13 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		}
 
 		if r.ManifestFileExists(componentVersion) {
-
 			imageShaDigests, err := r.GetImageShaDigest(componentVersion)
-
 			if err != nil {
 				log.Error(err, "manifest file exists for given component version, but could not get image sha digests")
 				return reconcile.Result{}, err
 			}
-
 			r.CacheSpec.ImageShaDigests = imageShaDigests
-
-			fmt.Printf("\n\n>>>>>>>>>> NW imageShaDigests: \n %v \n\n", r.CacheSpec.ImageShaDigests)
-		} // NW else use tags
+		}
 	}
 
 	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub, r.CacheSpec))

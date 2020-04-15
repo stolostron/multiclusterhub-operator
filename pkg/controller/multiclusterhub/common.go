@@ -312,7 +312,7 @@ func readFileRaw(path string) ([]byte, error) {
 	return data, nil
 }
 
-// NW HARDCODE FOR INIT TESTS WITH IMAGE SHAS
+// HARDCODE FOR INIT TESTS WITH IMAGE SHAS
 func (r *ReconcileMultiClusterHub) readComponentVersion() (string, error) {
 	return "1.0.0", nil
 }

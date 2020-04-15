@@ -47,12 +47,12 @@ func Search(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *unstru
 						"pullPolicy": m.Spec.ImagePullPolicy,
 					},
 				},
-				"hubconfig": map[string]interface{}{
-					"replicaCount": m.Spec.ReplicaCount,
-					"nodeSelector": m.Spec.NodeSelector,
-				},
-				"imageShaDigests": cache.ImageShaDigests,
 			},
+			"hubconfig": map[string]interface{}{
+				"replicaCount": m.Spec.ReplicaCount,
+				"nodeSelector": m.Spec.NodeSelector,
+			},
+			"imageShaDigests": cache.ImageShaDigests,
 		},
 	}
 	return newSubscription(m, sub)

@@ -122,19 +122,12 @@ func MchIsValid(m *operatorsv1alpha1.MultiClusterHub) bool {
 
 //GetImageReference returns full image reference for images referenced directly within operator
 func GetImageReference(mch *operatorsv1alpha1.MultiClusterHub, imageName, imageVersion string, cache CacheSpec) string {
-	fmt.Println("\n\n >>>>>>>>>> NW: cache.ImageShaDigests", cache.ImageShaDigests)
-	fmt.Println("\n\n >>>>>>>>>> NW: imageName", imageName)
-	fmt.Println("\n\n >>>>>>>>>> NW: imageVersion", imageVersion)
-	replaceAll := strings.ReplaceAll(imageName, "-", "_")
-	fmt.Println("\n\n >>>>>>>>>> NW: replaceAll", replaceAll)
+
 	imageShaDigest := cache.ImageShaDigests[strings.ReplaceAll(imageName, "-", "_")]
-	fmt.Println("\n\n >>>>>>>>>> NW: imageShaDigest", imageShaDigest)
 
 	if imageShaDigest != "" {
-		fmt.Println("\n\n >>>>>>>>>> NW: imageShaDigest NOT EMPTY!!!")
 		return fmt.Sprintf("%s/%s@%s", mch.Spec.ImageRepository, imageName, imageShaDigest)
 	} else {
-		fmt.Println("\n\n >>>>>>>>>> NW: imageShaDigest TOTALLY EMPTY!!!")
 		imageRef := fmt.Sprintf("%s/%s:%s", mch.Spec.ImageRepository, imageName, imageVersion)
 		if mch.Spec.ImageTagSuffix == "" {
 			return imageRef

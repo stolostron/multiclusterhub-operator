@@ -2,7 +2,6 @@ package multiclusterhub
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path"
 	"strings"
@@ -59,7 +58,6 @@ func formatImageShaDigests(manifestData []byte) (map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("\n\n>>>>>>>>>>NW FORMATTED MANIFEST FILE %+v \n", manifestFile)
 
 	imageShaDigests := make(map[string]string)
 	for _, img := range manifestFile {
@@ -76,8 +74,6 @@ func readManifestFile(version string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("\n\n>>>>>> NW FILEPATH: \n\n", filepath)
 
 	contents, err := readFileRaw(filepath)
 	if err != nil {
