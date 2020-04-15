@@ -13,6 +13,7 @@ import (
 )
 
 func TestValidate(t *testing.T) {
+	replicas := int(1)
 	mch := &operatorsv1alpha1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1alpha1.MultiClusterHubSpec{
@@ -20,7 +21,7 @@ func TestValidate(t *testing.T) {
 			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: corev1.PullAlways,
 			ImagePullSecret: "test",
-			ReplicaCount:    1,
+			ReplicaCount:    &replicas,
 			Mongo:           operatorsv1alpha1.Mongo{},
 		},
 	}
@@ -49,7 +50,8 @@ func TestValidate(t *testing.T) {
 
 	// 5. Modified ReplicaCount
 	mch4 := mch.DeepCopy()
-	mch4.Spec.ReplicaCount = 2
+	replicas = int(2)
+	mch4.Spec.ReplicaCount = &replicas
 	sub4 := KUIWebTerminal(mch4, cs)
 
 	type args struct {
@@ -107,6 +109,7 @@ func TestValidate(t *testing.T) {
 }
 
 func TestSubscriptions(t *testing.T) {
+	replicas := int(1)
 	mch := &operatorsv1alpha1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1alpha1.MultiClusterHubSpec{
@@ -114,7 +117,7 @@ func TestSubscriptions(t *testing.T) {
 			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: corev1.PullAlways,
 			ImagePullSecret: "test",
-			ReplicaCount:    1,
+			ReplicaCount:    &replicas,
 			Mongo:           operatorsv1alpha1.Mongo{},
 		},
 	}

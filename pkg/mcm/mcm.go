@@ -71,9 +71,9 @@ func ValidateDeployment(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheS
 	}
 
 	// verify replica count
-	if *found.Spec.Replicas != int32(m.Spec.ReplicaCount) {
+	if *found.Spec.Replicas != int32(*m.Spec.ReplicaCount) {
 		log.Info("Enforcing replicaCount from CR spec")
-		replicas := int32(m.Spec.ReplicaCount)
+		replicas := int32(*m.Spec.ReplicaCount)
 		found.Spec.Replicas = &replicas
 		needsUpdate = true
 	}
