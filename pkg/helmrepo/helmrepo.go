@@ -20,7 +20,6 @@ const Name = "multiclusterhub-repo"
 const Port = 3000
 
 // Version of helm repo image
-const Version = "1.0.0"
 
 func labels() map[string]string {
 	return map[string]string{
@@ -30,7 +29,7 @@ func labels() map[string]string {
 
 // Image returns image reference for multiclusterhub-repo
 func Image(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) string {
-	return utils.GetImageReference(m, Name, Version, cache)
+	return utils.GetImageReference(m, Name, m.Spec.Version, cache)
 }
 
 // Deployment for the helm repo serving charts

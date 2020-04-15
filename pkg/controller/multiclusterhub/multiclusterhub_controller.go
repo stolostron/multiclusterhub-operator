@@ -119,8 +119,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 // blank assignment to verify that ReconcileMultiClusterHub implements reconcile.Reconciler
 var _ reconcile.Reconciler = &ReconcileMultiClusterHub{}
 
-var attemptManifestFile bool // NW NOT GREAT APPROACH FOR ONE-TIME RUN, ASK ABOUT THIS (MOVE TO MAIN.GO?)
-
 // ReconcileMultiClusterHub reconciles a MultiClusterHub object
 type ReconcileMultiClusterHub struct {
 	// This client, initialized using mgr.Client() above, is a split client
@@ -198,23 +196,16 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		// return reconcile.Result{}, nil
 	}
 
-	if !attemptManifestFile { // NW THERE MUST BE A BETTER WAY TO DO THIS
-		attemptManifestFile = true // only run this conditional branch once
+	if r.shouldReadManifestFile(multiClusterHub) {
 
-		componentVersion, err := r.readComponentVersion()
-
-		if err != nil {
-			log.Error(err, "could not get component version")
-			return reconcile.Result{}, err
-		}
-
-		if r.ManifestFileExists(componentVersion) {
-			imageShaDigests, err := r.GetImageShaDigest(componentVersion)
+		if r.ManifestFileExists(multiClusterHub.Spec.Version) {
+			imageShaDigests, err := r.GetImageShaDigest(multiClusterHub.Spec.Version)
 			if err != nil {
-				log.Error(err, "manifest file exists for given component version, but could not get image sha digests")
+				log.Error(err, "manifest file exists for given version, but could not get image sha digests")
 				return reconcile.Result{}, err
 			}
 			r.CacheSpec.ImageShaDigests = imageShaDigests
+			r.CacheSpec.ISDVersion = multiClusterHub.Spec.Version
 		}
 	}
 
@@ -430,7 +421,11 @@ func generatePass(length int) string {
 // SetDefaults Updates MultiClusterHub resource with proper defaults
 func (r *ReconcileMultiClusterHub) SetDefaults(m *operatorsv1alpha1.MultiClusterHub) (*reconcile.Result, error) {
 	if m.Spec.Version == "" {
-		m.Spec.Version = utils.LatestVerison
+		componentVersion, err := r.ReadComponentVersionFile()
+		if err != nil {
+			return &reconcile.Result{}, err
+		}
+		m.Spec.Version = componentVersion
 	}
 
 	if m.Spec.ImageRepository == "" {
@@ -573,6 +568,24 @@ func (r *ReconcileMultiClusterHub) addFinalizer(reqLogger logr.Logger, m *operat
 		return err
 	}
 	return nil
+}
+
+func (r *ReconcileMultiClusterHub) shouldReadManifestFile(m *operatorsv1alpha1.MultiClusterHub) bool {
+	// read manifest file if:
+
+	// (1) CacheSpec.ImageShaDigests doesn't exist or
+	if r.CacheSpec.ImageShaDigests == nil {
+		return true
+	}
+	// (2) CacheSpec.ISDVersion doesn't exist or
+	if r.CacheSpec.ISDVersion == "" {
+		return true
+	}
+	// (3) CacheSpec.ISDVersion is not up-to-date with spec.Version
+	if r.CacheSpec.ISDVersion != m.Spec.Version {
+		return true
+	}
+	return true
 }
 
 func contains(list []string, s string) bool {
