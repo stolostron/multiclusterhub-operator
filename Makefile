@@ -61,6 +61,9 @@ install: image push olm-catalog
 	@oc create secret docker-registry quay-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
 	@oc apply -k ./build/_output/olm || true
 
+install-dev:
+	./common/scripts/tests/install.sh
+
 directuninstall:
 	@ oc delete -k ./build/_output/olm || true
 
@@ -115,9 +118,6 @@ unsubscribe:
 	@oc delete scc multicloud-scc || true
 	@oc delete clusterrole multicluster-mongodb
 	@oc delete clusterrolebinding multicluster-mongodb
-	@oc delete sub etcd-singlenamespace-alpha-community-operators-openshift-marketplace
-	@oc delete sub multicluster-operators-subscription-alpha-community-operators-openshift-marketplace
-	@oc delete sub multiclusterhub-operator
 
 resubscribe: unsubscribe subscribe
 

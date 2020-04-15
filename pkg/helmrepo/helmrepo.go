@@ -1,8 +1,6 @@
 package helmrepo
 
 import (
-	"fmt"
-
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 
@@ -30,16 +28,13 @@ func labels() map[string]string {
 	}
 }
 
-func Image(m *operatorsv1alpha1.MultiClusterHub) string {
-	imageName := fmt.Sprintf("%s/%s:%s", m.Spec.ImageRepository, Name, Version)
-	if m.Spec.ImageTagSuffix == "" {
-		return imageName
-	}
-	return imageName + "-" + m.Spec.ImageTagSuffix
+// Image returns image reference for multiclusterhub-repo
+func Image(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) string {
+	return utils.GetImageReference(m, Name, Version, cache)
 }
 
 // Deployment for the helm repo serving charts
-func Deployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deployment {
+func Deployment(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *appsv1.Deployment {
 	replicas := int32(m.Spec.ReplicaCount)
 
 	dep := &appsv1.Deployment{
@@ -59,7 +54,7 @@ func Deployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deployment {
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
-						Image:           Image(m),
+						Image:           Image(m, cache),
 						ImagePullPolicy: m.Spec.ImagePullPolicy,
 						Name:            Name,
 						Ports: []corev1.ContainerPort{{
@@ -142,7 +137,7 @@ func Service(m *operatorsv1alpha1.MultiClusterHub) *corev1.Service {
 
 // ValidateDeployment returns a deep copy of the deployment with the desired spec based on the MultiClusterHub spec.
 // Returns true if an update is needed to reconcile differences with the current spec.
-func ValidateDeployment(m *operatorsv1alpha1.MultiClusterHub, dep *appsv1.Deployment) (*appsv1.Deployment, bool) {
+func ValidateDeployment(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec, dep *appsv1.Deployment) (*appsv1.Deployment, bool) {
 	var log = logf.Log.WithValues("Deployment.Namespace", dep.GetNamespace(), "Deployment.Name", dep.GetName())
 	found := dep.DeepCopy()
 
@@ -161,9 +156,9 @@ func ValidateDeployment(m *operatorsv1alpha1.MultiClusterHub, dep *appsv1.Deploy
 	}
 
 	// verify image repository and suffix
-	if container.Image != Image(m) {
+	if container.Image != Image(m, cache) {
 		log.Info("Enforcing image repo and suffix from CR spec")
-		container.Image = Image(m)
+		container.Image = Image(m, cache)
 		needsUpdate = true
 	}
 

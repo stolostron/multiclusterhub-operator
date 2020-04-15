@@ -63,9 +63,9 @@ func (r *ReconcileMultiClusterHub) ensureDeployment(m *operatorsv1alpha1.MultiCl
 
 	switch found.Name {
 	case helmrepo.Name:
-		desired, needsUpdate = helmrepo.ValidateDeployment(m, found)
+		desired, needsUpdate = helmrepo.ValidateDeployment(m, r.CacheSpec, found)
 	case mcm.APIServerName, mcm.ControllerName, mcm.WebhookName:
-		desired, needsUpdate = mcm.ValidateDeployment(m, found)
+		desired, needsUpdate = mcm.ValidateDeployment(m, r.CacheSpec, found)
 	default:
 		dplog.Info("Could not validate deployment; unknown name")
 		return nil, nil

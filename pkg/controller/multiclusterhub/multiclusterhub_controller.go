@@ -225,7 +225,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		} // NW else use tags
 	}
 
-	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub))
+	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub, r.CacheSpec))
 	if result != nil {
 		return *result, err
 	}
@@ -343,7 +343,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	result, err = r.ensureDeployment(multiClusterHub, mcm.APIServerDeployment(multiClusterHub))
+	result, err = r.ensureDeployment(multiClusterHub, mcm.APIServerDeployment(multiClusterHub, r.CacheSpec))
 	if result != nil {
 		return *result, err
 	}
@@ -353,7 +353,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	result, err = r.ensureDeployment(multiClusterHub, mcm.WebhookDeployment(multiClusterHub))
+	result, err = r.ensureDeployment(multiClusterHub, mcm.WebhookDeployment(multiClusterHub, r.CacheSpec))
 	if result != nil {
 		return *result, err
 	}
@@ -363,7 +363,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	result, err = r.ensureDeployment(multiClusterHub, mcm.ControllerDeployment(multiClusterHub))
+	result, err = r.ensureDeployment(multiClusterHub, mcm.ControllerDeployment(multiClusterHub, r.CacheSpec))
 	if result != nil {
 		return *result, err
 	}
