@@ -11,6 +11,7 @@ import (
 )
 
 func TestDeployment(t *testing.T) {
+	replicas := int(1)
 	empty := &operatorsv1alpha1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1alpha1.MultiClusterHubSpec{
@@ -20,6 +21,7 @@ func TestDeployment(t *testing.T) {
 			ImagePullSecret: "",
 			ImageTagSuffix:  "",
 			Mongo:           operatorsv1alpha1.Mongo{},
+			ReplicaCount:    &replicas,
 		},
 	}
 	t.Run("MCH with empty fields", func(t *testing.T) {
@@ -33,6 +35,7 @@ func TestDeployment(t *testing.T) {
 			ImageRepository: "test",
 			ImagePullPolicy: "test",
 			ImageTagSuffix:  "test",
+			ReplicaCount:    &replicas,
 		},
 	}
 	t.Run("MCH with only required values", func(t *testing.T) {
