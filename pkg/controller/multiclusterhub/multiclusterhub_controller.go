@@ -442,7 +442,7 @@ func (r *ReconcileMultiClusterHub) setDefaults(m *operatorsv1alpha1.MultiCluster
 	}
 
 	if m.Spec.Mongo.ReplicaCount <= 0 {
-		m.Spec.Mongo.ReplicaCount = 1
+		m.Spec.Mongo.ReplicaCount = 3
 	}
 
 	// Apply defaults to server
