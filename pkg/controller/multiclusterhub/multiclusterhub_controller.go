@@ -244,13 +244,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	if r.CacheSpec.IngressDomain == "" {
-		result, err = r.ingressDomain(multiClusterHub)
-		if result != nil {
-			return *result, err
-		}
-	}
-
 	result, err = r.ingressDomain(multiClusterHub)
 	if result != nil {
 		return *result, err
