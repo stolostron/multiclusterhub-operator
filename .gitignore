@@ -24,3 +24,8 @@ build-harness-extensions/
 !vbh/.build-harness-vendorized
 !vbh/build-harness
 !vbh/build-harness-extensions
+
+# Python Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
