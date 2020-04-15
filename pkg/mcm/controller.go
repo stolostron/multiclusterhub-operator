@@ -14,7 +14,7 @@ const ControllerName string = "mcm-controller"
 
 // ControllerDeployment creates the deployment for the mcm controller
 func ControllerDeployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deployment {
-	replicas := int32(m.Spec.ReplicaCount)
+	replicas := int32(*m.Spec.ReplicaCount)
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{

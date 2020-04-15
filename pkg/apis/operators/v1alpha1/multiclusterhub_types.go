@@ -30,7 +30,7 @@ type MultiClusterHubSpec struct {
 
 	// ReplicaCount for HA support. Does not affect data stores.
 	// +optional
-	ReplicaCount int `json:"replicaCount,omitempty"`
+	ReplicaCount *int `json:"replicaCount,omitempty"`
 
 	// Flag for IPv6
 	// +optional
@@ -190,7 +190,7 @@ type Mongo struct {
 
 	// ReplicaCount for HA Mongo support
 	// +optional
-	ReplicaCount int `json:"replicaCount,omitempty"`
+	ReplicaCount *int `json:"replicaCount,omitempty"`
 }
 
 // MultiClusterHubStatus defines the observed state of MultiClusterHub

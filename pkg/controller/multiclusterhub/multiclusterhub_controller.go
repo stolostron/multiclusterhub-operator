@@ -437,12 +437,17 @@ func (r *ReconcileMultiClusterHub) setDefaults(m *operatorsv1alpha1.MultiCluster
 		m.Spec.Etcd.StorageClass = storageClass
 	}
 
-	if m.Spec.ReplicaCount <= 0 {
-		m.Spec.ReplicaCount = 1
+	replicas := int(1)
+	if m.Spec.ReplicaCount == nil {
+		m.Spec.ReplicaCount = &replicas
+	} else if *m.Spec.ReplicaCount <= 0 {
+		m.Spec.ReplicaCount = &replicas
 	}
 
-	if m.Spec.Mongo.ReplicaCount <= 0 {
-		m.Spec.Mongo.ReplicaCount = 1
+	if m.Spec.Mongo.ReplicaCount == nil {
+		m.Spec.Mongo.ReplicaCount = &replicas
+	} else if *m.Spec.Mongo.ReplicaCount <= 0 {
+		m.Spec.Mongo.ReplicaCount = &replicas
 	}
 
 	// Apply defaults to server
