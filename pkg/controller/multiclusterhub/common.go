@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"time"
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
@@ -303,7 +304,7 @@ func readFileRaw(path string) ([]byte, error) {
 		log.Error(err, "File reading error")
 		return nil, err
 	}
-	data, err := ioutil.ReadFile(path)
+	data, err := ioutil.ReadFile(filepath.Clean(path))
 	if err != nil {
 		log.Error(err, "File reading error")
 		return nil, err
