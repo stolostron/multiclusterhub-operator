@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
+	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -186,14 +187,9 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	}
 
 	var result *reconcile.Result
-	if !utils.MchIsValid(multiClusterHub) {
-		log.Info("MultiClusterHub is Invalid. Updating with proper defaults")
-		result, err = r.SetDefaults(multiClusterHub)
-		if result != nil {
-			return *result, err
-		}
-		log.Info("MultiClusterHub successfully updated")
-		// return reconcile.Result{}, nil
+	result, err = r.setDefaults(multiClusterHub)
+	if result != nil {
+		return *result, err
 	}
 
 	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub))
@@ -356,7 +352,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		if errors.IsConflict(err) {
 			// Error from object being modified is normal behavior and should not be treated like an error
 			reqLogger.Info("Failed to update status", "Reason", "Object has been modified")
-			return reconcile.Result{Requeue: true}, nil
+			return reconcile.Result{RequeueAfter: time.Second}, nil
 		}
 
 		reqLogger.Error(err, fmt.Sprintf("Failed to update %s/%s status ", multiClusterHub.Namespace, multiClusterHub.Name))
@@ -398,8 +394,13 @@ func generatePass(length int) string {
 	return string(buf)
 }
 
-// SetDefaults Updates MultiClusterHub resource with proper defaults
-func (r *ReconcileMultiClusterHub) SetDefaults(m *operatorsv1alpha1.MultiClusterHub) (*reconcile.Result, error) {
+// setDefaults updates MultiClusterHub resource with proper defaults
+func (r *ReconcileMultiClusterHub) setDefaults(m *operatorsv1alpha1.MultiClusterHub) (*reconcile.Result, error) {
+	if utils.MchIsValid(m) {
+		return nil, nil
+	}
+	log.Info("MultiClusterHub is Invalid. Updating with proper defaults")
+
 	if m.Spec.Version == "" {
 		m.Spec.Version = utils.LatestVerison
 	}
@@ -443,7 +444,16 @@ func (r *ReconcileMultiClusterHub) SetDefaults(m *operatorsv1alpha1.MultiCluster
 	if m.Spec.Mongo.ReplicaCount <= 0 {
 		m.Spec.Mongo.ReplicaCount = 1
 	}
-	return nil, nil
+
+	// Apply defaults to server
+	err := r.client.Update(context.TODO(), m)
+	if err != nil {
+		log.Error(err, "Failed to update MultiClusterHub", "MultiClusterHub.Namespace", m.Namespace, "MultiClusterHub.Name", m.Name)
+		return &reconcile.Result{}, err
+	}
+
+	log.Info("MultiClusterHub successfully updated")
+	return &reconcile.Result{Requeue: true}, nil
 }
 
 // getStorageClass retrieves the default storage class if it exists
@@ -495,12 +505,6 @@ func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1alpha1.MultiClust
 
 	log.Info("Ingress domain not set, updating value in cachespec", "MultiClusterHub.Namespace", m.Namespace, "MultiClusterHub.Name", m.Name, "ingressDomain", domain)
 	r.CacheSpec.IngressDomain = domain
-	err = r.client.Update(context.TODO(), m)
-	if err != nil {
-		log.Error(err, "Failed to update MultiClusterHub", "MultiClusterHub.Namespace", m.Namespace, "MultiClusterHub.Name", m.Name)
-		return &reconcile.Result{}, err
-	}
-
 	return nil, nil
 }
 
