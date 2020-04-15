@@ -28,6 +28,7 @@ func Topology(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *unst
 			},
 			"hubconfig": map[string]interface{}{
 				"replicaCount": m.Spec.ReplicaCount,
+				"nodeSelector": m.Spec.NodeSelector,
 			},
 			"imageShaDigests": cache.ImageShaDigests,
 		},

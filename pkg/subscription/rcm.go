@@ -31,6 +31,7 @@ func RCM(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *unstructu
 			},
 			"hubconfig": map[string]interface{}{
 				"replicaCount": m.Spec.ReplicaCount,
+				"nodeSelector": m.Spec.NodeSelector,
 			},
 			"imageShaDigests": cache.ImageShaDigests,
 		},

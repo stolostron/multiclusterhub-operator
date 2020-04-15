@@ -51,6 +51,7 @@ func MongoDB(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *unstr
 			},
 			"hubconfig": map[string]interface{}{
 				"replicaCount": m.Spec.Mongo.ReplicaCount,
+				"nodeSelector": m.Spec.NodeSelector,
 			},
 			"imageShaDigests": cache.ImageShaDigests,
 		},

@@ -6,8 +6,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-var certManagerNamespace = "cert-manager"
-
 // CertManager overrides the cert-manager chart
 func CertManager(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *unstructured.Unstructured {
 	sub := &Subscription{
@@ -38,6 +36,7 @@ func CertManager(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *u
 			},
 			"hubconfig": map[string]interface{}{
 				"replicaCount": m.Spec.ReplicaCount,
+				"nodeSelector": m.Spec.NodeSelector,
 			},
 			"imageShaDigests": cache.ImageShaDigests,
 		},
@@ -75,6 +74,7 @@ func CertWebhook(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *u
 			},
 			"hubconfig": map[string]interface{}{
 				"replicaCount": m.Spec.ReplicaCount,
+				"nodeSelector": m.Spec.NodeSelector,
 			},
 			"imageShaDigests": cache.ImageShaDigests,
 		},
@@ -102,6 +102,7 @@ func ConfigWatcher(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) 
 			},
 			"hubconfig": map[string]interface{}{
 				"replicaCount": m.Spec.ReplicaCount,
+				"nodeSelector": m.Spec.NodeSelector,
 			},
 			"imageShaDigests": cache.ImageShaDigests,
 		},
