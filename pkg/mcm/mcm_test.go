@@ -11,6 +11,7 @@ import (
 )
 
 func TestValidateDeployment(t *testing.T) {
+	replicas := int(1)
 	mch := &operatorsv1alpha1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1alpha1.MultiClusterHubSpec{
@@ -18,7 +19,7 @@ func TestValidateDeployment(t *testing.T) {
 			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: "Always",
 			ImagePullSecret: "test",
-			ReplicaCount:    1,
+			ReplicaCount:    &replicas,
 			Mongo:           operatorsv1alpha1.Mongo{},
 			NodeSelector: map[string]string{
 				"test": "test",
