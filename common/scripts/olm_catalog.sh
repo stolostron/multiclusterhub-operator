@@ -92,12 +92,16 @@ if [ "$(uname)" = "Darwin" ]; then
 else
   sed -i "${index}s/true/false/" "${CSVFILE}"
 fi
-# save "defaults" for some spec fields
-sed -i -e "/maintainers:/,/^ *[^:]*:/s/- {}/- email: email.com/" "${CSVFILE}"
+# # save "defaults" for some spec fields
+sed -i -e "/maintainers:/,/^ *[^:]*:/s/- {}/- email: email@email.com/" "${CSVFILE}"
+sed -i -e "/email:/a\\        
+\ \ \ \ name: install\\
+ " "${CSVFILE}"
 sed -i -e "/keywords/{n;s/.*/    - operator/;}" "${CSVFILE}" 
-sed -i -e "/mediatype:/,/^ *[^:]*:/s|[\"]|a|g;/^ *mediatype:/,/^ *[^:]*:/s|aa|image/png|g" "${CSVFILE}"
-sed -i -e "/- base64data:/,/^ *[^:]*:/s|[\"]|a|g;/^ *- base64data:/,/^ *[^:]*:/s|aa|${BASE_DATA}|g" "${CSVFILE}"
-sed -i -e "/email.com/{n;s/.*/  - name: install/;}" "${CSVFILE}"
+sed -i -e "s/mediatype:/  mediatype:/" "${CSVFILE}"
+sed -i -e "/  mediatype:/,/^ *[^:]*:/s|[\"]|a|g;/^ *mediatype:/,/^ *[^:]*:/s|aa|image/png|g" "${CSVFILE}"
+sed -i -e "s/- base64data:/  - base64data:/" "${CSVFILE}"
+sed -i -e "/  - base64data:/,/^ *[^:]*:/s|[\"]|a|g;/^   *- base64data:/,/^ *[^:]*:/s|aa|${BASE_DATA}|g" "${CSVFILE}"
 
 NAME=${NAME:-multiclusterhub-operator-registry}
 NAMESPACE=${NAMESPACE:-multicluster-system}
