@@ -9,6 +9,7 @@ import (
 )
 
 func TestAPIServerDeployment(t *testing.T) {
+	replicas := int(1)
 	empty := &operatorsv1alpha1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1alpha1.MultiClusterHubSpec{
@@ -18,6 +19,7 @@ func TestAPIServerDeployment(t *testing.T) {
 			ImagePullSecret: "",
 			ImageTagSuffix:  "",
 			Mongo:           operatorsv1alpha1.Mongo{},
+			ReplicaCount:    &replicas, // Adding replicas here to avoid nil pointer dereference
 		},
 	}
 
@@ -37,6 +39,7 @@ func TestAPIServerDeployment(t *testing.T) {
 			ImageRepository: "test",
 			ImagePullPolicy: "test",
 			ImageTagSuffix:  "test",
+			ReplicaCount:    &replicas, // Adding replicas here to avoid nil pointer dereference
 		},
 	}
 	t.Run("MCH with only required values", func(t *testing.T) {

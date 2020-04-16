@@ -16,7 +16,8 @@ const WebhookName string = "mcm-webhook"
 
 // WebhookDeployment creates the deployment for the mcm webhook
 func WebhookDeployment(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *appsv1.Deployment {
-	replicas := int32(m.Spec.ReplicaCount)
+
+	replicas := int32(*m.Spec.ReplicaCount)
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{

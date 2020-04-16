@@ -119,19 +119,20 @@ func TestContainsMap(t *testing.T) {
 }
 
 func TestMchIsValid(t *testing.T) {
+	replicas := int(1)
 	validMCH := &operatorsv1alpha1.MultiClusterHub{
 		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1alpha1.MultiClusterHubSpec{
-			Version:         "latest",
+			Version:         "1.0.0",
 			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: "Always",
 			ImagePullSecret: "test",
-			ReplicaCount:    1,
+			ReplicaCount:    &replicas,
 			Mongo: operatorsv1alpha1.Mongo{
 				Storage:      "mongoStorage",
 				StorageClass: "mongoStorageClass",
-				ReplicaCount: 1,
+				ReplicaCount: &replicas,
 			},
 			Etcd: operatorsv1alpha1.Etcd{
 				Storage:      "etcdStorage",
@@ -142,7 +143,7 @@ func TestMchIsValid(t *testing.T) {
 	noRepo := validMCH.DeepCopy()
 	noRepo.Spec.ImageRepository = ""
 	noMongoReplicas := validMCH.DeepCopy()
-	noMongoReplicas.Spec.Mongo.ReplicaCount = 0
+	noMongoReplicas.Spec.Mongo.ReplicaCount = nil
 
 	type args struct {
 		m *operatorsv1alpha1.MultiClusterHub

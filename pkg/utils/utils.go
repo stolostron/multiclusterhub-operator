@@ -39,8 +39,6 @@ const (
 
 	// DefaultRepository ...
 	DefaultRepository = "quay.io/open-cluster-management"
-	// LatestVerison ...
-	LatestVerison = "latest"
 
 	// directory housing image manifests (also specified in Dockerfile)
 	ImageManifestsDir = "image-manifests"
@@ -50,6 +48,7 @@ const (
 type CacheSpec struct {
 	IngressDomain   string
 	ImageShaDigests map[string]string
+	ISDVersion      string
 }
 
 // CertManagerNS returns the namespace to deploy cert manager objects
@@ -114,8 +113,8 @@ func MchIsValid(m *operatorsv1alpha1.MultiClusterHub) bool {
 		m.Spec.Mongo.StorageClass == "" ||
 		m.Spec.Etcd.Storage == "" ||
 		m.Spec.Etcd.StorageClass == "" ||
-		m.Spec.ReplicaCount <= 0 ||
-		m.Spec.Mongo.ReplicaCount <= 0
+		m.Spec.ReplicaCount == nil ||
+		m.Spec.Mongo.ReplicaCount == nil
 
 	return !invalid
 }

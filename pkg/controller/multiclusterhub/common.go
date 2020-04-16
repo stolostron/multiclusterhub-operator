@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
+	"strings"
 	"time"
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
@@ -312,7 +314,18 @@ func readFileRaw(path string) ([]byte, error) {
 	return data, nil
 }
 
-// HARDCODE FOR INIT TESTS WITH IMAGE SHAS
-func (r *ReconcileMultiClusterHub) readComponentVersion() (string, error) {
-	return "1.0.0", nil
+//ReadComponentVersionFile reads COMPONENT_VERSION file string
+func (r *ReconcileMultiClusterHub) ReadComponentVersionFile() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		log.Error(err, "Couldn't get user home directory")
+		return "", err
+	}
+	path := path.Join(home, "COMPONENT_VERSION")
+	data, err := readFileRaw(path)
+	if err != nil {
+		log.Error(err, "Couldn't read component version file")
+		return "", err
+	}
+	return strings.TrimSpace(string(data)), nil
 }
