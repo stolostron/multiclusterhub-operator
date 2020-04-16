@@ -35,7 +35,7 @@ metadata:
   name: example-multiclusterhub
   namespace: open-cluster-management
 spec:
-  version: latest
+  version: 1.0.0
   dockerRepository: "ibmcom"
   imagePullPolicy: Always
   imagePullSecret: ""

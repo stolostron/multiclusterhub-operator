@@ -12,7 +12,7 @@ endif
 
 BUILD_DIR ?= build
 
-VERSION ?= latest
+VERSION ?= 1.0.0
 IMG ?= multiclusterhub-operator
 SECRET_REGISTRY ?= quay.io
 REGISTRY ?= quay.io/rhibmcollab
@@ -22,7 +22,7 @@ GIT_VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
 
 DOCKER_USER := $(shell echo $(DOCKER_USER))
 DOCKER_PASS := $(shell echo $(DOCKER_PASS))
-NAMESPACE ?= default
+NAMESPACE ?= open-cluster-management
 
 # For OCP OLM
 export IMAGE ?= $(shell echo $(REGISTRY)/$(IMG):$(VERSION))

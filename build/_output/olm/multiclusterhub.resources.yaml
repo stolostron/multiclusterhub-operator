@@ -225,7 +225,6 @@ data:
                 - imagePullPolicy
                 - imageRepository
                 - imageTagSuffix
-                - version
                 type: object
               status:
                 description: MultiClusterHubStatus defines the observed state of MultiClusterHub
@@ -344,14 +343,13 @@ data:
                 "kind": "MultiClusterHub",
                 "metadata": {
                   "name": "multiclusterhub",
-                  "namespace": "default"
+                  "namespace": "open-cluster-management"
                 },
                 "spec": {
                   "imagePullPolicy": "Always",
                   "imagePullSecret": "quay-secret",
                   "imageRepository": "quay.io/open-cluster-management",
-                  "imageTagSuffix": "",
-                  "version": "latest"
+                  "imageTagSuffix": ""
                 }
               }
             ]
@@ -579,7 +577,7 @@ data:
                         value: multiclusterhub-operator
                       - name: TEMPLATES_PATH
                         value: /usr/local/templates
-                      image: quay.io/rhibmcollab/multiclusterhub-operator:latest
+                      image: quay.io/rhibmcollab/multiclusterhub-operator:1.0.0
                       imagePullPolicy: Always
                       name: multiclusterhub-operator
                       resources: {}

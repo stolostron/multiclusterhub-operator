@@ -57,9 +57,9 @@ export CSV_VERSION=0.0.1
 
 cp "${DEPLOYDIR}"/operator.yaml "${DEPLOYDIR}"/operator.yaml.bak
 if [ "$(uname)" = "Darwin" ]; then
-  sed -i "" "s|multiclusterhub-operator:latest|${IMAGE}|g" "${DEPLOYDIR}"/operator.yaml
+  sed -i "" "s|multiclusterhub-operator:1.0.0|${IMAGE}|g" "${DEPLOYDIR}"/operator.yaml
 else
-  sed -i "s|multiclusterhub-operator:latest|${IMAGE}|g" "${DEPLOYDIR}"/operator.yaml
+  sed -i "s|multiclusterhub-operator:1.0.0|${IMAGE}|g" "${DEPLOYDIR}"/operator.yaml
 fi
 
 operator-sdk generate csv --csv-channel "${CSV_CHANNEL}" --csv-version "${CSV_VERSION}" --operator-name "${IMG}" >/dev/null 2>&1
@@ -146,9 +146,9 @@ EOF
   docker push $_IMAGE_REFERENCE
   _SHA_IMAGE_REFERENCE=$(docker inspect --format='{{index .RepoDigests 0}}' $_IMAGE_REFERENCE)
   if [ "$(uname)" = "Darwin" ]; then
-    sed -i "" "s|quay.io/rhibmcollab/multiclusterhub-operator:latest|${_SHA_IMAGE_REFERENCE}|g" "${OLMOUTPUTDIR}"/multiclusterhub.csv.yaml
+    sed -i "" "s|quay.io/rhibmcollab/multiclusterhub-operator:1.0.0|${_SHA_IMAGE_REFERENCE}|g" "${OLMOUTPUTDIR}"/multiclusterhub.csv.yaml
   else
-    sed -i "s|quay.io/rhibmcollab/multiclusterhub-operator:latest|${_SHA_IMAGE_REFERENCE}|g" "${OLMOUTPUTDIR}"/multiclusterhub.csv.yaml
+    sed -i "s|quay.io/rhibmcollab/multiclusterhub-operator:1.0.0|${_SHA_IMAGE_REFERENCE}|g" "${OLMOUTPUTDIR}"/multiclusterhub.csv.yaml
   fi
 
   cat "${OLMOUTPUTDIR}"/multiclusterhub.csv.yaml
