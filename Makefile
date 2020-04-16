@@ -80,6 +80,7 @@ unsubscribe:
 	@oc delete appsub --all || true
 	@oc delete helmrelease --all || true
 	@oc delete MultiClusterHub example-multiclusterhub || true
+	@oc delete hiveconfig hive || true
 	@oc delete crd channels.app.ibm.com || true
 	@oc delete crd deployables.app.ibm.com || true
 	@oc delete crd subscriptions.app.ibm.com || true
@@ -90,6 +91,7 @@ unsubscribe:
 	@oc delete csv multiclusterhub-operator.v0.0.1 || true
 	@oc delete csv etcdoperator.v0.9.4 || true
 	@oc delete csv multicluster-operators-subscription.v0.1.5 || true
+	@oc delete csv hive-operator.v1.0.1 || true
 	@oc delete subscription multiclusterhub-operator || true
 	@oc delete subscription etcdoperator.v0.9.4 || true
 	@oc delete catalogsource multiclusterhub-operator-registry || true
@@ -111,12 +113,12 @@ unsubscribe:
 	@oc delete clusterrolebinding cert-manager-webhook-auth-delegator || true
 	@for crd in $(oc get crd | grep cert | cut -f 1 -d ' '); do oc delete crd $crd; done
 	# Wrong syntax for Makefile @for webhook in $(oc get validatingwebhookconfiguration | grep hive | cut -f 1 -d ' '); do oc delete validatingwebhookconfiguration $webhook; done
-	@oc delete ns hive || true
 	@oc delete scc multicloud-scc || true
 	@oc delete clusterrole multicluster-mongodb
 	@oc delete clusterrolebinding multicluster-mongodb
 	@oc delete sub etcd-singlenamespace-alpha-community-operators-openshift-marketplace
 	@oc delete sub multicluster-operators-subscription-alpha-community-operators-openshift-marketplace
+	@oc delete sub hive-operator-alpha-community-operators-openshift-marketplace
 	@oc delete sub multiclusterhub-operator
 
 resubscribe: unsubscribe subscribe

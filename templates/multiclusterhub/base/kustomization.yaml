@@ -2,8 +2,7 @@ resources:
 - rbac
 - security_context_constraints
 - crds
-- hive
 - apiserver
-- etcd
+- operands
 - webhook
 - certificates

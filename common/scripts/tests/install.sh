@@ -139,11 +139,6 @@ if [[ "$force" != "true" ]]; then
     done
 fi
 
-echo "Creating hive namespace if it does not exist"
-_output=$(oc create ns hive 2>/dev/null)
-echo "- hive namespace created"
-echo ""
-
 echo "Beginning installation ..."
 _output=$(make install 2>/dev/null)
 echo ""
