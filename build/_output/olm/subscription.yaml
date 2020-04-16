@@ -9,4 +9,4 @@ spec:
   name: multiclusterhub-operator
   source: multiclusterhub-operator-registry
   sourceNamespace: open-cluster-management
-  startingCSV: multiclusterhub-operator.v0.0.1
+  startingCSV: multiclusterhub-operator.v1.0.0

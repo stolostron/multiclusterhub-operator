@@ -354,7 +354,7 @@ data:
               }
             ]
           capabilities: Basic Install
-        name: multiclusterhub-operator.v0.0.1
+        name: multiclusterhub-operator.v1.0.0
         namespace: placeholder
       spec:
         apiservicedefinitions: {}
@@ -600,10 +600,10 @@ data:
         - {}
         maturity: alpha
         provider: {}
-        version: 0.0.1
+        version: 1.0.0
   packages: |-
     - channels:
-      - currentCSV: multiclusterhub-operator.v0.0.1
+      - currentCSV: multiclusterhub-operator.v1.0.0
         name: alpha
       defaultChannel: alpha
       packageName: multiclusterhub-operator

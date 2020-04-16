@@ -53,7 +53,7 @@ IMG=$2
 BUNDLE_VERSION=$(cat COMPONENT_VERSION)
 
 export CSV_CHANNEL=alpha
-export CSV_VERSION=0.0.1
+export CSV_VERSION=1.0.0
 
 cp "${DEPLOYDIR}"/operator.yaml "${DEPLOYDIR}"/operator.yaml.bak
 if [ "$(uname)" = "Darwin" ]; then

@@ -27,7 +27,7 @@ NAMESPACE ?= open-cluster-management
 # For OCP OLM
 export IMAGE ?= $(shell echo $(REGISTRY)/$(IMG):$(VERSION))
 export CSV_CHANNEL ?= alpha
-export CSV_VERSION ?= 0.0.1
+export CSV_VERSION ?= 1.0.0
 
 # Use podman if available, otherwise use docker
 ifeq ($(CONTAINER_ENGINE),)
@@ -90,7 +90,7 @@ unsubscribe:
 	@oc delete crd etcdclusters.etcd.database.coreos.com || true
 	@oc delete crd etcdrestores.etcd.database.coreos.com || true
 	@oc delete crd multiclusterhubs.operators.open-cluster-management.io || true
-	@oc delete csv multiclusterhub-operator.v0.0.1 || true
+	@oc delete csv multiclusterhub-operator.v1.0.0 || true
 	@oc delete csv etcdoperator.v0.9.4 || true
 	@oc delete csv multicluster-operators-subscription.v0.1.5 || true
 	@oc delete subscription multiclusterhub-operator || true

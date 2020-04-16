@@ -192,8 +192,9 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
+	fmt.Println("\n\n\n NW>>>>>>>>>> Should we read manifest file?")
 	if r.shouldReadManifestFile(multiClusterHub) {
-
+		fmt.Println("\n\n\n NW>>>>>>>>>> YES!")
 		if r.ManifestFileExists(multiClusterHub.Spec.Version) {
 			imageShaDigests, err := r.GetImageShaDigest(multiClusterHub.Spec.Version)
 			if err != nil {
@@ -202,6 +203,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 			}
 			r.CacheSpec.ImageShaDigests = imageShaDigests
 			r.CacheSpec.ISDVersion = multiClusterHub.Spec.Version
+			fmt.Println("\n\n\n NW>>>>>>>>>> r.CacheSpec", r.CacheSpec)
 		}
 	}
 
@@ -588,7 +590,7 @@ func (r *ReconcileMultiClusterHub) shouldReadManifestFile(m *operatorsv1alpha1.M
 	if r.CacheSpec.ISDVersion != m.Spec.Version {
 		return true
 	}
-	return true
+	return false
 }
 
 func contains(list []string, s string) bool {

@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"time"
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
@@ -326,5 +327,5 @@ func (r *ReconcileMultiClusterHub) ReadComponentVersionFile() (string, error) {
 		log.Error(err, "Couldn't read component version file")
 		return "", err
 	}
-	return string(data), nil
+	return strings.TrimSpace(string(data)), nil
 }

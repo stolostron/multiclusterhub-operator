@@ -97,7 +97,7 @@ spec:
   name: multiclusterhub-operator
   source: multiclusterhub-operator-registry
   sourceNamespace: multicluster-system
-  startingCSV: multiclusterhub-operator.v0.0.1
+  startingCSV: multiclusterhub-operator.v1.0.0
 EOF
 ```
 

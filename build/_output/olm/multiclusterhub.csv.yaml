@@ -20,7 +20,7 @@
           }
         ]
       capabilities: Basic Install
-    name: multiclusterhub-operator.v0.0.1
+    name: multiclusterhub-operator.v1.0.0
   spec:
     apiservicedefinitions: {}
     customresourcedefinitions:
@@ -265,4 +265,4 @@
     - {}
     maturity: alpha
     provider: {}
-    version: 0.0.1
+    version: 1.0.0
