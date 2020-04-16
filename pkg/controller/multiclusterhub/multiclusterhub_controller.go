@@ -3,6 +3,7 @@ package multiclusterhub
 import (
 	"context"
 	"crypto/rand"
+	err "errors"
 	"fmt"
 	"math/big"
 	"time"
@@ -193,8 +194,8 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	}
 
 	if r.shouldReadManifestFile(multiClusterHub) {
-		if r.ManifestFileExists(multiClusterHub.Spec.Version) {
-			imageShaDigests, err := r.GetImageShaDigest(multiClusterHub.Spec.Version)
+		if ManifestFileExists(multiClusterHub.Spec.Version) {
+			imageShaDigests, err := GetImageShaDigest(multiClusterHub.Spec.Version)
 			if err != nil {
 				log.Error(err, "manifest file exists for given version, but could not get image sha digests")
 				return reconcile.Result{}, err
@@ -419,6 +420,10 @@ func (r *ReconcileMultiClusterHub) setDefaults(m *operatorsv1alpha1.MultiCluster
 			return &reconcile.Result{}, err
 		}
 		m.Spec.Version = componentVersion
+	}
+
+	if !utils.IsVersionSupported(m.Spec.Version) {
+		return &reconcile.Result{}, err.New("Version " + m.Spec.Version + " not supported")
 	}
 
 	if m.Spec.ImageRepository == "" {

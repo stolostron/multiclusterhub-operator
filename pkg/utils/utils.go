@@ -40,7 +40,7 @@ const (
 	// DefaultRepository ...
 	DefaultRepository = "quay.io/open-cluster-management"
 
-	// directory housing image manifests (also specified in Dockerfile)
+	// ImageManifestsDir directory housing image manifests (also specified in Dockerfile)
 	ImageManifestsDir = "image-manifests"
 )
 
@@ -107,6 +107,7 @@ func CoreToUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) 
 // MchIsValid Checks if the optional default parameters need to be set
 func MchIsValid(m *operatorsv1alpha1.MultiClusterHub) bool {
 	invalid := m.Spec.Version == "" ||
+		!IsVersionSupported(m.Spec.Version) ||
 		m.Spec.ImageRepository == "" ||
 		m.Spec.ImagePullPolicy == "" ||
 		m.Spec.Mongo.Storage == "" ||
@@ -133,4 +134,23 @@ func GetImageReference(mch *operatorsv1alpha1.MultiClusterHub, imageName, imageV
 		}
 		return imageRef + "-" + mch.Spec.ImageTagSuffix
 	}
+}
+
+//IsVersionSupported returns true if version is supported
+func IsVersionSupported(version string) bool {
+	if version == "" {
+		return false
+	}
+	supportedVersions := GetSupportedVersions()
+	for _, sv := range supportedVersions {
+		if sv == version {
+			return true
+		}
+	}
+	return false
+}
+
+//GetSupportedVersions returns list of supported versions for Spec.Version (update every release)
+func GetSupportedVersions() []string {
+	return []string{"1.0.0"}
 }

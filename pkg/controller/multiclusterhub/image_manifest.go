@@ -26,7 +26,7 @@ func getManifestFilePath(version string) (string, error) {
 }
 
 // GetImageShaDigest Reads and formats image sha digest values from image manifest file.
-func (r *ReconcileMultiClusterHub) GetImageShaDigest(version string) (map[string]string, error) {
+func GetImageShaDigest(version string) (map[string]string, error) {
 
 	manifestData, err := readManifestFile(version)
 
@@ -44,7 +44,7 @@ func (r *ReconcileMultiClusterHub) GetImageShaDigest(version string) (map[string
 }
 
 // ManifestFileExists Has an image manifest file been provided?
-func (r *ReconcileMultiClusterHub) ManifestFileExists(version string) bool {
+func ManifestFileExists(version string) bool {
 	filepath, err := getManifestFilePath(version)
 	if err != nil {
 		return false
