@@ -97,6 +97,7 @@ sed -i -e "/maintainers:/,/^ *[^:]*:/s/- {}/- email: email.com/" "${CSVFILE}"
 sed -i -e "/keywords/{n;s/.*/    - operator/;}" "${CSVFILE}" 
 sed -i -e "/mediatype:/,/^ *[^:]*:/s|[\"]|a|g;/^ *mediatype:/,/^ *[^:]*:/s|aa|image/png|g" "${CSVFILE}"
 sed -i -e "/- base64data:/,/^ *[^:]*:/s|[\"]|a|g;/^ *- base64data:/,/^ *[^:]*:/s|aa|${BASE_DATA}|g" "${CSVFILE}"
+sed -i -e "/email.com/{n;s/.*/  - name: install/;}" "${CSVFILE}"
 
 NAME=${NAME:-multiclusterhub-operator-registry}
 NAMESPACE=${NAMESPACE:-multicluster-system}

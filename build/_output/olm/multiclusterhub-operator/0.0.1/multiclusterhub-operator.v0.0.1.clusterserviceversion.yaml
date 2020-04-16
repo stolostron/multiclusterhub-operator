@@ -265,6 +265,6 @@ spec:
     - operator
   maintainers:
   - email: email.com
-  maturity: alpha
+  - name: install
   provider: {}
   version: 0.0.1
