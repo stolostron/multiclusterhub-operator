@@ -102,6 +102,7 @@ func Deployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deployment {
 					}},
 					ImagePullSecrets: []corev1.LocalObjectReference{{Name: m.Spec.ImagePullSecret}},
 					NodeSelector:     m.Spec.NodeSelector,
+					Affinity:         utils.DistributePods("app", Name),
 					// ServiceAccountName: "default",
 				},
 			},
