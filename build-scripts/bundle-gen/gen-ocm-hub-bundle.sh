@@ -27,7 +27,7 @@ top_of_repo=$(readlink  -f $my_dir/../..)
 image_rgy_ns_and_repo="quay.io/open-cluster-management/multiclusterhub-operator"
 
 deploy_dir=$top_of_repo/deploy
-pkg_dir=$top_of_repo/operator-bundles
+pkg_dir=$top_of_repo/operator-bundles/open-cluster-management-hub
 csv_template=$my_dir/ocm-hub-csv-template.yaml
 
 csv_release="$1"
