@@ -5,7 +5,7 @@
 # - readlink
 # - Python 3.6 (for underlying scripts)
 #
-# This script drives the creation of the OCM Hub operator bundle.
+# This script drives the creation of an OCM Hub operator bundle that will be "released".
 #
 # Pre-reqs:
 #
@@ -27,7 +27,7 @@ top_of_repo=$(readlink  -f $my_dir/../..)
 image_rgy_ns_and_repo="quay.io/open-cluster-management/multiclusterhub-operator"
 
 deploy_dir=$top_of_repo/deploy
-pkg_dir=$top_of_repo/operator-bundles/open-cluster-management-hub
+pkg_dir=$top_of_repo/operator-bundles/bound/open-cluster-management-hub
 csv_template=$my_dir/ocm-hub-csv-template.yaml
 
 csv_release="$1"
@@ -47,7 +47,6 @@ rel_maj=${vvv[0]}
 rel_min=${vvv[1]}
 rel_z=${vvv[2]}
 IFS=$old_IFS
-
 
 if [[ -z $snapshot_id ]]; then
    csv_vers="$csv_release"
@@ -71,7 +70,7 @@ fi
 #
 #   The CSV replacement chain will be managed using this channel in the package.
 #
-# Feature-Release channel (eg. latest-1.0, latest-1.1, etc.)
+# Feature-Release channel (eg. latest-1.0, community-1.1, etc.)
 #   A channel that will have a CSV_replacement chain from most recent CSV for a
 #   major.minor feature release (eg. 1.0) to the first such for the feature release, but
 #   not have CSVs for other feature releases.  To be used by custoemrs that would want
@@ -95,10 +94,10 @@ fi
 #
 #   Pipeline-stage channels:  edge-1.0.0, stable-1.0.0, etc.
 
-version_channel="latest-v$rel_maj"
-feature_release_channel="latest-$rel_maj.$rel_min"
-specific_release_channel="snapshots-$csv_release"
-snapshot_channel="snapshot-$csv_vers"
+# If we're given an image suffix, we presume we are generating an bundle dir for an
+# actual snapshot-related bundle image. In this mode, we generate the bundle in
+# bundle-image format, maintin a replaces chain across the bundles generated over
+# time, and maintain a bunch of hopefully useful channel pointers.
 
 if [[ $image_suffix == sha256* ]]; then
    image_suffix="@$image_suffix"
@@ -106,24 +105,26 @@ else
    image_suffix=":$image_suffix"
 fi
 
-operator_image_override="$image_rgy_ns_and_repo$image_suffix"
+operator_image_override="--image-override $image_rgy_ns_and_repo$image_suffix"
+bundle_format="--use-bundle-image-format"
+
+version_channel="latest-v$rel_maj"
+feature_release_channel="latest-$rel_maj.$rel_min"
+specific_release_channel="snapshots-$csv_release"
+snapshot_channel="snapshot-$csv_vers"
+default_channel="$feature_release_channel"
+
+channels="--replaces-channel $version_channel"
+channels="$channels --other-channel $feature_release_channel"
+channels="$channels --other-channel $specific_release_channel"
+channels="$channels --other-channel $snapshot_channel"
+channels="$channels --default-channel $default_channel"
 
 if [[ ! -d $pkg_dir ]]; then
    mkdir -p $pkg_dir
 fi
 
-# TODO: Resolve this:
-# Since changes in major version (x of x.y.z) indicates a progression for which
-# automatic upgrades are not going to be provided, perhaps we should have a different
-# OLM package for each such version, eg. by appending the version number to the
-# package name (eg. advanced-cluster-management-v1)?
-
 $my_dir/create-ocm-hub-bundle.py \
    --deploy-dir $deploy_dir --pkg-dir $pkg_dir --csv-template $csv_template \
-   --csv-vers $csv_vers \
-   --replaces-channel "$version_channel" \
-   --other-channel "$feature_release_channel" \
-   --other-channel "$specific_release_channel" \
-   --other-channel "$snapshot_channel" \
-   --image-override $operator_image_override
+   --csv-vers $csv_vers $bundle_format $channels $operator_image_override
 

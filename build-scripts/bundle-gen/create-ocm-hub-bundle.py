@@ -39,8 +39,11 @@ def main():
    parser.add_argument("--pkg-dir",  dest="pkg_dir_pathn", required=True)
    parser.add_argument("--pkg-name", dest="pkg_name", default=default_pkg_name)
 
-   parser.add_argument("--replaces-channel", dest="replaces_channel", required=True)
+   parser.add_argument("--use-bundle-image-format", dest="use_bundle_image_format", action="store_true")
+
+   parser.add_argument("--replaces-channel", dest="replaces_channel")
    parser.add_argument("--other-channel",    dest="other_channels", action="append")
+   parser.add_argument("--default-channel",  dest="default_channel")
 
    parser.add_argument("--csv-vers",  dest="csv_vers", required=True)
 
@@ -56,8 +59,11 @@ def main():
    pkg_name       = args.pkg_name
    pkg_dir_pathn  = args.pkg_dir_pathn
 
+   use_bundle_image_format = args.use_bundle_image_format
+
    replaces_channel = args.replaces_channel
    other_channels   = args.other_channels
+   default_channel  = args.default_channel
 
    csv_vers  = args.csv_vers
 
@@ -74,8 +80,8 @@ def main():
 
    # And now on to the show...
 
-   csv_name  = "%s.v%s" % (pkg_name, csv_vers)
-   csv_fn    = "%s.clusterserviceversion.yaml" % (csv_name)
+   csv_name = "%s.v%s" % (pkg_name, csv_vers)
+   csv_fn   = "%s.clusterserviceversion.yaml" % (csv_name)
 
    # The package directory is the directory in which we place a version-named
    # sub-directory for the new bundle.  Make sure the package directory exists,
@@ -86,36 +92,49 @@ def main():
    elif not os.path.isdir(pkg_dir_pathn):
       die("Output package path exists but isn't a directory: %s" % pkg_dir_pathn)
 
-   bundle_pathn = os.path.join(pkg_dir_pathn, csv_vers)
-   try:
-      os.mkdir(bundle_pathn)
-   except FileExistsError:
-      if os.path.isdir(bundle_pathn):
-         for fn in os.listdir(bundle_pathn):
-            fpathn = os.path.join(bundle_pathn, fn)
-            os.unlink(fpathn)
-      else:
-         die("Output bundle directory path exists but isn't a directory: %s" % bundle_dir_pathn)
+   # There seem to be several formats for a bundle directore, depending on how they
+   # are being published: being placed in an image, or made available some other
+   # way (eg. as a community operator, or via a Quay.io Application Repo.
    #
+   # When the bundle is in bundle-image format, the bundle directory has a manifests
+   # subdirectory containing all CSV, CRD manifests, and a metadata directory containing
+   # an annotations manifest. When other formats these subdirectories do not exist and
+   # all manifests are in the bundle directory itself.  (The bits of metadata are instead
+   # in a package.yamml in the package directory containing the bundle.)
+
+   if use_bundle_image_format:
+      bundle_pathn = os.path.join(pkg_dir_pathn, csv_vers, "manifests")
+   else:
+      bundle_pathn = os.path.join(pkg_dir_pathn, csv_vers)
+   create_or_empty_directory("outout bundle manifests", bundle_pathn)
 
    csv_pathn = "%s/%s" % (bundle_pathn, csv_fn)
-
 
    # Load or create the package manifest.
 
    pkg_manifest_pathn = os.path.join(pkg_dir_pathn, "package.yaml")
    pkg_manifest = load_pkg_manifest(pkg_manifest_pathn, pkg_name)
+   if default_channel:
+      pkg_manifest["defaultChannel"] = default_channel
+   else:
+      # TODO/Idea: Use default channel already in package manifest if any?
+      if use_bundle_image_format:
+         emsg("A default channel is required when using bundle-image format.")
 
    # See if this CSV is to replace an existing one.
 
-   chan = find_channel_entry(pkg_manifest, replaces_channel)
-   if chan is not None:
-      prev_csv_name = chan["currentCSV"]
-   else:
-      prev_csv_name = None
+   prev_csv_name = None
+   channels_to_update = list()
 
-   channels_to_update = [replaces_channel]
-   channels_to_update.extend(other_channels)
+   if replaces_channel:
+      channels_to_update.append(replaces_channel)
+      chan = find_channel_entry(pkg_manifest, replaces_channel)
+      if chan is not None:
+         prev_csv_name = chan["currentCSV"]
+   if default_channel:
+      channels_to_update.append(default_channel)
+   if other_channels:
+      channels_to_update.extend(other_channels)
 
    # Reformat image overrides into a map for easy lookup
 
@@ -215,10 +234,10 @@ def main():
 
    # Adjust image refs in deployment specs according to overrides:
 
-   print("Updating image references...")
-
-   for deployment_name, deployment in deployments.items():
-      update_image_refs_in_deployment(deployment, image_overrides)
+   if image_overrides:
+      print("Updating image references...")
+      for deployment_name, deployment in deployments.items():
+         update_image_refs_in_deployment(deployment, image_overrides)
    #
 
    # --- Form the output CSV ---
@@ -290,6 +309,36 @@ def main():
    print("Updating package manifest.")
    update_pkg_manifest(pkg_manifest, channels_to_update, csv_name)
    dump_manifest("package manifest", pkg_manifest_pathn, pkg_manifest)
+
+
+   # --- Generate metadata/annotatoins ---
+
+   if use_bundle_image_format:
+      metadata_pathn = os.path.join(pkg_dir_pathn, csv_vers, "metadata")
+      create_or_empty_directory("outout bundle metadata", metadata_pathn)
+
+      annotations_manifest = dict()
+      annotations_manifest["annotations"] = dict()
+      annot = annotations_manifest["annotations"]
+
+      annot["operators.operatorframework.io.bundle.mediatype.v1"] = "registry+v1"
+      annot["operators.operatorframework.io.bundle.manifests.v1"] = "manifests/"
+      annot["operators.operatorframework.io.bundle.metadata.v1"]  = "metadata/"
+
+      annot["operators.operatorframework.io.bundle.package.v1"] = pkg_name
+
+      channels_list = ','.join(sorted(list(channels_to_update)))
+      annot["operators.operatorframework.io.bundle.channels.v1"] = channels_list
+
+      # Observation: Having a default channel annotation be a property of a bundle
+      # (representing a specific version of a CSV) seems odd, as this is really a
+      # property of the package, not a paritcular CSV.  I wonder what the result is if
+      # multiple CSVs decleare different defaults??
+      annot["operators.operatorframework.io.bundle.channel.default.v1"] = default_channel
+
+      print("\nWriting bundle metadata.")
+      bundle_annotations_pathn = os.path.join(metadata_pathn, "annotations.yaml")
+      dump_manifest("bundle metadata", bundle_annotations_pathn, annotations_manifest)
 
    exit(0)
 

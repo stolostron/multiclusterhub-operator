@@ -234,7 +234,7 @@ def copy_file(fn, from_dir_pathn, to_dir_pathn):
 def create_or_empty_directory(dir_type, pathn):
 
    try:
-      os.mkdir(pathn)
+      os.makedirs(pathn)
    except FileExistsError:
       if os.path.isdir(pathn):
          for fn in os.listdir(pathn):
@@ -297,7 +297,7 @@ def update_image_refs_in_deployment(deployment, image_overrides=None):
       parsed_ref = parse_image_ref(image_ref)
 
       if not image_overrides:
-         print("  Image: %s" % image_ref)
+         print("  Image (no overrides): %s" % image_ref)
       else:
          repository = parsed_ref["repository"]
          try:
