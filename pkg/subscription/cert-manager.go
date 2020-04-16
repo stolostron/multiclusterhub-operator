@@ -38,9 +38,13 @@ func CertManager(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *u
 				"replicaCount": m.Spec.ReplicaCount,
 				"nodeSelector": m.Spec.NodeSelector,
 			},
-			"imageShaDigests": cache.ImageShaDigests,
 		},
 	}
+
+	if cache.ImageShaDigests != nil {
+		sub.Overrides["imageShaDigests"] = cache.ImageShaDigests
+	}
+
 	return newSubscription(m, sub)
 }
 
@@ -55,21 +59,6 @@ func CertWebhook(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *u
 			"global": map[string]interface{}{
 				"pullSecret": m.Spec.ImagePullSecret,
 			},
-			"cainjector": map[string]interface{}{
-				"imageTagPostfix": imageSuffix(m),
-				"image": map[string]interface{}{
-					"repository": m.Spec.ImageRepository,
-				},
-				"serviceAccount": map[string]interface{}{
-					"create": false,
-					"name":   "default",
-				},
-				"hubconfig": map[string]interface{}{
-					"replicaCount": m.Spec.ReplicaCount,
-					"nodeSelector": m.Spec.NodeSelector,
-				},
-				"imageShaDigests": cache.ImageShaDigests,
-			},
 			"image": map[string]interface{}{
 				"repository": m.Spec.ImageRepository,
 			},
@@ -81,9 +70,31 @@ func CertWebhook(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *u
 				"replicaCount": m.Spec.ReplicaCount,
 				"nodeSelector": m.Spec.NodeSelector,
 			},
-			"imageShaDigests": cache.ImageShaDigests,
 		},
 	}
+
+	cainjector := map[string]interface{}{
+		"imageTagPostfix": imageSuffix(m),
+		"image": map[string]interface{}{
+			"repository": m.Spec.ImageRepository,
+		},
+		"serviceAccount": map[string]interface{}{
+			"create": false,
+			"name":   "default",
+		},
+		"hubconfig": map[string]interface{}{
+			"replicaCount": m.Spec.ReplicaCount,
+			"nodeSelector": m.Spec.NodeSelector,
+		},
+	}
+
+	if cache.ImageShaDigests != nil {
+		sub.Overrides["imageShaDigests"] = cache.ImageShaDigests
+		cainjector["imageShaDigests"] = cache.ImageShaDigests
+	}
+
+	sub.Overrides["cainjector"] = cainjector
+
 	return newSubscription(m, sub)
 }
 
@@ -109,8 +120,12 @@ func ConfigWatcher(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) 
 				"replicaCount": m.Spec.ReplicaCount,
 				"nodeSelector": m.Spec.NodeSelector,
 			},
-			"imageShaDigests": cache.ImageShaDigests,
 		},
 	}
+
+	if cache.ImageShaDigests != nil {
+		sub.Overrides["imageShaDigests"] = cache.ImageShaDigests
+	}
+
 	return newSubscription(m, sub)
 }

@@ -52,8 +52,12 @@ func Search(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *unstru
 				"replicaCount": m.Spec.ReplicaCount,
 				"nodeSelector": m.Spec.NodeSelector,
 			},
-			"imageShaDigests": cache.ImageShaDigests,
 		},
 	}
+
+	if cache.ImageShaDigests != nil {
+		sub.Overrides["imageShaDigests"] = cache.ImageShaDigests
+	}
+
 	return newSubscription(m, sub)
 }
