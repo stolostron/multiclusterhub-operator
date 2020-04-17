@@ -4,9 +4,9 @@ metadata:
   annotations:
     categories: A list of comma separated categories that your operator falls under.
     certified: 'false'
-    containerImage: quay.io/rhibmcollab/hive:2020-04-08-520125dc
+    containerImage: quay.io/rhibmcollab/hive:2020-04-17-ee7e42c2
     description: OpenShift cluster provisioning and management at scale.
-  name: hive-operator.v0.1.1846-520125dc
+  name: hive-operator.v0.1.1847-ee7e42c2
   namespace: hive
 spec:
   customresourcedefinitions:
@@ -268,4 +268,4 @@ spec:
   maturity: alpha
   provider:
     name: Red Hat, Inc
-  version: 0.1.1846-520125dc
+  version: 0.1.1847-ee7e42c2

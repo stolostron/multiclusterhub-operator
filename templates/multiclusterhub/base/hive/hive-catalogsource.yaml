@@ -4,7 +4,7 @@ metadata:
   name: hive-catalog
 spec:
   sourceType: grpc
-  image: quay.io/rhibmcollab/hive:2020-04-08-520125dc
+  image: quay.io/rhibmcollab/hive:2020-04-17-ee7e42c2
   displayName: Hive Test Registry
   publisher: Hive Developer
   secrets:
