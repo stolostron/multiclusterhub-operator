@@ -423,7 +423,13 @@ func (r *ReconcileMultiClusterHub) setDefaults(m *operatorsv1alpha1.MultiCluster
 	}
 
 	if !utils.IsVersionSupported(m.Spec.Version) {
-		return &reconcile.Result{}, err.New("Version " + m.Spec.Version + " not supported")
+		err := err.New("Version " + m.Spec.Version + " not supported")
+		log.Error(err, "Overriding with valid version")
+		componentVersion, err := r.ReadComponentVersionFile()
+		if err != nil {
+			return &reconcile.Result{}, err
+		}
+		m.Spec.Version = componentVersion
 	}
 
 	if m.Spec.ImageRepository == "" {
