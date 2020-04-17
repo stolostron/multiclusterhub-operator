@@ -246,7 +246,9 @@ CSV_FILE="bundle/0.1.$GIT_COMMIT_COUNT-$GIT_HASH/hive-operator.v0.1.$GIT_COMMIT_
 #export DEPLOY_IMG="quay.io/rhibmcollab/hive:2020-03-24-2ea0bcc0"
 #export DEPLOY_IMG="quay.io/rhibmcollab/hive:2020-03-30-7e5ab546"
 #export DEPLOY_IMG="quay.io/rhibmcollab/hive:2020-04-01-37d9c917"
-export DEPLOY_IMG="quay.io/rhibmcollab/hive:2020-04-08-520125dc"
+#export DEPLOY_IMG="quay.io/rhibmcollab/hive:2020-04-08-520125dc"
+export DEPLOY_IMG="quay.io/rhibmcollab/hive:2020-04-17-ee7e42c2"
+
 
 #NOTE: You can use your shortname at the end
 export REGISTRY_IMG="quay.io/rhibmcollab/multiclusterhub-operator:cahl4"
@@ -258,7 +260,7 @@ hack/olm-registry-deploy.sh
 ```
 **Ensure STEP 1,2 and 3 complete.**  STEP 4 and 5 do not need to run.
 The CSV file will be in the bundle directory.  The filename will contain the `commit id` of the new image we want to use.  For example, `bundle/0.1.1774-2154ceae/hive-operator.v0.1.1774-2154ceae.clusterserviceversion.yaml`.  If you want to
-bring over all the files, you can `tar` up the results, for example ```tar cvf hive-0.1.1781-37d9c917.tgz bundle/```
+bring over all the files, you can `tar` up the results, for example ```tar cvf hive-0.1.1847-ee7e42c2.tgz bundle/```
 
 ### Compare CSV file to our hive-operator.yaml
 - Make sure of the following metadata:
