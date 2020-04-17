@@ -99,7 +99,7 @@ if [ "$(uname)" = "Darwin" ]; then
   \ \ \ \ name: install\\
   " "${CSVFILE}"
 else
-  sed -i -e "/email:/a\\  name: install\\" "${CSVFILE}"
+  sed -i -e "/email:/a\\    name: install\\" "${CSVFILE}"
 fi
 sed -i -e "/keywords/{n;s/.*/    - operator/;}" "${CSVFILE}" 
 sed -i -e "s/mediatype:/  mediatype:/" "${CSVFILE}"
