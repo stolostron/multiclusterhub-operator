@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,7 +16,7 @@ func TestValidateDeployment(t *testing.T) {
 	mch := &operatorsv1alpha1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1alpha1.MultiClusterHubSpec{
-			Version:         "latest",
+			Version:         "1.0.0",
 			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: "Always",
 			ImagePullSecret: "test",
@@ -27,8 +28,13 @@ func TestValidateDeployment(t *testing.T) {
 		},
 	}
 
+	cs := utils.CacheSpec{
+		IngressDomain:   "testIngress",
+		ImageShaDigests: map[string]string{},
+	}
+
 	// 1. Valid mch
-	dep := ControllerDeployment(mch)
+	dep := ControllerDeployment(mch, cs)
 
 	// 2. Modified ImagePullSecret
 	dep1 := dep.DeepCopy()
@@ -99,7 +105,7 @@ func TestValidateDeployment(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := ValidateDeployment(tt.args.m, tt.args.dep)
+			got, got1 := ValidateDeployment(tt.args.m, cs, tt.args.dep)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ValidateDeployment() got = %v, want %v", got, tt.want)
 			}

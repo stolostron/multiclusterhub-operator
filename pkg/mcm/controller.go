@@ -14,7 +14,7 @@ import (
 const ControllerName string = "mcm-controller"
 
 // ControllerDeployment creates the deployment for the mcm controller
-func ControllerDeployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deployment {
+func ControllerDeployment(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *appsv1.Deployment {
 	replicas := int32(*m.Spec.ReplicaCount)
 
 	dep := &appsv1.Deployment{
@@ -38,7 +38,7 @@ func ControllerDeployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deployme
 					NodeSelector:       m.Spec.NodeSelector,
 					Affinity:           utils.DistributePods("app", ControllerName),
 					Containers: []corev1.Container{{
-						Image:           Image(m),
+						Image:           Image(m, cache),
 						ImagePullPolicy: m.Spec.ImagePullPolicy,
 						Name:            ControllerName,
 						Args: []string{

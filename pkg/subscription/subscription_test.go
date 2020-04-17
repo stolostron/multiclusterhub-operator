@@ -17,7 +17,7 @@ func TestValidate(t *testing.T) {
 	mch := &operatorsv1alpha1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1alpha1.MultiClusterHubSpec{
-			Version:         "latest",
+			Version:         "1.0.0",
 			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: corev1.PullAlways,
 			ImagePullSecret: "test",
@@ -25,29 +25,34 @@ func TestValidate(t *testing.T) {
 			Mongo:           operatorsv1alpha1.Mongo{},
 		},
 	}
+
+	cs := utils.CacheSpec{
+		IngressDomain:   "testIngress",
+		ImageShaDigests: map[string]string{},
+	}
 	// 1. Valid mch
-	sub := KUIWebTerminal(mch)
+	sub := KUIWebTerminal(mch, cs)
 
 	// 2. Modified ImagePullSecret
 	mch1 := mch.DeepCopy()
 	mch1.Spec.ImagePullSecret = "notTest"
-	sub1 := KUIWebTerminal(mch1)
+	sub1 := KUIWebTerminal(mch1, cs)
 
 	// 3. Modified ImagePullPolicy
 	mch2 := mch.DeepCopy()
 	mch2.Spec.ImagePullPolicy = corev1.PullNever
-	sub2 := KUIWebTerminal(mch2)
+	sub2 := KUIWebTerminal(mch2, cs)
 
 	// 4. Modified ImageRepository
 	mch3 := mch.DeepCopy()
 	mch3.Spec.ImageRepository = "notquay.io/closed-cluster-management"
-	sub3 := KUIWebTerminal(mch3)
+	sub3 := KUIWebTerminal(mch3, cs)
 
 	// 5. Modified ReplicaCount
 	mch4 := mch.DeepCopy()
 	replicas = int(2)
 	mch4.Spec.ReplicaCount = &replicas
-	sub4 := KUIWebTerminal(mch4)
+	sub4 := KUIWebTerminal(mch4, cs)
 
 	type args struct {
 		found *unstructured.Unstructured
@@ -108,7 +113,7 @@ func TestSubscriptions(t *testing.T) {
 	mch := &operatorsv1alpha1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1alpha1.MultiClusterHubSpec{
-			Version:         "latest",
+			Version:         "1.0.0",
 			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: corev1.PullAlways,
 			ImagePullSecret: "test",
@@ -118,25 +123,26 @@ func TestSubscriptions(t *testing.T) {
 	}
 
 	cache := utils.CacheSpec{
-		IngressDomain: "testIngress",
+		IngressDomain:   "testIngress",
+		ImageShaDigests: map[string]string{},
 	}
 
 	tests := []struct {
 		name string
 		got  *unstructured.Unstructured
 	}{
-		{"ApplicationUI subscription", ApplicationUI(mch)},
-		{"CertManager subscription", CertManager(mch)},
-		{"CertWebhook subscription", CertWebhook(mch)},
-		{"ConfigWatcher subscription", ConfigWatcher(mch)},
+		{"ApplicationUI subscription", ApplicationUI(mch, cache)},
+		{"CertManager subscription", CertManager(mch, cache)},
+		{"CertWebhook subscription", CertWebhook(mch, cache)},
+		{"ConfigWatcher subscription", ConfigWatcher(mch, cache)},
 		{"Console subscription", Console(mch, cache)},
-		{"GRC subscription", GRC(mch)},
-		{"KUIWebTerminal subscription", KUIWebTerminal(mch)},
+		{"GRC subscription", GRC(mch, cache)},
+		{"KUIWebTerminal subscription", KUIWebTerminal(mch, cache)},
 		{"ManagementIngress subscription", ManagementIngress(mch, cache)},
-		{"MongoDB subscription", MongoDB(mch)},
-		{"RCM subscription", RCM(mch)},
-		{"Search subscription", Search(mch)},
-		{"Topology subscription", Topology(mch)},
+		{"MongoDB subscription", MongoDB(mch, cache)},
+		{"RCM subscription", RCM(mch, cache)},
+		{"Search subscription", Search(mch, cache)},
+		{"Topology subscription", Topology(mch, cache)},
 	}
 
 	for _, tt := range tests {
