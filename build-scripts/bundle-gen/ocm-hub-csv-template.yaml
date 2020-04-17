@@ -1,0 +1,67 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: "*Insert*"
+    capabilities: Basic Install
+    categories: "Integration & Delivery"
+    certified: false
+    createdAt: "*Insert* eg: 2020-03-24T17:00:00Z>"
+    description: Open management of Openshift and Kubernetes clusters
+  name: "*Insert* eg: multicluster-hub-operator.v0.9.0"
+  namespace: placeholder
+spec:
+  displayName: Open Cluster Management Hub
+  version: "*Insert* eg: 0.9.0"
+  replaces: "*Insert* eg: multicluster-hub-operator.v0.8.9"
+  provider:
+    name: Red Hat
+  maintainers:
+  - email: acmteam@redhat.com
+    name: Red Hat ACM team
+  maturity: alpha
+  description: |
+    The Open Cluster Management Hub operator installs and maintains an instnace
+    of the OCM hub, a cetneral management console for managing OpenShift and
+    Kubernetes clusters.
+
+  icon:
+  - base64data: iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAEDElEQVRoge2ZSWgUQRSGv0lmXKLiAm4RRTAqmCDoUUVBjYKKIMZ49C6auB3Ei548uBy8RNCTSkAwiKAgiDkIKoLoQY1L3EHNwV1jNDGZ8VCvrJ6eXqqT7nEi+aHo7nqvuv6/6/XrVzMwhCEkghSQleNgQgHfsn/BIgmkHeeDbVXy8F+uiEau6CwGhhT85yuiUervTF7keK3IYAstIFjIQUp3VZZ5dWbJXwV9nQPOASOT5xUJdcBPDMe/cAvpk+tvcrwGTCgOx1DsI/9BWwmZD7yW86fA7GIw9UE50CRceoEGIggpAyqBO3L9AVicOOVCjAYuCYefQL30hwrpxQgJulExMBX/B2ktpNzRVw4cxyzt9tgpF6KG4NDulxCNRkzoHSO5ymAF8EXmuQlM9PAJFfIbfyEAmzDp7zxQMSDKhdgC9Mj9W/BP/9ZCgsqXRcB78bsFTOoX5XykgAMOPmErHosQgCpU7OaA58DcCKTdSAMnMO/gVosxoUL0soYJAZgC3Bb/j8BSizFujAEuyz06gXWW40KFdMt1xvKGk4HPmPS8yXIcwAzgvox9ByyMMDZWIbMdRH7JsQ/YYzF2AfBWxjxAiYqC2ISsAT6J72NgHvnp+ST+4VkLfBW/VmBcFAWCUCH6yQ7zuUEZKrtowi2oONdwpuerwCyHrQLYj0kopwLmCcOAhIwDLmKyy1689yyLgA6H3z3gBqai7hNBA9nvWAsZ7hpYA7Rj6p7akIkmosJL30+36/hntwywGWhGpfZO4AcqvTejVluHa6gQHRZOIfXAd+m/C8wMEeFEBarYWw5MC/DbIIRzIe0FsDaqkDRw2OFzmvh3jCngqIPYA2AHUA2MklYN7ATaPISFCpmOyig51EdyW8wCNI7IHN0yh1+Nh9gaMB/tQCFdcv1Gjh3AkrhYu7AeI2Klh70VuODRX4sRs1Z3+gnJoTJNZSyUC5HB7De8Vjstti6f8Y1ifym+vkKa6H+Ot0Ed5p3wCqcwIWngofh4lkU/xBj3PsONszLPDh97mBCAXeLT7GXUQiqB8dKSEPVE5pnnY7cRUiM+z7yMWkixmi5vrgT49KDqOt3OyZgxYu/0Kuo+o7KIE2XA2IAnEweCVj2DigyNKpc9Gz8de+jQqnb0jXc1XZtNcfXr5KBD67HNLjAp3AXmAKtQX2xQ0eCEzqZfUDWbG6vleDt2dhGwEUW0Df+vud6zjPCwpYFHYq9LgqAtMsArIdLg4xMkZKfY2rHflieGdZis5LUtaEXtZdz7llUyJosqc0oChzBiGgn+9SaNWgldZx1MnF0EpMjfKrShvtg1qB/QR8v5bkxJkkWJKMk/c9djfvALau2UUDj5IY0qAM+gvjOdqJ3pQ+mrowRe7CHY4A8ixrhAvKZDJwAAAABJRU5ErkJggg==
+    mediatype: image/png
+  keywords:
+  - Red Hat
+  - cluster
+  - kubernetes
+  - multi-cluster
+  - multicluster
+  - openshift
+  labels:
+    app: ocm-hub
+  links:
+  - name: Documentation
+    url: https://github.com/open-cluster-management/acm/start-here.html
+  selector:
+    matchLabels:
+      app: ocm-hub
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  apiservicedefinitions:
+    required: "*Insert* as List"
+    owned: "*Insert* as List"
+  customresourcedefinitions:
+    required: "*Insert* as List"
+    owned: "*Insert* as List"
+  install:
+    strategy: deployment
+    spec:
+      clusterPermissions: "*Insert* as list"
+      permissions: "*Insert* as List"
+      deployments: "*Insert* as List"
+
