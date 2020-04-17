@@ -36,6 +36,7 @@ func ControllerDeployment(m *operatorsv1alpha1.MultiClusterHub, cache utils.Cach
 					ImagePullSecrets:   []corev1.LocalObjectReference{{Name: m.Spec.ImagePullSecret}},
 					ServiceAccountName: ServiceAccount,
 					NodeSelector:       m.Spec.NodeSelector,
+					Affinity:           utils.DistributePods("app", ControllerName),
 					Containers: []corev1.Container{{
 						Image:           Image(m, cache),
 						ImagePullPolicy: m.Spec.ImagePullPolicy,

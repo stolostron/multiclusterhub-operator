@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"reflect"
 	"testing"
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
@@ -181,4 +182,12 @@ func TestMchIsValid(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestDistributePods(t *testing.T) {
+	t.Run("Returns pod affinity", func(t *testing.T) {
+		if got := DistributePods("app", "testapp"); reflect.TypeOf(got) != reflect.TypeOf((*corev1.Affinity)(nil)) {
+			t.Errorf("DistributePods() did not return an affinity type")
+		}
+	})
 }

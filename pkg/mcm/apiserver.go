@@ -40,6 +40,7 @@ func APIServerDeployment(m *operatorsv1alpha1.MultiClusterHub, cache utils.Cache
 					ImagePullSecrets:   []corev1.LocalObjectReference{{Name: m.Spec.ImagePullSecret}},
 					ServiceAccountName: ServiceAccount,
 					NodeSelector:       m.Spec.NodeSelector,
+					Affinity:           utils.DistributePods("app", APIServerName),
 					Volumes: []corev1.Volume{
 						{
 							Name: "apiserver-certs",
