@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"reflect"
 	"testing"
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
@@ -119,6 +120,7 @@ func TestContainsMap(t *testing.T) {
 }
 
 func TestMchIsValid(t *testing.T) {
+	replicas := int(1)
 	validMCH := &operatorsv1alpha1.MultiClusterHub{
 		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
@@ -127,11 +129,11 @@ func TestMchIsValid(t *testing.T) {
 			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: "Always",
 			ImagePullSecret: "test",
-			ReplicaCount:    1,
+			ReplicaCount:    &replicas,
 			Mongo: operatorsv1alpha1.Mongo{
 				Storage:      "mongoStorage",
 				StorageClass: "mongoStorageClass",
-				ReplicaCount: 1,
+				ReplicaCount: &replicas,
 			},
 			Etcd: operatorsv1alpha1.Etcd{
 				Storage:      "etcdStorage",
@@ -142,7 +144,7 @@ func TestMchIsValid(t *testing.T) {
 	noRepo := validMCH.DeepCopy()
 	noRepo.Spec.ImageRepository = ""
 	noMongoReplicas := validMCH.DeepCopy()
-	noMongoReplicas.Spec.Mongo.ReplicaCount = 0
+	noMongoReplicas.Spec.Mongo.ReplicaCount = nil
 
 	type args struct {
 		m *operatorsv1alpha1.MultiClusterHub
@@ -180,4 +182,12 @@ func TestMchIsValid(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestDistributePods(t *testing.T) {
+	t.Run("Returns pod affinity", func(t *testing.T) {
+		if got := DistributePods("app", "testapp"); reflect.TypeOf(got) != reflect.TypeOf((*corev1.Affinity)(nil)) {
+			t.Errorf("DistributePods() did not return an affinity type")
+		}
+	})
 }

@@ -2,6 +2,7 @@ package mcm
 
 import (
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
@@ -15,7 +16,7 @@ const WebhookName string = "mcm-webhook"
 
 // WebhookDeployment creates the deployment for the mcm webhook
 func WebhookDeployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deployment {
-	replicas := int32(m.Spec.ReplicaCount)
+	replicas := int32(*m.Spec.ReplicaCount)
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -36,6 +37,7 @@ func WebhookDeployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deployment 
 					ImagePullSecrets:   []corev1.LocalObjectReference{{Name: m.Spec.ImagePullSecret}},
 					ServiceAccountName: ServiceAccount,
 					NodeSelector:       m.Spec.NodeSelector,
+					Affinity:           utils.DistributePods("app", WebhookName),
 					Volumes: []corev1.Volume{
 						{
 							Name: "webhook-cert",

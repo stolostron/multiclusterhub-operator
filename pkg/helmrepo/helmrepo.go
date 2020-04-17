@@ -40,7 +40,7 @@ func Image(m *operatorsv1alpha1.MultiClusterHub) string {
 
 // Deployment for the helm repo serving charts
 func Deployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deployment {
-	replicas := int32(m.Spec.ReplicaCount)
+	replicas := int32(*m.Spec.ReplicaCount)
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -102,6 +102,7 @@ func Deployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deployment {
 					}},
 					ImagePullSecrets: []corev1.LocalObjectReference{{Name: m.Spec.ImagePullSecret}},
 					NodeSelector:     m.Spec.NodeSelector,
+					Affinity:         utils.DistributePods("app", Name),
 					// ServiceAccountName: "default",
 				},
 			},
@@ -183,9 +184,9 @@ func ValidateDeployment(m *operatorsv1alpha1.MultiClusterHub, dep *appsv1.Deploy
 	}
 
 	// verify replica count
-	if *found.Spec.Replicas != int32(m.Spec.ReplicaCount) {
+	if *found.Spec.Replicas != int32(*m.Spec.ReplicaCount) {
 		log.Info("Enforcing replicaCount from CR spec")
-		replicas := int32(m.Spec.ReplicaCount)
+		replicas := int32(*m.Spec.ReplicaCount)
 		found.Spec.Replicas = &replicas
 		needsUpdate = true
 	}

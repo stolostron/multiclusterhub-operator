@@ -6,6 +6,7 @@ import (
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -108,8 +109,49 @@ func MchIsValid(m *operatorsv1alpha1.MultiClusterHub) bool {
 		m.Spec.Mongo.StorageClass == "" ||
 		m.Spec.Etcd.Storage == "" ||
 		m.Spec.Etcd.StorageClass == "" ||
-		m.Spec.ReplicaCount <= 0 ||
-		m.Spec.Mongo.ReplicaCount <= 0
+		m.Spec.ReplicaCount == nil ||
+		m.Spec.Mongo.ReplicaCount == nil
 
 	return !invalid
+}
+
+// DistributePods returns a anti-affinity rule that specifies a preference for pod replicas with
+// the matching key-value label to run across different nodes and zones
+func DistributePods(key string, value string) *corev1.Affinity {
+	return &corev1.Affinity{
+		PodAntiAffinity: &corev1.PodAntiAffinity{
+			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+				{
+					PodAffinityTerm: corev1.PodAffinityTerm{
+						TopologyKey: "kubernetes.io/hostname",
+						LabelSelector: &metav1.LabelSelector{
+							MatchExpressions: []metav1.LabelSelectorRequirement{
+								{
+									Key:      key,
+									Operator: metav1.LabelSelectorOpIn,
+									Values:   []string{value},
+								},
+							},
+						},
+					},
+					Weight: 35,
+				},
+				{
+					PodAffinityTerm: corev1.PodAffinityTerm{
+						TopologyKey: "failure-domain.beta.kubernetes.io/zone",
+						LabelSelector: &metav1.LabelSelector{
+							MatchExpressions: []metav1.LabelSelectorRequirement{
+								{
+									Key:      key,
+									Operator: metav1.LabelSelectorOpIn,
+									Values:   []string{value},
+								},
+							},
+						},
+					},
+					Weight: 70,
+				},
+			},
+		},
+	}
 }

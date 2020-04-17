@@ -55,6 +55,8 @@ BUNDLE_VERSION=$(cat COMPONENT_VERSION)
 export CSV_CHANNEL=alpha
 export CSV_VERSION=0.0.1
 
+ export BASE_DATA=iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAEDElEQVRoge2ZSWgUQRSGv0lmXKLiAm4RRTAqmCDoUUVBjYKKIMZ49C6auB3Ei548uBy8RNCTSkAwiKAgiDkIKoLoQY1L3EHNwV1jNDGZ8VCvrJ6eXqqT7nEi+aHo7nqvuv6/6/XrVzMwhCEkghSQleNgQgHfsn/BIgmkHeeDbVXy8F+uiEau6CwGhhT85yuiUervTF7keK3IYAstIFjIQUp3VZZ5dWbJXwV9nQPOASOT5xUJdcBPDMe/cAvpk+tvcrwGTCgOx1DsI/9BWwmZD7yW86fA7GIw9UE50CRceoEGIggpAyqBO3L9AVicOOVCjAYuCYefQL30hwrpxQgJulExMBX/B2ktpNzRVw4cxyzt9tgpF6KG4NDulxCNRkzoHSO5ymAF8EXmuQlM9PAJFfIbfyEAmzDp7zxQMSDKhdgC9Mj9W/BP/9ZCgsqXRcB78bsFTOoX5XykgAMOPmErHosQgCpU7OaA58DcCKTdSAMnMO/gVosxoUL0soYJAZgC3Bb/j8BSizFujAEuyz06gXWW40KFdMt1xvKGk4HPmPS8yXIcwAzgvox9ByyMMDZWIbMdRH7JsQ/YYzF2AfBWxjxAiYqC2ISsAT6J72NgHvnp+ST+4VkLfBW/VmBcFAWCUCH6yQ7zuUEZKrtowi2oONdwpuerwCyHrQLYj0kopwLmCcOAhIwDLmKyy1689yyLgA6H3z3gBqai7hNBA9nvWAsZ7hpYA7Rj6p7akIkmosJL30+36/hntwywGWhGpfZO4AcqvTejVluHa6gQHRZOIfXAd+m/C8wMEeFEBarYWw5MC/DbIIRzIe0FsDaqkDRw2OFzmvh3jCngqIPYA2AHUA2MklYN7ATaPISFCpmOyig51EdyW8wCNI7IHN0yh1+Nh9gaMB/tQCFdcv1Gjh3AkrhYu7AeI2Klh70VuODRX4sRs1Z3+gnJoTJNZSyUC5HB7De8Vjstti6f8Y1ifym+vkKa6H+Ot0Ed5p3wCqcwIWngofh4lkU/xBj3PsONszLPDh97mBCAXeLT7GXUQiqB8dKSEPVE5pnnY7cRUiM+z7yMWkixmi5vrgT49KDqOt3OyZgxYu/0Kuo+o7KIE2XA2IAnEweCVj2DigyNKpc9Gz8de+jQqnb0jXc1XZtNcfXr5KBD67HNLjAp3AXmAKtQX2xQ0eCEzqZfUDWbG6vleDt2dhGwEUW0Df+vud6zjPCwpYFHYq9LgqAtMsArIdLg4xMkZKfY2rHflieGdZis5LUtaEXtZdz7llUyJosqc0oChzBiGgn+9SaNWgldZx1MnF0EpMjfKrShvtg1qB/QR8v5bkxJkkWJKMk/c9djfvALau2UUDj5IY0qAM+gvjOdqJ3pQ+mrowRe7CHY4A8ixrhAvKZDJwAAAABJRU5ErkJggg==
+
 cp "${DEPLOYDIR}"/operator.yaml "${DEPLOYDIR}"/operator.yaml.bak
 if [ "$(uname)" = "Darwin" ]; then
   sed -i "" "s|multiclusterhub-operator:latest|${IMAGE}|g" "${DEPLOYDIR}"/operator.yaml
@@ -91,6 +93,21 @@ if [ "$(uname)" = "Darwin" ]; then
 else
   sed -i "${index}s/true/false/" "${CSVFILE}"
 fi
+
+# # save "defaults" for some spec fields
+sed -i -e "/maintainers:/,/^ *[^:]*:/s/- {}/- email: email@email.com/" "${CSVFILE}"
+if [ "$(uname)" = "Darwin" ]; then
+  sed -i -e "/email:/a\\
+  \ \ \ \ name: install\\
+  " "${CSVFILE}"
+else
+  sed -i -e "/email:/a\\    name: install\\" "${CSVFILE}"
+fi
+sed -i -e "/keywords/{n;s/.*/    - operator/;}" "${CSVFILE}" 
+sed -i -e "s/mediatype:/  mediatype:/" "${CSVFILE}"
+sed -i -e "/  mediatype:/,/^ *[^:]*:/s|[\"]|a|g;/^ *mediatype:/,/^ *[^:]*:/s|aa|image/png|g" "${CSVFILE}"
+sed -i -e "s/- base64data:/  - base64data:/" "${CSVFILE}"
+sed -i -e "/  - base64data:/,/^ *[^:]*:/s|[\"]|a|g;/^   *- base64data:/,/^ *[^:]*:/s|aa|${BASE_DATA}|g" "${CSVFILE}"
 
 NAME=${NAME:-multiclusterhub-operator-registry}
 NAMESPACE=${NAMESPACE:-multicluster-system}
