@@ -2,11 +2,12 @@ package subscription
 
 import (
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 // MongoDB overrides the multicluster-mongodb chart
-func MongoDB(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructured {
+func MongoDB(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "multicluster-mongodb",
 		Namespace: m.Namespace,
@@ -54,5 +55,10 @@ func MongoDB(m *operatorsv1alpha1.MultiClusterHub) *unstructured.Unstructured {
 			},
 		},
 	}
+
+	if cache.ImageShaDigests != nil {
+		sub.Overrides["imageShaDigests"] = cache.ImageShaDigests
+	}
+
 	return newSubscription(m, sub)
 }

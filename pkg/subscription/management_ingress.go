@@ -25,5 +25,10 @@ func ManagementIngress(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSp
 			},
 		},
 	}
+
+	if cache.ImageShaDigests != nil {
+		sub.Overrides["imageShaDigests"] = cache.ImageShaDigests
+	}
+
 	return newSubscription(m, sub)
 }

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -21,8 +22,14 @@ func TestControllerDeployment(t *testing.T) {
 			ReplicaCount:    &replicas,
 		},
 	}
+
+	cs := utils.CacheSpec{
+		IngressDomain:   "testIngress",
+		ImageShaDigests: map[string]string{},
+	}
+
 	t.Run("MCH with empty fields", func(t *testing.T) {
-		_ = ControllerDeployment(empty)
+		_ = ControllerDeployment(empty, cs)
 	})
 
 	essentialsOnly := &operatorsv1alpha1.MultiClusterHub{
@@ -36,6 +43,6 @@ func TestControllerDeployment(t *testing.T) {
 		},
 	}
 	t.Run("MCH with only required values", func(t *testing.T) {
-		_ = ControllerDeployment(essentialsOnly)
+		_ = ControllerDeployment(essentialsOnly, cs)
 	})
 }

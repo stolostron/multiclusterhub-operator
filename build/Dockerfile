@@ -4,6 +4,10 @@ ENV OPERATOR=/usr/local/bin/multiclusterhub-operator \
     USER_UID=1001 \
     USER_NAME=multiclusterhub-operator
 
+# install manifest files
+COPY image-manifests ${HOME}/image-manifests
+COPY COMPONENT_VERSION ${HOME}/COMPONENT_VERSION
+
 # install templates
 COPY templates /usr/local/templates
 

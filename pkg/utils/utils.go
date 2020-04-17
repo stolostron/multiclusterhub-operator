@@ -2,6 +2,8 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
@@ -38,13 +40,16 @@ const (
 
 	// DefaultRepository ...
 	DefaultRepository = "quay.io/open-cluster-management"
-	// LatestVerison ...
-	LatestVerison = "latest"
+
+	// ImageManifestsDir directory housing image manifests (also specified in Dockerfile)
+	ImageManifestsDir = "image-manifests"
 )
 
 // CacheSpec ...
 type CacheSpec struct {
-	IngressDomain string
+	IngressDomain   string
+	ImageShaDigests map[string]string
+	ISDVersion      string
 }
 
 // CertManagerNS returns the namespace to deploy cert manager objects
@@ -103,6 +108,7 @@ func CoreToUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) 
 // MchIsValid Checks if the optional default parameters need to be set
 func MchIsValid(m *operatorsv1alpha1.MultiClusterHub) bool {
 	invalid := m.Spec.Version == "" ||
+		!IsVersionSupported(m.Spec.Version) ||
 		m.Spec.ImageRepository == "" ||
 		m.Spec.ImagePullPolicy == "" ||
 		m.Spec.Mongo.Storage == "" ||
@@ -113,6 +119,41 @@ func MchIsValid(m *operatorsv1alpha1.MultiClusterHub) bool {
 		m.Spec.Mongo.ReplicaCount == nil
 
 	return !invalid
+}
+
+//GetImageReference returns full image reference for images referenced directly within operator
+func GetImageReference(mch *operatorsv1alpha1.MultiClusterHub, imageName, imageVersion string, cache CacheSpec) string {
+
+	imageShaDigest := cache.ImageShaDigests[strings.ReplaceAll(imageName, "-", "_")]
+
+	if imageShaDigest != "" {
+		return fmt.Sprintf("%s/%s@%s", mch.Spec.ImageRepository, imageName, imageShaDigest)
+	} else {
+		imageRef := fmt.Sprintf("%s/%s:%s", mch.Spec.ImageRepository, imageName, imageVersion)
+		if mch.Spec.ImageTagSuffix == "" {
+			return imageRef
+		}
+		return imageRef + "-" + mch.Spec.ImageTagSuffix
+	}
+}
+
+//IsVersionSupported returns true if version is supported
+func IsVersionSupported(version string) bool {
+	if version == "" {
+		return false
+	}
+	supportedVersions := GetSupportedVersions()
+	for _, sv := range supportedVersions {
+		if sv == version {
+			return true
+		}
+	}
+	return false
+}
+
+//GetSupportedVersions returns list of supported versions for Spec.Version (update every release)
+func GetSupportedVersions() []string {
+	return []string{"1.0.0"}
 }
 
 // DistributePods returns a anti-affinity rule that specifies a preference for pod replicas with

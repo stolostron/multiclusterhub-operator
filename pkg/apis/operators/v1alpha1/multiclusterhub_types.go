@@ -13,7 +13,8 @@ import (
 // +k8s:openapi-gen=true
 type MultiClusterHubSpec struct {
 	// Version of the MultiCluster hub
-	Version string `json:"version"`
+	// +optional
+	Version string `json:"version,omitempty"`
 
 	// Repository of the MultiCluster hub images
 	ImageRepository string `json:"imageRepository"`
