@@ -94,9 +94,13 @@ else
 fi
 # # save "defaults" for some spec fields
 sed -i -e "/maintainers:/,/^ *[^:]*:/s/- {}/- email: email@email.com/" "${CSVFILE}"
-sed -i -e "/email:/a\\        
-\ \ \ \ name: install\\
- " "${CSVFILE}"
+if [ "$(uname)" = "Darwin" ]; then
+  sed -i -e "/email:/a\\
+  \ \ \ \ name: install\\
+  " "${CSVFILE}"
+else
+  sed -i -e "/email:/a\\\ \ \ \ name: install\\" "${CSVFILE}"
+fi
 sed -i -e "/keywords/{n;s/.*/    - operator/;}" "${CSVFILE}" 
 sed -i -e "s/mediatype:/  mediatype:/" "${CSVFILE}"
 sed -i -e "/  mediatype:/,/^ *[^:]*:/s|[\"]|a|g;/^ *mediatype:/,/^ *[^:]*:/s|aa|image/png|g" "${CSVFILE}"
