@@ -17,7 +17,7 @@ import (
 const APIServerName string = "mcm-apiserver"
 
 // APIServerDeployment creates the deployment for the mcm apiserver
-func APIServerDeployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deployment {
+func APIServerDeployment(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *appsv1.Deployment {
 	replicas := int32(*m.Spec.ReplicaCount)
 	mode := int32(420)
 
@@ -40,6 +40,7 @@ func APIServerDeployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deploymen
 					ImagePullSecrets:   []corev1.LocalObjectReference{{Name: m.Spec.ImagePullSecret}},
 					ServiceAccountName: ServiceAccount,
 					NodeSelector:       m.Spec.NodeSelector,
+					Affinity:           utils.DistributePods("app", APIServerName),
 					Volumes: []corev1.Volume{
 						{
 							Name: "apiserver-certs",
@@ -67,7 +68,7 @@ func APIServerDeployment(m *operatorsv1alpha1.MultiClusterHub) *appsv1.Deploymen
 						},
 					},
 					Containers: []corev1.Container{{
-						Image:           Image(m),
+						Image:           Image(m, cache),
 						ImagePullPolicy: m.Spec.ImagePullPolicy,
 						Name:            APIServerName,
 						Args: []string{

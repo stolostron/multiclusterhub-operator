@@ -2,7 +2,13 @@ package multiclusterhub
 
 import (
 	"context"
+	err "errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
 	"time"
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
@@ -60,9 +66,9 @@ func (r *ReconcileMultiClusterHub) ensureDeployment(m *operatorsv1alpha1.MultiCl
 
 	switch found.Name {
 	case helmrepo.Name:
-		desired, needsUpdate = helmrepo.ValidateDeployment(m, found)
+		desired, needsUpdate = helmrepo.ValidateDeployment(m, r.CacheSpec, found)
 	case mcm.APIServerName, mcm.ControllerName, mcm.WebhookName:
-		desired, needsUpdate = mcm.ValidateDeployment(m, found)
+		desired, needsUpdate = mcm.ValidateDeployment(m, r.CacheSpec, found)
 	default:
 		dplog.Info("Could not validate deployment; unknown name")
 		return nil, nil
@@ -284,4 +290,42 @@ func (r *ReconcileMultiClusterHub) copyPullSecret(m *operatorsv1alpha1.MultiClus
 		}
 	}
 	return nil, nil
+}
+
+func fileExists(path string) bool {
+	info, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
+}
+
+func readFileRaw(path string) ([]byte, error) {
+	if !fileExists(path) {
+		err := err.New("File" + path + "does not exist")
+		log.Error(err, "File reading error")
+		return nil, err
+	}
+	data, err := ioutil.ReadFile(filepath.Clean(path))
+	if err != nil {
+		log.Error(err, "File reading error")
+		return nil, err
+	}
+	return data, nil
+}
+
+//ReadComponentVersionFile reads COMPONENT_VERSION file string
+func (r *ReconcileMultiClusterHub) ReadComponentVersionFile() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		log.Error(err, "Couldn't get user home directory")
+		return "", err
+	}
+	path := path.Join(home, "COMPONENT_VERSION")
+	data, err := readFileRaw(path)
+	if err != nil {
+		log.Error(err, "Couldn't read component version file")
+		return "", err
+	}
+	return strings.TrimSpace(string(data)), nil
 }

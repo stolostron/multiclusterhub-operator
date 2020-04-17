@@ -40,5 +40,10 @@ func Console(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *unstr
 			},
 		},
 	}
+
+	if cache.ImageShaDigests != nil {
+		sub.Overrides["imageShaDigests"] = cache.ImageShaDigests
+	}
+
 	return newSubscription(m, sub)
 }

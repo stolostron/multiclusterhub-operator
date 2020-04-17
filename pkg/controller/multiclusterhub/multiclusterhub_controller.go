@@ -3,6 +3,7 @@ package multiclusterhub
 import (
 	"context"
 	"crypto/rand"
+	err "errors"
 	"fmt"
 	"math/big"
 	"time"
@@ -192,7 +193,19 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub))
+	if r.shouldReadManifestFile(multiClusterHub) {
+		if ManifestFileExists(multiClusterHub.Spec.Version) {
+			imageShaDigests, err := GetImageShaDigest(multiClusterHub.Spec.Version)
+			if err != nil {
+				log.Error(err, "manifest file exists for given version, but could not get image sha digests")
+				return reconcile.Result{}, err
+			}
+			r.CacheSpec.ImageShaDigests = imageShaDigests
+			r.CacheSpec.ISDVersion = multiClusterHub.Spec.Version
+		}
+	}
+
+	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub, r.CacheSpec))
 	if result != nil {
 		return *result, err
 	}
@@ -214,7 +227,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		}
 	}
 
-	result, err = r.ensureObject(multiClusterHub, subscription.CertManager(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.CertManager(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
@@ -225,12 +238,12 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	result, err = r.ensureObject(multiClusterHub, subscription.CertWebhook(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.CertWebhook(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
 
-	result, err = r.ensureObject(multiClusterHub, subscription.ConfigWatcher(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.ConfigWatcher(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
@@ -270,7 +283,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.ApplicationUI(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.ApplicationUI(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
@@ -278,32 +291,32 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.GRC(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.GRC(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.KUIWebTerminal(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.KUIWebTerminal(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.MongoDB(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.MongoDB(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.RCM(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.RCM(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.Search(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.Search(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.Topology(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.Topology(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
 
-	result, err = r.ensureDeployment(multiClusterHub, mcm.APIServerDeployment(multiClusterHub))
+	result, err = r.ensureDeployment(multiClusterHub, mcm.APIServerDeployment(multiClusterHub, r.CacheSpec))
 	if result != nil {
 		return *result, err
 	}
@@ -313,7 +326,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	result, err = r.ensureDeployment(multiClusterHub, mcm.WebhookDeployment(multiClusterHub))
+	result, err = r.ensureDeployment(multiClusterHub, mcm.WebhookDeployment(multiClusterHub, r.CacheSpec))
 	if result != nil {
 		return *result, err
 	}
@@ -323,7 +336,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	result, err = r.ensureDeployment(multiClusterHub, mcm.ControllerDeployment(multiClusterHub))
+	result, err = r.ensureDeployment(multiClusterHub, mcm.ControllerDeployment(multiClusterHub, r.CacheSpec))
 	if result != nil {
 		return *result, err
 	}
@@ -402,7 +415,21 @@ func (r *ReconcileMultiClusterHub) setDefaults(m *operatorsv1alpha1.MultiCluster
 	log.Info("MultiClusterHub is Invalid. Updating with proper defaults")
 
 	if m.Spec.Version == "" {
-		m.Spec.Version = utils.LatestVerison
+		componentVersion, err := r.ReadComponentVersionFile()
+		if err != nil {
+			return &reconcile.Result{}, err
+		}
+		m.Spec.Version = componentVersion
+	}
+
+	if !utils.IsVersionSupported(m.Spec.Version) {
+		err := err.New("Version " + m.Spec.Version + " not supported")
+		log.Error(err, "Overriding with valid version")
+		componentVersion, err := r.ReadComponentVersionFile()
+		if err != nil {
+			return &reconcile.Result{}, err
+		}
+		m.Spec.Version = componentVersion
 	}
 
 	if m.Spec.ImageRepository == "" {
@@ -554,6 +581,24 @@ func (r *ReconcileMultiClusterHub) addFinalizer(reqLogger logr.Logger, m *operat
 		return err
 	}
 	return nil
+}
+
+func (r *ReconcileMultiClusterHub) shouldReadManifestFile(m *operatorsv1alpha1.MultiClusterHub) bool {
+	// read manifest file if:
+
+	// (1) CacheSpec.ImageShaDigests doesn't exist or
+	if r.CacheSpec.ImageShaDigests == nil {
+		return true
+	}
+	// (2) CacheSpec.ISDVersion doesn't exist or
+	if r.CacheSpec.ISDVersion == "" {
+		return true
+	}
+	// (3) CacheSpec.ISDVersion is not up-to-date with spec.Version
+	if r.CacheSpec.ISDVersion != m.Spec.Version {
+		return true
+	}
+	return false
 }
 
 func contains(list []string, s string) bool {
