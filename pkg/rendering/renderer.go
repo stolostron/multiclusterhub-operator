@@ -248,10 +248,10 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 func (r *Renderer) renderHiveConfig(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
 	HiveConfig := v1alpha1.HiveConfigSpec{}
+
 	if !reflect.DeepEqual(structs.Map(r.cr.Spec.Hive), structs.Map(HiveConfig)) {
 		u.Object["spec"] = structs.Map(r.cr.Spec.Hive)
 	}
-	u.Object["spec"] = structs.Map(r.cr.Spec.Hive)
 	utils.AddInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
 	return u, nil
 }
