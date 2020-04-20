@@ -2,11 +2,11 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
   name: multiclusterhub-operator
-  namespace: default
+  namespace: open-cluster-management
 spec:
   channel: alpha
   installPlanApproval: Automatic
   name: multiclusterhub-operator
   source: multiclusterhub-operator-registry
-  sourceNamespace: default
-  startingCSV: multiclusterhub-operator.v0.0.1
+  sourceNamespace: open-cluster-management
+  startingCSV: multiclusterhub-operator.v1.0.0

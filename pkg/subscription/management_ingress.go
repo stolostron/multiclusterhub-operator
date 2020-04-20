@@ -21,8 +21,14 @@ func ManagementIngress(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSp
 			"cluster_basedomain": cache.IngressDomain,
 			"hubconfig": map[string]interface{}{
 				"replicaCount": m.Spec.ReplicaCount,
+				"nodeSelector": m.Spec.NodeSelector,
 			},
 		},
 	}
+
+	if cache.ImageShaDigests != nil {
+		sub.Overrides["imageShaDigests"] = cache.ImageShaDigests
+	}
+
 	return newSubscription(m, sub)
 }

@@ -12,7 +12,7 @@ endif
 
 BUILD_DIR ?= build
 
-VERSION ?= latest
+VERSION ?= 1.0.0
 IMG ?= multiclusterhub-operator
 SECRET_REGISTRY ?= quay.io
 REGISTRY ?= quay.io/rhibmcollab
@@ -22,12 +22,12 @@ GIT_VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
 
 DOCKER_USER := $(shell echo $(DOCKER_USER))
 DOCKER_PASS := $(shell echo $(DOCKER_PASS))
-NAMESPACE ?= default
+NAMESPACE ?= open-cluster-management
 
 # For OCP OLM
 export IMAGE ?= $(shell echo $(REGISTRY)/$(IMG):$(VERSION))
 export CSV_CHANNEL ?= alpha
-export CSV_VERSION ?= 0.0.1
+export CSV_VERSION ?= 1.0.0
 
 # Use podman if available, otherwise use docker
 ifeq ($(CONTAINER_ENGINE),)
@@ -61,6 +61,9 @@ install: image push olm-catalog
 	@oc create secret docker-registry quay-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
 	@oc apply -k ./build/_output/olm || true
 
+install-dev:
+	./common/scripts/tests/install.sh
+
 directuninstall:
 	@ oc delete -k ./build/_output/olm || true
 
@@ -80,6 +83,7 @@ unsubscribe:
 	@oc delete appsub --all || true
 	@oc delete helmrelease --all || true
 	@oc delete MultiClusterHub example-multiclusterhub || true
+	@oc delete hiveconfig hive || true
 	@oc delete crd channels.app.ibm.com || true
 	@oc delete crd deployables.app.ibm.com || true
 	@oc delete crd subscriptions.app.ibm.com || true
@@ -87,9 +91,10 @@ unsubscribe:
 	@oc delete crd etcdclusters.etcd.database.coreos.com || true
 	@oc delete crd etcdrestores.etcd.database.coreos.com || true
 	@oc delete crd multiclusterhubs.operators.open-cluster-management.io || true
-	@oc delete csv multiclusterhub-operator.v0.0.1 || true
+	@oc delete csv multiclusterhub-operator.v1.0.0 || true
 	@oc delete csv etcdoperator.v0.9.4 || true
 	@oc delete csv multicluster-operators-subscription.v0.1.5 || true
+	@oc delete csv hive-operator.v1.0.1 || true
 	@oc delete subscription multiclusterhub-operator || true
 	@oc delete subscription etcdoperator.v0.9.4 || true
 	@oc delete catalogsource multiclusterhub-operator-registry || true
@@ -111,10 +116,13 @@ unsubscribe:
 	@oc delete clusterrolebinding cert-manager-webhook-auth-delegator || true
 	@for crd in $(oc get crd | grep cert | cut -f 1 -d ' '); do oc delete crd $crd; done
 	# Wrong syntax for Makefile @for webhook in $(oc get validatingwebhookconfiguration | grep hive | cut -f 1 -d ' '); do oc delete validatingwebhookconfiguration $webhook; done
-	@oc delete ns hive || true
 	@oc delete scc multicloud-scc || true
 	@oc delete clusterrole multicluster-mongodb
 	@oc delete clusterrolebinding multicluster-mongodb
+	@oc delete sub etcd-singlenamespace-alpha-community-operators-openshift-marketplace
+	@oc delete sub multicluster-operators-subscription-alpha-community-operators-openshift-marketplace
+	@oc delete sub hive-operator-alpha-community-operators-openshift-marketplace
+	@oc delete sub multiclusterhub-operator
 
 resubscribe: unsubscribe subscribe
 

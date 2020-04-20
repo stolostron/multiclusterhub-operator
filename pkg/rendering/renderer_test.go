@@ -25,16 +25,11 @@ func TestRender(t *testing.T) {
 		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1alpha1.MultiClusterHubSpec{
-			Version:         "latest",
+			Version:         "1.0.0",
 			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: "Always",
 			ImagePullSecret: "test",
-			NodeSelector: &operatorsv1alpha1.NodeSelector{
-				OS:                  "test",
-				CustomLabelSelector: "test",
-				CustomLabelValue:    "test",
-			},
-			Mongo: operatorsv1alpha1.Mongo{},
+			Mongo:           operatorsv1alpha1.Mongo{},
 		},
 	}
 
@@ -51,45 +46,4 @@ func printObjs(t *testing.T, objs []*unstructured.Unstructured) {
 	for _, obj := range objs {
 		t.Log(obj)
 	}
-}
-
-func Test_addInstallerLabel(t *testing.T) {
-	name := "example-installer"
-	ns := "default"
-
-	t.Run("Should add labels when none exist", func(t *testing.T) {
-		u := &unstructured.Unstructured{
-			Object: map[string]interface{}{
-				"apiVersion": "apps.open-cluster-management.io/v1",
-				"kind":       "Channel",
-			},
-		}
-		want := 2
-
-		utils.AddInstallerLabel(u, name, ns)
-		if got := len(u.GetLabels()); got != want {
-			t.Errorf("got %v labels, want %v", got, want)
-		}
-	})
-
-	t.Run("Should not replace existing labels", func(t *testing.T) {
-		u := &unstructured.Unstructured{
-			Object: map[string]interface{}{
-				"apiVersion": "apps.open-cluster-management.io/v1",
-				"kind":       "Channel",
-				"metadata": map[string]interface{}{
-					"name": "channelName",
-					"labels": map[string]interface{}{
-						"hello": "world",
-					},
-				},
-			},
-		}
-		want := 3
-
-		utils.AddInstallerLabel(u, name, ns)
-		if got := len(u.GetLabels()); got != want {
-			t.Errorf("got %v labels, want %v", got, want)
-		}
-	})
 }

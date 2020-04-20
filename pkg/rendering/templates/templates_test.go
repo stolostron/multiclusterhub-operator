@@ -22,7 +22,7 @@ func TestGetCoreTemplates(t *testing.T) {
 	mchcr := &operatorsv1alpha1.MultiClusterHub{
 		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec:       operatorsv1alpha1.MultiClusterHubSpec{Version: "latest"},
+		Spec:       operatorsv1alpha1.MultiClusterHubSpec{Version: "1.0.0"},
 	}
 	_, err = GetTemplateRenderer().GetTemplates(mchcr)
 

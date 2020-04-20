@@ -139,16 +139,11 @@ if [[ "$force" != "true" ]]; then
     done
 fi
 
-echo "Creating hive namespace if it does not exist"
-_output=$(oc create ns hive 2>/dev/null)
-echo "- hive namespace created"
-echo ""
-
 echo "Beginning installation ..."
 _output=$(make install 2>/dev/null)
 echo ""
 
-while [[ $_output != "multiclusterhub.operators.open-cluster-management.io/example-multiclusterhub created" ]] # While string is different or empty...
+while [[ $_output != "multiclusterhub.operators.open-cluster-management.io/multiclusterhub created" ]] # While string is different or empty...
 do
     echo "Waiting for Operator to come online ..."
     _output=$(oc apply -f deploy/crds/operators.open-cluster-management.io_v1alpha1_multiclusterhub_cr.yaml 2>/dev/null)

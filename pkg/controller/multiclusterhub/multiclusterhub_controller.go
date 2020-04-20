@@ -3,8 +3,10 @@ package multiclusterhub
 import (
 	"context"
 	"crypto/rand"
+	err "errors"
 	"fmt"
 	"math/big"
+	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -33,6 +35,7 @@ import (
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/deploying"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/mcm"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
@@ -185,17 +188,24 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	}
 
 	var result *reconcile.Result
-	if !utils.MchIsValid(multiClusterHub) {
-		log.Info("MultiClusterHub is Invalid. Updating with proper defaults")
-		result, err = r.SetDefaults(multiClusterHub)
-		if result != nil {
-			return *result, err
-		}
-		log.Info("MultiClusterHub successfully updated")
-		// return reconcile.Result{}, nil
+	result, err = r.setDefaults(multiClusterHub)
+	if result != nil {
+		return *result, err
 	}
 
-	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub))
+	if r.shouldReadManifestFile(multiClusterHub) {
+		if ManifestFileExists(multiClusterHub.Spec.Version) {
+			imageShaDigests, err := GetImageShaDigest(multiClusterHub.Spec.Version)
+			if err != nil {
+				log.Error(err, "manifest file exists for given version, but could not get image sha digests")
+				return reconcile.Result{}, err
+			}
+			r.CacheSpec.ImageShaDigests = imageShaDigests
+			r.CacheSpec.ISDVersion = multiClusterHub.Spec.Version
+		}
+	}
+
+	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub, r.CacheSpec))
 	if result != nil {
 		return *result, err
 	}
@@ -217,7 +227,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		}
 	}
 
-	result, err = r.ensureObject(multiClusterHub, subscription.CertManager(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.CertManager(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
@@ -228,12 +238,12 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	result, err = r.ensureObject(multiClusterHub, subscription.CertWebhook(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.CertWebhook(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
 
-	result, err = r.ensureObject(multiClusterHub, subscription.ConfigWatcher(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.ConfigWatcher(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
@@ -241,13 +251,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	result, err = r.ensureSecret(multiClusterHub, r.mongoAuthSecret(multiClusterHub))
 	if result != nil {
 		return *result, err
-	}
-
-	if r.CacheSpec.IngressDomain == "" {
-		result, err = r.ingressDomain(multiClusterHub)
-		if result != nil {
-			return *result, err
-		}
 	}
 
 	result, err = r.ingressDomain(multiClusterHub)
@@ -280,7 +283,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.ApplicationUI(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.ApplicationUI(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
@@ -288,27 +291,52 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.GRC(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.GRC(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.KUIWebTerminal(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.KUIWebTerminal(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.MongoDB(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.MongoDB(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.RCM(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.RCM(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.Search(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.Search(multiClusterHub, r.CacheSpec), subscription.Schema)
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.Topology(multiClusterHub), subscription.Schema)
+	result, err = r.ensureObject(multiClusterHub, subscription.Topology(multiClusterHub, r.CacheSpec), subscription.Schema)
+	if result != nil {
+		return *result, err
+	}
+
+	result, err = r.ensureDeployment(multiClusterHub, mcm.APIServerDeployment(multiClusterHub, r.CacheSpec))
+	if result != nil {
+		return *result, err
+	}
+
+	result, err = r.ensureService(multiClusterHub, mcm.APIServerService(multiClusterHub))
+	if result != nil {
+		return *result, err
+	}
+
+	result, err = r.ensureDeployment(multiClusterHub, mcm.WebhookDeployment(multiClusterHub, r.CacheSpec))
+	if result != nil {
+		return *result, err
+	}
+
+	result, err = r.ensureService(multiClusterHub, mcm.WebhookService(multiClusterHub))
+	if result != nil {
+		return *result, err
+	}
+
+	result, err = r.ensureDeployment(multiClusterHub, mcm.ControllerDeployment(multiClusterHub, r.CacheSpec))
 	if result != nil {
 		return *result, err
 	}
@@ -337,7 +365,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		if errors.IsConflict(err) {
 			// Error from object being modified is normal behavior and should not be treated like an error
 			reqLogger.Info("Failed to update status", "Reason", "Object has been modified")
-			return reconcile.Result{Requeue: true}, nil
+			return reconcile.Result{RequeueAfter: time.Second}, nil
 		}
 
 		reqLogger.Error(err, fmt.Sprintf("Failed to update %s/%s status ", multiClusterHub.Namespace, multiClusterHub.Name))
@@ -379,10 +407,29 @@ func generatePass(length int) string {
 	return string(buf)
 }
 
-// SetDefaults Updates MultiClusterHub resource with proper defaults
-func (r *ReconcileMultiClusterHub) SetDefaults(m *operatorsv1alpha1.MultiClusterHub) (*reconcile.Result, error) {
+// setDefaults updates MultiClusterHub resource with proper defaults
+func (r *ReconcileMultiClusterHub) setDefaults(m *operatorsv1alpha1.MultiClusterHub) (*reconcile.Result, error) {
+	if utils.MchIsValid(m) {
+		return nil, nil
+	}
+	log.Info("MultiClusterHub is Invalid. Updating with proper defaults")
+
 	if m.Spec.Version == "" {
-		m.Spec.Version = utils.LatestVerison
+		componentVersion, err := r.ReadComponentVersionFile()
+		if err != nil {
+			return &reconcile.Result{}, err
+		}
+		m.Spec.Version = componentVersion
+	}
+
+	if !utils.IsVersionSupported(m.Spec.Version) {
+		err := err.New("Version " + m.Spec.Version + " not supported")
+		log.Error(err, "Overriding with valid version")
+		componentVersion, err := r.ReadComponentVersionFile()
+		if err != nil {
+			return &reconcile.Result{}, err
+		}
+		m.Spec.Version = componentVersion
 	}
 
 	if m.Spec.ImageRepository == "" {
@@ -417,14 +464,29 @@ func (r *ReconcileMultiClusterHub) SetDefaults(m *operatorsv1alpha1.MultiCluster
 		m.Spec.Etcd.StorageClass = storageClass
 	}
 
-	if m.Spec.ReplicaCount <= 0 {
-		m.Spec.ReplicaCount = 1
+	replicas := int(1)
+	if m.Spec.ReplicaCount == nil {
+		m.Spec.ReplicaCount = &replicas
+	} else if *m.Spec.ReplicaCount <= 0 {
+		m.Spec.ReplicaCount = &replicas
 	}
 
-	if m.Spec.Mongo.ReplicaCount <= 0 {
-		m.Spec.Mongo.ReplicaCount = 1
+	mongoReplicas := int(3)
+	if m.Spec.Mongo.ReplicaCount == nil {
+		m.Spec.Mongo.ReplicaCount = &mongoReplicas
+	} else if *m.Spec.Mongo.ReplicaCount <= 0 {
+		m.Spec.Mongo.ReplicaCount = &mongoReplicas
 	}
-	return nil, nil
+
+	// Apply defaults to server
+	err := r.client.Update(context.TODO(), m)
+	if err != nil {
+		log.Error(err, "Failed to update MultiClusterHub", "MultiClusterHub.Namespace", m.Namespace, "MultiClusterHub.Name", m.Name)
+		return &reconcile.Result{}, err
+	}
+
+	log.Info("MultiClusterHub successfully updated")
+	return &reconcile.Result{Requeue: true}, nil
 }
 
 // getStorageClass retrieves the default storage class if it exists
@@ -476,12 +538,6 @@ func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1alpha1.MultiClust
 
 	log.Info("Ingress domain not set, updating value in cachespec", "MultiClusterHub.Namespace", m.Namespace, "MultiClusterHub.Name", m.Name, "ingressDomain", domain)
 	r.CacheSpec.IngressDomain = domain
-	err = r.client.Update(context.TODO(), m)
-	if err != nil {
-		log.Error(err, "Failed to update MultiClusterHub", "MultiClusterHub.Namespace", m.Namespace, "MultiClusterHub.Name", m.Name)
-		return &reconcile.Result{}, err
-	}
-
 	return nil, nil
 }
 
@@ -525,6 +581,24 @@ func (r *ReconcileMultiClusterHub) addFinalizer(reqLogger logr.Logger, m *operat
 		return err
 	}
 	return nil
+}
+
+func (r *ReconcileMultiClusterHub) shouldReadManifestFile(m *operatorsv1alpha1.MultiClusterHub) bool {
+	// read manifest file if:
+
+	// (1) CacheSpec.ImageShaDigests doesn't exist or
+	if r.CacheSpec.ImageShaDigests == nil {
+		return true
+	}
+	// (2) CacheSpec.ISDVersion doesn't exist or
+	if r.CacheSpec.ISDVersion == "" {
+		return true
+	}
+	// (3) CacheSpec.ISDVersion is not up-to-date with spec.Version
+	if r.CacheSpec.ISDVersion != m.Spec.Version {
+		return true
+	}
+	return false
 }
 
 func contains(list []string, s string) bool {

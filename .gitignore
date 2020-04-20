@@ -7,7 +7,9 @@
 
 # Test binary, build with `go test -c`
 *.test
-cover.out
+cover.*
+gosec.json
+report.json
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
@@ -22,3 +24,8 @@ build-harness-extensions/
 !vbh/.build-harness-vendorized
 !vbh/build-harness
 !vbh/build-harness-extensions
+
+# Python Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+

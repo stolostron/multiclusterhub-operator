@@ -10,6 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 )
 
 type multiClusterHubValidator struct {
@@ -25,11 +26,16 @@ func (m *multiClusterHubValidator) Handle(ctx context.Context, req admission.Req
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	if len(multiClusterHubs.Items) == 0 {
-		return admission.Allowed("")
-	}
-
 	if req.Operation == "CREATE" {
+		if len(multiClusterHubs.Items) == 0 {
+			err := m.validateCreate(req)
+			if err != nil {
+				log.Info("Create denied")
+				return admission.Denied(err.Error())
+			}
+			log.Info("Create successful")
+			return admission.Allowed("")
+		}
 		return admission.Denied("The MultiClusterHub CR already exists")
 	}
 	//If not create update
@@ -46,7 +52,25 @@ func (m *multiClusterHubValidator) Handle(ctx context.Context, req admission.Req
 	return admission.Denied("Operation not allowed on MultiClusterHub CR")
 }
 
+func (m *multiClusterHubValidator) validateCreate(req admission.Request) error {
+
+	creatingMCH := &operatorsv1alpha1.MultiClusterHub{}
+	err := m.decoder.DecodeRaw(req.Object, creatingMCH)
+	if err != nil {
+		return err
+	}
+
+	if creatingMCH.Spec.Version != "" { // optional param defaults set by reconciler
+		if !utils.IsVersionSupported(creatingMCH.Spec.Version) {
+			return errors.New("Version " + creatingMCH.Spec.Version + " not supported")
+		}
+	}
+
+	return nil
+}
+
 func (m *multiClusterHubValidator) validateUpdate(req admission.Request) error {
+
 	// Parse existing and new MultiClusterHub resources
 	existingMCH := &operatorsv1alpha1.MultiClusterHub{}
 	err := m.decoder.DecodeRaw(req.OldObject, existingMCH)
@@ -58,7 +82,6 @@ func (m *multiClusterHubValidator) validateUpdate(req admission.Request) error {
 	if err != nil {
 		return err
 	}
-
 	if existingMCH.Spec.CloudPakCompatibility != newMCH.Spec.CloudPakCompatibility {
 		return errors.New("Updating CloudPakCompatibility is forbidden")
 	}
@@ -83,6 +106,24 @@ func (m *multiClusterHubValidator) validateUpdate(req admission.Request) error {
 
 	if existingMCH.Spec.IPv6 != newMCH.Spec.IPv6 {
 		return errors.New("IPv6 update is forbidden")
+	}
+
+	if newMCH.Spec.ReplicaCount != nil {
+		if *newMCH.Spec.ReplicaCount <= 0 {
+			return errors.New("ReplicaCount must be greater or equal to 1")
+		}
+	}
+
+	if newMCH.Spec.Mongo.ReplicaCount != nil {
+		if *newMCH.Spec.Mongo.ReplicaCount <= 0 {
+			return errors.New("ReplicaCount must be greater or equal to 1")
+		}
+	}
+
+	if newMCH.Spec.Version != "" { // optional param defaults set by reconciler
+		if !utils.IsVersionSupported(newMCH.Spec.Version) {
+			return errors.New("Version " + newMCH.Spec.Version + " not supported")
+		}
 	}
 
 	return nil

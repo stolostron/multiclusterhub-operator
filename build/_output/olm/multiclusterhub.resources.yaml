@@ -201,7 +201,7 @@ data:
                     description: Spec of mongo
                     properties:
                       replicaCount:
-                        description: ReplicaCount for HA support
+                        description: ReplicaCount for HA Mongo support
                         type: integer
                       storage:
                         description: StorageSize for MultiCluster hub components
@@ -211,20 +211,12 @@ data:
                         type: string
                     type: object
                   nodeSelector:
+                    additionalProperties:
+                      type: string
                     description: Spec of NodeSelector
-                    properties:
-                      customLabelSelector:
-                        description: Spec of CustomLabelSelector
-                        type: string
-                      customLabelValue:
-                        description: Spec of CustomLabelValue
-                        type: string
-                      os:
-                        description: Spec of OS
-                        type: string
                     type: object
                   replicaCount:
-                    description: ReplicaCount for HA support
+                    description: ReplicaCount for HA support. Does not affect data stores.
                     type: integer
                   version:
                     description: Version of the MultiCluster hub
@@ -233,7 +225,6 @@ data:
                 - imagePullPolicy
                 - imageRepository
                 - imageTagSuffix
-                - version
                 type: object
               status:
                 description: MultiClusterHubStatus defines the observed state of MultiClusterHub
@@ -351,20 +342,19 @@ data:
                 "apiVersion": "operators.open-cluster-management.io/v1alpha1",
                 "kind": "MultiClusterHub",
                 "metadata": {
-                  "name": "example-multiclusterhub",
-                  "namespace": "default"
+                  "name": "multiclusterhub",
+                  "namespace": "open-cluster-management"
                 },
                 "spec": {
                   "imagePullPolicy": "Always",
                   "imagePullSecret": "quay-secret",
                   "imageRepository": "quay.io/open-cluster-management",
-                  "imageTagSuffix": "",
-                  "version": "latest"
+                  "imageTagSuffix": ""
                 }
               }
             ]
           capabilities: Basic Install
-        name: multiclusterhub-operator.v0.0.1
+        name: multiclusterhub-operator.v1.0.0
         namespace: placeholder
       spec:
         apiservicedefinitions: {}
@@ -385,6 +375,11 @@ data:
             kind: HelmRelease
             displayName: Helm Release
             description: Represent a helm chart selected by the subscription, for internal use only.
+          - name: hiveconfigs.hive.openshift.io
+            version: v1
+            kind: HiveConfig
+            displayName: Hive Config
+            description: Configuration for the Hive Operator
           - name: subscriptions.apps.open-cluster-management.io
             version: v1
             kind: Subscription
@@ -399,8 +394,8 @@ data:
         description: Placeholder description
         displayName: Multiclusterhub Operator
         icon:
-        - base64data: ""
-          mediatype: ""
+          - base64data: iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAEDElEQVRoge2ZSWgUQRSGv0lmXKLiAm4RRTAqmCDoUUVBjYKKIMZ49C6auB3Ei548uBy8RNCTSkAwiKAgiDkIKoLoQY1L3EHNwV1jNDGZ8VCvrJ6eXqqT7nEi+aHo7nqvuv6/6/XrVzMwhCEkghSQleNgQgHfsn/BIgmkHeeDbVXy8F+uiEau6CwGhhT85yuiUervTF7keK3IYAstIFjIQUp3VZZ5dWbJXwV9nQPOASOT5xUJdcBPDMe/cAvpk+tvcrwGTCgOx1DsI/9BWwmZD7yW86fA7GIw9UE50CRceoEGIggpAyqBO3L9AVicOOVCjAYuCYefQL30hwrpxQgJulExMBX/B2ktpNzRVw4cxyzt9tgpF6KG4NDulxCNRkzoHSO5ymAF8EXmuQlM9PAJFfIbfyEAmzDp7zxQMSDKhdgC9Mj9W/BP/9ZCgsqXRcB78bsFTOoX5XykgAMOPmErHosQgCpU7OaA58DcCKTdSAMnMO/gVosxoUL0soYJAZgC3Bb/j8BSizFujAEuyz06gXWW40KFdMt1xvKGk4HPmPS8yXIcwAzgvox9ByyMMDZWIbMdRH7JsQ/YYzF2AfBWxjxAiYqC2ISsAT6J72NgHvnp+ST+4VkLfBW/VmBcFAWCUCH6yQ7zuUEZKrtowi2oONdwpuerwCyHrQLYj0kopwLmCcOAhIwDLmKyy1689yyLgA6H3z3gBqai7hNBA9nvWAsZ7hpYA7Rj6p7akIkmosJL30+36/hntwywGWhGpfZO4AcqvTejVluHa6gQHRZOIfXAd+m/C8wMEeFEBarYWw5MC/DbIIRzIe0FsDaqkDRw2OFzmvh3jCngqIPYA2AHUA2MklYN7ATaPISFCpmOyig51EdyW8wCNI7IHN0yh1+Nh9gaMB/tQCFdcv1Gjh3AkrhYu7AeI2Klh70VuODRX4sRs1Z3+gnJoTJNZSyUC5HB7De8Vjstti6f8Y1ifym+vkKa6H+Ot0Ed5p3wCqcwIWngofh4lkU/xBj3PsONszLPDh97mBCAXeLT7GXUQiqB8dKSEPVE5pnnY7cRUiM+z7yMWkixmi5vrgT49KDqOt3OyZgxYu/0Kuo+o7KIE2XA2IAnEweCVj2DigyNKpc9Gz8de+jQqnb0jXc1XZtNcfXr5KBD67HNLjAp3AXmAKtQX2xQ0eCEzqZfUDWbG6vleDt2dhGwEUW0Df+vud6zjPCwpYFHYq9LgqAtMsArIdLg4xMkZKfY2rHflieGdZis5LUtaEXtZdz7llUyJosqc0oChzBiGgn+9SaNWgldZx1MnF0EpMjfKrShvtg1qB/QR8v5bkxJkkWJKMk/c9djfvALau2UUDj5IY0qAM+gvjOdqJ3pQ+mrowRe7CHY4A8ixrhAvKZDJwAAAABJRU5ErkJggg==
+            mediatype: image/png
         install:
           spec:
             clusterPermissions:
@@ -587,7 +582,7 @@ data:
                         value: multiclusterhub-operator
                       - name: TEMPLATES_PATH
                         value: /usr/local/templates
-                      image: quay.io/rhibmcollab/multiclusterhub-operator:latest
+                      image: quay.io/rhibmcollab/multiclusterhub-operator:1.0.0
                       imagePullPolicy: Always
                       name: multiclusterhub-operator
                       resources: {}
@@ -605,15 +600,16 @@ data:
         - supported: false
           type: AllNamespaces
         keywords:
-        - ""
+          - operator
         maintainers:
-        - {}
+        - email: email@email.com
+          name: install
         maturity: alpha
         provider: {}
-        version: 0.0.1
+        version: 1.0.0
   packages: |-
     - channels:
-      - currentCSV: multiclusterhub-operator.v0.0.1
+      - currentCSV: multiclusterhub-operator.v1.0.0
         name: alpha
       defaultChannel: alpha
       packageName: multiclusterhub-operator

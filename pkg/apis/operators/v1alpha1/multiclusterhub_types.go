@@ -13,7 +13,8 @@ import (
 // +k8s:openapi-gen=true
 type MultiClusterHubSpec struct {
 	// Version of the MultiCluster hub
-	Version string `json:"version"`
+	// +optional
+	Version string `json:"version,omitempty"`
 
 	// Repository of the MultiCluster hub images
 	ImageRepository string `json:"imageRepository"`
@@ -30,7 +31,7 @@ type MultiClusterHubSpec struct {
 
 	// ReplicaCount for HA support. Does not affect data stores.
 	// +optional
-	ReplicaCount int `json:"replicaCount"`
+	ReplicaCount *int `json:"replicaCount,omitempty"`
 
 	// Flag for IPv6
 	// +optional
@@ -42,7 +43,7 @@ type MultiClusterHubSpec struct {
 
 	// Spec of NodeSelector
 	// +optional
-	NodeSelector *NodeSelector `json:"nodeSelector,omitempty"`
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
 	// Spec of hive
 	// +optional
@@ -66,21 +67,6 @@ type Etcd struct {
 	// StorageSize for MultiCluster hub components
 	// +optional
 	Storage string `json:"storage,omitempty"`
-}
-
-// NodeSelector defines the desired state of NodeSelector
-type NodeSelector struct {
-	// Spec of OS
-	// +optional
-	OS string `json:"os,omitempty"`
-
-	// Spec of CustomLabelSelector
-	// +optional
-	CustomLabelSelector string `json:"customLabelSelector,omitempty"`
-
-	// Spec of CustomLabelValue
-	// +optional
-	CustomLabelValue string `json:"customLabelValue,omitempty"`
 }
 
 type HiveConfigSpec struct {
@@ -205,7 +191,7 @@ type Mongo struct {
 
 	// ReplicaCount for HA Mongo support
 	// +optional
-	ReplicaCount int `json:"replicaCount"`
+	ReplicaCount *int `json:"replicaCount,omitempty"`
 }
 
 // MultiClusterHubStatus defines the observed state of MultiClusterHub
