@@ -3,22 +3,22 @@ package mcm
 import (
 	"testing"
 
-	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestAPIServerDeployment(t *testing.T) {
 	replicas := int(1)
-	empty := &operatorsv1alpha1.MultiClusterHub{
+	empty := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1alpha1.MultiClusterHubSpec{
+		Spec: operatorsv1beta1.MultiClusterHubSpec{
 			Version:         "",
 			ImageRepository: "",
 			ImagePullPolicy: "",
 			ImagePullSecret: "",
 			ImageTagSuffix:  "",
-			Mongo:           operatorsv1alpha1.Mongo{},
+			Mongo:           operatorsv1beta1.Mongo{},
 			ReplicaCount:    &replicas, // Adding replicas here to avoid nil pointer dereference
 		},
 	}
@@ -32,9 +32,9 @@ func TestAPIServerDeployment(t *testing.T) {
 		_ = APIServerDeployment(empty, cs)
 	})
 
-	essentialsOnly := &operatorsv1alpha1.MultiClusterHub{
+	essentialsOnly := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1alpha1.MultiClusterHubSpec{
+		Spec: operatorsv1beta1.MultiClusterHubSpec{
 			Version:         "test",
 			ImageRepository: "test",
 			ImagePullPolicy: "test",
@@ -48,7 +48,7 @@ func TestAPIServerDeployment(t *testing.T) {
 }
 
 func TestAPIServerService(t *testing.T) {
-	mch := &operatorsv1alpha1.MultiClusterHub{
+	mch := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "testName",
 			Namespace: "testNS",

@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	apixv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -17,7 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-func (r *ReconcileMultiClusterHub) cleanupHiveConfigs(reqLogger logr.Logger, m *operatorsv1alpha1.MultiClusterHub) error {
+func (r *ReconcileMultiClusterHub) cleanupHiveConfigs(reqLogger logr.Logger, m *operatorsv1beta1.MultiClusterHub) error {
 	hiveConfigRes := schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "hiveconfigs"}
 
 	dc, err := createDynamicClient()
@@ -60,7 +60,7 @@ func (r *ReconcileMultiClusterHub) cleanupHiveConfigs(reqLogger logr.Logger, m *
 	return nil
 }
 
-func (r *ReconcileMultiClusterHub) cleanupAPIServices(reqLogger logr.Logger, m *operatorsv1alpha1.MultiClusterHub) error {
+func (r *ReconcileMultiClusterHub) cleanupAPIServices(reqLogger logr.Logger, m *operatorsv1beta1.MultiClusterHub) error {
 	err := r.client.DeleteAllOf(
 		context.TODO(),
 		&apiregistrationv1.APIService{},
@@ -83,7 +83,7 @@ func (r *ReconcileMultiClusterHub) cleanupAPIServices(reqLogger logr.Logger, m *
 	return nil
 }
 
-func (r *ReconcileMultiClusterHub) cleanupClusterRoles(reqLogger logr.Logger, m *operatorsv1alpha1.MultiClusterHub) error {
+func (r *ReconcileMultiClusterHub) cleanupClusterRoles(reqLogger logr.Logger, m *operatorsv1beta1.MultiClusterHub) error {
 	config, err := config.GetConfig()
 	if err != nil {
 		return err
@@ -113,7 +113,7 @@ func (r *ReconcileMultiClusterHub) cleanupClusterRoles(reqLogger logr.Logger, m 
 	return nil
 }
 
-func (r *ReconcileMultiClusterHub) cleanupClusterRoleBindings(reqLogger logr.Logger, m *operatorsv1alpha1.MultiClusterHub) error {
+func (r *ReconcileMultiClusterHub) cleanupClusterRoleBindings(reqLogger logr.Logger, m *operatorsv1beta1.MultiClusterHub) error {
 	config, err := config.GetConfig()
 	if err != nil {
 		return err
@@ -143,7 +143,7 @@ func (r *ReconcileMultiClusterHub) cleanupClusterRoleBindings(reqLogger logr.Log
 	return nil
 }
 
-func (r *ReconcileMultiClusterHub) cleanupMutatingWebhooks(reqLogger logr.Logger, m *operatorsv1alpha1.MultiClusterHub) error {
+func (r *ReconcileMultiClusterHub) cleanupMutatingWebhooks(reqLogger logr.Logger, m *operatorsv1beta1.MultiClusterHub) error {
 	config, err := config.GetConfig()
 	if err != nil {
 		return err
@@ -173,7 +173,7 @@ func (r *ReconcileMultiClusterHub) cleanupMutatingWebhooks(reqLogger logr.Logger
 	return nil
 }
 
-func (r *ReconcileMultiClusterHub) cleanupPullSecret(reqLogger logr.Logger, m *operatorsv1alpha1.MultiClusterHub) error {
+func (r *ReconcileMultiClusterHub) cleanupPullSecret(reqLogger logr.Logger, m *operatorsv1beta1.MultiClusterHub) error {
 	config, err := config.GetConfig()
 	if err != nil {
 		return err
@@ -203,7 +203,7 @@ func (r *ReconcileMultiClusterHub) cleanupPullSecret(reqLogger logr.Logger, m *o
 	return nil
 }
 
-func (r *ReconcileMultiClusterHub) cleanupCRDs(log logr.Logger, m *operatorsv1alpha1.MultiClusterHub) error {
+func (r *ReconcileMultiClusterHub) cleanupCRDs(log logr.Logger, m *operatorsv1beta1.MultiClusterHub) error {
 	err := r.client.DeleteAllOf(
 		context.TODO(),
 		&apixv1beta1.CustomResourceDefinition{},

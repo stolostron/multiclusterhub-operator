@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/go-logr/logr"
-	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/deploying"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
@@ -84,7 +84,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to primary resource MultiClusterHub
-	err = c.Watch(&source.Kind{Type: &operatorsv1alpha1.MultiClusterHub{}}, &handler.EnqueueRequestForObject{}, predicate.GenerationChangedPredicate{})
+	err = c.Watch(&source.Kind{Type: &operatorsv1beta1.MultiClusterHub{}}, &handler.EnqueueRequestForObject{}, predicate.GenerationChangedPredicate{})
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Watch for changes to secondary resource Pods and requeue the owner MultiClusterHub
 	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &operatorsv1alpha1.MultiClusterHub{},
+		OwnerType:    &operatorsv1beta1.MultiClusterHub{},
 	})
 	if err != nil {
 		return err
@@ -140,7 +140,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	reqLogger.Info("Reconciling MultiClusterHub")
 
 	// Fetch the MultiClusterHub instance
-	multiClusterHub := &operatorsv1alpha1.MultiClusterHub{}
+	multiClusterHub := &operatorsv1beta1.MultiClusterHub{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, multiClusterHub)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -351,9 +351,9 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	if ready {
 		multiClusterHub.Status.Phase = "Running"
 	}
-	statedDeployments := []operatorsv1alpha1.DeploymentResult{}
+	statedDeployments := []operatorsv1beta1.DeploymentResult{}
 	for _, deploy := range deployments {
-		statedDeployments = append(statedDeployments, operatorsv1alpha1.DeploymentResult{
+		statedDeployments = append(statedDeployments, operatorsv1beta1.DeploymentResult{
 			Name:   deploy.Name,
 			Status: deploy.Status,
 		})
@@ -375,7 +375,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileMultiClusterHub) mongoAuthSecret(v *operatorsv1alpha1.MultiClusterHub) *corev1.Secret {
+func (r *ReconcileMultiClusterHub) mongoAuthSecret(v *operatorsv1beta1.MultiClusterHub) *corev1.Secret {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "mongodb-admin",
@@ -408,7 +408,7 @@ func generatePass(length int) string {
 }
 
 // setDefaults updates MultiClusterHub resource with proper defaults
-func (r *ReconcileMultiClusterHub) setDefaults(m *operatorsv1alpha1.MultiClusterHub) (*reconcile.Result, error) {
+func (r *ReconcileMultiClusterHub) setDefaults(m *operatorsv1beta1.MultiClusterHub) (*reconcile.Result, error) {
 	if utils.MchIsValid(m) {
 		return nil, nil
 	}
@@ -504,7 +504,7 @@ func (r *ReconcileMultiClusterHub) getStorageClass() (string, error) {
 }
 
 // ingressDomain is discovered from Openshift cluster configuration resources
-func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1alpha1.MultiClusterHub) (*reconcile.Result, error) {
+func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1beta1.MultiClusterHub) (*reconcile.Result, error) {
 	if r.CacheSpec.IngressDomain != "" {
 		return nil, nil
 	}
@@ -541,7 +541,7 @@ func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1alpha1.MultiClust
 	return nil, nil
 }
 
-func (r *ReconcileMultiClusterHub) finalizeHub(reqLogger logr.Logger, m *operatorsv1alpha1.MultiClusterHub) error {
+func (r *ReconcileMultiClusterHub) finalizeHub(reqLogger logr.Logger, m *operatorsv1beta1.MultiClusterHub) error {
 	if err := r.cleanupHiveConfigs(reqLogger, m); err != nil {
 		return err
 	}
@@ -570,7 +570,7 @@ func (r *ReconcileMultiClusterHub) finalizeHub(reqLogger logr.Logger, m *operato
 	return nil
 }
 
-func (r *ReconcileMultiClusterHub) addFinalizer(reqLogger logr.Logger, m *operatorsv1alpha1.MultiClusterHub) error {
+func (r *ReconcileMultiClusterHub) addFinalizer(reqLogger logr.Logger, m *operatorsv1beta1.MultiClusterHub) error {
 	reqLogger.Info("Adding Finalizer for the multiClusterHub")
 	m.SetFinalizers(append(m.GetFinalizers(), hubFinalizer))
 
@@ -583,7 +583,7 @@ func (r *ReconcileMultiClusterHub) addFinalizer(reqLogger logr.Logger, m *operat
 	return nil
 }
 
-func (r *ReconcileMultiClusterHub) shouldReadManifestFile(m *operatorsv1alpha1.MultiClusterHub) bool {
+func (r *ReconcileMultiClusterHub) shouldReadManifestFile(m *operatorsv1beta1.MultiClusterHub) bool {
 	// read manifest file if:
 
 	// (1) CacheSpec.ImageShaDigests doesn't exist or

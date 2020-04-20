@@ -23,7 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 )
 
 // Certificate ...
@@ -68,7 +68,7 @@ func GenerateWebhookCerts(certDir string) (string, []byte, error) {
 }
 
 // GenerateAPIServerSecret ...
-func GenerateAPIServerSecret(client runtimeclient.Client, multiClusterHub *operatorsv1alpha1.MultiClusterHub) error {
+func GenerateAPIServerSecret(client runtimeclient.Client, multiClusterHub *operatorsv1beta1.MultiClusterHub) error {
 	namespace, err := findNamespace()
 	if err != nil {
 		return err
@@ -109,7 +109,7 @@ func GenerateAPIServerSecret(client runtimeclient.Client, multiClusterHub *opera
 }
 
 // GenerateKlusterletSecret ...
-func GenerateKlusterletSecret(client runtimeclient.Client, multiClusterHub *operatorsv1alpha1.MultiClusterHub) error {
+func GenerateKlusterletSecret(client runtimeclient.Client, multiClusterHub *operatorsv1beta1.MultiClusterHub) error {
 	namespace, err := findNamespace()
 	if err != nil {
 		return err

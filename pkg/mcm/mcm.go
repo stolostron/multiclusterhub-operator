@@ -1,7 +1,7 @@
 package mcm
 
 import (
-	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -18,7 +18,7 @@ const ImageVersion = "0.0.1"
 const ServiceAccount = "hub-sa"
 
 // Image returns image reference for multicloud-manager
-func Image(mch *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) string {
+func Image(mch *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) string {
 	return utils.GetImageReference(mch, ImageName, ImageVersion, cache)
 }
 
@@ -30,7 +30,7 @@ func defaultLabels(app string) map[string]string {
 
 // ValidateDeployment returns a deep copy of the deployment with the desired spec based on the MultiClusterHub spec.
 // Returns true if an update is needed to reconcile differences with the current spec.
-func ValidateDeployment(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec, dep *appsv1.Deployment) (*appsv1.Deployment, bool) {
+func ValidateDeployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec, dep *appsv1.Deployment) (*appsv1.Deployment, bool) {
 	var log = logf.Log.WithValues("Deployment.Namespace", dep.GetNamespace(), "Deployment.Name", dep.GetName())
 	found := dep.DeepCopy()
 
