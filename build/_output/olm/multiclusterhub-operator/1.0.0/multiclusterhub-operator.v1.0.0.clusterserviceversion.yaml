@@ -251,7 +251,9 @@ spec:
                 image: quay.io/rhibmcollab/multiclusterhub-operator:1.0.0
                 imagePullPolicy: Always
                 name: multiclusterhub-operator
-                resources: {}
+                resources:
+                  request:
+                    memory: 128Mi
               imagePullSecrets:
               - name: multiclusterhub-operator-pull-secret
               serviceAccountName: multiclusterhub-operator
