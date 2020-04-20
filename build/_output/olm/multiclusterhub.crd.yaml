@@ -306,8 +306,6 @@
               phase:
                 description: Represents the running phase of the MultiClusterHub
                 type: string
-            required:
-            - phase
             type: object
         type: object
     version: v1alpha1

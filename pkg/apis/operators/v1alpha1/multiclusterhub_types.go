@@ -195,6 +195,7 @@ type Mongo struct {
 // +k8s:openapi-gen=true
 type MultiClusterHubStatus struct {
 	// Represents the running phase of the MultiClusterHub
+	// +optional
 	Phase string `json:"phase"`
 
 	// CurrentVersion indicates the current version of ACM
