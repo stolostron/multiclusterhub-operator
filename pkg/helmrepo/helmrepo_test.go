@@ -16,7 +16,6 @@ func TestDeployment(t *testing.T) {
 	empty := &operatorsv1alpha1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1alpha1.MultiClusterHubSpec{
-			Version:         "",
 			ImageRepository: "",
 			ImagePullPolicy: "",
 			ImagePullSecret: "",
@@ -38,7 +37,6 @@ func TestDeployment(t *testing.T) {
 	essentialsOnly := &operatorsv1alpha1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1alpha1.MultiClusterHubSpec{
-			Version:         "test",
 			ImageRepository: "test",
 			ImagePullPolicy: "test",
 			ImageTagSuffix:  "test",
@@ -74,7 +72,6 @@ func TestValidateDeployment(t *testing.T) {
 	mch := &operatorsv1alpha1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1alpha1.MultiClusterHubSpec{
-			Version:         "1.0.0",
 			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: "Always",
 			ImagePullSecret: "test",

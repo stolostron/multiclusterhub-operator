@@ -29,7 +29,7 @@ func labels() map[string]string {
 
 // Image returns image reference for multiclusterhub-repo
 func Image(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) string {
-	return utils.GetImageReference(m, Name, m.Spec.Version, cache)
+	return utils.GetImageReference(m, Name, m.Status.CurrentVersion, cache)
 }
 
 // Deployment for the helm repo serving charts

@@ -48,7 +48,7 @@ func GetTemplateRenderer() *TemplateRenderer {
 func (r *TemplateRenderer) GetTemplates(multiclusterhub *operatorsv1alpha1.MultiClusterHub) ([]*resource.Resource, error) {
 	var err error
 	kind := strings.ToLower(multiclusterhub.Kind)
-	version := multiclusterhub.Spec.Version
+	version := multiclusterhub.Status.CurrentVersion
 	key := fmt.Sprintf("%s-%s", kind, version)
 	resMap, ok := r.templates[key]
 	if !ok {

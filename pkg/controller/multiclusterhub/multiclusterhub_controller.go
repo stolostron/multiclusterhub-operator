@@ -188,20 +188,25 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	}
 
 	var result *reconcile.Result
+	result, err = r.validateVersion(multiClusterHub)
+	if result != nil {
+		return *result, err
+	}
+
 	result, err = r.setDefaults(multiClusterHub)
 	if result != nil {
 		return *result, err
 	}
 
 	if r.shouldReadManifestFile(multiClusterHub) {
-		if ManifestFileExists(multiClusterHub.Spec.Version) {
-			imageShaDigests, err := GetImageShaDigest(multiClusterHub.Spec.Version)
+		if ManifestFileExists(multiClusterHub.Status.CurrentVersion) {
+			imageShaDigests, err := GetImageShaDigest(multiClusterHub.Status.CurrentVersion)
 			if err != nil {
 				log.Error(err, "manifest file exists for given version, but could not get image sha digests")
 				return reconcile.Result{}, err
 			}
 			r.CacheSpec.ImageShaDigests = imageShaDigests
-			r.CacheSpec.ISDVersion = multiClusterHub.Spec.Version
+			r.CacheSpec.ISDVersion = multiClusterHub.Status.CurrentVersion
 		}
 	}
 
@@ -360,19 +365,27 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	}
 	multiClusterHub.Status.Deployments = statedDeployments
 
-	err = r.client.Status().Update(context.TODO(), multiClusterHub)
-	if err != nil {
-		if errors.IsConflict(err) {
-			// Error from object being modified is normal behavior and should not be treated like an error
-			reqLogger.Info("Failed to update status", "Reason", "Object has been modified")
-			return reconcile.Result{RequeueAfter: time.Second}, nil
-		}
-
-		reqLogger.Error(err, fmt.Sprintf("Failed to update %s/%s status ", multiClusterHub.Namespace, multiClusterHub.Name))
-		return reconcile.Result{}, err
+	result, err = r.UpdateStatus(multiClusterHub)
+	if result != nil {
+		return *result, err
 	}
 
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileMultiClusterHub) UpdateStatus(m *operatorsv1alpha1.MultiClusterHub) (*reconcile.Result, error) {
+	err := r.client.Status().Update(context.TODO(), m)
+	if err != nil {
+		if errors.IsConflict(err) {
+			// Error from object being modified is normal behavior and should not be treated like an error
+			log.Info("Failed to update status", "Reason", "Object has been modified")
+			return &reconcile.Result{RequeueAfter: time.Second}, nil
+		}
+
+		log.Error(err, fmt.Sprintf("Failed to update %s/%s status ", m.Namespace, m.Name))
+		return &reconcile.Result{}, err
+	}
+	return &reconcile.Result{}, nil
 }
 
 func (r *ReconcileMultiClusterHub) mongoAuthSecret(v *operatorsv1alpha1.MultiClusterHub) *corev1.Secret {
@@ -407,30 +420,43 @@ func generatePass(length int) string {
 	return string(buf)
 }
 
+func (r *ReconcileMultiClusterHub) validateVersion(m *operatorsv1alpha1.MultiClusterHub) (*reconcile.Result, error) {
+	updatedStatus := false
+	if m.Status.CurrentVersion == "" {
+		componentVersion, err := r.ReadComponentVersionFile()
+		if err != nil {
+			return &reconcile.Result{}, err
+		}
+		m.Status.CurrentVersion = componentVersion
+		updatedStatus = true
+
+	}
+
+	if !utils.IsVersionSupported(m.Status.CurrentVersion) {
+		err := err.New("Version " + m.Status.CurrentVersion + " not supported")
+		log.Error(err, "Overriding with valid version")
+		componentVersion, err := r.ReadComponentVersionFile()
+		if err != nil {
+			return &reconcile.Result{}, err
+		}
+		m.Status.CurrentVersion = componentVersion
+		m.Status.DesiredVersion = componentVersion
+		updatedStatus = true
+	}
+
+	if updatedStatus {
+		log.Info("Updating MultiClusterHub version")
+		return r.UpdateStatus(m)
+	}
+	return nil, nil
+}
+
 // setDefaults updates MultiClusterHub resource with proper defaults
 func (r *ReconcileMultiClusterHub) setDefaults(m *operatorsv1alpha1.MultiClusterHub) (*reconcile.Result, error) {
 	if utils.MchIsValid(m) {
 		return nil, nil
 	}
 	log.Info("MultiClusterHub is Invalid. Updating with proper defaults")
-
-	if m.Spec.Version == "" {
-		componentVersion, err := r.ReadComponentVersionFile()
-		if err != nil {
-			return &reconcile.Result{}, err
-		}
-		m.Spec.Version = componentVersion
-	}
-
-	if !utils.IsVersionSupported(m.Spec.Version) {
-		err := err.New("Version " + m.Spec.Version + " not supported")
-		log.Error(err, "Overriding with valid version")
-		componentVersion, err := r.ReadComponentVersionFile()
-		if err != nil {
-			return &reconcile.Result{}, err
-		}
-		m.Spec.Version = componentVersion
-	}
 
 	if m.Spec.ImageRepository == "" {
 		m.Spec.ImageRepository = utils.DefaultRepository
@@ -595,7 +621,7 @@ func (r *ReconcileMultiClusterHub) shouldReadManifestFile(m *operatorsv1alpha1.M
 		return true
 	}
 	// (3) CacheSpec.ISDVersion is not up-to-date with spec.Version
-	if r.CacheSpec.ISDVersion != m.Spec.Version {
+	if r.CacheSpec.ISDVersion != m.Status.CurrentVersion {
 		return true
 	}
 	return false

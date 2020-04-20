@@ -125,7 +125,6 @@ func TestMchIsValid(t *testing.T) {
 		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1alpha1.MultiClusterHubSpec{
-			Version:         "1.0.0",
 			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: "Always",
 			ImagePullSecret: "test",
@@ -139,6 +138,9 @@ func TestMchIsValid(t *testing.T) {
 				Storage:      "etcdStorage",
 				StorageClass: "etcdStorageClass",
 			},
+		},
+		Status: operatorsv1alpha1.MultiClusterHubStatus{
+			CurrentVersion: "1.0.0",
 		},
 	}
 	noRepo := validMCH.DeepCopy()

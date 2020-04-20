@@ -60,9 +60,9 @@ func (m *multiClusterHubValidator) validateCreate(req admission.Request) error {
 		return err
 	}
 
-	if creatingMCH.Spec.Version != "" { // optional param defaults set by reconciler
-		if !utils.IsVersionSupported(creatingMCH.Spec.Version) {
-			return errors.New("Version " + creatingMCH.Spec.Version + " not supported")
+	if creatingMCH.Status.CurrentVersion != "" { // optional param defaults set by reconciler
+		if !utils.IsVersionSupported(creatingMCH.Status.CurrentVersion) {
+			return errors.New("Version " + creatingMCH.Status.CurrentVersion + " not supported")
 		}
 	}
 
@@ -120,9 +120,9 @@ func (m *multiClusterHubValidator) validateUpdate(req admission.Request) error {
 		}
 	}
 
-	if newMCH.Spec.Version != "" { // optional param defaults set by reconciler
-		if !utils.IsVersionSupported(newMCH.Spec.Version) {
-			return errors.New("Version " + newMCH.Spec.Version + " not supported")
+	if newMCH.Status.CurrentVersion != "" { // optional param defaults set by reconciler
+		if !utils.IsVersionSupported(newMCH.Status.CurrentVersion) {
+			return errors.New("Version " + newMCH.Status.CurrentVersion + " not supported")
 		}
 	}
 

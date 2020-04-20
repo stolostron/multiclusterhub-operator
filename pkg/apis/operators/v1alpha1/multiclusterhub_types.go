@@ -12,9 +12,6 @@ import (
 // MultiClusterHubSpec defines the desired state of MultiClusterHub
 // +k8s:openapi-gen=true
 type MultiClusterHubSpec struct {
-	// Version of the MultiCluster hub
-	// +optional
-	Version string `json:"version,omitempty"`
 
 	// Repository of the MultiCluster hub images
 	ImageRepository string `json:"imageRepository"`
@@ -199,6 +196,14 @@ type Mongo struct {
 type MultiClusterHubStatus struct {
 	// Represents the running phase of the MultiClusterHub
 	Phase string `json:"phase"`
+
+	// CurrentVersion indicates the current version of ACM
+	// +optional
+	CurrentVersion string `json:"currentVersion,omitempty"`
+
+	// DesiredVersion indicates the current version of ACM
+	// +optional
+	DesiredVersion string `json:"desiredVersion,omitempty"`
 
 	// Represents the status of each deployment
 	// +optional

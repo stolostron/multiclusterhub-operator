@@ -107,8 +107,8 @@ func CoreToUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) 
 
 // MchIsValid Checks if the optional default parameters need to be set
 func MchIsValid(m *operatorsv1alpha1.MultiClusterHub) bool {
-	invalid := m.Spec.Version == "" ||
-		!IsVersionSupported(m.Spec.Version) ||
+	invalid := m.Status.CurrentVersion == "" ||
+		!IsVersionSupported(m.Status.CurrentVersion) ||
 		m.Spec.ImageRepository == "" ||
 		m.Spec.ImagePullPolicy == "" ||
 		m.Spec.Mongo.Storage == "" ||

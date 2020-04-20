@@ -218,9 +218,6 @@ data:
                   replicaCount:
                     description: ReplicaCount for HA support. Does not affect data stores.
                     type: integer
-                  version:
-                    description: Version of the MultiCluster hub
-                    type: string
                 required:
                 - imagePullPolicy
                 - imageRepository
@@ -229,6 +226,9 @@ data:
               status:
                 description: MultiClusterHubStatus defines the observed state of MultiClusterHub
                 properties:
+                  currentVersion:
+                    description: CurrentVersion indicates the current version of ACM
+                    type: string
                   deployments:
                     description: Represents the status of each deployment
                     items:
@@ -319,6 +319,9 @@ data:
                       - status
                       type: object
                     type: array
+                  desiredVersion:
+                    description: DesiredVersion indicates the current version of ACM
+                    type: string
                   phase:
                     description: Represents the running phase of the MultiClusterHub
                     type: string
