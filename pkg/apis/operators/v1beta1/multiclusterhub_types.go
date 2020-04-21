@@ -202,7 +202,7 @@ type MultiClusterHubStatus struct {
 	// +optional
 	CurrentVersion string `json:"currentVersion,omitempty"`
 
-	// DesiredVersion indicates the current version of ACM
+	// DesiredVersion indicates the desired version of ACM
 	// +optional
 	DesiredVersion string `json:"desiredVersion,omitempty"`
 
