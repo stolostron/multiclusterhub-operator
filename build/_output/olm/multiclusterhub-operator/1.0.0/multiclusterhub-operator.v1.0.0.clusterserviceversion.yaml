@@ -15,7 +15,7 @@ metadata:
             "imagePullPolicy": "Always",
             "imagePullSecret": "quay-secret",
             "imageRepository": "quay.io/open-cluster-management",
-            "imageTagSuffix": ""
+            "imageTagSuffix": "SNAPSHOT-2020-04-20-20-45-51"
           }
         }
       ]
