@@ -320,7 +320,7 @@ data:
                       type: object
                     type: array
                   desiredVersion:
-                    description: DesiredVersion indicates the current version of ACM
+                    description: DesiredVersion indicates the desired version of ACM
                     type: string
                   phase:
                     description: Represents the running phase of the MultiClusterHub
