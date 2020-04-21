@@ -326,9 +326,9 @@ data:
                 - phase
                 type: object
             type: object
-        version: v1alpha1
+        version: v1beta1
         versions:
-        - name: v1alpha1
+        - name: v1beta1
           served: true
           storage: true
   clusterServiceVersions: |-
@@ -339,7 +339,7 @@ data:
           alm-examples: |-
             [
               {
-                "apiVersion": "operators.open-cluster-management.io/v1alpha1",
+                "apiVersion": "operators.open-cluster-management.io/v1beta1",
                 "kind": "MultiClusterHub",
                 "metadata": {
                   "name": "multiclusterhub",
@@ -390,7 +390,7 @@ data:
             displayName: MultiClusterHub Operator
             kind: MultiClusterHub
             name: multiclusterhubs.operators.open-cluster-management.io
-            version: v1alpha1
+            version: v1beta1
         description: Placeholder description
         displayName: Multiclusterhub Operator
         icon:

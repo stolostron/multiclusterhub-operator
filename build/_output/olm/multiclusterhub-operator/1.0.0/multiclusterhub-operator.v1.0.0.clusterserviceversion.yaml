@@ -5,7 +5,7 @@ metadata:
     alm-examples: |-
       [
         {
-          "apiVersion": "operators.open-cluster-management.io/v1alpha1",
+          "apiVersion": "operators.open-cluster-management.io/v1beta1",
           "kind": "MultiClusterHub",
           "metadata": {
             "name": "multiclusterhub",
@@ -56,7 +56,7 @@ spec:
       displayName: MultiClusterHub Operator
       kind: MultiClusterHub
       name: multiclusterhubs.operators.open-cluster-management.io
-      version: v1alpha1
+      version: v1beta1
   description: Placeholder description
   displayName: Multiclusterhub Operator
   icon:

@@ -1,13 +1,13 @@
 package subscription
 
 import (
-	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 // CertManager overrides the cert-manager chart
-func CertManager(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *unstructured.Unstructured {
+func CertManager(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "cert-manager",
 		Namespace: utils.CertManagerNS(m),
@@ -49,7 +49,7 @@ func CertManager(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *u
 }
 
 // CertWebhook overrides the cert-manager-webhook chart
-func CertWebhook(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *unstructured.Unstructured {
+func CertWebhook(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "cert-manager-webhook",
 		Namespace: utils.CertManagerNS(m),
@@ -99,7 +99,7 @@ func CertWebhook(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *u
 }
 
 // ConfigWatcher overrides the configmap-watcher chart
-func ConfigWatcher(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *unstructured.Unstructured {
+func ConfigWatcher(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "configmap-watcher",
 		Namespace: utils.CertManagerNS(m),

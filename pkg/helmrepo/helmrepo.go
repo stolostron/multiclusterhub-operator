@@ -1,7 +1,7 @@
 package helmrepo
 
 import (
-	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -28,12 +28,12 @@ func labels() map[string]string {
 }
 
 // Image returns image reference for multiclusterhub-repo
-func Image(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) string {
+func Image(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) string {
 	return utils.GetImageReference(m, Name, m.Spec.Version, cache)
 }
 
 // Deployment for the helm repo serving charts
-func Deployment(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *appsv1.Deployment {
+func Deployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *appsv1.Deployment {
 	replicas := int32(*m.Spec.ReplicaCount)
 
 	dep := &appsv1.Deployment{
@@ -110,7 +110,7 @@ func Deployment(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *ap
 }
 
 // Service for the helm repo serving charts
-func Service(m *operatorsv1alpha1.MultiClusterHub) *corev1.Service {
+func Service(m *operatorsv1beta1.MultiClusterHub) *corev1.Service {
 	labels := labels()
 
 	s := &corev1.Service{
@@ -137,7 +137,7 @@ func Service(m *operatorsv1alpha1.MultiClusterHub) *corev1.Service {
 
 // ValidateDeployment returns a deep copy of the deployment with the desired spec based on the MultiClusterHub spec.
 // Returns true if an update is needed to reconcile differences with the current spec.
-func ValidateDeployment(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec, dep *appsv1.Deployment) (*appsv1.Deployment, bool) {
+func ValidateDeployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec, dep *appsv1.Deployment) (*appsv1.Deployment, bool) {
 	var log = logf.Log.WithValues("Deployment.Namespace", dep.GetNamespace(), "Deployment.Name", dep.GetName())
 	found := dep.DeepCopy()
 

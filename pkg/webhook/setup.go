@@ -19,7 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 )
 
@@ -28,8 +28,6 @@ var log = logf.Log.WithName("multiclusterhub_webhook")
 const (
 	resourceName          = "multiclusterhubs"
 	operatorName          = "multiclusterhub-operator"
-	mutatingWebhookName   = "multiclusterhub.mutating-webhook.open-cluster-management.io"
-	mutatingCfgName       = "multiclusterhub-operator-mutating-webhook"
 	validatingWebhookName = "multiclusterhub.validating-webhook.open-cluster-management.io"
 	validatingCfgName     = "multiclusterhub-operator-validating-webhook"
 )
@@ -52,9 +50,7 @@ func Setup(mgr manager.Manager) error {
 	}
 
 	log.Info("Registering webhooks to the webhook server.")
-	// mutatingPath := "/mutate-v1alpha1-multiclusterhub"
-	// hookServer.Register(mutatingPath, &webhook.Admission{Handler: &multiClusterHubMutator{}})
-	validatingPath := "/validate-v1alpha1-multiclusterhub"
+	validatingPath := "/validate-v1beta1-multiclusterhub"
 	hookServer.Register(validatingPath, &webhook.Admission{Handler: &multiClusterHubValidator{}})
 
 	go createWebhookService(mgr.GetClient(), ns)
@@ -153,36 +149,6 @@ func newWebhookService(namespace string) *corev1.Service {
 	}
 }
 
-func newMutatingWebhookCfg(namespace, path string, ca []byte) *admissionregistration.MutatingWebhookConfiguration {
-	return &admissionregistration.MutatingWebhookConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: mutatingCfgName,
-		},
-		Webhooks: []admissionregistration.MutatingWebhook{{
-			Name: mutatingWebhookName,
-			Rules: []admissionregistration.RuleWithOperations{{
-				Rule: admissionregistration.Rule{
-					APIGroups:   []string{operatorsv1alpha1.SchemeGroupVersion.Group},
-					APIVersions: []string{operatorsv1alpha1.SchemeGroupVersion.Version},
-					Resources:   []string{resourceName},
-				},
-				Operations: []admissionregistration.OperationType{
-					admissionregistration.Create,
-					admissionregistration.Update,
-				},
-			}},
-			ClientConfig: admissionregistration.WebhookClientConfig{
-				Service: &admissionregistration.ServiceReference{
-					Name:      utils.WebhookServiceName,
-					Namespace: namespace,
-					Path:      &path,
-				},
-				CABundle: ca,
-			},
-		}},
-	}
-}
-
 func newValidatingWebhookCfg(namespace, path string, ca []byte) *admissionregistration.ValidatingWebhookConfiguration {
 	return &admissionregistration.ValidatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
@@ -192,8 +158,8 @@ func newValidatingWebhookCfg(namespace, path string, ca []byte) *admissionregist
 			Name: validatingWebhookName,
 			Rules: []admissionregistration.RuleWithOperations{{
 				Rule: admissionregistration.Rule{
-					APIGroups:   []string{operatorsv1alpha1.SchemeGroupVersion.Group},
-					APIVersions: []string{operatorsv1alpha1.SchemeGroupVersion.Version},
+					APIGroups:   []string{operatorsv1beta1.SchemeGroupVersion.Group},
+					APIVersions: []string{operatorsv1beta1.SchemeGroupVersion.Version},
 					Resources:   []string{resourceName},
 				},
 				Operations: []admissionregistration.OperationType{
