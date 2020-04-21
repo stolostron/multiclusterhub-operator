@@ -128,7 +128,6 @@ func TestMchIsValid(t *testing.T) {
 			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: "Always",
 			ImagePullSecret: "test",
-			ReplicaCount:    &replicas,
 			Mongo: operatorsv1beta1.Mongo{
 				Storage:      "mongoStorage",
 				StorageClass: "mongoStorageClass",
