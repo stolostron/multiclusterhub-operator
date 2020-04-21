@@ -9,6 +9,6 @@ resources:
 - multiclusterhub.resources.yaml
 - subscription.yaml
 - operator.yaml
-- operators.open-cluster-management.io_v1alpha1_multiclusterhub_cr.yaml
+- operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml
 
 

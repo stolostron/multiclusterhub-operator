@@ -3,7 +3,7 @@ package mcm
 import (
 	"fmt"
 
-	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -17,7 +17,7 @@ import (
 const APIServerName string = "mcm-apiserver"
 
 // APIServerDeployment creates the deployment for the mcm apiserver
-func APIServerDeployment(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *appsv1.Deployment {
+func APIServerDeployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *appsv1.Deployment {
 	replicas := int32(*m.Spec.ReplicaCount)
 	mode := int32(420)
 
@@ -162,7 +162,7 @@ func APIServerDeployment(m *operatorsv1alpha1.MultiClusterHub, cache utils.Cache
 }
 
 // APIServerService creates a service object for the mcm apiserver
-func APIServerService(m *operatorsv1alpha1.MultiClusterHub) *corev1.Service {
+func APIServerService(m *operatorsv1beta1.MultiClusterHub) *corev1.Service {
 	s := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      APIServerName,

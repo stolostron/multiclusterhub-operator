@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -121,21 +121,21 @@ func TestContainsMap(t *testing.T) {
 
 func TestMchIsValid(t *testing.T) {
 	replicas := int(1)
-	validMCH := &operatorsv1alpha1.MultiClusterHub{
+	validMCH := &operatorsv1beta1.MultiClusterHub{
 		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1alpha1.MultiClusterHubSpec{
+		Spec: operatorsv1beta1.MultiClusterHubSpec{
 			Version:         "1.0.0",
 			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: "Always",
 			ImagePullSecret: "test",
 			ReplicaCount:    &replicas,
-			Mongo: operatorsv1alpha1.Mongo{
+			Mongo: operatorsv1beta1.Mongo{
 				Storage:      "mongoStorage",
 				StorageClass: "mongoStorageClass",
 				ReplicaCount: &replicas,
 			},
-			Etcd: operatorsv1alpha1.Etcd{
+			Etcd: operatorsv1beta1.Etcd{
 				Storage:      "etcdStorage",
 				StorageClass: "etcdStorageClass",
 			},
@@ -147,7 +147,7 @@ func TestMchIsValid(t *testing.T) {
 	noMongoReplicas.Spec.Mongo.ReplicaCount = nil
 
 	type args struct {
-		m *operatorsv1alpha1.MultiClusterHub
+		m *operatorsv1beta1.MultiClusterHub
 	}
 	tests := []struct {
 		name string
@@ -171,7 +171,7 @@ func TestMchIsValid(t *testing.T) {
 		},
 		{
 			"Empty object",
-			args{&operatorsv1alpha1.MultiClusterHub{}},
+			args{&operatorsv1beta1.MultiClusterHub{}},
 			false,
 		},
 	}

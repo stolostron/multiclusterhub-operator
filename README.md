@@ -108,5 +108,5 @@ or after the `multiclusterhub.resources.yaml` is applied, deploy the operator in
 > Note: the etcd and mongo need to be installed in advance
 
 ```bash
-kubectl -n multicluster-system apply -f deploy/crds/operators.open-cluster-management.io_v1alpha1_multiclusterhub_cr.yaml
+kubectl -n multicluster-system apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml
 ```
