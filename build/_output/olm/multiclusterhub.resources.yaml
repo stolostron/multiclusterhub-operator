@@ -66,6 +66,10 @@ data:
                         description: StorageClass for MultiCluster hub components
                         type: string
                     type: object
+                  failover:
+                    description: Enabled will toggle HA support. This will provide better
+                      support in cases of failover but consumes more resources.
+                    type: boolean
                   hive:
                     description: Spec of hive
                     properties:
@@ -215,9 +219,6 @@ data:
                       type: string
                     description: Spec of NodeSelector
                     type: object
-                  replicaCount:
-                    description: ReplicaCount for HA support. Does not affect data stores.
-                    type: integer
                 required:
                 - imagePullPolicy
                 - imageRepository
