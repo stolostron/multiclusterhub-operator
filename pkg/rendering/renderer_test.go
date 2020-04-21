@@ -25,11 +25,13 @@ func TestRender(t *testing.T) {
 		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
-			Version:         "1.0.0",
 			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: "Always",
 			ImagePullSecret: "test",
 			Mongo:           operatorsv1beta1.Mongo{},
+		},
+		Status: operatorsv1beta1.MultiClusterHubStatus{
+			CurrentVersion: "1.0.0",
 		},
 	}
 

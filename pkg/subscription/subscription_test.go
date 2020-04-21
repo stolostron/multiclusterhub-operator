@@ -17,7 +17,6 @@ func TestValidate(t *testing.T) {
 	mch := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
-			Version:         "1.0.0",
 			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: corev1.PullAlways,
 			ImagePullSecret: "test",
@@ -113,7 +112,6 @@ func TestSubscriptions(t *testing.T) {
 	mch := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
-			Version:         "1.0.0",
 			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: corev1.PullAlways,
 			ImagePullSecret: "test",
