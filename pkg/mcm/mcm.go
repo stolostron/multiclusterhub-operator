@@ -28,6 +28,13 @@ func defaultLabels(app string) map[string]string {
 	}
 }
 
+func getReplicaCount(mch *operatorsv1beta1.MultiClusterHub) int32 {
+	if mch.Spec.Failover {
+		return 3
+	}
+	return 1
+}
+
 // ValidateDeployment returns a deep copy of the deployment with the desired spec based on the MultiClusterHub spec.
 // Returns true if an update is needed to reconcile differences with the current spec.
 func ValidateDeployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec, dep *appsv1.Deployment) (*appsv1.Deployment, bool) {
@@ -71,9 +78,9 @@ func ValidateDeployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSp
 	}
 
 	// verify replica count
-	if *found.Spec.Replicas != int32(*m.Spec.ReplicaCount) {
-		log.Info("Enforcing replicaCount from CR spec")
-		replicas := int32(*m.Spec.ReplicaCount)
+	if *found.Spec.Replicas != getReplicaCount(m) {
+		log.Info("Enforcing number of replicas")
+		replicas := getReplicaCount(m)
 		found.Spec.Replicas = &replicas
 		needsUpdate = true
 	}
