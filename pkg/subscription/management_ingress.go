@@ -20,7 +20,7 @@ func ManagementIngress(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpe
 			},
 			"cluster_basedomain": cache.IngressDomain,
 			"hubconfig": map[string]interface{}{
-				"replicaCount": m.Spec.ReplicaCount,
+				"replicaCount": utils.DefaultReplicaCount(m),
 				"nodeSelector": m.Spec.NodeSelector,
 			},
 		},

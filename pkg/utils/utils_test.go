@@ -192,3 +192,33 @@ func TestDistributePods(t *testing.T) {
 		}
 	})
 }
+
+func TestDefaultReplicaCount(t *testing.T) {
+	mchDefault := &operatorsv1beta1.MultiClusterHub{}
+	mchNonHA := &operatorsv1beta1.MultiClusterHub{
+		Spec: operatorsv1beta1.MultiClusterHubSpec{
+			Failover: false,
+		},
+	}
+	mchHA := &operatorsv1beta1.MultiClusterHub{
+		Spec: operatorsv1beta1.MultiClusterHubSpec{
+			Failover: true,
+		},
+	}
+
+	t.Run("Non-HA (by default)", func(t *testing.T) {
+		if got := DefaultReplicaCount(mchDefault); got != 1 {
+			t.Errorf("DefaultReplicaCount() = %v, want %v", got, 1)
+		}
+	})
+	t.Run("Non-HA", func(t *testing.T) {
+		if got := DefaultReplicaCount(mchNonHA); got != 1 {
+			t.Errorf("DefaultReplicaCount() = %v, want %v", got, 1)
+		}
+	})
+	t.Run("HA-mode replicas", func(t *testing.T) {
+		if got := DefaultReplicaCount(mchHA); got <= 1 {
+			t.Errorf("DefaultReplicaCount() = %v, but should return multiple replicas", got)
+		}
+	})
+}

@@ -35,7 +35,7 @@ func Console(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstru
 				},
 			},
 			"hubconfig": map[string]interface{}{
-				"replicaCount": m.Spec.ReplicaCount,
+				"replicaCount": utils.DefaultReplicaCount(m),
 				"nodeSelector": m.Spec.NodeSelector,
 			},
 		},

@@ -13,14 +13,12 @@ import (
 )
 
 func TestValidate(t *testing.T) {
-	replicas := int(1)
 	mch := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
 			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: corev1.PullAlways,
 			ImagePullSecret: "test",
-			ReplicaCount:    &replicas,
 			Mongo:           operatorsv1beta1.Mongo{},
 		},
 	}
@@ -49,8 +47,7 @@ func TestValidate(t *testing.T) {
 
 	// 5. Modified ReplicaCount
 	mch4 := mch.DeepCopy()
-	replicas = int(2)
-	mch4.Spec.ReplicaCount = &replicas
+	mch4.Spec.Failover = true
 	sub4 := KUIWebTerminal(mch4, cs)
 
 	type args struct {
@@ -88,7 +85,7 @@ func TestValidate(t *testing.T) {
 			want1: true,
 		},
 		{
-			name:  "Modified ReplicaCount",
+			name:  "Activate failover mode",
 			args:  args{sub, sub4},
 			want:  sub4,
 			want1: true,
@@ -108,14 +105,12 @@ func TestValidate(t *testing.T) {
 }
 
 func TestSubscriptions(t *testing.T) {
-	replicas := int(1)
 	mch := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
 			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: corev1.PullAlways,
 			ImagePullSecret: "test",
-			ReplicaCount:    &replicas,
 			Mongo:           operatorsv1beta1.Mongo{},
 		},
 	}

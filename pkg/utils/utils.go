@@ -136,6 +136,15 @@ func GetImageReference(mch *operatorsv1beta1.MultiClusterHub, imageName, imageVe
 	}
 }
 
+// DefaultReplicaCount returns an integer corresponding to the default number of replicas
+// for HA or non-HA modes
+func DefaultReplicaCount(mch *operatorsv1beta1.MultiClusterHub) int {
+	if mch.Spec.Failover {
+		return 3
+	}
+	return 1
+}
+
 //IsVersionSupported returns true if version is supported
 func IsVersionSupported(version string) bool {
 	if version == "" {
