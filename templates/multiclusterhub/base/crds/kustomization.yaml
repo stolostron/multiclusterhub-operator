@@ -1,3 +1,2 @@
 resources:
-- search_services.yaml
 - inventory.open-cluster-management.io_baremetalassets_crd.yaml
