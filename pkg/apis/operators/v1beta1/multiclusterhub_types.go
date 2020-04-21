@@ -198,11 +198,11 @@ type MultiClusterHubStatus struct {
 	// +optional
 	Phase string `json:"phase"`
 
-	// CurrentVersion indicates the current version of ACM
+	// CurrentVersion indicates the current version
 	// +optional
 	CurrentVersion string `json:"currentVersion,omitempty"`
 
-	// DesiredVersion indicates the desired version of ACM
+	// DesiredVersion indicates the desired version
 	// +optional
 	DesiredVersion string `json:"desiredVersion,omitempty"`
 

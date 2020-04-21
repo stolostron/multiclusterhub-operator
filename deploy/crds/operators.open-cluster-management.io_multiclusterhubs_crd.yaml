@@ -208,7 +208,7 @@ spec:
           description: MultiClusterHubStatus defines the observed state of MultiClusterHub
           properties:
             currentVersion:
-              description: CurrentVersion indicates the current version of ACM
+              description: CurrentVersion indicates the current version
               type: string
             deployments:
               description: Represents the status of each deployment
@@ -301,7 +301,7 @@ spec:
                 type: object
               type: array
             desiredVersion:
-              description: DesiredVersion indicates the desired version of ACM
+              description: DesiredVersion indicates the desired version
               type: string
             phase:
               description: Represents the running phase of the MultiClusterHub
