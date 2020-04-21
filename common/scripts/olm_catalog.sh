@@ -104,11 +104,15 @@ if [ "$(uname)" = "Darwin" ]; then
   " "${CSVFILE}"
 
   sed -i -e "/deployments:/,/maintainers/ s/resources: {}/resources:\\
-                  request:\\
-                    memory: 128Mi/" "${CSVFILE}"
+                  requests:\\
+                    memory: 256Mi\\
+                    cpu: 100m\\
+                  limits:\\
+                    memory: 2048Mi/" "${CSVFILE}"
 else
   sed -i -e "/email:/a\\    name: install\\" "${CSVFILE}"
-  sed -i -e "/deployments:/,/maintainers/ s/resources: {}/resources:\\n                  request:\n                    memory: 128Mi/" "${CSVFILE}"
+  sed -i -e "/deployments:/,/maintainers/ s/resources: {}/resources:\\n                  request:\n
+                    memory: 256Mi\n                    cpu: 100m\n                  limits:\n                    memory: 2048Mi/" "${CSVFILE}"
 fi
 sed -i -e "/keywords/{n;s/.*/    - operator/;}" "${CSVFILE}" 
 sed -i -e "s/mediatype:/  mediatype:/" "${CSVFILE}"
