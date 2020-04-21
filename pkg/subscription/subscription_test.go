@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,14 +14,14 @@ import (
 
 func TestValidate(t *testing.T) {
 	replicas := int(1)
-	mch := &operatorsv1alpha1.MultiClusterHub{
+	mch := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1alpha1.MultiClusterHubSpec{
+		Spec: operatorsv1beta1.MultiClusterHubSpec{
 			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: corev1.PullAlways,
 			ImagePullSecret: "test",
 			ReplicaCount:    &replicas,
-			Mongo:           operatorsv1alpha1.Mongo{},
+			Mongo:           operatorsv1beta1.Mongo{},
 		},
 	}
 
@@ -109,14 +109,14 @@ func TestValidate(t *testing.T) {
 
 func TestSubscriptions(t *testing.T) {
 	replicas := int(1)
-	mch := &operatorsv1alpha1.MultiClusterHub{
+	mch := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1alpha1.MultiClusterHubSpec{
+		Spec: operatorsv1beta1.MultiClusterHubSpec{
 			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: corev1.PullAlways,
 			ImagePullSecret: "test",
 			ReplicaCount:    &replicas,
-			Mongo:           operatorsv1alpha1.Mongo{},
+			Mongo:           operatorsv1beta1.Mongo{},
 		},
 	}
 

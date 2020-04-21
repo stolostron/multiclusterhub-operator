@@ -1,7 +1,7 @@
 package mcm
 
 import (
-	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -15,7 +15,7 @@ import (
 const WebhookName string = "mcm-webhook"
 
 // WebhookDeployment creates the deployment for the mcm webhook
-func WebhookDeployment(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSpec) *appsv1.Deployment {
+func WebhookDeployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *appsv1.Deployment {
 
 	replicas := int32(*m.Spec.ReplicaCount)
 
@@ -100,7 +100,7 @@ func WebhookDeployment(m *operatorsv1alpha1.MultiClusterHub, cache utils.CacheSp
 }
 
 // WebhookService creates a service object for the mcm webhook
-func WebhookService(m *operatorsv1alpha1.MultiClusterHub) *corev1.Service {
+func WebhookService(m *operatorsv1beta1.MultiClusterHub) *corev1.Service {
 	s := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      WebhookName,

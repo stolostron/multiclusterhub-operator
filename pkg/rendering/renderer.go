@@ -13,8 +13,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/kustomize/v3/pkg/resource"
 
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
-	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 )
@@ -32,13 +31,13 @@ type renderFn func(*resource.Resource) (*unstructured.Unstructured, error)
 
 // Renderer is a Kustomizee Renderer Factory
 type Renderer struct {
-	cr        *operatorsv1alpha1.MultiClusterHub
+	cr        *operatorsv1beta1.MultiClusterHub
 	cacheSpec utils.CacheSpec
 	renderFns map[string]renderFn
 }
 
 // NewRenderer Initializes a Kustomize Renderer Factory
-func NewRenderer(multipleClusterHub *operatorsv1alpha1.MultiClusterHub, cacheSpec utils.CacheSpec) *Renderer {
+func NewRenderer(multipleClusterHub *operatorsv1beta1.MultiClusterHub, cacheSpec utils.CacheSpec) *Renderer {
 	renderer := &Renderer{cr: multipleClusterHub, cacheSpec: cacheSpec}
 	renderer.renderFns = map[string]renderFn{
 		"APIService":                   renderer.renderAPIServices,
@@ -247,7 +246,7 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 
 func (r *Renderer) renderHiveConfig(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
-	HiveConfig := v1alpha1.HiveConfigSpec{}
+	HiveConfig := operatorsv1beta1.HiveConfigSpec{}
 
 	if !reflect.DeepEqual(structs.Map(r.cr.Spec.Hive), structs.Map(HiveConfig)) {
 		u.Object["spec"] = structs.Map(r.cr.Spec.Hive)

@@ -18,7 +18,7 @@ import (
 	"sigs.k8s.io/kustomize/v3/pkg/resource"
 	"sigs.k8s.io/kustomize/v3/pkg/target"
 
-	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 )
 
 const TemplatesPathEnvVar = "TEMPLATES_PATH"
@@ -45,7 +45,7 @@ func GetTemplateRenderer() *TemplateRenderer {
 	return templateRenderer
 }
 
-func (r *TemplateRenderer) GetTemplates(multiclusterhub *operatorsv1alpha1.MultiClusterHub) ([]*resource.Resource, error) {
+func (r *TemplateRenderer) GetTemplates(multiclusterhub *operatorsv1beta1.MultiClusterHub) ([]*resource.Resource, error) {
 	var err error
 	kind := strings.ToLower(multiclusterhub.Kind)
 	version := multiclusterhub.Status.CurrentVersion

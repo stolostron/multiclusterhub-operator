@@ -5,7 +5,7 @@ import (
 	"path"
 	"testing"
 
-	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,16 +21,16 @@ func TestRender(t *testing.T) {
 	os.Setenv(templates.TemplatesPathEnvVar, templatesPath)
 	defer os.Unsetenv(templates.TemplatesPathEnvVar)
 
-	mchcr := &operatorsv1alpha1.MultiClusterHub{
+	mchcr := &operatorsv1beta1.MultiClusterHub{
 		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1alpha1.MultiClusterHubSpec{
+		Spec: operatorsv1beta1.MultiClusterHubSpec{
 			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: "Always",
 			ImagePullSecret: "test",
-			Mongo:           operatorsv1alpha1.Mongo{},
+			Mongo:           operatorsv1beta1.Mongo{},
 		},
-		Status: operatorsv1alpha1.MultiClusterHubStatus{
+		Status: operatorsv1beta1.MultiClusterHubStatus{
 			CurrentVersion: "1.0.0",
 		},
 	}

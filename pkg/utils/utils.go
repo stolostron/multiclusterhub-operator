@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -53,7 +53,7 @@ type CacheSpec struct {
 }
 
 // CertManagerNS returns the namespace to deploy cert manager objects
-func CertManagerNS(m *operatorsv1alpha1.MultiClusterHub) string {
+func CertManagerNS(m *operatorsv1beta1.MultiClusterHub) string {
 	if m.Spec.CloudPakCompatibility {
 		return CertManagerNamespace
 	}
@@ -106,7 +106,7 @@ func CoreToUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) 
 }
 
 // MchIsValid Checks if the optional default parameters need to be set
-func MchIsValid(m *operatorsv1alpha1.MultiClusterHub) bool {
+func MchIsValid(m *operatorsv1beta1.MultiClusterHub) bool {
 	invalid := m.Status.CurrentVersion == "" ||
 		!IsVersionSupported(m.Status.CurrentVersion) ||
 		m.Spec.ImageRepository == "" ||
@@ -122,7 +122,7 @@ func MchIsValid(m *operatorsv1alpha1.MultiClusterHub) bool {
 }
 
 //GetImageReference returns full image reference for images referenced directly within operator
-func GetImageReference(mch *operatorsv1alpha1.MultiClusterHub, imageName, imageVersion string, cache CacheSpec) string {
+func GetImageReference(mch *operatorsv1beta1.MultiClusterHub, imageName, imageVersion string, cache CacheSpec) string {
 
 	imageShaDigest := cache.ImageShaDigests[strings.ReplaceAll(imageName, "-", "_")]
 

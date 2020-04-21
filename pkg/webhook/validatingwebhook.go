@@ -9,7 +9,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	operatorsv1alpha1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1alpha1"
+	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 )
 
@@ -21,7 +21,7 @@ type multiClusterHubValidator struct {
 // Handle set the default values to every incoming MultiClusterHub cr.
 // Currently only handles create/update
 func (m *multiClusterHubValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	multiClusterHubs := &operatorsv1alpha1.MultiClusterHubList{}
+	multiClusterHubs := &operatorsv1beta1.MultiClusterHubList{}
 	if err := m.client.List(context.TODO(), multiClusterHubs); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
@@ -54,7 +54,7 @@ func (m *multiClusterHubValidator) Handle(ctx context.Context, req admission.Req
 
 func (m *multiClusterHubValidator) validateCreate(req admission.Request) error {
 
-	creatingMCH := &operatorsv1alpha1.MultiClusterHub{}
+	creatingMCH := &operatorsv1beta1.MultiClusterHub{}
 	err := m.decoder.DecodeRaw(req.Object, creatingMCH)
 	if err != nil {
 		return err
@@ -72,12 +72,12 @@ func (m *multiClusterHubValidator) validateCreate(req admission.Request) error {
 func (m *multiClusterHubValidator) validateUpdate(req admission.Request) error {
 
 	// Parse existing and new MultiClusterHub resources
-	existingMCH := &operatorsv1alpha1.MultiClusterHub{}
+	existingMCH := &operatorsv1beta1.MultiClusterHub{}
 	err := m.decoder.DecodeRaw(req.OldObject, existingMCH)
 	if err != nil {
 		return err
 	}
-	newMCH := &operatorsv1alpha1.MultiClusterHub{}
+	newMCH := &operatorsv1beta1.MultiClusterHub{}
 	err = m.decoder.DecodeRaw(req.Object, newMCH)
 	if err != nil {
 		return err
