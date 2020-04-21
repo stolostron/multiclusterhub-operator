@@ -491,13 +491,6 @@ func (r *ReconcileMultiClusterHub) setDefaults(m *operatorsv1beta1.MultiClusterH
 		m.Spec.Etcd.StorageClass = storageClass
 	}
 
-	replicas := int(1)
-	if m.Spec.ReplicaCount == nil {
-		m.Spec.ReplicaCount = &replicas
-	} else if *m.Spec.ReplicaCount <= 0 {
-		m.Spec.ReplicaCount = &replicas
-	}
-
 	mongoReplicas := int(3)
 	if m.Spec.Mongo.ReplicaCount == nil {
 		m.Spec.Mongo.ReplicaCount = &mongoReplicas
