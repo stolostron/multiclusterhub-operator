@@ -428,6 +428,7 @@ func (r *ReconcileMultiClusterHub) validateVersion(m *operatorsv1beta1.MultiClus
 			return &reconcile.Result{}, err
 		}
 		m.Status.CurrentVersion = componentVersion
+		m.Status.DesiredVersion = componentVersion
 		updatedStatus = true
 
 	}
