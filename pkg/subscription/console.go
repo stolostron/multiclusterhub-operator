@@ -18,19 +18,19 @@ func Console(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstru
 			"cfcRouterUrl":    "https://management-ingress:443",
 			"consoleui": map[string]interface{}{
 				"image": map[string]interface{}{
-					"repository": m.Spec.ImageRepository,
+					"repository": m.Spec.Overrides.ImageRepository,
 					"pullPolicy": m.Spec.ImagePullPolicy,
 				},
 			},
 			"consoleapi": map[string]interface{}{
 				"image": map[string]interface{}{
-					"repository": m.Spec.ImageRepository,
+					"repository": m.Spec.Overrides.ImageRepository,
 					"pullPolicy": m.Spec.ImagePullPolicy,
 				},
 			},
 			"consoleheader": map[string]interface{}{
 				"image": map[string]interface{}{
-					"repository": m.Spec.ImageRepository,
+					"repository": m.Spec.Overrides.ImageRepository,
 					"pullPolicy": m.Spec.ImagePullPolicy,
 				},
 			},

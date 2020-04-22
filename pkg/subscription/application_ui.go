@@ -16,7 +16,7 @@ func ApplicationUI(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *
 			"pullSecret":      m.Spec.ImagePullSecret,
 			"applicationui": map[string]interface{}{
 				"image": map[string]interface{}{
-					"repository": m.Spec.ImageRepository,
+					"repository": m.Spec.Overrides.ImageRepository,
 					"pullPolicy": m.Spec.ImagePullPolicy,
 				},
 			},

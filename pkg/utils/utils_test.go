@@ -125,7 +125,6 @@ func TestMchIsValid(t *testing.T) {
 		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
-			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: "Always",
 			ImagePullSecret: "test",
 			ReplicaCount:    &replicas,
@@ -143,8 +142,6 @@ func TestMchIsValid(t *testing.T) {
 			CurrentVersion: "1.0.0",
 		},
 	}
-	noRepo := validMCH.DeepCopy()
-	noRepo.Spec.ImageRepository = ""
 	noMongoReplicas := validMCH.DeepCopy()
 	noMongoReplicas.Spec.Mongo.ReplicaCount = nil
 
@@ -160,11 +157,6 @@ func TestMchIsValid(t *testing.T) {
 			"Valid MCH",
 			args{validMCH},
 			true,
-		},
-		{
-			"Missing Image Repository",
-			args{noRepo},
-			false,
 		},
 		{
 			"Zero Mongo Replicas",

@@ -16,19 +16,19 @@ func GRC(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstructur
 			"pullSecret":      m.Spec.ImagePullSecret,
 			"grcuiapi": map[string]interface{}{
 				"image": map[string]interface{}{
-					"repository": m.Spec.ImageRepository,
+					"repository": m.Spec.Overrides.ImageRepository,
 					"pullPolicy": m.Spec.ImagePullPolicy,
 				},
 			},
 			"grcui": map[string]interface{}{
 				"image": map[string]interface{}{
-					"repository": m.Spec.ImageRepository,
+					"repository": m.Spec.Overrides.ImageRepository,
 					"pullPolicy": m.Spec.ImagePullPolicy,
 				},
 			},
 			"compliance": map[string]interface{}{
 				"image": map[string]interface{}{
-					"repository": m.Spec.ImageRepository,
+					"repository": m.Spec.Overrides.ImageRepository,
 					"pullPolicy": m.Spec.ImagePullPolicy,
 				},
 			},

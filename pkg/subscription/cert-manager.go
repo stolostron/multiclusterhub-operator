@@ -18,7 +18,7 @@ func CertManager(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *un
 				"isOpenshift": true,
 			},
 			"image": map[string]interface{}{
-				"repository": m.Spec.ImageRepository,
+				"repository": m.Spec.Overrides.ImageRepository,
 				"pullPolicy": m.Spec.ImagePullPolicy,
 			},
 			"serviceAccount": map[string]interface{}{
@@ -26,7 +26,7 @@ func CertManager(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *un
 				"name":   "cert-manager",
 			},
 			"solver": map[string]interface{}{
-				"repository": m.Spec.ImageRepository,
+				"repository": m.Spec.Overrides.ImageRepository,
 			},
 			"extraEnv": []map[string]interface{}{
 				{
@@ -60,7 +60,7 @@ func CertWebhook(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *un
 				"pullSecret": m.Spec.ImagePullSecret,
 			},
 			"image": map[string]interface{}{
-				"repository": m.Spec.ImageRepository,
+				"repository": m.Spec.Overrides.ImageRepository,
 			},
 			"serviceAccount": map[string]interface{}{
 				"create": true,
@@ -76,7 +76,7 @@ func CertWebhook(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *un
 	cainjector := map[string]interface{}{
 		"imageTagPostfix": imageSuffix(m),
 		"image": map[string]interface{}{
-			"repository": m.Spec.ImageRepository,
+			"repository": m.Spec.Overrides.ImageRepository,
 		},
 		"serviceAccount": map[string]interface{}{
 			"create": false,
@@ -109,7 +109,7 @@ func ConfigWatcher(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *
 				"pullSecret": m.Spec.ImagePullSecret,
 			},
 			"image": map[string]interface{}{
-				"repository": m.Spec.ImageRepository,
+				"repository": m.Spec.Overrides.ImageRepository,
 				"pullPolicy": m.Spec.ImagePullPolicy,
 			},
 			"serviceAccount": map[string]interface{}{

@@ -16,7 +16,6 @@ func TestValidateDeployment(t *testing.T) {
 	mch := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
-			ImageRepository: "quay.io/open-cluster-management",
 			ImagePullPolicy: "Always",
 			ImagePullSecret: "test",
 			ReplicaCount:    &replicas,

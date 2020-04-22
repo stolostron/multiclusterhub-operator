@@ -109,7 +109,6 @@ func CoreToUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) 
 func MchIsValid(m *operatorsv1beta1.MultiClusterHub) bool {
 	invalid := m.Status.CurrentVersion == "" ||
 		!IsVersionSupported(m.Status.CurrentVersion) ||
-		m.Spec.ImageRepository == "" ||
 		m.Spec.ImagePullPolicy == "" ||
 		m.Spec.Mongo.Storage == "" ||
 		m.Spec.Mongo.StorageClass == "" ||
@@ -127,13 +126,13 @@ func GetImageReference(mch *operatorsv1beta1.MultiClusterHub, imageName, imageVe
 	imageShaDigest := cache.ImageShaDigests[strings.ReplaceAll(imageName, "-", "_")]
 
 	if imageShaDigest != "" {
-		return fmt.Sprintf("%s/%s@%s", mch.Spec.ImageRepository, imageName, imageShaDigest)
+		return fmt.Sprintf("%s/%s@%s", mch.Spec.Overrides.ImageRepository, imageName, imageShaDigest)
 	} else {
-		imageRef := fmt.Sprintf("%s/%s:%s", mch.Spec.ImageRepository, imageName, imageVersion)
-		if mch.Spec.ImageTagSuffix == "" {
+		imageRef := fmt.Sprintf("%s/%s:%s", mch.Spec.Overrides.ImageRepository, imageName, imageVersion)
+		if mch.Spec.Overrides.ImageTagSuffix == "" {
 			return imageRef
 		}
-		return imageRef + "-" + mch.Spec.ImageTagSuffix
+		return imageRef + "-" + mch.Spec.Overrides.ImageTagSuffix
 	}
 }
 

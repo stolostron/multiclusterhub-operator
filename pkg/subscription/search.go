@@ -19,31 +19,31 @@ func Search(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstruc
 			"search": map[string]interface{}{
 				"aggregator": map[string]interface{}{
 					"image": map[string]interface{}{
-						"repository": m.Spec.ImageRepository,
+						"repository": m.Spec.Overrides.ImageRepository,
 						"pullPolicy": m.Spec.ImagePullPolicy,
 					},
 				},
 				"collector": map[string]interface{}{
 					"image": map[string]interface{}{
-						"repository": m.Spec.ImageRepository,
+						"repository": m.Spec.Overrides.ImageRepository,
 						"pullPolicy": m.Spec.ImagePullPolicy,
 					},
 				},
 				"searchapi": map[string]interface{}{
 					"image": map[string]interface{}{
-						"repository": m.Spec.ImageRepository,
+						"repository": m.Spec.Overrides.ImageRepository,
 						"pullPolicy": m.Spec.ImagePullPolicy,
 					},
 				},
 				"redisgraph": map[string]interface{}{
 					"image": map[string]interface{}{
-						"repository": m.Spec.ImageRepository,
+						"repository": m.Spec.Overrides.ImageRepository,
 						"pullPolicy": m.Spec.ImagePullPolicy,
 					},
 				},
 				"operator": map[string]interface{}{
 					"image": map[string]interface{}{
-						"repository": m.Spec.ImageRepository,
+						"repository": m.Spec.Overrides.ImageRepository,
 						"pullPolicy": m.Spec.ImagePullPolicy,
 					},
 				},

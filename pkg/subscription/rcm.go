@@ -13,18 +13,18 @@ func RCM(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstructur
 		Namespace: m.Namespace,
 		Overrides: map[string]interface{}{
 			"imageTagPostfix": imageSuffix(m),
-			"imageRepository": m.Spec.ImageRepository,
+			"imageRepository": m.Spec.Overrides.ImageRepository,
 			"imagePullSecret": m.Spec.ImagePullSecret,
 			"clusterController": map[string]interface{}{
 				"image": map[string]interface{}{
-					"repository": m.Spec.ImageRepository,
+					"repository": m.Spec.Overrides.ImageRepository,
 					"pullPolicy": m.Spec.ImagePullPolicy,
 					"pullSecret": m.Spec.ImagePullSecret,
 				},
 			},
 			"clusterLifecycle": map[string]interface{}{
 				"image": map[string]interface{}{
-					"repository": m.Spec.ImageRepository,
+					"repository": m.Spec.Overrides.ImageRepository,
 					"pullPolicy": m.Spec.ImagePullPolicy,
 					"pullSecret": m.Spec.ImagePullSecret,
 				},

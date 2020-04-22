@@ -17,7 +17,7 @@ func KUIWebTerminal(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) 
 			"proxy": map[string]interface{}{
 				"clusterIP": "icp-management-ingress",
 				"image": map[string]interface{}{
-					"repository": m.Spec.ImageRepository,
+					"repository": m.Spec.Overrides.ImageRepository,
 					"pullPolicy": m.Spec.ImagePullPolicy,
 				},
 			},

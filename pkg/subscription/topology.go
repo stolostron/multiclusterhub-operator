@@ -16,13 +16,13 @@ func Topology(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstr
 			"pullSecret":      m.Spec.ImagePullSecret,
 			"ui": map[string]interface{}{
 				"image": map[string]interface{}{
-					"repository": m.Spec.ImageRepository,
+					"repository": m.Spec.Overrides.ImageRepository,
 					"pullPolicy": m.Spec.ImagePullPolicy,
 				},
 			},
 			"api": map[string]interface{}{
 				"image": map[string]interface{}{
-					"repository": m.Spec.ImageRepository,
+					"repository": m.Spec.Overrides.ImageRepository,
 					"pullPolicy": m.Spec.ImagePullPolicy,
 				},
 			},

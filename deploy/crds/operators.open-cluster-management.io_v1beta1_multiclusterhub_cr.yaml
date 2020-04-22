@@ -4,7 +4,5 @@ metadata:
   name: multiclusterhub
   namespace: open-cluster-management
 spec:
-  imageRepository: "quay.io/open-cluster-management"
-  imageTagSuffix: ""
   imagePullPolicy: Always
   imagePullSecret: quay-secret

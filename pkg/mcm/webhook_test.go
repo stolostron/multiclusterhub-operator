@@ -13,10 +13,8 @@ func TestWebhookDeployment(t *testing.T) {
 	empty := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
-			ImageRepository: "",
 			ImagePullPolicy: "",
 			ImagePullSecret: "",
-			ImageTagSuffix:  "",
 			Mongo:           operatorsv1beta1.Mongo{},
 			ReplicaCount:    &replicas,
 		},
@@ -34,9 +32,7 @@ func TestWebhookDeployment(t *testing.T) {
 	essentialsOnly := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
-			ImageRepository: "test",
 			ImagePullPolicy: "test",
-			ImageTagSuffix:  "test",
 			ReplicaCount:    &replicas,
 		},
 	}

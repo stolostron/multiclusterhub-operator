@@ -22,11 +22,11 @@ func MongoDB(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstru
 				"existingAdminSecret": "mongodb-admin",
 			},
 			"image": map[string]interface{}{
-				"repository": m.Spec.ImageRepository,
+				"repository": m.Spec.Overrides.ImageRepository,
 				"pullPolicy": m.Spec.ImagePullPolicy,
 			},
 			"installImage": map[string]interface{}{
-				"repository": m.Spec.ImageRepository,
+				"repository": m.Spec.Overrides.ImageRepository,
 				"pullPolicy": m.Spec.ImagePullPolicy,
 			},
 			"persistentVolume": map[string]interface{}{
@@ -39,7 +39,7 @@ func MongoDB(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstru
 			},
 			"curl": map[string]interface{}{
 				"image": map[string]interface{}{
-					"repository": m.Spec.ImageRepository,
+					"repository": m.Spec.Overrides.ImageRepository,
 					"pullPolicy": m.Spec.ImagePullPolicy,
 				},
 			},
