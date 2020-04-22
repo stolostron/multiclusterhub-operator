@@ -43,14 +43,14 @@ func MongoDB(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstru
 					"pullPolicy": m.Spec.ImagePullPolicy,
 				},
 			},
-			"replicas": m.Spec.Mongo.ReplicaCount,
+			"replicas": utils.MongoReplicas,
 			"tls": map[string]interface{}{
 				"casecret": "multicloud-ca-cert",
 				"issuer":   "multicloud-ca-issuer",
 				"enabled":  true,
 			},
 			"hubconfig": map[string]interface{}{
-				"replicaCount": m.Spec.Mongo.ReplicaCount,
+				"replicaCount": utils.MongoReplicas,
 				"nodeSelector": m.Spec.NodeSelector,
 			},
 		},

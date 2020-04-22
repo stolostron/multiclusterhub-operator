@@ -108,12 +108,6 @@ func (m *multiClusterHubValidator) validateUpdate(req admission.Request) error {
 		return errors.New("IPv6 update is forbidden")
 	}
 
-	if newMCH.Spec.Mongo.ReplicaCount != nil {
-		if *newMCH.Spec.Mongo.ReplicaCount <= 0 {
-			return errors.New("ReplicaCount must be greater or equal to 1")
-		}
-	}
-
 	if newMCH.Status.CurrentVersion != "" { // optional param defaults set by reconciler
 		if !utils.IsVersionSupported(newMCH.Status.CurrentVersion) {
 			return errors.New("Version " + newMCH.Status.CurrentVersion + " not supported")

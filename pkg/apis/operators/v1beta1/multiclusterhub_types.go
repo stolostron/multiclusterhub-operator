@@ -186,10 +186,6 @@ type Mongo struct {
 	// StorageSize for MultiCluster hub components
 	// +optional
 	Storage string `json:"storage,omitempty"`
-
-	// ReplicaCount for HA Mongo support
-	// +optional
-	ReplicaCount *int `json:"replicaCount,omitempty"`
 }
 
 // MultiClusterHubStatus defines the observed state of MultiClusterHub

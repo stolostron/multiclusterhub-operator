@@ -32,6 +32,8 @@ const (
 	MongoTLSSecret = "multicluster-mongodb-client-cert"
 	// MongoCaSecret ...
 	MongoCaSecret = "multicloud-ca-cert" // #nosec G101 (no confidential credentials)
+	// MongoReplicas is the number of Mongo pod replicas to run
+	MongoReplicas = 3
 
 	podNamespaceEnvVar = "POD_NAMESPACE"
 	apiserviceName     = "mcm-apiserver"
@@ -114,8 +116,7 @@ func MchIsValid(m *operatorsv1beta1.MultiClusterHub) bool {
 		m.Spec.Mongo.Storage == "" ||
 		m.Spec.Mongo.StorageClass == "" ||
 		m.Spec.Etcd.Storage == "" ||
-		m.Spec.Etcd.StorageClass == "" ||
-		m.Spec.Mongo.ReplicaCount == nil
+		m.Spec.Etcd.StorageClass == ""
 
 	return !invalid
 }

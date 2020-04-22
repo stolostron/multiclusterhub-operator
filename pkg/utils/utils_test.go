@@ -120,7 +120,6 @@ func TestContainsMap(t *testing.T) {
 }
 
 func TestMchIsValid(t *testing.T) {
-	replicas := int(1)
 	validMCH := &operatorsv1beta1.MultiClusterHub{
 		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
@@ -131,7 +130,6 @@ func TestMchIsValid(t *testing.T) {
 			Mongo: operatorsv1beta1.Mongo{
 				Storage:      "mongoStorage",
 				StorageClass: "mongoStorageClass",
-				ReplicaCount: &replicas,
 			},
 			Etcd: operatorsv1beta1.Etcd{
 				Storage:      "etcdStorage",
@@ -144,8 +142,6 @@ func TestMchIsValid(t *testing.T) {
 	}
 	noRepo := validMCH.DeepCopy()
 	noRepo.Spec.ImageRepository = ""
-	noMongoReplicas := validMCH.DeepCopy()
-	noMongoReplicas.Spec.Mongo.ReplicaCount = nil
 
 	type args struct {
 		m *operatorsv1beta1.MultiClusterHub
@@ -163,11 +159,6 @@ func TestMchIsValid(t *testing.T) {
 		{
 			"Missing Image Repository",
 			args{noRepo},
-			false,
-		},
-		{
-			"Zero Mongo Replicas",
-			args{noMongoReplicas},
 			false,
 		},
 		{

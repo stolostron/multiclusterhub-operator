@@ -185,9 +185,6 @@ spec:
             mongo:
               description: Spec of mongo
               properties:
-                replicaCount:
-                  description: ReplicaCount for HA Mongo support
-                  type: integer
                 storage:
                   description: StorageSize for MultiCluster hub components
                   type: string
