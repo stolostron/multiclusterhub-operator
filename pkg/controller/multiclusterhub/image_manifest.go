@@ -14,7 +14,7 @@ import (
 type manifestImage struct {
 	ImageKey     string `json:"image-key"`
 	ImageName    string `json:"image-name"`
-	ImageVersion string `json:"image-version:"`
+	ImageVersion string `json:"image-version"`
 	ImageRemote  string `json:"image-remote"`
 	ImageDigest  string `json:"image-digest"`
 }
