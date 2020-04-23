@@ -180,9 +180,8 @@ func DistributePods(key string, value string) *corev1.Affinity {
 
 //GetImagePullPolicy returns either pull policy from CR overrides or default of Always
 func GetImagePullPolicy(m *operatorsv1beta1.MultiClusterHub) v1.PullPolicy {
-	var ipp v1.PullPolicy
-	if ipp = corev1.PullAlways; m.Spec.Overrides.ImagePullPolicy != "" {
-		ipp = m.Spec.Overrides.ImagePullPolicy
+	if m.Spec.Overrides.ImagePullPolicy == "" {
+		return corev1.PullAlways
 	}
-	return ipp
+	return m.Spec.Overrides.ImagePullPolicy
 }

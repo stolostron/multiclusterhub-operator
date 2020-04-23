@@ -6,6 +6,7 @@ import (
 
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -181,6 +182,28 @@ func TestDistributePods(t *testing.T) {
 	t.Run("Returns pod affinity", func(t *testing.T) {
 		if got := DistributePods("app", "testapp"); reflect.TypeOf(got) != reflect.TypeOf((*corev1.Affinity)(nil)) {
 			t.Errorf("DistributePods() did not return an affinity type")
+		}
+	})
+}
+
+func TestGetImagePullPolicy(t *testing.T) {
+	noPullPolicyMCH := &operatorsv1beta1.MultiClusterHub{}
+	pullPolicyMCH := &operatorsv1beta1.MultiClusterHub{
+		Spec: operatorsv1beta1.MultiClusterHubSpec{
+			Overrides: operatorsv1beta1.Overrides{ImagePullPolicy: v1.PullIfNotPresent},
+		},
+	}
+
+	t.Run("No pull policy set", func(t *testing.T) {
+		want := v1.PullAlways
+		if got := GetImagePullPolicy(noPullPolicyMCH); got != want {
+			t.Errorf("GetImagePullPolicy() = %v, want %v", got, want)
+		}
+	})
+	t.Run("Pull policy set", func(t *testing.T) {
+		want := v1.PullIfNotPresent
+		if got := GetImagePullPolicy(pullPolicyMCH); got != want {
+			t.Errorf("GetImagePullPolicy() = %v, want %v", got, want)
 		}
 	})
 }
