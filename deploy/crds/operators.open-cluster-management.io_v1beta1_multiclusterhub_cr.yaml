@@ -4,5 +4,4 @@ metadata:
   name: multiclusterhub
   namespace: open-cluster-management
 spec:
-  imagePullPolicy: Always
   imagePullSecret: quay-secret

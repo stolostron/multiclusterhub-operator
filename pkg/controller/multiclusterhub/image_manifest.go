@@ -51,6 +51,8 @@ func GetImageOverrides(mch *operatorsv1beta1.MultiClusterHub) (map[string]string
 		return nil, err
 	}
 
+	imageOverrides = addBorrowedImageOverrides(imageOverrides)
+
 	return imageOverrides, nil
 }
 
@@ -101,4 +103,16 @@ func readManifestFile(version string) ([]byte, error) {
 		return nil, err
 	}
 	return contents, nil
+}
+
+//	THIS IS A WORKAROUND FUNCTION FOR HARD-CODING REFERENCES TO IMAGES NOT IN OUR BUILD PIPELINE.
+//	WHEN THESE IMAGES ARE ADDED TO OUR BUILD PIPELINE, THIS CODE WILL EFFECTIVELY DO NOTHING
+//	(AND SHOULD BE REMOVED AS SOON AS POSSIBLE).
+func addBorrowedImageOverrides(io map[string]string) map[string]string {
+	// `origin-oauth-proxy` image used by management-ingress chart
+	if io["oauth_proxy"] == "" {
+		// image digest equivalent of `origin-oauth-proxy:4.5`
+		io["oauth_proxy"] = "quay.io/openshift/origin-oauth-proxy@sha256:8599745a5bf914a3e00efa08f9ddd2c409de91c551d330b80e683bca52aa2146"
+	}
+	return io
 }

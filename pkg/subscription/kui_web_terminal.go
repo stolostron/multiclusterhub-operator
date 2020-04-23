@@ -15,9 +15,6 @@ func KUIWebTerminal(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) 
 			"pullSecret": m.Spec.ImagePullSecret,
 			"proxy": map[string]interface{}{
 				"clusterIP": "icp-management-ingress",
-				"image": map[string]interface{}{
-					"pullPolicy": m.Spec.ImagePullPolicy,
-				},
 			},
 			"hubconfig": map[string]interface{}{
 				"replicaCount": m.Spec.ReplicaCount,
@@ -25,6 +22,7 @@ func KUIWebTerminal(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) 
 			},
 			"global": map[string]interface{}{
 				"imageOverrides": cache.ImageOverrides,
+				"pullPolicy":     utils.GetImagePullPolicy(m),
 			},
 		},
 	}

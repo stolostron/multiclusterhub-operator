@@ -16,9 +16,7 @@ func CertManager(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *un
 			"global": map[string]interface{}{
 				"isOpenshift":    true,
 				"imageOverrides": cache.ImageOverrides,
-			},
-			"image": map[string]interface{}{
-				"pullPolicy": m.Spec.ImagePullPolicy,
+				"pullPolicy":     utils.GetImagePullPolicy(m),
 			},
 			"serviceAccount": map[string]interface{}{
 				"create": true,
@@ -87,9 +85,7 @@ func ConfigWatcher(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *
 			"global": map[string]interface{}{
 				"pullSecret":     m.Spec.ImagePullSecret,
 				"imageOverrides": cache.ImageOverrides,
-			},
-			"image": map[string]interface{}{
-				"pullPolicy": m.Spec.ImagePullPolicy,
+				"pullPolicy":     utils.GetImagePullPolicy(m),
 			},
 			"serviceAccount": map[string]interface{}{
 				"create": true,

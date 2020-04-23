@@ -20,12 +20,6 @@ func MongoDB(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstru
 				"enabled":             true,
 				"existingAdminSecret": "mongodb-admin",
 			},
-			"image": map[string]interface{}{
-				"pullPolicy": m.Spec.ImagePullPolicy,
-			},
-			"installImage": map[string]interface{}{
-				"pullPolicy": m.Spec.ImagePullPolicy,
-			},
 			"persistentVolume": map[string]interface{}{
 				"accessModes": []string{
 					"ReadWriteOnce",
@@ -46,6 +40,7 @@ func MongoDB(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstru
 			},
 			"global": map[string]interface{}{
 				"imageOverrides": cache.ImageOverrides,
+				"pullPolicy":     utils.GetImagePullPolicy(m),
 			},
 		},
 	}

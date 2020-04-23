@@ -17,7 +17,6 @@ func TestValidate(t *testing.T) {
 	mch := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
-			ImagePullPolicy: corev1.PullAlways,
 			ImagePullSecret: "test",
 			ReplicaCount:    &replicas,
 			Mongo:           operatorsv1beta1.Mongo{},
@@ -38,7 +37,7 @@ func TestValidate(t *testing.T) {
 
 	// 3. Modified ImagePullPolicy
 	mch2 := mch.DeepCopy()
-	mch2.Spec.ImagePullPolicy = corev1.PullNever
+	mch2.Spec.Overrides.ImagePullPolicy = corev1.PullNever
 	sub2 := KUIWebTerminal(mch2, cs)
 
 	// 4. Modified ImageRepository
@@ -111,7 +110,6 @@ func TestSubscriptions(t *testing.T) {
 	mch := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
-			ImagePullPolicy: corev1.PullAlways,
 			ImagePullSecret: "test",
 			ReplicaCount:    &replicas,
 			Mongo:           operatorsv1beta1.Mongo{},

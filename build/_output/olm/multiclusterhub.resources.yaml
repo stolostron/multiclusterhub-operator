@@ -182,9 +182,6 @@ data:
                     required:
                     - failedProvisionConfig
                     type: object
-                  imagePullPolicy:
-                    description: Pull policy of the MultiCluster hub images
-                    type: string
                   imagePullSecret:
                     description: Pull secret of the MultiCluster hub images
                     type: string
@@ -212,6 +209,9 @@ data:
                   overrides:
                     description: Overrides
                     properties:
+                      imagePullPolicy:
+                        description: Pull policy of the MultiCluster hub images
+                        type: string
                       imageRepository:
                         description: Repository of the MultiCluster hub images
                         type: string
@@ -222,8 +222,6 @@ data:
                   replicaCount:
                     description: ReplicaCount for HA support. Does not affect data stores.
                     type: integer
-                required:
-                - imagePullPolicy
                 type: object
               status:
                 description: MultiClusterHubStatus defines the observed state of MultiClusterHub
@@ -349,7 +347,6 @@ data:
                   "namespace": "open-cluster-management"
                 },
                 "spec": {
-                  "imagePullPolicy": "Always",
                   "imagePullSecret": "quay-secret"
                 }
               }

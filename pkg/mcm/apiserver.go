@@ -69,7 +69,7 @@ func APIServerDeployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheS
 					},
 					Containers: []corev1.Container{{
 						Image:           Image(cache),
-						ImagePullPolicy: m.Spec.ImagePullPolicy,
+						ImagePullPolicy: utils.GetImagePullPolicy(m),
 						Name:            APIServerName,
 						Args: []string{
 							"/mcm-apiserver",
