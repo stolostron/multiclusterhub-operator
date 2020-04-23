@@ -24,8 +24,8 @@ func TestDeployment(t *testing.T) {
 	}
 
 	cs := utils.CacheSpec{
-		IngressDomain:   "",
-		ImageShaDigests: map[string]string{},
+		IngressDomain:  "",
+		ImageOverrides: map[string]string{},
 	}
 
 	t.Run("MCH with empty fields", func(t *testing.T) {
@@ -79,8 +79,8 @@ func TestValidateDeployment(t *testing.T) {
 	}
 
 	cs := utils.CacheSpec{
-		IngressDomain:   "testIngress",
-		ImageShaDigests: map[string]string{},
+		IngressDomain:  "testIngress",
+		ImageOverrides: map[string]string{},
 	}
 
 	// 1. Valid mch

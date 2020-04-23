@@ -2,8 +2,6 @@ package utils
 
 import (
 	"encoding/json"
-	"fmt"
-	"strings"
 	"time"
 
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
@@ -48,8 +46,8 @@ const (
 // CacheSpec ...
 type CacheSpec struct {
 	IngressDomain   string
-	ImageShaDigests map[string]string
-	ISDVersion      string
+	ImageOverrides  map[string]string
+	ManifestVersion string
 }
 
 // CertManagerNS returns the namespace to deploy cert manager objects
@@ -118,22 +116,6 @@ func MchIsValid(m *operatorsv1beta1.MultiClusterHub) bool {
 		m.Spec.Mongo.ReplicaCount == nil
 
 	return !invalid
-}
-
-//GetImageReference returns full image reference for images referenced directly within operator
-func GetImageReference(mch *operatorsv1beta1.MultiClusterHub, imageName, imageVersion string, cache CacheSpec) string {
-
-	imageShaDigest := cache.ImageShaDigests[strings.ReplaceAll(imageName, "-", "_")]
-
-	if imageShaDigest != "" {
-		return fmt.Sprintf("%s/%s@%s", mch.Spec.Overrides.ImageRepository, imageName, imageShaDigest)
-	} else {
-		imageRef := fmt.Sprintf("%s/%s:%s", mch.Spec.Overrides.ImageRepository, imageName, imageVersion)
-		if mch.Spec.Overrides.ImageTagSuffix == "" {
-			return imageRef
-		}
-		return imageRef + "-" + mch.Spec.Overrides.ImageTagSuffix
-	}
 }
 
 //IsVersionSupported returns true if version is supported

@@ -25,8 +25,8 @@ func TestValidate(t *testing.T) {
 	}
 
 	cs := utils.CacheSpec{
-		IngressDomain:   "testIngress",
-		ImageShaDigests: map[string]string{},
+		IngressDomain:  "testIngress",
+		ImageOverrides: map[string]string{},
 	}
 	// 1. Valid mch
 	sub := KUIWebTerminal(mch, cs)
@@ -119,8 +119,8 @@ func TestSubscriptions(t *testing.T) {
 	}
 
 	cache := utils.CacheSpec{
-		IngressDomain:   "testIngress",
-		ImageShaDigests: map[string]string{},
+		IngressDomain:  "testIngress",
+		ImageOverrides: map[string]string{},
 	}
 
 	tests := []struct {

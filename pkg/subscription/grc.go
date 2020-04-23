@@ -12,23 +12,19 @@ func GRC(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstructur
 		Name:      "grc",
 		Namespace: m.Namespace,
 		Overrides: map[string]interface{}{
-			"imageTagPostfix": imageSuffix(m),
-			"pullSecret":      m.Spec.ImagePullSecret,
+			"pullSecret": m.Spec.ImagePullSecret,
 			"grcuiapi": map[string]interface{}{
 				"image": map[string]interface{}{
-					"repository": m.Spec.Overrides.ImageRepository,
 					"pullPolicy": m.Spec.ImagePullPolicy,
 				},
 			},
 			"grcui": map[string]interface{}{
 				"image": map[string]interface{}{
-					"repository": m.Spec.Overrides.ImageRepository,
 					"pullPolicy": m.Spec.ImagePullPolicy,
 				},
 			},
 			"compliance": map[string]interface{}{
 				"image": map[string]interface{}{
-					"repository": m.Spec.Overrides.ImageRepository,
 					"pullPolicy": m.Spec.ImagePullPolicy,
 				},
 			},
@@ -36,11 +32,10 @@ func GRC(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstructur
 				"replicaCount": m.Spec.ReplicaCount,
 				"nodeSelector": m.Spec.NodeSelector,
 			},
+			"global": map[string]interface{}{
+				"imageOverrides": cache.ImageOverrides,
+			},
 		},
-	}
-
-	if cache.ImageShaDigests != nil {
-		sub.Overrides["imageShaDigests"] = cache.ImageShaDigests
 	}
 
 	return newSubscription(m, sub)

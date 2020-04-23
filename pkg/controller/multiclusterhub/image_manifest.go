@@ -2,17 +2,21 @@ package multiclusterhub
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path"
-	"strings"
 
+	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 )
 
 // This does not include every available attribute from manifest file, just the attributes we need
 type manifestImage struct {
-	Name           string `json:"name"`
-	ManifestSha256 string `json:"manifest-sha256"`
+	ImageKey     string `json:"image-key"`
+	ImageName    string `json:"image-name"`
+	ImageVersion string `json:"image-version:"`
+	ImageRemote  string `json:"image-remote"`
+	ImageDigest  string `json:"image-digest"`
 }
 
 // if naming convention for manifest file changes, update this file (and Dockerfile and constants in utils)
@@ -25,22 +29,29 @@ func getManifestFilePath(version string) (string, error) {
 	return path.Join(home, utils.ImageManifestsDir, version+".json"), nil
 }
 
-// GetImageShaDigest Reads and formats image sha digest values from image manifest file.
-func GetImageShaDigest(version string) (map[string]string, error) {
+// GetImageOverrides Reads and formats full image reference from image manifest file.
+func GetImageOverrides(mch *operatorsv1beta1.MultiClusterHub) (map[string]string, error) {
 
+	version := mch.Status.CurrentVersion
 	manifestData, err := readManifestFile(version)
 
 	if err != nil {
 		return nil, err
 	}
 
-	imageShaDigests, err := formatImageShaDigests(manifestData)
+	manifestImages := []manifestImage{}
+	err = json.Unmarshal(manifestData, &manifestImages)
+	if err != nil {
+		return nil, err
+	}
+
+	imageOverrides, err := formatImageOverrides(mch, manifestImages)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return imageShaDigests, nil
+	return imageOverrides, nil
 }
 
 // ManifestFileExists Has an image manifest file been provided?
@@ -52,20 +63,39 @@ func ManifestFileExists(version string) bool {
 	return fileExists(filepath)
 }
 
-func formatImageShaDigests(manifestData []byte) (map[string]string, error) {
-	manifestFile := []manifestImage{}
-	err := json.Unmarshal(manifestData, &manifestFile)
-	if err != nil {
-		return nil, err
+func buildFullImageReference(mch *operatorsv1beta1.MultiClusterHub, mi manifestImage) string {
+	//NW real work here
+
+	var useRegistry string
+	if useRegistry = mi.ImageRemote; mch.Spec.Overrides.ImageRepository != "" {
+		useRegistry = mch.Spec.Overrides.ImageRepository
 	}
 
-	imageShaDigests := make(map[string]string)
-	for _, img := range manifestFile {
-		if img.Name != "" && img.ManifestSha256 != "" {
-			imageShaDigests[strings.ReplaceAll(img.Name, "-", "_")] = img.ManifestSha256
-		}
+	fmt.Println("\n\n\n>>>>>> NW: useRegistry", useRegistry)
+	imageRegistryAndName := fmt.Sprintf("%s/%s", useRegistry, mi.ImageName)
+	fmt.Println("\n\n\n>>>>>> NW: imageRegAndName", imageRegistryAndName)
+
+	var fullImageReference string
+	if mch.Spec.Overrides.ImageTagSuffix != "" {
+		fullImageReference = fmt.Sprintf("%s:%s-%s", imageRegistryAndName, mi.ImageVersion, mch.Spec.Overrides.ImageTagSuffix)
+	} else {
+		fullImageReference = fmt.Sprintf("%s@%s", imageRegistryAndName, mi.ImageDigest)
 	}
-	return imageShaDigests, nil
+
+	fmt.Println("\n\n\n>>>>>> NW: fullImageReference", fullImageReference)
+
+	return fullImageReference
+}
+
+func formatImageOverrides(mch *operatorsv1beta1.MultiClusterHub, manifestImages []manifestImage) (map[string]string, error) {
+
+	imageOverrides := make(map[string]string)
+	for _, mi := range manifestImages {
+		fullImageRef := buildFullImageReference(mch, mi)
+		imageOverrides[mi.ImageKey] = fullImageRef
+		fmt.Println("\n\n\n>>>>>> NW: formatImageOverrides mi.ImageKey", mi.ImageKey, "fullImageRef", fullImageRef)
+	}
+	return imageOverrides, nil
 }
 
 func readManifestFile(version string) ([]byte, error) {
