@@ -82,17 +82,17 @@ func Validate(found *unstructured.Unstructured, want *unstructured.Unstructured)
 	return nil, false
 }
 
+func imageSuffix(m *operatorsv1beta1.MultiClusterHub) (s string) {
+	s = m.Spec.Overrides.ImageTagSuffix
+	if s != "" {
+		s = "-" + s
+	}
+	return
+}
+
 func networkVersion(m *operatorsv1beta1.MultiClusterHub) (ipv string) {
 	if m.Spec.IPv6 {
 		return "ipv6"
 	}
 	return "ipv4"
-}
-
-func imageSuffix(m *operatorsv1beta1.MultiClusterHub) (s string) {
-	s = m.Spec.ImageTagSuffix
-	if s != "" {
-		s = "-" + s
-	}
-	return
 }
