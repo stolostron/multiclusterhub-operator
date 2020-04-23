@@ -26,9 +26,8 @@ top_of_repo=$(readlink  -f $my_dir/../..)
 
 image_rgy_ns_and_repo="quay.io/open-cluster-management/multiclusterhub-operator"
 
-deploy_dir=$top_of_repo/deploy
-pkg_dir=$top_of_repo/operator-bundles/bound/open-cluster-management-hub
-csv_template=$my_dir/ocm-hub-csv-template.yaml
+unbound_pkg_dir=$top_of_repo/operator-bundles/unbound/open-cluster-management-hub
+bound_pkg_dir=$top_of_repo/operator-bundles/bound/open-cluster-management-hub
 
 csv_release="$1"
 image_tag_or_digest="$2"
@@ -38,6 +37,8 @@ if [[ -z $image_tag_or_digest ]]; then
    >&2 echo "Syntax: <csv_version> <image_tag_or_digest> [<snapshot_id>]"
    exit 1
 fi
+
+source_bundle_dir=$($my_dir/find-bundle-dir.py "latest" $unbound_pkg_dir)
 
 # CSV release identifier is assumed to be in x.y.z format.
 
@@ -121,10 +122,11 @@ channels="$channels --other-channel $snapshot_channel"
 channels="$channels --default-channel $default_channel"
 
 if [[ ! -d $pkg_dir ]]; then
-   mkdir -p $pkg_dir
+   mkdir -p $bound_pkg_dir
 fi
 
-$my_dir/create-ocm-hub-bundle.py \
-   --deploy-dir $deploy_dir --pkg-dir $pkg_dir --csv-template $csv_template \
+$my_dir/create-bound-bundle.py \
+   --pkg-name "open-cluster-management-hub" \
+   --source-bundle-dir $source_bundle_dir --pkg-dir $bound_pkg_dir \
    --csv-vers $csv_vers $bundle_format $channels $operator_image_override
 
