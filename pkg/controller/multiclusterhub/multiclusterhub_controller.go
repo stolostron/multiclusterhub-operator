@@ -209,7 +209,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 			log.Error(err, "manifest file exists for given version, but could not get image sha digests")
 			return reconcile.Result{}, err
 		}
-		fmt.Println("\n\n\n>>>>>> NW: imageOverrides", imageOverrides)
 		r.CacheSpec.ImageOverrides = imageOverrides
 		r.CacheSpec.ManifestVersion = multiClusterHub.Status.CurrentVersion
 	}

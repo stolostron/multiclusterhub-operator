@@ -64,26 +64,18 @@ func ManifestFileExists(version string) bool {
 }
 
 func buildFullImageReference(mch *operatorsv1beta1.MultiClusterHub, mi manifestImage) string {
-	//NW real work here
 
 	var useRegistry string
 	if useRegistry = mi.ImageRemote; mch.Spec.Overrides.ImageRepository != "" {
 		useRegistry = mch.Spec.Overrides.ImageRepository
 	}
-
-	fmt.Println("\n\n\n>>>>>> NW: useRegistry", useRegistry)
 	imageRegistryAndName := fmt.Sprintf("%s/%s", useRegistry, mi.ImageName)
-	fmt.Println("\n\n\n>>>>>> NW: imageRegAndName", imageRegistryAndName)
-
 	var fullImageReference string
 	if mch.Spec.Overrides.ImageTagSuffix != "" {
 		fullImageReference = fmt.Sprintf("%s:%s-%s", imageRegistryAndName, mi.ImageVersion, mch.Spec.Overrides.ImageTagSuffix)
 	} else {
 		fullImageReference = fmt.Sprintf("%s@%s", imageRegistryAndName, mi.ImageDigest)
 	}
-
-	fmt.Println("\n\n\n>>>>>> NW: fullImageReference", fullImageReference)
-
 	return fullImageReference
 }
 
@@ -93,7 +85,6 @@ func formatImageOverrides(mch *operatorsv1beta1.MultiClusterHub, manifestImages 
 	for _, mi := range manifestImages {
 		fullImageRef := buildFullImageReference(mch, mi)
 		imageOverrides[mi.ImageKey] = fullImageRef
-		fmt.Println("\n\n\n>>>>>> NW: formatImageOverrides mi.ImageKey", mi.ImageKey, "fullImageRef", fullImageRef)
 	}
 	return imageOverrides, nil
 }
