@@ -13,8 +13,11 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// Name of helm repo
-const Name = "multiclusterhub-repo"
+// ImageKey used by mch repo
+const ImageKey = "multiclusterhub_repo"
+
+// HelmRepoName for labels, service name, and deployment name
+const HelmRepoName = "multiclusterhub-repo"
 
 // Port of helm repo service
 const Port = 3000
@@ -23,13 +26,13 @@ const Port = 3000
 
 func labels() map[string]string {
 	return map[string]string{
-		"app": Name,
+		"app": HelmRepoName,
 	}
 }
 
 // Image returns image reference for multiclusterhub-repo
-func Image(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) string {
-	return utils.GetImageReference(m, Name, m.Status.CurrentVersion, cache)
+func Image(cache utils.CacheSpec) string {
+	return cache.ImageOverrides[ImageKey]
 }
 
 // Deployment for the helm repo serving charts
@@ -38,7 +41,7 @@ func Deployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *app
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      Name,
+			Name:      HelmRepoName,
 			Namespace: m.Namespace,
 			Labels:    labels(),
 		},
@@ -53,9 +56,9 @@ func Deployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *app
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
-						Image:           Image(m, cache),
+						Image:           Image(cache),
 						ImagePullPolicy: m.Spec.ImagePullPolicy,
-						Name:            Name,
+						Name:            HelmRepoName,
 						Ports: []corev1.ContainerPort{{
 							ContainerPort: Port,
 							Name:          "helmrepo",
@@ -96,7 +99,7 @@ func Deployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *app
 					}},
 					ImagePullSecrets: []corev1.LocalObjectReference{{Name: m.Spec.ImagePullSecret}},
 					NodeSelector:     m.Spec.NodeSelector,
-					Affinity:         utils.DistributePods("app", Name),
+					Affinity:         utils.DistributePods("app", HelmRepoName),
 					// ServiceAccountName: "default",
 				},
 			},
@@ -115,7 +118,7 @@ func Service(m *operatorsv1beta1.MultiClusterHub) *corev1.Service {
 
 	s := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      Name,
+			Name:      HelmRepoName,
 			Namespace: m.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
@@ -156,9 +159,9 @@ func ValidateDeployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSp
 	}
 
 	// verify image repository and suffix
-	if container.Image != Image(m, cache) {
+	if container.Image != Image(cache) {
 		log.Info("Enforcing image repo and suffix from CR spec")
-		container.Image = Image(m, cache)
+		container.Image = Image(cache)
 		needsUpdate = true
 	}
 

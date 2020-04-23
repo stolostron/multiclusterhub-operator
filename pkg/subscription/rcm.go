@@ -12,32 +12,18 @@ func RCM(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstructur
 		Name:      "rcm",
 		Namespace: m.Namespace,
 		Overrides: map[string]interface{}{
-			"imageTagPostfix": imageSuffix(m),
-			"imageRepository": m.Spec.Overrides.ImageRepository,
-			"imagePullSecret": m.Spec.ImagePullSecret,
-			"clusterController": map[string]interface{}{
-				"image": map[string]interface{}{
-					"repository": m.Spec.Overrides.ImageRepository,
-					"pullPolicy": m.Spec.ImagePullPolicy,
-					"pullSecret": m.Spec.ImagePullSecret,
-				},
-			},
-			"clusterLifecycle": map[string]interface{}{
-				"image": map[string]interface{}{
-					"repository": m.Spec.Overrides.ImageRepository,
-					"pullPolicy": m.Spec.ImagePullPolicy,
-					"pullSecret": m.Spec.ImagePullSecret,
-				},
-			},
 			"hubconfig": map[string]interface{}{
 				"replicaCount": m.Spec.ReplicaCount,
 				"nodeSelector": m.Spec.NodeSelector,
 			},
+			"global": map[string]interface{}{
+				"imagePullPolicy": m.Spec.ImagePullPolicy,
+				"imagePullSecret": m.Spec.ImagePullSecret,
+				"imageRepository": m.Spec.ImageRepository,
+				"imageTagPostfix": imageSuffix(m),
+				"imageOverrides":  cache.ImageOverrides,
+			},
 		},
-	}
-
-	if cache.ImageShaDigests != nil {
-		sub.Overrides["imageShaDigests"] = cache.ImageShaDigests
 	}
 
 	return newSubscription(m, sub)

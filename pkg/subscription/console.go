@@ -12,10 +12,9 @@ func Console(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstru
 		Name:      "console-chart",
 		Namespace: m.Namespace,
 		Overrides: map[string]interface{}{
-			"imageTagPostfix": imageSuffix(m),
-			"pullSecret":      m.Spec.ImagePullSecret,
-			"ocpingress":      cache.IngressDomain,
-			"cfcRouterUrl":    "https://management-ingress:443",
+			"pullSecret":   m.Spec.ImagePullSecret,
+			"ocpingress":   cache.IngressDomain,
+			"cfcRouterUrl": "https://management-ingress:443",
 			"consoleui": map[string]interface{}{
 				"image": map[string]interface{}{
 					"repository": m.Spec.Overrides.ImageRepository,
@@ -24,13 +23,11 @@ func Console(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstru
 			},
 			"consoleapi": map[string]interface{}{
 				"image": map[string]interface{}{
-					"repository": m.Spec.Overrides.ImageRepository,
 					"pullPolicy": m.Spec.ImagePullPolicy,
 				},
 			},
 			"consoleheader": map[string]interface{}{
 				"image": map[string]interface{}{
-					"repository": m.Spec.Overrides.ImageRepository,
 					"pullPolicy": m.Spec.ImagePullPolicy,
 				},
 			},
@@ -38,11 +35,10 @@ func Console(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstru
 				"replicaCount": m.Spec.ReplicaCount,
 				"nodeSelector": m.Spec.NodeSelector,
 			},
+			"global": map[string]interface{}{
+				"imageOverrides": cache.ImageOverrides,
+			},
 		},
-	}
-
-	if cache.ImageShaDigests != nil {
-		sub.Overrides["imageShaDigests"] = cache.ImageShaDigests
 	}
 
 	return newSubscription(m, sub)

@@ -12,38 +12,33 @@ func Search(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstruc
 		Name:      "search-prod",
 		Namespace: m.Namespace,
 		Overrides: map[string]interface{}{
-			"imageTagPostfix": imageSuffix(m),
 			"global": map[string]interface{}{
-				"pullSecret": m.Spec.ImagePullSecret,
+				"pullSecret":     m.Spec.ImagePullSecret,
+				"imageOverrides": cache.ImageOverrides,
 			},
 			"search": map[string]interface{}{
 				"aggregator": map[string]interface{}{
 					"image": map[string]interface{}{
-						"repository": m.Spec.Overrides.ImageRepository,
 						"pullPolicy": m.Spec.ImagePullPolicy,
 					},
 				},
 				"collector": map[string]interface{}{
 					"image": map[string]interface{}{
-						"repository": m.Spec.Overrides.ImageRepository,
 						"pullPolicy": m.Spec.ImagePullPolicy,
 					},
 				},
 				"searchapi": map[string]interface{}{
 					"image": map[string]interface{}{
-						"repository": m.Spec.Overrides.ImageRepository,
 						"pullPolicy": m.Spec.ImagePullPolicy,
 					},
 				},
 				"redisgraph": map[string]interface{}{
 					"image": map[string]interface{}{
-						"repository": m.Spec.Overrides.ImageRepository,
 						"pullPolicy": m.Spec.ImagePullPolicy,
 					},
 				},
 				"operator": map[string]interface{}{
 					"image": map[string]interface{}{
-						"repository": m.Spec.Overrides.ImageRepository,
 						"pullPolicy": m.Spec.ImagePullPolicy,
 					},
 				},
@@ -53,10 +48,6 @@ func Search(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstruc
 				"nodeSelector": m.Spec.NodeSelector,
 			},
 		},
-	}
-
-	if cache.ImageShaDigests != nil {
-		sub.Overrides["imageShaDigests"] = cache.ImageShaDigests
 	}
 
 	return newSubscription(m, sub)

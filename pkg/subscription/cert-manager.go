@@ -12,21 +12,17 @@ func CertManager(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *un
 		Name:      "cert-manager",
 		Namespace: utils.CertManagerNS(m),
 		Overrides: map[string]interface{}{
-			"imageTagPostfix": imageSuffix(m),
 			"imagePullSecret": m.Spec.ImagePullSecret,
 			"global": map[string]interface{}{
-				"isOpenshift": true,
+				"isOpenshift":    true,
+				"imageOverrides": cache.ImageOverrides,
 			},
 			"image": map[string]interface{}{
-				"repository": m.Spec.Overrides.ImageRepository,
 				"pullPolicy": m.Spec.ImagePullPolicy,
 			},
 			"serviceAccount": map[string]interface{}{
 				"create": true,
 				"name":   "cert-manager",
-			},
-			"solver": map[string]interface{}{
-				"repository": m.Spec.Overrides.ImageRepository,
 			},
 			"extraEnv": []map[string]interface{}{
 				{
@@ -41,10 +37,6 @@ func CertManager(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *un
 		},
 	}
 
-	if cache.ImageShaDigests != nil {
-		sub.Overrides["imageShaDigests"] = cache.ImageShaDigests
-	}
-
 	return newSubscription(m, sub)
 }
 
@@ -54,13 +46,10 @@ func CertWebhook(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *un
 		Name:      "cert-manager-webhook",
 		Namespace: utils.CertManagerNS(m),
 		Overrides: map[string]interface{}{
-			"imageTagPostfix": imageSuffix(m),
-			"pkiNamespace":    m.Namespace,
+			"pkiNamespace": m.Namespace,
 			"global": map[string]interface{}{
-				"pullSecret": m.Spec.ImagePullSecret,
-			},
-			"image": map[string]interface{}{
-				"repository": m.Spec.Overrides.ImageRepository,
+				"pullSecret":     m.Spec.ImagePullSecret,
+				"imageOverrides": cache.ImageOverrides,
 			},
 			"serviceAccount": map[string]interface{}{
 				"create": true,
@@ -74,10 +63,6 @@ func CertWebhook(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *un
 	}
 
 	cainjector := map[string]interface{}{
-		"imageTagPostfix": imageSuffix(m),
-		"image": map[string]interface{}{
-			"repository": m.Spec.Overrides.ImageRepository,
-		},
 		"serviceAccount": map[string]interface{}{
 			"create": false,
 			"name":   "default",
@@ -86,11 +71,6 @@ func CertWebhook(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *un
 			"replicaCount": m.Spec.ReplicaCount,
 			"nodeSelector": m.Spec.NodeSelector,
 		},
-	}
-
-	if cache.ImageShaDigests != nil {
-		sub.Overrides["imageShaDigests"] = cache.ImageShaDigests
-		cainjector["imageShaDigests"] = cache.ImageShaDigests
 	}
 
 	sub.Overrides["cainjector"] = cainjector
@@ -104,12 +84,11 @@ func ConfigWatcher(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *
 		Name:      "configmap-watcher",
 		Namespace: utils.CertManagerNS(m),
 		Overrides: map[string]interface{}{
-			"imageTagPostfix": imageSuffix(m),
 			"global": map[string]interface{}{
-				"pullSecret": m.Spec.ImagePullSecret,
+				"pullSecret":     m.Spec.ImagePullSecret,
+				"imageOverrides": cache.ImageOverrides,
 			},
 			"image": map[string]interface{}{
-				"repository": m.Spec.Overrides.ImageRepository,
 				"pullPolicy": m.Spec.ImagePullPolicy,
 			},
 			"serviceAccount": map[string]interface{}{
@@ -121,10 +100,6 @@ func ConfigWatcher(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *
 				"nodeSelector": m.Spec.NodeSelector,
 			},
 		},
-	}
-
-	if cache.ImageShaDigests != nil {
-		sub.Overrides["imageShaDigests"] = cache.ImageShaDigests
 	}
 
 	return newSubscription(m, sub)

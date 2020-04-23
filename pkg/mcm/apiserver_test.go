@@ -21,8 +21,8 @@ func TestAPIServerDeployment(t *testing.T) {
 	}
 
 	cs := utils.CacheSpec{
-		IngressDomain:   "testIngress",
-		ImageShaDigests: map[string]string{},
+		IngressDomain:  "testIngress",
+		ImageOverrides: map[string]string{},
 	}
 
 	t.Run("MCH with empty fields", func(t *testing.T) {

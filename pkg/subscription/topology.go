@@ -12,17 +12,14 @@ func Topology(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstr
 		Name:      "topology",
 		Namespace: m.Namespace,
 		Overrides: map[string]interface{}{
-			"imageTagPostfix": imageSuffix(m),
-			"pullSecret":      m.Spec.ImagePullSecret,
+			"pullSecret": m.Spec.ImagePullSecret,
 			"ui": map[string]interface{}{
 				"image": map[string]interface{}{
-					"repository": m.Spec.Overrides.ImageRepository,
 					"pullPolicy": m.Spec.ImagePullPolicy,
 				},
 			},
 			"api": map[string]interface{}{
 				"image": map[string]interface{}{
-					"repository": m.Spec.Overrides.ImageRepository,
 					"pullPolicy": m.Spec.ImagePullPolicy,
 				},
 			},
@@ -30,11 +27,10 @@ func Topology(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstr
 				"replicaCount": m.Spec.ReplicaCount,
 				"nodeSelector": m.Spec.NodeSelector,
 			},
+			"global": map[string]interface{}{
+				"imageOverrides": cache.ImageOverrides,
+			},
 		},
-	}
-
-	if cache.ImageShaDigests != nil {
-		sub.Overrides["imageShaDigests"] = cache.ImageShaDigests
 	}
 
 	return newSubscription(m, sub)

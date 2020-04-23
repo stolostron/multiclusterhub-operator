@@ -65,7 +65,7 @@ func (r *ReconcileMultiClusterHub) ensureDeployment(m *operatorsv1beta1.MultiClu
 	var needsUpdate bool
 
 	switch found.Name {
-	case helmrepo.Name:
+	case helmrepo.HelmRepoName:
 		desired, needsUpdate = helmrepo.ValidateDeployment(m, r.CacheSpec, found)
 	case mcm.APIServerName, mcm.ControllerName, mcm.WebhookName:
 		desired, needsUpdate = mcm.ValidateDeployment(m, r.CacheSpec, found)
