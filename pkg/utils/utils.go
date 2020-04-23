@@ -31,9 +31,7 @@ const (
 	// MongoTLSSecret ...
 	MongoTLSSecret = "multicluster-mongodb-client-cert"
 	// MongoCaSecret ...
-	MongoCaSecret = "multicloud-ca-cert" // #nosec G101 (no confidential credentials)
-	// MongoReplicas is the number of Mongo pod replicas to run
-	MongoReplicas = 3
+	MongoCaSecret = "multicloud-ca-cert" // #nosec G101 (no confidential credentials)\
 
 	podNamespaceEnvVar = "POD_NAMESPACE"
 	apiserviceName     = "mcm-apiserver"
