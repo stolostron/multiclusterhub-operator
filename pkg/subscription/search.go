@@ -15,33 +15,7 @@ func Search(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstruc
 			"global": map[string]interface{}{
 				"pullSecret":     m.Spec.ImagePullSecret,
 				"imageOverrides": cache.ImageOverrides,
-			},
-			"search": map[string]interface{}{
-				"aggregator": map[string]interface{}{
-					"image": map[string]interface{}{
-						"pullPolicy": m.Spec.ImagePullPolicy,
-					},
-				},
-				"collector": map[string]interface{}{
-					"image": map[string]interface{}{
-						"pullPolicy": m.Spec.ImagePullPolicy,
-					},
-				},
-				"searchapi": map[string]interface{}{
-					"image": map[string]interface{}{
-						"pullPolicy": m.Spec.ImagePullPolicy,
-					},
-				},
-				"redisgraph": map[string]interface{}{
-					"image": map[string]interface{}{
-						"pullPolicy": m.Spec.ImagePullPolicy,
-					},
-				},
-				"operator": map[string]interface{}{
-					"image": map[string]interface{}{
-						"pullPolicy": m.Spec.ImagePullPolicy,
-					},
-				},
+				"pullPolicy":     utils.GetImagePullPolicy(m),
 			},
 			"hubconfig": map[string]interface{}{
 				"replicaCount": m.Spec.ReplicaCount,

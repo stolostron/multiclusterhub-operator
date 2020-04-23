@@ -13,17 +13,13 @@ func ApplicationUI(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *
 		Namespace: m.Namespace,
 		Overrides: map[string]interface{}{
 			"pullSecret": m.Spec.ImagePullSecret,
-			"applicationui": map[string]interface{}{
-				"image": map[string]interface{}{
-					"pullPolicy": m.Spec.ImagePullPolicy,
-				},
-			},
 			"hubconfig": map[string]interface{}{
 				"replicaCount": m.Spec.ReplicaCount,
 				"nodeSelector": m.Spec.NodeSelector,
 			},
 			"global": map[string]interface{}{
 				"imageOverrides": cache.ImageOverrides,
+				"pullPolicy":     utils.GetImagePullPolicy(m),
 			},
 		},
 	}

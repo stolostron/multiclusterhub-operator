@@ -57,7 +57,7 @@ func Deployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *app
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
 						Image:           Image(cache),
-						ImagePullPolicy: m.Spec.ImagePullPolicy,
+						ImagePullPolicy: utils.GetImagePullPolicy(m),
 						Name:            HelmRepoName,
 						Ports: []corev1.ContainerPort{{
 							ContainerPort: Port,
@@ -166,9 +166,9 @@ func ValidateDeployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSp
 	}
 
 	// verify image pull policy
-	if container.ImagePullPolicy != m.Spec.ImagePullPolicy {
-		log.Info("Enforcing imagePullPolicy from CR spec")
-		container.ImagePullPolicy = m.Spec.ImagePullPolicy
+	if container.ImagePullPolicy != utils.GetImagePullPolicy(m) {
+		log.Info("Enforcing imagePullPolicy")
+		container.ImagePullPolicy = utils.GetImagePullPolicy(m)
 		needsUpdate = true
 	}
 

@@ -462,10 +462,6 @@ func (r *ReconcileMultiClusterHub) setDefaults(m *operatorsv1beta1.MultiClusterH
 	}
 	log.Info("MultiClusterHub is Invalid. Updating with proper defaults")
 
-	if m.Spec.ImagePullPolicy == "" {
-		m.Spec.ImagePullPolicy = corev1.PullAlways
-	}
-
 	if m.Spec.Mongo.Storage == "" {
 		m.Spec.Mongo.Storage = "5Gi"
 	}

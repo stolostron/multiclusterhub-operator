@@ -6,6 +6,7 @@ import (
 
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -107,7 +108,6 @@ func CoreToUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) 
 func MchIsValid(m *operatorsv1beta1.MultiClusterHub) bool {
 	invalid := m.Status.CurrentVersion == "" ||
 		!IsVersionSupported(m.Status.CurrentVersion) ||
-		m.Spec.ImagePullPolicy == "" ||
 		m.Spec.Mongo.Storage == "" ||
 		m.Spec.Mongo.StorageClass == "" ||
 		m.Spec.Etcd.Storage == "" ||
@@ -176,4 +176,13 @@ func DistributePods(key string, value string) *corev1.Affinity {
 			},
 		},
 	}
+}
+
+//GetImagePullPolicy returns either pull policy from CR overrides or default of Always
+func GetImagePullPolicy(m *operatorsv1beta1.MultiClusterHub) v1.PullPolicy {
+	var ipp v1.PullPolicy
+	if ipp = corev1.PullAlways; m.Spec.Overrides.ImagePullPolicy != "" {
+		ipp = m.Spec.Overrides.ImagePullPolicy
+	}
+	return ipp
 }

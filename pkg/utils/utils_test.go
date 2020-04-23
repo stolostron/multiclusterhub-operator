@@ -125,7 +125,6 @@ func TestMchIsValid(t *testing.T) {
 		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
-			ImagePullPolicy: "Always",
 			ImagePullSecret: "test",
 			ReplicaCount:    &replicas,
 			Mongo: operatorsv1beta1.Mongo{

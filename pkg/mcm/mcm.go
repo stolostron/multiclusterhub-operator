@@ -53,9 +53,9 @@ func ValidateDeployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSp
 	}
 
 	// verify image pull policy
-	if container.ImagePullPolicy != m.Spec.ImagePullPolicy {
+	if container.ImagePullPolicy != utils.GetImagePullPolicy(m) {
 		log.Info("Enforcing imagePullPolicy from CR spec")
-		container.ImagePullPolicy = m.Spec.ImagePullPolicy
+		container.ImagePullPolicy = utils.GetImagePullPolicy(m)
 		needsUpdate = true
 	}
 

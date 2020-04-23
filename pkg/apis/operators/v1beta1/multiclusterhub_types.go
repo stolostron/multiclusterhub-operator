@@ -12,8 +12,6 @@ import (
 // MultiClusterHubSpec defines the desired state of MultiClusterHub
 // +k8s:openapi-gen=true
 type MultiClusterHubSpec struct {
-	// Pull policy of the MultiCluster hub images
-	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy"`
 
 	// Pull secret of the MultiCluster hub images
 	// +optional
@@ -61,6 +59,10 @@ type Overrides struct {
 	// ImageTagSuffix of the MultiCluster hub images
 	// +optional
 	ImageTagSuffix string `json:"imageTagSuffix,omitempty"`
+
+	// Pull policy of the MultiCluster hub images
+	// +optional
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 }
 
 // Etcd defines the desired state of Etcd
