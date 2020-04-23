@@ -20,7 +20,7 @@ func RCM(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstructur
 				"imagePullPolicy": m.Spec.ImagePullPolicy,
 				"imagePullSecret": m.Spec.ImagePullSecret,
 				"imageRepository": m.Spec.ImageRepository,
-				"imageTagPostfix": m.Spec.ImageTagSuffix,
+				"imageTagPostfix": imageSuffix(m),
 				"imageOverrides":  cache.ImageOverrides,
 			},
 		},

@@ -88,3 +88,11 @@ func networkVersion(m *operatorsv1beta1.MultiClusterHub) (ipv string) {
 	}
 	return "ipv4"
 }
+
+func imageSuffix(m *operatorsv1beta1.MultiClusterHub) (s string) {
+	s = m.Spec.ImageTagSuffix
+	if s != "" {
+		s = "-" + s
+	}
+	return
+}
