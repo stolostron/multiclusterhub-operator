@@ -16,18 +16,15 @@ func TestDeployment(t *testing.T) {
 	empty := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
-			ImageRepository: "",
-			ImagePullPolicy: "",
 			ImagePullSecret: "",
-			ImageTagSuffix:  "",
 			Mongo:           operatorsv1beta1.Mongo{},
 			ReplicaCount:    &replicas,
 		},
 	}
 
 	cs := utils.CacheSpec{
-		IngressDomain:   "",
-		ImageShaDigests: map[string]string{},
+		IngressDomain:  "",
+		ImageOverrides: map[string]string{},
 	}
 
 	t.Run("MCH with empty fields", func(t *testing.T) {
@@ -37,10 +34,7 @@ func TestDeployment(t *testing.T) {
 	essentialsOnly := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
-			ImageRepository: "test",
-			ImagePullPolicy: "test",
-			ImageTagSuffix:  "test",
-			ReplicaCount:    &replicas,
+			ReplicaCount: &replicas,
 		},
 	}
 	t.Run("MCH with only required values", func(t *testing.T) {
@@ -72,8 +66,6 @@ func TestValidateDeployment(t *testing.T) {
 	mch := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
-			ImageRepository: "quay.io/open-cluster-management",
-			ImagePullPolicy: "Always",
 			ImagePullSecret: "test",
 			ReplicaCount:    &replicas,
 			Mongo:           operatorsv1beta1.Mongo{},
@@ -84,8 +76,8 @@ func TestValidateDeployment(t *testing.T) {
 	}
 
 	cs := utils.CacheSpec{
-		IngressDomain:   "testIngress",
-		ImageShaDigests: map[string]string{},
+		IngressDomain:  "testIngress",
+		ImageOverrides: map[string]string{},
 	}
 
 	// 1. Valid mch

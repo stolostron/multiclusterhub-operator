@@ -3,7 +3,7 @@ package multiclusterhub
 import (
 	"context"
 	"crypto/rand"
-	err "errors"
+	e "errors"
 	"fmt"
 	"math/big"
 	"time"
@@ -199,15 +199,18 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	}
 
 	if r.shouldReadManifestFile(multiClusterHub) {
-		if ManifestFileExists(multiClusterHub.Status.CurrentVersion) {
-			imageShaDigests, err := GetImageShaDigest(multiClusterHub.Status.CurrentVersion)
-			if err != nil {
-				log.Error(err, "manifest file exists for given version, but could not get image sha digests")
-				return reconcile.Result{}, err
-			}
-			r.CacheSpec.ImageShaDigests = imageShaDigests
-			r.CacheSpec.ISDVersion = multiClusterHub.Status.CurrentVersion
+		if !ManifestFileExists(multiClusterHub.Status.CurrentVersion) {
+			err := e.New("Image manifest for " + multiClusterHub.Status.CurrentVersion + " not found")
+			log.Error(err, "Cannot find manifest.")
+			return reconcile.Result{}, err
 		}
+		imageOverrides, err := GetImageOverrides(multiClusterHub)
+		if err != nil {
+			log.Error(err, "manifest file exists for given version, but could not get image sha digests")
+			return reconcile.Result{}, err
+		}
+		r.CacheSpec.ImageOverrides = imageOverrides
+		r.CacheSpec.ManifestVersion = multiClusterHub.Status.CurrentVersion
 	}
 
 	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub, r.CacheSpec))
@@ -434,7 +437,7 @@ func (r *ReconcileMultiClusterHub) validateVersion(m *operatorsv1beta1.MultiClus
 	}
 
 	if !utils.IsVersionSupported(m.Status.CurrentVersion) {
-		err := err.New("Version " + m.Status.CurrentVersion + " not supported")
+		err := e.New("Version " + m.Status.CurrentVersion + " not supported")
 		log.Error(err, "Overriding with valid version")
 		componentVersion, err := r.ReadComponentVersionFile()
 		if err != nil {
@@ -458,14 +461,6 @@ func (r *ReconcileMultiClusterHub) setDefaults(m *operatorsv1beta1.MultiClusterH
 		return nil, nil
 	}
 	log.Info("MultiClusterHub is Invalid. Updating with proper defaults")
-
-	if m.Spec.ImageRepository == "" {
-		m.Spec.ImageRepository = utils.DefaultRepository
-	}
-
-	if m.Spec.ImagePullPolicy == "" {
-		m.Spec.ImagePullPolicy = corev1.PullAlways
-	}
 
 	if m.Spec.Mongo.Storage == "" {
 		m.Spec.Mongo.Storage = "5Gi"
@@ -614,15 +609,15 @@ func (r *ReconcileMultiClusterHub) shouldReadManifestFile(m *operatorsv1beta1.Mu
 	// read manifest file if:
 
 	// (1) CacheSpec.ImageShaDigests doesn't exist or
-	if r.CacheSpec.ImageShaDigests == nil {
+	if r.CacheSpec.ImageOverrides == nil {
 		return true
 	}
 	// (2) CacheSpec.ISDVersion doesn't exist or
-	if r.CacheSpec.ISDVersion == "" {
+	if r.CacheSpec.ManifestVersion == "" {
 		return true
 	}
 	// (3) CacheSpec.ISDVersion is not up-to-date with spec.Version
-	if r.CacheSpec.ISDVersion != m.Status.CurrentVersion {
+	if r.CacheSpec.ManifestVersion != m.Status.CurrentVersion {
 		return true
 	}
 	return false

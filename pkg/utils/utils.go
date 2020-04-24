@@ -2,12 +2,11 @@ package utils
 
 import (
 	"encoding/json"
-	"fmt"
-	"strings"
 	"time"
 
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -48,8 +47,8 @@ const (
 // CacheSpec ...
 type CacheSpec struct {
 	IngressDomain   string
-	ImageShaDigests map[string]string
-	ISDVersion      string
+	ImageOverrides  map[string]string
+	ManifestVersion string
 }
 
 // CertManagerNS returns the namespace to deploy cert manager objects
@@ -109,8 +108,6 @@ func CoreToUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) 
 func MchIsValid(m *operatorsv1beta1.MultiClusterHub) bool {
 	invalid := m.Status.CurrentVersion == "" ||
 		!IsVersionSupported(m.Status.CurrentVersion) ||
-		m.Spec.ImageRepository == "" ||
-		m.Spec.ImagePullPolicy == "" ||
 		m.Spec.Mongo.Storage == "" ||
 		m.Spec.Mongo.StorageClass == "" ||
 		m.Spec.Etcd.Storage == "" ||
@@ -119,22 +116,6 @@ func MchIsValid(m *operatorsv1beta1.MultiClusterHub) bool {
 		m.Spec.Mongo.ReplicaCount == nil
 
 	return !invalid
-}
-
-//GetImageReference returns full image reference for images referenced directly within operator
-func GetImageReference(mch *operatorsv1beta1.MultiClusterHub, imageName, imageVersion string, cache CacheSpec) string {
-
-	imageShaDigest := cache.ImageShaDigests[strings.ReplaceAll(imageName, "-", "_")]
-
-	if imageShaDigest != "" {
-		return fmt.Sprintf("%s/%s@%s", mch.Spec.ImageRepository, imageName, imageShaDigest)
-	} else {
-		imageRef := fmt.Sprintf("%s/%s:%s", mch.Spec.ImageRepository, imageName, imageVersion)
-		if mch.Spec.ImageTagSuffix == "" {
-			return imageRef
-		}
-		return imageRef + "-" + mch.Spec.ImageTagSuffix
-	}
 }
 
 //IsVersionSupported returns true if version is supported
@@ -195,4 +176,12 @@ func DistributePods(key string, value string) *corev1.Affinity {
 			},
 		},
 	}
+}
+
+//GetImagePullPolicy returns either pull policy from CR overrides or default of Always
+func GetImagePullPolicy(m *operatorsv1beta1.MultiClusterHub) v1.PullPolicy {
+	if m.Spec.Overrides.ImagePullPolicy == "" {
+		return corev1.PullAlways
+	}
+	return m.Spec.Overrides.ImagePullPolicy
 }

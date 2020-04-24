@@ -12,24 +12,19 @@ func KUIWebTerminal(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) 
 		Name:      "kui-web-terminal",
 		Namespace: m.Namespace,
 		Overrides: map[string]interface{}{
-			"imageTagPostfix": imageSuffix(m),
-			"pullSecret":      m.Spec.ImagePullSecret,
+			"pullSecret": m.Spec.ImagePullSecret,
 			"proxy": map[string]interface{}{
 				"clusterIP": "icp-management-ingress",
-				"image": map[string]interface{}{
-					"repository": m.Spec.ImageRepository,
-					"pullPolicy": m.Spec.ImagePullPolicy,
-				},
 			},
 			"hubconfig": map[string]interface{}{
 				"replicaCount": m.Spec.ReplicaCount,
 				"nodeSelector": m.Spec.NodeSelector,
 			},
+			"global": map[string]interface{}{
+				"imageOverrides": cache.ImageOverrides,
+				"pullPolicy":     utils.GetImagePullPolicy(m),
+			},
 		},
-	}
-
-	if cache.ImageShaDigests != nil {
-		sub.Overrides["imageShaDigests"] = cache.ImageShaDigests
 	}
 
 	return newSubscription(m, sub)

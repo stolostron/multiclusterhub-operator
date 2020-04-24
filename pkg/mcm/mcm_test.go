@@ -16,8 +16,6 @@ func TestValidateDeployment(t *testing.T) {
 	mch := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
-			ImageRepository: "quay.io/open-cluster-management",
-			ImagePullPolicy: "Always",
 			ImagePullSecret: "test",
 			ReplicaCount:    &replicas,
 			Mongo:           operatorsv1beta1.Mongo{},
@@ -28,8 +26,8 @@ func TestValidateDeployment(t *testing.T) {
 	}
 
 	cs := utils.CacheSpec{
-		IngressDomain:   "testIngress",
-		ImageShaDigests: map[string]string{},
+		IngressDomain:  "testIngress",
+		ImageOverrides: map[string]string{},
 	}
 
 	// 1. Valid mch

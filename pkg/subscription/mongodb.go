@@ -12,7 +12,6 @@ func MongoDB(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstru
 		Name:      "multicluster-mongodb",
 		Namespace: m.Namespace,
 		Overrides: map[string]interface{}{
-			"imageTagPostfix": imageSuffix(m),
 			"imagePullSecrets": []string{
 				m.Spec.ImagePullSecret,
 			},
@@ -21,14 +20,6 @@ func MongoDB(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstru
 				"enabled":             true,
 				"existingAdminSecret": "mongodb-admin",
 			},
-			"image": map[string]interface{}{
-				"repository": m.Spec.ImageRepository,
-				"pullPolicy": m.Spec.ImagePullPolicy,
-			},
-			"installImage": map[string]interface{}{
-				"repository": m.Spec.ImageRepository,
-				"pullPolicy": m.Spec.ImagePullPolicy,
-			},
 			"persistentVolume": map[string]interface{}{
 				"accessModes": []string{
 					"ReadWriteOnce",
@@ -36,12 +27,6 @@ func MongoDB(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstru
 				"enabled":      true,
 				"size":         m.Spec.Mongo.Storage,
 				"storageClass": m.Spec.Mongo.StorageClass,
-			},
-			"curl": map[string]interface{}{
-				"image": map[string]interface{}{
-					"repository": m.Spec.ImageRepository,
-					"pullPolicy": m.Spec.ImagePullPolicy,
-				},
 			},
 			"replicas": m.Spec.Mongo.ReplicaCount,
 			"tls": map[string]interface{}{
@@ -53,11 +38,11 @@ func MongoDB(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstru
 				"replicaCount": m.Spec.Mongo.ReplicaCount,
 				"nodeSelector": m.Spec.NodeSelector,
 			},
+			"global": map[string]interface{}{
+				"imageOverrides": cache.ImageOverrides,
+				"pullPolicy":     utils.GetImagePullPolicy(m),
+			},
 		},
-	}
-
-	if cache.ImageShaDigests != nil {
-		sub.Overrides["imageShaDigests"] = cache.ImageShaDigests
 	}
 
 	return newSubscription(m, sub)

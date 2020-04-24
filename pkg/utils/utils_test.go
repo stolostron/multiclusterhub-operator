@@ -6,6 +6,7 @@ import (
 
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -125,8 +126,6 @@ func TestMchIsValid(t *testing.T) {
 		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
-			ImageRepository: "quay.io/open-cluster-management",
-			ImagePullPolicy: "Always",
 			ImagePullSecret: "test",
 			ReplicaCount:    &replicas,
 			Mongo: operatorsv1beta1.Mongo{
@@ -143,8 +142,6 @@ func TestMchIsValid(t *testing.T) {
 			CurrentVersion: "1.0.0",
 		},
 	}
-	noRepo := validMCH.DeepCopy()
-	noRepo.Spec.ImageRepository = ""
 	noMongoReplicas := validMCH.DeepCopy()
 	noMongoReplicas.Spec.Mongo.ReplicaCount = nil
 
@@ -160,11 +157,6 @@ func TestMchIsValid(t *testing.T) {
 			"Valid MCH",
 			args{validMCH},
 			true,
-		},
-		{
-			"Missing Image Repository",
-			args{noRepo},
-			false,
 		},
 		{
 			"Zero Mongo Replicas",
@@ -190,6 +182,28 @@ func TestDistributePods(t *testing.T) {
 	t.Run("Returns pod affinity", func(t *testing.T) {
 		if got := DistributePods("app", "testapp"); reflect.TypeOf(got) != reflect.TypeOf((*corev1.Affinity)(nil)) {
 			t.Errorf("DistributePods() did not return an affinity type")
+		}
+	})
+}
+
+func TestGetImagePullPolicy(t *testing.T) {
+	noPullPolicyMCH := &operatorsv1beta1.MultiClusterHub{}
+	pullPolicyMCH := &operatorsv1beta1.MultiClusterHub{
+		Spec: operatorsv1beta1.MultiClusterHubSpec{
+			Overrides: operatorsv1beta1.Overrides{ImagePullPolicy: v1.PullIfNotPresent},
+		},
+	}
+
+	t.Run("No pull policy set", func(t *testing.T) {
+		want := v1.PullAlways
+		if got := GetImagePullPolicy(noPullPolicyMCH); got != want {
+			t.Errorf("GetImagePullPolicy() = %v, want %v", got, want)
+		}
+	})
+	t.Run("Pull policy set", func(t *testing.T) {
+		want := v1.PullIfNotPresent
+		if got := GetImagePullPolicy(pullPolicyMCH); got != want {
+			t.Errorf("GetImagePullPolicy() = %v, want %v", got, want)
 		}
 	})
 }

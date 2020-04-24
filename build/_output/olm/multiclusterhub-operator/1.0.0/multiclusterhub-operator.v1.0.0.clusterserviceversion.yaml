@@ -12,10 +12,7 @@ metadata:
             "namespace": "open-cluster-management"
           },
           "spec": {
-            "imagePullPolicy": "Always",
-            "imagePullSecret": "quay-secret",
-            "imageRepository": "quay.io/open-cluster-management",
-            "imageTagSuffix": ""
+            "imagePullSecret": "quay-secret"
           }
         }
       ]
