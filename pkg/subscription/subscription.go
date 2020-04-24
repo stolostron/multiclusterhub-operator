@@ -83,7 +83,7 @@ func Validate(found *unstructured.Unstructured, want *unstructured.Unstructured)
 }
 
 func imageSuffix(m *operatorsv1beta1.MultiClusterHub) (s string) {
-	s = m.Spec.ImageTagSuffix
+	s = m.Spec.Overrides.ImageTagSuffix
 	if s != "" {
 		s = "-" + s
 	}

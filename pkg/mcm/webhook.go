@@ -48,8 +48,8 @@ func WebhookDeployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpe
 						},
 					},
 					Containers: []corev1.Container{{
-						Image:           Image(m, cache),
-						ImagePullPolicy: m.Spec.ImagePullPolicy,
+						Image:           Image(cache),
+						ImagePullPolicy: utils.GetImagePullPolicy(m),
 						Name:            WebhookName,
 						Args: []string{
 							"/mcm-webhook",

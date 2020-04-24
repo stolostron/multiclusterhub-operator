@@ -17,8 +17,6 @@ func TestValidate(t *testing.T) {
 	mch := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
-			ImageRepository: "quay.io/open-cluster-management",
-			ImagePullPolicy: corev1.PullAlways,
 			ImagePullSecret: "test",
 			ReplicaCount:    &replicas,
 			Mongo:           operatorsv1beta1.Mongo{},
@@ -26,8 +24,8 @@ func TestValidate(t *testing.T) {
 	}
 
 	cs := utils.CacheSpec{
-		IngressDomain:   "testIngress",
-		ImageShaDigests: map[string]string{},
+		IngressDomain:  "testIngress",
+		ImageOverrides: map[string]string{},
 	}
 	// 1. Valid mch
 	sub := KUIWebTerminal(mch, cs)
@@ -39,12 +37,12 @@ func TestValidate(t *testing.T) {
 
 	// 3. Modified ImagePullPolicy
 	mch2 := mch.DeepCopy()
-	mch2.Spec.ImagePullPolicy = corev1.PullNever
+	mch2.Spec.Overrides.ImagePullPolicy = corev1.PullNever
 	sub2 := KUIWebTerminal(mch2, cs)
 
 	// 4. Modified ImageRepository
 	mch3 := mch.DeepCopy()
-	mch3.Spec.ImageRepository = "notquay.io/closed-cluster-management"
+	mch3.Spec.Overrides.ImageRepository = "notquay.io/closed-cluster-management"
 	sub3 := KUIWebTerminal(mch3, cs)
 
 	// 5. Modified ReplicaCount
@@ -112,8 +110,6 @@ func TestSubscriptions(t *testing.T) {
 	mch := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
-			ImageRepository: "quay.io/open-cluster-management",
-			ImagePullPolicy: corev1.PullAlways,
 			ImagePullSecret: "test",
 			ReplicaCount:    &replicas,
 			Mongo:           operatorsv1beta1.Mongo{},
@@ -121,8 +117,8 @@ func TestSubscriptions(t *testing.T) {
 	}
 
 	cache := utils.CacheSpec{
-		IngressDomain:   "testIngress",
-		ImageShaDigests: map[string]string{},
+		IngressDomain:  "testIngress",
+		ImageOverrides: map[string]string{},
 	}
 
 	tests := []struct {

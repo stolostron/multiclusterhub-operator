@@ -13,15 +13,6 @@ import (
 // +k8s:openapi-gen=true
 type MultiClusterHubSpec struct {
 
-	// Repository of the MultiCluster hub images
-	ImageRepository string `json:"imageRepository"`
-
-	// ImageTagSuffix of the MultiCluster hub images
-	ImageTagSuffix string `json:"imageTagSuffix"`
-
-	// Pull policy of the MultiCluster hub images
-	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy"`
-
 	// Pull secret of the MultiCluster hub images
 	// +optional
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
@@ -53,6 +44,25 @@ type MultiClusterHubSpec struct {
 	// Spec of Etcd
 	// +optional
 	Etcd `json:"etcd,omitempty"`
+
+	// Overrides
+	// +optional
+	Overrides `json:"overrides,omitempty"`
+}
+
+// Overrides provides developer overrides for MCH installation
+type Overrides struct {
+	// Repository of the MultiCluster hub images
+	// +optional
+	ImageRepository string `json:"imageRepository,omitempty"`
+
+	// ImageTagSuffix of the MultiCluster hub images
+	// +optional
+	ImageTagSuffix string `json:"imageTagSuffix,omitempty"`
+
+	// Pull policy of the MultiCluster hub images
+	// +optional
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 }
 
 // Etcd defines the desired state of Etcd

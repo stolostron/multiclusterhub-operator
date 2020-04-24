@@ -13,18 +13,15 @@ func TestAPIServerDeployment(t *testing.T) {
 	empty := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
-			ImageRepository: "",
-			ImagePullPolicy: "",
 			ImagePullSecret: "",
-			ImageTagSuffix:  "",
 			Mongo:           operatorsv1beta1.Mongo{},
 			ReplicaCount:    &replicas, // Adding replicas here to avoid nil pointer dereference
 		},
 	}
 
 	cs := utils.CacheSpec{
-		IngressDomain:   "testIngress",
-		ImageShaDigests: map[string]string{},
+		IngressDomain:  "testIngress",
+		ImageOverrides: map[string]string{},
 	}
 
 	t.Run("MCH with empty fields", func(t *testing.T) {
@@ -34,10 +31,7 @@ func TestAPIServerDeployment(t *testing.T) {
 	essentialsOnly := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
-			ImageRepository: "test",
-			ImagePullPolicy: "test",
-			ImageTagSuffix:  "test",
-			ReplicaCount:    &replicas, // Adding replicas here to avoid nil pointer dereference
+			ReplicaCount: &replicas, // Adding replicas here to avoid nil pointer dereference
 		},
 	}
 	t.Run("MCH with only required values", func(t *testing.T) {

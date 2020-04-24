@@ -8,18 +8,15 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// ImageName used by mcm deployments
-const ImageName = "multicloud-manager"
-
-// ImageVersion used by mcm deployments
-const ImageVersion = "0.0.1"
+// ImageKey used by mcm deployments
+const ImageKey = "multicloud_manager"
 
 // ServiceAccount used by mcm deployments
 const ServiceAccount = "hub-sa"
 
 // Image returns image reference for multicloud-manager
-func Image(mch *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) string {
-	return utils.GetImageReference(mch, ImageName, ImageVersion, cache)
+func Image(cache utils.CacheSpec) string {
+	return cache.ImageOverrides[ImageKey]
 }
 
 func defaultLabels(app string) map[string]string {
@@ -49,16 +46,16 @@ func ValidateDeployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSp
 	}
 
 	// verify image repository and suffix
-	if container.Image != Image(m, cache) {
+	if container.Image != Image(cache) {
 		log.Info("Enforcing image repo and suffix from CR spec")
-		container.Image = Image(m, cache)
+		container.Image = Image(cache)
 		needsUpdate = true
 	}
 
 	// verify image pull policy
-	if container.ImagePullPolicy != m.Spec.ImagePullPolicy {
+	if container.ImagePullPolicy != utils.GetImagePullPolicy(m) {
 		log.Info("Enforcing imagePullPolicy from CR spec")
-		container.ImagePullPolicy = m.Spec.ImagePullPolicy
+		container.ImagePullPolicy = utils.GetImagePullPolicy(m)
 		needsUpdate = true
 	}
 

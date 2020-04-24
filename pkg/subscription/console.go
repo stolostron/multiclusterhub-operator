@@ -12,37 +12,18 @@ func Console(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstru
 		Name:      "console-chart",
 		Namespace: m.Namespace,
 		Overrides: map[string]interface{}{
-			"imageTagPostfix": imageSuffix(m),
-			"pullSecret":      m.Spec.ImagePullSecret,
-			"ocpingress":      cache.IngressDomain,
-			"cfcRouterUrl":    "https://management-ingress:443",
-			"consoleui": map[string]interface{}{
-				"image": map[string]interface{}{
-					"repository": m.Spec.ImageRepository,
-					"pullPolicy": m.Spec.ImagePullPolicy,
-				},
-			},
-			"consoleapi": map[string]interface{}{
-				"image": map[string]interface{}{
-					"repository": m.Spec.ImageRepository,
-					"pullPolicy": m.Spec.ImagePullPolicy,
-				},
-			},
-			"consoleheader": map[string]interface{}{
-				"image": map[string]interface{}{
-					"repository": m.Spec.ImageRepository,
-					"pullPolicy": m.Spec.ImagePullPolicy,
-				},
-			},
+			"pullSecret":   m.Spec.ImagePullSecret,
+			"ocpingress":   cache.IngressDomain,
+			"cfcRouterUrl": "https://management-ingress:443",
 			"hubconfig": map[string]interface{}{
 				"replicaCount": m.Spec.ReplicaCount,
 				"nodeSelector": m.Spec.NodeSelector,
 			},
+			"global": map[string]interface{}{
+				"imageOverrides": cache.ImageOverrides,
+				"pullPolicy":     utils.GetImagePullPolicy(m),
+			},
 		},
-	}
-
-	if cache.ImageShaDigests != nil {
-		sub.Overrides["imageShaDigests"] = cache.ImageShaDigests
 	}
 
 	return newSubscription(m, sub)

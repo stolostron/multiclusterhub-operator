@@ -163,17 +163,8 @@
                 required:
                 - failedProvisionConfig
                 type: object
-              imagePullPolicy:
-                description: Pull policy of the MultiCluster hub images
-                type: string
               imagePullSecret:
                 description: Pull secret of the MultiCluster hub images
-                type: string
-              imageRepository:
-                description: Repository of the MultiCluster hub images
-                type: string
-              imageTagSuffix:
-                description: ImageTagSuffix of the MultiCluster hub images
                 type: string
               ipv6:
                 description: Flag for IPv6
@@ -196,13 +187,22 @@
                   type: string
                 description: Spec of NodeSelector
                 type: object
+              overrides:
+                description: Overrides
+                properties:
+                  imagePullPolicy:
+                    description: Pull policy of the MultiCluster hub images
+                    type: string
+                  imageRepository:
+                    description: Repository of the MultiCluster hub images
+                    type: string
+                  imageTagSuffix:
+                    description: ImageTagSuffix of the MultiCluster hub images
+                    type: string
+                type: object
               replicaCount:
                 description: ReplicaCount for HA support. Does not affect data stores.
                 type: integer
-            required:
-            - imagePullPolicy
-            - imageRepository
-            - imageTagSuffix
             type: object
           status:
             description: MultiClusterHubStatus defines the observed state of MultiClusterHub

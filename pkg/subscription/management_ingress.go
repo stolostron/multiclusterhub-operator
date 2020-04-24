@@ -12,22 +12,17 @@ func ManagementIngress(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpe
 		Name:      "management-ingress",
 		Namespace: m.Namespace,
 		Overrides: map[string]interface{}{
-			"imageTagPostfix": imageSuffix(m),
-			"pullSecret":      m.Spec.ImagePullSecret,
-			"image": map[string]interface{}{
-				"repository": m.Spec.ImageRepository,
-				"pullPolicy": m.Spec.ImagePullPolicy,
-			},
+			"pullSecret":         m.Spec.ImagePullSecret,
 			"cluster_basedomain": cache.IngressDomain,
 			"hubconfig": map[string]interface{}{
 				"replicaCount": m.Spec.ReplicaCount,
 				"nodeSelector": m.Spec.NodeSelector,
 			},
+			"global": map[string]interface{}{
+				"imageOverrides": cache.ImageOverrides,
+				"pullPolicy":     utils.GetImagePullPolicy(m),
+			},
 		},
-	}
-
-	if cache.ImageShaDigests != nil {
-		sub.Overrides["imageShaDigests"] = cache.ImageShaDigests
 	}
 
 	return newSubscription(m, sub)
