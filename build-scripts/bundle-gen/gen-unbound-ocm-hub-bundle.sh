@@ -38,23 +38,20 @@ deploy_dir=$top_of_repo/deploy
 pkg_dir=$top_of_repo/operator-bundles/unbound/open-cluster-management-hub
 csv_template=$my_dir/ocm-hub-csv-template.yaml
 
-csv_release="$1"
+csv_vers="$1"
 
-if [[ -z $csv_release ]]; then
+if [[ -z $csv_vers ]]; then
    >&2 echo "Syntax: <csv_version>"
    exit 1
 fi
 
-csv_vers="$csv_release"
-operator_image_override=""
-bundle_format=""
-channels="--default-channel latest"
+channel="latest"
 
 if [[ ! -d $pkg_dir ]]; then
    mkdir -p $pkg_dir
 fi
 
-$my_dir/create-ocm-hub-bundle.py \
+$my_dir/create-unbound-ocm-hub-bundle.py \
    --deploy-dir $deploy_dir --pkg-dir $pkg_dir --csv-template $csv_template \
-   --csv-vers $csv_vers $bundle_format $channels $operator_image_override
+   --csv-vers $csv_vers --channel $channel
 
