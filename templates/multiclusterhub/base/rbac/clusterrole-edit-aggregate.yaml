@@ -32,3 +32,6 @@ rules:
 - apiGroups: ["hive.openshift.io"]
   resources: ["clusterdeployments", "machinepools"]
   verbs: ["get", "list", "watch", "update", "patch"]
+- apiGroups: ["config.openshift.io"]
+  resources: ["clusterversions"]
+  verbs: ["get", "list", "watch", "update", "patch"]
