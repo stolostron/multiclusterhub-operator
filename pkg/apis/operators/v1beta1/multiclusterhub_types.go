@@ -18,8 +18,10 @@ type MultiClusterHubSpec struct {
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
 
 	// ReplicaCount for HA support. Does not affect data stores.
+	// Enabled will toggle HA support. This will provide better support in cases of failover
+	// but consumes more resources.
 	// +optional
-	ReplicaCount *int `json:"replicaCount,omitempty"`
+	Failover bool `json:"failover"`
 
 	// Flag for IPv6
 	// +optional
@@ -195,10 +197,6 @@ type Mongo struct {
 	// StorageSize for MultiCluster hub components
 	// +optional
 	Storage string `json:"storage,omitempty"`
-
-	// ReplicaCount for HA Mongo support
-	// +optional
-	ReplicaCount *int `json:"replicaCount,omitempty"`
 }
 
 // MultiClusterHubStatus defines the observed state of MultiClusterHub

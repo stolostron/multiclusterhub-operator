@@ -121,17 +121,14 @@ func TestContainsMap(t *testing.T) {
 }
 
 func TestMchIsValid(t *testing.T) {
-	replicas := int(1)
 	validMCH := &operatorsv1beta1.MultiClusterHub{
 		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
 			ImagePullSecret: "test",
-			ReplicaCount:    &replicas,
 			Mongo: operatorsv1beta1.Mongo{
 				Storage:      "mongoStorage",
 				StorageClass: "mongoStorageClass",
-				ReplicaCount: &replicas,
 			},
 			Etcd: operatorsv1beta1.Etcd{
 				Storage:      "etcdStorage",
@@ -142,8 +139,6 @@ func TestMchIsValid(t *testing.T) {
 			CurrentVersion: "1.0.0",
 		},
 	}
-	noMongoReplicas := validMCH.DeepCopy()
-	noMongoReplicas.Spec.Mongo.ReplicaCount = nil
 
 	type args struct {
 		m *operatorsv1beta1.MultiClusterHub
@@ -157,11 +152,6 @@ func TestMchIsValid(t *testing.T) {
 			"Valid MCH",
 			args{validMCH},
 			true,
-		},
-		{
-			"Zero Mongo Replicas",
-			args{noMongoReplicas},
-			false,
 		},
 		{
 			"Empty object",
@@ -204,6 +194,36 @@ func TestGetImagePullPolicy(t *testing.T) {
 		want := v1.PullIfNotPresent
 		if got := GetImagePullPolicy(pullPolicyMCH); got != want {
 			t.Errorf("GetImagePullPolicy() = %v, want %v", got, want)
+		}
+	})
+}
+
+func TestDefaultReplicaCount(t *testing.T) {
+	mchDefault := &operatorsv1beta1.MultiClusterHub{}
+	mchNonHA := &operatorsv1beta1.MultiClusterHub{
+		Spec: operatorsv1beta1.MultiClusterHubSpec{
+			Failover: false,
+		},
+	}
+	mchHA := &operatorsv1beta1.MultiClusterHub{
+		Spec: operatorsv1beta1.MultiClusterHubSpec{
+			Failover: true,
+		},
+	}
+
+	t.Run("Non-HA (by default)", func(t *testing.T) {
+		if got := DefaultReplicaCount(mchDefault); got != 1 {
+			t.Errorf("DefaultReplicaCount() = %v, want %v", got, 1)
+		}
+	})
+	t.Run("Non-HA", func(t *testing.T) {
+		if got := DefaultReplicaCount(mchNonHA); got != 1 {
+			t.Errorf("DefaultReplicaCount() = %v, want %v", got, 1)
+		}
+	})
+	t.Run("HA-mode replicas", func(t *testing.T) {
+		if got := DefaultReplicaCount(mchHA); got <= 1 {
+			t.Errorf("DefaultReplicaCount() = %v, but should return multiple replicas", got)
 		}
 	})
 }

@@ -12,12 +12,10 @@ import (
 )
 
 func TestValidateDeployment(t *testing.T) {
-	replicas := int(1)
 	mch := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
 			ImagePullSecret: "test",
-			ReplicaCount:    &replicas,
 			Mongo:           operatorsv1beta1.Mongo{},
 			NodeSelector: map[string]string{
 				"test": "test",
@@ -49,7 +47,7 @@ func TestValidateDeployment(t *testing.T) {
 	dep4 := dep.DeepCopy()
 	dep4.Spec.Template.Spec.NodeSelector = nil
 
-	// 6. Modified ReplicaCount
+	// 6. Activate HA mode
 	dep5 := dep.DeepCopy()
 	dep5.Spec.Replicas = new(int32)
 
@@ -94,7 +92,7 @@ func TestValidateDeployment(t *testing.T) {
 			want1: true,
 		},
 		{
-			name:  "Modified ReplicaCount",
+			name:  "Modified number of replicas",
 			args:  args{mch, dep5},
 			want:  dep,
 			want1: true,

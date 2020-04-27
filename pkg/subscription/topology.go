@@ -14,7 +14,7 @@ func Topology(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstr
 		Overrides: map[string]interface{}{
 			"pullSecret": m.Spec.ImagePullSecret,
 			"hubconfig": map[string]interface{}{
-				"replicaCount": m.Spec.ReplicaCount,
+				"replicaCount": utils.DefaultReplicaCount(m),
 				"nodeSelector": m.Spec.NodeSelector,
 			},
 			"global": map[string]interface{}{

@@ -111,11 +111,18 @@ func MchIsValid(m *operatorsv1beta1.MultiClusterHub) bool {
 		m.Spec.Mongo.Storage == "" ||
 		m.Spec.Mongo.StorageClass == "" ||
 		m.Spec.Etcd.Storage == "" ||
-		m.Spec.Etcd.StorageClass == "" ||
-		m.Spec.ReplicaCount == nil ||
-		m.Spec.Mongo.ReplicaCount == nil
+		m.Spec.Etcd.StorageClass == ""
 
 	return !invalid
+}
+
+// DefaultReplicaCount returns an integer corresponding to the default number of replicas
+// for HA or non-HA modes
+func DefaultReplicaCount(mch *operatorsv1beta1.MultiClusterHub) int {
+	if mch.Spec.Failover {
+		return 3
+	}
+	return 1
 }
 
 //IsVersionSupported returns true if version is supported
