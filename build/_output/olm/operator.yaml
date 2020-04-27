@@ -21,6 +21,12 @@ spec:
           imagePullPolicy: Always
           command:
           - multiclusterhub-operator
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 100m
+            limits:
+              memory: 2048Mi
           env:
             - name: WATCH_NAMESPACE
               valueFrom:
