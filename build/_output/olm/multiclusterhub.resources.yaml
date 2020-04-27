@@ -346,10 +346,7 @@ data:
                   "namespace": "open-cluster-management"
                 },
                 "spec": {
-                  "imagePullSecret": "quay-secret",
-                  "overrides": {
-                    "imageTagSuffix": "SNAPSHOT-2020-04-24-15-37-39"
-                  }
+                  "imagePullSecret": "quay-secret"
                 }
               }
             ]
@@ -582,7 +579,7 @@ data:
                         value: multiclusterhub-operator
                       - name: TEMPLATES_PATH
                         value: /usr/local/templates
-                      image: quay.io/rhibmcollab/multiclusterhub-operator:jdg
+                      image: quay.io/rhibmcollab/multiclusterhub-operator:1.0.0
                       imagePullPolicy: Always
                       name: multiclusterhub-operator
                       resources:
