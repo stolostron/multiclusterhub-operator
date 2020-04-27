@@ -9,13 +9,11 @@ import (
 )
 
 func TestWebhookDeployment(t *testing.T) {
-	replicas := int(1)
 	empty := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
 			ImagePullSecret: "",
 			Mongo:           operatorsv1beta1.Mongo{},
-			ReplicaCount:    &replicas,
 		},
 	}
 
@@ -30,9 +28,7 @@ func TestWebhookDeployment(t *testing.T) {
 
 	essentialsOnly := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1beta1.MultiClusterHubSpec{
-			ReplicaCount: &replicas,
-		},
+		Spec:       operatorsv1beta1.MultiClusterHubSpec{},
 	}
 	t.Run("MCH with only required values", func(t *testing.T) {
 		_ = WebhookDeployment(essentialsOnly, cs)

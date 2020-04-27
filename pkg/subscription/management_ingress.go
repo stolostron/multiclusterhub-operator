@@ -15,7 +15,7 @@ func ManagementIngress(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpe
 			"pullSecret":         m.Spec.ImagePullSecret,
 			"cluster_basedomain": cache.IngressDomain,
 			"hubconfig": map[string]interface{}{
-				"replicaCount": m.Spec.ReplicaCount,
+				"replicaCount": utils.DefaultReplicaCount(m),
 				"nodeSelector": m.Spec.NodeSelector,
 			},
 			"global": map[string]interface{}{

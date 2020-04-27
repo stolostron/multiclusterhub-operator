@@ -5,3 +5,5 @@ metadata:
   namespace: open-cluster-management
 spec:
   imagePullSecret: quay-secret
+  overrides:
+    imageTagSuffix: SNAPSHOT-2020-04-24-15-37-39

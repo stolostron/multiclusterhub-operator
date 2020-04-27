@@ -37,7 +37,7 @@ func Image(cache utils.CacheSpec) string {
 
 // Deployment for the helm repo serving charts
 func Deployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *appsv1.Deployment {
-	replicas := int32(*m.Spec.ReplicaCount)
+	replicas := int32(1)
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -177,14 +177,6 @@ func ValidateDeployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSp
 	if !utils.ContainsMap(pod.NodeSelector, desiredSelectors) {
 		log.Info("Enforcing node selectors from CR spec")
 		pod.NodeSelector = desiredSelectors
-		needsUpdate = true
-	}
-
-	// verify replica count
-	if *found.Spec.Replicas != int32(*m.Spec.ReplicaCount) {
-		log.Info("Enforcing replicaCount from CR spec")
-		replicas := int32(*m.Spec.ReplicaCount)
-		found.Spec.Replicas = &replicas
 		needsUpdate = true
 	}
 

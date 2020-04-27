@@ -13,7 +13,7 @@ func RCM(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstructur
 		Namespace: m.Namespace,
 		Overrides: map[string]interface{}{
 			"hubconfig": map[string]interface{}{
-				"replicaCount": m.Spec.ReplicaCount,
+				"replicaCount": utils.DefaultReplicaCount(m),
 				"nodeSelector": m.Spec.NodeSelector,
 			},
 			"global": map[string]interface{}{

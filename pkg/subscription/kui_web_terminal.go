@@ -17,7 +17,7 @@ func KUIWebTerminal(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) 
 				"clusterIP": "icp-management-ingress",
 			},
 			"hubconfig": map[string]interface{}{
-				"replicaCount": m.Spec.ReplicaCount,
+				"replicaCount": utils.DefaultReplicaCount(m),
 				"nodeSelector": m.Spec.NodeSelector,
 			},
 			"global": map[string]interface{}{

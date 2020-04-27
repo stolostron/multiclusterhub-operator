@@ -66,6 +66,11 @@ data:
                         description: StorageClass for MultiCluster hub components
                         type: string
                     type: object
+                  failover:
+                    description: ReplicaCount for HA support. Does not affect data stores.
+                      Enabled will toggle HA support. This will provide better support in
+                      cases of failover but consumes more resources.
+                    type: boolean
                   hive:
                     description: Spec of hive
                     properties:
@@ -191,9 +196,6 @@ data:
                   mongo:
                     description: Spec of mongo
                     properties:
-                      replicaCount:
-                        description: ReplicaCount for HA Mongo support
-                        type: integer
                       storage:
                         description: StorageSize for MultiCluster hub components
                         type: string
@@ -219,9 +221,6 @@ data:
                         description: ImageTagSuffix of the MultiCluster hub images
                         type: string
                     type: object
-                  replicaCount:
-                    description: ReplicaCount for HA support. Does not affect data stores.
-                    type: integer
                 type: object
               status:
                 description: MultiClusterHubStatus defines the observed state of MultiClusterHub
@@ -347,7 +346,10 @@ data:
                   "namespace": "open-cluster-management"
                 },
                 "spec": {
-                  "imagePullSecret": "quay-secret"
+                  "imagePullSecret": "quay-secret",
+                  "overrides": {
+                    "imageTagSuffix": "SNAPSHOT-2020-04-24-15-37-39"
+                  }
                 }
               }
             ]
@@ -580,7 +582,7 @@ data:
                         value: multiclusterhub-operator
                       - name: TEMPLATES_PATH
                         value: /usr/local/templates
-                      image: quay.io/rhibmcollab/multiclusterhub-operator:1.0.0
+                      image: quay.io/rhibmcollab/multiclusterhub-operator:jdg
                       imagePullPolicy: Always
                       name: multiclusterhub-operator
                       resources:

@@ -18,7 +18,7 @@ const APIServerName string = "mcm-apiserver"
 
 // APIServerDeployment creates the deployment for the mcm apiserver
 func APIServerDeployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *appsv1.Deployment {
-	replicas := int32(*m.Spec.ReplicaCount)
+	replicas := getReplicaCount(m)
 	mode := int32(420)
 
 	dep := &appsv1.Deployment{
