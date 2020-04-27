@@ -586,11 +586,11 @@ data:
                       imagePullPolicy: Always
                       name: multiclusterhub-operator
                       resources:
-                        requests:
-                          memory: 256Mi
-                          cpu: 100m
                         limits:
-                          memory: 2048Mi
+                          memory: 2Gi
+                        requests:
+                          cpu: 100m
+                          memory: 256Mi
                     imagePullSecrets:
                     - name: multiclusterhub-operator-pull-secret
                     serviceAccountName: multiclusterhub-operator
