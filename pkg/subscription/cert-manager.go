@@ -29,7 +29,7 @@ func CertManager(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *un
 				},
 			},
 			"hubconfig": map[string]interface{}{
-				"replicaCount": m.Spec.ReplicaCount,
+				"replicaCount": utils.DefaultReplicaCount(m),
 				"nodeSelector": m.Spec.NodeSelector,
 			},
 		},
@@ -54,7 +54,7 @@ func CertWebhook(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *un
 				"name":   "cert-manager-webhook",
 			},
 			"hubconfig": map[string]interface{}{
-				"replicaCount": m.Spec.ReplicaCount,
+				"replicaCount": utils.DefaultReplicaCount(m),
 				"nodeSelector": m.Spec.NodeSelector,
 			},
 		},
@@ -66,7 +66,7 @@ func CertWebhook(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *un
 			"name":   "default",
 		},
 		"hubconfig": map[string]interface{}{
-			"replicaCount": m.Spec.ReplicaCount,
+			"replicaCount": utils.DefaultReplicaCount(m),
 			"nodeSelector": m.Spec.NodeSelector,
 		},
 	}
@@ -92,7 +92,7 @@ func ConfigWatcher(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *
 				"name":   "cert-manager-config",
 			},
 			"hubconfig": map[string]interface{}{
-				"replicaCount": m.Spec.ReplicaCount,
+				"replicaCount": utils.DefaultReplicaCount(m),
 				"nodeSelector": m.Spec.NodeSelector,
 			},
 		},

@@ -28,14 +28,14 @@ func MongoDB(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstru
 				"size":         m.Spec.Mongo.Storage,
 				"storageClass": m.Spec.Mongo.StorageClass,
 			},
-			"replicas": m.Spec.Mongo.ReplicaCount,
+			"replicas": utils.DefaultReplicaCount(m),
 			"tls": map[string]interface{}{
 				"casecret": "multicloud-ca-cert",
 				"issuer":   "multicloud-ca-issuer",
 				"enabled":  true,
 			},
 			"hubconfig": map[string]interface{}{
-				"replicaCount": m.Spec.Mongo.ReplicaCount,
+				"replicaCount": utils.DefaultReplicaCount(m),
 				"nodeSelector": m.Spec.NodeSelector,
 			},
 			"global": map[string]interface{}{

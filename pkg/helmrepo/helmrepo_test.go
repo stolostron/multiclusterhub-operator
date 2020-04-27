@@ -12,13 +12,11 @@ import (
 )
 
 func TestDeployment(t *testing.T) {
-	replicas := int(1)
 	empty := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
 			ImagePullSecret: "",
 			Mongo:           operatorsv1beta1.Mongo{},
-			ReplicaCount:    &replicas,
 		},
 	}
 
@@ -33,9 +31,7 @@ func TestDeployment(t *testing.T) {
 
 	essentialsOnly := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1beta1.MultiClusterHubSpec{
-			ReplicaCount: &replicas,
-		},
+		Spec:       operatorsv1beta1.MultiClusterHubSpec{},
 	}
 	t.Run("MCH with only required values", func(t *testing.T) {
 		_ = Deployment(essentialsOnly, cs)
@@ -62,12 +58,10 @@ func TestService(t *testing.T) {
 }
 
 func TestValidateDeployment(t *testing.T) {
-	replicas := int(1)
 	mch := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
 			ImagePullSecret: "test",
-			ReplicaCount:    &replicas,
 			Mongo:           operatorsv1beta1.Mongo{},
 			NodeSelector: map[string]string{
 				"test": "test",
@@ -98,10 +92,6 @@ func TestValidateDeployment(t *testing.T) {
 	// 5. Modified NodeSelector
 	dep4 := dep.DeepCopy()
 	dep4.Spec.Template.Spec.NodeSelector = nil
-
-	// 6. Modified ReplicaCount
-	dep5 := dep.DeepCopy()
-	dep5.Spec.Replicas = new(int32)
 
 	type args struct {
 		m   *operatorsv1beta1.MultiClusterHub
@@ -140,12 +130,6 @@ func TestValidateDeployment(t *testing.T) {
 		{
 			name:  "Modified NodeSelector",
 			args:  args{mch, dep4},
-			want:  dep,
-			want1: true,
-		},
-		{
-			name:  "Modified ReplicaCount",
-			args:  args{mch, dep5},
 			want:  dep,
 			want1: true,
 		},
