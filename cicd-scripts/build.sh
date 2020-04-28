@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) 2020 Red Hat, Inc.
+
 echo "BUILD GOES HERE!"
 
 echo "<repo>/<component>:<tag> : $1"

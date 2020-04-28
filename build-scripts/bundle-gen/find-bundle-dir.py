@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright (c) 2020 Red Hat, Inc.
 
 # Given a package directory (eg. as is found in the community-operators repo),
 # find the bundle directory for the current CSV in a specified channel of a package.
