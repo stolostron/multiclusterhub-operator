@@ -29,5 +29,5 @@ webhooks:
     - applications
   clientConfig:
     service:
-      name: mcm-webhook-service
+      name: mcm-webhook
     caBundle: abc
