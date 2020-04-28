@@ -19,22 +19,23 @@ var poundScanner = regexp.MustCompile(`\# Copyright \(c\) 2020 Red Hat, Inc\.`)
 
 var skip = map[string]bool{
 	// Operator SDK boilerplate
-	"pkg/apis/operators/v1beta1/doc.go":                   true,
-	"pkg/apis/operators/v1beta1/register.go":              true,
-	"pkg/apis/operators/v1beta1/zz_generated.deepcopy.go": true,
-	"pkg/apis/operators/group.go":                         true,
-	"pkg/apis/addtoscheme_operators_v1beta1.go":           true,
-	"pkg/apis/apis.go":                                    true,
-	"tools.go":                                            true,
+	"../pkg/apis/operators/v1beta1/doc.go":                   true,
+	"../pkg/apis/operators/v1beta1/register.go":              true,
+	"../pkg/apis/operators/v1beta1/zz_generated.deepcopy.go": true,
+	"../pkg/apis/operators/group.go":                         true,
+	"../pkg/apis/addtoscheme_operators_v1beta1.go":           true,
+	"../pkg/apis/apis.go":                                    true,
+	"../tools.go":                                            true,
 
 	// Build Harness
-	"vbh": true,
+	"../vbh":                      true,
+	"../build-harness-extensions": true,
+	"../build-harness":            true,
 }
 
 func TestLicense(t *testing.T) {
 	// Run from base dir instead of package dir
-	os.Chdir("..")
-	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk("..", func(path string, info os.FileInfo, err error) error {
 		if skip[path] {
 			if info.IsDir() {
 				return filepath.SkipDir
