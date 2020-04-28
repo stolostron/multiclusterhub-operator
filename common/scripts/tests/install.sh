@@ -1,4 +1,5 @@
 #!/bin/bash
+# Copyright (c) 2020 Red Hat, Inc.
 
 # 1. Check Variables Are Defined
 # 2. Test Docker Login

@@ -4,7 +4,6 @@
 package license
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -37,7 +36,6 @@ func TestLicense(t *testing.T) {
 	os.Chdir("..")
 	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		if skip[path] {
-			fmt.Printf("skipping file or dir: %q\n", path)
 			if info.IsDir() {
 				return filepath.SkipDir
 			}
