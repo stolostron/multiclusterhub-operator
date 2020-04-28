@@ -4,6 +4,11 @@ ENV OPERATOR=/usr/local/bin/multiclusterhub-operator \
     USER_UID=1001 \
     USER_NAME=multiclusterhub-operator
 
+LABEL org.label-schema.vendor="Red Hat" \
+      org.label-schema.name="multiclusterhub-operator" \
+      org.label-schema.description="Installer operator for Red Hat Advanced Cluster Management" \
+      org.label-schema.license="Red Hat Advanced Cluster Management for Kubernetes EULA"
+
 # install manifest files
 COPY image-manifests ${HOME}/image-manifests
 COPY COMPONENT_VERSION ${HOME}/COMPONENT_VERSION
