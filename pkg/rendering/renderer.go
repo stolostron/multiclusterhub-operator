@@ -227,7 +227,8 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 		data["tls.key"] = []byte(cert.Key)
 		return u, nil
 	case "mcm-webhook-secret":
-		ca, err := utils.GenerateSelfSignedCACert("mcm-webhook.open-cluster-management.svc")
+		cn := "mcm-webhook." + r.cr.Namespace + ".svc"
+		ca, err := utils.GenerateSelfSignedCACert(cn)
 		if err != nil {
 			return nil, err
 		}
