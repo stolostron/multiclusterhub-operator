@@ -232,7 +232,7 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 		if err != nil {
 			return nil, err
 		}
-		cert, err := utils.GenerateSignedCert(webhookName, []string{}, ca)
+		cert, err := utils.GenerateSignedCert(cn, []string{}, ca)
 		if err != nil {
 			return nil, err
 		}
