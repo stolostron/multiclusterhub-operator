@@ -1,3 +1,5 @@
+// Copyright (c) 2020 Red Hat, Inc.
+
 package channel
 
 import (
@@ -17,7 +19,7 @@ var ChannelName = "charts-v1"
 // Schema is the GVK for an application subscription channel
 var Schema = schema.GroupVersionResource{Group: "apps.open-cluster-management.io", Version: "v1", Resource: "channels"}
 
-// build Helm pathname from repo name and port
+// build Helm pathname from repo name and por
 func channelURL(m *operatorsv1beta1.MultiClusterHub) string {
 	return fmt.Sprintf("http://%s.%s:%d/charts", helmrepo.HelmRepoName, m.Namespace, helmrepo.Port)
 }

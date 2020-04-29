@@ -1,4 +1,5 @@
 #!/bin/bash
+# Copyright (c) 2020 Red Hat, Inc.
 
 # Quick hack to drive OCM Hub Bundle gen script.
 
