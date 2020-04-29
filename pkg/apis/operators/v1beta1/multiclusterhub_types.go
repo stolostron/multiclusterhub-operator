@@ -1,3 +1,4 @@
+// Copyright (c) 2020 Red Hat, Inc.
 package v1beta1
 
 import (

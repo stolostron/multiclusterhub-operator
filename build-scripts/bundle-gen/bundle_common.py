@@ -1,3 +1,4 @@
+# Copyright (c) 2020 Red Hat, Inc.
 
 # Some common functions for ACM/OCM bundle building scripts.
 

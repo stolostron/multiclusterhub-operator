@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (c) 2020 Red Hat, Inc.
+
 # Assumes: Python 3.6+
 
 # Creates the composite ACM bundle by merging CSVs and other manifests from one or more

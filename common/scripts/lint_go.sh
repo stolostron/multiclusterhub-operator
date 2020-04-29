@@ -1,4 +1,5 @@
 #!/bin/bash
+# Copyright (c) 2020 Red Hat, Inc.
 #
 # Copyright 2019 The Kubernetes Authors.
 #

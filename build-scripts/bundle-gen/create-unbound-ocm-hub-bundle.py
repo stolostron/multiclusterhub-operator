@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (c) 2020 Red Hat, Inc.
+
 # Assumes: Python 3.6+
 
 # Creates an "unbound" the OCM Hub bundle from parts in the hub operator repo's deploy directory.

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (c) 2020 Red Hat, Inc.
+
 # Assumes: Python 3.6+
 
 # Takes an "unbound" CSV bundle abd configures it for a release by:
