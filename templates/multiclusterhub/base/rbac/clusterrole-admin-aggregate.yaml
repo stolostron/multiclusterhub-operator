@@ -26,7 +26,7 @@ rules:
 - apiGroups: ["policy.mcm.ibm.com"]
   resources: ["policies"]
   verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
-- apiGroups: ["multicloud.ibm.com"]
+- apiGroups: ["multicloud.open-cluster-management.io"]
   resources: ["endpointconfigs"]
   verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
 - apiGroups: ["hive.openshift.io"]
