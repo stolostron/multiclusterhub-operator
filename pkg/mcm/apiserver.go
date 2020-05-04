@@ -19,7 +19,7 @@ import (
 const APIServerName string = "mcm-apiserver"
 
 // APIServerDeployment creates the deployment for the mcm apiserver
-func APIServerDeployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *appsv1.Deployment {
+func APIServerDeployment(m *operatorsv1beta1.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
 	replicas := getReplicaCount(m)
 	mode := int32(420)
 
@@ -70,7 +70,7 @@ func APIServerDeployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheS
 						},
 					},
 					Containers: []corev1.Container{{
-						Image:           Image(cache),
+						Image:           Image(overrides),
 						ImagePullPolicy: utils.GetImagePullPolicy(m),
 						Name:            APIServerName,
 						Args: []string{

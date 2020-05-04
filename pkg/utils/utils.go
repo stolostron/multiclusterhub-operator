@@ -41,17 +41,7 @@ const (
 
 	// DefaultRepository ...
 	DefaultRepository = "quay.io/open-cluster-management"
-
-	// ImageManifestsDir directory housing image manifests (also specified in Dockerfile)
-	ImageManifestsDir = "image-manifests"
 )
-
-// CacheSpec ...
-type CacheSpec struct {
-	IngressDomain   string
-	ImageOverrides  map[string]string
-	ManifestVersion string
-}
 
 // CertManagerNS returns the namespace to deploy cert manager objects
 func CertManagerNS(m *operatorsv1beta1.MultiClusterHub) string {
@@ -108,9 +98,7 @@ func CoreToUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) 
 
 // MchIsValid Checks if the optional default parameters need to be set
 func MchIsValid(m *operatorsv1beta1.MultiClusterHub) bool {
-	invalid := m.Status.CurrentVersion == "" ||
-		!IsVersionSupported(m.Status.CurrentVersion) ||
-		m.Spec.Mongo.Storage == "" ||
+	invalid := m.Spec.Mongo.Storage == "" ||
 		m.Spec.Mongo.StorageClass == "" ||
 		m.Spec.Etcd.Storage == "" ||
 		m.Spec.Etcd.StorageClass == ""
@@ -125,25 +113,6 @@ func DefaultReplicaCount(mch *operatorsv1beta1.MultiClusterHub) int {
 		return 3
 	}
 	return 1
-}
-
-//IsVersionSupported returns true if version is supported
-func IsVersionSupported(version string) bool {
-	if version == "" {
-		return false
-	}
-	supportedVersions := GetSupportedVersions()
-	for _, sv := range supportedVersions {
-		if sv == version {
-			return true
-		}
-	}
-	return false
-}
-
-//GetSupportedVersions returns list of supported versions for Spec.Version (update every release)
-func GetSupportedVersions() []string {
-	return []string{"1.0.0"}
 }
 
 // DistributePods returns a anti-affinity rule that specifies a preference for pod replicas with

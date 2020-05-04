@@ -17,7 +17,7 @@ import (
 const WebhookName string = "mcm-webhook"
 
 // WebhookDeployment creates the deployment for the mcm webhook
-func WebhookDeployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *appsv1.Deployment {
+func WebhookDeployment(m *operatorsv1beta1.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
 	replicas := getReplicaCount(m)
 
 	dep := &appsv1.Deployment{
@@ -49,7 +49,7 @@ func WebhookDeployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpe
 						},
 					},
 					Containers: []corev1.Container{{
-						Image:           Image(cache),
+						Image:           Image(overrides),
 						ImagePullPolicy: utils.GetImagePullPolicy(m),
 						Name:            WebhookName,
 						Args: []string{

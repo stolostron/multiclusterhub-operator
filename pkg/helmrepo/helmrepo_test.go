@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,14 +20,10 @@ func TestDeployment(t *testing.T) {
 			Mongo:           operatorsv1beta1.Mongo{},
 		},
 	}
-
-	cs := utils.CacheSpec{
-		IngressDomain:  "",
-		ImageOverrides: map[string]string{},
-	}
+	ovr := map[string]string{}
 
 	t.Run("MCH with empty fields", func(t *testing.T) {
-		_ = Deployment(empty, cs)
+		_ = Deployment(empty, ovr)
 	})
 
 	essentialsOnly := &operatorsv1beta1.MultiClusterHub{
@@ -36,7 +31,7 @@ func TestDeployment(t *testing.T) {
 		Spec:       operatorsv1beta1.MultiClusterHubSpec{},
 	}
 	t.Run("MCH with only required values", func(t *testing.T) {
-		_ = Deployment(essentialsOnly, cs)
+		_ = Deployment(essentialsOnly, ovr)
 	})
 }
 
@@ -70,14 +65,10 @@ func TestValidateDeployment(t *testing.T) {
 			},
 		},
 	}
-
-	cs := utils.CacheSpec{
-		IngressDomain:  "testIngress",
-		ImageOverrides: map[string]string{},
-	}
+	ovr := map[string]string{}
 
 	// 1. Valid mch
-	dep := Deployment(mch, cs)
+	dep := Deployment(mch, ovr)
 
 	// 2. Modified ImagePullSecret
 	dep1 := dep.DeepCopy()
@@ -138,7 +129,7 @@ func TestValidateDeployment(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := ValidateDeployment(tt.args.m, cs, tt.args.dep)
+			got, got1 := ValidateDeployment(tt.args.m, ovr, tt.args.dep)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ValidateDeployment() got = %v, want %v", got, tt.want)
 			}

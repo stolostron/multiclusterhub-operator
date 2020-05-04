@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,14 +23,10 @@ func TestValidateDeployment(t *testing.T) {
 			},
 		},
 	}
-
-	cs := utils.CacheSpec{
-		IngressDomain:  "testIngress",
-		ImageOverrides: map[string]string{},
-	}
+	ovr := map[string]string{}
 
 	// 1. Valid mch
-	dep := ControllerDeployment(mch, cs)
+	dep := ControllerDeployment(mch, ovr)
 
 	// 2. Modified ImagePullSecret
 	dep1 := dep.DeepCopy()
@@ -49,7 +44,7 @@ func TestValidateDeployment(t *testing.T) {
 	dep4 := dep.DeepCopy()
 	dep4.Spec.Template.Spec.NodeSelector = nil
 
-	// 6. Activate HA mode
+	// 6. Modified replica count
 	dep5 := dep.DeepCopy()
 	dep5.Spec.Replicas = new(int32)
 
@@ -102,7 +97,7 @@ func TestValidateDeployment(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := ValidateDeployment(tt.args.m, cs, tt.args.dep)
+			got, got1 := ValidateDeployment(tt.args.m, ovr, tt.args.dep)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ValidateDeployment() got = %v, want %v", got, tt.want)
 			}
