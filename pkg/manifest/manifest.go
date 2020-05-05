@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	"github.com/open-cluster-management/multicloudhub-operator/version"
@@ -126,7 +127,7 @@ func readManifestFile(version string) ([]byte, error) {
 	}
 
 	filePath := path.Join(manifestsPath, version+".json")
-	contents, err := ioutil.ReadFile(filePath)
+	contents, err := ioutil.ReadFile(filepath.Clean(filePath)) // #nosec G304 (filepath cleaned)
 	if err != nil {
 		log.Error(err, "Failed to read image manifest", "Path", filePath)
 		return nil, err
