@@ -231,7 +231,7 @@ type DeploymentResult struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// MultiClusterHub is the Schema for the multiclusterhubs API
+// MultiClusterHub configures an instance of the MultiCluster Hub
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=multiclusterhubs,scope=Namespaced,shortName=mch

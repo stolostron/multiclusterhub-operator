@@ -16,7 +16,7 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
-      description: Coonfiguration for an instance of the MultiCluster Hub
+      description: MultiClusterHub configures an instance of the MultiCluster Hub
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
