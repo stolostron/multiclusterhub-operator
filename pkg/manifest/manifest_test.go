@@ -84,17 +84,17 @@ func Test_buildFullImageReference(t *testing.T) {
 		want string
 	}{
 		{
-			name: "default",
+			name: "Default (sha format)",
 			args: args{mch1, mi},
 			want: "quay.io/open-cluster-management/test-app@sha256:abc123",
 		},
 		{
-			name: "good",
+			name: "Custom registry",
 			args: args{mch2, mi},
 			want: "foo.io/bar/test-app@sha256:abc123",
 		},
 		{
-			name: "good",
+			name: "Use image suffix format",
 			args: args{mch3, mi},
 			want: "quay.io/open-cluster-management/test-app:1.0.0-baz",
 		},
