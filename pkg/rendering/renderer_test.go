@@ -29,9 +29,6 @@ func TestRender(t *testing.T) {
 			ImagePullSecret: "test",
 			Mongo:           operatorsv1beta1.Mongo{},
 		},
-		Status: operatorsv1beta1.MultiClusterHubStatus{
-			CurrentVersion: "1.0.0",
-		},
 	}
 
 	renderer := NewRenderer(mchcr)

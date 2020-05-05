@@ -63,7 +63,7 @@ func NewRenderer(multipleClusterHub *operatorsv1beta1.MultiClusterHub) *Renderer
 
 // Render renders Templates under TEMPLATES_PATH
 func (r *Renderer) Render(c runtimeclient.Client) ([]*unstructured.Unstructured, error) {
-	templates, err := templates.GetTemplateRenderer().GetTemplates(r.cr)
+	templates, err := templates.GetTemplateRenderer().GetTemplates()
 	if err != nil {
 		return nil, err
 	}
