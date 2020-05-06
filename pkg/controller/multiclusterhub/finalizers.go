@@ -208,7 +208,7 @@ func (r *ReconcileMultiClusterHub) cleanupPullSecret(reqLogger logr.Logger, m *o
 func (r *ReconcileMultiClusterHub) cleanupCRDs(log logr.Logger, m *operatorsv1beta1.MultiClusterHub) error {
 	err := r.client.DeleteAllOf(
 		context.TODO(),
-		&apixv1.CustomResourceDefinition{}
+		&apixv1.CustomResourceDefinition{},
 		client.MatchingLabels{
 			"installer.name":      m.GetName(),
 			"installer.namespace": m.GetNamespace(),
