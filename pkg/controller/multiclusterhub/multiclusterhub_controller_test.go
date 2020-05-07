@@ -14,6 +14,7 @@ import (
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	netv1 "github.com/openshift/api/config/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -27,6 +28,7 @@ func TestReconcileMultiClusterHub(t *testing.T) {
 		namespace = "open-cluster-management"
 	)
 	os.Setenv("TEMPLATES_PATH", "../../../templates")
+
 	// A MultiClusterHub object with metadata and spec.
 	multiClusterHub := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
@@ -64,7 +66,12 @@ func TestReconcileMultiClusterHub(t *testing.T) {
 	}
 
 	if err := subalpha1.AddToScheme(s); err != nil {
-		t.Errorf("Could not add Channel to Scheme")
+		t.Errorf("Could not add Subscription to Scheme")
+		os.Exit(1)
+	}
+
+	if err := netv1.AddToScheme(s); err != nil {
+		t.Errorf("Could not add (Openshift) Ingress to Scheme")
 		os.Exit(1)
 	}
 

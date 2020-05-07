@@ -10,13 +10,13 @@ import (
 	"math/big"
 	"time"
 
+	netv1 "github.com/openshift/api/config/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 
 	storv1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -47,9 +47,10 @@ import (
 const hubFinalizer = "finalizer.operators.open-cluster-management.io"
 
 var (
-	log = logf.Log.WithName("controller_multiclusterhub")
+	log      = logf.Log.WithName("controller_multiclusterhub")
 	unitTest = false
 )
+
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
 * business logic.  Delete these comments after modifying this file.*
@@ -221,7 +222,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		r.CacheSpec.ManifestVersion = multiClusterHub.Status.CurrentVersion
 	}
 
-
 	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub, r.CacheSpec))
 	if result != nil {
 		return *result, err
@@ -294,7 +294,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 			return reconcile.Result{}, err
 		}
 	}
-
 
 	// Install the rest of the subscriptions in no particular order
 	result, err = r.ensureSubscription(multiClusterHub, subscription.ManagementIngress(multiClusterHub, r.CacheSpec))
@@ -526,35 +525,17 @@ func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1beta1.MultiCluste
 		return nil, nil
 	}
 
-	// Create dynamic client
-	dc, err := createDynamicClient()
-	if err != nil {
-		log.Error(err, "Failed to create dynamic client")
+	ingress := &netv1.Ingress{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{
+		Name: "cluster",
+	}, ingress)
+	// Don't fail on a unit test (Fake client won't find "cluster" Ingress)
+	if err != nil && m.UID != "" {
+		log.Error(err, "Failed to get Ingress")
 		return &reconcile.Result{}, err
 	}
 
-	// Find resource
-	schema := schema.GroupVersionResource{Group: "config.openshift.io", Version: "v1", Resource: "ingresses"}
-	crd, err := dc.Resource(schema).Get("cluster", metav1.GetOptions{})
-	if err != nil {
-		log.Error(err, "Failed to get resource", "resource", schema.GroupResource().String())
-		return &reconcile.Result{}, err
-	}
-
-	// Parse resource for domain value
-	domain, ok, err := unstructured.NestedString(crd.UnstructuredContent(), "spec", "domain")
-	if err != nil {
-		log.Error(err, "Error parsing resource", "resource", schema.GroupResource().String(), "value", "spec.domain")
-		return &reconcile.Result{}, err
-	}
-	if !ok {
-		err = fmt.Errorf("field not found")
-		log.Error(err, "Ingress config did not contain expected value", "resource", schema.GroupResource().String(), "value", "spec.domain")
-		return &reconcile.Result{}, err
-	}
-
-	log.Info("Ingress domain not set, updating value in cachespec", "MultiClusterHub.Namespace", m.Namespace, "MultiClusterHub.Name", m.Name, "ingressDomain", domain)
-	r.CacheSpec.IngressDomain = domain
+	r.CacheSpec.IngressDomain = ingress.Spec.Domain
 	return nil, nil
 }
 

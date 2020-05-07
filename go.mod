@@ -8,9 +8,11 @@ require (
 	github.com/open-cluster-management/multicloud-operators-channel v1.0.0-2020-05-07-19-51-26
 	github.com/open-cluster-management/multicloud-operators-placementrule v1.0.0-2020-05-07-19-51-26
 	github.com/open-cluster-management/multicloud-operators-subscription v1.0.0-2020-05-07-19-51-26
+	github.com/openshift/api v3.9.1-0.20190924102528-32369d4db2ad+incompatible
 	github.com/operator-framework/operator-sdk v0.17.0
 	github.com/prometheus/common v0.9.1
 	github.com/spf13/pflag v1.0.5
+	github.com/wadey/gocovmerge v0.0.0-20160331181800-b5bfa59ec0ad // indirect
 	k8s.io/api v0.17.4
 	k8s.io/apiextensions-apiserver v0.17.4
 	k8s.io/apimachinery v0.17.4
