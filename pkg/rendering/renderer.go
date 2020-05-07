@@ -3,6 +3,7 @@
 package rendering
 
 import (
+	"encoding/base64"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -210,9 +211,9 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 		if err != nil {
 			return nil, err
 		}
-		data["ca.crt"] = []byte(ca.Cert)
-		data["tls.crt"] = []byte(cert.Cert)
-		data["tls.key"] = []byte(cert.Key)
+		data["ca.crt"] = base64.StdEncoding.EncodeToString([]byte(ca.Cert))
+		data["tls.crt"] = base64.StdEncoding.EncodeToString([]byte(cert.Cert))
+		data["tls.key"] = base64.StdEncoding.EncodeToString([]byte(cert.Key))
 
 		return u, nil
 	case "mcm-klusterlet-self-signed-secrets":
@@ -224,9 +225,9 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 		if err != nil {
 			return nil, err
 		}
-		data["ca.crt"] = []byte(ca.Cert)
-		data["tls.crt"] = []byte(cert.Cert)
-		data["tls.key"] = []byte(cert.Key)
+		data["ca.crt"] = base64.StdEncoding.EncodeToString([]byte(ca.Cert))
+		data["tls.crt"] = base64.StdEncoding.EncodeToString([]byte(cert.Cert))
+		data["tls.key"] = base64.StdEncoding.EncodeToString([]byte(cert.Key))
 		return u, nil
 	case "mcm-webhook-secret":
 		cn := "mcm-webhook." + r.cr.Namespace + ".svc"
@@ -238,9 +239,9 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 		if err != nil {
 			return nil, err
 		}
-		data["ca.crt"] = []byte(ca.Cert)
-		data["tls.crt"] = []byte(cert.Cert)
-		data["tls.key"] = []byte(cert.Key)
+		data["ca.crt"] = base64.StdEncoding.EncodeToString([]byte(ca.Cert))
+		data["tls.crt"] = base64.StdEncoding.EncodeToString([]byte(cert.Cert))
+		data["tls.key"] = base64.StdEncoding.EncodeToString([]byte(cert.Key))
 		return u, nil
 	}
 

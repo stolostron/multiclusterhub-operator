@@ -4,11 +4,19 @@ package subscription
 
 import (
 	"bytes"
+	"encoding/json"
+	"fmt"
 
+	plrv1alpha1 "github.com/open-cluster-management/multicloud-operators-placementrule/pkg/apis/apps/v1"
+	subalpha1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis/apps/v1"
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	"github.com/prometheus/common/log"
+
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/yaml"
@@ -25,59 +33,76 @@ type Subscription struct {
 }
 
 // newSubscription creates a new instance of an unstructured open-cluster-management.io Subscription object
-func newSubscription(m *operatorsv1beta1.MultiClusterHub, s *Subscription) *unstructured.Unstructured {
-	sub := &unstructured.Unstructured{
-		Object: map[string]interface{}{
-			"apiVersion": "apps.open-cluster-management.io/v1",
-			"kind":       "Subscription",
-			"metadata": map[string]interface{}{
-				"name":      s.Name + "-sub",
-				"namespace": s.Namespace,
-			},
-			"spec": map[string]interface{}{
-				"channel": m.Namespace + "/" + channel.ChannelName,
-				"name":    s.Name,
-				"placement": map[string]interface{}{
-					"local": true,
-				},
-				"packageOverrides": []map[string]interface{}{
-					{
-						"packageName": s.Name,
-						"packageOverrides": []map[string]interface{}{
-							{
-								"path":  "spec",
-								"value": s.Overrides,
-							},
-						},
-					},
+func newSubscription(m *operatorsv1beta1.MultiClusterHub, s *Subscription) *subalpha1.Subscription {
+	packageOverrides := []map[string]interface{}{
+		{
+			"path":  "spec",
+			"value": s.Overrides,
+		},
+	}
+	byteArr, err := json.Marshal(packageOverrides)
+	if err != nil {
+		log.Error(err, "unable to marshal packageOverrides")
+	}
+
+	override := subalpha1.Overrides{
+		PackageName: s.Name,
+		PackageOverrides: []subalpha1.PackageOverride{
+			subalpha1.PackageOverride{
+				runtime.RawExtension{
+					Raw: byteArr,
 				},
 			},
 		},
 	}
-	sub.SetOwnerReferences([]metav1.OwnerReference{
-		*metav1.NewControllerRef(m, m.GetObjectKind().GroupVersionKind()),
-	})
+	placement := true
+	sub := &subalpha1.Subscription{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "apps.open-cluster-management.io/v1",
+			Kind:       "Subscription",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%s-sub", s.Name),
+			Namespace: s.Namespace,
+		},
+		Spec: subalpha1.SubscriptionSpec{
+			Channel: fmt.Sprintf("%s/%s", m.Namespace, channel.ChannelName),
+			Placement: &plrv1alpha1.Placement{
+				Local: &placement,
+			},
+			PackageOverrides: []*subalpha1.Overrides{
+				&override,
+			},
+		},
+	}
+
+	if m.UID != "" {
+		sub.SetOwnerReferences([]metav1.OwnerReference{
+			*metav1.NewControllerRef(m, m.GetObjectKind().GroupVersionKind()),
+		})
+	}
+
 	return sub
 }
 
 // Validate returns true if an update is needed to reconcile differences with the current spec. If an update
 // is needed it returns the object with the new spec to update with.
-func Validate(found *unstructured.Unstructured, want *unstructured.Unstructured) (*unstructured.Unstructured, bool) {
-	var log = logf.Log.WithValues("Namespace", found.GetNamespace(), "Name", found.GetName(), "Kind", found.GetKind())
+func Validate(found *subalpha1.Subscription, want *subalpha1.Subscription) (*subalpha1.Subscription, bool) {
+	var log = logf.Log.WithValues("Namespace", found.GetNamespace(), "Name", found.GetName(), "Kind", found.Kind)
 
-	desired, err := yaml.Marshal(want.Object["spec"])
+	desired, err := yaml.Marshal(want.Spec)
 	if err != nil {
 		log.Error(err, "issue parsing desired subscription values")
 	}
-	current, err := yaml.Marshal(found.Object["spec"])
+	current, err := yaml.Marshal(found.Spec)
 	if err != nil {
 		log.Error(err, "issue parsing current subscription values")
 	}
 
 	if res := bytes.Compare(desired, current); res != 0 {
 		// Return current object with adjusted spec, preserving metadata
-		log.V(1).Info("Subscription doesn't match spec", "Want", want.Object["spec"], "Have", found.Object["spec"])
-		found.Object["spec"] = want.Object["spec"]
+		log.V(1).Info("Subscription doesn't match spec", "Want", want.Spec, "Have", found.Spec)
+		found.Spec = want.Spec
 		return found, true
 	}
 

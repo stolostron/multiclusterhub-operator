@@ -13,6 +13,9 @@ import (
 	"strings"
 	"time"
 
+	chnv1alpha1 "github.com/open-cluster-management/multicloud-operators-channel/pkg/apis/apps/v1"
+	subalpha1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis/apps/v1"
+
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/mcm"
@@ -23,7 +26,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -165,53 +167,77 @@ func (r *ReconcileMultiClusterHub) ensureSecret(m *operatorsv1beta1.MultiCluster
 	return nil, nil
 }
 
-func (r *ReconcileMultiClusterHub) ensureObject(m *operatorsv1beta1.MultiClusterHub, u *unstructured.Unstructured, schema schema.GroupVersionResource) (*reconcile.Result, error) {
-	obLog := log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName(), "Kind", u.GetKind())
+func (r *ReconcileMultiClusterHub) ensureChannel(m *operatorsv1beta1.MultiClusterHub, ch *chnv1alpha1.Channel) (*reconcile.Result, error) {
+	selog := log.WithValues("Channel.Namespace", ch.Namespace, "Channel.Name", ch.Name)
 
-	dc, err := createDynamicClient()
-	if err != nil {
-		obLog.Error(err, "Failed to create dynamic client")
-		return &reconcile.Result{}, nil
-	}
-
-	// Try to get API group instance
-	found, err := dc.Resource(schema).Namespace(u.GetNamespace()).Get(u.GetName(), metav1.GetOptions{})
+	found := &chnv1alpha1.Channel{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{
+		Name:      ch.Name,
+		Namespace: m.Namespace,
+	}, found)
 	if err != nil && errors.IsNotFound(err) {
 
-		// Create the resource
-		_, err = dc.Resource(schema).Namespace(u.GetNamespace()).Create(u, metav1.CreateOptions{})
+		// Create the secret
+		err = r.client.Create(context.TODO(), ch)
 		if err != nil {
 			// Creation failed
-			obLog.Error(err, "Failed to create new instance")
+			selog.Error(err, "Failed to create new Channel")
 			return &reconcile.Result{}, err
 		}
 
 		// Creation was successful
-		obLog.Info("Created new object")
+		selog.Info("Created a new channel")
 		return nil, nil
 
 	} else if err != nil {
-		// Error that isn't due to the resource not existing
-		obLog.Error(err, "Failed to get resource", "resource", schema.GroupResource().String())
+		// Error that isn't due to the secret not existing
+		selog.Error(err, "Failed to get channel")
 		return &reconcile.Result{}, err
 	}
 
-	// Validate object based on type
-	switch kind := u.GetKind(); kind {
-	case "Subscription":
-		updated, needsUpdate := subscription.Validate(found, u)
-		if needsUpdate {
-			obLog.Info("Updating subscription")
-			// Update the resource
-			_, err = dc.Resource(schema).Namespace(u.GetNamespace()).Update(updated, metav1.UpdateOptions{})
-			if err != nil {
-				// Update failed
-				obLog.Error(err, "Failed to update object")
-				return &reconcile.Result{}, err
-			}
-			// Spec updated - return
-			return nil, nil
+	return nil, nil
+}
+
+func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1beta1.MultiClusterHub, sub *subalpha1.Subscription) (*reconcile.Result, error) {
+	sublog := log.WithValues("Subscription.Namespace", sub.Namespace, "Subscription.Name", sub.Name)
+
+	found := &subalpha1.Subscription{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{
+		Name:      sub.Name,
+		Namespace: m.Namespace,
+	}, found)
+	if err != nil && errors.IsNotFound(err) {
+
+		// Create the secret
+		err = r.client.Create(context.TODO(), sub)
+		if err != nil {
+			// Creation failed
+			sublog.Error(err, "Failed to create new Subscription")
+			return &reconcile.Result{}, err
 		}
+
+		// Creation was successful
+		sublog.Info("Created a new subscription")
+		return nil, nil
+
+	} else if err != nil {
+		// Error that isn't due to the secret not existing
+		sublog.Error(err, "Failed to get subscription")
+		return &reconcile.Result{}, err
+	}
+
+	updated, needsUpdate := subscription.Validate(found, sub)
+	if needsUpdate {
+		sublog.Info("Updating subscription")
+		// Update the subscription
+		err := r.client.Update(context.TODO(), updated)
+		if err != nil {
+			// Update failed
+			sublog.Error(err, "Failed to update subscription")
+			return &reconcile.Result{}, err
+		}
+		// Spec updated - return
+		return nil, nil
 	}
 
 	return nil, nil
@@ -231,7 +257,7 @@ func createDynamicClient() (dynamic.Interface, error) {
 	return dynClient, err
 }
 
-func (r *ReconcileMultiClusterHub) apiReady(gv schema.GroupVersion) (*reconcile.Result, error) {
+func (r *ReconcileMultiClusterHub) apiReady(gv schema.GroupVersion, unitTest bool) (*reconcile.Result, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		log.Error(err, "Failed to create rest config")
@@ -244,11 +270,13 @@ func (r *ReconcileMultiClusterHub) apiReady(gv schema.GroupVersion) (*reconcile.
 		return &reconcile.Result{}, err
 	}
 
-	err = discovery.ServerSupportsVersion(c, gv)
-	if err != nil {
-		// Wait a little and try again
-		log.Info("Waiting for API group to be available", "API group", gv)
-		return &reconcile.Result{RequeueAfter: time.Second * 10}, nil
+	if !unitTest {
+		err = discovery.ServerSupportsVersion(c, gv)
+		if err != nil {
+			// Wait a little and try again
+			log.Info("Waiting for API group to be available", "API group", gv)
+			return &reconcile.Result{RequeueAfter: time.Second * 10}, nil
+		}
 	}
 	return nil, nil
 }

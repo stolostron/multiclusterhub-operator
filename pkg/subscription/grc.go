@@ -3,13 +3,13 @@
 package subscription
 
 import (
+	subalpha1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis/apps/v1"
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 // GRC overrides the grc chart
-func GRC(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstructured.Unstructured {
+func GRC(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *subalpha1.Subscription {
 	sub := &Subscription{
 		Name:      "grc",
 		Namespace: m.Namespace,

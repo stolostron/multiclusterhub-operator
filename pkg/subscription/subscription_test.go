@@ -6,11 +6,11 @@ import (
 	"reflect"
 	"testing"
 
+	subalpha1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis/apps/v1"
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/yaml"
 )
 
@@ -51,13 +51,13 @@ func TestValidate(t *testing.T) {
 	sub4 := KUIWebTerminal(mch4, cs)
 
 	type args struct {
-		found *unstructured.Unstructured
-		want  *unstructured.Unstructured
+		found *subalpha1.Subscription
+		want  *subalpha1.Subscription
 	}
 	tests := []struct {
 		name  string
 		args  args
-		want  *unstructured.Unstructured
+		want  *subalpha1.Subscription
 		want1 bool
 	}{
 		{
@@ -120,7 +120,7 @@ func TestSubscriptions(t *testing.T) {
 
 	tests := []struct {
 		name string
-		got  *unstructured.Unstructured
+		got  *subalpha1.Subscription
 	}{
 		{"ApplicationUI subscription", ApplicationUI(mch, cache)},
 		{"CertManager subscription", CertManager(mch, cache)},
@@ -138,10 +138,7 @@ func TestSubscriptions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if _, err := tt.got.MarshalJSON(); err != nil {
-				t.Error("Subscription does not marshal properly")
-			}
-			_, err := yaml.Marshal(tt.got.Object["spec"])
+			_, err := yaml.Marshal(tt.got.Spec)
 			if err != nil {
 				t.Error("Issue parsing subscription values")
 			}

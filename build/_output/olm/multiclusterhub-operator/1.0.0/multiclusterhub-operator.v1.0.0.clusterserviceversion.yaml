@@ -49,7 +49,8 @@ spec:
       displayName: Subscription
       description: Subscribe resources from a channel according to its package filters
     owned:
-    - description: MultiClusterHub is the Schema for the multiclusterhubs API
+    - description: MultiClusterHub defines the configuration for an instance of the
+        MultiCluster Hub
       displayName: MultiClusterHub Operator
       kind: MultiClusterHub
       name: multiclusterhubs.operators.open-cluster-management.io

@@ -46,8 +46,10 @@ import (
 
 const hubFinalizer = "finalizer.operators.open-cluster-management.io"
 
-var log = logf.Log.WithName("controller_multiclusterhub")
-
+var (
+	log = logf.Log.WithName("controller_multiclusterhub")
+	unitTest = false
+)
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
 * business logic.  Delete these comments after modifying this file.*
@@ -182,6 +184,10 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return reconcile.Result{}, nil
 	}
 
+	if multiClusterHub.UID == "" {
+		unitTest = true
+	}
+
 	// Add finalizer for this CR
 	if !contains(multiClusterHub.GetFinalizers(), hubFinalizer) {
 		if err := r.addFinalizer(reqLogger, multiClusterHub); err != nil {
@@ -215,6 +221,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		r.CacheSpec.ManifestVersion = multiClusterHub.Status.CurrentVersion
 	}
 
+
 	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub, r.CacheSpec))
 	if result != nil {
 		return *result, err
@@ -225,7 +232,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	result, err = r.ensureObject(multiClusterHub, channel.Channel(multiClusterHub), channel.Schema)
+	result, err = r.ensureChannel(multiClusterHub, channel.Channel(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}
@@ -237,23 +244,23 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		}
 	}
 
-	result, err = r.ensureObject(multiClusterHub, subscription.CertManager(multiClusterHub, r.CacheSpec), subscription.Schema)
+	result, err = r.ensureSubscription(multiClusterHub, subscription.CertManager(multiClusterHub, r.CacheSpec))
 	if result != nil {
 		return *result, err
 	}
 
 	certGV := schema.GroupVersion{Group: "certmanager.k8s.io", Version: "v1alpha1"}
-	result, err = r.apiReady(certGV)
+	result, err = r.apiReady(certGV, unitTest)
 	if result != nil {
 		return *result, err
 	}
 
-	result, err = r.ensureObject(multiClusterHub, subscription.CertWebhook(multiClusterHub, r.CacheSpec), subscription.Schema)
+	result, err = r.ensureSubscription(multiClusterHub, subscription.CertWebhook(multiClusterHub, r.CacheSpec))
 	if result != nil {
 		return *result, err
 	}
 
-	result, err = r.ensureObject(multiClusterHub, subscription.ConfigWatcher(multiClusterHub, r.CacheSpec), subscription.Schema)
+	result, err = r.ensureSubscription(multiClusterHub, subscription.ConfigWatcher(multiClusterHub, r.CacheSpec))
 	if result != nil {
 		return *result, err
 	}
@@ -288,40 +295,41 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		}
 	}
 
+
 	// Install the rest of the subscriptions in no particular order
-	result, err = r.ensureObject(multiClusterHub, subscription.ManagementIngress(multiClusterHub, r.CacheSpec), subscription.Schema)
+	result, err = r.ensureSubscription(multiClusterHub, subscription.ManagementIngress(multiClusterHub, r.CacheSpec))
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.ApplicationUI(multiClusterHub, r.CacheSpec), subscription.Schema)
+	result, err = r.ensureSubscription(multiClusterHub, subscription.ApplicationUI(multiClusterHub, r.CacheSpec))
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.Console(multiClusterHub, r.CacheSpec), subscription.Schema)
+	result, err = r.ensureSubscription(multiClusterHub, subscription.Console(multiClusterHub, r.CacheSpec))
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.GRC(multiClusterHub, r.CacheSpec), subscription.Schema)
+	result, err = r.ensureSubscription(multiClusterHub, subscription.GRC(multiClusterHub, r.CacheSpec))
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.KUIWebTerminal(multiClusterHub, r.CacheSpec), subscription.Schema)
+	result, err = r.ensureSubscription(multiClusterHub, subscription.KUIWebTerminal(multiClusterHub, r.CacheSpec))
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.MongoDB(multiClusterHub, r.CacheSpec), subscription.Schema)
+	result, err = r.ensureSubscription(multiClusterHub, subscription.MongoDB(multiClusterHub, r.CacheSpec))
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.RCM(multiClusterHub, r.CacheSpec), subscription.Schema)
+	result, err = r.ensureSubscription(multiClusterHub, subscription.RCM(multiClusterHub, r.CacheSpec))
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.Search(multiClusterHub, r.CacheSpec), subscription.Schema)
+	result, err = r.ensureSubscription(multiClusterHub, subscription.Search(multiClusterHub, r.CacheSpec))
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.Topology(multiClusterHub, r.CacheSpec), subscription.Schema)
+	result, err = r.ensureSubscription(multiClusterHub, subscription.Topology(multiClusterHub, r.CacheSpec))
 	if result != nil {
 		return *result, err
 	}
@@ -386,7 +394,6 @@ func (r *ReconcileMultiClusterHub) UpdateStatus(m *operatorsv1beta1.MultiCluster
 			log.Info("Failed to update status", "Reason", "Object has been modified")
 			return &reconcile.Result{RequeueAfter: time.Second}, nil
 		}
-
 		log.Error(err, fmt.Sprintf("Failed to update %s/%s status ", m.Namespace, m.Name))
 		return &reconcile.Result{}, err
 	}

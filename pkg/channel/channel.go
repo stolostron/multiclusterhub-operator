@@ -5,8 +5,8 @@ package channel
 import (
 	"fmt"
 
+	chnv1alpha1 "github.com/open-cluster-management/multicloud-operators-channel/pkg/apis/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
@@ -25,23 +25,27 @@ func channelURL(m *operatorsv1beta1.MultiClusterHub) string {
 }
 
 // Channel returns an unstructured Channel object to watch the helm repository
-func Channel(m *operatorsv1beta1.MultiClusterHub) *unstructured.Unstructured {
-	ch := &unstructured.Unstructured{
-		Object: map[string]interface{}{
-			"apiVersion": "apps.open-cluster-management.io/v1",
-			"kind":       "Channel",
-			"metadata": map[string]interface{}{
-				"name":      ChannelName,
-				"namespace": m.Namespace,
-			},
-			"spec": map[string]interface{}{
-				"type":     "HelmRepo",
-				"pathname": channelURL(m),
-			},
+func Channel(m *operatorsv1beta1.MultiClusterHub) *chnv1alpha1.Channel {
+	ch := &chnv1alpha1.Channel{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Channel",
+			APIVersion: "apps.open-cluster-management.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ChannelName,
+			Namespace: m.Namespace,
+		},
+		Spec: chnv1alpha1.ChannelSpec{
+			Type:     "HelmRepo",
+			Pathname: channelURL(m),
 		},
 	}
-	ch.SetOwnerReferences([]metav1.OwnerReference{
-		*metav1.NewControllerRef(m, m.GetObjectKind().GroupVersionKind()),
-	})
+	// Skip this step on testing, as there is no controller ref to receive
+	if m.UID != "" {
+		ch.SetOwnerReferences([]metav1.OwnerReference{
+			*metav1.NewControllerRef(m, m.GetObjectKind().GroupVersionKind()),
+		})
+	}
+
 	return ch
 }
