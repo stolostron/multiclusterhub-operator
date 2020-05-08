@@ -29,3 +29,5 @@ build-harness-extensions/
 __pycache__/
 *.py[cod]
 
+# Generated bundles from opm
+bundles/
