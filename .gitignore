@@ -31,3 +31,6 @@ __pycache__/
 
 # Generated bundles from opm
 bundles/
+# Customized during configmap install  
+build/configmap-install/index-configmap.yaml
+bundle.Dockerfile
