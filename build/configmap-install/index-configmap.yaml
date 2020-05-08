@@ -1,0 +1,10 @@
+# This file will get populated by make-generate-bundle.sh
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: mch-index
+  namespace: open-cluster-management
+data:
+  customResourceDefinitions:
+  clusterServiceVersions:
+  packages:

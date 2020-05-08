@@ -79,11 +79,17 @@ subscribe: image olm-catalog
 	@oc apply -f build/_output/olm/multiclusterhub.resources.yaml
 
 unsubscribe:
-	@oc delete MultiClusterHub example-multiclusterhub || true
-	@oc delete appsub --all || true
-	@oc delete helmrelease --all || true
-	@oc delete MultiClusterHub example-multiclusterhub || true
-	@oc delete hiveconfig hive || true
+	@oc delete MultiClusterHub --all --ignore-not-found
+	# Delete subscriptions
+	@oc delete sub etcd-singlenamespace-alpha-community-operators-openshift-marketplace --ignore-not-found
+	@oc delete sub multicluster-operators-subscription-alpha-community-operators-openshift-marketplace --ignore-not-found
+	@oc delete sub hive-operator-alpha-community-operators-openshift-marketplace --ignore-not-found
+	@oc delete sub multiclusterhub-operator --ignore-not-found
+	# Delete CSVs
+	@oc delete csv --all
+	@oc delete catalogsource --all
+	@oc delete configmap --all
+
 	@oc delete crd channels.app.ibm.com || true
 	@oc delete crd deployables.app.ibm.com || true
 	@oc delete crd subscriptions.app.ibm.com || true
@@ -91,38 +97,23 @@ unsubscribe:
 	@oc delete crd etcdclusters.etcd.database.coreos.com || true
 	@oc delete crd etcdrestores.etcd.database.coreos.com || true
 	@oc delete crd multiclusterhubs.operators.open-cluster-management.io || true
-	@oc delete csv multiclusterhub-operator.v1.0.0 || true
-	@oc delete csv etcdoperator.v0.9.4 || true
-	@oc delete csv multicluster-operators-subscription.v0.1.5 || true
-	@oc delete csv hive-operator.v1.0.2 || true
-	@oc delete subscription multiclusterhub-operator || true
-	@oc delete subscription etcdoperator.v0.9.4 || true
-	@oc delete catalogsource multiclusterhub-operator-registry || true
-	@oc delete deploy -n hive hive-controllers || true
-	@oc delete deploy -n hive hiveadmission || true
+
 	@oc delete apiservice v1.admission.hive.openshift.io || true
 	@oc delete apiservice v1.hive.openshift.io || true
 	@oc delete apiservice v1alpha1.clusterregistry.k8s.io || true
 	@oc delete apiservice v1alpha1.mcm.ibm.com || true
 	@oc delete apiservice v1beta1.mcm.ibm.com || true
 	@oc delete apiservice v1beta1.webhook.certmanager.k8s.io || true
-	@oc delete -k templates/multiclusterhub/base/hive/ || true
 	@oc delete clusterrole hive-admin || true
 	@oc delete clusterrole hive-reader || true
 	@oc delete service multicluster-operators-subscription || true
-	@oc delete helmreleases --all || true
 	@oc delete validatingwebhookconfiguration cert-manager-webhook || true
 	@oc delete clusterrole cert-manager-webhook-requester || true
 	@oc delete clusterrolebinding cert-manager-webhook-auth-delegator || true
 	@for crd in $(oc get crd | grep cert | cut -f 1 -d ' '); do oc delete crd $crd; done
-	# Wrong syntax for Makefile @for webhook in $(oc get validatingwebhookconfiguration | grep hive | cut -f 1 -d ' '); do oc delete validatingwebhookconfiguration $webhook; done
 	@oc delete scc multicloud-scc || true
 	@oc delete clusterrole multicluster-mongodb
 	@oc delete clusterrolebinding multicluster-mongodb
-	@oc delete sub etcd-singlenamespace-alpha-community-operators-openshift-marketplace
-	@oc delete sub multicluster-operators-subscription-alpha-community-operators-openshift-marketplace
-	@oc delete sub hive-operator-alpha-community-operators-openshift-marketplace
-	@oc delete sub multiclusterhub-operator
 
 resubscribe: unsubscribe subscribe
 
@@ -130,3 +121,11 @@ resubscribe: unsubscribe subscribe
 deps:
 	./cicd-scripts/install-dependencies.sh
 	go mod tidy
+
+dev-install:
+	operator-sdk17 generate csv
+	operator-sdk17 build quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
+	docker push quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
+	kubectl create configmap mch-index -n open-cluster-management -o yaml --dry-run=client | kubectl apply -f -
+	bash common/scripts/make-generate-bundle.sh REGISTRY="$(REGISTRY)" VERSION="$(VERSION)"
+	kubectl apply -k build/configmap-install
