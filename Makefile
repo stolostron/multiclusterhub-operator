@@ -122,10 +122,36 @@ deps:
 	./cicd-scripts/install-dependencies.sh
 	go mod tidy
 
-dev-install:
+# run operator locally outside the cluster
+local-install:
+	# Need to get in changes to manifest and version logic before we can run locally
+	@echo "Make target under construction"; exit 1
+	kubectl apply -f deploy/crds/operators.open-cluster-management.io_multiclusterhubs_crd.yaml
+	kubectl apply -k build/subscriptions
+	OPERATOR_NAME=multiclusterhub-operator \
+	TEMPLATES_PATH=$(pwd)/templates \
+	MANIFESTS_PATH=$(pwd)/image-manifests \
+	operator-sdk17 run --local --watch-namespace=open-cluster-management --kubeconfig=$(KUBECONFIG)
+
+# run as a Deployment inside the cluster
+in-cluster-install:
+	kubectl apply -f deploy/crds/operators.open-cluster-management.io_multiclusterhubs_crd.yaml
+	kubectl apply -k build/subscriptions
+	kubectl apply -k deploy
+	kubectl apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml
+
+# creates a configmap index and catalogsource that it subscribes to
+cm-install:
 	operator-sdk17 generate csv
 	operator-sdk17 build quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
 	docker push quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
-	kubectl create configmap mch-index -n open-cluster-management -o yaml --dry-run=client | kubectl apply -f -
-	bash common/scripts/make-generate-bundle.sh REGISTRY="$(REGISTRY)" VERSION="$(VERSION)"
+	bash common/scripts/generate-cm-index.sh REGISTRY="$(REGISTRY)" VERSION="$(VERSION)"
 	kubectl apply -k build/configmap-install
+
+# generates an index image and catalogsource that serves it
+index-install:
+	operator-sdk17 generate csv
+	operator-sdk17 build quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
+	docker push quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
+	bash common/scripts/generate-index.sh REGISTRY="$(REGISTRY)" VERSION="$(VERSION)"
+	kubectl apply -k build/index-install
