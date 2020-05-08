@@ -48,19 +48,11 @@ if [ -z ${DOCKER_PASS+x} ]; then
     done
 fi
 
-if [ -z ${NAMESPACE+x} ]; then
-    echo "Define variable - NAMESPACE to avoid being prompted"
-    while [[ $NAMESPACE == '' ]] # While string is different or empty...
-    do
-        read -p "Enter your namespace to install the operator and operands: " NAMESPACE
-    done
-fi
-
 export GITHUB_USER=$GITHUB_USER
 export GITHUB_TOKEN=$GITHUB_TOKEN
 export DOCKER_USER=$DOCKER_USER
 export DOCKER_PASS=$DOCKER_PASS
-export NAMESPACE=$NAMESPACE
+export NAMESPACE=open-cluster-management
 
 # Ensure the namespace exists
 oc get ns $NAMESPACE > /dev/null 2>&1
@@ -73,19 +65,26 @@ fi
 oc project $NAMESPACE
 
 operatorSDKVersion=$(operator-sdk version | cut -d, -f 1 | tr -d '"' | cut -d ' ' -f 3)
-if [[ "$operatorSDKVersion" != "v0.16.0" ]]; then
-    echo "Must install operator-sdk v0.16.0."
+if [[ "$operatorSDKVersion" != "v0.17.0" ]]; then
+    echo "Must install operator-sdk v0.17.0."
     while [[ "$_install" != "Y" ]] && [[ "$_install" != "N" ]] # While string is different or empty...
     do
-        read -p "Install operator-sdk v0.16.0? (Y/N): " _install
+        read -p "Install operator-sdk v0.17.0? (Y/N): " _install
     done
     if [[ "$_install" == "Y" ]]; then
-        echo "Installing operator-sdk v0.16.0 ..."
+        echo "Installing operator-sdk v0.17.0 ..."
         make deps
     else
-        echo "Must install operator-sdk v0.16.0 ... Exiting"
-        exit 1
+        echo "Must install operator-sdk v0.17.0 ... Exiting"
+        # exit 1
     fi
+fi
+
+opm -h >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo "ERROR: Make sure you have opm v1.12.2 installed"
+    echo "Install the binary here: https://github.com/operator-framework/operator-registry/releases/tag/v1.12.2"
+    exit 1
 fi
 
 ## 2. Test Docker Login
@@ -99,31 +98,7 @@ fi
 echo "- Docker login succeeded"
 echo ""
 
-## 3. Check for OperatorGroup
-
-echo "Checking for operatorgroup ..."
-_output=$(oc get operatorgroup | wc -l | awk '{$1=$1};1')
-if [[ "$_output" != "2" ]]; then
-    echo "No operatorgroup found. Applying default Operatorgroup."
-    sed -i -e "s/- .*/- $NAMESPACE/g" common/scripts/tests/resources/operatorgroup.yaml
-    rm -rf common/scripts/tests/resources/operatorgroup.yaml-e
-    oc apply -f common/scripts/tests/resources/operatorgroup.yaml
-    echo "Default operator group applied"
-fi
-echo "- Operator group exists"
-echo ""
-
-## 4. Update Namespace
-
-sed -i -e "s/namespace:.*/namespace: $NAMESPACE/g" deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml
-sed -i -e "s/endpoints: mongo-0.mongo.*/endpoints: mongo-0.mongo.$NAMESPACE/g" deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml
-sed -i -e "s/namespace:.*/namespace: $NAMESPACE/g" deploy/kustomization.yaml
-sed -i -e "s/sourceNamespace:.*/sourceNamespace: $NAMESPACE/g" deploy/subscription.yaml
-rm -rf deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml-e
-rm -rf deploy/kustomization.yaml-e
-rm -rf deploy/subscription.yaml-e
-
-## 5. Build & Install Operator
+## 4. Build & Install Operator
 
 if [[ "$force" != "true" ]]; then
     echo ""
@@ -141,20 +116,11 @@ if [[ "$force" != "true" ]]; then
 fi
 
 echo "Beginning installation ..."
-_output=$(make install 2>/dev/null)
-echo ""
-
-while [[ $_output != "multiclusterhub.operators.open-cluster-management.io/multiclusterhub created" ]] # While string is different or empty...
-do
-    echo "Waiting for Operator to come online ..."
-    _output=$(oc apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml 2>/dev/null)
-    sleep 10
-done
-
+make cm-install
 echo ""
 echo "Operator online. MultiClusterHub CR applied."
 
-## 6. Validate Install
+## 5. Validate Install
 
 ./common/scripts/tests/validate.sh
 return_code=$?

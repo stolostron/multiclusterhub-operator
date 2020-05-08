@@ -61,6 +61,10 @@ install: image push olm-catalog
 	@oc create secret docker-registry quay-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
 	@oc apply -k ./build/_output/olm || true
 
+secrets: 
+	@oc create secret docker-registry multiclusterhub-operator-pull-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
+	@oc create secret docker-registry quay-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
+
 install-dev:
 	./common/scripts/tests/install.sh
 
@@ -80,6 +84,7 @@ subscribe: image olm-catalog
 
 unsubscribe:
 	@oc delete MultiClusterHub --all --ignore-not-found
+	@oc delete helmrelease --all --ignore-not-found
 	# Delete subscriptions
 	@oc delete sub etcd-singlenamespace-alpha-community-operators-openshift-marketplace --ignore-not-found
 	@oc delete sub multicluster-operators-subscription-alpha-community-operators-openshift-marketplace --ignore-not-found
@@ -97,6 +102,8 @@ unsubscribe:
 	@oc delete crd etcdclusters.etcd.database.coreos.com || true
 	@oc delete crd etcdrestores.etcd.database.coreos.com || true
 	@oc delete crd multiclusterhubs.operators.open-cluster-management.io || true
+
+	@oc delete deployment --all
 
 	@oc delete apiservice v1.admission.hive.openshift.io || true
 	@oc delete apiservice v1.hive.openshift.io || true
@@ -122,8 +129,23 @@ deps:
 	./cicd-scripts/install-dependencies.sh
 	go mod tidy
 
+
+update-image:
+	operator-sdk17 build quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
+	docker push quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
+
+csv:
+	operator-sdk17 generate csv
+
+cr:
+	kubectl apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml
+
+# Apply subscriptions normally created by OLM
+subscriptions:
+	kubectl apply -k build/subscriptions
+
 # run operator locally outside the cluster
-local-install:
+local-install: secrets
 	# Need to get in changes to manifest and version logic before we can run locally
 	@echo "Make target under construction"; exit 1
 	kubectl apply -f deploy/crds/operators.open-cluster-management.io_multiclusterhubs_crd.yaml
@@ -134,24 +156,17 @@ local-install:
 	operator-sdk17 run --local --watch-namespace=open-cluster-management --kubeconfig=$(KUBECONFIG)
 
 # run as a Deployment inside the cluster
-in-cluster-install:
+in-cluster-install: secrets update-image subscriptions
 	kubectl apply -f deploy/crds/operators.open-cluster-management.io_multiclusterhubs_crd.yaml
-	kubectl apply -k build/subscriptions
 	kubectl apply -k deploy
 	kubectl apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml
 
 # creates a configmap index and catalogsource that it subscribes to
-cm-install:
-	operator-sdk17 generate csv
-	operator-sdk17 build quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
-	docker push quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
+cm-install: secrets update-image csv
 	bash common/scripts/generate-cm-index.sh REGISTRY="$(REGISTRY)" VERSION="$(VERSION)"
 	kubectl apply -k build/configmap-install
 
 # generates an index image and catalogsource that serves it
-index-install:
-	operator-sdk17 generate csv
-	operator-sdk17 build quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
-	docker push quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
+index-install: secrets update-image csv
 	bash common/scripts/generate-index.sh REGISTRY="$(REGISTRY)" VERSION="$(VERSION)"
 	kubectl apply -k build/index-install
