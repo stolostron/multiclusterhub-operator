@@ -29,6 +29,7 @@ csv=$(yq r bundles/$version/manifests/multiclusterhub-operator.clusterservicever
 crd=$(yq r bundles/$version/manifests/operators.open-cluster-management.io_multiclusterhubs_crd.yaml | indent)
 pkg=$(yq r build/configmap-install/package.yaml | indent)
 
+# Contruct composite Configmap
 cat > build/configmap-install/index-configmap.yaml <<-EOF
 kind: ConfigMap
 apiVersion: v1
