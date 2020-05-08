@@ -9,4 +9,3 @@ spec:
   name: multiclusterhub-operator
   source: mch-catalog-source
   sourceNamespace: open-cluster-management
-  startingCSV: multiclusterhub-operator.v1.0.0
