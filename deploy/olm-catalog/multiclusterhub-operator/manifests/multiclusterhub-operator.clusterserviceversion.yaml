@@ -1,0 +1,289 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "operators.open-cluster-management.io/v1beta1",
+          "kind": "MultiClusterHub",
+          "metadata": {
+            "name": "multiclusterhub",
+            "namespace": "open-cluster-management"
+          },
+          "spec": {
+            "imagePullSecret": "quay-secret"
+          }
+        }
+      ]
+    capabilities: Basic Install
+    categories: Integration & Delivery
+    certified: "false"
+    createdAt: "2020-04-29T15:57:12Z"
+    description: Open management of Openshift and Kubernetes clusters
+    repository: https://github.com/open-cluster-management/multicloudhub-operator
+    support: The Open Cluster Management Project
+  name: multiclusterhub-operator.v1.0.0
+  namespace: open-cluster-management
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: MultiClusterHub defines the configuration for an instance of the
+        MultiCluster Hub
+      displayName: MultiClusterHub Operator
+      kind: MultiClusterHub
+      name: multiclusterhubs.operators.open-cluster-management.io
+      version: v1beta1
+    required:
+    - description: Represent a helm chart repository
+      displayName: Channel
+      kind: Channel
+      name: channels.apps.open-cluster-management.io
+      version: v1
+    - description: Represents a cluster of etcd nodes.
+      displayName: etcd Cluster
+      kind: EtcdCluster
+      name: etcdclusters.etcd.database.coreos.com
+      version: v1beta2
+    - description: Represent a helm chart selected by the subscription, for internal
+        use only.
+      displayName: Helm Release
+      kind: HelmRelease
+      name: helmreleases.apps.open-cluster-management.io
+      version: v1
+    - description: Configuration for the Hive Operator
+      displayName: Hive Config
+      kind: HiveConfig
+      name: hiveconfigs.hive.openshift.io
+      version: v1
+    - description: Subscribe resources from a channel according to its package filters
+      displayName: Subscription
+      kind: Subscription
+      name: subscriptions.apps.open-cluster-management.io
+      version: v1
+  description: 'The Open Cluster Management Hub operator installs and maintains an
+    instance of the OCM hub, a central management console for managing OpenShift and
+    Kubernetes clusters. '
+  displayName: Open Cluster Management Hub
+  icon:
+  - base64data: PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3MjEuMTUgNzIxLjE1Ij48ZGVmcz48c3R5bGU+LmNscy0xe2ZpbGw6I2RiMzkyNzt9LmNscy0ye2ZpbGw6I2NiMzYyODt9LmNscy0ze2ZpbGw6I2ZmZjt9LmNscy00e2ZpbGw6I2UzZTNlMjt9PC9zdHlsZT48L2RlZnM+PHRpdGxlPlByb2R1Y3RfSWNvbi1SZWRfSGF0QWR2YW5jZWRfQ2x1c3Rlcl9NYW5hZ2VtZW50X2Zvcl9LdWJlcm5ldGVzLVJHQjwvdGl0bGU+PGcgaWQ9IkxheWVyXzEiIGRhdGEtbmFtZT0iTGF5ZXIgMSI+PGNpcmNsZSBjbGFzcz0iY2xzLTEiIGN4PSIzNjAuNTciIGN5PSIzNjAuNTciIHI9IjM1OC41OCIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTYxNC4xMywxMDcsMTA3LDYxNC4xM2MxNDAsMTQwLDM2Ny4wNywxNDAsNTA3LjExLDBTNzU0LjE2LDI0Ny4wNiw2MTQuMTMsMTA3WiIvPjxyZWN0IGNsYXNzPSJjbHMtMyIgeD0iMzMwLjg3IiB5PSIyODAuNiIgd2lkdGg9IjIwMy4xNyIgaGVpZ2h0PSIyMCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTc4LjkgMzkwLjUyKSByb3RhdGUoLTQ0Ljk2KSIvPjxyZWN0IGNsYXNzPSJjbHMtMyIgeD0iMzA2LjYzIiB5PSIxNjcuODMiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMDQuNDciIHRyYW5zZm9ybT0idHJhbnNsYXRlKC04NS4zMyAxNjIuMjcpIHJvdGF0ZSgtMjUuNDUpIi8+PHJlY3QgY2xhc3M9ImNscy0zIiB4PSIxNjIuOTgiIHk9IjM2NC4xIiB3aWR0aD0iMTk4LjI4IiBoZWlnaHQ9IjIwIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNDIuMzkgMzMuNjEpIHJvdGF0ZSgtNi43OSkiLz48cmVjdCBjbGFzcz0iY2xzLTMiIHg9IjI0NS4xIiB5PSI0NTEuNTQiIHdpZHRoPSIyMDAuNjIiIGhlaWdodD0iMjAiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0xNjMuMDEgNzMzLjI2KSByb3RhdGUoLTgxLjMxKSIvPjxyZWN0IGNsYXNzPSJjbHMtMyIgeD0iNDQzLjg1IiB5PSIzMDMuNzYiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMDcuMDQiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0xMDkuOTcgNjM5LjU4KSByb3RhdGUoLTY0LjMpIi8+PGNpcmNsZSBjbGFzcz0iY2xzLTMiIGN4PSI1MDQuMzQiIGN5PSIyMTguODMiIHI9IjQ0LjA4Ii8+PGNpcmNsZSBjbGFzcz0iY2xzLTMiIGN4PSIyNzIuNyIgY3k9IjE3Ny43NSIgcj0iNDQuMDgiLz48Y2lyY2xlIGNsYXNzPSJjbHMtMyIgY3g9IjU0Ny4xMiIgY3k9IjQ1Mi4xNyIgcj0iNDQuMDgiLz48Y2lyY2xlIGNsYXNzPSJjbHMtMyIgY3g9IjE2My42OCIgY3k9IjM4NS44MiIgcj0iNDQuMDgiLz48Y2lyY2xlIGNsYXNzPSJjbHMtMyIgY3g9IjMzMC4yNiIgY3k9IjU2MC43IiByPSI0NC4wOCIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTQ0NC45NCwyNzkuOTIsMjc2LjE5LDQ0OC42N0ExMTkuMzIsMTE5LjMyLDAsMCwwLDQ0NC45NCwyNzkuOTJaIi8+PHBhdGggY2xhc3M9ImNscy0zIiBkPSJNMzc1LjY4LDI0NS43NmExMTkuMzMsMTE5LjMzLDAsMCwwLTk5LjQ5LDIwMi45MUw0NDQuOTQsMjc5LjkyQTExOC44OSwxMTguODksMCwwLDAsMzc1LjY4LDI0NS43NloiLz48L2c+PC9zdmc+
+    mediatype: image/svg+xml
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - services
+          - services/finalizers
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          - serviceaccounts
+          - namespaces
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - apps
+          resourceNames:
+          - multiclusterhub-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - get
+        - apiGroups:
+          - apps
+          resources:
+          - replicasets
+          - deployments
+          verbs:
+          - get
+        - apiGroups:
+          - admissionregistration.k8s.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - operators.open-cluster-management.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - apiregistration.k8s.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - clusterregistry.k8s.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - operators.coreos.com
+          resources:
+          - operatorgroups
+          - subscriptions
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - etcd.database.coreos.com
+          resources:
+          - etcdclusters
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - apiextensions.k8s.io
+          resources:
+          - customresourcedefinitions
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps.open-cluster-management.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - operators.coreos.com
+          resources:
+          - hive-catalog
+          - catalogsources
+          - clusterserviceversions
+          - hiveconfig
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - hive.openshift.io
+          resources:
+          - hiveconfigs
+          verbs:
+          - get
+          - create
+          - list
+          - delete
+        - apiGroups:
+          - security.openshift.io
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - '*'
+        - apiGroups:
+          - storage.k8s.io
+          resources:
+          - storageclasses
+          verbs:
+          - '*'
+        - apiGroups:
+          - config.openshift.io
+          resources:
+          - ingresses
+          verbs:
+          - get
+        serviceAccountName: multiclusterhub-operator
+      deployments:
+      - name: multiclusterhub-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: multiclusterhub-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: multiclusterhub-operator
+            spec:
+              containers:
+              - command:
+                - multiclusterhub-operator
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: OPERATOR_NAME
+                  value: multiclusterhub-operator
+                - name: USER
+                  value: multiclusterhub-operator
+                - name: TEMPLATES_PATH
+                  value: /usr/local/templates
+                image: multiclusterhub-operator:1.0.0
+                imagePullPolicy: Always
+                name: multiclusterhub-operator
+                resources:
+                  limits:
+                    memory: 2Gi
+                  requests:
+                    cpu: 100m
+                    memory: 256Mi
+              imagePullSecrets:
+              - name: multiclusterhub-operator-pull-secret
+              serviceAccountName: multiclusterhub-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  keywords:
+  - multiclusterhub
+  - install
+  maintainers:
+  - email: ocm-dev@open-cluster-management.io
+    name: Open Cluster Management Project team
+  maturity: alpha
+  provider:
+    name: Redhat
+  version: 1.0.0
