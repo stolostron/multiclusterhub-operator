@@ -1,4 +1,5 @@
 #!/bin/bash
+# Copyright (c) 2020 Red Hat, Inc.
 
 oc delete MultiClusterHub --all --ignore-not-found
 
