@@ -48,104 +48,44 @@ image:
 push:
 	./common/scripts/push.sh "$(REGISTRY)/$(IMG):$(VERSION)"
 
-olm-catalog: clean
-	@common/scripts/olm_catalog.sh "$(BUNDLE_REGISTRY)" "$(IMG)" "$(VERSION)"
+# configmap subscription install with additional logic
+install:
+	./common/scripts/tests/install.sh
 
-clean::
-	rm -rf $(BUILD_DIR)/_output
-	rm -f cover.out
+uninstall:
+	bash common/scripts/uninstall.sh
 
-install: image push olm-catalog
-	# need to check for operator group
-	@oc create secret docker-registry multiclusterhub-operator-pull-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
-	@oc create secret docker-registry quay-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
-	@oc apply -k ./build/_output/olm || true
-
+# create secrets for pulling images
 secrets: 
 	@oc create secret docker-registry multiclusterhub-operator-pull-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
 	@oc create secret docker-registry quay-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
 
-install-dev:
-	./common/scripts/tests/install.sh
+reinstall: uninstall cm-install
 
-directuninstall:
-	@ oc delete -k ./build/_output/olm || true
-
-uninstall: directuninstall unsubscribe
-
-reinstall: uninstall install
-
-local:
-	@operator-sdk run --local --namespace="" --operator-flags="--zap-devel=true"
-
-subscribe: image olm-catalog
-	# @kubectl create secret docker-registry quay-secret --docker-server=$(REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
-	@oc apply -f build/_output/olm/multiclusterhub.resources.yaml
-
-unsubscribe:
-	@oc delete MultiClusterHub --all --ignore-not-found
-	@oc delete helmrelease --all --ignore-not-found
-	# Delete subscriptions
-	@oc delete sub etcd-singlenamespace-alpha-community-operators-openshift-marketplace --ignore-not-found
-	@oc delete sub multicluster-operators-subscription-alpha-community-operators-openshift-marketplace --ignore-not-found
-	@oc delete sub hive-operator-alpha-community-operators-openshift-marketplace --ignore-not-found
-	@oc delete sub multiclusterhub-operator --ignore-not-found
-	# Delete CSVs
-	@oc delete csv --all
-	@oc delete catalogsource --all
-	@oc delete configmap --all
-
-	@oc delete crd channels.app.ibm.com || true
-	@oc delete crd deployables.app.ibm.com || true
-	@oc delete crd subscriptions.app.ibm.com || true
-	@oc delete crd etcdbackups.etcd.database.coreos.com || true
-	@oc delete crd etcdclusters.etcd.database.coreos.com || true
-	@oc delete crd etcdrestores.etcd.database.coreos.com || true
-	@oc delete crd multiclusterhubs.operators.open-cluster-management.io || true
-
-	@oc delete deployment --all
-
-	@oc delete apiservice v1.admission.hive.openshift.io || true
-	@oc delete apiservice v1.hive.openshift.io || true
-	@oc delete apiservice v1alpha1.clusterregistry.k8s.io || true
-	@oc delete apiservice v1alpha1.mcm.ibm.com || true
-	@oc delete apiservice v1beta1.mcm.ibm.com || true
-	@oc delete apiservice v1beta1.webhook.certmanager.k8s.io || true
-	@oc delete clusterrole hive-admin || true
-	@oc delete clusterrole hive-reader || true
-	@oc delete service multicluster-operators-subscription || true
-	@oc delete validatingwebhookconfiguration cert-manager-webhook || true
-	@oc delete clusterrole cert-manager-webhook-requester || true
-	@oc delete clusterrolebinding cert-manager-webhook-auth-delegator || true
-	@for crd in $(oc get crd | grep cert | cut -f 1 -d ' '); do oc delete crd $crd; done
-	@oc delete scc multicloud-scc || true
-	@oc delete clusterrole multicluster-mongodb
-	@oc delete clusterrolebinding multicluster-mongodb
-
-resubscribe: unsubscribe subscribe
-
+subscribe: cm-install
 
 deps:
 	./cicd-scripts/install-dependencies.sh
 	go mod tidy
 
-
 update-image:
 	operator-sdk17 build quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
 	docker push quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
 
+# regenerate CSV
 csv:
 	operator-sdk17 generate csv
 
+# apply CR
 cr:
 	kubectl apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml
 
-# Apply subscriptions normally created by OLM
+# apply subscriptions normally created by OLM
 subscriptions:
 	kubectl apply -k build/subscriptions
 
 # run operator locally outside the cluster
-local-install: secrets
+local-install:
 	# Need to get in changes to manifest and version logic before we can run locally
 	@echo "Make target under construction"; exit 1
 	kubectl apply -f deploy/crds/operators.open-cluster-management.io_multiclusterhubs_crd.yaml
