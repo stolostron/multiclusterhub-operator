@@ -19,7 +19,7 @@ import (
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/controller"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/webhook"
 	"github.com/open-cluster-management/multicloudhub-operator/version"
-	netv1 "github.com/openshift/api"
+	netv1 "github.com/openshift/api/config/v1"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
@@ -144,7 +144,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := netv1.Install(mgr.GetScheme()); err != nil {
+	if err := netv1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Error(err, "")
 		os.Exit(1)
 	}
