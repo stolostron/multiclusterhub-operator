@@ -22,6 +22,12 @@ import (
 )
 
 func (r *ReconcileMultiClusterHub) cleanupHiveConfigs(reqLogger logr.Logger, m *operatorsv1beta1.MultiClusterHub) error {
+
+	listOptions := client.MatchingLabels{
+		"installer.name":      m.GetName(),
+		"installer.namespace": m.GetNamespace(),
+	}
+
 	found := &unstructured.Unstructured{}
 	found.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   "hive.openshift.io",
@@ -38,7 +44,7 @@ func (r *ReconcileMultiClusterHub) cleanupHiveConfigs(reqLogger logr.Logger, m *
 
 	// Delete HiveConfig if it exists
 	reqLogger.Info("Deleting hiveconfig", "Resource.Name", found.GetName())
-	err = r.client.Delete(context.TODO(), found)
+	err = r.client.DeleteAllOf(context.TODO(), found, listOptions)
 	if err != nil {
 		reqLogger.Error(err, "Error while deleting hiveconfig instances")
 		return err

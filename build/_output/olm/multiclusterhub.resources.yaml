@@ -527,6 +527,7 @@ data:
                 - create
                 - list
                 - delete
+                - deletecollection
               - apiGroups:
                 - security.openshift.io
                 resources:
