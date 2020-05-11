@@ -209,18 +209,20 @@ func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1beta1.MultiC
 		Version: "v1",
 	})
 	// Try to get API group instance
-	err := r.client.Get(context.TODO(), types.NamespacedName{
+	err := r.client.Get(context.Background(), types.NamespacedName{
 		Name:      u.GetName(),
 		Namespace: u.GetNamespace(),
 	}, found)
 	if err != nil && errors.IsNotFound(err) {
 
 		// Create the resource
-		err := r.client.Create(context.TODO(), u)
-		if err != nil {
-			// Creation failed
-			obLog.Error(err, "Failed to create new instance")
-			return &reconcile.Result{}, err
+		if m.UID != "" {
+			err := r.client.Create(context.Background(), u)
+			if err != nil {
+				// Creation failed
+				obLog.Error(err, "Failed to create new instance")
+				return &reconcile.Result{}, err
+			}
 		}
 
 		// Creation was successful

@@ -60,6 +60,7 @@ jobs:
         # Bootstrap the build harness, pull test image, and run unit tests.  
         - | 
           make 
+          make test
           make component/pull 
           make component/test/unit
           make sonar/go
