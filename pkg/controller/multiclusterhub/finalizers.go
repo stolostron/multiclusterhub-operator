@@ -9,7 +9,7 @@ import (
 	"github.com/go-logr/logr"
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
-	apixv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -194,7 +194,7 @@ func (r *ReconcileMultiClusterHub) cleanupPullSecret(reqLogger logr.Logger, m *o
 func (r *ReconcileMultiClusterHub) cleanupCRDs(log logr.Logger, m *operatorsv1beta1.MultiClusterHub) error {
 	err := r.client.DeleteAllOf(
 		context.TODO(),
-		&apixv1beta1.CustomResourceDefinition{},
+		&apixv1.CustomResourceDefinition{},
 		client.MatchingLabels{
 			"installer.name":      m.GetName(),
 			"installer.namespace": m.GetNamespace(),
