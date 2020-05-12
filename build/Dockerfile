@@ -10,7 +10,7 @@ LABEL org.label-schema.vendor="Red Hat" \
       org.label-schema.license="Red Hat Advanced Cluster Management for Kubernetes EULA"
 
 # install manifest files
-COPY image-manifests /usr/local/image-manifests
+COPY image-manifests /image-manifests
 
 # install templates
 COPY templates /usr/local/templates

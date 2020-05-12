@@ -248,6 +248,8 @@
                     value: multiclusterhub-operator
                   - name: TEMPLATES_PATH
                     value: /usr/local/templates
+                  - name: MANIFESTS_PATH
+                    value: /image-manifests
                   image: quay.io/rhibmcollab/multiclusterhub-operator:1.0.0
                   imagePullPolicy: Always
                   name: multiclusterhub-operator
