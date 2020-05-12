@@ -109,6 +109,10 @@ func manifestFormat(mi ManifestImage, registry string) string {
 func suffixFormat(mi ManifestImage, registry string, suffix string) string {
 	image := mi.ImageName
 	version := mi.ImageVersion
+	// TODO: Remove hardcoded value
+	if mi.ImageKey == "oauth_proxy" {
+		return fmt.Sprintf("%s/%s:%s", registry, image, version)
+	}
 	return fmt.Sprintf("%s/%s:%s-%s", registry, image, version, suffix)
 }
 
