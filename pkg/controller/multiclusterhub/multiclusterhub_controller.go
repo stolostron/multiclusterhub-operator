@@ -15,7 +15,6 @@ import (
 	storv1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -42,6 +41,7 @@ import (
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	"github.com/open-cluster-management/multicloudhub-operator/version"
+	netv1 "github.com/openshift/api/config/v1"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 )
 
@@ -219,7 +219,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	result, err = r.ensureObject(multiClusterHub, channel.Channel(multiClusterHub), channel.Schema)
+	result, err = r.ensureChannel(multiClusterHub, channel.Channel(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}
@@ -231,7 +231,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		}
 	}
 
-	result, err = r.ensureObject(multiClusterHub, subscription.CertManager(multiClusterHub, r.CacheSpec.ImageOverrides), subscription.Schema)
+	result, err = r.ensureSubscription(multiClusterHub, subscription.CertManager(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
 	}
@@ -242,12 +242,12 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	result, err = r.ensureObject(multiClusterHub, subscription.CertWebhook(multiClusterHub, r.CacheSpec.ImageOverrides), subscription.Schema)
+	result, err = r.ensureSubscription(multiClusterHub, subscription.CertWebhook(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
 	}
 
-	result, err = r.ensureObject(multiClusterHub, subscription.ConfigWatcher(multiClusterHub, r.CacheSpec.ImageOverrides), subscription.Schema)
+	result, err = r.ensureSubscription(multiClusterHub, subscription.ConfigWatcher(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
 	}
@@ -283,39 +283,39 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	}
 
 	// Install the rest of the subscriptions in no particular order
-	result, err = r.ensureObject(multiClusterHub, subscription.ManagementIngress(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain), subscription.Schema)
+	result, err = r.ensureSubscription(multiClusterHub, subscription.ManagementIngress(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.ApplicationUI(multiClusterHub, r.CacheSpec.ImageOverrides), subscription.Schema)
+	result, err = r.ensureSubscription(multiClusterHub, subscription.ApplicationUI(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.Console(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain), subscription.Schema)
+	result, err = r.ensureSubscription(multiClusterHub, subscription.Console(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.GRC(multiClusterHub, r.CacheSpec.ImageOverrides), subscription.Schema)
+	result, err = r.ensureSubscription(multiClusterHub, subscription.GRC(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.KUIWebTerminal(multiClusterHub, r.CacheSpec.ImageOverrides), subscription.Schema)
+	result, err = r.ensureSubscription(multiClusterHub, subscription.KUIWebTerminal(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.MongoDB(multiClusterHub, r.CacheSpec.ImageOverrides), subscription.Schema)
+	result, err = r.ensureSubscription(multiClusterHub, subscription.MongoDB(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.RCM(multiClusterHub, r.CacheSpec.ImageOverrides), subscription.Schema)
+	result, err = r.ensureSubscription(multiClusterHub, subscription.RCM(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.Search(multiClusterHub, r.CacheSpec.ImageOverrides), subscription.Schema)
+	result, err = r.ensureSubscription(multiClusterHub, subscription.Search(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureObject(multiClusterHub, subscription.Topology(multiClusterHub, r.CacheSpec.ImageOverrides), subscription.Schema)
+	result, err = r.ensureSubscription(multiClusterHub, subscription.Topology(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
 	}
@@ -481,35 +481,17 @@ func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1beta1.MultiCluste
 		return nil, nil
 	}
 
-	// Create dynamic client
-	dc, err := createDynamicClient()
-	if err != nil {
-		log.Error(err, "Failed to create dynamic client")
+	ingress := &netv1.Ingress{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{
+		Name: "cluster",
+	}, ingress)
+	// Don't fail on a unit test (Fake client won't find "cluster" Ingress)
+	if err != nil && m.UID != "" {
+		log.Error(err, "Failed to get Ingress")
 		return &reconcile.Result{}, err
 	}
 
-	// Find resource
-	schema := schema.GroupVersionResource{Group: "config.openshift.io", Version: "v1", Resource: "ingresses"}
-	crd, err := dc.Resource(schema).Get("cluster", metav1.GetOptions{})
-	if err != nil {
-		log.Error(err, "Failed to get resource", "resource", schema.GroupResource().String())
-		return &reconcile.Result{}, err
-	}
-
-	// Parse resource for domain value
-	domain, ok, err := unstructured.NestedString(crd.UnstructuredContent(), "spec", "domain")
-	if err != nil {
-		log.Error(err, "Error parsing resource", "resource", schema.GroupResource().String(), "value", "spec.domain")
-		return &reconcile.Result{}, err
-	}
-	if !ok {
-		err = fmt.Errorf("field not found")
-		log.Error(err, "Ingress config did not contain expected value", "resource", schema.GroupResource().String(), "value", "spec.domain")
-		return &reconcile.Result{}, err
-	}
-
-	log.Info("Ingress domain not set, updating value in cachespec", "MultiClusterHub.Namespace", m.Namespace, "MultiClusterHub.Name", m.Name, "ingressDomain", domain)
-	r.CacheSpec.IngressDomain = domain
+	r.CacheSpec.IngressDomain = ingress.Spec.Domain
 	return nil, nil
 }
 
@@ -558,24 +540,6 @@ func (r *ReconcileMultiClusterHub) addFinalizer(reqLogger logr.Logger, m *operat
 // useImageSuffixes returns true if an ImageTagSuffix is provided in the spec
 func useImageSuffixes(m *operatorsv1beta1.MultiClusterHub) bool {
 	return m.Spec.Overrides.ImageTagSuffix != ""
-}
-
-func (r *ReconcileMultiClusterHub) shouldReadManifestFile(m *operatorsv1beta1.MultiClusterHub) bool {
-	// read manifest file if:
-
-	// (1) CacheSpec.ImageShaDigests doesn't exist or
-	if r.CacheSpec.ImageOverrides == nil {
-		return true
-	}
-	// (2) CacheSpec.ISDVersion doesn't exist or
-	if r.CacheSpec.ManifestVersion == "" {
-		return true
-	}
-	// (3) CacheSpec.ISDVersion is not up-to-date with spec.Version
-	if r.CacheSpec.ManifestVersion != m.Status.CurrentVersion {
-		return true
-	}
-	return false
 }
 
 func contains(list []string, s string) bool {
