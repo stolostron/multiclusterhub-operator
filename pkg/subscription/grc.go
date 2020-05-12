@@ -9,7 +9,7 @@ import (
 )
 
 // GRC overrides the grc chart
-func GRC(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstructured.Unstructured {
+func GRC(m *operatorsv1beta1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "grc",
 		Namespace: m.Namespace,
@@ -20,7 +20,7 @@ func GRC(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstructur
 				"nodeSelector": m.Spec.NodeSelector,
 			},
 			"global": map[string]interface{}{
-				"imageOverrides": cache.ImageOverrides,
+				"imageOverrides": overrides,
 				"pullPolicy":     utils.GetImagePullPolicy(m),
 			},
 		},

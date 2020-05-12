@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -18,14 +17,10 @@ func TestWebhookDeployment(t *testing.T) {
 			Mongo:           operatorsv1beta1.Mongo{},
 		},
 	}
-
-	cs := utils.CacheSpec{
-		IngressDomain:  "testIngress",
-		ImageOverrides: map[string]string{},
-	}
+	ovr := map[string]string{}
 
 	t.Run("MCH with empty fields", func(t *testing.T) {
-		_ = WebhookDeployment(empty, cs)
+		_ = WebhookDeployment(empty, ovr)
 	})
 
 	essentialsOnly := &operatorsv1beta1.MultiClusterHub{
@@ -33,7 +28,7 @@ func TestWebhookDeployment(t *testing.T) {
 		Spec:       operatorsv1beta1.MultiClusterHubSpec{},
 	}
 	t.Run("MCH with only required values", func(t *testing.T) {
-		_ = WebhookDeployment(essentialsOnly, cs)
+		_ = WebhookDeployment(essentialsOnly, ovr)
 	})
 }
 

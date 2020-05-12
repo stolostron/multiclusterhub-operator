@@ -17,8 +17,8 @@ const ImageKey = "multicloud_manager"
 const ServiceAccount = "hub-sa"
 
 // Image returns image reference for multicloud-manager
-func Image(cache utils.CacheSpec) string {
-	return cache.ImageOverrides[ImageKey]
+func Image(overrides map[string]string) string {
+	return overrides[ImageKey]
 }
 
 func defaultLabels(app string) map[string]string {
@@ -36,7 +36,7 @@ func getReplicaCount(mch *operatorsv1beta1.MultiClusterHub) int32 {
 
 // ValidateDeployment returns a deep copy of the deployment with the desired spec based on the MultiClusterHub spec.
 // Returns true if an update is needed to reconcile differences with the current spec.
-func ValidateDeployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec, dep *appsv1.Deployment) (*appsv1.Deployment, bool) {
+func ValidateDeployment(m *operatorsv1beta1.MultiClusterHub, overrides map[string]string, dep *appsv1.Deployment) (*appsv1.Deployment, bool) {
 	var log = logf.Log.WithValues("Deployment.Namespace", dep.GetNamespace(), "Deployment.Name", dep.GetName())
 	found := dep.DeepCopy()
 
@@ -55,9 +55,9 @@ func ValidateDeployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSp
 	}
 
 	// verify image repository and suffix
-	if container.Image != Image(cache) {
+	if container.Image != Image(overrides) {
 		log.Info("Enforcing image repo and suffix from CR spec")
-		container.Image = Image(cache)
+		container.Image = Image(overrides)
 		needsUpdate = true
 	}
 
