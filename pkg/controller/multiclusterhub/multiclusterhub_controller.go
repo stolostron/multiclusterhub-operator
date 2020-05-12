@@ -347,6 +347,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 
 	// Update the CR status
 	multiClusterHub.Status.Phase = "Pending"
+	multiClusterHub.Status.DesiredVersion = version.Version
 	ready, deployments, err := deploying.ListDeployments(r.client, multiClusterHub.Namespace)
 	if err != nil {
 		reqLogger.Error(err, "Failed to list deployments")
@@ -354,6 +355,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	}
 	if ready {
 		multiClusterHub.Status.Phase = "Running"
+		multiClusterHub.Status.CurrentVersion = version.Version
 	}
 	statedDeployments := []operatorsv1beta1.DeploymentResult{}
 	for _, deploy := range deployments {
