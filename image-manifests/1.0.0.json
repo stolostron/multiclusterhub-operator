@@ -56,7 +56,7 @@
     "git-sha256": "11491bb96a2a4906e8a93bd6ef8466c1eb363841",
     "git-repository": "open-cluster-management/cert-policy-controller",
     "image-remote": "quay.io/open-cluster-management",
-    "image-digest": "sha256:0b7ca6a3c2806d98b964c8f1c902f73137769a4471c8e26b9a4894ae2bd12049",
+    "image-digest": "sha256:7f10e57915e6c8692ebbcc3eaa762aaffae4eb82cc275078335986a361606df9",
     "image-key": "cert_policy_controller"
   },
   {
@@ -66,7 +66,7 @@
     "git-sha256": "1a1614559e15aa20085fa5f40b879ea3fe512aec",
     "git-repository": "open-cluster-management/cis-controller",
     "image-remote": "quay.io/open-cluster-management",
-    "image-digest": "sha256:03a7c028bf6e0a9bee90ba65702cef656685a03b755447150dc305f6de05fead",
+    "image-digest": "sha256:66f469b850145913f66c99c87160e0c377c2247403112c5631895703f04372b1",
     "image-key": "cis_controller"
   },
   {
@@ -76,7 +76,7 @@
     "git-sha256": "8b4c5c18d127f6c2bad3b136fab30b5866e763db",
     "git-repository": "open-cluster-management/cis-crawler",
     "image-remote": "quay.io/open-cluster-management",
-    "image-digest": "sha256:b80121e013c8122cdcd38af5768346f10e26ed18b46889c3b8ba9ec6014a7b58",
+    "image-digest": "sha256:600a346d894a6c36e25238084b35e94fd5aa02f594b57a8a00f1fae7e46a8847",
     "image-key": "cis_crawler"
   },
   {
@@ -92,31 +92,31 @@
   {
     "image-name": "console-api",
     "image-version": "1.0.0",
-    "image-tag": "1.0.0-1243f723587fd390ae6727009601f875af78b097",
-    "git-sha256": "1243f723587fd390ae6727009601f875af78b097",
+    "image-tag": "1.0.0-b2b54b712812c6b46f38db2a6a744814e90dc63b",
+    "git-sha256": "b2b54b712812c6b46f38db2a6a744814e90dc63b",
     "git-repository": "open-cluster-management/console-api",
     "image-remote": "quay.io/open-cluster-management",
-    "image-digest": "sha256:6420f7350a73f81b3c6234768e313b165cf3b0559acd1f7e7f17c64d01415d3d",
+    "image-digest": "sha256:5560f5164cebe1badf34d28eca97e19e5cc8f688470a76ede0cf0049d5743433",
     "image-key": "console_api"
   },
   {
     "image-name": "console-header",
     "image-version": "1.0.0",
-    "image-tag": "1.0.0-333025eaa397aa03d8603e00e197208cb63f5e30",
-    "git-sha256": "333025eaa397aa03d8603e00e197208cb63f5e30",
+    "image-tag": "1.0.0-f34b7122507d0f3d287631377114943627fde5ca",
+    "git-sha256": "f34b7122507d0f3d287631377114943627fde5ca",
     "git-repository": "open-cluster-management/console-header",
     "image-remote": "quay.io/open-cluster-management",
-    "image-digest": "sha256:cb74a862dd6d9ef6f38d87f63cec5e86fd579f0aa5388fedb5d88382296b513b",
+    "image-digest": "sha256:06b9b1df9c0ad62dfa87805d6ca9dbd4c03513f523fe6471a40a7904b37b077a",
     "image-key": "console_header"
   },
   {
     "image-name": "console-ui",
     "image-version": "1.0.0",
-    "image-tag": "1.0.0-b10d5b63f6a12605a160a5ef0d115ab547e78dea",
-    "git-sha256": "b10d5b63f6a12605a160a5ef0d115ab547e78dea",
+    "image-tag": "1.0.0-ec67391b04ac327b3bb64a5b1048b6b935a1d742",
+    "git-sha256": "ec67391b04ac327b3bb64a5b1048b6b935a1d742",
     "git-repository": "open-cluster-management/console-ui",
     "image-remote": "quay.io/open-cluster-management",
-    "image-digest": "sha256:5e6d06685a0cf6049f52d6c3a7058c52553e01da65827177c40547643c04c36c",
+    "image-digest": "sha256:a749846c176b9357885c898d6e68fa6199cd8f4107870ffc5615d8f600b1202c",
     "image-key": "console_ui"
   },
   {
@@ -126,7 +126,7 @@
     "git-sha256": "487e9fb533a6603d2947c918b9ef45bfdde50996",
     "git-repository": "open-cluster-management/coredns",
     "image-remote": "quay.io/open-cluster-management",
-    "image-digest": "sha256:98817fcf2ef59f487a8931491cb09aea52d0cbd13e2aa10b081fa6eb79caa484",
+    "image-digest": "sha256:6e97ede796486698196a292666804f00de9fb2a4816af088b3010091c71244fd",
     "image-key": "coredns"
   },
   {
@@ -146,17 +146,17 @@
     "git-sha256": "8280ea4b55ae4dd154d5ec8bc8347e5fea3a5d66",
     "git-repository": "open-cluster-management/drishti-cis",
     "image-remote": "quay.io/open-cluster-management",
-    "image-digest": "sha256:837228897f80fd040c7199aa85449deb1f07fb77b9b33c1a29dfb9314ecedcbf",
+    "image-digest": "sha256:0b636a5363c7909741fc30696df478e51e52707cfdfc4199158cc6d98b0db278",
     "image-key": "drishti_cis"
   },
   {
     "image-name": "endpoint-component-operator",
     "image-version": "1.0.0",
-    "image-tag": "1.0.0-cc09d8ad35f4606c416fae3d2d8de352f2fc26b6",
-    "git-sha256": "cc09d8ad35f4606c416fae3d2d8de352f2fc26b6",
+    "image-tag": "1.0.0-4470f6e577659af7cd40dda25db340d2475297c0",
+    "git-sha256": "4470f6e577659af7cd40dda25db340d2475297c0",
     "git-repository": "open-cluster-management/endpoint-component-operator",
     "image-remote": "quay.io/open-cluster-management",
-    "image-digest": "sha256:6bbe936f5c7dc0b68764f02671f2268bf7e53581bb2b4709f1ab62dd2cba6488",
+    "image-digest": "sha256:2c10dd62222832831aa730d663f16b944ec46980ad8e6a3bea2d0364436af682",
     "image-key": "endpoint_component_operator"
   },
   {
@@ -182,21 +182,21 @@
   {
     "image-name": "grc-ui-api",
     "image-version": "3.6.0",
-    "image-tag": "3.6.0-8193f6bdef878612f037b184df4bd6b007990539",
-    "git-sha256": "8193f6bdef878612f037b184df4bd6b007990539",
+    "image-tag": "3.6.0-bd4f6de382208f2a7afe53f40768e9fb7541d501",
+    "git-sha256": "bd4f6de382208f2a7afe53f40768e9fb7541d501",
     "git-repository": "open-cluster-management/grc-ui-api",
     "image-remote": "quay.io/open-cluster-management",
-    "image-digest": "sha256:027ad681b63ba8dce4fae8078f2f04476bc5168a8104b1b561ef81a695413f50",
+    "image-digest": "sha256:296e57662d9e4633e6cafe27784c48b392512f941a73e6fdd68f4d3574ba9c2a",
     "image-key": "grc_ui_api"
   },
   {
     "image-name": "helloworld",
     "image-version": "1.0.1",
-    "image-tag": "1.0.1-9020e11101274256e7ee74e790f5e951076d5648",
-    "git-sha256": "9020e11101274256e7ee74e790f5e951076d5648",
+    "image-tag": "1.0.1-0200c98cd302cb8303cd5ccbf249cb8575f897bd",
+    "git-sha256": "0200c98cd302cb8303cd5ccbf249cb8575f897bd",
     "git-repository": "open-cluster-management/example-cicd-component",
     "image-remote": "quay.io/open-cluster-management",
-    "image-digest": "sha256:cd85d4c6d9590f6e4a2566a3acff715973f4336e8e6ea96aef2f5a15cebec130",
+    "image-digest": "sha256:c9c81a042010dd5857db89cf903c9b7396dbcdf6bd3ca14f20d6859ee728a392",
     "image-key": "helloworld"
   },
   {
@@ -226,7 +226,7 @@
     "git-sha256": "35d38487db44542f9a75e97be334cb06ef262dd9",
     "git-repository": "open-cluster-management/img-minio",
     "image-remote": "quay.io/open-cluster-management",
-    "image-digest": "sha256:c1cbb34524542034685fb454a33bf03ce6ed73d7e49de5f48b5895d2e96b6bf8",
+    "image-digest": "sha256:deb852e632e56436f4bdfaabe82005ea8954c0f329124c77fcd81bfa3a9350ba",
     "image-key": "img_minio"
   },
   {
@@ -236,7 +236,7 @@
     "git-sha256": "16484ea4d31e15c00176d739b2940b602f6317d4",
     "git-repository": "open-cluster-management/img-minio-mc",
     "image-remote": "quay.io/open-cluster-management",
-    "image-digest": "sha256:599ff984d9ae6ae65b38a8efcd039bdac06aa91210deb365f3d6c1a000209c58",
+    "image-digest": "sha256:67a9d6011bb52b654eb646bbe453bdc2e53c7500635a492a69aff860333b11a2",
     "image-key": "img_minio_mc"
   },
   {
@@ -292,11 +292,11 @@
   {
     "image-name": "multicloud-manager",
     "image-version": "0.0.1",
-    "image-tag": "0.0.1-fe743d3340e395b748579c0b2f30591ca210c949",
-    "git-sha256": "fe743d3340e395b748579c0b2f30591ca210c949",
+    "image-tag": "0.0.1-ef70ba20888ca09f7210fee77a32a40439e7c5c2",
+    "git-sha256": "ef70ba20888ca09f7210fee77a32a40439e7c5c2",
     "git-repository": "open-cluster-management/multicloud-operators-foundation",
     "image-remote": "quay.io/open-cluster-management",
-    "image-digest": "sha256:9c9cbdeec536f16e6dfb26071b8afc2e797fbc6e3211c978474b4d96ae7518ef",
+    "image-digest": "sha256:f9b937a4449076b920598a1c5833b7b4d5d1ed8f20fadc46e75bdc6d0fd1d846",
     "image-key": "multicloud_manager"
   },
   {
@@ -326,7 +326,7 @@
     "git-sha256": "9784b474c751543db385612ef9186e57ea26114f",
     "git-repository": "open-cluster-management/multicloud-operators-application",
     "image-remote": "quay.io/open-cluster-management",
-    "image-digest": "sha256:cddd312fbf6179fa4b2c469e0acb27489edb3745ed9bad70d701a4e6eb8b3519",
+    "image-digest": "sha256:d30607520b888968328ae483d761c80ba24ce835ae5e1ca2333dc3a1e4b68957",
     "image-key": "multicluster_operators_application"
   },
   {
@@ -336,7 +336,7 @@
     "git-sha256": "091d2794b7bbd5ceccae2a699257828c9ba7fe24",
     "git-repository": "open-cluster-management/multicloud-operators-channel",
     "image-remote": "quay.io/open-cluster-management",
-    "image-digest": "sha256:3251c74b920830f0bc10975faf6c15ebf80273c010ea53e6001ff2cffeabba81",
+    "image-digest": "sha256:55c81cdf5d197b44d24c1b8f2d31a7a62af60a088264330691b4d468302ebed2",
     "image-key": "multicluster_operators_channel"
   },
   {
@@ -346,7 +346,7 @@
     "git-sha256": "ad3143d4eefeb3f009d2b8e95fd7ed78f1a66caf",
     "git-repository": "open-cluster-management/multicloud-operators-deployable",
     "image-remote": "quay.io/open-cluster-management",
-    "image-digest": "sha256:4d38f90163ac781d9d378dba16dcccde1ee09c991689cb0d17c08c99a9e93610",
+    "image-digest": "sha256:be480f80167859038bf826668e125e8823bc7c74eb891b46c3f4c42db0cfe631",
     "image-key": "multicluster_operators_deployable"
   },
   {
@@ -356,7 +356,7 @@
     "git-sha256": "21bfb6373fc4b3b58d958c10da215c8a68f90986",
     "git-repository": "open-cluster-management/multicloud-operators-placementrule",
     "image-remote": "quay.io/open-cluster-management",
-    "image-digest": "sha256:05989062e9dcc20f80ec5c2d31996603330bc2f3c2ce5eda6a4b4a10508b1952",
+    "image-digest": "sha256:c6b85faca30fc16d0991dcc6264167f6a0fa7996da7cb66baf447f5314dc927f",
     "image-key": "multicluster_operators_placementrule"
   },
   {
@@ -366,7 +366,7 @@
     "git-sha256": "5a0ce5cf5a53f7ccd1c6fd72493bb76abeae3f9e",
     "git-repository": "open-cluster-management/multicloud-operators-subscription",
     "image-remote": "quay.io/open-cluster-management",
-    "image-digest": "sha256:bebb2958cc713c8d89fa0d1cd381bbaa45f1571fb03d18a01f8ce71881b3d396",
+    "image-digest": "sha256:d8f5806f1dabb3acbefba3c9ffd4dd02fdf5d07c8219cbeb2b4539bffbb0508c",
     "image-key": "multicluster_operators_subscription"
   },
   {
@@ -376,37 +376,37 @@
     "git-sha256": "59448a40834493102df117855ac8a1ea3bd962b3",
     "git-repository": "open-cluster-management/multicloud-operators-subscription-release",
     "image-remote": "quay.io/open-cluster-management",
-    "image-digest": "sha256:bd6fe59557ffcd356e18673a0db4d5e35d0b5b9853c4ad0c042556fb416d1f5d",
+    "image-digest": "sha256:af024b5f8dc5269ffe52abe2360a4ffa37094c04800ee66ac7d5e6f48b937a9f",
     "image-key": "multicluster_operators_subscription_release"
   },
   {
     "image-name": "multiclusterhub-operator",
     "image-version": "1.0.0",
-    "image-tag": "1.0.0-aa37e6b3e81d161cf9961771f0f3260ba4e9e97f",
-    "git-sha256": "aa37e6b3e81d161cf9961771f0f3260ba4e9e97f",
+    "image-tag": "1.0.0-d17989f6fb319377aed480f558f72d0579e0d040",
+    "git-sha256": "d17989f6fb319377aed480f558f72d0579e0d040",
     "git-repository": "open-cluster-management/multicloudhub-operator",
     "image-remote": "quay.io/open-cluster-management",
-    "image-digest": "sha256:a3617626edbe81cdc28e92bb1432ae4cafa0b60fa274b58c9f9c312008922c31",
+    "image-digest": "sha256:3110534f25917b98d79deb264dc82dc90190293160234d19963510b417903cad",
     "image-key": "multiclusterhub_operator"
   },
   {
     "image-name": "multiclusterhub-operator-bundle",
     "image-version": "1.0.0",
-    "image-tag": "1.0.0-aa37e6b3e81d161cf9961771f0f3260ba4e9e97f",
-    "git-sha256": "aa37e6b3e81d161cf9961771f0f3260ba4e9e97f",
+    "image-tag": "1.0.0-d17989f6fb319377aed480f558f72d0579e0d040",
+    "git-sha256": "d17989f6fb319377aed480f558f72d0579e0d040",
     "git-repository": "open-cluster-management/multicloudhub-operator",
     "image-remote": "quay.io/open-cluster-management",
-    "image-digest": "sha256:bf1fd271d5754bd57996001dce64048ede5cedccd5764008e57b3d3a0025f573",
+    "image-digest": "sha256:6f9a362c76ff88f10bf7a4dc79d1d33c47032995fae705e4b31b4c790802835d",
     "image-key": "multiclusterhub_operator_bundle"
   },
   {
     "image-name": "multiclusterhub-repo",
     "image-version": "1.0.0",
-    "image-tag": "1.0.0-508f147edd50777e35c7fca4f81dc810ab58f630",
-    "git-sha256": "508f147edd50777e35c7fca4f81dc810ab58f630",
+    "image-tag": "1.0.0-d37f32807b79e9418eda53cc7cc6bb4a913e7401",
+    "git-sha256": "d37f32807b79e9418eda53cc7cc6bb4a913e7401",
     "git-repository": "open-cluster-management/multicloudhub-repo",
     "image-remote": "quay.io/open-cluster-management",
-    "image-digest": "sha256:be427da58d3c805179cef66274e53af881ba2f7b763da7f89e4af95a15454daf",
+    "image-digest": "sha256:2e37b8a70412380095a3fa2cd9cb3d117fc1d8de632ae880c4231353c7090b62",
     "image-key": "multiclusterhub_repo"
   },
   {
@@ -462,11 +462,11 @@
   {
     "image-name": "search-api",
     "image-version": "3.5.0",
-    "image-tag": "3.5.0-b1004ce8306b2831541cf348554954dba4b57a4d",
-    "git-sha256": "b1004ce8306b2831541cf348554954dba4b57a4d",
+    "image-tag": "3.5.0-f31e583ceb457ea7f1ad22516c6ab1c97b128ddb",
+    "git-sha256": "f31e583ceb457ea7f1ad22516c6ab1c97b128ddb",
     "git-repository": "open-cluster-management/search-api",
     "image-remote": "quay.io/open-cluster-management",
-    "image-digest": "sha256:43bd1e7b31653174139921d88f9c14c3d4217f4a5a906cdfa1199a2bff73a956",
+    "image-digest": "sha256:f331feae4a7316c6bbc153824f7787d3237785552f733baef44693e9cc806314",
     "image-key": "search_api"
   },
   {
