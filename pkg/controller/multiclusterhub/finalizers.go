@@ -115,10 +115,13 @@ func (r *ReconcileMultiClusterHub) cleanupClusterRoleBindings(reqLogger logr.Log
 }
 
 func (r *ReconcileMultiClusterHub) cleanupMutatingWebhooks(reqLogger logr.Logger, m *operatorsv1beta1.MultiClusterHub) error {
-	err := r.client.DeleteAllOf(context.TODO(), &admissionregistrationv1beta1.MutatingWebhookConfiguration{}, client.MatchingLabels{
-		"installer.name":      m.GetName(),
-		"installer.namespace": m.GetNamespace(),
-	})
+	err := r.client.DeleteAllOf(
+		context.TODO(),
+		&admissionregistrationv1beta1.MutatingWebhookConfiguration{},
+		client.MatchingLabels{
+			"installer.name":      m.GetName(),
+			"installer.namespace": m.GetNamespace(),
+		})
 
 	if err != nil {
 		if errors.IsNotFound(err) {
