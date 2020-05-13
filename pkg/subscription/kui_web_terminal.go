@@ -9,7 +9,7 @@ import (
 )
 
 // KUIWebTerminal overrides the kui-web-terminal chart
-func KUIWebTerminal(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstructured.Unstructured {
+func KUIWebTerminal(m *operatorsv1beta1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "kui-web-terminal",
 		Namespace: m.Namespace,
@@ -23,7 +23,7 @@ func KUIWebTerminal(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) 
 				"nodeSelector": m.Spec.NodeSelector,
 			},
 			"global": map[string]interface{}{
-				"imageOverrides": cache.ImageOverrides,
+				"imageOverrides": overrides,
 				"pullPolicy":     utils.GetImagePullPolicy(m),
 			},
 		},

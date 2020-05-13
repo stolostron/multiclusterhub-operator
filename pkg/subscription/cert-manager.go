@@ -9,7 +9,7 @@ import (
 )
 
 // CertManager overrides the cert-manager chart
-func CertManager(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstructured.Unstructured {
+func CertManager(m *operatorsv1beta1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "cert-manager",
 		Namespace: utils.CertManagerNS(m),
@@ -17,7 +17,7 @@ func CertManager(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *un
 			"imagePullSecret": m.Spec.ImagePullSecret,
 			"global": map[string]interface{}{
 				"isOpenshift":    true,
-				"imageOverrides": cache.ImageOverrides,
+				"imageOverrides": overrides,
 				"pullPolicy":     utils.GetImagePullPolicy(m),
 			},
 			"serviceAccount": map[string]interface{}{
@@ -41,7 +41,7 @@ func CertManager(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *un
 }
 
 // CertWebhook overrides the cert-manager-webhook chart
-func CertWebhook(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstructured.Unstructured {
+func CertWebhook(m *operatorsv1beta1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "cert-manager-webhook",
 		Namespace: utils.CertManagerNS(m),
@@ -49,7 +49,7 @@ func CertWebhook(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *un
 			"pkiNamespace": m.Namespace,
 			"global": map[string]interface{}{
 				"pullSecret":     m.Spec.ImagePullSecret,
-				"imageOverrides": cache.ImageOverrides,
+				"imageOverrides": overrides,
 			},
 			"serviceAccount": map[string]interface{}{
 				"create": true,
@@ -79,14 +79,14 @@ func CertWebhook(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *un
 }
 
 // ConfigWatcher overrides the configmap-watcher chart
-func ConfigWatcher(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstructured.Unstructured {
+func ConfigWatcher(m *operatorsv1beta1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "configmap-watcher",
 		Namespace: utils.CertManagerNS(m),
 		Overrides: map[string]interface{}{
 			"global": map[string]interface{}{
 				"pullSecret":     m.Spec.ImagePullSecret,
-				"imageOverrides": cache.ImageOverrides,
+				"imageOverrides": overrides,
 				"pullPolicy":     utils.GetImagePullPolicy(m),
 			},
 			"serviceAccount": map[string]interface{}{

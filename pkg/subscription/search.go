@@ -9,14 +9,14 @@ import (
 )
 
 // Search overrides the search-prod chart
-func Search(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstructured.Unstructured {
+func Search(m *operatorsv1beta1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "search-prod",
 		Namespace: m.Namespace,
 		Overrides: map[string]interface{}{
 			"global": map[string]interface{}{
 				"pullSecret":     m.Spec.ImagePullSecret,
-				"imageOverrides": cache.ImageOverrides,
+				"imageOverrides": overrides,
 				"pullPolicy":     utils.GetImagePullPolicy(m),
 			},
 			"hubconfig": map[string]interface{}{

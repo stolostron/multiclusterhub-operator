@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"path"
-	"strings"
 	"sync"
 
 	"sigs.k8s.io/kustomize/v3/k8sdeps/kunstruct"
@@ -20,7 +19,7 @@ import (
 	"sigs.k8s.io/kustomize/v3/pkg/resource"
 	"sigs.k8s.io/kustomize/v3/pkg/target"
 
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	"github.com/open-cluster-management/multicloudhub-operator/version"
 )
 
 const TemplatesPathEnvVar = "TEMPLATES_PATH"
@@ -47,14 +46,14 @@ func GetTemplateRenderer() *TemplateRenderer {
 	return templateRenderer
 }
 
-func (r *TemplateRenderer) GetTemplates(multiclusterhub *operatorsv1beta1.MultiClusterHub) ([]*resource.Resource, error) {
+func (r *TemplateRenderer) GetTemplates() ([]*resource.Resource, error) {
 	var err error
-	kind := strings.ToLower(multiclusterhub.Kind)
-	version := multiclusterhub.Status.CurrentVersion
+	kind := "multiclusterhub"
+	version := version.Version
 	key := fmt.Sprintf("%s-%s", kind, version)
 	resMap, ok := r.templates[key]
 	if !ok {
-		resMap, err = r.render(path.Join(r.templatesPath, kind, "version", version))
+		resMap, err = r.render(path.Join(r.templatesPath, kind, "base"))
 		if err != nil {
 			return nil, err
 		}

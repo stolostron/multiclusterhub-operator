@@ -9,19 +9,19 @@ import (
 )
 
 // ManagementIngress overrides the management-ingress chart
-func ManagementIngress(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstructured.Unstructured {
+func ManagementIngress(m *operatorsv1beta1.MultiClusterHub, overrides map[string]string, ingress string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "management-ingress",
 		Namespace: m.Namespace,
 		Overrides: map[string]interface{}{
 			"pullSecret":         m.Spec.ImagePullSecret,
-			"cluster_basedomain": cache.IngressDomain,
+			"cluster_basedomain": ingress,
 			"hubconfig": map[string]interface{}{
 				"replicaCount": utils.DefaultReplicaCount(m),
 				"nodeSelector": m.Spec.NodeSelector,
 			},
 			"global": map[string]interface{}{
-				"imageOverrides": cache.ImageOverrides,
+				"imageOverrides": overrides,
 				"pullPolicy":     utils.GetImagePullPolicy(m),
 			},
 		},

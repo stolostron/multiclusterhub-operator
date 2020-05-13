@@ -9,7 +9,7 @@ import (
 )
 
 // RCM overrides the rcm chart
-func RCM(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstructured.Unstructured {
+func RCM(m *operatorsv1beta1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "rcm",
 		Namespace: m.Namespace,
@@ -23,7 +23,7 @@ func RCM(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstructur
 				"imagePullSecret": m.Spec.ImagePullSecret,
 				"imageRepository": m.Spec.Overrides.ImageRepository,
 				"imageTagPostfix": imageSuffix(m),
-				"imageOverrides":  cache.ImageOverrides,
+				"imageOverrides":  overrides,
 			},
 		},
 	}

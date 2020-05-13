@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -22,33 +21,30 @@ func TestValidate(t *testing.T) {
 			Mongo:           operatorsv1beta1.Mongo{},
 		},
 	}
+	ovr := map[string]string{}
 
-	cs := utils.CacheSpec{
-		IngressDomain:  "testIngress",
-		ImageOverrides: map[string]string{},
-	}
 	// 1. Valid mch
-	sub := KUIWebTerminal(mch, cs)
+	sub := KUIWebTerminal(mch, ovr)
 
 	// 2. Modified ImagePullSecret
 	mch1 := mch.DeepCopy()
 	mch1.Spec.ImagePullSecret = "notTest"
-	sub1 := KUIWebTerminal(mch1, cs)
+	sub1 := KUIWebTerminal(mch1, ovr)
 
 	// 3. Modified ImagePullPolicy
 	mch2 := mch.DeepCopy()
 	mch2.Spec.Overrides.ImagePullPolicy = corev1.PullNever
-	sub2 := KUIWebTerminal(mch2, cs)
+	sub2 := KUIWebTerminal(mch2, ovr)
 
 	// 4. Modified ImageRepository
 	mch3 := mch.DeepCopy()
 	mch3.Spec.Overrides.ImageRepository = "notquay.io/closed-cluster-management"
-	sub3 := KUIWebTerminal(mch3, cs)
+	sub3 := KUIWebTerminal(mch3, ovr)
 
 	// 5. Activate HA mode
 	mch4 := mch.DeepCopy()
 	mch4.Spec.Failover = true
-	sub4 := KUIWebTerminal(mch4, cs)
+	sub4 := KUIWebTerminal(mch4, ovr)
 
 	type args struct {
 		found *unstructured.Unstructured
@@ -112,28 +108,24 @@ func TestSubscriptions(t *testing.T) {
 			Mongo:           operatorsv1beta1.Mongo{},
 		},
 	}
-
-	cache := utils.CacheSpec{
-		IngressDomain:  "testIngress",
-		ImageOverrides: map[string]string{},
-	}
+	ovr := map[string]string{}
 
 	tests := []struct {
 		name string
 		got  *unstructured.Unstructured
 	}{
-		{"ApplicationUI subscription", ApplicationUI(mch, cache)},
-		{"CertManager subscription", CertManager(mch, cache)},
-		{"CertWebhook subscription", CertWebhook(mch, cache)},
-		{"ConfigWatcher subscription", ConfigWatcher(mch, cache)},
-		{"Console subscription", Console(mch, cache)},
-		{"GRC subscription", GRC(mch, cache)},
-		{"KUIWebTerminal subscription", KUIWebTerminal(mch, cache)},
-		{"ManagementIngress subscription", ManagementIngress(mch, cache)},
-		{"MongoDB subscription", MongoDB(mch, cache)},
-		{"RCM subscription", RCM(mch, cache)},
-		{"Search subscription", Search(mch, cache)},
-		{"Topology subscription", Topology(mch, cache)},
+		{"ApplicationUI subscription", ApplicationUI(mch, ovr)},
+		{"CertManager subscription", CertManager(mch, ovr)},
+		{"CertWebhook subscription", CertWebhook(mch, ovr)},
+		{"ConfigWatcher subscription", ConfigWatcher(mch, ovr)},
+		{"Console subscription", Console(mch, ovr, "")},
+		{"GRC subscription", GRC(mch, ovr)},
+		{"KUIWebTerminal subscription", KUIWebTerminal(mch, ovr)},
+		{"ManagementIngress subscription", ManagementIngress(mch, ovr, "")},
+		{"MongoDB subscription", MongoDB(mch, ovr)},
+		{"RCM subscription", RCM(mch, ovr)},
+		{"Search subscription", Search(mch, ovr)},
+		{"Topology subscription", Topology(mch, ovr)},
 	}
 
 	for _, tt := range tests {

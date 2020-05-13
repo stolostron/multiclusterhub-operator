@@ -9,7 +9,7 @@ import (
 )
 
 // MongoDB overrides the multicluster-mongodb chart
-func MongoDB(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstructured.Unstructured {
+func MongoDB(m *operatorsv1beta1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "multicluster-mongodb",
 		Namespace: m.Namespace,
@@ -41,7 +41,7 @@ func MongoDB(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstru
 				"nodeSelector": m.Spec.NodeSelector,
 			},
 			"global": map[string]interface{}{
-				"imageOverrides": cache.ImageOverrides,
+				"imageOverrides": overrides,
 				"pullPolicy":     utils.GetImagePullPolicy(m),
 			},
 		},
