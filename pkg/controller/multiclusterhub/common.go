@@ -118,20 +118,6 @@ func (r *ReconcileMultiClusterHub) ensureService(m *operatorsv1beta1.MultiCluste
 	return nil, nil
 }
 
-// Namespace returns namespace object of given name
-func (r *ReconcileMultiClusterHub) Namespace(namespace string) *unstructured.Unstructured {
-	ns := &unstructured.Unstructured{
-		Object: map[string]interface{}{
-			"apiVersion": "v1",
-			"kind":       "Namespace",
-			"metadata": map[string]interface{}{
-				"name": namespace,
-			},
-		},
-	}
-	return ns
-}
-
 func (r *ReconcileMultiClusterHub) ensureSecret(m *operatorsv1beta1.MultiClusterHub, s *corev1.Secret) (*reconcile.Result, error) {
 	selog := log.WithValues("Secret.Namespace", s.Namespace, "Secret.Name", s.Name)
 
@@ -209,15 +195,16 @@ func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1beta1.MultiC
 		Version: "v1",
 	})
 	// Try to get API group instance
-	err := r.client.Get(context.Background(), types.NamespacedName{
+	err := r.client.Get(context.TODO(), types.NamespacedName{
 		Name:      u.GetName(),
 		Namespace: u.GetNamespace(),
 	}, found)
 	if err != nil && errors.IsNotFound(err) {
 
-		// Create the resource
+		// Create the resource. Skip on unit test
 		if m.UID != "" {
-			err := r.client.Create(context.Background(), u)
+
+			err := r.client.Create(context.TODO(), u)
 			if err != nil {
 				// Creation failed
 				obLog.Error(err, "Failed to create new instance")
@@ -239,13 +226,14 @@ func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1beta1.MultiC
 	updated, needsUpdate := subscription.Validate(found, u)
 	if needsUpdate {
 		obLog.Info("Updating subscription")
-		// Update the resource
+		// Update the resource. Skip on unit test
 		err = r.client.Update(context.TODO(), updated)
 		if err != nil {
 			// Update failed
 			obLog.Error(err, "Failed to update object")
 			return &reconcile.Result{}, err
 		}
+
 		// Spec updated - return
 		return nil, nil
 	}
@@ -339,7 +327,7 @@ func readFileRaw(path string) ([]byte, error) {
 }
 
 //ReadComponentVersionFile reads COMPONENT_VERSION file string
-func (r *ReconcileMultiClusterHub) ReadComponentVersionFile() (string, error) {
+func ReadComponentVersionFile() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		log.Error(err, "Couldn't get user home directory")

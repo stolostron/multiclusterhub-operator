@@ -428,7 +428,7 @@ func generatePass(length int) string {
 func (r *ReconcileMultiClusterHub) validateVersion(m *operatorsv1beta1.MultiClusterHub) (*reconcile.Result, error) {
 	updatedStatus := false
 	if m.Status.CurrentVersion == "" {
-		componentVersion, err := r.ReadComponentVersionFile()
+		componentVersion, err := ReadComponentVersionFile()
 		if err != nil {
 			return &reconcile.Result{}, err
 		}
@@ -441,7 +441,7 @@ func (r *ReconcileMultiClusterHub) validateVersion(m *operatorsv1beta1.MultiClus
 	if !utils.IsVersionSupported(m.Status.CurrentVersion) {
 		err := e.New("Version " + m.Status.CurrentVersion + " not supported")
 		log.Error(err, "Overriding with valid version")
-		componentVersion, err := r.ReadComponentVersionFile()
+		componentVersion, err := ReadComponentVersionFile()
 		if err != nil {
 			return &reconcile.Result{}, err
 		}
