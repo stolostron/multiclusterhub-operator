@@ -3,6 +3,7 @@
 package multiclusterhub
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -14,6 +15,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 func Test_ensureDeployment(t *testing.T) {
@@ -75,6 +77,15 @@ func Test_ensureDeployment(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to ensure deployment")
 			}
+
+			deploy := &appsv1.Deployment{}
+			err = r.client.Get(context.TODO(), types.NamespacedName{
+				Name:      tt.Deployment.Name,
+				Namespace: tt.Deployment.Namespace,
+			}, deploy)
+			if err != tt.Result {
+				t.Fatalf("Could not find created '%s' deployment: %s", tt.Deployment.Name, err.Error())
+			}
 		})
 	}
 
@@ -124,6 +135,15 @@ func Test_ensureService(t *testing.T) {
 			if !errorEquals(err, tt.Result) {
 				t.Fatalf("Failed to ensure service")
 			}
+
+			service := &corev1.Service{}
+			err = r.client.Get(context.TODO(), types.NamespacedName{
+				Name:      tt.Service.Name,
+				Namespace: tt.Service.Namespace,
+			}, service)
+			if err != tt.Result {
+				t.Fatalf("Could not find created '%s' service: %s", tt.Service.Name, err.Error())
+			}
 		})
 	}
 }
@@ -158,6 +178,15 @@ func Test_ensureSecret(t *testing.T) {
 			_, err = r.ensureSecret(tt.MCH, tt.Secret)
 			if !errorEquals(err, tt.Result) {
 				t.Fatalf("Failed to ensure secret")
+			}
+
+			secret := &corev1.Secret{}
+			err = r.client.Get(context.TODO(), types.NamespacedName{
+				Name:      tt.Secret.Name,
+				Namespace: tt.Secret.Namespace,
+			}, secret)
+			if err != tt.Result {
+				t.Fatalf("Could not find created '%s' service: %s", tt.Secret.Name, err.Error())
 			}
 		})
 	}
