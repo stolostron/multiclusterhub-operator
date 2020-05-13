@@ -158,8 +158,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return reconcile.Result{}, err
 	}
 
-	fmt.Println("1")
-
 	// Check if the multiClusterHub instance is marked to be deleted, which is
 	// indicated by the deletion timestamp being set.
 	isHubMarkedToBeDeleted := multiClusterHub.GetDeletionTimestamp() != nil
@@ -184,7 +182,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 
 		return reconcile.Result{}, nil
 	}
-	fmt.Println("2")
 
 	// Add finalizer for this CR
 	if !contains(multiClusterHub.GetFinalizers(), hubFinalizer) {
@@ -193,15 +190,11 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		}
 	}
 
-	fmt.Println("3")
-
 	var result *reconcile.Result
 	result, err = r.setDefaults(multiClusterHub)
 	if result != nil {
 		return *result, err
 	}
-
-	fmt.Println("4")
 
 	// Get image override values for cache
 	if oType := manifest.GetImageOverrideType(multiClusterHub); oType != r.CacheSpec.ImageOverrideType {
@@ -216,8 +209,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		r.CacheSpec.ImageOverrideType = oType
 	}
 
-	fmt.Println("5")
-
 	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
@@ -228,15 +219,12 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	fmt.Println("6")
-
 	result, err = r.ensureChannel(multiClusterHub, channel.Channel(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}
 
-	fmt.Println("7")
-
+	fmt.Println("COPYING PULL SECRET")
 	if multiClusterHub.Spec.CloudPakCompatibility {
 		result, err = r.copyPullSecret(multiClusterHub, utils.CertManagerNamespace)
 		if result != nil {
@@ -244,13 +232,12 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		}
 	}
 
-	fmt.Println("8")
+	fmt.Println("SUCCESS COPYING PULL SECRET")
 
 	result, err = r.ensureSubscription(multiClusterHub, subscription.CertManager(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
 	}
-	fmt.Println("9")
 
 	certGV := schema.GroupVersion{Group: "certmanager.k8s.io", Version: "v1alpha1"}
 	result, err = r.apiReady(certGV)

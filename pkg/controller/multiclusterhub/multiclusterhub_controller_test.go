@@ -11,6 +11,7 @@ import (
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	netv1 "github.com/openshift/api/config/v1"
+	corev1 "k8s.io/api/core/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -31,7 +32,7 @@ var (
 			Namespace: mch_namespace,
 		},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
-			ImagePullSecret: "Always",
+			ImagePullSecret: "pull-secret",
 			Mongo: operatorsv1beta1.Mongo{
 				Storage:      "5gi",
 				StorageClass: "gp2",
@@ -52,7 +53,7 @@ var (
 			Namespace: mch_namespace,
 		},
 		Spec: operatorsv1beta1.MultiClusterHubSpec{
-			ImagePullSecret: "Always",
+			ImagePullSecret: "pull-secret",
 		},
 	}
 	mch_namespaced = types.NamespacedName{
@@ -62,6 +63,17 @@ var (
 )
 
 func Test_ReconcileMultiClusterHub(t *testing.T) {
+
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "pull-secret",
+			Namespace: mch_namespace,
+		},
+		StringData: map[string]string{
+			"test": "data",
+		},
+	}
+
 	os.Setenv("TEMPLATES_PATH", "../../../templates")
 	os.Setenv("MANIFESTS_PATH", "../../../image-manifests")
 
@@ -119,7 +131,7 @@ func Test_ReconcileMultiClusterHub(t *testing.T) {
 		{
 			Name:     "CloudPakCompatibility",
 			MCH:      mch5,
-			Expected: fmt.Errorf("secrets \"Always\" not found"),
+			Expected: nil,
 		},
 	}
 
@@ -135,6 +147,14 @@ func Test_ReconcileMultiClusterHub(t *testing.T) {
 			req := reconcile.Request{
 				NamespacedName: mch_namespaced,
 			}
+
+			if tt.MCH.Spec.CloudPakCompatibility {
+				err = r.client.Create(context.TODO(), secret)
+				if err != nil {
+					t.Fatal(err.Error())
+				}
+			}
+
 			res, err := r.Reconcile(req)
 			if !errorEquals(err, tt.Expected) {
 				t.Fatalf("reconcile: (%v)", err)
