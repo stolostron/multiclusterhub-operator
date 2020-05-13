@@ -340,6 +340,24 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
+	//ACM proxy server deployment
+	result, err = r.ensureDeployment(multiClusterHub, mcm.ACMProxyServerDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
+	if result != nil {
+		return *result, err
+	}
+
+	//ACM proxy server service
+	result, err = r.ensureService(multiClusterHub, mcm.ACMProxyServerService(multiClusterHub))
+	if result != nil {
+		return *result, err
+	}
+
+	//ACM controller deployment
+	result, err = r.ensureDeployment(multiClusterHub, mcm.ACMControllerDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
+	if result != nil {
+		return *result, err
+	}
+
 	result, err = r.ensureDeployment(multiClusterHub, mcm.ControllerDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err

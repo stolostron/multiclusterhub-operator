@@ -8,23 +8,24 @@ import (
 	"strconv"
 
 	"github.com/fatih/structs"
+	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/mcm"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	v1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/kustomize/v3/pkg/resource"
-
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 )
 
 const (
-	apiserviceName = "mcm-apiserver"
-	controllerName = "mcm-controller"
-	webhookName    = "mcm-webhook"
-	metadataErr    = "failed to find metadata field"
+	apiserviceName      = "mcm-apiserver"
+	controllerName      = "mcm-controller"
+	webhookName         = "mcm-webhook"
+	metadataErr         = "failed to find metadata field"
+	proxyApiServiceName = "v1beta1.proxy.open-cluster-management.io"
 )
 
 var log = logf.Log.WithName("renderer")
@@ -105,9 +106,20 @@ func (r *Renderer) renderAPIServices(res *resource.Resource) (*unstructured.Unst
 	if !ok {
 		return nil, fmt.Errorf("failed to find apiservices spec field")
 	}
-	spec["service"] = map[string]interface{}{
-		"namespace": r.cr.Namespace,
-		"name":      apiserviceName,
+	metadata, ok := u.Object["metadata"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to find metadata field")
+	}
+	if metadata["name"] == proxyApiServiceName {
+		spec["service"] = map[string]interface{}{
+			"namespace": r.cr.Namespace,
+			"name":      mcm.ACMProxyServerName,
+		}
+	} else {
+		spec["service"] = map[string]interface{}{
+			"namespace": r.cr.Namespace,
+			"name":      apiserviceName,
+		}
 	}
 	utils.AddInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
 	return u, nil
