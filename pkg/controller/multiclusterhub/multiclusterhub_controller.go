@@ -224,7 +224,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	fmt.Println("COPYING PULL SECRET")
 	if multiClusterHub.Spec.CloudPakCompatibility {
 		result, err = r.copyPullSecret(multiClusterHub, utils.CertManagerNamespace)
 		if result != nil {
@@ -232,23 +231,28 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		}
 	}
 
-	fmt.Println("SUCCESS COPYING PULL SECRET")
-
 	result, err = r.ensureSubscription(multiClusterHub, subscription.CertManager(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
 	}
 
+	fmt.Println("Subscription1 passed")
+
 	certGV := schema.GroupVersion{Group: "certmanager.k8s.io", Version: "v1alpha1"}
-	result, err = r.apiReady(certGV)
-	if result != nil {
-		return *result, err
+	// Skip wait for API to be ready on unit test
+	if multiClusterHub.UID != "" {
+		result, err = r.apiReady(certGV)
+		if result != nil {
+			return *result, err
+		}
 	}
 
 	result, err = r.ensureSubscription(multiClusterHub, subscription.CertWebhook(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
 	}
+
+	fmt.Println("Subscription2 passed")
 
 	result, err = r.ensureSubscription(multiClusterHub, subscription.ConfigWatcher(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
@@ -332,6 +336,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	if result != nil {
 		return *result, err
 	}
+	fmt.Println("Made it far")
 
 	result, err = r.ensureDeployment(multiClusterHub, mcm.WebhookDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {

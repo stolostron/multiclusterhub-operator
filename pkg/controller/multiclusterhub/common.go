@@ -273,7 +273,6 @@ func (r *ReconcileMultiClusterHub) copyPullSecret(m *operatorsv1beta1.MultiClust
 	}, pullSecret)
 	if err != nil {
 		sublog.Error(err, "Failed to get secret")
-		fmt.Printf("ERROR: %s\n", err.Error())
 		return &reconcile.Result{}, err
 	}
 
@@ -284,7 +283,6 @@ func (r *ReconcileMultiClusterHub) copyPullSecret(m *operatorsv1beta1.MultiClust
 
 	unstructuredPullSecret, err := utils.CoreToUnstructured(pullSecret)
 	if err != nil {
-		fmt.Printf("ERROR2: %s\n", err.Error())
 		sublog.Error(err, "Failed to unmarshal into unstructured object")
 		return &reconcile.Result{}, err
 	}
@@ -299,7 +297,6 @@ func (r *ReconcileMultiClusterHub) copyPullSecret(m *operatorsv1beta1.MultiClust
 		sublog.Info(fmt.Sprintf("Creating secret %s in namespace %s", unstructuredPullSecret.GetName(), utils.CertManagerNamespace))
 		err = r.client.Create(context.TODO(), unstructuredPullSecret)
 		if err != nil {
-			fmt.Printf("ERROR3: %s\n", err.Error())
 			sublog.Error(err, "Failed to create secret")
 			return &reconcile.Result{}, err
 		}
