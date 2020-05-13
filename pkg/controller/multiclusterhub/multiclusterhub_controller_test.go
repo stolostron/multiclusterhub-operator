@@ -63,6 +63,7 @@ var (
 
 func Test_ReconcileMultiClusterHub(t *testing.T) {
 	os.Setenv("TEMPLATES_PATH", "../../../templates")
+	os.Setenv("MANIFESTS_PATH", "../../../image-manifests")
 
 	// Without Datastores
 	mch1 := full_mch.DeepCopy()
@@ -154,6 +155,7 @@ func Test_ReconcileMultiClusterHub(t *testing.T) {
 		})
 	}
 	os.Unsetenv("TEMPLATES_PATH")
+	os.Unsetenv("MANIFESTS_PATH")
 }
 
 func TestUpdateStatus(t *testing.T) {
@@ -162,7 +164,7 @@ func TestUpdateStatus(t *testing.T) {
 		t.Fatalf("Failed to create test reconciler")
 	}
 
-	_, err = r.validateVersion(full_mch)
+	_, err = r.UpdateStatus(full_mch)
 	if err != nil {
 		t.Errorf("Unable to validate version")
 	}

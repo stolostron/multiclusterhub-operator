@@ -11,7 +11,6 @@ import (
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/mcm"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -23,7 +22,7 @@ func Test_ensureDeployment(t *testing.T) {
 		t.Fatalf("Failed to create test reconciler")
 	}
 
-	cacheSpec := utils.CacheSpec{
+	cacheSpec := CacheSpec{
 		IngressDomain: "apps.smart-buck.dev01.red-chesterfield.com",
 		ImageOverrides: map[string]string{
 			"application_ui": "quay.io/open-cluster-management/application-ui@sha256:c740fc7bac067f003145ab909504287360564016b7a4a51b7ad4987aca123ac1",
@@ -41,25 +40,25 @@ func Test_ensureDeployment(t *testing.T) {
 		{
 			Name:       "Test: EnsureDeployment - APIServer",
 			MCH:        full_mch,
-			Deployment: mcm.APIServerDeployment(full_mch, cacheSpec),
+			Deployment: mcm.APIServerDeployment(full_mch, cacheSpec.ImageOverrides),
 			Result:     nil,
 		},
 		{
 			Name:       "Test: EnsureDeployment - Multiclusterhub-repo",
 			MCH:        full_mch,
-			Deployment: helmrepo.Deployment(full_mch, cacheSpec),
+			Deployment: helmrepo.Deployment(full_mch, cacheSpec.ImageOverrides),
 			Result:     nil,
 		},
 		{
 			Name:       "Test: EnsureDeployment - Webhook",
 			MCH:        full_mch,
-			Deployment: mcm.WebhookDeployment(full_mch, cacheSpec),
+			Deployment: mcm.WebhookDeployment(full_mch, cacheSpec.ImageOverrides),
 			Result:     nil,
 		},
 		{
 			Name:       "Test: EnsureDeployment - Webhook",
 			MCH:        full_mch,
-			Deployment: mcm.ControllerDeployment(full_mch, cacheSpec),
+			Deployment: mcm.ControllerDeployment(full_mch, cacheSpec.ImageOverrides),
 			Result:     nil,
 		},
 		{
@@ -205,7 +204,7 @@ func Test_ensureSubscription(t *testing.T) {
 		t.Fatalf("Failed to create test reconciler")
 	}
 
-	cacheSpec := utils.CacheSpec{
+	cacheSpec := CacheSpec{
 		IngressDomain: "apps.smart-buck.dev01.red-chesterfield.com",
 		ImageOverrides: map[string]string{
 			"application_ui": "quay.io/open-cluster-management/application-ui@sha256:c740fc7bac067f003145ab909504287360564016b7a4a51b7ad4987aca123ac1",
@@ -223,73 +222,73 @@ func Test_ensureSubscription(t *testing.T) {
 		{
 			Name:         "Test: ensureSubscription - Cert-manager",
 			MCH:          full_mch,
-			Subscription: subscription.CertManager(full_mch, cacheSpec),
+			Subscription: subscription.CertManager(full_mch, cacheSpec.ImageOverrides),
 			Result:       nil,
 		},
 		{
 			Name:         "Test: ensureSubscription - Cert-webhook",
 			MCH:          full_mch,
-			Subscription: subscription.CertWebhook(full_mch, cacheSpec),
+			Subscription: subscription.CertWebhook(full_mch, cacheSpec.ImageOverrides),
 			Result:       nil,
 		},
 		{
 			Name:         "Test: ensureSubscription - Config-watcher",
 			MCH:          full_mch,
-			Subscription: subscription.ConfigWatcher(full_mch, cacheSpec),
+			Subscription: subscription.ConfigWatcher(full_mch, cacheSpec.ImageOverrides),
 			Result:       nil,
 		},
 		{
 			Name:         "Test: ensureSubscription - Management-ingress",
 			MCH:          full_mch,
-			Subscription: subscription.ManagementIngress(full_mch, cacheSpec),
+			Subscription: subscription.ManagementIngress(full_mch, cacheSpec.ImageOverrides, cacheSpec.IngressDomain),
 			Result:       nil,
 		},
 		{
 			Name:         "Test: ensureSubscription - Application-UI",
 			MCH:          full_mch,
-			Subscription: subscription.ApplicationUI(full_mch, cacheSpec),
+			Subscription: subscription.ApplicationUI(full_mch, cacheSpec.ImageOverrides),
 			Result:       nil,
 		},
 		{
 			Name:         "Test: ensureSubscription - Console",
 			MCH:          full_mch,
-			Subscription: subscription.Console(full_mch, cacheSpec),
+			Subscription: subscription.Console(full_mch, cacheSpec.ImageOverrides, cacheSpec.IngressDomain),
 			Result:       nil,
 		},
 		{
 			Name:         "Test: ensureSubscription - GRC",
 			MCH:          full_mch,
-			Subscription: subscription.GRC(full_mch, cacheSpec),
+			Subscription: subscription.GRC(full_mch, cacheSpec.ImageOverrides),
 			Result:       nil,
 		},
 		{
 			Name:         "Test: ensureSubscription - KUI",
 			MCH:          full_mch,
-			Subscription: subscription.KUIWebTerminal(full_mch, cacheSpec),
+			Subscription: subscription.KUIWebTerminal(full_mch, cacheSpec.ImageOverrides),
 			Result:       nil,
 		},
 		{
 			Name:         "Test: ensureSubscription - Mongo",
 			MCH:          full_mch,
-			Subscription: subscription.MongoDB(full_mch, cacheSpec),
+			Subscription: subscription.MongoDB(full_mch, cacheSpec.ImageOverrides),
 			Result:       nil,
 		},
 		{
 			Name:         "Test: ensureSubscription - RCM",
 			MCH:          full_mch,
-			Subscription: subscription.RCM(full_mch, cacheSpec),
+			Subscription: subscription.RCM(full_mch, cacheSpec.ImageOverrides),
 			Result:       nil,
 		},
 		{
 			Name:         "Test: ensureSubscription - Search",
 			MCH:          full_mch,
-			Subscription: subscription.Search(full_mch, cacheSpec),
+			Subscription: subscription.Search(full_mch, cacheSpec.ImageOverrides),
 			Result:       nil,
 		},
 		{
 			Name:         "Test: ensureSubscription - Topology",
 			MCH:          full_mch,
-			Subscription: subscription.Topology(full_mch, cacheSpec),
+			Subscription: subscription.Topology(full_mch, cacheSpec.ImageOverrides),
 			Result:       nil,
 		},
 		{
