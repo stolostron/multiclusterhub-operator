@@ -203,7 +203,6 @@ func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1beta1.MultiC
 
 		// Create the resource. Skip on unit test
 		if m.UID != "" {
-
 			err := r.client.Create(context.TODO(), u)
 			if err != nil {
 				// Creation failed
