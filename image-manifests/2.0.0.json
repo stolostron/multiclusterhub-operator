@@ -423,7 +423,7 @@
     "image-name": "origin-oauth-proxy",
     "image-version": "4.5",
     "image-tag": "4.5",
-    "git-sha256": "ffffffffffffffffffffffffffffffffffffffff",
+    "git-sha256": "git-sha256",
     "git-repository": "openshift/origin-oauth-proxy",
     "image-remote": "quay.io/openshift",
     "image-digest": "sha256:image-digest-sha",
