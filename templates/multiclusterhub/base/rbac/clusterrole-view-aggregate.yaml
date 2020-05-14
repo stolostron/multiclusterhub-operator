@@ -26,7 +26,7 @@ rules:
 - apiGroups: ["policy.mcm.ibm.com"]
   resources: ["policies"]
   verbs: ["get", "list", "watch"]
-- apiGroups: ["klusterlet.open-cluster-management.io"]
+- apiGroups: ["agent.open-cluster-management.io"]
   resources: ["klusterletconfigs"]
   verbs: ["get", "list"]
 - apiGroups: ["hive.openshift.io"]
