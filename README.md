@@ -11,12 +11,6 @@ export DOCKER_USER=<DOCKER_USER>
 export DOCKER_PASS=<DOCKER_PASS>
 ```
 
-### Optional
-
-```bash
-export CONTAINER_ENGINE=<CONTAINER_ENGINE>
-```
-
 ### Install Dependencies and Subscribe
 
 ```bash
