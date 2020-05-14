@@ -74,8 +74,12 @@ func Test_ReconcileMultiClusterHub(t *testing.T) {
 		},
 	}
 
+	os.Setenv("UNIT_TEST", "true")
 	os.Setenv("TEMPLATES_PATH", "../../../templates")
 	os.Setenv("MANIFESTS_PATH", "../../../image-manifests")
+	defer os.Unsetenv("TEMPLATES_PATH")
+	defer os.Unsetenv("MANIFESTS_PATH")
+	defer os.Unsetenv("UNIT_TEST")
 
 	// Without Datastores
 	mch1 := full_mch.DeepCopy()
@@ -174,8 +178,7 @@ func Test_ReconcileMultiClusterHub(t *testing.T) {
 
 		})
 	}
-	os.Unsetenv("TEMPLATES_PATH")
-	os.Unsetenv("MANIFESTS_PATH")
+
 }
 
 func TestUpdateStatus(t *testing.T) {

@@ -5,6 +5,7 @@ package multiclusterhub
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
@@ -228,6 +229,9 @@ func Test_ensureChannel(t *testing.T) {
 }
 
 func Test_ensureSubscription(t *testing.T) {
+	os.Setenv("UNIT_TEST", "true")
+	defer os.Unsetenv("UNIT_TEST")
+
 	r, err := getTestReconciler(full_mch)
 	if err != nil {
 		t.Fatalf("Failed to create test reconciler")

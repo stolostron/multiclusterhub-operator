@@ -4,6 +4,7 @@ package utils
 
 import (
 	"encoding/json"
+	"os"
 	"time"
 
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
@@ -41,6 +42,8 @@ const (
 
 	// DefaultRepository ...
 	DefaultRepository = "quay.io/open-cluster-management"
+
+	UnitTestEnvVar = "UNIT_TEST"
 )
 
 // CertManagerNS returns the namespace to deploy cert manager objects
@@ -162,4 +165,13 @@ func GetImagePullPolicy(m *operatorsv1beta1.MultiClusterHub) v1.PullPolicy {
 		return corev1.PullAlways
 	}
 	return m.Spec.Overrides.ImagePullPolicy
+}
+
+func IsUnitTest() bool {
+	if unitTest, found := os.LookupEnv(UnitTestEnvVar); found {
+		if unitTest == "true" {
+			return true
+		}
+	}
+	return false
 }

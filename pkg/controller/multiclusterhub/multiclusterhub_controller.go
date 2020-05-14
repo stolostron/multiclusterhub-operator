@@ -238,7 +238,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 
 	certGV := schema.GroupVersion{Group: "certmanager.k8s.io", Version: "v1alpha1"}
 	// Skip wait for API to be ready on unit test
-	if multiClusterHub.UID != "" {
+	if !utils.IsUnitTest() {
 		result, err = r.apiReady(certGV)
 		if result != nil {
 			return *result, err
@@ -491,7 +491,7 @@ func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1beta1.MultiCluste
 		Name: "cluster",
 	}, ingress)
 	// Don't fail on a unit test (Fake client won't find "cluster" Ingress)
-	if err != nil && m.UID != "" {
+	if err != nil && !utils.IsUnitTest() {
 		log.Error(err, "Failed to get Ingress")
 		return &reconcile.Result{}, err
 	}
