@@ -41,6 +41,9 @@ const (
 
 	// DefaultRepository ...
 	DefaultRepository = "quay.io/open-cluster-management"
+
+	// DefaultSSLCiphers defines the default cipher configuration used by management ingress
+	DefaultSSLCiphers = "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256"
 )
 
 // CertManagerNS returns the namespace to deploy cert manager objects

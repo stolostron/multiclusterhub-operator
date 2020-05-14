@@ -203,6 +203,9 @@ spec:
                   description: ImageTagSuffix of the MultiCluster hub images
                   type: string
               type: object
+            sslCiphers:
+              description: List of SSL ciphers for management ingress to support
+              type: string
           type: object
         status:
           description: MultiClusterHubStatus defines the observed state of MultiClusterHub

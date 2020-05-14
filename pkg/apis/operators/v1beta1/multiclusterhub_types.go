@@ -48,6 +48,10 @@ type MultiClusterHubSpec struct {
 	// +optional
 	Etcd `json:"etcd,omitempty"`
 
+	// List of SSL ciphers for management ingress to support
+	// +optional
+	SSLCiphers string `json:"sslCiphers"`
+
 	// Overrides
 	// +optional
 	Overrides `json:"overrides,omitempty"`
