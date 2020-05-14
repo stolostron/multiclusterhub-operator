@@ -355,7 +355,7 @@ data:
               }
             ]
           capabilities: Basic Install
-        name: multiclusterhub-operator.v1.0.0
+        name: multiclusterhub-operator.v2.0.0
         namespace: placeholder
       spec:
         apiservicedefinitions: {}
@@ -589,7 +589,7 @@ data:
                         value: /usr/local/templates
                       - name: MANIFESTS_PATH
                         value: /image-manifests
-                      image: quay.io/rhibmcollab/multiclusterhub-operator:1.0.0
+                      image: quay.io/rhibmcollab/multiclusterhub-operator:2.0.0
                       imagePullPolicy: Always
                       name: multiclusterhub-operator
                       resources:
@@ -618,10 +618,10 @@ data:
           name: install
         maturity: alpha
         provider: {}
-        version: 1.0.0
+        version: 2.0.0
   packages: |-
     - channels:
-      - currentCSV: multiclusterhub-operator.v1.0.0
+      - currentCSV: multiclusterhub-operator.v2.0.0
         name: alpha
       defaultChannel: alpha
       packageName: multiclusterhub-operator
