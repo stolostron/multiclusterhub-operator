@@ -110,5 +110,3 @@ or after the `multiclusterhub.resources.yaml` is applied, deploy the operator in
 ```bash
 kubectl -n multicluster-system apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml
 ```
-
-### TODO: Update README
