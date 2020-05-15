@@ -34,10 +34,5 @@ func (c CacheSpec) isStale(m *operatorsv1beta1.MultiClusterHub) bool {
 		return true
 	}
 
-	// A change to name invalidates cache
-	if name := m.Name; name != c.CRName {
-		return true
-	}
-
 	return false
 }
