@@ -132,6 +132,7 @@ rules:
   - create
   - list
   - delete
+  - deletecollection
 - apiGroups:
   - security.openshift.io
   resources:
@@ -150,3 +151,5 @@ rules:
   - ingresses
   verbs:
   - get
+  - list
+  - watch

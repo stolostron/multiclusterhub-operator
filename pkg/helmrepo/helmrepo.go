@@ -33,12 +33,12 @@ func labels() map[string]string {
 }
 
 // Image returns image reference for multiclusterhub-repo
-func Image(cache utils.CacheSpec) string {
-	return cache.ImageOverrides[ImageKey]
+func Image(overrides map[string]string) string {
+	return overrides[ImageKey]
 }
 
 // Deployment for the helm repo serving charts
-func Deployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *appsv1.Deployment {
+func Deployment(m *operatorsv1beta1.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
 	replicas := int32(1)
 
 	dep := &appsv1.Deployment{
@@ -58,7 +58,7 @@ func Deployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *app
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
-						Image:           Image(cache),
+						Image:           Image(overrides),
 						ImagePullPolicy: utils.GetImagePullPolicy(m),
 						Name:            HelmRepoName,
 						Ports: []corev1.ContainerPort{{
@@ -142,7 +142,7 @@ func Service(m *operatorsv1beta1.MultiClusterHub) *corev1.Service {
 
 // ValidateDeployment returns a deep copy of the deployment with the desired spec based on the MultiClusterHub spec.
 // Returns true if an update is needed to reconcile differences with the current spec.
-func ValidateDeployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec, dep *appsv1.Deployment) (*appsv1.Deployment, bool) {
+func ValidateDeployment(m *operatorsv1beta1.MultiClusterHub, overrides map[string]string, dep *appsv1.Deployment) (*appsv1.Deployment, bool) {
 	var log = logf.Log.WithValues("Deployment.Namespace", dep.GetNamespace(), "Deployment.Name", dep.GetName())
 	found := dep.DeepCopy()
 
@@ -161,9 +161,9 @@ func ValidateDeployment(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSp
 	}
 
 	// verify image repository and suffix
-	if container.Image != Image(cache) {
+	if container.Image != Image(overrides) {
 		log.Info("Enforcing image repo and suffix from CR spec")
-		container.Image = Image(cache)
+		container.Image = Image(overrides)
 		needsUpdate = true
 	}
 

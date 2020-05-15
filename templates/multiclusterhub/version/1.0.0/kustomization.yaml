@@ -1,6 +1,0 @@
-resources:
-- ../../base
-
-images:
-    - name: multicloud-manager
-      newTag: 0.0.1

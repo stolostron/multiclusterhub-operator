@@ -9,7 +9,7 @@ import (
 )
 
 // ApplicationUI overrides the application-chart chart
-func ApplicationUI(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstructured.Unstructured {
+func ApplicationUI(m *operatorsv1beta1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "application-chart",
 		Namespace: m.Namespace,
@@ -20,7 +20,7 @@ func ApplicationUI(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *
 				"nodeSelector": m.Spec.NodeSelector,
 			},
 			"global": map[string]interface{}{
-				"imageOverrides": cache.ImageOverrides,
+				"imageOverrides": overrides,
 				"pullPolicy":     utils.GetImagePullPolicy(m),
 			},
 		},

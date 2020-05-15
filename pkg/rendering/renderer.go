@@ -34,13 +34,12 @@ type renderFn func(*resource.Resource) (*unstructured.Unstructured, error)
 // Renderer is a Kustomizee Renderer Factory
 type Renderer struct {
 	cr        *operatorsv1beta1.MultiClusterHub
-	cacheSpec utils.CacheSpec
 	renderFns map[string]renderFn
 }
 
 // NewRenderer Initializes a Kustomize Renderer Factory
-func NewRenderer(multipleClusterHub *operatorsv1beta1.MultiClusterHub, cacheSpec utils.CacheSpec) *Renderer {
-	renderer := &Renderer{cr: multipleClusterHub, cacheSpec: cacheSpec}
+func NewRenderer(multipleClusterHub *operatorsv1beta1.MultiClusterHub) *Renderer {
+	renderer := &Renderer{cr: multipleClusterHub}
 	renderer.renderFns = map[string]renderFn{
 		"APIService":                   renderer.renderAPIServices,
 		"Deployment":                   renderer.renderNamespace,
@@ -64,7 +63,7 @@ func NewRenderer(multipleClusterHub *operatorsv1beta1.MultiClusterHub, cacheSpec
 
 // Render renders Templates under TEMPLATES_PATH
 func (r *Renderer) Render(c runtimeclient.Client) ([]*unstructured.Unstructured, error) {
-	templates, err := templates.GetTemplateRenderer().GetTemplates(r.cr)
+	templates, err := templates.GetTemplateRenderer().GetTemplates()
 	if err != nil {
 		return nil, err
 	}

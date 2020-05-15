@@ -12,7 +12,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 )
 
 type multiClusterHubValidator struct {
@@ -62,12 +61,6 @@ func (m *multiClusterHubValidator) validateCreate(req admission.Request) error {
 		return err
 	}
 
-	if creatingMCH.Status.CurrentVersion != "" { // optional param defaults set by reconciler
-		if !utils.IsVersionSupported(creatingMCH.Status.CurrentVersion) {
-			return errors.New("Version " + creatingMCH.Status.CurrentVersion + " not supported")
-		}
-	}
-
 	return nil
 }
 
@@ -108,12 +101,6 @@ func (m *multiClusterHubValidator) validateUpdate(req admission.Request) error {
 
 	if existingMCH.Spec.IPv6 != newMCH.Spec.IPv6 {
 		return errors.New("IPv6 update is forbidden")
-	}
-
-	if newMCH.Status.CurrentVersion != "" { // optional param defaults set by reconciler
-		if !utils.IsVersionSupported(newMCH.Status.CurrentVersion) {
-			return errors.New("Version " + newMCH.Status.CurrentVersion + " not supported")
-		}
 	}
 
 	return nil

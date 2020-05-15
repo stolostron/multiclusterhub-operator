@@ -9,7 +9,7 @@ import (
 )
 
 // Topology overrides the grc chart
-func Topology(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstructured.Unstructured {
+func Topology(m *operatorsv1beta1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "topology",
 		Namespace: m.Namespace,
@@ -20,7 +20,7 @@ func Topology(m *operatorsv1beta1.MultiClusterHub, cache utils.CacheSpec) *unstr
 				"nodeSelector": m.Spec.NodeSelector,
 			},
 			"global": map[string]interface{}{
-				"imageOverrides": cache.ImageOverrides,
+				"imageOverrides": overrides,
 				"pullPolicy":     utils.GetImagePullPolicy(m),
 			},
 		},

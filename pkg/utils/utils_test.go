@@ -137,9 +137,6 @@ func TestMchIsValid(t *testing.T) {
 				StorageClass: "etcdStorageClass",
 			},
 		},
-		Status: operatorsv1beta1.MultiClusterHubStatus{
-			CurrentVersion: "1.0.0",
-		},
 	}
 
 	type args struct {

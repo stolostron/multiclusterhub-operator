@@ -10,7 +10,7 @@ PIPELINE_MANIFEST_ORG ?= open-cluster-management
 PIPELINE_MANIFEST_REPO?= pipeline
 # The URL for the pipeline repo
 PIPELINE_MANIFEST_GIT_URL ?= "https://$(GITHUB_USER):$(GITHUB_TOKEN)@$(PIPELINE_MANIFEST_SITE)/$(PIPELINE_MANIFEST_ORG)/$(PIPELINE_MANIFEST_REPO).git"
-# Branch of release compenent is on, i.e release-1.0.0
+# Branch of release compenent is on, i.e release-2.0
 PIPELINE_MANIFEST_COMPONENT_BRANCH  ?= $(PIPELINE_MANIFEST_BRANCH)
 # Release version of the product
 PIPELINE_MANIFEST_RELEASE_VERSION ?= $(subst release-,,$(PIPELINE_MANIFEST_BRANCH))

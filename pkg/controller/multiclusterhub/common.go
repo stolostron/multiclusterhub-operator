@@ -23,12 +23,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -68,9 +66,9 @@ func (r *ReconcileMultiClusterHub) ensureDeployment(m *operatorsv1beta1.MultiClu
 
 	switch found.Name {
 	case helmrepo.HelmRepoName:
-		desired, needsUpdate = helmrepo.ValidateDeployment(m, r.CacheSpec, found)
+		desired, needsUpdate = helmrepo.ValidateDeployment(m, r.CacheSpec.ImageOverrides, found)
 	case mcm.APIServerName, mcm.ControllerName, mcm.WebhookName:
-		desired, needsUpdate = mcm.ValidateDeployment(m, r.CacheSpec, found)
+		desired, needsUpdate = mcm.ValidateDeployment(m, r.CacheSpec.ImageOverrides, found)
 	default:
 		dplog.Info("Could not validate deployment; unknown name")
 		return nil, nil
@@ -165,21 +163,60 @@ func (r *ReconcileMultiClusterHub) ensureSecret(m *operatorsv1beta1.MultiCluster
 	return nil, nil
 }
 
-func (r *ReconcileMultiClusterHub) ensureObject(m *operatorsv1beta1.MultiClusterHub, u *unstructured.Unstructured, schema schema.GroupVersionResource) (*reconcile.Result, error) {
-	obLog := log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName(), "Kind", u.GetKind())
+func (r *ReconcileMultiClusterHub) ensureChannel(m *operatorsv1beta1.MultiClusterHub, u *unstructured.Unstructured) (*reconcile.Result, error) {
+	selog := log.WithValues("Channel.Namespace", u.GetNamespace(), "Channel.Name", u.GetName())
 
-	dc, err := createDynamicClient()
-	if err != nil {
-		obLog.Error(err, "Failed to create dynamic client")
-		return &reconcile.Result{}, nil
+	found := &unstructured.Unstructured{}
+	found.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "apps.open-cluster-management.io",
+		Kind:    "Channel",
+		Version: "v1",
+	})
+	err := r.client.Get(context.TODO(), types.NamespacedName{
+		Name:      u.GetName(),
+		Namespace: m.Namespace,
+	}, found)
+	if err != nil && errors.IsNotFound(err) {
+
+		// Create the Channel
+		err = r.client.Create(context.TODO(), u)
+		if err != nil {
+			// Creation failed
+			selog.Error(err, "Failed to create new Channel")
+			return &reconcile.Result{}, err
+		}
+
+		// Creation was successful
+		selog.Info("Created a new Channel")
+		return nil, nil
+
+	} else if err != nil {
+		// Error that isn't due to the Channel not existing
+		selog.Error(err, "Failed to get Channel")
+		return &reconcile.Result{}, err
 	}
 
+	return nil, nil
+}
+
+func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1beta1.MultiClusterHub, u *unstructured.Unstructured) (*reconcile.Result, error) {
+	obLog := log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName(), "Kind", u.GetKind())
+
+	found := &unstructured.Unstructured{}
+	found.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "apps.open-cluster-management.io",
+		Kind:    "Subscription",
+		Version: "v1",
+	})
 	// Try to get API group instance
-	found, err := dc.Resource(schema).Namespace(u.GetNamespace()).Get(u.GetName(), metav1.GetOptions{})
+	err := r.client.Get(context.TODO(), types.NamespacedName{
+		Name:      u.GetName(),
+		Namespace: u.GetNamespace(),
+	}, found)
 	if err != nil && errors.IsNotFound(err) {
 
 		// Create the resource
-		_, err = dc.Resource(schema).Namespace(u.GetNamespace()).Create(u, metav1.CreateOptions{})
+		err := r.client.Create(context.TODO(), u)
 		if err != nil {
 			// Creation failed
 			obLog.Error(err, "Failed to create new instance")
@@ -192,43 +229,26 @@ func (r *ReconcileMultiClusterHub) ensureObject(m *operatorsv1beta1.MultiCluster
 
 	} else if err != nil {
 		// Error that isn't due to the resource not existing
-		obLog.Error(err, "Failed to get resource", "resource", schema.GroupResource().String())
+		obLog.Error(err, "Failed to get subscription")
 		return &reconcile.Result{}, err
 	}
 
 	// Validate object based on type
-	switch kind := u.GetKind(); kind {
-	case "Subscription":
-		updated, needsUpdate := subscription.Validate(found, u)
-		if needsUpdate {
-			obLog.Info("Updating subscription")
-			// Update the resource
-			_, err = dc.Resource(schema).Namespace(u.GetNamespace()).Update(updated, metav1.UpdateOptions{})
-			if err != nil {
-				// Update failed
-				obLog.Error(err, "Failed to update object")
-				return &reconcile.Result{}, err
-			}
-			// Spec updated - return
-			return nil, nil
+	updated, needsUpdate := subscription.Validate(found, u)
+	if needsUpdate {
+		obLog.Info("Updating subscription")
+		// Update the resource
+		err = r.client.Update(context.TODO(), updated)
+		if err != nil {
+			// Update failed
+			obLog.Error(err, "Failed to update object")
+			return &reconcile.Result{}, err
 		}
+		// Spec updated - return
+		return nil, nil
 	}
 
 	return nil, nil
-}
-
-func createDynamicClient() (dynamic.Interface, error) {
-	config, err := config.GetConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	dynClient, err := dynamic.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
-	return dynClient, err
 }
 
 func (r *ReconcileMultiClusterHub) apiReady(gv schema.GroupVersion) (*reconcile.Result, error) {

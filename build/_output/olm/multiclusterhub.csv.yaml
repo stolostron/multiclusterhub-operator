@@ -1,0 +1,282 @@
+  apiVersion: operators.coreos.com/v1alpha1
+  kind: ClusterServiceVersion
+  metadata:
+    annotations:
+      alm-examples: |-
+        [
+          {
+            "apiVersion": "operators.open-cluster-management.io/v1beta1",
+            "kind": "MultiClusterHub",
+            "metadata": {
+              "name": "multiclusterhub",
+              "namespace": "open-cluster-management"
+            },
+            "spec": {
+              "imagePullSecret": "quay-secret"
+            }
+          }
+        ]
+      capabilities: Basic Install
+    name: multiclusterhub-operator.v2.0.0
+  spec:
+    apiservicedefinitions: {}
+    customresourcedefinitions:
+      required:
+      - name: channels.apps.open-cluster-management.io
+        version: v1
+        kind: Channel
+        displayName: Channel
+        description: Represent a helm chart repository
+      - name: etcdclusters.etcd.database.coreos.com
+        version: v1beta2
+        kind: EtcdCluster
+        displayName: etcd Cluster
+        description: Represents a cluster of etcd nodes.
+      - name: helmreleases.apps.open-cluster-management.io
+        version: v1
+        kind: HelmRelease
+        displayName: Helm Release
+        description: Represent a helm chart selected by the subscription, for internal use only.
+      - name: hiveconfigs.hive.openshift.io
+        version: v1
+        kind: HiveConfig
+        displayName: Hive Config
+        description: Configuration for the Hive Operator
+      - name: subscriptions.apps.open-cluster-management.io
+        version: v1
+        kind: Subscription
+        displayName: Subscription
+        description: Subscribe resources from a channel according to its package filters
+      owned:
+      - description: MultiClusterHub defines the configuration for an instance of the
+          MultiCluster Hub
+        displayName: MultiClusterHub Operator
+        kind: MultiClusterHub
+        name: multiclusterhubs.operators.open-cluster-management.io
+        version: v1beta1
+    description: Placeholder description
+    displayName: Multiclusterhub Operator
+    icon:
+      - base64data: iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAEDElEQVRoge2ZSWgUQRSGv0lmXKLiAm4RRTAqmCDoUUVBjYKKIMZ49C6auB3Ei548uBy8RNCTSkAwiKAgiDkIKoLoQY1L3EHNwV1jNDGZ8VCvrJ6eXqqT7nEi+aHo7nqvuv6/6/XrVzMwhCEkghSQleNgQgHfsn/BIgmkHeeDbVXy8F+uiEau6CwGhhT85yuiUervTF7keK3IYAstIFjIQUp3VZZ5dWbJXwV9nQPOASOT5xUJdcBPDMe/cAvpk+tvcrwGTCgOx1DsI/9BWwmZD7yW86fA7GIw9UE50CRceoEGIggpAyqBO3L9AVicOOVCjAYuCYefQL30hwrpxQgJulExMBX/B2ktpNzRVw4cxyzt9tgpF6KG4NDulxCNRkzoHSO5ymAF8EXmuQlM9PAJFfIbfyEAmzDp7zxQMSDKhdgC9Mj9W/BP/9ZCgsqXRcB78bsFTOoX5XykgAMOPmErHosQgCpU7OaA58DcCKTdSAMnMO/gVosxoUL0soYJAZgC3Bb/j8BSizFujAEuyz06gXWW40KFdMt1xvKGk4HPmPS8yXIcwAzgvox9ByyMMDZWIbMdRH7JsQ/YYzF2AfBWxjxAiYqC2ISsAT6J72NgHvnp+ST+4VkLfBW/VmBcFAWCUCH6yQ7zuUEZKrtowi2oONdwpuerwCyHrQLYj0kopwLmCcOAhIwDLmKyy1689yyLgA6H3z3gBqai7hNBA9nvWAsZ7hpYA7Rj6p7akIkmosJL30+36/hntwywGWhGpfZO4AcqvTejVluHa6gQHRZOIfXAd+m/C8wMEeFEBarYWw5MC/DbIIRzIe0FsDaqkDRw2OFzmvh3jCngqIPYA2AHUA2MklYN7ATaPISFCpmOyig51EdyW8wCNI7IHN0yh1+Nh9gaMB/tQCFdcv1Gjh3AkrhYu7AeI2Klh70VuODRX4sRs1Z3+gnJoTJNZSyUC5HB7De8Vjstti6f8Y1ifym+vkKa6H+Ot0Ed5p3wCqcwIWngofh4lkU/xBj3PsONszLPDh97mBCAXeLT7GXUQiqB8dKSEPVE5pnnY7cRUiM+z7yMWkixmi5vrgT49KDqOt3OyZgxYu/0Kuo+o7KIE2XA2IAnEweCVj2DigyNKpc9Gz8de+jQqnb0jXc1XZtNcfXr5KBD67HNLjAp3AXmAKtQX2xQ0eCEzqZfUDWbG6vleDt2dhGwEUW0Df+vud6zjPCwpYFHYq9LgqAtMsArIdLg4xMkZKfY2rHflieGdZis5LUtaEXtZdz7llUyJosqc0oChzBiGgn+9SaNWgldZx1MnF0EpMjfKrShvtg1qB/QR8v5bkxJkkWJKMk/c9djfvALau2UUDj5IY0qAM+gvjOdqJ3pQ+mrowRe7CHY4A8ixrhAvKZDJwAAAABJRU5ErkJggg==
+        mediatype: image/png
+    install:
+      spec:
+        clusterPermissions:
+        - rules:
+          - apiGroups:
+            - ""
+            resources:
+            - pods
+            - services
+            - services/finalizers
+            - endpoints
+            - persistentvolumeclaims
+            - events
+            - configmaps
+            - secrets
+            - serviceaccounts
+            - namespaces
+            verbs:
+            - '*'
+          - apiGroups:
+            - apps
+            resources:
+            - deployments
+            - daemonsets
+            - replicasets
+            - statefulsets
+            verbs:
+            - '*'
+          - apiGroups:
+            - monitoring.coreos.com
+            resources:
+            - servicemonitors
+            verbs:
+            - get
+            - create
+          - apiGroups:
+            - apps
+            resourceNames:
+            - multiclusterhub-operator
+            resources:
+            - deployments/finalizers
+            verbs:
+            - update
+          - apiGroups:
+            - ""
+            resources:
+            - pods
+            verbs:
+            - get
+          - apiGroups:
+            - apps
+            resources:
+            - replicasets
+            - deployments
+            verbs:
+            - get
+          - apiGroups:
+            - admissionregistration.k8s.io
+            resources:
+            - '*'
+            verbs:
+            - '*'
+          - apiGroups:
+            - operators.open-cluster-management.io
+            resources:
+            - '*'
+            verbs:
+            - '*'
+          - apiGroups:
+            - apiregistration.k8s.io
+            resources:
+            - '*'
+            verbs:
+            - '*'
+          - apiGroups:
+            - rbac.authorization.k8s.io
+            resources:
+            - '*'
+            verbs:
+            - '*'
+          - apiGroups:
+            - clusterregistry.k8s.io
+            resources:
+            - '*'
+            verbs:
+            - '*'
+          - apiGroups:
+            - operators.coreos.com
+            resources:
+            - operatorgroups
+            - subscriptions
+            verbs:
+            - get
+            - create
+          - apiGroups:
+            - etcd.database.coreos.com
+            resources:
+            - etcdclusters
+            verbs:
+            - get
+            - create
+          - apiGroups:
+            - apiextensions.k8s.io
+            resources:
+            - customresourcedefinitions
+            verbs:
+            - '*'
+          - apiGroups:
+            - apps.open-cluster-management.io
+            resources:
+            - '*'
+            verbs:
+            - '*'
+          - apiGroups:
+            - operators.coreos.com
+            resources:
+            - hive-catalog
+            - catalogsources
+            - clusterserviceversions
+            - hiveconfig
+            verbs:
+            - get
+            - create
+          - apiGroups:
+            - hive.openshift.io
+            resources:
+            - hiveconfigs
+            verbs:
+            - get
+            - create
+            - list
+            - delete
+            - deletecollection
+          - apiGroups:
+            - security.openshift.io
+            resources:
+            - securitycontextconstraints
+            verbs:
+            - '*'
+          - apiGroups:
+            - storage.k8s.io
+            resources:
+            - storageclasses
+            verbs:
+            - '*'
+          - apiGroups:
+            - config.openshift.io
+            resources:
+            - ingresses
+            verbs:
+            - get
+            - list
+            - watch
+          serviceAccountName: multiclusterhub-operator
+        deployments:
+        - name: multiclusterhub-operator
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                name: multiclusterhub-operator
+            strategy: {}
+            template:
+              metadata:
+                labels:
+                  name: multiclusterhub-operator
+              spec:
+                containers:
+                - command:
+                  - multiclusterhub-operator
+                  env:
+                  - name: WATCH_NAMESPACE
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.annotations['olm.targetNamespaces']
+                  - name: POD_NAME
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.name
+                  - name: POD_NAMESPACE
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.namespace
+                  - name: OPERATOR_NAME
+                    value: multiclusterhub-operator
+                  - name: USER
+                    value: multiclusterhub-operator
+                  - name: TEMPLATES_PATH
+                    value: /usr/local/templates
+                  - name: MANIFESTS_PATH
+                    value: /image-manifests
+                  image: quay.io/rhibmcollab/multiclusterhub-operator:2.0.0
+                  imagePullPolicy: Always
+                  name: multiclusterhub-operator
+                  resources:
+                    limits:
+                      memory: 2Gi
+                    requests:
+                      cpu: 100m
+                      memory: 256Mi
+                imagePullSecrets:
+                - name: multiclusterhub-operator-pull-secret
+                serviceAccountName: multiclusterhub-operator
+      strategy: deployment
+    installModes:
+    - supported: true
+      type: OwnNamespace
+    - supported: true
+      type: SingleNamespace
+    - supported: false
+      type: MultiNamespace
+    - supported: false
+      type: AllNamespaces
+    keywords:
+      - operator
+    maintainers:
+    - email: email@email.com
+      name: install
+    maturity: alpha
+    provider: {}
+    version: 2.0.0

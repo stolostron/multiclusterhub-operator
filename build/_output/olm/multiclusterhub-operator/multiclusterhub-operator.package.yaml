@@ -1,0 +1,5 @@
+channels:
+- currentCSV: multiclusterhub-operator.v2.0.0
+  name: alpha
+defaultChannel: alpha
+packageName: multiclusterhub-operator

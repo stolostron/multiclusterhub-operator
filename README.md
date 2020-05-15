@@ -11,12 +11,6 @@ export DOCKER_USER=<DOCKER_USER>
 export DOCKER_PASS=<DOCKER_PASS>
 ```
 
-### Optional
-
-```bash
-export CONTAINER_ENGINE=<CONTAINER_ENGINE>
-```
-
 ### Install Dependencies and Subscribe
 
 ```bash
@@ -97,7 +91,6 @@ spec:
   name: multiclusterhub-operator
   source: multiclusterhub-operator-registry
   sourceNamespace: multicluster-system
-  startingCSV: multiclusterhub-operator.v1.0.0
 EOF
 ```
 
