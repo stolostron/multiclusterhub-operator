@@ -17,6 +17,7 @@ func TestCacheSpec_IsStale(t *testing.T) {
 		ImageRepository:   "quay.io",
 		ImageSuffix:       "foo",
 		ManifestVersion:   "0.0.0",
+		CRName:            "name",
 	}
 	cm := CacheSpec{
 		IngressDomain:     "test.com",
@@ -25,6 +26,7 @@ func TestCacheSpec_IsStale(t *testing.T) {
 		ImageRepository:   "quay.io",
 		ImageSuffix:       "",
 		ManifestVersion:   "0.0.0",
+		CRName:            "name",
 	}
 
 	t.Run("No change to suffix cache", func(t *testing.T) {
