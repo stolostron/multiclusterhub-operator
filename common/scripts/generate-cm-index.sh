@@ -9,7 +9,7 @@ indent() {
 }
 
 channel=dev
-version=$VERSION
+version=$1
 registry=quay.io/rhibmcollab
 
 # Generate bundle files with SDK

@@ -86,11 +86,8 @@ subscriptions:
 	kubectl apply -k build/subscriptions
 
 # run operator locally outside the cluster
-local-install:
-	# Need to get in changes to manifest and version logic before we can run locally
-	@echo "Make target under construction"; exit 1
+local-install: secrets subscriptions
 	kubectl apply -f deploy/crds/operators.open-cluster-management.io_multiclusterhubs_crd.yaml
-	kubectl apply -k build/subscriptions
 	OPERATOR_NAME=multiclusterhub-operator \
 	TEMPLATES_PATH=$(pwd)/templates \
 	MANIFESTS_PATH=$(pwd)/image-manifests \
@@ -104,10 +101,10 @@ in-cluster-install: secrets update-image subscriptions
 
 # creates a configmap index and catalogsource that it subscribes to
 cm-install: secrets update-image csv
-	bash common/scripts/generate-cm-index.sh REGISTRY="$(REGISTRY)" VERSION="$(VERSION)"
+	bash common/scripts/generate-cm-index.sh ${VERSION} ${REGISTRY}
 	kubectl apply -k build/configmap-install
 
 # generates an index image and catalogsource that serves it
 index-install: secrets update-image csv
-	bash common/scripts/generate-index.sh REGISTRY="$(REGISTRY)" VERSION="$(VERSION)"
+	bash common/scripts/generate-index.sh ${VERSION} ${REGISTRY}
 	kubectl apply -k build/index-install
