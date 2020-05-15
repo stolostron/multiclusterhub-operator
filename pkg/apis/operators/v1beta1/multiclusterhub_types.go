@@ -208,7 +208,7 @@ type Mongo struct {
 type IngressSpec struct {
 	// List of SSL ciphers for management ingress to support
 	// +optional
-	SSLCiphers []string `json:"sslCiphers"`
+	SSLCiphers []string `json:"sslCiphers,omitempty"`
 }
 
 // MultiClusterHubStatus defines the observed state of MultiClusterHub

@@ -114,7 +114,8 @@ func MchIsValid(m *operatorsv1beta1.MultiClusterHub) bool {
 	invalid := m.Spec.Mongo.Storage == "" ||
 		m.Spec.Mongo.StorageClass == "" ||
 		m.Spec.Etcd.Storage == "" ||
-		m.Spec.Etcd.StorageClass == ""
+		m.Spec.Etcd.StorageClass == "" ||
+		len(m.Spec.Ingress.SSLCiphers) == 0
 
 	return !invalid
 }
