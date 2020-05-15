@@ -62,6 +62,7 @@ secrets:
 
 reinstall: uninstall cm-install
 
+# subscribe is an alias for the configmap installation method
 subscribe: cm-install
 
 deps:
