@@ -41,6 +41,9 @@ var (
 				Storage:      "1gi",
 				StorageClass: "gp2",
 			},
+			Ingress: operatorsv1beta1.IngressSpec{
+				SSLCiphers: []string{"foo", "bar", "baz"},
+			},
 		},
 		Status: operatorsv1beta1.MultiClusterHubStatus{
 			CurrentVersion: "1.0.0",

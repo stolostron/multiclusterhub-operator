@@ -136,6 +136,9 @@ func TestMchIsValid(t *testing.T) {
 				Storage:      "etcdStorage",
 				StorageClass: "etcdStorageClass",
 			},
+			Ingress: operatorsv1beta1.IngressSpec{
+				SSLCiphers: []string{"foo", "bar", "baz"},
+			},
 		},
 	}
 
@@ -225,4 +228,29 @@ func TestDefaultReplicaCount(t *testing.T) {
 			t.Errorf("DefaultReplicaCount() = %v, but should return multiple replicas", got)
 		}
 	})
+}
+
+func TestFormatSSLCiphers(t *testing.T) {
+	type args struct {
+		ciphers []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			"Default cipher list",
+			args{[]string{"ECDHE-ECDSA-AES256-GCM-SHA384", "ECDHE-RSA-AES256-GCM-SHA384"}},
+			"ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384",
+		},
+		{"Empty slice", args{[]string{}}, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := FormatSSLCiphers(tt.args.ciphers); got != tt.want {
+				t.Errorf("FormatSSLCiphers() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

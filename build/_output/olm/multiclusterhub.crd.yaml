@@ -172,6 +172,15 @@
               imagePullSecret:
                 description: Pull secret of the MultiCluster hub images
                 type: string
+              ingress:
+                description: Configuration options for ingress management
+                properties:
+                  sslCiphers:
+                    description: List of SSL ciphers for management ingress to support
+                    items:
+                      type: string
+                    type: array
+                type: object
               ipv6:
                 description: Flag for IPv6
                 type: boolean

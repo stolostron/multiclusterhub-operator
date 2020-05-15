@@ -196,8 +196,9 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	// Get image override values for cache
-	if oType := manifest.GetImageOverrideType(multiClusterHub); oType != r.CacheSpec.ImageOverrideType {
+	// Revalidate cache. Rebuild image overrides if invalid
+	if r.CacheSpec.isStale(multiClusterHub) {
+		log.Info("Refreshing image cache")
 		// Need to update image format
 		imageOverrides, err := manifest.GetImageOverrides(multiClusterHub)
 		if err != nil {
@@ -206,7 +207,9 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		}
 		r.CacheSpec.ImageOverrides = imageOverrides
 		r.CacheSpec.ManifestVersion = version.Version
-		r.CacheSpec.ImageOverrideType = oType
+		r.CacheSpec.ImageOverrideType = manifest.GetImageOverrideType(multiClusterHub)
+		r.CacheSpec.ImageRepository = multiClusterHub.Spec.Overrides.ImageRepository
+		r.CacheSpec.ImageSuffix = multiClusterHub.Spec.Overrides.ImageTagSuffix
 	}
 
 	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub, r.CacheSpec.ImageOverrides))
@@ -431,6 +434,10 @@ func (r *ReconcileMultiClusterHub) setDefaults(m *operatorsv1beta1.MultiClusterH
 	}
 	log.Info("MultiClusterHub is Invalid. Updating with proper defaults")
 
+	if len(m.Spec.Ingress.SSLCiphers) == 0 {
+		m.Spec.Ingress.SSLCiphers = utils.DefaultSSLCiphers
+	}
+
 	if m.Spec.Mongo.Storage == "" {
 		m.Spec.Mongo.Storage = "5Gi"
 	}
@@ -540,11 +547,6 @@ func (r *ReconcileMultiClusterHub) addFinalizer(reqLogger logr.Logger, m *operat
 		return err
 	}
 	return nil
-}
-
-// useImageSuffixes returns true if an ImageTagSuffix is provided in the spec
-func useImageSuffixes(m *operatorsv1beta1.MultiClusterHub) bool {
-	return m.Spec.Overrides.ImageTagSuffix != ""
 }
 
 func contains(list []string, s string) bool {
