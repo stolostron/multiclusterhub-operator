@@ -136,6 +136,9 @@ func TestMchIsValid(t *testing.T) {
 				Storage:      "etcdStorage",
 				StorageClass: "etcdStorageClass",
 			},
+			Ingress: operatorsv1beta1.IngressSpec{
+				SSLCiphers: []string{"foo", "bar", "baz"},
+			},
 		},
 	}
 
