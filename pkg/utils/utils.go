@@ -4,6 +4,7 @@ package utils
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
@@ -41,6 +42,18 @@ const (
 
 	// DefaultRepository ...
 	DefaultRepository = "quay.io/open-cluster-management"
+)
+
+var (
+	// DefaultSSLCiphers defines the default cipher configuration used by management ingress
+	DefaultSSLCiphers = []string{
+		"ECDHE-ECDSA-AES256-GCM-SHA384",
+		"ECDHE-RSA-AES256-GCM-SHA384",
+		"ECDHE-ECDSA-CHACHA20-POLY1305",
+		"ECDHE-RSA-CHACHA20-POLY1305",
+		"ECDHE-ECDSA-AES128-GCM-SHA256",
+		"ECDHE-RSA-AES128-GCM-SHA256",
+	}
 )
 
 // CertManagerNS returns the namespace to deploy cert manager objects
@@ -101,7 +114,8 @@ func MchIsValid(m *operatorsv1beta1.MultiClusterHub) bool {
 	invalid := m.Spec.Mongo.Storage == "" ||
 		m.Spec.Mongo.StorageClass == "" ||
 		m.Spec.Etcd.Storage == "" ||
-		m.Spec.Etcd.StorageClass == ""
+		m.Spec.Etcd.StorageClass == "" ||
+		len(m.Spec.Ingress.SSLCiphers) == 0
 
 	return !invalid
 }
@@ -162,4 +176,10 @@ func GetImagePullPolicy(m *operatorsv1beta1.MultiClusterHub) v1.PullPolicy {
 		return corev1.PullAlways
 	}
 	return m.Spec.Overrides.ImagePullPolicy
+}
+
+// FormatSSLCiphers converts an array of ciphers into a string consumed by the management
+// ingress chart
+func FormatSSLCiphers(ciphers []string) string {
+	return strings.Join(ciphers, ":")
 }

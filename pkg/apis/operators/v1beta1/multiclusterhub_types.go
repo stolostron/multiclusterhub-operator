@@ -48,6 +48,10 @@ type MultiClusterHubSpec struct {
 	// +optional
 	Etcd `json:"etcd,omitempty"`
 
+	// Configuration options for ingress management
+	// +optional
+	Ingress IngressSpec `json:"ingress,omitempty"`
+
 	// Overrides
 	// +optional
 	Overrides `json:"overrides,omitempty"`
@@ -198,6 +202,13 @@ type Mongo struct {
 	// StorageSize for MultiCluster hub components
 	// +optional
 	Storage string `json:"storage,omitempty"`
+}
+
+// IngressSpec specifies configuration options for ingress management
+type IngressSpec struct {
+	// List of SSL ciphers for management ingress to support
+	// +optional
+	SSLCiphers []string `json:"sslCiphers,omitempty"`
 }
 
 // MultiClusterHubStatus defines the observed state of MultiClusterHub
