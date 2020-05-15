@@ -15,6 +15,7 @@ type CacheSpec struct {
 	ImageRepository   string
 	ImageSuffix       string
 	ManifestVersion   string
+	CRName            string
 }
 
 // Determines whether the cache has become out of date. Returns true if a change to the
@@ -30,6 +31,11 @@ func (c CacheSpec) isStale(m *operatorsv1beta1.MultiClusterHub) bool {
 	}
 	// A change to image repository invalidates cache
 	if repo := m.Spec.Overrides.ImageRepository; repo != c.ImageRepository {
+		return true
+	}
+
+	// A change to name invalidates cache
+	if name := m.Name; name != c.CRName {
 		return true
 	}
 

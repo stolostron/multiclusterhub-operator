@@ -18,6 +18,7 @@ func GRC(m *operatorsv1beta1.MultiClusterHub, overrides map[string]string) *unst
 			"hubconfig": map[string]interface{}{
 				"replicaCount": utils.DefaultReplicaCount(m),
 				"nodeSelector": m.Spec.NodeSelector,
+				"CRName":       m.Name,
 			},
 			"global": map[string]interface{}{
 				"imageOverrides": overrides,

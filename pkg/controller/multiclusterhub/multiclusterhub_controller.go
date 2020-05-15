@@ -210,6 +210,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		r.CacheSpec.ImageOverrideType = manifest.GetImageOverrideType(multiClusterHub)
 		r.CacheSpec.ImageRepository = multiClusterHub.Spec.Overrides.ImageRepository
 		r.CacheSpec.ImageSuffix = multiClusterHub.Spec.Overrides.ImageTagSuffix
+		r.CacheSpec.CRName = multiClusterHub.Name
 	}
 
 	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub, r.CacheSpec.ImageOverrides))
