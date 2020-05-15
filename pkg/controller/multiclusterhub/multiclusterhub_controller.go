@@ -431,8 +431,8 @@ func (r *ReconcileMultiClusterHub) setDefaults(m *operatorsv1beta1.MultiClusterH
 	}
 	log.Info("MultiClusterHub is Invalid. Updating with proper defaults")
 
-	if m.Spec.SSLCiphers == "" {
-		m.Spec.SSLCiphers = utils.DefaultSSLCiphers
+	if len(m.Spec.Ingress.SSLCiphers) == 0 {
+		m.Spec.Ingress.SSLCiphers = utils.DefaultSSLCiphers
 	}
 
 	if m.Spec.Mongo.Storage == "" {
