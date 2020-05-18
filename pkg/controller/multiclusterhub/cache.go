@@ -15,7 +15,6 @@ type CacheSpec struct {
 	ImageRepository   string
 	ImageSuffix       string
 	ManifestVersion   string
-	CRName            string
 }
 
 // Determines whether the cache has become out of date. Returns true if a change to the
