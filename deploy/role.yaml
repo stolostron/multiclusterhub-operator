@@ -236,18 +236,3 @@ rules:
   - multiclusterhubs/status
   verbs:
   - update
-
-
-# # MULTICLUSTER Update Permissions
-# - apiGroups:
-#   - ""
-#   - "authorization.k8s.io"
-#   - "rbac.authorization.k8s.io"
-#   resources:
-#   - configmaps
-#   - namespaces
-#   - secrets
-#   - subjectaccessreviews
-#   - rolebindings
-#   verbs:
-#   - '*'
