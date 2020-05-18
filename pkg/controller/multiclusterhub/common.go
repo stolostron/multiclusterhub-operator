@@ -4,13 +4,7 @@ package multiclusterhub
 
 import (
 	"context"
-	err "errors"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"path"
-	"path/filepath"
-	"strings"
 	"time"
 
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
@@ -118,20 +112,6 @@ func (r *ReconcileMultiClusterHub) ensureService(m *operatorsv1beta1.MultiCluste
 	return nil, nil
 }
 
-// Namespace returns namespace object of given name
-func (r *ReconcileMultiClusterHub) Namespace(namespace string) *unstructured.Unstructured {
-	ns := &unstructured.Unstructured{
-		Object: map[string]interface{}{
-			"apiVersion": "v1",
-			"kind":       "Namespace",
-			"metadata": map[string]interface{}{
-				"name": namespace,
-			},
-		},
-	}
-	return ns
-}
-
 func (r *ReconcileMultiClusterHub) ensureSecret(m *operatorsv1beta1.MultiClusterHub, s *corev1.Secret) (*reconcile.Result, error) {
 	selog := log.WithValues("Secret.Namespace", s.Namespace, "Secret.Name", s.Name)
 
@@ -215,12 +195,14 @@ func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1beta1.MultiC
 	}, found)
 	if err != nil && errors.IsNotFound(err) {
 
-		// Create the resource
-		err := r.client.Create(context.TODO(), u)
-		if err != nil {
-			// Creation failed
-			obLog.Error(err, "Failed to create new instance")
-			return &reconcile.Result{}, err
+		// Create the resource. Skip on unit test
+		if !utils.IsUnitTest() {
+			err := r.client.Create(context.TODO(), u)
+			if err != nil {
+				// Creation failed
+				obLog.Error(err, "Failed to create new instance")
+				return &reconcile.Result{}, err
+			}
 		}
 
 		// Creation was successful
@@ -237,13 +219,14 @@ func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1beta1.MultiC
 	updated, needsUpdate := subscription.Validate(found, u)
 	if needsUpdate {
 		obLog.Info("Updating subscription")
-		// Update the resource
+		// Update the resource. Skip on unit test
 		err = r.client.Update(context.TODO(), updated)
 		if err != nil {
 			// Update failed
 			obLog.Error(err, "Failed to update object")
 			return &reconcile.Result{}, err
 		}
+
 		// Spec updated - return
 		return nil, nil
 	}
@@ -312,42 +295,4 @@ func (r *ReconcileMultiClusterHub) copyPullSecret(m *operatorsv1beta1.MultiClust
 		}
 	}
 	return nil, nil
-}
-
-func fileExists(path string) bool {
-	info, err := os.Stat(path)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return !info.IsDir()
-}
-
-func readFileRaw(path string) ([]byte, error) {
-	if !fileExists(path) {
-		err := err.New("File" + path + "does not exist")
-		log.Error(err, "File reading error")
-		return nil, err
-	}
-	data, err := ioutil.ReadFile(filepath.Clean(path))
-	if err != nil {
-		log.Error(err, "File reading error")
-		return nil, err
-	}
-	return data, nil
-}
-
-//ReadComponentVersionFile reads COMPONENT_VERSION file string
-func (r *ReconcileMultiClusterHub) ReadComponentVersionFile() (string, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		log.Error(err, "Couldn't get user home directory")
-		return "", err
-	}
-	path := path.Join(home, "COMPONENT_VERSION")
-	data, err := readFileRaw(path)
-	if err != nil {
-		log.Error(err, "Couldn't read component version file")
-		return "", err
-	}
-	return strings.TrimSpace(string(data)), nil
 }

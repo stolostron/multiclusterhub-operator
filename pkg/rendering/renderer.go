@@ -3,6 +3,7 @@
 package rendering
 
 import (
+	"encoding/base64"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -193,6 +194,7 @@ func (r *Renderer) renderMutatingWebhookConfiguration(res *resource.Resource) (*
 }
 
 func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructured, error) {
+	caCert, tlsCert, tlsKey := "ca.crt", "tls.crt", "tls.key"
 	u := &unstructured.Unstructured{Object: res.Map()}
 	metadata, ok := u.Object["metadata"].(map[string]interface{})
 	if !ok {
@@ -221,9 +223,9 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 		if err != nil {
 			return nil, err
 		}
-		data["ca.crt"] = []byte(ca.Cert)
-		data["tls.crt"] = []byte(cert.Cert)
-		data["tls.key"] = []byte(cert.Key)
+		data[caCert] = base64.StdEncoding.EncodeToString([]byte(ca.Cert))
+		data[tlsCert] = base64.StdEncoding.EncodeToString([]byte(cert.Cert))
+		data[tlsKey] = base64.StdEncoding.EncodeToString([]byte(cert.Key))
 
 		return u, nil
 	case "mcm-klusterlet-self-signed-secrets":
@@ -235,9 +237,9 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 		if err != nil {
 			return nil, err
 		}
-		data["ca.crt"] = []byte(ca.Cert)
-		data["tls.crt"] = []byte(cert.Cert)
-		data["tls.key"] = []byte(cert.Key)
+		data[caCert] = base64.StdEncoding.EncodeToString([]byte(ca.Cert))
+		data[tlsCert] = base64.StdEncoding.EncodeToString([]byte(cert.Cert))
+		data[tlsKey] = base64.StdEncoding.EncodeToString([]byte(cert.Key))
 		return u, nil
 	case "mcm-webhook-secret":
 		cn := "mcm-webhook." + r.cr.Namespace + ".svc"
@@ -249,9 +251,9 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 		if err != nil {
 			return nil, err
 		}
-		data["ca.crt"] = []byte(ca.Cert)
-		data["tls.crt"] = []byte(cert.Cert)
-		data["tls.key"] = []byte(cert.Key)
+		data[caCert] = base64.StdEncoding.EncodeToString([]byte(ca.Cert))
+		data[tlsCert] = base64.StdEncoding.EncodeToString([]byte(cert.Cert))
+		data[tlsKey] = base64.StdEncoding.EncodeToString([]byte(cert.Key))
 		return u, nil
 	}
 
