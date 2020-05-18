@@ -1,9 +1,10 @@
 resources:
-- clusterrole.yaml
-- clusterrolebinding-account.yaml
-- clusterrolebinding-group.yaml
 - serviceaccount.yaml
+- clusterrole.yaml
+- clusterrole-hub-sa.yaml
 - clusterrole-admin-aggregate.yaml
 - clusterrole-edit-aggregate.yaml
 - clusterrole-view-aggregate.yaml
-- clusterrolebinding-default.yaml
+# - clusterrolebinding-default.yaml
+- clusterrolebinding-account.yaml
+- clusterrolebinding-group.yaml
