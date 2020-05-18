@@ -225,6 +225,8 @@ func Test_ensureChannel(t *testing.T) {
 				t.Fatalf("Failed to ensure channel")
 			}
 		})
+
+		// TODO: Check Channel is created in the fake client
 	}
 }
 
@@ -338,6 +340,8 @@ func Test_ensureSubscription(t *testing.T) {
 			if !errorEquals(err, tt.Result) {
 				t.Fatalf("Failed to ensure subscription")
 			}
+
+			// TODO: Check Subscription is created in the fake client
 		})
 	}
 }

@@ -166,7 +166,6 @@ func (r *ReconcileMultiClusterHub) cleanupCRDs(log logr.Logger, m *operatorsv1be
 	)
 
 	if err != nil {
-		fmt.Println(err.Error())
 		if errors.IsNotFound(err) {
 			log.Info("No matching CRDs to finalize. Continuing.")
 			return nil
