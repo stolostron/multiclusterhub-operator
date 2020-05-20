@@ -61,7 +61,7 @@ var (
 
 // CertManagerNS returns the namespace to deploy cert manager objects
 func CertManagerNS(m *operatorsv1beta1.MultiClusterHub) string {
-	if m.Spec.CloudPakCompatibility {
+	if m.Spec.SeparateCertificateManagement {
 		return CertManagerNamespace
 	}
 	return m.Namespace

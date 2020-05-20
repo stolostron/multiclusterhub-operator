@@ -101,9 +101,9 @@ func Test_ReconcileMultiClusterHub(t *testing.T) {
 	mch4 := full_mch.DeepCopy()
 	mch4.Spec.IPv6 = true
 
-	// CloudPakCompatibility
+	// SeparateCertificateManagement
 	mch5 := full_mch.DeepCopy()
-	mch5.Spec.CloudPakCompatibility = true
+	mch5.Spec.SeparateCertificateManagement = true
 
 	tests := []struct {
 		Name     string
@@ -155,7 +155,7 @@ func Test_ReconcileMultiClusterHub(t *testing.T) {
 				NamespacedName: mch_namespaced,
 			}
 
-			if tt.MCH.Spec.CloudPakCompatibility {
+			if tt.MCH.Spec.SeparateCertificateManagement {
 				err = r.client.Create(context.TODO(), secret)
 				if err != nil {
 					t.Fatal(err.Error())

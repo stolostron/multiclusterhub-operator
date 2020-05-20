@@ -227,7 +227,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	if multiClusterHub.Spec.CloudPakCompatibility {
+	if multiClusterHub.Spec.SeparateCertificateManagement {
 		result, err = r.copyPullSecret(multiClusterHub, utils.CertManagerNamespace)
 		if result != nil {
 			return *result, err
@@ -544,7 +544,7 @@ func (r *ReconcileMultiClusterHub) finalizeHub(reqLogger logr.Logger, m *operato
 	if err := r.cleanupCRDs(reqLogger, m); err != nil {
 		return err
 	}
-	if m.Spec.CloudPakCompatibility {
+	if m.Spec.SeparateCertificateManagement {
 		if err := r.cleanupPullSecret(reqLogger, m); err != nil {
 			return err
 		}
