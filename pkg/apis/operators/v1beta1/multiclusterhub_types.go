@@ -28,9 +28,9 @@ type MultiClusterHubSpec struct {
 	// +optional
 	IPv6 bool `json:"ipv6"`
 
-	// Flag to install cert-manager into its own namespace for IBM Cloud Pak compatibility
+	// Flag to install cert-manager into its own namespace.
 	// +optional
-	CloudPakCompatibility bool `json:"cloudPakCompatibility"`
+	SeparateCertificateManagement bool `json:"separateCertificateManagement"`
 
 	// Spec of NodeSelector
 	// +optional
@@ -47,6 +47,10 @@ type MultiClusterHubSpec struct {
 	// Spec of Etcd
 	// +optional
 	Etcd `json:"etcd,omitempty"`
+
+	// Configuration options for ingress management
+	// +optional
+	Ingress IngressSpec `json:"ingress,omitempty"`
 
 	// Overrides
 	// +optional
@@ -198,6 +202,13 @@ type Mongo struct {
 	// StorageSize for MultiCluster hub components
 	// +optional
 	Storage string `json:"storage,omitempty"`
+}
+
+// IngressSpec specifies configuration options for ingress management
+type IngressSpec struct {
+	// List of SSL ciphers for management ingress to support
+	// +optional
+	SSLCiphers []string `json:"sslCiphers,omitempty"`
 }
 
 // MultiClusterHubStatus defines the observed state of MultiClusterHub
