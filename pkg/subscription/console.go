@@ -20,6 +20,8 @@ func Console(m *operatorsv1beta1.MultiClusterHub, overrides map[string]string, i
 			"hubconfig": map[string]interface{}{
 				"replicaCount": utils.DefaultReplicaCount(m),
 				"nodeSelector": m.Spec.NodeSelector,
+				"name":         m.Name,
+				"namespace":	m.Namespace,
 			},
 			"global": map[string]interface{}{
 				"imageOverrides": overrides,
