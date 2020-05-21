@@ -478,6 +478,7 @@ data:
                 - servicemonitors
                 - subjectaccessreviews
                 - subscriptions
+                - validatingwebhookconfigurations
                 verbs:
                 - create
               - apiGroups:
@@ -539,10 +540,6 @@ data:
                 - apps
                 - mcm.ibm.com
                 - monitoring.coreos.com
-                resourceNames:
-                - multiclusterhub-operator
-                - multiclusterhub-operator-metrics
-                - multiclusterhub-operator-validating-webhook
                 resources:
                 - deployments/finalizers
                 - services
@@ -569,6 +566,7 @@ data:
                 verbs:
                 - deletecollection
               - apiGroups:
+                - agent.open-cluster-management.io
                 - app.k8s.io
                 - apps.open-cluster-management.io
                 - clusterregistry.k8s.io
@@ -596,6 +594,7 @@ data:
                 - endpointconfigs
                 - helmrepos
                 - helmrepos/status
+                - klusterletconfigs
                 - machinepools
                 - placementbindings
                 - placementpolicies

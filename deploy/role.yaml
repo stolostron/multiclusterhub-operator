@@ -77,6 +77,7 @@ rules:
   - servicemonitors
   - subjectaccessreviews
   - subscriptions
+  - validatingwebhookconfigurations
   verbs:
   - create
 # LIST
@@ -170,6 +171,7 @@ rules:
   
 # RCM Dependancies
 - apiGroups:
+  - "agent.open-cluster-management.io"
   - "app.k8s.io"
   - "apps.open-cluster-management.io"
   - "clusterregistry.k8s.io"
@@ -197,6 +199,7 @@ rules:
   - endpointconfigs
   - helmrepos
   - helmrepos/status
+  - klusterletconfigs
   - machinepools
   - placementbindings
   - placementpolicies
