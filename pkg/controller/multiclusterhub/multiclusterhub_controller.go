@@ -408,13 +408,13 @@ func (r *ReconcileMultiClusterHub) UpdateStatus(m *operatorsv1beta1.MultiCluster
 		if errors.IsConflict(err) {
 			// Error from object being modified is normal behavior and should not be treated like an error
 			log.Info("Failed to update status", "Reason", "Object has been modified")
-			return &reconcile.Result{RequeueAfter: time.Second}, nil
+			return &reconcile.Result{RequeueAfter: time.Second * 15}, nil
 		}
 
 		log.Error(err, fmt.Sprintf("Failed to update %s/%s status ", m.Namespace, m.Name))
 		return &reconcile.Result{}, err
 	}
-	return &reconcile.Result{}, nil
+	return nil, nil
 }
 
 func (r *ReconcileMultiClusterHub) mongoAuthSecret(v *operatorsv1beta1.MultiClusterHub) *corev1.Secret {
