@@ -395,6 +395,10 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
+	if !ready {
+		// Keep reconciling while install is not complete
+		return reconcile.Result{RequeueAfter: time.Second * 20}, nil
+	}
 	return reconcile.Result{}, nil
 }
 
