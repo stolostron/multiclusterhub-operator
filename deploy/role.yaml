@@ -4,7 +4,6 @@ metadata:
   creationTimestamp: null
   name: multiclusterhub-operator
 rules:
-# GET
 - apiGroups:
   - ""
   - "admissionregistration.k8s.io"
@@ -41,7 +40,7 @@ rules:
   - subscriptions
   verbs:
   - get
-# CREATE
+
 - apiGroups:
   - ""
   - "admissionregistration.k8s.io"
@@ -80,7 +79,7 @@ rules:
   - validatingwebhookconfigurations
   verbs:
   - create
-# LIST
+
 - apiGroups:
   - ""
   - "apps"
@@ -107,7 +106,7 @@ rules:
   - validatingwebhookconfigurations
   verbs:
   - list
-# WATCH
+
 - apiGroups:
   - ""
   - "admissionregistration.k8s.io"
@@ -135,13 +134,14 @@ rules:
   - validatingwebhookconfigurations
   verbs:
   - watch
-# UPDATE
+
 - apiGroups:
   - ""
   - "admissionregistration.k8s.io"
   - "apps"
   - "mcm.ibm.com"
   - "monitoring.coreos.com"
+  - "operators.open-cluster-management.io"
   resources:
   - deployments/finalizers
   - services
@@ -149,9 +149,12 @@ rules:
   - servicemonitors
   - servicemonitors/finalizers
   - validatingwebhookconfigurations
+  - multiclusterhubs
+  - multiclusterhubs/finalizers
+  - multiclusterhubs/status
   verbs:
   - update
-# DELETECOLLECTION
+
 - apiGroups:
   - "admissionregistration.k8s.io"
   - "apiextensions.k8s.io"
@@ -224,14 +227,3 @@ rules:
   - delete
   - deletecollection
   - patch
-
-
-# MULTICLUSTER Update Permissions
-- apiGroups:
-  - "operators.open-cluster-management.io"
-  resources:
-  - multiclusterhubs
-  - multiclusterhubs/finalizers
-  - multiclusterhubs/status
-  verbs:
-  - update
