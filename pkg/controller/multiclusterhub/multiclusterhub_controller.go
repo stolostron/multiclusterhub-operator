@@ -390,7 +390,7 @@ func (r *ReconcileMultiClusterHub) UpdateStatus(m *operatorsv1beta1.MultiCluster
 		log.Error(err, fmt.Sprintf("Failed to update %s/%s status ", m.Namespace, m.Name))
 		return &reconcile.Result{}, err
 	}
-	return &reconcile.Result{}, nil
+	return nil, nil
 }
 
 func (r *ReconcileMultiClusterHub) mongoAuthSecret(v *operatorsv1beta1.MultiClusterHub) *corev1.Secret {
@@ -439,8 +439,7 @@ func (r *ReconcileMultiClusterHub) validateVersion(m *operatorsv1beta1.MultiClus
 	}
 
 	if !utils.IsVersionSupported(m.Status.CurrentVersion) {
-		err := e.New("Version " + m.Status.CurrentVersion + " not supported")
-		log.Error(err, "Overriding with valid version")
+		log.Info("Version " + m.Status.CurrentVersion + " not supported. Overriding with valid version")
 		componentVersion, err := r.ReadComponentVersionFile()
 		if err != nil {
 			return &reconcile.Result{}, err

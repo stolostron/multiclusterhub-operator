@@ -114,7 +114,7 @@ func addBorrowedImageOverrides(io map[string]string) map[string]string {
 	// `origin-oauth-proxy` image used by management-ingress chart
 	if io["oauth_proxy"] == "" {
 		// image digest equivalent of `origin-oauth-proxy:4.5`
-		io["oauth_proxy"] = "quay.io/openshift/origin-oauth-proxy@sha256:8599745a5bf914a3e00efa08f9ddd2c409de91c551d330b80e683bca52aa2146"
+		io["oauth_proxy"] = "quay.io/openshift/origin-oauth-proxy:4.5"
 	}
 	return io
 }

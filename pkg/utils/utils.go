@@ -143,7 +143,7 @@ func IsVersionSupported(version string) bool {
 
 //GetSupportedVersions returns list of supported versions for Spec.Version (update every release)
 func GetSupportedVersions() []string {
-	return []string{"1.0.0"}
+	return []string{"1.0.1"}
 }
 
 // DistributePods returns a anti-affinity rule that specifies a preference for pod replicas with
