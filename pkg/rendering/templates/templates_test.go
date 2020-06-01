@@ -26,7 +26,7 @@ func TestGetCoreTemplates(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec:       operatorsv1beta1.MultiClusterHubSpec{},
 		Status: operatorsv1beta1.MultiClusterHubStatus{
-			CurrentVersion: "1.0.0",
+			CurrentVersion: "1.0.1",
 		},
 	}
 	_, err = GetTemplateRenderer().GetTemplates(mchcr)
