@@ -31,7 +31,7 @@ func TestRender(t *testing.T) {
 			Mongo:           operatorsv1beta1.Mongo{},
 		},
 		Status: operatorsv1beta1.MultiClusterHubStatus{
-			CurrentVersion: "1.0.0",
+			CurrentVersion: "1.0.1",
 		},
 	}
 
