@@ -20,6 +20,7 @@ COPY build/_output/bin/multiclusterhub-operator ${OPERATOR}
 
 COPY build/bin /usr/local/bin
 RUN  /usr/local/bin/user_setup
+RUN microdnf update
 
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
 
