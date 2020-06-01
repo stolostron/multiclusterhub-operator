@@ -26,7 +26,7 @@ operator-sdk17 bundle create \
 yq w -i bundles/$version/manifests/multiclusterhub-operator.clusterserviceversion.yaml 'spec.install.spec.deployments(name==multiclusterhub-operator).spec.template.spec.containers.(name==multiclusterhub-operator).image' "$registry/multiclusterhub-operator:$version"
 
 # Build bundle image with opm
-opm alpha bundle build --directory ./bundles/$version/manifests \
+operator-sdk18 bundle create --directory ./bundles/$version \
 --package=multiclusterhub-operator \
 --channels=$channel \
 --default=$channel \

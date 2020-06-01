@@ -81,30 +81,36 @@ csv:
 cr:
 	kubectl apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml
 
+og:
+	kubectl apply -f build/operatorgroup.yaml
+
+ns:
+	kubectl apply -f build/namespace.yaml
+
 # apply subscriptions normally created by OLM
 subscriptions:
 	kubectl apply -k build/subscriptions
 
 # run operator locally outside the cluster
-local-install: secrets subscriptions
+local-install: ns secrets og subscriptions
 	kubectl apply -f deploy/crds/operators.open-cluster-management.io_multiclusterhubs_crd.yaml
 	OPERATOR_NAME=multiclusterhub-operator \
 	TEMPLATES_PATH=$(pwd)/templates \
 	MANIFESTS_PATH=$(pwd)/image-manifests \
-	operator-sdk17 run --local --watch-namespace=open-cluster-management --kubeconfig=$(KUBECONFIG)
+	operator-sdk18 run local --watch-namespace=open-cluster-management --kubeconfig=$(KUBECONFIG)
 
 # run as a Deployment inside the cluster
-in-cluster-install: secrets update-image subscriptions
+in-cluster-install: update-image ns secrets og subscriptions
 	kubectl apply -f deploy/crds/operators.open-cluster-management.io_multiclusterhubs_crd.yaml
 	kubectl apply -k deploy
-	kubectl apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml
+	# kubectl apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml
 
 # creates a configmap index and catalogsource that it subscribes to
-cm-install: secrets update-image csv
+cm-install: update-image csv ns secrets og 
 	bash common/scripts/generate-cm-index.sh ${VERSION} ${REGISTRY}
 	kubectl apply -k build/configmap-install
 
 # generates an index image and catalogsource that serves it
-index-install: secrets update-image csv
+index-install: update-image csv ns secrets og
 	bash common/scripts/generate-index.sh ${VERSION} ${REGISTRY}
 	kubectl apply -k build/index-install
