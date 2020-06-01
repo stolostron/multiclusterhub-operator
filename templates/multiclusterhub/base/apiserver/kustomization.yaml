@@ -2,3 +2,4 @@ resources:
 - apiservice-apiserver_v1alpha1.yaml
 - apiservice-apiserver_v1beta1.yaml
 - apiservice-clusterregistry.yaml
+- apiservice-proxy-server_v1beta1.yaml

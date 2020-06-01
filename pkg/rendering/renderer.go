@@ -3,28 +3,30 @@
 package rendering
 
 import (
+	"encoding/base64"
 	"fmt"
 	"reflect"
 	"strconv"
 
 	"github.com/fatih/structs"
+	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/mcm"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	v1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/kustomize/v3/pkg/resource"
-
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 )
 
 const (
-	apiserviceName = "mcm-apiserver"
-	controllerName = "mcm-controller"
-	webhookName    = "mcm-webhook"
-	metadataErr    = "failed to find metadata field"
+	apiserviceName      = "mcm-apiserver"
+	controllerName      = "mcm-controller"
+	webhookName         = "mcm-webhook"
+	metadataErr         = "failed to find metadata field"
+	proxyApiServiceName = "v1beta1.proxy.open-cluster-management.io"
 )
 
 var log = logf.Log.WithName("renderer")
@@ -105,9 +107,20 @@ func (r *Renderer) renderAPIServices(res *resource.Resource) (*unstructured.Unst
 	if !ok {
 		return nil, fmt.Errorf("failed to find apiservices spec field")
 	}
-	spec["service"] = map[string]interface{}{
-		"namespace": r.cr.Namespace,
-		"name":      apiserviceName,
+	metadata, ok := u.Object["metadata"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to find metadata field")
+	}
+	if metadata["name"] == proxyApiServiceName {
+		spec["service"] = map[string]interface{}{
+			"namespace": r.cr.Namespace,
+			"name":      mcm.ACMProxyServerName,
+		}
+	} else {
+		spec["service"] = map[string]interface{}{
+			"namespace": r.cr.Namespace,
+			"name":      apiserviceName,
+		}
 	}
 	utils.AddInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
 	return u, nil
@@ -181,6 +194,7 @@ func (r *Renderer) renderMutatingWebhookConfiguration(res *resource.Resource) (*
 }
 
 func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructured, error) {
+	caCert, tlsCert, tlsKey := "ca.crt", "tls.crt", "tls.key"
 	u := &unstructured.Unstructured{Object: res.Map()}
 	metadata, ok := u.Object["metadata"].(map[string]interface{})
 	if !ok {
@@ -209,9 +223,9 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 		if err != nil {
 			return nil, err
 		}
-		data["ca.crt"] = []byte(ca.Cert)
-		data["tls.crt"] = []byte(cert.Cert)
-		data["tls.key"] = []byte(cert.Key)
+		data[caCert] = base64.StdEncoding.EncodeToString([]byte(ca.Cert))
+		data[tlsCert] = base64.StdEncoding.EncodeToString([]byte(cert.Cert))
+		data[tlsKey] = base64.StdEncoding.EncodeToString([]byte(cert.Key))
 
 		return u, nil
 	case "mcm-klusterlet-self-signed-secrets":
@@ -223,9 +237,9 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 		if err != nil {
 			return nil, err
 		}
-		data["ca.crt"] = []byte(ca.Cert)
-		data["tls.crt"] = []byte(cert.Cert)
-		data["tls.key"] = []byte(cert.Key)
+		data[caCert] = base64.StdEncoding.EncodeToString([]byte(ca.Cert))
+		data[tlsCert] = base64.StdEncoding.EncodeToString([]byte(cert.Cert))
+		data[tlsKey] = base64.StdEncoding.EncodeToString([]byte(cert.Key))
 		return u, nil
 	case "mcm-webhook-secret":
 		cn := "mcm-webhook." + r.cr.Namespace + ".svc"
@@ -237,9 +251,9 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 		if err != nil {
 			return nil, err
 		}
-		data["ca.crt"] = []byte(ca.Cert)
-		data["tls.crt"] = []byte(cert.Cert)
-		data["tls.key"] = []byte(cert.Key)
+		data[caCert] = base64.StdEncoding.EncodeToString([]byte(ca.Cert))
+		data[tlsCert] = base64.StdEncoding.EncodeToString([]byte(cert.Cert))
+		data[tlsKey] = base64.StdEncoding.EncodeToString([]byte(cert.Key))
 		return u, nil
 	}
 

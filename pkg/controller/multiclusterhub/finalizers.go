@@ -9,16 +9,16 @@ import (
 	"github.com/go-logr/logr"
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
+	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 func (r *ReconcileMultiClusterHub) cleanupHiveConfigs(reqLogger logr.Logger, m *operatorsv1beta1.MultiClusterHub) error {
@@ -78,21 +78,10 @@ func (r *ReconcileMultiClusterHub) cleanupAPIServices(reqLogger logr.Logger, m *
 }
 
 func (r *ReconcileMultiClusterHub) cleanupClusterRoles(reqLogger logr.Logger, m *operatorsv1beta1.MultiClusterHub) error {
-	config, err := config.GetConfig()
-	if err != nil {
-		return err
-	}
-
-	clientset, err := kubernetes.NewForConfig(config)
-	labelSelector := fmt.Sprintf("installer.name=%s, installer.namespace=%s", m.GetName(), m.GetNamespace())
-	listOptions := metav1.ListOptions{
-		LabelSelector: labelSelector,
-	}
-	deletePolicy := metav1.DeletePropagationForeground
-	deleteOptions := metav1.DeleteOptions{
-		PropagationPolicy: &deletePolicy,
-	}
-	err = clientset.RbacV1().ClusterRoles().DeleteCollection(&deleteOptions, listOptions)
+	err := r.client.DeleteAllOf(context.TODO(), &rbacv1.ClusterRole{}, client.MatchingLabels{
+		"installer.name":      m.GetName(),
+		"installer.namespace": m.GetNamespace(),
+	})
 
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -108,22 +97,10 @@ func (r *ReconcileMultiClusterHub) cleanupClusterRoles(reqLogger logr.Logger, m 
 }
 
 func (r *ReconcileMultiClusterHub) cleanupClusterRoleBindings(reqLogger logr.Logger, m *operatorsv1beta1.MultiClusterHub) error {
-	config, err := config.GetConfig()
-	if err != nil {
-		return err
-	}
-
-	clientset, err := kubernetes.NewForConfig(config)
-	labelSelector := fmt.Sprintf("installer.name=%s, installer.namespace=%s", m.GetName(), m.GetNamespace())
-	listOptions := metav1.ListOptions{
-		LabelSelector: labelSelector,
-	}
-	deletePolicy := metav1.DeletePropagationForeground
-	deleteOptions := metav1.DeleteOptions{
-		PropagationPolicy: &deletePolicy,
-	}
-
-	err = clientset.RbacV1().ClusterRoleBindings().DeleteCollection(&deleteOptions, listOptions)
+	err := r.client.DeleteAllOf(context.TODO(), &rbacv1.ClusterRoleBinding{}, client.MatchingLabels{
+		"installer.name":      m.GetName(),
+		"installer.namespace": m.GetNamespace(),
+	})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			reqLogger.Info("No matching clusterrolebindings to finalize. Continuing.")
@@ -138,22 +115,14 @@ func (r *ReconcileMultiClusterHub) cleanupClusterRoleBindings(reqLogger logr.Log
 }
 
 func (r *ReconcileMultiClusterHub) cleanupMutatingWebhooks(reqLogger logr.Logger, m *operatorsv1beta1.MultiClusterHub) error {
-	config, err := config.GetConfig()
-	if err != nil {
-		return err
-	}
+	err := r.client.DeleteAllOf(
+		context.TODO(),
+		&admissionregistrationv1beta1.MutatingWebhookConfiguration{},
+		client.MatchingLabels{
+			"installer.name":      m.GetName(),
+			"installer.namespace": m.GetNamespace(),
+		})
 
-	clientset, err := kubernetes.NewForConfig(config)
-	labelSelector := fmt.Sprintf("installer.name=%s, installer.namespace=%s", m.GetName(), m.GetNamespace())
-	listOptions := metav1.ListOptions{
-		LabelSelector: labelSelector,
-	}
-	deletePolicy := metav1.DeletePropagationForeground
-	deleteOptions := metav1.DeleteOptions{
-		PropagationPolicy: &deletePolicy,
-	}
-
-	err = clientset.AdmissionregistrationV1beta1().MutatingWebhookConfigurations().DeleteCollection(&deleteOptions, listOptions)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			reqLogger.Info("No matching MutatingWebhookConfigurations to finalize. Continuing.")
@@ -168,21 +137,10 @@ func (r *ReconcileMultiClusterHub) cleanupMutatingWebhooks(reqLogger logr.Logger
 }
 
 func (r *ReconcileMultiClusterHub) cleanupPullSecret(reqLogger logr.Logger, m *operatorsv1beta1.MultiClusterHub) error {
-	config, err := config.GetConfig()
-	if err != nil {
-		return err
-	}
-
-	clientset, err := kubernetes.NewForConfig(config)
-	labelSelector := fmt.Sprintf("installer.name=%s, installer.namespace=%s", m.GetName(), m.GetNamespace())
-	listOptions := metav1.ListOptions{
-		LabelSelector: labelSelector,
-	}
-	deletePolicy := metav1.DeletePropagationForeground
-	deleteOptions := metav1.DeleteOptions{
-		PropagationPolicy: &deletePolicy,
-	}
-	err = clientset.CoreV1().Secrets(utils.CertManagerNS(m)).DeleteCollection(&deleteOptions, listOptions)
+	err := r.client.DeleteAllOf(context.TODO(), &corev1.Secret{}, client.MatchingLabels{
+		"installer.name":      m.GetName(),
+		"installer.namespace": m.GetNamespace(),
+	})
 
 	if err != nil {
 		if errors.IsNotFound(err) {

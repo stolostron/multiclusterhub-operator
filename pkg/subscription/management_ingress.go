@@ -24,6 +24,9 @@ func ManagementIngress(m *operatorsv1beta1.MultiClusterHub, overrides map[string
 				"imageOverrides": overrides,
 				"pullPolicy":     utils.GetImagePullPolicy(m),
 			},
+			"config": map[string]interface{}{
+				"ssl-ciphers": utils.FormatSSLCiphers(m.Spec.Ingress.SSLCiphers),
+			},
 		},
 	}
 
