@@ -10,6 +10,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // ACMControllerName is the name of the acm controller deployment
@@ -57,6 +58,24 @@ func ACMControllerDeployment(m *operatorsv1beta1.MultiClusterHub, overrides map[
 							"--klusterlet-cafile=/var/run/klusterlet/ca.crt",
 							"--max-qps=100.0",
 							"--max-burst=200",
+						},
+						LivenessProbe: &v1.Probe{
+							Handler: v1.Handler{
+								HTTPGet: &v1.HTTPGetAction{
+									Path: "/healthz",
+									Port: intstr.FromInt(8000),
+								},
+							},
+							PeriodSeconds: 10,
+						},
+						ReadinessProbe: &v1.Probe{
+							Handler: v1.Handler{
+								HTTPGet: &v1.HTTPGetAction{
+									Path: "/readyz",
+									Port: intstr.FromInt(8000),
+								},
+							},
+							PeriodSeconds: 10,
 						},
 						Resources: v1.ResourceRequirements{
 							Requests: v1.ResourceList{
