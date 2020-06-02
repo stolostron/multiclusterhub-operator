@@ -174,36 +174,65 @@ rules:
   
 # RCM Dependancies
 - apiGroups:
+  - ""
+  - "action.open-cluster-management.io"
   - "agent.open-cluster-management.io"
   - "app.k8s.io"
   - "apps.open-cluster-management.io"
+  - "authorization.k8s.io"
+  - "certificates.k8s.io"
   - "clusterregistry.k8s.io"
+  - "cluster.open-cluster-management.io"
   - "config.openshift.io"
+  - "compliance.mcm.ibm.com"
   - "hive.openshift.io"
+  - "internal.open-cluster-management.io"
+  - "inventory.open-cluster-management.io"
   - "mcm.ibm.com"
   - "multicloud.ibm.com"
   - "policy.mcm.ibm.com"
+  - "proxy.open-cluster-management.io"
+  - "rbac.authorization.k8s.io"
+  - "view.open-cluster-management.io"
   resources:
   - applications
   - applications/status
   - applicationrelationships
   - applicationrelationships/status
+  - baremetalassets
+  - baremetalassets/status
+  - certificatesigningrequests
+  - certificatesigningrequests/approval
   - channels
   - channels/status
+  - clusteractions
+  - clusteractions/status
   - clusterdeployments
+  - clusterinfos
+  - clusterinfos/status
+  - clusterjoinrequests
+  - clusterjoinrequests/status
   - clusters
   - clusters/status
   - clusterstatuses
+  - clusterstatuses/aggregator
+  - clusterstatuses/metering-receiver
+  - clusterstatuses/topology
   - clusterversions
+  - compliances
+  - configmaps
   - deployables
   - deployables/status
   - deployableoverrides
   - deployableoverrides/status
+  - endpoints
   - endpointconfigs
+  - events
   - helmrepos
   - helmrepos/status
   - klusterletconfigs
   - machinepools
+  - namespaces
   - placementbindings
   - placementpolicies
   - placementpolicies/status
@@ -212,10 +241,20 @@ rules:
   - policies
   - resourceviews
   - resourceviews/status
+  - roles
+  - rolebindings
+  - secrets
+  - signers
+  - spokeclusters
+  - spokeviews
+  - spokeviews/status
   - subscriptions
   - subscriptions/status
+  - subjectaccessreviews
+  - syncsets
   - works
   - works/status
+  - works/result
   - worksets
   - worksets/status
   verbs:
@@ -227,3 +266,4 @@ rules:
   - delete
   - deletecollection
   - patch
+  - approve
