@@ -70,15 +70,15 @@ deps:
 	go mod tidy
 
 update-image:
-	operator-sdk18 build quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
+	operator-sdk build quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
 	docker push quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
 
 crd:
-	operator-sdk18 generate crds --crd-version=v1beta1 
+	operator-sdk generate crds --crd-version=v1beta1 
 
 # regenerate CSV
 csv:
-	operator-sdk18 generate csv
+	operator-sdk generate csv
 
 # apply CR
 cr:
@@ -100,7 +100,7 @@ local-install: ns secrets og subscriptions
 	OPERATOR_NAME=multiclusterhub-operator \
 	TEMPLATES_PATH=$(pwd)/templates \
 	MANIFESTS_PATH=$(pwd)/image-manifests \
-	operator-sdk18 run local --watch-namespace=open-cluster-management --kubeconfig=$(KUBECONFIG)
+	operator-sdk run local --watch-namespace=open-cluster-management --kubeconfig=$(KUBECONFIG)
 
 # run as a Deployment inside the cluster
 in-cluster-install: update-image ns secrets og subscriptions

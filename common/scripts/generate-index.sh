@@ -13,7 +13,7 @@ version=$VERSION
 registry=quay.io/rhibmcollab
 
 # Generate bundle files with SDK
-operator-sdk18 generate bundle \
+operator-sdk generate bundle \
 --manifests --metadata \
 --channels=$channel \
 --default-channel=$channel \

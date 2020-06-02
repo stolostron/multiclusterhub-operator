@@ -64,7 +64,7 @@ fi
 # Ensure the default namespace is the one we are going to be working in
 oc project $NAMESPACE
 
-operatorSDKVersion=$(operator-sdk18 version | cut -d, -f 1 | tr -d '"' | cut -d ' ' -f 3)
+operatorSDKVersion=$(operator-sdk version | cut -d, -f 1 | tr -d '"' | cut -d ' ' -f 3)
 if [[ "$operatorSDKVersion" != "v0.18.0" ]]; then
     echo "Must install operator-sdk v0.18.0."
     while [[ "$_install" != "Y" ]] && [[ "$_install" != "N" ]] # While string is different or empty...
