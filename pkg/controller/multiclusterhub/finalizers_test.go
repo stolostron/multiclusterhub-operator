@@ -216,7 +216,7 @@ func Test_cleanupClusterRoleBindings(t *testing.T) {
 		Subjects: []rbacv1.Subject{
 			{
 				Kind: "ServiceAccount",
-				Name: "hub-sa",
+				Name: "acm-foundation-sa",
 			},
 		},
 	}

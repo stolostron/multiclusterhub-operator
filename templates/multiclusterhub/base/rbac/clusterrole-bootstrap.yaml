@@ -2,8 +2,6 @@ kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: klusterlet-bootstrap
-  labels:
-    app: mcm-apiserver
 rules:
 - apiGroups: ["mcm.ibm.com"]
   resources: ["clusterjoinrequests"]
