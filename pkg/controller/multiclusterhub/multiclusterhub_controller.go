@@ -48,6 +48,7 @@ import (
 const hubFinalizer = "finalizer.operators.open-cluster-management.io"
 
 var log = logf.Log.WithName("controller_multiclusterhub")
+var resyncPeriod = time.Second * 20
 
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
@@ -395,6 +396,10 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
+	if !ready {
+		// Keep reconciling while install is not complete
+		return reconcile.Result{RequeueAfter: resyncPeriod}, nil
+	}
 	return reconcile.Result{}, nil
 }
 
@@ -404,13 +409,13 @@ func (r *ReconcileMultiClusterHub) UpdateStatus(m *operatorsv1beta1.MultiCluster
 		if errors.IsConflict(err) {
 			// Error from object being modified is normal behavior and should not be treated like an error
 			log.Info("Failed to update status", "Reason", "Object has been modified")
-			return &reconcile.Result{RequeueAfter: time.Second}, nil
+			return &reconcile.Result{RequeueAfter: resyncPeriod}, nil
 		}
 
 		log.Error(err, fmt.Sprintf("Failed to update %s/%s status ", m.Namespace, m.Name))
 		return &reconcile.Result{}, err
 	}
-	return &reconcile.Result{}, nil
+	return nil, nil
 }
 
 func (r *ReconcileMultiClusterHub) mongoAuthSecret(v *operatorsv1beta1.MultiClusterHub) *corev1.Secret {
