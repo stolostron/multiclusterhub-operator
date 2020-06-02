@@ -2,8 +2,6 @@ kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: mcm-klusterlet-bootstrap
-  labels:
-    app: mcm-apiserver
 subjects:
   - kind: Group
     name: system:authenticated
