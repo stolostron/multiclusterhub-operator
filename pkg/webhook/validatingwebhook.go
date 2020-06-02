@@ -77,8 +77,8 @@ func (m *multiClusterHubValidator) validateUpdate(req admission.Request) error {
 	if err != nil {
 		return err
 	}
-	if existingMCH.Spec.CloudPakCompatibility != newMCH.Spec.CloudPakCompatibility {
-		return errors.New("Updating CloudPakCompatibility is forbidden")
+	if existingMCH.Spec.SeparateCertificateManagement != newMCH.Spec.SeparateCertificateManagement {
+		return errors.New("Updating SeparateCertificateManagement is forbidden")
 	}
 
 	if existingMCH.Spec.Etcd.Storage != "" && existingMCH.Spec.Etcd.Storage != newMCH.Spec.Etcd.Storage {

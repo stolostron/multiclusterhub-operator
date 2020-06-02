@@ -48,6 +48,7 @@ import (
 const hubFinalizer = "finalizer.operators.open-cluster-management.io"
 
 var log = logf.Log.WithName("controller_multiclusterhub")
+var resyncPeriod = time.Second * 20
 
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
@@ -227,7 +228,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	if multiClusterHub.Spec.CloudPakCompatibility {
+	if multiClusterHub.Spec.SeparateCertificateManagement {
 		result, err = r.copyPullSecret(multiClusterHub, utils.CertManagerNamespace)
 		if result != nil {
 			return *result, err
@@ -240,9 +241,12 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	}
 
 	certGV := schema.GroupVersion{Group: "certmanager.k8s.io", Version: "v1alpha1"}
-	result, err = r.apiReady(certGV)
-	if result != nil {
-		return *result, err
+	// Skip wait for API to be ready on unit test
+	if !utils.IsUnitTest() {
+		result, err = r.apiReady(certGV)
+		if result != nil {
+			return *result, err
+		}
 	}
 
 	result, err = r.ensureSubscription(multiClusterHub, subscription.CertWebhook(multiClusterHub, r.CacheSpec.ImageOverrides))
@@ -392,6 +396,10 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
+	if !ready {
+		// Keep reconciling while install is not complete
+		return reconcile.Result{RequeueAfter: resyncPeriod}, nil
+	}
 	return reconcile.Result{}, nil
 }
 
@@ -401,13 +409,13 @@ func (r *ReconcileMultiClusterHub) UpdateStatus(m *operatorsv1beta1.MultiCluster
 		if errors.IsConflict(err) {
 			// Error from object being modified is normal behavior and should not be treated like an error
 			log.Info("Failed to update status", "Reason", "Object has been modified")
-			return &reconcile.Result{RequeueAfter: time.Second}, nil
+			return &reconcile.Result{RequeueAfter: resyncPeriod}, nil
 		}
 
 		log.Error(err, fmt.Sprintf("Failed to update %s/%s status ", m.Namespace, m.Name))
 		return &reconcile.Result{}, err
 	}
-	return &reconcile.Result{}, nil
+	return nil, nil
 }
 
 func (r *ReconcileMultiClusterHub) mongoAuthSecret(v *operatorsv1beta1.MultiClusterHub) *corev1.Secret {
@@ -513,7 +521,7 @@ func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1beta1.MultiCluste
 		Name: "cluster",
 	}, ingress)
 	// Don't fail on a unit test (Fake client won't find "cluster" Ingress)
-	if err != nil && m.UID != "" {
+	if err != nil && !utils.IsUnitTest() {
 		log.Error(err, "Failed to get Ingress")
 		return &reconcile.Result{}, err
 	}
@@ -541,7 +549,7 @@ func (r *ReconcileMultiClusterHub) finalizeHub(reqLogger logr.Logger, m *operato
 	if err := r.cleanupCRDs(reqLogger, m); err != nil {
 		return err
 	}
-	if m.Spec.CloudPakCompatibility {
+	if m.Spec.SeparateCertificateManagement {
 		if err := r.cleanupPullSecret(reqLogger, m); err != nil {
 			return err
 		}

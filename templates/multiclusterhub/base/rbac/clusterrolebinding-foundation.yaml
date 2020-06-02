@@ -1,13 +1,11 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: mcm-rbac
-  labels:
-    app: mcm-apiserver
+  name: acm-foundation
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: cluster-admin
+  name: acm-foundation
 subjects:
   - kind: ServiceAccount
-    name: hub-sa
+    name: acm-foundation-sa

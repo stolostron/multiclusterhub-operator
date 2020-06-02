@@ -28,9 +28,9 @@ type MultiClusterHubSpec struct {
 	// +optional
 	IPv6 bool `json:"ipv6"`
 
-	// Flag to install cert-manager into its own namespace for IBM Cloud Pak compatibility
+	// Flag to install cert-manager into its own namespace.
 	// +optional
-	CloudPakCompatibility bool `json:"cloudPakCompatibility"`
+	SeparateCertificateManagement bool `json:"separateCertificateManagement"`
 
 	// Spec of NodeSelector
 	// +optional

@@ -4,6 +4,7 @@ package utils
 
 import (
 	"encoding/json"
+	"os"
 	"strings"
 	"time"
 
@@ -42,6 +43,8 @@ const (
 
 	// DefaultRepository ...
 	DefaultRepository = "quay.io/open-cluster-management"
+
+	UnitTestEnvVar = "UNIT_TEST"
 )
 
 var (
@@ -58,7 +61,7 @@ var (
 
 // CertManagerNS returns the namespace to deploy cert manager objects
 func CertManagerNS(m *operatorsv1beta1.MultiClusterHub) string {
-	if m.Spec.CloudPakCompatibility {
+	if m.Spec.SeparateCertificateManagement {
 		return CertManagerNamespace
 	}
 	return m.Namespace
@@ -176,6 +179,15 @@ func GetImagePullPolicy(m *operatorsv1beta1.MultiClusterHub) v1.PullPolicy {
 		return corev1.PullAlways
 	}
 	return m.Spec.Overrides.ImagePullPolicy
+}
+
+func IsUnitTest() bool {
+	if unitTest, found := os.LookupEnv(UnitTestEnvVar); found {
+		if unitTest == "true" {
+			return true
+		}
+	}
+	return false
 }
 
 // FormatSSLCiphers converts an array of ciphers into a string consumed by the management
