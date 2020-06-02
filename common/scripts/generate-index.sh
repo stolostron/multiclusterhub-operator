@@ -8,25 +8,23 @@ indent() {
       -e "1s/^${INDENT}/${INDENT1S} /"
 }
 
-channel=dev
+channel=latest
 version=$VERSION
 registry=quay.io/rhibmcollab
 
 # Generate bundle files with SDK
-operator-sdk17 bundle create \
---directory ./deploy/olm-catalog/multiclusterhub-operator/manifests \
---package=multiclusterhub-operator \
+operator-sdk18 generate bundle \
+--manifests --metadata \
 --channels=$channel \
 --default-channel=$channel \
 --output-dir=./bundles/$version \
---generate-only \
 --overwrite
 
 # Update operator image
 yq w -i bundles/$version/manifests/multiclusterhub-operator.clusterserviceversion.yaml 'spec.install.spec.deployments(name==multiclusterhub-operator).spec.template.spec.containers.(name==multiclusterhub-operator).image' "$registry/multiclusterhub-operator:$version"
 
 # Build bundle image with opm
-operator-sdk18 bundle create --directory ./bundles/$version \
+opm alpha bundle build --directory ./bundles/$version/manifests \
 --package=multiclusterhub-operator \
 --channels=$channel \
 --default=$channel \

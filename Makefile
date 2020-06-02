@@ -70,12 +70,15 @@ deps:
 	go mod tidy
 
 update-image:
-	operator-sdk17 build quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
+	operator-sdk18 build quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
 	docker push quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
+
+crd:
+	operator-sdk18 generate crds --crd-version=v1beta1 
 
 # regenerate CSV
 csv:
-	operator-sdk17 generate csv
+	operator-sdk18 generate csv
 
 # apply CR
 cr:
@@ -112,5 +115,6 @@ cm-install: update-image csv ns secrets og
 
 # generates an index image and catalogsource that serves it
 index-install: update-image csv ns secrets og
+	kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "quay-secret"}]}'
 	bash common/scripts/generate-index.sh ${VERSION} ${REGISTRY}
 	kubectl apply -k build/index-install

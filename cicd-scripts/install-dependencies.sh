@@ -15,7 +15,7 @@ if ! [ -x "$(command -v operator-sdk)" ]; then
     sudo mv operator-sdk /usr/local/bin/operator-sdk
 fi
 
-_OPM_VERSION=v1.12.3
+_OPM_VERSION=v1.12.5
 
 if ! [ -x "$(command -v opm)" ]; then
     if [[ "$OSTYPE" == "linux-gnu" ]]; then

@@ -64,18 +64,18 @@ fi
 # Ensure the default namespace is the one we are going to be working in
 oc project $NAMESPACE
 
-operatorSDKVersion=$(operator-sdk version | cut -d, -f 1 | tr -d '"' | cut -d ' ' -f 3)
-if [[ "$operatorSDKVersion" != "v0.17.0" ]]; then
-    echo "Must install operator-sdk v0.17.0."
+operatorSDKVersion=$(operator-sdk18 version | cut -d, -f 1 | tr -d '"' | cut -d ' ' -f 3)
+if [[ "$operatorSDKVersion" != "v0.18.0" ]]; then
+    echo "Must install operator-sdk v0.18.0."
     while [[ "$_install" != "Y" ]] && [[ "$_install" != "N" ]] # While string is different or empty...
     do
-        read -p "Install operator-sdk v0.17.0? (Y/N): " _install
+        read -p "Install operator-sdk v0.18.0? (Y/N): " _install
     done
     if [[ "$_install" == "Y" ]]; then
-        echo "Installing operator-sdk v0.17.0 ..."
+        echo "Installing operator-sdk v0.18.0 ..."
         make deps
     else
-        echo "Must install operator-sdk v0.17.0 ... Exiting"
+        echo "Must install operator-sdk v0.18.0 ... Exiting"
         # exit 1
     fi
 fi
@@ -119,6 +119,13 @@ echo "Beginning installation ..."
 make cm-install
 echo ""
 echo "Operator online. MultiClusterHub CR applied."
+
+while [[ $_output != "multiclusterhub.operators.open-cluster-management.io/multiclusterhub created" ]] # While string is different or empty...
+do
+    echo "Waiting for Operator to come online ..."
+    _output=$(oc apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml 2>/dev/null)
+    sleep 10
+done
 
 ## 5. Validate Install
 
