@@ -14,7 +14,7 @@ import (
 const ImageKey = "multicloud_manager"
 
 // ServiceAccount used by mcm deployments
-const ServiceAccount = "hub-sa"
+const ServiceAccount = "acm-foundation-sa"
 
 // Image returns image reference for multicloud-manager
 func Image(overrides map[string]string) string {
