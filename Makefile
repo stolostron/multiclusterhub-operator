@@ -78,7 +78,7 @@ crd:
 
 # regenerate CSV
 csv:
-	operator-sdk generate csv
+	operator-sdk generate csv --operator-name=multiclusterhub-operator
 
 # apply CR
 cr:

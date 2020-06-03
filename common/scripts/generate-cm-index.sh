@@ -14,6 +14,7 @@ registry=quay.io/rhibmcollab
 
 # Generate bundle files with SDK
 operator-sdk generate bundle \
+--operator-name=multiclusterhub-operator \
 --manifests --metadata \
 --channels=$channel \
 --default-channel=$channel \
