@@ -143,6 +143,7 @@ rules:
   - "monitoring.coreos.com"
   - "operators.open-cluster-management.io"
   resources:
+  - deployments
   - deployments/finalizers
   - services
   - services/finalizers
