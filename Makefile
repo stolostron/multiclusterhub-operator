@@ -66,7 +66,7 @@ reinstall: uninstall cm-install
 subscribe: cm-install
 
 deps:
-	./cicd-scripts/install-dependencies.sh
+	./common/scripts/install-dependencies.sh
 	go mod tidy
 
 update-image:
