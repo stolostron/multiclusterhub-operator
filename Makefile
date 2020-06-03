@@ -89,6 +89,7 @@ og:
 
 ns:
 	kubectl apply -f build/namespace.yaml
+	oc project open-cluster-management
 
 # apply subscriptions normally created by OLM
 subscriptions:
@@ -98,13 +99,14 @@ subscriptions:
 local-install: ns secrets og subscriptions
 	kubectl apply -f deploy/crds/operators.open-cluster-management.io_multiclusterhubs_crd.yaml
 	OPERATOR_NAME=multiclusterhub-operator \
-	TEMPLATES_PATH=$(pwd)/templates \
-	MANIFESTS_PATH=$(pwd)/image-manifests \
-	operator-sdk run local --watch-namespace=open-cluster-management --kubeconfig=$(KUBECONFIG)
+	TEMPLATES_PATH="$(shell pwd)/templates" \
+	MANIFESTS_PATH="$(shell pwd)/image-manifests" \
+	operator-sdk18 run local --watch-namespace=open-cluster-management --kubeconfig=$(KUBECONFIG)
 
 # run as a Deployment inside the cluster
 in-cluster-install: update-image ns secrets og subscriptions
 	kubectl apply -f deploy/crds/operators.open-cluster-management.io_multiclusterhubs_crd.yaml
+	yq w -i deploy/kustomization.yaml 'images(name==multiclusterhub-operator).newTag' "$(version)"
 	kubectl apply -k deploy
 	# kubectl apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml
 
@@ -115,6 +117,6 @@ cm-install: update-image csv ns secrets og
 
 # generates an index image and catalogsource that serves it
 index-install: update-image csv ns secrets og
-	kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "quay-secret"}]}'
+	kubectl patch serviceaccount default -n open-cluster-management -p '{"imagePullSecrets": [{"name": "quay-secret"}]}'
 	bash common/scripts/generate-index.sh ${VERSION} ${REGISTRY}
 	kubectl apply -k build/index-install

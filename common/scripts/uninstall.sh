@@ -64,5 +64,8 @@ oc delete configmap hive-operator-leader --ignore-not-found
 # Delete SCCs
 oc delete scc multicloud-scc || true
 
+# Delete deploy resources if an in-cluster install
+oc delete -k deploy/
+
 # Other
 oc delete consolelink acm-console-link --ignore-not-found
