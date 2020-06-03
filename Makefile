@@ -48,85 +48,75 @@ image:
 push:
 	./common/scripts/push.sh "$(REGISTRY)/$(IMG):$(VERSION)"
 
-olm-catalog: clean
-	@common/scripts/olm_catalog.sh "$(BUNDLE_REGISTRY)" "$(IMG)" "$(VERSION)"
-
-clean::
-	rm -rf $(BUILD_DIR)/_output
-	rm -f cover.out
-
-install: image push olm-catalog
-	# need to check for operator group
-	@oc create secret docker-registry multiclusterhub-operator-pull-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
-	@oc create secret docker-registry quay-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
-	@oc apply -k ./build/_output/olm || true
-
-install-dev:
+# configmap subscription install with additional logic
+install:
 	./common/scripts/tests/install.sh
 
-directuninstall:
-	@ oc delete -k ./build/_output/olm || true
+uninstall:
+	bash common/scripts/uninstall.sh
 
-uninstall: directuninstall unsubscribe
+# create secrets for pulling images
+secrets: 
+	@oc create secret docker-registry multiclusterhub-operator-pull-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
+	@oc create secret docker-registry quay-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
 
-reinstall: uninstall install
+reinstall: uninstall cm-install
 
-local:
-	@operator-sdk run --local --namespace="" --operator-flags="--zap-devel=true"
-
-subscribe: image olm-catalog
-	# @kubectl create secret docker-registry quay-secret --docker-server=$(REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
-	@oc apply -f build/_output/olm/multiclusterhub.resources.yaml
-
-unsubscribe:
-	@oc delete MultiClusterHub example-multiclusterhub || true
-	@oc delete appsub --all || true
-	@oc delete helmrelease --all || true
-	@oc delete MultiClusterHub example-multiclusterhub || true
-	@oc delete hiveconfig hive || true
-	@oc delete crd channels.app.ibm.com || true
-	@oc delete crd deployables.app.ibm.com || true
-	@oc delete crd subscriptions.app.ibm.com || true
-	@oc delete crd etcdbackups.etcd.database.coreos.com || true
-	@oc delete crd etcdclusters.etcd.database.coreos.com || true
-	@oc delete crd etcdrestores.etcd.database.coreos.com || true
-	@oc delete crd multiclusterhubs.operators.open-cluster-management.io || true
-	@oc delete csv multiclusterhub-operator.v2.0.0 || true
-	@oc delete csv etcdoperator.v0.9.4 || true
-	@oc delete csv multicluster-operators-subscription.v0.1.5 || true
-	@oc delete csv hive-operator.v1.0.2 || true
-	@oc delete subscription multiclusterhub-operator || true
-	@oc delete subscription etcdoperator.v0.9.4 || true
-	@oc delete catalogsource multiclusterhub-operator-registry || true
-	@oc delete deploy -n hive hive-controllers || true
-	@oc delete deploy -n hive hiveadmission || true
-	@oc delete apiservice v1.admission.hive.openshift.io || true
-	@oc delete apiservice v1.hive.openshift.io || true
-	@oc delete apiservice v1alpha1.clusterregistry.k8s.io || true
-	@oc delete apiservice v1alpha1.mcm.ibm.com || true
-	@oc delete apiservice v1beta1.mcm.ibm.com || true
-	@oc delete apiservice v1beta1.webhook.certmanager.k8s.io || true
-	@oc delete -k templates/multiclusterhub/base/hive/ || true
-	@oc delete clusterrole hive-admin || true
-	@oc delete clusterrole hive-reader || true
-	@oc delete service multicluster-operators-subscription || true
-	@oc delete helmreleases --all || true
-	@oc delete validatingwebhookconfiguration cert-manager-webhook || true
-	@oc delete clusterrole cert-manager-webhook-requester || true
-	@oc delete clusterrolebinding cert-manager-webhook-auth-delegator || true
-	@for crd in $(oc get crd | grep cert | cut -f 1 -d ' '); do oc delete crd $crd; done
-	# Wrong syntax for Makefile @for webhook in $(oc get validatingwebhookconfiguration | grep hive | cut -f 1 -d ' '); do oc delete validatingwebhookconfiguration $webhook; done
-	@oc delete scc multicloud-scc || true
-	@oc delete clusterrole multicluster-mongodb
-	@oc delete clusterrolebinding multicluster-mongodb
-	@oc delete sub etcd-singlenamespace-alpha-community-operators-openshift-marketplace
-	@oc delete sub multicluster-operators-subscription-alpha-community-operators-openshift-marketplace
-	@oc delete sub hive-operator-alpha-community-operators-openshift-marketplace
-	@oc delete sub multiclusterhub-operator
-
-resubscribe: unsubscribe subscribe
-
+# subscribe is an alias for the configmap installation method
+subscribe: cm-install
 
 deps:
 	./cicd-scripts/install-dependencies.sh
 	go mod tidy
+
+update-image:
+	operator-sdk build quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
+	docker push quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
+
+crd:
+	operator-sdk generate crds --crd-version=v1beta1 
+
+# regenerate CSV
+csv:
+	operator-sdk generate csv --operator-name=multiclusterhub-operator
+
+# apply CR
+cr:
+	kubectl apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml
+
+og:
+	kubectl apply -f build/operatorgroup.yaml
+
+ns:
+	kubectl apply -f build/namespace.yaml
+	oc project open-cluster-management
+
+# apply subscriptions normally created by OLM
+subscriptions:
+	kubectl apply -k build/subscriptions
+
+# run operator locally outside the cluster
+local-install: ns secrets og subscriptions
+	kubectl apply -f deploy/crds/operators.open-cluster-management.io_multiclusterhubs_crd.yaml
+	OPERATOR_NAME=multiclusterhub-operator \
+	TEMPLATES_PATH="$(shell pwd)/templates" \
+	MANIFESTS_PATH="$(shell pwd)/image-manifests" \
+	operator-sdk18 run local --watch-namespace=open-cluster-management --kubeconfig=$(KUBECONFIG)
+
+# run as a Deployment inside the cluster
+in-cluster-install: update-image ns secrets og subscriptions
+	kubectl apply -f deploy/crds/operators.open-cluster-management.io_multiclusterhubs_crd.yaml
+	yq w -i deploy/kustomization.yaml 'images(name==multiclusterhub-operator).newTag' "$(version)"
+	kubectl apply -k deploy
+	# kubectl apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml
+
+# creates a configmap index and catalogsource that it subscribes to
+cm-install: update-image csv ns secrets og 
+	bash common/scripts/generate-cm-index.sh ${VERSION} ${REGISTRY}
+	kubectl apply -k build/configmap-install
+
+# generates an index image and catalogsource that serves it
+index-install: update-image csv ns secrets og
+	kubectl patch serviceaccount default -n open-cluster-management -p '{"imagePullSecrets": [{"name": "quay-secret"}]}'
+	bash common/scripts/generate-index.sh ${VERSION} ${REGISTRY}
+	kubectl apply -k build/index-install

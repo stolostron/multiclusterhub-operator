@@ -1,0 +1,294 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "operators.open-cluster-management.io/v1beta1",
+          "kind": "MultiClusterHub",
+          "metadata": {
+            "name": "multiclusterhub",
+            "namespace": "open-cluster-management"
+          },
+          "spec": {
+            "imagePullSecret": "quay-secret"
+          }
+        }
+      ]
+    capabilities: Basic Install
+    categories: Integration & Delivery
+    certified: "false"
+    createdAt: "2020-04-29T15:57:12Z"
+    description: Open management of Openshift and Kubernetes clusters
+    repository: https://github.com/open-cluster-management/multicloudhub-operator
+    support: The Open Cluster Management Project
+  name: multiclusterhub-operator.v2.0.0
+  namespace: open-cluster-management
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: MultiClusterHub defines the configuration for an instance of the
+        MultiCluster Hub
+      displayName: MultiClusterHub Operator
+      kind: MultiClusterHub
+      name: multiclusterhubs.operators.open-cluster-management.io
+      version: v1beta1
+    required:
+    - description: Represent a helm chart repository
+      displayName: Channel
+      kind: Channel
+      name: channels.apps.open-cluster-management.io
+      version: v1
+    - description: Represents a cluster of etcd nodes.
+      displayName: etcd Cluster
+      kind: EtcdCluster
+      name: etcdclusters.etcd.database.coreos.com
+      version: v1beta2
+    - description: Represent a helm chart selected by the subscription, for internal
+        use only.
+      displayName: Helm Release
+      kind: HelmRelease
+      name: helmreleases.apps.open-cluster-management.io
+      version: v1
+    - description: Configuration for the Hive Operator
+      displayName: Hive Config
+      kind: HiveConfig
+      name: hiveconfigs.hive.openshift.io
+      version: v1
+    - description: Subscribe resources from a channel according to its package filters
+      displayName: Subscription
+      kind: Subscription
+      name: subscriptions.apps.open-cluster-management.io
+      version: v1
+  description: 'The Open Cluster Management Hub operator installs and maintains an
+    instance of the OCM hub, a central management console for managing OpenShift and
+    Kubernetes clusters. '
+  displayName: Open Cluster Management Hub
+  icon:
+  - base64data: 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
+    mediatype: image/jpeg
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - services
+          - services/finalizers
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          - serviceaccounts
+          - namespaces
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - apps
+          resourceNames:
+          - multiclusterhub-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - get
+        - apiGroups:
+          - apps
+          resources:
+          - replicasets
+          - deployments
+          verbs:
+          - get
+        - apiGroups:
+          - admissionregistration.k8s.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - operators.open-cluster-management.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - apiregistration.k8s.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - clusterregistry.k8s.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - operators.coreos.com
+          resources:
+          - operatorgroups
+          - subscriptions
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - etcd.database.coreos.com
+          resources:
+          - etcdclusters
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - apiextensions.k8s.io
+          resources:
+          - customresourcedefinitions
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps.open-cluster-management.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - operators.coreos.com
+          resources:
+          - hive-catalog
+          - catalogsources
+          - clusterserviceversions
+          - hiveconfig
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - hive.openshift.io
+          resources:
+          - hiveconfigs
+          verbs:
+          - get
+          - create
+          - list
+          - delete
+          - deletecollection
+        - apiGroups:
+          - security.openshift.io
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - '*'
+        - apiGroups:
+          - storage.k8s.io
+          resources:
+          - storageclasses
+          verbs:
+          - '*'
+        - apiGroups:
+          - config.openshift.io
+          resources:
+          - ingresses
+          verbs:
+          - get
+          - list
+          - watch
+        serviceAccountName: multiclusterhub-operator
+      deployments:
+      - name: multiclusterhub-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: multiclusterhub-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: multiclusterhub-operator
+            spec:
+              containers:
+              - command:
+                - multiclusterhub-operator
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: OPERATOR_NAME
+                  value: multiclusterhub-operator
+                - name: USER
+                  value: multiclusterhub-operator
+                - name: TEMPLATES_PATH
+                  value: /usr/local/templates
+                - name: MANIFESTS_PATH
+                  value: /image-manifests
+                image: multiclusterhub-operator:2.0.0
+                imagePullPolicy: Always
+                name: multiclusterhub-operator
+                resources:
+                  limits:
+                    memory: 2Gi
+                  requests:
+                    cpu: 100m
+                    memory: 256Mi
+              imagePullSecrets:
+              - name: multiclusterhub-operator-pull-secret
+              serviceAccountName: multiclusterhub-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  keywords:
+  - multiclusterhub
+  - install
+  maintainers:
+  - email: ocm-dev@open-cluster-management.io
+    name: Open Cluster Management Project team
+  maturity: alpha
+  provider:
+    name: Redhat
+  version: 2.0.0
