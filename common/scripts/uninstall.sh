@@ -73,9 +73,15 @@ oc delete consolelink acm-console-link --ignore-not-found
 # Delete Nucleus
 _nucleusDir=build/nucleus
 if [ -d "$_nucleusDir" ]; then
-    echo "- Removing Existing Nucleus Directory ..."
     cd build/nucleus
     make clean-hub
     make clean-spoke
     cd ../..
+    oc delete deploy cluster-manager || true
+    oc delete deploy klusterlet || true
+    oc get csv | grep "cluster-manager" | awk '{ print $1 }' | xargs oc delete csv --wait=false --ignore-not-found || true
+    oc get csv | grep "klusterlet" | awk '{ print $1 }' | xargs oc delete csv --wait=false --ignore-not-found || true
+    oc get sub | grep "cluster-manager" | awk '{ print $1 }' | xargs oc delete sub --wait=false --ignore-not-found || true
+    oc get sub | grep "klusterlet" | awk '{ print $1 }' | xargs oc delete sub --wait=false --ignore-not-found || true
+
 fi
