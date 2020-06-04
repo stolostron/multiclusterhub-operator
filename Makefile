@@ -73,7 +73,7 @@ deps:
 	go mod tidy
 
 update-image:
-	operator-sdk build quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
+	operator-sdk build quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION) --go-build-args "-o build/_output/bin/multiclusterhub-operator"
 	docker push quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
 
 crd:
