@@ -16,7 +16,7 @@ report.json
 *.out
 
 *.build-harness-bootstrap
-build/_output/bin/multiclusterhub-operator
+build/_output/bin/
 .idea/
 build-harness/
 build-harness-extensions/
@@ -30,3 +30,8 @@ build-harness-extensions/
 __pycache__/
 *.py[cod]
 
+# Generated bundles from opm
+bundles/
+# Customized during configmap install  
+build/configmap-install/index-configmap.yaml
+bundle.Dockerfile
