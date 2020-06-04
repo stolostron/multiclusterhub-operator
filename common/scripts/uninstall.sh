@@ -69,3 +69,13 @@ oc delete -k deploy/
 
 # Other
 oc delete consolelink acm-console-link --ignore-not-found
+
+# Delete Nucleus
+_nucleusDir=build/nucleus
+if [ -d "$_nucleusDir" ]; then
+    echo "- Removing Existing Nucleus Directory ..."
+    cd build/nucleus
+    make clean-hub
+    make clean-spoke
+    cd ../..
+fi

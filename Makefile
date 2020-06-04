@@ -55,6 +55,9 @@ install:
 uninstall:
 	bash common/scripts/uninstall.sh
 
+nucleus:
+	./common/scripts/nucleus/install_nucleus.sh
+
 # create secrets for pulling images
 secrets: 
 	@oc create secret docker-registry multiclusterhub-operator-pull-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true

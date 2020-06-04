@@ -16,6 +16,7 @@ report.json
 
 *.build-harness-bootstrap
 build/_output/bin/
+build/nucleus/
 .idea/
 build-harness/
 build-harness-extensions/
