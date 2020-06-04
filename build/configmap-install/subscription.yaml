@@ -4,9 +4,8 @@ metadata:
   name: multiclusterhub-operator
   namespace: open-cluster-management
 spec:
-  channel: alpha
+  channel: latest
   installPlanApproval: Automatic
   name: multiclusterhub-operator
-  source: multiclusterhub-operator-registry
+  source: mch-catalog-source
   sourceNamespace: open-cluster-management
-  startingCSV: multiclusterhub-operator.v2.0.0

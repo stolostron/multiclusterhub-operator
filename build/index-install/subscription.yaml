@@ -1,0 +1,11 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: multiclusterhub-operator
+  namespace: open-cluster-management
+spec:
+  channel: latest
+  installPlanApproval: Automatic
+  name: multiclusterhub-operator
+  source: mch-catalog-source
+  sourceNamespace: open-cluster-management
