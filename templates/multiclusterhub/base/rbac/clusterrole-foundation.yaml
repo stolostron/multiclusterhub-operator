@@ -5,7 +5,7 @@ metadata:
 rules:
   - apiGroups: ["mcm.ibm.com"]
     resources: ["clusterjoinrequests", "clusterjoinrequests/status"]
-    verbs: ["get", "list", "watch", "create", "update", "Delete"]
+    verbs: ["get", "list", "watch", "create", "update", "delete"]
   - apiGroups: ["mcm.ibm.com"]
     resources: ["resourceviews", "resourceviews/status", "works", "works/status", "works/result", "worksets", "worksets/status"]
     verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
