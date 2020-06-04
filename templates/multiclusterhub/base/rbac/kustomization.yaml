@@ -8,4 +8,3 @@ resources:
 - clusterrole-admin-aggregate.yaml
 - clusterrole-edit-aggregate.yaml
 - clusterrole-view-aggregate.yaml
-# - clusterrolebinding-default.yaml
