@@ -57,9 +57,9 @@ func ACMProxyServerDeployment(m *operatorsv1beta1.MultiClusterHub, overrides map
 							"/acm-proxyserver",
 							"--secure-port=6443",
 							"--cert-dir=/tmp",
-							"--klusterlet-cafile=/var/run/klusterlet/ca.crt",
-							"--klusterlet-certfile=/var/run/klusterlet/tls.crt",
-							"--klusterlet-keyfile=/var/run/klusterlet/tls.key",
+							"--agent-cafile=/var/run/klusterlet/ca.crt",
+							"--agent-certfile=/var/run/klusterlet/tls.crt",
+							"--agent-keyfile=/var/run/klusterlet/tls.key",
 						},
 						LivenessProbe: &v1.Probe{
 							Handler: v1.Handler{

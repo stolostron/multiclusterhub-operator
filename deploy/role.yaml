@@ -206,11 +206,11 @@ rules:
   - certificatesigningrequests/approval
   - channels
   - channels/status
-  - clusteractions
-  - clusteractions/status
+  - managedclusteractions
+  - managedclusteractions/status
   - clusterdeployments
-  - clusterinfos
-  - clusterinfos/status
+  - managedclusterinfos
+  - managedclusterinfos/status
   - clusterjoinrequests
   - clusterjoinrequests/status
   - clusters
@@ -246,9 +246,9 @@ rules:
   - rolebindings
   - secrets
   - signers
-  - spokeclusters
-  - spokeviews
-  - spokeviews/status
+  - managedclusters
+  - managedclusterviews
+  - managedclusterviews/status
   - subscriptions
   - subscriptions/status
   - subjectaccessreviews

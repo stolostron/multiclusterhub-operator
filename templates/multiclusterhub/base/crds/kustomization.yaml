@@ -1,8 +1,6 @@
 resources:
 - inventory.open-cluster-management.io_baremetalassets_crd.yaml
-- action.open-cluster-management.io_clusteractions_crd.yaml
-- clusters.open-cluster-management.io_spokeclusters.crd.yaml
-- internal.open-cluster-management.io_clusterinfos_crd.yaml
-- nucleus.open-cluster-management.io_hubcores.crd.yaml
-- view.open-cluster-management.io_spokeviews_crd.yaml
-- work.open-cluster-management.io_workloads.crd.yaml
+- internal.open-cluster-management.io_managedclusterinfos_crd.yaml
+- view.open-cluster-management.io_managedclusterviews_crd.yaml
+- action.open-cluster-management.io_managedclusteractions_crd.yaml
+- clusters.open-cluster-management.io_managedclusters_crd.yaml
