@@ -1,3 +1,4 @@
+
 resources:
 - clusterrole-bootstrap.yaml
 - clusterrolebinding-bootstrap.yaml
@@ -7,4 +8,3 @@ resources:
 - clusterrole-admin-aggregate.yaml
 - clusterrole-edit-aggregate.yaml
 - clusterrole-view-aggregate.yaml
-- clusterrolebinding-default.yaml

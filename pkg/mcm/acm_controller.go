@@ -55,9 +55,7 @@ func ACMControllerDeployment(m *operatorsv1beta1.MultiClusterHub, overrides map[
 						Name:            ACMControllerName,
 						Args: []string{
 							"/acm-controller",
-							"--klusterlet-cafile=/var/run/klusterlet/ca.crt",
-							"--max-qps=100.0",
-							"--max-burst=200",
+							"--agent-cafile=/var/run/klusterlet/ca.crt",
 						},
 						LivenessProbe: &v1.Probe{
 							Handler: v1.Handler{

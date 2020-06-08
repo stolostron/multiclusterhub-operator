@@ -75,153 +75,261 @@ spec:
       - rules:
         - apiGroups:
           - ""
-          resources:
-          - pods
-          - services
-          - services/finalizers
-          - endpoints
-          - persistentvolumeclaims
-          - events
-          - configmaps
-          - secrets
-          - serviceaccounts
-          - namespaces
-          verbs:
-          - '*'
-        - apiGroups:
-          - apps
-          resources:
-          - deployments
-          - daemonsets
-          - replicasets
-          - statefulsets
-          verbs:
-          - '*'
-        - apiGroups:
-          - monitoring.coreos.com
-          resources:
-          - servicemonitors
-          verbs:
-          - get
-          - create
-        - apiGroups:
-          - apps
-          resourceNames:
-          - multiclusterhub-operator
-          resources:
-          - deployments/finalizers
-          verbs:
-          - update
-        - apiGroups:
-          - ""
-          resources:
-          - pods
-          verbs:
-          - get
-        - apiGroups:
-          - apps
-          resources:
-          - replicasets
-          - deployments
-          verbs:
-          - get
-        - apiGroups:
           - admissionregistration.k8s.io
-          resources:
-          - '*'
-          verbs:
-          - '*'
-        - apiGroups:
-          - operators.open-cluster-management.io
-          resources:
-          - '*'
-          verbs:
-          - '*'
-        - apiGroups:
+          - apiextensions.k8s.io
           - apiregistration.k8s.io
-          resources:
-          - '*'
-          verbs:
-          - '*'
-        - apiGroups:
+          - apps
+          - apps.open-cluster-management.io
+          - authorization.k8s.io
+          - etcd.database.coreos.com
+          - hive.openshift.io
+          - mcm.ibm.com
           - rbac.authorization.k8s.io
+          - security.openshift.io
           resources:
-          - '*'
-          verbs:
-          - '*'
-        - apiGroups:
-          - clusterregistry.k8s.io
-          resources:
-          - '*'
-          verbs:
-          - '*'
-        - apiGroups:
-          - operators.coreos.com
-          resources:
-          - operatorgroups
+          - apiservices
+          - channels
+          - clusterjoinrequests
+          - clusterrolebindings
+          - configmaps
+          - customresourcedefinitions
+          - deployments
+          - etcdclusters
+          - hiveconfigs
+          - mutatingwebhookconfigurations
+          - namespaces
+          - pods
+          - replicasets
+          - rolebindings
+          - secrets
+          - securitycontextconstraints
+          - serviceaccounts
+          - services
+          - subjectaccessreviews
           - subscriptions
           verbs:
           - get
-          - create
         - apiGroups:
-          - etcd.database.coreos.com
-          resources:
-          - etcdclusters
-          verbs:
-          - get
-          - create
-        - apiGroups:
+          - ""
+          - admissionregistration.k8s.io
           - apiextensions.k8s.io
-          resources:
-          - customresourcedefinitions
-          verbs:
-          - '*'
-        - apiGroups:
+          - apiregistration.k8s.io
+          - apps
           - apps.open-cluster-management.io
-          resources:
-          - '*'
-          verbs:
-          - '*'
-        - apiGroups:
-          - operators.coreos.com
-          resources:
-          - hive-catalog
-          - catalogsources
-          - clusterserviceversions
-          - hiveconfig
-          verbs:
-          - get
-          - create
-        - apiGroups:
+          - authorization.k8s.io
+          - etcd.database.coreos.com
           - hive.openshift.io
-          resources:
-          - hiveconfigs
-          verbs:
-          - get
-          - create
-          - list
-          - delete
-          - deletecollection
-        - apiGroups:
+          - monitoring.coreos.com
+          - rbac.authorization.k8s.io
+          - mcm.ibm.com
           - security.openshift.io
           resources:
+          - apiservices
+          - channels
+          - clusterjoinrequests
+          - clusterrolebindings
+          - clusterroles
+          - configmaps
+          - customresourcedefinitions
+          - deployments
+          - etcdclusters
+          - hiveconfigs
+          - mutatingwebhookconfigurations
+          - namespaces
+          - rolebindings
+          - secrets
           - securitycontextconstraints
+          - serviceaccounts
+          - services
+          - servicemonitors
+          - subjectaccessreviews
+          - subscriptions
+          - validatingwebhookconfigurations
           verbs:
-          - '*'
+          - create
         - apiGroups:
+          - ""
+          - apps
+          - admissionregistration.k8s.io
+          - apiregistration.k8s.io
+          - authorization.k8s.io
+          - config.openshift.io
+          - mcm.ibm.com
+          - operators.open-cluster-management.io
+          - rbac.authorization.k8s.io
+          resources:
+          - apiservices
+          - clusterjoinrequests
+          - configmaps
+          - deployments
+          - ingresses
+          - multiclusterhubs
+          - namespaces
+          - rolebindings
+          - servicemonitors
+          - secrets
+          - services
+          - subjectaccessreviews
+          - validatingwebhookconfigurations
+          verbs:
+          - list
+        - apiGroups:
+          - ""
+          - admissionregistration.k8s.io
+          - apiregistration.k8s.io
+          - apps
+          - authorization.k8s.io
+          - config.openshift.io
+          - mcm.ibm.com
+          - operators.open-cluster-management.io
+          - rbac.authorization.k8s.io
           - storage.k8s.io
           resources:
-          - storageclasses
-          verbs:
-          - '*'
-        - apiGroups:
-          - config.openshift.io
-          resources:
+          - apiservices
+          - configmaps
+          - clusterjoinrequests
+          - deployments
           - ingresses
+          - multiclusterhubs
+          - namespaces
+          - rolebindings
+          - secrets
+          - services
+          - storageclasses
+          - subjectaccessreviews
+          - validatingwebhookconfigurations
           verbs:
+          - watch
+        - apiGroups:
+          - ""
+          - admissionregistration.k8s.io
+          - apps
+          - mcm.ibm.com
+          - monitoring.coreos.com
+          - operators.open-cluster-management.io
+          resources:
+          - deployments
+          - deployments/finalizers
+          - services
+          - services/finalizers
+          - servicemonitors
+          - servicemonitors/finalizers
+          - validatingwebhookconfigurations
+          - multiclusterhubs
+          - multiclusterhubs/finalizers
+          - multiclusterhubs/status
+          verbs:
+          - update
+        - apiGroups:
+          - admissionregistration.k8s.io
+          - apiextensions.k8s.io
+          - apiregistration.k8s.io
+          - hive.openshift.io
+          - mcm.ibm.com
+          - rbac.authorization.k8s.io
+          resources:
+          - apiservices
+          - clusterroles
+          - clusterrolebindings
+          - customresourcedefinitions
+          - hiveconfigs
+          - mutatingwebhookconfigurations
+          verbs:
+          - deletecollection
+        - apiGroups:
+          - ""
+          - action.open-cluster-management.io
+          - agent.open-cluster-management.io
+          - app.k8s.io
+          - apps.open-cluster-management.io
+          - authorization.k8s.io
+          - certificates.k8s.io
+          - clusterregistry.k8s.io
+          - cluster.open-cluster-management.io
+          - config.openshift.io
+          - compliance.mcm.ibm.com
+          - hive.openshift.io
+          - internal.open-cluster-management.io
+          - inventory.open-cluster-management.io
+          - mcm.ibm.com
+          - multicloud.ibm.com
+          - policy.mcm.ibm.com
+          - proxy.open-cluster-management.io
+          - rbac.authorization.k8s.io
+          - view.open-cluster-management.io
+          resources:
+          - applications
+          - applications/status
+          - applicationrelationships
+          - applicationrelationships/status
+          - baremetalassets
+          - baremetalassets/status
+          - certificatesigningrequests
+          - certificatesigningrequests/approval
+          - channels
+          - channels/status
+          - managedclusteractions
+          - managedclusteractions/status
+          - clusterdeployments
+          - managedclusterinfos
+          - managedclusterinfos/status
+          - clusterjoinrequests
+          - clusterjoinrequests/status
+          - clusters
+          - clusters/status
+          - clusterstatuses
+          - clusterstatuses/aggregator
+          - clusterstatuses/metering-receiver
+          - clusterstatuses/topology
+          - clusterversions
+          - compliances
+          - configmaps
+          - deployables
+          - deployables/status
+          - deployableoverrides
+          - deployableoverrides/status
+          - endpoints
+          - endpointconfigs
+          - events
+          - helmrepos
+          - helmrepos/status
+          - klusterletconfigs
+          - machinepools
+          - namespaces
+          - placementbindings
+          - placementpolicies
+          - placementpolicies/status
+          - placementrules
+          - placementrules/status
+          - policies
+          - resourceviews
+          - resourceviews/status
+          - roles
+          - rolebindings
+          - secrets
+          - signers
+          - managedclusters
+          - managedclusterviews
+          - managedclusterviews/status
+          - subscriptions
+          - subscriptions/status
+          - subjectaccessreviews
+          - syncsets
+          - works
+          - works/status
+          - works/result
+          - worksets
+          - worksets/status
+          verbs:
+          - create
           - get
           - list
           - watch
+          - update
+          - delete
+          - deletecollection
+          - patch
+          - approve
         serviceAccountName: multiclusterhub-operator
       deployments:
       - name: multiclusterhub-operator
