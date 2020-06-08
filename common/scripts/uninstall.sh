@@ -74,7 +74,7 @@ oc delete consolelink acm-console-link --ignore-not-found
 _nucleusDir=build/nucleus
 if [ -d "$_nucleusDir" ]; then
     cd build/nucleus
-    make clean-hub
+    make clean-hub OLM_NAMESPACE=openshift-operator-lifecycle-manager
     cd ../..
     oc delete deploy cluster-manager || true
     oc get csv | grep "cluster-manager" | awk '{ print $1 }' | xargs oc delete csv --wait=false --ignore-not-found || true
