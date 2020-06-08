@@ -4,7 +4,7 @@ metadata:
   name: acm-foundation
 rules:
   - apiGroups: ["mcm.ibm.com"]
-    resources: ["clusterjoinrequests", "clusterjoinrequests/status"]
+    resources: ["clusterjoinrequests", "clusterjoinrequests/status", "clusterjoinrequests/finalizers"]
     verbs: ["get", "list", "watch", "create", "update", "delete"]
   - apiGroups: ["mcm.ibm.com"]
     resources: ["resourceviews", "resourceviews/status", "works", "works/status", "works/result", "worksets", "worksets/status"]
@@ -13,7 +13,7 @@ rules:
     resources: ["clusterstatuses", "clusterstatuses/aggregator", "clusterstatuses/metering-receiver", "clusterstatuses/topology"]
     verbs: ["get", "list", "watch", "create", "update"]
   - apiGroups: ["clusterregistry.k8s.io"]
-    resources: ["clusters", "clusters/status"]
+    resources: ["clusters", "clusters/status", "clusters/finalizers"]
     verbs: ["get", "list", "watch", "create", "update", "patch"]
   - apiGroups: [""]
     resources: ["configmaps", "namespaces", "events", "endpoints", "secrets"]

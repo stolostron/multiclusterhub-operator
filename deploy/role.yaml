@@ -213,8 +213,10 @@ rules:
   - managedclusterinfos/status
   - clusterjoinrequests
   - clusterjoinrequests/status
+  - clusterjoinrequests/finalizers
   - clusters
   - clusters/status
+  - clusters/finalizers
   - clusterstatuses
   - clusterstatuses/aggregator
   - clusterstatuses/metering-receiver
