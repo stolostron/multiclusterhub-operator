@@ -56,7 +56,7 @@ uninstall:
 	bash common/scripts/uninstall.sh
 
 nucleus:
-	./common/scripts/nucleus/install_nucleus.sh
+	./common/scripts/install_nucleus.sh
 
 # create secrets for pulling images
 secrets: 

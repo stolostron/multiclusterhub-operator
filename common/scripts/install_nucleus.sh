@@ -36,4 +36,4 @@ echo "Attempting deploy of Nucleus ..."
 
 echo ""
 make update-all
-make deploy OLM_NAMESPACE=$_olmNamespace KUBECONFIG=~/.kube/config
+make deploy-hub OLM_NAMESPACE=$_olmNamespace
