@@ -62,6 +62,11 @@ spec:
       kind: Subscription
       name: subscriptions.apps.open-cluster-management.io
       version: v1
+    - description: Configuration for the Cluster Manager Operator
+      displayName: ClusterManager
+      kind: ClusterManager
+      name: clustermanagers.operator.open-cluster-management.io
+      version: v1
   description: 'The Open Cluster Management Hub operator installs and maintains an
     instance of the OCM hub, a central management console for managing OpenShift and
     Kubernetes clusters. '

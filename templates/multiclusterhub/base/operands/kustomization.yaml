@@ -1,4 +1,3 @@
 resources:
 - etcd.yaml
 - hiveconfig.yaml
-- clustermanager.yaml

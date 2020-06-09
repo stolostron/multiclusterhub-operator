@@ -42,10 +42,9 @@ type Renderer struct {
 }
 
 // NewRenderer Initializes a Kustomize Renderer Factory
-func NewRenderer(multipleClusterHub *operatorsv1beta1.MultiClusterHub, imageOverrides map[string]string) *Renderer {
+func NewRenderer(multipleClusterHub *operatorsv1beta1.MultiClusterHub) *Renderer {
 	renderer := &Renderer{
-		cr:             multipleClusterHub,
-		imageOverrides: imageOverrides,
+		cr: multipleClusterHub,
 	}
 	renderer.renderFns = map[string]renderFn{
 		"APIService":                   renderer.renderAPIServices,
@@ -64,7 +63,7 @@ func NewRenderer(multipleClusterHub *operatorsv1beta1.MultiClusterHub, imageOver
 		"HiveConfig":                   renderer.renderHiveConfig,
 		"SecurityContextConstraints":   renderer.renderSecContextConstraints,
 		"CustomResourceDefinition":     renderer.renderCRD,
-		"ClusterManager":               renderer.renderClusterManager,
+		"ClusterManager":               renderer.renderInstallerLabels,
 	}
 	return renderer
 }
@@ -363,14 +362,8 @@ func (r *Renderer) renderEtcdCluster(res *resource.Resource) (*unstructured.Unst
 	return u, nil
 }
 
-func (r *Renderer) renderClusterManager(res *resource.Resource) (*unstructured.Unstructured, error) {
+func (r *Renderer) renderInstallerLabels(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
-	spec, ok := u.Object["spec"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("failed to find ClusterManager spec field")
-	}
-	spec["registrationImagePullSpec"] = r.image(registration)
-
 	utils.AddInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
 	return u, nil
 }

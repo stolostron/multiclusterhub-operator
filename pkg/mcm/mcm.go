@@ -3,15 +3,22 @@
 package mcm
 
 import (
+	"bytes"
+
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
+	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // ImageKey used by mcm deployments
 const ImageKey = "multicloud_manager"
+
+// ImageKey used by mcm deployments
+const RegistrationImageKey = "registration"
 
 // ServiceAccount used by mcm deployments
 const ServiceAccount = "acm-foundation-sa"
@@ -19,6 +26,10 @@ const ServiceAccount = "acm-foundation-sa"
 // Image returns image reference for multicloud-manager
 func Image(overrides map[string]string) string {
 	return overrides[ImageKey]
+}
+
+func RegistrationImage(overrides map[string]string) string {
+	return overrides[RegistrationImageKey]
 }
 
 func defaultLabels(app string) map[string]string {
@@ -85,4 +96,28 @@ func ValidateDeployment(m *operatorsv1beta1.MultiClusterHub, overrides map[strin
 	}
 
 	return found, needsUpdate
+}
+
+// ValidateClusterManager returns true if an update is needed to reconcile differences with the current spec. If an update
+// is needed it returns the object with the new spec to update with.
+func ValidateClusterManager(found *unstructured.Unstructured, want *unstructured.Unstructured) (*unstructured.Unstructured, bool) {
+	var log = logf.Log.WithValues("Namespace", found.GetNamespace(), "Name", found.GetName(), "Kind", found.GetKind())
+
+	desired, err := yaml.Marshal(want.Object["spec"])
+	if err != nil {
+		log.Error(err, "issue parsing desired cluster manager values")
+	}
+	current, err := yaml.Marshal(found.Object["spec"])
+	if err != nil {
+		log.Error(err, "issue parsing current cluster manager values")
+	}
+
+	if res := bytes.Compare(desired, current); res != 0 {
+		// Return current object with adjusted spec, preserving metadata
+		log.V(1).Info("Cluster Manager doesn't match spec", "Want", want.Object["spec"], "Have", found.Object["spec"])
+		found.Object["spec"] = want.Object["spec"]
+		return found, true
+	}
+
+	return nil, false
 }

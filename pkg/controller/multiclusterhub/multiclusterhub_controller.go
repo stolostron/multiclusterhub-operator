@@ -270,7 +270,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	}
 
 	//Render the templates with a specified CR
-	renderer := rendering.NewRenderer(multiClusterHub, r.CacheSpec.ImageOverrides)
+	renderer := rendering.NewRenderer(multiClusterHub)
 	toDeploy, err := renderer.Render(r.client)
 	if err != nil {
 		reqLogger.Error(err, "Failed to render MultiClusterHub templates")
@@ -366,6 +366,11 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	}
 
 	result, err = r.ensureDeployment(multiClusterHub, mcm.ControllerDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
+	if result != nil {
+		return *result, err
+	}
+
+	result, err = r.ensureClusterManager(multiClusterHub, mcm.ClusterManager(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
 	}
