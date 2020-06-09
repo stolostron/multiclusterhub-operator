@@ -250,16 +250,12 @@ func (r *ReconcileMultiClusterHub) ensureClusterManager(m *operatorsv1beta1.Mult
 	}, found)
 	if err != nil && errors.IsNotFound(err) {
 
-		// Create the resource. Skip on unit test
-		// if !utils.IsUnitTest() {
-		// 	err := r.client.Create(context.TODO(), u)
-		// 	if err != nil {
-		// 		// Creation failed
-		// 		obLog.Error(err, "Failed to create new instance")
-		// 		return &reconcile.Result{}, err
-		// 	}
-		// }
-
+		err := r.client.Create(context.TODO(), u)
+		if err != nil {
+			// Creation failed
+			obLog.Error(err, "Failed to create new instance")
+			return &reconcile.Result{}, err
+		}
 		// Creation was successful
 		obLog.Info("Created new object")
 		return nil, nil

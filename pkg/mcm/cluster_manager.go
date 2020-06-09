@@ -4,6 +4,7 @@ package mcm
 
 import (
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
@@ -21,6 +22,8 @@ func ClusterManager(m *operatorsv1beta1.MultiClusterHub, overrides map[string]st
 			},
 		},
 	}
+
+	utils.AddInstallerLabel(cm, m.GetName(), m.GetNamespace())
 
 	return cm
 }

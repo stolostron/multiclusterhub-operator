@@ -63,7 +63,6 @@ func NewRenderer(multipleClusterHub *operatorsv1beta1.MultiClusterHub) *Renderer
 		"HiveConfig":                   renderer.renderHiveConfig,
 		"SecurityContextConstraints":   renderer.renderSecContextConstraints,
 		"CustomResourceDefinition":     renderer.renderCRD,
-		"ClusterManager":               renderer.renderInstallerLabels,
 	}
 	return renderer
 }
@@ -359,12 +358,6 @@ func (r *Renderer) renderEtcdCluster(res *resource.Resource) (*unstructured.Unst
 		return nil, fmt.Errorf("failed to find Etcd spec pod persistentVolumeClaimSpec resources requests field")
 	}
 	requests["storage"] = r.cr.Spec.Etcd.Storage
-	return u, nil
-}
-
-func (r *Renderer) renderInstallerLabels(res *resource.Resource) (*unstructured.Unstructured, error) {
-	u := &unstructured.Unstructured{Object: res.Map()}
-	utils.AddInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
 	return u, nil
 }
 
