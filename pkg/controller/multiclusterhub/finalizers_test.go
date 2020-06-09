@@ -501,10 +501,10 @@ func Test_cleanupCRDS(t *testing.T) {
 
 func Test_cleanupClusterManagers(t *testing.T) {
 	tests := []struct {
-		Name       string
-		MCH        *operatorsv1beta1.MultiClusterHub
-		HiveConfig *unstructured.Unstructured
-		Result     error
+		Name           string
+		MCH            *operatorsv1beta1.MultiClusterHub
+		ClusterManager *unstructured.Unstructured
+		Result         error
 	}{
 		{
 			Name:   "Installer Created ClusterManager",
