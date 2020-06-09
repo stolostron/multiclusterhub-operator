@@ -27,6 +27,7 @@ const (
 	webhookName         = "mcm-webhook"
 	metadataErr         = "failed to find metadata field"
 	proxyApiServiceName = "v1beta1.proxy.open-cluster-management.io"
+	registration        = "registration"
 )
 
 var log = logf.Log.WithName("renderer")
@@ -35,13 +36,17 @@ type renderFn func(*resource.Resource) (*unstructured.Unstructured, error)
 
 // Renderer is a Kustomizee Renderer Factory
 type Renderer struct {
-	cr        *operatorsv1beta1.MultiClusterHub
-	renderFns map[string]renderFn
+	cr             *operatorsv1beta1.MultiClusterHub
+	imageOverrides map[string]string
+	renderFns      map[string]renderFn
 }
 
 // NewRenderer Initializes a Kustomize Renderer Factory
-func NewRenderer(multipleClusterHub *operatorsv1beta1.MultiClusterHub) *Renderer {
-	renderer := &Renderer{cr: multipleClusterHub}
+func NewRenderer(multipleClusterHub *operatorsv1beta1.MultiClusterHub, imageOverrides map[string]string) *Renderer {
+	renderer := &Renderer{
+		cr:             multipleClusterHub,
+		imageOverrides: imageOverrides,
+	}
 	renderer.renderFns = map[string]renderFn{
 		"APIService":                   renderer.renderAPIServices,
 		"Deployment":                   renderer.renderNamespace,
@@ -59,6 +64,7 @@ func NewRenderer(multipleClusterHub *operatorsv1beta1.MultiClusterHub) *Renderer
 		"HiveConfig":                   renderer.renderHiveConfig,
 		"SecurityContextConstraints":   renderer.renderSecContextConstraints,
 		"CustomResourceDefinition":     renderer.renderCRD,
+		"ClusterManager":               renderer.renderClusterManager,
 	}
 	return renderer
 }
@@ -355,4 +361,20 @@ func (r *Renderer) renderEtcdCluster(res *resource.Resource) (*unstructured.Unst
 	}
 	requests["storage"] = r.cr.Spec.Etcd.Storage
 	return u, nil
+}
+
+func (r *Renderer) renderClusterManager(res *resource.Resource) (*unstructured.Unstructured, error) {
+	u := &unstructured.Unstructured{Object: res.Map()}
+	spec, ok := u.Object["spec"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to find ClusterManager spec field")
+	}
+	spec["registrationImagePullSpec"] = r.image(registration)
+
+	utils.AddInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
+	return u, nil
+}
+
+func (r *Renderer) image(imageKey string) string {
+	return r.imageOverrides[imageKey]
 }
