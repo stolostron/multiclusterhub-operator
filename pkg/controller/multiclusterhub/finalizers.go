@@ -177,3 +177,36 @@ func (r *ReconcileMultiClusterHub) cleanupCRDs(log logr.Logger, m *operatorsv1be
 	log.Info("CRDs finalized")
 	return nil
 }
+
+func (r *ReconcileMultiClusterHub) cleanupClusterManagers(reqLogger logr.Logger, m *operatorsv1beta1.MultiClusterHub) error {
+
+	listOptions := client.MatchingLabels{
+		"installer.name":      m.GetName(),
+		"installer.namespace": m.GetNamespace(),
+	}
+
+	found := &unstructured.Unstructured{}
+	found.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "operator.open-cluster-management.io",
+		Kind:    "ClusterManager",
+		Version: "v1",
+	})
+	err := r.client.Get(context.TODO(), types.NamespacedName{
+		Name: "cluster-manager",
+	}, found)
+	if err != nil && errors.IsNotFound(err) {
+		// No ClusterManager. Return nil
+		return nil
+	}
+
+	// Delete ClusterManager if it exists
+	reqLogger.Info("Deleting clustermanager", "Resource.Name", found.GetName())
+	err = r.client.DeleteAllOf(context.TODO(), found, listOptions)
+	if err != nil {
+		reqLogger.Error(err, "Error while deleting clustermanager instances")
+		return err
+	}
+
+	reqLogger.Info("ClusterManagers finalized")
+	return nil
+}

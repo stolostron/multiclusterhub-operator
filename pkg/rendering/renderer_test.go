@@ -31,7 +31,11 @@ func TestRender(t *testing.T) {
 		},
 	}
 
-	renderer := NewRenderer(mchcr)
+	imageOverrides := map[string]string{
+		"multicloud-manager": "quay.io/open-cluster-management/multicloud-manager@sha256:image-digest-sha",
+	}
+
+	renderer := NewRenderer(mchcr, imageOverrides)
 	objs, err := renderer.Render(nil)
 	if err != nil {
 		t.Fatalf("failed to render multiclusterhub %v", err)

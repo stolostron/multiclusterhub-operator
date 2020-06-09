@@ -270,7 +270,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	}
 
 	//Render the templates with a specified CR
-	renderer := rendering.NewRenderer(multiClusterHub)
+	renderer := rendering.NewRenderer(multiClusterHub, r.CacheSpec.ImageOverrides)
 	toDeploy, err := renderer.Render(r.client)
 	if err != nil {
 		reqLogger.Error(err, "Failed to render MultiClusterHub templates")
@@ -547,6 +547,9 @@ func (r *ReconcileMultiClusterHub) finalizeHub(reqLogger logr.Logger, m *operato
 		return err
 	}
 	if err := r.cleanupCRDs(reqLogger, m); err != nil {
+		return err
+	}
+	if err := r.cleanupClusterManagers(reqLogger, m); err != nil {
 		return err
 	}
 	if m.Spec.SeparateCertificateManagement {
