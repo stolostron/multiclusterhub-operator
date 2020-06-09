@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"reflect"
-	"strconv"
 
 	"github.com/fatih/structs"
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
@@ -127,12 +126,7 @@ func (r *Renderer) renderAPIServices(res *resource.Resource) (*unstructured.Unst
 }
 
 func (r *Renderer) renderNamespace(res *resource.Resource) (*unstructured.Unstructured, error) {
-	u := &unstructured.Unstructured{Object: res.Map()}
-
-	if UpdateNamespace(u) {
-		res.SetNamespace(r.cr.Namespace)
-	}
-
+	res.SetNamespace(r.cr.Namespace)
 	return &unstructured.Unstructured{Object: res.Map()}, nil
 }
 
@@ -159,9 +153,7 @@ func (r *Renderer) renderClusterRoleBinding(res *resource.Resource) (*unstructur
 		return u, nil
 	}
 
-	if UpdateNamespace(u) {
-		clusterRoleBinding.Subjects[0].Namespace = r.cr.Namespace
-	}
+	clusterRoleBinding.Subjects[0].Namespace = r.cr.Namespace
 
 	newCRB, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&clusterRoleBinding)
 	if err != nil {
@@ -310,21 +302,6 @@ func (r *Renderer) renderSecContextConstraints(res *resource.Resource) (*unstruc
 	ns := r.cr.Namespace
 	users[0] = fmt.Sprintf("system:serviceaccount:%s:default", ns)
 	return u, nil
-}
-
-// UpdateNamespace checks for annotiation to update NS
-func UpdateNamespace(u *unstructured.Unstructured) bool {
-	metadata, ok := u.Object["metadata"].(map[string]interface{})
-	updateNamespace := true
-	if ok {
-		annotations, ok := metadata["annotations"].(map[string]interface{})
-		if ok {
-			if annotations["update-namespace"] != "" {
-				updateNamespace, _ = strconv.ParseBool(annotations["update-namespace"].(string))
-			}
-		}
-	}
-	return updateNamespace
 }
 
 func (r *Renderer) renderEtcdCluster(res *resource.Resource) (*unstructured.Unstructured, error) {

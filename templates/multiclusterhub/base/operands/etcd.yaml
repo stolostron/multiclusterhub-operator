@@ -2,6 +2,8 @@ apiVersion: etcd.database.coreos.com/v1beta2
 kind: EtcdCluster
 metadata:
   name: etcd-cluster
+  annotations:
+    etcd.database.coreos.com/scope: clusterwide
   namespace: multicluster-system
 spec:
   size: 3
