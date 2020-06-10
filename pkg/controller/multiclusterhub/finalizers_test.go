@@ -530,7 +530,7 @@ func Test_cleanupClusterManagers(t *testing.T) {
 
 			err = r.cleanupClusterManagers(reqLogger, full_mch)
 			if err != tt.Result {
-				t.Fatal("Failed to cleanup ClusterManager: %s", err)
+				t.Fatalf("Failed to cleanup ClusterManager: %s", err)
 			}
 
 		})
