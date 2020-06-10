@@ -36,9 +36,8 @@ type renderFn func(*resource.Resource) (*unstructured.Unstructured, error)
 
 // Renderer is a Kustomizee Renderer Factory
 type Renderer struct {
-	cr             *operatorsv1beta1.MultiClusterHub
-	imageOverrides map[string]string
-	renderFns      map[string]renderFn
+	cr        *operatorsv1beta1.MultiClusterHub
+	renderFns map[string]renderFn
 }
 
 // NewRenderer Initializes a Kustomize Renderer Factory
@@ -359,8 +358,4 @@ func (r *Renderer) renderEtcdCluster(res *resource.Resource) (*unstructured.Unst
 	}
 	requests["storage"] = r.cr.Spec.Etcd.Storage
 	return u, nil
-}
-
-func (r *Renderer) image(imageKey string) string {
-	return r.imageOverrides[imageKey]
 }
