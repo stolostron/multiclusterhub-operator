@@ -57,6 +57,8 @@ var (
 		"ECDHE-ECDSA-AES128-GCM-SHA256",
 		"ECDHE-RSA-AES128-GCM-SHA256",
 	}
+	// LabelMCHPause sits in multiclusterhub label to identify if the multiclusterhub is paused or not
+	LabelMCHPause = "subscription-pause"
 )
 
 // CertManagerNS returns the namespace to deploy cert manager objects
@@ -194,4 +196,18 @@ func IsUnitTest() bool {
 // ingress chart
 func FormatSSLCiphers(ciphers []string) string {
 	return strings.Join(ciphers, ":")
+}
+
+// IsPaused returns true if the multiclusterhub instance is labeled as paused, and false otherwise
+func IsPaused(instance *operatorsv1beta1.MultiClusterHub) bool {
+	labels := instance.GetLabels()
+	if labels == nil {
+		return false
+	}
+
+	if labels[LabelMCHPause] != "" && strings.EqualFold(labels[LabelMCHPause], "true") {
+		return true
+	}
+
+	return false
 }

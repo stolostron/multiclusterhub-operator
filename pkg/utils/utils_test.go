@@ -254,3 +254,32 @@ func TestFormatSSLCiphers(t *testing.T) {
 		})
 	}
 }
+
+func TestIsPaused(t *testing.T) {
+	t.Run("Unpaused MCH", func(t *testing.T) {
+		mch := &operatorsv1beta1.MultiClusterHub{}
+		want := false
+		if got := IsPaused(mch); got != want {
+			t.Errorf("IsPaused() = %v, want %v", got, want)
+		}
+	})
+	t.Run("Paused MCH", func(t *testing.T) {
+		mch := &operatorsv1beta1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{LabelMCHPause: "true"}},
+		}
+		want := true
+		if got := IsPaused(mch); got != want {
+			t.Errorf("IsPaused() = %v, want %v", got, want)
+		}
+	})
+	t.Run("Pause label false MCH", func(t *testing.T) {
+		mch := &operatorsv1beta1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{LabelMCHPause: "false"}},
+		}
+		want := false
+		if got := IsPaused(mch); got != want {
+			t.Errorf("IsPaused() = %v, want %v", got, want)
+		}
+	})
+
+}
