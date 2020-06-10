@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/go-logr/logr"
+	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis/apps/v1"
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/deploying"
@@ -95,6 +96,15 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 	// Watch for changes to secondary resource Pods and requeue the owner MultiClusterHub
 	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &operatorsv1beta1.MultiClusterHub{},
+	})
+	if err != nil {
+		return err
+	}
+
+	// Watch application subscriptions
+	err = c.Watch(&source.Kind{Type: &appsubv1.Subscription{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &operatorsv1beta1.MultiClusterHub{},
 	})
