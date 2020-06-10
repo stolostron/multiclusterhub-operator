@@ -374,7 +374,7 @@ func Test_ensureClusterManager(t *testing.T) {
 		t.Run(tt.Name, func(t *testing.T) {
 			_, err = r.ensureClusterManager(tt.MCH, tt.ClusterManager)
 			if !errorEquals(err, tt.Result) {
-				t.Fatalf("Failed to ensure ClusterManager")
+				t.Fatalf("Failed to ensure ClusterManager: %s", err)
 			}
 		})
 	}
