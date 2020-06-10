@@ -27,7 +27,6 @@ const (
 	webhookName         = "mcm-webhook"
 	metadataErr         = "failed to find metadata field"
 	proxyApiServiceName = "v1beta1.proxy.open-cluster-management.io"
-	registration        = "registration"
 )
 
 var log = logf.Log.WithName("renderer")
