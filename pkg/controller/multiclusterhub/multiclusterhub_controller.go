@@ -370,6 +370,11 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
+	result, err = r.ensureClusterManager(multiClusterHub, mcm.ClusterManager(multiClusterHub, r.CacheSpec.ImageOverrides))
+	if result != nil {
+		return *result, err
+	}
+
 	// Update the CR status
 	multiClusterHub.Status.Phase = "Pending"
 	multiClusterHub.Status.DesiredVersion = version.Version
@@ -547,6 +552,9 @@ func (r *ReconcileMultiClusterHub) finalizeHub(reqLogger logr.Logger, m *operato
 		return err
 	}
 	if err := r.cleanupCRDs(reqLogger, m); err != nil {
+		return err
+	}
+	if err := r.cleanupClusterManagers(reqLogger, m); err != nil {
 		return err
 	}
 	if m.Spec.SeparateCertificateManagement {
