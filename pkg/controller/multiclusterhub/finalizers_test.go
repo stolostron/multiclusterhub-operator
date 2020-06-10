@@ -525,7 +525,7 @@ func Test_cleanupClusterManagers(t *testing.T) {
 			// Objects to track in the fake client.
 			r, err := getTestReconciler(tt.MCH)
 			if err != nil {
-				t.Fatalf("Failed to create test reconciler")
+				t.Fatalf("Failed to create test reconciler: %s", err)
 			}
 
 			err = r.cleanupClusterManagers(reqLogger, full_mch)
