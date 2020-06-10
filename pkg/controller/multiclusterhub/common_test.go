@@ -345,3 +345,37 @@ func Test_ensureSubscription(t *testing.T) {
 		})
 	}
 }
+
+func Test_ensureClusterManager(t *testing.T) {
+	r, err := getTestReconciler(full_mch)
+	if err != nil {
+		t.Fatalf("Failed to create test reconciler")
+	}
+
+	imageOverrides := map[string]string{
+		"registration": "quay.io/open-cluster-management/registration@sha256:fe95bca419976ca8ffe608bc66afcead6ef333b863f22be55df57c89ded75dda",
+	}
+
+	tests := []struct {
+		Name           string
+		MCH            *operatorsv1beta1.MultiClusterHub
+		ClusterManager *unstructured.Unstructured
+		Result         error
+	}{
+		{
+			Name:           "Test: ensureClusterManager - ClusterManager",
+			MCH:            full_mch,
+			ClusterManager: mcm.ClusterManager(full_mch, imageOverrides),
+			Result:         nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.Name, func(t *testing.T) {
+			_, err = r.ensureClusterManager(tt.MCH, tt.ClusterManager)
+			if !errorEquals(err, tt.Result) {
+				t.Fatalf("Failed to ensure ClusterManager")
+			}
+		})
+	}
+}
