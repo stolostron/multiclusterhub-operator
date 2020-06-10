@@ -194,9 +194,13 @@ func (r *ReconcileMultiClusterHub) cleanupClusterManagers(reqLogger logr.Logger,
 	err := r.client.Get(context.TODO(), types.NamespacedName{
 		Name: "cluster-manager",
 	}, found)
-	if err != nil && errors.IsNotFound(err) {
-		// No ClusterManager. Return nil
-		return nil
+	if err != nil {
+		if errors.IsNotFound(err) {
+			reqLogger.Info("No matching ClusterManagers to finalize. Continuing.")
+			return nil
+		}
+		reqLogger.Error(err, "Error while deleting ClusterManagers")
+		return err
 	}
 
 	// Delete ClusterManager if it exists
