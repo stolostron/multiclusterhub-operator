@@ -58,7 +58,7 @@ var (
 		"ECDHE-RSA-AES128-GCM-SHA256",
 	}
 	// LabelMCHPause sits in multiclusterhub label to identify if the multiclusterhub is paused or not
-	LabelMCHPause = "subscription-pause"
+	LabelMCHPause = "mch-pause"
 )
 
 // CertManagerNS returns the namespace to deploy cert manager objects
