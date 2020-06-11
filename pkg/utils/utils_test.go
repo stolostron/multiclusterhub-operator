@@ -265,7 +265,7 @@ func TestIsPaused(t *testing.T) {
 	})
 	t.Run("Paused MCH", func(t *testing.T) {
 		mch := &operatorsv1beta1.MultiClusterHub{
-			ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{LabelMCHPause: "true"}},
+			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{AnnotationMCHPause: "true"}},
 		}
 		want := true
 		if got := IsPaused(mch); got != want {
@@ -274,7 +274,7 @@ func TestIsPaused(t *testing.T) {
 	})
 	t.Run("Pause label false MCH", func(t *testing.T) {
 		mch := &operatorsv1beta1.MultiClusterHub{
-			ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{LabelMCHPause: "false"}},
+			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{AnnotationMCHPause: "false"}},
 		}
 		want := false
 		if got := IsPaused(mch); got != want {
