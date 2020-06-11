@@ -41,7 +41,9 @@ type Renderer struct {
 
 // NewRenderer Initializes a Kustomize Renderer Factory
 func NewRenderer(multipleClusterHub *operatorsv1beta1.MultiClusterHub) *Renderer {
-	renderer := &Renderer{cr: multipleClusterHub}
+	renderer := &Renderer{
+		cr: multipleClusterHub,
+	}
 	renderer.renderFns = map[string]renderFn{
 		"APIService":                   renderer.renderAPIServices,
 		"Deployment":                   renderer.renderNamespace,

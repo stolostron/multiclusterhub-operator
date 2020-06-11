@@ -223,6 +223,12 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		r.CacheSpec.ImageSuffix = multiClusterHub.Spec.Overrides.ImageTagSuffix
 	}
 
+	// Do not reconcile objects if this instance of mch is labeled "paused"
+	if utils.IsPaused(multiClusterHub) {
+		reqLogger.Info("MultiClusterHub reconciliation is paused. Nothing more to do.")
+		return reconcile.Result{}, nil
+	}
+
 	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
@@ -376,6 +382,11 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	}
 
 	result, err = r.ensureDeployment(multiClusterHub, mcm.ControllerDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
+	if result != nil {
+		return *result, err
+	}
+
+	result, err = r.ensureClusterManager(multiClusterHub, mcm.ClusterManager(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
 	}
@@ -557,6 +568,9 @@ func (r *ReconcileMultiClusterHub) finalizeHub(reqLogger logr.Logger, m *operato
 		return err
 	}
 	if err := r.cleanupCRDs(reqLogger, m); err != nil {
+		return err
+	}
+	if err := r.cleanupClusterManagers(reqLogger, m); err != nil {
 		return err
 	}
 	if m.Spec.SeparateCertificateManagement {
