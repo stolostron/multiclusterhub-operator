@@ -41,6 +41,11 @@ spec:
       kind: Channel
       name: channels.apps.open-cluster-management.io
       version: v1
+    - description: Configuration for the Cluster Manager Operator
+      displayName: ClusterManager
+      kind: ClusterManager
+      name: clustermanagers.operator.open-cluster-management.io
+      version: v1
     - description: Represents a cluster of etcd nodes.
       displayName: etcd Cluster
       kind: EtcdCluster
@@ -257,6 +262,7 @@ spec:
           - proxy.open-cluster-management.io
           - rbac.authorization.k8s.io
           - view.open-cluster-management.io
+          - operator.open-cluster-management.io
           resources:
           - applications
           - applications/status
@@ -322,6 +328,7 @@ spec:
           - works/result
           - worksets
           - worksets/status
+          - clustermanagers
           verbs:
           - create
           - get
