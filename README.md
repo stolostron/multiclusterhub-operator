@@ -2,21 +2,21 @@
 
 The MultiCusterHub operator manages the install of Open Cluster Management (OCM) on RedHat Openshift Container Platform
 
-## Quick Install Instructions
+## Quick Install
 
 For a standard installation of Open Cluster Management, follow the instructions at https://github.com/open-cluster-management/deploy
 
-## Install
+## Installation
 
 The below guidelines will explain how to build and run the code in this repo for manually installing the MultiCusterHub.
 
 ### Prerequisites
 
-- [Operator SDK >= v0.18.0](https://github.com/operator-framework/operator-sdk/releases)
-- [OPM >= v1.12.5](https://github.com/operator-framework/operator-registry/releases)
+- [operator SDK](https://github.com/operator-framework/operator-sdk/releases) >= v0.18.0
+- [opm](https://github.com/operator-framework/operator-registry/releases) >= v1.12.5
 - yq
-- Docker
-- Credentials to access https://quay.io/organization/rhibmcollab and https://quay.io/organization/open-cluster-management
+- docker
+- quay credentials for https://quay.io/organization/rhibmcollab and https://quay.io/organization/open-cluster-management
 
 ### Declare Required Variables
 
@@ -25,23 +25,17 @@ export DOCKER_USER=<DOCKER_USER>
 export DOCKER_PASS=<DOCKER_PASS>
 ```
 
-*Recommended* Set custom version
+It is also recommneded to set a unqiue version label
 ```bash
 export VERSION=<A_UNIQUE_VERSION>
 ```
-
-### Install Dependencies
-
-```bash
-make deps subscribe
-```
-*This will not install all required dependencies* Set custom version
-
 ### Replace image manifest
 
-The json file located in `image-manifests/` contains a template for images versions. Before installing this file needs to be populated with proper values, which can be found in https://github.com/open-cluster-management/pipeline/tree/2.0-integration/snapshots
+Populate the json file located in `image-manifests/` with proper values. Values can be found in https://github.com/open-cluster-management/pipeline/tree/2.0-integration/snapshots
 
-### Install Manually
+### Install Options
+
+There are 4 ways to install the operator:
 
 #### 1. Run as a Deployment inside the cluster
 ```bash
@@ -84,11 +78,11 @@ This will
 5. Apply OLM objects (catalogsource, index, subscription)
 
 ### Deploy MultiClusterHub instance
-To create a default instance of MultiClusterHub:
+Once the operator is installed in the cluster, initiate an installation by creating an instance of MultiClusterHub. To create a default instance of MultiClusterHub:
 ```bash
 make cr
 ```
-To customize the instance, first modify the `deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml` file in advance.
+> To customize the instance, first modify the spec in `deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml`.
 
 ## Cleanup
 Delete multiclusterhub instance if it exists
@@ -110,9 +104,10 @@ If not all resources are properly cleaned up, follow the uninstall instructions 
 `make push`: Push built image to Quay
 `make secrets`: Generate secrets needed for install
 `make cr`: Apply basic multiclusterhub instance
-
+`make deps`: Installs operator sdk and opm
 
 ## Disabling MultiClusterHub Operator
+
 Once installed, the hub operator will monitor changes in the cluster that affect an instance of the multiclusterhub (mch) and reconcile deviations to maintain a desired state. To stop the installer from making these changes you can apply an annotation to the mch instance.
 ```bash
 kubectl annotate mch <mch-name> mch-pause=true
