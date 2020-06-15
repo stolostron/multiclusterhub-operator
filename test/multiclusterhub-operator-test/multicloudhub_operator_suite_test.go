@@ -23,19 +23,12 @@ import (
 )
 
 var (
-	testName           string
-	testNamespace      string
-	clientHub          kubernetes.Interface
-	clientHubDynamic   dynamic.Interface
-	gvrMultiClusterHub schema.GroupVersionResource
-	gvrSubscription    schema.GroupVersionResource
-	// gvrClusterregistry   schema.GroupVersionResource
-	// gvrKlusterletconfig  schema.GroupVersionResource
-	// gvrClusterdeployment schema.GroupVersionResource
-	// gvrSyncset           schema.GroupVersionResource
-	// gvrSelectorsyncset   schema.GroupVersionResource
-	// gvrSecret            schema.GroupVersionResource
-	// gvrServiceaccount    schema.GroupVersionResource
+	testName            string
+	testNamespace       string
+	clientHub           kubernetes.Interface
+	clientHubDynamic    dynamic.Interface
+	gvrMultiClusterHub  schema.GroupVersionResource
+	gvrSubscription     schema.GroupVersionResource
 	optionsFile         string
 	baseDomain          string
 	kubeadminUser       string
@@ -81,13 +74,6 @@ func init() {
 
 var _ = BeforeSuite(func() {
 	By("Setup Hub client")
-	// gvrClusterregistry = schema.GroupVersionResource{Group: "clusterregistry.k8s.io", Version: "v1alpha1", Resource: "clusters"}
-	// gvrKlusterletconfig = schema.GroupVersionResource{Group: "agent.open-cluster-management.io", Version: "v1beta1", Resource: "klusterletconfigs"}
-	// gvrClusterdeployment = schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "clusterdeployments"}
-	// gvrSyncset = schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "syncsets"}
-	// gvrSelectorsyncset = schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "selectorsyncsets"}
-	// gvrSecret = schema.GroupVersionResource{Version: "v1", Resource: "secrets"}
-	// gvrServiceaccount = schema.GroupVersionResource{Version: "v1", Resource: "serviceaccounts"}
 	gvrMultiClusterHub = schema.GroupVersionResource{Group: "operators.open-cluster-management.io", Version: "v1beta1", Resource: "multiclusterhubs"}
 	gvrSubscription = schema.GroupVersionResource{Group: "apps.open-cluster-management.io", Version: "v1", Resource: "subscriptions"}
 	clientHub = NewKubeClient("", "", "")

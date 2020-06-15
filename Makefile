@@ -119,7 +119,7 @@ cm-install: update-image csv ns secrets og
 	kubectl apply -k build/configmap-install
 
 # generates an index image and catalogsource that serves it
-index-install: update-image csv ns secrets og
+index-install: secrets update-image csv ns og
 	kubectl patch serviceaccount default -n open-cluster-management -p '{"imagePullSecrets": [{"name": "quay-secret"}]}'
 	bash common/scripts/generate-index.sh ${VERSION} ${REGISTRY}
 	kubectl apply -k build/index-install
