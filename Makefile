@@ -109,7 +109,7 @@ local-install: ns secrets og subscriptions
 # run as a Deployment inside the cluster
 in-cluster-install: update-image ns secrets og subscriptions
 	kubectl apply -f deploy/crds/operators.open-cluster-management.io_multiclusterhubs_crd.yaml
-	yq w -i deploy/kustomization.yaml 'images(name==multiclusterhub-operator).newTag' "$(version)"
+	yq w -i deploy/kustomization.yaml 'images(name==multiclusterhub-operator).newTag' "${VERSION}"
 	kubectl apply -k deploy
 	# kubectl apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml
 

@@ -234,6 +234,57 @@ func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1beta1.MultiC
 	return nil, nil
 }
 
+func (r *ReconcileMultiClusterHub) ensureClusterManager(m *operatorsv1beta1.MultiClusterHub, u *unstructured.Unstructured) (*reconcile.Result, error) {
+	obLog := log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName(), "Kind", u.GetKind())
+
+	found := &unstructured.Unstructured{}
+	found.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "operator.open-cluster-management.io",
+		Kind:    "ClusterManager",
+		Version: "v1",
+	})
+	// Try to get API group instance
+	err := r.client.Get(context.TODO(), types.NamespacedName{
+		Name:      u.GetName(),
+		Namespace: u.GetNamespace(),
+	}, found)
+	if err != nil && errors.IsNotFound(err) {
+
+		err := r.client.Create(context.TODO(), u)
+		if err != nil {
+			// Creation failed
+			obLog.Error(err, "Failed to create new instance")
+			return &reconcile.Result{}, err
+		}
+		// Creation was successful
+		obLog.Info("Created new object")
+		return nil, nil
+
+	} else if err != nil {
+		// Error that isn't due to the resource not existing
+		obLog.Error(err, "Failed to get cluster manager")
+		return &reconcile.Result{}, err
+	}
+
+	// Validate object based on type
+	updated, needsUpdate := mcm.ValidateClusterManager(found, u)
+	if needsUpdate {
+		obLog.Info("Updating cluster manager")
+		// Update the resource. Skip on unit test
+		err = r.client.Update(context.TODO(), updated)
+		if err != nil {
+			// Update failed
+			obLog.Error(err, "Failed to update object")
+			return &reconcile.Result{}, err
+		}
+
+		// Spec updated - return
+		return nil, nil
+	}
+
+	return nil, nil
+}
+
 func (r *ReconcileMultiClusterHub) apiReady(gv schema.GroupVersion) (*reconcile.Result, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {

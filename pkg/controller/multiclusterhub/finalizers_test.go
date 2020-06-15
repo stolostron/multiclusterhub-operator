@@ -498,3 +498,41 @@ func Test_cleanupCRDS(t *testing.T) {
 		})
 	}
 }
+
+func Test_cleanupClusterManagers(t *testing.T) {
+	tests := []struct {
+		Name           string
+		MCH            *operatorsv1beta1.MultiClusterHub
+		ClusterManager *unstructured.Unstructured
+		Result         error
+	}{
+		{
+			Name:   "Installer Created ClusterManager",
+			MCH:    full_mch,
+			Result: nil,
+		},
+		{
+			Name:   "Seperate ClusterManager",
+			MCH:    empty_mch,
+			Result: nil,
+		},
+	}
+
+	reqLogger := log.WithValues("Request.Namespace", mch_namespace, "Request.Name", mch_name)
+
+	for _, tt := range tests {
+		t.Run(tt.Name, func(t *testing.T) {
+			// Objects to track in the fake client.
+			r, err := getTestReconciler(tt.MCH)
+			if err != nil {
+				t.Fatalf("Failed to create test reconciler: %s", err)
+			}
+
+			err = r.cleanupClusterManagers(reqLogger, full_mch)
+			if err != tt.Result {
+				t.Fatalf("Failed to cleanup ClusterManager: %s", err)
+			}
+
+		})
+	}
+}
