@@ -1,6 +1,7 @@
 package multicloudhub_operator_test
 
 import (
+	"context"
 	"fmt"
 
 	. "github.com/onsi/ginkgo"
@@ -28,7 +29,7 @@ var _ = Describe("Multiclusterhub", func() {
 			Eventually(func() error {
 				var err error
 				klog.V(1).Info("Wait MCH Repo deployment...")
-				deploy, err = clientHub.AppsV1().Deployments(testNamespace).Get(multiClusterHubRepo, metav1.GetOptions{})
+				deploy, err = clientHub.AppsV1().Deployments(testNamespace).Get(context.TODO(), multiClusterHubRepo, metav1.GetOptions{})
 				if err != nil {
 					return err
 				}

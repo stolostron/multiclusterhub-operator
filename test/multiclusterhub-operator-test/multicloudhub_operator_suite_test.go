@@ -1,6 +1,7 @@
 package multicloudhub_operator_test
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -87,14 +88,14 @@ var _ = BeforeSuite(func() {
 		"grc-sub", "kui-web-terminal-sub", "management-ingress-sub", "multicluster-mongodb-sub", "rcm-sub", "search-prod-sub", "topology-sub"}
 	By("Create Namesapce if needed")
 	namespaces := clientHub.CoreV1().Namespaces()
-	if _, err := namespaces.Get(testNamespace, metav1.GetOptions{}); err != nil && errors.IsNotFound(err) {
-		Expect(namespaces.Create(&corev1.Namespace{
+	if _, err := namespaces.Get(context.TODO(), testNamespace, metav1.GetOptions{}); err != nil && errors.IsNotFound(err) {
+		Expect(namespaces.Create(context.TODO(), &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: testNamespace,
 			},
-		})).NotTo(BeNil())
+		}, metav1.CreateOptions{})).NotTo(BeNil())
 	}
-	Expect(namespaces.Get(testNamespace, metav1.GetOptions{})).NotTo(BeNil())
+	Expect(namespaces.Get(context.TODO(), testNamespace, metav1.GetOptions{})).NotTo(BeNil())
 })
 
 func TestMulticloudhubOperator(t *testing.T) {
@@ -167,13 +168,13 @@ func LoadConfig(url, kubeconfig, context string) (*rest.Config, error) {
 // deleteIfExists deletes resources by using gvr & name & namespace, will wait for deletion to complete by using eventually
 func deleteIfExists(clientHubDynamic dynamic.Interface, gvr schema.GroupVersionResource, name, namespace string) {
 	ns := clientHubDynamic.Resource(gvr).Namespace(namespace)
-	if _, err := ns.Get(name, metav1.GetOptions{}); err != nil {
+	if _, err := ns.Get(context.TODO(), name, metav1.GetOptions{}); err != nil {
 		Expect(errors.IsNotFound(err)).To(Equal(true))
 		return
 	}
 	Expect(func() error {
 		// possibly already got deleted
-		err := ns.Delete(name, nil)
+		err := ns.Delete(context.TODO(), name, metav1.DeleteOptions{})
 		if err != nil && !errors.IsNotFound(err) {
 			return err
 		}
@@ -183,7 +184,7 @@ func deleteIfExists(clientHubDynamic dynamic.Interface, gvr schema.GroupVersionR
 	By("Wait for deletion")
 	Eventually(func() error {
 		var err error
-		_, err = ns.Get(name, metav1.GetOptions{})
+		_, err = ns.Get(context.TODO(), name, metav1.GetOptions{})
 		if err != nil && !errors.IsNotFound(err) {
 			return err
 		}
@@ -202,8 +203,8 @@ func createNewUnstructured(
 	name, namespace string,
 ) {
 	ns := clientHubDynamic.Resource(gvr).Namespace(namespace)
-	Expect(ns.Create(obj, metav1.CreateOptions{})).NotTo(BeNil())
-	Expect(ns.Get(name, metav1.GetOptions{})).NotTo(BeNil())
+	Expect(ns.Create(context.TODO(), obj, metav1.CreateOptions{})).NotTo(BeNil())
+	Expect(ns.Get(context.TODO(), name, metav1.GetOptions{})).NotTo(BeNil())
 }
 
 // isOwner checks if obj is owned by owner, obj can either be unstructured or ObjectMeta
@@ -268,7 +269,7 @@ func listAppSubs(
 			LabelSelector: labelSelector,
 			Limit:         100,
 		}
-		obj, err = namespace.List(listOptions)
+		obj, err = namespace.List(context.TODO(), listOptions)
 		// obj, err = namespace.Get(name, metav1.GetOptions{})
 		if wantFound && err != nil {
 			return err
