@@ -90,7 +90,7 @@ Delete multiclusterhub instance if it exists
 kubectl delete mch --all
 ```
 
-Clean up operator resources:
+Clean up the operator and its resources:
 ```bash
 make uninstall
 ```
@@ -100,11 +100,11 @@ If not all resources are properly cleaned up, follow the uninstall instructions 
 
 ## Useful Make Targets
 
-`make image`: Build the image
-`make push`: Push built image to Quay
-`make secrets`: Generate secrets needed for install
-`make cr`: Apply basic multiclusterhub instance
-`make deps`: Installs operator sdk and opm
+- `make image`: Build the image
+- `make push`: Push built image to Quay
+- `make secrets`: Generate secrets needed for install
+- `make cr`: Apply basic multiclusterhub instance
+- `make deps`: Installs operator sdk and opm
 
 ## Disabling MultiClusterHub Operator
 
