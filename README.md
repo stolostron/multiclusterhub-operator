@@ -37,6 +37,10 @@ make deps subscribe
 ```
 *This will not install all required dependencies* Set custom version
 
+### Replace image manifest
+
+The json file located in `image-manifests/` contains a template for images versions. Before installing this file needs to be populated with proper values, which can be found in https://github.com/open-cluster-management/pipeline/tree/2.0-integration/snapshots
+
 ### Install Manually
 
 #### 1. Run as a Deployment inside the cluster
