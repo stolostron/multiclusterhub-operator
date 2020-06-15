@@ -49,10 +49,25 @@ var _ = Describe("Multiclusterhub", func() {
 		mch := newMultiClusterHub(testName, testNamespace)
 		createNewUnstructured(clientHubDynamic, gvrMultiClusterHub, mch, testName, testNamespace)
 
-		_ = listAppSubs(clientHubDynamic, gvrSubscription, testNamespace, true, 60, len(appsubs))
+		When("MultiClusterHub is created, wait for Application Subscriptions to be available", func() {
+			Eventually(func() error {
+				unstructuredAppSubs := listAppSubs(clientHubDynamic, gvrSubscription, testNamespace, true, 60, len(appsubs))
 
-		// By("Checking ownerRef", func() {
-		// 	Expect(isOwner(mch, &deploy.ObjectMeta)).To(Equal(true))
-		// })
+				// ready := false
+				for _, appsub := range unstructuredAppSubs.Items {
+					if _, ok := appsub.Object["status"]; !ok {
+						return fmt.Errorf("Appsub: %s has no 'status' field", appsub.GetName())
+					}
+					status, ok := appsub.Object["status"].(map[string]interface{})
+					if !ok || status == nil {
+						return fmt.Errorf("Appsub: %s has no 'status' map", appsub.GetName())
+					}
+					if status["message"] != "Active" || status["phase"] != "Subscribed" {
+						return fmt.Errorf("Appsub: %s is not active", appsub.GetName())
+					}
+				}
+				return nil
+			}, 180, 1).Should(BeNil())
+		})
 	})
 })
