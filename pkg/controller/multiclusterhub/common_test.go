@@ -15,9 +15,15 @@ import (
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 )
+
+func kind(kind string) schema.GroupKind {
+	return schema.GroupKind{Group: "", Kind: kind}
+}
 
 func Test_ensureDeployment(t *testing.T) {
 	r, err := getTestReconciler(full_mch)
@@ -68,24 +74,34 @@ func Test_ensureDeployment(t *testing.T) {
 			Name:       "Test: EnsureDeployment - Empty Deployment",
 			MCH:        full_mch,
 			Deployment: &appsv1.Deployment{},
-			Result:     nil,
+			Result:     errors.NewInvalid(kind("Test"), "", nil),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
 			_, err = r.ensureDeployment(tt.MCH, tt.Deployment)
-			if err != nil {
-				t.Fatalf("Failed to ensure deployment")
-			}
 
-			deploy := &appsv1.Deployment{}
-			err = r.client.Get(context.TODO(), types.NamespacedName{
-				Name:      tt.Deployment.Name,
-				Namespace: tt.Deployment.Namespace,
-			}, deploy)
-			if err != tt.Result {
-				t.Fatalf("Could not find created '%s' deployment: %s", tt.Deployment.Name, err.Error())
+			if tt.Result != nil {
+				// Check if error matches desired error
+
+				if errors.ReasonForError(err) != errors.ReasonForError(tt.Result) {
+					t.Fatalf("ensureDeployment() error = %v, wantErr %v", err, tt.Result)
+				}
+			} else {
+				if err != nil {
+					t.Fatalf("ensureDeployment() error = %v, wantErr %v", err, tt.Result)
+				}
+
+				deploy := &appsv1.Deployment{}
+				err = r.client.Get(context.TODO(), types.NamespacedName{
+					Name:      tt.Deployment.Name,
+					Namespace: tt.Deployment.Namespace,
+				}, deploy)
+
+				if err != tt.Result {
+					t.Fatalf("Could not find created '%s' deployment: %s", tt.Deployment.Name, err.Error())
+				}
 			}
 		})
 	}
@@ -126,24 +142,32 @@ func Test_ensureService(t *testing.T) {
 			Name:    "Test: ensureService - Empty service",
 			MCH:     full_mch,
 			Service: &corev1.Service{},
-			Result:  nil,
+			Result:  errors.NewInvalid(kind("Test"), "", nil),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
 			_, err = r.ensureService(tt.MCH, tt.Service)
-			if !errorEquals(err, tt.Result) {
-				t.Fatalf("Failed to ensure service")
-			}
 
-			service := &corev1.Service{}
-			err = r.client.Get(context.TODO(), types.NamespacedName{
-				Name:      tt.Service.Name,
-				Namespace: tt.Service.Namespace,
-			}, service)
-			if err != tt.Result {
-				t.Fatalf("Could not find created '%s' service: %s", tt.Service.Name, err.Error())
+			if tt.Result != nil {
+				// Check if error matches desired error
+				if errors.ReasonForError(err) != errors.ReasonForError(tt.Result) {
+					t.Fatalf("ensureService() error = %v, wantErr %v", err, tt.Result)
+				}
+			} else {
+				if err != nil {
+					t.Fatalf("ensureService() error = %v, wantErr %v", err, tt.Result)
+				}
+
+				service := &corev1.Service{}
+				err = r.client.Get(context.TODO(), types.NamespacedName{
+					Name:      tt.Service.Name,
+					Namespace: tt.Service.Namespace,
+				}, service)
+				if err != tt.Result {
+					t.Fatalf("Could not find created '%s' service: %s", tt.Service.Name, err.Error())
+				}
 			}
 		})
 	}
@@ -171,23 +195,31 @@ func Test_ensureSecret(t *testing.T) {
 			Name:   "Test: ensureSecret - Empty secret",
 			MCH:    full_mch,
 			Secret: &corev1.Secret{},
-			Result: nil,
+			Result: errors.NewInvalid(kind("Test"), "", nil),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
 			_, err = r.ensureSecret(tt.MCH, tt.Secret)
-			if !errorEquals(err, tt.Result) {
-				t.Fatalf("Failed to ensure secret")
-			}
 
-			secret := &corev1.Secret{}
-			err = r.client.Get(context.TODO(), types.NamespacedName{
-				Name:      tt.Secret.Name,
-				Namespace: tt.Secret.Namespace,
-			}, secret)
-			if err != tt.Result {
-				t.Fatalf("Could not find created '%s' service: %s", tt.Secret.Name, err.Error())
+			if tt.Result != nil {
+				// Check if error matches desired error
+				if errors.ReasonForError(err) != errors.ReasonForError(tt.Result) {
+					t.Fatalf("ensureSecret() error = %v, wantErr %v", err, tt.Result)
+				}
+			} else {
+				if err != nil {
+					t.Fatalf("ensureSecret() error = %v, wantErr %v", err, tt.Result)
+				}
+
+				secret := &corev1.Secret{}
+				err = r.client.Get(context.TODO(), types.NamespacedName{
+					Name:      tt.Secret.Name,
+					Namespace: tt.Secret.Namespace,
+				}, secret)
+				if err != tt.Result {
+					t.Fatalf("Could not find created '%s' service: %s", tt.Secret.Name, err.Error())
+				}
 			}
 		})
 	}
@@ -222,7 +254,7 @@ func Test_ensureChannel(t *testing.T) {
 		t.Run(tt.Name, func(t *testing.T) {
 			_, err = r.ensureChannel(tt.MCH, tt.Channel)
 			if !errorEquals(err, tt.Result) {
-				t.Fatalf("Failed to ensure channel")
+				t.Errorf("ensureChannel() error = %v, wantErr %v", err, tt.Result)
 			}
 		})
 
@@ -338,10 +370,44 @@ func Test_ensureSubscription(t *testing.T) {
 		t.Run(tt.Name, func(t *testing.T) {
 			_, err = r.ensureSubscription(tt.MCH, tt.Subscription)
 			if !errorEquals(err, tt.Result) {
-				t.Fatalf("Failed to ensure subscription")
+				t.Errorf("ensureSubscription() error = %v, wantErr %v", err, tt.Result)
 			}
 
 			// TODO: Check Subscription is created in the fake client
+		})
+	}
+}
+
+func Test_ensureClusterManager(t *testing.T) {
+	r, err := getTestReconciler(full_mch)
+	if err != nil {
+		t.Fatalf("Failed to create test reconciler")
+	}
+
+	imageOverrides := map[string]string{
+		"registration": "quay.io/open-cluster-management/registration@sha256:fe95bca419976ca8ffe608bc66afcead6ef333b863f22be55df57c89ded75dda",
+	}
+
+	tests := []struct {
+		Name           string
+		MCH            *operatorsv1beta1.MultiClusterHub
+		ClusterManager *unstructured.Unstructured
+		Result         error
+	}{
+		{
+			Name:           "Test: ensureClusterManager - ClusterManager",
+			MCH:            full_mch,
+			ClusterManager: mcm.ClusterManager(full_mch, imageOverrides),
+			Result:         nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.Name, func(t *testing.T) {
+			_, err = r.ensureClusterManager(tt.MCH, tt.ClusterManager)
+			if !errorEquals(err, tt.Result) {
+				t.Fatalf("Failed to ensure ClusterManager: %s", err)
+			}
 		})
 	}
 }

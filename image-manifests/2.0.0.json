@@ -488,5 +488,15 @@
     "image-remote": "quay.io/open-cluster-management",
     "image-digest": "sha256:image-digest-sha",
     "image-key": "search_operator"
+  },
+  {
+    "image-name": "registration",
+    "image-version": "0.0.1",
+    "image-tag": "0.0.1-git-sha256",
+    "git-sha256": "git-sha256",
+    "git-repository": "open-cluster-management/registration",
+    "image-remote": "quay.io/open-cluster-management",
+    "image-digest": "sha256:image-digest-sha",
+    "image-key": "registration"
   }
 ]
