@@ -70,10 +70,10 @@ oc delete -k deploy/
 # Other
 oc delete consolelink acm-console-link --ignore-not-found
 
-# Delete Nucleus
-_nucleusDir=build/nucleus
-if [ -d "$_nucleusDir" ]; then
-    cd build/nucleus
+# Delete Registration Operator
+_regOpDir=build/registration-operator
+if [ -d "$_regOpDir" ]; then
+    cd $_regOpDir
     make clean-hub OLM_NAMESPACE=openshift-operator-lifecycle-manager
     cd ../..
     oc delete deploy cluster-manager || true

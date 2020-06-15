@@ -55,8 +55,8 @@ install:
 uninstall:
 	bash common/scripts/uninstall.sh
 
-nucleus:
-	./common/scripts/install_nucleus.sh
+registration-operator:
+	./common/scripts/install_regop.sh
 
 # create secrets for pulling images
 secrets: 
@@ -99,7 +99,7 @@ subscriptions:
 	kubectl apply -k build/subscriptions
 
 # run operator locally outside the cluster
-local-install: ns secrets og subscriptions nucleus
+local-install: ns secrets og subscriptions registration-operator
 	kubectl apply -f deploy/crds/operators.open-cluster-management.io_multiclusterhubs_crd.yaml
 	OPERATOR_NAME=multiclusterhub-operator \
 	TEMPLATES_PATH="$(shell pwd)/templates" \
@@ -107,19 +107,19 @@ local-install: ns secrets og subscriptions nucleus
 	operator-sdk18 run local --watch-namespace=open-cluster-management --kubeconfig=$(KUBECONFIG)
 
 # run as a Deployment inside the cluster
-in-cluster-install: update-image ns secrets og subscriptions nucleus
+in-cluster-install: ns secrets og update-image subscriptions registration-operator
 	kubectl apply -f deploy/crds/operators.open-cluster-management.io_multiclusterhubs_crd.yaml
 	yq w -i deploy/kustomization.yaml 'images(name==multiclusterhub-operator).newTag' "$(version)"
 	kubectl apply -k deploy
 	# kubectl apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml
 
 # creates a configmap index and catalogsource that it subscribes to
-cm-install: update-image csv ns secrets og nucleus
+cm-install: ns secrets og update-image csv registration-operator
 	bash common/scripts/generate-cm-index.sh ${VERSION} ${REGISTRY}
 	kubectl apply -k build/configmap-install
 
 # generates an index image and catalogsource that serves it
-index-install: update-image csv ns secrets og nucleus
+index-install: ns secrets og update-image csv registration-operator
 	kubectl patch serviceaccount default -n open-cluster-management -p '{"imagePullSecrets": [{"name": "quay-secret"}]}'
 	bash common/scripts/generate-index.sh ${VERSION} ${REGISTRY}
 	kubectl apply -k build/index-install
