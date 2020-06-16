@@ -1,5 +1,0 @@
-- name: subscriptions.apps.open-cluster-management.io
-  version: v1
-  kind: Subscription
-  displayName: Subscription
-  description: Subscribe resources from a channel according to its package filters

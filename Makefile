@@ -34,7 +34,7 @@ ifeq ($(CONTAINER_ENGINE),)
 	CONTAINER_ENGINE = $(shell podman version > /dev/null && echo podman || echo docker)
 endif
 
-.PHONY: lint image olm-catalog clean
+.PHONY: lint image clean
 
 all: clean lint test image
 
