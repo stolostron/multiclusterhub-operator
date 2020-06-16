@@ -23,7 +23,7 @@ kubectl annotate mch <mch-name> mch-pause=true
 
 Remove or edit this annotation to resume installer operations
 ```bash
-kubectl annotate mch <mch-name> mch-pause=false
+kubectl annotate mch <mch-name> mch-pause=false --overwrite
 ```
 
 [install_guide]: /docs/installation.md
