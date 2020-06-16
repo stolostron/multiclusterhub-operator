@@ -73,6 +73,7 @@ oc delete consolelink acm-console-link --ignore-not-found
 # Delete Registration Operator
 _regOpDir=build/registration-operator
 if [ -d "$_regOpDir" ]; then
+    oc delete clustermanager --all
     cd $_regOpDir
     make clean-hub OLM_NAMESPACE=openshift-operator-lifecycle-manager
     cd ../..

@@ -23,10 +23,6 @@ if ! [ -x "$(command -v gsed)" ]; then
     fi
 fi
 
-if [[ "$OSTYPE" == "darwin"* ]]; then
-        gsed -i 's/sed/gsed/g' Makefile
-fi
-
 echo ""
 echo "Deleting OperatorGroups if they exist. (Registration Operator always creates OperatorGroup in a given NS.)"
 oc delete og --all
@@ -36,4 +32,4 @@ echo "Attempting deploy of Registration Operator ..."
 
 echo ""
 make update-all
-make deploy-hub OLM_NAMESPACE=$_olmNamespace
+make deploy-hub-operator OLM_NAMESPACE=$_olmNamespace
