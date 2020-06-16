@@ -219,8 +219,8 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		r.CacheSpec.ImageOverrides = imageOverrides
 		r.CacheSpec.ManifestVersion = version.Version
 		r.CacheSpec.ImageOverrideType = manifest.GetImageOverrideType(multiClusterHub)
-		r.CacheSpec.ImageRepository = multiClusterHub.Spec.Overrides.ImageRepository
-		r.CacheSpec.ImageSuffix = multiClusterHub.Spec.Overrides.ImageTagSuffix
+		r.CacheSpec.ImageRepository = utils.GetImageRepository(multiClusterHub)
+		r.CacheSpec.ImageSuffix = utils.GetImageSuffix(multiClusterHub)
 	}
 
 	// Do not reconcile objects if this instance of mch is labeled "paused"

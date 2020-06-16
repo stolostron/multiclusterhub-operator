@@ -21,7 +21,7 @@ func RCM(m *operatorsv1beta1.MultiClusterHub, overrides map[string]string) *unst
 			"global": map[string]interface{}{
 				"pullPolicy":      utils.GetImagePullPolicy(m),
 				"imagePullSecret": m.Spec.ImagePullSecret,
-				"imageRepository": m.Spec.Overrides.ImageRepository,
+				"imageRepository": utils.GetImageRepository(m),
 				"imageTagPostfix": imageSuffix(m),
 				"imageOverrides":  overrides,
 			},

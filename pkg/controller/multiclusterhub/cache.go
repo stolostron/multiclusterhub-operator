@@ -5,6 +5,7 @@ package multiclusterhub
 import (
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/manifest"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 )
 
 // CacheSpec ...
@@ -25,11 +26,11 @@ func (c CacheSpec) isStale(m *operatorsv1beta1.MultiClusterHub) bool {
 		return true
 	}
 	// A change in suffix invalidates cache
-	if s := m.Spec.Overrides.ImageTagSuffix; s != c.ImageSuffix {
+	if s := utils.GetImageSuffix(m); s != c.ImageSuffix {
 		return true
 	}
 	// A change to image repository invalidates cache
-	if repo := m.Spec.Overrides.ImageRepository; repo != c.ImageRepository {
+	if repo := utils.GetImageRepository(m); repo != c.ImageRepository {
 		return true
 	}
 

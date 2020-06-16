@@ -59,6 +59,10 @@ var (
 	}
 	// AnnotationMCHPause sits in multiclusterhub annotations to identify if the multiclusterhub is paused or not
 	AnnotationMCHPause = "mch-pause"
+	// AnnotationImageRepo sits in multiclusterhub annotations to identify a custom image repository to use
+	AnnotationImageRepo = "mch-imageRepository"
+	// AnnotationSuffix sits in multiclusterhub annotations to identify a custom image tag suffix to use
+	AnnotationSuffix = "mch-imageTagSuffix"
 )
 
 // CertManagerNS returns the namespace to deploy cert manager objects
@@ -210,4 +214,22 @@ func IsPaused(instance *operatorsv1beta1.MultiClusterHub) bool {
 	}
 
 	return false
+}
+
+// GetImageRepository returns the image repo annotation, or an empty string if not set
+func GetImageRepository(instance *operatorsv1beta1.MultiClusterHub) string {
+	a := instance.GetAnnotations()
+	if a == nil {
+		return ""
+	}
+	return a[AnnotationImageRepo]
+}
+
+// GetImageSuffix returns the image tag suffix annotation, or an empty string if not set
+func GetImageSuffix(instance *operatorsv1beta1.MultiClusterHub) string {
+	a := instance.GetAnnotations()
+	if a == nil {
+		return ""
+	}
+	return a[AnnotationSuffix]
 }
