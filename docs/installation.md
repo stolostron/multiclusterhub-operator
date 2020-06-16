@@ -1,11 +1,12 @@
 # Installation
 
-The below guidelines will explain how to build and run the code in this repo for manually installing the MultiCusterHub.
+The below guidelines will explain how to build and install the operator on a remote cluster.
 
 ### Prerequisites
 
-- [operator SDK](https://github.com/operator-framework/operator-sdk/releases) >= v0.18.0
-- [opm](https://github.com/operator-framework/operator-registry/releases) >= v1.12.5
+- [go][go_tool] version v1.13+
+- [operator SDK][osdk] v0.18.0+
+- [opm][opm] v1.12.5+
 - yq
 - docker
 - quay credentials for https://quay.io/organization/rhibmcollab and https://quay.io/organization/open-cluster-management
@@ -75,3 +76,21 @@ Once the operator is installed in the cluster, initiate an installation by creat
 make cr
 ```
 > To customize the instance, first modify the spec in `deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml`.
+
+## Cleanup
+Delete multiclusterhub instance if it exists
+```bash
+kubectl delete mch --all
+```
+
+Clean up the operator and its resources:
+```bash
+make uninstall
+```
+
+If not all resources are properly cleaned up, follow the uninstall instructions at https://github.com/open-cluster-management/deploy to manually clean up remaining resources.
+
+
+[go_tool]:https://golang.org/dl/
+[osdk]:https://github.com/operator-framework/operator-sdk/releases
+[opm]:https://github.com/operator-framework/operator-registry/releases

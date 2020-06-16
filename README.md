@@ -4,21 +4,7 @@ The MultiCusterHub operator manages the install of Open Cluster Management (OCM)
 
 ## Quick Install
 
-For a standard installation of Open Cluster Management, follow the instructions at https://github.com/open-cluster-management/deploy. For more details on how to do a custom installation with code from this repository, see the [installation guide][install_guide].
-
-## Cleanup
-Delete multiclusterhub instance if it exists
-```bash
-kubectl delete mch --all
-```
-
-Clean up the operator and its resources:
-```bash
-make uninstall
-```
-
-If not all resources are properly cleaned up, follow the uninstall instructions at https://github.com/open-cluster-management/deploy to manually clean up remaining resources.
-
+For a standard installation of Open Cluster Management, follow the instructions at https://github.com/open-cluster-management/deploy. To install directly from this repository, see the [installation guide][install_guide].
 
 ## Useful Make Targets
 
