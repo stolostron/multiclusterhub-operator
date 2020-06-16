@@ -119,12 +119,12 @@ in-cluster-install: ns secrets og update-image subscriptions regop
 	# kubectl apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml
 
 # creates a configmap index and catalogsource that it subscribes to
-cm-install: ns secrets og update-image csv regop
+cm-install: ns secrets og csv update-image regop
 	bash common/scripts/generate-cm-index.sh ${VERSION} ${REGISTRY}
 	kubectl apply -k build/configmap-install
 
 # generates an index image and catalogsource that serves it
-index-install: ns secrets og update-image csv regop
+index-install: ns secrets og csv update-image regop
 	kubectl patch serviceaccount default -n open-cluster-management -p '{"imagePullSecrets": [{"name": "quay-secret"}]}'
 	bash common/scripts/generate-index.sh ${VERSION} ${REGISTRY}
 	kubectl apply -k build/index-install
