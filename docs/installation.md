@@ -18,7 +18,7 @@ export DOCKER_USER=<DOCKER_USER>
 export DOCKER_PASS=<DOCKER_PASS>
 ```
 
-It is also recommneded to set a unqiue version label
+It is also recommended to set a unique version label
 ```bash
 export VERSION=<A_UNIQUE_VERSION>
 ```
