@@ -1,105 +1,30 @@
 # MultiClusterHub Operator
 
-Build with [operator-sdk](https://github.com/operator-framework/operator-sdk) [v0.16.0+](https://github.com/operator-framework/operator-sdk/releases)
+The MultiCusterHub operator manages the install of Open Cluster Management (OCM) on RedHat Openshift Container Platform
 
-## Quick Install Instructions
+## Quick Install
 
-### Declare Required Variables
+For a standard installation of Open Cluster Management, follow the instructions in the [deploy repo][deploy]. To install directly from this repository, see the [installation guide][install_guide].
 
+## Useful Make Targets
+
+- `make image`: Build the image
+- `make push`: Push built image to Quay
+- `make secrets`: Generate secrets needed for install
+- `make cr`: Apply basic multiclusterhub instance
+- `make deps`: Installs operator sdk and opm
+
+## Disabling MultiClusterHub Operator
+
+Once installed, the hub operator will monitor changes in the cluster that affect an instance of the multiclusterhub (mch) and reconcile deviations to maintain a desired state. To stop the installer from making these changes you can apply an annotation to the mch instance.
 ```bash
-export DOCKER_USER=<DOCKER_USER>
-export DOCKER_PASS=<DOCKER_PASS>
+kubectl annotate mch <mch-name> mch-pause=true
 ```
 
-### Install Dependencies and Subscribe
-
+Remove or edit this annotation to resume installer operations
 ```bash
-make deps subscribe
+kubectl annotate mch <mch-name> mch-pause=false --overwrite
 ```
 
-### Install Manually
-
-Before running the command below, update the namespace in the following file [deploy/kustomization.yaml](deploy/kustomization.yaml) to reflect your targeted namespace.
-
-```bash
-make deps subscribe
-```
-
-## All Make Targets
-
-## Download Dependancies
-
-```bash
-make deps
-```
-
-## Test
-
-```bash
-make test
-```
-
-## Build image
-
-```bash
-make image
-```
-
-## Subscribe to Operator on OperatorHub
-
-```bash
-make subscribe
-```
-
-## Manually Install Operator
-
-```bash
-make install
-```
-
-## Run Operator Locally
-
-```bash
-make local
-```
-
-## Deploy MultiClusterHub operator
-
-```bash
-kubectl create namespace multicluster-system
-
-kubectl -k deploy
-```
-
-### Deploy MultiClusterHub operator on OCP as a custom operators
-
-```bash
-make olm-catalog
-
-oc create namespace multicluster-system
-
-oc apply -f build/_output/olm/multiclusterhub.resources.yaml
-
-cat <<EOF | oc -n multicluster-system apply -f -
-apiVersion: operators.coreos.com/v1alpha1
-kind: Subscription
-metadata:
-  name: multiclusterhub-operator
-spec:
-  channel: alpha
-  installPlanApproval: Automatic
-  name: multiclusterhub-operator
-  source: multiclusterhub-operator-registry
-  sourceNamespace: multicluster-system
-EOF
-```
-
-or after the `multiclusterhub.resources.yaml` is applied, deploy the operator in OCP OperatorHub
-
-## Deploy MultiClusterHub
-
-> Note: the etcd and mongo need to be installed in advance
-
-```bash
-kubectl -n multicluster-system apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml
-```
+[install_guide]: /docs/installation.md
+[deploy]: https://github.com/open-cluster-management/deploy
