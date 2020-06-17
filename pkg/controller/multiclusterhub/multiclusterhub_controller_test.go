@@ -333,7 +333,7 @@ func getTestReconciler(m *operatorsv1.MultiClusterHub) (*ReconcileMultiClusterHu
 	if err := apixv1.AddToScheme(s); err != nil {
 		return nil, fmt.Errorf("Could not add CRDs to test scheme")
 	}
-	s.AddKnownTypes(v1beta1.SchemeGroupVersion, m)
+	s.AddKnownTypes(v1.SchemeGroupVersion, m)
 
 	// Create a fake client to mock API calls.
 	cl := fake.NewFakeClient(objs...)
