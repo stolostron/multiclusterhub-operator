@@ -85,8 +85,8 @@ func formatImageOverrides(mch *operatorsv1beta1.MultiClusterHub, manifestImages 
 func buildFullImageReference(mch *operatorsv1beta1.MultiClusterHub, mi ManifestImage) string {
 	registry := mi.ImageRemote
 	// Use ImageRepository if provided
-	if utils.GetImageRepository(mch) != "" {
-		registry = utils.GetImageRepository(mch)
+	if reg := utils.GetImageRepository(mch); reg != "" {
+		registry = reg
 	}
 
 	switch imageFormat := GetImageOverrideType(mch); imageFormat {

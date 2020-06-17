@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -38,7 +39,7 @@ func TestValidate(t *testing.T) {
 
 	// 4. Modified ImageRepository
 	mch3 := mch.DeepCopy()
-	mch3.Spec.Overrides.ImageRepository = "notquay.io/closed-cluster-management"
+	mch3.SetAnnotations(map[string]string{utils.AnnotationImageRepo: "notquay.io/closed-cluster-management"})
 	sub3 := KUIWebTerminal(mch3, ovr)
 
 	// 5. Activate HA mode

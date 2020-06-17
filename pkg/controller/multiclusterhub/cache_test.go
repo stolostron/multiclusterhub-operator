@@ -7,6 +7,8 @@ import (
 
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/manifest"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestCacheSpec_IsStale(t *testing.T) {
@@ -29,10 +31,10 @@ func TestCacheSpec_IsStale(t *testing.T) {
 
 	t.Run("No change to suffix cache", func(t *testing.T) {
 		mch := &operatorsv1beta1.MultiClusterHub{
-			Spec: operatorsv1beta1.MultiClusterHubSpec{
-				Overrides: operatorsv1beta1.Overrides{
-					ImageRepository: "quay.io",
-					ImageTagSuffix:  "foo",
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					utils.AnnotationImageRepo: "quay.io",
+					utils.AnnotationSuffix:    "foo",
 				},
 			},
 		}
@@ -44,9 +46,9 @@ func TestCacheSpec_IsStale(t *testing.T) {
 
 	t.Run("No change to manifest cache", func(t *testing.T) {
 		mch := &operatorsv1beta1.MultiClusterHub{
-			Spec: operatorsv1beta1.MultiClusterHubSpec{
-				Overrides: operatorsv1beta1.Overrides{
-					ImageRepository: "quay.io",
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					utils.AnnotationImageRepo: "quay.io",
 				},
 			},
 		}

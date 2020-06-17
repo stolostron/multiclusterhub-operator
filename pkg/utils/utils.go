@@ -226,11 +226,11 @@ func getAnnotation(instance *operatorsv1beta1.MultiClusterHub, key string) strin
 }
 
 // GetImageRepository returns the image repo annotation, or an empty string if not set
-func GetImageRepository(i *operatorsv1beta1.MultiClusterHub) string {
-	return getAnnotation(i, AnnotationImageRepo)
+func GetImageRepository(instance *operatorsv1beta1.MultiClusterHub) string {
+	return getAnnotation(instance, AnnotationImageRepo)
 }
 
 // GetImageSuffix returns the image tag suffix annotation, or an empty string if not set
 func GetImageSuffix(instance *operatorsv1beta1.MultiClusterHub) string {
-	return getAnnotation(i, AnnotationSuffix)
+	return getAnnotation(instance, AnnotationSuffix)
 }

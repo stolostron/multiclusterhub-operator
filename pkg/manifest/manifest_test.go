@@ -70,11 +70,10 @@ func Test_buildFullImageReference(t *testing.T) {
 	mch1 := mch.DeepCopy()
 
 	mch2 := mch.DeepCopy()
-	mch2.Spec.Overrides.ImageRepository = "foo.io/bar"
+	mch2.SetAnnotations(map[string]string{utils.AnnotationImageRepo: "foo.io/bar"})
 
 	mch3 := mch.DeepCopy()
-	// mch3.Spec.Overrides.ImageTagSuffix = "baz"
-	mch3.SetAnnotations(map[string]string{utils.AnnotationSuffix: "foo"})
+	mch3.SetAnnotations(map[string]string{utils.AnnotationSuffix: "baz"})
 
 	type args struct {
 		mch *operatorsv1beta1.MultiClusterHub
