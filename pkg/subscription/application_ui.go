@@ -9,7 +9,7 @@ import (
 )
 
 // ApplicationUI overrides the application-chart chart
-func ApplicationUI(m *operatorsv11.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
+func ApplicationUI(m *operatorsv1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "application-chart",
 		Namespace: m.Namespace,

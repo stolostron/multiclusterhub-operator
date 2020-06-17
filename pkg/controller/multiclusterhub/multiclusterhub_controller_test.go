@@ -26,12 +26,12 @@ var (
 	mch_name      = "multiclusterhub-operator"
 	mch_namespace = "open-cluster-management"
 	// A MultiClusterHub object with metadata and spec.
-	full_mch = &operatorsv11.MultiClusterHub{
+	full_mch = &operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      mch_name,
 			Namespace: mch_namespace,
 		},
-		Spec: operatorsv11.MultiClusterHubSpec{
+		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "pull-secret",
 			Mongo: operatorsv11.Mongo{
 				Storage:      "5gi",
@@ -45,17 +45,17 @@ var (
 				SSLCiphers: []string{"foo", "bar", "baz"},
 			},
 		},
-		Status: operatorsv11.MultiClusterHubStatus{
+		Status: operatorsv1.MultiClusterHubStatus{
 			CurrentVersion: "1.0.0",
 		},
 	}
 	// A MultiClusterHub object with metadata and spec.
-	empty_mch = &operatorsv11.MultiClusterHub{
+	empty_mch = &operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      mch_name,
 			Namespace: mch_namespace,
 		},
-		Spec: operatorsv11.MultiClusterHubSpec{
+		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "pull-secret",
 		},
 	}
@@ -91,7 +91,7 @@ func Test_ReconcileMultiClusterHub(t *testing.T) {
 
 	// Without Status Prefilled
 	mch2 := full_mch.DeepCopy()
-	mch2.Status = operatorsv11.MultiClusterHubStatus{}
+	mch2.Status = operatorsv1.MultiClusterHubStatus{}
 
 	// Failover
 	mch3 := full_mch.DeepCopy()
@@ -107,7 +107,7 @@ func Test_ReconcileMultiClusterHub(t *testing.T) {
 
 	tests := []struct {
 		Name     string
-		MCH      *operatorsv11.MultiClusterHub
+		MCH      *operatorsv1.MultiClusterHub
 		Expected error
 	}{
 		{
@@ -173,7 +173,7 @@ func Test_ReconcileMultiClusterHub(t *testing.T) {
 			}
 
 			// Check if MCH has been created
-			mch := &operatorsv11.MultiClusterHub{}
+			mch := &operatorsv1.MultiClusterHub{}
 			err = r.client.Get(context.TODO(), mch_namespaced, mch)
 			if err != nil {
 				t.Errorf("Could not find MultiClusterHub resource")
@@ -196,7 +196,7 @@ func TestUpdateStatus(t *testing.T) {
 	}
 
 	// Check if deployment has been created and has the correct size.
-	mch := &operatorsv11.MultiClusterHub{}
+	mch := &operatorsv1.MultiClusterHub{}
 	err = r.client.Get(context.TODO(), mch_namespaced, mch)
 	if err != nil {
 		t.Errorf("Could not find MCH")
@@ -209,12 +209,12 @@ func TestUpdateStatus(t *testing.T) {
 
 func Test_mongoAuthSecret(t *testing.T) {
 	t.Run("Test mongo auth secret creation", func(t *testing.T) {
-		mch := &operatorsv11.MultiClusterHub{
+		mch := &operatorsv1.MultiClusterHub{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "multiclusterhub",
 				Namespace: "open-cluster-management",
 			},
-			Spec: operatorsv11.MultiClusterHubSpec{
+			Spec: operatorsv1.MultiClusterHubSpec{
 				ImagePullSecret: "Always",
 			},
 		}
@@ -245,11 +245,11 @@ func Test_setDefaults(t *testing.T) {
 
 	// Without Status Prefilled
 	mch2 := full_mch.DeepCopy()
-	mch2.Status = operatorsv11.MultiClusterHubStatus{}
+	mch2.Status = operatorsv1.MultiClusterHubStatus{}
 
 	tests := []struct {
 		Name     string
-		MCH      *operatorsv11.MultiClusterHub
+		MCH      *operatorsv1.MultiClusterHub
 		Expected error
 	}{
 		{
@@ -316,7 +316,7 @@ func errorEquals(err, expected error) bool {
 	return false
 }
 
-func getTestReconciler(m *operatorsv11.MultiClusterHub) (*ReconcileMultiClusterHub, error) {
+func getTestReconciler(m *operatorsv1.MultiClusterHub) (*ReconcileMultiClusterHub, error) {
 	objs := []runtime.Object{m}
 
 	// Register operator types with the runtime scheme.

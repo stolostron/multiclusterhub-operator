@@ -17,7 +17,7 @@ import (
 const ACMControllerName string = "acm-controller"
 
 // ACMControllerDeployment creates the deployment for the acm controller
-func ACMControllerDeployment(m *operatorsv11.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
+func ACMControllerDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
 	replicas := getReplicaCount(m)
 	mode := int32(420)
 

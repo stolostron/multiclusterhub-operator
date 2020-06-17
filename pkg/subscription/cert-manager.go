@@ -9,7 +9,7 @@ import (
 )
 
 // CertManager overrides the cert-manager chart
-func CertManager(m *operatorsv11.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
+func CertManager(m *operatorsv1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "cert-manager",
 		Namespace: utils.CertManagerNS(m),
@@ -41,7 +41,7 @@ func CertManager(m *operatorsv11.MultiClusterHub, overrides map[string]string) *
 }
 
 // CertWebhook overrides the cert-manager-webhook chart
-func CertWebhook(m *operatorsv11.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
+func CertWebhook(m *operatorsv1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "cert-manager-webhook",
 		Namespace: utils.CertManagerNS(m),
@@ -79,7 +79,7 @@ func CertWebhook(m *operatorsv11.MultiClusterHub, overrides map[string]string) *
 }
 
 // ConfigWatcher overrides the configmap-watcher chart
-func ConfigWatcher(m *operatorsv11.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
+func ConfigWatcher(m *operatorsv1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "configmap-watcher",
 		Namespace: utils.CertManagerNS(m),

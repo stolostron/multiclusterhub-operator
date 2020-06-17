@@ -9,7 +9,7 @@ import (
 )
 
 // Search overrides the search-prod chart
-func Search(m *operatorsv11.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
+func Search(m *operatorsv1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "search-prod",
 		Namespace: m.Namespace,

@@ -13,9 +13,9 @@ import (
 )
 
 func TestDeployment(t *testing.T) {
-	empty := &operatorsv11.MultiClusterHub{
+	empty := &operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv11.MultiClusterHubSpec{
+		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "",
 			Mongo:           operatorsv11.Mongo{},
 		},
@@ -26,9 +26,9 @@ func TestDeployment(t *testing.T) {
 		_ = Deployment(empty, ovr)
 	})
 
-	essentialsOnly := &operatorsv11.MultiClusterHub{
+	essentialsOnly := &operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec:       operatorsv11.MultiClusterHubSpec{},
+		Spec:       operatorsv1.MultiClusterHubSpec{},
 	}
 	t.Run("MCH with only required values", func(t *testing.T) {
 		_ = Deployment(essentialsOnly, ovr)
@@ -36,7 +36,7 @@ func TestDeployment(t *testing.T) {
 }
 
 func TestService(t *testing.T) {
-	mch := &operatorsv11.MultiClusterHub{
+	mch := &operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "testName",
 			Namespace: "testNS",
@@ -55,9 +55,9 @@ func TestService(t *testing.T) {
 }
 
 func TestValidateDeployment(t *testing.T) {
-	mch := &operatorsv11.MultiClusterHub{
+	mch := &operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv11.MultiClusterHubSpec{
+		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "test",
 			Mongo:           operatorsv11.Mongo{},
 			NodeSelector: map[string]string{
@@ -87,7 +87,7 @@ func TestValidateDeployment(t *testing.T) {
 	dep4.Spec.Template.Spec.NodeSelector = nil
 
 	type args struct {
-		m   *operatorsv11.MultiClusterHub
+		m   *operatorsv1.MultiClusterHub
 		dep *appsv1.Deployment
 	}
 	tests := []struct {

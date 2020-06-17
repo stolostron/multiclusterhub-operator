@@ -70,7 +70,7 @@ func GenerateWebhookCerts(certDir string) (string, []byte, error) {
 }
 
 // GenerateAPIServerSecret ...
-func GenerateAPIServerSecret(client runtimeclient.Client, multiClusterHub *operatorsv11.MultiClusterHub) error {
+func GenerateAPIServerSecret(client runtimeclient.Client, multiClusterHub *operatorsv1.MultiClusterHub) error {
 	namespace, err := findNamespace()
 	if err != nil {
 		return err
@@ -111,7 +111,7 @@ func GenerateAPIServerSecret(client runtimeclient.Client, multiClusterHub *opera
 }
 
 // GenerateKlusterletSecret ...
-func GenerateKlusterletSecret(client runtimeclient.Client, multiClusterHub *operatorsv11.MultiClusterHub) error {
+func GenerateKlusterletSecret(client runtimeclient.Client, multiClusterHub *operatorsv1.MultiClusterHub) error {
 	namespace, err := findNamespace()
 	if err != nil {
 		return err

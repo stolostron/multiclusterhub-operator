@@ -10,9 +10,9 @@ import (
 )
 
 func TestAcmControllerDeployment(t *testing.T) {
-	empty := &operatorsv11.MultiClusterHub{
+	empty := &operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv11.MultiClusterHubSpec{
+		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "",
 			Mongo:           operatorsv11.Mongo{},
 		},
@@ -24,9 +24,9 @@ func TestAcmControllerDeployment(t *testing.T) {
 		_ = ACMControllerDeployment(empty, ovr)
 	})
 
-	essentialsOnly := &operatorsv11.MultiClusterHub{
+	essentialsOnly := &operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec:       operatorsv11.MultiClusterHubSpec{},
+		Spec:       operatorsv1.MultiClusterHubSpec{},
 	}
 	t.Run("MCH with only required values", func(t *testing.T) {
 		_ = ACMControllerDeployment(essentialsOnly, ovr)

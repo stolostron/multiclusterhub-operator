@@ -9,7 +9,7 @@ import (
 )
 
 // RCM overrides the rcm chart
-func RCM(m *operatorsv11.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
+func RCM(m *operatorsv1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "rcm",
 		Namespace: m.Namespace,

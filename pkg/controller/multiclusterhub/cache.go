@@ -19,7 +19,7 @@ type CacheSpec struct {
 
 // Determines whether the cache has become out of date. Returns true if a change to the
 // multiclusterhub CR that would alter the cache contents occurs
-func (c CacheSpec) isStale(m *operatorsv11.MultiClusterHub) bool {
+func (c CacheSpec) isStale(m *operatorsv1.MultiClusterHub) bool {
 	// A change in override type invalidates cache
 	if oType := manifest.GetImageOverrideType(m); oType != c.ImageOverrideType {
 		return true

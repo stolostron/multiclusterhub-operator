@@ -16,7 +16,7 @@ import (
 const ControllerName string = "mcm-controller"
 
 // ControllerDeployment creates the deployment for the mcm controller
-func ControllerDeployment(m *operatorsv11.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
+func ControllerDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
 	replicas := getReplicaCount(m)
 
 	dep := &appsv1.Deployment{

@@ -19,7 +19,7 @@ import (
 const APIServerName string = "mcm-apiserver"
 
 // APIServerDeployment creates the deployment for the mcm apiserver
-func APIServerDeployment(m *operatorsv11.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
+func APIServerDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
 	replicas := getReplicaCount(m)
 	mode := int32(420)
 
@@ -164,7 +164,7 @@ func APIServerDeployment(m *operatorsv11.MultiClusterHub, overrides map[string]s
 }
 
 // APIServerService creates a service object for the mcm apiserver
-func APIServerService(m *operatorsv11.MultiClusterHub) *corev1.Service {
+func APIServerService(m *operatorsv1.MultiClusterHub) *corev1.Service {
 	s := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      APIServerName,

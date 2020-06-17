@@ -9,7 +9,7 @@ import (
 )
 
 // GRC overrides the grc chart
-func GRC(m *operatorsv11.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
+func GRC(m *operatorsv1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "grc",
 		Namespace: m.Namespace,

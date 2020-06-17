@@ -20,12 +20,12 @@ var ChannelName = "charts-v1"
 var Schema = schema.GroupVersionResource{Group: "apps.open-cluster-management.io", Version: "v1", Resource: "channels"}
 
 // build Helm pathname from repo name and por
-func channelURL(m *operatorsv11.MultiClusterHub) string {
+func channelURL(m *operatorsv1.MultiClusterHub) string {
 	return fmt.Sprintf("http://%s.%s:%d/charts", helmrepo.HelmRepoName, m.Namespace, helmrepo.Port)
 }
 
 // Channel returns an unstructured Channel object to watch the helm repository
-func Channel(m *operatorsv11.MultiClusterHub) *unstructured.Unstructured {
+func Channel(m *operatorsv1.MultiClusterHub) *unstructured.Unstructured {
 	ch := &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": "apps.open-cluster-management.io/v1",

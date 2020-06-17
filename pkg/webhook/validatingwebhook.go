@@ -22,7 +22,7 @@ type multiClusterHubValidator struct {
 // Handle set the default values to every incoming MultiClusterHub cr.
 // Currently only handles create/update
 func (m *multiClusterHubValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	multiClusterHubs := &operatorsv11.MultiClusterHubList{}
+	multiClusterHubs := &operatorsv1.MultiClusterHubList{}
 	if err := m.client.List(context.TODO(), multiClusterHubs); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
@@ -55,7 +55,7 @@ func (m *multiClusterHubValidator) Handle(ctx context.Context, req admission.Req
 
 func (m *multiClusterHubValidator) validateCreate(req admission.Request) error {
 
-	creatingMCH := &operatorsv11.MultiClusterHub{}
+	creatingMCH := &operatorsv1.MultiClusterHub{}
 	err := m.decoder.DecodeRaw(req.Object, creatingMCH)
 	if err != nil {
 		return err
@@ -67,12 +67,12 @@ func (m *multiClusterHubValidator) validateCreate(req admission.Request) error {
 func (m *multiClusterHubValidator) validateUpdate(req admission.Request) error {
 
 	// Parse existing and new MultiClusterHub resources
-	existingMCH := &operatorsv11.MultiClusterHub{}
+	existingMCH := &operatorsv1.MultiClusterHub{}
 	err := m.decoder.DecodeRaw(req.OldObject, existingMCH)
 	if err != nil {
 		return err
 	}
-	newMCH := &operatorsv11.MultiClusterHub{}
+	newMCH := &operatorsv1.MultiClusterHub{}
 	err = m.decoder.DecodeRaw(req.Object, newMCH)
 	if err != nil {
 		return err

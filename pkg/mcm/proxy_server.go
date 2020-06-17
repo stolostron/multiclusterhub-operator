@@ -17,7 +17,7 @@ import (
 const ACMProxyServerName string = "acm-proxyserver"
 
 // ACMProxyServerDeployment creates the deployment for the acm proxy server
-func ACMProxyServerDeployment(m *operatorsv11.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
+func ACMProxyServerDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
 	replicas := getReplicaCount(m)
 	mode := int32(420)
 
@@ -107,7 +107,7 @@ func ACMProxyServerDeployment(m *operatorsv11.MultiClusterHub, overrides map[str
 }
 
 // ACMProxyServerService creates a service object for the acm proxy server
-func ACMProxyServerService(m *operatorsv11.MultiClusterHub) *corev1.Service {
+func ACMProxyServerService(m *operatorsv1.MultiClusterHub) *corev1.Service {
 	s := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ACMProxyServerName,

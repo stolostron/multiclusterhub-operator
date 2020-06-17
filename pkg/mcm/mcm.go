@@ -38,7 +38,7 @@ func defaultLabels(app string) map[string]string {
 	}
 }
 
-func getReplicaCount(mch *operatorsv11.MultiClusterHub) int32 {
+func getReplicaCount(mch *operatorsv1.MultiClusterHub) int32 {
 	if mch.Spec.Failover {
 		return 3
 	}
@@ -47,7 +47,7 @@ func getReplicaCount(mch *operatorsv11.MultiClusterHub) int32 {
 
 // ValidateDeployment returns a deep copy of the deployment with the desired spec based on the MultiClusterHub spec.
 // Returns true if an update is needed to reconcile differences with the current spec.
-func ValidateDeployment(m *operatorsv11.MultiClusterHub, overrides map[string]string, dep *appsv1.Deployment) (*appsv1.Deployment, bool) {
+func ValidateDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]string, dep *appsv1.Deployment) (*appsv1.Deployment, bool) {
 	var log = logf.Log.WithValues("Deployment.Namespace", dep.GetNamespace(), "Deployment.Name", dep.GetName())
 	found := dep.DeepCopy()
 

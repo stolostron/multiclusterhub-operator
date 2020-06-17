@@ -17,7 +17,7 @@ import (
 const WebhookName string = "mcm-webhook"
 
 // WebhookDeployment creates the deployment for the mcm webhook
-func WebhookDeployment(m *operatorsv11.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
+func WebhookDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
 	replicas := getReplicaCount(m)
 
 	dep := &appsv1.Deployment{
@@ -101,7 +101,7 @@ func WebhookDeployment(m *operatorsv11.MultiClusterHub, overrides map[string]str
 }
 
 // WebhookService creates a service object for the mcm webhook
-func WebhookService(m *operatorsv11.MultiClusterHub) *corev1.Service {
+func WebhookService(m *operatorsv1.MultiClusterHub) *corev1.Service {
 	s := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      WebhookName,

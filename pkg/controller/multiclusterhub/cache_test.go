@@ -28,8 +28,8 @@ func TestCacheSpec_IsStale(t *testing.T) {
 	}
 
 	t.Run("No change to suffix cache", func(t *testing.T) {
-		mch := &operatorsv11.MultiClusterHub{
-			Spec: operatorsv11.MultiClusterHubSpec{
+		mch := &operatorsv1.MultiClusterHub{
+			Spec: operatorsv1.MultiClusterHubSpec{
 				Overrides: operatorsv11.Overrides{
 					ImageRepository: "quay.io",
 					ImageTagSuffix:  "foo",
@@ -43,8 +43,8 @@ func TestCacheSpec_IsStale(t *testing.T) {
 	})
 
 	t.Run("No change to manifest cache", func(t *testing.T) {
-		mch := &operatorsv11.MultiClusterHub{
-			Spec: operatorsv11.MultiClusterHubSpec{
+		mch := &operatorsv1.MultiClusterHub{
+			Spec: operatorsv1.MultiClusterHubSpec{
 				Overrides: operatorsv11.Overrides{
 					ImageRepository: "quay.io",
 				},
@@ -57,8 +57,8 @@ func TestCacheSpec_IsStale(t *testing.T) {
 	})
 
 	t.Run("Change type to manifest", func(t *testing.T) {
-		mch := &operatorsv11.MultiClusterHub{
-			Spec: operatorsv11.MultiClusterHubSpec{
+		mch := &operatorsv1.MultiClusterHub{
+			Spec: operatorsv1.MultiClusterHubSpec{
 				Overrides: operatorsv11.Overrides{
 					ImageRepository: "quay.io",
 				},
@@ -71,8 +71,8 @@ func TestCacheSpec_IsStale(t *testing.T) {
 	})
 
 	t.Run("Change type to suffix", func(t *testing.T) {
-		mch := &operatorsv11.MultiClusterHub{
-			Spec: operatorsv11.MultiClusterHubSpec{
+		mch := &operatorsv1.MultiClusterHub{
+			Spec: operatorsv1.MultiClusterHubSpec{
 				Overrides: operatorsv11.Overrides{
 					ImageRepository: "quay.io",
 					ImageTagSuffix:  "foo",
@@ -86,8 +86,8 @@ func TestCacheSpec_IsStale(t *testing.T) {
 	})
 
 	t.Run("Change suffix", func(t *testing.T) {
-		mch := &operatorsv11.MultiClusterHub{
-			Spec: operatorsv11.MultiClusterHubSpec{
+		mch := &operatorsv1.MultiClusterHub{
+			Spec: operatorsv1.MultiClusterHubSpec{
 				Overrides: operatorsv11.Overrides{
 					ImageRepository: "quay.io",
 					ImageTagSuffix:  "bar",
@@ -101,8 +101,8 @@ func TestCacheSpec_IsStale(t *testing.T) {
 	})
 
 	t.Run("Change image repository", func(t *testing.T) {
-		mch := &operatorsv11.MultiClusterHub{
-			Spec: operatorsv11.MultiClusterHubSpec{
+		mch := &operatorsv1.MultiClusterHub{
+			Spec: operatorsv1.MultiClusterHubSpec{
 				Overrides: operatorsv11.Overrides{
 					ImageRepository: "artifactory",
 					ImageTagSuffix:  "foo",

@@ -48,13 +48,13 @@ func TestGenerateAPIServerSecret(t *testing.T) {
 	defer os.Unsetenv(podNamespaceEnvVar)
 
 	fakeclient := fake.NewFakeClient()
-	err := GenerateAPIServerSecret(fakeclient, &operatorsv11.MultiClusterHub{})
+	err := GenerateAPIServerSecret(fakeclient, &operatorsv1.MultiClusterHub{})
 	if err != nil {
 		t.Errorf("Expected nil, but failed %v", err)
 	}
 
-	err = GenerateAPIServerSecret(fakeclient, &operatorsv11.MultiClusterHub{
-		Spec: operatorsv11.MultiClusterHubSpec{},
+	err = GenerateAPIServerSecret(fakeclient, &operatorsv1.MultiClusterHub{
+		Spec: operatorsv1.MultiClusterHubSpec{},
 	})
 	if err != nil {
 		t.Errorf("Failed to generate secret, %v", err)
@@ -72,13 +72,13 @@ func TestGenerateKlusterletSecret(t *testing.T) {
 	defer os.Unsetenv(podNamespaceEnvVar)
 
 	fakeclient := fake.NewFakeClient()
-	err := GenerateKlusterletSecret(fakeclient, &operatorsv11.MultiClusterHub{})
+	err := GenerateKlusterletSecret(fakeclient, &operatorsv1.MultiClusterHub{})
 	if err != nil {
 		t.Errorf("Expected nil, but failed %v", err)
 	}
 
-	err = GenerateKlusterletSecret(fakeclient, &operatorsv11.MultiClusterHub{
-		Spec: operatorsv11.MultiClusterHubSpec{},
+	err = GenerateKlusterletSecret(fakeclient, &operatorsv1.MultiClusterHub{
+		Spec: operatorsv1.MultiClusterHubSpec{},
 	})
 	if err != nil {
 		t.Errorf("Failed to generate secret, %v", err)

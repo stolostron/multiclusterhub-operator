@@ -22,10 +22,10 @@ func TestRender(t *testing.T) {
 	os.Setenv(templates.TemplatesPathEnvVar, templatesPath)
 	defer os.Unsetenv(templates.TemplatesPathEnvVar)
 
-	mchcr := &operatorsv11.MultiClusterHub{
+	mchcr := &operatorsv1.MultiClusterHub{
 		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv11.MultiClusterHubSpec{
+		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "test",
 			Mongo:           operatorsv11.Mongo{},
 		},

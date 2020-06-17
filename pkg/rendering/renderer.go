@@ -35,12 +35,12 @@ type renderFn func(*resource.Resource) (*unstructured.Unstructured, error)
 
 // Renderer is a Kustomizee Renderer Factory
 type Renderer struct {
-	cr        *operatorsv11.MultiClusterHub
+	cr        *operatorsv1.MultiClusterHub
 	renderFns map[string]renderFn
 }
 
 // NewRenderer Initializes a Kustomize Renderer Factory
-func NewRenderer(multipleClusterHub *operatorsv11.MultiClusterHub) *Renderer {
+func NewRenderer(multipleClusterHub *operatorsv1.MultiClusterHub) *Renderer {
 	renderer := &Renderer{
 		cr: multipleClusterHub,
 	}

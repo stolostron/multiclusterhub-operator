@@ -89,7 +89,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to primary resource MultiClusterHub
-	err = c.Watch(&source.Kind{Type: &operatorsv11.MultiClusterHub{}}, &handler.EnqueueRequestForObject{}, predicate.GenerationChangedPredicate{})
+	err = c.Watch(&source.Kind{Type: &operatorsv1.MultiClusterHub{}}, &handler.EnqueueRequestForObject{}, predicate.GenerationChangedPredicate{})
 	if err != nil {
 		return err
 	}
@@ -97,7 +97,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Watch for changes to secondary resource Pods and requeue the owner MultiClusterHub
 	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &operatorsv11.MultiClusterHub{},
+		OwnerType:    &operatorsv1.MultiClusterHub{},
 	})
 	if err != nil {
 		return err
@@ -106,7 +106,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Watch application subscriptions
 	err = c.Watch(&source.Kind{Type: &appsubv1.Subscription{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &operatorsv11.MultiClusterHub{},
+		OwnerType:    &operatorsv1.MultiClusterHub{},
 	})
 	if err != nil {
 		return err
@@ -154,7 +154,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	reqLogger.Info("Reconciling MultiClusterHub")
 
 	// Fetch the MultiClusterHub instance
-	multiClusterHub := &operatorsv11.MultiClusterHub{}
+	multiClusterHub := &operatorsv1.MultiClusterHub{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, multiClusterHub)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -424,7 +424,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileMultiClusterHub) UpdateStatus(m *operatorsv11.MultiClusterHub) (*reconcile.Result, error) {
+func (r *ReconcileMultiClusterHub) UpdateStatus(m *operatorsv1.MultiClusterHub) (*reconcile.Result, error) {
 	err := r.client.Status().Update(context.TODO(), m)
 	if err != nil {
 		if errors.IsConflict(err) {
@@ -439,7 +439,7 @@ func (r *ReconcileMultiClusterHub) UpdateStatus(m *operatorsv11.MultiClusterHub)
 	return nil, nil
 }
 
-func (r *ReconcileMultiClusterHub) mongoAuthSecret(v *operatorsv11.MultiClusterHub) *corev1.Secret {
+func (r *ReconcileMultiClusterHub) mongoAuthSecret(v *operatorsv1.MultiClusterHub) *corev1.Secret {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "mongodb-admin",
@@ -472,7 +472,7 @@ func generatePass(length int) string {
 }
 
 // setDefaults updates MultiClusterHub resource with proper defaults
-func (r *ReconcileMultiClusterHub) setDefaults(m *operatorsv11.MultiClusterHub) (*reconcile.Result, error) {
+func (r *ReconcileMultiClusterHub) setDefaults(m *operatorsv1.MultiClusterHub) (*reconcile.Result, error) {
 	if utils.MchIsValid(m) {
 		return nil, nil
 	}
@@ -532,7 +532,7 @@ func (r *ReconcileMultiClusterHub) getStorageClass() (string, error) {
 }
 
 // ingressDomain is discovered from Openshift cluster configuration resources
-func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv11.MultiClusterHub) (*reconcile.Result, error) {
+func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1.MultiClusterHub) (*reconcile.Result, error) {
 	if r.CacheSpec.IngressDomain != "" {
 		return nil, nil
 	}
@@ -551,7 +551,7 @@ func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv11.MultiClusterHub
 	return nil, nil
 }
 
-func (r *ReconcileMultiClusterHub) finalizeHub(reqLogger logr.Logger, m *operatorsv11.MultiClusterHub) error {
+func (r *ReconcileMultiClusterHub) finalizeHub(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	if err := r.cleanupHiveConfigs(reqLogger, m); err != nil {
 		return err
 	}
@@ -583,7 +583,7 @@ func (r *ReconcileMultiClusterHub) finalizeHub(reqLogger logr.Logger, m *operato
 	return nil
 }
 
-func (r *ReconcileMultiClusterHub) addFinalizer(reqLogger logr.Logger, m *operatorsv11.MultiClusterHub) error {
+func (r *ReconcileMultiClusterHub) addFinalizer(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	reqLogger.Info("Adding Finalizer for the multiClusterHub")
 	m.SetFinalizers(append(m.GetFinalizers(), hubFinalizer))
 

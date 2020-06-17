@@ -9,7 +9,7 @@ import (
 )
 
 // ManagementIngress overrides the management-ingress chart
-func ManagementIngress(m *operatorsv11.MultiClusterHub, overrides map[string]string, ingress string) *unstructured.Unstructured {
+func ManagementIngress(m *operatorsv1.MultiClusterHub, overrides map[string]string, ingress string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "management-ingress",
 		Namespace: m.Namespace,

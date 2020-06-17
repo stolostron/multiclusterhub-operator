@@ -9,7 +9,7 @@ import (
 )
 
 // Console overrides the console-chart chart
-func Console(m *operatorsv11.MultiClusterHub, overrides map[string]string, ingress string) *unstructured.Unstructured {
+func Console(m *operatorsv1.MultiClusterHub, overrides map[string]string, ingress string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "console-chart",
 		Namespace: m.Namespace,

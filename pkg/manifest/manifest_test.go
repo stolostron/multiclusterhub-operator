@@ -10,7 +10,7 @@ import (
 )
 
 func TestGetImageOverrideType(t *testing.T) {
-	mch := &operatorsv11.MultiClusterHub{}
+	mch := &operatorsv1.MultiClusterHub{}
 	t.Run("Manifest format", func(t *testing.T) {
 		want := Manifest
 		if got := GetImageOverrideType(mch); got != want {
@@ -64,7 +64,7 @@ func Test_buildFullImageReference(t *testing.T) {
 		ImageRemote:  "quay.io/open-cluster-management",
 		ImageDigest:  "sha256:abc123",
 	}
-	mch := &operatorsv11.MultiClusterHub{}
+	mch := &operatorsv1.MultiClusterHub{}
 
 	mch1 := mch.DeepCopy()
 
@@ -75,7 +75,7 @@ func Test_buildFullImageReference(t *testing.T) {
 	mch3.Spec.Overrides.ImageTagSuffix = "baz"
 
 	type args struct {
-		mch *operatorsv11.MultiClusterHub
+		mch *operatorsv1.MultiClusterHub
 		mi  ManifestImage
 	}
 	tests := []struct {

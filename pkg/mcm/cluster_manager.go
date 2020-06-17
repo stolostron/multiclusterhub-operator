@@ -8,7 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-func ClusterManager(m *operatorsv11.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
+func ClusterManager(m *operatorsv1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
 
 	cm := &unstructured.Unstructured{
 		Object: map[string]interface{}{

@@ -14,9 +14,9 @@ import (
 )
 
 func TestValidate(t *testing.T) {
-	mch := &operatorsv11.MultiClusterHub{
+	mch := &operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv11.MultiClusterHubSpec{
+		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "test",
 			Mongo:           operatorsv11.Mongo{},
 		},
@@ -101,9 +101,9 @@ func TestValidate(t *testing.T) {
 }
 
 func TestSubscriptions(t *testing.T) {
-	mch := &operatorsv11.MultiClusterHub{
+	mch := &operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv11.MultiClusterHubSpec{
+		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "test",
 			Mongo:           operatorsv11.Mongo{},
 		},

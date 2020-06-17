@@ -123,10 +123,10 @@ func TestContainsMap(t *testing.T) {
 }
 
 func TestMchIsValid(t *testing.T) {
-	validMCH := &operatorsv11.MultiClusterHub{
+	validMCH := &operatorsv1.MultiClusterHub{
 		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv11.MultiClusterHubSpec{
+		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "test",
 			Mongo: operatorsv11.Mongo{
 				Storage:      "mongoStorage",
@@ -143,7 +143,7 @@ func TestMchIsValid(t *testing.T) {
 	}
 
 	type args struct {
-		m *operatorsv11.MultiClusterHub
+		m *operatorsv1.MultiClusterHub
 	}
 	tests := []struct {
 		name string
@@ -157,7 +157,7 @@ func TestMchIsValid(t *testing.T) {
 		},
 		{
 			"Empty object",
-			args{&operatorsv11.MultiClusterHub{}},
+			args{&operatorsv1.MultiClusterHub{}},
 			false,
 		},
 	}
@@ -179,9 +179,9 @@ func TestDistributePods(t *testing.T) {
 }
 
 func TestGetImagePullPolicy(t *testing.T) {
-	noPullPolicyMCH := &operatorsv11.MultiClusterHub{}
-	pullPolicyMCH := &operatorsv11.MultiClusterHub{
-		Spec: operatorsv11.MultiClusterHubSpec{
+	noPullPolicyMCH := &operatorsv1.MultiClusterHub{}
+	pullPolicyMCH := &operatorsv1.MultiClusterHub{
+		Spec: operatorsv1.MultiClusterHubSpec{
 			Overrides: operatorsv11.Overrides{ImagePullPolicy: v1.PullIfNotPresent},
 		},
 	}
@@ -201,14 +201,14 @@ func TestGetImagePullPolicy(t *testing.T) {
 }
 
 func TestDefaultReplicaCount(t *testing.T) {
-	mchDefault := &operatorsv11.MultiClusterHub{}
-	mchNonHA := &operatorsv11.MultiClusterHub{
-		Spec: operatorsv11.MultiClusterHubSpec{
+	mchDefault := &operatorsv1.MultiClusterHub{}
+	mchNonHA := &operatorsv1.MultiClusterHub{
+		Spec: operatorsv1.MultiClusterHubSpec{
 			Failover: false,
 		},
 	}
-	mchHA := &operatorsv11.MultiClusterHub{
-		Spec: operatorsv11.MultiClusterHubSpec{
+	mchHA := &operatorsv1.MultiClusterHub{
+		Spec: operatorsv1.MultiClusterHubSpec{
 			Failover: true,
 		},
 	}
@@ -257,14 +257,14 @@ func TestFormatSSLCiphers(t *testing.T) {
 
 func TestIsPaused(t *testing.T) {
 	t.Run("Unpaused MCH", func(t *testing.T) {
-		mch := &operatorsv11.MultiClusterHub{}
+		mch := &operatorsv1.MultiClusterHub{}
 		want := false
 		if got := IsPaused(mch); got != want {
 			t.Errorf("IsPaused() = %v, want %v", got, want)
 		}
 	})
 	t.Run("Paused MCH", func(t *testing.T) {
-		mch := &operatorsv11.MultiClusterHub{
+		mch := &operatorsv1.MultiClusterHub{
 			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{AnnotationMCHPause: "true"}},
 		}
 		want := true
@@ -273,7 +273,7 @@ func TestIsPaused(t *testing.T) {
 		}
 	})
 	t.Run("Pause label false MCH", func(t *testing.T) {
-		mch := &operatorsv11.MultiClusterHub{
+		mch := &operatorsv1.MultiClusterHub{
 			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{AnnotationMCHPause: "false"}},
 		}
 		want := false

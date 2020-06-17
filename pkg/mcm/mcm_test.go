@@ -13,9 +13,9 @@ import (
 )
 
 func TestValidateDeployment(t *testing.T) {
-	mch := &operatorsv11.MultiClusterHub{
+	mch := &operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv11.MultiClusterHubSpec{
+		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "test",
 			Mongo:           operatorsv11.Mongo{},
 			NodeSelector: map[string]string{
@@ -49,7 +49,7 @@ func TestValidateDeployment(t *testing.T) {
 	dep5.Spec.Replicas = new(int32)
 
 	type args struct {
-		m   *operatorsv11.MultiClusterHub
+		m   *operatorsv1.MultiClusterHub
 		dep *appsv1.Deployment
 	}
 	tests := []struct {
