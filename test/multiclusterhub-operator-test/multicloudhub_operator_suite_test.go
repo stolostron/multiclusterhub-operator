@@ -30,6 +30,7 @@ var (
 	clientHubDynamic    dynamic.Interface
 	gvrMultiClusterHub  schema.GroupVersionResource
 	gvrSubscription     schema.GroupVersionResource
+	gvrOperatorGroup    schema.GroupVersionResource
 	optionsFile         string
 	baseDomain          string
 	kubeadminUser       string
@@ -42,22 +43,6 @@ var (
 	multiClusterHubRepo string
 	appsubs             [12]string
 )
-
-func newMultiClusterHub(name, namespace string) *unstructured.Unstructured {
-	return &unstructured.Unstructured{
-		Object: map[string]interface{}{
-			"apiVersion": "operators.open-cluster-management.io/v1beta1",
-			"kind":       "MultiClusterHub",
-			"metadata": map[string]interface{}{
-				"name":      name,
-				"namespace": namespace,
-			},
-			"spec": map[string]interface{}{
-				"imagePullSecret": "quay-secret",
-			},
-		},
-	}
-}
 
 func init() {
 	klog.SetOutput(GinkgoWriter)
@@ -77,6 +62,7 @@ var _ = BeforeSuite(func() {
 	By("Setup Hub client")
 	gvrMultiClusterHub = schema.GroupVersionResource{Group: "operators.open-cluster-management.io", Version: "v1beta1", Resource: "multiclusterhubs"}
 	gvrSubscription = schema.GroupVersionResource{Group: "apps.open-cluster-management.io", Version: "v1", Resource: "subscriptions"}
+	gvrOperatorGroup = schema.GroupVersionResource{Group: "operators.coreos.com", Version: "v1", Resource: "operatorgroups"}
 	clientHub = NewKubeClient("", "", "")
 	clientHubDynamic = NewKubeClientDynamic("", "", "")
 	defaultImageRegistry = "quay.io/open-cluster-management"
@@ -86,7 +72,8 @@ var _ = BeforeSuite(func() {
 	multiClusterHubRepo = "multiclusterhub-repo"
 	appsubs = [...]string{"application-chart-sub", "cert-manager-sub", "cert-manager-webhook-sub", "configmap-watcher-sub", "console-chart-sub",
 		"grc-sub", "kui-web-terminal-sub", "management-ingress-sub", "multicluster-mongodb-sub", "rcm-sub", "search-prod-sub", "topology-sub"}
-	By("Create Namesapce if needed")
+
+	By("Create Namespace if needed")
 	namespaces := clientHub.CoreV1().Namespaces()
 	if _, err := namespaces.Get(context.TODO(), testNamespace, metav1.GetOptions{}); err != nil && errors.IsNotFound(err) {
 		Expect(namespaces.Create(context.TODO(), &corev1.Namespace{
@@ -96,6 +83,22 @@ var _ = BeforeSuite(func() {
 		}, metav1.CreateOptions{})).NotTo(BeNil())
 	}
 	Expect(namespaces.Get(context.TODO(), testNamespace, metav1.GetOptions{})).NotTo(BeNil())
+
+	By("Create OperatorGroup if needed")
+	opGroup := clientHubDynamic.Resource(gvrOperatorGroup).Namespace(testNamespace)
+	operatorGroups, err := opGroup.List(context.Background(), metav1.ListOptions{})
+	if err != nil || len(operatorGroups.Items) < 1 {
+		opGroup := newOperatorGroup(testNamespace)
+		createNewUnstructured(clientHubDynamic, gvrOperatorGroup, opGroup, "default", testNamespace)
+	}
+	Expect(opGroup.Get(context.TODO(), "default", metav1.GetOptions{})).NotTo(BeNil())
+
+	By("Create 'multiclusterhub-operator-pull-secret' Secret if needed")
+	secret := clientHub.CoreV1().Secrets(testNamespace)
+	if _, err := namespaces.Get(context.TODO(), "multiclusterhub-operator-pull-secret", metav1.GetOptions{}); err != nil && errors.IsNotFound(err) {
+		Expect(secret.Create(context.TODO(), newPullSecret("multiclusterhub-operator-pull-secret", testNamespace), metav1.CreateOptions{})).NotTo(BeNil())
+	}
+
 })
 
 func TestMulticloudhubOperator(t *testing.T) {

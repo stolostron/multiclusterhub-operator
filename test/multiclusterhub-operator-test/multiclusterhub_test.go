@@ -16,10 +16,9 @@ var _ = Describe("Multiclusterhub", func() {
 	AfterEach(func() {
 		By("Delete MultiClusterHub if it exists")
 		deleteIfExists(clientHubDynamic, gvrMultiClusterHub, testName, testNamespace)
-
 	})
 
-	It("MCH Should Create MultiClusterHub-Repo", func() {
+	It("Install Basic MCH CR", func() {
 		By("Creating MultiClusterHub")
 		mch := newMultiClusterHub(testName, testNamespace)
 		createNewUnstructured(clientHubDynamic, gvrMultiClusterHub, mch, testName, testNamespace)
@@ -43,13 +42,8 @@ var _ = Describe("Multiclusterhub", func() {
 		By("Checking ownerRef", func() {
 			Expect(isOwner(mch, &deploy.ObjectMeta)).To(Equal(true))
 		})
-	})
 
-	It("MCH Should Create all AppSubs", func() {
-		By("Creating MultiClusterHub")
-		mch := newMultiClusterHub(testName, testNamespace)
-		createNewUnstructured(clientHubDynamic, gvrMultiClusterHub, mch, testName, testNamespace)
-
+		By("Checking Appsubs")
 		When("MultiClusterHub is created, wait for Application Subscriptions to be available", func() {
 			Eventually(func() error {
 				unstructuredAppSubs := listAppSubs(clientHubDynamic, gvrSubscription, testNamespace, true, 60, len(appsubs))
@@ -63,12 +57,19 @@ var _ = Describe("Multiclusterhub", func() {
 					if !ok || status == nil {
 						return fmt.Errorf("Appsub: %s has no 'status' map", appsub.GetName())
 					}
-					if status["message"] != "Active" || status["phase"] != "Subscribed" {
-						return fmt.Errorf("Appsub: %s is not active", appsub.GetName())
-					}
+					klog.V(5).Infof("Checking Appsub - %s", appsub.GetName())
+					Expect(status["message"]).To(Equal("Active"))
+					Expect(status["phase"]).To(Equal("Subscribed"))
 				}
 				return nil
 			}, 180, 1).Should(BeNil())
 		})
 	})
+
+	// It("MCH Should Create all AppSubs", func() {
+	// 	By("Creating MultiClusterHub")
+	// 	mch := newMultiClusterHub(testName, testNamespace)
+	// 	createNewUnstructured(clientHubDynamic, gvrMultiClusterHub, mch, testName, testNamespace)
+
+	// })
 })
