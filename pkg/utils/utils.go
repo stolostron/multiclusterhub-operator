@@ -216,20 +216,21 @@ func IsPaused(instance *operatorsv1beta1.MultiClusterHub) bool {
 	return false
 }
 
-// GetImageRepository returns the image repo annotation, or an empty string if not set
-func GetImageRepository(instance *operatorsv1beta1.MultiClusterHub) string {
+// getAnnotation returns the annotation value for a given key, or an empty string if not set
+func getAnnotation(instance *operatorsv1beta1.MultiClusterHub, key string) string {
 	a := instance.GetAnnotations()
 	if a == nil {
 		return ""
 	}
-	return a[AnnotationImageRepo]
+	return a[key]
+}
+
+// GetImageRepository returns the image repo annotation, or an empty string if not set
+func GetImageRepository(i *operatorsv1beta1.MultiClusterHub) string {
+	return getAnnotation(i, AnnotationImageRepo)
 }
 
 // GetImageSuffix returns the image tag suffix annotation, or an empty string if not set
 func GetImageSuffix(instance *operatorsv1beta1.MultiClusterHub) string {
-	a := instance.GetAnnotations()
-	if a == nil {
-		return ""
-	}
-	return a[AnnotationSuffix]
+	return getAnnotation(i, AnnotationSuffix)
 }

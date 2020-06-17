@@ -283,3 +283,41 @@ func TestIsPaused(t *testing.T) {
 	})
 
 }
+
+func Test_getAnnotation(t *testing.T) {
+	type args struct {
+		instance *operatorsv1beta1.MultiClusterHub
+		key      string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "Annotation does not exist",
+			args: args{
+				instance: &operatorsv1beta1.MultiClusterHub{},
+				key:      "",
+			},
+			want: "",
+		},
+		{
+			name: "Annotation exists",
+			args: args{
+				instance: &operatorsv1beta1.MultiClusterHub{
+					ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{"foo": "bar"}},
+				},
+				key: "foo",
+			},
+			want: "bar",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getAnnotation(tt.args.instance, tt.args.key); got != tt.want {
+				t.Errorf("getAnnotation() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
