@@ -5,16 +5,16 @@ package mcm
 import (
 	"testing"
 
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	operatorsv11 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestProxyServerDeployment(t *testing.T) {
-	empty := &operatorsv1beta1.MultiClusterHub{
+	empty := &operatorsv11.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1beta1.MultiClusterHubSpec{
+		Spec: operatorsv11.MultiClusterHubSpec{
 			ImagePullSecret: "",
-			Mongo:           operatorsv1beta1.Mongo{},
+			Mongo:           operatorsv11.Mongo{},
 		},
 	}
 
@@ -24,9 +24,9 @@ func TestProxyServerDeployment(t *testing.T) {
 		_ = ACMProxyServerDeployment(empty, ovr)
 	})
 
-	essentialsOnly := &operatorsv1beta1.MultiClusterHub{
+	essentialsOnly := &operatorsv11.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec:       operatorsv1beta1.MultiClusterHubSpec{},
+		Spec:       operatorsv11.MultiClusterHubSpec{},
 	}
 	t.Run("MCH with only required values", func(t *testing.T) {
 		_ = ACMProxyServerDeployment(essentialsOnly, ovr)
@@ -34,7 +34,7 @@ func TestProxyServerDeployment(t *testing.T) {
 }
 
 func TestProxyServerService(t *testing.T) {
-	mch := &operatorsv1beta1.MultiClusterHub{
+	mch := &operatorsv11.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "testName",
 			Namespace: "testNS",

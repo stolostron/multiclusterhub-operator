@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	operatorsv11 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -14,11 +14,11 @@ import (
 )
 
 func TestValidate(t *testing.T) {
-	mch := &operatorsv1beta1.MultiClusterHub{
+	mch := &operatorsv11.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1beta1.MultiClusterHubSpec{
+		Spec: operatorsv11.MultiClusterHubSpec{
 			ImagePullSecret: "test",
-			Mongo:           operatorsv1beta1.Mongo{},
+			Mongo:           operatorsv11.Mongo{},
 		},
 	}
 	ovr := map[string]string{}
@@ -101,11 +101,11 @@ func TestValidate(t *testing.T) {
 }
 
 func TestSubscriptions(t *testing.T) {
-	mch := &operatorsv1beta1.MultiClusterHub{
+	mch := &operatorsv11.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1beta1.MultiClusterHubSpec{
+		Spec: operatorsv11.MultiClusterHubSpec{
 			ImagePullSecret: "test",
-			Mongo:           operatorsv1beta1.Mongo{},
+			Mongo:           operatorsv11.Mongo{},
 		},
 	}
 	ovr := map[string]string{}

@@ -6,18 +6,18 @@ import (
 	"reflect"
 	"testing"
 
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	operatorsv11 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestDeployment(t *testing.T) {
-	empty := &operatorsv1beta1.MultiClusterHub{
+	empty := &operatorsv11.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1beta1.MultiClusterHubSpec{
+		Spec: operatorsv11.MultiClusterHubSpec{
 			ImagePullSecret: "",
-			Mongo:           operatorsv1beta1.Mongo{},
+			Mongo:           operatorsv11.Mongo{},
 		},
 	}
 	ovr := map[string]string{}
@@ -26,9 +26,9 @@ func TestDeployment(t *testing.T) {
 		_ = Deployment(empty, ovr)
 	})
 
-	essentialsOnly := &operatorsv1beta1.MultiClusterHub{
+	essentialsOnly := &operatorsv11.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec:       operatorsv1beta1.MultiClusterHubSpec{},
+		Spec:       operatorsv11.MultiClusterHubSpec{},
 	}
 	t.Run("MCH with only required values", func(t *testing.T) {
 		_ = Deployment(essentialsOnly, ovr)
@@ -36,7 +36,7 @@ func TestDeployment(t *testing.T) {
 }
 
 func TestService(t *testing.T) {
-	mch := &operatorsv1beta1.MultiClusterHub{
+	mch := &operatorsv11.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "testName",
 			Namespace: "testNS",
@@ -55,11 +55,11 @@ func TestService(t *testing.T) {
 }
 
 func TestValidateDeployment(t *testing.T) {
-	mch := &operatorsv1beta1.MultiClusterHub{
+	mch := &operatorsv11.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1beta1.MultiClusterHubSpec{
+		Spec: operatorsv11.MultiClusterHubSpec{
 			ImagePullSecret: "test",
-			Mongo:           operatorsv1beta1.Mongo{},
+			Mongo:           operatorsv11.Mongo{},
 			NodeSelector: map[string]string{
 				"test": "test",
 			},
@@ -87,7 +87,7 @@ func TestValidateDeployment(t *testing.T) {
 	dep4.Spec.Template.Spec.NodeSelector = nil
 
 	type args struct {
-		m   *operatorsv1beta1.MultiClusterHub
+		m   *operatorsv11.MultiClusterHub
 		dep *appsv1.Deployment
 	}
 	tests := []struct {

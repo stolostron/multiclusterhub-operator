@@ -104,7 +104,7 @@ if [[ "$force" != "true" ]]; then
     echo ""
     echo "Ensure the file(s) below are correctly configured -"
     echo ""
-    echo "- 'deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml'"
+    echo "- 'deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml'"
     echo "-- Ensure 'spec.overrides.imageTagSuffix' is accurately set. (Ex- SNAPSHOT-YYYY-MM-DD-hh-mm-ss)."
     echo "-- Apply any changes to the CR if necessary"
     echo ""
@@ -120,10 +120,10 @@ make cm-install
 echo ""
 echo "Operator online. MultiClusterHub CR applied."
 
-while [[ $_output != "multiclusterhub.operators.open-cluster-management.io/multiclusterhub created" ]] # While string is different or empty...
+while [[ $_output != "multiclusterhub.operator.open-cluster-management.io/multiclusterhub created" ]] # While string is different or empty...
 do
     echo "Waiting for Operator to come online ..."
-    _output=$(oc apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml 2>/dev/null)
+    _output=$(oc apply -f deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml 2>/dev/null)
     sleep 10
 done
 

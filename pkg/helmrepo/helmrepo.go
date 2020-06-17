@@ -3,7 +3,7 @@
 package helmrepo
 
 import (
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	operatorsv11 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -38,7 +38,7 @@ func Image(overrides map[string]string) string {
 }
 
 // Deployment for the helm repo serving charts
-func Deployment(m *operatorsv1beta1.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
+func Deployment(m *operatorsv11.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
 	replicas := int32(1)
 
 	dep := &appsv1.Deployment{
@@ -115,7 +115,7 @@ func Deployment(m *operatorsv1beta1.MultiClusterHub, overrides map[string]string
 }
 
 // Service for the helm repo serving charts
-func Service(m *operatorsv1beta1.MultiClusterHub) *corev1.Service {
+func Service(m *operatorsv11.MultiClusterHub) *corev1.Service {
 	labels := labels()
 
 	s := &corev1.Service{
@@ -142,7 +142,7 @@ func Service(m *operatorsv1beta1.MultiClusterHub) *corev1.Service {
 
 // ValidateDeployment returns a deep copy of the deployment with the desired spec based on the MultiClusterHub spec.
 // Returns true if an update is needed to reconcile differences with the current spec.
-func ValidateDeployment(m *operatorsv1beta1.MultiClusterHub, overrides map[string]string, dep *appsv1.Deployment) (*appsv1.Deployment, bool) {
+func ValidateDeployment(m *operatorsv11.MultiClusterHub, overrides map[string]string, dep *appsv1.Deployment) (*appsv1.Deployment, bool) {
 	var log = logf.Log.WithValues("Deployment.Namespace", dep.GetNamespace(), "Deployment.Name", dep.GetName())
 	found := dep.DeepCopy()
 

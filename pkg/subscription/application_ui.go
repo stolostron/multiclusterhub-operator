@@ -3,13 +3,13 @@
 package subscription
 
 import (
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	operatorsv11 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 // ApplicationUI overrides the application-chart chart
-func ApplicationUI(m *operatorsv1beta1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
+func ApplicationUI(m *operatorsv11.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "application-chart",
 		Namespace: m.Namespace,

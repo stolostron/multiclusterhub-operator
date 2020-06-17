@@ -9,7 +9,7 @@ import (
 	"strconv"
 
 	"github.com/fatih/structs"
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	operatorsv11 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/mcm"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
@@ -35,12 +35,12 @@ type renderFn func(*resource.Resource) (*unstructured.Unstructured, error)
 
 // Renderer is a Kustomizee Renderer Factory
 type Renderer struct {
-	cr        *operatorsv1beta1.MultiClusterHub
+	cr        *operatorsv11.MultiClusterHub
 	renderFns map[string]renderFn
 }
 
 // NewRenderer Initializes a Kustomize Renderer Factory
-func NewRenderer(multipleClusterHub *operatorsv1beta1.MultiClusterHub) *Renderer {
+func NewRenderer(multipleClusterHub *operatorsv11.MultiClusterHub) *Renderer {
 	renderer := &Renderer{
 		cr: multipleClusterHub,
 	}
@@ -264,7 +264,7 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 
 func (r *Renderer) renderHiveConfig(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
-	HiveConfig := operatorsv1beta1.HiveConfigSpec{}
+	HiveConfig := operatorsv11.HiveConfigSpec{}
 
 	if !reflect.DeepEqual(structs.Map(r.cr.Spec.Hive), structs.Map(HiveConfig)) {
 		u.Object["spec"] = structs.Map(r.cr.Spec.Hive)

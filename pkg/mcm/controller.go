@@ -3,7 +3,7 @@
 package mcm
 
 import (
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	operatorsv11 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -16,7 +16,7 @@ import (
 const ControllerName string = "mcm-controller"
 
 // ControllerDeployment creates the deployment for the mcm controller
-func ControllerDeployment(m *operatorsv1beta1.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
+func ControllerDeployment(m *operatorsv11.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
 	replicas := getReplicaCount(m)
 
 	dep := &appsv1.Deployment{
