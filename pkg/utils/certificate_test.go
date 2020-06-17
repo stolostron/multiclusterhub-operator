@@ -12,7 +12,7 @@ import (
 	k8scertutil "k8s.io/client-go/util/cert"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	operatorsv11 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 )
 
 func TestGenerateSignedWebhookCertificates(t *testing.T) {

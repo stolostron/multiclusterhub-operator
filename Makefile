@@ -74,7 +74,7 @@ update-image:
 	docker push quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
 
 crd:
-	operator-sdk generate crds --crd-version=v1 
+	operator-sdk generate crds --crd-version=v1beta1
 
 # regenerate CSV
 csv:

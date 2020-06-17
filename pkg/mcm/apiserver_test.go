@@ -5,7 +5,7 @@ package mcm
 import (
 	"testing"
 
-	operatorsv11 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -14,7 +14,7 @@ func TestAPIServerDeployment(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "",
-			Mongo:           operatorsv11.Mongo{},
+			Mongo:           operatorsv1.Mongo{},
 		},
 	}
 	ovr := map[string]string{}

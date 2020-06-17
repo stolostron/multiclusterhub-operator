@@ -5,7 +5,7 @@ package multiclusterhub
 import (
 	"testing"
 
-	operatorsv11 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/manifest"
 )
 
@@ -30,7 +30,7 @@ func TestCacheSpec_IsStale(t *testing.T) {
 	t.Run("No change to suffix cache", func(t *testing.T) {
 		mch := &operatorsv1.MultiClusterHub{
 			Spec: operatorsv1.MultiClusterHubSpec{
-				Overrides: operatorsv11.Overrides{
+				Overrides: operatorsv1.Overrides{
 					ImageRepository: "quay.io",
 					ImageTagSuffix:  "foo",
 				},
@@ -45,7 +45,7 @@ func TestCacheSpec_IsStale(t *testing.T) {
 	t.Run("No change to manifest cache", func(t *testing.T) {
 		mch := &operatorsv1.MultiClusterHub{
 			Spec: operatorsv1.MultiClusterHubSpec{
-				Overrides: operatorsv11.Overrides{
+				Overrides: operatorsv1.Overrides{
 					ImageRepository: "quay.io",
 				},
 			},
@@ -59,7 +59,7 @@ func TestCacheSpec_IsStale(t *testing.T) {
 	t.Run("Change type to manifest", func(t *testing.T) {
 		mch := &operatorsv1.MultiClusterHub{
 			Spec: operatorsv1.MultiClusterHubSpec{
-				Overrides: operatorsv11.Overrides{
+				Overrides: operatorsv1.Overrides{
 					ImageRepository: "quay.io",
 				},
 			},
@@ -73,7 +73,7 @@ func TestCacheSpec_IsStale(t *testing.T) {
 	t.Run("Change type to suffix", func(t *testing.T) {
 		mch := &operatorsv1.MultiClusterHub{
 			Spec: operatorsv1.MultiClusterHubSpec{
-				Overrides: operatorsv11.Overrides{
+				Overrides: operatorsv1.Overrides{
 					ImageRepository: "quay.io",
 					ImageTagSuffix:  "foo",
 				},
@@ -88,7 +88,7 @@ func TestCacheSpec_IsStale(t *testing.T) {
 	t.Run("Change suffix", func(t *testing.T) {
 		mch := &operatorsv1.MultiClusterHub{
 			Spec: operatorsv1.MultiClusterHubSpec{
-				Overrides: operatorsv11.Overrides{
+				Overrides: operatorsv1.Overrides{
 					ImageRepository: "quay.io",
 					ImageTagSuffix:  "bar",
 				},
@@ -103,7 +103,7 @@ func TestCacheSpec_IsStale(t *testing.T) {
 	t.Run("Change image repository", func(t *testing.T) {
 		mch := &operatorsv1.MultiClusterHub{
 			Spec: operatorsv1.MultiClusterHubSpec{
-				Overrides: operatorsv11.Overrides{
+				Overrides: operatorsv1.Overrides{
 					ImageRepository: "artifactory",
 					ImageTagSuffix:  "foo",
 				},

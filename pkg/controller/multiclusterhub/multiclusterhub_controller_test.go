@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
-	operatorsv11 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 	netv1 "github.com/openshift/api/config/v1"
 	corev1 "k8s.io/api/core/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -33,15 +33,15 @@ var (
 		},
 		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "pull-secret",
-			Mongo: operatorsv11.Mongo{
+			Mongo: operatorsv1.Mongo{
 				Storage:      "5gi",
 				StorageClass: "gp2",
 			},
-			Etcd: operatorsv11.Etcd{
+			Etcd: operatorsv1.Etcd{
 				Storage:      "1gi",
 				StorageClass: "gp2",
 			},
-			Ingress: operatorsv11.IngressSpec{
+			Ingress: operatorsv1.IngressSpec{
 				SSLCiphers: []string{"foo", "bar", "baz"},
 			},
 		},
@@ -86,8 +86,8 @@ func Test_ReconcileMultiClusterHub(t *testing.T) {
 
 	// Without Datastores
 	mch1 := full_mch.DeepCopy()
-	mch1.Spec.Etcd = operatorsv11.Etcd{}
-	mch1.Spec.Mongo = operatorsv11.Mongo{}
+	mch1.Spec.Etcd = operatorsv1.Etcd{}
+	mch1.Spec.Mongo = operatorsv1.Mongo{}
 
 	// Without Status Prefilled
 	mch2 := full_mch.DeepCopy()
@@ -240,8 +240,8 @@ func Test_setDefaults(t *testing.T) {
 
 	// Without Datastores
 	mch1 := full_mch.DeepCopy()
-	mch1.Spec.Etcd = operatorsv11.Etcd{}
-	mch1.Spec.Mongo = operatorsv11.Mongo{}
+	mch1.Spec.Etcd = operatorsv1.Etcd{}
+	mch1.Spec.Mongo = operatorsv1.Mongo{}
 
 	// Without Status Prefilled
 	mch2 := full_mch.DeepCopy()

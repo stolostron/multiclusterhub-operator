@@ -5,7 +5,7 @@ package mcm
 import (
 	"testing"
 
-	operatorsv11 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 )
 
 func TestClusterManager(t *testing.T) {

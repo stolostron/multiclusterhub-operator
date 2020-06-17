@@ -32,7 +32,7 @@ import (
 
 	"github.com/go-logr/logr"
 	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis/apps/v1"
-	operatorsv11 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/deploying"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
@@ -403,9 +403,9 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		multiClusterHub.Status.Phase = "Running"
 		multiClusterHub.Status.CurrentVersion = version.Version
 	}
-	statedDeployments := []operatorsv11.DeploymentResult{}
+	statedDeployments := []operatorsv1.DeploymentResult{}
 	for _, deploy := range deployments {
-		statedDeployments = append(statedDeployments, operatorsv11.DeploymentResult{
+		statedDeployments = append(statedDeployments, operatorsv1.DeploymentResult{
 			Name:   deploy.Name,
 			Status: deploy.Status,
 		})

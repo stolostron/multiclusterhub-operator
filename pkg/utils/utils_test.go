@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	operatorsv11 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -128,15 +128,15 @@ func TestMchIsValid(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "test",
-			Mongo: operatorsv11.Mongo{
+			Mongo: operatorsv1.Mongo{
 				Storage:      "mongoStorage",
 				StorageClass: "mongoStorageClass",
 			},
-			Etcd: operatorsv11.Etcd{
+			Etcd: operatorsv1.Etcd{
 				Storage:      "etcdStorage",
 				StorageClass: "etcdStorageClass",
 			},
-			Ingress: operatorsv11.IngressSpec{
+			Ingress: operatorsv1.IngressSpec{
 				SSLCiphers: []string{"foo", "bar", "baz"},
 			},
 		},
@@ -182,7 +182,7 @@ func TestGetImagePullPolicy(t *testing.T) {
 	noPullPolicyMCH := &operatorsv1.MultiClusterHub{}
 	pullPolicyMCH := &operatorsv1.MultiClusterHub{
 		Spec: operatorsv1.MultiClusterHubSpec{
-			Overrides: operatorsv11.Overrides{ImagePullPolicy: v1.PullIfNotPresent},
+			Overrides: operatorsv1.Overrides{ImagePullPolicy: v1.PullIfNotPresent},
 		},
 	}
 
