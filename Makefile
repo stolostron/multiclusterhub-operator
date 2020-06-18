@@ -86,10 +86,7 @@ csv:
 
 # apply CR
 cr:
-	cp deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml build/multiclusterhub-cr-with-pull-secret.yaml
-	yq w -i build/multiclusterhub-cr-with-pull-secret.yaml 'spec.imagePullSecret' "quay-secret"
-	oc apply -f build/multiclusterhub-cr-with-pull-secret.yaml
-	rm build/multiclusterhub-cr-with-pull-secret.yaml
+	yq w  deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml 'spec.imagePullSecret' "quay-secret" | oc apply -f -
 
 og:
 	oc apply -f build/operatorgroup.yaml
