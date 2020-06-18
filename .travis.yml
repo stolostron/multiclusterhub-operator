@@ -27,7 +27,7 @@ env:
     # Component Specific
     - COMPONENT_INIT_COMMAND=${TRAVIS_BUILD_DIR}/cicd-scripts/install-dependencies.sh
     - COMPONENT_BUILD_COMMAND=${TRAVIS_BUILD_DIR}/cicd-scripts/build.sh
-    - COMPONENT_UNIT_TEST_COMMAND=${TRAVIS_BUILD_DIR}/cicd-scripts/run-unit-test.sh
+    - COMPONENT_UNIT_TEST_COMMAND=${TRAVIS_BUILD_DIR}/cicd-scripts/run-unit-tests.sh
     - COMPONENT_DEPLOY_COMMAND=${TRAVIS_BUILD_DIR}/cicd-scripts/deploy-to-cluster.sh
     - COMPONENT_E2E_TEST_COMMAND=${TRAVIS_BUILD_DIR}/cicd-scripts/e2e-test.sh
 
