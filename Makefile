@@ -42,8 +42,11 @@ include common/Makefile.common.mk
 
 lint: lint-all
 
-functional-test:
-	ginkgo -tags functional -v --slowSpecThreshold=10 test/multiclusterhub-operator-test
+functional-test-install:
+	ginkgo -tags functional -v --slowSpecThreshold=10 test/multiclusterhub_install_test
+
+functional-test-uninstall:
+	ginkgo -tags functional -v --slowSpecThreshold=10 test/multiclusterhub_uninstall_test
 
 image:
 	./cicd-scripts/build.sh "$(REGISTRY)/$(IMG):$(VERSION)"

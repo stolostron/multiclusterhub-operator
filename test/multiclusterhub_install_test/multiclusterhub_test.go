@@ -1,4 +1,4 @@
-package multicloudhub_operator_test
+package multiclusterhub_install_test
 
 import (
 	"context"
@@ -6,6 +6,8 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	utils "github.com/open-cluster-management/multicloudhub-operator/test/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
@@ -13,22 +15,22 @@ import (
 
 var _ = Describe("Multiclusterhub", func() {
 
-	AfterEach(func() {
+	BeforeEach(func() {
 		By("Delete MultiClusterHub if it exists")
-		deleteIfExists(clientHubDynamic, gvrMultiClusterHub, testName, testNamespace)
+		utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace)
 	})
 
 	It("Install Basic MCH CR", func() {
 		By("Creating MultiClusterHub")
-		mch := newMultiClusterHub(testName, testNamespace)
-		createNewUnstructured(clientHubDynamic, gvrMultiClusterHub, mch, testName, testNamespace)
+		mch := utils.NewMultiClusterHub(utils.MCHName, utils.MCHNamespace)
+		utils.CreateNewUnstructured(utils.DynamicKubeClient, utils.GVRMultiClusterHub, mch, utils.MCHName, utils.MCHNamespace)
 
 		var deploy *appsv1.Deployment
 		When("MultiClusterHub is created, wait for MultiClusterHub Repo to be available", func() {
 			Eventually(func() error {
 				var err error
 				klog.V(1).Info("Wait MCH Repo deployment...")
-				deploy, err = clientHub.AppsV1().Deployments(testNamespace).Get(context.TODO(), multiClusterHubRepo, metav1.GetOptions{})
+				deploy, err = utils.KubeClient.AppsV1().Deployments(utils.MCHNamespace).Get(context.TODO(), utils.MCHRepoName, metav1.GetOptions{})
 				if err != nil {
 					return err
 				}
@@ -36,17 +38,17 @@ var _ = Describe("Multiclusterhub", func() {
 					return fmt.Errorf("MCH Repo not available")
 				}
 				return err
-			}, 30, 1).Should(BeNil())
+			}, 60, 1).Should(BeNil())
 			klog.V(1).Info("MCH Repo deployment available")
 		})
 		By("Checking ownerRef", func() {
-			Expect(isOwner(mch, &deploy.ObjectMeta)).To(Equal(true))
+			Expect(utils.IsOwner(mch, &deploy.ObjectMeta)).To(Equal(true))
 		})
 
 		By("Checking Appsubs")
 		When("MultiClusterHub is created, wait for Application Subscriptions to be available", func() {
 			Eventually(func() error {
-				unstructuredAppSubs := listAppSubs(clientHubDynamic, gvrSubscription, testNamespace, true, 60, len(appsubs))
+				unstructuredAppSubs := listAppSubs(utils.DynamicKubeClient, utils.GVRAppSub, utils.MCHNamespace, 60, len(utils.AppSubSlice))
 
 				// ready := false
 				for _, appsub := range unstructuredAppSubs.Items {
@@ -65,11 +67,4 @@ var _ = Describe("Multiclusterhub", func() {
 			}, 180, 1).Should(BeNil())
 		})
 	})
-
-	// It("MCH Should Create all AppSubs", func() {
-	// 	By("Creating MultiClusterHub")
-	// 	mch := newMultiClusterHub(testName, testNamespace)
-	// 	createNewUnstructured(clientHubDynamic, gvrMultiClusterHub, mch, testName, testNamespace)
-
-	// })
 })
