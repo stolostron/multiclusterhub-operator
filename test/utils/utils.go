@@ -30,17 +30,41 @@ var (
 	DynamicKubeClient = NewKubeClientDynamic("", "", "")
 
 	// GVRMultiClusterHub ...
-	GVRMultiClusterHub = schema.GroupVersionResource{Group: "operators.open-cluster-management.io", Version: "v1beta1", Resource: "multiclusterhubs"}
+	GVRMultiClusterHub = schema.GroupVersionResource{
+		Group:    "operators.open-cluster-management.io",
+		Version:  "v1beta1",
+		Resource: "multiclusterhubs",
+	}
 	// GVRAppSub ...
-	GVRAppSub = schema.GroupVersionResource{Group: "apps.open-cluster-management.io", Version: "v1", Resource: "subscriptions"}
+	GVRAppSub = schema.GroupVersionResource{
+		Group:    "apps.open-cluster-management.io",
+		Version:  "v1",
+		Resource: "subscriptions",
+	}
 	// GVRSub ...
-	GVRSub = schema.GroupVersionResource{Group: "operators.coreos.com", Version: "v1alpha1", Resource: "subscriptions"}
+	GVRSub = schema.GroupVersionResource{
+		Group:    "operators.coreos.com",
+		Version:  "v1alpha1",
+		Resource: "subscriptions",
+	}
 	// GVROperatorGroup ...
-	GVROperatorGroup = schema.GroupVersionResource{Group: "operators.coreos.com", Version: "v1", Resource: "operatorgroups"}
+	GVROperatorGroup = schema.GroupVersionResource{
+		Group:    "operators.coreos.com",
+		Version:  "v1",
+		Resource: "operatorgroups",
+	}
 	// GVRCSV ...
-	GVRCSV = schema.GroupVersionResource{Group: "operators.coreos.com", Version: "v1alpha1", Resource: "clusterserviceversions"}
+	GVRCSV = schema.GroupVersionResource{
+		Group:    "operators.coreos.com",
+		Version:  "v1alpha1",
+		Resource: "clusterserviceversions",
+	}
 	// GVRHelmRelease ...
-	GVRHelmRelease = schema.GroupVersionResource{Group: "apps.open-cluster-management.io", Version: "v1", Resource: "helmreleases"}
+	GVRHelmRelease = schema.GroupVersionResource{
+		Group:    "apps.open-cluster-management.io",
+		Version:  "v1",
+		Resource: "helmreleases",
+	}
 
 	// DefaultImageRegistry ...
 	DefaultImageRegistry = "quay.io/open-cluster-management"
@@ -63,8 +87,10 @@ var (
 	ACMSubscriptionName = "acm-operator-subscription"
 
 	// AppSubSlice ...
-	AppSubSlice = [...]string{"application-chart-sub", "cert-manager-sub", "cert-manager-webhook-sub", "configmap-watcher-sub", "console-chart-sub",
-		"grc-sub", "kui-web-terminal-sub", "management-ingress-sub", "multicluster-mongodb-sub", "rcm-sub", "search-prod-sub", "topology-sub"}
+	AppSubSlice = [...]string{"application-chart-sub", "cert-manager-sub",
+		"cert-manager-webhook-sub", "configmap-watcher-sub", "console-chart-sub",
+		"grc-sub", "kui-web-terminal-sub", "management-ingress-sub", "multicluster-mongodb-sub",
+		"rcm-sub", "search-prod-sub", "topology-sub"}
 
 	// CSVNameSlice ...
 	CSVNameSlice = [...]string{"advanced-cluster-management", "etcdoperator"}
@@ -82,7 +108,8 @@ func CreateNewUnstructured(
 	Expect(ns.Get(context.TODO(), name, metav1.GetOptions{})).NotTo(BeNil())
 }
 
-// DeleteIfExists deletes resources by using gvr & name & namespace, will wait for deletion to complete by using eventually
+// DeleteIfExists deletes resources by using gvr, name, and namespace.
+// Will wait for deletion to complete by using eventually
 func DeleteIfExists(clientHubDynamic dynamic.Interface, gvr schema.GroupVersionResource, name, namespace string) {
 	ns := clientHubDynamic.Resource(gvr).Namespace(namespace)
 	if _, err := ns.Get(context.TODO(), name, metav1.GetOptions{}); err != nil {
@@ -130,7 +157,11 @@ func NewKubeClient(url, kubeconfig, context string) kubernetes.Interface {
 
 // NewKubeClientDynamic returns a dynamic kube client
 func NewKubeClientDynamic(url, kubeconfig, context string) dynamic.Interface {
-	klog.V(5).Infof("Create kubeclient dynamic for url %s using kubeconfig path %s\n", url, kubeconfig)
+	klog.V(5).Infof(
+		"Create kubeclient dynamic for url %s using kubeconfig path %s\n",
+		url,
+		kubeconfig,
+	)
 	config, err := LoadConfig(url, kubeconfig, context)
 	if err != nil {
 		panic(err)

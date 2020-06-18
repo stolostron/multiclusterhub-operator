@@ -57,7 +57,10 @@ func NewPullSecret(name, namespace string) *corev1.Secret {
 		},
 		Type: "kubernetes.io/dockerconfigjson",
 		StringData: map[string]string{
-			".dockerconfigjson": fmt.Sprintf(`{"auths":{"quay.io":{"username":"%s","password":"%s","auth":"%s"}}}`, os.Getenv("DOCKER_USER"), os.Getenv("DOCKER_PASS"), base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", os.Getenv("DOCKER_USER"), os.Getenv("DOCKER_PASS"))))),
+			".dockerconfigjson": fmt.Sprintf(`{
+				"auths":{"quay.io":{"username":"%s","password":"%s","auth":"%s"}}}`,
+				os.Getenv("DOCKER_USER"), os.Getenv("DOCKER_PASS"),
+				base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", os.Getenv("DOCKER_USER"), os.Getenv("DOCKER_PASS"))))),
 		},
 	}
 }
