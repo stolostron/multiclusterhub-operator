@@ -97,22 +97,22 @@ csv:
 
 # apply CR
 cr:
-	kubectl apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml
+	yq w  deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml 'spec.imagePullSecret' "quay-secret" | oc apply -f -
 
 og:
-	kubectl apply -f build/operatorgroup.yaml
+	oc apply -f build/operatorgroup.yaml
 
 ns:
-	kubectl apply -f build/namespace.yaml
+	oc apply -f build/namespace.yaml
 	oc project open-cluster-management
 
 # apply subscriptions normally created by OLM
 subscriptions:
-	kubectl apply -k build/subscriptions
+	oc apply -k build/subscriptions
 
 # run operator locally outside the cluster
 local-install: ns secrets og subscriptions regop
-	kubectl apply -f deploy/crds/operators.open-cluster-management.io_multiclusterhubs_crd.yaml
+	oc apply -f deploy/crds/operators.open-cluster-management.io_multiclusterhubs_crd.yaml
 	OPERATOR_NAME=multiclusterhub-operator \
 	TEMPLATES_PATH="$(shell pwd)/templates" \
 	MANIFESTS_PATH="$(shell pwd)/image-manifests" \
@@ -120,18 +120,18 @@ local-install: ns secrets og subscriptions regop
 
 # run as a Deployment inside the cluster
 in-cluster-install: ns secrets og update-image subscriptions regop
-	kubectl apply -f deploy/crds/operators.open-cluster-management.io_multiclusterhubs_crd.yaml
+	oc apply -f deploy/crds/operators.open-cluster-management.io_multiclusterhubs_crd.yaml
 	yq w -i deploy/kustomization.yaml 'images(name==multiclusterhub-operator).newTag' "${VERSION}"
-	kubectl apply -k deploy
-	# kubectl apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml
+	oc apply -k deploy
+	# oc apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml
 
 # creates a configmap index and catalogsource that it subscribes to
 cm-install: ns secrets og csv update-image regop
 	bash common/scripts/generate-cm-index.sh ${VERSION} ${REGISTRY}
-	kubectl apply -k build/configmap-install
+	oc apply -k build/configmap-install
 
 # generates an index image and catalogsource that serves it
 index-install: ns secrets og csv update-image regop
-	kubectl patch serviceaccount default -n open-cluster-management -p '{"imagePullSecrets": [{"name": "quay-secret"}]}'
+	oc patch serviceaccount default -n open-cluster-management -p '{"imagePullSecrets": [{"name": "quay-secret"}]}'
 	bash common/scripts/generate-index.sh ${VERSION} ${REGISTRY}
-	kubectl apply -k build/index-install
+	oc apply -k build/index-install
