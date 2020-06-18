@@ -57,11 +57,7 @@ uninstall:
 
 ## Install Registration-Operator Hub
 regop:
-	./common/scripts/install_regop.sh
-
-# Apply  Registration Operator Hub CR
-regop-cr:
-	./common/scripts/apply_regop_cr.sh
+	@bash ./common/scripts/install_regop.sh
 
 # create secrets for pulling images
 secrets: 
@@ -89,7 +85,7 @@ csv:
 	operator-sdk generate csv --operator-name=multiclusterhub-operator
 
 # apply CR
-cr: regop-cr
+cr:
 	kubectl apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml
 
 og:

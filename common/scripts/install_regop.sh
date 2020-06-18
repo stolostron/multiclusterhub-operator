@@ -31,5 +31,5 @@ echo ""
 echo "Attempting deploy of Registration Operator ..."
 
 echo ""
-make update-all
-make deploy-hub-operator OLM_NAMESPACE=$_olmNamespace
+make update-all &> /dev/null
+make deploy-hub-operator OLM_NAMESPACE=$_olmNamespace 
