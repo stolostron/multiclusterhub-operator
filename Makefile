@@ -55,6 +55,10 @@ install:
 uninstall:
 	bash common/scripts/uninstall.sh
 
+## Install Registration-Operator Hub
+regop:
+	@bash ./common/scripts/install_regop.sh
+
 # create secrets for pulling images
 secrets: 
 	@oc create secret docker-registry multiclusterhub-operator-pull-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
@@ -96,7 +100,7 @@ subscriptions:
 	kubectl apply -k build/subscriptions
 
 # run operator locally outside the cluster
-local-install: ns secrets og subscriptions
+local-install: ns secrets og subscriptions regop
 	kubectl apply -f deploy/crds/operator.open-cluster-management.io_multiclusterhubs_crd.yaml
 	OPERATOR_NAME=multiclusterhub-operator \
 	TEMPLATES_PATH="$(shell pwd)/templates" \
@@ -104,19 +108,19 @@ local-install: ns secrets og subscriptions
 	operator-sdk18 run local --watch-namespace=open-cluster-management --kubeconfig=$(KUBECONFIG)
 
 # run as a Deployment inside the cluster
-in-cluster-install: update-image ns secrets og subscriptions
+in-cluster-install: ns secrets og update-image subscriptions regop
 	kubectl apply -f deploy/crds/operator.open-cluster-management.io_multiclusterhubs_crd.yaml
 	yq w -i deploy/kustomization.yaml 'images(name==multiclusterhub-operator).newTag' "${VERSION}"
 	kubectl apply -k deploy
 	# kubectl apply -f deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml
 
 # creates a configmap index and catalogsource that it subscribes to
-cm-install: update-image csv ns secrets og 
+cm-install: ns secrets og csv update-image regop
 	bash common/scripts/generate-cm-index.sh ${VERSION} ${REGISTRY}
 	kubectl apply -k build/configmap-install
 
 # generates an index image and catalogsource that serves it
-index-install: update-image csv ns secrets og
+index-install: ns secrets og csv update-image regop
 	kubectl patch serviceaccount default -n open-cluster-management -p '{"imagePullSecrets": [{"name": "quay-secret"}]}'
 	bash common/scripts/generate-index.sh ${VERSION} ${REGISTRY}
 	kubectl apply -k build/index-install
