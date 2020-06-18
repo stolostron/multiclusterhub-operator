@@ -21,7 +21,6 @@ lint-markdown:
 
 lint-all: lint-dockerfiles lint-scripts lint-yaml lint-go lint-markdown
 
-test:
-	@common/scripts/test.sh
+test: component/test/unit
 
 .PHONY: lint-dockerfiles lint-scripts lint-yaml lint-go lint-markdown lint-all test

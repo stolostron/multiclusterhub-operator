@@ -10,7 +10,6 @@ import (
 	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 func TestRender(t *testing.T) {
@@ -32,16 +31,8 @@ func TestRender(t *testing.T) {
 	}
 
 	renderer := NewRenderer(mchcr)
-	objs, err := renderer.Render(nil)
+	_, err = renderer.Render(nil)
 	if err != nil {
 		t.Fatalf("failed to render multiclusterhub %v", err)
-	}
-
-	printObjs(t, objs)
-}
-
-func printObjs(t *testing.T, objs []*unstructured.Unstructured) {
-	for _, obj := range objs {
-		t.Log(obj)
 	}
 }

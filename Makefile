@@ -29,6 +29,11 @@ export IMAGE ?= $(shell echo $(REGISTRY)/$(IMG):$(VERSION))
 export CSV_CHANNEL ?= alpha
 export CSV_VERSION ?= 2.0.0
 
+
+export PROJECT_DIR = $(shell 'pwd')
+export GOPACKAGES   = $(shell go list ./... | grep -v /vendor | grep -v /internal | grep -v ../build | grep -v /test)
+export COMPONENT_SCRIPTS_PATH = $(shell 'pwd')/cicd-scripts
+
 # Use podman if available, otherwise use docker
 ifeq ($(CONTAINER_ENGINE),)
 	CONTAINER_ENGINE = $(shell podman version > /dev/null && echo podman || echo docker)
@@ -72,7 +77,7 @@ reinstall: uninstall cm-install
 subscribe: cm-install
 
 deps:
-	./common/scripts/install-dependencies.sh
+	./cicd-scripts/install-dependencies.sh
 	go mod tidy
 
 update-image:

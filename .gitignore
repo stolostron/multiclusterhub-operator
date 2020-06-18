@@ -21,6 +21,9 @@ build/_output/bin/
 build-harness/
 build-harness-extensions/
 
+test/out
+test/coverage
+
 # override build harness vendoring
 !vbh/.build-harness-vendorized
 !vbh/build-harness
