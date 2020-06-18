@@ -59,14 +59,6 @@ type MultiClusterHubSpec struct {
 
 // Overrides provides developer overrides for MCH installation
 type Overrides struct {
-	// Repository of the MultiCluster hub images
-	// +optional
-	ImageRepository string `json:"imageRepository,omitempty"`
-
-	// ImageTagSuffix of the MultiCluster hub images
-	// +optional
-	ImageTagSuffix string `json:"imageTagSuffix,omitempty"`
-
 	// Pull policy of the MultiCluster hub images
 	// +optional
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`

@@ -60,9 +60,9 @@ func TestCacheSpec_IsStale(t *testing.T) {
 
 	t.Run("Change type to manifest", func(t *testing.T) {
 		mch := &operatorsv1beta1.MultiClusterHub{
-			Spec: operatorsv1beta1.MultiClusterHubSpec{
-				Overrides: operatorsv1beta1.Overrides{
-					ImageRepository: "quay.io",
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					utils.AnnotationImageRepo: "quay.io",
 				},
 			},
 		}
@@ -74,10 +74,10 @@ func TestCacheSpec_IsStale(t *testing.T) {
 
 	t.Run("Change type to suffix", func(t *testing.T) {
 		mch := &operatorsv1beta1.MultiClusterHub{
-			Spec: operatorsv1beta1.MultiClusterHubSpec{
-				Overrides: operatorsv1beta1.Overrides{
-					ImageRepository: "quay.io",
-					ImageTagSuffix:  "foo",
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					utils.AnnotationImageRepo: "quay.io",
+					utils.AnnotationSuffix:    "foo",
 				},
 			},
 		}
@@ -89,10 +89,10 @@ func TestCacheSpec_IsStale(t *testing.T) {
 
 	t.Run("Change suffix", func(t *testing.T) {
 		mch := &operatorsv1beta1.MultiClusterHub{
-			Spec: operatorsv1beta1.MultiClusterHubSpec{
-				Overrides: operatorsv1beta1.Overrides{
-					ImageRepository: "quay.io",
-					ImageTagSuffix:  "bar",
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					utils.AnnotationImageRepo: "quay.io",
+					utils.AnnotationSuffix:    "bar",
 				},
 			},
 		}
@@ -104,10 +104,10 @@ func TestCacheSpec_IsStale(t *testing.T) {
 
 	t.Run("Change image repository", func(t *testing.T) {
 		mch := &operatorsv1beta1.MultiClusterHub{
-			Spec: operatorsv1beta1.MultiClusterHubSpec{
-				Overrides: operatorsv1beta1.Overrides{
-					ImageRepository: "artifactory",
-					ImageTagSuffix:  "foo",
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					utils.AnnotationImageRepo: "artifactory",
+					utils.AnnotationSuffix:    "foo",
 				},
 			},
 		}
