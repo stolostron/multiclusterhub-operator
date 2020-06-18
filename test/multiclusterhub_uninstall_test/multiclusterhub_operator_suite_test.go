@@ -1,3 +1,4 @@
+// Copyright (c) 2020 Red Hat, Inc.
 package multiclusterhub_uninstall_test
 
 import (
