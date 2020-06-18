@@ -1,6 +1,15 @@
 #!/bin/bash -e
 # Copyright (c) 2020 Red Hat, Inc.
 
+# Go tools
+
+if ! which patter > /dev/null; then      echo "Installing patter ..."; go get -u github.com/apg/patter; fi
+if ! which gocovmerge > /dev/null; then  echo "Installing gocovmerge..."; go get -u github.com/wadey/gocovmerge; fi
+if ! which golangci-lint > /dev/null; then
+   curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.23.6
+fi
+
+
 _script_dir=$(dirname "$0")
 mkdir -p test/coverage
 echo 'mode: atomic' > test/coverage/cover.out

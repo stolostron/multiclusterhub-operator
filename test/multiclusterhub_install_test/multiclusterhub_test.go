@@ -19,15 +19,17 @@ var _ = Describe("Multiclusterhub", func() {
 	BeforeEach(func() {
 		By("Delete MultiClusterHub if it exists")
 		utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace)
+
+		Expect(utils.EnsureHelmReleasesAreRemoved(utils.DynamicKubeClient)).Should(BeNil())
 	})
 
-	It("Install Basic MCH CR", func() {
+	It("Install Default MCH CR", func() {
 		By("Creating MultiClusterHub")
 		mch := utils.NewMultiClusterHub(utils.MCHName, utils.MCHNamespace)
 		utils.CreateNewUnstructured(utils.DynamicKubeClient, utils.GVRMultiClusterHub, mch, utils.MCHName, utils.MCHNamespace)
 
 		var deploy *appsv1.Deployment
-		When("MultiClusterHub is created, wait for MultiClusterHub Repo to be available", func() {
+		When("Wait for MultiClusterHub Repo to be available", func() {
 			Eventually(func() error {
 				var err error
 				klog.V(1).Info("Wait MCH Repo deployment...")
@@ -47,11 +49,10 @@ var _ = Describe("Multiclusterhub", func() {
 		})
 
 		By("Checking Appsubs")
-		When("MultiClusterHub is created, wait for Application Subscriptions to be available", func() {
+		When("Wait for Application Subscriptions to be Active", func() {
 			Eventually(func() error {
-				unstructuredAppSubs := listAppSubs(utils.DynamicKubeClient, utils.GVRAppSub, utils.MCHNamespace, 60, len(utils.AppSubSlice))
+				unstructuredAppSubs := listByGVR(utils.DynamicKubeClient, utils.GVRAppSub, utils.MCHNamespace, 60, len(utils.AppSubSlice))
 
-				// ready := false
 				for _, appsub := range unstructuredAppSubs.Items {
 					if _, ok := appsub.Object["status"]; !ok {
 						return fmt.Errorf("Appsub: %s has no 'status' field", appsub.GetName())
@@ -66,6 +67,36 @@ var _ = Describe("Multiclusterhub", func() {
 				}
 				return nil
 			}, 180, 1).Should(BeNil())
+		})
+
+		By("Checking HelmReleases")
+		When("Wait for HelmReleases to be successfully installed", func() {
+			Eventually(func() error {
+				unstructuredHelmReleases := listByGVR(utils.DynamicKubeClient, utils.GVRHelmRelease, utils.MCHNamespace, 60, len(utils.AppSubSlice))
+				// ready := false
+				for _, helmRelease := range unstructuredHelmReleases.Items {
+					klog.V(5).Infof("Checking HelmRelease - %s", helmRelease.GetName())
+
+					status, ok := helmRelease.Object["status"].(map[string]interface{})
+					if !ok || status == nil {
+						return fmt.Errorf("HelmRelease: %s has no 'status' map", helmRelease.GetName())
+					}
+
+					conditions, ok := status["conditions"].([]interface{})
+					if !ok || conditions == nil {
+						return fmt.Errorf("HelmRelease: %s has no 'conditions' interface", helmRelease.GetName())
+					}
+
+					finalCondition, ok := conditions[len(conditions)-1].(map[string]interface{})
+					if finalCondition["reason"] != "InstallSuccessful" || finalCondition["type"] != "Deployed" {
+						return fmt.Errorf("HelmRelease: %s not ready", helmRelease.GetName())
+					}
+
+					Expect(finalCondition["reason"]).To(Equal("InstallSuccessful"))
+					Expect(finalCondition["type"]).To(Equal("Deployed"))
+				}
+				return nil
+			}, 500, 1).Should(BeNil())
 		})
 	})
 })

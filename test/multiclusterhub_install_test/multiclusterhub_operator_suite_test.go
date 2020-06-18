@@ -88,7 +88,7 @@ func TestMultiClusterHubOperatorInstall(t *testing.T) {
 }
 
 // listAppSubs keeps polling to get the object for timeout seconds
-func listAppSubs(clientHubDynamic dynamic.Interface, gvr schema.GroupVersionResource, namespace string, timeout int, expectedTotal int) *unstructured.UnstructuredList {
+func listByGVR(clientHubDynamic dynamic.Interface, gvr schema.GroupVersionResource, namespace string, timeout int, expectedTotal int) *unstructured.UnstructuredList {
 	if timeout < 1 {
 		timeout = 1
 	}

@@ -47,6 +47,9 @@ include common/Makefile.common.mk
 
 lint: lint-all
 
+## Run unit-tests
+test: component/test/unit
+
 ## Run the installer functional tests
 functional-test-install:
 	ginkgo -tags functional -v --slowSpecThreshold=10 test/multiclusterhub_install_test
