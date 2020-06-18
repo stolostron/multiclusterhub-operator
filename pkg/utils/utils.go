@@ -57,12 +57,6 @@ var (
 		"ECDHE-ECDSA-AES128-GCM-SHA256",
 		"ECDHE-RSA-AES128-GCM-SHA256",
 	}
-	// AnnotationMCHPause sits in multiclusterhub annotations to identify if the multiclusterhub is paused or not
-	AnnotationMCHPause = "mch-pause"
-	// AnnotationImageRepo sits in multiclusterhub annotations to identify a custom image repository to use
-	AnnotationImageRepo = "mch-imageRepository"
-	// AnnotationSuffix sits in multiclusterhub annotations to identify a custom image tag suffix to use
-	AnnotationSuffix = "mch-imageTagSuffix"
 )
 
 // CertManagerNS returns the namespace to deploy cert manager objects
@@ -200,37 +194,4 @@ func IsUnitTest() bool {
 // ingress chart
 func FormatSSLCiphers(ciphers []string) string {
 	return strings.Join(ciphers, ":")
-}
-
-// IsPaused returns true if the multiclusterhub instance is labeled as paused, and false otherwise
-func IsPaused(instance *operatorsv1beta1.MultiClusterHub) bool {
-	a := instance.GetAnnotations()
-	if a == nil {
-		return false
-	}
-
-	if a[AnnotationMCHPause] != "" && strings.EqualFold(a[AnnotationMCHPause], "true") {
-		return true
-	}
-
-	return false
-}
-
-// getAnnotation returns the annotation value for a given key, or an empty string if not set
-func getAnnotation(instance *operatorsv1beta1.MultiClusterHub, key string) string {
-	a := instance.GetAnnotations()
-	if a == nil {
-		return ""
-	}
-	return a[key]
-}
-
-// GetImageRepository returns the image repo annotation, or an empty string if not set
-func GetImageRepository(instance *operatorsv1beta1.MultiClusterHub) string {
-	return getAnnotation(instance, AnnotationImageRepo)
-}
-
-// GetImageSuffix returns the image tag suffix annotation, or an empty string if not set
-func GetImageSuffix(instance *operatorsv1beta1.MultiClusterHub) string {
-	return getAnnotation(instance, AnnotationSuffix)
 }
