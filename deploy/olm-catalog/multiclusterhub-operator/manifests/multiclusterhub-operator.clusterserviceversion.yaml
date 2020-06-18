@@ -11,9 +11,7 @@ metadata:
             "name": "multiclusterhub",
             "namespace": "open-cluster-management"
           },
-          "spec": {
-            "imagePullSecret": "quay-secret"
-          }
+          "spec": {}
         }
       ]
     capabilities: Basic Install
