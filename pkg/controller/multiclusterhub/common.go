@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/mcm"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func (r *ReconcileMultiClusterHub) ensureDeployment(m *operatorsv1beta1.MultiClusterHub, dep *appsv1.Deployment) (*reconcile.Result, error) {
+func (r *ReconcileMultiClusterHub) ensureDeployment(m *operatorsv1.MultiClusterHub, dep *appsv1.Deployment) (*reconcile.Result, error) {
 	dplog := log.WithValues("Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
 
 	// See if deployment already exists and create if it doesn't
@@ -80,7 +80,7 @@ func (r *ReconcileMultiClusterHub) ensureDeployment(m *operatorsv1beta1.MultiClu
 	return nil, nil
 }
 
-func (r *ReconcileMultiClusterHub) ensureService(m *operatorsv1beta1.MultiClusterHub, s *corev1.Service) (*reconcile.Result, error) {
+func (r *ReconcileMultiClusterHub) ensureService(m *operatorsv1.MultiClusterHub, s *corev1.Service) (*reconcile.Result, error) {
 	svlog := log.WithValues("Service.Namespace", s.Namespace, "Service.Name", s.Name)
 
 	found := &corev1.Service{}
@@ -112,7 +112,7 @@ func (r *ReconcileMultiClusterHub) ensureService(m *operatorsv1beta1.MultiCluste
 	return nil, nil
 }
 
-func (r *ReconcileMultiClusterHub) ensureSecret(m *operatorsv1beta1.MultiClusterHub, s *corev1.Secret) (*reconcile.Result, error) {
+func (r *ReconcileMultiClusterHub) ensureSecret(m *operatorsv1.MultiClusterHub, s *corev1.Secret) (*reconcile.Result, error) {
 	selog := log.WithValues("Secret.Namespace", s.Namespace, "Secret.Name", s.Name)
 
 	found := &corev1.Secret{}
@@ -143,7 +143,7 @@ func (r *ReconcileMultiClusterHub) ensureSecret(m *operatorsv1beta1.MultiCluster
 	return nil, nil
 }
 
-func (r *ReconcileMultiClusterHub) ensureChannel(m *operatorsv1beta1.MultiClusterHub, u *unstructured.Unstructured) (*reconcile.Result, error) {
+func (r *ReconcileMultiClusterHub) ensureChannel(m *operatorsv1.MultiClusterHub, u *unstructured.Unstructured) (*reconcile.Result, error) {
 	selog := log.WithValues("Channel.Namespace", u.GetNamespace(), "Channel.Name", u.GetName())
 
 	found := &unstructured.Unstructured{}
@@ -179,7 +179,7 @@ func (r *ReconcileMultiClusterHub) ensureChannel(m *operatorsv1beta1.MultiCluste
 	return nil, nil
 }
 
-func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1beta1.MultiClusterHub, u *unstructured.Unstructured) (*reconcile.Result, error) {
+func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1.MultiClusterHub, u *unstructured.Unstructured) (*reconcile.Result, error) {
 	obLog := log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName(), "Kind", u.GetKind())
 
 	found := &unstructured.Unstructured{}
@@ -234,7 +234,7 @@ func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1beta1.MultiC
 	return nil, nil
 }
 
-func (r *ReconcileMultiClusterHub) ensureClusterManager(m *operatorsv1beta1.MultiClusterHub, u *unstructured.Unstructured) (*reconcile.Result, error) {
+func (r *ReconcileMultiClusterHub) ensureClusterManager(m *operatorsv1.MultiClusterHub, u *unstructured.Unstructured) (*reconcile.Result, error) {
 	obLog := log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName(), "Kind", u.GetKind())
 
 	found := &unstructured.Unstructured{}
@@ -307,7 +307,7 @@ func (r *ReconcileMultiClusterHub) apiReady(gv schema.GroupVersion) (*reconcile.
 	return nil, nil
 }
 
-func (r *ReconcileMultiClusterHub) copyPullSecret(m *operatorsv1beta1.MultiClusterHub, newNS string) (*reconcile.Result, error) {
+func (r *ReconcileMultiClusterHub) copyPullSecret(m *operatorsv1.MultiClusterHub, newNS string) (*reconcile.Result, error) {
 	sublog := log.WithValues("Copying Secret to cert-manager namespace", m.Spec.ImagePullSecret, "Namespace.Name", utils.CertManagerNamespace)
 
 	pullSecret := &v1.Secret{}

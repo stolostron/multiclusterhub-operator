@@ -5,7 +5,7 @@
       alm-examples: |-
         [
           {
-            "apiVersion": "operators.open-cluster-management.io/v1beta1",
+            "apiVersion": "operator.open-cluster-management.io/v1",
             "kind": "MultiClusterHub",
             "metadata": {
               "name": "multiclusterhub",
@@ -52,7 +52,7 @@
           MultiCluster Hub
         displayName: MultiClusterHub Operator
         kind: MultiClusterHub
-        name: multiclusterhubs.operators.open-cluster-management.io
+        name: multiclusterhubs.operator.open-cluster-management.io
         version: v1beta1
     description: Placeholder description
     displayName: Multiclusterhub Operator
@@ -145,7 +145,7 @@
             - authorization.k8s.io
             - config.openshift.io
             - mcm.ibm.com
-            - operators.open-cluster-management.io
+            - operator.open-cluster-management.io
             - rbac.authorization.k8s.io
             resources:
             - apiservices
@@ -171,7 +171,7 @@
             - authorization.k8s.io
             - config.openshift.io
             - mcm.ibm.com
-            - operators.open-cluster-management.io
+            - operator.open-cluster-management.io
             - rbac.authorization.k8s.io
             - storage.k8s.io
             resources:
@@ -196,7 +196,7 @@
             - apps
             - mcm.ibm.com
             - monitoring.coreos.com
-            - operators.open-cluster-management.io
+            - operator.open-cluster-management.io
             resources:
             - deployments/finalizers
             - services

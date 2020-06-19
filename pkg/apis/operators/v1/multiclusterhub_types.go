@@ -1,5 +1,5 @@
 // Copyright (c) 2020 Red Hat, Inc.
-package v1beta1
+package v1
 
 import (
 	appsv1 "k8s.io/api/apps/v1"

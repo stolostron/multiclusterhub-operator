@@ -11,7 +11,7 @@ import (
 	"path"
 	"path/filepath"
 
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	"github.com/open-cluster-management/multicloudhub-operator/version"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -45,7 +45,7 @@ type ManifestImage struct {
 
 // GetImageOverrideType returns an image format type based on the MultiClusterHub
 // object content
-func GetImageOverrideType(m *operatorsv1beta1.MultiClusterHub) OverrideType {
+func GetImageOverrideType(m *operatorsv1.MultiClusterHub) OverrideType {
 	if utils.GetImageSuffix(m) == "" {
 		return Manifest
 	} else {
@@ -54,7 +54,7 @@ func GetImageOverrideType(m *operatorsv1beta1.MultiClusterHub) OverrideType {
 }
 
 // GetImageOverrides Reads and formats full image reference from image manifest file.
-func GetImageOverrides(mch *operatorsv1beta1.MultiClusterHub) (map[string]string, error) {
+func GetImageOverrides(mch *operatorsv1.MultiClusterHub) (map[string]string, error) {
 	manifestData, err := readManifestFile(version.Version)
 	if err != nil {
 		return nil, err
@@ -74,7 +74,7 @@ func GetImageOverrides(mch *operatorsv1beta1.MultiClusterHub) (map[string]string
 	return imageOverrides, nil
 }
 
-func formatImageOverrides(mch *operatorsv1beta1.MultiClusterHub, manifestImages []ManifestImage) (map[string]string, error) {
+func formatImageOverrides(mch *operatorsv1.MultiClusterHub, manifestImages []ManifestImage) (map[string]string, error) {
 	imageOverrides := make(map[string]string)
 	for _, img := range manifestImages {
 		imageOverrides[img.ImageKey] = buildFullImageReference(mch, img)
@@ -82,7 +82,7 @@ func formatImageOverrides(mch *operatorsv1beta1.MultiClusterHub, manifestImages 
 	return imageOverrides, nil
 }
 
-func buildFullImageReference(mch *operatorsv1beta1.MultiClusterHub, mi ManifestImage) string {
+func buildFullImageReference(mch *operatorsv1.MultiClusterHub, mi ManifestImage) string {
 	registry := mi.ImageRemote
 	// Use ImageRepository if provided
 	if reg := utils.GetImageRepository(mch); reg != "" {

@@ -6,12 +6,12 @@ import (
 	"os"
 	"testing"
 
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 )
 
 func TestGetImageOverrideType(t *testing.T) {
-	mch := &operatorsv1beta1.MultiClusterHub{}
+	mch := &operatorsv1.MultiClusterHub{}
 	t.Run("Manifest format", func(t *testing.T) {
 		want := Manifest
 		if got := GetImageOverrideType(mch); got != want {
@@ -65,7 +65,7 @@ func Test_buildFullImageReference(t *testing.T) {
 		ImageRemote:  "quay.io/open-cluster-management",
 		ImageDigest:  "sha256:abc123",
 	}
-	mch := &operatorsv1beta1.MultiClusterHub{}
+	mch := &operatorsv1.MultiClusterHub{}
 
 	mch1 := mch.DeepCopy()
 
@@ -76,7 +76,7 @@ func Test_buildFullImageReference(t *testing.T) {
 	mch3.SetAnnotations(map[string]string{utils.AnnotationSuffix: "baz"})
 
 	type args struct {
-		mch *operatorsv1beta1.MultiClusterHub
+		mch *operatorsv1.MultiClusterHub
 		mi  ManifestImage
 	}
 	tests := []struct {

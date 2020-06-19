@@ -5,7 +5,7 @@ package utils
 import (
 	"strings"
 
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 )
 
 var (
@@ -18,7 +18,7 @@ var (
 )
 
 // IsPaused returns true if the multiclusterhub instance is labeled as paused, and false otherwise
-func IsPaused(instance *operatorsv1beta1.MultiClusterHub) bool {
+func IsPaused(instance *operatorsv1.MultiClusterHub) bool {
 	a := instance.GetAnnotations()
 	if a == nil {
 		return false
@@ -39,7 +39,7 @@ func AnnotationsMatch(old, new map[string]string) bool {
 }
 
 // getAnnotation returns the annotation value for a given key, or an empty string if not set
-func getAnnotation(instance *operatorsv1beta1.MultiClusterHub, key string) string {
+func getAnnotation(instance *operatorsv1.MultiClusterHub, key string) string {
 	a := instance.GetAnnotations()
 	if a == nil {
 		return ""
@@ -48,11 +48,11 @@ func getAnnotation(instance *operatorsv1beta1.MultiClusterHub, key string) strin
 }
 
 // GetImageRepository returns the image repo annotation, or an empty string if not set
-func GetImageRepository(instance *operatorsv1beta1.MultiClusterHub) string {
+func GetImageRepository(instance *operatorsv1.MultiClusterHub) string {
 	return getAnnotation(instance, AnnotationImageRepo)
 }
 
 // GetImageSuffix returns the image tag suffix annotation, or an empty string if not set
-func GetImageSuffix(instance *operatorsv1beta1.MultiClusterHub) string {
+func GetImageSuffix(instance *operatorsv1.MultiClusterHub) string {
 	return getAnnotation(instance, AnnotationSuffix)
 }

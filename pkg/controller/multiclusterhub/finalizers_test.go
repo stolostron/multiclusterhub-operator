@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -21,7 +21,7 @@ import (
 func Test_cleanupHiveConfigs(t *testing.T) {
 	tests := []struct {
 		Name       string
-		MCH        *operatorsv1beta1.MultiClusterHub
+		MCH        *operatorsv1.MultiClusterHub
 		HiveConfig *unstructured.Unstructured
 		Result     error
 	}{
@@ -80,7 +80,7 @@ func Test_cleanupAPIServices(t *testing.T) {
 
 	tests := []struct {
 		Name       string
-		MCH        *operatorsv1beta1.MultiClusterHub
+		MCH        *operatorsv1.MultiClusterHub
 		APIService *apiregistrationv1.APIService
 		Result     error
 	}{
@@ -152,7 +152,7 @@ func Test_cleanupClusterRoles(t *testing.T) {
 
 	tests := []struct {
 		Name        string
-		MCH         *operatorsv1beta1.MultiClusterHub
+		MCH         *operatorsv1.MultiClusterHub
 		ClusterRole *rbacv1.ClusterRole
 		Result      error
 	}{
@@ -229,7 +229,7 @@ func Test_cleanupClusterRoleBindings(t *testing.T) {
 
 	tests := []struct {
 		Name   string
-		MCH    *operatorsv1beta1.MultiClusterHub
+		MCH    *operatorsv1.MultiClusterHub
 		CRB    *rbacv1.ClusterRoleBinding
 		Result error
 	}{
@@ -305,7 +305,7 @@ func Test_cleanupMutatingWebhooks(t *testing.T) {
 
 	tests := []struct {
 		Name   string
-		MCH    *operatorsv1beta1.MultiClusterHub
+		MCH    *operatorsv1.MultiClusterHub
 		MWC    *admissionregistrationv1beta1.MutatingWebhookConfiguration
 		Result error
 	}{
@@ -374,7 +374,7 @@ func Test_cleanupPullSecret(t *testing.T) {
 
 	tests := []struct {
 		Name   string
-		MCH    *operatorsv1beta1.MultiClusterHub
+		MCH    *operatorsv1.MultiClusterHub
 		Secret *corev1.Secret
 		Result error
 	}{
@@ -449,7 +449,7 @@ func Test_cleanupCRDS(t *testing.T) {
 
 	tests := []struct {
 		Name   string
-		MCH    *operatorsv1beta1.MultiClusterHub
+		MCH    *operatorsv1.MultiClusterHub
 		CRD    *apixv1.CustomResourceDefinition
 		Result error
 	}{
@@ -502,7 +502,7 @@ func Test_cleanupCRDS(t *testing.T) {
 func Test_cleanupClusterManagers(t *testing.T) {
 	tests := []struct {
 		Name           string
-		MCH            *operatorsv1beta1.MultiClusterHub
+		MCH            *operatorsv1.MultiClusterHub
 		ClusterManager *unstructured.Unstructured
 		Result         error
 	}{

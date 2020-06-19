@@ -5,7 +5,7 @@ package multiclusterhub
 import (
 	"testing"
 
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/manifest"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,7 +30,7 @@ func TestCacheSpec_IsStale(t *testing.T) {
 	}
 
 	t.Run("No change to suffix cache", func(t *testing.T) {
-		mch := &operatorsv1beta1.MultiClusterHub{
+		mch := &operatorsv1.MultiClusterHub{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
 					utils.AnnotationImageRepo: "quay.io",
@@ -45,7 +45,7 @@ func TestCacheSpec_IsStale(t *testing.T) {
 	})
 
 	t.Run("No change to manifest cache", func(t *testing.T) {
-		mch := &operatorsv1beta1.MultiClusterHub{
+		mch := &operatorsv1.MultiClusterHub{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
 					utils.AnnotationImageRepo: "quay.io",
@@ -59,7 +59,7 @@ func TestCacheSpec_IsStale(t *testing.T) {
 	})
 
 	t.Run("Change type to manifest", func(t *testing.T) {
-		mch := &operatorsv1beta1.MultiClusterHub{
+		mch := &operatorsv1.MultiClusterHub{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
 					utils.AnnotationImageRepo: "quay.io",
@@ -73,7 +73,7 @@ func TestCacheSpec_IsStale(t *testing.T) {
 	})
 
 	t.Run("Change type to suffix", func(t *testing.T) {
-		mch := &operatorsv1beta1.MultiClusterHub{
+		mch := &operatorsv1.MultiClusterHub{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
 					utils.AnnotationImageRepo: "quay.io",
@@ -88,7 +88,7 @@ func TestCacheSpec_IsStale(t *testing.T) {
 	})
 
 	t.Run("Change suffix", func(t *testing.T) {
-		mch := &operatorsv1beta1.MultiClusterHub{
+		mch := &operatorsv1.MultiClusterHub{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
 					utils.AnnotationImageRepo: "quay.io",
@@ -103,7 +103,7 @@ func TestCacheSpec_IsStale(t *testing.T) {
 	})
 
 	t.Run("Change image repository", func(t *testing.T) {
-		mch := &operatorsv1beta1.MultiClusterHub{
+		mch := &operatorsv1.MultiClusterHub{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
 					utils.AnnotationImageRepo: "artifactory",

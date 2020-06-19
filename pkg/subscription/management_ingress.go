@@ -3,13 +3,13 @@
 package subscription
 
 import (
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 // ManagementIngress overrides the management-ingress chart
-func ManagementIngress(m *operatorsv1beta1.MultiClusterHub, overrides map[string]string, ingress string) *unstructured.Unstructured {
+func ManagementIngress(m *operatorsv1.MultiClusterHub, overrides map[string]string, ingress string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "management-ingress",
 		Namespace: m.Namespace,

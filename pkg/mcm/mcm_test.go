@@ -6,18 +6,18 @@ import (
 	"reflect"
 	"testing"
 
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestValidateDeployment(t *testing.T) {
-	mch := &operatorsv1beta1.MultiClusterHub{
+	mch := &operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1beta1.MultiClusterHubSpec{
+		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "test",
-			Mongo:           operatorsv1beta1.Mongo{},
+			Mongo:           operatorsv1.Mongo{},
 			NodeSelector: map[string]string{
 				"test": "test",
 			},
@@ -49,7 +49,7 @@ func TestValidateDeployment(t *testing.T) {
 	dep5.Spec.Replicas = new(int32)
 
 	type args struct {
-		m   *operatorsv1beta1.MultiClusterHub
+		m   *operatorsv1.MultiClusterHub
 		dep *appsv1.Deployment
 	}
 	tests := []struct {
