@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/mcm"
@@ -42,7 +42,7 @@ func Test_ensureDeployment(t *testing.T) {
 
 	tests := []struct {
 		Name       string
-		MCH        *operatorsv1beta1.MultiClusterHub
+		MCH        *operatorsv1.MultiClusterHub
 		Deployment *appsv1.Deployment
 		Result     error
 	}{
@@ -116,7 +116,7 @@ func Test_ensureService(t *testing.T) {
 
 	tests := []struct {
 		Name    string
-		MCH     *operatorsv1beta1.MultiClusterHub
+		MCH     *operatorsv1.MultiClusterHub
 		Service *corev1.Service
 		Result  error
 	}{
@@ -181,7 +181,7 @@ func Test_ensureSecret(t *testing.T) {
 
 	tests := []struct {
 		Name   string
-		MCH    *operatorsv1beta1.MultiClusterHub
+		MCH    *operatorsv1.MultiClusterHub
 		Secret *corev1.Secret
 		Result error
 	}{
@@ -233,7 +233,7 @@ func Test_ensureChannel(t *testing.T) {
 
 	tests := []struct {
 		Name    string
-		MCH     *operatorsv1beta1.MultiClusterHub
+		MCH     *operatorsv1.MultiClusterHub
 		Channel *unstructured.Unstructured
 		Result  error
 	}{
@@ -282,7 +282,7 @@ func Test_ensureSubscription(t *testing.T) {
 
 	tests := []struct {
 		Name         string
-		MCH          *operatorsv1beta1.MultiClusterHub
+		MCH          *operatorsv1.MultiClusterHub
 		Subscription *unstructured.Unstructured
 		Result       error
 	}{
@@ -390,7 +390,7 @@ func Test_ensureClusterManager(t *testing.T) {
 
 	tests := []struct {
 		Name           string
-		MCH            *operatorsv1beta1.MultiClusterHub
+		MCH            *operatorsv1.MultiClusterHub
 		ClusterManager *unstructured.Unstructured
 		Result         error
 	}{

@@ -88,7 +88,7 @@ rules:
   - "authorization.k8s.io"
   - "config.openshift.io"
   - "mcm.ibm.com"
-  - "operators.open-cluster-management.io"
+  - "operator.open-cluster-management.io"
   - "rbac.authorization.k8s.io"
   resources:
   - apiservices
@@ -115,7 +115,7 @@ rules:
   - "authorization.k8s.io"
   - "config.openshift.io"
   - "mcm.ibm.com"
-  - "operators.open-cluster-management.io"
+  - "operator.open-cluster-management.io"
   - "rbac.authorization.k8s.io"
   - "storage.k8s.io"
   resources:
@@ -141,7 +141,7 @@ rules:
   - "apps"
   - "mcm.ibm.com"
   - "monitoring.coreos.com"
-  - "operators.open-cluster-management.io"
+  - "operator.open-cluster-management.io"
   resources:
   - deployments
   - deployments/finalizers

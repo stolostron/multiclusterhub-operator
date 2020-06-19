@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -62,7 +62,7 @@ var (
 )
 
 // CertManagerNS returns the namespace to deploy cert manager objects
-func CertManagerNS(m *operatorsv1beta1.MultiClusterHub) string {
+func CertManagerNS(m *operatorsv1.MultiClusterHub) string {
 	if m.Spec.SeparateCertificateManagement {
 		return CertManagerNamespace
 	}
@@ -115,7 +115,7 @@ func CoreToUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) 
 }
 
 // MchIsValid Checks if the optional default parameters need to be set
-func MchIsValid(m *operatorsv1beta1.MultiClusterHub) bool {
+func MchIsValid(m *operatorsv1.MultiClusterHub) bool {
 	invalid := m.Spec.Mongo.Storage == "" ||
 		m.Spec.Mongo.StorageClass == "" ||
 		m.Spec.Etcd.Storage == "" ||
@@ -127,7 +127,7 @@ func MchIsValid(m *operatorsv1beta1.MultiClusterHub) bool {
 
 // DefaultReplicaCount returns an integer corresponding to the default number of replicas
 // for HA or non-HA modes
-func DefaultReplicaCount(mch *operatorsv1beta1.MultiClusterHub) int {
+func DefaultReplicaCount(mch *operatorsv1.MultiClusterHub) int {
 	if mch.Spec.Failover {
 		return 3
 	}
@@ -176,7 +176,7 @@ func DistributePods(key string, value string) *corev1.Affinity {
 }
 
 //GetImagePullPolicy returns either pull policy from CR overrides or default of Always
-func GetImagePullPolicy(m *operatorsv1beta1.MultiClusterHub) v1.PullPolicy {
+func GetImagePullPolicy(m *operatorsv1.MultiClusterHub) v1.PullPolicy {
 	if m.Spec.Overrides.ImagePullPolicy == "" {
 		return corev1.PullAlways
 	}
@@ -199,7 +199,7 @@ func FormatSSLCiphers(ciphers []string) string {
 }
 
 // IsPaused returns true if the multiclusterhub instance is labeled as paused, and false otherwise
-func IsPaused(instance *operatorsv1beta1.MultiClusterHub) bool {
+func IsPaused(instance *operatorsv1.MultiClusterHub) bool {
 	a := instance.GetAnnotations()
 	if a == nil {
 		return false

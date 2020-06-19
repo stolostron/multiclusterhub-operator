@@ -3,12 +3,12 @@
 package mcm
 
 import (
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-func ClusterManager(m *operatorsv1beta1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
+func ClusterManager(m *operatorsv1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
 
 	cm := &unstructured.Unstructured{
 		Object: map[string]interface{}{

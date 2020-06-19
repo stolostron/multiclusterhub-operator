@@ -78,7 +78,7 @@ update-image:
 	docker push quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
 
 crd:
-	operator-sdk generate crds --crd-version=v1beta1 
+	operator-sdk generate crds --crd-version=v1beta1
 
 # regenerate CSV
 csv:
@@ -86,7 +86,7 @@ csv:
 
 # apply CR
 cr:
-	yq w  deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml 'spec.imagePullSecret' "quay-secret" | oc apply -f -
+	yq w  deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml 'spec.imagePullSecret' "quay-secret" | oc apply -f -
 
 og:
 	oc apply -f build/operatorgroup.yaml
@@ -101,7 +101,7 @@ subscriptions:
 
 # run operator locally outside the cluster
 local-install: ns secrets og subscriptions regop
-	oc apply -f deploy/crds/operators.open-cluster-management.io_multiclusterhubs_crd.yaml
+	oc apply -f deploy/crds/operator.open-cluster-management.io_multiclusterhubs_crd.yaml
 	OPERATOR_NAME=multiclusterhub-operator \
 	TEMPLATES_PATH="$(shell pwd)/templates" \
 	MANIFESTS_PATH="$(shell pwd)/image-manifests" \
@@ -109,10 +109,10 @@ local-install: ns secrets og subscriptions regop
 
 # run as a Deployment inside the cluster
 in-cluster-install: ns secrets og update-image subscriptions regop
-	oc apply -f deploy/crds/operators.open-cluster-management.io_multiclusterhubs_crd.yaml
+	oc apply -f deploy/crds/operator.open-cluster-management.io_multiclusterhubs_crd.yaml
 	yq w -i deploy/kustomization.yaml 'images(name==multiclusterhub-operator).newTag' "${VERSION}"
 	oc apply -k deploy
-	# oc apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml
+	# oc apply -f deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml
 
 # creates a configmap index and catalogsource that it subscribes to
 cm-install: ns secrets og csv update-image regop

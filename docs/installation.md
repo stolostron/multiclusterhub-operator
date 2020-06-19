@@ -75,7 +75,7 @@ Once the operator is installed in the cluster, initiate an installation by creat
 ```bash
 make cr
 ```
-> To customize the instance, first modify the spec in `deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml`.
+> To customize the instance, first modify the spec in `deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml`.
 
 ## Cleanup
 Delete multiclusterhub instance if it exists
