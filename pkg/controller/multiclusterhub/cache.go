@@ -3,7 +3,7 @@
 package multiclusterhub
 
 import (
-	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/manifest"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 )

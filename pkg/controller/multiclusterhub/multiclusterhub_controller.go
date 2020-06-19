@@ -32,7 +32,7 @@ import (
 
 	"github.com/go-logr/logr"
 	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis/apps/v1"
-	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/deploying"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
