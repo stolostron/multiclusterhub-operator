@@ -19,9 +19,12 @@ func init() {
 }
 
 var _ = AfterSuite(func() {
-	By("Deleting ACM Subscription")
+	By("Deleting ACM Subscriptions")
 	// Delete Subscription
 	err := utils.DynamicKubeClient.Resource(utils.GVRSub).Namespace(utils.MCHNamespace).Delete(context.TODO(), utils.ACMSubscriptionName, metav1.DeleteOptions{})
+	Expect(err).Should(BeNil())
+	// Delete ETCD Sub
+	err = utils.DynamicKubeClient.Resource(utils.GVRSub).Namespace(utils.MCHNamespace).Delete(context.TODO(), utils.ETCDSubscriptionName, metav1.DeleteOptions{})
 	Expect(err).Should(BeNil())
 
 	// Delete CSVs
