@@ -5,7 +5,7 @@ package subscription
 import (
 	"bytes"
 
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,7 +26,7 @@ type Subscription struct {
 }
 
 // newSubscription creates a new instance of an unstructured open-cluster-management.io Subscription object
-func newSubscription(m *operatorsv1beta1.MultiClusterHub, s *Subscription) *unstructured.Unstructured {
+func newSubscription(m *operatorsv1.MultiClusterHub, s *Subscription) *unstructured.Unstructured {
 	sub := &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": "apps.open-cluster-management.io/v1",
@@ -86,7 +86,7 @@ func Validate(found *unstructured.Unstructured, want *unstructured.Unstructured)
 	return nil, false
 }
 
-func imageSuffix(m *operatorsv1beta1.MultiClusterHub) (s string) {
+func imageSuffix(m *operatorsv1.MultiClusterHub) (s string) {
 	s = m.Spec.Overrides.ImageTagSuffix
 	if s != "" {
 		s = "-" + s
@@ -94,7 +94,7 @@ func imageSuffix(m *operatorsv1beta1.MultiClusterHub) (s string) {
 	return
 }
 
-func networkVersion(m *operatorsv1beta1.MultiClusterHub) (ipv string) {
+func networkVersion(m *operatorsv1.MultiClusterHub) (ipv string) {
 	if m.Spec.IPv6 {
 		return "ipv6"
 	}

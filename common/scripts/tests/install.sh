@@ -99,10 +99,10 @@ make cm-install
 echo ""
 echo "Operator online. MultiClusterHub CR applied."
 
-while [[ $_output != "multiclusterhub.operators.open-cluster-management.io/multiclusterhub created" ]] # While string is different or empty...
+while [[ $_output != "multiclusterhub.operator.open-cluster-management.io/multiclusterhub created" ]] # While string is different or empty...
 do
     echo "Waiting for Operator to come online ..."
-    _output=$(oc apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml 2>/dev/null)
+    _output=$(oc apply -f deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml 2>/dev/null)
     sleep 10
 done
 

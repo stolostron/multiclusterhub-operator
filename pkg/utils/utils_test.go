@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -123,27 +123,27 @@ func TestContainsMap(t *testing.T) {
 }
 
 func TestMchIsValid(t *testing.T) {
-	validMCH := &operatorsv1beta1.MultiClusterHub{
+	validMCH := &operatorsv1.MultiClusterHub{
 		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1beta1.MultiClusterHubSpec{
+		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "test",
-			Mongo: operatorsv1beta1.Mongo{
+			Mongo: operatorsv1.Mongo{
 				Storage:      "mongoStorage",
 				StorageClass: "mongoStorageClass",
 			},
-			Etcd: operatorsv1beta1.Etcd{
+			Etcd: operatorsv1.Etcd{
 				Storage:      "etcdStorage",
 				StorageClass: "etcdStorageClass",
 			},
-			Ingress: operatorsv1beta1.IngressSpec{
+			Ingress: operatorsv1.IngressSpec{
 				SSLCiphers: []string{"foo", "bar", "baz"},
 			},
 		},
 	}
 
 	type args struct {
-		m *operatorsv1beta1.MultiClusterHub
+		m *operatorsv1.MultiClusterHub
 	}
 	tests := []struct {
 		name string
@@ -157,7 +157,7 @@ func TestMchIsValid(t *testing.T) {
 		},
 		{
 			"Empty object",
-			args{&operatorsv1beta1.MultiClusterHub{}},
+			args{&operatorsv1.MultiClusterHub{}},
 			false,
 		},
 	}
@@ -179,10 +179,10 @@ func TestDistributePods(t *testing.T) {
 }
 
 func TestGetImagePullPolicy(t *testing.T) {
-	noPullPolicyMCH := &operatorsv1beta1.MultiClusterHub{}
-	pullPolicyMCH := &operatorsv1beta1.MultiClusterHub{
-		Spec: operatorsv1beta1.MultiClusterHubSpec{
-			Overrides: operatorsv1beta1.Overrides{ImagePullPolicy: v1.PullIfNotPresent},
+	noPullPolicyMCH := &operatorsv1.MultiClusterHub{}
+	pullPolicyMCH := &operatorsv1.MultiClusterHub{
+		Spec: operatorsv1.MultiClusterHubSpec{
+			Overrides: operatorsv1.Overrides{ImagePullPolicy: v1.PullIfNotPresent},
 		},
 	}
 
@@ -201,14 +201,14 @@ func TestGetImagePullPolicy(t *testing.T) {
 }
 
 func TestDefaultReplicaCount(t *testing.T) {
-	mchDefault := &operatorsv1beta1.MultiClusterHub{}
-	mchNonHA := &operatorsv1beta1.MultiClusterHub{
-		Spec: operatorsv1beta1.MultiClusterHubSpec{
+	mchDefault := &operatorsv1.MultiClusterHub{}
+	mchNonHA := &operatorsv1.MultiClusterHub{
+		Spec: operatorsv1.MultiClusterHubSpec{
 			Failover: false,
 		},
 	}
-	mchHA := &operatorsv1beta1.MultiClusterHub{
-		Spec: operatorsv1beta1.MultiClusterHubSpec{
+	mchHA := &operatorsv1.MultiClusterHub{
+		Spec: operatorsv1.MultiClusterHubSpec{
 			Failover: true,
 		},
 	}
@@ -257,14 +257,14 @@ func TestFormatSSLCiphers(t *testing.T) {
 
 func TestIsPaused(t *testing.T) {
 	t.Run("Unpaused MCH", func(t *testing.T) {
-		mch := &operatorsv1beta1.MultiClusterHub{}
+		mch := &operatorsv1.MultiClusterHub{}
 		want := false
 		if got := IsPaused(mch); got != want {
 			t.Errorf("IsPaused() = %v, want %v", got, want)
 		}
 	})
 	t.Run("Paused MCH", func(t *testing.T) {
-		mch := &operatorsv1beta1.MultiClusterHub{
+		mch := &operatorsv1.MultiClusterHub{
 			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{AnnotationMCHPause: "true"}},
 		}
 		want := true
@@ -273,7 +273,7 @@ func TestIsPaused(t *testing.T) {
 		}
 	})
 	t.Run("Pause label false MCH", func(t *testing.T) {
-		mch := &operatorsv1beta1.MultiClusterHub{
+		mch := &operatorsv1.MultiClusterHub{
 			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{AnnotationMCHPause: "false"}},
 		}
 		want := false

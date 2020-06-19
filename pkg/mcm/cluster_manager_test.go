@@ -5,12 +5,12 @@ package mcm
 import (
 	"testing"
 
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 )
 
 func TestClusterManager(t *testing.T) {
 
-	empty := &operatorsv1beta1.MultiClusterHub{}
+	empty := &operatorsv1.MultiClusterHub{}
 
 	imageOverrides := map[string]string{
 		"registration": "quay.io/open-cluster-management/registration@sha256:fe95bca419976ca8ffe608bc66afcead6ef333b863f22be55df57c89ded75dda",

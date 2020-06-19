@@ -5,16 +5,16 @@ package mcm
 import (
 	"testing"
 
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestControllerDeployment(t *testing.T) {
-	empty := &operatorsv1beta1.MultiClusterHub{
+	empty := &operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1beta1.MultiClusterHubSpec{
+		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "",
-			Mongo:           operatorsv1beta1.Mongo{},
+			Mongo:           operatorsv1.Mongo{},
 		},
 	}
 	ovr := map[string]string{}
@@ -23,9 +23,9 @@ func TestControllerDeployment(t *testing.T) {
 		_ = ControllerDeployment(empty, ovr)
 	})
 
-	essentialsOnly := &operatorsv1beta1.MultiClusterHub{
+	essentialsOnly := &operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec:       operatorsv1beta1.MultiClusterHubSpec{},
+		Spec:       operatorsv1.MultiClusterHubSpec{},
 	}
 	t.Run("MCH with only required values", func(t *testing.T) {
 		_ = ControllerDeployment(essentialsOnly, ovr)
