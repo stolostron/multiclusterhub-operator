@@ -96,7 +96,7 @@ func (GenerationChangedPredicate) Update(e event.UpdateEvent) bool {
 	}
 
 	if !utils.AnnotationsMatch(e.MetaOld.GetAnnotations(), e.MetaNew.GetAnnotations()) {
-		log.Info("Metadata annotations have changed", "event", e)
+		log.Info("Metadata annotations have changed")
 		return true
 	}
 
