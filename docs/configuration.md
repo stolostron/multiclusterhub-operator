@@ -20,8 +20,6 @@ spec:
 
 ### Specify ingress SSL ciphers to support
 
-> Note: change $cluster_name to the EtcdCluster's name.
-
 ```yaml
 spec:
   ingress:
