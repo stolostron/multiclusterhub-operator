@@ -6,7 +6,8 @@ import (
 	"os"
 	"testing"
 
-	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 )
 
 func TestGetImageOverrideType(t *testing.T) {
@@ -18,7 +19,7 @@ func TestGetImageOverrideType(t *testing.T) {
 		}
 	})
 
-	mch.Spec.Overrides.ImageTagSuffix = "foo"
+	mch.SetAnnotations(map[string]string{utils.AnnotationSuffix: "foo"})
 	t.Run("Suffix format", func(t *testing.T) {
 		want := Suffix
 		if got := GetImageOverrideType(mch); got != want {
@@ -69,10 +70,10 @@ func Test_buildFullImageReference(t *testing.T) {
 	mch1 := mch.DeepCopy()
 
 	mch2 := mch.DeepCopy()
-	mch2.Spec.Overrides.ImageRepository = "foo.io/bar"
+	mch2.SetAnnotations(map[string]string{utils.AnnotationImageRepo: "foo.io/bar"})
 
 	mch3 := mch.DeepCopy()
-	mch3.Spec.Overrides.ImageTagSuffix = "baz"
+	mch3.SetAnnotations(map[string]string{utils.AnnotationSuffix: "baz"})
 
 	type args struct {
 		mch *operatorsv1.MultiClusterHub

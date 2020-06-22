@@ -8,8 +8,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
-	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 	netv1 "github.com/openshift/api/config/v1"
 	corev1 "k8s.io/api/core/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -333,7 +332,7 @@ func getTestReconciler(m *operatorsv1.MultiClusterHub) (*ReconcileMultiClusterHu
 	if err := apixv1.AddToScheme(s); err != nil {
 		return nil, fmt.Errorf("Could not add CRDs to test scheme")
 	}
-	s.AddKnownTypes(v1.SchemeGroupVersion, m)
+	s.AddKnownTypes(operatorsv1.SchemeGroupVersion, m)
 
 	// Create a fake client to mock API calls.
 	cl := fake.NewFakeClient(objs...)
