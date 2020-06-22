@@ -1,9 +1,9 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: multiclusterhubs.operators.open-cluster-management.io
+  name: multiclusterhubs.operator.open-cluster-management.io
 spec:
-  group: operators.open-cluster-management.io
+  group: operator.open-cluster-management.io
   names:
     kind: MultiClusterHub
     listKind: MultiClusterHubList
@@ -316,8 +316,8 @@ spec:
               type: string
           type: object
       type: object
-  version: v1beta1
+  version: v1
   versions:
-  - name: v1beta1
+  - name: v1
     served: true
     storage: true

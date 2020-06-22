@@ -55,6 +55,10 @@ install:
 uninstall:
 	bash common/scripts/uninstall.sh
 
+## Install Registration-Operator Hub
+regop:
+	@bash ./common/scripts/install_regop.sh
+
 # create secrets for pulling images
 secrets: 
 	@oc create secret docker-registry multiclusterhub-operator-pull-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
@@ -74,7 +78,7 @@ update-image:
 	docker push quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
 
 crd:
-	operator-sdk generate crds --crd-version=v1beta1 
+	operator-sdk generate crds --crd-version=v1beta1
 
 # regenerate CSV
 csv:
@@ -82,41 +86,41 @@ csv:
 
 # apply CR
 cr:
-	kubectl apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml
+	yq w  deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml 'spec.imagePullSecret' "quay-secret" | oc apply -f -
 
 og:
-	kubectl apply -f build/operatorgroup.yaml
+	oc apply -f build/operatorgroup.yaml
 
 ns:
-	kubectl apply -f build/namespace.yaml
+	oc apply -f build/namespace.yaml
 	oc project open-cluster-management
 
 # apply subscriptions normally created by OLM
 subscriptions:
-	kubectl apply -k build/subscriptions
+	oc apply -k build/subscriptions
 
 # run operator locally outside the cluster
-local-install: ns secrets og subscriptions
-	kubectl apply -f deploy/crds/operators.open-cluster-management.io_multiclusterhubs_crd.yaml
+local-install: ns secrets og subscriptions regop
+	oc apply -f deploy/crds/operator.open-cluster-management.io_multiclusterhubs_crd.yaml
 	OPERATOR_NAME=multiclusterhub-operator \
 	TEMPLATES_PATH="$(shell pwd)/templates" \
 	MANIFESTS_PATH="$(shell pwd)/image-manifests" \
 	operator-sdk18 run local --watch-namespace=open-cluster-management --kubeconfig=$(KUBECONFIG)
 
 # run as a Deployment inside the cluster
-in-cluster-install: update-image ns secrets og subscriptions
-	kubectl apply -f deploy/crds/operators.open-cluster-management.io_multiclusterhubs_crd.yaml
+in-cluster-install: ns secrets og update-image subscriptions regop
+	oc apply -f deploy/crds/operator.open-cluster-management.io_multiclusterhubs_crd.yaml
 	yq w -i deploy/kustomization.yaml 'images(name==multiclusterhub-operator).newTag' "${VERSION}"
-	kubectl apply -k deploy
-	# kubectl apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml
+	oc apply -k deploy
+	# oc apply -f deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml
 
 # creates a configmap index and catalogsource that it subscribes to
-cm-install: update-image csv ns secrets og 
+cm-install: ns secrets og csv update-image regop
 	bash common/scripts/generate-cm-index.sh ${VERSION} ${REGISTRY}
-	kubectl apply -k build/configmap-install
+	oc apply -k build/configmap-install
 
 # generates an index image and catalogsource that serves it
-index-install: update-image csv ns secrets og
-	kubectl patch serviceaccount default -n open-cluster-management -p '{"imagePullSecrets": [{"name": "quay-secret"}]}'
+index-install: ns secrets og csv update-image regop
+	oc patch serviceaccount default -n open-cluster-management -p '{"imagePullSecrets": [{"name": "quay-secret"}]}'
 	bash common/scripts/generate-index.sh ${VERSION} ${REGISTRY}
-	kubectl apply -k build/index-install
+	oc apply -k build/index-install

@@ -10,12 +10,6 @@
 
 # 1. Check Variables Are Defined
 
-force_flag=$1
-force=false
-if [[ "$force_flag" == "-f" ]] || [[ "$force_flag" == "--force" ]]; then
-    force=true
-fi
-
 if [ -z ${GITHUB_USER+x} ]; then
     echo "Define variable - GITHUB_USER to avoid being prompted"
     while [[ $GITHUB_USER == '' ]] # While string is different or empty...
@@ -100,30 +94,15 @@ echo ""
 
 ## 4. Build & Install Operator
 
-if [[ "$force" != "true" ]]; then
-    echo ""
-    echo "Ensure the file(s) below are correctly configured -"
-    echo ""
-    echo "- 'deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml'"
-    echo "-- Ensure 'spec.overrides.imageTagSuffix' is accurately set. (Ex- SNAPSHOT-YYYY-MM-DD-hh-mm-ss)."
-    echo "-- Apply any changes to the CR if necessary"
-    echo ""
-
-    while [[ $_Done != 'done' ]] # While string is different or empty...
-    do
-        read -p "Enter 'done' when changes are completed: " _Done
-    done
-fi
-
 echo "Beginning installation ..."
 make cm-install
 echo ""
 echo "Operator online. MultiClusterHub CR applied."
 
-while [[ $_output != "multiclusterhub.operators.open-cluster-management.io/multiclusterhub created" ]] # While string is different or empty...
+while [[ $_output != "multiclusterhub.operator.open-cluster-management.io/multiclusterhub created" ]] # While string is different or empty...
 do
     echo "Waiting for Operator to come online ..."
-    _output=$(oc apply -f deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml 2>/dev/null)
+    _output=$(oc apply -f deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml 2>/dev/null)
     sleep 10
 done
 

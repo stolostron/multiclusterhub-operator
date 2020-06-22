@@ -5,15 +5,13 @@ metadata:
     alm-examples: |-
       [
         {
-          "apiVersion": "operators.open-cluster-management.io/v1beta1",
+          "apiVersion": "operator.open-cluster-management.io/v1",
           "kind": "MultiClusterHub",
           "metadata": {
             "name": "multiclusterhub",
             "namespace": "open-cluster-management"
           },
-          "spec": {
-            "imagePullSecret": "quay-secret"
-          }
+          "spec": {}
         }
       ]
     capabilities: Basic Install
@@ -33,8 +31,8 @@ spec:
         MultiCluster Hub
       displayName: MultiClusterHub Operator
       kind: MultiClusterHub
-      name: multiclusterhubs.operators.open-cluster-management.io
-      version: v1beta1
+      name: multiclusterhubs.operator.open-cluster-management.io
+      version: v1
     required:
     - description: Represent a helm chart repository
       displayName: Channel
@@ -160,7 +158,7 @@ spec:
           - authorization.k8s.io
           - config.openshift.io
           - mcm.ibm.com
-          - operators.open-cluster-management.io
+          - operator.open-cluster-management.io
           - rbac.authorization.k8s.io
           resources:
           - apiservices
@@ -186,7 +184,7 @@ spec:
           - authorization.k8s.io
           - config.openshift.io
           - mcm.ibm.com
-          - operators.open-cluster-management.io
+          - operator.open-cluster-management.io
           - rbac.authorization.k8s.io
           - storage.k8s.io
           resources:
@@ -211,7 +209,7 @@ spec:
           - apps
           - mcm.ibm.com
           - monitoring.coreos.com
-          - operators.open-cluster-management.io
+          - operator.open-cluster-management.io
           resources:
           - deployments
           - deployments/finalizers
