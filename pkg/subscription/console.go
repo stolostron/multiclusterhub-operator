@@ -3,7 +3,7 @@
 package subscription
 
 import (
-	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -21,7 +21,7 @@ func Console(m *operatorsv1.MultiClusterHub, overrides map[string]string, ingres
 				"replicaCount": utils.DefaultReplicaCount(m),
 				"nodeSelector": m.Spec.NodeSelector,
 				"name":         m.Name,
-				"namespace":	m.Namespace,
+				"namespace":    m.Namespace,
 			},
 			"global": map[string]interface{}{
 				"imageOverrides": overrides,

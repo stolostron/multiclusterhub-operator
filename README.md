@@ -4,7 +4,7 @@ The MultiCusterHub operator manages the install of Open Cluster Management (OCM)
 
 ## Quick Install
 
-For a standard installation of Open Cluster Management, follow the instructions in the [deploy repo][deploy]. To install directly from this repository, see the [installation guide][install_guide].
+For a standard installation of Open Cluster Management, follow the instructions in the [deploy repo][deploy]. To install directly from this repository, see the [installation guide][install_guide]. Example configurations are given in the [configuration guide][config_guide].
 
 ## Useful Make Targets
 
@@ -27,4 +27,5 @@ kubectl annotate mch <mch-name> mch-pause=false --overwrite
 ```
 
 [install_guide]: /docs/installation.md
+[config_guide]: /docs/configuration.md
 [deploy]: https://github.com/open-cluster-management/deploy
