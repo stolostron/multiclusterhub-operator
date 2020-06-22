@@ -34,6 +34,9 @@ spec:
         spec:
           description: MultiClusterHubSpec defines the desired state of MultiClusterHub
           properties:
+            customCAConfigmap:
+              description: Configuration options for custom CA
+              type: string
             etcd:
               description: Spec of Etcd
               properties:

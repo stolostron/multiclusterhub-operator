@@ -5,3 +5,4 @@ metadata:
   namespace: open-cluster-management
 spec:
   imagePullSecret: quay-secret
+  customCAConfigmap: example-config

@@ -12,6 +12,7 @@ metadata:
             "namespace": "open-cluster-management"
           },
           "spec": {
+            "customCAConfigmap": "example-config",
             "imagePullSecret": "quay-secret"
           }
         }
