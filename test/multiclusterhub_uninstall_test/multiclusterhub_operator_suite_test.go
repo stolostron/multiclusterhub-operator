@@ -21,10 +21,21 @@ func init() {
 var _ = AfterSuite(func() {
 	By("Deleting ACM Subscriptions")
 	// Delete Subscription
-	err := utils.DynamicKubeClient.Resource(utils.GVRSub).Namespace(utils.MCHNamespace).Delete(context.TODO(), utils.ACMSubscriptionName, metav1.DeleteOptions{})
+	subLink := utils.DynamicKubeClient.Resource(utils.GVRSub).Namespace(utils.MCHNamespace)
+
+	err := subLink.Delete(context.TODO(), utils.ACMSubscriptionName, metav1.DeleteOptions{})
 	Expect(err).Should(BeNil())
-	// Delete ETCD Sub
+
+	// Delete ETCD Sub (Whether it is single namespace or clusterwide)
 	err = utils.DynamicKubeClient.Resource(utils.GVRSub).Namespace(utils.MCHNamespace).Delete(context.TODO(), utils.ETCDSubscriptionName, metav1.DeleteOptions{})
+	subList, err := subLink.List(context.TODO(), metav1.ListOptions{})
+	Expect(err).Should(BeNil())
+
+	for _, sub := range subList.Items {
+		if strings.Contains(sub.GetName(), "etcd") {
+			err = subLink.Delete(context.TODO(), sub.GetName(), metav1.DeleteOptions{})
+		}
+	}
 	Expect(err).Should(BeNil())
 
 	// Delete CSVs

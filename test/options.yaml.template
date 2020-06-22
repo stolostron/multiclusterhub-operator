@@ -1,0 +1,9 @@
+options:
+  hub:
+    apiserver: BASE_DOMAIN
+    token: TOKEN ## A token OR both a user and password are required.
+    user: BASE_USER
+    password: BASE_PASSWORD
+  quay:
+    user: DOCKER_USER
+    pass: DOCKER_PASS

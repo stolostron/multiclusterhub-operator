@@ -52,11 +52,24 @@ test: component/test/unit
 
 ## Run the installer functional tests
 functional-test-install:
-	ginkgo -tags functional -v --slowSpecThreshold=10 test/multiclusterhub_install_test
+	docker run \
+		-e TEST_MODE="install" \
+		--volume $(shell pwd)/test/options.yaml:/resources/options.yaml \
+		$(REGISTRY)/$(IMG)-tests:$(VERSION)
+	# ginkgo -tags functional -v --slowSpecThreshold=10 test/multiclusterhub_install_test
 
 ## Run the uninstall functional tests
 functional-test-uninstall:
-	ginkgo -tags functional -v --slowSpecThreshold=10 test/multiclusterhub_uninstall_test
+	docker run \
+		-e TEST_MODE="uninstall" \
+		--volume $(shell pwd)/test/options.yaml:/resources/options.yaml \
+		$(REGISTRY)/$(IMG)-tests:$(VERSION)
+	# ginkgo -tags functional -v --slowSpecThreshold=10 test/multiclusterhub_uninstall_test
+
+## Build the MCH functional test image
+test-image:
+	@echo "Building $(REGISTRY)/$(IMG)-tests:$(VERSION)"
+	docker build . -f build/Dockerfile.test -t $(REGISTRY)/$(IMG)-tests:$(VERSION)
 
 ## Build the MultiClusterHub operator image
 image:

@@ -24,6 +24,7 @@ build-harness-extensions/
 
 test/out
 test/coverage
+test/options.yaml
 
 # override build harness vendoring
 !vbh/.build-harness-vendorized
