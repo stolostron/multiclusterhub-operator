@@ -23,8 +23,9 @@ spec:
 ```yaml
 spec:
   ingress:
-  - "ECDHE-ECDSA-AES128-GCM-SHA256"
-  - "ECDHE-RSA-AES128-GCM-SHA256"
+    sslCiphers:
+    - "ECDHE-ECDSA-AES128-GCM-SHA256"
+    - "ECDHE-RSA-AES128-GCM-SHA256"
 ```
 
 ### Install Cert Manager in its own namespace
