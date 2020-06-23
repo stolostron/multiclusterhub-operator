@@ -105,7 +105,7 @@ local-install: ns secrets og subscriptions regop
 	OPERATOR_NAME=multiclusterhub-operator \
 	TEMPLATES_PATH="$(shell pwd)/templates" \
 	MANIFESTS_PATH="$(shell pwd)/image-manifests" \
-	operator-sdk18 run local --watch-namespace=open-cluster-management --kubeconfig=$(KUBECONFIG)
+	operator-sdk run local --watch-namespace=open-cluster-management --kubeconfig=$(KUBECONFIG)
 
 # run as a Deployment inside the cluster
 in-cluster-install: ns secrets og update-image subscriptions regop

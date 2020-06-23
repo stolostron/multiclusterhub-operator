@@ -204,12 +204,6 @@ spec:
                 imagePullPolicy:
                   description: Pull policy of the MultiCluster hub images
                   type: string
-                imageRepository:
-                  description: Repository of the MultiCluster hub images
-                  type: string
-                imageTagSuffix:
-                  description: ImageTagSuffix of the MultiCluster hub images
-                  type: string
               type: object
             separateCertificateManagement:
               description: Flag to install cert-manager into its own namespace.
