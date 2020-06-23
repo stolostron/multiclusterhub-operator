@@ -12,7 +12,6 @@ rules:
   - "apps"
   - "apps.open-cluster-management.io"
   - "authorization.k8s.io"
-  - "etcd.database.coreos.com"
   - "hive.openshift.io"
   - "mcm.ibm.com"
   - "rbac.authorization.k8s.io"
@@ -25,7 +24,6 @@ rules:
   - configmaps
   - customresourcedefinitions
   - deployments
-  - etcdclusters
   - hiveconfigs
   - mutatingwebhookconfigurations
   - namespaces
@@ -49,7 +47,6 @@ rules:
   - "apps"
   - "apps.open-cluster-management.io"
   - "authorization.k8s.io"
-  - "etcd.database.coreos.com"
   - "hive.openshift.io"
   - "monitoring.coreos.com"
   - "rbac.authorization.k8s.io"
@@ -64,7 +61,6 @@ rules:
   - configmaps
   - customresourcedefinitions
   - deployments
-  - etcdclusters
   - hiveconfigs
   - mutatingwebhookconfigurations
   - namespaces

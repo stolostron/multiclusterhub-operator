@@ -9,7 +9,7 @@ import (
 
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/mcm"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/foundation"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 
@@ -61,8 +61,8 @@ func (r *ReconcileMultiClusterHub) ensureDeployment(m *operatorsv1.MultiClusterH
 	switch found.Name {
 	case helmrepo.HelmRepoName:
 		desired, needsUpdate = helmrepo.ValidateDeployment(m, r.CacheSpec.ImageOverrides, found)
-	case mcm.APIServerName, mcm.ControllerName, mcm.ACMControllerName, mcm.ACMProxyServerName, mcm.WebhookName:
-		desired, needsUpdate = mcm.ValidateDeployment(m, r.CacheSpec.ImageOverrides, found)
+	case foundation.APIServerName, foundation.ControllerName, foundation.ACMControllerName, foundation.ACMProxyServerName, foundation.WebhookName:
+		desired, needsUpdate = foundation.ValidateDeployment(m, r.CacheSpec.ImageOverrides, found)
 	default:
 		dplog.Info("Could not validate deployment; unknown name")
 		return nil, nil
@@ -267,7 +267,7 @@ func (r *ReconcileMultiClusterHub) ensureClusterManager(m *operatorsv1.MultiClus
 	}
 
 	// Validate object based on type
-	updated, needsUpdate := mcm.ValidateClusterManager(found, u)
+	updated, needsUpdate := foundation.ValidateClusterManager(found, u)
 	if needsUpdate {
 		obLog.Info("Updating cluster manager")
 		// Update the resource. Skip on unit test

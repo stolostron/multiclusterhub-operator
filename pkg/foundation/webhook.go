@@ -1,6 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 
-package mcm
+package foundation
 
 import (
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
@@ -13,86 +13,80 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// ACMProxyServerName is the name of the acm proxy server deployment
-const ACMProxyServerName string = "acm-proxyserver"
+// WebhookName is the name of the webhook deployment
+const WebhookName string = "acm-webhook"
 
-// ACMProxyServerDeployment creates the deployment for the acm proxy server
-func ACMProxyServerDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
+// WebhookDeployment creates the deployment for the webhook
+func WebhookDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
 	replicas := getReplicaCount(m)
-	mode := int32(420)
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      ACMProxyServerName,
+			Name:      WebhookName,
 			Namespace: m.Namespace,
-			Labels:    defaultLabels(ACMProxyServerName),
+			Labels:    defaultLabels(WebhookName),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
 			Selector: &metav1.LabelSelector{
-				MatchLabels: defaultLabels(ACMProxyServerName),
+				MatchLabels: defaultLabels(WebhookName),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: defaultLabels(ACMProxyServerName),
+					Labels: defaultLabels(WebhookName),
 				},
 				Spec: corev1.PodSpec{
 					ImagePullSecrets:   []corev1.LocalObjectReference{{Name: m.Spec.ImagePullSecret}},
 					ServiceAccountName: ServiceAccount,
 					NodeSelector:       m.Spec.NodeSelector,
-					Affinity:           utils.DistributePods("app", ACMProxyServerName),
+					Affinity:           utils.DistributePods("app", WebhookName),
 					Volumes: []corev1.Volume{
 						{
-							Name: "klusterlet-certs",
+							Name: "webhook-cert",
 							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{DefaultMode: &mode, SecretName: utils.KlusterletSecretName},
+								Secret: &corev1.SecretVolumeSource{SecretName: "acm-webhook-secret"},
 							},
 						},
 					},
 					Containers: []corev1.Container{{
 						Image:           Image(overrides),
 						ImagePullPolicy: utils.GetImagePullPolicy(m),
-						Name:            ACMProxyServerName,
+						Name:            WebhookName,
 						Args: []string{
-							"/acm-proxyserver",
-							"--secure-port=6443",
-							"--cert-dir=/tmp",
-							"--agent-cafile=/var/run/klusterlet/ca.crt",
-							"--agent-certfile=/var/run/klusterlet/tls.crt",
-							"--agent-keyfile=/var/run/klusterlet/tls.key",
+							"/acm-webhook",
+							"--tls-cert-file=/var/run/acm-webhook/tls.crt",
+							"--tls-private-key-file=/var/run/acm-webhook/tls.key",
 						},
+						Ports: []v1.ContainerPort{{ContainerPort: 8000}},
 						LivenessProbe: &v1.Probe{
 							Handler: v1.Handler{
-								HTTPGet: &v1.HTTPGetAction{
-									Path:   "/healthz",
-									Port:   intstr.FromInt(6443),
-									Scheme: v1.URISchemeHTTPS,
+								Exec: &v1.ExecAction{
+									Command: []string{"ls"},
 								},
 							},
-							InitialDelaySeconds: 2,
-							PeriodSeconds:       10,
+							InitialDelaySeconds: 15,
+							PeriodSeconds:       15,
 						},
 						ReadinessProbe: &v1.Probe{
 							Handler: v1.Handler{
-								HTTPGet: &v1.HTTPGetAction{
-									Path:   "/healthz",
-									Port:   intstr.FromInt(6443),
-									Scheme: v1.URISchemeHTTPS,
+								Exec: &v1.ExecAction{
+									Command: []string{"ls"},
 								},
 							},
-							InitialDelaySeconds: 2,
+							InitialDelaySeconds: 15,
+							PeriodSeconds:       15,
 						},
 						Resources: v1.ResourceRequirements{
 							Requests: v1.ResourceList{
-								v1.ResourceCPU:    resource.MustParse("200m"),
-								v1.ResourceMemory: resource.MustParse("256Mi"),
+								v1.ResourceMemory: resource.MustParse("128Mi"),
+								v1.ResourceCPU:    resource.MustParse("100m"),
 							},
 							Limits: v1.ResourceList{
-								v1.ResourceMemory: resource.MustParse("2048Mi"),
+								v1.ResourceMemory: resource.MustParse("256Mi"),
 							},
 						},
 						VolumeMounts: []corev1.VolumeMount{
-							{Name: "klusterlet-certs", MountPath: "/var/run/klusterlet"},
+							{Name: "webhook-cert", MountPath: "/var/run/acm-webhook"},
 						},
 					}},
 				},
@@ -106,21 +100,19 @@ func ACMProxyServerDeployment(m *operatorsv1.MultiClusterHub, overrides map[stri
 	return dep
 }
 
-// ACMProxyServerService creates a service object for the acm proxy server
-func ACMProxyServerService(m *operatorsv1.MultiClusterHub) *corev1.Service {
+// WebhookService creates a service object for the webhook
+func WebhookService(m *operatorsv1.MultiClusterHub) *corev1.Service {
 	s := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      ACMProxyServerName,
+			Name:      WebhookName,
 			Namespace: m.Namespace,
-			Labels:    defaultLabels(ACMProxyServerName),
+			Labels:    defaultLabels(WebhookName),
 		},
 		Spec: corev1.ServiceSpec{
-			Selector: defaultLabels(ACMProxyServerName),
+			Selector: defaultLabels(WebhookName),
 			Ports: []corev1.ServicePort{{
-				Name:       "secure",
-				Protocol:   corev1.ProtocolTCP,
 				Port:       443,
-				TargetPort: intstr.FromInt(6443),
+				TargetPort: intstr.FromInt(8000),
 			}},
 		},
 	}

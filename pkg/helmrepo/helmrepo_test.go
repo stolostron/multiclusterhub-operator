@@ -17,7 +17,6 @@ func TestDeployment(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "",
-			Mongo:           operatorsv1.Mongo{},
 		},
 	}
 	ovr := map[string]string{}
@@ -59,7 +58,6 @@ func TestValidateDeployment(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "test",
-			Mongo:           operatorsv1.Mongo{},
 			NodeSelector: map[string]string{
 				"test": "test",
 			},

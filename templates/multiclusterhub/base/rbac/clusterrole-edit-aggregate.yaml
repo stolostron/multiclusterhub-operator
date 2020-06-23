@@ -6,13 +6,7 @@ metadata:
   name: mcm-edit-aggregate
 rules:
 - apiGroups: ["mcm.ibm.com"]
-  resources: ["resourceviews", "resourceviews/status", "works", "works/status", "worksets", "worksets/status"]
-  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
-- apiGroups: ["mcm.ibm.com"]
-  resources: ["clusterstatuses", "helmrepos", "helmrepos/status"]
-  verbs: ["get", "list", "watch", "update", "patch"]
-- apiGroups: ["clusterregistry.k8s.io"]
-  resources: ["clusters", "clusters/status"]
+  resources: ["helmrepos", "helmrepos/status"]
   verbs: ["get", "list", "watch", "update", "patch"]
 - apiGroups: ["mcm.ibm.com"]
   resources: ["deployables", "deployables/status", "placementbindings", "placementpolicies", "placementpolicies/status", "deployableoverrides", "deployableoverrides/status", "applicationrelationships", "applicationrelationships/status"]

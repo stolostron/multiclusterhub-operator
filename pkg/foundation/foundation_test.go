@@ -1,6 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 
-package mcm
+package foundation
 
 import (
 	"reflect"
@@ -17,7 +17,6 @@ func TestValidateDeployment(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "test",
-			Mongo:           operatorsv1.Mongo{},
 			NodeSelector: map[string]string{
 				"test": "test",
 			},

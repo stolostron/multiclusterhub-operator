@@ -1,6 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 
-package mcm
+package foundation
 
 import (
 	"testing"
@@ -14,7 +14,6 @@ func TestAcmControllerDeployment(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "",
-			Mongo:           operatorsv1.Mongo{},
 		},
 	}
 

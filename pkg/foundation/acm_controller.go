@@ -1,6 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 
-package mcm
+package foundation
 
 import (
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"

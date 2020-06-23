@@ -81,20 +81,6 @@ func (m *multiClusterHubValidator) validateUpdate(req admission.Request) error {
 		return errors.New("Updating SeparateCertificateManagement is forbidden")
 	}
 
-	if existingMCH.Spec.Etcd.Storage != "" && existingMCH.Spec.Etcd.Storage != newMCH.Spec.Etcd.Storage {
-		return errors.New("Updating Etcd storage is forbidden")
-	}
-	if existingMCH.Spec.Etcd.StorageClass != "" && existingMCH.Spec.Etcd.StorageClass != newMCH.Spec.Etcd.StorageClass {
-		return errors.New("Updating Etcd storageClass is forbidden")
-	}
-
-	if existingMCH.Spec.Mongo.Storage != "" && existingMCH.Spec.Mongo.Storage != newMCH.Spec.Mongo.Storage {
-		return errors.New("Updating Mongo storage is forbidden")
-	}
-	if existingMCH.Spec.Mongo.StorageClass != "" && existingMCH.Spec.Mongo.StorageClass != newMCH.Spec.Mongo.StorageClass {
-		return errors.New("Updating Mongo storageClass is forbidden")
-	}
-
 	if !reflect.DeepEqual(existingMCH.Spec.Hive, newMCH.Spec.Hive) {
 		return errors.New("Hive updates are forbidden")
 	}

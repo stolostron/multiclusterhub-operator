@@ -64,8 +64,8 @@ func Test_cleanupAPIServices(t *testing.T) {
 			Namespace: mch_namespace,
 		},
 		Spec: apiregistrationv1.APIServiceSpec{
-			Group:                 "mcm.ibm.com",
-			Version:               "v1alpha1",
+			Group:                 "proxy.open-cluster-management.io",
+			Version:               "v1beta1",
 			InsecureSkipTLSVerify: true,
 			GroupPriorityMinimum:  1000,
 			VersionPriority:       20,
@@ -138,8 +138,8 @@ func Test_cleanupClusterRoles(t *testing.T) {
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
-				APIGroups: []string{"mcm.ibm.com"},
-				Resources: []string{"clusterjoinrequests"},
+				APIGroups: []string{"cluster.open-cluster-management.io"},
+				Resources: []string{"managedclusters"},
 				Verbs:     []string{"get", "list", "watch", "create"},
 			},
 		},
@@ -287,10 +287,10 @@ func Test_cleanupMutatingWebhooks(t *testing.T) {
 		},
 		Webhooks: []admissionregistrationv1beta1.MutatingWebhook{
 			{
-				Name: "mcm.webhook.admission.cloud.ibm.com",
+				Name: "acm.webhook.admission.open-cluster-management.io",
 				ClientConfig: admissionregistrationv1beta1.WebhookClientConfig{
 					Service: &admissionregistrationv1beta1.ServiceReference{
-						Name: "mcm-webhook",
+						Name: "acm-webhook",
 					},
 				},
 			},

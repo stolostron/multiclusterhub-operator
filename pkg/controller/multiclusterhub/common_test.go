@@ -11,7 +11,7 @@ import (
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/mcm"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/foundation"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -49,7 +49,7 @@ func Test_ensureDeployment(t *testing.T) {
 		{
 			Name:       "Test: EnsureDeployment - APIServer",
 			MCH:        full_mch,
-			Deployment: mcm.APIServerDeployment(full_mch, cacheSpec.ImageOverrides),
+			Deployment: foundation.APIServerDeployment(full_mch, cacheSpec.ImageOverrides),
 			Result:     nil,
 		},
 		{
@@ -61,13 +61,13 @@ func Test_ensureDeployment(t *testing.T) {
 		{
 			Name:       "Test: EnsureDeployment - Webhook",
 			MCH:        full_mch,
-			Deployment: mcm.WebhookDeployment(full_mch, cacheSpec.ImageOverrides),
+			Deployment: foundation.WebhookDeployment(full_mch, cacheSpec.ImageOverrides),
 			Result:     nil,
 		},
 		{
 			Name:       "Test: EnsureDeployment - Webhook",
 			MCH:        full_mch,
-			Deployment: mcm.ControllerDeployment(full_mch, cacheSpec.ImageOverrides),
+			Deployment: foundation.ControllerDeployment(full_mch, cacheSpec.ImageOverrides),
 			Result:     nil,
 		},
 		{
@@ -129,13 +129,13 @@ func Test_ensureService(t *testing.T) {
 		{
 			Name:    "Test: ensureService - APIServer",
 			MCH:     full_mch,
-			Service: mcm.APIServerService(full_mch),
+			Service: foundation.APIServerService(full_mch),
 			Result:  nil,
 		},
 		{
 			Name:    "Test: ensureService - Webhook",
 			MCH:     full_mch,
-			Service: mcm.WebhookService(full_mch),
+			Service: foundation.WebhookService(full_mch),
 			Result:  nil,
 		},
 		{
@@ -185,12 +185,6 @@ func Test_ensureSecret(t *testing.T) {
 		Secret *corev1.Secret
 		Result error
 	}{
-		{
-			Name:   "Test: ensureSecret - Multiclusterhub-repo",
-			MCH:    full_mch,
-			Secret: r.mongoAuthSecret(full_mch),
-			Result: nil,
-		},
 		{
 			Name:   "Test: ensureSecret - Empty secret",
 			MCH:    full_mch,
@@ -335,12 +329,6 @@ func Test_ensureSubscription(t *testing.T) {
 			Result:       nil,
 		},
 		{
-			Name:         "Test: ensureSubscription - Mongo",
-			MCH:          full_mch,
-			Subscription: subscription.MongoDB(full_mch, cacheSpec.ImageOverrides),
-			Result:       nil,
-		},
-		{
 			Name:         "Test: ensureSubscription - RCM",
 			MCH:          full_mch,
 			Subscription: subscription.RCM(full_mch, cacheSpec.ImageOverrides),
@@ -397,7 +385,7 @@ func Test_ensureClusterManager(t *testing.T) {
 		{
 			Name:           "Test: ensureClusterManager - ClusterManager",
 			MCH:            full_mch,
-			ClusterManager: mcm.ClusterManager(full_mch, imageOverrides),
+			ClusterManager: foundation.ClusterManager(full_mch, imageOverrides),
 			Result:         nil,
 		},
 	}

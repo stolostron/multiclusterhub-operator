@@ -1,7 +1,5 @@
 
 resources:
-- clusterrole-bootstrap.yaml
-- clusterrolebinding-bootstrap.yaml
 - serviceaccount-foundation.yaml
 - clusterrole-foundation.yaml
 - clusterrolebinding-foundation.yaml
