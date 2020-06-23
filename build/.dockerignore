@@ -1,2 +1,2 @@
-**/coverage
-**/out
+../test/coverage
+../test/out

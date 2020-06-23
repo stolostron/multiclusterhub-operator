@@ -3,10 +3,12 @@ package multiclusterhub_install_test
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	utils "github.com/open-cluster-management/multicloudhub-operator/test/utils"
 	appsv1 "k8s.io/api/apps/v1"
@@ -18,11 +20,27 @@ import (
 	"k8s.io/klog"
 )
 
-var ()
+var (
+	optionsFile         string
+	baseDomain          string
+	kubeadminUser       string
+	kubeadminCredential string
+	kubeconfig          string
+	reportFile          string
+)
 
 func init() {
 	klog.SetOutput(GinkgoWriter)
 	klog.InitFlags(nil)
+
+	flag.StringVar(&kubeadminUser, "kubeadmin-user", "kubeadmin", "Provide the kubeadmin credential for the cluster under test (e.g. -kubeadmin-user=\"xxxxx\").")
+	flag.StringVar(&kubeadminCredential, "kubeadmin-credential", "",
+		"Provide the kubeadmin credential for the cluster under test (e.g. -kubeadmin-credential=\"xxxxx-xxxxx-xxxxx-xxxxx\").")
+	flag.StringVar(&baseDomain, "base-domain", "", "Provide the base domain for the cluster under test (e.g. -base-domain=\"demo.red-chesterfield.com\").")
+
+	flag.StringVar(&optionsFile, "options", "", "Location of an \"options.yaml\" file to provide input for various tests")
+	flag.StringVar(&reportFile, "report-file", "results.xml", "Provide the path to where the junit results will be printed.")
+
 }
 
 var _ = BeforeSuite(func() {
@@ -90,7 +108,8 @@ var _ = BeforeSuite(func() {
 
 func TestMultiClusterHubOperatorInstall(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "MultiClusterHubOperator Install Suite")
+	junitReporter := reporters.NewJUnitReporter(reportFile)
+	RunSpecsWithDefaultAndCustomReporters(t, "MultiClusterHubOperator Install Suite", []Reporter{junitReporter})
 }
 
 // listAppSubs keeps polling to get the object for timeout seconds

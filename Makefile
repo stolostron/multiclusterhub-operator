@@ -54,7 +54,10 @@ test: component/test/unit
 functional-test-install:
 	docker run \
 		-e TEST_MODE="install" \
-		--volume $(shell pwd)/test/options.yaml:/resources/options.yaml \
+		--network host \
+		--dns 8.8.8.8 \
+ 		--dns 8.8.4.4 \
+		--volume ~/.kube/config:/opt/.kube/config \
 		$(REGISTRY)/$(IMG)-tests:$(VERSION)
 	# ginkgo -tags functional -v --slowSpecThreshold=10 test/multiclusterhub_install_test
 
@@ -62,10 +65,12 @@ functional-test-install:
 functional-test-uninstall:
 	docker run \
 		-e TEST_MODE="uninstall" \
-		--volume $(shell pwd)/test/options.yaml:/resources/options.yaml \
+		--network host \
+		--dns 8.8.8.8 \
+ 		--dns 8.8.4.4 \
+		--volume ~/.kube/config:/opt/.kube/config \
 		$(REGISTRY)/$(IMG)-tests:$(VERSION)
 	# ginkgo -tags functional -v --slowSpecThreshold=10 test/multiclusterhub_uninstall_test
-
 ## Build the MCH functional test image
 test-image:
 	@echo "Building $(REGISTRY)/$(IMG)-tests:$(VERSION)"
