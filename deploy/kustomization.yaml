@@ -4,7 +4,7 @@ images: # updates operator.yaml with the dev image
     newName: quay.io/rhibmcollab/multiclusterhub-operator
     newTag: 2.0.0
 resources:
-  - role.yaml
-  - role_binding.yaml
-  - service_account.yaml
-  - operator.yaml
+- role.yaml
+- role_binding.yaml
+- service_account.yaml
+- operator.yaml
