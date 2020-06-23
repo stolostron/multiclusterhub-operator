@@ -32,7 +32,7 @@ import (
 
 	"github.com/go-logr/logr"
 	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis/apps/v1"
-	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/deploying"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
@@ -67,6 +67,42 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileMultiClusterHub{client: mgr.GetClient(), scheme: mgr.GetScheme()}
 }
 
+// GenerationChangedPredicate implements a default update predicate function on Generation change.
+//
+// This predicate will skip update events that have no change in the object's metadata.generation field.
+// The metadata.generation field of an object is incremented by the API server when writes are made to the spec field of an object.
+// This allows a controller to ignore update events where the spec is unchanged, and only the metadata and/or status fields are changed.
+type GenerationChangedPredicate struct {
+	predicate.Funcs
+}
+
+// Update implements default UpdateEvent filter for validating generation change
+func (GenerationChangedPredicate) Update(e event.UpdateEvent) bool {
+	if e.MetaOld == nil {
+		log.Error(nil, "Update event has no old metadata", "event", e)
+		return false
+	}
+	if e.ObjectOld == nil {
+		log.Error(nil, "Update event has no old runtime object to update", "event", e)
+		return false
+	}
+	if e.ObjectNew == nil {
+		log.Error(nil, "Update event has no new runtime object for update", "event", e)
+		return false
+	}
+	if e.MetaNew == nil {
+		log.Error(nil, "Update event has no new metadata", "event", e)
+		return false
+	}
+
+	if !utils.AnnotationsMatch(e.MetaOld.GetAnnotations(), e.MetaNew.GetAnnotations()) {
+		log.Info("Metadata annotations have changed")
+		return true
+	}
+
+	return e.MetaNew.GetGeneration() != e.MetaOld.GetGeneration()
+}
+
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
@@ -89,7 +125,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to primary resource MultiClusterHub
-	err = c.Watch(&source.Kind{Type: &operatorsv1.MultiClusterHub{}}, &handler.EnqueueRequestForObject{}, predicate.GenerationChangedPredicate{})
+	err = c.Watch(&source.Kind{Type: &operatorsv1.MultiClusterHub{}}, &handler.EnqueueRequestForObject{}, GenerationChangedPredicate{})
 	if err != nil {
 		return err
 	}
@@ -219,8 +255,8 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		r.CacheSpec.ImageOverrides = imageOverrides
 		r.CacheSpec.ManifestVersion = version.Version
 		r.CacheSpec.ImageOverrideType = manifest.GetImageOverrideType(multiClusterHub)
-		r.CacheSpec.ImageRepository = multiClusterHub.Spec.Overrides.ImageRepository
-		r.CacheSpec.ImageSuffix = multiClusterHub.Spec.Overrides.ImageTagSuffix
+		r.CacheSpec.ImageRepository = utils.GetImageRepository(multiClusterHub)
+		r.CacheSpec.ImageSuffix = utils.GetImageSuffix(multiClusterHub)
 	}
 
 	// Do not reconcile objects if this instance of mch is labeled "paused"

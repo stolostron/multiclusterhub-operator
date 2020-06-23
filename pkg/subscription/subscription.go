@@ -5,7 +5,7 @@ package subscription
 import (
 	"bytes"
 
-	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -87,7 +87,7 @@ func Validate(found *unstructured.Unstructured, want *unstructured.Unstructured)
 }
 
 func imageSuffix(m *operatorsv1.MultiClusterHub) (s string) {
-	s = m.Spec.Overrides.ImageTagSuffix
+	s = utils.GetImageSuffix(m)
 	if s != "" {
 		s = "-" + s
 	}
