@@ -80,6 +80,12 @@ var _ = BeforeSuite(func() {
 		}, 45, 1).Should(BeNil())
 		klog.V(1).Info("MCH Operator deployment available")
 	})
+
+	By("Ensuring MCH CR is not yet installed")
+	mchLink := utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace)
+	mchList, err := mchLink.List(context.TODO(), metav1.ListOptions{})
+	Expect(err).To(BeNil())
+	Expect(len(mchList.Items)).Should(BeEquivalentTo(0))
 })
 
 func TestMultiClusterHubOperatorInstall(t *testing.T) {
