@@ -127,7 +127,7 @@ func MchIsValid(m *operatorsv1.MultiClusterHub) bool {
 // for HA or non-HA modes
 func DefaultReplicaCount(mch *operatorsv1.MultiClusterHub) int {
 	if mch.Spec.Failover {
-		return 3
+		return 2
 	}
 	return 1
 }

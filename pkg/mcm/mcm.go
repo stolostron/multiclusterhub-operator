@@ -40,7 +40,7 @@ func defaultLabels(app string) map[string]string {
 
 func getReplicaCount(mch *operatorsv1.MultiClusterHub) int32 {
 	if mch.Spec.Failover {
-		return 3
+		return 2
 	}
 	return 1
 }
