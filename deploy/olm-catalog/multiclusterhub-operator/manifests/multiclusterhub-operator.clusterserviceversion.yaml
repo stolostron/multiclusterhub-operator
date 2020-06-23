@@ -11,10 +11,7 @@ metadata:
             "name": "multiclusterhub",
             "namespace": "open-cluster-management"
           },
-          "spec": {
-            "customCAConfigmap": "example-config",
-            "imagePullSecret": "quay-secret"
-          }
+          "spec": {}
         }
       ]
     capabilities: Basic Install
