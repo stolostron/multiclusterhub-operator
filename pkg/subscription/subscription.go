@@ -43,7 +43,8 @@ func newSubscription(m *operatorsv1.MultiClusterHub, s *Subscription) *unstructu
 				},
 				"packageOverrides": []map[string]interface{}{
 					{
-						"packageName": s.Name,
+						"packageName":  s.Name,
+						"packageAlias": s.Name,
 						"packageOverrides": []map[string]interface{}{
 							{
 								"path":  "spec",
