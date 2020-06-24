@@ -44,37 +44,9 @@ func init() {
 }
 
 var _ = BeforeSuite(func() {
-
-	// Create Resources
-	By("Creating Namespace if needed")
-	namespaces := utils.KubeClient.CoreV1().Namespaces()
-	if _, err := namespaces.Get(context.TODO(), utils.MCHNamespace, metav1.GetOptions{}); err != nil && errors.IsNotFound(err) {
-		ns := utils.NewNamespace(utils.MCHNamespace)
-		Expect(namespaces.Create(context.TODO(), ns, metav1.CreateOptions{})).NotTo(BeNil())
-	}
-	Expect(namespaces.Get(context.TODO(), utils.MCHNamespace, metav1.GetOptions{})).NotTo(BeNil())
-
-	By("Creating OperatorGroup if needed")
-	operatorGroups := utils.DynamicKubeClient.Resource(utils.GVROperatorGroup).Namespace(utils.MCHNamespace)
-	ogList, err := operatorGroups.List(context.TODO(), metav1.ListOptions{})
-	if err != nil || len(ogList.Items) < 1 {
-		utils.CreateNewUnstructured(
-			utils.DynamicKubeClient, utils.GVROperatorGroup, utils.NewOperatorGroup(utils.MCHNamespace), "default", utils.MCHNamespace,
-		)
-	}
-	Expect(operatorGroups.Get(context.TODO(), "default", metav1.GetOptions{})).NotTo(BeNil())
-
-	By("Creating 'multiclusterhub-operator-pull-secret' Secret if needed")
-	secrets := utils.KubeClient.CoreV1().Secrets(utils.MCHNamespace)
-	if _, err := secrets.Get(context.TODO(), utils.MCHPullSecretName, metav1.GetOptions{}); err != nil && errors.IsNotFound(err) {
-		pullSecret := utils.NewPullSecret(utils.MCHPullSecretName, utils.MCHNamespace)
-		Expect(secrets.Create(context.TODO(), pullSecret, metav1.CreateOptions{})).NotTo(BeNil())
-	}
-	Expect(secrets.Get(context.TODO(), utils.MCHPullSecretName, metav1.GetOptions{})).NotTo(BeNil())
-
 	By("Creating ACM Operator Subscription")
 	subscription := utils.DynamicKubeClient.Resource(utils.GVRSub).Namespace(utils.MCHNamespace)
-	_, err = subscription.Get(context.TODO(), utils.ACMSubscriptionName, metav1.GetOptions{})
+	_, err := subscription.Get(context.TODO(), utils.ACMSubscriptionName, metav1.GetOptions{})
 	if err != nil && errors.IsNotFound(err) {
 		acmSub := utils.NewACMSubscription(utils.MCHNamespace)
 		utils.CreateNewUnstructured(utils.DynamicKubeClient, utils.GVRSub, acmSub, utils.ACMSubscriptionName, utils.MCHNamespace)

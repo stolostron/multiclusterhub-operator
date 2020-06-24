@@ -31,8 +31,8 @@ var (
 
 	// GVRMultiClusterHub ...
 	GVRMultiClusterHub = schema.GroupVersionResource{
-		Group:    "operators.open-cluster-management.io",
-		Version:  "v1beta1",
+		Group:    "operator.open-cluster-management.io",
+		Version:  "v1",
 		Resource: "multiclusterhubs",
 	}
 	// GVRAppSub ...
@@ -76,7 +76,7 @@ var (
 	// MCHNamespace ...
 	MCHNamespace = "open-cluster-management"
 	// MCHPullSecretName ...
-	MCHPullSecretName = "multiclusterhub-operator-pull-secret"
+	MCHPullSecretName = os.Getenv("pullSecret")
 
 	// MCHRepoName ...
 	MCHRepoName = "multiclusterhub-repo"
@@ -84,7 +84,7 @@ var (
 	MCHOperatorName = "multiclusterhub-operator"
 
 	// ACMSubscriptionName ...
-	ACMSubscriptionName = "acm-operator-subscription"
+	ACMSubscriptionName = "multicluster-hub-operator-subscription"
 	// ETCDSubscriptionName ...
 	ETCDSubscriptionName = "etcd-singlenamespace-alpha-community-operators-openshift-marketplace"
 

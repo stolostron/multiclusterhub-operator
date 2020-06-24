@@ -45,8 +45,8 @@ var _ = AfterSuite(func() {
 	err := subLink.Delete(context.TODO(), utils.ACMSubscriptionName, metav1.DeleteOptions{})
 	Expect(err).Should(BeNil())
 
+	By("Deleting ETCD Subscriptions")
 	// Delete ETCD Sub (Whether it is single namespace or clusterwide)
-	err = utils.DynamicKubeClient.Resource(utils.GVRSub).Namespace(utils.MCHNamespace).Delete(context.TODO(), utils.ETCDSubscriptionName, metav1.DeleteOptions{})
 	subList, err := subLink.List(context.TODO(), metav1.ListOptions{})
 	Expect(err).Should(BeNil())
 
@@ -57,6 +57,7 @@ var _ = AfterSuite(func() {
 	}
 	Expect(err).Should(BeNil())
 
+	By("Deleting CSVs")
 	// Delete CSVs
 	csvLink := utils.DynamicKubeClient.Resource(utils.GVRCSV).Namespace(utils.MCHNamespace)
 	csvList, err := csvLink.List(context.TODO(), metav1.ListOptions{})
@@ -68,13 +69,6 @@ var _ = AfterSuite(func() {
 			}
 		}
 	}
-	// Delete Secret
-	err = utils.KubeClient.CoreV1().Secrets(utils.MCHNamespace).Delete(context.TODO(), utils.MCHPullSecretName, metav1.DeleteOptions{})
-	Expect(err).Should(BeNil())
-
-	// Delete OperatorGroup
-	err = utils.DynamicKubeClient.Resource(utils.GVROperatorGroup).Namespace(utils.MCHNamespace).Delete(context.TODO(), "default", metav1.DeleteOptions{})
-	Expect(err).Should(BeNil())
 })
 
 func TestMultiClusterHubOperatorUninstall(t *testing.T) {
