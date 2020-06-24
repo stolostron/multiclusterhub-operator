@@ -22,6 +22,7 @@ func Console(m *operatorsv1.MultiClusterHub, overrides map[string]string, ingres
 				"nodeSelector": m.Spec.NodeSelector,
 				"name":         m.Name,
 				"namespace":    m.Namespace,
+				"customCAConfigmap": m.Spec.CustomCAConfigmap,
 			},
 			"global": map[string]interface{}{
 				"imageOverrides": overrides,

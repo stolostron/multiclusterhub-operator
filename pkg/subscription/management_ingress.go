@@ -16,10 +16,10 @@ func ManagementIngress(m *operatorsv1.MultiClusterHub, overrides map[string]stri
 		Overrides: map[string]interface{}{
 			"pullSecret":         m.Spec.ImagePullSecret,
 			"cluster_basedomain": ingress,
-			"customCAConfigmap":	  m.Spec.CustomCAConfigmap,
 			"hubconfig": map[string]interface{}{
 				"replicaCount": utils.DefaultReplicaCount(m),
 				"nodeSelector": m.Spec.NodeSelector,
+				"customCAConfigmap":	  m.Spec.CustomCAConfigmap,
 			},
 			"global": map[string]interface{}{
 				"imageOverrides": overrides,

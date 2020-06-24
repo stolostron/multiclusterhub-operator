@@ -33,6 +33,7 @@ func CertManager(m *operatorsv1.MultiClusterHub, overrides map[string]string) *u
 			"hubconfig": map[string]interface{}{
 				"replicaCount": utils.DefaultReplicaCount(m),
 				"nodeSelector": m.Spec.NodeSelector,
+				"customCAConfigmap": m.Spec.CustomCAConfigmap,
 			},
 		},
 	}
