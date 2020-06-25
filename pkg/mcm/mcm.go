@@ -39,7 +39,7 @@ func defaultLabels(app string) map[string]string {
 }
 
 func getReplicaCount(mch *operatorsv1.MultiClusterHub) int32 {
-	if mch.Spec.AvailabilityType == operatorsv1.HABasic {
+	if mch.Spec.AvailabilityConfig == operatorsv1.HABasic {
 		return 1
 	}
 	return 2

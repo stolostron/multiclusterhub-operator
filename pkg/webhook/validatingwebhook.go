@@ -104,8 +104,8 @@ func (m *multiClusterHubValidator) validateUpdate(req admission.Request) error {
 		return errors.New("IPv6 update is forbidden")
 	}
 
-	if !utils.AvailabilityTypeIsValid(newMCH.Spec.AvailabilityType) && newMCH.Spec.AvailabilityType != "" {
-		return errors.New("Invalid AvailabilityType given")
+	if !utils.AvailabilityConfigIsValid(newMCH.Spec.AvailabilityConfig) && newMCH.Spec.AvailabilityConfig != "" {
+		return errors.New("Invalid AvailabilityConfig given")
 	}
 	return nil
 }

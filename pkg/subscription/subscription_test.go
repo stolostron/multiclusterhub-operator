@@ -44,7 +44,7 @@ func TestValidate(t *testing.T) {
 
 	// 5. Activate HA mode
 	mch4 := mch.DeepCopy()
-	mch4.Spec.AvailabilityType = operatorsv1.HABasic
+	mch4.Spec.AvailabilityConfig = operatorsv1.HABasic
 	sub4 := KUIWebTerminal(mch4, ovr)
 
 	type args struct {
@@ -82,7 +82,7 @@ func TestValidate(t *testing.T) {
 			want1: true,
 		},
 		{
-			name:  "Deactivate HighAvailabilityType mode",
+			name:  "Deactivate HighAvailabilityConfig mode",
 			args:  args{sub, sub4},
 			want:  sub4,
 			want1: true,
