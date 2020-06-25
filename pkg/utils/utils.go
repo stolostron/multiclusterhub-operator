@@ -118,7 +118,8 @@ func MchIsValid(m *operatorsv1.MultiClusterHub) bool {
 		m.Spec.Mongo.StorageClass == "" ||
 		m.Spec.Etcd.Storage == "" ||
 		m.Spec.Etcd.StorageClass == "" ||
-		len(m.Spec.Ingress.SSLCiphers) == 0
+		len(m.Spec.Ingress.SSLCiphers) == 0 ||
+		!AvailabilityConfigIsValid(m.Spec.AvailabilityConfig)
 
 	return !invalid
 }
@@ -126,10 +127,20 @@ func MchIsValid(m *operatorsv1.MultiClusterHub) bool {
 // DefaultReplicaCount returns an integer corresponding to the default number of replicas
 // for HA or non-HA modes
 func DefaultReplicaCount(mch *operatorsv1.MultiClusterHub) int {
-	if mch.Spec.Failover {
-		return 3
+	if mch.Spec.AvailabilityConfig == operatorsv1.HABasic {
+		return 1
 	}
-	return 1
+	return 2
+}
+
+//AvailabilityConfigIsValid ...
+func AvailabilityConfigIsValid(config operatorsv1.AvailabilityType) bool {
+	switch config {
+	case operatorsv1.HAHigh, operatorsv1.HABasic:
+		return true
+	default:
+		return false
+	}
 }
 
 // DistributePods returns a anti-affinity rule that specifies a preference for pod replicas with

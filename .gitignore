@@ -40,3 +40,4 @@ bundles/
 # Customized during configmap install  
 build/configmap-install/index-configmap.yaml
 bundle.Dockerfile
+*.tap
