@@ -5,7 +5,7 @@
 package v1
 
 import (
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -150,12 +150,12 @@ func (in *HiveConfigSpec) DeepCopyInto(out *HiveConfigSpec) {
 	}
 	if in.AdditionalCertificateAuthorities != nil {
 		in, out := &in.AdditionalCertificateAuthorities, &out.AdditionalCertificateAuthorities
-		*out = make([]v1.LocalObjectReference, len(*in))
+		*out = make([]corev1.LocalObjectReference, len(*in))
 		copy(*out, *in)
 	}
 	if in.GlobalPullSecret != nil {
 		in, out := &in.GlobalPullSecret, &out.GlobalPullSecret
-		*out = new(v1.LocalObjectReference)
+		*out = new(corev1.LocalObjectReference)
 		**out = **in
 	}
 	in.Backup.DeepCopyInto(&out.Backup)

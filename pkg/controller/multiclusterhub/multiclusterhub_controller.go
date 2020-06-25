@@ -518,6 +518,10 @@ func (r *ReconcileMultiClusterHub) setDefaults(m *operatorsv1.MultiClusterHub) (
 		m.Spec.Ingress.SSLCiphers = utils.DefaultSSLCiphers
 	}
 
+	if !utils.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {
+		m.Spec.AvailabilityConfig = operatorsv1.HAHigh
+	}
+
 	if m.Spec.Mongo.Storage == "" {
 		m.Spec.Mongo.Storage = "5Gi"
 	}
