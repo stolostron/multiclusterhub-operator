@@ -18,13 +18,15 @@ func GRC(m *operatorsv1.MultiClusterHub, overrides map[string]string) *unstructu
 			"hubconfig": map[string]interface{}{
 				"replicaCount": utils.DefaultReplicaCount(m),
 				"nodeSelector": m.Spec.NodeSelector,
-				"customCAConfigmap": m.Spec.CustomCAConfigmap,
 			},
 			"global": map[string]interface{}{
 				"imageOverrides": overrides,
 				"pullPolicy":     utils.GetImagePullPolicy(m),
 			},
 		},
+	}
+	if m.Spec.CustomCAConfigmap != "" {
+		sub.Overrides["hubconfig"].(map[string]interface{})["customCAConfigmap"] = m.Spec.CustomCAConfigmap;
 	}
 
 	return newSubscription(m, sub)

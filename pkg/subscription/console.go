@@ -22,13 +22,15 @@ func Console(m *operatorsv1.MultiClusterHub, overrides map[string]string, ingres
 				"nodeSelector": m.Spec.NodeSelector,
 				"name":         m.Name,
 				"namespace":    m.Namespace,
-				"customCAConfigmap": m.Spec.CustomCAConfigmap,
 			},
 			"global": map[string]interface{}{
 				"imageOverrides": overrides,
 				"pullPolicy":     utils.GetImagePullPolicy(m),
 			},
 		},
+	}
+	if m.Spec.CustomCAConfigmap != "" {
+		sub.Overrides["hubconfig"].(map[string]interface{})["customCAConfigmap"] = m.Spec.CustomCAConfigmap;
 	}
 
 	return newSubscription(m, sub)

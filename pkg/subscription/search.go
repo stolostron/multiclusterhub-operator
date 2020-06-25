@@ -22,9 +22,11 @@ func Search(m *operatorsv1.MultiClusterHub, overrides map[string]string) *unstru
 			"hubconfig": map[string]interface{}{
 				"replicaCount": utils.DefaultReplicaCount(m),
 				"nodeSelector": m.Spec.NodeSelector,
-				"customCAConfigmap": m.Spec.CustomCAConfigmap,
 			},
 		},
+	}
+	if m.Spec.CustomCAConfigmap != "" {
+		sub.Overrides["hubconfig"].(map[string]interface{})["customCAConfigmap"] = m.Spec.CustomCAConfigmap;
 	}
 
 	return newSubscription(m, sub)
