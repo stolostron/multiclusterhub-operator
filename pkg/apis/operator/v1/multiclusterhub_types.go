@@ -12,9 +12,9 @@ type AvailabilityType string
 
 const (
 	// HABasic stands up most app subscriptions with a replicaCount of 1
-	HABasic AvailabilityType = "basic"
+	HABasic AvailabilityType = "Basic"
 	// HAHigh stands up most app subscriptions with a replicaCount of 2
-	HAHigh AvailabilityType = "high"
+	HAHigh AvailabilityType = "High"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -30,7 +30,7 @@ type MultiClusterHubSpec struct {
 
 	// ReplicaCount for HA support. Does not affect data stores.
 	// Enabled will toggle HA support. This will provide better support in cases of failover
-	// but consumes more resources. Options are: none and high (default).
+	// but consumes more resources. Options are: Basic and High (default).
 	// +optional
 	AvailabilityConfig AvailabilityType `json:"availabilityConfig,omitempty"`
 

@@ -43,7 +43,7 @@ var (
 			Ingress: operatorsv1.IngressSpec{
 				SSLCiphers: []string{"foo", "bar", "baz"},
 			},
-			AvailabilityConfig: "high",
+			AvailabilityConfig: operatorsv1.HAHigh,
 		},
 		Status: operatorsv1.MultiClusterHubStatus{
 			CurrentVersion: "1.0.0",

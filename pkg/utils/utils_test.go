@@ -139,7 +139,7 @@ func TestMchIsValid(t *testing.T) {
 			Ingress: operatorsv1.IngressSpec{
 				SSLCiphers: []string{"foo", "bar", "baz"},
 			},
-			AvailabilityConfig: "high",
+			AvailabilityConfig: operatorsv1.HAHigh,
 		},
 	}
 
