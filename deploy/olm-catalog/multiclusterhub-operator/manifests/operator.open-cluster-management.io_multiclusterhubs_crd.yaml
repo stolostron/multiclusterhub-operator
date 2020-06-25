@@ -34,16 +34,6 @@ spec:
         spec:
           description: MultiClusterHubSpec defines the desired state of MultiClusterHub
           properties:
-            etcd:
-              description: Spec of Etcd
-              properties:
-                storage:
-                  description: StorageSize for MultiCluster hub components
-                  type: string
-                storageClass:
-                  description: StorageClass for MultiCluster hub components
-                  type: string
-              type: object
             failover:
               description: ReplicaCount for HA support. Does not affect data stores.
                 Enabled will toggle HA support. This will provide better support in
@@ -180,16 +170,6 @@ spec:
             ipv6:
               description: Flag for IPv6
               type: boolean
-            mongo:
-              description: Spec of mongo
-              properties:
-                storage:
-                  description: StorageSize for MultiCluster hub components
-                  type: string
-                storageClass:
-                  description: StorageClass for MultiCluster hub components
-                  type: string
-              type: object
             nodeSelector:
               additionalProperties:
                 type: string

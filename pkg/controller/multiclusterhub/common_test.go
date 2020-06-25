@@ -47,12 +47,6 @@ func Test_ensureDeployment(t *testing.T) {
 		Result     error
 	}{
 		{
-			Name:       "Test: EnsureDeployment - APIServer",
-			MCH:        full_mch,
-			Deployment: foundation.APIServerDeployment(full_mch, cacheSpec.ImageOverrides),
-			Result:     nil,
-		},
-		{
 			Name:       "Test: EnsureDeployment - Multiclusterhub-repo",
 			MCH:        full_mch,
 			Deployment: helmrepo.Deployment(full_mch, cacheSpec.ImageOverrides),
@@ -62,12 +56,6 @@ func Test_ensureDeployment(t *testing.T) {
 			Name:       "Test: EnsureDeployment - Webhook",
 			MCH:        full_mch,
 			Deployment: foundation.WebhookDeployment(full_mch, cacheSpec.ImageOverrides),
-			Result:     nil,
-		},
-		{
-			Name:       "Test: EnsureDeployment - Webhook",
-			MCH:        full_mch,
-			Deployment: foundation.ControllerDeployment(full_mch, cacheSpec.ImageOverrides),
 			Result:     nil,
 		},
 		{
@@ -124,12 +112,6 @@ func Test_ensureService(t *testing.T) {
 			Name:    "Test: ensureService - Multiclusterhub-repo",
 			MCH:     full_mch,
 			Service: helmrepo.Service(full_mch),
-			Result:  nil,
-		},
-		{
-			Name:    "Test: ensureService - APIServer",
-			MCH:     full_mch,
-			Service: foundation.APIServerService(full_mch),
 			Result:  nil,
 		},
 		{
