@@ -11,8 +11,8 @@ import (
 type HighAvailabilityType string
 
 const (
-	// HANone stands up most app subscriptions with a replicaCount of 1
-	HANone HighAvailabilityType = "none"
+	// HABasic stands up most app subscriptions with a replicaCount of 1
+	HABasic HighAvailabilityType = "basic"
 	// HAHigh stands up most app subscriptions with a replicaCount of 2
 	HAHigh HighAvailabilityType = "high"
 )

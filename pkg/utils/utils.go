@@ -127,7 +127,7 @@ func MchIsValid(m *operatorsv1.MultiClusterHub) bool {
 // DefaultReplicaCount returns an integer corresponding to the default number of replicas
 // for HA or non-HA modes
 func DefaultReplicaCount(mch *operatorsv1.MultiClusterHub) int {
-	if mch.Spec.HighAvailabilityConfig == operatorsv1.HANone {
+	if mch.Spec.HighAvailabilityConfig == operatorsv1.HABasic {
 		return 1
 	}
 	return 2
@@ -136,7 +136,7 @@ func DefaultReplicaCount(mch *operatorsv1.MultiClusterHub) int {
 //HighAvailabilityConfigIsValid ...
 func HighAvailabilityConfigIsValid(config operatorsv1.HighAvailabilityType) bool {
 	switch config {
-	case operatorsv1.HAHigh, operatorsv1.HANone:
+	case operatorsv1.HAHigh, operatorsv1.HABasic:
 		return true
 	default:
 		return false

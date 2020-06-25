@@ -205,7 +205,7 @@ func TestDefaultReplicaCount(t *testing.T) {
 	mchDefault := &operatorsv1.MultiClusterHub{}
 	mchNonHA := &operatorsv1.MultiClusterHub{
 		Spec: operatorsv1.MultiClusterHubSpec{
-			HighAvailabilityConfig: operatorsv1.HANone,
+			HighAvailabilityConfig: operatorsv1.HABasic,
 		},
 	}
 	mchHA := &operatorsv1.MultiClusterHub{

@@ -95,7 +95,7 @@ func Test_ReconcileMultiClusterHub(t *testing.T) {
 
 	// HighAvailabilityConfig
 	mch3 := full_mch.DeepCopy()
-	mch3.Spec.HighAvailabilityConfig = operatorsv1.HANone
+	mch3.Spec.HighAvailabilityConfig = operatorsv1.HABasic
 
 	// IPv6
 	mch4 := full_mch.DeepCopy()
