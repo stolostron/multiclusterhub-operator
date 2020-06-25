@@ -7,6 +7,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// HighAvailabilityType ...
+type HighAvailabilityType string
+
+const (
+	// HANone stands up most app subscriptions with a replicaCount of 1
+	HANone HighAvailabilityType = "none"
+	// HAHigh stands up most app subscriptions with a replicaCount of 2
+	HAHigh HighAvailabilityType = "high"
+)
+
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
@@ -20,9 +30,9 @@ type MultiClusterHubSpec struct {
 
 	// ReplicaCount for HA support. Does not affect data stores.
 	// Enabled will toggle HA support. This will provide better support in cases of failover
-	// but consumes more resources.
+	// but consumes more resources. Options are: none and high (default).
 	// +optional
-	Failover bool `json:"failover"`
+	HighAvailabilityConfig HighAvailabilityType `json:"highAvailabilityConfig,omitempty"`
 
 	// Flag for IPv6
 	// +optional

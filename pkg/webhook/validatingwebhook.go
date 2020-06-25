@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 )
 
 type multiClusterHubValidator struct {
@@ -103,6 +104,9 @@ func (m *multiClusterHubValidator) validateUpdate(req admission.Request) error {
 		return errors.New("IPv6 update is forbidden")
 	}
 
+	if !utils.HighAvailabilityConfigIsValid(newMCH.Spec.HighAvailabilityConfig) && newMCH.Spec.HighAvailabilityConfig != "" {
+		return errors.New("Invalid HighAvailabilityConfig given")
+	}
 	return nil
 }
 

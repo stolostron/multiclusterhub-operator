@@ -39,10 +39,10 @@ func defaultLabels(app string) map[string]string {
 }
 
 func getReplicaCount(mch *operatorsv1.MultiClusterHub) int32 {
-	if mch.Spec.Failover {
-		return 2
+	if mch.Spec.HighAvailabilityConfig == operatorsv1.HANone {
+		return 1
 	}
-	return 1
+	return 2
 }
 
 // ValidateDeployment returns a deep copy of the deployment with the desired spec based on the MultiClusterHub spec.

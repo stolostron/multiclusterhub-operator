@@ -139,6 +139,7 @@ func TestMchIsValid(t *testing.T) {
 			Ingress: operatorsv1.IngressSpec{
 				SSLCiphers: []string{"foo", "bar", "baz"},
 			},
+			HighAvailabilityConfig: "high",
 		},
 	}
 
@@ -204,18 +205,18 @@ func TestDefaultReplicaCount(t *testing.T) {
 	mchDefault := &operatorsv1.MultiClusterHub{}
 	mchNonHA := &operatorsv1.MultiClusterHub{
 		Spec: operatorsv1.MultiClusterHubSpec{
-			Failover: false,
+			HighAvailabilityConfig: operatorsv1.HANone,
 		},
 	}
 	mchHA := &operatorsv1.MultiClusterHub{
 		Spec: operatorsv1.MultiClusterHubSpec{
-			Failover: true,
+			HighAvailabilityConfig: operatorsv1.HAHigh,
 		},
 	}
 
-	t.Run("Non-HA (by default)", func(t *testing.T) {
-		if got := DefaultReplicaCount(mchDefault); got != 1 {
-			t.Errorf("DefaultReplicaCount() = %v, want %v", got, 1)
+	t.Run("HA (by default)", func(t *testing.T) {
+		if got := DefaultReplicaCount(mchDefault); got != 2 {
+			t.Errorf("DefaultReplicaCount() = %v, want %v", got, 2)
 		}
 	})
 	t.Run("Non-HA", func(t *testing.T) {
