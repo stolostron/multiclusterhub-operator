@@ -28,9 +28,7 @@ func KUIWebTerminal(m *operatorsv1.MultiClusterHub, overrides map[string]string)
 			},
 		},
 	}
-	if m.Spec.CustomCAConfigmap != "" {
-		sub.Overrides["hubconfig"].(map[string]interface{})["customCAConfigmap"] = m.Spec.CustomCAConfigmap;
-	}
+	CheckCustomCA(m, sub)
 
 	return newSubscription(m, sub)
 }
