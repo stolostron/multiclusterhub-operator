@@ -119,7 +119,7 @@ func MchIsValid(m *operatorsv1.MultiClusterHub) bool {
 		m.Spec.Etcd.Storage == "" ||
 		m.Spec.Etcd.StorageClass == "" ||
 		len(m.Spec.Ingress.SSLCiphers) == 0 ||
-		!HighAvailabilityConfigIsValid(m.Spec.HighAvailabilityConfig)
+		!AvailabilityTypeIsValid(m.Spec.AvailabilityType)
 
 	return !invalid
 }
@@ -127,14 +127,14 @@ func MchIsValid(m *operatorsv1.MultiClusterHub) bool {
 // DefaultReplicaCount returns an integer corresponding to the default number of replicas
 // for HA or non-HA modes
 func DefaultReplicaCount(mch *operatorsv1.MultiClusterHub) int {
-	if mch.Spec.HighAvailabilityConfig == operatorsv1.HABasic {
+	if mch.Spec.AvailabilityType == operatorsv1.HABasic {
 		return 1
 	}
 	return 2
 }
 
-//HighAvailabilityConfigIsValid ...
-func HighAvailabilityConfigIsValid(config operatorsv1.HighAvailabilityType) bool {
+//AvailabilityTypeIsValid ...
+func AvailabilityTypeIsValid(config operatorsv1.Availability) bool {
 	switch config {
 	case operatorsv1.HAHigh, operatorsv1.HABasic:
 		return true

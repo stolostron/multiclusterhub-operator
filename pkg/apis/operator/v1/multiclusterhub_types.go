@@ -7,14 +7,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// HighAvailabilityType ...
-type HighAvailabilityType string
+// Availability ...
+type Availability string
 
 const (
 	// HABasic stands up most app subscriptions with a replicaCount of 1
-	HABasic HighAvailabilityType = "basic"
+	HABasic Availability = "basic"
 	// HAHigh stands up most app subscriptions with a replicaCount of 2
-	HAHigh HighAvailabilityType = "high"
+	HAHigh Availability = "high"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -32,7 +32,7 @@ type MultiClusterHubSpec struct {
 	// Enabled will toggle HA support. This will provide better support in cases of failover
 	// but consumes more resources. Options are: none and high (default).
 	// +optional
-	HighAvailabilityConfig HighAvailabilityType `json:"highAvailabilityConfig,omitempty"`
+	AvailabilityType Availability `json:"availabilityType,omitempty"`
 
 	// Flag for IPv6
 	// +optional

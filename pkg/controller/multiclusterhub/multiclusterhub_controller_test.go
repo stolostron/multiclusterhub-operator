@@ -43,7 +43,7 @@ var (
 			Ingress: operatorsv1.IngressSpec{
 				SSLCiphers: []string{"foo", "bar", "baz"},
 			},
-			HighAvailabilityConfig: "high",
+			AvailabilityType: "high",
 		},
 		Status: operatorsv1.MultiClusterHubStatus{
 			CurrentVersion: "1.0.0",
@@ -93,9 +93,9 @@ func Test_ReconcileMultiClusterHub(t *testing.T) {
 	mch2 := full_mch.DeepCopy()
 	mch2.Status = operatorsv1.MultiClusterHubStatus{}
 
-	// HighAvailabilityConfig
+	// AvailabilityType
 	mch3 := full_mch.DeepCopy()
-	mch3.Spec.HighAvailabilityConfig = operatorsv1.HABasic
+	mch3.Spec.AvailabilityType = operatorsv1.HABasic
 
 	// IPv6
 	mch4 := full_mch.DeepCopy()
@@ -126,7 +126,7 @@ func Test_ReconcileMultiClusterHub(t *testing.T) {
 			Expected: nil,
 		},
 		{
-			Name:     "HighAvailabilityConfig",
+			Name:     "AvailabilityType",
 			MCH:      mch3,
 			Expected: nil,
 		},
