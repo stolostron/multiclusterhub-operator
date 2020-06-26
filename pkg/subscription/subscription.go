@@ -90,7 +90,7 @@ func Validate(found *unstructured.Unstructured, want *unstructured.Unstructured)
 //if they haven't, there is no need to pass down a value to charts
 func CheckCustomCA(m *operatorsv1.MultiClusterHub, sub *Subscription) {
 	if m.Spec.CustomCAConfigmap != "" {
-		sub.Overrides["hubconfig"].(map[string]interface{})["customCAConfigmap"] = m.Spec.CustomCAConfigmap;
+		sub.Overrides["hubconfig"].(map[string]interface{})["customCAConfigmap"] = m.Spec.CustomCAConfigmap
 	}
 }
 
