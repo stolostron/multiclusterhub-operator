@@ -55,6 +55,7 @@ func newSubscription(m *operatorsv1.MultiClusterHub, s *Subscription) *unstructu
 			},
 		},
 	}
+	utils.AddInstallerLabel(sub, m.Name, m.Namespace)
 	sub.SetOwnerReferences([]metav1.OwnerReference{
 		*metav1.NewControllerRef(m, m.GetObjectKind().GroupVersionKind()),
 	})

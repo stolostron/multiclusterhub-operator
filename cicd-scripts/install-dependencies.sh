@@ -1,7 +1,8 @@
 #!/bin/bash
 # Copyright (c) 2020 Red Hat, Inc.
 
-echo "INSTALL DEPENDENCIES GOES HERE!"
+echo "Installing MultiClusterHub Operator Dependancies ..."
+echo ""
 
 _OPERATOR_SDK_VERSION=v0.18.0
 
@@ -13,4 +14,19 @@ if ! [ -x "$(command -v operator-sdk)" ]; then
     fi
     chmod +x operator-sdk
     sudo mv operator-sdk /usr/local/bin/operator-sdk
+fi
+
+_OPM_VERSION=v1.12.5
+
+if ! [ -x "$(command -v opm)" ]; then
+    if [[ "$TRAVIS" ]]; then
+        echo "Skipping OPM install on Travis builds ..."
+    elif [[ "$OSTYPE" == "linux-gnu" ]]; then
+        echo "Build opm from source from here: https://github.com/operator-framework/operator-registry/releases/tag/${_OPM_VERSION}"
+        exit 1
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        curl -L https://github.com/operator-framework/operator-registry/releases/download/${_OPM_VERSION}/darwin-amd64-opm -o opm
+        chmod +x opm
+        sudo mv opm /usr/local/bin/opm
+    fi
 fi
