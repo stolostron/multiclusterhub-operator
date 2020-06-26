@@ -127,7 +127,7 @@ csv:
 
 ## Apply the MultiClusterHub CR
 cr:
-	yq w  deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml 'spec.imagePullSecret' "quay-secret" | oc apply -f -
+	cat deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml | yq w - "spec.imagePullSecret" "quay-secret" | yq w - "spec.availabilityConfig" "Basic" | oc apply -f -
 
 ## Apply the default OperatorGroup
 og:
