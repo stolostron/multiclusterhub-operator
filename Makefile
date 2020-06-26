@@ -2,7 +2,7 @@
 GITHUB_USER := $(shell echo $(GITHUB_USER) | sed 's/@/%40/g')
 GITHUB_TOKEN ?=
 
-USE_VENDORIZED_BUILD_HARNESS ?=
+# USE_VENDORIZED_BUILD_HARNESS ?=
 
 ifndef USE_VENDORIZED_BUILD_HARNESS
 -include $(shell curl -s -H 'Authorization: token ${GITHUB_TOKEN}' -H 'Accept: application/vnd.github.v4.raw' -L https://api.github.com/repos/open-cluster-management/build-harness-extensions/contents/templates/Makefile.build-harness-bootstrap -o .build-harness-bootstrap; echo .build-harness-bootstrap)
@@ -127,7 +127,7 @@ csv:
 
 ## Apply the MultiClusterHub CR
 cr:
-	yq w  deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml 'spec.imagePullSecret' "quay-secret" | oc apply -f -
+	cat deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml | yq w - "spec.imagePullSecret" "quay-secret" | yq w - "spec.availabilityConfig" "Basic" | oc apply -f -
 
 ## Apply the default OperatorGroup
 og:
