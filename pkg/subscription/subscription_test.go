@@ -90,13 +90,13 @@ func TestValidate(t *testing.T) {
 		{
 			name:  "Deactivate HighAvailabilityConfig mode",
 			args:  args{sub, sub4},
-			want:  sub5,
+			want:  sub4,
 			want1: true,
 		},
 		{
 			name:  "Modified CustomCAConfigmap",
 			args:  args{sub, sub5},
-			want:  sub4,
+			want:  sub5,
 			want1: true,
 		},
 	}
