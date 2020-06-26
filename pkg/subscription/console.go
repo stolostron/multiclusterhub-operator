@@ -29,7 +29,7 @@ func Console(m *operatorsv1.MultiClusterHub, overrides map[string]string, ingres
 			},
 		},
 	}
-	CheckCustomCA(m, sub)
+	setCustomCA(m, sub)
 
 	return newSubscription(m, sub)
 }

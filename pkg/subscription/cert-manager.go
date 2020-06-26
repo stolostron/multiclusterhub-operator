@@ -36,7 +36,7 @@ func CertManager(m *operatorsv1.MultiClusterHub, overrides map[string]string) *u
 			},
 		},
 	}
-	CheckCustomCA(m, sub)
+	setCustomCA(m, sub)
 
 	return newSubscription(m, sub)
 }

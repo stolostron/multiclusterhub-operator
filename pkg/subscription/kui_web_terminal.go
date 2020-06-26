@@ -28,7 +28,7 @@ func KUIWebTerminal(m *operatorsv1.MultiClusterHub, overrides map[string]string)
 			},
 		},
 	}
-	CheckCustomCA(m, sub)
+	setCustomCA(m, sub)
 
 	return newSubscription(m, sub)
 }

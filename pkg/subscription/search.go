@@ -25,7 +25,7 @@ func Search(m *operatorsv1.MultiClusterHub, overrides map[string]string) *unstru
 			},
 		},
 	}
-	CheckCustomCA(m, sub)
+	setCustomCA(m, sub)
 
 	return newSubscription(m, sub)
 }
