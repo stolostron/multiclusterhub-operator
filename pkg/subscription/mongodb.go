@@ -46,6 +46,7 @@ func MongoDB(m *operatorsv1.MultiClusterHub, overrides map[string]string) *unstr
 			},
 		},
 	}
+	setCustomCA(m, sub)
 
 	return newSubscription(m, sub)
 }

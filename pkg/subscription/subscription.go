@@ -86,6 +86,13 @@ func Validate(found *unstructured.Unstructured, want *unstructured.Unstructured)
 	return nil, false
 }
 
+// setCustomCA sets a CustomCAConfigmap to the hubconfig overrides if available
+func setCustomCA(m *operatorsv1.MultiClusterHub, sub *Subscription) {
+	if m.Spec.CustomCAConfigmap != "" {
+		sub.Overrides["hubconfig"].(map[string]interface{})["customCAConfigmap"] = m.Spec.CustomCAConfigmap
+	}
+}
+
 func imageSuffix(m *operatorsv1.MultiClusterHub) (s string) {
 	s = utils.GetImageSuffix(m)
 	if s != "" {

@@ -27,6 +27,7 @@ func RCM(m *operatorsv1.MultiClusterHub, overrides map[string]string) *unstructu
 			},
 		},
 	}
+	setCustomCA(m, sub)
 
 	return newSubscription(m, sub)
 }

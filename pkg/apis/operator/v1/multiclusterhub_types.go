@@ -64,6 +64,10 @@ type MultiClusterHubSpec struct {
 	// Overrides
 	// +optional
 	Overrides `json:"overrides,omitempty"`
+
+	// Configuration options for custom CA
+	// +optional
+	CustomCAConfigmap string `json:"customCAConfigmap,omitempty"`
 }
 
 // Overrides provides developer overrides for MCH installation
