@@ -40,6 +40,9 @@ spec:
                 cases of failover but consumes more resources. Options are: Basic
                 and High (default).'
               type: string
+            customCAConfigmap:
+              description: Configuration options for custom CA
+              type: string
             etcd:
               description: Spec of Etcd
               properties:

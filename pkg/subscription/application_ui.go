@@ -25,6 +25,7 @@ func ApplicationUI(m *operatorsv1.MultiClusterHub, overrides map[string]string) 
 			},
 		},
 	}
+	setCustomCA(m, sub)
 
 	return newSubscription(m, sub)
 }

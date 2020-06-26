@@ -20,6 +20,7 @@ func TestValidate(t *testing.T) {
 		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "test",
 			Mongo:           operatorsv1.Mongo{},
+			CustomCAConfigmap: "test-config",
 		},
 	}
 	ovr := map[string]string{}
@@ -46,6 +47,11 @@ func TestValidate(t *testing.T) {
 	mch4 := mch.DeepCopy()
 	mch4.Spec.AvailabilityConfig = operatorsv1.HABasic
 	sub4 := KUIWebTerminal(mch4, ovr)
+
+	// 6. Modified CustomCAConfigmap
+	mch6 := mch.DeepCopy()
+	mch6.Spec.CustomCAConfigmap = ""
+	sub5 := KUIWebTerminal(mch6, ovr)
 
 	type args struct {
 		found *unstructured.Unstructured
@@ -85,6 +91,12 @@ func TestValidate(t *testing.T) {
 			name:  "Deactivate HighAvailabilityConfig mode",
 			args:  args{sub, sub4},
 			want:  sub4,
+			want1: true,
+		},
+		{
+			name:  "Modified CustomCAConfigmap",
+			args:  args{sub, sub5},
+			want:  sub5,
 			want1: true,
 		},
 	}
