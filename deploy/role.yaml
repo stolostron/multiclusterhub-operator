@@ -31,7 +31,6 @@ rules:
   - replicasets
   - rolebindings
   - secrets
-  - securitycontextconstraints
   - serviceaccounts
   - services
   - subjectaccessreviews
@@ -66,7 +65,6 @@ rules:
   - namespaces
   - rolebindings
   - secrets
-  - securitycontextconstraints
   - serviceaccounts
   - services
   - servicemonitors

@@ -55,6 +55,7 @@ func newSubscription(m *operatorsv1.MultiClusterHub, s *Subscription) *unstructu
 			},
 		},
 	}
+	utils.AddInstallerLabel(sub, m.Name, m.Namespace)
 	sub.SetOwnerReferences([]metav1.OwnerReference{
 		*metav1.NewControllerRef(m, m.GetObjectKind().GroupVersionKind()),
 	})
@@ -83,6 +84,13 @@ func Validate(found *unstructured.Unstructured, want *unstructured.Unstructured)
 	}
 
 	return nil, false
+}
+
+// setCustomCA sets a CustomCAConfigmap to the hubconfig overrides if available
+func setCustomCA(m *operatorsv1.MultiClusterHub, sub *Subscription) {
+	if m.Spec.CustomCAConfigmap != "" {
+		sub.Overrides["hubconfig"].(map[string]interface{})["customCAConfigmap"] = m.Spec.CustomCAConfigmap
+	}
 }
 
 func imageSuffix(m *operatorsv1.MultiClusterHub) (s string) {

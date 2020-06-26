@@ -98,7 +98,6 @@ spec:
           - replicasets
           - rolebindings
           - secrets
-          - securitycontextconstraints
           - serviceaccounts
           - services
           - subjectaccessreviews
@@ -132,7 +131,6 @@ spec:
           - namespaces
           - rolebindings
           - secrets
-          - securitycontextconstraints
           - serviceaccounts
           - services
           - servicemonitors

@@ -402,7 +402,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	// Update the CR status
 	multiClusterHub.Status.Phase = "Pending"
 	multiClusterHub.Status.DesiredVersion = version.Version
-	ready, deployments, err := deploying.ListDeployments(r.client, multiClusterHub.Namespace)
+	ready, _, err := deploying.ListDeployments(r.client, multiClusterHub.Namespace)
 	if err != nil {
 		reqLogger.Error(err, "Failed to list deployments")
 		return reconcile.Result{}, err
@@ -411,14 +411,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		multiClusterHub.Status.Phase = "Running"
 		multiClusterHub.Status.CurrentVersion = version.Version
 	}
-	statedDeployments := []operatorsv1.DeploymentResult{}
-	for _, deploy := range deployments {
-		statedDeployments = append(statedDeployments, operatorsv1.DeploymentResult{
-			Name:   deploy.Name,
-			Status: deploy.Status,
-		})
-	}
-	multiClusterHub.Status.Deployments = statedDeployments
 
 	result, err = r.UpdateStatus(multiClusterHub)
 	if result != nil {
@@ -469,6 +461,10 @@ func (r *ReconcileMultiClusterHub) setDefaults(m *operatorsv1.MultiClusterHub) (
 
 	if len(m.Spec.Ingress.SSLCiphers) == 0 {
 		m.Spec.Ingress.SSLCiphers = utils.DefaultSSLCiphers
+	}
+
+	if !utils.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {
+		m.Spec.AvailabilityConfig = operatorsv1.HAHigh
 	}
 
 	// Apply defaults to server

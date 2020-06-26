@@ -2,9 +2,18 @@
 package v1
 
 import (
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+// AvailabilityType ...
+type AvailabilityType string
+
+const (
+	// HABasic stands up most app subscriptions with a replicaCount of 1
+	HABasic AvailabilityType = "Basic"
+	// HAHigh stands up most app subscriptions with a replicaCount of 2
+	HAHigh AvailabilityType = "High"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -20,9 +29,9 @@ type MultiClusterHubSpec struct {
 
 	// ReplicaCount for HA support. Does not affect data stores.
 	// Enabled will toggle HA support. This will provide better support in cases of failover
-	// but consumes more resources.
+	// but consumes more resources. Options are: Basic and High (default).
 	// +optional
-	Failover bool `json:"failover"`
+	AvailabilityConfig AvailabilityType `json:"availabilityConfig,omitempty"`
 
 	// Flag for IPv6
 	// +optional
@@ -47,6 +56,10 @@ type MultiClusterHubSpec struct {
 	// Overrides
 	// +optional
 	Overrides `json:"overrides,omitempty"`
+
+	// Configuration options for custom CA
+	// +optional
+	CustomCAConfigmap string `json:"customCAConfigmap,omitempty"`
 }
 
 // Overrides provides developer overrides for MCH installation
@@ -187,19 +200,6 @@ type MultiClusterHubStatus struct {
 	// DesiredVersion indicates the desired version
 	// +optional
 	DesiredVersion string `json:"desiredVersion,omitempty"`
-
-	// Represents the status of each deployment
-	// +optional
-	Deployments []DeploymentResult `json:"deployments,omitempty"`
-}
-
-// DeploymentResult defines the observed state of Deployment
-type DeploymentResult struct {
-	// Name of the deployment
-	Name string `json:"name"`
-
-	// The most recently observed status of the Deployment
-	Status appsv1.DeploymentStatus `json:"status"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

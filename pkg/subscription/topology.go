@@ -25,6 +25,7 @@ func Topology(m *operatorsv1.MultiClusterHub, overrides map[string]string) *unst
 			},
 		},
 	}
+	setCustomCA(m, sub)
 
 	return newSubscription(m, sub)
 }

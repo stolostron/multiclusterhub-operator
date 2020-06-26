@@ -1,6 +1,5 @@
 resources:
 - rbac
-- security_context_constraints
 - crds
 - apiserver
 - operands
