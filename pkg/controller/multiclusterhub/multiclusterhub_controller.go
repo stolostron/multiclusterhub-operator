@@ -4,9 +4,7 @@ package multiclusterhub
 
 import (
 	"context"
-	"crypto/rand"
 	"fmt"
-	"math/big"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -436,19 +434,6 @@ func (r *ReconcileMultiClusterHub) UpdateStatus(m *operatorsv1.MultiClusterHub) 
 		return &reconcile.Result{}, err
 	}
 	return nil, nil
-}
-
-func generatePass(length int) string {
-	chars := "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
-		"abcdefghijklmnopqrstuvwxyz" +
-		"0123456789"
-
-	buf := make([]byte, length)
-	for i := 0; i < length; i++ {
-		nBig, _ := rand.Int(rand.Reader, big.NewInt(int64(len(chars))))
-		buf[i] = chars[nBig.Int64()]
-	}
-	return string(buf)
 }
 
 // setDefaults updates MultiClusterHub resource with proper defaults
