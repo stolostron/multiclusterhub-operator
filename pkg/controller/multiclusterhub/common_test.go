@@ -10,8 +10,8 @@ import (
 
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/foundation"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -155,52 +155,6 @@ func Test_ensureService(t *testing.T) {
 	}
 }
 
-func Test_ensureSecret(t *testing.T) {
-	r, err := getTestReconciler(full_mch)
-	if err != nil {
-		t.Fatalf("Failed to create test reconciler")
-	}
-
-	tests := []struct {
-		Name   string
-		MCH    *operatorsv1.MultiClusterHub
-		Secret *corev1.Secret
-		Result error
-	}{
-		{
-			Name:   "Test: ensureSecret - Empty secret",
-			MCH:    full_mch,
-			Secret: &corev1.Secret{},
-			Result: errors.NewInvalid(kind("Test"), "", nil),
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.Name, func(t *testing.T) {
-			_, err = r.ensureSecret(tt.MCH, tt.Secret)
-
-			if tt.Result != nil {
-				// Check if error matches desired error
-				if errors.ReasonForError(err) != errors.ReasonForError(tt.Result) {
-					t.Fatalf("ensureSecret() error = %v, wantErr %v", err, tt.Result)
-				}
-			} else {
-				if err != nil {
-					t.Fatalf("ensureSecret() error = %v, wantErr %v", err, tt.Result)
-				}
-
-				secret := &corev1.Secret{}
-				err = r.client.Get(context.TODO(), types.NamespacedName{
-					Name:      tt.Secret.Name,
-					Namespace: tt.Secret.Namespace,
-				}, secret)
-				if err != tt.Result {
-					t.Fatalf("Could not find created '%s' service: %s", tt.Secret.Name, err.Error())
-				}
-			}
-		})
-	}
-}
-
 func Test_ensureChannel(t *testing.T) {
 	r, err := getTestReconciler(full_mch)
 	if err != nil {
@@ -214,13 +168,13 @@ func Test_ensureChannel(t *testing.T) {
 		Result  error
 	}{
 		{
-			Name:    "Test: ensureSecret - Multiclusterhub-repo",
+			Name:    "Test: ensureChannel - Multiclusterhub-repo",
 			MCH:     full_mch,
 			Channel: channel.Channel(full_mch),
 			Result:  nil,
 		},
 		{
-			Name:    "Test: ensureSecret - Empty channel",
+			Name:    "Test: ensureChannel - Empty channel",
 			MCH:     full_mch,
 			Channel: &unstructured.Unstructured{},
 			Result:  fmt.Errorf("Object 'Kind' is missing in 'unstructured object has no kind'"),
