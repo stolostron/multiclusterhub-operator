@@ -187,7 +187,6 @@ spec:
           - rolebindings
           - secrets
           - services
-          - storageclasses
           - subjectaccessreviews
           - validatingwebhookconfigurations
           verbs:

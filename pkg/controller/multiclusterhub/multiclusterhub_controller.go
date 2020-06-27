@@ -10,7 +10,6 @@ import (
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
-	storv1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -476,20 +475,6 @@ func (r *ReconcileMultiClusterHub) setDefaults(m *operatorsv1.MultiClusterHub) (
 
 	log.Info("MultiClusterHub successfully updated")
 	return &reconcile.Result{Requeue: true}, nil
-}
-
-// getStorageClass retrieves the default storage class if it exists
-func (r *ReconcileMultiClusterHub) getStorageClass() (string, error) {
-	scList := &storv1.StorageClassList{}
-	if err := r.client.List(context.TODO(), scList); err != nil {
-		return "", err
-	}
-	for _, sc := range scList.Items {
-		if sc.Annotations["storageclass.kubernetes.io/is-default-class"] == "true" {
-			return sc.GetName(), nil
-		}
-	}
-	return "", fmt.Errorf("failed to find default storageclass")
 }
 
 // ingressDomain is discovered from Openshift cluster configuration resources

@@ -25,7 +25,7 @@ func TestValidateDeployment(t *testing.T) {
 	ovr := map[string]string{}
 
 	// 1. Valid mch
-	dep := ControllerDeployment(mch, ovr)
+	dep := ACMControllerDeployment(mch, ovr)
 
 	// 2. Modified ImagePullSecret
 	dep1 := dep.DeepCopy()

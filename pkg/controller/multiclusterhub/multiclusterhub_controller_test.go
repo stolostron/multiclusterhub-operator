@@ -76,9 +76,6 @@ func Test_ReconcileMultiClusterHub(t *testing.T) {
 	defer os.Unsetenv("MANIFESTS_PATH")
 	defer os.Unsetenv("UNIT_TEST")
 
-	// Without Datastores
-	mch1 := full_mch.DeepCopy()
-
 	// Without Status Prefilled
 	mch2 := full_mch.DeepCopy()
 	mch2.Status = operatorsv1.MultiClusterHubStatus{}
@@ -104,11 +101,6 @@ func Test_ReconcileMultiClusterHub(t *testing.T) {
 			Name:     "Full Valid MCH",
 			MCH:      full_mch,
 			Expected: nil,
-		},
-		{
-			Name:     "Without Datastores",
-			MCH:      mch1,
-			Expected: fmt.Errorf("failed to find default storageclass"), // No storageclasses included in fake client
 		},
 		{
 			Name:     "Without Status",
@@ -200,12 +192,9 @@ func TestUpdateStatus(t *testing.T) {
 func Test_setDefaults(t *testing.T) {
 	os.Setenv("TEMPLATES_PATH", "../../../templates")
 
-	// Without Datastores
-	mch1 := full_mch.DeepCopy()
-
 	// Without Status Prefilled
-	mch2 := full_mch.DeepCopy()
-	mch2.Status = operatorsv1.MultiClusterHubStatus{}
+	mch1 := full_mch.DeepCopy()
+	mch1.Status = operatorsv1.MultiClusterHubStatus{}
 
 	tests := []struct {
 		Name     string
@@ -218,13 +207,8 @@ func Test_setDefaults(t *testing.T) {
 			Expected: nil,
 		},
 		{
-			Name:     "Without Datastores",
-			MCH:      mch1,
-			Expected: fmt.Errorf("failed to find default storageclass"), // No storageclasses included in fake client
-		},
-		{
 			Name:     "Without Status",
-			MCH:      mch2,
+			MCH:      mch1,
 			Expected: nil,
 		},
 	}
