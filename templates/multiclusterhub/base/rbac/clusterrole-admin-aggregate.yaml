@@ -5,8 +5,17 @@ metadata:
     rbac.authorization.k8s.io/aggregate-to-admin: "true"
   name: mcm-admin-aggregate
 rules:
-- apiGroups: ["mcm.ibm.com"]
-  resources: ["helmrepos", "helmrepos/status"]
+- apiGroups: ["cluster.open-cluster-management.io"]
+  resources: ["managedclusters", "managedclusters/status"]
+  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+- apiGroups: ["action.open-cluster-management.io"]
+  resources: ["managedclusteractions", "managedclusteractions/status"]
+  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+- apiGroups: ["view.open-cluster-management.io"]
+  resources: ["managedclusterviews", "managedclusterviews/status"]
+  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+- apiGroups: ["internal.open-cluster-management.io"]
+  resources: ["managedclusterinfos", "managedclusterinfos/status"]
   verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
 - apiGroups: ["mcm.ibm.com"]
   resources: ["deployables", "deployables/status", "placementbindings", "placementpolicies", "placementpolicies/status", "deployableoverrides", "deployableoverrides/status", "applicationrelationships", "applicationrelationships/status"]
