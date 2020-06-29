@@ -1,0 +1,24 @@
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: acm-validating-webhook
+  labels:
+    app: acm-webhook
+webhooks:
+- name: acm.validating.webhook.admission.open-cluster-management.io
+  rules:
+  - apiGroups:
+    - ""
+    apiVersions:
+    - v1
+    operations:
+    - DELETE
+    resources:
+    - namespaces
+    scope: '*'
+  clientConfig:
+    service:
+      name: acm-webhook
+      port: 443
+      path: /validating
+    caBundle: abc

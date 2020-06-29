@@ -13,10 +13,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// WebhookName is the name of the webhook deployment
+// WebhookName is the name of the foundation webhook deployment
 const WebhookName string = "acm-webhook"
 
-// WebhookDeployment creates the deployment for the webhook
+// WebhookDeployment creates the deployment for the foundation webhook
 func WebhookDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
 	replicas := getReplicaCount(m)
 
@@ -100,7 +100,7 @@ func WebhookDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]stri
 	return dep
 }
 
-// WebhookService creates a service object for the webhook
+// WebhookService creates a service object for the foundation webhook
 func WebhookService(m *operatorsv1.MultiClusterHub) *corev1.Service {
 	s := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{

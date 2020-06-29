@@ -5,7 +5,7 @@ metadata:
   labels:
     app: acm-webhook
 webhooks:
-- name: acm.webhook.admission.open-cluster-management.io
+- name: acm.mutating.webhook.admission.open-cluster-management.io
   rules:
   - apiGroups:
     - 'apps.open-cluster-management.io'
@@ -30,4 +30,6 @@ webhooks:
   clientConfig:
     service:
       name: acm-webhook
+      port: 443
+      path: /mutating
     caBundle: abc

@@ -42,20 +42,21 @@ func NewRenderer(multipleClusterHub *operatorsv1.MultiClusterHub) *Renderer {
 		cr: multipleClusterHub,
 	}
 	renderer.renderFns = map[string]renderFn{
-		"APIService":                   renderer.renderAPIServices,
-		"Deployment":                   renderer.renderNamespace,
-		"Service":                      renderer.renderNamespace,
-		"ServiceAccount":               renderer.renderNamespace,
-		"ConfigMap":                    renderer.renderNamespace,
-		"ClusterRoleBinding":           renderer.renderClusterRoleBinding,
-		"ClusterRole":                  renderer.renderClusterRole,
-		"MutatingWebhookConfiguration": renderer.renderMutatingWebhookConfiguration,
-		"Secret":                       renderer.renderSecret,
-		"Subscription":                 renderer.renderNamespace,
-		"StatefulSet":                  renderer.renderNamespace,
-		"Channel":                      renderer.renderNamespace,
-		"HiveConfig":                   renderer.renderHiveConfig,
-		"CustomResourceDefinition":     renderer.renderCRD,
+		"APIService":                     renderer.renderAPIServices,
+		"Deployment":                     renderer.renderNamespace,
+		"Service":                        renderer.renderNamespace,
+		"ServiceAccount":                 renderer.renderNamespace,
+		"ConfigMap":                      renderer.renderNamespace,
+		"ClusterRoleBinding":             renderer.renderClusterRoleBinding,
+		"ClusterRole":                    renderer.renderClusterRole,
+		"MutatingWebhookConfiguration":   renderer.renderMutatingWebhookConfiguration,
+		"ValidatingWebhookConfiguration": renderer.renderValidatingWebhookConfiguration,
+		"Secret":                         renderer.renderSecret,
+		"Subscription":                   renderer.renderNamespace,
+		"StatefulSet":                    renderer.renderNamespace,
+		"Channel":                        renderer.renderNamespace,
+		"HiveConfig":                     renderer.renderHiveConfig,
+		"CustomResourceDefinition":       renderer.renderCRD,
 	}
 	return renderer
 }
@@ -92,7 +93,8 @@ func (r *Renderer) renderTemplates(templates []*resource.Resource) ([]*unstructu
 
 	}
 
-	//acm-mutating-webhook has a section `webhooks.clientConfig.caBundle` created in secret acm-webhook-secrets.
+	// acm-mutating-webhook and acm-validating-webhook have a section `webhooks.clientConfig.caBundle` created
+	// in secret acm-webhook-secrets.
 	// Current render mechanism cannot handle this dependence scenario. So re-render template dependence in the end.
 	uobjs, err := reRenderDependence(uobjs)
 	return uobjs, err
@@ -185,6 +187,21 @@ func (r *Renderer) renderMutatingWebhookConfiguration(res *resource.Resource) (*
 	return u, nil
 }
 
+func (r *Renderer) renderValidatingWebhookConfiguration(res *resource.Resource) (*unstructured.Unstructured, error) {
+	u := &unstructured.Unstructured{Object: res.Map()}
+	webooks, ok := u.Object["webhooks"].([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to find webhooks spec field")
+	}
+	webhook := webooks[0].(map[string]interface{})
+	clientConfig := webhook["clientConfig"].(map[string]interface{})
+	service := clientConfig["service"].(map[string]interface{})
+
+	service["namespace"] = r.cr.Namespace
+	utils.AddInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
+	return u, nil
+}
+
 func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructured, error) {
 	caCert, tlsCert, tlsKey := "ca.crt", "tls.crt", "tls.key"
 	u := &unstructured.Unstructured{Object: res.Map()}
@@ -248,6 +265,7 @@ func (r *Renderer) renderHiveConfig(res *resource.Resource) (*unstructured.Unstr
 func reRenderDependence(objs []*unstructured.Unstructured) ([]*unstructured.Unstructured, error) {
 	var ca interface{}
 	var mutatingConfig *unstructured.Unstructured
+	var validatingConfig *unstructured.Unstructured
 	for _, obj := range objs {
 		if obj.GetKind() == "Secret" && obj.GetName() == "acm-webhook-secret" {
 			data, ok := obj.Object["data"].(map[string]interface{})
@@ -260,10 +278,24 @@ func reRenderDependence(objs []*unstructured.Unstructured) ([]*unstructured.Unst
 		if obj.GetKind() == "MutatingWebhookConfiguration" && obj.GetName() == "acm-mutating-webhook" {
 			mutatingConfig = obj
 		}
+
+		if obj.GetKind() == "ValidatingWebhookConfiguration" && obj.GetName() == "acm-validating-webhook" {
+			validatingConfig = obj
+		}
 	}
 
 	if ca != nil && mutatingConfig != nil {
 		webooks, ok := mutatingConfig.Object["webhooks"].([]interface{})
+		if !ok {
+			return nil, fmt.Errorf("failed to find webhooks spec field")
+		}
+		webhook := webooks[0].(map[string]interface{})
+		clientConfig := webhook["clientConfig"].(map[string]interface{})
+		clientConfig["caBundle"] = ca
+	}
+
+	if ca != nil && validatingConfig != nil {
+		webooks, ok := validatingConfig.Object["webhooks"].([]interface{})
 		if !ok {
 			return nil, fmt.Errorf("failed to find webhooks spec field")
 		}
