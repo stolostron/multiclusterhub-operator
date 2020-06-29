@@ -26,7 +26,6 @@ func TestRender(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "test",
-			Mongo:           operatorsv1.Mongo{},
 		},
 	}
 

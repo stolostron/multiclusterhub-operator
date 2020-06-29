@@ -1,6 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 
-package mcm
+package foundation
 
 import (
 	"testing"
@@ -9,19 +9,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestProxyServerDeployment(t *testing.T) {
+func TestWebhookDeployment(t *testing.T) {
 	empty := &operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "",
-			Mongo:           operatorsv1.Mongo{},
 		},
 	}
-
 	ovr := map[string]string{}
 
 	t.Run("MCH with empty fields", func(t *testing.T) {
-		_ = ACMProxyServerDeployment(empty, ovr)
+		_ = WebhookDeployment(empty, ovr)
 	})
 
 	essentialsOnly := &operatorsv1.MultiClusterHub{
@@ -29,11 +27,11 @@ func TestProxyServerDeployment(t *testing.T) {
 		Spec:       operatorsv1.MultiClusterHubSpec{},
 	}
 	t.Run("MCH with only required values", func(t *testing.T) {
-		_ = ACMProxyServerDeployment(essentialsOnly, ovr)
+		_ = WebhookDeployment(essentialsOnly, ovr)
 	})
 }
 
-func TestProxyServerService(t *testing.T) {
+func TestWebhookService(t *testing.T) {
 	mch := &operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "testName",
@@ -42,7 +40,7 @@ func TestProxyServerService(t *testing.T) {
 	}
 
 	t.Run("Create service", func(t *testing.T) {
-		s := ACMProxyServerService(mch)
+		s := WebhookService(mch)
 		if ns := s.Namespace; ns != "testNS" {
 			t.Errorf("expected namespace %s, got %s", "testNS", ns)
 		}

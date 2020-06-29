@@ -43,16 +43,6 @@ spec:
             customCAConfigmap:
               description: Configuration options for custom CA
               type: string
-            etcd:
-              description: Spec of Etcd
-              properties:
-                storage:
-                  description: StorageSize for MultiCluster hub components
-                  type: string
-                storageClass:
-                  description: StorageClass for MultiCluster hub components
-                  type: string
-              type: object
             hive:
               description: Spec of hive
               properties:
@@ -184,16 +174,6 @@ spec:
             ipv6:
               description: Flag for IPv6
               type: boolean
-            mongo:
-              description: Spec of mongo
-              properties:
-                storage:
-                  description: StorageSize for MultiCluster hub components
-                  type: string
-                storageClass:
-                  description: StorageClass for MultiCluster hub components
-                  type: string
-              type: object
             nodeSelector:
               additionalProperties:
                 type: string

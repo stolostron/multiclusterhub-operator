@@ -128,14 +128,6 @@ func TestMchIsValid(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "test",
-			Mongo: operatorsv1.Mongo{
-				Storage:      "mongoStorage",
-				StorageClass: "mongoStorageClass",
-			},
-			Etcd: operatorsv1.Etcd{
-				Storage:      "etcdStorage",
-				StorageClass: "etcdStorageClass",
-			},
 			Ingress: operatorsv1.IngressSpec{
 				SSLCiphers: []string{"foo", "bar", "baz"},
 			},

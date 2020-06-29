@@ -32,14 +32,6 @@ var (
 		},
 		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "pull-secret",
-			Mongo: operatorsv1.Mongo{
-				Storage:      "5gi",
-				StorageClass: "gp2",
-			},
-			Etcd: operatorsv1.Etcd{
-				Storage:      "1gi",
-				StorageClass: "gp2",
-			},
 			Ingress: operatorsv1.IngressSpec{
 				SSLCiphers: []string{"foo", "bar", "baz"},
 			},
@@ -84,11 +76,6 @@ func Test_ReconcileMultiClusterHub(t *testing.T) {
 	defer os.Unsetenv("MANIFESTS_PATH")
 	defer os.Unsetenv("UNIT_TEST")
 
-	// Without Datastores
-	mch1 := full_mch.DeepCopy()
-	mch1.Spec.Etcd = operatorsv1.Etcd{}
-	mch1.Spec.Mongo = operatorsv1.Mongo{}
-
 	// Without Status Prefilled
 	mch2 := full_mch.DeepCopy()
 	mch2.Status = operatorsv1.MultiClusterHubStatus{}
@@ -114,11 +101,6 @@ func Test_ReconcileMultiClusterHub(t *testing.T) {
 			Name:     "Full Valid MCH",
 			MCH:      full_mch,
 			Expected: nil,
-		},
-		{
-			Name:     "Without Datastores",
-			MCH:      mch1,
-			Expected: fmt.Errorf("failed to find default storageclass"), // No storageclasses included in fake client
 		},
 		{
 			Name:     "Without Status",
@@ -207,45 +189,12 @@ func TestUpdateStatus(t *testing.T) {
 	}
 }
 
-func Test_mongoAuthSecret(t *testing.T) {
-	t.Run("Test mongo auth secret creation", func(t *testing.T) {
-		mch := &operatorsv1.MultiClusterHub{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "multiclusterhub",
-				Namespace: "open-cluster-management",
-			},
-			Spec: operatorsv1.MultiClusterHubSpec{
-				ImagePullSecret: "Always",
-			},
-		}
-		r, err := getTestReconciler(mch)
-		if err != nil {
-			t.Fatalf("Failed to create test reconciler")
-		}
-
-		secret := r.mongoAuthSecret(mch)
-
-		if secret.Namespace != mch.Namespace {
-			t.Errorf("Namespace not set from mch in secret")
-		}
-		if !(secret.StringData["user"] == "admin" || secret.StringData["password"] != "") {
-			t.Errorf("StringData must be set properly in mongo auth secret")
-		}
-	})
-
-}
-
 func Test_setDefaults(t *testing.T) {
 	os.Setenv("TEMPLATES_PATH", "../../../templates")
 
-	// Without Datastores
-	mch1 := full_mch.DeepCopy()
-	mch1.Spec.Etcd = operatorsv1.Etcd{}
-	mch1.Spec.Mongo = operatorsv1.Mongo{}
-
 	// Without Status Prefilled
-	mch2 := full_mch.DeepCopy()
-	mch2.Status = operatorsv1.MultiClusterHubStatus{}
+	mch1 := full_mch.DeepCopy()
+	mch1.Status = operatorsv1.MultiClusterHubStatus{}
 
 	tests := []struct {
 		Name     string
@@ -258,13 +207,8 @@ func Test_setDefaults(t *testing.T) {
 			Expected: nil,
 		},
 		{
-			Name:     "Without Datastores",
-			MCH:      mch1,
-			Expected: fmt.Errorf("failed to find default storageclass"), // No storageclasses included in fake client
-		},
-		{
 			Name:     "Without Status",
-			MCH:      mch2,
+			MCH:      mch1,
 			Expected: nil,
 		},
 	}
@@ -284,23 +228,6 @@ func Test_setDefaults(t *testing.T) {
 		})
 	}
 	os.Unsetenv("TEMPLATES_PATH")
-}
-
-func Test_generatePass(t *testing.T) {
-	t.Run("Test length", func(t *testing.T) {
-		length := 16
-		if got := generatePass(length); len(got) != length {
-			t.Errorf("length of generatePass(%d) = %d, want %d", length, len(got), length)
-		}
-	})
-
-	t.Run("Test randomness", func(t *testing.T) {
-		t1 := generatePass(32)
-		t2 := generatePass(32)
-		if t1 == t2 {
-			t.Errorf("generatePass() did not generate a unique password")
-		}
-	})
 }
 
 func errorEquals(err, expected error) bool {

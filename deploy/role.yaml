@@ -12,7 +12,6 @@ rules:
   - "apps"
   - "apps.open-cluster-management.io"
   - "authorization.k8s.io"
-  - "etcd.database.coreos.com"
   - "hive.openshift.io"
   - "mcm.ibm.com"
   - "rbac.authorization.k8s.io"
@@ -25,9 +24,9 @@ rules:
   - configmaps
   - customresourcedefinitions
   - deployments
-  - etcdclusters
   - hiveconfigs
   - mutatingwebhookconfigurations
+  - validatingwebhookconfigurations
   - namespaces
   - pods
   - replicasets
@@ -48,7 +47,6 @@ rules:
   - "apps"
   - "apps.open-cluster-management.io"
   - "authorization.k8s.io"
-  - "etcd.database.coreos.com"
   - "hive.openshift.io"
   - "monitoring.coreos.com"
   - "rbac.authorization.k8s.io"
@@ -63,9 +61,9 @@ rules:
   - configmaps
   - customresourcedefinitions
   - deployments
-  - etcdclusters
   - hiveconfigs
   - mutatingwebhookconfigurations
+  - validatingwebhookconfigurations
   - namespaces
   - rolebindings
   - secrets
@@ -127,7 +125,6 @@ rules:
   - rolebindings
   - secrets
   - services
-  - storageclasses
   - subjectaccessreviews
   - validatingwebhookconfigurations
   verbs:
@@ -168,6 +165,7 @@ rules:
   - customresourcedefinitions
   - hiveconfigs
   - mutatingwebhookconfigurations
+  - validatingwebhookconfigurations
   verbs:
   - deletecollection
   
@@ -176,6 +174,8 @@ rules:
   - ""
   - "action.open-cluster-management.io"
   - "agent.open-cluster-management.io"
+  - "cluster.open-cluster-management.io"
+  - "work.open-cluster-management.io"
   - "app.k8s.io"
   - "apps.open-cluster-management.io"
   - "authorization.k8s.io"
@@ -210,16 +210,13 @@ rules:
   - clusterdeployments
   - managedclusterinfos
   - managedclusterinfos/status
-  - clusterjoinrequests
-  - clusterjoinrequests/status
-  - clusterjoinrequests/finalizers
-  - clusters
-  - clusters/status
-  - clusters/finalizers
-  - clusterstatuses
+  - managedclusters
+  - managedclusters/status
+  - managedclusterviews
+  - managedclusterviews/status
+  - manifestworks
+  - manifestworks/status
   - clusterstatuses/aggregator
-  - clusterstatuses/metering-receiver
-  - clusterstatuses/topology
   - clusterversions
   - compliances
   - configmaps
@@ -241,24 +238,14 @@ rules:
   - placementrules
   - placementrules/status
   - policies
-  - resourceviews
-  - resourceviews/status
   - roles
   - rolebindings
   - secrets
   - signers
-  - managedclusters
-  - managedclusterviews
-  - managedclusterviews/status
   - subscriptions
   - subscriptions/status
   - subjectaccessreviews
   - syncsets
-  - works
-  - works/status
-  - works/result
-  - worksets
-  - worksets/status
   - clustermanagers
   verbs:
   - create

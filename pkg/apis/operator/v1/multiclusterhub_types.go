@@ -49,14 +49,6 @@ type MultiClusterHubSpec struct {
 	// +optional
 	Hive HiveConfigSpec `json:"hive"`
 
-	// Spec of mongo
-	// +optional
-	Mongo `json:"mongo"`
-
-	// Spec of Etcd
-	// +optional
-	Etcd `json:"etcd,omitempty"`
-
 	// Configuration options for ingress management
 	// +optional
 	Ingress IngressSpec `json:"ingress,omitempty"`
@@ -75,17 +67,6 @@ type Overrides struct {
 	// Pull policy of the MultiCluster hub images
 	// +optional
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
-}
-
-// Etcd defines the desired state of Etcd
-type Etcd struct {
-	// StorageClass for MultiCluster hub components
-	// +optional
-	StorageClass string `json:"storageClass,omitempty"`
-
-	// StorageSize for MultiCluster hub components
-	// +optional
-	Storage string `json:"storage,omitempty"`
 }
 
 type HiveConfigSpec struct {
@@ -196,17 +177,6 @@ type ExternalDNSGCPConfig struct {
 	// The credentials must specify the project to use.
 	// +optional
 	Credentials corev1.LocalObjectReference `json:"credentials,omitempty"`
-}
-
-// Mongo defines the desired state of mongo
-type Mongo struct {
-	// StorageClass for MultiCluster hub components
-	// +optional
-	StorageClass string `json:"storageClass"`
-
-	// StorageSize for MultiCluster hub components
-	// +optional
-	Storage string `json:"storage,omitempty"`
 }
 
 // IngressSpec specifies configuration options for ingress management

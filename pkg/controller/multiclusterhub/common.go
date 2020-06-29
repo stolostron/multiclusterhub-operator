@@ -8,8 +8,8 @@ import (
 	"time"
 
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/foundation"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/mcm"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 
@@ -61,8 +61,8 @@ func (r *ReconcileMultiClusterHub) ensureDeployment(m *operatorsv1.MultiClusterH
 	switch found.Name {
 	case helmrepo.HelmRepoName:
 		desired, needsUpdate = helmrepo.ValidateDeployment(m, r.CacheSpec.ImageOverrides, found)
-	case mcm.APIServerName, mcm.ControllerName, mcm.ACMControllerName, mcm.ACMProxyServerName, mcm.WebhookName:
-		desired, needsUpdate = mcm.ValidateDeployment(m, r.CacheSpec.ImageOverrides, found)
+	case foundation.ACMControllerName, foundation.ACMProxyServerName, foundation.WebhookName:
+		desired, needsUpdate = foundation.ValidateDeployment(m, r.CacheSpec.ImageOverrides, found)
 	default:
 		dplog.Info("Could not validate deployment; unknown name")
 		return nil, nil
@@ -106,37 +106,6 @@ func (r *ReconcileMultiClusterHub) ensureService(m *operatorsv1.MultiClusterHub,
 	} else if err != nil {
 		// Error that isn't due to the service not existing
 		svlog.Error(err, "Failed to get Service")
-		return &reconcile.Result{}, err
-	}
-
-	return nil, nil
-}
-
-func (r *ReconcileMultiClusterHub) ensureSecret(m *operatorsv1.MultiClusterHub, s *corev1.Secret) (*reconcile.Result, error) {
-	selog := log.WithValues("Secret.Namespace", s.Namespace, "Secret.Name", s.Name)
-
-	found := &corev1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{
-		Name:      s.Name,
-		Namespace: m.Namespace,
-	}, found)
-	if err != nil && errors.IsNotFound(err) {
-
-		// Create the secret
-		err = r.client.Create(context.TODO(), s)
-		if err != nil {
-			// Creation failed
-			selog.Error(err, "Failed to create new Secret")
-			return &reconcile.Result{}, err
-		}
-
-		// Creation was successful
-		selog.Info("Created a new secret")
-		return nil, nil
-
-	} else if err != nil {
-		// Error that isn't due to the secret not existing
-		selog.Error(err, "Failed to get Secret")
 		return &reconcile.Result{}, err
 	}
 
@@ -267,7 +236,7 @@ func (r *ReconcileMultiClusterHub) ensureClusterManager(m *operatorsv1.MultiClus
 	}
 
 	// Validate object based on type
-	updated, needsUpdate := mcm.ValidateClusterManager(found, u)
+	updated, needsUpdate := foundation.ValidateClusterManager(found, u)
 	if needsUpdate {
 		obLog.Info("Updating cluster manager")
 		// Update the resource. Skip on unit test

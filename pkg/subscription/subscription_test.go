@@ -18,8 +18,7 @@ func TestValidate(t *testing.T) {
 	mch := &operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1.MultiClusterHubSpec{
-			ImagePullSecret: "test",
-			Mongo:           operatorsv1.Mongo{},
+			ImagePullSecret:   "test",
 			CustomCAConfigmap: "test-config",
 		},
 	}
@@ -118,7 +117,6 @@ func TestSubscriptions(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "test",
-			Mongo:           operatorsv1.Mongo{},
 		},
 	}
 	ovr := map[string]string{}
@@ -135,7 +133,6 @@ func TestSubscriptions(t *testing.T) {
 		{"GRC subscription", GRC(mch, ovr)},
 		{"KUIWebTerminal subscription", KUIWebTerminal(mch, ovr)},
 		{"ManagementIngress subscription", ManagementIngress(mch, ovr, "")},
-		{"MongoDB subscription", MongoDB(mch, ovr)},
 		{"RCM subscription", RCM(mch, ovr)},
 		{"Search subscription", Search(mch, ovr)},
 		{"Topology subscription", Topology(mch, ovr)},

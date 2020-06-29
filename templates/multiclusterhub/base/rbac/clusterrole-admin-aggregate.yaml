@@ -5,14 +5,17 @@ metadata:
     rbac.authorization.k8s.io/aggregate-to-admin: "true"
   name: mcm-admin-aggregate
 rules:
-- apiGroups: ["mcm.ibm.com"]
-  resources: ["resourceviews", "resourceviews/status", "works", "works/status", "worksets", "worksets/status"]
+- apiGroups: ["cluster.open-cluster-management.io"]
+  resources: ["managedclusters", "managedclusters/status"]
   verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
-- apiGroups: ["mcm.ibm.com"]
-  resources: ["clusterstatuses", "helmrepos", "helmrepos/status"]
+- apiGroups: ["action.open-cluster-management.io"]
+  resources: ["managedclusteractions", "managedclusteractions/status"]
   verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
-- apiGroups: ["clusterregistry.k8s.io"]
-  resources: ["clusters", "clusters/status"]
+- apiGroups: ["view.open-cluster-management.io"]
+  resources: ["managedclusterviews", "managedclusterviews/status"]
+  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+- apiGroups: ["internal.open-cluster-management.io"]
+  resources: ["managedclusterinfos", "managedclusterinfos/status"]
   verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
 - apiGroups: ["mcm.ibm.com"]
   resources: ["deployables", "deployables/status", "placementbindings", "placementpolicies", "placementpolicies/status", "deployableoverrides", "deployableoverrides/status", "applicationrelationships", "applicationrelationships/status"]

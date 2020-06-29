@@ -1,6 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 
-package mcm
+package foundation
 
 import (
 	"bytes"
@@ -14,13 +14,13 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// ImageKey used by mcm deployments
+// ImageKey used by multicoud manager deployments
 const ImageKey = "multicloud_manager"
 
-// ImageKey used by mcm deployments
+// ImageKey used by registration deployments
 const RegistrationImageKey = "registration"
 
-// ServiceAccount used by mcm deployments
+// ServiceAccount used by acm deployments
 const ServiceAccount = "acm-foundation-sa"
 
 // Image returns image reference for multicloud-manager
