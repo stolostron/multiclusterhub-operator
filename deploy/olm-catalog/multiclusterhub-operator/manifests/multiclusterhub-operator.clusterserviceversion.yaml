@@ -100,6 +100,7 @@ spec:
           - etcdclusters
           - hiveconfigs
           - mutatingwebhookconfigurations
+          - validatingwebhookconfigurations
           - namespaces
           - pods
           - replicasets
@@ -137,6 +138,7 @@ spec:
           - etcdclusters
           - hiveconfigs
           - mutatingwebhookconfigurations
+          - validatingwebhookconfigurations
           - namespaces
           - rolebindings
           - secrets
@@ -235,6 +237,7 @@ spec:
           - customresourcedefinitions
           - hiveconfigs
           - mutatingwebhookconfigurations
+          - validatingwebhookconfigurations
           verbs:
           - deletecollection
         - apiGroups:

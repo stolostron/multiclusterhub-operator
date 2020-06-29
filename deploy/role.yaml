@@ -28,6 +28,7 @@ rules:
   - etcdclusters
   - hiveconfigs
   - mutatingwebhookconfigurations
+  - validatingwebhookconfigurations
   - namespaces
   - pods
   - replicasets
@@ -66,6 +67,7 @@ rules:
   - etcdclusters
   - hiveconfigs
   - mutatingwebhookconfigurations
+  - validatingwebhookconfigurations
   - namespaces
   - rolebindings
   - secrets
@@ -168,6 +170,7 @@ rules:
   - customresourcedefinitions
   - hiveconfigs
   - mutatingwebhookconfigurations
+  - validatingwebhookconfigurations
   verbs:
   - deletecollection
   

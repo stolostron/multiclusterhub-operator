@@ -13,10 +13,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// WebhookName is the name of the mcm apiserver deployment
-const WebhookName string = "mcm-webhook"
+// WebhookName is the name of the foundation webhook deployment
+const WebhookName string = "acm-webhook"
 
-// WebhookDeployment creates the deployment for the mcm webhook
+// WebhookDeployment creates the deployment for the foundation webhook
 func WebhookDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
 	replicas := getReplicaCount(m)
 
@@ -44,7 +44,7 @@ func WebhookDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]stri
 						{
 							Name: "webhook-cert",
 							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{SecretName: "mcm-webhook-secret"},
+								Secret: &corev1.SecretVolumeSource{SecretName: "acm-webhook-secret"},
 							},
 						},
 					},
@@ -53,9 +53,9 @@ func WebhookDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]stri
 						ImagePullPolicy: utils.GetImagePullPolicy(m),
 						Name:            WebhookName,
 						Args: []string{
-							"/mcm-webhook",
-							"--tls-cert-file=/var/run/mcm-webhook/tls.crt",
-							"--tls-private-key-file=/var/run/mcm-webhook/tls.key",
+							"/acm-webhook",
+							"--tls-cert-file=/var/run/acm-webhook/tls.crt",
+							"--tls-private-key-file=/var/run/acm-webhook/tls.key",
 						},
 						Ports: []v1.ContainerPort{{ContainerPort: 8000}},
 						LivenessProbe: &v1.Probe{
@@ -86,7 +86,7 @@ func WebhookDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]stri
 							},
 						},
 						VolumeMounts: []corev1.VolumeMount{
-							{Name: "webhook-cert", MountPath: "/var/run/mcm-webhook"},
+							{Name: "webhook-cert", MountPath: "/var/run/acm-webhook"},
 						},
 					}},
 				},
@@ -100,7 +100,7 @@ func WebhookDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]stri
 	return dep
 }
 
-// WebhookService creates a service object for the mcm webhook
+// WebhookService creates a service object for the foundation webhook
 func WebhookService(m *operatorsv1.MultiClusterHub) *corev1.Service {
 	s := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{

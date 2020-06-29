@@ -287,10 +287,10 @@ func Test_cleanupMutatingWebhooks(t *testing.T) {
 		},
 		Webhooks: []admissionregistrationv1beta1.MutatingWebhook{
 			{
-				Name: "mcm.webhook.admission.cloud.ibm.com",
+				Name: "acm.mutating.webhook.admission.open-cluster-management.io",
 				ClientConfig: admissionregistrationv1beta1.WebhookClientConfig{
 					Service: &admissionregistrationv1beta1.ServiceReference{
-						Name: "mcm-webhook",
+						Name: "acm-webhook",
 					},
 				},
 			},
@@ -344,6 +344,82 @@ func Test_cleanupMutatingWebhooks(t *testing.T) {
 			}
 
 			emptyMWC := &admissionregistrationv1beta1.MutatingWebhookConfiguration{}
+			err = r.client.Get(context.TODO(), types.NamespacedName{
+				Name:      tt.MWC.Name,
+				Namespace: tt.MWC.Namespace,
+			}, emptyMWC)
+			if !errorEquals(err, tt.Result) {
+				t.Fatal(err.Error())
+			}
+		})
+	}
+}
+
+func Test_cleanupValidatingWebhooks(t *testing.T) {
+	MWC := &admissionregistrationv1beta1.ValidatingWebhookConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-validatingwebhookconfiguration",
+			Namespace: mch_namespace,
+		},
+		Webhooks: []admissionregistrationv1beta1.ValidatingWebhook{
+			{
+				Name: "acm.validating.webhook.admission.open-cluster-management.io",
+				ClientConfig: admissionregistrationv1beta1.WebhookClientConfig{
+					Service: &admissionregistrationv1beta1.ServiceReference{
+						Name: "acm-webhook",
+					},
+				},
+			},
+		},
+	}
+
+	installerMWC := MWC.DeepCopy()
+	installerMWC.SetLabels(map[string]string{
+		"installer.name":      mch_name,
+		"installer.namespace": mch_namespace,
+	})
+
+	tests := []struct {
+		Name   string
+		MCH    *operatorsv1.MultiClusterHub
+		MWC    *admissionregistrationv1beta1.ValidatingWebhookConfiguration
+		Result error
+	}{
+		{
+			Name:   "Without Labels",
+			MCH:    full_mch,
+			MWC:    MWC,
+			Result: nil,
+		},
+		{
+			Name:   "With Labels",
+			MCH:    empty_mch,
+			MWC:    installerMWC,
+			Result: fmt.Errorf("validatingwebhookconfigurations.admissionregistration.k8s.io \"test-validatingwebhookconfiguration\" not found"),
+		},
+	}
+
+	reqLogger := log.WithValues("Request.Namespace", mch_namespace, "Request.Name", mch_name)
+
+	for _, tt := range tests {
+		t.Run(tt.Name, func(t *testing.T) {
+			// Objects to track in the fake client.
+			r, err := getTestReconciler(tt.MCH)
+			if err != nil {
+				t.Fatalf("Failed to create test reconciler")
+			}
+
+			err = r.client.Create(context.TODO(), tt.MWC)
+			if err != nil {
+				t.Fatal(err.Error())
+			}
+
+			err = r.cleanupValidatingWebhooks(reqLogger, full_mch)
+			if err != nil {
+				t.Fatal("Failed to cleanup validatingwebhookconfigurations")
+			}
+
+			emptyMWC := &admissionregistrationv1beta1.ValidatingWebhookConfiguration{}
 			err = r.client.Get(context.TODO(), types.NamespacedName{
 				Name:      tt.MWC.Name,
 				Namespace: tt.MWC.Namespace,
