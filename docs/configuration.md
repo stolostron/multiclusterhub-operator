@@ -16,8 +16,6 @@ spec:
   availabilityConfig: "Basic"
 ```
 
-> The instance is installed with High availability by default if not otherwise specified
-
 ### HA installation with node selector
 
 ```yaml
