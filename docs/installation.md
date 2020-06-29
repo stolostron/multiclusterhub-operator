@@ -68,7 +68,7 @@ This will
 5. Apply OLM objects (catalogsource, index, subscription)
 
 
-#### 3. Deploy with the Operator Lifecycle Manager (Index image)
+#### 4. Deploy with the Operator Lifecycle Manager (Index image)
 OLM will manage creation of most resources required to run the operator. This method builds and pushes an actual index image.
 
 ```bash
