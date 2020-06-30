@@ -2,11 +2,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: open-cluster-management:cluster-manager-admin
-rules:
-  - apiGroups: ["cluster.open-cluster-management.io"]
-    resources: ["managedclusters", "managedclusters/accept","managedclusters/status"]
-    verbs: ["create","get", "list", "watch", "update", "delete", "deletecollection", "patch"]
 aggregationRule:
   clusterRoleSelectors:
     - matchLabels:
         rbac.authorization.k8s.io/aggregate-to-ocm-cluster-manager-admin: 'true'
+rules: []
