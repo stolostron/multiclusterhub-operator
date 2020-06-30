@@ -21,7 +21,7 @@ const (
 	WebhookServiceName = "multiclusterhub-operator-webhook"
 
 	// KlusterletSecretName ...
-	KlusterletSecretName = "acm-klusterlet-self-signed-secrets" // #nosec G101 (no confidential credentials)
+	KlusterletSecretName = "ocm-klusterlet-self-signed-secrets" // #nosec G101 (no confidential credentials)
 
 	// CertManagerNamespace ...
 	CertManagerNamespace = "cert-manager"
@@ -33,6 +33,7 @@ const (
 	// DefaultRepository ...
 	DefaultRepository = "quay.io/open-cluster-management"
 
+	// UnitTestEnvVar ...
 	UnitTestEnvVar = "UNIT_TEST"
 )
 

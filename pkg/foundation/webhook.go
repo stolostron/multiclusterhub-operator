@@ -14,7 +14,7 @@ import (
 )
 
 // WebhookName is the name of the foundation webhook deployment
-const WebhookName string = "acm-webhook"
+const WebhookName string = "ocm-webhook"
 
 // WebhookDeployment creates the deployment for the foundation webhook
 func WebhookDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
@@ -44,7 +44,7 @@ func WebhookDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]stri
 						{
 							Name: "webhook-cert",
 							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{SecretName: "acm-webhook-secret"},
+								Secret: &corev1.SecretVolumeSource{SecretName: "ocm-webhook-secret"},
 							},
 						},
 					},

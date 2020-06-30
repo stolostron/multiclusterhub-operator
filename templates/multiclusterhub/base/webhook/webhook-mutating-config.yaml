@@ -1,11 +1,11 @@
 apiVersion: admissionregistration.k8s.io/v1beta1
 kind: MutatingWebhookConfiguration
 metadata:
-  name: acm-mutating-webhook
+  name: ocm-mutating-webhook
   labels:
-    app: acm-webhook
+    app: ocm-webhook
 webhooks:
-- name: acm.mutating.webhook.admission.open-cluster-management.io
+- name: ocm.mutating.webhook.admission.open-cluster-management.io
   rules:
   - apiGroups:
     - 'apps.open-cluster-management.io'
@@ -29,7 +29,7 @@ webhooks:
     - applications
   clientConfig:
     service:
-      name: acm-webhook
+      name: ocm-webhook
       port: 443
       path: /mutating
     caBundle: abc

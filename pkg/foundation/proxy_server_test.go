@@ -20,7 +20,7 @@ func TestProxyServerDeployment(t *testing.T) {
 	ovr := map[string]string{}
 
 	t.Run("MCH with empty fields", func(t *testing.T) {
-		_ = ACMProxyServerDeployment(empty, ovr)
+		_ = OCMProxyServerDeployment(empty, ovr)
 	})
 
 	essentialsOnly := &operatorsv1.MultiClusterHub{
@@ -28,7 +28,7 @@ func TestProxyServerDeployment(t *testing.T) {
 		Spec:       operatorsv1.MultiClusterHubSpec{},
 	}
 	t.Run("MCH with only required values", func(t *testing.T) {
-		_ = ACMProxyServerDeployment(essentialsOnly, ovr)
+		_ = OCMProxyServerDeployment(essentialsOnly, ovr)
 	})
 }
 
@@ -41,7 +41,7 @@ func TestProxyServerService(t *testing.T) {
 	}
 
 	t.Run("Create service", func(t *testing.T) {
-		s := ACMProxyServerService(mch)
+		s := OCMProxyServerService(mch)
 		if ns := s.Namespace; ns != "testNS" {
 			t.Errorf("expected namespace %s, got %s", "testNS", ns)
 		}
