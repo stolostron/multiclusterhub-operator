@@ -229,7 +229,7 @@ rules:
   - events
   - helmrepos
   - helmrepos/status
-  - klusterletconfigs
+  - klusterletaddonconfigs
   - machinepools
   - namespaces
   - placementbindings
