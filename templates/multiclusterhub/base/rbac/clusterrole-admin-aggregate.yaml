@@ -3,11 +3,12 @@ kind: ClusterRole
 metadata:
   labels:
     rbac.authorization.k8s.io/aggregate-to-admin: "true"
+    rbac.authorization.k8s.io/aggregate-to-ocm-cluster-manager-admin: "true"
   name: mcm-admin-aggregate
 rules:
 - apiGroups: ["cluster.open-cluster-management.io"]
   resources: ["managedclusters", "managedclusters/status"]
-  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+  verbs: ["get", "list", "watch", "patch"]
 - apiGroups: ["action.open-cluster-management.io"]
   resources: ["managedclusteractions", "managedclusteractions/status"]
   verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
