@@ -33,7 +33,7 @@ rules:
   resources: ["policies"]
   verbs: ["get", "list", "watch"]
 - apiGroups: ["agent.open-cluster-management.io"]
-  resources: ["klusterletconfigs"]
+  resources: ["klusterletaddonconfigs"]
   verbs: ["get", "list"]
 - apiGroups: ["hive.openshift.io"]
   resources: ["clusterdeployments", "machinepools"]
