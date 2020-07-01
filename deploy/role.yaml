@@ -216,6 +216,8 @@ rules:
   - managedclusterviews/status
   - manifestworks
   - manifestworks/status
+  - clustermanagers
+  - clusterroles
   - clusterstatuses/aggregator
   - clusterversions
   - compliances
@@ -246,7 +248,6 @@ rules:
   - subscriptions/status
   - subjectaccessreviews
   - syncsets
-  - clustermanagers
   verbs:
   - create
   - get
@@ -257,3 +258,4 @@ rules:
   - deletecollection
   - patch
   - approve
+  - escalate

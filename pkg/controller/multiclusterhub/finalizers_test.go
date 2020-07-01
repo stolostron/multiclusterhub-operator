@@ -216,7 +216,7 @@ func Test_cleanupClusterRoleBindings(t *testing.T) {
 		Subjects: []rbacv1.Subject{
 			{
 				Kind: "ServiceAccount",
-				Name: "acm-foundation-sa",
+				Name: "ocm-foundation-sa",
 			},
 		},
 	}
@@ -287,10 +287,10 @@ func Test_cleanupMutatingWebhooks(t *testing.T) {
 		},
 		Webhooks: []admissionregistrationv1beta1.MutatingWebhook{
 			{
-				Name: "acm.mutating.webhook.admission.open-cluster-management.io",
+				Name: "ocm.mutating.webhook.admission.open-cluster-management.io",
 				ClientConfig: admissionregistrationv1beta1.WebhookClientConfig{
 					Service: &admissionregistrationv1beta1.ServiceReference{
-						Name: "acm-webhook",
+						Name: "ocm-webhook",
 					},
 				},
 			},
@@ -363,10 +363,10 @@ func Test_cleanupValidatingWebhooks(t *testing.T) {
 		},
 		Webhooks: []admissionregistrationv1beta1.ValidatingWebhook{
 			{
-				Name: "acm.validating.webhook.admission.open-cluster-management.io",
+				Name: "ocm.validating.webhook.admission.open-cluster-management.io",
 				ClientConfig: admissionregistrationv1beta1.WebhookClientConfig{
 					Service: &admissionregistrationv1beta1.ServiceReference{
-						Name: "acm-webhook",
+						Name: "ocm-webhook",
 					},
 				},
 			},
@@ -430,7 +430,6 @@ func Test_cleanupValidatingWebhooks(t *testing.T) {
 		})
 	}
 }
-
 
 func Test_cleanupPullSecret(t *testing.T) {
 	secret := &corev1.Secret{
