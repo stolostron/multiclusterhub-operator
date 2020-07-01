@@ -276,6 +276,8 @@ spec:
           - managedclusterviews/status
           - manifestworks
           - manifestworks/status
+          - clustermanagers
+          - clusterroles
           - clusterstatuses/aggregator
           - clusterversions
           - compliances
@@ -306,7 +308,6 @@ spec:
           - subscriptions/status
           - subjectaccessreviews
           - syncsets
-          - clustermanagers
           verbs:
           - create
           - get
@@ -317,6 +318,7 @@ spec:
           - deletecollection
           - patch
           - approve
+          - escalate
         serviceAccountName: multiclusterhub-operator
       deployments:
       - name: multiclusterhub-operator
