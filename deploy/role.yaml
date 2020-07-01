@@ -168,7 +168,7 @@ rules:
   - validatingwebhookconfigurations
   verbs:
   - deletecollection
-  
+
 # RCM Dependancies
 - apiGroups:
   - ""
@@ -189,7 +189,7 @@ rules:
   - "inventory.open-cluster-management.io"
   - "mcm.ibm.com"
   - "multicloud.ibm.com"
-  - "policy.mcm.ibm.com"
+  - "policy.open-cluster-management.io"
   - "proxy.open-cluster-management.io"
   - "rbac.authorization.k8s.io"
   - "view.open-cluster-management.io"
@@ -234,12 +234,11 @@ rules:
   - klusterletaddonconfigs
   - machinepools
   - namespaces
-  - placementbindings
-  - placementpolicies
-  - placementpolicies/status
   - placementrules
   - placementrules/status
   - policies
+  - policies/status
+  - placementbindings
   - roles
   - rolebindings
   - secrets
