@@ -3,7 +3,7 @@ kind: ClusterRole
 metadata:
   labels:
     rbac.authorization.k8s.io/aggregate-to-admin: "true"
-  name: open-cluster-management:installer:admin-aggregate
+  name: open-cluster-management:admin-aggregate
 rules:
 - apiGroups: ["cluster.open-cluster-management.io"]
   resources: ["managedclusters", "managedclusters/status"]
