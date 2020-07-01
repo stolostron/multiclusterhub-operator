@@ -373,20 +373,20 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	//ACM proxy server deployment
-	result, err = r.ensureDeployment(multiClusterHub, foundation.ACMProxyServerDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
+	//OCM proxy server deployment
+	result, err = r.ensureDeployment(multiClusterHub, foundation.OCMProxyServerDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
 	}
 
-	//ACM proxy server service
-	result, err = r.ensureService(multiClusterHub, foundation.ACMProxyServerService(multiClusterHub))
+	//OCM proxy server service
+	result, err = r.ensureService(multiClusterHub, foundation.OCMProxyServerService(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}
 
-	//ACM controller deployment
-	result, err = r.ensureDeployment(multiClusterHub, foundation.ACMControllerDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
+	//OCM controller deployment
+	result, err = r.ensureDeployment(multiClusterHub, foundation.OCMControllerDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
 	}

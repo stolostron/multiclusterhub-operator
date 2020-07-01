@@ -208,7 +208,7 @@ type MultiClusterHubStatus struct {
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=multiclusterhubs,scope=Namespaced,shortName=mch
-// +operator-sdk:gen-csv:customresourcedefinitions.displayName="MultiClusterHub Operator"
+// +operator-sdk:gen-csv:customresourcedefinitions.displayName="MultiClusterHub"
 type MultiClusterHub struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

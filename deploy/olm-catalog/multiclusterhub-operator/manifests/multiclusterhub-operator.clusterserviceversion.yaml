@@ -29,7 +29,7 @@ spec:
     owned:
     - description: MultiClusterHub defines the configuration for an instance of the
         MultiCluster Hub
-      displayName: MultiClusterHub Operator
+      displayName: MultiClusterHub
       kind: MultiClusterHub
       name: multiclusterhubs.operator.open-cluster-management.io
       version: v1
@@ -249,7 +249,7 @@ spec:
           - inventory.open-cluster-management.io
           - mcm.ibm.com
           - multicloud.ibm.com
-          - policy.mcm.ibm.com
+          - policy.open-cluster-management.io
           - proxy.open-cluster-management.io
           - rbac.authorization.k8s.io
           - view.open-cluster-management.io
@@ -276,6 +276,8 @@ spec:
           - managedclusterviews/status
           - manifestworks
           - manifestworks/status
+          - clustermanagers
+          - clusterroles
           - clusterstatuses/aggregator
           - clusterversions
           - compliances
@@ -292,12 +294,11 @@ spec:
           - klusterletaddonconfigs
           - machinepools
           - namespaces
-          - placementbindings
-          - placementpolicies
-          - placementpolicies/status
           - placementrules
           - placementrules/status
           - policies
+          - policies/status
+          - placementbindings
           - roles
           - rolebindings
           - secrets
@@ -306,7 +307,6 @@ spec:
           - subscriptions/status
           - subjectaccessreviews
           - syncsets
-          - clustermanagers
           verbs:
           - create
           - get
@@ -317,6 +317,7 @@ spec:
           - deletecollection
           - patch
           - approve
+          - escalate
         serviceAccountName: multiclusterhub-operator
       deployments:
       - name: multiclusterhub-operator
