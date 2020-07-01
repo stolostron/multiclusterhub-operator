@@ -65,8 +65,8 @@ func CertWebhook(m *operatorsv1.MultiClusterHub, overrides map[string]string) *u
 
 	cainjector := map[string]interface{}{
 		"serviceAccount": map[string]interface{}{
-			"create": false,
-			"name":   "default",
+			"create": true,
+			"name":   "cert-manager-cainjector",
 		},
 		"hubconfig": map[string]interface{}{
 			"replicaCount": utils.DefaultReplicaCount(m),
