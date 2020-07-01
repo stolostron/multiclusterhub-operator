@@ -1,3 +1,2 @@
 resources:
 - webhook-mutating-config.yaml
-- webhook-validating-config.yaml
