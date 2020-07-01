@@ -24,14 +24,14 @@ func NewMultiClusterHub(name, namespace string) *unstructured.Unstructured {
 	}
 }
 
-// NewACMSubscription ...
-func NewACMSubscription(namespace string) *unstructured.Unstructured {
+// NewOCMSubscription ...
+func NewOCMSubscription(namespace string) *unstructured.Unstructured {
 	return &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": "operators.coreos.com/v1alpha1",
 			"kind":       "Subscription",
 			"metadata": map[string]interface{}{
-				"name":      ACMSubscriptionName,
+				"name":      OCMSubscriptionName,
 				"namespace": namespace,
 			},
 			"spec": map[string]interface{}{
