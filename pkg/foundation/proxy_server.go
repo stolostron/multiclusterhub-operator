@@ -13,34 +13,34 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// ACMProxyServerName is the name of the acm proxy server deployment
-const ACMProxyServerName string = "acm-proxyserver"
+// OCMProxyServerName is the name of the ocm proxy server deployment
+const OCMProxyServerName string = "ocm-proxyserver"
 
-// ACMProxyServerDeployment creates the deployment for the acm proxy server
-func ACMProxyServerDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
+// OCMProxyServerDeployment creates the deployment for the ocm proxy server
+func OCMProxyServerDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
 	replicas := getReplicaCount(m)
 	mode := int32(420)
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      ACMProxyServerName,
+			Name:      OCMProxyServerName,
 			Namespace: m.Namespace,
-			Labels:    defaultLabels(ACMProxyServerName),
+			Labels:    defaultLabels(OCMProxyServerName),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
 			Selector: &metav1.LabelSelector{
-				MatchLabels: defaultLabels(ACMProxyServerName),
+				MatchLabels: defaultLabels(OCMProxyServerName),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: defaultLabels(ACMProxyServerName),
+					Labels: defaultLabels(OCMProxyServerName),
 				},
 				Spec: corev1.PodSpec{
 					ImagePullSecrets:   []corev1.LocalObjectReference{{Name: m.Spec.ImagePullSecret}},
 					ServiceAccountName: ServiceAccount,
 					NodeSelector:       m.Spec.NodeSelector,
-					Affinity:           utils.DistributePods("app", ACMProxyServerName),
+					Affinity:           utils.DistributePods("app", OCMProxyServerName),
 					Volumes: []corev1.Volume{
 						{
 							Name: "klusterlet-certs",
@@ -52,7 +52,7 @@ func ACMProxyServerDeployment(m *operatorsv1.MultiClusterHub, overrides map[stri
 					Containers: []corev1.Container{{
 						Image:           Image(overrides),
 						ImagePullPolicy: utils.GetImagePullPolicy(m),
-						Name:            ACMProxyServerName,
+						Name:            OCMProxyServerName,
 						Args: []string{
 							"/acm-proxyserver",
 							"--secure-port=6443",
@@ -106,16 +106,16 @@ func ACMProxyServerDeployment(m *operatorsv1.MultiClusterHub, overrides map[stri
 	return dep
 }
 
-// ACMProxyServerService creates a service object for the acm proxy server
-func ACMProxyServerService(m *operatorsv1.MultiClusterHub) *corev1.Service {
+// OCMProxyServerService creates a service object for the ocm proxy server
+func OCMProxyServerService(m *operatorsv1.MultiClusterHub) *corev1.Service {
 	s := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      ACMProxyServerName,
+			Name:      OCMProxyServerName,
 			Namespace: m.Namespace,
-			Labels:    defaultLabels(ACMProxyServerName),
+			Labels:    defaultLabels(OCMProxyServerName),
 		},
 		Spec: corev1.ServiceSpec{
-			Selector: defaultLabels(ACMProxyServerName),
+			Selector: defaultLabels(OCMProxyServerName),
 			Ports: []corev1.ServicePort{{
 				Name:       "secure",
 				Protocol:   corev1.ProtocolTCP,

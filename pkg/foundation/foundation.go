@@ -17,17 +17,18 @@ import (
 // ImageKey used by multicoud manager deployments
 const ImageKey = "multicloud_manager"
 
-// ImageKey used by registration deployments
+// RegistrationImageKey used by registration deployments
 const RegistrationImageKey = "registration"
 
-// ServiceAccount used by acm deployments
-const ServiceAccount = "acm-foundation-sa"
+// ServiceAccount used by ocm deployments
+const ServiceAccount = "ocm-foundation-sa"
 
 // Image returns image reference for multicloud-manager
 func Image(overrides map[string]string) string {
 	return overrides[ImageKey]
 }
 
+// RegistrationImage ...
 func RegistrationImage(overrides map[string]string) string {
 	return overrides[RegistrationImageKey]
 }

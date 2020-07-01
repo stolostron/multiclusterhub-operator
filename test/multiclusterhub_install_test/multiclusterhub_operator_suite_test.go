@@ -44,14 +44,14 @@ func init() {
 }
 
 var _ = BeforeSuite(func() {
-	By("Creating ACM Operator Subscription")
+	By("Creating OCM Operator Subscription")
 	subscription := utils.DynamicKubeClient.Resource(utils.GVRSub).Namespace(utils.MCHNamespace)
-	_, err := subscription.Get(context.TODO(), utils.ACMSubscriptionName, metav1.GetOptions{})
+	_, err := subscription.Get(context.TODO(), utils.OCMSubscriptionName, metav1.GetOptions{})
 	if err != nil && errors.IsNotFound(err) {
-		acmSub := utils.NewACMSubscription(utils.MCHNamespace)
-		utils.CreateNewUnstructured(utils.DynamicKubeClient, utils.GVRSub, acmSub, utils.ACMSubscriptionName, utils.MCHNamespace)
+		ocmSub := utils.NewOCMSubscription(utils.MCHNamespace)
+		utils.CreateNewUnstructured(utils.DynamicKubeClient, utils.GVRSub, ocmSub, utils.OCMSubscriptionName, utils.MCHNamespace)
 	}
-	Expect(subscription.Get(context.TODO(), utils.ACMSubscriptionName, metav1.GetOptions{})).NotTo(BeNil())
+	Expect(subscription.Get(context.TODO(), utils.OCMSubscriptionName, metav1.GetOptions{})).NotTo(BeNil())
 
 	By("Wait for MCH Operator to be available")
 	var deploy *appsv1.Deployment

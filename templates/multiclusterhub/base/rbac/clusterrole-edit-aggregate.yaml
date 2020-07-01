@@ -3,7 +3,7 @@ kind: ClusterRole
 metadata:
   labels:
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
-  name: mcm-edit-aggregate
+  name: open-cluster-management:edit-aggregate
 rules:
 - apiGroups: ["cluster.open-cluster-management.io"]
   resources: ["managedclusters", "managedclusters/status"]

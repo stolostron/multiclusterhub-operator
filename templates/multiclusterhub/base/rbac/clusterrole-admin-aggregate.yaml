@@ -4,7 +4,7 @@ metadata:
   labels:
     rbac.authorization.k8s.io/aggregate-to-admin: "true"
     rbac.authorization.k8s.io/aggregate-to-ocm-cluster-manager-admin: "true"
-  name: mcm-admin-aggregate
+  name: open-cluster-management:admin-aggregate
 rules:
 - apiGroups: ["cluster.open-cluster-management.io"]
   resources: ["managedclusters", "managedclusters/status"]

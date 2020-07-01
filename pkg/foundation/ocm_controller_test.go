@@ -9,7 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestAcmControllerDeployment(t *testing.T) {
+func TestOcmControllerDeployment(t *testing.T) {
 	empty := &operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1.MultiClusterHubSpec{
@@ -20,7 +20,7 @@ func TestAcmControllerDeployment(t *testing.T) {
 	ovr := map[string]string{}
 
 	t.Run("MCH with empty fields", func(t *testing.T) {
-		_ = ACMControllerDeployment(empty, ovr)
+		_ = OCMControllerDeployment(empty, ovr)
 	})
 
 	essentialsOnly := &operatorsv1.MultiClusterHub{
@@ -28,6 +28,6 @@ func TestAcmControllerDeployment(t *testing.T) {
 		Spec:       operatorsv1.MultiClusterHubSpec{},
 	}
 	t.Run("MCH with only required values", func(t *testing.T) {
-		_ = ACMControllerDeployment(essentialsOnly, ovr)
+		_ = OCMControllerDeployment(essentialsOnly, ovr)
 	})
 }

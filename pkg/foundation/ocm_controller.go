@@ -13,34 +13,34 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// ACMControllerName is the name of the acm controller deployment
-const ACMControllerName string = "acm-controller"
+// OCMControllerName is the name of the ocm controller deployment
+const OCMControllerName string = "ocm-controller"
 
-// ACMControllerDeployment creates the deployment for the acm controller
-func ACMControllerDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
+// OCMControllerDeployment creates the deployment for the ocm controller
+func OCMControllerDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
 	replicas := getReplicaCount(m)
 	mode := int32(420)
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      ACMControllerName,
+			Name:      OCMControllerName,
 			Namespace: m.Namespace,
-			Labels:    defaultLabels(ACMControllerName),
+			Labels:    defaultLabels(OCMControllerName),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
 			Selector: &metav1.LabelSelector{
-				MatchLabels: defaultLabels(ACMControllerName),
+				MatchLabels: defaultLabels(OCMControllerName),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: defaultLabels(ACMControllerName),
+					Labels: defaultLabels(OCMControllerName),
 				},
 				Spec: corev1.PodSpec{
 					ImagePullSecrets:   []corev1.LocalObjectReference{{Name: m.Spec.ImagePullSecret}},
 					ServiceAccountName: ServiceAccount,
 					NodeSelector:       m.Spec.NodeSelector,
-					Affinity:           utils.DistributePods("app", ACMControllerName),
+					Affinity:           utils.DistributePods("app", OCMControllerName),
 					Volumes: []corev1.Volume{
 						{
 							Name: "klusterlet-certs",
@@ -52,7 +52,7 @@ func ACMControllerDeployment(m *operatorsv1.MultiClusterHub, overrides map[strin
 					Containers: []corev1.Container{{
 						Image:           Image(overrides),
 						ImagePullPolicy: utils.GetImagePullPolicy(m),
-						Name:            ACMControllerName,
+						Name:            OCMControllerName,
 						Args: []string{
 							"/acm-controller",
 							"--agent-cafile=/var/run/klusterlet/ca.crt",

@@ -38,11 +38,11 @@ func init() {
 }
 
 var _ = AfterSuite(func() {
-	By("Deleting ACM Subscriptions")
+	By("Deleting OCM Subscriptions")
 	// Delete Subscription
 	subLink := utils.DynamicKubeClient.Resource(utils.GVRSub).Namespace(utils.MCHNamespace)
 
-	err := subLink.Delete(context.TODO(), utils.ACMSubscriptionName, metav1.DeleteOptions{})
+	err := subLink.Delete(context.TODO(), utils.OCMSubscriptionName, metav1.DeleteOptions{})
 	Expect(err).Should(BeNil())
 
 	By("Deleting ETCD Subscriptions")
