@@ -28,7 +28,7 @@ var _ = Describe("Multiclusterhub", func() {
 	if os.Getenv("full_test_suite") == "true" {
 		By("Beginning Full Install Test Suite ...")
 		totalAttempts := 10
-		for i := 1; i < totalAttempts; i++ {
+		for i := 1; i <= totalAttempts; i++ {
 			ok := It(fmt.Sprintf("Installing MCH - Attempt %d of %d", i, totalAttempts), func() {
 				By("Creating MultiClusterHub")
 				err := ValidateMCH(CreateDefaultMCH())
