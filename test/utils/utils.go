@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -85,17 +86,22 @@ var (
 
 	// OCMSubscriptionName ...
 	OCMSubscriptionName = "multicluster-hub-operator-subscription"
-	// ETCDSubscriptionName ...
-	ETCDSubscriptionName = "etcd-singlenamespace-alpha-community-operators-openshift-marketplace"
+
+	// SubList contains the list of subscriptions to delete
+	SubList = [...]string{
+		OCMSubscriptionName,
+		"hive-operator-alpha-community-operators-openshift-marketplace",
+		"multicluster-operators-subscription-alpha-community-operators-openshift-marketplace",
+	}
 
 	// AppSubSlice ...
 	AppSubSlice = [...]string{"application-chart-sub", "cert-manager-sub",
 		"cert-manager-webhook-sub", "configmap-watcher-sub", "console-chart-sub",
-		"grc-sub", "kui-web-terminal-sub", "management-ingress-sub", "multicluster-mongodb-sub",
+		"grc-sub", "kui-web-terminal-sub", "management-ingress-sub",
 		"rcm-sub", "search-prod-sub", "topology-sub"}
 
-	// CSVNameSlice ...
-	CSVNameSlice = [...]string{"advanced-cluster-management", "etcdoperator"}
+	// CSVName ...
+	CSVName = "advanced-cluster-management"
 )
 
 // CreateNewUnstructured creates resources by using gvr & obj, will get object after create.
@@ -252,6 +258,7 @@ func IsOwner(owner *unstructured.Unstructured, obj interface{}) bool {
 // EnsureHelmReleasesAreRemoved ...
 func EnsureHelmReleasesAreRemoved(clientHubDynamic dynamic.Interface) error {
 	By("Waiting For HelmReleases to be deleted")
+	helmReleasesDetected := false
 	When("When MultiClusterHub is deleted, wait for all helmreleases to deleted", func() {
 		Eventually(func() error {
 			helmReleaseLink := clientHubDynamic.Resource(GVRHelmRelease)
@@ -261,9 +268,14 @@ func EnsureHelmReleasesAreRemoved(clientHubDynamic dynamic.Interface) error {
 			if len(helmReleases.Items) == 0 {
 				return nil
 			}
-			return fmt.Errorf("%d helmreleases left to be uninstalled.", len(helmReleases.Items))
+			helmReleasesDetected = true
+			return fmt.Errorf("%d helmreleases left to be uninstalled", len(helmReleases.Items))
 		}, 60, 1).Should(BeNil())
 		klog.V(1).Info("All Helmreleases deleted")
 	})
+	if helmReleasesDetected {
+		By("Waiting for 2 minutes for resources to be uninstalled.")
+		time.Sleep(2 * time.Minute)
+	}
 	return nil
 }

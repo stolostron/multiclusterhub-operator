@@ -52,22 +52,27 @@ test: component/test/unit
 
 ## Run the installer functional tests
 functional-test-install:
-	docker run \
-		-e TEST_MODE="install" \
-		--network host \
-		--dns 8.8.8.8 \
- 		--dns 8.8.4.4 \
+	docker run --network host \
+		--env pullSecret=multiclusterhub-operator-pull-secret \
+		--env source="acm-custom-registry" \
+		--env channel="release-2.0" \
+		--env sourceNamespace=open-cluster-management \
+		--env name="advanced-cluster-management" \
+		--env TEST_MODE="install" \
+		--env full_test_suite="false" \
 		--volume ~/.kube/config:/opt/.kube/config \
 		$(REGISTRY)/$(IMG)-tests:$(VERSION)
 	# ginkgo -tags functional -v --slowSpecThreshold=10 test/multiclusterhub_install_test
 
 ## Run the uninstall functional tests
 functional-test-uninstall:
-	docker run \
-		-e TEST_MODE="uninstall" \
-		--network host \
-		--dns 8.8.8.8 \
- 		--dns 8.8.4.4 \
+	docker run --network host \
+		--env pullSecret=multiclusterhub-operator-pull-secret \
+		--env source="acm-custom-registry" \
+		--env channel="release-2.0" \
+		--env sourceNamespace=open-cluster-management \
+		--env name="advanced-cluster-management" \
+		--env TEST_MODE="uninstall" \
 		--volume ~/.kube/config:/opt/.kube/config \
 		$(REGISTRY)/$(IMG)-tests:$(VERSION)
 	# ginkgo -tags functional -v --slowSpecThreshold=10 test/multiclusterhub_uninstall_test

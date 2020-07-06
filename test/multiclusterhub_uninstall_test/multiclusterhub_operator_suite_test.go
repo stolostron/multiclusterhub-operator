@@ -42,17 +42,14 @@ var _ = AfterSuite(func() {
 	// Delete Subscription
 	subLink := utils.DynamicKubeClient.Resource(utils.GVRSub).Namespace(utils.MCHNamespace)
 
-	err := subLink.Delete(context.TODO(), utils.OCMSubscriptionName, metav1.DeleteOptions{})
-	Expect(err).Should(BeNil())
-
-	By("Deleting ETCD Subscriptions")
-	// Delete ETCD Sub (Whether it is single namespace or clusterwide)
 	subList, err := subLink.List(context.TODO(), metav1.ListOptions{})
 	Expect(err).Should(BeNil())
-
 	for _, sub := range subList.Items {
-		if strings.Contains(sub.GetName(), "etcd") {
-			err = subLink.Delete(context.TODO(), sub.GetName(), metav1.DeleteOptions{})
+		for _, subName := range utils.SubList {
+			if strings.Contains(sub.GetName(), subName) {
+				err = subLink.Delete(context.TODO(), sub.GetName(), metav1.DeleteOptions{})
+				Expect(err).Should(BeNil())
+			}
 		}
 	}
 	Expect(err).Should(BeNil())
@@ -63,10 +60,9 @@ var _ = AfterSuite(func() {
 	csvList, err := csvLink.List(context.TODO(), metav1.ListOptions{})
 	Expect(err).Should(BeNil())
 	for _, csv := range csvList.Items {
-		for _, csvName := range utils.CSVNameSlice {
-			if strings.Contains(csv.GetName(), csvName) {
-				err = csvLink.Delete(context.TODO(), csv.GetName(), metav1.DeleteOptions{})
-			}
+		if strings.Contains(csv.GetName(), utils.CSVName) {
+			err = csvLink.Delete(context.TODO(), csv.GetName(), metav1.DeleteOptions{})
+			Expect(err).Should(BeNil())
 		}
 	}
 })
