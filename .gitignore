@@ -9,8 +9,6 @@
 # Test binary, build with `go test -c`
 *.test
 cover.*
-gosec.json
-report.json
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
@@ -21,6 +19,10 @@ build/registration-operator/
 .idea/
 build-harness/
 build-harness-extensions/
+
+test/out
+test/coverage
+test/options.yaml
 
 # override build harness vendoring
 !vbh/.build-harness-vendorized
@@ -33,6 +35,9 @@ __pycache__/
 
 # Generated bundles from opm
 bundles/
+
 # Customized during configmap install  
 build/configmap-install/index-configmap.yaml
 bundle.Dockerfile
+*.tap
+*.json

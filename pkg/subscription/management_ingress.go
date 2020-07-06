@@ -29,6 +29,7 @@ func ManagementIngress(m *operatorsv1.MultiClusterHub, overrides map[string]stri
 			},
 		},
 	}
+	setCustomCA(m, sub)
 
 	return newSubscription(m, sub)
 }

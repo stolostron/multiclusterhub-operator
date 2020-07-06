@@ -1,11 +1,11 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: acm-foundation
+  name: open-cluster-management:installer:foundation
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: acm-foundation
+  name: open-cluster-management:installer:foundation
 subjects:
   - kind: ServiceAccount
-    name: acm-foundation-sa
+    name: ocm-foundation-sa

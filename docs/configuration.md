@@ -9,14 +9,23 @@ spec:
   imagePullSecret: "quay-secret"
 ```
 
+### Minimum availability installation
+
+```yaml
+spec:
+  availabilityConfig: "Basic"
+```
+
 ### HA installation with node selector
 
 ```yaml
 spec:
-  failover: true
+  availabilityConfig: "High"
   nodeSelector:
       diskType: ssd
 ```
+
+> The instance is installed with High availability by default if not otherwise specified
 
 ### Specify ingress SSL ciphers to support
 

@@ -29,7 +29,7 @@ spec:
     owned:
     - description: MultiClusterHub defines the configuration for an instance of the
         MultiCluster Hub
-      displayName: MultiClusterHub Operator
+      displayName: MultiClusterHub
       kind: MultiClusterHub
       name: multiclusterhubs.operator.open-cluster-management.io
       version: v1
@@ -44,11 +44,6 @@ spec:
       kind: ClusterManager
       name: clustermanagers.operator.open-cluster-management.io
       version: v1
-    - description: Represents a cluster of etcd nodes.
-      displayName: etcd Cluster
-      kind: EtcdCluster
-      name: etcdclusters.etcd.database.coreos.com
-      version: v1beta2
     - description: Represent a helm chart selected by the subscription, for internal
         use only.
       displayName: Helm Release
@@ -84,7 +79,6 @@ spec:
           - apps
           - apps.open-cluster-management.io
           - authorization.k8s.io
-          - etcd.database.coreos.com
           - hive.openshift.io
           - mcm.ibm.com
           - rbac.authorization.k8s.io
@@ -97,15 +91,14 @@ spec:
           - configmaps
           - customresourcedefinitions
           - deployments
-          - etcdclusters
           - hiveconfigs
           - mutatingwebhookconfigurations
+          - validatingwebhookconfigurations
           - namespaces
           - pods
           - replicasets
           - rolebindings
           - secrets
-          - securitycontextconstraints
           - serviceaccounts
           - services
           - subjectaccessreviews
@@ -120,7 +113,6 @@ spec:
           - apps
           - apps.open-cluster-management.io
           - authorization.k8s.io
-          - etcd.database.coreos.com
           - hive.openshift.io
           - monitoring.coreos.com
           - rbac.authorization.k8s.io
@@ -135,13 +127,12 @@ spec:
           - configmaps
           - customresourcedefinitions
           - deployments
-          - etcdclusters
           - hiveconfigs
           - mutatingwebhookconfigurations
+          - validatingwebhookconfigurations
           - namespaces
           - rolebindings
           - secrets
-          - securitycontextconstraints
           - serviceaccounts
           - services
           - servicemonitors
@@ -198,7 +189,6 @@ spec:
           - rolebindings
           - secrets
           - services
-          - storageclasses
           - subjectaccessreviews
           - validatingwebhookconfigurations
           verbs:
@@ -237,12 +227,15 @@ spec:
           - customresourcedefinitions
           - hiveconfigs
           - mutatingwebhookconfigurations
+          - validatingwebhookconfigurations
           verbs:
           - deletecollection
         - apiGroups:
           - ""
           - action.open-cluster-management.io
           - agent.open-cluster-management.io
+          - cluster.open-cluster-management.io
+          - work.open-cluster-management.io
           - app.k8s.io
           - apps.open-cluster-management.io
           - authorization.k8s.io
@@ -256,7 +249,7 @@ spec:
           - inventory.open-cluster-management.io
           - mcm.ibm.com
           - multicloud.ibm.com
-          - policy.mcm.ibm.com
+          - policy.open-cluster-management.io
           - proxy.open-cluster-management.io
           - rbac.authorization.k8s.io
           - view.open-cluster-management.io
@@ -277,16 +270,15 @@ spec:
           - clusterdeployments
           - managedclusterinfos
           - managedclusterinfos/status
-          - clusterjoinrequests
-          - clusterjoinrequests/status
-          - clusterjoinrequests/finalizers
-          - clusters
-          - clusters/status
-          - clusters/finalizers
-          - clusterstatuses
+          - managedclusters
+          - managedclusters/status
+          - managedclusterviews
+          - managedclusterviews/status
+          - manifestworks
+          - manifestworks/status
+          - clustermanagers
+          - clusterroles
           - clusterstatuses/aggregator
-          - clusterstatuses/metering-receiver
-          - clusterstatuses/topology
           - clusterversions
           - compliances
           - configmaps
@@ -299,34 +291,22 @@ spec:
           - events
           - helmrepos
           - helmrepos/status
-          - klusterletconfigs
+          - klusterletaddonconfigs
           - machinepools
           - namespaces
-          - placementbindings
-          - placementpolicies
-          - placementpolicies/status
           - placementrules
           - placementrules/status
           - policies
-          - resourceviews
-          - resourceviews/status
+          - policies/status
+          - placementbindings
           - roles
           - rolebindings
           - secrets
           - signers
-          - managedclusters
-          - managedclusterviews
-          - managedclusterviews/status
           - subscriptions
           - subscriptions/status
           - subjectaccessreviews
           - syncsets
-          - works
-          - works/status
-          - works/result
-          - worksets
-          - worksets/status
-          - clustermanagers
           verbs:
           - create
           - get
@@ -337,6 +317,7 @@ spec:
           - deletecollection
           - patch
           - approve
+          - escalate
         serviceAccountName: multiclusterhub-operator
       deployments:
       - name: multiclusterhub-operator

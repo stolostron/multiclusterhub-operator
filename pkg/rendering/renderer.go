@@ -10,7 +10,7 @@ import (
 
 	"github.com/fatih/structs"
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/mcm"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/foundation"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	v1 "k8s.io/api/rbac/v1"
@@ -22,9 +22,6 @@ import (
 )
 
 const (
-	apiserviceName      = "mcm-apiserver"
-	controllerName      = "mcm-controller"
-	webhookName         = "mcm-webhook"
 	metadataErr         = "failed to find metadata field"
 	proxyApiServiceName = "v1beta1.proxy.open-cluster-management.io"
 )
@@ -45,22 +42,21 @@ func NewRenderer(multipleClusterHub *operatorsv1.MultiClusterHub) *Renderer {
 		cr: multipleClusterHub,
 	}
 	renderer.renderFns = map[string]renderFn{
-		"APIService":                   renderer.renderAPIServices,
-		"Deployment":                   renderer.renderNamespace,
-		"Service":                      renderer.renderNamespace,
-		"ServiceAccount":               renderer.renderNamespace,
-		"ConfigMap":                    renderer.renderNamespace,
-		"ClusterRoleBinding":           renderer.renderClusterRoleBinding,
-		"ClusterRole":                  renderer.renderClusterRole,
-		"MutatingWebhookConfiguration": renderer.renderMutatingWebhookConfiguration,
-		"Secret":                       renderer.renderSecret,
-		"Subscription":                 renderer.renderNamespace,
-		"EtcdCluster":                  renderer.renderEtcdCluster,
-		"StatefulSet":                  renderer.renderNamespace,
-		"Channel":                      renderer.renderNamespace,
-		"HiveConfig":                   renderer.renderHiveConfig,
-		"SecurityContextConstraints":   renderer.renderSecContextConstraints,
-		"CustomResourceDefinition":     renderer.renderCRD,
+		"APIService":                     renderer.renderAPIServices,
+		"Deployment":                     renderer.renderNamespace,
+		"Service":                        renderer.renderNamespace,
+		"ServiceAccount":                 renderer.renderNamespace,
+		"ConfigMap":                      renderer.renderNamespace,
+		"ClusterRoleBinding":             renderer.renderClusterRoleBinding,
+		"ClusterRole":                    renderer.renderClusterRole,
+		"MutatingWebhookConfiguration":   renderer.renderMutatingWebhookConfiguration,
+		"ValidatingWebhookConfiguration": renderer.renderValidatingWebhookConfiguration,
+		"Secret":                         renderer.renderSecret,
+		"Subscription":                   renderer.renderNamespace,
+		"StatefulSet":                    renderer.renderNamespace,
+		"Channel":                        renderer.renderNamespace,
+		"HiveConfig":                     renderer.renderHiveConfig,
+		"CustomResourceDefinition":       renderer.renderCRD,
 	}
 	return renderer
 }
@@ -97,7 +93,8 @@ func (r *Renderer) renderTemplates(templates []*resource.Resource) ([]*unstructu
 
 	}
 
-	// mcm-mutating-webhook has a section `webhooks.clientConfig.caBundle` created in secret mcm-webhook-secrets.
+	// ocm-mutating-webhook and ocm-validating-webhook have a section `webhooks.clientConfig.caBundle` created
+	// in secret ocm-webhook-secrets.
 	// Current render mechanism cannot handle this dependence scenario. So re-render template dependence in the end.
 	uobjs, err := reRenderDependence(uobjs)
 	return uobjs, err
@@ -116,12 +113,7 @@ func (r *Renderer) renderAPIServices(res *resource.Resource) (*unstructured.Unst
 	if metadata["name"] == proxyApiServiceName {
 		spec["service"] = map[string]interface{}{
 			"namespace": r.cr.Namespace,
-			"name":      mcm.ACMProxyServerName,
-		}
-	} else {
-		spec["service"] = map[string]interface{}{
-			"namespace": r.cr.Namespace,
-			"name":      apiserviceName,
+			"name":      foundation.OCMProxyServerName,
 		}
 	}
 	utils.AddInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
@@ -195,6 +187,21 @@ func (r *Renderer) renderMutatingWebhookConfiguration(res *resource.Resource) (*
 	return u, nil
 }
 
+func (r *Renderer) renderValidatingWebhookConfiguration(res *resource.Resource) (*unstructured.Unstructured, error) {
+	u := &unstructured.Unstructured{Object: res.Map()}
+	webooks, ok := u.Object["webhooks"].([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to find webhooks spec field")
+	}
+	webhook := webooks[0].(map[string]interface{})
+	clientConfig := webhook["clientConfig"].(map[string]interface{})
+	service := clientConfig["service"].(map[string]interface{})
+
+	service["namespace"] = r.cr.Namespace
+	utils.AddInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
+	return u, nil
+}
+
 func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructured, error) {
 	caCert, tlsCert, tlsKey := "ca.crt", "tls.crt", "tls.key"
 	u := &unstructured.Unstructured{Object: res.Map()}
@@ -212,25 +219,7 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 	name := res.GetName()
 
 	switch name {
-	case "mcm-apiserver-self-signed-secrets":
-		ca, err := utils.GenerateSelfSignedCACert("multiclusterhub-api")
-		if err != nil {
-			return nil, err
-		}
-		alternateDNS := []string{
-			fmt.Sprintf("%s.%s", apiserviceName, r.cr.Namespace),
-			fmt.Sprintf("%s.%s.svc", apiserviceName, r.cr.Namespace),
-		}
-		cert, err := utils.GenerateSignedCert(apiserviceName, alternateDNS, ca)
-		if err != nil {
-			return nil, err
-		}
-		data[caCert] = base64.StdEncoding.EncodeToString([]byte(ca.Cert))
-		data[tlsCert] = base64.StdEncoding.EncodeToString([]byte(cert.Cert))
-		data[tlsKey] = base64.StdEncoding.EncodeToString([]byte(cert.Key))
-
-		return u, nil
-	case "mcm-klusterlet-self-signed-secrets":
+	case "ocm-klusterlet-self-signed-secrets":
 		ca, err := utils.GenerateSelfSignedCACert("multiclusterhub-klusterlet")
 		if err != nil {
 			return nil, err
@@ -243,8 +232,8 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 		data[tlsCert] = base64.StdEncoding.EncodeToString([]byte(cert.Cert))
 		data[tlsKey] = base64.StdEncoding.EncodeToString([]byte(cert.Key))
 		return u, nil
-	case "mcm-webhook-secret":
-		cn := "mcm-webhook." + r.cr.Namespace + ".svc"
+	case "ocm-webhook-secret":
+		cn := "ocm-webhook." + r.cr.Namespace + ".svc"
 		ca, err := utils.GenerateSelfSignedCACert(cn)
 		if err != nil {
 			return nil, err
@@ -276,17 +265,22 @@ func (r *Renderer) renderHiveConfig(res *resource.Resource) (*unstructured.Unstr
 func reRenderDependence(objs []*unstructured.Unstructured) ([]*unstructured.Unstructured, error) {
 	var ca interface{}
 	var mutatingConfig *unstructured.Unstructured
+	var validatingConfig *unstructured.Unstructured
 	for _, obj := range objs {
-		if obj.GetKind() == "Secret" && obj.GetName() == "mcm-webhook-secret" {
+		if obj.GetKind() == "Secret" && obj.GetName() == "ocm-webhook-secret" {
 			data, ok := obj.Object["data"].(map[string]interface{})
 			if !ok {
-				return nil, fmt.Errorf("failed to get ca in mcm-webhook-secrets")
+				return nil, fmt.Errorf("failed to get ca in ocm-webhook-secrets")
 			}
 			ca = data["ca.crt"]
 		}
 
-		if obj.GetKind() == "MutatingWebhookConfiguration" && obj.GetName() == "mcm-mutating-webhook" {
+		if obj.GetKind() == "MutatingWebhookConfiguration" && obj.GetName() == "ocm-mutating-webhook" {
 			mutatingConfig = obj
+		}
+
+		if obj.GetKind() == "ValidatingWebhookConfiguration" && obj.GetName() == "ocm-validating-webhook" {
+			validatingConfig = obj
 		}
 	}
 
@@ -300,18 +294,17 @@ func reRenderDependence(objs []*unstructured.Unstructured) ([]*unstructured.Unst
 		clientConfig["caBundle"] = ca
 	}
 
-	return objs, nil
-}
-
-func (r *Renderer) renderSecContextConstraints(res *resource.Resource) (*unstructured.Unstructured, error) {
-	u := &unstructured.Unstructured{Object: res.Map()}
-	users, ok := u.Object["users"].([]interface{})
-	if !ok {
-		return nil, fmt.Errorf("failed to find users field")
+	if ca != nil && validatingConfig != nil {
+		webooks, ok := validatingConfig.Object["webhooks"].([]interface{})
+		if !ok {
+			return nil, fmt.Errorf("failed to find webhooks spec field")
+		}
+		webhook := webooks[0].(map[string]interface{})
+		clientConfig := webhook["clientConfig"].(map[string]interface{})
+		clientConfig["caBundle"] = ca
 	}
-	ns := r.cr.Namespace
-	users[0] = fmt.Sprintf("system:serviceaccount:%s:default", ns)
-	return u, nil
+
+	return objs, nil
 }
 
 // UpdateNamespace checks for annotiation to update NS
@@ -327,34 +320,4 @@ func UpdateNamespace(u *unstructured.Unstructured) bool {
 		}
 	}
 	return updateNamespace
-}
-
-func (r *Renderer) renderEtcdCluster(res *resource.Resource) (*unstructured.Unstructured, error) {
-	r.renderNamespace(res)
-	u := &unstructured.Unstructured{Object: res.Map()}
-	spec, ok := u.Object["spec"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("failed to find Etcd spec field")
-	}
-
-	pod, ok := spec["pod"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("failed to find Etcd spec pod field")
-	}
-	persistentVolumeClaimSpec, ok := pod["persistentVolumeClaimSpec"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("failed to find Etcd spec pod persistentVolumeClaimSpec field")
-	}
-	persistentVolumeClaimSpec["storageClassName"] = r.cr.Spec.Etcd.StorageClass
-
-	resources, ok := persistentVolumeClaimSpec["resources"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("failed to find Etcd spec pod persistentVolumeClaimSpec resources field")
-	}
-	requests, ok := resources["requests"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("failed to find Etcd spec pod persistentVolumeClaimSpec resources requests field")
-	}
-	requests["storage"] = r.cr.Spec.Etcd.Storage
-	return u, nil
 }

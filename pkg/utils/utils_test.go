@@ -128,17 +128,10 @@ func TestMchIsValid(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "test",
-			Mongo: operatorsv1.Mongo{
-				Storage:      "mongoStorage",
-				StorageClass: "mongoStorageClass",
-			},
-			Etcd: operatorsv1.Etcd{
-				Storage:      "etcdStorage",
-				StorageClass: "etcdStorageClass",
-			},
 			Ingress: operatorsv1.IngressSpec{
 				SSLCiphers: []string{"foo", "bar", "baz"},
 			},
+			AvailabilityConfig: operatorsv1.HAHigh,
 		},
 	}
 
@@ -204,18 +197,18 @@ func TestDefaultReplicaCount(t *testing.T) {
 	mchDefault := &operatorsv1.MultiClusterHub{}
 	mchNonHA := &operatorsv1.MultiClusterHub{
 		Spec: operatorsv1.MultiClusterHubSpec{
-			Failover: false,
+			AvailabilityConfig: operatorsv1.HABasic,
 		},
 	}
 	mchHA := &operatorsv1.MultiClusterHub{
 		Spec: operatorsv1.MultiClusterHubSpec{
-			Failover: true,
+			AvailabilityConfig: operatorsv1.HAHigh,
 		},
 	}
 
-	t.Run("Non-HA (by default)", func(t *testing.T) {
-		if got := DefaultReplicaCount(mchDefault); got != 1 {
-			t.Errorf("DefaultReplicaCount() = %v, want %v", got, 1)
+	t.Run("HA (by default)", func(t *testing.T) {
+		if got := DefaultReplicaCount(mchDefault); got != 2 {
+			t.Errorf("DefaultReplicaCount() = %v, want %v", got, 2)
 		}
 	})
 	t.Run("Non-HA", func(t *testing.T) {

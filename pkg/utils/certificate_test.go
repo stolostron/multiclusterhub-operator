@@ -43,30 +43,6 @@ func TestGenerateSignedWebhookCertificates(t *testing.T) {
 	}
 }
 
-func TestGenerateAPIServerSecret(t *testing.T) {
-	os.Setenv(podNamespaceEnvVar, "test")
-	defer os.Unsetenv(podNamespaceEnvVar)
-
-	fakeclient := fake.NewFakeClient()
-	err := GenerateAPIServerSecret(fakeclient, &operatorsv1.MultiClusterHub{})
-	if err != nil {
-		t.Errorf("Expected nil, but failed %v", err)
-	}
-
-	err = GenerateAPIServerSecret(fakeclient, &operatorsv1.MultiClusterHub{
-		Spec: operatorsv1.MultiClusterHubSpec{},
-	})
-	if err != nil {
-		t.Errorf("Failed to generate secret, %v", err)
-	}
-
-	expected := &corev1.Secret{}
-	err = fakeclient.Get(context.TODO(), types.NamespacedName{Name: APIServerSecretName, Namespace: "test"}, expected)
-	if err != nil {
-		t.Errorf("Failed to generate secret, %v", err)
-	}
-}
-
 func TestGenerateKlusterletSecret(t *testing.T) {
 	os.Setenv(podNamespaceEnvVar, "test")
 	defer os.Unsetenv(podNamespaceEnvVar)

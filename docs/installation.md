@@ -44,6 +44,10 @@ This will
 #### 2. Run locally outside the cluster
 This method is preferred during development cycle to deploy and test faster.
 
+```bash
+make local-install
+```
+
 This will 
 1. Apply necessary objects (namespace, secrets, operatorgroup, required subscriptions)
 2. Apply the CRD
@@ -51,6 +55,10 @@ This will
 
 #### 3. Deploy with the Operator Lifecycle Manager (Configmap)
 OLM will manage creation of most resources required to run the operator. This method simulates an index image with a configmap.
+
+```bash
+make cm-install
+```
 
 This will 
 1. Build and push an installer image
@@ -60,8 +68,12 @@ This will
 5. Apply OLM objects (catalogsource, index, subscription)
 
 
-#### 3. Deploy with the Operator Lifecycle Manager (Index image)
+#### 4. Deploy with the Operator Lifecycle Manager (Index image)
 OLM will manage creation of most resources required to run the operator. This method builds and pushes an actual index image.
+
+```bash
+make index-install
+```
 
 This will 
 1. Build and push an installer image

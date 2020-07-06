@@ -19,31 +19,21 @@ import (
 const (
 	// WebhookServiceName ...
 	WebhookServiceName = "multiclusterhub-operator-webhook"
-	// APIServerSecretName ...
-	APIServerSecretName = "mcm-apiserver-self-signed-secrets" // #nosec G101 (no confidential credentials)
+
 	// KlusterletSecretName ...
-	KlusterletSecretName = "mcm-klusterlet-self-signed-secrets" // #nosec G101 (no confidential credentials)
+	KlusterletSecretName = "ocm-klusterlet-self-signed-secrets" // #nosec G101 (no confidential credentials)
 
 	// CertManagerNamespace ...
 	CertManagerNamespace = "cert-manager"
 
-	// MongoEndpoints ...
-	MongoEndpoints = "multicluster-mongodb"
-	// MongoReplicaSet ...
-	MongoReplicaSet = "rs0"
-	// MongoTLSSecret ...
-	MongoTLSSecret = "multicluster-mongodb-client-cert"
-	// MongoCaSecret ...
-	MongoCaSecret = "multicloud-ca-cert" // #nosec G101 (no confidential credentials)
-
 	podNamespaceEnvVar = "POD_NAMESPACE"
-	apiserviceName     = "mcm-apiserver"
 	rsaKeySize         = 2048
 	duration365d       = time.Hour * 24 * 365
 
 	// DefaultRepository ...
 	DefaultRepository = "quay.io/open-cluster-management"
 
+	// UnitTestEnvVar ...
 	UnitTestEnvVar = "UNIT_TEST"
 )
 
@@ -114,22 +104,27 @@ func CoreToUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) 
 
 // MchIsValid Checks if the optional default parameters need to be set
 func MchIsValid(m *operatorsv1.MultiClusterHub) bool {
-	invalid := m.Spec.Mongo.Storage == "" ||
-		m.Spec.Mongo.StorageClass == "" ||
-		m.Spec.Etcd.Storage == "" ||
-		m.Spec.Etcd.StorageClass == "" ||
-		len(m.Spec.Ingress.SSLCiphers) == 0
-
+	invalid := len(m.Spec.Ingress.SSLCiphers) == 0 || !AvailabilityConfigIsValid(m.Spec.AvailabilityConfig)
 	return !invalid
 }
 
 // DefaultReplicaCount returns an integer corresponding to the default number of replicas
 // for HA or non-HA modes
 func DefaultReplicaCount(mch *operatorsv1.MultiClusterHub) int {
-	if mch.Spec.Failover {
-		return 3
+	if mch.Spec.AvailabilityConfig == operatorsv1.HABasic {
+		return 1
 	}
-	return 1
+	return 2
+}
+
+//AvailabilityConfigIsValid ...
+func AvailabilityConfigIsValid(config operatorsv1.AvailabilityType) bool {
+	switch config {
+	case operatorsv1.HAHigh, operatorsv1.HABasic:
+		return true
+	default:
+		return false
+	}
 }
 
 // DistributePods returns a anti-affinity rule that specifies a preference for pod replicas with

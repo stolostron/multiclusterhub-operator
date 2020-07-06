@@ -2,9 +2,18 @@
 package v1
 
 import (
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+// AvailabilityType ...
+type AvailabilityType string
+
+const (
+	// HABasic stands up most app subscriptions with a replicaCount of 1
+	HABasic AvailabilityType = "Basic"
+	// HAHigh stands up most app subscriptions with a replicaCount of 2
+	HAHigh AvailabilityType = "High"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -20,9 +29,9 @@ type MultiClusterHubSpec struct {
 
 	// ReplicaCount for HA support. Does not affect data stores.
 	// Enabled will toggle HA support. This will provide better support in cases of failover
-	// but consumes more resources.
+	// but consumes more resources. Options are: Basic and High (default).
 	// +optional
-	Failover bool `json:"failover"`
+	AvailabilityConfig AvailabilityType `json:"availabilityConfig,omitempty"`
 
 	// Flag for IPv6
 	// +optional
@@ -40,14 +49,6 @@ type MultiClusterHubSpec struct {
 	// +optional
 	Hive HiveConfigSpec `json:"hive"`
 
-	// Spec of mongo
-	// +optional
-	Mongo `json:"mongo"`
-
-	// Spec of Etcd
-	// +optional
-	Etcd `json:"etcd,omitempty"`
-
 	// Configuration options for ingress management
 	// +optional
 	Ingress IngressSpec `json:"ingress,omitempty"`
@@ -55,6 +56,10 @@ type MultiClusterHubSpec struct {
 	// Overrides
 	// +optional
 	Overrides `json:"overrides,omitempty"`
+
+	// Configuration options for custom CA
+	// +optional
+	CustomCAConfigmap string `json:"customCAConfigmap,omitempty"`
 }
 
 // Overrides provides developer overrides for MCH installation
@@ -62,17 +67,6 @@ type Overrides struct {
 	// Pull policy of the MultiCluster hub images
 	// +optional
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
-}
-
-// Etcd defines the desired state of Etcd
-type Etcd struct {
-	// StorageClass for MultiCluster hub components
-	// +optional
-	StorageClass string `json:"storageClass,omitempty"`
-
-	// StorageSize for MultiCluster hub components
-	// +optional
-	Storage string `json:"storage,omitempty"`
 }
 
 type HiveConfigSpec struct {
@@ -185,17 +179,6 @@ type ExternalDNSGCPConfig struct {
 	Credentials corev1.LocalObjectReference `json:"credentials,omitempty"`
 }
 
-// Mongo defines the desired state of mongo
-type Mongo struct {
-	// StorageClass for MultiCluster hub components
-	// +optional
-	StorageClass string `json:"storageClass"`
-
-	// StorageSize for MultiCluster hub components
-	// +optional
-	Storage string `json:"storage,omitempty"`
-}
-
 // IngressSpec specifies configuration options for ingress management
 type IngressSpec struct {
 	// List of SSL ciphers for management ingress to support
@@ -217,19 +200,6 @@ type MultiClusterHubStatus struct {
 	// DesiredVersion indicates the desired version
 	// +optional
 	DesiredVersion string `json:"desiredVersion,omitempty"`
-
-	// Represents the status of each deployment
-	// +optional
-	Deployments []DeploymentResult `json:"deployments,omitempty"`
-}
-
-// DeploymentResult defines the observed state of Deployment
-type DeploymentResult struct {
-	// Name of the deployment
-	Name string `json:"name"`
-
-	// The most recently observed status of the Deployment
-	Status appsv1.DeploymentStatus `json:"status"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -238,7 +208,7 @@ type DeploymentResult struct {
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=multiclusterhubs,scope=Namespaced,shortName=mch
-// +operator-sdk:gen-csv:customresourcedefinitions.displayName="MultiClusterHub Operator"
+// +operator-sdk:gen-csv:customresourcedefinitions.displayName="MultiClusterHub"
 type MultiClusterHub struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

@@ -18,8 +18,8 @@ func TestValidate(t *testing.T) {
 	mch := &operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1.MultiClusterHubSpec{
-			ImagePullSecret: "test",
-			Mongo:           operatorsv1.Mongo{},
+			ImagePullSecret:   "test",
+			CustomCAConfigmap: "test-config",
 		},
 	}
 	ovr := map[string]string{}
@@ -44,8 +44,13 @@ func TestValidate(t *testing.T) {
 
 	// 5. Activate HA mode
 	mch4 := mch.DeepCopy()
-	mch4.Spec.Failover = true
+	mch4.Spec.AvailabilityConfig = operatorsv1.HABasic
 	sub4 := KUIWebTerminal(mch4, ovr)
+
+	// 6. Modified CustomCAConfigmap
+	mch6 := mch.DeepCopy()
+	mch6.Spec.CustomCAConfigmap = ""
+	sub5 := KUIWebTerminal(mch6, ovr)
 
 	type args struct {
 		found *unstructured.Unstructured
@@ -82,9 +87,15 @@ func TestValidate(t *testing.T) {
 			want1: true,
 		},
 		{
-			name:  "Activate failover mode",
+			name:  "Deactivate HighAvailabilityConfig mode",
 			args:  args{sub, sub4},
 			want:  sub4,
+			want1: true,
+		},
+		{
+			name:  "Modified CustomCAConfigmap",
+			args:  args{sub, sub5},
+			want:  sub5,
 			want1: true,
 		},
 	}
@@ -106,7 +117,6 @@ func TestSubscriptions(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: operatorsv1.MultiClusterHubSpec{
 			ImagePullSecret: "test",
-			Mongo:           operatorsv1.Mongo{},
 		},
 	}
 	ovr := map[string]string{}
@@ -123,7 +133,6 @@ func TestSubscriptions(t *testing.T) {
 		{"GRC subscription", GRC(mch, ovr)},
 		{"KUIWebTerminal subscription", KUIWebTerminal(mch, ovr)},
 		{"ManagementIngress subscription", ManagementIngress(mch, ovr, "")},
-		{"MongoDB subscription", MongoDB(mch, ovr)},
 		{"RCM subscription", RCM(mch, ovr)},
 		{"Search subscription", Search(mch, ovr)},
 		{"Topology subscription", Topology(mch, ovr)},

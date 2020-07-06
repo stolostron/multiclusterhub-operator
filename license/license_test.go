@@ -28,9 +28,10 @@ var skip = map[string]bool{
 	"../tools.go":                                      true,
 
 	// Build Harness
-	"../vbh":                      true,
-	"../build-harness-extensions": true,
-	"../build-harness":            true,
+	"../vbh":                         true,
+	"../build-harness-extensions":    true,
+	"../build-harness":               true,
+	"../build/registration-operator": true,
 	"../build":                    true,
 }
 

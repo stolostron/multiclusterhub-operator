@@ -4,17 +4,11 @@ package multiclusterhub
 
 import (
 	"context"
-	"crypto/rand"
 	"fmt"
-	"math/big"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-
-	storv1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -34,9 +28,9 @@ import (
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/deploying"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/foundation"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/manifest"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/mcm"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/predicate"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
@@ -262,11 +256,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	result, err = r.ensureSecret(multiClusterHub, r.mongoAuthSecret(multiClusterHub))
-	if result != nil {
-		return *result, err
-	}
-
 	result, err = r.ingressDomain(multiClusterHub)
 	if result != nil {
 		return *result, err
@@ -313,10 +302,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureSubscription(multiClusterHub, subscription.MongoDB(multiClusterHub, r.CacheSpec.ImageOverrides))
-	if result != nil {
-		return *result, err
-	}
 	result, err = r.ensureSubscription(multiClusterHub, subscription.RCM(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
@@ -329,51 +314,35 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	if result != nil {
 		return *result, err
 	}
-
-	result, err = r.ensureDeployment(multiClusterHub, mcm.APIServerDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
+	result, err = r.ensureDeployment(multiClusterHub, foundation.WebhookDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
 	}
 
-	result, err = r.ensureService(multiClusterHub, mcm.APIServerService(multiClusterHub))
+	result, err = r.ensureService(multiClusterHub, foundation.WebhookService(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}
 
-	result, err = r.ensureDeployment(multiClusterHub, mcm.WebhookDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
+	//OCM proxy server deployment
+	result, err = r.ensureDeployment(multiClusterHub, foundation.OCMProxyServerDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
 	}
 
-	result, err = r.ensureService(multiClusterHub, mcm.WebhookService(multiClusterHub))
+	//OCM proxy server service
+	result, err = r.ensureService(multiClusterHub, foundation.OCMProxyServerService(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}
 
-	//ACM proxy server deployment
-	result, err = r.ensureDeployment(multiClusterHub, mcm.ACMProxyServerDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
+	//OCM controller deployment
+	result, err = r.ensureDeployment(multiClusterHub, foundation.OCMControllerDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
 	}
 
-	//ACM proxy server service
-	result, err = r.ensureService(multiClusterHub, mcm.ACMProxyServerService(multiClusterHub))
-	if result != nil {
-		return *result, err
-	}
-
-	//ACM controller deployment
-	result, err = r.ensureDeployment(multiClusterHub, mcm.ACMControllerDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
-	if result != nil {
-		return *result, err
-	}
-
-	result, err = r.ensureDeployment(multiClusterHub, mcm.ControllerDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
-	if result != nil {
-		return *result, err
-	}
-
-	result, err = r.ensureClusterManager(multiClusterHub, mcm.ClusterManager(multiClusterHub, r.CacheSpec.ImageOverrides))
+	result, err = r.ensureClusterManager(multiClusterHub, foundation.ClusterManager(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
 	}
@@ -381,7 +350,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	// Update the CR status
 	multiClusterHub.Status.Phase = "Pending"
 	multiClusterHub.Status.DesiredVersion = version.Version
-	ready, deployments, err := deploying.ListDeployments(r.client, multiClusterHub.Namespace)
+	ready, _, err := deploying.ListDeployments(r.client, multiClusterHub.Namespace)
 	if err != nil {
 		reqLogger.Error(err, "Failed to list deployments")
 		return reconcile.Result{}, err
@@ -390,14 +359,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		multiClusterHub.Status.Phase = "Running"
 		multiClusterHub.Status.CurrentVersion = version.Version
 	}
-	statedDeployments := []operatorsv1.DeploymentResult{}
-	for _, deploy := range deployments {
-		statedDeployments = append(statedDeployments, operatorsv1.DeploymentResult{
-			Name:   deploy.Name,
-			Status: deploy.Status,
-		})
-	}
-	multiClusterHub.Status.Deployments = statedDeployments
 
 	result, err = r.UpdateStatus(multiClusterHub)
 	if result != nil {
@@ -426,38 +387,6 @@ func (r *ReconcileMultiClusterHub) UpdateStatus(m *operatorsv1.MultiClusterHub) 
 	return nil, nil
 }
 
-func (r *ReconcileMultiClusterHub) mongoAuthSecret(v *operatorsv1.MultiClusterHub) *corev1.Secret {
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "mongodb-admin",
-			Namespace: v.Namespace,
-		},
-		Type: "Opaque",
-		StringData: map[string]string{
-			"user":     "admin",
-			"password": generatePass(16),
-		},
-	}
-
-	if err := controllerutil.SetControllerReference(v, secret, r.scheme); err != nil {
-		log.Error(err, "Failed to set controller reference", "Secret.Namespace", v.Namespace, "Secret.Name", v.Name)
-	}
-	return secret
-}
-
-func generatePass(length int) string {
-	chars := "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
-		"abcdefghijklmnopqrstuvwxyz" +
-		"0123456789"
-
-	buf := make([]byte, length)
-	for i := 0; i < length; i++ {
-		nBig, _ := rand.Int(rand.Reader, big.NewInt(int64(len(chars))))
-		buf[i] = chars[nBig.Int64()]
-	}
-	return string(buf)
-}
-
 // setDefaults updates MultiClusterHub resource with proper defaults
 func (r *ReconcileMultiClusterHub) setDefaults(m *operatorsv1.MultiClusterHub) (*reconcile.Result, error) {
 	if utils.MchIsValid(m) {
@@ -469,28 +398,8 @@ func (r *ReconcileMultiClusterHub) setDefaults(m *operatorsv1.MultiClusterHub) (
 		m.Spec.Ingress.SSLCiphers = utils.DefaultSSLCiphers
 	}
 
-	if m.Spec.Mongo.Storage == "" {
-		m.Spec.Mongo.Storage = "5Gi"
-	}
-
-	if m.Spec.Mongo.StorageClass == "" {
-		storageClass, err := r.getStorageClass()
-		if err != nil {
-			return &reconcile.Result{}, err
-		}
-		m.Spec.Mongo.StorageClass = storageClass
-	}
-
-	if m.Spec.Etcd.Storage == "" {
-		m.Spec.Etcd.Storage = "1Gi"
-	}
-
-	if m.Spec.Etcd.StorageClass == "" {
-		storageClass, err := r.getStorageClass()
-		if err != nil {
-			return &reconcile.Result{}, err
-		}
-		m.Spec.Etcd.StorageClass = storageClass
+	if !utils.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {
+		m.Spec.AvailabilityConfig = operatorsv1.HAHigh
 	}
 
 	// Apply defaults to server
@@ -502,20 +411,6 @@ func (r *ReconcileMultiClusterHub) setDefaults(m *operatorsv1.MultiClusterHub) (
 
 	log.Info("MultiClusterHub successfully updated")
 	return &reconcile.Result{Requeue: true}, nil
-}
-
-// getStorageClass retrieves the default storage class if it exists
-func (r *ReconcileMultiClusterHub) getStorageClass() (string, error) {
-	scList := &storv1.StorageClassList{}
-	if err := r.client.List(context.TODO(), scList); err != nil {
-		return "", err
-	}
-	for _, sc := range scList.Items {
-		if sc.Annotations["storageclass.kubernetes.io/is-default-class"] == "true" {
-			return sc.GetName(), nil
-		}
-	}
-	return "", fmt.Errorf("failed to find default storageclass")
 }
 
 // ingressDomain is discovered from Openshift cluster configuration resources
@@ -552,6 +447,9 @@ func (r *ReconcileMultiClusterHub) finalizeHub(reqLogger logr.Logger, m *operato
 		return err
 	}
 	if err := r.cleanupMutatingWebhooks(reqLogger, m); err != nil {
+		return err
+	}
+	if err := r.cleanupValidatingWebhooks(reqLogger, m); err != nil {
 		return err
 	}
 	if err := r.cleanupCRDs(reqLogger, m); err != nil {

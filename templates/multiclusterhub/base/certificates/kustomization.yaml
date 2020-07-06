@@ -1,4 +1,3 @@
 resources:
-- mcm-apiserver-self-signed-secrets.yaml
-- mcm-klusterlet-self-signed-secrets.yaml
-- mcm-webhook-secret.yaml
+- ocm-klusterlet-self-signed-secrets.yaml
+- ocm-webhook-secret.yaml
