@@ -21,7 +21,7 @@ var Schema = schema.GroupVersionResource{Group: "apps.open-cluster-management.io
 
 // build Helm pathname from repo name and por
 func channelURL(m *operatorsv1.MultiClusterHub) string {
-	return fmt.Sprintf("http://%s.%s:%d/charts", helmrepo.HelmRepoName, m.Namespace, helmrepo.Port)
+	return fmt.Sprintf("http://%s.%s.svc.cluster.local:%d/charts", helmrepo.HelmRepoName, m.Namespace, helmrepo.Port)
 }
 
 // Channel returns an unstructured Channel object to watch the helm repository
