@@ -211,6 +211,7 @@ rules:
   - managedclusterinfos
   - managedclusterinfos/status
   - managedclusters
+  - managedclusters/accept
   - managedclusters/status
   - managedclusterviews
   - managedclusterviews/status
