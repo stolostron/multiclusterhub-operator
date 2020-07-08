@@ -4,7 +4,7 @@ metadata:
   name: multicluster-operators-subscription-alpha-community-operators-openshift-marketplace
   namespace: open-cluster-management
 spec:
-  channel: release-2.0
+  channel: release-2.1
   config:
     resources: {}
   installPlanApproval: Automatic
