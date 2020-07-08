@@ -7,7 +7,7 @@ metadata:
   name: open-cluster-management:admin-aggregate
 rules:
 - apiGroups: ["cluster.open-cluster-management.io"]
-  resources: ["managedclusters", "managedclusters/status"]
+  resources: ["managedclusters", "managedclusters/status","delete", "deletecollection", "patch"]
   verbs: ["get", "list", "watch", "update","patch"]
 - apiGroups: ["work.open-cluster-management.io"]
   resources: ["manifestworks", "manifestworks/status"]
