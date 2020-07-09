@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -21,7 +21,7 @@ import (
 func Test_cleanupHiveConfigs(t *testing.T) {
 	tests := []struct {
 		Name       string
-		MCH        *operatorsv1beta1.MultiClusterHub
+		MCH        *operatorsv1.MultiClusterHub
 		HiveConfig *unstructured.Unstructured
 		Result     error
 	}{
@@ -64,8 +64,8 @@ func Test_cleanupAPIServices(t *testing.T) {
 			Namespace: mch_namespace,
 		},
 		Spec: apiregistrationv1.APIServiceSpec{
-			Group:                 "mcm.ibm.com",
-			Version:               "v1alpha1",
+			Group:                 "proxy.open-cluster-management.io",
+			Version:               "v1beta1",
 			InsecureSkipTLSVerify: true,
 			GroupPriorityMinimum:  1000,
 			VersionPriority:       20,
@@ -80,7 +80,7 @@ func Test_cleanupAPIServices(t *testing.T) {
 
 	tests := []struct {
 		Name       string
-		MCH        *operatorsv1beta1.MultiClusterHub
+		MCH        *operatorsv1.MultiClusterHub
 		APIService *apiregistrationv1.APIService
 		Result     error
 	}{
@@ -138,8 +138,8 @@ func Test_cleanupClusterRoles(t *testing.T) {
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
-				APIGroups: []string{"mcm.ibm.com"},
-				Resources: []string{"clusterjoinrequests"},
+				APIGroups: []string{"cluster.open-cluster-management.io"},
+				Resources: []string{"managedclusters"},
 				Verbs:     []string{"get", "list", "watch", "create"},
 			},
 		},
@@ -152,7 +152,7 @@ func Test_cleanupClusterRoles(t *testing.T) {
 
 	tests := []struct {
 		Name        string
-		MCH         *operatorsv1beta1.MultiClusterHub
+		MCH         *operatorsv1.MultiClusterHub
 		ClusterRole *rbacv1.ClusterRole
 		Result      error
 	}{
@@ -216,7 +216,7 @@ func Test_cleanupClusterRoleBindings(t *testing.T) {
 		Subjects: []rbacv1.Subject{
 			{
 				Kind: "ServiceAccount",
-				Name: "acm-foundation-sa",
+				Name: "ocm-foundation-sa",
 			},
 		},
 	}
@@ -229,7 +229,7 @@ func Test_cleanupClusterRoleBindings(t *testing.T) {
 
 	tests := []struct {
 		Name   string
-		MCH    *operatorsv1beta1.MultiClusterHub
+		MCH    *operatorsv1.MultiClusterHub
 		CRB    *rbacv1.ClusterRoleBinding
 		Result error
 	}{
@@ -287,10 +287,10 @@ func Test_cleanupMutatingWebhooks(t *testing.T) {
 		},
 		Webhooks: []admissionregistrationv1beta1.MutatingWebhook{
 			{
-				Name: "mcm.webhook.admission.cloud.ibm.com",
+				Name: "ocm.mutating.webhook.admission.open-cluster-management.io",
 				ClientConfig: admissionregistrationv1beta1.WebhookClientConfig{
 					Service: &admissionregistrationv1beta1.ServiceReference{
-						Name: "mcm-webhook",
+						Name: "ocm-webhook",
 					},
 				},
 			},
@@ -305,7 +305,7 @@ func Test_cleanupMutatingWebhooks(t *testing.T) {
 
 	tests := []struct {
 		Name   string
-		MCH    *operatorsv1beta1.MultiClusterHub
+		MCH    *operatorsv1.MultiClusterHub
 		MWC    *admissionregistrationv1beta1.MutatingWebhookConfiguration
 		Result error
 	}{
@@ -355,6 +355,82 @@ func Test_cleanupMutatingWebhooks(t *testing.T) {
 	}
 }
 
+func Test_cleanupValidatingWebhooks(t *testing.T) {
+	MWC := &admissionregistrationv1beta1.ValidatingWebhookConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-validatingwebhookconfiguration",
+			Namespace: mch_namespace,
+		},
+		Webhooks: []admissionregistrationv1beta1.ValidatingWebhook{
+			{
+				Name: "ocm.validating.webhook.admission.open-cluster-management.io",
+				ClientConfig: admissionregistrationv1beta1.WebhookClientConfig{
+					Service: &admissionregistrationv1beta1.ServiceReference{
+						Name: "ocm-webhook",
+					},
+				},
+			},
+		},
+	}
+
+	installerMWC := MWC.DeepCopy()
+	installerMWC.SetLabels(map[string]string{
+		"installer.name":      mch_name,
+		"installer.namespace": mch_namespace,
+	})
+
+	tests := []struct {
+		Name   string
+		MCH    *operatorsv1.MultiClusterHub
+		MWC    *admissionregistrationv1beta1.ValidatingWebhookConfiguration
+		Result error
+	}{
+		{
+			Name:   "Without Labels",
+			MCH:    full_mch,
+			MWC:    MWC,
+			Result: nil,
+		},
+		{
+			Name:   "With Labels",
+			MCH:    empty_mch,
+			MWC:    installerMWC,
+			Result: fmt.Errorf("validatingwebhookconfigurations.admissionregistration.k8s.io \"test-validatingwebhookconfiguration\" not found"),
+		},
+	}
+
+	reqLogger := log.WithValues("Request.Namespace", mch_namespace, "Request.Name", mch_name)
+
+	for _, tt := range tests {
+		t.Run(tt.Name, func(t *testing.T) {
+			// Objects to track in the fake client.
+			r, err := getTestReconciler(tt.MCH)
+			if err != nil {
+				t.Fatalf("Failed to create test reconciler")
+			}
+
+			err = r.client.Create(context.TODO(), tt.MWC)
+			if err != nil {
+				t.Fatal(err.Error())
+			}
+
+			err = r.cleanupValidatingWebhooks(reqLogger, full_mch)
+			if err != nil {
+				t.Fatal("Failed to cleanup validatingwebhookconfigurations")
+			}
+
+			emptyMWC := &admissionregistrationv1beta1.ValidatingWebhookConfiguration{}
+			err = r.client.Get(context.TODO(), types.NamespacedName{
+				Name:      tt.MWC.Name,
+				Namespace: tt.MWC.Namespace,
+			}, emptyMWC)
+			if !errorEquals(err, tt.Result) {
+				t.Fatal(err.Error())
+			}
+		})
+	}
+}
+
 func Test_cleanupPullSecret(t *testing.T) {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -374,7 +450,7 @@ func Test_cleanupPullSecret(t *testing.T) {
 
 	tests := []struct {
 		Name   string
-		MCH    *operatorsv1beta1.MultiClusterHub
+		MCH    *operatorsv1.MultiClusterHub
 		Secret *corev1.Secret
 		Result error
 	}{
@@ -449,7 +525,7 @@ func Test_cleanupCRDS(t *testing.T) {
 
 	tests := []struct {
 		Name   string
-		MCH    *operatorsv1beta1.MultiClusterHub
+		MCH    *operatorsv1.MultiClusterHub
 		CRD    *apixv1.CustomResourceDefinition
 		Result error
 	}{
@@ -502,7 +578,7 @@ func Test_cleanupCRDS(t *testing.T) {
 func Test_cleanupClusterManagers(t *testing.T) {
 	tests := []struct {
 		Name           string
-		MCH            *operatorsv1beta1.MultiClusterHub
+		MCH            *operatorsv1.MultiClusterHub
 		ClusterManager *unstructured.Unstructured
 		Result         error
 	}{

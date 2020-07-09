@@ -21,7 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 )
 
@@ -160,8 +160,8 @@ func newValidatingWebhookCfg(namespace, path string, ca []byte) *admissionregist
 			Name: validatingWebhookName,
 			Rules: []admissionregistration.RuleWithOperations{{
 				Rule: admissionregistration.Rule{
-					APIGroups:   []string{operatorsv1beta1.SchemeGroupVersion.Group},
-					APIVersions: []string{operatorsv1beta1.SchemeGroupVersion.Version},
+					APIGroups:   []string{operatorsv1.SchemeGroupVersion.Group},
+					APIVersions: []string{operatorsv1.SchemeGroupVersion.Version},
 					Resources:   []string{resourceName},
 				},
 				Operations: []admissionregistration.OperationType{

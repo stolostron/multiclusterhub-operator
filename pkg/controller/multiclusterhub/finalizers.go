@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -21,7 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (r *ReconcileMultiClusterHub) cleanupHiveConfigs(reqLogger logr.Logger, m *operatorsv1beta1.MultiClusterHub) error {
+func (r *ReconcileMultiClusterHub) cleanupHiveConfigs(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 
 	listOptions := client.MatchingLabels{
 		"installer.name":      m.GetName(),
@@ -54,7 +54,7 @@ func (r *ReconcileMultiClusterHub) cleanupHiveConfigs(reqLogger logr.Logger, m *
 	return nil
 }
 
-func (r *ReconcileMultiClusterHub) cleanupAPIServices(reqLogger logr.Logger, m *operatorsv1beta1.MultiClusterHub) error {
+func (r *ReconcileMultiClusterHub) cleanupAPIServices(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	err := r.client.DeleteAllOf(
 		context.TODO(),
 		&apiregistrationv1.APIService{},
@@ -77,7 +77,7 @@ func (r *ReconcileMultiClusterHub) cleanupAPIServices(reqLogger logr.Logger, m *
 	return nil
 }
 
-func (r *ReconcileMultiClusterHub) cleanupClusterRoles(reqLogger logr.Logger, m *operatorsv1beta1.MultiClusterHub) error {
+func (r *ReconcileMultiClusterHub) cleanupClusterRoles(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	err := r.client.DeleteAllOf(context.TODO(), &rbacv1.ClusterRole{}, client.MatchingLabels{
 		"installer.name":      m.GetName(),
 		"installer.namespace": m.GetNamespace(),
@@ -96,7 +96,7 @@ func (r *ReconcileMultiClusterHub) cleanupClusterRoles(reqLogger logr.Logger, m 
 	return nil
 }
 
-func (r *ReconcileMultiClusterHub) cleanupClusterRoleBindings(reqLogger logr.Logger, m *operatorsv1beta1.MultiClusterHub) error {
+func (r *ReconcileMultiClusterHub) cleanupClusterRoleBindings(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	err := r.client.DeleteAllOf(context.TODO(), &rbacv1.ClusterRoleBinding{}, client.MatchingLabels{
 		"installer.name":      m.GetName(),
 		"installer.namespace": m.GetNamespace(),
@@ -114,7 +114,7 @@ func (r *ReconcileMultiClusterHub) cleanupClusterRoleBindings(reqLogger logr.Log
 	return nil
 }
 
-func (r *ReconcileMultiClusterHub) cleanupMutatingWebhooks(reqLogger logr.Logger, m *operatorsv1beta1.MultiClusterHub) error {
+func (r *ReconcileMultiClusterHub) cleanupMutatingWebhooks(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	err := r.client.DeleteAllOf(
 		context.TODO(),
 		&admissionregistrationv1beta1.MutatingWebhookConfiguration{},
@@ -136,7 +136,29 @@ func (r *ReconcileMultiClusterHub) cleanupMutatingWebhooks(reqLogger logr.Logger
 	return nil
 }
 
-func (r *ReconcileMultiClusterHub) cleanupPullSecret(reqLogger logr.Logger, m *operatorsv1beta1.MultiClusterHub) error {
+func (r *ReconcileMultiClusterHub) cleanupValidatingWebhooks(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+	err := r.client.DeleteAllOf(
+		context.TODO(),
+		&admissionregistrationv1beta1.ValidatingWebhookConfiguration{},
+		client.MatchingLabels{
+			"installer.name":      m.GetName(),
+			"installer.namespace": m.GetNamespace(),
+		})
+
+	if err != nil {
+		if errors.IsNotFound(err) {
+			reqLogger.Info("No matching ValidatingWebhookConfigurations to finalize. Continuing.")
+			return nil
+		}
+		reqLogger.Error(err, "Error while deleting ValidatingWebhookConfigurations")
+		return err
+	}
+
+	reqLogger.Info("ValidatingWebhookConfigurations finalized")
+	return nil
+}
+
+func (r *ReconcileMultiClusterHub) cleanupPullSecret(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	err := r.client.DeleteAllOf(context.TODO(), &corev1.Secret{}, client.MatchingLabels{
 		"installer.name":      m.GetName(),
 		"installer.namespace": m.GetNamespace(),
@@ -155,7 +177,7 @@ func (r *ReconcileMultiClusterHub) cleanupPullSecret(reqLogger logr.Logger, m *o
 	return nil
 }
 
-func (r *ReconcileMultiClusterHub) cleanupCRDs(log logr.Logger, m *operatorsv1beta1.MultiClusterHub) error {
+func (r *ReconcileMultiClusterHub) cleanupCRDs(log logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	err := r.client.DeleteAllOf(
 		context.TODO(),
 		&apixv1.CustomResourceDefinition{},
@@ -178,7 +200,7 @@ func (r *ReconcileMultiClusterHub) cleanupCRDs(log logr.Logger, m *operatorsv1be
 	return nil
 }
 
-func (r *ReconcileMultiClusterHub) cleanupClusterManagers(reqLogger logr.Logger, m *operatorsv1beta1.MultiClusterHub) error {
+func (r *ReconcileMultiClusterHub) cleanupClusterManagers(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 
 	listOptions := client.MatchingLabels{
 		"installer.name":      m.GetName(),

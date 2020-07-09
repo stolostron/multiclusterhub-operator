@@ -3,8 +3,9 @@
 package multiclusterhub
 
 import (
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/manifest"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 )
 
 // CacheSpec ...
@@ -19,17 +20,17 @@ type CacheSpec struct {
 
 // Determines whether the cache has become out of date. Returns true if a change to the
 // multiclusterhub CR that would alter the cache contents occurs
-func (c CacheSpec) isStale(m *operatorsv1beta1.MultiClusterHub) bool {
+func (c CacheSpec) isStale(m *operatorsv1.MultiClusterHub) bool {
 	// A change in override type invalidates cache
 	if oType := manifest.GetImageOverrideType(m); oType != c.ImageOverrideType {
 		return true
 	}
 	// A change in suffix invalidates cache
-	if s := m.Spec.Overrides.ImageTagSuffix; s != c.ImageSuffix {
+	if s := utils.GetImageSuffix(m); s != c.ImageSuffix {
 		return true
 	}
 	// A change to image repository invalidates cache
-	if repo := m.Spec.Overrides.ImageRepository; repo != c.ImageRepository {
+	if repo := utils.GetImageRepository(m); repo != c.ImageRepository {
 		return true
 	}
 

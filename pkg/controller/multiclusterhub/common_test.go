@@ -8,10 +8,10 @@ import (
 	"os"
 	"testing"
 
-	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
+	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/foundation"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/mcm"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -42,16 +42,10 @@ func Test_ensureDeployment(t *testing.T) {
 
 	tests := []struct {
 		Name       string
-		MCH        *operatorsv1beta1.MultiClusterHub
+		MCH        *operatorsv1.MultiClusterHub
 		Deployment *appsv1.Deployment
 		Result     error
 	}{
-		{
-			Name:       "Test: EnsureDeployment - APIServer",
-			MCH:        full_mch,
-			Deployment: mcm.APIServerDeployment(full_mch, cacheSpec.ImageOverrides),
-			Result:     nil,
-		},
 		{
 			Name:       "Test: EnsureDeployment - Multiclusterhub-repo",
 			MCH:        full_mch,
@@ -61,13 +55,7 @@ func Test_ensureDeployment(t *testing.T) {
 		{
 			Name:       "Test: EnsureDeployment - Webhook",
 			MCH:        full_mch,
-			Deployment: mcm.WebhookDeployment(full_mch, cacheSpec.ImageOverrides),
-			Result:     nil,
-		},
-		{
-			Name:       "Test: EnsureDeployment - Webhook",
-			MCH:        full_mch,
-			Deployment: mcm.ControllerDeployment(full_mch, cacheSpec.ImageOverrides),
+			Deployment: foundation.WebhookDeployment(full_mch, cacheSpec.ImageOverrides),
 			Result:     nil,
 		},
 		{
@@ -116,7 +104,7 @@ func Test_ensureService(t *testing.T) {
 
 	tests := []struct {
 		Name    string
-		MCH     *operatorsv1beta1.MultiClusterHub
+		MCH     *operatorsv1.MultiClusterHub
 		Service *corev1.Service
 		Result  error
 	}{
@@ -127,15 +115,9 @@ func Test_ensureService(t *testing.T) {
 			Result:  nil,
 		},
 		{
-			Name:    "Test: ensureService - APIServer",
-			MCH:     full_mch,
-			Service: mcm.APIServerService(full_mch),
-			Result:  nil,
-		},
-		{
 			Name:    "Test: ensureService - Webhook",
 			MCH:     full_mch,
-			Service: mcm.WebhookService(full_mch),
+			Service: foundation.WebhookService(full_mch),
 			Result:  nil,
 		},
 		{
@@ -173,58 +155,6 @@ func Test_ensureService(t *testing.T) {
 	}
 }
 
-func Test_ensureSecret(t *testing.T) {
-	r, err := getTestReconciler(full_mch)
-	if err != nil {
-		t.Fatalf("Failed to create test reconciler")
-	}
-
-	tests := []struct {
-		Name   string
-		MCH    *operatorsv1beta1.MultiClusterHub
-		Secret *corev1.Secret
-		Result error
-	}{
-		{
-			Name:   "Test: ensureSecret - Multiclusterhub-repo",
-			MCH:    full_mch,
-			Secret: r.mongoAuthSecret(full_mch),
-			Result: nil,
-		},
-		{
-			Name:   "Test: ensureSecret - Empty secret",
-			MCH:    full_mch,
-			Secret: &corev1.Secret{},
-			Result: errors.NewInvalid(kind("Test"), "", nil),
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.Name, func(t *testing.T) {
-			_, err = r.ensureSecret(tt.MCH, tt.Secret)
-
-			if tt.Result != nil {
-				// Check if error matches desired error
-				if errors.ReasonForError(err) != errors.ReasonForError(tt.Result) {
-					t.Fatalf("ensureSecret() error = %v, wantErr %v", err, tt.Result)
-				}
-			} else {
-				if err != nil {
-					t.Fatalf("ensureSecret() error = %v, wantErr %v", err, tt.Result)
-				}
-
-				secret := &corev1.Secret{}
-				err = r.client.Get(context.TODO(), types.NamespacedName{
-					Name:      tt.Secret.Name,
-					Namespace: tt.Secret.Namespace,
-				}, secret)
-				if err != tt.Result {
-					t.Fatalf("Could not find created '%s' service: %s", tt.Secret.Name, err.Error())
-				}
-			}
-		})
-	}
-}
-
 func Test_ensureChannel(t *testing.T) {
 	r, err := getTestReconciler(full_mch)
 	if err != nil {
@@ -233,18 +163,18 @@ func Test_ensureChannel(t *testing.T) {
 
 	tests := []struct {
 		Name    string
-		MCH     *operatorsv1beta1.MultiClusterHub
+		MCH     *operatorsv1.MultiClusterHub
 		Channel *unstructured.Unstructured
 		Result  error
 	}{
 		{
-			Name:    "Test: ensureSecret - Multiclusterhub-repo",
+			Name:    "Test: ensureChannel - Multiclusterhub-repo",
 			MCH:     full_mch,
 			Channel: channel.Channel(full_mch),
 			Result:  nil,
 		},
 		{
-			Name:    "Test: ensureSecret - Empty channel",
+			Name:    "Test: ensureChannel - Empty channel",
 			MCH:     full_mch,
 			Channel: &unstructured.Unstructured{},
 			Result:  fmt.Errorf("Object 'Kind' is missing in 'unstructured object has no kind'"),
@@ -282,7 +212,7 @@ func Test_ensureSubscription(t *testing.T) {
 
 	tests := []struct {
 		Name         string
-		MCH          *operatorsv1beta1.MultiClusterHub
+		MCH          *operatorsv1.MultiClusterHub
 		Subscription *unstructured.Unstructured
 		Result       error
 	}{
@@ -335,12 +265,6 @@ func Test_ensureSubscription(t *testing.T) {
 			Result:       nil,
 		},
 		{
-			Name:         "Test: ensureSubscription - Mongo",
-			MCH:          full_mch,
-			Subscription: subscription.MongoDB(full_mch, cacheSpec.ImageOverrides),
-			Result:       nil,
-		},
-		{
 			Name:         "Test: ensureSubscription - RCM",
 			MCH:          full_mch,
 			Subscription: subscription.RCM(full_mch, cacheSpec.ImageOverrides),
@@ -390,14 +314,14 @@ func Test_ensureClusterManager(t *testing.T) {
 
 	tests := []struct {
 		Name           string
-		MCH            *operatorsv1beta1.MultiClusterHub
+		MCH            *operatorsv1.MultiClusterHub
 		ClusterManager *unstructured.Unstructured
 		Result         error
 	}{
 		{
 			Name:           "Test: ensureClusterManager - ClusterManager",
 			MCH:            full_mch,
-			ClusterManager: mcm.ClusterManager(full_mch, imageOverrides),
+			ClusterManager: foundation.ClusterManager(full_mch, imageOverrides),
 			Result:         nil,
 		},
 	}

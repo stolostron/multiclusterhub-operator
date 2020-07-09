@@ -6,7 +6,7 @@ spec:
   group: proxy.open-cluster-management.io
   version: v1beta1
   service:
-    name: acm-proxyserver
+    name: ocm-proxyserver
   insecureSkipTLSVerify: true
   groupPriorityMinimum: 10000
   versionPriority: 20

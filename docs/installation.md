@@ -24,7 +24,7 @@ export VERSION=<A_UNIQUE_VERSION>
 ```
 ### Replace image manifest
 
-Populate the json file located in `image-manifests/` with proper values. Values can be found in https://github.com/open-cluster-management/pipeline/tree/2.0-integration/snapshots
+Populate the json file located in `image-manifests/` with proper values. Values can be found in https://github.com/open-cluster-management/pipeline/tree/2.1-integration/snapshots
 
 ### Install Options
 
@@ -44,6 +44,10 @@ This will
 #### 2. Run locally outside the cluster
 This method is preferred during development cycle to deploy and test faster.
 
+```bash
+make local-install
+```
+
 This will 
 1. Apply necessary objects (namespace, secrets, operatorgroup, required subscriptions)
 2. Apply the CRD
@@ -51,6 +55,10 @@ This will
 
 #### 3. Deploy with the Operator Lifecycle Manager (Configmap)
 OLM will manage creation of most resources required to run the operator. This method simulates an index image with a configmap.
+
+```bash
+make cm-install
+```
 
 This will 
 1. Build and push an installer image
@@ -60,8 +68,12 @@ This will
 5. Apply OLM objects (catalogsource, index, subscription)
 
 
-#### 3. Deploy with the Operator Lifecycle Manager (Index image)
+#### 4. Deploy with the Operator Lifecycle Manager (Index image)
 OLM will manage creation of most resources required to run the operator. This method builds and pushes an actual index image.
+
+```bash
+make index-install
+```
 
 This will 
 1. Build and push an installer image
@@ -75,7 +87,7 @@ Once the operator is installed in the cluster, initiate an installation by creat
 ```bash
 make cr
 ```
-> To customize the instance, first modify the spec in `deploy/crds/operators.open-cluster-management.io_v1beta1_multiclusterhub_cr.yaml`.
+> To customize the instance, first modify the spec in `deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml`.
 
 ## Cleanup
 Delete multiclusterhub instance if it exists
