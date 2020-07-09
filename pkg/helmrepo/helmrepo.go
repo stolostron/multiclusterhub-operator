@@ -3,6 +3,8 @@
 package helmrepo
 
 import (
+	"strconv"
+
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 
@@ -16,13 +18,13 @@ import (
 )
 
 // ImageKey used by mch repo
-const ImageKey = "multiclusterhub_repo"
+var ImageKey = "multiclusterhub_repo"
 
 // HelmRepoName for labels, service name, and deployment name
-const HelmRepoName = "multiclusterhub-repo"
+var HelmRepoName = "multiclusterhub-repo"
 
 // Port of helm repo service
-const Port = 3000
+var Port = 3000
 
 // Version of helm repo image
 
@@ -62,7 +64,7 @@ func Deployment(m *operatorsv1.MultiClusterHub, overrides map[string]string) *ap
 						ImagePullPolicy: utils.GetImagePullPolicy(m),
 						Name:            HelmRepoName,
 						Ports: []corev1.ContainerPort{{
-							ContainerPort: Port,
+							ContainerPort: int32(Port),
 							Name:          "helmrepo",
 						}},
 						Resources: v1.ResourceRequirements{
@@ -97,6 +99,14 @@ func Deployment(m *operatorsv1.MultiClusterHub, overrides map[string]string) *ap
 								Name:      "POD_NAMESPACE",
 								ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.namespace"}},
 							},
+							{
+								Name:  "MCH_REPO_PORT",
+								Value: strconv.Itoa(Port),
+							},
+							{
+								Name:  "MCH_REPO_SERVICE",
+								Value: HelmRepoName,
+							},
 						},
 					}},
 					ImagePullSecrets: []corev1.LocalObjectReference{{Name: m.Spec.ImagePullSecret}},
@@ -127,7 +137,7 @@ func Service(m *operatorsv1.MultiClusterHub) *corev1.Service {
 			Selector: labels,
 			Ports: []corev1.ServicePort{{
 				Protocol:   corev1.ProtocolTCP,
-				Port:       Port,
+				Port:       int32(Port),
 				TargetPort: intstr.FromInt(Port),
 			}},
 			Type: corev1.ServiceTypeClusterIP,
