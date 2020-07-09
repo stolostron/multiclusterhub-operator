@@ -50,10 +50,6 @@ spec:
         status:
           description: Status represents the desired status of the Cluster
           properties:
-            cloudVendor:
-              description: CloudVendor describes the cloud provider for the managed
-                cluster.
-              type: string
             conditions:
               description: Conditions contains condition information for a managed
                 cluster
@@ -94,20 +90,6 @@ spec:
                   description: OCP is the distribution information of OCP managed
                     cluster, is matched when the Type is OCP.
                   properties:
-                    availableUpdates:
-                      description: availableUpdates contains the list of update versions
-                        that are appropriate for the manage cluster.
-                      items:
-                        type: string
-                      type: array
-                    desiredVersion:
-                      description: Desiredversion represents the desired version of
-                        the ocp cluster
-                      type: string
-                    upgradeFailed:
-                      description: UpgradeFailed indicate whether upgrade of the manage
-                        cluster is failed
-                      type: boolean
                     version:
                       description: Version is the distribution version of OCP
                       type: string
@@ -117,10 +99,6 @@ spec:
                     OCP currently
                   type: string
               type: object
-            kubeVendor:
-              description: KubeVendor describes the kubernetes provider of the managed
-                cluster.
-              type: string
             loggingEndpoint:
               description: LoggingEndpoint shows the endpoint to connect to logging
                 server of managed cluster

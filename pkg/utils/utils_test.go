@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
+	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -123,20 +123,27 @@ func TestContainsMap(t *testing.T) {
 }
 
 func TestMchIsValid(t *testing.T) {
-	validMCH := &operatorsv1.MultiClusterHub{
+	validMCH := &operatorsv1beta1.MultiClusterHub{
 		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1.MultiClusterHubSpec{
+		Spec: operatorsv1beta1.MultiClusterHubSpec{
 			ImagePullSecret: "test",
-			Ingress: operatorsv1.IngressSpec{
+			Mongo: operatorsv1beta1.Mongo{
+				Storage:      "mongoStorage",
+				StorageClass: "mongoStorageClass",
+			},
+			Etcd: operatorsv1beta1.Etcd{
+				Storage:      "etcdStorage",
+				StorageClass: "etcdStorageClass",
+			},
+			Ingress: operatorsv1beta1.IngressSpec{
 				SSLCiphers: []string{"foo", "bar", "baz"},
 			},
-			AvailabilityConfig: operatorsv1.HAHigh,
 		},
 	}
 
 	type args struct {
-		m *operatorsv1.MultiClusterHub
+		m *operatorsv1beta1.MultiClusterHub
 	}
 	tests := []struct {
 		name string
@@ -150,7 +157,7 @@ func TestMchIsValid(t *testing.T) {
 		},
 		{
 			"Empty object",
-			args{&operatorsv1.MultiClusterHub{}},
+			args{&operatorsv1beta1.MultiClusterHub{}},
 			false,
 		},
 	}
@@ -172,10 +179,10 @@ func TestDistributePods(t *testing.T) {
 }
 
 func TestGetImagePullPolicy(t *testing.T) {
-	noPullPolicyMCH := &operatorsv1.MultiClusterHub{}
-	pullPolicyMCH := &operatorsv1.MultiClusterHub{
-		Spec: operatorsv1.MultiClusterHubSpec{
-			Overrides: operatorsv1.Overrides{ImagePullPolicy: v1.PullIfNotPresent},
+	noPullPolicyMCH := &operatorsv1beta1.MultiClusterHub{}
+	pullPolicyMCH := &operatorsv1beta1.MultiClusterHub{
+		Spec: operatorsv1beta1.MultiClusterHubSpec{
+			Overrides: operatorsv1beta1.Overrides{ImagePullPolicy: v1.PullIfNotPresent},
 		},
 	}
 
@@ -194,21 +201,21 @@ func TestGetImagePullPolicy(t *testing.T) {
 }
 
 func TestDefaultReplicaCount(t *testing.T) {
-	mchDefault := &operatorsv1.MultiClusterHub{}
-	mchNonHA := &operatorsv1.MultiClusterHub{
-		Spec: operatorsv1.MultiClusterHubSpec{
-			AvailabilityConfig: operatorsv1.HABasic,
+	mchDefault := &operatorsv1beta1.MultiClusterHub{}
+	mchNonHA := &operatorsv1beta1.MultiClusterHub{
+		Spec: operatorsv1beta1.MultiClusterHubSpec{
+			Failover: false,
 		},
 	}
-	mchHA := &operatorsv1.MultiClusterHub{
-		Spec: operatorsv1.MultiClusterHubSpec{
-			AvailabilityConfig: operatorsv1.HAHigh,
+	mchHA := &operatorsv1beta1.MultiClusterHub{
+		Spec: operatorsv1beta1.MultiClusterHubSpec{
+			Failover: true,
 		},
 	}
 
-	t.Run("HA (by default)", func(t *testing.T) {
-		if got := DefaultReplicaCount(mchDefault); got != 2 {
-			t.Errorf("DefaultReplicaCount() = %v, want %v", got, 2)
+	t.Run("Non-HA (by default)", func(t *testing.T) {
+		if got := DefaultReplicaCount(mchDefault); got != 1 {
+			t.Errorf("DefaultReplicaCount() = %v, want %v", got, 1)
 		}
 	})
 	t.Run("Non-HA", func(t *testing.T) {
@@ -246,4 +253,33 @@ func TestFormatSSLCiphers(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestIsPaused(t *testing.T) {
+	t.Run("Unpaused MCH", func(t *testing.T) {
+		mch := &operatorsv1beta1.MultiClusterHub{}
+		want := false
+		if got := IsPaused(mch); got != want {
+			t.Errorf("IsPaused() = %v, want %v", got, want)
+		}
+	})
+	t.Run("Paused MCH", func(t *testing.T) {
+		mch := &operatorsv1beta1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{AnnotationMCHPause: "true"}},
+		}
+		want := true
+		if got := IsPaused(mch); got != want {
+			t.Errorf("IsPaused() = %v, want %v", got, want)
+		}
+	})
+	t.Run("Pause label false MCH", func(t *testing.T) {
+		mch := &operatorsv1beta1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{AnnotationMCHPause: "false"}},
+		}
+		want := false
+		if got := IsPaused(mch); got != want {
+			t.Errorf("IsPaused() = %v, want %v", got, want)
+		}
+	})
+
 }

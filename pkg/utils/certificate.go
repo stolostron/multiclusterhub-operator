@@ -25,7 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
+	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 )
 
 // Certificate ...
@@ -69,8 +69,49 @@ func GenerateWebhookCerts(certDir string) (string, []byte, error) {
 	return namespace, []byte(ca.Cert), nil
 }
 
+// GenerateAPIServerSecret ...
+func GenerateAPIServerSecret(client runtimeclient.Client, multiClusterHub *operatorsv1beta1.MultiClusterHub) error {
+	namespace, err := findNamespace()
+	if err != nil {
+		return err
+	}
+	err = client.Get(context.TODO(), types.NamespacedName{Name: APIServerSecretName, Namespace: namespace}, &corev1.Secret{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			ca, err := GenerateSelfSignedCACert("multiclusterhub-api")
+			if err != nil {
+				return err
+			}
+
+			alternateDNS := []string{
+				fmt.Sprintf("%s.%s", apiserviceName, namespace),
+				fmt.Sprintf("%s.%s.svc", apiserviceName, namespace),
+			}
+			cert, err := GenerateSignedCert(apiserviceName, alternateDNS, ca)
+			if err != nil {
+				return err
+			}
+			return client.Create(context.TODO(), &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      APIServerSecretName,
+					Namespace: namespace,
+					OwnerReferences: []metav1.OwnerReference{
+						*metav1.NewControllerRef(multiClusterHub, multiClusterHub.GetObjectKind().GroupVersionKind())},
+				},
+				Data: map[string][]byte{
+					"ca.crt":  []byte(ca.Cert),
+					"tls.crt": []byte(cert.Cert),
+					"tls.key": []byte(cert.Key),
+				},
+			})
+		}
+		return err
+	}
+	return nil
+}
+
 // GenerateKlusterletSecret ...
-func GenerateKlusterletSecret(client runtimeclient.Client, multiClusterHub *operatorsv1.MultiClusterHub) error {
+func GenerateKlusterletSecret(client runtimeclient.Client, multiClusterHub *operatorsv1beta1.MultiClusterHub) error {
 	namespace, err := findNamespace()
 	if err != nil {
 		return err

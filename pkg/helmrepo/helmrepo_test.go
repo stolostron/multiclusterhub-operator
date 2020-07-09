@@ -6,17 +6,18 @@ import (
 	"reflect"
 	"testing"
 
-	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
+	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestDeployment(t *testing.T) {
-	empty := &operatorsv1.MultiClusterHub{
+	empty := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1.MultiClusterHubSpec{
+		Spec: operatorsv1beta1.MultiClusterHubSpec{
 			ImagePullSecret: "",
+			Mongo:           operatorsv1beta1.Mongo{},
 		},
 	}
 	ovr := map[string]string{}
@@ -25,9 +26,9 @@ func TestDeployment(t *testing.T) {
 		_ = Deployment(empty, ovr)
 	})
 
-	essentialsOnly := &operatorsv1.MultiClusterHub{
+	essentialsOnly := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec:       operatorsv1.MultiClusterHubSpec{},
+		Spec:       operatorsv1beta1.MultiClusterHubSpec{},
 	}
 	t.Run("MCH with only required values", func(t *testing.T) {
 		_ = Deployment(essentialsOnly, ovr)
@@ -35,7 +36,7 @@ func TestDeployment(t *testing.T) {
 }
 
 func TestService(t *testing.T) {
-	mch := &operatorsv1.MultiClusterHub{
+	mch := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "testName",
 			Namespace: "testNS",
@@ -54,10 +55,11 @@ func TestService(t *testing.T) {
 }
 
 func TestValidateDeployment(t *testing.T) {
-	mch := &operatorsv1.MultiClusterHub{
+	mch := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1.MultiClusterHubSpec{
+		Spec: operatorsv1beta1.MultiClusterHubSpec{
 			ImagePullSecret: "test",
+			Mongo:           operatorsv1beta1.Mongo{},
 			NodeSelector: map[string]string{
 				"test": "test",
 			},
@@ -85,7 +87,7 @@ func TestValidateDeployment(t *testing.T) {
 	dep4.Spec.Template.Spec.NodeSelector = nil
 
 	type args struct {
-		m   *operatorsv1.MultiClusterHub
+		m   *operatorsv1beta1.MultiClusterHub
 		dep *appsv1.Deployment
 	}
 	tests := []struct {

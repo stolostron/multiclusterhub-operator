@@ -3,13 +3,13 @@
 package subscription
 
 import (
-	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
+	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 // RCM overrides the rcm chart
-func RCM(m *operatorsv1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
+func RCM(m *operatorsv1beta1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "rcm",
 		Namespace: m.Namespace,
@@ -21,13 +21,12 @@ func RCM(m *operatorsv1.MultiClusterHub, overrides map[string]string) *unstructu
 			"global": map[string]interface{}{
 				"pullPolicy":      utils.GetImagePullPolicy(m),
 				"imagePullSecret": m.Spec.ImagePullSecret,
-				"imageRepository": utils.GetImageRepository(m),
+				"imageRepository": m.Spec.Overrides.ImageRepository,
 				"imageTagPostfix": imageSuffix(m),
 				"imageOverrides":  overrides,
 			},
 		},
 	}
-	setCustomCA(m, sub)
 
 	return newSubscription(m, sub)
 }

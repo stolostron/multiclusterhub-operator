@@ -29,7 +29,7 @@ spec:
 After the operator was installed by OLM, user uses `MultiClusterHub` CRD to define the multicloud hub deployment configuration, its corresponding CR looks like
 
 ```yaml
-apiVersion: operator.open-cluster-management.io/v1
+apiVersion: operators.open-cluster-management.io/v1beta1
 kind: MultiClusterHub
 metadata:
   name: example-multiclusterhub
@@ -55,7 +55,7 @@ spec:
 As an easiest way, user use a default CR to deploy the multicloud hub, e.g.
 
 ```yaml
-apiVersion: operator.open-cluster-management.io/v1
+apiVersion: operators.open-cluster-management.io/v1beta1
 kind: MultiClusterHub
 metadata:
   name: myhub
@@ -72,7 +72,7 @@ Then the MultiClusterHub operator will deploy the multicloud hub to namespace `m
 After user apply the MultiClusterHub CR, user can query the CR to get the defualt configuration and status
 
 ```yaml
-apiVersion: operator.open-cluster-management.io/v1
+apiVersion: operators.open-cluster-management.io/v1beta1
 kind: MultiClusterHub
 metadata:
   name: myhub
@@ -132,7 +132,7 @@ status:
 The MultiCloudFoundation Operator is implemented by using [Operator SDK](https://github.com/operator-framework/operator-sdk/blob/master/doc/user-guide.md), with this operator we can rotate the certifacate and manage the secrets in the operator, this operator deploy the multicloud foundation components, includes: mcm `core`, `application` and `grc`, user can use this operator to deploy community multicloud hub, its corresponding CR looks like
 
 ```yaml
-apiVersion: operator.open-cluster-management.io/v1
+apiVersion: operators.open-cluster-management.io/v1beta1
 kind: MultiCloudFoundation
 metadata:
   name: myhub
@@ -172,7 +172,7 @@ To install a community version multicloud hub, user follow below steps
 3. After the OLM installs the MultiCloudFoundation operator with the `Subscription`, user defines a CR to describe the multicloud hub configuration, e.g.
 
     ```yaml
-    apiVersion: operator.open-cluster-management.io/v1
+    apiVersion: operators.open-cluster-management.io/v1beta1
     kind: MultiCloudFoundation
     metadata:
       name: myhub

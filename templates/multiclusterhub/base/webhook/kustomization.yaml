@@ -1,4 +1,2 @@
 resources:
 - webhook-mutating-config.yaml
-# Disabling webhook-validating-config.yaml in v2.0.0. See https://github.com/open-cluster-management/multicloudhub-operator/pull/299
-# - webhook-validating-config.yaml

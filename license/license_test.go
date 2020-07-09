@@ -19,20 +19,18 @@ var poundScanner = regexp.MustCompile(`\# Copyright \(c\) 2020 Red Hat, Inc\.`)
 
 var skip = map[string]bool{
 	// Operator SDK boilerplate
-	"../pkg/apis/operator/v1/doc.go":                   true,
-	"../pkg/apis/operator/v1/register.go":              true,
-	"../pkg/apis/operator/v1/zz_generated.deepcopy.go": true,
-	"../pkg/apis/operator/group.go":                    true,
-	"../pkg/apis/addtoscheme_operator_v1.go":           true,
-	"../pkg/apis/apis.go":                              true,
-	"../tools.go":                                      true,
+	"../pkg/apis/operators/v1beta1/doc.go":                   true,
+	"../pkg/apis/operators/v1beta1/register.go":              true,
+	"../pkg/apis/operators/v1beta1/zz_generated.deepcopy.go": true,
+	"../pkg/apis/operators/group.go":                         true,
+	"../pkg/apis/addtoscheme_operators_v1beta1.go":           true,
+	"../pkg/apis/apis.go":                                    true,
+	"../tools.go":                                            true,
 
 	// Build Harness
-	"../vbh":                         true,
-	"../build-harness-extensions":    true,
-	"../build-harness":               true,
-	"../build/registration-operator": true,
-	"../build":                    true,
+	"../vbh":                      true,
+	"../build-harness-extensions": true,
+	"../build-harness":            true,
 }
 
 func TestLicense(t *testing.T) {

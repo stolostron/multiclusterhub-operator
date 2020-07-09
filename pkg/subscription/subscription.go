@@ -5,9 +5,8 @@ package subscription
 import (
 	"bytes"
 
-	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
+	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -26,7 +25,7 @@ type Subscription struct {
 }
 
 // newSubscription creates a new instance of an unstructured open-cluster-management.io Subscription object
-func newSubscription(m *operatorsv1.MultiClusterHub, s *Subscription) *unstructured.Unstructured {
+func newSubscription(m *operatorsv1beta1.MultiClusterHub, s *Subscription) *unstructured.Unstructured {
 	sub := &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": "apps.open-cluster-management.io/v1",
@@ -55,7 +54,6 @@ func newSubscription(m *operatorsv1.MultiClusterHub, s *Subscription) *unstructu
 			},
 		},
 	}
-	utils.AddInstallerLabel(sub, m.Name, m.Namespace)
 	sub.SetOwnerReferences([]metav1.OwnerReference{
 		*metav1.NewControllerRef(m, m.GetObjectKind().GroupVersionKind()),
 	})
@@ -86,22 +84,15 @@ func Validate(found *unstructured.Unstructured, want *unstructured.Unstructured)
 	return nil, false
 }
 
-// setCustomCA sets a CustomCAConfigmap to the hubconfig overrides if available
-func setCustomCA(m *operatorsv1.MultiClusterHub, sub *Subscription) {
-	if m.Spec.CustomCAConfigmap != "" {
-		sub.Overrides["hubconfig"].(map[string]interface{})["customCAConfigmap"] = m.Spec.CustomCAConfigmap
-	}
-}
-
-func imageSuffix(m *operatorsv1.MultiClusterHub) (s string) {
-	s = utils.GetImageSuffix(m)
+func imageSuffix(m *operatorsv1beta1.MultiClusterHub) (s string) {
+	s = m.Spec.Overrides.ImageTagSuffix
 	if s != "" {
 		s = "-" + s
 	}
 	return
 }
 
-func networkVersion(m *operatorsv1.MultiClusterHub) (ipv string) {
+func networkVersion(m *operatorsv1beta1.MultiClusterHub) (ipv string) {
 	if m.Spec.IPv6 {
 		return "ipv6"
 	}

@@ -26,7 +26,7 @@ yq w -i bundles/$version/manifests/multiclusterhub-operator.clusterserviceversio
 
 # Compile bundle info into configmap
 csv=$(yq r bundles/$version/manifests/multiclusterhub-operator.clusterserviceversion.yaml | indent)
-crd=$(yq r bundles/$version/manifests/operator.open-cluster-management.io_multiclusterhubs_crd.yaml | indent)
+crd=$(yq r bundles/$version/manifests/operators.open-cluster-management.io_multiclusterhubs_crd.yaml | indent)
 pkg=$(yq r build/configmap-install/package.yaml | indent)
 
 # Contruct composite Configmap

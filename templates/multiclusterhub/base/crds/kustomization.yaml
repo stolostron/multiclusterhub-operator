@@ -3,3 +3,4 @@ resources:
 - internal.open-cluster-management.io_managedclusterinfos_crd.yaml
 - view.open-cluster-management.io_managedclusterviews_crd.yaml
 - action.open-cluster-management.io_managedclusteractions_crd.yaml
+- clusters.open-cluster-management.io_managedclusters_crd.yaml

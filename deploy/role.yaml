@@ -12,6 +12,7 @@ rules:
   - "apps"
   - "apps.open-cluster-management.io"
   - "authorization.k8s.io"
+  - "etcd.database.coreos.com"
   - "hive.openshift.io"
   - "mcm.ibm.com"
   - "rbac.authorization.k8s.io"
@@ -24,14 +25,15 @@ rules:
   - configmaps
   - customresourcedefinitions
   - deployments
+  - etcdclusters
   - hiveconfigs
   - mutatingwebhookconfigurations
-  - validatingwebhookconfigurations
   - namespaces
   - pods
   - replicasets
   - rolebindings
   - secrets
+  - securitycontextconstraints
   - serviceaccounts
   - services
   - subjectaccessreviews
@@ -47,6 +49,7 @@ rules:
   - "apps"
   - "apps.open-cluster-management.io"
   - "authorization.k8s.io"
+  - "etcd.database.coreos.com"
   - "hive.openshift.io"
   - "monitoring.coreos.com"
   - "rbac.authorization.k8s.io"
@@ -61,12 +64,13 @@ rules:
   - configmaps
   - customresourcedefinitions
   - deployments
+  - etcdclusters
   - hiveconfigs
   - mutatingwebhookconfigurations
-  - validatingwebhookconfigurations
   - namespaces
   - rolebindings
   - secrets
+  - securitycontextconstraints
   - serviceaccounts
   - services
   - servicemonitors
@@ -84,7 +88,7 @@ rules:
   - "authorization.k8s.io"
   - "config.openshift.io"
   - "mcm.ibm.com"
-  - "operator.open-cluster-management.io"
+  - "operators.open-cluster-management.io"
   - "rbac.authorization.k8s.io"
   resources:
   - apiservices
@@ -111,7 +115,7 @@ rules:
   - "authorization.k8s.io"
   - "config.openshift.io"
   - "mcm.ibm.com"
-  - "operator.open-cluster-management.io"
+  - "operators.open-cluster-management.io"
   - "rbac.authorization.k8s.io"
   - "storage.k8s.io"
   resources:
@@ -125,6 +129,7 @@ rules:
   - rolebindings
   - secrets
   - services
+  - storageclasses
   - subjectaccessreviews
   - validatingwebhookconfigurations
   verbs:
@@ -136,7 +141,7 @@ rules:
   - "apps"
   - "mcm.ibm.com"
   - "monitoring.coreos.com"
-  - "operator.open-cluster-management.io"
+  - "operators.open-cluster-management.io"
   resources:
   - deployments
   - deployments/finalizers
@@ -165,17 +170,14 @@ rules:
   - customresourcedefinitions
   - hiveconfigs
   - mutatingwebhookconfigurations
-  - validatingwebhookconfigurations
   verbs:
   - deletecollection
-
+  
 # RCM Dependancies
 - apiGroups:
   - ""
   - "action.open-cluster-management.io"
   - "agent.open-cluster-management.io"
-  - "cluster.open-cluster-management.io"
-  - "work.open-cluster-management.io"
   - "app.k8s.io"
   - "apps.open-cluster-management.io"
   - "authorization.k8s.io"
@@ -189,12 +191,11 @@ rules:
   - "inventory.open-cluster-management.io"
   - "mcm.ibm.com"
   - "multicloud.ibm.com"
-  - "policy.open-cluster-management.io"
+  - "policy.mcm.ibm.com"
   - "proxy.open-cluster-management.io"
   - "rbac.authorization.k8s.io"
   - "view.open-cluster-management.io"
   - "operator.open-cluster-management.io"
-  - "register.open-cluster-management.io"
   resources:
   - applications
   - applications/status
@@ -211,16 +212,16 @@ rules:
   - clusterdeployments
   - managedclusterinfos
   - managedclusterinfos/status
-  - managedclusters
-  - managedclusters/accept
-  - managedclusters/status
-  - managedclusterviews
-  - managedclusterviews/status
-  - manifestworks
-  - manifestworks/status
-  - clustermanagers
-  - clusterroles
+  - clusterjoinrequests
+  - clusterjoinrequests/status
+  - clusterjoinrequests/finalizers
+  - clusters
+  - clusters/status
+  - clusters/finalizers
+  - clusterstatuses
   - clusterstatuses/aggregator
+  - clusterstatuses/metering-receiver
+  - clusterstatuses/topology
   - clusterversions
   - compliances
   - configmaps
@@ -233,22 +234,34 @@ rules:
   - events
   - helmrepos
   - helmrepos/status
-  - klusterletaddonconfigs
+  - klusterletconfigs
   - machinepools
   - namespaces
+  - placementbindings
+  - placementpolicies
+  - placementpolicies/status
   - placementrules
   - placementrules/status
   - policies
-  - policies/status
-  - placementbindings
+  - resourceviews
+  - resourceviews/status
   - roles
   - rolebindings
   - secrets
   - signers
+  - managedclusters
+  - managedclusterviews
+  - managedclusterviews/status
   - subscriptions
   - subscriptions/status
   - subjectaccessreviews
   - syncsets
+  - works
+  - works/status
+  - works/result
+  - worksets
+  - worksets/status
+  - clustermanagers
   verbs:
   - create
   - get
@@ -259,4 +272,3 @@ rules:
   - deletecollection
   - patch
   - approve
-  - escalate

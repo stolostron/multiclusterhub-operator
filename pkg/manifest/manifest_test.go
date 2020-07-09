@@ -6,12 +6,11 @@ import (
 	"os"
 	"testing"
 
-	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
+	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 )
 
 func TestGetImageOverrideType(t *testing.T) {
-	mch := &operatorsv1.MultiClusterHub{}
+	mch := &operatorsv1beta1.MultiClusterHub{}
 	t.Run("Manifest format", func(t *testing.T) {
 		want := Manifest
 		if got := GetImageOverrideType(mch); got != want {
@@ -19,7 +18,7 @@ func TestGetImageOverrideType(t *testing.T) {
 		}
 	})
 
-	mch.SetAnnotations(map[string]string{utils.AnnotationSuffix: "foo"})
+	mch.Spec.Overrides.ImageTagSuffix = "foo"
 	t.Run("Suffix format", func(t *testing.T) {
 		want := Suffix
 		if got := GetImageOverrideType(mch); got != want {
@@ -31,7 +30,7 @@ func TestGetImageOverrideType(t *testing.T) {
 func Test_readManifestFile(t *testing.T) {
 	t.Run("Get manifest", func(t *testing.T) {
 		os.Setenv(ManifestsPathEnvVar, "../../image-manifests")
-		version := "2.1.0"
+		version := "2.0.0"
 		_, err := readManifestFile(version)
 		if err != nil {
 			t.Errorf("readManifestFile() error = %v, wantErr %v", err, nil)
@@ -49,7 +48,7 @@ func Test_readManifestFile(t *testing.T) {
 
 	t.Run("Env var missing", func(t *testing.T) {
 		os.Unsetenv(ManifestsPathEnvVar)
-		version := "2.1.0"
+		version := "2.0.0"
 		_, err := readManifestFile(version)
 		if err == nil {
 			t.Errorf("readManifestFile() did not return error")
@@ -61,22 +60,22 @@ func Test_buildFullImageReference(t *testing.T) {
 	mi := ManifestImage{
 		ImageKey:     "test_app",
 		ImageName:    "test-app",
-		ImageVersion: "2.1.0",
+		ImageVersion: "2.0.0",
 		ImageRemote:  "quay.io/open-cluster-management",
 		ImageDigest:  "sha256:abc123",
 	}
-	mch := &operatorsv1.MultiClusterHub{}
+	mch := &operatorsv1beta1.MultiClusterHub{}
 
 	mch1 := mch.DeepCopy()
 
 	mch2 := mch.DeepCopy()
-	mch2.SetAnnotations(map[string]string{utils.AnnotationImageRepo: "foo.io/bar"})
+	mch2.Spec.Overrides.ImageRepository = "foo.io/bar"
 
 	mch3 := mch.DeepCopy()
-	mch3.SetAnnotations(map[string]string{utils.AnnotationSuffix: "baz"})
+	mch3.Spec.Overrides.ImageTagSuffix = "baz"
 
 	type args struct {
-		mch *operatorsv1.MultiClusterHub
+		mch *operatorsv1beta1.MultiClusterHub
 		mi  ManifestImage
 	}
 	tests := []struct {
@@ -97,7 +96,7 @@ func Test_buildFullImageReference(t *testing.T) {
 		{
 			name: "Use image suffix format",
 			args: args{mch3, mi},
-			want: "quay.io/open-cluster-management/test-app:2.1.0-baz",
+			want: "quay.io/open-cluster-management/test-app:2.0.0-baz",
 		},
 	}
 	for _, tt := range tests {

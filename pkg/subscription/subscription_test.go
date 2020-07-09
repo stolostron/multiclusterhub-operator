@@ -6,8 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
+	operatorsv1beta1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operators/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -15,11 +14,11 @@ import (
 )
 
 func TestValidate(t *testing.T) {
-	mch := &operatorsv1.MultiClusterHub{
+	mch := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1.MultiClusterHubSpec{
-			ImagePullSecret:   "test",
-			CustomCAConfigmap: "test-config",
+		Spec: operatorsv1beta1.MultiClusterHubSpec{
+			ImagePullSecret: "test",
+			Mongo:           operatorsv1beta1.Mongo{},
 		},
 	}
 	ovr := map[string]string{}
@@ -39,18 +38,13 @@ func TestValidate(t *testing.T) {
 
 	// 4. Modified ImageRepository
 	mch3 := mch.DeepCopy()
-	mch3.SetAnnotations(map[string]string{utils.AnnotationImageRepo: "notquay.io/closed-cluster-management"})
+	mch3.Spec.Overrides.ImageRepository = "notquay.io/closed-cluster-management"
 	sub3 := KUIWebTerminal(mch3, ovr)
 
 	// 5. Activate HA mode
 	mch4 := mch.DeepCopy()
-	mch4.Spec.AvailabilityConfig = operatorsv1.HABasic
+	mch4.Spec.Failover = true
 	sub4 := KUIWebTerminal(mch4, ovr)
-
-	// 6. Modified CustomCAConfigmap
-	mch6 := mch.DeepCopy()
-	mch6.Spec.CustomCAConfigmap = ""
-	sub5 := KUIWebTerminal(mch6, ovr)
 
 	type args struct {
 		found *unstructured.Unstructured
@@ -87,15 +81,9 @@ func TestValidate(t *testing.T) {
 			want1: true,
 		},
 		{
-			name:  "Deactivate HighAvailabilityConfig mode",
+			name:  "Activate failover mode",
 			args:  args{sub, sub4},
 			want:  sub4,
-			want1: true,
-		},
-		{
-			name:  "Modified CustomCAConfigmap",
-			args:  args{sub, sub5},
-			want:  sub5,
 			want1: true,
 		},
 	}
@@ -113,10 +101,11 @@ func TestValidate(t *testing.T) {
 }
 
 func TestSubscriptions(t *testing.T) {
-	mch := &operatorsv1.MultiClusterHub{
+	mch := &operatorsv1beta1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1.MultiClusterHubSpec{
+		Spec: operatorsv1beta1.MultiClusterHubSpec{
 			ImagePullSecret: "test",
+			Mongo:           operatorsv1beta1.Mongo{},
 		},
 	}
 	ovr := map[string]string{}
@@ -133,6 +122,7 @@ func TestSubscriptions(t *testing.T) {
 		{"GRC subscription", GRC(mch, ovr)},
 		{"KUIWebTerminal subscription", KUIWebTerminal(mch, ovr)},
 		{"ManagementIngress subscription", ManagementIngress(mch, ovr, "")},
+		{"MongoDB subscription", MongoDB(mch, ovr)},
 		{"RCM subscription", RCM(mch, ovr)},
 		{"Search subscription", Search(mch, ovr)},
 		{"Topology subscription", Topology(mch, ovr)},

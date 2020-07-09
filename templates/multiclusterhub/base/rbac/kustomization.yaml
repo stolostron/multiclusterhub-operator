@@ -1,10 +1,10 @@
 
 resources:
+- clusterrole-bootstrap.yaml
+- clusterrolebinding-bootstrap.yaml
 - serviceaccount-foundation.yaml
 - clusterrole-foundation.yaml
 - clusterrolebinding-foundation.yaml
 - clusterrole-admin-aggregate.yaml
 - clusterrole-edit-aggregate.yaml
 - clusterrole-view-aggregate.yaml
-- clusterrole-clustermanageradmin.yaml
-- clusterrole-clustermanageradmin-aggregate.yaml
