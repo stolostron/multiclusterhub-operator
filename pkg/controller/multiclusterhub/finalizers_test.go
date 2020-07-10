@@ -8,10 +8,12 @@ import (
 	"testing"
 
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
@@ -434,37 +436,23 @@ func Test_cleanupValidatingWebhooks(t *testing.T) {
 func Test_cleanupPullSecret(t *testing.T) {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-secret",
-			Namespace: mch_namespace,
+			Name:      full_mch.Spec.ImagePullSecret,
+			Namespace: utils.CertManagerNamespace,
 		},
 		StringData: map[string]string{
 			"test": "data",
 		},
 	}
 
-	installerSecret := secret.DeepCopy()
-	installerSecret.SetLabels(map[string]string{
-		"installer.name":      mch_name,
-		"installer.namespace": mch_namespace,
-	})
-
 	tests := []struct {
 		Name   string
 		MCH    *operatorsv1.MultiClusterHub
 		Secret *corev1.Secret
-		Result error
 	}{
 		{
 			Name:   "Without Labels",
 			MCH:    full_mch,
 			Secret: secret,
-			Result: nil,
-		},
-		{
-			Name:   "With Labels",
-			MCH:    empty_mch,
-			Secret: installerSecret,
-			Result: fmt.Errorf("secrets \"test-secret\" not found"),
 		},
 	}
 
@@ -493,8 +481,9 @@ func Test_cleanupPullSecret(t *testing.T) {
 				Name:      tt.Secret.Name,
 				Namespace: tt.Secret.Namespace,
 			}, emptySecret)
-			if !errorEquals(err, tt.Result) {
-				t.Fatal(err.Error())
+
+			if err == nil || !errors.IsNotFound(err) {
+				t.Errorf("cleanupPullSecret() error = %v, wanted isNotFound error", err)
 			}
 		})
 	}
