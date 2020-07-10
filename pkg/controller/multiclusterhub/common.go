@@ -4,6 +4,7 @@ package multiclusterhub
 
 import (
 	"context"
+	e "errors"
 	"fmt"
 	"time"
 
@@ -278,6 +279,12 @@ func (r *ReconcileMultiClusterHub) apiReady(gv schema.GroupVersion) (*reconcile.
 
 func (r *ReconcileMultiClusterHub) copyPullSecret(m *operatorsv1.MultiClusterHub, newNS string) (*reconcile.Result, error) {
 	sublog := log.WithValues("Copying Secret to cert-manager namespace", m.Spec.ImagePullSecret, "Namespace.Name", utils.CertManagerNamespace)
+
+	if m.Spec.ImagePullSecret == "" {
+		err := e.New("imagePullSecret is empty")
+		sublog.Error(err, "copyPullSecret requires a valid secret to copy")
+		return &reconcile.Result{}, err
+	}
 
 	pullSecret := &v1.Secret{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{
