@@ -274,7 +274,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	if multiClusterHub.Spec.SeparateCertificateManagement {
+	if multiClusterHub.Spec.SeparateCertificateManagement && multiClusterHub.Spec.ImagePullSecret != "" {
 		result, err = r.copyPullSecret(multiClusterHub, utils.CertManagerNamespace)
 		if result != nil {
 			return *result, err
