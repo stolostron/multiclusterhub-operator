@@ -220,6 +220,7 @@ rules:
   - manifestworks/status
   - clustermanagers
   - clusterroles
+  - clusterrolebindings
   - clusterstatuses/aggregator
   - clusterversions
   - compliances

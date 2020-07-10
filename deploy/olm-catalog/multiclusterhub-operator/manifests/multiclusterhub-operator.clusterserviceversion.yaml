@@ -280,6 +280,7 @@ spec:
           - manifestworks/status
           - clustermanagers
           - clusterroles
+          - clusterrolebindings
           - clusterstatuses/aggregator
           - clusterversions
           - compliances
