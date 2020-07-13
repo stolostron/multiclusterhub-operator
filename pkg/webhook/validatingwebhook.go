@@ -86,10 +86,6 @@ func (m *multiClusterHubValidator) validateUpdate(req admission.Request) error {
 		return errors.New("Hive updates are forbidden")
 	}
 
-	if existingMCH.Spec.IPv6 != newMCH.Spec.IPv6 {
-		return errors.New("IPv6 update is forbidden")
-	}
-
 	if !utils.AvailabilityConfigIsValid(newMCH.Spec.AvailabilityConfig) && newMCH.Spec.AvailabilityConfig != "" {
 		return errors.New("Invalid AvailabilityConfig given")
 	}

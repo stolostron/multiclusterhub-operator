@@ -84,10 +84,6 @@ func Test_ReconcileMultiClusterHub(t *testing.T) {
 	mch3 := full_mch.DeepCopy()
 	mch3.Spec.AvailabilityConfig = operatorsv1.HABasic
 
-	// IPv6
-	mch4 := full_mch.DeepCopy()
-	mch4.Spec.IPv6 = true
-
 	// SeparateCertificateManagement
 	mch5 := full_mch.DeepCopy()
 	mch5.Spec.SeparateCertificateManagement = true
@@ -110,11 +106,6 @@ func Test_ReconcileMultiClusterHub(t *testing.T) {
 		{
 			Name:     "AvailabilityConfig",
 			MCH:      mch3,
-			Expected: nil,
-		},
-		{
-			Name:     "IPv6",
-			MCH:      mch4,
 			Expected: nil,
 		},
 		{
