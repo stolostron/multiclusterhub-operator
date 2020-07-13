@@ -33,10 +33,6 @@ type MultiClusterHubSpec struct {
 	// +optional
 	AvailabilityConfig AvailabilityType `json:"availabilityConfig,omitempty"`
 
-	// Flag for IPv6
-	// +optional
-	IPv6 bool `json:"ipv6"`
-
 	// Flag to install cert-manager into its own namespace.
 	// +optional
 	SeparateCertificateManagement bool `json:"separateCertificateManagement"`
