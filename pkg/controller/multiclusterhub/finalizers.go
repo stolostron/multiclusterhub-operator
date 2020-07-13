@@ -14,6 +14,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -159,21 +160,30 @@ func (r *ReconcileMultiClusterHub) cleanupValidatingWebhooks(reqLogger logr.Logg
 }
 
 func (r *ReconcileMultiClusterHub) cleanupPullSecret(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
-	err := r.client.DeleteAllOf(context.TODO(), &corev1.Secret{}, client.MatchingLabels{
-		"installer.name":      m.GetName(),
-		"installer.namespace": m.GetNamespace(),
-	})
+	// TODO: Handle scenario where ImagePullSecret is changed after install
+	if m.Spec.ImagePullSecret == "" {
+		reqLogger.Info("No ImagePullSecret to cleanup. Continuing.")
+		return nil
+	}
 
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: utils.CertManagerNamespace,
+			Name:      m.Spec.ImagePullSecret,
+		},
+	}
+
+	err := r.client.Delete(context.TODO(), secret)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			reqLogger.Info("No matching secrets to finalize. Continuing.")
+			reqLogger.Info("No matching secret to finalize. Continuing.")
 			return nil
 		}
-		reqLogger.Error(err, "Error while deleting secrets")
+		reqLogger.Error(err, "Error while deleting secret")
 		return err
 	}
 
-	reqLogger.Info(fmt.Sprintf("%s secrets finalized", utils.CertManagerNS(m)))
+	reqLogger.Info(fmt.Sprintf("%s secret finalized", utils.CertManagerNS(m)))
 	return nil
 }
 

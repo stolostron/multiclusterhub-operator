@@ -1,5 +1,0 @@
-- name: channels.apps.open-cluster-management.io
-  version: v1
-  kind: Channel
-  displayName: Channel
-  description: Represent a helm chart repository

@@ -1,5 +1,0 @@
-- name: helmreleases.apps.open-cluster-management.io
-  version: v1
-  kind: HelmRelease
-  displayName: Helm Release
-  description: Represent a helm chart selected by the subscription, for internal use only.
