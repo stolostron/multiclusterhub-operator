@@ -1,5 +1,0 @@
-- name: clustermanagers.operator.open-cluster-management.io
-  version: v1
-  kind: ClusterManager
-  displayName: ClusterManager
-  description: Configuration for the Cluster Manager Operator
