@@ -310,6 +310,7 @@ spec:
           - subscriptions/status
           - subjectaccessreviews
           - syncsets
+          - syncsetinstances
           verbs:
           - create
           - get
