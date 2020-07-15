@@ -22,15 +22,6 @@ type multiClusterHubValidator struct {
 	decoder *admission.Decoder
 }
 
-var (
-	// GVRManagedCluster ...
-	GVRManagedCluster = schema.GroupVersionResource{
-		Group:    "cluster.open-cluster-management.io",
-		Version:  "v1",
-		Resource: "managedclusters",
-	}
-)
-
 // Handle set the default values to every incoming MultiClusterHub cr.
 // Currently only handles create/update
 func (m *multiClusterHubValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
