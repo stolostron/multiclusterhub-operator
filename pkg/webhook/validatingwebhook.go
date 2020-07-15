@@ -117,7 +117,7 @@ func (m *multiClusterHubValidator) validateDelete(req admission.Request) error {
 		return errors.New("Error retrieving ManagedClusters")
 	}
 	if len(u.Items) > 0 {
-		return errors.New("Must detach all ManagedClusters before deleting MultiClusterHub")
+		return errors.New("Cannot delete MultiClusterHub resource because ManagedCluster resource(s) exist")
 	}
 	return nil
 }
