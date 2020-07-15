@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"reflect"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -19,6 +21,15 @@ type multiClusterHubValidator struct {
 	client  client.Client
 	decoder *admission.Decoder
 }
+
+var (
+	// GVRManagedCluster ...
+	GVRManagedCluster = schema.GroupVersionResource{
+		Group:    "cluster.open-cluster-management.io",
+		Version:  "v1",
+		Resource: "managedclusters",
+	}
+)
 
 // Handle set the default values to every incoming MultiClusterHub cr.
 // Currently only handles create/update
@@ -43,6 +54,16 @@ func (m *multiClusterHubValidator) Handle(ctx context.Context, req admission.Req
 	//If not create update
 	if req.Operation == "UPDATE" {
 		err := m.validateUpdate(req)
+		if err != nil {
+			log.Info("Update denied")
+			return admission.Denied(err.Error())
+		}
+		log.Info("Update successful")
+		return admission.Allowed("")
+	}
+
+	if req.Operation == "DELETE" {
+		err := m.validateDelete(req)
 		if err != nil {
 			log.Info("Update denied")
 			return admission.Denied(err.Error())
@@ -88,6 +109,24 @@ func (m *multiClusterHubValidator) validateUpdate(req admission.Request) error {
 
 	if !utils.AvailabilityConfigIsValid(newMCH.Spec.AvailabilityConfig) && newMCH.Spec.AvailabilityConfig != "" {
 		return errors.New("Invalid AvailabilityConfig given")
+	}
+	return nil
+}
+
+func (m *multiClusterHubValidator) validateDelete(req admission.Request) error {
+	u := &unstructured.UnstructuredList{}
+	u.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "cluster.open-cluster-management.io",
+		Version: "v1",
+		Kind:    "ManagedClusterList",
+	})
+
+	err := m.client.List(context.TODO(), u)
+	if err != nil {
+		return errors.New("Error retrieving managedclusters")
+	}
+	if len(u.Items) > 0 {
+		return errors.New("Must remove all managedclusters before deleting MultiClusterHub")
 	}
 	return nil
 }
