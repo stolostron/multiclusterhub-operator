@@ -123,7 +123,7 @@ func (m *multiClusterHubValidator) validateDelete(req admission.Request) error {
 
 	err := m.client.List(context.TODO(), u)
 	if err != nil {
-		return errors.New("Error retrieving managedclusters")
+		return errors.New("Error retrieving ManagedClusters")
 	}
 	if len(u.Items) > 0 {
 		return errors.New("Must detach all ManagedClusters before deleting MultiClusterHub")
