@@ -119,7 +119,7 @@ update-image:
 
 ## Operator-sdk generate CRD(s)
 crd:
-	operator-sdk generate crds --crd-version=v1beta1
+	operator-sdk generate crds --crd-version=v1
 
 ## Operator-sdk regenerate CSV
 csv:
