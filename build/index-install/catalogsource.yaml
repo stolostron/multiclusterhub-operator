@@ -1,10 +1,8 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: mch-catalog-source
+  name: acm-custom-registry
   namespace: open-cluster-management
 spec:
-  displayName: Multiclusterhub Installer
-  description: Installs Multiclusterhub
   sourceType: grpc
-  image: quay.io/rhibmcollab/multiclusterhub-operator:index
+  address: acm-custom-registry.open-cluster-management.svc:50051

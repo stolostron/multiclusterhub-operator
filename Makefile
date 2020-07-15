@@ -55,11 +55,11 @@ functional-test-install:
 	docker run --network host \
 		--env pullSecret=multiclusterhub-operator-pull-secret \
 		--env source="acm-custom-registry" \
-		--env channel="release-2.0" \
+		--env channel="release-2.1" \
 		--env sourceNamespace=open-cluster-management \
 		--env name="advanced-cluster-management" \
 		--env TEST_MODE="install" \
-		--env full_test_suite="false" \
+		--env full_test_suite="true" \
 		--volume ~/.kube/config:/opt/.kube/config \
 		$(REGISTRY)/$(IMG)-tests:$(VERSION)
 	# ginkgo -tags functional -v --slowSpecThreshold=10 test/multiclusterhub_install_test
@@ -69,7 +69,7 @@ functional-test-uninstall:
 	docker run --network host \
 		--env pullSecret=multiclusterhub-operator-pull-secret \
 		--env source="acm-custom-registry" \
-		--env channel="release-2.0" \
+		--env channel="release-2.1" \
 		--env sourceNamespace=open-cluster-management \
 		--env name="advanced-cluster-management" \
 		--env TEST_MODE="uninstall" \
@@ -132,7 +132,7 @@ csv:
 
 ## Apply the MultiClusterHub CR
 cr:
-	cat deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml | yq w - "spec.imagePullSecret" "quay-secret" | yq w - "spec.availabilityConfig" "Basic" | oc apply -f -
+	cat deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml | yq w - "spec.imagePullSecret" "quay-secret" | oc apply -f -
 
 ## Apply the default OperatorGroup
 og:
@@ -171,4 +171,8 @@ cm-install: ns secrets og csv update-image regop
 index-install: ns secrets og csv update-image regop
 	oc patch serviceaccount default -n open-cluster-management -p '{"imagePullSecrets": [{"name": "quay-secret"}]}'
 	bash common/scripts/generate-index.sh ${VERSION} ${REGISTRY}
+	oc apply -k build/index-install
+
+acm-index-install: ns secrets og
+	bash common/scripts/bundle-acm.sh
 	oc apply -k build/index-install

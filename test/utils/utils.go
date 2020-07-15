@@ -85,7 +85,7 @@ var (
 	MCHOperatorName = "multiclusterhub-operator"
 
 	// OCMSubscriptionName ...
-	OCMSubscriptionName = "multicluster-hub-operator-subscription"
+	OCMSubscriptionName = os.Getenv("name")
 
 	// SubList contains the list of subscriptions to delete
 	SubList = [...]string{
