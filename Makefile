@@ -10,6 +10,8 @@ else
 -include vbh/.build-harness-vendorized
 endif
 
+-include test/Makefile
+
 BUILD_DIR ?= build
 
 VERSION ?= 2.1.0
@@ -49,37 +51,6 @@ lint: lint-all
 
 ## Run unit-tests
 test: component/test/unit
-
-## Run the installer functional tests
-functional-test-install:
-	docker run --network host \
-		--env pullSecret=multiclusterhub-operator-pull-secret \
-		--env source="acm-custom-registry" \
-		--env channel="release-2.1" \
-		--env sourceNamespace=open-cluster-management \
-		--env name="advanced-cluster-management" \
-		--env TEST_MODE="install" \
-		--env full_test_suite="true" \
-		--volume ~/.kube/config:/opt/.kube/config \
-		$(REGISTRY)/$(IMG)-tests:$(VERSION)
-	# ginkgo -tags functional -v --slowSpecThreshold=10 test/multiclusterhub_install_test
-
-## Run the uninstall functional tests
-functional-test-uninstall:
-	docker run --network host \
-		--env pullSecret=multiclusterhub-operator-pull-secret \
-		--env source="acm-custom-registry" \
-		--env channel="release-2.1" \
-		--env sourceNamespace=open-cluster-management \
-		--env name="advanced-cluster-management" \
-		--env TEST_MODE="uninstall" \
-		--volume ~/.kube/config:/opt/.kube/config \
-		$(REGISTRY)/$(IMG)-tests:$(VERSION)
-	# ginkgo -tags functional -v --slowSpecThreshold=10 test/multiclusterhub_uninstall_test
-## Build the MCH functional test image
-test-image:
-	@echo "Building $(REGISTRY)/$(IMG)-tests:$(VERSION)"
-	docker build . -f build/Dockerfile.test -t $(REGISTRY)/$(IMG)-tests:$(VERSION)
 
 ## Build the MultiClusterHub operator image
 image:
@@ -171,8 +142,8 @@ cm-install: ns secrets og csv update-image regop
 index-install: ns secrets og csv update-image regop
 	oc patch serviceaccount default -n open-cluster-management -p '{"imagePullSecrets": [{"name": "quay-secret"}]}'
 	bash common/scripts/generate-index.sh ${VERSION} ${REGISTRY}
-	oc apply -k build/index-install
+	oc apply -k build/index-install/upstream
 
 acm-index-install: ns secrets og
-	bash common/scripts/bundle-acm.sh
-	oc apply -k build/index-install
+	# Run `make  test-update-image` to generate a new index if necessary
+	oc apply -k build/index-install/downstream

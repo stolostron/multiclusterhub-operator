@@ -34,13 +34,7 @@ func NewOCMSubscription(namespace string) *unstructured.Unstructured {
 				"name":      os.Getenv("name"),
 				"namespace": namespace,
 			},
-			"spec": map[string]interface{}{
-				"sourceNamespace":     os.Getenv("sourceNamespace"),
-				"source":              os.Getenv("source"),
-				"channel":             os.Getenv("channel"),
-				"installPlanApproval": "Automatic",
-				"name":                os.Getenv("name"),
-			},
+			"spec": GetSubscriptionSpec(),
 		},
 	}
 }

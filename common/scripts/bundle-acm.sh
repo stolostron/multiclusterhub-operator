@@ -1,50 +1,91 @@
 #!/bin/bash
+# Tested on Mac only
+
+
+function extractBundleFromImage {
+    id=$(docker create $1 sh)
+    mkdir build/temp-bundle-$2
+    docker cp $id:"/"  - > build/temp-bundle-$2/local-tar-file.tgz
+    tar -xzvf build/temp-bundle-$2/local-tar-file.tgz -C build/temp-bundle-$2
+    docker rm $id
+    
+    rm -rf bundles/$2
+    mkdir bundles/$2
+    cp -R build/temp-bundle-$2/manifests bundles/$2
+    cp -R build/temp-bundle-$2/metadata bundles/$2
+    
+    rm -rf build/temp-bundle-$2
+}
+
+startBundle="quay.io/open-cluster-management/acm-operator-bundle:$1"
+updateBundle="quay.io/open-cluster-management/acm-operator-bundle:$2"
+startVerion=$3
+updateVersion=$4
 
 registry="quay.io/rhibmcollab"
-acmBundleV200="quay.io/open-cluster-management/acm-operator-bundle:2.0.0-SNAPSHOT-2020-07-14-17-05-13"
-acmBundleV201="quay.io/open-cluster-management/acm-operator-bundle:2.1.0-SNAPSHOT-2020-07-14-18-42-16"
-indexImage="quay.io/rhibmcollab/multiclusterhub-operator:2.1.0-index"
-Version="2.1.0"
+indexImage="quay.io/rhibmcollab/multiclusterhub-operator:$updateVersion-index"
 
-docker pull $acmBundleV200
-docker pull $acmBundleV201
-docker tag $acmBundleV200 $registry/acm-operator-bundle:2.0.0
-docker tag $acmBundleV201 $registry/acm-operator-bundle:2.1.0
+# Pull and tag images
+docker pull $startBundle
+docker pull $updateBundle
+docker tag $startBundle $registry/acm-operator-bundle:$startVerion
+docker tag $updateBundle $registry/acm-operator-bundle:$updateVersion
+startBundle="$registry/acm-operator-bundle:$startVerion"
+updateBundle="$registry/acm-operator-bundle:$updateVersion"
 
-acmBundleV200="$registry/acm-operator-bundle:2.0.0"
-acmBundleV201="$registry/acm-operator-bundle:2.1.0"
+# Extract Contents of Images
+extractBundleFromImage $startBundle $startVerion
+extractBundleFromImage $updateBundle $updateVersion
 
+# Add 'Replaces' to Update CSV
+yq w -i \
+    bundles/$updateVersion/manifests/advanced-cluster-management.v$updateVersion.clusterserviceversion.yaml \
+    "spec.replaces" "advanced-cluster-management.v$startVerion"
 
-id=$(docker create $acmBundleV201 sh)
-echo "ID: $acmBundleV201"
-mkdir build/temp-bundle
-docker cp $id:"/"  - > build/temp-bundle/local-tar-file.tgz
-tar -xzvf build/temp-bundle/local-tar-file.tgz -C build/temp-bundle
-docker rm $id
+# Switch all channels to latest
+yq w -i \
+    bundles/$startVerion/metadata/annotations.yaml \
+    "annotations.[operators.operatorframework.io.bundle.channels.v1]" "latest"
+yq w -i \
+    bundles/$startVerion/metadata/annotations.yaml \
+    "annotations.[operators.operatorframework.io.bundle.channel.default.v1]" "latest"
+yq w -i \
+    bundles/$updateVersion/metadata/annotations.yaml \
+    "annotations.[operators.operatorframework.io.bundle.channels.v1]" "latest"
+yq w -i \
+    bundles/$updateVersion/metadata/annotations.yaml \
+    "annotations.[operators.operatorframework.io.bundle.channel.default.v1]" "latest"
 
-rm -rf bundles/$Version
-mkdir bundles/$Version
-cp -r build/temp-bundle/manifests bundles/$Version/
-cp -r build/temp-bundle/metadata bundles/$Version/
+# Generate and Build Bundles
+opm alpha bundle generate \
+--directory bundles/$startVerion/manifests \
+--package advanced-cluster-management \
+--channels latest \
+--default latest \
 
+docker build -f bundle.Dockerfile -t $startBundle .
 
-yq w -i bundles/$Version/manifests/advanced-cluster-management.v$Version.clusterserviceversion.yaml "spec.replaces" "advanced-cluster-management.v2.0.0"
+opm alpha bundle generate \
+--directory bundles/$updateVersion/manifests \
+--package advanced-cluster-management \
+--channels latest \
+--default latest
 
-opm alpha bundle build --directory ./bundles/$Version/manifests \
---package=advanced-cluster-management \
---channels=release-2.1 \
---default=release-2.1 \
---image-builder=docker \
---tag $acmBundleV201
+docker build -f bundle.Dockerfile -t $updateBundle .
 
-docker push $acmBundleV200
-docker push $acmBundleV201
+rm bundle.Dockerfile
 
+# Push new bundles
+docker push $startBundle
+docker push $updateBundle
+
+# Generate and push index image of bundles
 opm index add \
---bundles $acmBundleV200,$acmBundleV201 \
+--bundles $startBundle,$updateBundle \
 --tag $indexImage \
 -c docker
 
 docker push $indexImage
 
-yq w -i build/index-install/kustomization.yaml 'images[0].newTag' "$Version-index"
+# Update Kustomize with new tag if necessary
+yq w -i build/index-install/downstream/kustomization.yaml 'images[0].newTag' "$updateVersion-index"

@@ -1,5 +1,5 @@
 // Copyright (c) 2020 Red Hat, Inc.
-package multiclusterhub_install_test
+package multiclusterhub_update_test
 
 import (
 	"context"
@@ -14,6 +14,9 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/klog"
 )
 
@@ -79,4 +82,34 @@ func TestMultiClusterHubOperatorInstall(t *testing.T) {
 	RegisterFailHandler(Fail)
 	junitReporter := reporters.NewJUnitReporter(reportFile)
 	RunSpecsWithDefaultAndCustomReporters(t, "MultiClusterHubOperator Install Suite", []Reporter{junitReporter})
+}
+
+// listAppSubs keeps polling to get the object for timeout seconds
+func listByGVR(clientHubDynamic dynamic.Interface, gvr schema.GroupVersionResource, namespace string, timeout int, expectedTotal int) *unstructured.UnstructuredList {
+	if timeout < 1 {
+		timeout = 1
+	}
+	var obj *unstructured.UnstructuredList
+
+	Eventually(func() error {
+		var err error
+		namespace := clientHubDynamic.Resource(gvr).Namespace(namespace)
+
+		// labelSelector := fmt.Sprintf("installer.name=%s, installer.namespace=%s", mchName, mchNamespace)
+		// listOptions := metav1.ListOptions{
+		// 	LabelSelector: labelSelector,
+		// 	Limit:         100,
+		// }
+		// obj, err = namespace.List(context.TODO(), listOptions)
+
+		obj, err = namespace.List(context.TODO(), metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+		if len(obj.Items) < expectedTotal {
+			return fmt.Errorf("Not all Appsubs created in time. %d/%d appsubs found.", len(obj.Items), expectedTotal)
+		}
+		return nil
+	}, timeout, 1).Should(BeNil())
+	return obj
 }

@@ -11,6 +11,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
@@ -278,4 +279,135 @@ func EnsureHelmReleasesAreRemoved(clientHubDynamic dynamic.Interface) error {
 		time.Sleep(2 * time.Minute)
 	}
 	return nil
+}
+
+func ValidateMCH(mch *unstructured.Unstructured) error {
+	var deploy *appsv1.Deployment
+	When("Wait for MultiClusterHub Repo to be available", func() {
+		Eventually(func() error {
+			var err error
+			klog.V(1).Info("Wait MCH Repo deployment...")
+			deploy, err = KubeClient.AppsV1().Deployments(MCHNamespace).Get(context.TODO(), MCHRepoName, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			if deploy.Status.AvailableReplicas == 0 {
+				return fmt.Errorf("MCH Repo not available")
+			}
+			return err
+		}, 60, 1).Should(BeNil())
+		klog.V(1).Info("MCH Repo deployment available")
+	})
+	By("Checking ownerRef", func() {
+		Expect(IsOwner(mch, &deploy.ObjectMeta)).To(Equal(true))
+	})
+
+	By("Checking Appsubs")
+	ok := When("Wait for Application Subscriptions to be Active", func() {
+		Eventually(func() error {
+			unstructuredAppSubs := listByGVR(DynamicKubeClient, GVRAppSub, MCHNamespace, 60, len(AppSubSlice))
+
+			for _, appsub := range unstructuredAppSubs.Items {
+				if _, ok := appsub.Object["status"]; !ok {
+					return fmt.Errorf("Appsub: %s has no 'status' field", appsub.GetName())
+				}
+				status, ok := appsub.Object["status"].(map[string]interface{})
+				if !ok || status == nil {
+					return fmt.Errorf("Appsub: %s has no 'status' map", appsub.GetName())
+				}
+				klog.V(5).Infof("Checking Appsub - %s", appsub.GetName())
+				Expect(status["message"]).To(Equal("Active"))
+				Expect(status["phase"]).To(Equal("Subscribed"))
+			}
+			return nil
+		}, 180, 1).Should(BeNil())
+	})
+	if !ok {
+		return fmt.Errorf("Unable to create all Application Subscriptions")
+	}
+
+	By("Checking HelmReleases")
+	ok = When("Wait for HelmReleases to be successfully installed", func() {
+		Eventually(func() error {
+			unstructuredHelmReleases := listByGVR(DynamicKubeClient, GVRHelmRelease, MCHNamespace, 60, len(AppSubSlice))
+			// ready := false
+			for _, helmRelease := range unstructuredHelmReleases.Items {
+				klog.V(5).Infof("Checking HelmRelease - %s", helmRelease.GetName())
+
+				status, ok := helmRelease.Object["status"].(map[string]interface{})
+				if !ok || status == nil {
+					return fmt.Errorf("HelmRelease: %s has no 'status' map", helmRelease.GetName())
+				}
+
+				conditions, ok := status["conditions"].([]interface{})
+				if !ok || conditions == nil {
+					return fmt.Errorf("HelmRelease: %s has no 'conditions' interface", helmRelease.GetName())
+				}
+
+				finalCondition, ok := conditions[len(conditions)-1].(map[string]interface{})
+				if finalCondition["reason"] != "InstallSuccessful" || finalCondition["type"] != "Deployed" {
+					return fmt.Errorf("HelmRelease: %s not ready", helmRelease.GetName())
+				}
+
+				Expect(finalCondition["reason"]).To(Equal("InstallSuccessful"))
+				Expect(finalCondition["type"]).To(Equal("Deployed"))
+			}
+			return nil
+		}, 500, 1).Should(BeNil())
+	})
+	if !ok {
+		return fmt.Errorf("Unable to create all Helm Releases successfully")
+	}
+	return nil
+}
+
+// listByGVR keeps polling to get the object for timeout seconds
+func listByGVR(clientHubDynamic dynamic.Interface, gvr schema.GroupVersionResource, namespace string, timeout int, expectedTotal int) *unstructured.UnstructuredList {
+	if timeout < 1 {
+		timeout = 1
+	}
+	var obj *unstructured.UnstructuredList
+
+	Eventually(func() error {
+		var err error
+		namespace := clientHubDynamic.Resource(gvr).Namespace(namespace)
+
+		// labelSelector := fmt.Sprintf("installer.name=%s, installer.namespace=%s", mchName, mchNamespace)
+		// listOptions := metav1.ListOptions{
+		// 	LabelSelector: labelSelector,
+		// 	Limit:         100,
+		// }
+		// obj, err = namespace.List(context.TODO(), listOptions)
+
+		obj, err = namespace.List(context.TODO(), metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+		if len(obj.Items) < expectedTotal {
+			return fmt.Errorf("Not all resources created in time. %d/%d appsubs found.", len(obj.Items), expectedTotal)
+		}
+		return nil
+	}, timeout, 1).Should(BeNil())
+	return obj
+}
+
+// GetSubscriptionSpec Returns Install Plan Mode
+func GetSubscriptionSpec() map[string]interface{} {
+	if os.Getenv("TEST_MODE") == "update" {
+		return map[string]interface{}{
+			"sourceNamespace":     os.Getenv("sourceNamespace"),
+			"source":              os.Getenv("source"),
+			"channel":             os.Getenv("channel"),
+			"installPlanApproval": "Manual",
+			"name":                os.Getenv("name"),
+			"startingCSV":         fmt.Sprintf("advanced-cluster-management.v%s", os.Getenv("startVersion")),
+		}
+	}
+	return map[string]interface{}{
+		"sourceNamespace":     os.Getenv("sourceNamespace"),
+		"source":              os.Getenv("source"),
+		"channel":             os.Getenv("channel"),
+		"installPlanApproval": "Automatic",
+		"name":                os.Getenv("name"),
+	}
 }
