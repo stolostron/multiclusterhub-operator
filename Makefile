@@ -158,12 +158,12 @@ in-cluster-install: ns secrets og update-image subscriptions regop
 	# oc apply -f deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml
 
 ## Creates a configmap index and catalogsource that it subscribes to
-cm-install: ns secrets og csv update-image regop
+cm-install: ns secrets og csv update-image subscriptions regop
 	bash common/scripts/generate-cm-index.sh ${VERSION} ${REGISTRY}
 	oc apply -k build/configmap-install
 
 ## Generates an index image and catalogsource that serves it
-index-install: ns secrets og csv update-image regop
+index-install: ns secrets og csv update-image subscriptions regop
 	oc patch serviceaccount default -n open-cluster-management -p '{"imagePullSecrets": [{"name": "quay-secret"}]}'
 	bash common/scripts/generate-index.sh ${VERSION} ${REGISTRY}
 	oc apply -k build/index-install
