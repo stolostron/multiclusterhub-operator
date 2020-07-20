@@ -68,6 +68,13 @@ var (
 		Resource: "helmreleases",
 	}
 
+	// GVRInstallPlan ...
+	GVRInstallPlan = schema.GroupVersionResource{
+		Group:    "operators.coreos.com",
+		Version:  "v1alpha1",
+		Resource: "installplans",
+	}
+
 	// DefaultImageRegistry ...
 	DefaultImageRegistry = "quay.io/open-cluster-management"
 	// DefaultImagePullSecretName ...
@@ -410,4 +417,31 @@ func GetSubscriptionSpec() map[string]interface{} {
 		"installPlanApproval": "Automatic",
 		"name":                os.Getenv("name"),
 	}
+}
+
+// GetInstallPlanNameFromSub ...
+func GetInstallPlanNameFromSub(sub *unstructured.Unstructured) (string, error) {
+	if _, ok := sub.Object["status"]; !ok {
+		return "", fmt.Errorf("Sub: %s has no 'status' field", sub.GetName())
+	}
+	status, ok := sub.Object["status"].(map[string]interface{})
+	if !ok || status == nil {
+		return "", fmt.Errorf("Sub: %s has no 'status' map", sub.GetName())
+	}
+	installplan, ok := status["installplan"].(map[string]interface{})
+	if !ok || status == nil {
+		return "", fmt.Errorf("Sub: %s has no 'installplan' map", sub.GetName())
+	}
+
+	return installplan["name"].(string), nil
+}
+
+// MarkInstallPlanAsApproved ...
+func MarkInstallPlanAsApproved(ip *unstructured.Unstructured) (*unstructured.Unstructured, error) {
+	spec, ok := ip.Object["spec"].(map[string]interface{})
+	if !ok || spec == nil {
+		return nil, fmt.Errorf("Installplan: %s has no 'spec' map", ip.GetName())
+	}
+	spec["approved"] = true
+	return ip, nil
 }

@@ -25,6 +25,7 @@ GIT_VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
 DOCKER_USER := $(shell echo $(DOCKER_USER))
 DOCKER_PASS := $(shell echo $(DOCKER_PASS))
 NAMESPACE ?= open-cluster-management
+export ACM_NAMESPACE :=$(NAMESPACE)
 
 # For OCP OLM
 export IMAGE ?= $(shell echo $(REGISTRY)/$(IMG):$(VERSION))
@@ -64,9 +65,12 @@ push:
 install:
 	./common/scripts/tests/install.sh
 
+uninstall-cr:
+	bash common/scripts/clean-up.sh
+
 ## Fully uninstall the MCH CR and operator
-uninstall:
-	bash common/scripts/uninstall.sh
+uninstall: uninstall-cr
+	bash common/scripts/clean-up.sh
 
 ## Install Registration-Operator hub
 regop:
@@ -143,7 +147,3 @@ index-install: ns secrets og csv update-image regop
 	oc patch serviceaccount default -n open-cluster-management -p '{"imagePullSecrets": [{"name": "quay-secret"}]}'
 	bash common/scripts/generate-index.sh ${VERSION} ${REGISTRY}
 	oc apply -k build/index-install/upstream
-
-acm-index-install: ns secrets og
-	# Run `make  test-update-image` to generate a new index if necessary
-	oc apply -k build/index-install/downstream

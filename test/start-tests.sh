@@ -23,5 +23,5 @@ elif [[ "$TEST_MODE" == "uninstall" ]]; then
 elif [[ "$TEST_MODE" == "update" ]]; then
     echo "Beginning Update Tests ..."
     echo ""
-    ginkgo -tags functional -v --slowSpecThreshold=300 test/multiclusterhub_update_test
+    ginkgo -tags functional -v --slowSpecThreshold=900 test/multiclusterhub_update_test
 fi
