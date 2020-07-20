@@ -37,7 +37,6 @@ var _ = Describe("Multiclusterhub", func() {
 		installPlanName, err := utils.GetInstallPlanNameFromSub(acmSub)
 		Expect(err).To(BeNil())
 
-		By("Approving InstallPlan")
 		installPlanLink := utils.DynamicKubeClient.Resource(utils.GVRInstallPlan).Namespace(utils.MCHNamespace)
 		installPlan, err := installPlanLink.Get(context.TODO(), installPlanName, metav1.GetOptions{})
 		Expect(err).To(BeNil())

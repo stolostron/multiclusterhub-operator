@@ -3,5 +3,3 @@ kind: Kustomization
 resources:
 - catalogsource.yaml
 - subscription.yaml
-images:
-- newTag: 2.1.0-index

@@ -8,7 +8,7 @@ functional-test-install:
 		--env sourceNamespace=open-cluster-management \
 		--env name="advanced-cluster-management" \
 		--env TEST_MODE="install" \
-		--env full_test_suite="true" \
+		--env full_test_suite="false" \
 		--volume ~/.kube/config:/opt/.kube/config \
 		$(REGISTRY)/$(IMG)-tests:$(VERSION)
 	# ginkgo -tags functional -v --slowSpecThreshold=10 test/multiclusterhub_install_test
@@ -50,7 +50,7 @@ test-image:
 # Usage: common/scripts/bundle-acm.sh "<Starting Snapshot>" <Update Snapshot> <Start Version> <Update Version>
 ## Creates an index image to test updates
 test-update-image:
-	bash common/scripts/bundle-acm.sh "2.0.0-SNAPSHOT-2020-07-16-16-16-06" "2.1.0-SNAPSHOT-2020-07-16-16-44-10" "2.0.0" "2.1.0"
+	bash common/scripts/bundle-acm.sh "2.0.0-SNAPSHOT-2020-07-20-17-52-48" "2.1.0-SNAPSHOT-2020-07-20-17-29-00" "2.0.0" "2.1.0"
 
 acm-index-install: ns secrets og test-update-image
 	# Run `make  test-update-image` to generate a new index if necessary
