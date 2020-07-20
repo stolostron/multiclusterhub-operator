@@ -379,14 +379,13 @@ func listByGVR(clientHubDynamic dynamic.Interface, gvr schema.GroupVersionResour
 		var err error
 		namespace := clientHubDynamic.Resource(gvr).Namespace(namespace)
 
-		// labelSelector := fmt.Sprintf("installer.name=%s, installer.namespace=%s", mchName, mchNamespace)
-		// listOptions := metav1.ListOptions{
-		// 	LabelSelector: labelSelector,
-		// 	Limit:         100,
-		// }
-		// obj, err = namespace.List(context.TODO(), listOptions)
+		labelSelector := fmt.Sprintf("installer.name=%s, installer.namespace=%s", mchName, mchNamespace)
+		listOptions := metav1.ListOptions{
+			LabelSelector: labelSelector,
+			Limit:         100,
+		}
 
-		obj, err = namespace.List(context.TODO(), metav1.ListOptions{})
+		obj, err = namespace.List(context.TODO(), listOptions)
 		if err != nil {
 			return err
 		}
