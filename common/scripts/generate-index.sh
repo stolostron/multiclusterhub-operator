@@ -45,4 +45,4 @@ opm index add \
 docker push $registry/multiclusterhub-operator:$version-index 
 
 # Update catalogsource image
-yq w -i build/index-install/catalogsource.yaml 'spec.image' "$registry/multiclusterhub-operator:$version-index"
+yq w -i build/index-install/non-composite/catalogsource.yaml 'spec.image' "$registry/multiclusterhub-operator:$version-index"

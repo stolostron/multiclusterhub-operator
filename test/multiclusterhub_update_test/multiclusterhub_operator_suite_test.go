@@ -1,5 +1,5 @@
 // Copyright (c) 2020 Red Hat, Inc.
-package multiclusterhub_install_test
+package multiclusterhub_update_test
 
 import (
 	"context"
@@ -41,7 +41,7 @@ func init() {
 }
 
 var _ = BeforeSuite(func() {
-	By("Creating OCM Operator Subscription")
+	By("Creating ACM Operator Subscription")
 	subscription := utils.DynamicKubeClient.Resource(utils.GVRSub).Namespace(utils.MCHNamespace)
 	_, err := subscription.Get(context.TODO(), utils.OCMSubscriptionName, metav1.GetOptions{})
 	if err != nil && errors.IsNotFound(err) {
@@ -50,7 +50,33 @@ var _ = BeforeSuite(func() {
 	}
 	Expect(subscription.Get(context.TODO(), utils.OCMSubscriptionName, metav1.GetOptions{})).NotTo(BeNil())
 
-	By("Wait for MCH Operator to be available")
+	installPlanName := ""
+	When("Wait for install plan", func() {
+		Eventually(func() error {
+			acmSub, err := subscription.Get(context.TODO(), utils.OCMSubscriptionName, metav1.GetOptions{})
+			Expect(err).To(BeNil())
+
+			installPlanName, err = utils.GetInstallPlanNameFromSub(acmSub)
+			if err != nil {
+				return err
+			}
+			return nil
+		}, 45, 1).Should(BeNil())
+		klog.V(1).Info("MCH Operator deployment available")
+	})
+
+	Expect(installPlanName).NotTo(BeEquivalentTo(""))
+
+	By("Approving InstallPlan")
+	installPlanLink := utils.DynamicKubeClient.Resource(utils.GVRInstallPlan).Namespace(utils.MCHNamespace)
+	installPlan, err := installPlanLink.Get(context.TODO(), installPlanName, metav1.GetOptions{})
+	Expect(err).To(BeNil())
+	approvedInstallPlan, err := utils.MarkInstallPlanAsApproved(installPlan)
+	Expect(err).To(BeNil())
+	installPlan, err = installPlanLink.Update(context.TODO(), approvedInstallPlan, metav1.UpdateOptions{})
+	Expect(err).To(BeNil())
+
+	// 	By("Wait for MCH Operator to be available")
 	var deploy *appsv1.Deployment
 	When("Subscription is created, wait for Operator to run", func() {
 		Eventually(func() error {

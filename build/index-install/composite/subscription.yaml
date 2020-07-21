@@ -1,0 +1,12 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: multiclusterhub-operator
+  namespace: open-cluster-management
+spec:
+  channel: latest
+  installPlanApproval: Manual
+  name: advanced-cluster-management
+  source: acm-custom-registry
+  sourceNamespace: open-cluster-management
+  startingCSV: advanced-cluster-management.v2.0.0
