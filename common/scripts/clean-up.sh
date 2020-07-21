@@ -1,4 +1,5 @@
 #!/bin/bash
+# Copyright (c) 2020 Red Hat, Inc.
 
 if [ -z ${ACM_NAMESPACE+x} ]; 
 then 
