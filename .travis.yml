@@ -50,7 +50,7 @@ jobs:
           make component/build
           make component/push
           make security/scans
-          COMPONENT_NAME=multiclusterhub-operator-tests
+          COMPONENT_NAME=multiclusterhub-operator-tests COMPONENT_BUILD_COMMAND=${TRAVIS_BUILD_DIR}/cicd-scripts/build-test-image.sh
           make component/build
           make component/push
     - stage: unit-test
