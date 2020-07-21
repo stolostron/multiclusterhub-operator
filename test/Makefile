@@ -54,4 +54,4 @@ test-update-image:
 
 acm-index-install: ns secrets og test-update-image
 	# Run `make  test-update-image` to generate a new index if necessary
-	oc apply -k build/index-install/downstream
+	oc apply -k build/index-install/composite

@@ -288,7 +288,9 @@ func EnsureHelmReleasesAreRemoved(clientHubDynamic dynamic.Interface) error {
 	return nil
 }
 
+// ValidateMCH validates MCH CR is running successfully
 func ValidateMCH(mch *unstructured.Unstructured) error {
+	By("Validating MultiClusterHub")
 	var deploy *appsv1.Deployment
 	When("Wait for MultiClusterHub Repo to be available", func() {
 		Eventually(func() error {
@@ -305,11 +307,11 @@ func ValidateMCH(mch *unstructured.Unstructured) error {
 		}, 60, 1).Should(BeNil())
 		klog.V(1).Info("MCH Repo deployment available")
 	})
-	By("Checking ownerRef", func() {
+	By("- Checking ownerRef", func() {
 		Expect(IsOwner(mch, &deploy.ObjectMeta)).To(Equal(true))
 	})
 
-	By("Checking Appsubs")
+	By("- Checking Appsubs")
 	ok := When("Wait for Application Subscriptions to be Active", func() {
 		Eventually(func() error {
 			unstructuredAppSubs := listByGVR(DynamicKubeClient, GVRAppSub, MCHNamespace, 60, len(AppSubSlice))
@@ -333,7 +335,7 @@ func ValidateMCH(mch *unstructured.Unstructured) error {
 		return fmt.Errorf("Unable to create all Application Subscriptions")
 	}
 
-	By("Checking HelmReleases")
+	By("- Checking HelmReleases")
 	ok = When("Wait for HelmReleases to be successfully installed", func() {
 		Eventually(func() error {
 			unstructuredHelmReleases := listByGVR(DynamicKubeClient, GVRHelmRelease, MCHNamespace, 60, len(AppSubSlice))
@@ -352,11 +354,9 @@ func ValidateMCH(mch *unstructured.Unstructured) error {
 				}
 
 				finalCondition, ok := conditions[len(conditions)-1].(map[string]interface{})
-				if finalCondition["reason"] != "InstallSuccessful" || finalCondition["type"] != "Deployed" {
+				if finalCondition["reason"] != "InstallSuccessful" && finalCondition["reason"] != "UpdateSuccessful" {
 					return fmt.Errorf("HelmRelease: %s not ready", helmRelease.GetName())
 				}
-
-				Expect(finalCondition["reason"]).To(Equal("InstallSuccessful"))
 				Expect(finalCondition["type"]).To(Equal("Deployed"))
 			}
 			return nil
@@ -365,6 +365,25 @@ func ValidateMCH(mch *unstructured.Unstructured) error {
 	if !ok {
 		return fmt.Errorf("Unable to create all Helm Releases successfully")
 	}
+
+	By("- Ensuring MCH is in 'running' phase")
+	When("Wait for MultiClusterHub to be in running phase", func() {
+		Eventually(func() error {
+			mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+			Expect(err).To(BeNil())
+			status, ok := mch.Object["status"].(map[string]interface{})
+			if !ok || status == nil {
+				return fmt.Errorf("MultiClusterHub: %s has no 'status' map", mch.GetName())
+			}
+			if _, ok := status["phase"]; !ok {
+				return fmt.Errorf("MultiClusterHub: %s status has no 'phase' field", mch.GetName())
+			}
+			if status["phase"] != "Running" {
+				return fmt.Errorf("MultiClusterHub: %s is not in running phase", mch.GetName())
+			}
+			return nil
+		}, 500, 1).Should(BeNil())
+	})
 	return nil
 }
 

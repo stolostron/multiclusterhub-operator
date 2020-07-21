@@ -27,7 +27,8 @@ var _ = Describe("Multiclusterhub", func() {
 	By("Beginning Basic Update Test Suite ...")
 	It("Install Default MCH CR", func() {
 		By("Creating MultiClusterHub")
-		utils.ValidateMCH(CreateDefaultMCH())
+		defaultMCH := CreateDefaultMCH()
+		utils.ValidateMCH(defaultMCH)
 
 		By("Approving Update InstallPlan")
 		subscription := utils.DynamicKubeClient.Resource(utils.GVRSub).Namespace(utils.MCHNamespace)
@@ -54,8 +55,12 @@ var _ = Describe("Multiclusterhub", func() {
 				if !ok || status == nil {
 					return fmt.Errorf("MultiClusterHub: %s has no 'status' map", mch.GetName())
 				}
-				if _, ok := status["currentVersion"]; !ok {
+				version, ok := status["currentVersion"]
+				if !ok {
 					return fmt.Errorf("MultiClusterHub: %s status has no 'currentVersion' field", mch.GetName())
+				}
+				if version != os.Getenv("updateVersion") {
+					return fmt.Errorf("MCH: %s current version mismatch '%s' != %s", mch.GetName(), version, os.Getenv("updateVersion"))
 				}
 				Expect(status["currentVersion"]).To(Equal(os.Getenv("updateVersion")))
 				Expect(status["desiredVersion"]).To(Equal(os.Getenv("updateVersion")))
@@ -63,6 +68,8 @@ var _ = Describe("Multiclusterhub", func() {
 			}, 800, 1).Should(BeNil())
 			klog.V(1).Info("MCH Operator upgraded successfully")
 		})
+
+		utils.ValidateMCH(defaultMCH)
 	})
 })
 

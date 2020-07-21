@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"testing"
-	"time"
 
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
@@ -51,13 +50,22 @@ var _ = BeforeSuite(func() {
 	}
 	Expect(subscription.Get(context.TODO(), utils.OCMSubscriptionName, metav1.GetOptions{})).NotTo(BeNil())
 
-	By("Waiting 10 seconds for installplan ...")
-	time.Sleep(10 * time.Second)
-	acmSub, err := subscription.Get(context.TODO(), utils.OCMSubscriptionName, metav1.GetOptions{})
-	Expect(err).To(BeNil())
+	installPlanName := ""
+	When("Wait for install plan", func() {
+		Eventually(func() error {
+			acmSub, err := subscription.Get(context.TODO(), utils.OCMSubscriptionName, metav1.GetOptions{})
+			Expect(err).To(BeNil())
 
-	installPlanName, err := utils.GetInstallPlanNameFromSub(acmSub)
-	Expect(err).To(BeNil())
+			installPlanName, err = utils.GetInstallPlanNameFromSub(acmSub)
+			if err != nil {
+				return err
+			}
+			return nil
+		}, 45, 1).Should(BeNil())
+		klog.V(1).Info("MCH Operator deployment available")
+	})
+
+	Expect(installPlanName).NotTo(BeEquivalentTo(""))
 
 	By("Approving InstallPlan")
 	installPlanLink := utils.DynamicKubeClient.Resource(utils.GVRInstallPlan).Namespace(utils.MCHNamespace)

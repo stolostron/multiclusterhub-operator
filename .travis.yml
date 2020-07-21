@@ -42,7 +42,7 @@ stages:
 jobs:
   include:
     - stage: build
-      name: "Build the component, bundle, and test images and push them"
+      name: "Build the component and test images and push them"
       script:
         - if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then export COMPONENT_TAG_EXTENSION="-PR${TRAVIS_PULL_REQUEST}-${TRAVIS_COMMIT}"; fi;
         - |

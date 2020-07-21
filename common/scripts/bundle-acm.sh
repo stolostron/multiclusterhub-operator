@@ -17,9 +17,16 @@ function extractBundleFromImage {
     rm -rf build/temp-bundle-$2
 }
 
+if [ "$#" -ne 4 ]; then
+    echo "Incorrect Usage"
+    echo "Usage: common/scripts/bundle-acm.sh <Starting Snapshot> <Update Snapshot> <Start Version> <Update Version>"
+    exit 1
+fi
+
+
 startBundle="quay.io/open-cluster-management/acm-operator-bundle:$1"
 updateBundle="quay.io/open-cluster-management/acm-operator-bundle:$2"
-startVerion=$3
+startVersion=$3
 updateVersion=$4
 
 registry="quay.io/rhibmcollab"
@@ -28,26 +35,26 @@ indexImage="quay.io/rhibmcollab/multiclusterhub-operator:$updateVersion-index"
 # Pull and tag images
 docker pull $startBundle
 docker pull $updateBundle
-docker tag $startBundle $registry/acm-operator-bundle:$startVerion
+docker tag $startBundle $registry/acm-operator-bundle:$startVersion
 docker tag $updateBundle $registry/acm-operator-bundle:$updateVersion
-startBundle="$registry/acm-operator-bundle:$startVerion"
+startBundle="$registry/acm-operator-bundle:$startVersion"
 updateBundle="$registry/acm-operator-bundle:$updateVersion"
 
 # Extract Contents of Images
-extractBundleFromImage $startBundle $startVerion
+extractBundleFromImage $startBundle $startVersion
 extractBundleFromImage $updateBundle $updateVersion
 
 # Add 'Replaces' to Update CSV
 yq w -i \
     bundles/$updateVersion/manifests/advanced-cluster-management.v$updateVersion.clusterserviceversion.yaml \
-    "spec.replaces" "advanced-cluster-management.v$startVerion"
+    "spec.replaces" "advanced-cluster-management.v$startVersion"
 
 # Switch all channels to latest
 yq w -i \
-    bundles/$startVerion/metadata/annotations.yaml \
+    bundles/$startVestartVersionrion/metadata/annotations.yaml \
     "annotations.[operators.operatorframework.io.bundle.channels.v1]" "latest"
 yq w -i \
-    bundles/$startVerion/metadata/annotations.yaml \
+    bundles/$startVersion/metadata/annotations.yaml \
     "annotations.[operators.operatorframework.io.bundle.channel.default.v1]" "latest"
 yq w -i \
     bundles/$updateVersion/metadata/annotations.yaml \
@@ -58,7 +65,7 @@ yq w -i \
 
 # Generate and Build Bundles
 opm alpha bundle generate \
---directory bundles/$startVerion/manifests \
+--directory bundles/$startVersion/manifests \
 --package advanced-cluster-management \
 --channels latest \
 --default latest \
@@ -88,4 +95,4 @@ opm index add \
 docker push $indexImage
 
 # Update Kustomize with new tag if necessary
-yq w -i build/index-install/downstream/kustomization.yaml 'images[0].newTag' "$updateVersion-index"
+yq w -i build/index-install/composite/kustomization.yaml 'images[0].newTag' "$updateVersion-index"

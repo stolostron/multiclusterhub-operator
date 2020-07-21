@@ -146,4 +146,4 @@ cm-install: ns secrets og csv update-image subscriptions regop
 index-install: ns secrets og csv update-image subscriptions regop
 	oc patch serviceaccount default -n open-cluster-management -p '{"imagePullSecrets": [{"name": "quay-secret"}]}'
 	bash common/scripts/generate-index.sh ${VERSION} ${REGISTRY}
-	oc apply -k build/index-install/upstream
+	oc apply -k build/index-install/non-composite
