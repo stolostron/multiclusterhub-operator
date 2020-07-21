@@ -51,7 +51,7 @@ yq w -i \
 
 # Switch all channels to latest
 yq w -i \
-    bundles/$startVestartVersionrion/metadata/annotations.yaml \
+    bundles/$startVersion/metadata/annotations.yaml \
     "annotations.[operators.operatorframework.io.bundle.channels.v1]" "latest"
 yq w -i \
     bundles/$startVersion/metadata/annotations.yaml \

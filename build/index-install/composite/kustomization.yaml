@@ -8,5 +8,4 @@ resources:
 - catalogsource.yaml
 - service.yaml
 - deploy.yaml
-- prereq.yaml
 # - subscription.yaml
