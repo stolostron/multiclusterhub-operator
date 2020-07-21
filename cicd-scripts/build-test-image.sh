@@ -3,4 +3,4 @@
 
 echo "Building test-image"
 
-make test-image
+docker build . -f build/Dockerfile.test -t $1
