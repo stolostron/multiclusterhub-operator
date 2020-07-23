@@ -15,6 +15,8 @@ var (
 	AnnotationImageRepo = "mch-imageRepository"
 	// AnnotationSuffix sits in multiclusterhub annotations to identify a custom image tag suffix to use
 	AnnotationSuffix = "mch-imageTagSuffix"
+	// AnnotationImageOverridesCM sits in multiclusterhub annotations to identify a custom configmap containing image overrides
+	AnnotationImageOverridesCM = "image-overrides-configmap"
 )
 
 // IsPaused returns true if the multiclusterhub instance is labeled as paused, and false otherwise
@@ -55,4 +57,9 @@ func GetImageRepository(instance *operatorsv1.MultiClusterHub) string {
 // GetImageSuffix returns the image tag suffix annotation, or an empty string if not set
 func GetImageSuffix(instance *operatorsv1.MultiClusterHub) string {
 	return getAnnotation(instance, AnnotationSuffix)
+}
+
+// GetImageOverridesConfigmap returns the images override configmap annotation, or an empty string if not set
+func GetImageOverridesConfigmap(instance *operatorsv1.MultiClusterHub) string {
+	return getAnnotation(instance, AnnotationImageOverridesCM)
 }

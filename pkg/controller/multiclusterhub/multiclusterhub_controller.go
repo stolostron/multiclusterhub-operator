@@ -237,21 +237,27 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	// Revalidate cache. Rebuild image overrides if invalid
-	if r.CacheSpec.isStale(multiClusterHub) {
-		log.Info("Refreshing image cache")
-		// Need to update image format
-		imageOverrides, err := manifest.GetImageOverrides(multiClusterHub)
-		if err != nil {
-			reqLogger.Error(err, "Could not get map of image overrides")
-			return reconcile.Result{}, err
-		}
-		r.CacheSpec.ImageOverrides = imageOverrides
-		r.CacheSpec.ManifestVersion = version.Version
-		r.CacheSpec.ImageOverrideType = manifest.GetImageOverrideType(multiClusterHub)
-		r.CacheSpec.ImageRepository = utils.GetImageRepository(multiClusterHub)
-		r.CacheSpec.ImageSuffix = utils.GetImageSuffix(multiClusterHub)
+	log.Info("Refreshing image cache")
+	// Read image overrides
+	imageOverrides, err := manifest.GetImageOverrides(multiClusterHub)
+	if err != nil {
+		reqLogger.Error(err, "Could not get map of image overrides")
+		return reconcile.Result{}, err
 	}
+
+	// Check for developer overrides
+	if imageOverridesConfigmap := utils.GetImageOverridesConfigmap(multiClusterHub); imageOverridesConfigmap != "" {
+		imageOverrides, err = r.OverrideImagesFromConfigmap(imageOverrides, multiClusterHub.GetNamespace(), imageOverridesConfigmap)
+		if err != nil {
+			reqLogger.Info(fmt.Sprintf("Could not find configmap: %s/%s", multiClusterHub.GetNamespace(), imageOverridesConfigmap))
+		}
+	}
+	r.CacheSpec.ImageOverrides = imageOverrides
+	r.CacheSpec.ManifestVersion = version.Version
+	r.CacheSpec.ImageOverrideType = manifest.GetImageOverrideType(multiClusterHub)
+	r.CacheSpec.ImageRepository = utils.GetImageRepository(multiClusterHub)
+	r.CacheSpec.ImageSuffix = utils.GetImageSuffix(multiClusterHub)
+	r.CacheSpec.ImageOverridesCM = utils.GetImageOverridesConfigmap(multiClusterHub)
 
 	// Do not reconcile objects if this instance of mch is labeled "paused"
 	if utils.IsPaused(multiClusterHub) {
