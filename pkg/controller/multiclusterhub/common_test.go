@@ -382,7 +382,6 @@ func Test_OverrideImagesFromConfigmap(t *testing.T) {
 						  "image-name": "multiclusterhub-repo",
 						  "image-tag": "2.1.0-test",
 						  "image-remote": "quay.io/open-cluster-management",
-						  "image-digest": "sha256:9be2ca81e72e5edd9b3d1d9860a126fe4a3a389a1b2c87eefd36629aef2a62a9",
 						  "image-key": "multiclusterhub_repo"
 						}
 					  ]`,
