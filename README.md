@@ -34,7 +34,7 @@ kubectl create configmap <my-config> --from-file=docs/manifest-example.json
 kubectl annotate mch <mch-name> --overwrite image-overrides-configmap=<my-config>
 ```
 
-To remove or edit this annotation to revert back to the original manifest
+To remove this annotation to revert back to the original manifest
 ```bash
 kubectl annotate mch <mch-name> image-overrides-configmap- --overwrite
 ```
