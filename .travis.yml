@@ -42,7 +42,7 @@ stages:
 jobs:
   include:
     - stage: build
-      name: "Build the component, bundle, and test images and push them"
+      name: "Build the component and test images and push them"
       script:
         - if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then export COMPONENT_TAG_EXTENSION="-PR${TRAVIS_PULL_REQUEST}-${TRAVIS_COMMIT}"; fi;
         - |
@@ -50,11 +50,7 @@ jobs:
           make component/build
           make component/push
           make security/scans
-          COMPONENT_NAME=multiclusterhub-operator-bundle
-          make component/build
-          make component/push
-          make security/scans
-          COMPONENT_NAME=multiclusterhub-operator-tests
+          COMPONENT_NAME=multiclusterhub-operator-tests COMPONENT_BUILD_COMMAND=${TRAVIS_BUILD_DIR}/cicd-scripts/build-test-image.sh
           make component/build
           make component/push
     - stage: unit-test
@@ -92,10 +88,7 @@ jobs:
           make 
           make pipeline-manifest/update PIPELINE_MANIFEST_COMPONENT_SHA256=${TRAVIS_COMMIT} PIPELINE_MANIFEST_COMPONENT_REPO=${TRAVIS_REPO_SLUG} PIPELINE_MANIFEST_BRANCH=${TRAVIS_BRANCH}
           rm -rf pipeline
-          echo "Waiting 60s before publishing bundle image..." && sleep 60
-          COMPONENT_NAME=multiclusterhub-operator-bundle
-          make pipeline-manifest/update PIPELINE_MANIFEST_COMPONENT_SHA256=${TRAVIS_COMMIT} PIPELINE_MANIFEST_COMPONENT_REPO=${TRAVIS_REPO_SLUG} PIPELINE_MANIFEST_BRANCH=${TRAVIS_BRANCH}
-          rm -rf pipeline
-          echo "Waiting 60s before publishing bundle image..." && sleep 60
+          echo "Waiting 60s before publishing test image..." && sleep 60
           COMPONENT_NAME=multiclusterhub-operator-tests
           make pipeline-manifest/update PIPELINE_MANIFEST_COMPONENT_SHA256=${TRAVIS_COMMIT} PIPELINE_MANIFEST_COMPONENT_REPO=${TRAVIS_REPO_SLUG} PIPELINE_MANIFEST_BRANCH=${TRAVIS_BRANCH}
+

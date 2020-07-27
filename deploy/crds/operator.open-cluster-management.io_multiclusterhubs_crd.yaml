@@ -171,9 +171,6 @@ spec:
                     type: string
                   type: array
               type: object
-            ipv6:
-              description: Flag for IPv6
-              type: boolean
             nodeSelector:
               additionalProperties:
                 type: string

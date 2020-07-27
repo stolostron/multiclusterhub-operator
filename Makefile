@@ -10,9 +10,11 @@ else
 -include vbh/.build-harness-vendorized
 endif
 
+-include test/Makefile
+
 BUILD_DIR ?= build
 
-VERSION ?= 2.0.0
+VERSION ?= 2.1.0
 IMG ?= multiclusterhub-operator
 SECRET_REGISTRY ?= quay.io
 REGISTRY ?= quay.io/rhibmcollab
@@ -23,11 +25,12 @@ GIT_VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
 DOCKER_USER := $(shell echo $(DOCKER_USER))
 DOCKER_PASS := $(shell echo $(DOCKER_PASS))
 NAMESPACE ?= open-cluster-management
+export ACM_NAMESPACE :=$(NAMESPACE)
 
 # For OCP OLM
 export IMAGE ?= $(shell echo $(REGISTRY)/$(IMG):$(VERSION))
 export CSV_CHANNEL ?= alpha
-export CSV_VERSION ?= 2.0.0
+export CSV_VERSION ?= 2.1.0
 
 
 export PROJECT_DIR = $(shell 'pwd')
@@ -39,7 +42,7 @@ ifeq ($(CONTAINER_ENGINE),)
 	CONTAINER_ENGINE = $(shell podman version > /dev/null && echo podman || echo docker)
 endif
 
-.PHONY: lint image olm-catalog clean
+.PHONY: lint image clean
 
 all: clean lint test image
 
@@ -49,32 +52,6 @@ lint: lint-all
 
 ## Run unit-tests
 test: component/test/unit
-
-## Run the installer functional tests
-functional-test-install:
-	docker run \
-		-e TEST_MODE="install" \
-		--network host \
-		--dns 8.8.8.8 \
- 		--dns 8.8.4.4 \
-		--volume ~/.kube/config:/opt/.kube/config \
-		$(REGISTRY)/$(IMG)-tests:$(VERSION)
-	# ginkgo -tags functional -v --slowSpecThreshold=10 test/multiclusterhub_install_test
-
-## Run the uninstall functional tests
-functional-test-uninstall:
-	docker run \
-		-e TEST_MODE="uninstall" \
-		--network host \
-		--dns 8.8.8.8 \
- 		--dns 8.8.4.4 \
-		--volume ~/.kube/config:/opt/.kube/config \
-		$(REGISTRY)/$(IMG)-tests:$(VERSION)
-	# ginkgo -tags functional -v --slowSpecThreshold=10 test/multiclusterhub_uninstall_test
-## Build the MCH functional test image
-test-image:
-	@echo "Building $(REGISTRY)/$(IMG)-tests:$(VERSION)"
-	docker build . -f build/Dockerfile.test -t $(REGISTRY)/$(IMG)-tests:$(VERSION)
 
 ## Build the MultiClusterHub operator image
 image:
@@ -88,9 +65,12 @@ push:
 install:
 	./common/scripts/tests/install.sh
 
+uninstall-cr:
+	bash common/scripts/clean-up.sh
+
 ## Fully uninstall the MCH CR and operator
-uninstall:
-	bash common/scripts/uninstall.sh
+uninstall: uninstall-cr
+	bash common/scripts/clean-up.sh
 
 ## Install Registration-Operator hub
 regop:
@@ -158,12 +138,12 @@ in-cluster-install: ns secrets og update-image subscriptions regop
 	# oc apply -f deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml
 
 ## Creates a configmap index and catalogsource that it subscribes to
-cm-install: ns secrets og csv update-image regop
+cm-install: ns secrets og csv update-image subscriptions regop
 	bash common/scripts/generate-cm-index.sh ${VERSION} ${REGISTRY}
 	oc apply -k build/configmap-install
 
 ## Generates an index image and catalogsource that serves it
-index-install: ns secrets og csv update-image regop
+index-install: ns secrets og csv update-image subscriptions regop
 	oc patch serviceaccount default -n open-cluster-management -p '{"imagePullSecrets": [{"name": "quay-secret"}]}'
 	bash common/scripts/generate-index.sh ${VERSION} ${REGISTRY}
-	oc apply -k build/index-install
+	oc apply -k build/index-install/non-composite

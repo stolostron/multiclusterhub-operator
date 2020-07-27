@@ -21,7 +21,7 @@ metadata:
     description: Open management of Openshift and Kubernetes clusters
     repository: https://github.com/open-cluster-management/multicloudhub-operator
     support: The Open Cluster Management Project
-  name: multiclusterhub-operator.v2.0.0
+  name: multiclusterhub-operator.v2.1.0
   namespace: open-cluster-management
 spec:
   apiservicedefinitions: {}
@@ -32,33 +32,6 @@ spec:
       displayName: MultiClusterHub
       kind: MultiClusterHub
       name: multiclusterhubs.operator.open-cluster-management.io
-      version: v1
-    required:
-    - description: Represent a helm chart repository
-      displayName: Channel
-      kind: Channel
-      name: channels.apps.open-cluster-management.io
-      version: v1
-    - description: Configuration for the Cluster Manager Operator
-      displayName: ClusterManager
-      kind: ClusterManager
-      name: clustermanagers.operator.open-cluster-management.io
-      version: v1
-    - description: Represent a helm chart selected by the subscription, for internal
-        use only.
-      displayName: Helm Release
-      kind: HelmRelease
-      name: helmreleases.apps.open-cluster-management.io
-      version: v1
-    - description: Configuration for the Hive Operator
-      displayName: Hive Config
-      kind: HiveConfig
-      name: hiveconfigs.hive.openshift.io
-      version: v1
-    - description: Subscribe resources from a channel according to its package filters
-      displayName: Subscription
-      kind: Subscription
-      name: subscriptions.apps.open-cluster-management.io
       version: v1
   description: 'The Open Cluster Management Hub operator installs and maintains an
     instance of the OCM hub, a central management console for managing OpenShift and
@@ -254,6 +227,7 @@ spec:
           - rbac.authorization.k8s.io
           - view.open-cluster-management.io
           - operator.open-cluster-management.io
+          - register.open-cluster-management.io
           resources:
           - applications
           - applications/status
@@ -271,6 +245,7 @@ spec:
           - managedclusterinfos
           - managedclusterinfos/status
           - managedclusters
+          - managedclusters/accept
           - managedclusters/status
           - managedclusterviews
           - managedclusterviews/status
@@ -278,6 +253,7 @@ spec:
           - manifestworks/status
           - clustermanagers
           - clusterroles
+          - clusterrolebindings
           - clusterstatuses/aggregator
           - clusterversions
           - compliances
@@ -307,6 +283,7 @@ spec:
           - subscriptions/status
           - subjectaccessreviews
           - syncsets
+          - syncsetinstances
           verbs:
           - create
           - get
@@ -356,7 +333,7 @@ spec:
                   value: /usr/local/templates
                 - name: MANIFESTS_PATH
                   value: /image-manifests
-                image: multiclusterhub-operator:2.0.0
+                image: multiclusterhub-operator:2.1.0
                 imagePullPolicy: Always
                 name: multiclusterhub-operator
                 resources:
@@ -387,4 +364,4 @@ spec:
   maturity: alpha
   provider:
     name: Redhat
-  version: 2.0.0
+  version: 2.1.0

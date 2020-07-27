@@ -1,5 +1,0 @@
-- name: hiveconfigs.hive.openshift.io
-  version: v1
-  kind: HiveConfig
-  displayName: Hive Config
-  description: Configuration for the Hive Operator

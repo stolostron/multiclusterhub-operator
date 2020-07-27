@@ -194,6 +194,7 @@ rules:
   - "rbac.authorization.k8s.io"
   - "view.open-cluster-management.io"
   - "operator.open-cluster-management.io"
+  - "register.open-cluster-management.io"
   resources:
   - applications
   - applications/status
@@ -211,6 +212,7 @@ rules:
   - managedclusterinfos
   - managedclusterinfos/status
   - managedclusters
+  - managedclusters/accept
   - managedclusters/status
   - managedclusterviews
   - managedclusterviews/status
@@ -218,6 +220,7 @@ rules:
   - manifestworks/status
   - clustermanagers
   - clusterroles
+  - clusterrolebindings
   - clusterstatuses/aggregator
   - clusterversions
   - compliances
@@ -247,6 +250,7 @@ rules:
   - subscriptions/status
   - subjectaccessreviews
   - syncsets
+  - syncsetinstances
   verbs:
   - create
   - get

@@ -101,10 +101,3 @@ func imageSuffix(m *operatorsv1.MultiClusterHub) (s string) {
 	}
 	return
 }
-
-func networkVersion(m *operatorsv1.MultiClusterHub) (ipv string) {
-	if m.Spec.IPv6 {
-		return "ipv6"
-	}
-	return "ipv4"
-}
