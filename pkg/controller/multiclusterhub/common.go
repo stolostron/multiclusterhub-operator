@@ -363,7 +363,12 @@ func (r *ReconcileMultiClusterHub) OverrideImagesFromConfigmap(imageOverrides ma
 		}
 
 		for _, manifestImage := range manifestImages {
-			imageOverrides[manifestImage.ImageKey] = fmt.Sprintf("%s/%s:%s", manifestImage.ImageRemote, manifestImage.ImageName, manifestImage.ImageTag)
+			if manifestImage.ImageDigest != "" {
+				imageOverrides[manifestImage.ImageKey] = fmt.Sprintf("%s/%s@%s", manifestImage.ImageRemote, manifestImage.ImageName, manifestImage.ImageDigest)
+			} else if manifestImage.ImageTag != "" {
+				imageOverrides[manifestImage.ImageKey] = fmt.Sprintf("%s/%s:%s", manifestImage.ImageRemote, manifestImage.ImageName, manifestImage.ImageTag)
+			}
+
 		}
 	}
 

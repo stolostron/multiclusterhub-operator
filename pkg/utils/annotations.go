@@ -16,7 +16,7 @@ var (
 	// AnnotationSuffix sits in multiclusterhub annotations to identify a custom image tag suffix to use
 	AnnotationSuffix = "mch-imageTagSuffix"
 	// AnnotationImageOverridesCM sits in multiclusterhub annotations to identify a custom configmap containing image overrides
-	AnnotationImageOverridesCM = "image-overrides-configmap"
+	AnnotationImageOverridesCM = "mch-imageOverridesCM"
 )
 
 // IsPaused returns true if the multiclusterhub instance is labeled as paused, and false otherwise

@@ -31,12 +31,12 @@ This is done by creating a configmap from a new [manifest](https://github.com/op
 
 ```bash
 kubectl create configmap <my-config> --from-file=docs/manifest-example.json
-kubectl annotate mch <mch-name> --overwrite image-overrides-configmap=<my-config>
+kubectl annotate mch <mch-name> --overwrite mch-imageOverridesCM=<my-config>
 ```
 
 To remove this annotation to revert back to the original manifest
 ```bash
-kubectl annotate mch <mch-name> image-overrides-configmap- --overwrite
+kubectl annotate mch <mch-name> mch-imageOverridesCM- --overwrite
 ```
 
 [install_guide]: /docs/installation.md
