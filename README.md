@@ -26,8 +26,8 @@ Remove or edit this annotation to resume installer operations
 kubectl annotate mch <mch-name> mch-pause=false --overwrite
 ```
 
-Developer image overrides can be added by specifiying a configmap containing the overrides in the MCH resource. The configmap must be in the same namesapce as the MCH resource.
-This is done by creating a configmap from a new [manifest](https://github.com/open-cluster-management/pipeline/tree/2.1-integration/snapshots). A developer use this to override any 1 or all images.
+Developer image overrides can be added by specifiying a configmap containing the overrides in the MCH resource. The configmap must be in the same namespace as the MCH resource.
+This is done by creating a configmap from a new [manifest](https://github.com/open-cluster-management/pipeline/tree/2.1-integration/snapshots). A developer may use this to override any 1 or all images.
 
 ```bash
 kubectl create configmap <my-config> --from-file=docs/manifest-example.json
@@ -37,6 +37,7 @@ kubectl annotate mch <mch-name> --overwrite mch-imageOverridesCM=<my-config>
 To remove this annotation to revert back to the original manifest
 ```bash
 kubectl annotate mch <mch-name> mch-imageOverridesCM- --overwrite
+kubectl delete configmap <my-config>
 ```
 
 [install_guide]: /docs/installation.md
