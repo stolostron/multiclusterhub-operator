@@ -249,7 +249,8 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	if imageOverridesConfigmap := utils.GetImageOverridesConfigmap(multiClusterHub); imageOverridesConfigmap != "" {
 		imageOverrides, err = r.OverrideImagesFromConfigmap(imageOverrides, multiClusterHub.GetNamespace(), imageOverridesConfigmap)
 		if err != nil {
-			reqLogger.Info(fmt.Sprintf("Could not find configmap: %s/%s", multiClusterHub.GetNamespace(), imageOverridesConfigmap))
+			reqLogger.Error(err, fmt.Sprintf("Could not find image override configmap: %s/%s", multiClusterHub.GetNamespace(), imageOverridesConfigmap))
+			return reconcile.Result{}, err
 		}
 	}
 	r.CacheSpec.ImageOverrides = imageOverrides

@@ -37,7 +37,8 @@ func IsPaused(instance *operatorsv1.MultiClusterHub) bool {
 func AnnotationsMatch(old, new map[string]string) bool {
 	return old[AnnotationMCHPause] == new[AnnotationMCHPause] &&
 		old[AnnotationImageRepo] == new[AnnotationImageRepo] &&
-		old[AnnotationSuffix] == new[AnnotationSuffix]
+		old[AnnotationSuffix] == new[AnnotationSuffix] &&
+		old[AnnotationImageOverridesCM] == new[AnnotationImageOverridesCM]
 }
 
 // getAnnotation returns the annotation value for a given key, or an empty string if not set

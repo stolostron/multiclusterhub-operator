@@ -1,0 +1,22 @@
+[
+    {
+      "image-name": "multiclusterhub-repo",
+      "image-version": "2.1",
+      "image-tag": "2.1-ef3d555e8720c843ab68374b396e02efc24a3f65",
+      "git-sha256": "ef3d555e8720c843ab68374b396e02efc24a3f65",
+      "git-repository": "open-cluster-management/multicloudhub-repo",
+      "image-remote": "quay.io/open-cluster-management",
+      "image-digest": "sha256:9be2ca81e72e5edd9b3d1d9860a126fe4a3a389a1b2c87eefd36629aef2a62a9",
+      "image-key": "multiclusterhub_repo"
+    },
+    {
+      "image-name": "cert-manager-cainjector",
+      "image-version": "0.10.2",
+      "image-tag": "0.10.2-6c6860960e3dcce51b5622f97cafcdd5c2f0d040",
+      "git-sha256": "6c6860960e3dcce51b5622f97cafcdd5c2f0d040",
+      "git-repository": "open-cluster-management/cert-manager",
+      "image-remote": "quay.io/open-cluster-management",
+      "image-digest": "sha256:8852efff818f7eba2dd71f367143b25ff36ac7c1a13b839501eae8b4409481eb",
+      "image-key": "cert_manager_cainjector"
+    }
+  ]

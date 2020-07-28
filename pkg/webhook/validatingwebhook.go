@@ -59,7 +59,7 @@ func (m *multiClusterHubValidator) Handle(ctx context.Context, req admission.Req
 			log.Info("Update denied")
 			return admission.Denied(err.Error())
 		}
-		log.Info("Update successful")
+		log.Info("Delete successful")
 		return admission.Allowed("")
 	}
 

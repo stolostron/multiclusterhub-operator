@@ -396,7 +396,7 @@ func Test_OverrideImagesFromConfigmap(t *testing.T) {
 			Result: nil,
 		},
 		{
-			Name:     "Test: OverrideImagesFromConfigmap - Override repo image (non-existent)",
+			Name:     "Test: OverrideImagesFromConfigmap - New image added from Configmap",
 			MCH:      annotatedMCH,
 			CreateCM: true,
 			ConfigMap: &corev1.ConfigMap{
@@ -408,7 +408,7 @@ func Test_OverrideImagesFromConfigmap(t *testing.T) {
 					"overrides.json:": `[
 						{
 						  "image-name": "non-existent-image",
-						  "image-tag": "2.1.0-test",
+						  "image-digest": "sha256:e728a4cdf4a11b78b927b7b280d75babca7b3880450fbf190d80b194f7d064b6",
 						  "image-remote": "quay.io/open-cluster-management",
 						  "image-key": "non_existent_image"
 						}
@@ -416,10 +416,10 @@ func Test_OverrideImagesFromConfigmap(t *testing.T) {
 				},
 			},
 			ManifestImage: manifest.ManifestImage{
-				ImageKey:    "multiclusterhub_repo",
+				ImageKey:    "non_existent_image",
 				ImageRemote: "quay.io/open-cluster-management",
 				ImageDigest: "sha256:e728a4cdf4a11b78b927b7b280d75babca7b3880450fbf190d80b194f7d064b6",
-				ImageName:   "multiclusterhub-repo",
+				ImageName:   "non-existent-image",
 			},
 			Result: nil,
 		},
@@ -444,7 +444,6 @@ func Test_OverrideImagesFromConfigmap(t *testing.T) {
 				t.Fatalf("Failed to get image overrides from configmap : %s", err)
 			}
 			if tt.CreateCM {
-				fmt.Println(imagesOverrides[tt.ManifestImage.ImageKey])
 				if imagesOverrides[tt.ManifestImage.ImageKey] != fmt.Sprintf("%s/%s:%s", tt.ManifestImage.ImageRemote, tt.ManifestImage.ImageName, tt.ManifestImage.ImageTag) &&
 					imagesOverrides[tt.ManifestImage.ImageKey] != fmt.Sprintf("%s/%s@%s", tt.ManifestImage.ImageRemote, tt.ManifestImage.ImageName, tt.ManifestImage.ImageDigest) {
 					t.Fatalf("Unexpected image override")
