@@ -41,6 +41,8 @@ type ManifestImage struct {
 
 	// immutable sha version identifier
 	ImageDigest string `json:"image-digest"`
+
+	ImageTag string `json:"image-tag"`
 }
 
 // GetImageOverrideType returns an image format type based on the MultiClusterHub

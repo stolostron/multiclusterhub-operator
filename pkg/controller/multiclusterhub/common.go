@@ -4,6 +4,7 @@ package multiclusterhub
 
 import (
 	"context"
+	"encoding/json"
 	e "errors"
 	"fmt"
 	"time"
@@ -11,6 +12,7 @@ import (
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/foundation"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/manifest"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 
@@ -25,6 +27,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
+
+// CacheSpec ...
+type CacheSpec struct {
+	IngressDomain     string
+	ImageOverrides    map[string]string
+	ImageOverrideType manifest.OverrideType
+	ImageRepository   string
+	ImageSuffix       string
+	ManifestVersion   string
+	ImageOverridesCM  string
+}
 
 func (r *ReconcileMultiClusterHub) ensureDeployment(m *operatorsv1.MultiClusterHub, dep *appsv1.Deployment) (*reconcile.Result, error) {
 	dplog := log.WithValues("Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
@@ -322,4 +335,42 @@ func (r *ReconcileMultiClusterHub) copyPullSecret(m *operatorsv1.MultiClusterHub
 		}
 	}
 	return nil, nil
+}
+
+// OverrideImagesFromConfigmap ...
+func (r *ReconcileMultiClusterHub) OverrideImagesFromConfigmap(imageOverrides map[string]string, namespace, configmapName string) (map[string]string, error) {
+	log.Info(fmt.Sprintf("Overriding images from configmap: %s/%s", namespace, configmapName))
+
+	configmap := &corev1.ConfigMap{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{
+		Name:      configmapName,
+		Namespace: namespace,
+	}, configmap)
+	if err != nil && errors.IsNotFound(err) {
+		return imageOverrides, err
+	}
+
+	if len(configmap.Data) != 1 {
+		return imageOverrides, fmt.Errorf(fmt.Sprintf("Unexpected number of keys in configmap: %s", configmapName))
+	}
+
+	for _, v := range configmap.Data {
+
+		var manifestImages []manifest.ManifestImage
+		err = json.Unmarshal([]byte(v), &manifestImages)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, manifestImage := range manifestImages {
+			if manifestImage.ImageDigest != "" {
+				imageOverrides[manifestImage.ImageKey] = fmt.Sprintf("%s/%s@%s", manifestImage.ImageRemote, manifestImage.ImageName, manifestImage.ImageDigest)
+			} else if manifestImage.ImageTag != "" {
+				imageOverrides[manifestImage.ImageKey] = fmt.Sprintf("%s/%s:%s", manifestImage.ImageRemote, manifestImage.ImageName, manifestImage.ImageTag)
+			}
+
+		}
+	}
+
+	return imageOverrides, nil
 }

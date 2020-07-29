@@ -26,6 +26,40 @@ Remove or edit this annotation to resume installer operations
 kubectl annotate mch <mch-name> mch-pause=false --overwrite
 ```
 
+## Add Image Overrides Via Configmap
+
+Developer image overrides can be added by specifiying a configmap containing the overrides for the MCH resource. This configmap must be in the same namespace as the MCH resource.
+
+This is done by creating a configmap from a new [manifest](https://github.com/open-cluster-management/pipeline/tree/2.1-integration/snapshots). A developer may use this to override any 1 or all images.
+
+
+If overriding individual images, the minimum required parameters required to build the image reference are - 
+
+- `image-name`
+- `image-remote`
+- `image-key`
+- `image-digest` or `image-tag`, both can optionally be provided, if so the `image-digest` will be preferred.
+
+
+```bash
+kubectl create configmap <my-config> --from-file=docs/examples/manifest-oneimage.json # Override 1 image example
+kubectl create configmap <my-config> --from-file=docs/examples/manifest-allimages.json # Overriding all images example
+
+kubectl annotate mch <mch-name> --overwrite mch-imageOverridesCM=<my-config> # Provide the configmap as an override to the MCH
+```
+
+To remove this annotation to revert back to the original manifest
+```bash
+kubectl annotate mch <mch-name> mch-imageOverridesCM- --overwrite # Remove annotation
+kubectl delete configmap <my-config> # Delete configmap
+```
+
+If editing the configmap directly instead of creating/deleting it each time, an operator reconcile may be necessary in order to get the changes to take effect. This can be done by cycling the MCH Operator pod - 
+
+```
+kubectl delete pod multiclusterhub-operator-xxxxx-xxxxx
+```
+
 [install_guide]: /docs/installation.md
 [config_guide]: /docs/configuration.md
 [deploy]: https://github.com/open-cluster-management/deploy

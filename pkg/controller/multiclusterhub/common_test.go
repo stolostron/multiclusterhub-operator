@@ -12,10 +12,12 @@ import (
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/foundation"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/manifest"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -331,6 +333,121 @@ func Test_ensureClusterManager(t *testing.T) {
 			_, err = r.ensureClusterManager(tt.MCH, tt.ClusterManager)
 			if !errorEquals(err, tt.Result) {
 				t.Fatalf("Failed to ensure ClusterManager: %s", err)
+			}
+		})
+	}
+}
+
+func Test_OverrideImagesFromConfigmap(t *testing.T) {
+	os.Setenv("MANIFESTS_PATH", "../../../image-manifests")
+	defer os.Unsetenv("MANIFESTS_PATH")
+
+	r, err := getTestReconciler(full_mch)
+	if err != nil {
+		t.Fatalf("Failed to create test reconciler")
+	}
+
+	annotatedMCH := full_mch.DeepCopy()
+	annotatedMCH.SetAnnotations(map[string]string{
+		"image-overrides-configmap": "my-config",
+	})
+
+	tests := []struct {
+		Name          string
+		MCH           *operatorsv1.MultiClusterHub
+		CreateCM      bool
+		ConfigMap     *corev1.ConfigMap
+		ManifestImage manifest.ManifestImage
+		Result        error
+	}{
+		{
+			Name:      "Test: OverrideImagesFromConfigmap - Nonexistant configmap",
+			MCH:       annotatedMCH,
+			CreateCM:  false,
+			ConfigMap: &corev1.ConfigMap{},
+			Result:    fmt.Errorf(`configmaps "" not found`),
+		},
+		{
+			Name:     "Test: OverrideImagesFromConfigmap - Override repo image",
+			MCH:      annotatedMCH,
+			CreateCM: true,
+			ConfigMap: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "my-config",
+					Namespace: full_mch.GetNamespace(),
+				},
+				Data: map[string]string{
+					"overrides.json:": `[
+						{
+						  "image-name": "multiclusterhub-repo",
+						  "image-tag": "2.1.0-test",
+						  "image-remote": "quay.io/open-cluster-management",
+						  "image-key": "multiclusterhub_repo"
+						}
+					  ]`,
+				},
+			},
+			ManifestImage: manifest.ManifestImage{
+				ImageKey:    "multiclusterhub_repo",
+				ImageRemote: "quay.io/open-cluster-management",
+				ImageTag:    "2.1.0-test",
+				ImageName:   "multiclusterhub-repo",
+			},
+			Result: nil,
+		},
+		{
+			Name:     "Test: OverrideImagesFromConfigmap - New image added from Configmap",
+			MCH:      annotatedMCH,
+			CreateCM: true,
+			ConfigMap: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "my-config",
+					Namespace: full_mch.GetNamespace(),
+				},
+				Data: map[string]string{
+					"overrides.json:": `[
+						{
+						  "image-name": "non-existent-image",
+						  "image-digest": "sha256:e728a4cdf4a11b78b927b7b280d75babca7b3880450fbf190d80b194f7d064b6",
+						  "image-remote": "quay.io/open-cluster-management",
+						  "image-key": "non_existent_image"
+						}
+					  ]`,
+				},
+			},
+			ManifestImage: manifest.ManifestImage{
+				ImageKey:    "non_existent_image",
+				ImageRemote: "quay.io/open-cluster-management",
+				ImageDigest: "sha256:e728a4cdf4a11b78b927b7b280d75babca7b3880450fbf190d80b194f7d064b6",
+				ImageName:   "non-existent-image",
+			},
+			Result: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.Name, func(t *testing.T) {
+			if tt.CreateCM {
+				err := r.client.Create(context.TODO(), tt.ConfigMap)
+				if err != nil {
+					t.Fatalf("Failed to create configmap: %s", err)
+				}
+				defer r.client.Delete(context.TODO(), tt.ConfigMap)
+			}
+
+			imagesOverrides, err := manifest.GetImageOverrides(tt.MCH)
+			if err != nil {
+				t.Fatalf("Failed to get image overrides: %s", err)
+			}
+			imagesOverrides, err = r.OverrideImagesFromConfigmap(imagesOverrides, tt.MCH.GetNamespace(), tt.ConfigMap.GetName())
+			if !errorEquals(err, tt.Result) {
+				t.Fatalf("Failed to get image overrides from configmap : %s", err)
+			}
+			if tt.CreateCM {
+				if imagesOverrides[tt.ManifestImage.ImageKey] != fmt.Sprintf("%s/%s:%s", tt.ManifestImage.ImageRemote, tt.ManifestImage.ImageName, tt.ManifestImage.ImageTag) &&
+					imagesOverrides[tt.ManifestImage.ImageKey] != fmt.Sprintf("%s/%s@%s", tt.ManifestImage.ImageRemote, tt.ManifestImage.ImageName, tt.ManifestImage.ImageDigest) {
+					t.Fatalf("Unexpected image override")
+				}
 			}
 		})
 	}
