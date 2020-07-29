@@ -32,6 +32,7 @@ Developer image overrides can be added by specifiying a configmap containing the
 
 This is done by creating a configmap from a new [manifest](https://github.com/open-cluster-management/pipeline/tree/2.1-integration/snapshots). A developer may use this to override any 1 or all images.
 
+
 If overriding individual images, the minimum required parameters required to build the image reference are - 
 
 - `image-name`
@@ -51,6 +52,12 @@ To remove this annotation to revert back to the original manifest
 ```bash
 kubectl annotate mch <mch-name> mch-imageOverridesCM- --overwrite # Remove annotation
 kubectl delete configmap <my-config> # Delete configmap
+```
+
+If editing the configmap directly instead of creating/deleting it each time, an operator reconcile may be necessary in order to get the changes to take effect. This can be done by cycling the MCH Operator pod - 
+
+```
+kubectl delete pod multiclusterhub-operator-xxxxx-xxxxx
 ```
 
 [install_guide]: /docs/installation.md
