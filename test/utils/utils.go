@@ -463,3 +463,12 @@ func MarkInstallPlanAsApproved(ip *unstructured.Unstructured) (*unstructured.Uns
 	spec["approved"] = true
 	return ip, nil
 }
+
+// ShouldSkipSubscription skips subscription operations if set as true
+func ShouldSkipSubscription() bool {
+	skipSubscription := os.Getenv("skipSubscription")
+	if skipSubscription == "true" {
+		return true
+	}
+	return false
+}
