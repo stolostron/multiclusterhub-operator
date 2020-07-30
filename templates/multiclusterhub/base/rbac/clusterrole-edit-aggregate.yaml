@@ -41,3 +41,6 @@ rules:
 - apiGroups: ["config.openshift.io"]
   resources: ["clusterversions"]
   verbs: ["get", "list", "watch", "update", "patch"]
+- apiGroup: ["inventory.open-cluster-management.io"]
+  resources: ["baremetalassets"]
+  verbs: ["get", "list", "watch", "update", "patch"]
