@@ -1,44 +1,60 @@
+SUBSCRIPTION_NAME := "advanced-cluster-management"
+PULL_SECRET_NAME := "multiclusterhub-operator-pull-secret"
+CHANNEL := "release-2.1"
+SOURCE_NAMESPACE := "open-cluster-management"
+SOURCE_NAME := "acm-custom-registry"
 
-## Run the installer functional tests
-functional-test-install:
+
+## Run the installer downstream functional tests
+ft-downstream-install:
 	docker run --network host \
-		--env pullSecret=multiclusterhub-operator-pull-secret \
-		--env source="acm-custom-registry" \
-		--env channel="release-2.1" \
-		--env sourceNamespace=open-cluster-management \
-		--env name="advanced-cluster-management" \
+		--env pullSecret=$(PULL_SECRET_NAME) \
+		--env source=$(SOURCE_NAME) \
+		--env channel=$(CHANNEL) \
+		--env sourceNamespace=$(SOURCE_NAMESPACE) \
+		--env name=$(SUBSCRIPTION_NAME) \
 		--env TEST_MODE="install" \
 		--env full_test_suite="false" \
 		--volume ~/.kube/config:/opt/.kube/config \
 		$(REGISTRY)/$(IMG)-tests:$(VERSION)
-	# ginkgo -tags functional -v --slowSpecThreshold=10 test/multiclusterhub_install_test
 
 ## Run the uninstall functional tests
-functional-test-uninstall:
+ft-downstream-uninstall:
 	docker run --network host \
-		--env pullSecret=multiclusterhub-operator-pull-secret \
-		--env source="acm-custom-registry" \
-		--env channel="release-2.1" \
-		--env sourceNamespace=open-cluster-management \
-		--env name="advanced-cluster-management" \
+		--env pullSecret=$(PULL_SECRET_NAME) \
+		--env source=$(SOURCE_NAME) \
+		--env channel=$(CHANNEL) \
+		--env sourceNamespace=$(SOURCE_NAMESPACE) \
+		--env name=$(SUBSCRIPTION_NAME) \
 		--env TEST_MODE="uninstall" \
 		--volume ~/.kube/config:/opt/.kube/config \
 		$(REGISTRY)/$(IMG)-tests:$(VERSION)
-	# ginkgo -tags functional -v --slowSpecThreshold=10 test/multiclusterhub_uninstall_test
 
 ## Run the uninstall functional tests
-functional-test-update:
+ft-downstream-update:
 	docker run --network host \
-		--env pullSecret=multiclusterhub-operator-pull-secret \
-		--env source="acm-custom-registry" \
-		--env channel="latest" \
-		--env sourceNamespace=open-cluster-management \
-		--env name="advanced-cluster-management" \
+		--env pullSecret=$(PULL_SECRET_NAME) \
+		--env source=$(SOURCE_NAME) \
+		--env channel=$(CHANNEL) \
+		--env sourceNamespace=$(SOURCE_NAMESPACE) \
+		--env name=$(SUBSCRIPTION_NAME) \
 		--env TEST_MODE="update" \
 		--env startVersion="2.0.0" \
 		--env updateVersion="2.1.0" \
 		--volume ~/.kube/config:/opt/.kube/config \
 		$(REGISTRY)/$(IMG)-tests:$(VERSION)
+
+## Run the install functional tests directly
+ft-install: 
+	export skipSubscription="true";	ginkgo -tags functional -v --slowSpecThreshold=150 test/multiclusterhub_install_test
+
+## Run the uninstall functional tests directly
+ft-uninstall:
+	export skipSubscription="true";	ginkgo -tags functional -v --slowSpecThreshold=100 test/multiclusterhub_uninstall_test
+
+## Run the update functional tests directly
+ft-update:
+	export skipSubscription="true";	ginkgo -tags functional -v --slowSpecThreshold=300 test/multiclusterhub_update_test
 
 ## Build the MCH functional test image
 test-image:

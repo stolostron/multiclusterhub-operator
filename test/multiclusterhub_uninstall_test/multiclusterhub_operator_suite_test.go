@@ -38,6 +38,9 @@ func init() {
 }
 
 var _ = AfterSuite(func() {
+	if utils.ShouldSkipSubscription() {
+		return
+	}
 	By("Deleting OCM Subscriptions")
 	// Delete Subscription
 	subLink := utils.DynamicKubeClient.Resource(utils.GVRSub).Namespace(utils.MCHNamespace)

@@ -41,6 +41,9 @@ func init() {
 }
 
 var _ = BeforeSuite(func() {
+	if utils.ShouldSkipSubscription() {
+		return
+	}
 	By("Creating ACM Operator Subscription")
 	subscription := utils.DynamicKubeClient.Resource(utils.GVRSub).Namespace(utils.MCHNamespace)
 	_, err := subscription.Get(context.TODO(), utils.OCMSubscriptionName, metav1.GetOptions{})
