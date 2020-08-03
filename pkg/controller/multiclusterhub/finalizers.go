@@ -8,6 +8,9 @@ import (
 
 	"github.com/go-logr/logr"
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
+	foundation "github.com/open-cluster-management/multicloudhub-operator/pkg/foundation"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -137,28 +140,6 @@ func (r *ReconcileMultiClusterHub) cleanupMutatingWebhooks(reqLogger logr.Logger
 	return nil
 }
 
-func (r *ReconcileMultiClusterHub) cleanupValidatingWebhooks(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
-	err := r.client.DeleteAllOf(
-		context.TODO(),
-		&admissionregistrationv1beta1.ValidatingWebhookConfiguration{},
-		client.MatchingLabels{
-			"installer.name":      m.GetName(),
-			"installer.namespace": m.GetNamespace(),
-		})
-
-	if err != nil {
-		if errors.IsNotFound(err) {
-			reqLogger.Info("No matching ValidatingWebhookConfigurations to finalize. Continuing.")
-			return nil
-		}
-		reqLogger.Error(err, "Error while deleting ValidatingWebhookConfigurations")
-		return err
-	}
-
-	reqLogger.Info("ValidatingWebhookConfigurations finalized")
-	return nil
-}
-
 func (r *ReconcileMultiClusterHub) cleanupPullSecret(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	// TODO: Handle scenario where ImagePullSecret is changed after install
 	if m.Spec.ImagePullSecret == "" {
@@ -270,11 +251,9 @@ func (r *ReconcileMultiClusterHub) cleanupAppSubscriptions(reqLogger logr.Logger
 	})
 
 	err := r.client.List(context.TODO(), appSubList)
-	if err != nil {
-		if err != nil && !errors.IsNotFound(err) {
-			reqLogger.Error(err, "Error while listing appsubs")
-			return err
-		}
+	if err != nil && !errors.IsNotFound(err) {
+		reqLogger.Error(err, "Error while listing appsubs")
+		return err
 	}
 	err = r.client.List(context.TODO(), matchingAppSubList, installerLabels)
 	if err != nil && !errors.IsNotFound(err) {
@@ -308,5 +287,70 @@ func (r *ReconcileMultiClusterHub) cleanupAppSubscriptions(reqLogger logr.Logger
 	}
 
 	reqLogger.Info("All helmreleases have been terminated")
+	return nil
+}
+
+func (r *ReconcileMultiClusterHub) cleanupFoundation(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+
+	var emptyOverrides map[string]string
+
+	reqLogger.Info("Deleting OCM controller deployment")
+	err := r.client.Delete(context.TODO(), foundation.OCMControllerDeployment(m, emptyOverrides))
+	if err != nil && !errors.IsNotFound(err) {
+		reqLogger.Error(err, "Error deleting OCM controller deployment")
+		return err
+	}
+
+	reqLogger.Info("Deleting OCM proxy server service")
+	err = r.client.Delete(context.TODO(), foundation.OCMProxyServerService(m))
+	if err != nil && !errors.IsNotFound(err) {
+		reqLogger.Error(err, "Error deleting OCM proxy server service")
+		return err
+	}
+
+	reqLogger.Info("Deleting OCM proxy server deployment")
+	err = r.client.Delete(context.TODO(), foundation.OCMProxyServerDeployment(m, emptyOverrides))
+	if err != nil && !errors.IsNotFound(err) {
+		reqLogger.Error(err, "Error deleting OCM proxy server deployment")
+		return err
+	}
+
+	reqLogger.Info("Deleting OCM webhook service")
+	err = r.client.Delete(context.TODO(), foundation.WebhookService(m))
+	if err != nil && !errors.IsNotFound(err) {
+		reqLogger.Error(err, "Error deleting OCM webhook service")
+		return err
+	}
+
+	reqLogger.Info("Deleting OCM webhook deployment")
+	err = r.client.Delete(context.TODO(), foundation.WebhookDeployment(m, emptyOverrides))
+	if err != nil && !errors.IsNotFound(err) {
+		reqLogger.Error(err, "Error deleting OCM webhook deployment")
+		return err
+	}
+
+	reqLogger.Info("Deleting MultiClusterHub repo deployment")
+	err = r.client.Delete(context.TODO(), helmrepo.Deployment(m, emptyOverrides))
+	if err != nil && !errors.IsNotFound(err) {
+		reqLogger.Error(err, "Error deleting MultiClusterHub repo deployment")
+		return err
+	}
+
+	reqLogger.Info("Deleting MultiClusterHub repo service")
+	err = r.client.Delete(context.TODO(), helmrepo.Service(m))
+	if err != nil && !errors.IsNotFound(err) {
+		reqLogger.Error(err, "Error deleting MultiClusterHub repo service")
+		return err
+	}
+
+	reqLogger.Info("Deleting MultiClusterHub channel")
+	err = r.client.Delete(context.TODO(), channel.Channel(m))
+	if err != nil && !errors.IsNotFound(err) {
+		reqLogger.Error(err, "Error deleting MultiClusterHub channel")
+		return err
+	}
+
+	reqLogger.Info("All foundation artefacts have been terminated")
+
 	return nil
 }
