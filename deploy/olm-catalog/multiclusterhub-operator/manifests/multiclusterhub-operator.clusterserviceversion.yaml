@@ -76,6 +76,7 @@ spec:
           - services
           - subjectaccessreviews
           - subscriptions
+          - helmreleases
           verbs:
           - get
         - apiGroups:
@@ -117,6 +118,7 @@ spec:
         - apiGroups:
           - ""
           - apps
+          - apps.open-cluster-management.io
           - admissionregistration.k8s.io
           - apiregistration.k8s.io
           - authorization.k8s.io
@@ -129,6 +131,7 @@ spec:
           - clusterjoinrequests
           - configmaps
           - deployments
+          - helmreleases
           - ingresses
           - multiclusterhubs
           - namespaces
@@ -137,6 +140,7 @@ spec:
           - secrets
           - services
           - subjectaccessreviews
+          - subscriptions
           - validatingwebhookconfigurations
           verbs:
           - list
@@ -203,6 +207,16 @@ spec:
           - validatingwebhookconfigurations
           verbs:
           - deletecollection
+        - apiGroups:
+          - ""
+          - apps
+          - apps.open-cluster-management.io
+          resources:
+          - deployments
+          - services
+          - channels
+          verbs:
+          - delete
         - apiGroups:
           - ""
           - action.open-cluster-management.io

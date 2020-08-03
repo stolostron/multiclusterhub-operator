@@ -36,6 +36,7 @@ rules:
   - services
   - subjectaccessreviews
   - subscriptions
+  - helmreleases
   verbs:
   - get
 
@@ -79,6 +80,7 @@ rules:
 - apiGroups:
   - ""
   - "apps"
+  - "apps.open-cluster-management.io"
   - "admissionregistration.k8s.io"
   - "apiregistration.k8s.io"
   - "authorization.k8s.io"
@@ -91,6 +93,7 @@ rules:
   - clusterjoinrequests
   - configmaps
   - deployments
+  - helmreleases
   - ingresses
   - multiclusterhubs
   - namespaces
@@ -99,6 +102,7 @@ rules:
   - secrets
   - services
   - subjectaccessreviews
+  - subscriptions
   - validatingwebhookconfigurations
   verbs:
   - list
@@ -168,6 +172,17 @@ rules:
   - validatingwebhookconfigurations
   verbs:
   - deletecollection
+
+- apiGroups:
+  - ""
+  - "apps"
+  - "apps.open-cluster-management.io"
+  resources:
+  - deployments
+  - services
+  - channels
+  verbs:
+  - delete
 
 # RCM Dependancies
 - apiGroups:
