@@ -8,6 +8,7 @@ import (
 	"os"
 	"testing"
 
+	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis"
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 	netv1 "github.com/openshift/api/config/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -250,6 +251,11 @@ func getTestReconciler(m *operatorsv1.MultiClusterHub) (*ReconcileMultiClusterHu
 
 	if err := apixv1.AddToScheme(s); err != nil {
 		return nil, fmt.Errorf("Could not add CRDs to test scheme")
+	}
+
+	if err := appsubv1.AddToScheme(s); err != nil {
+		log.Error(err, "")
+		os.Exit(1)
 	}
 	s.AddKnownTypes(operatorsv1.SchemeGroupVersion, m)
 

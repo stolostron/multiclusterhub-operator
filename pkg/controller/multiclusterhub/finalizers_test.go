@@ -601,3 +601,36 @@ func Test_cleanupClusterManagers(t *testing.T) {
 		})
 	}
 }
+
+func Test_cleanupAppSubscriptions(t *testing.T) {
+	tests := []struct {
+		Name           string
+		MCH            *operatorsv1.MultiClusterHub
+		ClusterManager *unstructured.Unstructured
+		Result         error
+	}{
+		{
+			Name:   "Installer Created Appsubscriptions",
+			MCH:    full_mch,
+			Result: nil,
+		},
+	}
+
+	reqLogger := log.WithValues("Request.Namespace", mch_namespace, "Request.Name", mch_name)
+
+	for _, tt := range tests {
+		t.Run(tt.Name, func(t *testing.T) {
+			// Objects to track in the fake client.
+			r, err := getTestReconciler(tt.MCH)
+			if err != nil {
+				t.Fatalf("Failed to create test reconciler: %s", err)
+			}
+
+			err = r.cleanupAppSubscriptions(reqLogger, tt.MCH)
+			if err != tt.Result {
+				t.Fatalf("Failed to cleanup appsubscription: %s", err)
+			}
+
+		})
+	}
+}

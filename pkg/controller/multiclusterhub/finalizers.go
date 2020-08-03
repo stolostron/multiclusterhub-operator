@@ -256,7 +256,7 @@ func (r *ReconcileMultiClusterHub) cleanupAppSubscriptions(reqLogger logr.Logger
 	appSubList := &unstructured.UnstructuredList{}
 	appSubList.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   "apps.open-cluster-management.io",
-		Kind:    "Subscription",
+		Kind:    "SubscriptionList",
 		Version: "v1",
 	})
 
@@ -265,7 +265,7 @@ func (r *ReconcileMultiClusterHub) cleanupAppSubscriptions(reqLogger logr.Logger
 	helmReleaseList := &unstructured.UnstructuredList{}
 	helmReleaseList.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   "apps.open-cluster-management.io",
-		Kind:    "HelmRelease",
+		Kind:    "HelmReleaseList",
 		Version: "v1",
 	})
 
@@ -277,11 +277,9 @@ func (r *ReconcileMultiClusterHub) cleanupAppSubscriptions(reqLogger logr.Logger
 		}
 	}
 	err = r.client.List(context.TODO(), matchingAppSubList, installerLabels)
-	if err != nil {
-		if !errors.IsNotFound(err) {
-			reqLogger.Error(err, "Error while listing appsubs")
-			return err
-		}
+	if err != nil && !errors.IsNotFound(err) {
+		reqLogger.Error(err, "Error while listing appsubs")
+		return err
 	}
 
 	if len(matchingAppSubList.Items) > 0 {
@@ -296,11 +294,9 @@ func (r *ReconcileMultiClusterHub) cleanupAppSubscriptions(reqLogger logr.Logger
 	}
 
 	err = r.client.List(context.TODO(), helmReleaseList)
-	if err != nil {
-		if !errors.IsNotFound(err) {
-			reqLogger.Error(err, "Error while listing helmreleases")
-			return err
-		}
+	if err != nil && !errors.IsNotFound(err) {
+		reqLogger.Error(err, "Error while listing helmreleases")
+		return err
 	}
 
 	// Checks to ensure that expected number of helmreleases exist by
