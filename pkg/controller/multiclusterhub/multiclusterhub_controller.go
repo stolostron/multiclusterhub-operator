@@ -20,7 +20,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -32,6 +31,7 @@ import (
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/foundation"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/manifest"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/predicate"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
@@ -61,42 +61,6 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileMultiClusterHub{client: mgr.GetClient(), scheme: mgr.GetScheme()}
 }
 
-// GenerationChangedPredicate implements a default update predicate function on Generation change.
-//
-// This predicate will skip update events that have no change in the object's metadata.generation field.
-// The metadata.generation field of an object is incremented by the API server when writes are made to the spec field of an object.
-// This allows a controller to ignore update events where the spec is unchanged, and only the metadata and/or status fields are changed.
-type GenerationChangedPredicate struct {
-	predicate.Funcs
-}
-
-// Update implements default UpdateEvent filter for validating generation change
-func (GenerationChangedPredicate) Update(e event.UpdateEvent) bool {
-	if e.MetaOld == nil {
-		log.Error(nil, "Update event has no old metadata", "event", e)
-		return false
-	}
-	if e.ObjectOld == nil {
-		log.Error(nil, "Update event has no old runtime object to update", "event", e)
-		return false
-	}
-	if e.ObjectNew == nil {
-		log.Error(nil, "Update event has no new runtime object for update", "event", e)
-		return false
-	}
-	if e.MetaNew == nil {
-		log.Error(nil, "Update event has no new metadata", "event", e)
-		return false
-	}
-
-	if !utils.AnnotationsMatch(e.MetaOld.GetAnnotations(), e.MetaNew.GetAnnotations()) {
-		log.Info("Metadata annotations have changed")
-		return true
-	}
-
-	return e.MetaNew.GetGeneration() != e.MetaOld.GetGeneration()
-}
-
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
@@ -105,21 +69,8 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// Watch for apiService deletions
-	pred := predicate.Funcs{
-		CreateFunc:  func(e event.CreateEvent) bool { return false },
-		GenericFunc: func(e event.GenericEvent) bool { return false },
-		UpdateFunc:  func(e event.UpdateEvent) bool { return false },
-		DeleteFunc: func(e event.DeleteEvent) bool {
-			labels := e.Meta.GetLabels()
-			_, nameExists := labels["installer.name"]
-			_, namespaceExists := labels["installer.namespace"]
-			return nameExists && namespaceExists
-		},
-	}
-
 	// Watch for changes to primary resource MultiClusterHub
-	err = c.Watch(&source.Kind{Type: &operatorsv1.MultiClusterHub{}}, &handler.EnqueueRequestForObject{}, GenerationChangedPredicate{})
+	err = c.Watch(&source.Kind{Type: &operatorsv1.MultiClusterHub{}}, &handler.EnqueueRequestForObject{}, predicate.GenerationChangedPredicate{})
 	if err != nil {
 		return err
 	}
@@ -153,7 +104,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 				}})
 			},
 		},
-		pred,
+		predicate.DeletePredicate{},
 	)
 	if err != nil {
 		return err
