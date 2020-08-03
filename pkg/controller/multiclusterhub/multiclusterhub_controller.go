@@ -441,6 +441,9 @@ func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1.MultiClusterHub)
 }
 
 func (r *ReconcileMultiClusterHub) finalizeHub(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+	if err := r.cleanupAppSubscriptions(reqLogger, m); err != nil {
+		return err
+	}
 	if err := r.cleanupHiveConfigs(reqLogger, m); err != nil {
 		return err
 	}

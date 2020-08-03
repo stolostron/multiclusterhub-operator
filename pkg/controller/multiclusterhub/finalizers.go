@@ -246,3 +246,71 @@ func (r *ReconcileMultiClusterHub) cleanupClusterManagers(reqLogger logr.Logger,
 	reqLogger.Info("ClusterManagers finalized")
 	return nil
 }
+
+func (r *ReconcileMultiClusterHub) cleanupAppSubscriptions(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+	installerLabels := client.MatchingLabels{
+		"installer.name":      m.GetName(),
+		"installer.namespace": m.GetNamespace(),
+	}
+
+	appSubList := &unstructured.UnstructuredList{}
+	appSubList.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "apps.open-cluster-management.io",
+		Kind:    "Subscription",
+		Version: "v1",
+	})
+
+	matchingAppSubList := appSubList.DeepCopy()
+
+	helmReleaseList := &unstructured.UnstructuredList{}
+	helmReleaseList.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "apps.open-cluster-management.io",
+		Kind:    "HelmRelease",
+		Version: "v1",
+	})
+
+	err := r.client.List(context.TODO(), appSubList)
+	if err != nil {
+		if err != nil && !errors.IsNotFound(err) {
+			reqLogger.Error(err, "Error while listing appsubs")
+			return err
+		}
+	}
+	err = r.client.List(context.TODO(), matchingAppSubList, installerLabels)
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			reqLogger.Error(err, "Error while listing appsubs")
+			return err
+		}
+	}
+
+	if len(matchingAppSubList.Items) > 0 {
+		reqLogger.Info("Terminating App Subscriptions")
+		for _, appsub := range matchingAppSubList.Items {
+			err = r.client.Delete(context.TODO(), &appsub)
+			if err != nil {
+				reqLogger.Error(err, fmt.Sprintf("Error terminating sub: %s", appsub.GetName()))
+				return err
+			}
+		}
+	}
+
+	err = r.client.List(context.TODO(), helmReleaseList)
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			reqLogger.Error(err, "Error while listing helmreleases")
+			return err
+		}
+	}
+
+	// Checks to ensure that expected number of helmreleases exist by
+	// checking if number of helmreleases equals the total number of appsubs
+	// with the operator label subtracted from total appsubs
+	if (len(appSubList.Items) - len(matchingAppSubList.Items)) != len(helmReleaseList.Items) {
+		reqLogger.Info("Waiting for helmreleases to be terminated")
+		return fmt.Errorf("Waiting for helmreleases to be terminated")
+	}
+
+	reqLogger.Info("All helmreleases have been terminated")
+	return nil
+}
