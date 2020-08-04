@@ -70,7 +70,7 @@ uninstall-cr:
 
 ## Fully uninstall the MCH CR and operator
 uninstall: uninstall-cr
-	bash common/scripts/clean-up.sh
+	bash common/scripts/uninstall.sh
 
 ## Install Registration-Operator hub
 regop:
