@@ -21,6 +21,16 @@ var _ = Describe("Multiclusterhub", func() {
 		Expect(utils.EnsureHelmReleasesAreRemoved(utils.DynamicKubeClient)).Should(BeNil())
 	})
 
+	It(fmt.Sprintf("Installing MCH with bad pull secret - should have Pending status"), func() {
+		By("Creating MultiClusterHub")
+		err := utils.ValidateMCHUnsuccessful(CreateMCHBadPullSecret())
+		if err != nil {
+			fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+			return
+		}
+		return
+	})
+
 	if os.Getenv("full_test_suite") == "true" {
 		By("Beginning Full Install Test Suite ...")
 		totalAttempts := 10
@@ -49,6 +59,12 @@ var _ = Describe("Multiclusterhub", func() {
 
 func CreateDefaultMCH() *unstructured.Unstructured {
 	mch := utils.NewMultiClusterHub(utils.MCHName, utils.MCHNamespace)
+	utils.CreateNewUnstructured(utils.DynamicKubeClient, utils.GVRMultiClusterHub, mch, utils.MCHName, utils.MCHNamespace)
+	return mch
+}
+
+func CreateMCHBadPullSecret() *unstructured.Unstructured {
+	mch := utils.NewMultiClusterHubBadPullSecret(utils.MCHName, utils.MCHNamespace)
 	utils.CreateNewUnstructured(utils.DynamicKubeClient, utils.GVRMultiClusterHub, mch, utils.MCHName, utils.MCHNamespace)
 	return mch
 }
