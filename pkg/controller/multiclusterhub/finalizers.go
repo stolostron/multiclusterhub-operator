@@ -5,6 +5,7 @@ package multiclusterhub
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/go-logr/logr"
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
@@ -241,8 +242,6 @@ func (r *ReconcileMultiClusterHub) cleanupAppSubscriptions(reqLogger logr.Logger
 		Version: "v1",
 	})
 
-	matchingAppSubList := appSubList.DeepCopy()
-
 	helmReleaseList := &unstructured.UnstructuredList{}
 	helmReleaseList.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   "apps.open-cluster-management.io",
@@ -250,20 +249,51 @@ func (r *ReconcileMultiClusterHub) cleanupAppSubscriptions(reqLogger logr.Logger
 		Version: "v1",
 	})
 
-	err := r.client.List(context.TODO(), appSubList)
-	if err != nil && !errors.IsNotFound(err) {
-		reqLogger.Error(err, "Error while listing appsubs")
-		return err
-	}
-	err = r.client.List(context.TODO(), matchingAppSubList, installerLabels)
+	err := r.client.List(context.TODO(), appSubList, installerLabels)
 	if err != nil && !errors.IsNotFound(err) {
 		reqLogger.Error(err, "Error while listing appsubs")
 		return err
 	}
 
-	if len(matchingAppSubList.Items) > 0 {
+	err = r.client.List(context.TODO(), helmReleaseList, installerLabels)
+	if err != nil && !errors.IsNotFound(err) {
+		reqLogger.Error(err, "Error while listing helmreleases")
+		return err
+	}
+
+	// If there are more appsubs with our installer label than helmreleases, update helmreleases
+	if len(appSubList.Items) > len(helmReleaseList.Items) {
+		for _, appsub := range appSubList.Items {
+			helmReleaseName := fmt.Sprintf("%s-%s", strings.Replace(appsub.GetName(), "-sub", "", 1), appsub.GetUID()[0:5])
+
+			helmRelease := &unstructured.Unstructured{}
+			helmRelease.SetGroupVersionKind(schema.GroupVersionKind{
+				Group:   "apps.open-cluster-management.io",
+				Kind:    "HelmRelease",
+				Version: "v1",
+			})
+
+			err = r.client.Get(context.TODO(), types.NamespacedName{
+				Name:      helmReleaseName,
+				Namespace: m.GetNamespace(),
+			}, helmRelease)
+			if err != nil {
+				reqLogger.Error(err, fmt.Sprintf("Error getting helmrelease: %s", helmReleaseName))
+				return err
+			}
+
+			utils.AddInstallerLabel(helmRelease, m.GetName(), m.GetNamespace())
+			err = r.client.Update(context.TODO(), helmRelease)
+			if err != nil {
+				reqLogger.Error(err, fmt.Sprintf("Error updating helmrelease: %s", helmReleaseName))
+				return err
+			}
+		}
+	}
+
+	if len(appSubList.Items) > 0 {
 		reqLogger.Info("Terminating App Subscriptions")
-		for _, appsub := range matchingAppSubList.Items {
+		for _, appsub := range appSubList.Items {
 			err = r.client.Delete(context.TODO(), &appsub)
 			if err != nil {
 				reqLogger.Error(err, fmt.Sprintf("Error terminating sub: %s", appsub.GetName()))
@@ -272,16 +302,7 @@ func (r *ReconcileMultiClusterHub) cleanupAppSubscriptions(reqLogger logr.Logger
 		}
 	}
 
-	err = r.client.List(context.TODO(), helmReleaseList)
-	if err != nil && !errors.IsNotFound(err) {
-		reqLogger.Error(err, "Error while listing helmreleases")
-		return err
-	}
-
-	// Checks to ensure that expected number of helmreleases exist by
-	// checking if number of helmreleases equals the total number of appsubs
-	// with the operator label subtracted from total appsubs
-	if (len(appSubList.Items) - len(matchingAppSubList.Items)) != len(helmReleaseList.Items) {
+	if len(appSubList.Items) != 0 || len(helmReleaseList.Items) != 0 {
 		reqLogger.Info("Waiting for helmreleases to be terminated")
 		return fmt.Errorf("Waiting for helmreleases to be terminated")
 	}
