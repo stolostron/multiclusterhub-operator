@@ -5,9 +5,14 @@ package multiclusterhub
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/foundation"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -527,6 +532,9 @@ func Test_cleanupClusterManagers(t *testing.T) {
 }
 
 func Test_cleanupAppSubscriptions(t *testing.T) {
+	os.Setenv("UNIT_TEST", "true")
+	defer os.Unsetenv("UNIT_TEST")
+
 	tests := []struct {
 		Name           string
 		MCH            *operatorsv1.MultiClusterHub
@@ -548,6 +556,23 @@ func Test_cleanupAppSubscriptions(t *testing.T) {
 			r, err := getTestReconciler(tt.MCH)
 			if err != nil {
 				t.Fatalf("Failed to create test reconciler: %s", err)
+			}
+
+			var emptyOverrides map[string]string
+
+			result, err := r.ensureSubscription(tt.MCH, subscription.CertWebhook(tt.MCH, emptyOverrides))
+			if result != nil {
+				t.Fatalf("Failed to ensure foundation resource: %s", err)
+			}
+
+			result, err = r.ensureSubscription(tt.MCH, subscription.ConfigWatcher(tt.MCH, emptyOverrides))
+			if result != nil {
+				t.Fatalf("Failed to ensure foundation resource: %s", err)
+			}
+
+			result, err = r.ensureSubscription(tt.MCH, subscription.Search(tt.MCH, emptyOverrides))
+			if result != nil {
+				t.Fatalf("Failed to ensure foundation resource: %s", err)
 			}
 
 			err = r.cleanupAppSubscriptions(reqLogger, tt.MCH)
@@ -581,6 +606,51 @@ func Test_cleanupFoundation(t *testing.T) {
 			r, err := getTestReconciler(tt.MCH)
 			if err != nil {
 				t.Fatalf("Failed to create test reconciler: %s", err)
+			}
+
+			var emptyOverrides map[string]string
+
+			result, err := r.ensureDeployment(tt.MCH, helmrepo.Deployment(tt.MCH, emptyOverrides))
+			if result != nil {
+				t.Fatalf("Failed to ensure foundation resource: %s", err)
+			}
+
+			result, err = r.ensureService(tt.MCH, helmrepo.Service(tt.MCH))
+			if result != nil {
+				t.Fatalf("Failed to ensure foundation resource: %s", err)
+			}
+
+			result, err = r.ensureChannel(tt.MCH, channel.Channel(tt.MCH))
+			if result != nil {
+				t.Fatalf("Failed to ensure foundation resource: %s", err)
+			}
+
+			result, err = r.ensureDeployment(tt.MCH, foundation.WebhookDeployment(tt.MCH, emptyOverrides))
+			if result != nil {
+				t.Fatalf("Failed to ensure foundation resource: %s", err)
+			}
+
+			result, err = r.ensureService(tt.MCH, foundation.WebhookService(tt.MCH))
+			if result != nil {
+				t.Fatalf("Failed to ensure foundation resource: %s", err)
+			}
+
+			//OCM proxy server deployment
+			result, err = r.ensureDeployment(tt.MCH, foundation.OCMProxyServerDeployment(tt.MCH, emptyOverrides))
+			if result != nil {
+				t.Fatalf("Failed to ensure foundation resource: %s", err)
+			}
+
+			//OCM proxy server service
+			result, err = r.ensureService(tt.MCH, foundation.OCMProxyServerService(tt.MCH))
+			if result != nil {
+				t.Fatalf("Failed to ensure foundation resource: %s", err)
+			}
+
+			//OCM controller deployment
+			result, err = r.ensureDeployment(tt.MCH, foundation.OCMControllerDeployment(tt.MCH, emptyOverrides))
+			if result != nil {
+				t.Fatalf("Failed to ensure foundation resource: %s", err)
 			}
 
 			err = r.cleanupFoundation(reqLogger, tt.MCH)

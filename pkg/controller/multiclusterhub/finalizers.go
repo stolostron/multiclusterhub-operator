@@ -275,7 +275,7 @@ func (r *ReconcileMultiClusterHub) cleanupAppSubscriptions(reqLogger logr.Logger
 
 			err = r.client.Get(context.TODO(), types.NamespacedName{
 				Name:      helmReleaseName,
-				Namespace: m.GetNamespace(),
+				Namespace: appsub.GetNamespace(),
 			}, helmRelease)
 			if err != nil {
 				reqLogger.Error(err, fmt.Sprintf("Error getting helmrelease: %s", helmReleaseName))

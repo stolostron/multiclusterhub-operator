@@ -174,12 +174,14 @@ spec:
           - ""
           - admissionregistration.k8s.io
           - apps
+          - apps.open-cluster-management.io
           - mcm.ibm.com
           - monitoring.coreos.com
           - operator.open-cluster-management.io
           resources:
           - deployments
           - deployments/finalizers
+          - helmreleases
           - services
           - services/finalizers
           - servicemonitors
