@@ -293,8 +293,8 @@ func (r *ReconcileMultiClusterHub) cleanupAppSubscriptions(reqLogger logr.Logger
 
 	if len(appSubList.Items) > 0 {
 		reqLogger.Info("Terminating App Subscriptions")
-		for _, appsub := range appSubList.Items {
-			err = r.client.Delete(context.TODO(), &appsub)
+		for i, appsub := range appSubList.Items {
+			err = r.client.Delete(context.TODO(), &appSubList.Items[i])
 			if err != nil {
 				reqLogger.Error(err, fmt.Sprintf("Error terminating sub: %s", appsub.GetName()))
 				return err
