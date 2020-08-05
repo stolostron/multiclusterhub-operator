@@ -123,7 +123,7 @@ crd:
 
 ## Operator-sdk regenerate CSV
 csv:
-	operator-sdk generate csv --operator-name=multiclusterhub-operator
+	operator-sdk generate csv --operator-name=multiclusterhub-operator --csv-version "$(CSV_VERSION)"
 
 ## Apply the MultiClusterHub CR
 cr:

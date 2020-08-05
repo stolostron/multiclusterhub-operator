@@ -21,7 +21,7 @@ metadata:
     description: Open management of Openshift and Kubernetes clusters
     repository: https://github.com/open-cluster-management/multicloudhub-operator
     support: The Open Cluster Management Project
-  name: multiclusterhub-operator.v2.0.0
+  name: multiclusterhub-operator.v2.0.1
   namespace: open-cluster-management
 spec:
   apiservicedefinitions: {}
@@ -391,4 +391,5 @@ spec:
   maturity: alpha
   provider:
     name: Redhat
-  version: 2.0.0
+  replaces: multiclusterhub-operator.v2.0.0
+  version: 2.0.1
