@@ -12,7 +12,7 @@ endif
 
 BUILD_DIR ?= build
 
-VERSION ?= 2.0.0
+VERSION ?= 2.0.1
 IMG ?= multiclusterhub-operator
 SECRET_REGISTRY ?= quay.io
 REGISTRY ?= quay.io/rhibmcollab
@@ -27,7 +27,7 @@ NAMESPACE ?= open-cluster-management
 # For OCP OLM
 export IMAGE ?= $(shell echo $(REGISTRY)/$(IMG):$(VERSION))
 export CSV_CHANNEL ?= alpha
-export CSV_VERSION ?= 2.0.0
+export CSV_VERSION ?= 2.0.1
 
 
 export PROJECT_DIR = $(shell 'pwd')
@@ -123,7 +123,7 @@ crd:
 
 ## Operator-sdk regenerate CSV
 csv:
-	operator-sdk generate csv --operator-name=multiclusterhub-operator
+	operator-sdk generate csv --operator-name=multiclusterhub-operator --csv-version "$(CSV_VERSION)"
 
 ## Apply the MultiClusterHub CR
 cr:
