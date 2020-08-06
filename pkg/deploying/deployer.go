@@ -26,7 +26,10 @@ func Deploy(c runtimeclient.Client, obj *unstructured.Unstructured) error {
 		}
 		return err
 	}
-	return nil
+
+	// If resources exists, update it with current config
+	obj.SetResourceVersion(found.GetResourceVersion())
+	return c.Update(context.TODO(), obj)
 }
 
 func ListDeployments(c runtimeclient.Client, namespace string) (bool, []appsv1.Deployment, error) {
