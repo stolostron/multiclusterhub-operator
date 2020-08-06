@@ -355,6 +355,11 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	}
 
 	// Update the CR status
+	result, err = r.UpdateStatus(multiClusterHub)
+	if result != nil {
+		return *result, err
+	}
+
 	multiClusterHub.Status.Phase = "Pending"
 	multiClusterHub.Status.DesiredVersion = version.Version
 	ready, _, err := deploying.ListDeployments(r.client, multiClusterHub.Namespace)
@@ -377,21 +382,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return reconcile.Result{RequeueAfter: resyncPeriod}, nil
 	}
 	return reconcile.Result{}, nil
-}
-
-func (r *ReconcileMultiClusterHub) UpdateStatus(m *operatorsv1.MultiClusterHub) (*reconcile.Result, error) {
-	err := r.client.Status().Update(context.TODO(), m)
-	if err != nil {
-		if errors.IsConflict(err) {
-			// Error from object being modified is normal behavior and should not be treated like an error
-			log.Info("Failed to update status", "Reason", "Object has been modified")
-			return &reconcile.Result{RequeueAfter: resyncPeriod}, nil
-		}
-
-		log.Error(err, fmt.Sprintf("Failed to update %s/%s status ", m.Namespace, m.Name))
-		return &reconcile.Result{}, err
-	}
-	return nil, nil
 }
 
 // setDefaults updates MultiClusterHub resource with proper defaults
