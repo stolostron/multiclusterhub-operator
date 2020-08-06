@@ -5,9 +5,13 @@ package multiclusterhub
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/foundation"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -357,82 +361,6 @@ func Test_cleanupMutatingWebhooks(t *testing.T) {
 	}
 }
 
-func Test_cleanupValidatingWebhooks(t *testing.T) {
-	MWC := &admissionregistrationv1beta1.ValidatingWebhookConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-validatingwebhookconfiguration",
-			Namespace: mch_namespace,
-		},
-		Webhooks: []admissionregistrationv1beta1.ValidatingWebhook{
-			{
-				Name: "ocm.validating.webhook.admission.open-cluster-management.io",
-				ClientConfig: admissionregistrationv1beta1.WebhookClientConfig{
-					Service: &admissionregistrationv1beta1.ServiceReference{
-						Name: "ocm-webhook",
-					},
-				},
-			},
-		},
-	}
-
-	installerMWC := MWC.DeepCopy()
-	installerMWC.SetLabels(map[string]string{
-		"installer.name":      mch_name,
-		"installer.namespace": mch_namespace,
-	})
-
-	tests := []struct {
-		Name   string
-		MCH    *operatorsv1.MultiClusterHub
-		MWC    *admissionregistrationv1beta1.ValidatingWebhookConfiguration
-		Result error
-	}{
-		{
-			Name:   "Without Labels",
-			MCH:    full_mch,
-			MWC:    MWC,
-			Result: nil,
-		},
-		{
-			Name:   "With Labels",
-			MCH:    empty_mch,
-			MWC:    installerMWC,
-			Result: fmt.Errorf("validatingwebhookconfigurations.admissionregistration.k8s.io \"test-validatingwebhookconfiguration\" not found"),
-		},
-	}
-
-	reqLogger := log.WithValues("Request.Namespace", mch_namespace, "Request.Name", mch_name)
-
-	for _, tt := range tests {
-		t.Run(tt.Name, func(t *testing.T) {
-			// Objects to track in the fake client.
-			r, err := getTestReconciler(tt.MCH)
-			if err != nil {
-				t.Fatalf("Failed to create test reconciler")
-			}
-
-			err = r.client.Create(context.TODO(), tt.MWC)
-			if err != nil {
-				t.Fatal(err.Error())
-			}
-
-			err = r.cleanupValidatingWebhooks(reqLogger, full_mch)
-			if err != nil {
-				t.Fatal("Failed to cleanup validatingwebhookconfigurations")
-			}
-
-			emptyMWC := &admissionregistrationv1beta1.ValidatingWebhookConfiguration{}
-			err = r.client.Get(context.TODO(), types.NamespacedName{
-				Name:      tt.MWC.Name,
-				Namespace: tt.MWC.Namespace,
-			}, emptyMWC)
-			if !errorEquals(err, tt.Result) {
-				t.Fatal(err.Error())
-			}
-		})
-	}
-}
-
 func Test_cleanupPullSecret(t *testing.T) {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -596,6 +524,111 @@ func Test_cleanupClusterManagers(t *testing.T) {
 			err = r.cleanupClusterManagers(reqLogger, full_mch)
 			if err != tt.Result {
 				t.Fatalf("Failed to cleanup ClusterManager: %s", err)
+			}
+
+		})
+	}
+}
+
+func Test_cleanupAppSubscriptions(t *testing.T) {
+	os.Setenv("UNIT_TEST", "true")
+	defer os.Unsetenv("UNIT_TEST")
+
+	tests := []struct {
+		Name           string
+		MCH            *operatorsv1.MultiClusterHub
+		ClusterManager *unstructured.Unstructured
+		Result         error
+	}{
+		{
+			Name:   "Installer Created Appsubscriptions",
+			MCH:    full_mch,
+			Result: nil,
+		},
+	}
+
+	reqLogger := log.WithValues("Request.Namespace", mch_namespace, "Request.Name", mch_name)
+
+	for _, tt := range tests {
+		t.Run(tt.Name, func(t *testing.T) {
+			// Objects to track in the fake client.
+			r, err := getTestReconciler(tt.MCH)
+			if err != nil {
+				t.Fatalf("Failed to create test reconciler: %s", err)
+			}
+
+			var emptyOverrides map[string]string
+
+			result, err := r.ensureSubscription(tt.MCH, subscription.CertWebhook(tt.MCH, emptyOverrides))
+			if result != nil {
+				t.Fatalf("Failed to ensure foundation resource: %s", err)
+			}
+
+			result, err = r.ensureSubscription(tt.MCH, subscription.ConfigWatcher(tt.MCH, emptyOverrides))
+			if result != nil {
+				t.Fatalf("Failed to ensure foundation resource: %s", err)
+			}
+
+			result, err = r.ensureSubscription(tt.MCH, subscription.Search(tt.MCH, emptyOverrides))
+			if result != nil {
+				t.Fatalf("Failed to ensure foundation resource: %s", err)
+			}
+
+			err = r.cleanupAppSubscriptions(reqLogger, tt.MCH)
+			if err != tt.Result {
+				t.Fatalf("Failed to cleanup appsubscription: %s", err)
+			}
+
+		})
+	}
+}
+
+func Test_cleanupFoundation(t *testing.T) {
+	tests := []struct {
+		Name           string
+		MCH            *operatorsv1.MultiClusterHub
+		ClusterManager *unstructured.Unstructured
+		Result         error
+	}{
+		{
+			Name:   "Installer Foundation Artefacts",
+			MCH:    full_mch,
+			Result: nil,
+		},
+	}
+
+	reqLogger := log.WithValues("Request.Namespace", mch_namespace, "Request.Name", mch_name)
+
+	for _, tt := range tests {
+		t.Run(tt.Name, func(t *testing.T) {
+			// Objects to track in the fake client.
+			r, err := getTestReconciler(tt.MCH)
+			if err != nil {
+				t.Fatalf("Failed to create test reconciler: %s", err)
+			}
+
+			var emptyOverrides map[string]string
+
+			result, err := r.ensureChannel(tt.MCH, channel.Channel(tt.MCH))
+			if result != nil {
+				t.Fatalf("Failed to ensure foundation resource: %s", err)
+			}
+
+			//OCM proxy server service
+			result, err = r.ensureService(tt.MCH, foundation.OCMProxyServerService(tt.MCH))
+			if result != nil {
+				t.Fatalf("Failed to ensure foundation resource: %s", err)
+			}
+
+			//OCM controller deployment
+			result, err = r.ensureDeployment(tt.MCH, foundation.OCMControllerDeployment(tt.MCH, emptyOverrides))
+			if result != nil {
+				t.Fatalf("Failed to ensure foundation resource: %s", err)
+			}
+
+			err = r.cleanupFoundation(reqLogger, tt.MCH)
+			if err != tt.Result {
+				t.Fatalf("Failed to cleanup foundation: %s", err)
 			}
 
 		})
