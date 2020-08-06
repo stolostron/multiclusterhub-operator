@@ -609,7 +609,7 @@ func Test_cleanupFoundation(t *testing.T) {
 
 			var emptyOverrides map[string]string
 
-			result, err = r.ensureChannel(tt.MCH, channel.Channel(tt.MCH))
+			result, err := r.ensureChannel(tt.MCH, channel.Channel(tt.MCH))
 			if result != nil {
 				t.Fatalf("Failed to ensure foundation resource: %s", err)
 			}

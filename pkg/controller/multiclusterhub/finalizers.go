@@ -278,6 +278,10 @@ func (r *ReconcileMultiClusterHub) cleanupAppSubscriptions(reqLogger logr.Logger
 				Namespace: appsub.GetNamespace(),
 			}, helmRelease)
 			if err != nil {
+				if errors.IsNotFound(err) {
+					reqLogger.Info(err, fmt.Sprintf("Unable to locate helmrelease: %s", helmReleaseName))
+					continue
+				}
 				reqLogger.Error(err, fmt.Sprintf("Error getting helmrelease: %s", helmReleaseName))
 				return err
 			}
