@@ -14,6 +14,7 @@ rules:
   - "authorization.k8s.io"
   - "hive.openshift.io"
   - "mcm.ibm.com"
+  - "proxy.open-cluster-management.io"
   - "rbac.authorization.k8s.io"
   - "security.openshift.io"
   resources:
@@ -21,6 +22,7 @@ rules:
   - channels
   - clusterjoinrequests
   - clusterrolebindings
+  - clusterstatuses/log
   - configmaps
   - customresourcedefinitions
   - deployments
