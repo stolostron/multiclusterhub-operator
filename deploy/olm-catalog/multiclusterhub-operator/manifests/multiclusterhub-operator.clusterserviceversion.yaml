@@ -116,6 +116,7 @@ spec:
           - validatingwebhookconfigurations
           verbs:
           - create
+          - update
         - apiGroups:
           - ""
           - apps
