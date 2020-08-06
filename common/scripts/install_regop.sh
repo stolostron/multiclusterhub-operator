@@ -32,4 +32,8 @@ echo "Attempting deploy of Registration Operator ..."
 
 echo ""
 make update-all &> /dev/null
+
+yq d -i deploy/cluster-manager/olm-catalog/cluster-manager/manifests/cluster-manager.clusterserviceversion.yaml spec.replaces
+yq d -i deploy/klusterlet/olm-catalog/klusterlet/manifests/klusterlet.clusterserviceversion.yaml spec.replaces
+
 make deploy-hub-operator OLM_NAMESPACE=$_olmNamespace 
