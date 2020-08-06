@@ -42,3 +42,6 @@ rules:
 - apiGroups: ["config.openshift.io"]
   resources: ["clusterversions"]
   verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+- apiGroups: ["proxy.open-cluster-management.io"]
+  resources: ["clusterstatuses/log"]
+  verbs: ["get"]
