@@ -75,6 +75,7 @@ rules:
   - validatingwebhookconfigurations
   verbs:
   - create
+  - update
 
 - apiGroups:
   - ""
