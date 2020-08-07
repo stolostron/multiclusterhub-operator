@@ -132,7 +132,7 @@ func CreateNewUnstructured(
 
 // DeleteIfExists deletes resources by using gvr, name, and namespace.
 // Will wait for deletion to complete by using eventually
-func DeleteIfExists(clientHubDynamic dynamic.Interface, gvr schema.GroupVersionResource, name, namespace string) {
+func DeleteIfExists(clientHubDynamic dynamic.Interface, gvr schema.GroupVersionResource, name, namespace string, wait bool) {
 	ns := clientHubDynamic.Resource(gvr).Namespace(namespace)
 	if _, err := ns.Get(context.TODO(), name, metav1.GetOptions{}); err != nil {
 		Expect(errors.IsNotFound(err)).To(Equal(true))
@@ -155,10 +155,13 @@ func DeleteIfExists(clientHubDynamic dynamic.Interface, gvr schema.GroupVersionR
 			return err
 		}
 		if err == nil {
-			return fmt.Errorf("found object %s in namespace %s after deletion", name, namespace)
+			if wait {
+				return fmt.Errorf("found object %s in namespace %s after deletion", name, namespace)
+			}
+			return nil
 		}
 		return nil
-	}, 120, 1).Should(BeNil())
+	}, 90, 1).Should(BeNil())
 }
 
 // NewKubeClient returns a kube client
@@ -269,6 +272,13 @@ func IsOwner(owner *unstructured.Unstructured, obj interface{}) bool {
 	return false
 }
 
+// CreateDefaultMCH ...
+func CreateDefaultMCH() *unstructured.Unstructured {
+	mch := NewMultiClusterHub(MCHName, MCHNamespace)
+	CreateNewUnstructured(DynamicKubeClient, GVRMultiClusterHub, mch, MCHName, MCHNamespace)
+	return mch
+}
+
 // ValidateDelete ...
 func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 	By("Validating MCH has been successfully uninstalled.")
@@ -279,12 +289,12 @@ func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 		Limit:         100,
 	}
 
-	helmReleaseLink := clientHubDynamic.Resource(GVRHelmRelease)
-	helmReleases, err := helmReleaseLink.List(context.TODO(), listOptions)
-	Expect(err).Should(BeNil())
-
 	appSubLink := clientHubDynamic.Resource(GVRAppSub)
 	appSubs, err := appSubLink.List(context.TODO(), listOptions)
+	Expect(err).Should(BeNil())
+
+	helmReleaseLink := clientHubDynamic.Resource(GVRHelmRelease)
+	helmReleases, err := helmReleaseLink.List(context.TODO(), listOptions)
 	Expect(err).Should(BeNil())
 
 	By("- Ensuring Application Subscriptions have terminated")
@@ -294,7 +304,8 @@ func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 
 	By("- Ensuring HelmReleases have terminated")
 	if len(helmReleases.Items) != 0 {
-		return fmt.Errorf("%d helmreleases left to be uninstalled", len(appSubs.Items))
+		By(fmt.Sprintf("%d helmreleases left to be uninstalled", len(helmReleases.Items)))
+		return fmt.Errorf("%d helmreleases left to be uninstalled", len(helmReleases.Items))
 	}
 
 	By("- Ensuring MCH Repo deployment has been terminated")

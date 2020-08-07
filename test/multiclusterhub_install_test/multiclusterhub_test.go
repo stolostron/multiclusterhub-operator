@@ -9,14 +9,13 @@ import (
 	. "github.com/onsi/gomega"
 
 	utils "github.com/open-cluster-management/multicloudhub-operator/test/utils"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 var _ = Describe("Multiclusterhub", func() {
 
 	BeforeEach(func() {
 		By("Attempting to delete MultiClusterHub if it exists")
-		utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace)
+		utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
 
 		Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
 	})
@@ -27,7 +26,7 @@ var _ = Describe("Multiclusterhub", func() {
 		for i := 1; i <= totalAttempts; i++ {
 			ok := It(fmt.Sprintf("Installing MCH - Attempt %d of %d", i, totalAttempts), func() {
 				By("Creating MultiClusterHub")
-				err := utils.ValidateMCH(CreateDefaultMCH())
+				err := utils.ValidateMCH(utils.CreateDefaultMCH())
 				if err != nil {
 					fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
 					return
@@ -42,13 +41,7 @@ var _ = Describe("Multiclusterhub", func() {
 		By("Beginning Basic Install Test Suite ...")
 		It("Install Default MCH CR", func() {
 			By("Creating MultiClusterHub")
-			utils.ValidateMCH(CreateDefaultMCH())
+			utils.ValidateMCH(utils.CreateDefaultMCH())
 		})
 	}
 })
-
-func CreateDefaultMCH() *unstructured.Unstructured {
-	mch := utils.NewMultiClusterHub(utils.MCHName, utils.MCHNamespace)
-	utils.CreateNewUnstructured(utils.DynamicKubeClient, utils.GVRMultiClusterHub, mch, utils.MCHName, utils.MCHNamespace)
-	return mch
-}

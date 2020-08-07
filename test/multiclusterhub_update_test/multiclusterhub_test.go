@@ -11,7 +11,6 @@ import (
 
 	utils "github.com/open-cluster-management/multicloudhub-operator/test/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/klog"
 )
 
@@ -19,7 +18,7 @@ var _ = Describe("Multiclusterhub", func() {
 
 	BeforeEach(func() {
 		By("Attempting to delete MultiClusterHub if it exists")
-		utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace)
+		utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
 
 		Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
 	})
@@ -27,7 +26,7 @@ var _ = Describe("Multiclusterhub", func() {
 	By("Beginning Basic Update Test Suite ...")
 	It("Install Default MCH CR", func() {
 		By("Creating MultiClusterHub")
-		defaultMCH := CreateDefaultMCH()
+		defaultMCH := utils.CreateDefaultMCH()
 		utils.ValidateMCH(defaultMCH)
 
 		By("Approving Update InstallPlan")
@@ -72,9 +71,3 @@ var _ = Describe("Multiclusterhub", func() {
 		utils.ValidateMCH(defaultMCH)
 	})
 })
-
-func CreateDefaultMCH() *unstructured.Unstructured {
-	mch := utils.NewMultiClusterHub(utils.MCHName, utils.MCHNamespace)
-	utils.CreateNewUnstructured(utils.DynamicKubeClient, utils.GVRMultiClusterHub, mch, utils.MCHName, utils.MCHNamespace)
-	return mch
-}
