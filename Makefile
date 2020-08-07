@@ -70,7 +70,7 @@ uninstall-cr:
 
 ## Fully uninstall the MCH CR and operator
 uninstall: uninstall-cr
-	bash common/scripts/clean-up.sh
+	bash common/scripts/uninstall.sh
 
 ## Install Registration-Operator hub
 regop:
@@ -128,6 +128,7 @@ local-install: ns secrets og subscriptions regop
 	OPERATOR_NAME=multiclusterhub-operator \
 	TEMPLATES_PATH="$(shell pwd)/templates" \
 	MANIFESTS_PATH="$(shell pwd)/image-manifests" \
+	POD_NAMESPACE="open-cluster-management" \
 	operator-sdk run local --watch-namespace=open-cluster-management --kubeconfig=$(KUBECONFIG)
 
 ## Run as a Deployment inside the cluster

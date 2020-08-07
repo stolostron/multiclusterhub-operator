@@ -45,3 +45,6 @@ rules:
 - apiGroups: ["inventory.open-cluster-management.io"]
   resources: ["baremetalassets"]
   verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+- apiGroups: ["proxy.open-cluster-management.io"]
+  resources: ["clusterstatuses/log"]
+  verbs: ["get"]

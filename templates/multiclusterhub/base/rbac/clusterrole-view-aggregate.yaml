@@ -44,3 +44,6 @@ rules:
 - apiGroups: ["inventory.open-cluster-management.io"]
   resources: ["baremetalassets"]
   verbs: ["get", "list"]
+- apiGroups: ["proxy.open-cluster-management.io"]
+  resources: ["clusterstatuses/log"]
+  verbs: ["get"]

@@ -25,3 +25,5 @@ oc delete oauthclient multicloudingress
 oc delete rolebinding -n kube-system cert-manager-webhook-webhook-authentication-reader
 oc delete scc kui-proxy-scc
 oc delete validatingwebhookconfiguration cert-manager-webhook
+
+exit 0
