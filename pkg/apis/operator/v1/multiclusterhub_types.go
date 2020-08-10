@@ -185,13 +185,15 @@ type IngressSpec struct {
 type HubPhaseType string
 
 const (
-	HubInstalling HubPhaseType = "Installing"
-	HubUpgrading  HubPhaseType = "Upgrading"
-	HubDeleting   HubPhaseType = "Deleting"
-	HubInstalled  HubPhaseType = "Install Successful"
-	HubUpgraded   HubPhaseType = "Upgrade Successful"
-	HubError      HubPhaseType = "Error"
-	HubUnknown    HubPhaseType = "Unknown"
+	HubPending HubPhaseType = "Pending"
+	HubRunning HubPhaseType = "Running"
+	// HubInstalling HubPhaseType = "Installing"
+	// HubUpgrading  HubPhaseType = "Upgrading"
+	// HubDeleting   HubPhaseType = "Deleting"
+	// HubInstalled  HubPhaseType = "Install Successful"
+	// HubUpgraded   HubPhaseType = "Upgrade Successful"
+	// HubError      HubPhaseType = "Error"
+	// HubUnknown    HubPhaseType = "Unknown"
 )
 
 // MultiClusterHubStatus defines the observed state of MultiClusterHub
@@ -208,6 +210,34 @@ type MultiClusterHubStatus struct {
 	// DesiredVersion indicates the desired version
 	// +optional
 	DesiredVersion string `json:"desiredVersion,omitempty"`
+
+	// Components []ComponentCondition `json:"manifests,omitempty"`
+	Components map[string]StatusCondition `json:"components,omitempty"`
+}
+
+// StatusCondition contains condition information.
+type StatusCondition struct {
+	// Type is the type of the cluster condition.
+	// +required
+	Type string `json:"type,omitempty"`
+
+	// Status is the status of the condition. One of True, False, Unknown.
+	// +required
+	Status metav1.ConditionStatus `json:"status,omitempty"`
+
+	// The last time this condition was updated.
+	LastUpdateTime metav1.Time `json:"-"`
+
+	// LastTransitionTime is the last time the condition changed from one status to another.
+	LastTransitionTime metav1.Time `json:"-"`
+
+	// Reason is a (brief) reason for the condition's last status change.
+	// +required
+	Reason string `json:"reason,omitempty"`
+
+	// Message is a human-readable message indicating details about the last status change.
+	// +required
+	Message string `json:"message,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

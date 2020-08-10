@@ -130,7 +130,7 @@ type ReconcileMultiClusterHub struct {
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueue reconcile.Result, retError error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	reqLogger.Info("Reconciling MultiClusterHub")
 
@@ -210,6 +210,10 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 	r.CacheSpec.ImageRepository = utils.GetImageRepository(multiClusterHub)
 	r.CacheSpec.ImageSuffix = utils.GetImageSuffix(multiClusterHub)
 	r.CacheSpec.ImageOverridesCM = utils.GetImageOverridesConfigmap(multiClusterHub)
+
+	defer func() {
+		retQueue, retError = r.UpdateStatus(multiClusterHub)
+	}()
 
 	// Do not reconcile objects if this instance of mch is labeled "paused"
 	if utils.IsPaused(multiClusterHub) {
@@ -354,34 +358,34 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (reconci
 		return *result, err
 	}
 
-	// Update the CR status
-	result, err = r.UpdateStatus(multiClusterHub)
-	if result != nil {
-		return *result, err
-	}
+	// // Update the CR status
+	// result, err = r.UpdateStatus(multiClusterHub)
+	// if result != nil {
+	// 	return *result, err
+	// }
 
-	multiClusterHub.Status.Phase = "Pending"
-	multiClusterHub.Status.DesiredVersion = version.Version
-	ready, _, err := deploying.ListDeployments(r.client, multiClusterHub.Namespace)
-	if err != nil {
-		reqLogger.Error(err, "Failed to list deployments")
-		return reconcile.Result{}, err
-	}
-	if ready {
-		multiClusterHub.Status.Phase = "Running"
-		multiClusterHub.Status.CurrentVersion = version.Version
-	}
+	// multiClusterHub.Status.Phase = "Pending"
+	// multiClusterHub.Status.DesiredVersion = version.Version
+	// ready, _, err := deploying.ListDeployments(r.client, multiClusterHub.Namespace)
+	// if err != nil {
+	// 	reqLogger.Error(err, "Failed to list deployments")
+	// 	return reconcile.Result{}, err
+	// }
+	// if ready {
+	// 	multiClusterHub.Status.Phase = "Running"
+	// 	multiClusterHub.Status.CurrentVersion = version.Version
+	// }
 
-	result, err = r.UpdateStatus(multiClusterHub)
-	if result != nil {
-		return *result, err
-	}
+	// result, err = r.UpdateStatus(multiClusterHub)
+	// if result != nil {
+	// 	return *result, err
+	// }
 
-	if !ready {
-		// Keep reconciling while install is not complete
-		return reconcile.Result{RequeueAfter: resyncPeriod}, nil
-	}
-	return reconcile.Result{}, nil
+	// if !ready {
+	// 	// Keep reconciling while install is not complete
+	// 	return reconcile.Result{RequeueAfter: resyncPeriod}, nil
+	// }
+	return retQueue, retError
 }
 
 // setDefaults updates MultiClusterHub resource with proper defaults
