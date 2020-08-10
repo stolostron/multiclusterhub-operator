@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
-	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -75,13 +74,20 @@ var (
 		Resource: "installplans",
 	}
 
+	// GVRDeployment ...
+	GVRDeployment = schema.GroupVersionResource{
+		Group:    "apps",
+		Version:  "v1",
+		Resource: "deployments",
+	}
+
 	// DefaultImageRegistry ...
 	DefaultImageRegistry = "quay.io/open-cluster-management"
 	// DefaultImagePullSecretName ...
 	DefaultImagePullSecretName = "multiclusterhub-operator-pull-secret"
 
 	// MCHName ...
-	MCHName = "multiclusterhub-test"
+	MCHName = "multiclusterhub"
 	// MCHNamespace ...
 	MCHNamespace = "open-cluster-management"
 	// MCHPullSecretName ...
@@ -126,7 +132,7 @@ func CreateNewUnstructured(
 
 // DeleteIfExists deletes resources by using gvr, name, and namespace.
 // Will wait for deletion to complete by using eventually
-func DeleteIfExists(clientHubDynamic dynamic.Interface, gvr schema.GroupVersionResource, name, namespace string) {
+func DeleteIfExists(clientHubDynamic dynamic.Interface, gvr schema.GroupVersionResource, name, namespace string, wait bool) {
 	ns := clientHubDynamic.Resource(gvr).Namespace(namespace)
 	if _, err := ns.Get(context.TODO(), name, metav1.GetOptions{}); err != nil {
 		Expect(errors.IsNotFound(err)).To(Equal(true))
@@ -149,10 +155,13 @@ func DeleteIfExists(clientHubDynamic dynamic.Interface, gvr schema.GroupVersionR
 			return err
 		}
 		if err == nil {
-			return fmt.Errorf("found object %s in namespace %s after deletion", name, namespace)
+			if wait {
+				return fmt.Errorf("found object %s in namespace %s after deletion", name, namespace)
+			}
+			return nil
 		}
 		return nil
-	}, 10, 1).Should(BeNil())
+	}, 90, 1).Should(BeNil())
 }
 
 // NewKubeClient returns a kube client
@@ -263,28 +272,47 @@ func IsOwner(owner *unstructured.Unstructured, obj interface{}) bool {
 	return false
 }
 
-// EnsureHelmReleasesAreRemoved ...
-func EnsureHelmReleasesAreRemoved(clientHubDynamic dynamic.Interface) error {
-	By("Waiting For HelmReleases to be deleted")
-	helmReleasesDetected := false
-	When("When MultiClusterHub is deleted, wait for all helmreleases to deleted", func() {
-		Eventually(func() error {
-			helmReleaseLink := clientHubDynamic.Resource(GVRHelmRelease)
-			helmReleases, err := helmReleaseLink.List(context.TODO(), metav1.ListOptions{})
-			Expect(err).Should(BeNil())
+// CreateDefaultMCH ...
+func CreateDefaultMCH() *unstructured.Unstructured {
+	mch := NewMultiClusterHub(MCHName, MCHNamespace)
+	CreateNewUnstructured(DynamicKubeClient, GVRMultiClusterHub, mch, MCHName, MCHNamespace)
+	return mch
+}
 
-			if len(helmReleases.Items) == 0 {
-				return nil
-			}
-			helmReleasesDetected = true
-			return fmt.Errorf("%d helmreleases left to be uninstalled", len(helmReleases.Items))
-		}, 60, 1).Should(BeNil())
-		klog.V(1).Info("All Helmreleases deleted")
-	})
-	if helmReleasesDetected {
-		By("Waiting for 2 minutes for resources to be uninstalled.")
-		time.Sleep(2 * time.Minute)
+// ValidateDelete ...
+func ValidateDelete(clientHubDynamic dynamic.Interface) error {
+	By("Validating MCH has been successfully uninstalled.")
+
+	labelSelector := fmt.Sprintf("installer.name=%s, installer.namespace=%s", MCHName, MCHNamespace)
+	listOptions := metav1.ListOptions{
+		LabelSelector: labelSelector,
+		Limit:         100,
 	}
+
+	appSubLink := clientHubDynamic.Resource(GVRAppSub)
+	appSubs, err := appSubLink.List(context.TODO(), listOptions)
+	Expect(err).Should(BeNil())
+
+	helmReleaseLink := clientHubDynamic.Resource(GVRHelmRelease)
+	helmReleases, err := helmReleaseLink.List(context.TODO(), listOptions)
+	Expect(err).Should(BeNil())
+
+	By("- Ensuring Application Subscriptions have terminated")
+	if len(appSubs.Items) != 0 {
+		return fmt.Errorf("%d appsubs left to be uninstalled", len(appSubs.Items))
+	}
+
+	By("- Ensuring HelmReleases have terminated")
+	if len(helmReleases.Items) != 0 {
+		By(fmt.Sprintf("%d helmreleases left to be uninstalled", len(helmReleases.Items)))
+		return fmt.Errorf("%d helmreleases left to be uninstalled", len(helmReleases.Items))
+	}
+
+	By("- Ensuring MCH Repo deployment has been terminated")
+	deploymentLink := clientHubDynamic.Resource(GVRDeployment).Namespace(MCHNamespace)
+	_, err = deploymentLink.Get(context.TODO(), "multiclusterhub-repo", metav1.GetOptions{})
+	Expect(err).ShouldNot(BeNil())
+
 	return nil
 }
 
