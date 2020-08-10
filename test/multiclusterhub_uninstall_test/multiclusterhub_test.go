@@ -24,7 +24,6 @@ var _ = Describe("Multiclusterhub", func() {
 		Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
 	})
 
-	os.Setenv("full_test_suite", "true")
 	if os.Getenv("full_test_suite") == "true" {
 		It("SAD CASE: Fail to remove a helmrelease (Left behind finalizer)", func() {
 			By("Creating MultiClusterHub")
