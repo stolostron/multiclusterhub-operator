@@ -31,7 +31,15 @@ var _ = Describe("Multiclusterhub", func() {
 			AddFinalizerToHelmRelease(utils.DynamicKubeClient)
 			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, false)
 			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).ShouldNot(BeNil())
-			RemoveFinalizerFromHelmRelease(utils.DynamicKubeClient, "test-finalizer")
+			Eventually(func() error {
+				err := RemoveFinalizerFromHelmRelease(utils.DynamicKubeClient)
+				if err != nil {
+					return err
+				}
+				return nil
+			}, 20, 1).Should(BeNil())
+			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
+			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
 		})
 	}
 })
@@ -60,7 +68,7 @@ func AddFinalizerToHelmRelease(clientHubDynamic dynamic.Interface) error {
 }
 
 // RemoveFinalizerFromHelmRelease ...
-func RemoveFinalizerFromHelmRelease(clientHubDynamic dynamic.Interface, finalizer string) error {
+func RemoveFinalizerFromHelmRelease(clientHubDynamic dynamic.Interface) error {
 	By("Removing test finalizer from helmrelease")
 
 	labelSelector := fmt.Sprintf("installer.name=%s, installer.namespace=%s", utils.MCHName, utils.MCHNamespace)
@@ -71,13 +79,17 @@ func RemoveFinalizerFromHelmRelease(clientHubDynamic dynamic.Interface, finalize
 
 	helmReleaseLink := clientHubDynamic.Resource(utils.GVRHelmRelease).Namespace(utils.MCHNamespace)
 	helmReleases, err := helmReleaseLink.List(context.TODO(), listOptions)
-	Expect(err).Should(BeNil())
+	if err != nil {
+		return err
+	}
 
 	helmRelease := helmReleases.Items[0]
 	helmRelease.SetFinalizers([]string{})
 
 	_, err = helmReleaseLink.Update(context.TODO(), &helmRelease, metav1.UpdateOptions{})
-	Expect(err).Should(BeNil())
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
