@@ -6,6 +6,8 @@ import (
 	"context"
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
+
 	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis/apps/v1"
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/foundation"
@@ -50,56 +52,38 @@ var unknownStatus = operatorsv1.StatusCondition{
 
 // UpdateStatus updates status
 func (r *ReconcileMultiClusterHub) UpdateStatus(m *operatorsv1.MultiClusterHub) (reconcile.Result, error) {
-	// oldStatus := m.Status
+	oldStatus := m.Status
 	newStatus := m.Status.DeepCopy()
 	newStatus.DesiredVersion = version.Version
 
-	newStatus.Components = make(map[string]operatorsv1.StatusCondition)
+	components := make(map[string]operatorsv1.StatusCondition)
 
 	deployment := &appsv1.Deployment{}
 	for i, d := range deployments {
 		r.client.Get(context.TODO(), deployments[i], deployment)
-		newStatus.Components[d.Name] = mapDeployment(deployment)
+		components[d.Name] = mapDeployment(deployment)
 	}
 
 	for _, d := range appsubs {
-		newStatus.Components[d.Name] = unknownStatus
+		components[d.Name] = unknownStatus
 	}
 
 	hrList := &subrelv1.HelmReleaseList{}
 	r.client.List(context.TODO(), hrList)
 	for _, hr := range hrList.Items {
-		if _, ok := newStatus.Components[hr.OwnerReferences[0].Name]; ok {
-			newStatus.Components[hr.OwnerReferences[0].Name] = mapHelmRelease(&hr)
+		if _, ok := components[hr.OwnerReferences[0].Name]; ok {
+			components[hr.OwnerReferences[0].Name] = mapHelmRelease(&hr)
 		}
 	}
 
-	newStatus.Phase = aggregateStatus(newStatus)
+	newStatus.Phase = aggregateStatus(components)
 
-	// appsub := &appsubv1.Subscription{}
-	// for i, _ := range appsubs {
-	// 	r.client.Get(context.TODO(), appsubs[i], appsub)
-	// 	newStatus.Components = append(newStatus.Components, mapAppsub(appsub))
-	// }
+	newStatus.CurrentVersion = oldStatus.CurrentVersion
+	if newStatus.Phase == operatorsv1.HubRunning {
+		newStatus.CurrentVersion = version.Version
+	}
 
 	m.Status = *newStatus
-
-	// ready, deployments, err := deploying.ListDeployments(r.client, multiClusterHub.Namespace)
-
-	/* Update the CR status
-	multiClusterHub.Status.Phase = "Pending"
-	multiClusterHub.Status.DesiredVersion = version.Version
-	ready, _, err := deploying.ListDeployments(r.client, multiClusterHub.Namespace)
-	if err != nil {
-		reqLogger.Error(err, "Failed to list deployments")
-		return reconcile.Result{}, err
-	}
-	if ready {
-		multiClusterHub.Status.Phase = "Running"
-		multiClusterHub.Status.CurrentVersion = version.Version
-	}
-
-	result, err = r.UpdateStatus(multiClusterHub) */
 
 	return r.applyStatus(m)
 }
@@ -116,14 +100,30 @@ func (r *ReconcileMultiClusterHub) applyStatus(m *operatorsv1.MultiClusterHub) (
 		log.Error(err, fmt.Sprintf("Failed to update %s/%s status ", m.Namespace, m.Name))
 		return reconcile.Result{}, err
 	}
-	return reconcile.Result{}, nil
+
+	if m.Status.Phase != operatorsv1.HubRunning {
+		return reconcile.Result{RequeueAfter: resyncPeriod}, nil
+	} else {
+		return reconcile.Result{}, nil
+	}
 }
 
-func successfulDeploy(ds *appsv1.Deployment) bool {
-	if ds.Status.ReadyReplicas != ds.Status.Replicas {
-		return false
+func successfulDeploy(d *appsv1.Deployment) bool {
+	latest := latestDeployCondition(d.Status.Conditions)
+	return latest.Type == appsv1.DeploymentAvailable && latest.Status == corev1.ConditionTrue
+}
+
+func latestDeployCondition(conditions []appsv1.DeploymentCondition) appsv1.DeploymentCondition {
+	if len(conditions) < 1 {
+		return appsv1.DeploymentCondition{}
 	}
-	return true
+	latest := conditions[0]
+	for i := range conditions {
+		if conditions[i].LastTransitionTime.Time.After(latest.LastTransitionTime.Time) {
+			latest = conditions[i]
+		}
+	}
+	return latest
 }
 
 func mapDeployment(ds *appsv1.Deployment) operatorsv1.StatusCondition {
@@ -131,8 +131,7 @@ func mapDeployment(ds *appsv1.Deployment) operatorsv1.StatusCondition {
 		return unknownStatus
 	}
 
-	// TODO: Get lastest condition by LastUpdateTime
-	dcs := ds.Status.Conditions[0]
+	dcs := latestDeployCondition(ds.Status.Conditions)
 	ret := operatorsv1.StatusCondition{
 		Type:               string(dcs.Type),
 		Status:             metav1.ConditionStatus(string(dcs.Status)),
@@ -149,14 +148,21 @@ func mapDeployment(ds *appsv1.Deployment) operatorsv1.StatusCondition {
 }
 
 func successfulHelmRelease(hr *subrelv1.HelmRelease) bool {
-	c := hr.Status.Conditions[len(hr.Status.Conditions)-1]
-	if c.Reason == subrelv1.ReasonInstallError ||
-		c.Reason == subrelv1.ReasonUpdateError ||
-		c.Reason == subrelv1.ReasonReconcileError ||
-		c.Reason == subrelv1.ReasonUninstallError {
-		return false
+	latest := latestHelmReleaseCondition(hr.Status.Conditions)
+	return latest.Type == subrelv1.ConditionDeployed && latest.Status == subrelv1.StatusTrue
+}
+
+func latestHelmReleaseCondition(conditions []subrelv1.HelmAppCondition) subrelv1.HelmAppCondition {
+	if len(conditions) < 1 {
+		return subrelv1.HelmAppCondition{}
 	}
-	return true
+	latest := conditions[0]
+	for i := range conditions {
+		if conditions[i].LastTransitionTime.Time.After(latest.LastTransitionTime.Time) {
+			latest = conditions[i]
+		}
+	}
+	return latest
 }
 
 func mapHelmRelease(hr *subrelv1.HelmRelease) operatorsv1.StatusCondition {
@@ -164,8 +170,7 @@ func mapHelmRelease(hr *subrelv1.HelmRelease) operatorsv1.StatusCondition {
 		return unknownStatus
 	}
 
-	// TODO: Get lastest condition by LastUpdateTime
-	condition := hr.Status.Conditions[len(hr.Status.Conditions)-1]
+	condition := latestHelmReleaseCondition(hr.Status.Conditions)
 	ret := operatorsv1.StatusCondition{
 		Type:               string(condition.Type),
 		Status:             metav1.ConditionStatus(condition.Status),
@@ -181,117 +186,14 @@ func mapHelmRelease(hr *subrelv1.HelmRelease) operatorsv1.StatusCondition {
 	return ret
 }
 
-// func mapAppsub(as *appsubv1.Subscription) operatorsv1.ComponentCondition {
-// 	var component operatorsv1.ComponentCondition
+func successfulComponent(sc operatorsv1.StatusCondition) bool {
+	return (sc.Status == metav1.ConditionTrue) && (sc.Type == "Available" || sc.Type == "Deployed")
+}
 
-// 	if len(as.Status.Statuses) < 1 {
-// 		component = operatorsv1.ComponentCondition{
-// 			Name:         as.Name,
-// 			ResourceType: operatorsv1.ComponentSubscription,
-// 			Condition: operatorsv1.StatusCondition{
-// 				Type:               "Unknown",
-// 				Status:             metav1.ConditionUnknown,
-// 				LastUpdateTime:     metav1.Now(),
-// 				LastTransitionTime: metav1.Now(),
-// 				Reason:             "No conditions available",
-// 				Message:            "No conditions available",
-// 			},
-// 		}
-// 	}
-
-// 	name, unit := getUnitStatus(as)
-// 	if unit == nil {
-// 		log.Info("Unit status empty")
-// 		return component
-// 	} else {
-// 		component.Name = name
-// 		component.Condition = marshalAppsub(unit.ResourceStatus)
-// 	}
-// 	return component
-// }
-
-// // Assumes single packagename and clustername
-// func getUnitStatus(sub *appsubv1.Subscription) (string, *appsubv1.SubscriptionUnitStatus) {
-// 	subStatus := sub.Status
-
-// 	if _, ok := subStatus.Statuses["/"]; ok != true {
-// 		return "", nil
-// 	}
-
-// 	sps := subStatus.Statuses["/"].SubscriptionPackageStatus // "packages"
-// 	for pkgName, unitStatus := range sps {
-// 		// SubscriptionClusterStatusMap defines per cluster status
-// 		// For endpoint, it is the status of subscription, key is packagename
-// 		return pkgName, unitStatus
-// 	}
-// 	return "", nil
-// }
-
-// func getReleaseStatus(sub *appsubv1.Subscription) (subrelv1.HelmAppStatus, error) {
-// 	_, unit := getUnitStatus(sub)
-// 	if unit == nil {
-// 		log.Info("Unit status empty")
-// 	}
-
-// 	resourceStatus := unit.ResourceStatus
-// 	if resourceStatus == nil {
-// 		log.Info("ResourceStatus nil")
-// 	}
-
-// 	// Marshal resourceStatus into a HelmRelease status
-// 	var helmStatus subrelv1.HelmAppStatus
-// 	if err := json.Unmarshal(resourceStatus.Raw, &helmStatus); err != nil {
-// 		log.Error(err, "Could not unmarshall to helmstatus")
-// 		return helmStatus, err
-// 	}
-// }
-
-// // marshalAppsub marshals a runtime.RawExtension into a HelmAppStatus and then converts that further into
-// // a ComponentCondition. If the RawExtension is nil or cannot be marshalled it will return a default
-// // componentCondition with unknown status
-// func marshalAppsub(resourceStatus *runtime.RawExtension) operatorsv1.StatusCondition {
-// 	c := operatorsv1.StatusCondition{
-// 		Type:               "Unknown",
-// 		Status:             metav1.ConditionUnknown,
-// 		LastUpdateTime:     metav1.Now(),
-// 		LastTransitionTime: metav1.Now(),
-// 		Reason:             "No conditions available",
-// 		Message:            "No conditions available",
-// 	}
-
-// 	// If resourceStatus is nil, set defaults
-// 	if resourceStatus == nil {
-// 		log.Info("ResourceStatus nil")
-// 		return c
-// 	}
-
-// 	// Marshal resourceStatus into a HelmRelease status
-// 	var helmStatus subrelv1.HelmAppStatus
-// 	if err := json.Unmarshal(resourceStatus.Raw, &helmStatus); err != nil {
-// 		log.Error(err, "Could not unmarshall to helmstatus")
-// 		return c
-// 	}
-
-// 	condition, err := lastCondition(helmStatus.Conditions)
-// 	if err != nil {
-// 		log.Error(err, "Could not get most recent condition")
-// 		return c
-// 	}
-
-// 	return operatorsv1.StatusCondition{
-// 		Type:               string(condition.Type),
-// 		Status:             metav1.ConditionStatus(condition.Status),
-// 		LastUpdateTime:     metav1.Now(),
-// 		LastTransitionTime: condition.LastTransitionTime,
-// 		Reason:             string(condition.Reason),
-// 		Message:            condition.Message,
-// 	}
-
-// }
-
-func aggregateStatus(m *operatorsv1.MultiClusterHubStatus) operatorsv1.HubPhaseType {
-	for _, val := range m.Components {
-		if isErrorType(string(val.Reason)) || val.Status == metav1.ConditionUnknown {
+func aggregateStatus(components map[string]operatorsv1.StatusCondition) operatorsv1.HubPhaseType {
+	for k, val := range components {
+		if !successfulComponent(val) {
+			log.Info("Waiting on", "name", k)
 			return operatorsv1.HubPending
 		}
 	}

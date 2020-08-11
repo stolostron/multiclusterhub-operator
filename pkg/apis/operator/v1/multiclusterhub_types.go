@@ -187,13 +187,6 @@ type HubPhaseType string
 const (
 	HubPending HubPhaseType = "Pending"
 	HubRunning HubPhaseType = "Running"
-	// HubInstalling HubPhaseType = "Installing"
-	// HubUpgrading  HubPhaseType = "Upgrading"
-	// HubDeleting   HubPhaseType = "Deleting"
-	// HubInstalled  HubPhaseType = "Install Successful"
-	// HubUpgraded   HubPhaseType = "Upgrade Successful"
-	// HubError      HubPhaseType = "Error"
-	// HubUnknown    HubPhaseType = "Unknown"
 )
 
 // MultiClusterHubStatus defines the observed state of MultiClusterHub
@@ -210,9 +203,6 @@ type MultiClusterHubStatus struct {
 	// DesiredVersion indicates the desired version
 	// +optional
 	DesiredVersion string `json:"desiredVersion,omitempty"`
-
-	// Components []ComponentCondition `json:"manifests,omitempty"`
-	Components map[string]StatusCondition `json:"components,omitempty"`
 }
 
 // StatusCondition contains condition information.

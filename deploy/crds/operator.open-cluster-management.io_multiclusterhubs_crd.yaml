@@ -190,28 +190,6 @@ spec:
         status:
           description: MultiClusterHubStatus defines the observed state of MultiClusterHub
           properties:
-            components:
-              additionalProperties:
-                description: StatusCondition contains condition information.
-                properties:
-                  message:
-                    description: Message is a human-readable message indicating details
-                      about the last status change.
-                    type: string
-                  reason:
-                    description: Reason is a (brief) reason for the condition's last
-                      status change.
-                    type: string
-                  status:
-                    description: Status is the status of the condition. One of True,
-                      False, Unknown.
-                    type: string
-                  type:
-                    description: Type is the type of the cluster condition.
-                    type: string
-                type: object
-              description: Components []ComponentCondition `json:"manifests,omitempty"`
-              type: object
             currentVersion:
               description: CurrentVersion indicates the current version
               type: string

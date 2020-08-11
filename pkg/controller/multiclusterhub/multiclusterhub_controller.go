@@ -358,33 +358,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		return *result, err
 	}
 
-	// // Update the CR status
-	// result, err = r.UpdateStatus(multiClusterHub)
-	// if result != nil {
-	// 	return *result, err
-	// }
-
-	// multiClusterHub.Status.Phase = "Pending"
-	// multiClusterHub.Status.DesiredVersion = version.Version
-	// ready, _, err := deploying.ListDeployments(r.client, multiClusterHub.Namespace)
-	// if err != nil {
-	// 	reqLogger.Error(err, "Failed to list deployments")
-	// 	return reconcile.Result{}, err
-	// }
-	// if ready {
-	// 	multiClusterHub.Status.Phase = "Running"
-	// 	multiClusterHub.Status.CurrentVersion = version.Version
-	// }
-
-	// result, err = r.UpdateStatus(multiClusterHub)
-	// if result != nil {
-	// 	return *result, err
-	// }
-
-	// if !ready {
-	// 	// Keep reconciling while install is not complete
-	// 	return reconcile.Result{RequeueAfter: resyncPeriod}, nil
-	// }
 	return retQueue, retError
 }
 
