@@ -12,6 +12,7 @@ import (
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/foundation"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	"github.com/open-cluster-management/multicloudhub-operator/version"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -20,25 +21,29 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-var deployments = []types.NamespacedName{
-	{Name: helmrepo.HelmRepoName, Namespace: "open-cluster-management"},
-	{Name: foundation.OCMControllerName, Namespace: "open-cluster-management"},
-	{Name: foundation.OCMProxyServerName, Namespace: "open-cluster-management"},
-	{Name: foundation.WebhookName, Namespace: "open-cluster-management"},
+func getDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
+	return []types.NamespacedName{
+		{Name: helmrepo.HelmRepoName, Namespace: m.Namespace},
+		{Name: foundation.OCMControllerName, Namespace: m.Namespace},
+		{Name: foundation.OCMProxyServerName, Namespace: m.Namespace},
+		{Name: foundation.WebhookName, Namespace: m.Namespace},
+	}
 }
 
-var appsubs = []types.NamespacedName{
-	{Name: "application-chart-sub", Namespace: "open-cluster-management"},
-	{Name: "cert-manager-sub", Namespace: "open-cluster-management"},
-	{Name: "cert-manager-webhook-sub", Namespace: "open-cluster-management"},
-	{Name: "configmap-watcher-sub", Namespace: "open-cluster-management"},
-	{Name: "console-chart-sub", Namespace: "open-cluster-management"},
-	{Name: "grc-sub", Namespace: "open-cluster-management"},
-	{Name: "kui-web-terminal-sub", Namespace: "open-cluster-management"},
-	{Name: "management-ingress-sub", Namespace: "open-cluster-management"},
-	{Name: "rcm-sub", Namespace: "open-cluster-management"},
-	{Name: "search-prod-sub", Namespace: "open-cluster-management"},
-	{Name: "topology-sub", Namespace: "open-cluster-management"},
+func getAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
+	return []types.NamespacedName{
+		{Name: "application-chart-sub", Namespace: m.Namespace},
+		{Name: "cert-manager-sub", Namespace: utils.CertManagerNS(m)},
+		{Name: "cert-manager-webhook-sub", Namespace: utils.CertManagerNS(m)},
+		{Name: "configmap-watcher-sub", Namespace: utils.CertManagerNS(m)},
+		{Name: "console-chart-sub", Namespace: m.Namespace},
+		{Name: "grc-sub", Namespace: m.Namespace},
+		{Name: "kui-web-terminal-sub", Namespace: m.Namespace},
+		{Name: "management-ingress-sub", Namespace: m.Namespace},
+		{Name: "rcm-sub", Namespace: m.Namespace},
+		{Name: "search-prod-sub", Namespace: m.Namespace},
+		{Name: "topology-sub", Namespace: m.Namespace},
+	}
 }
 
 var unknownStatus = operatorsv1.StatusCondition{
@@ -59,6 +64,7 @@ func (r *ReconcileMultiClusterHub) UpdateStatus(m *operatorsv1.MultiClusterHub) 
 	components := make(map[string]operatorsv1.StatusCondition)
 
 	deployment := &appsv1.Deployment{}
+	deployments := getDeployments(m)
 	for i, d := range deployments {
 		err := r.client.Get(context.TODO(), deployments[i], deployment)
 		if err != nil && !errors.IsNotFound(err) {
@@ -67,6 +73,7 @@ func (r *ReconcileMultiClusterHub) UpdateStatus(m *operatorsv1.MultiClusterHub) 
 		components[d.Name] = mapDeployment(deployment)
 	}
 
+	appsubs := getAppsubs(m)
 	for _, d := range appsubs {
 		components[d.Name] = unknownStatus
 	}
