@@ -22,6 +22,17 @@ var _ = Describe("Multiclusterhub", func() {
 
 	if os.Getenv("full_test_suite") == "true" {
 		By("Beginning Full Install Test Suite ...")
+
+		It(fmt.Sprintf("Installing MCH with bad pull secret - should have Pending status"), func() {
+			By("Creating MultiClusterHub")
+			err := utils.ValidateMCHUnsuccessful(utils.CreateMCHBadPullSecret())
+			if err != nil {
+				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				return
+			}
+			return
+		})
+
 		totalAttempts := 10
 		for i := 1; i <= totalAttempts; i++ {
 			ok := It(fmt.Sprintf("Installing MCH - Attempt %d of %d", i, totalAttempts), func() {

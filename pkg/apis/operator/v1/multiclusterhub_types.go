@@ -182,12 +182,19 @@ type IngressSpec struct {
 	SSLCiphers []string `json:"sslCiphers,omitempty"`
 }
 
+type HubPhaseType string
+
+const (
+	HubPending HubPhaseType = "Pending"
+	HubRunning HubPhaseType = "Running"
+)
+
 // MultiClusterHubStatus defines the observed state of MultiClusterHub
 // +k8s:openapi-gen=true
 type MultiClusterHubStatus struct {
 	// Represents the running phase of the MultiClusterHub
 	// +optional
-	Phase string `json:"phase"`
+	Phase HubPhaseType `json:"phase"`
 
 	// CurrentVersion indicates the current version
 	// +optional
@@ -196,6 +203,31 @@ type MultiClusterHubStatus struct {
 	// DesiredVersion indicates the desired version
 	// +optional
 	DesiredVersion string `json:"desiredVersion,omitempty"`
+}
+
+// StatusCondition contains condition information.
+type StatusCondition struct {
+	// Type is the type of the cluster condition.
+	// +required
+	Type string `json:"type,omitempty"`
+
+	// Status is the status of the condition. One of True, False, Unknown.
+	// +required
+	Status metav1.ConditionStatus `json:"status,omitempty"`
+
+	// The last time this condition was updated.
+	LastUpdateTime metav1.Time `json:"-"`
+
+	// LastTransitionTime is the last time the condition changed from one status to another.
+	LastTransitionTime metav1.Time `json:"-"`
+
+	// Reason is a (brief) reason for the condition's last status change.
+	// +required
+	Reason string `json:"reason,omitempty"`
+
+	// Message is a human-readable message indicating details about the last status change.
+	// +required
+	Message string `json:"message,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
