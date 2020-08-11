@@ -408,6 +408,12 @@ func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1.MultiClusterHub)
 }
 
 func (r *ReconcileMultiClusterHub) finalizeHub(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+	if err := r.cleanupAppSubscriptions(reqLogger, m); err != nil {
+		return err
+	}
+	if err := r.cleanupFoundation(reqLogger, m); err != nil {
+		return err
+	}
 	if err := r.cleanupHiveConfigs(reqLogger, m); err != nil {
 		return err
 	}
@@ -421,9 +427,6 @@ func (r *ReconcileMultiClusterHub) finalizeHub(reqLogger logr.Logger, m *operato
 		return err
 	}
 	if err := r.cleanupMutatingWebhooks(reqLogger, m); err != nil {
-		return err
-	}
-	if err := r.cleanupValidatingWebhooks(reqLogger, m); err != nil {
 		return err
 	}
 	if err := r.cleanupCRDs(reqLogger, m); err != nil {

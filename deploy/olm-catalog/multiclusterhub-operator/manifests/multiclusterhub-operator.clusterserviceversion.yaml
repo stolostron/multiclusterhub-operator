@@ -54,6 +54,7 @@ spec:
           - authorization.k8s.io
           - hive.openshift.io
           - mcm.ibm.com
+          - proxy.open-cluster-management.io
           - rbac.authorization.k8s.io
           - security.openshift.io
           resources:
@@ -61,6 +62,7 @@ spec:
           - channels
           - clusterjoinrequests
           - clusterrolebindings
+          - clusterstatuses/log
           - configmaps
           - customresourcedefinitions
           - deployments
@@ -76,6 +78,7 @@ spec:
           - services
           - subjectaccessreviews
           - subscriptions
+          - helmreleases
           verbs:
           - get
         - apiGroups:
@@ -114,9 +117,11 @@ spec:
           - validatingwebhookconfigurations
           verbs:
           - create
+          - update
         - apiGroups:
           - ""
           - apps
+          - apps.open-cluster-management.io
           - admissionregistration.k8s.io
           - apiregistration.k8s.io
           - authorization.k8s.io
@@ -129,6 +134,7 @@ spec:
           - clusterjoinrequests
           - configmaps
           - deployments
+          - helmreleases
           - ingresses
           - multiclusterhubs
           - namespaces
@@ -137,6 +143,7 @@ spec:
           - secrets
           - services
           - subjectaccessreviews
+          - subscriptions
           - validatingwebhookconfigurations
           verbs:
           - list
@@ -170,12 +177,14 @@ spec:
           - ""
           - admissionregistration.k8s.io
           - apps
+          - apps.open-cluster-management.io
           - mcm.ibm.com
           - monitoring.coreos.com
           - operator.open-cluster-management.io
           resources:
           - deployments
           - deployments/finalizers
+          - helmreleases
           - services
           - services/finalizers
           - servicemonitors
@@ -203,6 +212,16 @@ spec:
           - validatingwebhookconfigurations
           verbs:
           - deletecollection
+        - apiGroups:
+          - ""
+          - apps
+          - apps.open-cluster-management.io
+          resources:
+          - deployments
+          - services
+          - channels
+          verbs:
+          - delete
         - apiGroups:
           - ""
           - action.open-cluster-management.io
