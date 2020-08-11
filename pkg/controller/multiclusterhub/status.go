@@ -77,8 +77,10 @@ func (r *ReconcileMultiClusterHub) UpdateStatus(m *operatorsv1.MultiClusterHub) 
 		return reconcile.Result{}, err
 	}
 	for _, hr := range hrList.Items {
-		if _, ok := components[hr.OwnerReferences[0].Name]; ok {
-			components[hr.OwnerReferences[0].Name] = mapHelmRelease(&hr)
+		owner := hr.OwnerReferences[0].Name
+		helmrelease := hr
+		if _, ok := components[owner]; ok {
+			components[owner] = mapHelmRelease(&helmrelease)
 		}
 	}
 
