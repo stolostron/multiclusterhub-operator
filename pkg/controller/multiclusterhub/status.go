@@ -60,7 +60,10 @@ func (r *ReconcileMultiClusterHub) UpdateStatus(m *operatorsv1.MultiClusterHub) 
 
 	deployment := &appsv1.Deployment{}
 	for i, d := range deployments {
-		r.client.Get(context.TODO(), deployments[i], deployment)
+		err := r.client.Get(context.TODO(), deployments[i], deployment)
+		if err != nil && !errors.IsNotFound(err) {
+			return reconcile.Result{}, err
+		}
 		components[d.Name] = mapDeployment(deployment)
 	}
 
@@ -69,7 +72,10 @@ func (r *ReconcileMultiClusterHub) UpdateStatus(m *operatorsv1.MultiClusterHub) 
 	}
 
 	hrList := &subrelv1.HelmReleaseList{}
-	r.client.List(context.TODO(), hrList)
+	err := r.client.List(context.TODO(), hrList)
+	if err != nil && !errors.IsNotFound(err) {
+		return reconcile.Result{}, err
+	}
 	for _, hr := range hrList.Items {
 		if _, ok := components[hr.OwnerReferences[0].Name]; ok {
 			components[hr.OwnerReferences[0].Name] = mapHelmRelease(&hr)

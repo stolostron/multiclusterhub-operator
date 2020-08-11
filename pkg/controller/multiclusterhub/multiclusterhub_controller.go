@@ -213,6 +213,9 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 
 	defer func() {
 		retQueue, retError = r.UpdateStatus(multiClusterHub)
+		if retError != nil {
+			log.Error(retError, "Error updating status")
+		}
 	}()
 
 	// Do not reconcile objects if this instance of mch is labeled "paused"
