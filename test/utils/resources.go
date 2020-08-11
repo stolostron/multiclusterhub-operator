@@ -24,6 +24,23 @@ func NewMultiClusterHub(name, namespace string) *unstructured.Unstructured {
 	}
 }
 
+// NewMultiClusterHubBadPullSecret ...
+func NewMultiClusterHubBadPullSecret(name, namespace string) *unstructured.Unstructured {
+	return &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "operator.open-cluster-management.io/v1",
+			"kind":       "MultiClusterHub",
+			"metadata": map[string]interface{}{
+				"name":      name,
+				"namespace": namespace,
+			},
+			"spec": map[string]interface{}{
+				"imagePullSecret": "bad-pull-secret",
+			},
+		},
+	}
+}
+
 // NewOCMSubscription ...
 func NewOCMSubscription(namespace string) *unstructured.Unstructured {
 	return &unstructured.Unstructured{
