@@ -121,8 +121,10 @@ rules:
   - "operator.open-cluster-management.io"
   - "rbac.authorization.k8s.io"
   - "storage.k8s.io"
+  - "apps.open-cluster-management.io"
   resources:
   - apiservices
+  - helmreleases
   - configmaps
   - clusterjoinrequests
   - deployments

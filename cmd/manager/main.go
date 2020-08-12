@@ -15,6 +15,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 
+	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis"
 	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/apis"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/controller"
@@ -151,6 +152,11 @@ func main() {
 	}
 
 	if err := appsubv1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Error(err, "")
+		os.Exit(1)
+	}
+
+	if err := subrelv1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Error(err, "")
 		os.Exit(1)
 	}
