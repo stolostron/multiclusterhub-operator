@@ -342,7 +342,7 @@ func ValidateMCH(mch *unstructured.Unstructured) error {
 	By("- Checking Appsubs")
 	ok := When("Wait for Application Subscriptions to be Active", func() {
 		Eventually(func() error {
-			unstructuredAppSubs := listByGVR(DynamicKubeClient, GVRAppSub, MCHNamespace, 60, len(AppSubSlice))
+			unstructuredAppSubs := listByGVR(DynamicKubeClient, GVRAppSub, MCHNamespace, 120, len(AppSubSlice))
 
 			for _, appsub := range unstructuredAppSubs.Items {
 				if _, ok := appsub.Object["status"]; !ok {
@@ -366,7 +366,7 @@ func ValidateMCH(mch *unstructured.Unstructured) error {
 	By("- Checking HelmReleases")
 	ok = When("Wait for HelmReleases to be successfully installed", func() {
 		Eventually(func() error {
-			unstructuredHelmReleases := listByGVR(DynamicKubeClient, GVRHelmRelease, MCHNamespace, 60, len(AppSubSlice))
+			unstructuredHelmReleases := listByGVR(DynamicKubeClient, GVRHelmRelease, MCHNamespace, 240, len(AppSubSlice))
 			// ready := false
 			for _, helmRelease := range unstructuredHelmReleases.Items {
 				klog.V(5).Infof("Checking HelmRelease - %s", helmRelease.GetName())
@@ -376,16 +376,10 @@ func ValidateMCH(mch *unstructured.Unstructured) error {
 					return fmt.Errorf("HelmRelease: %s has no 'status' map", helmRelease.GetName())
 				}
 
-				conditions, ok := status["conditions"].([]interface{})
+				conditions, ok := status["deployedRelease"].(map[string]interface{})
 				if !ok || conditions == nil {
-					return fmt.Errorf("HelmRelease: %s has no 'conditions' interface", helmRelease.GetName())
+					return fmt.Errorf("HelmRelease: %s has no 'deployedRelease' interface", helmRelease.GetName())
 				}
-
-				finalCondition, ok := conditions[len(conditions)-1].(map[string]interface{})
-				if finalCondition["reason"] != "InstallSuccessful" && finalCondition["reason"] != "UpdateSuccessful" {
-					return fmt.Errorf("HelmRelease: %s not ready", helmRelease.GetName())
-				}
-				Expect(finalCondition["type"]).To(Equal("Deployed"))
 			}
 			return nil
 		}, 500, 1).Should(BeNil())
