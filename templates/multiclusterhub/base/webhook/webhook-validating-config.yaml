@@ -8,13 +8,14 @@ webhooks:
 - name: ocm.validating.webhook.admission.open-cluster-management.io
   rules:
   - apiGroups:
-    - ""
+    - "cluster.open-cluster-management.io"
     apiVersions:
-    - v1
+    - v1alpha1
     operations:
-    - DELETE
+    - CREATE
+    - UPDATE
     resources:
-    - namespaces
+    - managedclusterclaims
     scope: '*'
   clientConfig:
     service:
