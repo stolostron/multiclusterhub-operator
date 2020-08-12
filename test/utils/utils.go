@@ -435,16 +435,10 @@ func ValidateMCH(mch *unstructured.Unstructured) error {
 					return fmt.Errorf("HelmRelease: %s has no 'status' map", helmRelease.GetName())
 				}
 
-				conditions, ok := status["conditions"].([]interface{})
+				conditions, ok := status["deployedRelease"].(map[string]interface{})
 				if !ok || conditions == nil {
-					return fmt.Errorf("HelmRelease: %s has no 'conditions' interface", helmRelease.GetName())
+					return fmt.Errorf("HelmRelease: %s has no 'deployedRelease' interface", helmRelease.GetName())
 				}
-
-				finalCondition, ok := conditions[len(conditions)-1].(map[string]interface{})
-				if finalCondition["reason"] != "InstallSuccessful" && finalCondition["reason"] != "UpdateSuccessful" {
-					return fmt.Errorf("HelmRelease: %s not ready", helmRelease.GetName())
-				}
-				Expect(finalCondition["type"]).To(Equal("Deployed"))
 			}
 			return nil
 		}, 1, 1).Should(BeNil())
