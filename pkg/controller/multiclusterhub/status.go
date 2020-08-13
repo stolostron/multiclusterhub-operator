@@ -91,6 +91,7 @@ func (r *ReconcileMultiClusterHub) UpdateStatus(m *operatorsv1.MultiClusterHub) 
 		}
 	}
 
+	newStatus.Components = components
 	newStatus.Phase = aggregateStatus(components)
 
 	newStatus.CurrentVersion = oldStatus.CurrentVersion
@@ -194,10 +195,10 @@ func mapHelmRelease(hr *subrelv1.HelmRelease) operatorsv1.StatusCondition {
 		Reason:             string(condition.Reason),
 		Message:            condition.Message,
 	}
-	// Ignore success messages
-	if !isErrorType(ret.Type) {
+	if successfulHelmRelease(hr) {
 		ret.Message = ""
 	}
+
 	return ret
 }
 
