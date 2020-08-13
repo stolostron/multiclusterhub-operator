@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"reflect"
 	"testing"
 
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
@@ -450,5 +451,69 @@ func Test_OverrideImagesFromConfigmap(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func Test_storeFinalImageOverrides(t *testing.T) {
+	r, err := getTestReconciler(full_mch)
+	if err != nil {
+		t.Fatalf("Failed to create test reconciler")
+	}
+
+	r.CacheSpec = CacheSpec{
+		ImageOverrides: map[string]string{
+			"application_ui": "quay.io/open-cluster-management/application-ui@sha256:c740fc7bac067f003145ab909504287360564016b7a4a51b7ad4987aca123ac1",
+			"console_api":    "quay.io/open-cluster-management/console-api@sha256:3ef1043b4e61a09b07ff37f9ad8fc6e707af9813936cf2c0d52f2fa0e489c75f",
+			"rcm_controller": " quay.io/open-cluster-management/rcm-controller@sha256:8fab4d788241bf364dbc1b8c1ea5ccf18d3145a640dbd456b0dc7ba204e36819",
+		},
+		ManifestVersion: "2.1.0",
+	}
+
+	configmapName := fmt.Sprintf("acm-image-manifest-%s", r.CacheSpec.ManifestVersion)
+
+	// Check configmap is created if it doesnt exist
+	err = r.storeFinalImageOverrides(full_mch)
+	if err != nil {
+		t.Fatalf("Failed to store image overrides: %s", err)
+	}
+	configmap := &corev1.ConfigMap{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{
+		Name:      configmapName,
+		Namespace: full_mch.Namespace,
+	}, configmap)
+	if err != nil {
+		t.Fatalf("Failed to get overrides configmap: %s", err)
+	}
+	if !reflect.DeepEqual(configmap.Data, r.CacheSpec.ImageOverrides) {
+		t.Fatalf("Failed to set configmap contents")
+	}
+
+	// Check configmap is updated if exists
+	configmap.Data = make(map[string]string)
+	err = r.client.Update(context.TODO(), configmap)
+	if err != nil {
+		t.Fatalf("Failed to find image overrides configmap: %s", err)
+	}
+	err = r.client.Get(context.TODO(), types.NamespacedName{
+		Name:      configmapName,
+		Namespace: full_mch.Namespace,
+	}, configmap)
+	if err != nil {
+		t.Fatalf("Failed to get overrides configmap: %s", err)
+	}
+	if !reflect.DeepEqual(configmap.Data, make(map[string]string)) {
+		t.Fatalf("Failed to clear configmap contents")
+	}
+	err = r.storeFinalImageOverrides(full_mch)
+	if err != nil {
+		t.Fatalf("Failed to store image overrides: %s", err)
+	}
+	configmap = &corev1.ConfigMap{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{
+		Name:      configmapName,
+		Namespace: full_mch.Namespace,
+	}, configmap)
+	if !reflect.DeepEqual(configmap.Data, r.CacheSpec.ImageOverrides) {
+		t.Fatalf("Failed to update configmap")
 	}
 }
