@@ -47,15 +47,8 @@ var _ = Describe("Multiclusterhub", func() {
 
 		When("Operator Is Upgraded, wait for MCH Version to Update", func() {
 			Eventually(func() error {
-				var err error
-				mch, err := utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Get(context.TODO(), utils.MCHName, metav1.GetOptions{})
-				Expect(err).To(BeNil())
-				status, ok := mch.Object["status"].(map[string]interface{})
-				if !ok || status == nil {
-					return fmt.Errorf("MultiClusterHub: %s has no 'status' map", mch.GetName())
-				}
-				version, ok := status["currentVersion"]
-				if !ok {
+				version, err := utils.GetCurrentVersionFromMCH()
+				if err != nil {
 					return fmt.Errorf("MultiClusterHub: %s status has no 'currentVersion' field", mch.GetName())
 				}
 				if version != os.Getenv("updateVersion") {

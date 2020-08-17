@@ -379,73 +379,50 @@ func ValidateMCH(mch *unstructured.Unstructured) error {
 		}, WaitInMinutes*60, 1).Should(BeNil())
 	})
 
+	By("- Ensuring MCH Repo Is available")
 	var deploy *appsv1.Deployment
-	When("MultiClusterHub Repo should be available", func() {
-		Eventually(func() error {
-			var err error
-			klog.V(1).Info("Wait MCH Repo deployment...")
-			deploy, err = KubeClient.AppsV1().Deployments(MCHNamespace).Get(context.TODO(), MCHRepoName, metav1.GetOptions{})
-			if err != nil {
-				return err
-			}
-			if deploy.Status.AvailableReplicas == 0 {
-				return fmt.Errorf("MCH Repo not available")
-			}
-			return err
-		}, 1, 1).Should(BeNil())
-		klog.V(1).Info("MCH Repo deployment available")
-	})
-	By("- Checking ownerRef", func() {
-		Expect(IsOwner(mch, &deploy.ObjectMeta)).To(Equal(true))
-	})
+	deploy, err := KubeClient.AppsV1().Deployments(MCHNamespace).Get(context.TODO(), MCHRepoName, metav1.GetOptions{})
+	Expect(err).Should(BeNil())
+	Expect(deploy.Status.AvailableReplicas).ShouldNot(Equal(0))
+	Expect(IsOwner(mch, &deploy.ObjectMeta)).To(Equal(true)
 
 	By("- Checking Appsubs")
-	ok := When("Application Subscriptions should be Active", func() {
-		Eventually(func() error {
-			unstructuredAppSubs := listByGVR(DynamicKubeClient, GVRAppSub, MCHNamespace, 1, len(AppSubSlice))
-			for _, appsub := range unstructuredAppSubs.Items {
-				if _, ok := appsub.Object["status"]; !ok {
-					return fmt.Errorf("Appsub: %s has no 'status' field", appsub.GetName())
-				}
-				status, ok := appsub.Object["status"].(map[string]interface{})
-				if !ok || status == nil {
-					return fmt.Errorf("Appsub: %s has no 'status' map", appsub.GetName())
-				}
-				klog.V(5).Infof("Checking Appsub - %s", appsub.GetName())
-				Expect(status["message"]).To(Equal("Active"))
-				Expect(status["phase"]).To(Equal("Subscribed"))
-			}
-			return nil
-		}, 1, 1).Should(BeNil())
-	})
-	if !ok {
-		return fmt.Errorf("Unable to create all Application Subscriptions")
+	unstructuredAppSubs := listByGVR(DynamicKubeClient, GVRAppSub, MCHNamespace, 1, len(AppSubSlice))
+	for _, appsub := range unstructuredAppSubs.Items {
+		if _, ok := appsub.Object["status"]; !ok {
+			return fmt.Errorf("Appsub: %s has no 'status' field", appsub.GetName())
+		}
+		status, ok := appsub.Object["status"].(map[string]interface{})
+		if !ok || status == nil {
+			return fmt.Errorf("Appsub: %s has no 'status' map", appsub.GetName())
+		}
+		klog.V(5).Infof("Checking Appsub - %s", appsub.GetName())
+		Expect(status["message"]).To(Equal("Active"))
+		Expect(status["phase"]).To(Equal("Subscribed"))
 	}
 
 	By("- Checking HelmReleases")
-	ok = When("HelmReleases should be installed", func() {
-		Eventually(func() error {
-			unstructuredHelmReleases := listByGVR(DynamicKubeClient, GVRHelmRelease, MCHNamespace, 1, len(AppSubSlice))
-			// ready := false
-			for _, helmRelease := range unstructuredHelmReleases.Items {
-				klog.V(5).Infof("Checking HelmRelease - %s", helmRelease.GetName())
+	unstructuredHelmReleases := listByGVR(DynamicKubeClient, GVRHelmRelease, MCHNamespace, 1, len(AppSubSlice))
+	for _, helmRelease := range unstructuredHelmReleases.Items {
+		klog.V(5).Infof("Checking HelmRelease - %s", helmRelease.GetName())
 
-				status, ok := helmRelease.Object["status"].(map[string]interface{})
-				if !ok || status == nil {
-					return fmt.Errorf("HelmRelease: %s has no 'status' map", helmRelease.GetName())
-				}
+		status, ok := helmRelease.Object["status"].(map[string]interface{})
+		if !ok || status == nil {
+			return fmt.Errorf("HelmRelease: %s has no 'status' map", helmRelease.GetName())
+		}
 
-				conditions, ok := status["deployedRelease"].(map[string]interface{})
-				if !ok || conditions == nil {
-					return fmt.Errorf("HelmRelease: %s has no 'deployedRelease' interface", helmRelease.GetName())
-				}
-			}
-			return nil
-		}, 1, 1).Should(BeNil())
-	})
-	if !ok {
-		return fmt.Errorf("Unable to create all Helm Releases successfully")
+		conditions, ok := status["deployedRelease"].(map[string]interface{})
+		if !ok || conditions == nil {
+			return fmt.Errorf("HelmRelease: %s has no 'deployedRelease' interface", helmRelease.GetName())
+		}
 	}
+
+	By("- Ensuring image manifest configmap is created")
+	currentVersion, err := GetCurrentVersionFromMCH()
+	Expect(err).Should(BeNil())
+	_, err = KubeClient.CoreV1().ConfigMaps(MCHNamespace).Get(context.TODO(), fmt.Sprintf("mch-image-manifest-%s", currentVersion), metav1.GetOptions{})
+	Expect(err).Should(BeNil())
+
 	return nil
 }
 
@@ -533,4 +510,18 @@ func ShouldSkipSubscription() bool {
 		return true
 	}
 	return false
+}
+
+func GetCurrentVersionFromMCH() (string, error) {
+	mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+	Expect(err).To(BeNil())
+	status, ok := mch.Object["status"].(map[string]interface{})
+	if !ok || status == nil {
+		return "", fmt.Errorf("MultiClusterHub: %s has no 'status' map", mch.GetName())
+	}
+	version, ok := status["currentVersion"]
+	if !ok {
+		return "", fmt.Errorf("MultiClusterHub: %s status has no 'currentVersion' field", mch.GetName())
+	}
+	return version.(string), nil
 }
