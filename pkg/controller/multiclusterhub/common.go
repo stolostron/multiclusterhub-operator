@@ -383,13 +383,19 @@ func (r *ReconcileMultiClusterHub) storeFinalImageOverrides(mch *operatorsv1.Mul
 	// Define configmap
 	configmap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("acm-image-manifest-%s", r.CacheSpec.ManifestVersion),
+			Name:      fmt.Sprintf("mch-image-manifest-%s", r.CacheSpec.ManifestVersion),
 			Namespace: mch.Namespace,
 		},
 	}
 	configmap.SetOwnerReferences([]metav1.OwnerReference{
 		*metav1.NewControllerRef(mch, mch.GetObjectKind().GroupVersionKind()),
 	})
+
+	labels := make(map[string]string)
+	labels["ocm-configmap-type"] = "image-manifest"
+	labels["ocm-release-version"] = r.CacheSpec.ManifestVersion
+
+	configmap.SetLabels(labels)
 
 	// Get Configmap if it exists
 	err := r.client.Get(context.TODO(), types.NamespacedName{

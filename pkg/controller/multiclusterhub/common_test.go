@@ -469,7 +469,7 @@ func Test_storeFinalImageOverrides(t *testing.T) {
 		ManifestVersion: "2.1.0",
 	}
 
-	configmapName := fmt.Sprintf("acm-image-manifest-%s", r.CacheSpec.ManifestVersion)
+	configmapName := fmt.Sprintf("mch-image-manifest-%s", r.CacheSpec.ManifestVersion)
 
 	// Check configmap is created if it doesnt exist
 	err = r.storeFinalImageOverrides(full_mch)
