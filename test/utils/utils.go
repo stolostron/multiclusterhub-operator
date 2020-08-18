@@ -384,7 +384,7 @@ func ValidateMCH(mch *unstructured.Unstructured) error {
 	deploy, err := KubeClient.AppsV1().Deployments(MCHNamespace).Get(context.TODO(), MCHRepoName, metav1.GetOptions{})
 	Expect(err).Should(BeNil())
 	Expect(deploy.Status.AvailableReplicas).ShouldNot(Equal(0))
-	Expect(IsOwner(mch, &deploy.ObjectMeta)).To(Equal(true)
+	Expect(IsOwner(mch, &deploy.ObjectMeta)).To(Equal(true))
 
 	By("- Checking Appsubs")
 	unstructuredAppSubs := listByGVR(DynamicKubeClient, GVRAppSub, MCHNamespace, 1, len(AppSubSlice))
