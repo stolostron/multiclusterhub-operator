@@ -379,6 +379,30 @@ func ValidateMCH(mch *unstructured.Unstructured) error {
 		}, WaitInMinutes*60, 1).Should(BeNil())
 	})
 
+	By("- Ensuring components have status 'true' when MCH is in 'running' phase")
+    When("Component statuses should be true", func() {
+        Eventually(func() error {
+            mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+            Expect(err).To(BeNil())
+            status := mch.Object["status"].(map[string]interface{})
+            if status["phase"] == "Running" {
+                components, ok := mch.Object["status"].(map[string]interface{})["components"]
+                if !ok || components == nil {
+                    return fmt.Errorf("MultiClusterHub: %s has no 'Components' map in status", mch.GetName())
+                }
+                for k, v := range components.(map[string]interface{}) {
+                    compStatus := v.(map[string]interface{})["status"].(string)
+                    if compStatus != "True" {
+                        return fmt.Errorf("Component: %s does not have status of 'true'", k)
+                    }
+                }
+            }
+            return nil
+        }, 1, 1).Should(BeNil())
+    })
+
+
+
 	var deploy *appsv1.Deployment
 	When("MultiClusterHub Repo should be available", func() {
 		Eventually(func() error {
