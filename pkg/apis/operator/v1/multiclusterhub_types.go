@@ -203,6 +203,10 @@ type MultiClusterHubStatus struct {
 	// DesiredVersion indicates the desired version
 	// +optional
 	DesiredVersion string `json:"desiredVersion,omitempty"`
+
+	// Components []ComponentCondition `json:"manifests,omitempty"`
+	// +optional
+	Components map[string]StatusCondition `json:"components,omitempty"`
 }
 
 // StatusCondition contains condition information.
