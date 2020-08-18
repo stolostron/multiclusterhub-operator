@@ -203,6 +203,10 @@ type MultiClusterHubStatus struct {
 	// DesiredVersion indicates the desired version
 	// +optional
 	DesiredVersion string `json:"desiredVersion,omitempty"`
+
+	// Conditions contains the different condition statuses for the MultiClusterHub
+	// +optional
+	HubConditions []StatusCondition `json:"conditions,omitempty"`
 }
 
 // StatusCondition contains condition information.
@@ -219,7 +223,7 @@ type StatusCondition struct {
 	LastUpdateTime metav1.Time `json:"-"`
 
 	// LastTransitionTime is the last time the condition changed from one status to another.
-	LastTransitionTime metav1.Time `json:"-"`
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
 
 	// Reason is a (brief) reason for the condition's last status change.
 	// +required
