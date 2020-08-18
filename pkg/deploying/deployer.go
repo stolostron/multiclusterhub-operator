@@ -27,6 +27,18 @@ func Deploy(c runtimeclient.Client, obj *unstructured.Unstructured) error {
 		return err
 	}
 
+	// Do not update webhook configurations or cert secrets
+	if kind := found.GetKind(); kind == "MutatingWebhookConfiguration" || kind == "ValidatingWebhookConfiguration" {
+		if name := found.GetName(); name == "ocm-mutating-webhook" || name == "ocm-validating-webhook" {
+			return nil
+		}
+	}
+	if kind := found.GetKind(); kind == "Secret" {
+		if name := found.GetName(); name == "ocm-klusterlet-self-signed-secrets" || name == "ocm-webhook-secret" {
+			return nil
+		}
+	}
+
 	// If resources exists, update it with current config
 	obj.SetResourceVersion(found.GetResourceVersion())
 	return c.Update(context.TODO(), obj)
