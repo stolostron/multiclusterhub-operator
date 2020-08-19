@@ -16,16 +16,23 @@ var _ = Describe("Multiclusterhub", func() {
 	BeforeEach(func() {
 		By("Attempting to delete MultiClusterHub if it exists")
 		utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
-
 		Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
+		By("Attempting to delete Image Overrides ConfigMap with bad image reference if it exists")
+		err := utils.DeleteConfigMapIfExists(utils.ImageOverridesCMBadImageName, utils.MCHNamespace)
+		Expect(err).Should(BeNil())
 	})
 
 	if os.Getenv("full_test_suite") == "true" {
 		By("Beginning Full Install Test Suite ...")
 
-		It(fmt.Sprintf("Installing MCH with bad pull secret - should have Pending status"), func() {
-			By("Creating MultiClusterHub")
-			err := utils.ValidateMCHUnsuccessful(utils.CreateMCHBadPullSecret())
+		It(fmt.Sprintf("Installing MCH with bad image reference - should have Pending status"), func() {
+			By("Creating Bad Image Overrides Configmap")
+			imageOverridesCM := utils.NewImageOverridesConfigmapBadImageRef(utils.ImageOverridesCMBadImageName, utils.MCHNamespace)
+			err := utils.CreateNewConfigMap(imageOverridesCM, utils.MCHNamespace)
+			Expect(err).To(BeNil())
+
+			By("Creating MultiClusterHub with image overrides annotation")
+			err = utils.ValidateMCHUnsuccessful(utils.CreateMCHImageOverridesAnnotation(utils.ImageOverridesCMBadImageName))
 			if err != nil {
 				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
 				return
