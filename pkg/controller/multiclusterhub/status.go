@@ -5,6 +5,8 @@ package multiclusterhub
 import (
 	"context"
 	"fmt"
+	"sort"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -17,6 +19,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -60,6 +63,7 @@ func (r *ReconcileMultiClusterHub) UpdateStatus(m *operatorsv1.MultiClusterHub) 
 	oldStatus := m.Status
 	newStatus := m.Status.DeepCopy()
 	newStatus.DesiredVersion = version.Version
+	newStatus.HubConditions = m.Status.HubConditions
 
 	components := make(map[string]operatorsv1.StatusCondition)
 
@@ -95,10 +99,26 @@ func (r *ReconcileMultiClusterHub) UpdateStatus(m *operatorsv1.MultiClusterHub) 
 
 	newStatus.CurrentVersion = oldStatus.CurrentVersion
 	if newStatus.Phase == operatorsv1.HubRunning {
+		AddCondition(m, operatorsv1.StatusCondition{
+			Type:               "Success",
+			Status:             v1.ConditionTrue,
+			LastTransitionTime: v1.Now(),
+			LastUpdateTime:     v1.Now(),
+			Reason:             "AllComponentsInstalled",
+			Message:            "mch is installed",
+		})
 		newStatus.CurrentVersion = version.Version
 	}
 
 	m.Status = *newStatus
+	AddCondition(m, operatorsv1.StatusCondition{
+		Type:               "New",
+		Status:             v1.ConditionTrue,
+		LastTransitionTime: v1.Now(),
+		LastUpdateTime:     v1.Now(),
+		Reason:             "NewConditionAdded",
+		Message:            "Hi I'm new",
+	})
 
 	return r.applyStatus(m)
 }
@@ -157,6 +177,7 @@ func mapDeployment(ds *appsv1.Deployment) operatorsv1.StatusCondition {
 	}
 	if successfulDeploy(ds) {
 		ret.Message = ""
+		ret.LastTransitionTime = v1.Time{}
 	}
 
 	return ret
@@ -220,4 +241,106 @@ func isErrorType(cr string) bool {
 		cr == string(subrelv1.ReasonUpdateError) ||
 		cr == string(subrelv1.ReasonReconcileError) ||
 		cr == string(subrelv1.ReasonUninstallError)
+}
+
+type byTransitionTime []operatorsv1.StatusCondition
+
+func (a byTransitionTime) Len() int      { return len(a) }
+func (a byTransitionTime) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a byTransitionTime) Less(i, j int) bool {
+	return a[i].LastTransitionTime.Time.Before(a[j].LastTransitionTime.Time)
+}
+
+// Adds the statusCondition to a multiclusterhub
+func AddCondition(m *operatorsv1.MultiClusterHub, sc operatorsv1.StatusCondition) {
+	log.Info("Adding condition", "Condition", sc.Reason)
+	for i, x := range m.Status.HubConditions {
+		if x.Reason == sc.Reason && x.Status == sc.Status {
+			ltt := x.LastTransitionTime
+			m.Status.HubConditions[i] = sc
+			m.Status.HubConditions[i].LastTransitionTime = ltt
+			return
+		}
+	}
+	m.Status.HubConditions = append(m.Status.HubConditions, sc)
+
+	// Trim conditions
+	sort.Sort(sort.Reverse(byTransitionTime(m.Status.HubConditions)))
+	if len(m.Status.HubConditions) > 2 {
+		m.Status.HubConditions = m.Status.HubConditions[:1]
+	}
+
+}
+
+// SetHubCondition sets the status condition. It either overwrites the existing one or creates a new one.
+func SetHubCondition(m *operatorsv1.MultiClusterHub, newCondition operatorsv1.StatusCondition) {
+	newCondition.LastTransitionTime = metav1.NewTime(time.Now())
+
+	existingCondition := FindHubCondition(m, newCondition.Type)
+	if existingCondition == nil {
+		m.Status.HubConditions = append(m.Status.HubConditions, newCondition)
+		return
+	}
+
+	if existingCondition.Status != newCondition.Status || existingCondition.LastTransitionTime.IsZero() {
+		existingCondition.LastTransitionTime = newCondition.LastTransitionTime
+	}
+
+	existingCondition.Status = newCondition.Status
+	existingCondition.Reason = newCondition.Reason
+	existingCondition.Message = newCondition.Message
+}
+
+// RemoveCRDCondition removes the status condition.
+func RemoveHubCondition(m *operatorsv1.MultiClusterHub, conditionType operatorsv1.HubConditionType) {
+	newConditions := []operatorsv1.HubCondition{}
+	for _, condition := range m.Status.HubConditions {
+		if condition.Type != conditionType {
+			newConditions = append(newConditions, condition)
+		}
+	}
+	crd.Status.Conditions = newConditions
+}
+
+// FindHubCondition returns the condition you're looking for or nil.
+func FindHubCondition(m *operatorsv1.MultiClusterHub, conditionType operatorsv1.HubConditionType) *operatorsv1.HubCondition {
+	for i := range m.Status.HubConditions {
+		if m.Status.HubConditions[i].Type == conditionType {
+			return &m.Status.HubConditions[i]
+		}
+	}
+
+	return nil
+}
+
+// IsHubConditionTrue indicates if the condition is present and strictly true.
+func IsHubConditionTrue(crd *operatorsv1.MultiClusterHub, conditionType operatorsv1.HubConditionType) bool {
+	return IsHubConditionPresentAndEqual(crd, conditionType, v1.ConditionTrue)
+}
+
+// IsHubConditionFalse indicates if the condition is present and false.
+func IsHubConditionFalse(m *operatorsv1.MultiClusterHub, conditionType operatorsv1.HubConditionType) bool {
+	return IsHubConditionPresentAndEqual(m, conditionType, v1.ConditionFalse)
+}
+
+// IsHubConditionPresentAndEqual indicates if the condition is present and equal to the given status.
+func IsHubConditionPresentAndEqual(m *operatorsv1.MultiClusterHub, conditionType operatorsv1.HubConditionType, status v1.ConditionStatus) bool {
+	for _, condition := range m.Status.HubConditions {
+		if condition.Type == conditionType {
+			return condition.Status == status
+		}
+	}
+	return false
+}
+
+// IsCRDConditionEquivalent returns true if the lhs and rhs are equivalent except for times.
+func IsCRDConditionEquivalent(lhs, rhs *operatorsv1.HubCondition) bool {
+	if lhs == nil && rhs == nil {
+		return true
+	}
+	if lhs == nil || rhs == nil {
+		return false
+	}
+
+	return lhs.Message == rhs.Message && lhs.Reason == rhs.Reason && lhs.Status == rhs.Status && lhs.Type == rhs.Type
 }

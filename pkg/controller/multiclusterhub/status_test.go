@@ -128,3 +128,94 @@ func Test_latestDeployCondition(t *testing.T) {
 		})
 	}
 }
+
+func TestAddCondition(t *testing.T) {
+	oldest := operatorsv1.StatusCondition{
+		Reason:             "OldestReason",
+		Status:             v1.ConditionTrue,
+		LastTransitionTime: v1.NewTime(time.Date(1, 1, 0, 0, 1, 0, 0, time.UTC)),
+	}
+	older := operatorsv1.StatusCondition{
+		Reason:             "OlderReason",
+		Status:             v1.ConditionTrue,
+		LastTransitionTime: v1.NewTime(time.Date(1, 1, 0, 0, 2, 0, 0, time.UTC)),
+	}
+	old := operatorsv1.StatusCondition{
+		Reason:             "OldReason",
+		Status:             v1.ConditionTrue,
+		LastTransitionTime: v1.NewTime(time.Date(1, 1, 0, 0, 3, 0, 0, time.UTC)),
+	}
+	new := operatorsv1.StatusCondition{
+		Reason:             "OldReason",
+		Status:             v1.ConditionTrue,
+		LastTransitionTime: v1.NewTime(time.Date(1, 1, 0, 0, 4, 0, 0, time.UTC)),
+	}
+
+	t.Run("Add single hubcondition", func(t *testing.T) {
+		m := &operatorsv1.MultiClusterHub{}
+		sc := unknownStatus
+		AddCondition(m, sc)
+		if len(m.Status.HubConditions) < 1 {
+			t.Errorf("AddCondition() failed to add a HubCondition")
+		}
+	})
+
+	t.Run("Add several hubconditions", func(t *testing.T) {
+		m := &operatorsv1.MultiClusterHub{}
+		expected := 3
+		AddCondition(m, oldest)
+		AddCondition(m, older)
+		AddCondition(m, old)
+		AddCondition(m, new)
+		if len(m.Status.HubConditions) > expected {
+			t.Errorf("AddCondition() added too many hub conditions; expected a max of %d, got %d", expected, len(m.Status.HubConditions))
+		}
+	})
+
+	t.Run("No duplicate hubconditions", func(t *testing.T) {
+		m := &operatorsv1.MultiClusterHub{}
+		sc := unknownStatus
+		expected := 1
+		for i := 0; i < 2; i++ {
+			AddCondition(m, sc)
+		}
+		if len(m.Status.HubConditions) != 1 {
+			t.Errorf("AddCondition() added duplicate hub conditions; expected %d, got %d", expected, len(m.Status.HubConditions))
+		}
+	})
+
+	t.Run("Retain last transition time", func(t *testing.T) {
+		m := &operatorsv1.MultiClusterHub{}
+		AddCondition(m, old)
+		AddCondition(m, new)
+		if len(m.Status.HubConditions) != 1 {
+			t.Errorf("AddCondition() too many hub conditions; expected %d, got %d", 1, len(m.Status.HubConditions))
+		}
+		if ltt := &m.Status.HubConditions[0].LastTransitionTime; !ltt.Equal(&old.LastTransitionTime) {
+			t.Errorf("AddCondition() expected lastTransitionTime of %v, got %v", old.LastTransitionTime, ltt)
+		}
+	})
+
+	t.Run("Remove oldest conditions", func(t *testing.T) {
+		m := &operatorsv1.MultiClusterHub{}
+		AddCondition(m, oldest)
+		AddCondition(m, older)
+		AddCondition(m, old)
+		for _, x := range m.Status.HubConditions {
+			if x.Reason == "OldestReason" {
+				t.Errorf("Expected oldest condition to be removed")
+			}
+		}
+	})
+
+	t.Run("Conditions should be in sorted order", func(t *testing.T) {
+		m := &operatorsv1.MultiClusterHub{}
+		AddCondition(m, oldest)
+		AddCondition(m, older)
+		first := &m.Status.HubConditions[0]
+		second := &m.Status.HubConditions[1]
+		if !first.LastTransitionTime.Time.After(second.LastTransitionTime.Time) {
+			t.Errorf("AddCondition() expected first condition to be the most recent; got %v", m.Status.HubConditions)
+		}
+	})
+}

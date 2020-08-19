@@ -9,6 +9,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -254,6 +255,14 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 	certGV := schema.GroupVersion{Group: "certmanager.k8s.io", Version: "v1alpha1"}
 	// Skip wait for API to be ready on unit test
 	if !utils.IsUnitTest() {
+		AddCondition(multiClusterHub, operatorsv1.StatusCondition{
+			Type:               "Progressing",
+			Status:             v1.ConditionTrue,
+			LastTransitionTime: v1.Now(),
+			LastUpdateTime:     v1.Now(),
+			Reason:             "Installing",
+			Message:            "Waiting for cert manager CRDs",
+		})
 		result, err = r.apiReady(certGV)
 		if result != nil {
 			return *result, err
