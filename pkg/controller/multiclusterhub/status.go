@@ -299,7 +299,7 @@ func RemoveHubCondition(m *operatorsv1.MultiClusterHub, conditionType operatorsv
 			newConditions = append(newConditions, condition)
 		}
 	}
-	crd.Status.Conditions = newConditions
+	m.Status.HubConditions = newConditions
 }
 
 // FindHubCondition returns the condition you're looking for or nil.
@@ -344,3 +344,48 @@ func IsCRDConditionEquivalent(lhs, rhs *operatorsv1.HubCondition) bool {
 
 	return lhs.Message == rhs.Message && lhs.Reason == rhs.Reason && lhs.Status == rhs.Status && lhs.Type == rhs.Type
 }
+
+// DeploymentTimedOut considers a deployment to have timed out once its condition that reports progress
+// is older than progressDeadlineSeconds or a Progressing condition with a TimedOutReason reason already
+// exists.
+// func DeploymentTimedOut(deployment *apps.Deployment, newStatus *apps.DeploymentStatus) bool {
+// 	if !HasProgressDeadline(deployment) {
+// 		return false
+// 	}
+
+// 	// Look for the Progressing condition. If it doesn't exist, we have no base to estimate progress.
+// 	// If it's already set with a TimedOutReason reason, we have already timed out, no need to check
+// 	// again.
+// 	condition := GetDeploymentCondition(*newStatus, apps.DeploymentProgressing)
+// 	if condition == nil {
+// 		return false
+// 	}
+// 	// If the previous condition has been a successful rollout then we shouldn't try to
+// 	// estimate any progress. Scenario:
+// 	//
+// 	// * progressDeadlineSeconds is smaller than the difference between now and the time
+// 	//   the last rollout finished in the past.
+// 	// * the creation of a new ReplicaSet triggers a resync of the Deployment prior to the
+// 	//   cached copy of the Deployment getting updated with the status.condition that indicates
+// 	//   the creation of the new ReplicaSet.
+// 	//
+// 	// The Deployment will be resynced and eventually its Progressing condition will catch
+// 	// up with the state of the world.
+// 	if condition.Reason == NewRSAvailableReason {
+// 		return false
+// 	}
+// 	if condition.Reason == TimedOutReason {
+// 		return true
+// 	}
+
+// 	// Look at the difference in seconds between now and the last time we reported any
+// 	// progress or tried to create a replica set, or resumed a paused deployment and
+// 	// compare against progressDeadlineSeconds.
+// 	from := condition.LastUpdateTime
+// 	now := nowFn()
+// 	delta := time.Duration(*deployment.Spec.ProgressDeadlineSeconds) * time.Second
+// 	timedOut := from.Add(delta).Before(now)
+
+// 	klog.V(4).Infof("Deployment %q timed out (%t) [last progress check: %v - now: %v]", deployment.Name, timedOut, from, now)
+// 	return timedOut
+// }

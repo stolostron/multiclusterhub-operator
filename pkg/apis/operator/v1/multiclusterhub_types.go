@@ -239,6 +239,9 @@ type HubConditionType string
 const (
 	HubTypeInitialized HubConditionType = "Initialized"
 	HubTypeSuccessful  HubConditionType = "Successful"
+
+	// Terminating means that the multiclusterhub has been deleted and is cleaning up.
+	Terminating HubConditionType = "Terminating"
 )
 
 // StatusCondition contains condition information.
