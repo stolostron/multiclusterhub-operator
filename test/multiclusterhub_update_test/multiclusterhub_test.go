@@ -49,13 +49,13 @@ var _ = Describe("Multiclusterhub", func() {
 			Eventually(func() error {
 				version, err := utils.GetCurrentVersionFromMCH()
 				if err != nil {
-					return fmt.Errorf("MultiClusterHub: %s status has no 'currentVersion' field", mch.GetName())
+					return fmt.Errorf("MultiClusterHub: %s status has no 'currentVersion' field", utils.MCHName)
 				}
 				if version != os.Getenv("updateVersion") {
-					return fmt.Errorf("MCH: %s current version mismatch '%s' != %s", mch.GetName(), version, os.Getenv("updateVersion"))
+					return fmt.Errorf("MCH: %s current version mismatch '%s' != %s", utils.MCHName, version, os.Getenv("updateVersion"))
 				}
-				Expect(status["currentVersion"]).To(Equal(os.Getenv("updateVersion")))
-				Expect(status["desiredVersion"]).To(Equal(os.Getenv("updateVersion")))
+				Expect(version).To(Equal(os.Getenv("updateVersion")))
+				Expect(version).To(Equal(os.Getenv("updateVersion")))
 				return nil
 			}, 800, 1).Should(BeNil())
 			klog.V(1).Info("MCH Operator upgraded successfully")
