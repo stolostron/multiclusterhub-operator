@@ -83,6 +83,9 @@ func RemoveFinalizerFromHelmRelease(clientHubDynamic dynamic.Interface) error {
 		return err
 	}
 
+	if len(helmReleases.Items) == 0 {
+		return fmt.Errorf("No helmreleases found")
+	}
 	helmRelease := helmReleases.Items[0]
 	helmRelease.SetFinalizers([]string{})
 

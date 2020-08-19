@@ -105,9 +105,16 @@ func FullInstallTestSuite() {
 		mch, err = utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
 		Expect(err).To(BeNil())
 
-		configmap, err = utils.KubeClient.CoreV1().ConfigMaps(utils.MCHNamespace).Get(context.TODO(), fmt.Sprintf("mch-image-manifest-%s", currentVersion), metav1.GetOptions{})
-		Expect(len(configmap.Data)).ShouldNot(Equal(0))
-		Expect(configmap.Data["application_ui"]).Should(Equal("quay.io/open-cluster-management/application-ui:not-a-real-tag"))
+		Eventually(func() error {
+			configmap, err = utils.KubeClient.CoreV1().ConfigMaps(utils.MCHNamespace).Get(context.TODO(), fmt.Sprintf("mch-image-manifest-%s", currentVersion), metav1.GetOptions{})
+			if len(configmap.Data) == 0 {
+				return fmt.Errorf("Configmap has not been updated")
+			}
+			if configmap.Data["application_ui"] != "quay.io/open-cluster-management/application-ui:not-a-real-tag" {
+				return fmt.Errorf("Configmap has not been updated from overrides CM.")
+			}
+			return nil
+		}, 30, 1).Should(BeNil())
 
 		annotations = make(map[string]string)
 		mch.SetAnnotations(annotations)
