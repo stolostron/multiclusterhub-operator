@@ -324,6 +324,15 @@ func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 	_, err = deploymentLink.Get(context.TODO(), "multiclusterhub-repo", metav1.GetOptions{})
 	Expect(err).ShouldNot(BeNil())
 
+	By("- Ensuring MCH image manifest configmap is terminated")
+	labelSelector = fmt.Sprintf("ocm-configmap-type=%s", "image-manifest")
+	listOptions = metav1.ListOptions{
+		LabelSelector: labelSelector,
+		Limit:         100,
+	}
+	configmaps, err := KubeClient.CoreV1().ConfigMaps(MCHNamespace).List(context.TODO(), listOptions)
+	Expect(len(configmaps.Items)).Should(Equal(0))
+
 	return nil
 }
 
