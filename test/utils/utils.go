@@ -388,7 +388,7 @@ func ValidateMCH(mch *unstructured.Unstructured) error {
             if status["phase"] == "Running" {
                 components, ok := mch.Object["status"].(map[string]interface{})["components"]
                 if !ok || components == nil {
-                    return fmt.Errorf("MultiClusterHub: %s has no 'Components' map in status", mch.GetName())
+                    return fmt.Errorf("MultiClusterHub: %s has no 'Components' map despite reporting 'running'", mch.GetName())
                 }
                 for k, v := range components.(map[string]interface{}) {
                     compStatus := v.(map[string]interface{})["status"].(string)
@@ -470,6 +470,28 @@ func ValidateMCH(mch *unstructured.Unstructured) error {
 	if !ok {
 		return fmt.Errorf("Unable to create all Helm Releases successfully")
 	}
+	return nil
+}
+
+//check if Component statuses exist immediately when MCH is created
+func ValidateComponentStatusExist(mch *unstructured.Unstructured) error {
+	Eventually(func() error {
+		mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+		if mch.Object["status"] == nil {
+			return fmt.Errorf("MCH object status not created")
+		}
+		Expect(err).To(BeNil())
+		if components, ok := mch.Object["status"].(map[string]interface{})["components"]; !ok || components == nil {
+			return fmt.Errorf("MultiClusterHub: %s has no 'Components' map in status", mch.GetName())
+		} else {
+			for k, v := range components.(map[string]interface{}) {
+				if _, ok := v.(map[string]interface{})["status"].(string); !ok {
+					return fmt.Errorf("Component: %s status does not exist", k)
+				}
+			}
+		}
+		return nil
+	}, 10,1).Should(BeNil())
 	return nil
 }
 
