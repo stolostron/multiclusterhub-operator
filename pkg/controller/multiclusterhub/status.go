@@ -194,7 +194,6 @@ func mapHelmRelease(hr *subrelv1.HelmRelease) operatorsv1.StatusCondition {
 		Reason:             string(condition.Reason),
 		Message:            condition.Message,
 	}
-
 	// Ignore success messages
 	if !isErrorType(ret.Type) {
 		ret.Message = ""
