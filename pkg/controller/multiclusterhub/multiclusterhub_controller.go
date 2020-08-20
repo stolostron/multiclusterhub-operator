@@ -220,7 +220,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 	r.CacheSpec.ImageSuffix = utils.GetImageSuffix(multiClusterHub)
 	r.CacheSpec.ImageOverridesCM = utils.GetImageOverridesConfigmap(multiClusterHub)
 
-	err = r.storeFinalImageOverrides(multiClusterHub)
+	err = r.maintainImageManifestConfigmap(multiClusterHub)
 	if err != nil {
 		reqLogger.Error(err, "Error storing image manifests in configmap")
 		return reconcile.Result{}, err

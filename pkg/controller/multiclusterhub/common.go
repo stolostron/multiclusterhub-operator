@@ -379,7 +379,7 @@ func (r *ReconcileMultiClusterHub) OverrideImagesFromConfigmap(imageOverrides ma
 	return imageOverrides, nil
 }
 
-func (r *ReconcileMultiClusterHub) storeFinalImageOverrides(mch *operatorsv1.MultiClusterHub) error {
+func (r *ReconcileMultiClusterHub) maintainImageManifestConfigmap(mch *operatorsv1.MultiClusterHub) error {
 	// Define configmap
 	configmap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{

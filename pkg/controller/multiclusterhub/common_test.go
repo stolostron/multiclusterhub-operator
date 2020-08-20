@@ -454,7 +454,7 @@ func Test_OverrideImagesFromConfigmap(t *testing.T) {
 	}
 }
 
-func Test_storeFinalImageOverrides(t *testing.T) {
+func Test_maintainImageManifestConfigmap(t *testing.T) {
 	r, err := getTestReconciler(full_mch)
 	if err != nil {
 		t.Fatalf("Failed to create test reconciler")
@@ -472,7 +472,7 @@ func Test_storeFinalImageOverrides(t *testing.T) {
 	configmapName := fmt.Sprintf("mch-image-manifest-%s", r.CacheSpec.ManifestVersion)
 
 	// Check configmap is created if it doesnt exist
-	err = r.storeFinalImageOverrides(full_mch)
+	err = r.maintainImageManifestConfigmap(full_mch)
 	if err != nil {
 		t.Fatalf("Failed to store image overrides: %s", err)
 	}
@@ -504,7 +504,7 @@ func Test_storeFinalImageOverrides(t *testing.T) {
 	if !reflect.DeepEqual(configmap.Data, make(map[string]string)) {
 		t.Fatalf("Failed to clear configmap contents")
 	}
-	err = r.storeFinalImageOverrides(full_mch)
+	err = r.maintainImageManifestConfigmap(full_mch)
 	if err != nil {
 		t.Fatalf("Failed to store image overrides: %s", err)
 	}
