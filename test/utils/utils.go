@@ -473,20 +473,20 @@ func ValidateMCH(mch *unstructured.Unstructured) error {
 	return nil
 }
 
-//check if MCH object status exists
-func ValidateMCHStatusExist(mch *unstructured.Unstructured) error {
-	mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+//check if mch status exists
+func ValidateMCHStatusExist(mch *unstructured.Unstructured) error  {
 	if mch.Object["status"] == nil {
 		return fmt.Errorf("MCH object status not created")
 	}
-	Expect(err).To(BeNil())
 	return nil
-}	
+}
 
 //check if Component statuses exist immediately when MCH is created
 func ValidateComponentStatusExist(mch *unstructured.Unstructured) error {
 	Eventually(func() error {
-		if err := ValidateMCHStatusExist(mch); err != nil { return fmt.Errorf("mch status doesn't exist")}
+		mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+		ValidateMCHStatusExist(mch)
+		Expect(err).To(BeNil())
 		if components, ok := mch.Object["status"].(map[string]interface{})["components"]; !ok || components == nil {
 			return fmt.Errorf("MultiClusterHub: %s has no 'Components' map in status", mch.GetName())
 		} else {
