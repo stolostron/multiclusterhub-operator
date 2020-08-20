@@ -486,7 +486,7 @@ func ValidateMCHStatusExist(mch *unstructured.Unstructured) error {
 //check if Component statuses exist immediately when MCH is created
 func ValidateComponentStatusExist(mch *unstructured.Unstructured) error {
 	Eventually(func() error {
-		ValidateMCHStatusExist(mch)
+		if err := ValidateMCHStatusExist(mch); err != nil { return fmt.Errorf("mch status doesn't exist")}
 		if components, ok := mch.Object["status"].(map[string]interface{})["components"]; !ok || components == nil {
 			return fmt.Errorf("MultiClusterHub: %s has no 'Components' map in status", mch.GetName())
 		} else {
