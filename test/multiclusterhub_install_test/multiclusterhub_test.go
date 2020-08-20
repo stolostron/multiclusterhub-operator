@@ -57,7 +57,17 @@ var _ = Describe("Multiclusterhub", func() {
 		By("Beginning Basic Install Test Suite ...")
 		It("Install Default MCH CR", func() {
 			By("Creating MultiClusterHub")
-			utils.ValidateMCH(utils.CreateDefaultMCH())
+			mch := utils.CreateDefaultMCH()
+			if err := utils.ValidateComponentStatusExist(mch); err != nil {
+				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				return
+			}
+			err := utils.ValidateMCH(mch)
+			if err != nil {
+				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				return
+			}
+			return
 		})
 	}
 })
