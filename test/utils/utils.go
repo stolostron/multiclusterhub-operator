@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
@@ -426,11 +427,17 @@ func ValidateMCH(mch *unstructured.Unstructured) error {
 		}
 	}
 
-	By("- Ensuring image manifest configmap is created")
 	currentVersion, err := GetCurrentVersionFromMCH()
 	Expect(err).Should(BeNil())
-	_, err = KubeClient.CoreV1().ConfigMaps(MCHNamespace).Get(context.TODO(), fmt.Sprintf("mch-image-manifest-%s", currentVersion), metav1.GetOptions{})
+	v, err := semver.NewVersion(currentVersion)
 	Expect(err).Should(BeNil())
+	c, err := semver.NewConstraint(">= 2.1.0")
+	Expect(err).Should(BeNil())
+	if c.Check(v) {
+		By("- Ensuring image manifest configmap is created")
+		_, err = KubeClient.CoreV1().ConfigMaps(MCHNamespace).Get(context.TODO(), fmt.Sprintf("mch-image-manifest-%s", currentVersion), metav1.GetOptions{})
+		Expect(err).Should(BeNil())
+	}
 
 	return nil
 }

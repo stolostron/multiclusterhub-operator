@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Masterminds/semver"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -45,25 +46,30 @@ func FullInstallTestSuite() {
 		By("- Overrwite Image Overrides Configmap")
 		currentVersion, err := utils.GetCurrentVersionFromMCH()
 		Expect(err).To(BeNil())
-		configmap, err := utils.KubeClient.CoreV1().ConfigMaps(utils.MCHNamespace).Get(context.TODO(), fmt.Sprintf("mch-image-manifest-%s", currentVersion), metav1.GetOptions{})
-		Expect(err).To(BeNil())
+		v, err := semver.NewVersion(currentVersion)
+		Expect(err).Should(BeNil())
+		c, err := semver.NewConstraint(">= 2.1.0")
+		Expect(err).Should(BeNil())
 
-		// Clear all data in configmap
-		configmap.Data = make(map[string]string)
-		configmap, err = utils.KubeClient.CoreV1().ConfigMaps(utils.MCHNamespace).Update(context.TODO(), configmap, metav1.UpdateOptions{})
-		Expect(err).To(BeNil())
-		Expect(len(configmap.Data)).Should(Equal(0))
+		if c.Check(v) {
+			configmap, err := utils.KubeClient.CoreV1().ConfigMaps(utils.MCHNamespace).Get(context.TODO(), fmt.Sprintf("mch-image-manifest-%s", currentVersion), metav1.GetOptions{})
+			Expect(err).To(BeNil())
 
-		Eventually(func() error {
-			configmap, err = utils.KubeClient.CoreV1().ConfigMaps(utils.MCHNamespace).Get(context.TODO(), fmt.Sprintf("mch-image-manifest-%s", currentVersion), metav1.GetOptions{})
-			if len(configmap.Data) == 0 {
-				return fmt.Errorf("Configmap has not been updated")
-			}
-			return nil
-		}, 30, 1).Should(BeNil())
+			// Clear all data in configmap
+			configmap.Data = make(map[string]string)
+			configmap, err = utils.KubeClient.CoreV1().ConfigMaps(utils.MCHNamespace).Update(context.TODO(), configmap, metav1.UpdateOptions{})
+			Expect(err).To(BeNil())
+			Expect(len(configmap.Data)).Should(Equal(0))
 
-		By("- If `mch-imageOverridesCM` annotation is given, ensure Image Overrides Configmap is updated ")
+			Eventually(func() error {
+				configmap, err = utils.KubeClient.CoreV1().ConfigMaps(utils.MCHNamespace).Get(context.TODO(), fmt.Sprintf("mch-image-manifest-%s", currentVersion), metav1.GetOptions{})
+				if len(configmap.Data) == 0 {
+					return fmt.Errorf("Configmap has not been updated")
+				}
+				return nil
+			}, 30, 1).Should(BeNil())
 
+		}
 		return
 	})
 
@@ -93,37 +99,43 @@ func FullInstallTestSuite() {
 		// Create configmap overrides
 		currentVersion, err := utils.GetCurrentVersionFromMCH()
 		Expect(err).To(BeNil())
-		_, err = utils.KubeClient.CoreV1().ConfigMaps(utils.MCHNamespace).Create(context.TODO(), configmap, metav1.CreateOptions{})
-		Expect(err).To(BeNil())
 
-		// Annotate MCH
-		annotations := make(map[string]string)
-		annotations["mch-imageOverridesCM"] = "my-config"
-		mch, err := utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Get(context.TODO(), utils.MCHName, metav1.GetOptions{})
-		Expect(err).To(BeNil())
-		mch.SetAnnotations(annotations)
-		mch, err = utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
-		Expect(err).To(BeNil())
+		v, err := semver.NewVersion(currentVersion)
+		Expect(err).Should(BeNil())
+		c, err := semver.NewConstraint(">= 2.1.0")
+		Expect(err).Should(BeNil())
+		if c.Check(v) {
+			_, err = utils.KubeClient.CoreV1().ConfigMaps(utils.MCHNamespace).Create(context.TODO(), configmap, metav1.CreateOptions{})
+			Expect(err).To(BeNil())
 
-		Eventually(func() error {
-			configmap, err = utils.KubeClient.CoreV1().ConfigMaps(utils.MCHNamespace).Get(context.TODO(), fmt.Sprintf("mch-image-manifest-%s", currentVersion), metav1.GetOptions{})
-			if len(configmap.Data) == 0 {
-				return fmt.Errorf("Configmap has not been updated")
-			}
-			if configmap.Data["application_ui"] != "quay.io/open-cluster-management/application-ui:not-a-real-tag" {
-				return fmt.Errorf("Configmap has not been updated from overrides CM.")
-			}
-			return nil
-		}, 30, 1).Should(BeNil())
+			// Annotate MCH
+			annotations := make(map[string]string)
+			annotations["mch-imageOverridesCM"] = "my-config"
+			mch, err := utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Get(context.TODO(), utils.MCHName, metav1.GetOptions{})
+			Expect(err).To(BeNil())
+			mch.SetAnnotations(annotations)
+			mch, err = utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
+			Expect(err).To(BeNil())
 
-		annotations = make(map[string]string)
-		mch.SetAnnotations(annotations)
-		_, err = utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
-		Expect(err).To(BeNil())
+			Eventually(func() error {
+				configmap, err = utils.KubeClient.CoreV1().ConfigMaps(utils.MCHNamespace).Get(context.TODO(), fmt.Sprintf("mch-image-manifest-%s", currentVersion), metav1.GetOptions{})
+				if len(configmap.Data) == 0 {
+					return fmt.Errorf("Configmap has not been updated")
+				}
+				if configmap.Data["application_ui"] != "quay.io/open-cluster-management/application-ui:not-a-real-tag" {
+					return fmt.Errorf("Configmap has not been updated from overrides CM.")
+				}
+				return nil
+			}, 30, 1).Should(BeNil())
 
-		err = utils.KubeClient.CoreV1().ConfigMaps(utils.MCHNamespace).Delete(context.TODO(), "my-config", metav1.DeleteOptions{})
-		Expect(err).To(BeNil())
+			annotations = make(map[string]string)
+			mch.SetAnnotations(annotations)
+			_, err = utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
+			Expect(err).To(BeNil())
 
+			err = utils.KubeClient.CoreV1().ConfigMaps(utils.MCHNamespace).Delete(context.TODO(), "my-config", metav1.DeleteOptions{})
+			Expect(err).To(BeNil())
+		}
 		return
 	})
 
