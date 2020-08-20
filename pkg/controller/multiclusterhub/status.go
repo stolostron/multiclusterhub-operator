@@ -194,6 +194,11 @@ func mapHelmRelease(hr *subrelv1.HelmRelease) operatorsv1.StatusCondition {
 		Reason:             string(condition.Reason),
 		Message:            condition.Message,
 	}
+
+	if condition.Type == "Initialized" && hr.Status.DeployedRelease != nil {
+		ret.Type = "DeployedRelease"
+	}
+
 	// Ignore success messages
 	if !isErrorType(ret.Type) {
 		ret.Message = ""
@@ -202,7 +207,7 @@ func mapHelmRelease(hr *subrelv1.HelmRelease) operatorsv1.StatusCondition {
 }
 
 func successfulComponent(sc operatorsv1.StatusCondition) bool {
-	return (sc.Status == metav1.ConditionTrue) && (sc.Type == "Available" || sc.Type == "Deployed")
+	return (sc.Status == metav1.ConditionTrue) && (sc.Type == "Available" || sc.Type == "Deployed" || sc.Type == "DeployedRelease")
 }
 
 func aggregateStatus(components map[string]operatorsv1.StatusCondition) operatorsv1.HubPhaseType {
