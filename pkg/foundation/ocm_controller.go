@@ -54,7 +54,7 @@ func OCMControllerDeployment(m *operatorsv1.MultiClusterHub, overrides map[strin
 						ImagePullPolicy: utils.GetImagePullPolicy(m),
 						Name:            OCMControllerName,
 						Args: []string{
-							"/acm-controller",
+							"/controller",
 							"--agent-cafile=/var/run/klusterlet/ca.crt",
 						},
 						LivenessProbe: &v1.Probe{
