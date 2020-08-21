@@ -27,7 +27,8 @@ var _ = Describe("Multiclusterhub", func() {
 	if os.Getenv("full_test_suite") == "true" {
 		It("SAD CASE: Fail to remove a helmrelease (Left behind finalizer)", func() {
 			By("Creating MultiClusterHub")
-			utils.ValidateMCH(utils.CreateDefaultMCH())
+			utils.CreateDefaultMCH()
+			utils.ValidateMCH()
 			AddFinalizerToHelmRelease(utils.DynamicKubeClient)
 			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, false)
 			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).ShouldNot(BeNil())

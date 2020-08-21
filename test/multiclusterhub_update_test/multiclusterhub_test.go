@@ -27,8 +27,8 @@ var _ = Describe("Multiclusterhub", func() {
 	By("Beginning Basic Update Test Suite ...")
 	It("Install Default MCH CR", func() {
 		By("Creating MultiClusterHub")
-		defaultMCH := utils.CreateDefaultMCH()
-		utils.ValidateMCH(defaultMCH)
+		utils.CreateDefaultMCH()
+		utils.ValidateMCH()
 
 		By("Approving Update InstallPlan")
 		subscription := utils.DynamicKubeClient.Resource(utils.GVRSub).Namespace(utils.MCHNamespace)
@@ -62,7 +62,7 @@ var _ = Describe("Multiclusterhub", func() {
 			klog.V(1).Info("MCH Operator upgraded successfully")
 		})
 
-		utils.ValidateMCH(defaultMCH)
+		utils.ValidateMCH()
 
 		startVersion, err := semver.NewVersion(os.Getenv(("startVersion")))
 		Expect(err).Should(BeNil())

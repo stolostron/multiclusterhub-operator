@@ -31,7 +31,17 @@ var _ = Describe("Multiclusterhub", func() {
 		By("Beginning Basic Install Test Suite ...")
 		It("Install Default MCH CR", func() {
 			By("Creating MultiClusterHub")
-			utils.ValidateMCH(utils.CreateDefaultMCH())
+			utils.CreateDefaultMCH()
+			if err := utils.ValidateStatusesExist(); err != nil {
+				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				return
+			}
+			err := utils.ValidateMCH()
+			if err != nil {
+				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				return
+			}
+			return
 		})
 	}
 })
@@ -40,7 +50,9 @@ func FullInstallTestSuite() {
 
 	It("Testing Image Overrides Configmap", func() {
 		By("- If configmap is manually overwitten, ensure MCH Operator will overwrite")
-		err := utils.ValidateMCH(utils.CreateDefaultMCH())
+
+		utils.CreateDefaultMCH()
+		err := utils.ValidateMCH()
 		Expect(err).To(BeNil())
 
 		By("- Overrwite Image Overrides Configmap")
@@ -76,7 +88,8 @@ func FullInstallTestSuite() {
 	It("- If `mch-imageOverridesCM` annotation is given, ensure Image Overrides Configmap is updated ", func() {
 		By("- Creating Developer Image Overrides Configmap")
 
-		err := utils.ValidateMCH(utils.CreateDefaultMCH())
+		utils.CreateDefaultMCH()
+		err := utils.ValidateMCH()
 		Expect(err).To(BeNil())
 
 		configmap := &corev1.ConfigMap{
@@ -141,7 +154,9 @@ func FullInstallTestSuite() {
 
 	It("Installing MCH with bad pull secret - should have Pending status", func() {
 		By("Creating MultiClusterHub")
-		err := utils.ValidateMCHUnsuccessful(utils.CreateMCHBadPullSecret())
+		utils.CreateMCHBadPullSecret()
+
+		err := utils.ValidateMCHUnsuccessful()
 		if err != nil {
 			fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
 			return
@@ -149,16 +164,24 @@ func FullInstallTestSuite() {
 		return
 	})
 
-	totalAttempts := 10
+	totalAttempts := 2
 	for i := 1; i <= totalAttempts; i++ {
-		It(fmt.Sprintf("Installing MCH - Attempt %d of %d", i, totalAttempts), func() {
+		ok := It(fmt.Sprintf("Installing MCH - Attempt %d of %d", i, totalAttempts), func() {
 			By("Creating MultiClusterHub")
-			err := utils.ValidateMCH(utils.CreateDefaultMCH())
+			utils.CreateDefaultMCH()
+			if err := utils.ValidateStatusesExist(); err != nil {
+				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				return
+			}
+			err := utils.ValidateMCH()
 			if err != nil {
 				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
 				return
 			}
 			return
 		})
+		if !ok {
+			break
+		}
 	}
 }
