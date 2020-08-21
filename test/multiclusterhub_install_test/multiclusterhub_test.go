@@ -25,7 +25,8 @@ var _ = Describe("Multiclusterhub", func() {
 
 		It(fmt.Sprintf("Installing MCH with bad pull secret - should have Pending status"), func() {
 			By("Creating MultiClusterHub")
-			err := utils.ValidateMCHUnsuccessful(utils.CreateMCHBadPullSecret())
+			utils.CreateMCHBadPullSecret()
+			err := utils.ValidateMCHUnsuccessful()
 			if err != nil {
 				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
 				return
@@ -37,7 +38,12 @@ var _ = Describe("Multiclusterhub", func() {
 		for i := 1; i <= totalAttempts; i++ {
 			ok := It(fmt.Sprintf("Installing MCH - Attempt %d of %d", i, totalAttempts), func() {
 				By("Creating MultiClusterHub")
-				err := utils.ValidateMCH(utils.CreateDefaultMCH())
+				utils.CreateDefaultMCH()
+				if err := utils.ValidateStatusesExist(); err != nil {
+					fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+					return
+				}
+				err := utils.ValidateMCH()
 				if err != nil {
 					fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
 					return
@@ -52,7 +58,17 @@ var _ = Describe("Multiclusterhub", func() {
 		By("Beginning Basic Install Test Suite ...")
 		It("Install Default MCH CR", func() {
 			By("Creating MultiClusterHub")
-			utils.ValidateMCH(utils.CreateDefaultMCH())
+			utils.CreateDefaultMCH()
+			if err := utils.ValidateStatusesExist(); err != nil {
+				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				return
+			}
+			err := utils.ValidateMCH()
+			if err != nil {
+				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				return
+			}
+			return
 		})
 	}
 })

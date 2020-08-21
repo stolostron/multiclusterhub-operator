@@ -328,7 +328,7 @@ func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 }
 
 // ValidateMCHUnsuccessful ...
-func ValidateMCHUnsuccessful(mch *unstructured.Unstructured) error {
+func ValidateMCHUnsuccessful() error {
 	By("Validating MultiClusterHub Unsuccessful")
 	By(fmt.Sprintf("- Waiting %d minutes", WaitInMinutes), func() {
 		time.Sleep(time.Duration(WaitInMinutes) * time.Minute)
@@ -357,7 +357,7 @@ func ValidateMCHUnsuccessful(mch *unstructured.Unstructured) error {
 }
 
 // ValidateMCH validates MCH CR is running successfully
-func ValidateMCH(mch *unstructured.Unstructured) error {
+func ValidateMCH() error {
 	By("Validating MultiClusterHub")
 
 	By("- Ensuring MCH is in 'running' phase")
@@ -379,6 +379,28 @@ func ValidateMCH(mch *unstructured.Unstructured) error {
 		}, WaitInMinutes*60, 1).Should(BeNil())
 	})
 
+	By("- Ensuring components have status 'true' when MCH is in 'running' phase")
+	When("Component statuses should be true", func() {
+		Eventually(func() error {
+			mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+			Expect(err).To(BeNil())
+			status := mch.Object["status"].(map[string]interface{})
+			if status["phase"] == "Running" {
+				components, ok := mch.Object["status"].(map[string]interface{})["components"]
+				if !ok || components == nil {
+					return fmt.Errorf("MultiClusterHub: %s has no 'Components' map despite reporting 'running'", mch.GetName())
+				}
+				for k, v := range components.(map[string]interface{}) {
+					compStatus := v.(map[string]interface{})["status"].(string)
+					if compStatus != "True" {
+						return fmt.Errorf("Component: %s does not have status of 'true'", k)
+					}
+				}
+			}
+			return nil
+		}, 1, 1).Should(BeNil())
+	})
+
 	var deploy *appsv1.Deployment
 	When("MultiClusterHub Repo should be available", func() {
 		Eventually(func() error {
@@ -395,6 +417,9 @@ func ValidateMCH(mch *unstructured.Unstructured) error {
 		}, 1, 1).Should(BeNil())
 		klog.V(1).Info("MCH Repo deployment available")
 	})
+
+	mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+	Expect(err).To(BeNil())
 	By("- Checking ownerRef", func() {
 		Expect(IsOwner(mch, &deploy.ObjectMeta)).To(Equal(true))
 	})
@@ -445,6 +470,58 @@ func ValidateMCH(mch *unstructured.Unstructured) error {
 	})
 	if !ok {
 		return fmt.Errorf("Unable to create all Helm Releases successfully")
+	}
+	return nil
+}
+
+// ValidateMCHStatusExist check if mch status exists
+func ValidateMCHStatusExist() error {
+	Eventually(func() error {
+		mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+		Expect(err).To(BeNil())
+		status, ok := mch.Object["status"].(map[string]interface{})
+		if !ok || status == nil {
+			return fmt.Errorf("MultiClusterHub: %s has no 'status' map", mch.GetName())
+		}
+		return nil
+	}, 10, 1).Should(BeNil())
+	return nil
+}
+
+// ValidateComponentStatusExist check if Component statuses exist immediately when MCH is created
+func ValidateComponentStatusExist() error {
+	Eventually(func() error {
+		mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+		Expect(err).To(BeNil())
+		status, ok := mch.Object["status"].(map[string]interface{})
+		if !ok || status == nil {
+			return fmt.Errorf("MultiClusterHub: %s has no 'status' map", mch.GetName())
+		}
+		if components, ok := status["components"]; !ok || components == nil {
+			return fmt.Errorf("MultiClusterHub: %s has no 'Components' map in status", mch.GetName())
+		} else {
+			for k, v := range components.(map[string]interface{}) {
+				if _, ok := v.(map[string]interface{})["status"].(string); !ok {
+					return fmt.Errorf("Component: %s status does not exist", k)
+				}
+			}
+		}
+		return nil
+	}, 10, 1).Should(BeNil())
+	return nil
+}
+
+// ValidateStatusesExist Confirms existence of both overall MCH and Component statuses immediately after MCH creation
+func ValidateStatusesExist() error {
+	By("Validating Statuses exist")
+
+	By("- Ensuring MCH Status exists")
+	if err := ValidateMCHStatusExist(); err != nil {
+		return err
+	}
+	By("- Ensuring Component Status exist")
+	if err := ValidateComponentStatusExist(); err != nil {
+		return err
 	}
 	return nil
 }
