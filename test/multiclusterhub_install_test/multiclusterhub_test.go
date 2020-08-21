@@ -39,7 +39,7 @@ var _ = Describe("Multiclusterhub", func() {
 			ok := It(fmt.Sprintf("Installing MCH - Attempt %d of %d", i, totalAttempts), func() {
 				By("Creating MultiClusterHub")
 				utils.CreateDefaultMCH()
-				if err := utils.ValidateComponentStatusExist(); err != nil {
+				if err := utils.ValidateStatusesExist(); err != nil {
 					fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
 					return
 				}
@@ -59,7 +59,7 @@ var _ = Describe("Multiclusterhub", func() {
 		It("Install Default MCH CR", func() {
 			By("Creating MultiClusterHub")
 			utils.CreateDefaultMCH()
-			if err := utils.ValidateComponentStatusExist(); err != nil {
+			if err := utils.ValidateStatusesExist(); err != nil {
 				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
 				return
 			}

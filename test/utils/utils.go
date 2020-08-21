@@ -417,6 +417,9 @@ func ValidateMCH() error {
 		}, 1, 1).Should(BeNil())
 		klog.V(1).Info("MCH Repo deployment available")
 	})
+
+	mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+	Expect(err).To(BeNil())
 	By("- Checking ownerRef", func() {
 		Expect(IsOwner(mch, &deploy.ObjectMeta)).To(Equal(true))
 	})
@@ -475,8 +478,10 @@ func ValidateMCH() error {
 func ValidateMCHStatusExist() error {
 	Eventually(func() error {
 		mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
-		if mch.Object["status"] == nil {
-			return fmt.Errorf("MCH object status not created")
+		Expect(err).To(BeNil())
+		status, ok := mch.Object["status"].(map[string]interface{})
+		if !ok || status == nil {
+			return fmt.Errorf("MultiClusterHub: %s has no 'status' map", mch.GetName())
 		}
 		return nil
 	}, 10, 1).Should(BeNil())
@@ -488,7 +493,11 @@ func ValidateComponentStatusExist() error {
 	Eventually(func() error {
 		mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
 		Expect(err).To(BeNil())
-		if components, ok := mch.Object["status"].(map[string]interface{})["components"]; !ok || components == nil {
+		status, ok := mch.Object["status"].(map[string]interface{})
+		if !ok || status == nil {
+			return fmt.Errorf("MultiClusterHub: %s has no 'status' map", mch.GetName())
+		}
+		if components, ok := status["components"]; !ok || components == nil {
 			return fmt.Errorf("MultiClusterHub: %s has no 'Components' map in status", mch.GetName())
 		} else {
 			for k, v := range components.(map[string]interface{}) {
@@ -504,10 +513,14 @@ func ValidateComponentStatusExist() error {
 
 // ValidateStatusesExist Confirms existence of both overall MCH and Component statuses immediately after MCH creation
 func ValidateStatusesExist() error {
-	if err := utils.ValidateMCHStatusExist(); err != nil {
+	By("Validating Statuses exist")
+
+	By("- Ensuring MCH Status exists")
+	if err := ValidateMCHStatusExist(); err != nil {
 		return err
 	}
-	if err = utils.ValidateComponentStatusExist(); err != nil {
+	By("- Ensuring Component Status exist")
+	if err := ValidateComponentStatusExist(); err != nil {
 		return err
 	}
 	return nil
