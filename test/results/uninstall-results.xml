@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  <testsuite name="MultiClusterHubOperator Install Suite" tests="2" failures="0" errors="0" time="7.192">
+      <testcase name="Multiclusterhub Deleting and Validating MCH CR" classname="MultiClusterHubOperator Install Suite" time="0.687181286"></testcase>
+  </testsuite>
