@@ -71,7 +71,7 @@ var _ = Describe("Multiclusterhub", func() {
 
 		c, err := semver.NewConstraint(">= 2.1.0")
 		Expect(err).Should(BeNil())
-		configmapCount = 0
+		configmapCount := 0
 		if c.Check(startVersion) {
 			configmapCount = 2
 		} else if c.Check(updateVersion) {
@@ -80,12 +80,12 @@ var _ = Describe("Multiclusterhub", func() {
 
 		if configmapCount > 0 {
 			By("Validating Image Manifest Configmaps Exist")
-			labelSelector = fmt.Sprintf("ocm-configmap-type=%s", "image-manifest")
-			listOptions = metav1.ListOptions{
+			labelSelector := fmt.Sprintf("ocm-configmap-type=%s", "image-manifest")
+			listOptions := metav1.ListOptions{
 				LabelSelector: labelSelector,
 				Limit:         100,
 			}
-			configmaps, err := KubeClient.CoreV1().ConfigMaps(MCHNamespace).List(context.TODO(), listOptions)
+			configmaps, err := utils.KubeClient.CoreV1().ConfigMaps(utils.MCHNamespace).List(context.TODO(), listOptions)
 			Expect(err).To(BeNil())
 			Expect(len(configmaps.Items)).Should(Equal(configmapCount))
 		}
