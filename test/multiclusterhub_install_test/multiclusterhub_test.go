@@ -33,7 +33,7 @@ var _ = Describe("Multiclusterhub", func() {
 			return
 		})
 
-		totalAttempts := 10
+		totalAttempts := 2
 		for i := 1; i <= totalAttempts; i++ {
 			ok := It(fmt.Sprintf("Installing MCH - Attempt %d of %d", i, totalAttempts), func() {
 				By("Creating MultiClusterHub")
