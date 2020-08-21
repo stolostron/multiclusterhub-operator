@@ -8,4 +8,5 @@ resources:
 - catalogsource.yaml
 - service.yaml
 - deploy.yaml
+- default-sa-pull-secret-patch.yaml
 # - subscription.yaml

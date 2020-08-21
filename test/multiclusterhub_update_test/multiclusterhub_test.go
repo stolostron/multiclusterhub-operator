@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Masterminds/semver"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -62,5 +63,31 @@ var _ = Describe("Multiclusterhub", func() {
 		})
 
 		utils.ValidateMCH(defaultMCH)
+
+		startVersion, err := semver.NewVersion(os.Getenv(("startVersion")))
+		Expect(err).Should(BeNil())
+		updateVersion, err := semver.NewVersion(os.Getenv(("updateVersion")))
+		Expect(err).Should(BeNil())
+
+		c, err := semver.NewConstraint(">= 2.1.0")
+		Expect(err).Should(BeNil())
+		configmapCount = 0
+		if c.Check(startVersion) {
+			configmapCount = 2
+		} else if c.Check(updateVersion) {
+			configmapCount = 1
+		}
+
+		if configmapCount > 0 {
+			By("Validating Image Manifest Configmaps Exist")
+			labelSelector = fmt.Sprintf("ocm-configmap-type=%s", "image-manifest")
+			listOptions = metav1.ListOptions{
+				LabelSelector: labelSelector,
+				Limit:         100,
+			}
+			configmaps, err := KubeClient.CoreV1().ConfigMaps(MCHNamespace).List(context.TODO(), listOptions)
+			Expect(err).To(BeNil())
+			Expect(len(configmaps.Items)).Should(Equal(configmapCount))
+		}
 	})
 })
