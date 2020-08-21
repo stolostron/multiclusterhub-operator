@@ -53,9 +53,9 @@ func WebhookDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]stri
 						ImagePullPolicy: utils.GetImagePullPolicy(m),
 						Name:            WebhookName,
 						Args: []string{
-							"/acm-webhook",
-							"--tls-cert-file=/var/run/acm-webhook/tls.crt",
-							"--tls-private-key-file=/var/run/acm-webhook/tls.key",
+							"/webhook",
+							"--tls-cert-file=/var/run/ocm-webhook/tls.crt",
+							"--tls-private-key-file=/var/run/ocm-webhook/tls.key",
 						},
 						Ports: []v1.ContainerPort{{ContainerPort: 8000}},
 						LivenessProbe: &v1.Probe{
@@ -86,7 +86,7 @@ func WebhookDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]stri
 							},
 						},
 						VolumeMounts: []corev1.VolumeMount{
-							{Name: "webhook-cert", MountPath: "/var/run/acm-webhook"},
+							{Name: "webhook-cert", MountPath: "/var/run/ocm-webhook"},
 						},
 					}},
 				},
