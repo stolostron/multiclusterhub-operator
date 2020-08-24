@@ -8,6 +8,7 @@ import (
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -86,6 +87,14 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 	// Watch application subscriptions
 	err = c.Watch(&source.Kind{Type: &appsubv1.Subscription{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &operatorsv1.MultiClusterHub{},
+	})
+	if err != nil {
+		return err
+	}
+
+	err = c.Watch(&source.Kind{Type: &corev1.ConfigMap{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &operatorsv1.MultiClusterHub{},
 	})
@@ -210,6 +219,12 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 	r.CacheSpec.ImageRepository = utils.GetImageRepository(multiClusterHub)
 	r.CacheSpec.ImageSuffix = utils.GetImageSuffix(multiClusterHub)
 	r.CacheSpec.ImageOverridesCM = utils.GetImageOverridesConfigmap(multiClusterHub)
+
+	err = r.maintainImageManifestConfigmap(multiClusterHub)
+	if err != nil {
+		reqLogger.Error(err, "Error storing image manifests in configmap")
+		return reconcile.Result{}, err
+	}
 
 	defer func() {
 		retQueue, retError = r.UpdateStatus(multiClusterHub)

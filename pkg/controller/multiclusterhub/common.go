@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	e "errors"
 	"fmt"
+	"reflect"
+
 	"time"
 
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
@@ -19,6 +21,8 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -373,4 +377,49 @@ func (r *ReconcileMultiClusterHub) OverrideImagesFromConfigmap(imageOverrides ma
 	}
 
 	return imageOverrides, nil
+}
+
+func (r *ReconcileMultiClusterHub) maintainImageManifestConfigmap(mch *operatorsv1.MultiClusterHub) error {
+	// Define configmap
+	configmap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("mch-image-manifest-%s", r.CacheSpec.ManifestVersion),
+			Namespace: mch.Namespace,
+		},
+	}
+	configmap.SetOwnerReferences([]metav1.OwnerReference{
+		*metav1.NewControllerRef(mch, mch.GetObjectKind().GroupVersionKind()),
+	})
+
+	labels := make(map[string]string)
+	labels["ocm-configmap-type"] = "image-manifest"
+	labels["ocm-release-version"] = r.CacheSpec.ManifestVersion
+
+	configmap.SetLabels(labels)
+
+	// Get Configmap if it exists
+	err := r.client.Get(context.TODO(), types.NamespacedName{
+		Name:      configmap.Name,
+		Namespace: configmap.Namespace,
+	}, configmap)
+	if err != nil && errors.IsNotFound(err) {
+		// If configmap does not exist, create and return
+		configmap.Data = r.CacheSpec.ImageOverrides
+		err = r.client.Create(context.TODO(), configmap)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	// If cached image overrides are not equal to the configmap data, update configmap and return
+	if !reflect.DeepEqual(configmap.Data, r.CacheSpec.ImageOverrides) {
+		configmap.Data = r.CacheSpec.ImageOverrides
+		err = r.client.Update(context.TODO(), configmap)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

@@ -54,7 +54,14 @@ ft-uninstall:
 
 ## Run the update functional tests directly
 ft-update:
-	export skipSubscription="true";	ginkgo -tags functional -v --slowSpecThreshold=300 test/multiclusterhub_update_test
+	export pullSecret=$(PULL_SECRET_NAME) \
+		source=$(SOURCE_NAME) \
+		channel="latest" \
+		sourceNamespace=$(SOURCE_NAMESPACE) \
+		name=$(SUBSCRIPTION_NAME) \
+		TEST_MODE="update" \
+		startVersion="2.0.1" \
+		updateVersion="2.1.0";	ginkgo -tags functional -v --slowSpecThreshold=300 test/multiclusterhub_update_test
 
 ## Build the MCH functional test image
 test-image:
@@ -66,7 +73,7 @@ test-image:
 # Usage: common/scripts/bundle-acm.sh "<Starting Snapshot>" <Update Snapshot> <Start Version> <Update Version>
 ## Creates an index image to test updates
 test-update-image:
-	bash common/scripts/bundle-acm.sh "2.0.0-SNAPSHOT-2020-07-20-17-52-48" "2.1.0-SNAPSHOT-2020-07-20-17-29-00" "2.0.0" "2.1.0"
+	bash common/scripts/bundle-acm.sh "2.0.1-SNAPSHOT-2020-08-20-19-07-00" "2.1.0-SNAPSHOT-2020-08-21-16-48-23" "2.0.1" "2.1.0"
 
 acm-index-install: ns secrets og test-update-image
 	# Run `make  test-update-image` to generate a new index if necessary
