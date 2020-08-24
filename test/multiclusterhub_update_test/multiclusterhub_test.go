@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Masterminds/semver"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -47,27 +48,46 @@ var _ = Describe("Multiclusterhub", func() {
 
 		When("Operator Is Upgraded, wait for MCH Version to Update", func() {
 			Eventually(func() error {
-				var err error
-				mch, err := utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Get(context.TODO(), utils.MCHName, metav1.GetOptions{})
-				Expect(err).To(BeNil())
-				status, ok := mch.Object["status"].(map[string]interface{})
-				if !ok || status == nil {
-					return fmt.Errorf("MultiClusterHub: %s has no 'status' map", mch.GetName())
-				}
-				version, ok := status["currentVersion"]
-				if !ok {
-					return fmt.Errorf("MultiClusterHub: %s status has no 'currentVersion' field", mch.GetName())
+				version, err := utils.GetCurrentVersionFromMCH()
+				if err != nil {
+					return fmt.Errorf("MultiClusterHub: %s status has no 'currentVersion' field", utils.MCHName)
 				}
 				if version != os.Getenv("updateVersion") {
-					return fmt.Errorf("MCH: %s current version mismatch '%s' != %s", mch.GetName(), version, os.Getenv("updateVersion"))
+					return fmt.Errorf("MCH: %s current version mismatch '%s' != %s", utils.MCHName, version, os.Getenv("updateVersion"))
 				}
-				Expect(status["currentVersion"]).To(Equal(os.Getenv("updateVersion")))
-				Expect(status["desiredVersion"]).To(Equal(os.Getenv("updateVersion")))
+				Expect(version).To(Equal(os.Getenv("updateVersion")))
+				Expect(version).To(Equal(os.Getenv("updateVersion")))
 				return nil
 			}, 800, 1).Should(BeNil())
 			klog.V(1).Info("MCH Operator upgraded successfully")
 		})
 
 		utils.ValidateMCH()
+
+		startVersion, err := semver.NewVersion(os.Getenv(("startVersion")))
+		Expect(err).Should(BeNil())
+		updateVersion, err := semver.NewVersion(os.Getenv(("updateVersion")))
+		Expect(err).Should(BeNil())
+
+		c, err := semver.NewConstraint(">= 2.1.0")
+		Expect(err).Should(BeNil())
+		configmapCount := 0
+		if c.Check(startVersion) {
+			configmapCount = 2
+		} else if c.Check(updateVersion) {
+			configmapCount = 1
+		}
+
+		if configmapCount > 0 {
+			By("Validating Image Manifest Configmaps Exist")
+			labelSelector := fmt.Sprintf("ocm-configmap-type=%s", "image-manifest")
+			listOptions := metav1.ListOptions{
+				LabelSelector: labelSelector,
+				Limit:         100,
+			}
+			configmaps, err := utils.KubeClient.CoreV1().ConfigMaps(utils.MCHNamespace).List(context.TODO(), listOptions)
+			Expect(err).To(BeNil())
+			Expect(len(configmaps.Items)).Should(Equal(configmapCount))
+		}
 	})
 })
