@@ -54,7 +54,7 @@ func OCMProxyServerDeployment(m *operatorsv1.MultiClusterHub, overrides map[stri
 						ImagePullPolicy: utils.GetImagePullPolicy(m),
 						Name:            OCMProxyServerName,
 						Args: []string{
-							"/acm-proxyserver",
+							"/proxyserver",
 							"--secure-port=6443",
 							"--cert-dir=/tmp",
 							"--agent-cafile=/var/run/klusterlet/ca.crt",

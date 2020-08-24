@@ -297,6 +297,13 @@ func (in *MultiClusterHubStatus) DeepCopyInto(out *MultiClusterHubStatus) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.Components != nil {
+		in, out := &in.Components, &out.Components
+		*out = make(map[string]StatusCondition, len(*in))
+		for key, val := range *in {
+			(*out)[key] = *val.DeepCopy()
+		}
+	}
 	return
 }
 

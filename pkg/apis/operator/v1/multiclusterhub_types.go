@@ -207,6 +207,10 @@ type MultiClusterHubStatus struct {
 	// Conditions contains the different condition statuses for the MultiClusterHub
 	// +optional
 	HubConditions []HubCondition `json:"conditions,omitempty"`
+
+	// Components []ComponentCondition `json:"manifests,omitempty"`
+	// +optional
+	Components map[string]StatusCondition `json:"components,omitempty"`
 }
 
 // StatusCondition contains condition information.

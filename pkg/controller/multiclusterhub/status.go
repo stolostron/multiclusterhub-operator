@@ -117,6 +117,7 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 	status := operatorsv1.MultiClusterHubStatus{
 		CurrentVersion: hub.Status.CurrentVersion,
 		DesiredVersion: version.Version,
+		Components:     components,
 		Phase:          aggregateStatus(components),
 	}
 
@@ -211,16 +212,15 @@ func mapDeployment(ds *appsv1.Deployment) operatorsv1.StatusCondition {
 
 	dcs := latestDeployCondition(ds.Status.Conditions)
 	ret := operatorsv1.StatusCondition{
-		Type:               string(dcs.Type),
-		Status:             metav1.ConditionStatus(string(dcs.Status)),
-		LastUpdateTime:     dcs.LastUpdateTime,
-		LastTransitionTime: dcs.LastTransitionTime,
-		Reason:             dcs.Reason,
-		Message:            dcs.Message,
+		Type:           string(dcs.Type),
+		Status:         metav1.ConditionStatus(string(dcs.Status)),
+		LastUpdateTime: dcs.LastUpdateTime,
+		Reason:         dcs.Reason,
+		Message:        dcs.Message,
 	}
 	if successfulDeploy(ds) {
 		ret.Message = ""
-		ret.LastTransitionTime = v1.Time{}
+		ret.LastTransitionTime = dcs.LastTransitionTime
 	}
 
 	return ret
@@ -258,15 +258,21 @@ func mapHelmRelease(hr *subrelv1.HelmRelease) operatorsv1.StatusCondition {
 		Reason:             string(condition.Reason),
 		Message:            condition.Message,
 	}
+
+	if condition.Type == "Initialized" && hr.Status.DeployedRelease != nil {
+		ret.Type = "DeployedRelease"
+	}
+
 	// Ignore success messages
 	if !isErrorType(ret.Type) {
 		ret.Message = ""
 	}
+
 	return ret
 }
 
 func successfulComponent(sc operatorsv1.StatusCondition) bool {
-	return (sc.Status == metav1.ConditionTrue) && (sc.Type == "Available" || sc.Type == "Deployed")
+	return (sc.Status == metav1.ConditionTrue) && (sc.Type == "Available" || sc.Type == "Deployed" || sc.Type == "DeployedRelease")
 }
 
 func aggregateStatus(components map[string]operatorsv1.StatusCondition) operatorsv1.HubPhaseType {
