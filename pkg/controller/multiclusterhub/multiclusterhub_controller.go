@@ -230,6 +230,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 	r.CacheSpec.ImageOverridesCM = utils.GetImageOverridesConfigmap(multiClusterHub)
 
 	// Do not reconcile objects if this instance of mch is labeled "paused"
+	updatePausedCondition(multiClusterHub)
 	if utils.IsPaused(multiClusterHub) {
 		reqLogger.Info("MultiClusterHub reconciliation is paused. Nothing more to do.")
 		return reconcile.Result{}, nil
@@ -265,14 +266,8 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 	certGV := schema.GroupVersion{Group: "certmanager.k8s.io", Version: "v1alpha1"}
 	// Skip wait for API to be ready on unit test
 	if !utils.IsUnitTest() {
-		// AddCondition(multiClusterHub, operatorsv1.StatusCondition{
-		// 	Type:               "Progressing",
-		// 	Status:             v1.ConditionTrue,
-		// 	LastTransitionTime: v1.Now(),
-		// 	LastUpdateTime:     v1.Now(),
-		// 	Reason:             "Installing",
-		// 	Message:            "Waiting for cert manager CRDs",
-		// })
+		// condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, CertManagerReason, "Waiting for cert manager CRDs")
+		// SetHubCondition(&multiClusterHub.Status, *condition)
 		result, err = r.apiReady(certGV)
 		if result != nil {
 			return *result, err
@@ -483,6 +478,25 @@ func (r *ReconcileMultiClusterHub) addFinalizer(reqLogger logr.Logger, m *operat
 		return err
 	}
 	return nil
+}
+
+func updatePausedCondition(m *operatorsv1.MultiClusterHub) {
+	c := GetHubCondition(m.Status, operatorsv1.Progressing)
+
+	if utils.IsPaused(m) {
+		// Pause condition needs to go on
+		if c == nil || c.Reason != PausedReason {
+			condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionUnknown, PausedReason, "Multiclusterhub is paused")
+			SetHubCondition(&m.Status, *condition)
+		}
+	} else {
+		// Pause condition needs to come off
+		if c != nil && c.Reason == PausedReason {
+			condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, ResumedReason, "Multiclusterhub is resumed")
+			SetHubCondition(&m.Status, *condition)
+		}
+
+	}
 }
 
 func contains(list []string, s string) bool {

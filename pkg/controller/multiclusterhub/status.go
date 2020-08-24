@@ -32,8 +32,16 @@ const (
 	ComponentsUnavailableReason = "ComponentsUnavailable"
 	// NewComponentReason is added when the hub creates a new install resource successfully
 	NewComponentReason = "NewResourceCreated"
-	// DeleteTimestampReason is added when the multiclusterhub
+	// CertManagerReason is added when the hub is waiting for cert manager CRDs to come up
+	CertManagerReason = "CertManagerInitializing"
+	// DeleteTimestampReason is added when the multiclusterhub has been targeted for delete
 	DeleteTimestampReason = "DeletionTimestampPresent"
+	// PausedReason is added when the multiclusterhub is paused
+	PausedReason = "MCHPaused"
+	// ResumedReason is added when the multiclusterhub is resumed
+	ResumedReason = "MCHResumed"
+	// ReconcileReason is added when the multiclusterhub is actively reconciling
+	ReconcileReason = "MCHReconciling"
 )
 
 func getDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
@@ -124,6 +132,7 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 	// Copy conditions one by one so we won't mutate the original object.
 	conditions := hub.Status.HubConditions
 	for i := range conditions {
+		log.Info("Conditions exist", "name", conditions[i].Type)
 		status.HubConditions = append(status.HubConditions, conditions[i])
 	}
 
@@ -132,8 +141,13 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 		SetHubCondition(&status, *available)
 		status.CurrentVersion = version.Version
 	} else {
+		// hub is progressing unless otherwise specified
+		if !HubConditionPresent(status, operatorsv1.Progressing) {
+			progressing := NewHubCondition(operatorsv1.Progressing, v1.ConditionTrue, ReconcileReason, "Hub is reconciling.")
+			SetHubCondition(&status, *progressing)
+		}
 		// only add unavailable status if complete status already present
-		if GetHubCondition(status, operatorsv1.Complete) != nil {
+		if HubConditionPresent(status, operatorsv1.Complete) {
 			unavailable := NewHubCondition(operatorsv1.Complete, v1.ConditionFalse, ComponentsUnavailableReason, "Not all hub components ready.")
 			SetHubCondition(&status, *unavailable)
 		}
@@ -375,34 +389,12 @@ func filterOutCondition(conditions []operatorsv1.HubCondition, condType operator
 	return newConditions
 }
 
-// IsHubConditionTrue indicates if the condition is present and strictly true.
-func IsHubConditionTrue(m *operatorsv1.MultiClusterHub, conditionType operatorsv1.HubConditionType) bool {
-	return IsHubConditionPresentAndEqual(m, conditionType, v1.ConditionTrue)
-}
-
-// IsHubConditionFalse indicates if the condition is present and false.
-func IsHubConditionFalse(m *operatorsv1.MultiClusterHub, conditionType operatorsv1.HubConditionType) bool {
-	return IsHubConditionPresentAndEqual(m, conditionType, v1.ConditionFalse)
-}
-
 // IsHubConditionPresentAndEqual indicates if the condition is present and equal to the given status.
-func IsHubConditionPresentAndEqual(m *operatorsv1.MultiClusterHub, conditionType operatorsv1.HubConditionType, status v1.ConditionStatus) bool {
-	for _, condition := range m.Status.HubConditions {
+func HubConditionPresent(status operatorsv1.MultiClusterHubStatus, conditionType operatorsv1.HubConditionType) bool {
+	for _, condition := range status.HubConditions {
 		if condition.Type == conditionType {
-			return condition.Status == status
+			return true
 		}
 	}
 	return false
-}
-
-// IsCRDConditionEquivalent returns true if the lhs and rhs are equivalent except for times.
-func IsCRDConditionEquivalent(lhs, rhs *operatorsv1.HubCondition) bool {
-	if lhs == nil && rhs == nil {
-		return true
-	}
-	if lhs == nil || rhs == nil {
-		return false
-	}
-
-	return lhs.Message == rhs.Message && lhs.Reason == rhs.Reason && lhs.Status == rhs.Status && lhs.Type == rhs.Type
 }
