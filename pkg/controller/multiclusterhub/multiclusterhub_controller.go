@@ -9,7 +9,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -151,10 +151,27 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		return reconcile.Result{}, err
 	}
 
+	originalStatus := multiClusterHub.Status.DeepCopy()
+	defer func() {
+		statusQueue, statusError := r.syncHubStatus(multiClusterHub, originalStatus)
+		if statusError != nil {
+			log.Error(retError, "Error updating status")
+		}
+		if empty := (reconcile.Result{}); retQueue == empty {
+			retQueue = statusQueue
+		}
+		if retError == nil {
+			retError = statusError
+		}
+	}()
+
 	// Check if the multiClusterHub instance is marked to be deleted, which is
 	// indicated by the deletion timestamp being set.
 	isHubMarkedToBeDeleted := multiClusterHub.GetDeletionTimestamp() != nil
 	if isHubMarkedToBeDeleted {
+		terminating := NewHubCondition(operatorsv1.Terminating, metav1.ConditionTrue, DeleteTimestampReason, "Multiclusterhub is being cleaned up.")
+		SetHubCondition(&multiClusterHub.Status, *terminating)
+
 		if contains(multiClusterHub.GetFinalizers(), hubFinalizer) {
 			// Run finalization logic. If the finalization
 			// logic fails, don't remove the finalizer so
@@ -212,13 +229,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 	r.CacheSpec.ImageSuffix = utils.GetImageSuffix(multiClusterHub)
 	r.CacheSpec.ImageOverridesCM = utils.GetImageOverridesConfigmap(multiClusterHub)
 
-	defer func() {
-		retQueue, retError = r.UpdateStatus(multiClusterHub)
-		if retError != nil {
-			log.Error(retError, "Error updating status")
-		}
-	}()
-
 	// Do not reconcile objects if this instance of mch is labeled "paused"
 	if utils.IsPaused(multiClusterHub) {
 		reqLogger.Info("MultiClusterHub reconciliation is paused. Nothing more to do.")
@@ -255,14 +265,14 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 	certGV := schema.GroupVersion{Group: "certmanager.k8s.io", Version: "v1alpha1"}
 	// Skip wait for API to be ready on unit test
 	if !utils.IsUnitTest() {
-		AddCondition(multiClusterHub, operatorsv1.StatusCondition{
-			Type:               "Progressing",
-			Status:             v1.ConditionTrue,
-			LastTransitionTime: v1.Now(),
-			LastUpdateTime:     v1.Now(),
-			Reason:             "Installing",
-			Message:            "Waiting for cert manager CRDs",
-		})
+		// AddCondition(multiClusterHub, operatorsv1.StatusCondition{
+		// 	Type:               "Progressing",
+		// 	Status:             v1.ConditionTrue,
+		// 	LastTransitionTime: v1.Now(),
+		// 	LastUpdateTime:     v1.Now(),
+		// 	Reason:             "Installing",
+		// 	Message:            "Waiting for cert manager CRDs",
+		// })
 		result, err = r.apiReady(certGV)
 		if result != nil {
 			return *result, err

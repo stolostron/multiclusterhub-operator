@@ -22,6 +22,8 @@ func Deploy(c runtimeclient.Client, obj *unstructured.Unstructured) error {
 	if err != nil {
 		if errors.IsNotFound(err) {
 			log.Info("Creating resource", "Kind", obj.GetKind(), "Name", obj.GetName())
+			// condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+			// SetHubCondition(&m.Status, *condition)
 			return c.Create(context.TODO(), obj)
 		}
 		return err

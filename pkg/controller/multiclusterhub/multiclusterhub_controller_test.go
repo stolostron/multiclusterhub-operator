@@ -158,29 +158,6 @@ func Test_ReconcileMultiClusterHub(t *testing.T) {
 
 }
 
-func TestUpdateStatus(t *testing.T) {
-	r, err := getTestReconciler(full_mch)
-	if err != nil {
-		t.Fatalf("Failed to create test reconciler")
-	}
-
-	_, err = r.UpdateStatus(full_mch)
-	if err != nil {
-		t.Errorf("Unable to validate version")
-	}
-
-	// Check if deployment has been created and has the correct size.
-	mch := &operatorsv1.MultiClusterHub{}
-	err = r.client.Get(context.TODO(), mch_namespaced, mch)
-	if err != nil {
-		t.Errorf("Could not find MCH")
-	}
-
-	if mch.Status.CurrentVersion != full_mch.Status.CurrentVersion || mch.Status.DesiredVersion != full_mch.Status.DesiredVersion {
-		t.Errorf("Update failed")
-	}
-}
-
 func Test_setDefaults(t *testing.T) {
 	os.Setenv("TEMPLATES_PATH", "../../../templates")
 

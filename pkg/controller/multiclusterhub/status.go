@@ -5,8 +5,7 @@ package multiclusterhub
 import (
 	"context"
 	"fmt"
-	"sort"
-	"time"
+	"reflect"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -22,6 +21,19 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+)
+
+const (
+	// ComponentsAvailableReason is added in a hub when all desired components are
+	// installed successfully
+	ComponentsAvailableReason = "ComponentsAvailable"
+	// ComponentsUnavailableReason is added in a hub when one or more components are
+	// in an unready state
+	ComponentsUnavailableReason = "ComponentsUnAvailable"
+	// NewComponentReason is added when the hub creates a new install resource successfully
+	NewComponentReason = "NewResourceCreated"
+	// DeleteTimestampReason is added when the multiclusterhub
+	DeleteTimestampReason = "DeletionTimestampPresent"
 )
 
 func getDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
@@ -49,6 +61,17 @@ func getAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	}
 }
 
+func newComponentList(m *operatorsv1.MultiClusterHub) map[string]operatorsv1.StatusCondition {
+	components := make(map[string]operatorsv1.StatusCondition)
+	for _, d := range getDeployments(m) {
+		components[d.Name] = unknownStatus
+	}
+	for _, s := range getAppsubs(m) {
+		components[s.Name] = unknownStatus
+	}
+	return components
+}
+
 var unknownStatus = operatorsv1.StatusCondition{
 	Type:               "Unknown",
 	Status:             metav1.ConditionUnknown,
@@ -58,73 +81,19 @@ var unknownStatus = operatorsv1.StatusCondition{
 	Message:            "No conditions available",
 }
 
-// UpdateStatus updates status
-func (r *ReconcileMultiClusterHub) UpdateStatus(m *operatorsv1.MultiClusterHub) (reconcile.Result, error) {
-	oldStatus := m.Status
-	newStatus := m.Status.DeepCopy()
-	newStatus.DesiredVersion = version.Version
-	newStatus.HubConditions = m.Status.HubConditions
-
-	components := make(map[string]operatorsv1.StatusCondition)
-
-	deployment := &appsv1.Deployment{}
-	deployments := getDeployments(m)
-	for i, d := range deployments {
-		err := r.client.Get(context.TODO(), deployments[i], deployment)
-		if err != nil && !errors.IsNotFound(err) {
-			return reconcile.Result{}, err
-		}
-		components[d.Name] = mapDeployment(deployment)
+// syncHubStatus checks if the status is up-to-date and sync it if necessary
+func (r *ReconcileMultiClusterHub) syncHubStatus(m *operatorsv1.MultiClusterHub, original *operatorsv1.MultiClusterHubStatus) (reconcile.Result, error) {
+	deployList, err := r.listDeployments()
+	hrList, err := r.listHelmReleases()
+	newStatus := calculateStatus(m, deployList, hrList)
+	if reflect.DeepEqual(m.Status, original) {
+		log.Info("Status hasn't changed")
+		return reconcile.Result{}, nil
 	}
 
-	appsubs := getAppsubs(m)
-	for _, d := range appsubs {
-		components[d.Name] = unknownStatus
-	}
-
-	hrList := &subrelv1.HelmReleaseList{}
-	err := r.client.List(context.TODO(), hrList)
-	if err != nil && !errors.IsNotFound(err) {
-		return reconcile.Result{}, err
-	}
-	for _, hr := range hrList.Items {
-		owner := hr.OwnerReferences[0].Name
-		helmrelease := hr
-		if _, ok := components[owner]; ok {
-			components[owner] = mapHelmRelease(&helmrelease)
-		}
-	}
-
-	newStatus.Phase = aggregateStatus(components)
-
-	newStatus.CurrentVersion = oldStatus.CurrentVersion
-	if newStatus.Phase == operatorsv1.HubRunning {
-		AddCondition(m, operatorsv1.StatusCondition{
-			Type:               "Success",
-			Status:             v1.ConditionTrue,
-			LastTransitionTime: v1.Now(),
-			LastUpdateTime:     v1.Now(),
-			Reason:             "AllComponentsInstalled",
-			Message:            "mch is installed",
-		})
-		newStatus.CurrentVersion = version.Version
-	}
-
-	m.Status = *newStatus
-	AddCondition(m, operatorsv1.StatusCondition{
-		Type:               "New",
-		Status:             v1.ConditionTrue,
-		LastTransitionTime: v1.Now(),
-		LastUpdateTime:     v1.Now(),
-		Reason:             "NewConditionAdded",
-		Message:            "Hi I'm new",
-	})
-
-	return r.applyStatus(m)
-}
-
-func (r *ReconcileMultiClusterHub) applyStatus(m *operatorsv1.MultiClusterHub) (reconcile.Result, error) {
-	err := r.client.Status().Update(context.TODO(), m)
+	newHub := m
+	newHub.Status = newStatus
+	err = r.client.Status().Update(context.TODO(), newHub)
 	if err != nil {
 		if errors.IsConflict(err) {
 			// Error from object being modified is normal behavior and should not be treated like an error
@@ -141,6 +110,77 @@ func (r *ReconcileMultiClusterHub) applyStatus(m *operatorsv1.MultiClusterHub) (
 	} else {
 		return reconcile.Result{}, nil
 	}
+}
+
+func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deployment, allHRs []*subrelv1.HelmRelease) operatorsv1.MultiClusterHubStatus {
+	components := getComponentStatuses(hub, allHRs, allDeps)
+	status := operatorsv1.MultiClusterHubStatus{
+		CurrentVersion: hub.Status.CurrentVersion,
+		DesiredVersion: version.Version,
+		Phase:          aggregateStatus(components),
+	}
+
+	// Copy conditions one by one so we won't mutate the original object.
+	conditions := hub.Status.HubConditions
+	for i := range conditions {
+		status.HubConditions = append(status.HubConditions, conditions[i])
+	}
+
+	if status.Phase == operatorsv1.HubRunning {
+		available := NewHubCondition(operatorsv1.Complete, v1.ConditionTrue, ComponentsAvailableReason, "All hub components ready.")
+		SetHubCondition(&status, *available)
+		status.CurrentVersion = version.Version
+	} else {
+		notAvailable := NewHubCondition(operatorsv1.Complete, v1.ConditionFalse, ComponentsUnavailableReason, "Not all hub components ready.")
+		SetHubCondition(&status, *notAvailable)
+	}
+
+	return status
+}
+
+// getComponentStatuses populates a complete list of the hub component statuses
+func getComponentStatuses(hub *operatorsv1.MultiClusterHub, hrList []*subrelv1.HelmRelease, dList []*appsv1.Deployment) map[string]operatorsv1.StatusCondition {
+	components := newComponentList(hub)
+
+	for _, hr := range hrList {
+		owner := hr.OwnerReferences[0].Name
+		if _, ok := components[owner]; ok {
+			components[owner] = mapHelmRelease(hr)
+		}
+	}
+
+	for _, d := range dList {
+		if _, ok := components[d.Name]; ok {
+			components[d.Name] = mapDeployment(d)
+		}
+	}
+	return components
+}
+
+func (r *ReconcileMultiClusterHub) listDeployments() ([]*appsv1.Deployment, error) {
+	deployList := &appsv1.DeploymentList{}
+	err := r.client.List(context.TODO(), deployList)
+	if err != nil && !errors.IsNotFound(err) {
+		return nil, err
+	}
+	var ret []*appsv1.Deployment
+	for i := 0; i < len(deployList.Items); i++ {
+		ret = append(ret, &deployList.Items[i])
+	}
+	return ret, nil
+}
+
+func (r *ReconcileMultiClusterHub) listHelmReleases() ([]*subrelv1.HelmRelease, error) {
+	hrList := &subrelv1.HelmReleaseList{}
+	err := r.client.List(context.TODO(), hrList)
+	if err != nil && !errors.IsNotFound(err) {
+		return nil, err
+	}
+	var ret []*subrelv1.HelmRelease
+	for i := 0; i < len(hrList.Items); i++ {
+		ret = append(ret, &hrList.Items[i])
+	}
+	return ret, nil
 }
 
 func successfulDeploy(d *appsv1.Deployment) bool {
@@ -243,79 +283,92 @@ func isErrorType(cr string) bool {
 		cr == string(subrelv1.ReasonUninstallError)
 }
 
-type byTransitionTime []operatorsv1.StatusCondition
+// type byTransitionTime []operatorsv1.StatusCondition
 
-func (a byTransitionTime) Len() int      { return len(a) }
-func (a byTransitionTime) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a byTransitionTime) Less(i, j int) bool {
-	return a[i].LastTransitionTime.Time.Before(a[j].LastTransitionTime.Time)
-}
+// func (a byTransitionTime) Len() int      { return len(a) }
+// func (a byTransitionTime) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+// func (a byTransitionTime) Less(i, j int) bool {
+// 	return a[i].LastTransitionTime.Time.Before(a[j].LastTransitionTime.Time)
+// }
 
-// Adds the statusCondition to a multiclusterhub
-func AddCondition(m *operatorsv1.MultiClusterHub, sc operatorsv1.StatusCondition) {
-	log.Info("Adding condition", "Condition", sc.Reason)
-	for i, x := range m.Status.HubConditions {
-		if x.Reason == sc.Reason && x.Status == sc.Status {
-			ltt := x.LastTransitionTime
-			m.Status.HubConditions[i] = sc
-			m.Status.HubConditions[i].LastTransitionTime = ltt
-			return
-		}
+// // Adds the statusCondition to a multiclusterhub
+// func AddCondition(m *operatorsv1.MultiClusterHub, sc operatorsv1.StatusCondition) {
+// 	log.Info("Adding condition", "Condition", sc.Reason)
+// 	for i, x := range m.Status.HubConditions {
+// 		if x.Reason == sc.Reason && x.Status == sc.Status {
+// 			ltt := x.LastTransitionTime
+// 			m.Status.HubConditions[i] = sc
+// 			m.Status.HubConditions[i].LastTransitionTime = ltt
+// 			return
+// 		}
+// 	}
+// 	m.Status.HubConditions = append(m.Status.HubConditions, sc)
+
+// 	// Trim conditions
+// 	sort.Sort(sort.Reverse(byTransitionTime(m.Status.HubConditions)))
+// 	if len(m.Status.HubConditions) > 2 {
+// 		m.Status.HubConditions = m.Status.HubConditions[:1]
+// 	}
+
+// }
+
+// NewHubCondition creates a new hub condition.
+func NewHubCondition(condType operatorsv1.HubConditionType, status v1.ConditionStatus, reason, message string) *operatorsv1.HubCondition {
+	return &operatorsv1.HubCondition{
+		Type:               condType,
+		Status:             status,
+		LastUpdateTime:     metav1.Now(),
+		LastTransitionTime: metav1.Now(),
+		Reason:             reason,
+		Message:            message,
 	}
-	m.Status.HubConditions = append(m.Status.HubConditions, sc)
-
-	// Trim conditions
-	sort.Sort(sort.Reverse(byTransitionTime(m.Status.HubConditions)))
-	if len(m.Status.HubConditions) > 2 {
-		m.Status.HubConditions = m.Status.HubConditions[:1]
-	}
-
 }
 
 // SetHubCondition sets the status condition. It either overwrites the existing one or creates a new one.
-func SetHubCondition(m *operatorsv1.MultiClusterHub, newCondition operatorsv1.StatusCondition) {
-	newCondition.LastTransitionTime = metav1.NewTime(time.Now())
-
-	existingCondition := FindHubCondition(m, newCondition.Type)
-	if existingCondition == nil {
-		m.Status.HubConditions = append(m.Status.HubConditions, newCondition)
+func SetHubCondition(status *operatorsv1.MultiClusterHubStatus, condition operatorsv1.HubCondition) {
+	currentCond := GetHubCondition(*status, condition.Type)
+	if currentCond != nil && currentCond.Status == condition.Status && currentCond.Reason == condition.Reason {
 		return
 	}
-
-	if existingCondition.Status != newCondition.Status || existingCondition.LastTransitionTime.IsZero() {
-		existingCondition.LastTransitionTime = newCondition.LastTransitionTime
+	// Do not update lastTransitionTime if the status of the condition doesn't change.
+	if currentCond != nil && currentCond.Status == condition.Status {
+		condition.LastTransitionTime = currentCond.LastTransitionTime
 	}
-
-	existingCondition.Status = newCondition.Status
-	existingCondition.Reason = newCondition.Reason
-	existingCondition.Message = newCondition.Message
+	newConditions := filterOutCondition(status.HubConditions, condition.Type)
+	status.HubConditions = append(newConditions, condition)
 }
 
 // RemoveCRDCondition removes the status condition.
-func RemoveHubCondition(m *operatorsv1.MultiClusterHub, conditionType operatorsv1.HubConditionType) {
-	newConditions := []operatorsv1.HubCondition{}
-	for _, condition := range m.Status.HubConditions {
-		if condition.Type != conditionType {
-			newConditions = append(newConditions, condition)
-		}
-	}
-	m.Status.HubConditions = newConditions
+func RemoveHubCondition(status *operatorsv1.MultiClusterHubStatus, condType operatorsv1.HubConditionType) {
+	status.HubConditions = filterOutCondition(status.HubConditions, condType)
 }
 
 // FindHubCondition returns the condition you're looking for or nil.
-func FindHubCondition(m *operatorsv1.MultiClusterHub, conditionType operatorsv1.HubConditionType) *operatorsv1.HubCondition {
-	for i := range m.Status.HubConditions {
-		if m.Status.HubConditions[i].Type == conditionType {
-			return &m.Status.HubConditions[i]
+func GetHubCondition(status operatorsv1.MultiClusterHubStatus, condType operatorsv1.HubConditionType) *operatorsv1.HubCondition {
+	for i := range status.HubConditions {
+		c := status.HubConditions[i]
+		if c.Type == condType {
+			return &c
 		}
 	}
-
 	return nil
 }
 
+// filterOutCondition returns a new slice of hub conditions without conditions with the provided type.
+func filterOutCondition(conditions []operatorsv1.HubCondition, condType operatorsv1.HubConditionType) []operatorsv1.HubCondition {
+	var newConditions []operatorsv1.HubCondition
+	for _, c := range conditions {
+		if c.Type == condType {
+			continue
+		}
+		newConditions = append(newConditions, c)
+	}
+	return newConditions
+}
+
 // IsHubConditionTrue indicates if the condition is present and strictly true.
-func IsHubConditionTrue(crd *operatorsv1.MultiClusterHub, conditionType operatorsv1.HubConditionType) bool {
-	return IsHubConditionPresentAndEqual(crd, conditionType, v1.ConditionTrue)
+func IsHubConditionTrue(m *operatorsv1.MultiClusterHub, conditionType operatorsv1.HubConditionType) bool {
+	return IsHubConditionPresentAndEqual(m, conditionType, v1.ConditionTrue)
 }
 
 // IsHubConditionFalse indicates if the condition is present and false.
@@ -344,48 +397,3 @@ func IsCRDConditionEquivalent(lhs, rhs *operatorsv1.HubCondition) bool {
 
 	return lhs.Message == rhs.Message && lhs.Reason == rhs.Reason && lhs.Status == rhs.Status && lhs.Type == rhs.Type
 }
-
-// DeploymentTimedOut considers a deployment to have timed out once its condition that reports progress
-// is older than progressDeadlineSeconds or a Progressing condition with a TimedOutReason reason already
-// exists.
-// func DeploymentTimedOut(deployment *apps.Deployment, newStatus *apps.DeploymentStatus) bool {
-// 	if !HasProgressDeadline(deployment) {
-// 		return false
-// 	}
-
-// 	// Look for the Progressing condition. If it doesn't exist, we have no base to estimate progress.
-// 	// If it's already set with a TimedOutReason reason, we have already timed out, no need to check
-// 	// again.
-// 	condition := GetDeploymentCondition(*newStatus, apps.DeploymentProgressing)
-// 	if condition == nil {
-// 		return false
-// 	}
-// 	// If the previous condition has been a successful rollout then we shouldn't try to
-// 	// estimate any progress. Scenario:
-// 	//
-// 	// * progressDeadlineSeconds is smaller than the difference between now and the time
-// 	//   the last rollout finished in the past.
-// 	// * the creation of a new ReplicaSet triggers a resync of the Deployment prior to the
-// 	//   cached copy of the Deployment getting updated with the status.condition that indicates
-// 	//   the creation of the new ReplicaSet.
-// 	//
-// 	// The Deployment will be resynced and eventually its Progressing condition will catch
-// 	// up with the state of the world.
-// 	if condition.Reason == NewRSAvailableReason {
-// 		return false
-// 	}
-// 	if condition.Reason == TimedOutReason {
-// 		return true
-// 	}
-
-// 	// Look at the difference in seconds between now and the last time we reported any
-// 	// progress or tried to create a replica set, or resumed a paused deployment and
-// 	// compare against progressDeadlineSeconds.
-// 	from := condition.LastUpdateTime
-// 	now := nowFn()
-// 	delta := time.Duration(*deployment.Spec.ProgressDeadlineSeconds) * time.Second
-// 	timedOut := from.Add(delta).Before(now)
-
-// 	klog.V(4).Infof("Deployment %q timed out (%t) [last progress check: %v - now: %v]", deployment.Name, timedOut, from, now)
-// 	return timedOut
-// }

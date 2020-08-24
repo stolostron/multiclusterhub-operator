@@ -237,8 +237,11 @@ type StatusCondition struct {
 type HubConditionType string
 
 const (
-	HubTypeInitialized HubConditionType = "Initialized"
-	HubTypeSuccessful  HubConditionType = "Successful"
+	// Progressing means the deployment is progressing.
+	Progressing HubConditionType = "Progressing"
+
+	// Complete means that all desired components are configured and in a running state.
+	Complete HubConditionType = "Complete"
 
 	// Terminating means that the multiclusterhub has been deleted and is cleaning up.
 	Terminating HubConditionType = "Terminating"
