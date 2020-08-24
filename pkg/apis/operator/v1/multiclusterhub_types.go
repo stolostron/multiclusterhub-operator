@@ -262,7 +262,7 @@ type HubCondition struct {
 	Status metav1.ConditionStatus `json:"status,omitempty"`
 
 	// The last time this condition was updated.
-	LastUpdateTime metav1.Time `json:"-"`
+	LastUpdateTime metav1.Time `json:"lastUpdateTime,omitempty"`
 
 	// LastTransitionTime is the last time the condition changed from one status to another.
 	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
