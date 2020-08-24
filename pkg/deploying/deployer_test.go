@@ -21,7 +21,7 @@ func TestNewDeployment(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to generate deployment %v", err)
 	}
-	err = Deploy(fakeclient, dep)
+	err, _ = Deploy(fakeclient, dep)
 	if err != nil {
 		t.Fatalf("failed to deploy deployment %v", err)
 	}

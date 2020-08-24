@@ -308,9 +308,14 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 				reqLogger.Error(err, "Failed to set controller reference")
 			}
 		}
-		if err := deploying.Deploy(r.client, res); err != nil {
+		err, ok := deploying.Deploy(r.client, res)
+		if err != nil {
 			reqLogger.Error(err, fmt.Sprintf("Failed to deploy %s %s/%s", res.GetKind(), multiClusterHub.Namespace, res.GetName()))
 			return reconcile.Result{}, err
+		}
+		if ok {
+			condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+			SetHubCondition(&multiClusterHub.Status, *condition)
 		}
 	}
 

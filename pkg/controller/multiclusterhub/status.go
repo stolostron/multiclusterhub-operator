@@ -29,7 +29,7 @@ const (
 	ComponentsAvailableReason = "ComponentsAvailable"
 	// ComponentsUnavailableReason is added in a hub when one or more components are
 	// in an unready state
-	ComponentsUnavailableReason = "ComponentsUnAvailable"
+	ComponentsUnavailableReason = "ComponentsUnavailable"
 	// NewComponentReason is added when the hub creates a new install resource successfully
 	NewComponentReason = "NewResourceCreated"
 	// DeleteTimestampReason is added when the multiclusterhub
@@ -131,8 +131,11 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 		SetHubCondition(&status, *available)
 		status.CurrentVersion = version.Version
 	} else {
-		notAvailable := NewHubCondition(operatorsv1.Complete, v1.ConditionFalse, ComponentsUnavailableReason, "Not all hub components ready.")
-		SetHubCondition(&status, *notAvailable)
+		// only add unavailable status if complete status already present
+		if GetHubCondition(status, operatorsv1.Complete) != nil {
+			unavailable := NewHubCondition(operatorsv1.Complete, v1.ConditionFalse, ComponentsUnavailableReason, "Not all hub components ready.")
+			SetHubCondition(&status, *unavailable)
+		}
 	}
 
 	return status

@@ -15,35 +15,35 @@ import (
 
 var log = logf.Log.WithName("deployer")
 
-func Deploy(c runtimeclient.Client, obj *unstructured.Unstructured) error {
+// Deploy attempts to create or update the obj resource depending on whether it exists.
+// Returns true if deploy does try to create a new resource
+func Deploy(c runtimeclient.Client, obj *unstructured.Unstructured) (error, bool) {
 	found := &unstructured.Unstructured{}
 	found.SetGroupVersionKind(obj.GroupVersionKind())
 	err := c.Get(context.TODO(), types.NamespacedName{Name: obj.GetName(), Namespace: obj.GetNamespace()}, found)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			log.Info("Creating resource", "Kind", obj.GetKind(), "Name", obj.GetName())
-			// condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
-			// SetHubCondition(&m.Status, *condition)
-			return c.Create(context.TODO(), obj)
+			return c.Create(context.TODO(), obj), true
 		}
-		return err
+		return err, false
 	}
 
 	// Do not update webhook configurations or cert secrets
 	if kind := found.GetKind(); kind == "MutatingWebhookConfiguration" || kind == "ValidatingWebhookConfiguration" {
 		if name := found.GetName(); name == "ocm-mutating-webhook" || name == "ocm-validating-webhook" {
-			return nil
+			return nil, false
 		}
 	}
 	if kind := found.GetKind(); kind == "Secret" {
 		if name := found.GetName(); name == "ocm-klusterlet-self-signed-secrets" || name == "ocm-webhook-secret" {
-			return nil
+			return nil, false
 		}
 	}
 
 	// If resources exists, update it with current config
 	obj.SetResourceVersion(found.GetResourceVersion())
-	return c.Update(context.TODO(), obj)
+	return c.Update(context.TODO(), obj), false
 }
 
 func ListDeployments(c runtimeclient.Client, namespace string) (bool, []appsv1.Deployment, error) {
