@@ -327,6 +327,25 @@ func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 	return nil
 }
 
+// findCondition reports whether a hub condition of type 't' exists and matches the status 's'
+func findCondition(status map[string]interface{}, t string, s string) error {
+	conditions, ok := status["conditions"].([]interface{})
+	if !ok || conditions == nil {
+		return fmt.Errorf("no hubConditions found")
+	}
+	for i := range conditions {
+		condition := conditions[i]
+		if condition.(map[string]interface{})["type"].(string) == t {
+			if got := condition.(map[string]interface{})["status"].(string); got == s {
+				return nil
+			} else {
+				return fmt.Errorf("hubCondition 'status' equals '%s', expected '%s'", got, s)
+			}
+		}
+	}
+	return fmt.Errorf("MCH does not have a hubcondition with type '%s'", t)
+}
+
 // ValidateMCHUnsuccessful ...
 func ValidateMCHUnsuccessful() error {
 	By("Validating MultiClusterHub Unsuccessful")
@@ -358,15 +377,7 @@ func ValidateMCHUnsuccessful() error {
 			mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
 			Expect(err).To(BeNil())
 			status := mch.Object["status"].(map[string]interface{})
-			conditions, ok := status["conditions"].([]interface{})
-			if !ok || conditions == nil {
-				return fmt.Errorf("MultiClusterHub: %s has no 'conditions' map despite reporting 'running'", mch.GetName())
-			}
-			condition := conditions[len(conditions) - 1]
-			if condition.(map[string]interface{})["type"].(string) != "Progressing" {
-				return fmt.Errorf("HubCondtions 'type' does not equal 'complete' despite reporting 'running'")
-			}
-			return nil
+			return findCondition(status, "Progressing", "True")
 		}, 1, 1).Should(BeNil())
 	})
 
@@ -424,18 +435,7 @@ func ValidateMCH() error {
 			mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
 			Expect(err).To(BeNil())
 			status := mch.Object["status"].(map[string]interface{})
-			conditions, ok := status["conditions"].([]interface{})
-			if !ok || conditions == nil {
-				return fmt.Errorf("MultiClusterHub: %s has no 'conditions' map despite reporting 'running'", mch.GetName())
-			}
-			condition := conditions[len(conditions) - 1]
-			if condition.(map[string]interface{})["type"].(string) != "Complete" {
-				return fmt.Errorf("HubCondtions 'type' does not equal 'complete' despite reporting 'running'")
-			}
-			if condition.(map[string]interface{})["status"].(string) != "True" {
-				return fmt.Errorf("HubCondtions 'status' does not equal 'True' despite reporting 'running'")
-			}
-			return nil
+			return findCondition(status, "Complete", "True")
 		}, 1, 1).Should(BeNil())
 	})
 
@@ -555,14 +555,8 @@ func ValidateConditionDuringUninstall() error {
 	Eventually(func() error {
 		mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
 		Expect(err).To(BeNil())
-		status:= mch.Object["status"].(map[string]interface{})
-		conditions:= status["conditions"].([]interface{})
-		condition := status["conditions"].([]interface{})[len(conditions) - 1]
-		fmt.Println("un condition: ", condition)
-		if condition.(map[string]interface{})["type"].(string) != "Terminating" {
-			return fmt.Errorf("HubCondtions 'type' does not equal 'terminating' during uninstall")
-		}
-		return nil
+		status := mch.Object["status"].(map[string]interface{})
+		return findCondition(status, "Terminating", "True")
 	}, 10, 1).Should(BeNil())
 	return nil
 }
