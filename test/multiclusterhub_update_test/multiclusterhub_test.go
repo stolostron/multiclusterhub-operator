@@ -21,7 +21,13 @@ var _ = Describe("Multiclusterhub", func() {
 		By("Attempting to delete MultiClusterHub if it exists")
 		utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
 
-		Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
+		Eventually(func() error {
+			err := utils.ValidateDelete(utils.DynamicKubeClient)
+			if err != nil {
+				return err
+			}
+			return nil
+		}, 120, 1).Should(BeNil())
 	})
 
 	By("Beginning Basic Update Test Suite ...")
