@@ -19,6 +19,7 @@ func ClusterManager(m *operatorsv1.MultiClusterHub, overrides map[string]string)
 			},
 			"spec": map[string]interface{}{
 				"registrationImagePullSpec": RegistrationImage(overrides),
+				"workImagePullSpec":         WorkImage(overrides),
 			},
 		},
 	}
