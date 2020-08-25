@@ -558,7 +558,6 @@ func ValidateConditionDuringUninstall() error {
 		status:= mch.Object["status"].(map[string]interface{})
 		conditions:= status["conditions"].([]interface{})
 		condition := status["conditions"].([]interface{})[len(conditions) - 1]
-		fmt.Println("un condition: ", condition)
 		if condition.(map[string]interface{})["type"].(string) != "Terminating" {
 			return fmt.Errorf("HubCondtions 'type' does not equal 'terminating' during uninstall")
 		}
