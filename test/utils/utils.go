@@ -166,7 +166,7 @@ func DeleteIfExists(clientHubDynamic dynamic.Interface, gvr schema.GroupVersionR
 			return nil
 		}
 		return nil
-	}, 90, 1).Should(BeNil())
+	}, 240, 1).Should(BeNil())
 }
 
 // NewKubeClient returns a kube client
