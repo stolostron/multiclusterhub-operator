@@ -12,7 +12,7 @@ endif
 
 BUILD_DIR ?= build
 
-VERSION ?= 2.0.1
+VERSION ?= 2.0.2
 IMG ?= multiclusterhub-operator
 SECRET_REGISTRY ?= quay.io
 REGISTRY ?= quay.io/rhibmcollab
@@ -27,7 +27,7 @@ NAMESPACE ?= open-cluster-management
 # For OCP OLM
 export IMAGE ?= $(shell echo $(REGISTRY)/$(IMG):$(VERSION))
 export CSV_CHANNEL ?= alpha
-export CSV_VERSION ?= 2.0.1
+export CSV_VERSION ?= 2.0.2
 
 
 export PROJECT_DIR = $(shell 'pwd')
