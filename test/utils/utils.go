@@ -544,10 +544,21 @@ func ValidateComponentStatusExist() error {
 				}
 			}
 		}
-		if err := findCondition(status, "Progressing", "True"); err != nil {
-			return err
-		}
 		return nil
+	}, 10, 1).Should(BeNil())
+	return nil
+}
+
+// ValidateHubStatusExist checks if hub statuses exist immediately when MCH is created
+func ValidateHubStatusExist() error {
+	Eventually(func() error {
+		mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+		Expect(err).To(BeNil())
+		status, ok := mch.Object["status"].(map[string]interface{})
+		if !ok || status == nil {
+			return fmt.Errorf("MultiClusterHub: %s has no 'status' map", mch.GetName())
+		}
+		return findCondition(status, "Progressing", "True")
 	}, 10, 1).Should(BeNil())
 	return nil
 }
@@ -574,6 +585,10 @@ func ValidateStatusesExist() error {
 	}
 	By("- Ensuring Component Status exist")
 	if err := ValidateComponentStatusExist(); err != nil {
+		return err
+	}
+	By("- Ensuring Hub Status exist")
+	if err := ValidateHubStatusExist(); err != nil {
 		return err
 	}
 	return nil
