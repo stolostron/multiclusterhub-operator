@@ -331,8 +331,15 @@ func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 		LabelSelector: labelSelector,
 		Limit:         100,
 	}
-	configmaps, err := KubeClient.CoreV1().ConfigMaps(MCHNamespace).List(context.TODO(), listOptions)
-	Expect(len(configmaps.Items)).Should(Equal(0))
+
+	Eventually(func() error {
+		configmaps, err := KubeClient.CoreV1().ConfigMaps(MCHNamespace).List(context.TODO(), listOptions)
+		Expect(err).Should(BeNil())
+		if len(configmaps.Items) != 0 {
+			return fmt.Errorf("Expecting configmaps to terminate")
+		}
+		return nil
+	}, 30, 1).Should(BeNil())
 
 	return nil
 }
