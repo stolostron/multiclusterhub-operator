@@ -33,7 +33,7 @@ func init() {
 	flag.StringVar(&baseDomain, "base-domain", "", "Provide the base domain for the cluster under test (e.g. -base-domain=\"demo.red-chesterfield.com\").")
 
 	flag.StringVar(&optionsFile, "options", "", "Location of an \"options.yaml\" file to provide input for various tests")
-	flag.StringVar(&reportFile, "report-file", "results.xml", "Provide the path to where the junit results will be printed.")
+	flag.StringVar(&reportFile, "report-file", "../results/uninstall-results.xml", "Provide the path to where the junit results will be printed.")
 
 }
 

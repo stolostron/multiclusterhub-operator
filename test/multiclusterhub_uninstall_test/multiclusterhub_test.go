@@ -21,16 +21,24 @@ var _ = Describe("Multiclusterhub", func() {
 		By("Deleting MultiClusterHub")
 		utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
 
-		Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
+		Eventually(func() error {
+			err := utils.ValidateDelete(utils.DynamicKubeClient)
+			if err != nil {
+				return err
+			}
+			return nil
+		}, 120, 1).Should(BeNil())
 	})
 
 	if os.Getenv("full_test_suite") == "true" {
 		It("SAD CASE: Fail to remove a helmrelease (Left behind finalizer)", func() {
 			By("Creating MultiClusterHub")
-			utils.ValidateMCH(utils.CreateDefaultMCH())
+			utils.CreateDefaultMCH()
+			utils.ValidateMCH()
 			AddFinalizerToHelmRelease(utils.DynamicKubeClient)
 			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, false)
 			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).ShouldNot(BeNil())
+			utils.ValidateConditionDuringUninstall()
 			Eventually(func() error {
 				err := RemoveFinalizerFromHelmRelease(utils.DynamicKubeClient)
 				if err != nil {
@@ -83,6 +91,9 @@ func RemoveFinalizerFromHelmRelease(clientHubDynamic dynamic.Interface) error {
 		return err
 	}
 
+	if len(helmReleases.Items) == 0 {
+		return fmt.Errorf("No helmreleases found")
+	}
 	helmRelease := helmReleases.Items[0]
 	helmRelease.SetFinalizers([]string{})
 

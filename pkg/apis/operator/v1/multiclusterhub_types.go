@@ -203,6 +203,14 @@ type MultiClusterHubStatus struct {
 	// DesiredVersion indicates the desired version
 	// +optional
 	DesiredVersion string `json:"desiredVersion,omitempty"`
+
+	// Conditions contains the different condition statuses for the MultiClusterHub
+	// +optional
+	HubConditions []HubCondition `json:"conditions,omitempty"`
+
+	// Components []ComponentCondition `json:"manifests,omitempty"`
+	// +optional
+	Components map[string]StatusCondition `json:"components,omitempty"`
 }
 
 // StatusCondition contains condition information.
@@ -219,7 +227,45 @@ type StatusCondition struct {
 	LastUpdateTime metav1.Time `json:"-"`
 
 	// LastTransitionTime is the last time the condition changed from one status to another.
-	LastTransitionTime metav1.Time `json:"-"`
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
+
+	// Reason is a (brief) reason for the condition's last status change.
+	// +required
+	Reason string `json:"reason,omitempty"`
+
+	// Message is a human-readable message indicating details about the last status change.
+	// +required
+	Message string `json:"message,omitempty"`
+}
+
+type HubConditionType string
+
+const (
+	// Progressing means the deployment is progressing.
+	Progressing HubConditionType = "Progressing"
+
+	// Complete means that all desired components are configured and in a running state.
+	Complete HubConditionType = "Complete"
+
+	// Terminating means that the multiclusterhub has been deleted and is cleaning up.
+	Terminating HubConditionType = "Terminating"
+)
+
+// StatusCondition contains condition information.
+type HubCondition struct {
+	// Type is the type of the cluster condition.
+	// +required
+	Type HubConditionType `json:"type,omitempty"`
+
+	// Status is the status of the condition. One of True, False, Unknown.
+	// +required
+	Status metav1.ConditionStatus `json:"status,omitempty"`
+
+	// The last time this condition was updated.
+	LastUpdateTime metav1.Time `json:"lastUpdateTime,omitempty"`
+
+	// LastTransitionTime is the last time the condition changed from one status to another.
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
 
 	// Reason is a (brief) reason for the condition's last status change.
 	// +required

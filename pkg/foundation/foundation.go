@@ -20,6 +20,9 @@ const ImageKey = "multicloud_manager"
 // RegistrationImageKey used by registration deployments
 const RegistrationImageKey = "registration"
 
+// WorkImageKey used by work deployments
+const WorkImageKey = "work"
+
 // ServiceAccount used by ocm deployments
 const ServiceAccount = "ocm-foundation-sa"
 
@@ -31,6 +34,11 @@ func Image(overrides map[string]string) string {
 // RegistrationImage ...
 func RegistrationImage(overrides map[string]string) string {
 	return overrides[RegistrationImageKey]
+}
+
+// WorkImage ...
+func WorkImage(overrides map[string]string) string {
+	return overrides[WorkImageKey]
 }
 
 func defaultLabels(app string) map[string]string {

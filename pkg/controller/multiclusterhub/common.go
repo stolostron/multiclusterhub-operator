@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	e "errors"
 	"fmt"
+	"reflect"
+
 	"time"
 
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
@@ -19,7 +21,9 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
+
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -60,6 +64,8 @@ func (r *ReconcileMultiClusterHub) ensureDeployment(m *operatorsv1.MultiClusterH
 
 		// Deployment was successful
 		dplog.Info("Created a new Deployment")
+		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+		SetHubCondition(&m.Status, *condition)
 		return nil, nil
 
 	} else if err != nil {
@@ -115,6 +121,8 @@ func (r *ReconcileMultiClusterHub) ensureService(m *operatorsv1.MultiClusterHub,
 
 		// Creation was successful
 		svlog.Info("Created a new Service")
+		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+		SetHubCondition(&m.Status, *condition)
 		return nil, nil
 
 	} else if err != nil {
@@ -151,6 +159,8 @@ func (r *ReconcileMultiClusterHub) ensureChannel(m *operatorsv1.MultiClusterHub,
 
 		// Creation was successful
 		selog.Info("Created a new Channel")
+		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+		SetHubCondition(&m.Status, *condition)
 		return nil, nil
 
 	} else if err != nil {
@@ -190,6 +200,8 @@ func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1.MultiCluste
 
 		// Creation was successful
 		obLog.Info("Created new object")
+		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+		SetHubCondition(&m.Status, *condition)
 		return nil, nil
 
 	} else if err != nil {
@@ -241,6 +253,8 @@ func (r *ReconcileMultiClusterHub) ensureClusterManager(m *operatorsv1.MultiClus
 		}
 		// Creation was successful
 		obLog.Info("Created new object")
+		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+		SetHubCondition(&m.Status, *condition)
 		return nil, nil
 
 	} else if err != nil {
@@ -285,6 +299,8 @@ func (r *ReconcileMultiClusterHub) apiReady(gv schema.GroupVersion) (*reconcile.
 	if err != nil {
 		// Wait a little and try again
 		log.Info("Waiting for API group to be available", "API group", gv)
+		// condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Waiting for cert manager CRD availability")
+		// SetHubCondition(&m.Status, *condition)
 		return &reconcile.Result{RequeueAfter: time.Second * 10}, nil
 	}
 	return nil, nil
@@ -373,4 +389,49 @@ func (r *ReconcileMultiClusterHub) OverrideImagesFromConfigmap(imageOverrides ma
 	}
 
 	return imageOverrides, nil
+}
+
+func (r *ReconcileMultiClusterHub) maintainImageManifestConfigmap(mch *operatorsv1.MultiClusterHub) error {
+	// Define configmap
+	configmap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("mch-image-manifest-%s", r.CacheSpec.ManifestVersion),
+			Namespace: mch.Namespace,
+		},
+	}
+	configmap.SetOwnerReferences([]metav1.OwnerReference{
+		*metav1.NewControllerRef(mch, mch.GetObjectKind().GroupVersionKind()),
+	})
+
+	labels := make(map[string]string)
+	labels["ocm-configmap-type"] = "image-manifest"
+	labels["ocm-release-version"] = r.CacheSpec.ManifestVersion
+
+	configmap.SetLabels(labels)
+
+	// Get Configmap if it exists
+	err := r.client.Get(context.TODO(), types.NamespacedName{
+		Name:      configmap.Name,
+		Namespace: configmap.Namespace,
+	}, configmap)
+	if err != nil && errors.IsNotFound(err) {
+		// If configmap does not exist, create and return
+		configmap.Data = r.CacheSpec.ImageOverrides
+		err = r.client.Create(context.TODO(), configmap)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	// If cached image overrides are not equal to the configmap data, update configmap and return
+	if !reflect.DeepEqual(configmap.Data, r.CacheSpec.ImageOverrides) {
+		configmap.Data = r.CacheSpec.ImageOverrides
+		err = r.client.Update(context.TODO(), configmap)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
