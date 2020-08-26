@@ -87,11 +87,28 @@ rm bundle.Dockerfile
 docker push $startBundle
 docker push $updateBundle
 
+mkdir "database"
+
+opm registry add -b $startBundle -d "database/index.db"
+opm registry add -b $updateBundle -d "database/index.db"
+
+
+
+cp build/dockerfile.index .
+mkdir "etc"
+touch "etc/nsswitch.conf"
+chmod a+r "etc/nsswitch.conf"
+docker build -f dockerfile.index -t $indexImage .
+
+rm -rf database
+rm dockerfile.index
+rm -rf etc/
+
 # Generate and push index image of bundles
-opm index add \
---bundles $startBundle,$updateBundle \
---tag $indexImage \
--c docker
+# opm index add \
+# --bundles $startBundle,$updateBundle \
+# --tag $indexImage \
+# -c docker
 
 docker push $indexImage
 
