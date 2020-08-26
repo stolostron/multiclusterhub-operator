@@ -290,6 +290,65 @@ func CreateMCHBadPullSecret() *unstructured.Unstructured {
 	return mch
 }
 
+// BrickMCHRepo modifies the multiclusterhub-repo deployment so it becomes unhealthy
+func BrickMCHRepo() error {
+	deploy, err := KubeClient.AppsV1().Deployments(MCHNamespace).Get(context.TODO(), MCHRepoName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	// Add non-existent nodeSelector so the pod isn't scheduled
+	deploy.Spec.Template.Spec.NodeSelector = map[string]string{"schedule": "never"}
+	deploy.Spec.Strategy = appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
+
+	_, err = KubeClient.AppsV1().Deployments(MCHNamespace).Update(context.TODO(), deploy, metav1.UpdateOptions{})
+	return err
+}
+
+// FixMCHRepo deletes the multiclusterhub-repo deployment so it can be recreated by the installer
+func FixMCHRepo() error {
+	return KubeClient.AppsV1().Deployments(MCHNamespace).Delete(context.TODO(), MCHRepoName, metav1.DeleteOptions{})
+}
+
+// ValidateMCHDegraded validates the install operator responds appropriately when the install components
+// go into a degraded state after a successful install
+func ValidateMCHDegraded() error {
+	By("Validating MultiClusterHub Degraded")
+	By(fmt.Sprintf("- Waiting %d seconds", 10), func() {
+		time.Sleep(time.Duration(10) * time.Second)
+	})
+
+	By("- Ensuring MCH is in 'pending' phase")
+	When("MCH Status should be `Pending`", func() {
+		Eventually(func() error {
+			mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+			Expect(err).To(BeNil())
+			status, ok := mch.Object["status"].(map[string]interface{})
+			if !ok || status == nil {
+				return fmt.Errorf("MultiClusterHub: %s has no 'status' map", mch.GetName())
+			}
+			if _, ok := status["phase"]; !ok {
+				return fmt.Errorf("MultiClusterHub: %s status has no 'phase' field", mch.GetName())
+			}
+			if status["phase"] != "Pending" {
+				return fmt.Errorf("MultiClusterHub: %s with phase %s is not in pending phase", mch.GetName(), status["phase"])
+			}
+			return nil
+		}, 1, 1).Should(BeNil())
+	})
+
+	By("- Ensuring hub condition shows installation as incomplete")
+	When("MCH should have HubCondition with type 'Cqomplete' and status 'False'", func() {
+		Eventually(func() error {
+			mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+			Expect(err).To(BeNil())
+			status := mch.Object["status"].(map[string]interface{})
+			return findCondition(status, "Complete", "False")
+		}, 1, 1).Should(BeNil())
+	})
+
+	return nil
+}
+
 // ValidateDelete ...
 func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 	By("Validating MCH has been successfully uninstalled.")
