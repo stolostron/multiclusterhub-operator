@@ -334,13 +334,30 @@ func findPhase(status map[string]interface{}, wantPhase string) error {
 	return nil
 }
 
+// waitForRepoUnavailable waits for the multiclusterhub-repo to go unready, with timeout
+func waitForUnavailableRepo(timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		deploy, err := KubeClient.AppsV1().Deployments(MCHNamespace).Get(context.TODO(), MCHRepoName, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		if deploy.Status.ReadyReplicas == 0 {
+			return nil
+		}
+		time.Sleep(2 * time.Second)
+	}
+	return fmt.Errorf("Repo failed to become unready after %s", timeout)
+}
+
 // ValidateMCHDegraded validates the install operator responds appropriately when the install components
 // go into a degraded state after a successful install
 func ValidateMCHDegraded() error {
 	By("Validating MultiClusterHub Degraded")
-	By(fmt.Sprintf("- Waiting %d seconds", 10), func() {
-		time.Sleep(time.Duration(10) * time.Second)
-	})
+	By("- Wait for degraded deployment")
+	if err := waitForUnavailableRepo(time.Duration(45) * time.Second); err != nil {
+		return err
+	}
 
 	status, err := getMCHStatus()
 	if err != nil {
