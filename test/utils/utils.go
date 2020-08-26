@@ -290,6 +290,93 @@ func CreateMCHBadPullSecret() *unstructured.Unstructured {
 	return mch
 }
 
+// BrickMCHRepo modifies the multiclusterhub-repo deployment so it becomes unhealthy
+func BrickMCHRepo() error {
+	deploy, err := KubeClient.AppsV1().Deployments(MCHNamespace).Get(context.TODO(), MCHRepoName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	// Add non-existent nodeSelector so the pod isn't scheduled
+	deploy.Spec.Template.Spec.NodeSelector = map[string]string{"schedule": "never"}
+	deploy.Spec.Strategy = appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
+
+	_, err = KubeClient.AppsV1().Deployments(MCHNamespace).Update(context.TODO(), deploy, metav1.UpdateOptions{})
+	return err
+}
+
+// FixMCHRepo deletes the multiclusterhub-repo deployment so it can be recreated by the installer
+func FixMCHRepo() error {
+	return KubeClient.AppsV1().Deployments(MCHNamespace).Delete(context.TODO(), MCHRepoName, metav1.DeleteOptions{})
+}
+
+// getMCHStatus gets the mch object and parses its status
+func getMCHStatus() (map[string]interface{}, error) {
+	mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	status, ok := mch.Object["status"].(map[string]interface{})
+	if !ok || status == nil {
+		return nil, fmt.Errorf("MultiClusterHub: %s has no 'status' map", mch.GetName())
+	}
+	return status, nil
+}
+
+// findPhase reports whether the hub status has the desired phase
+func findPhase(status map[string]interface{}, wantPhase string) error {
+	if _, ok := status["phase"]; !ok {
+		return fmt.Errorf("MCH status has no 'phase' field")
+	}
+	if phase := status["phase"]; phase != wantPhase {
+		return fmt.Errorf("MCH phase equals %s, expected %s", phase, wantPhase)
+	}
+	return nil
+}
+
+// waitForRepoUnavailable waits for the multiclusterhub-repo to go unready, with timeout
+func waitForUnavailableRepo(timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		deploy, err := KubeClient.AppsV1().Deployments(MCHNamespace).Get(context.TODO(), MCHRepoName, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		if deploy.Status.ReadyReplicas == 0 {
+			return nil
+		}
+		time.Sleep(2 * time.Second)
+	}
+	return fmt.Errorf("Repo failed to become unready after %s", timeout)
+}
+
+// ValidateMCHDegraded validates the install operator responds appropriately when the install components
+// go into a degraded state after a successful install
+func ValidateMCHDegraded() error {
+	By("Validating MultiClusterHub Degraded")
+	By("- Wait for degraded deployment")
+	if err := waitForUnavailableRepo(time.Duration(45) * time.Second); err != nil {
+		return err
+	}
+
+	status, err := getMCHStatus()
+	if err != nil {
+		return err
+	}
+
+	By("- Ensuring MCH is in 'pending' phase")
+	if err := findPhase(status, "Pending"); err != nil {
+		return err
+	}
+
+	By("- Ensuring hub condition shows installation as incomplete")
+	if err := findCondition(status, "Complete", "False"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // ValidateDelete ...
 func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 	By("Validating MCH has been successfully uninstalled.")
@@ -327,6 +414,25 @@ func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 	return nil
 }
 
+// findCondition reports whether a hub condition of type 't' exists and matches the status 's'
+func findCondition(status map[string]interface{}, t string, s string) error {
+	conditions, ok := status["conditions"].([]interface{})
+	if !ok || conditions == nil {
+		return fmt.Errorf("no hubConditions found")
+	}
+	for i := range conditions {
+		condition := conditions[i]
+		if condition.(map[string]interface{})["type"].(string) == t {
+			if got := condition.(map[string]interface{})["status"].(string); got == s {
+				return nil
+			} else {
+				return fmt.Errorf("hubCondition `%s` status equals '%s', expected '%s'", t, got, s)
+			}
+		}
+	}
+	return fmt.Errorf("MCH does not have a hubcondition with type '%s'", t)
+}
+
 // ValidateMCHUnsuccessful ...
 func ValidateMCHUnsuccessful() error {
 	By("Validating MultiClusterHub Unsuccessful")
@@ -350,6 +456,15 @@ func ValidateMCHUnsuccessful() error {
 				return fmt.Errorf("MultiClusterHub: %s with phase %s is not in pending phase", mch.GetName(), status["phase"])
 			}
 			return nil
+		}, 1, 1).Should(BeNil())
+	})
+
+	When("MCH Condition 'type' should be `Progressing` and 'status' should be 'true", func() {
+		Eventually(func() error {
+			mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+			Expect(err).To(BeNil())
+			status := mch.Object["status"].(map[string]interface{})
+			return findCondition(status, "Progressing", "True")
 		}, 1, 1).Should(BeNil())
 	})
 
@@ -398,6 +513,16 @@ func ValidateMCH() error {
 				}
 			}
 			return nil
+		}, 1, 1).Should(BeNil())
+	})
+
+	By("- Ensuring condition has status 'true' and type 'complete' when MCH is in 'running' phase")
+	When("Component statuses should be true", func() {
+		Eventually(func() error {
+			mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+			Expect(err).To(BeNil())
+			status := mch.Object["status"].(map[string]interface{})
+			return findCondition(status, "Complete", "True")
 		}, 1, 1).Should(BeNil())
 	})
 
@@ -511,6 +636,32 @@ func ValidateComponentStatusExist() error {
 	return nil
 }
 
+// ValidateHubStatusExist checks if hub statuses exist immediately when MCH is created
+func ValidateHubStatusExist() error {
+	Eventually(func() error {
+		mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+		Expect(err).To(BeNil())
+		status, ok := mch.Object["status"].(map[string]interface{})
+		if !ok || status == nil {
+			return fmt.Errorf("MultiClusterHub: %s has no 'status' map", mch.GetName())
+		}
+		return findCondition(status, "Progressing", "True")
+	}, 10, 1).Should(BeNil())
+	return nil
+}
+
+//ValidateConditionDuringUninstall check if condition is terminating during uninstall of MCH
+func ValidateConditionDuringUninstall() error {
+	By("- Checking HubCondition type")
+	Eventually(func() error {
+		mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+		Expect(err).To(BeNil())
+		status := mch.Object["status"].(map[string]interface{})
+		return findCondition(status, "Terminating", "True")
+	}, 10, 1).Should(BeNil())
+	return nil
+}
+
 // ValidateStatusesExist Confirms existence of both overall MCH and Component statuses immediately after MCH creation
 func ValidateStatusesExist() error {
 	By("Validating Statuses exist")
@@ -521,6 +672,10 @@ func ValidateStatusesExist() error {
 	}
 	By("- Ensuring Component Status exist")
 	if err := ValidateComponentStatusExist(); err != nil {
+		return err
+	}
+	By("- Ensuring Hub Status exist")
+	if err := ValidateHubStatusExist(); err != nil {
 		return err
 	}
 	return nil

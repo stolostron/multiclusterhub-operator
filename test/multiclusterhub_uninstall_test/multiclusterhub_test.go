@@ -32,6 +32,7 @@ var _ = Describe("Multiclusterhub", func() {
 			AddFinalizerToHelmRelease(utils.DynamicKubeClient)
 			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, false)
 			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).ShouldNot(BeNil())
+			utils.ValidateConditionDuringUninstall()
 			Eventually(func() error {
 				err := RemoveFinalizerFromHelmRelease(utils.DynamicKubeClient)
 				if err != nil {
