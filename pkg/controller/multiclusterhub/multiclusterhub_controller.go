@@ -9,6 +9,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -150,10 +151,27 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		return reconcile.Result{}, err
 	}
 
+	originalStatus := multiClusterHub.Status.DeepCopy()
+	defer func() {
+		statusQueue, statusError := r.syncHubStatus(multiClusterHub, originalStatus)
+		if statusError != nil {
+			log.Error(retError, "Error updating status")
+		}
+		if empty := (reconcile.Result{}); retQueue == empty {
+			retQueue = statusQueue
+		}
+		if retError == nil {
+			retError = statusError
+		}
+	}()
+
 	// Check if the multiClusterHub instance is marked to be deleted, which is
 	// indicated by the deletion timestamp being set.
 	isHubMarkedToBeDeleted := multiClusterHub.GetDeletionTimestamp() != nil
 	if isHubMarkedToBeDeleted {
+		terminating := NewHubCondition(operatorsv1.Terminating, metav1.ConditionTrue, DeleteTimestampReason, "Multiclusterhub is being cleaned up.")
+		SetHubCondition(&multiClusterHub.Status, *terminating)
+
 		if contains(multiClusterHub.GetFinalizers(), hubFinalizer) {
 			// Run finalization logic. If the finalization
 			// logic fails, don't remove the finalizer so
@@ -211,14 +229,8 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 	r.CacheSpec.ImageSuffix = utils.GetImageSuffix(multiClusterHub)
 	r.CacheSpec.ImageOverridesCM = utils.GetImageOverridesConfigmap(multiClusterHub)
 
-	defer func() {
-		retQueue, retError = r.UpdateStatus(multiClusterHub)
-		if retError != nil {
-			log.Error(retError, "Error updating status")
-		}
-	}()
-
 	// Do not reconcile objects if this instance of mch is labeled "paused"
+	updatePausedCondition(multiClusterHub)
 	if utils.IsPaused(multiClusterHub) {
 		reqLogger.Info("MultiClusterHub reconciliation is paused. Nothing more to do.")
 		return reconcile.Result{}, nil
@@ -254,6 +266,8 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 	certGV := schema.GroupVersion{Group: "certmanager.k8s.io", Version: "v1alpha1"}
 	// Skip wait for API to be ready on unit test
 	if !utils.IsUnitTest() {
+		// condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, CertManagerReason, "Waiting for cert manager CRDs")
+		// SetHubCondition(&multiClusterHub.Status, *condition)
 		result, err = r.apiReady(certGV)
 		if result != nil {
 			return *result, err
@@ -289,9 +303,14 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 				reqLogger.Error(err, "Failed to set controller reference")
 			}
 		}
-		if err := deploying.Deploy(r.client, res); err != nil {
+		err, ok := deploying.Deploy(r.client, res)
+		if err != nil {
 			reqLogger.Error(err, fmt.Sprintf("Failed to deploy %s %s/%s", res.GetKind(), multiClusterHub.Namespace, res.GetName()))
 			return reconcile.Result{}, err
+		}
+		if ok {
+			condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+			SetHubCondition(&multiClusterHub.Status, *condition)
 		}
 	}
 
@@ -459,6 +478,25 @@ func (r *ReconcileMultiClusterHub) addFinalizer(reqLogger logr.Logger, m *operat
 		return err
 	}
 	return nil
+}
+
+func updatePausedCondition(m *operatorsv1.MultiClusterHub) {
+	c := GetHubCondition(m.Status, operatorsv1.Progressing)
+
+	if utils.IsPaused(m) {
+		// Pause condition needs to go on
+		if c == nil || c.Reason != PausedReason {
+			condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionUnknown, PausedReason, "Multiclusterhub is paused")
+			SetHubCondition(&m.Status, *condition)
+		}
+	} else {
+		// Pause condition needs to come off
+		if c != nil && c.Reason == PausedReason {
+			condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, ResumedReason, "Multiclusterhub is resumed")
+			SetHubCondition(&m.Status, *condition)
+		}
+
+	}
 }
 
 func contains(list []string, s string) bool {

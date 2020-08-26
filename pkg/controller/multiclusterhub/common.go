@@ -20,6 +20,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -60,6 +61,8 @@ func (r *ReconcileMultiClusterHub) ensureDeployment(m *operatorsv1.MultiClusterH
 
 		// Deployment was successful
 		dplog.Info("Created a new Deployment")
+		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+		SetHubCondition(&m.Status, *condition)
 		return nil, nil
 
 	} else if err != nil {
@@ -115,6 +118,8 @@ func (r *ReconcileMultiClusterHub) ensureService(m *operatorsv1.MultiClusterHub,
 
 		// Creation was successful
 		svlog.Info("Created a new Service")
+		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+		SetHubCondition(&m.Status, *condition)
 		return nil, nil
 
 	} else if err != nil {
@@ -151,6 +156,8 @@ func (r *ReconcileMultiClusterHub) ensureChannel(m *operatorsv1.MultiClusterHub,
 
 		// Creation was successful
 		selog.Info("Created a new Channel")
+		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+		SetHubCondition(&m.Status, *condition)
 		return nil, nil
 
 	} else if err != nil {
@@ -190,6 +197,8 @@ func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1.MultiCluste
 
 		// Creation was successful
 		obLog.Info("Created new object")
+		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+		SetHubCondition(&m.Status, *condition)
 		return nil, nil
 
 	} else if err != nil {
@@ -241,6 +250,8 @@ func (r *ReconcileMultiClusterHub) ensureClusterManager(m *operatorsv1.MultiClus
 		}
 		// Creation was successful
 		obLog.Info("Created new object")
+		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+		SetHubCondition(&m.Status, *condition)
 		return nil, nil
 
 	} else if err != nil {
@@ -285,6 +296,8 @@ func (r *ReconcileMultiClusterHub) apiReady(gv schema.GroupVersion) (*reconcile.
 	if err != nil {
 		// Wait a little and try again
 		log.Info("Waiting for API group to be available", "API group", gv)
+		// condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Waiting for cert manager CRD availability")
+		// SetHubCondition(&m.Status, *condition)
 		return &reconcile.Result{RequeueAfter: time.Second * 10}, nil
 	}
 	return nil, nil
