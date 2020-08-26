@@ -48,6 +48,20 @@ var _ = Describe("Multiclusterhub", func() {
 					fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
 					return
 				}
+
+				By("Degrading the installation")
+				if err := utils.BrickMCHRepo(); err != nil {
+					fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+					return
+				}
+				if err := utils.ValidateMCHDegraded(); err != nil {
+					fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+					return
+				}
+				if err := utils.FixMCHRepo(); err != nil {
+					fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+					return
+				}
 				return
 			})
 			if !ok {
