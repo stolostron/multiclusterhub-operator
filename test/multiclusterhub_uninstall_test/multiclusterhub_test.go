@@ -27,7 +27,7 @@ var _ = Describe("Multiclusterhub", func() {
 				return err
 			}
 			return nil
-		}, 120, 1).Should(BeNil())
+		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
 	})
 
 	if os.Getenv("full_test_suite") == "true" {
@@ -45,7 +45,7 @@ var _ = Describe("Multiclusterhub", func() {
 					return err
 				}
 				return nil
-			}, utils.GetWaitInMinutes(), 1).Should(BeNil())
+			}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
 			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
 			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
 		})

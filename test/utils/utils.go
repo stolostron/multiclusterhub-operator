@@ -459,7 +459,7 @@ func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 			return fmt.Errorf("Expecting configmaps to terminate")
 		}
 		return nil
-	}, 30, 1).Should(BeNil())
+	}, GetWaitInMinutes()*60, 1).Should(BeNil())
 
 	return nil
 }
@@ -486,8 +486,8 @@ func findCondition(status map[string]interface{}, t string, s string) error {
 // ValidateMCHUnsuccessful ...
 func ValidateMCHUnsuccessful() error {
 	By("Validating MultiClusterHub Unsuccessful")
-	By(fmt.Sprintf("- Waiting %d minutes", GetWaitInMinutes()), func() {
-		time.Sleep(time.Duration(GetWaitInMinutes()) * time.Minute)
+	By(fmt.Sprintf("- Waiting %d minutes", GetWaitInMinutes()*60), func() {
+		time.Sleep(time.Duration(GetWaitInMinutes()*60) * time.Minute)
 	})
 
 	By("- Ensuring MCH is in 'pending' phase")
@@ -636,7 +636,7 @@ func ValidateMCHStatusExist() error {
 			return fmt.Errorf("MultiClusterHub: %s has no 'status' map", mch.GetName())
 		}
 		return nil
-	}, 10, 1).Should(BeNil())
+	}, GetWaitInMinutes()*60, 1).Should(BeNil())
 	return nil
 }
 
@@ -659,7 +659,7 @@ func ValidateComponentStatusExist() error {
 			}
 		}
 		return nil
-	}, 10, 1).Should(BeNil())
+	}, GetWaitInMinutes()*60, 1).Should(BeNil())
 	return nil
 }
 
@@ -673,7 +673,7 @@ func ValidateHubStatusExist() error {
 			return fmt.Errorf("MultiClusterHub: %s has no 'status' map", mch.GetName())
 		}
 		return findCondition(status, "Progressing", "True")
-	}, 10, 1).Should(BeNil())
+	}, GetWaitInMinutes()*60, 1).Should(BeNil())
 	return nil
 }
 
@@ -685,7 +685,7 @@ func ValidateConditionDuringUninstall() error {
 		Expect(err).To(BeNil())
 		status := mch.Object["status"].(map[string]interface{})
 		return findCondition(status, "Terminating", "True")
-	}, 10, 1).Should(BeNil())
+	}, GetWaitInMinutes()*60, 1).Should(BeNil())
 	return nil
 }
 

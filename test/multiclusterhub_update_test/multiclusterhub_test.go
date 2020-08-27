@@ -27,7 +27,7 @@ var _ = Describe("Multiclusterhub", func() {
 				return err
 			}
 			return nil
-		}, 120, 1).Should(BeNil())
+		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
 	})
 
 	By("Beginning Basic Update Test Suite ...")
@@ -64,7 +64,7 @@ var _ = Describe("Multiclusterhub", func() {
 				Expect(version).To(Equal(os.Getenv("updateVersion")))
 				Expect(version).To(Equal(os.Getenv("updateVersion")))
 				return nil
-			}, 800, 1).Should(BeNil())
+			}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
 			klog.V(1).Info("MCH Operator upgraded successfully")
 		})
 

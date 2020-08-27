@@ -64,7 +64,7 @@ var _ = BeforeSuite(func() {
 				return err
 			}
 			return nil
-		}, 45, 1).Should(BeNil())
+		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
 		klog.V(1).Info("MCH Operator deployment available")
 	})
 
@@ -93,7 +93,7 @@ var _ = BeforeSuite(func() {
 				return fmt.Errorf("MCH Operator not available")
 			}
 			return err
-		}, 45, 1).Should(BeNil())
+		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
 		klog.V(1).Info("MCH Operator deployment available")
 	})
 
