@@ -21,6 +21,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -31,6 +32,9 @@ var (
 	KubeClient = NewKubeClient("", "", "")
 	// DynamicKubeClient ...
 	DynamicKubeClient = NewKubeClientDynamic("", "", "")
+
+	// ImageOverridesCMBadImageName...
+	ImageOverridesCMBadImageName = "bad-image-ref"
 
 	// GVRMultiClusterHub ...
 	GVRMultiClusterHub = schema.GroupVersionResource{
@@ -133,6 +137,21 @@ func CreateNewUnstructured(
 	ns := clientHubDynamic.Resource(gvr).Namespace(namespace)
 	Expect(ns.Create(context.TODO(), obj, metav1.CreateOptions{})).NotTo(BeNil())
 	Expect(ns.Get(context.TODO(), name, metav1.GetOptions{})).NotTo(BeNil())
+}
+
+// CreateNewConfigMap ...
+func CreateNewConfigMap(cm *corev1.ConfigMap, namespace string) error {
+	_, err := KubeClient.CoreV1().ConfigMaps(namespace).Create(context.TODO(), cm, metav1.CreateOptions{})
+	return err
+}
+
+// DeleteConfigMapIfExists ...
+func DeleteConfigMapIfExists(cmName, namespace string) error {
+	_, err := KubeClient.CoreV1().ConfigMaps(namespace).Get(context.TODO(), cmName, metav1.GetOptions{})
+	if err == nil {
+		return KubeClient.CoreV1().ConfigMaps(namespace).Delete(context.TODO(), cmName, metav1.DeleteOptions{})
+	}
+	return nil
 }
 
 // DeleteIfExists deletes resources by using gvr, name, and namespace.
@@ -279,14 +298,14 @@ func IsOwner(owner *unstructured.Unstructured, obj interface{}) bool {
 
 // CreateDefaultMCH ...
 func CreateDefaultMCH() *unstructured.Unstructured {
-	mch := NewMultiClusterHub(MCHName, MCHNamespace)
+	mch := NewMultiClusterHub(MCHName, MCHNamespace, "")
 	CreateNewUnstructured(DynamicKubeClient, GVRMultiClusterHub, mch, MCHName, MCHNamespace)
 	return mch
 }
 
-// CreateMCHBadPullSecret ...
-func CreateMCHBadPullSecret() *unstructured.Unstructured {
-	mch := NewMultiClusterHubBadPullSecret(MCHName, MCHNamespace)
+// CreateMCHImageOverridesAnnotation ...
+func CreateMCHImageOverridesAnnotation(imageOverridesConfigmapName string) *unstructured.Unstructured {
+	mch := NewMultiClusterHub(MCHName, MCHNamespace, imageOverridesConfigmapName)
 	CreateNewUnstructured(DynamicKubeClient, GVRMultiClusterHub, mch, MCHName, MCHNamespace)
 	return mch
 }

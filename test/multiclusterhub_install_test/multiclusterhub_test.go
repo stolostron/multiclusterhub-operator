@@ -28,6 +28,10 @@ var _ = Describe("Multiclusterhub", func() {
 			}
 			return nil
 		}, 120, 1).Should(BeNil())
+
+		By("Attempting to delete Image Overrides ConfigMap with bad image reference if it exists")
+		err := utils.DeleteConfigMapIfExists(utils.ImageOverridesCMBadImageName, utils.MCHNamespace)
+		Expect(err).Should(BeNil())
 	})
 
 	if os.Getenv("full_test_suite") == "true" {
@@ -61,7 +65,7 @@ func FullInstallTestSuite() {
 		err := utils.ValidateMCH()
 		Expect(err).To(BeNil())
 
-		By("- Overrwite Image Overrides Configmap")
+		By("- Overwrite Image Overrides Configmap")
 		currentVersion, err := utils.GetCurrentVersionFromMCH()
 		Expect(err).To(BeNil())
 		v, err := semver.NewVersion(currentVersion)
@@ -158,16 +162,15 @@ func FullInstallTestSuite() {
 		return
 	})
 
-	It("Installing MCH with bad pull secret - should have Pending status", func() {
-		By("Creating MultiClusterHub")
-		utils.CreateMCHBadPullSecret()
+	It(fmt.Sprintf("Installing MCH with bad image reference - should have Pending status"), func() {
+		By("Creating Bad Image Overrides Configmap")
+		imageOverridesCM := utils.NewImageOverridesConfigmapBadImageRef(utils.ImageOverridesCMBadImageName, utils.MCHNamespace)
+		err := utils.CreateNewConfigMap(imageOverridesCM, utils.MCHNamespace)
+		Expect(err).To(BeNil())
 
-		err := utils.ValidateMCHUnsuccessful()
-		if err != nil {
-			fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
-			return
-		}
-		return
+		By("Creating MultiClusterHub with image overrides annotation")
+		utils.CreateMCHImageOverridesAnnotation(utils.ImageOverridesCMBadImageName)
+		err = utils.ValidateMCHUnsuccessful()
 	})
 
 	totalAttempts := 2
