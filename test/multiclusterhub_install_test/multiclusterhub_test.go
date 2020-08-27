@@ -27,7 +27,7 @@ var _ = Describe("Multiclusterhub", func() {
 				return err
 			}
 			return nil
-		}, 120, 1).Should(BeNil())
+		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
 
 		By("Attempting to delete Image Overrides ConfigMap with bad image reference if it exists")
 		err := utils.DeleteConfigMapIfExists(utils.ImageOverridesCMBadImageName, utils.MCHNamespace)
@@ -89,7 +89,7 @@ func FullInstallTestSuite() {
 					return fmt.Errorf("Configmap has not been updated")
 				}
 				return nil
-			}, 30, 1).Should(BeNil())
+			}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
 
 		}
 		return
@@ -149,7 +149,7 @@ func FullInstallTestSuite() {
 					return fmt.Errorf("Configmap has not been updated from overrides CM.")
 				}
 				return nil
-			}, 30, 1).Should(BeNil())
+			}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
 
 			annotations = make(map[string]string)
 			mch.SetAnnotations(annotations)
