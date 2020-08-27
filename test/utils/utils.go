@@ -124,7 +124,7 @@ var (
 	CSVName = "advanced-cluster-management"
 
 	// WaitInMinutes ...
-	WaitInMinutes = 6
+	WaitInMinutes = 8
 )
 
 // CreateNewUnstructured creates resources by using gvr & obj, will get object after create.
@@ -185,7 +185,7 @@ func DeleteIfExists(clientHubDynamic dynamic.Interface, gvr schema.GroupVersionR
 			return nil
 		}
 		return nil
-	}, 240, 1).Should(BeNil())
+	}, WaitInMinutes*60, 1).Should(BeNil())
 }
 
 // NewKubeClient returns a kube client
