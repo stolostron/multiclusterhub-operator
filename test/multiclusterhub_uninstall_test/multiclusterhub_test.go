@@ -18,7 +18,7 @@ import (
 var _ = Describe("Multiclusterhub", func() {
 
 	It("Deleting and Validating MCH CR", func() {
-		By("Deleting MultiClusterHub")
+		By(fmt.Sprintf("Deleting MultiClusterHub within %d minutes", utils.GetWaitInMinutes()))
 		utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
 
 		Eventually(func() error {
@@ -45,7 +45,7 @@ var _ = Describe("Multiclusterhub", func() {
 					return err
 				}
 				return nil
-			}, 20, 1).Should(BeNil())
+			}, utils.GetWaitInMinutes(), 1).Should(BeNil())
 			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
 			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
 		})

@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/Masterminds/semver/v3"
@@ -123,9 +124,22 @@ var (
 	// CSVName ...
 	CSVName = "advanced-cluster-management"
 
-	// WaitInMinutes ...
-	WaitInMinutes = 6
+	// WaitInMinutesDefault ...
+	WaitInMinutesDefault = 6
 )
+
+// GetWaitInMinutes...
+func GetWaitInMinutes() int {
+	waitInMinutesAsString := os.Getenv("waitInMinutes")
+	if waitInMinutesAsString == "" {
+		return WaitInMinutesDefault
+	}
+	waitInMinutesAsInt, err := strconv.Atoi(waitInMinutesAsString)
+	if err != nil {
+		return WaitInMinutesDefault
+	}
+	return waitInMinutesAsInt
+}
 
 // CreateNewUnstructured creates resources by using gvr & obj, will get object after create.
 func CreateNewUnstructured(
@@ -185,7 +199,7 @@ func DeleteIfExists(clientHubDynamic dynamic.Interface, gvr schema.GroupVersionR
 			return nil
 		}
 		return nil
-	}, 240, 1).Should(BeNil())
+	}, GetWaitInMinutes()*60, 1).Should(BeNil())
 }
 
 // NewKubeClient returns a kube client
@@ -472,8 +486,8 @@ func findCondition(status map[string]interface{}, t string, s string) error {
 // ValidateMCHUnsuccessful ...
 func ValidateMCHUnsuccessful() error {
 	By("Validating MultiClusterHub Unsuccessful")
-	By(fmt.Sprintf("- Waiting %d minutes", WaitInMinutes), func() {
-		time.Sleep(time.Duration(WaitInMinutes) * time.Minute)
+	By(fmt.Sprintf("- Waiting %d minutes", GetWaitInMinutes()), func() {
+		time.Sleep(time.Duration(GetWaitInMinutes()) * time.Minute)
 	})
 
 	By("- Ensuring MCH is in 'pending' phase")
@@ -511,8 +525,8 @@ func ValidateMCHUnsuccessful() error {
 func ValidateMCH() error {
 	By("Validating MultiClusterHub")
 
-	By("- Ensuring MCH is in 'running' phase")
-	When(fmt.Sprintf("Wait for MultiClusterHub to be in running phase (Will take up to %d minutes)", WaitInMinutes), func() {
+	By(fmt.Sprintf("- Ensuring MCH is in 'running' phase within %d minutes", GetWaitInMinutes()))
+	When(fmt.Sprintf("Wait for MultiClusterHub to be in running phase (Will take up to %d minutes)", GetWaitInMinutes()), func() {
 		Eventually(func() error {
 			mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
 			Expect(err).To(BeNil())
@@ -527,7 +541,7 @@ func ValidateMCH() error {
 				return fmt.Errorf("MultiClusterHub: %s with phase %s is not in running phase", mch.GetName(), status["phase"])
 			}
 			return nil
-		}, WaitInMinutes*60, 1).Should(BeNil())
+		}, GetWaitInMinutes()*60, 1).Should(BeNil())
 	})
 
 	By("- Ensuring MCH Repo Is available")
