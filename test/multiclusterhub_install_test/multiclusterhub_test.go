@@ -65,7 +65,7 @@ func FullInstallTestSuite() {
 		err := utils.ValidateMCH()
 		Expect(err).To(BeNil())
 
-		By("- Overrwite Image Overrides Configmap")
+		By("- Overwrite Image Overrides Configmap")
 		currentVersion, err := utils.GetCurrentVersionFromMCH()
 		Expect(err).To(BeNil())
 		v, err := semver.NewVersion(currentVersion)
@@ -169,7 +169,8 @@ func FullInstallTestSuite() {
 		Expect(err).To(BeNil())
 
 		By("Creating MultiClusterHub with image overrides annotation")
-		err = utils.ValidateMCHUnsuccessful(utils.CreateMCHImageOverridesAnnotation(utils.ImageOverridesCMBadImageName))
+		utils.CreateMCHImageOverridesAnnotation(utils.ImageOverridesCMBadImageName)
+		err = utils.ValidateMCHUnsuccessful()
 	})
 
 	totalAttempts := 2

@@ -23,8 +23,7 @@ build-harness-extensions/
 test/out
 test/coverage
 test/options.yaml
-test/multiclusterhub_uninstall_test/results.xml
-test/multiclusterhub_install_test/results.xml
+test/results/*
 
 # override build harness vendoring
 !vbh/.build-harness-vendorized
