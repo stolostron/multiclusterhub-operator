@@ -120,6 +120,24 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	err = c.Watch(
+		&source.Kind{Type: &appsv1.Deployment{}},
+		&handler.EnqueueRequestsFromMapFunc{
+			ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
+				return []reconcile.Request{
+					{NamespacedName: types.NamespacedName{
+						Name:      a.Meta.GetLabels()["installer.name"],
+						Namespace: a.Meta.GetLabels()["installer.namespace"],
+					}},
+				}
+			}),
+		},
+		predicate.InstallerLabelPredicate{},
+	)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
