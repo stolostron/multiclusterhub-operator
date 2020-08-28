@@ -105,20 +105,14 @@ func (m *multiClusterHubValidator) validateUpdate(req admission.Request) error {
 }
 
 func (m *multiClusterHubValidator) validateDelete(req admission.Request) error {
-
-	mch := &operatorsv1.MultiClusterHub{}
-	err := m.decoder.DecodeRaw(req.Object, mch)
-	if err != nil {
-		return err
-	}
-
 	u := &unstructured.UnstructuredList{}
 	u.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   "cluster.open-cluster-management.io",
 		Version: "v1",
 		Kind:    "ManagedClusterList",
 	})
-	err = m.client.List(context.TODO(), u)
+
+	err := m.client.List(context.TODO(), u)
 	if err != nil {
 		return nil
 	}
@@ -128,7 +122,7 @@ func (m *multiClusterHubValidator) validateDelete(req admission.Request) error {
 
 	if len(u.Items) == 1 {
 		managedCluster := u.Items[0]
-		if managedCluster.GetName() != "ocm-hub" {
+		if managedCluster.GetName() != "ocm-hub-cluster" {
 			return errors.New("Cannot delete MultiClusterHub resource because ManagedCluster resource(s) exist")
 		}
 	}

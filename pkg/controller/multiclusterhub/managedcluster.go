@@ -2,6 +2,7 @@ package multiclusterhub
 
 import (
 	"context"
+	"fmt"
 
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -14,10 +15,10 @@ import (
 
 const (
 	// ManagedClusterName name of the hub cluster managedcluster resource
-	ManagedClusterName = "ocm-hub"
+	ManagedClusterName = "ocm-hub-cluster"
 
 	// KlusterletAddonConfigName name of the hub cluster managedcluster resource
-	KlusterletAddonConfigName = "ocm-hub"
+	KlusterletAddonConfigName = "ocm-hub-cluster"
 )
 
 func getInstallerLabels(m *operatorsv1.MultiClusterHub) map[string]string {
@@ -99,10 +100,15 @@ func getKlusterletAddonConfig(version string) *unstructured.Unstructured {
 func (r *ReconcileMultiClusterHub) ensureHubIsImported(m *operatorsv1.MultiClusterHub) (*reconcile.Result, error) {
 	if m.Status.Phase != operatorsv1.HubRunning {
 		log.Info("Waiting for mch phase to be 'running' before importing hub cluster")
-		return &reconcile.Result{}, nil
+		return &reconcile.Result{}, fmt.Errorf("Waiting for mch phase to be 'running' before importing hub cluster")
 	}
 
-	result, err := r.ensureManagedCluster(m)
+	result, err := r.ensureNamespace(m)
+	if result != nil {
+		return result, err
+	}
+
+	result, err = r.ensureManagedCluster(m)
 	if result != nil {
 		return result, err
 	}
@@ -159,12 +165,11 @@ func (r *ReconcileMultiClusterHub) ensureHubNamespaceIsRemoved(m *operatorsv1.Mu
 	HubNamespace.SetLabels(getInstallerLabels(m))
 
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: HubNamespace.GetName()}, HubNamespace)
-	if err != nil && !errors.IsNotFound(err) {
-		log.Error(err, "Waiting for hub namespace to be cleaned up")
-		return &reconcile.Result{}, err
+	if err != nil && errors.IsNotFound(err) {
+		// Namespace is removed
+		return nil, nil
 	}
-
-	return nil, nil
+	return &reconcile.Result{}, fmt.Errorf("Waiting on namespace: %s to be removed", HubNamespace.GetName())
 }
 
 func (r *ReconcileMultiClusterHub) ensureManagedCluster(m *operatorsv1.MultiClusterHub) (*reconcile.Result, error) {
@@ -177,6 +182,10 @@ func (r *ReconcileMultiClusterHub) ensureManagedCluster(m *operatorsv1.MultiClus
 		labels := getInstallerLabels(m)
 		labels["local-cluster"] = "true"
 		managedCluster.SetLabels(labels)
+
+		managedCluster.SetOwnerReferences([]metav1.OwnerReference{
+			*metav1.NewControllerRef(m, m.GetObjectKind().GroupVersionKind()),
+		})
 
 		err = r.client.Create(context.TODO(), managedCluster)
 		if err != nil {
@@ -194,12 +203,22 @@ func (r *ReconcileMultiClusterHub) removeManagedCluster(m *operatorsv1.MultiClus
 	labels["local-cluster"] = "true"
 	managedCluster.SetLabels(labels)
 
-	err := r.client.Delete(context.TODO(), managedCluster)
-	if err != nil && !errors.IsNotFound(err) {
-		log.Error(err, "Error deleting managed cluster hub namespace")
+	// Wait for managedcluster to be removed
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: ManagedClusterName}, managedCluster)
+	if err != nil && errors.IsNotFound(err) {
+		fmt.Println("Managed Cluster Gone")
+
+		// ManagedCluster is removed
 		return nil, nil
 	}
-	return nil, nil
+
+	fmt.Println("Deleting Managed Cluster")
+	err = r.client.Delete(context.TODO(), getManagedCluster())
+	if err != nil && !errors.IsNotFound(err) {
+		log.Error(err, "Error deleting managedcluster")
+		return &reconcile.Result{}, err
+	}
+	return &reconcile.Result{}, fmt.Errorf("Waiting on managedcluster: %s to be removed", ManagedClusterName)
 }
 
 func (r *ReconcileMultiClusterHub) ensureKlusterletAddonConfig(m *operatorsv1.MultiClusterHub) (*reconcile.Result, error) {
@@ -224,9 +243,9 @@ func (r *ReconcileMultiClusterHub) ensureKlusterletAddonConfigIsRemoved(m *opera
 	klusterletaddonconfig.SetLabels(getInstallerLabels(m))
 
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: KlusterletAddonConfigName, Namespace: ManagedClusterName}, klusterletaddonconfig)
-	if err != nil && !errors.IsNotFound(err) {
-		log.Error(err, "Waiting for hub namespace to be cleaned up")
-		return &reconcile.Result{}, err
+	if err != nil && errors.IsNotFound(err) {
+		// KlusterletAddonConfig is removed
+		return nil, nil
 	}
-	return nil, nil
+	return &reconcile.Result{}, fmt.Errorf("Waiting on klusterletaddonconfig: %s/%s to be removed", ManagedClusterName, KlusterletAddonConfigName)
 }
