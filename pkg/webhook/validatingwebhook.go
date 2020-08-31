@@ -122,7 +122,7 @@ func (m *multiClusterHubValidator) validateDelete(req admission.Request) error {
 
 	if len(u.Items) == 1 {
 		managedCluster := u.Items[0]
-		if managedCluster.GetName() != "ocm-hub-cluster" {
+		if managedCluster.GetName() != "local-cluster" {
 			return errors.New("Cannot delete MultiClusterHub resource because ManagedCluster resource(s) exist")
 		}
 	}

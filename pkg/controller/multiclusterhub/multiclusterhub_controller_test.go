@@ -39,7 +39,8 @@ var (
 			AvailabilityConfig: operatorsv1.HAHigh,
 		},
 		Status: operatorsv1.MultiClusterHubStatus{
-			CurrentVersion: "1.0.0",
+			CurrentVersion: "2.0.0",
+			Phase:          "Running",
 		},
 	}
 	// A MultiClusterHub object with metadata and spec.
@@ -102,7 +103,7 @@ func Test_ReconcileMultiClusterHub(t *testing.T) {
 		{
 			Name:     "Without Status",
 			MCH:      mch2,
-			Expected: nil,
+			Expected: fmt.Errorf("Waiting for mch phase to be 'running' before importing hub cluster"),
 		},
 		{
 			Name:     "AvailabilityConfig",
