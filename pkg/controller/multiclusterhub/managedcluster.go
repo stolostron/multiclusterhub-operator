@@ -1,3 +1,5 @@
+// Copyright (c) 2020 Red Hat, Inc.
+
 package multiclusterhub
 
 import (
@@ -165,6 +167,19 @@ func (r *ReconcileMultiClusterHub) ensureManagedCluster(m *operatorsv1.MultiClus
 		}
 	}
 
+	labels := getInstallerLabels(m)
+	labels["local-cluster"] = "true"
+	managedCluster.SetLabels(labels)
+	managedCluster.SetOwnerReferences([]metav1.OwnerReference{
+		*metav1.NewControllerRef(m, m.GetObjectKind().GroupVersionKind()),
+	})
+
+	err = r.client.Update(context.TODO(), managedCluster)
+	if err != nil {
+		log.Error(err, "Failed to update managedcluster resource")
+		return &reconcile.Result{}, err
+	}
+
 	return nil, nil
 }
 
@@ -197,11 +212,27 @@ func (r *ReconcileMultiClusterHub) ensureKlusterletAddonConfig(m *operatorsv1.Mu
 		klusterletaddonconfig = getKlusterletAddonConfig(m.Status.CurrentVersion)
 		klusterletaddonconfig.SetLabels(getInstallerLabels(m))
 
+		klusterletaddonconfig.SetOwnerReferences([]metav1.OwnerReference{
+			*metav1.NewControllerRef(m, m.GetObjectKind().GroupVersionKind()),
+		})
+
 		err = r.client.Create(context.TODO(), klusterletaddonconfig)
 		if err != nil {
 			log.Error(err, "Failed to create klusterletaddonconfig resource")
 			return &reconcile.Result{}, err
 		}
 	}
+
+	klusterletaddonconfig.SetLabels(getInstallerLabels(m))
+	klusterletaddonconfig.SetOwnerReferences([]metav1.OwnerReference{
+		*metav1.NewControllerRef(m, m.GetObjectKind().GroupVersionKind()),
+	})
+
+	err = r.client.Update(context.TODO(), klusterletaddonconfig)
+	if err != nil {
+		log.Error(err, "Failed to update klusterletaddonconfig resource")
+		return &reconcile.Result{}, err
+	}
+
 	return nil, nil
 }
