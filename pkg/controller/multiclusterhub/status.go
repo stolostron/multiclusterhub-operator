@@ -90,14 +90,8 @@ var unknownStatus = operatorsv1.StatusCondition{
 }
 
 // syncHubStatus checks if the status is up-to-date and sync it if necessary
-func (r *ReconcileMultiClusterHub) syncHubStatus(m *operatorsv1.MultiClusterHub, original *operatorsv1.MultiClusterHubStatus) (reconcile.Result, error) {
-	deployList, err := r.listDeployments()
-	hrList, err := r.listHelmReleases()
-	newStatus := calculateStatus(m, deployList, hrList)
-	hrOwnedDeploys := GetHelmReleaseOwnedDeployments(m, hrList, deployList)
-	if err := r.LabelDeployments(m, hrOwnedDeploys); err != nil {
-		return reconcile.Result{}, nil
-	}
+func (r *ReconcileMultiClusterHub) syncHubStatus(m *operatorsv1.MultiClusterHub, original *operatorsv1.MultiClusterHubStatus, allDeps []*appsv1.Deployment, allHRs []*subrelv1.HelmRelease) (reconcile.Result, error) {
+	newStatus := calculateStatus(m, allDeps, allHRs)
 
 	if reflect.DeepEqual(m.Status, original) {
 		log.Info("Status hasn't changed")
@@ -106,7 +100,7 @@ func (r *ReconcileMultiClusterHub) syncHubStatus(m *operatorsv1.MultiClusterHub,
 
 	newHub := m
 	newHub.Status = newStatus
-	err = r.client.Status().Update(context.TODO(), newHub)
+	err := r.client.Status().Update(context.TODO(), newHub)
 	if err != nil {
 		if errors.IsConflict(err) {
 			// Error from object being modified is normal behavior and should not be treated like an error
@@ -137,7 +131,6 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 	// Copy conditions one by one so we won't mutate the original object.
 	conditions := hub.Status.HubConditions
 	for i := range conditions {
-		log.Info("Conditions exist", "name", conditions[i].Type)
 		status.HubConditions = append(status.HubConditions, conditions[i])
 	}
 
@@ -162,22 +155,18 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 }
 
 // getComponentStatuses populates a complete list of the hub component statuses
-func getComponentStatuses(hub *operatorsv1.MultiClusterHub, hrList []*subrelv1.HelmRelease, dList []*appsv1.Deployment) map[string]operatorsv1.StatusCondition {
+func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allHRs []*subrelv1.HelmRelease, allDeps []*appsv1.Deployment) map[string]operatorsv1.StatusCondition {
 	components := newComponentList(hub)
 
-	for _, hr := range hrList {
+	for _, hr := range allHRs {
 		owner := hr.OwnerReferences[0].Name
 		if _, ok := components[owner]; ok {
 			components[owner] = mapHelmRelease(hr)
 
 			// If helmrelease is labeled successful, check its deployments for readiness
 			if successfulHelmRelease(hr) {
-				hrDeployments := getLabeledDeployments(dList, hr.Name)
+				hrDeployments := filterDeploymentsByRelease(allDeps, hr.Name)
 				for _, d := range hrDeployments {
-					// Attach installer labels so we can keep our eyes on the deployment
-					if addInstallerLabel(d, hub.Name, hub.Namespace) {
-
-					}
 					// Set status reported to first unready deployment
 					if !successfulDeploy(d) {
 						components[owner] = mapDeployment(d)
@@ -186,49 +175,14 @@ func getComponentStatuses(hub *operatorsv1.MultiClusterHub, hrList []*subrelv1.H
 				}
 			}
 		}
-
-		// Logging matched deploys
-		name := hr.Name
-		matchingDeploys := getLabeledDeployments(dList, name)
-		var nameList []string
-		for _, d := range matchingDeploys {
-			nameList = append(nameList, d.Name)
-		}
-		log.Info("Helmrelease owns these deployments", "HRName", name, "Deployments", nameList)
 	}
 
-	for _, d := range dList {
+	for _, d := range allDeps {
 		if _, ok := components[d.Name]; ok {
 			components[d.Name] = mapDeployment(d)
 		}
 	}
 	return components
-}
-
-func (r *ReconcileMultiClusterHub) listDeployments() ([]*appsv1.Deployment, error) {
-	deployList := &appsv1.DeploymentList{}
-	err := r.client.List(context.TODO(), deployList)
-	if err != nil && !errors.IsNotFound(err) {
-		return nil, err
-	}
-	var ret []*appsv1.Deployment
-	for i := 0; i < len(deployList.Items); i++ {
-		ret = append(ret, &deployList.Items[i])
-	}
-	return ret, nil
-}
-
-func (r *ReconcileMultiClusterHub) listHelmReleases() ([]*subrelv1.HelmRelease, error) {
-	hrList := &subrelv1.HelmReleaseList{}
-	err := r.client.List(context.TODO(), hrList)
-	if err != nil && !errors.IsNotFound(err) {
-		return nil, err
-	}
-	var ret []*subrelv1.HelmRelease
-	for i := 0; i < len(hrList.Items); i++ {
-		ret = append(ret, &hrList.Items[i])
-	}
-	return ret, nil
 }
 
 func successfulDeploy(d *appsv1.Deployment) bool {
@@ -308,7 +262,7 @@ func mapHelmRelease(hr *subrelv1.HelmRelease) operatorsv1.StatusCondition {
 	}
 
 	// Ignore success messages
-	if !isErrorType(ret.Type) {
+	if successfulHelmRelease(hr) {
 		ret.Message = ""
 	}
 
@@ -327,13 +281,6 @@ func aggregateStatus(components map[string]operatorsv1.StatusCondition) operator
 		}
 	}
 	return operatorsv1.HubRunning
-}
-
-func isErrorType(cr string) bool {
-	return cr == string(subrelv1.ReasonInstallError) ||
-		cr == string(subrelv1.ReasonUpdateError) ||
-		cr == string(subrelv1.ReasonReconcileError) ||
-		cr == string(subrelv1.ReasonUninstallError)
 }
 
 // type byTransitionTime []operatorsv1.StatusCondition
@@ -427,64 +374,4 @@ func HubConditionPresent(status operatorsv1.MultiClusterHubStatus, conditionType
 		}
 	}
 	return false
-}
-
-func getLabeledDeployments(allDeps []*appsv1.Deployment, releaseLabel string) []*appsv1.Deployment {
-	var labeledDeps []*appsv1.Deployment
-	for i := range allDeps {
-		if release := allDeps[i].ObjectMeta.Labels["release"]; release == releaseLabel {
-			labeledDeps = append(labeledDeps, allDeps[i])
-		}
-	}
-	return labeledDeps
-}
-
-// addInstallerLabel adds the installer name and namespace to a deployment's labels
-// so it can be watched. Returns false if the labels are already present.
-func addInstallerLabel(d *appsv1.Deployment, name string, ns string) bool {
-	updated := false
-	if d.Labels["installer.name"] != name {
-		d.Labels["installer.name"] = name
-		updated = true
-	}
-	if d.Labels["installer.namespace"] != ns {
-		d.Labels["installer.namespace"] = ns
-		updated = true
-	}
-	return updated
-}
-
-// GetHelmReleaseOwnedDeployments
-func GetHelmReleaseOwnedDeployments(hub *operatorsv1.MultiClusterHub, hrList []*subrelv1.HelmRelease, dList []*appsv1.Deployment) []*appsv1.Deployment {
-	appsubs := make(map[string]bool)
-	for _, s := range getAppsubs(hub) {
-		appsubs[s.Name] = true
-	}
-
-	var mchDeps []*appsv1.Deployment
-	for _, hr := range hrList {
-		owner := hr.OwnerReferences[0].Name
-		// check if this is one of our helmreleases
-		if appsubs[owner] {
-			hrDeployments := getLabeledDeployments(dList, hr.Name)
-			mchDeps = append(mchDeps, hrDeployments...)
-
-		}
-	}
-	return mchDeps
-}
-
-func (r *ReconcileMultiClusterHub) LabelDeployments(hub *operatorsv1.MultiClusterHub, dList []*appsv1.Deployment) error {
-	for _, d := range dList {
-		// Attach installer labels so we can keep our eyes on the deployment
-		if addInstallerLabel(d, hub.Name, hub.Namespace) {
-			log.Info("Adding installer labels to deployment", "Name", d.Name)
-			err := r.client.Update(context.TODO(), d)
-			if err != nil {
-				log.Error(err, "Failed to update Deployment", "Name", d.Name)
-				return err
-			}
-		}
-	}
-	return nil
 }

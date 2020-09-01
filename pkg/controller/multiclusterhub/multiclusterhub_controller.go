@@ -178,9 +178,18 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		return reconcile.Result{}, err
 	}
 
+	allDeploys, err := r.listDeployments()
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	allHRs, err := r.listHelmReleases()
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
 	originalStatus := multiClusterHub.Status.DeepCopy()
 	defer func() {
-		statusQueue, statusError := r.syncHubStatus(multiClusterHub, originalStatus)
+		statusQueue, statusError := r.syncHubStatus(multiClusterHub, originalStatus, allDeploys, allHRs)
 		if statusError != nil {
 			log.Error(retError, "Error updating status")
 		}
@@ -260,6 +269,13 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 	if err != nil {
 		reqLogger.Error(err, "Error storing image manifests in configmap")
 		return reconcile.Result{}, err
+	}
+
+	// Add installer labels to Helm-owned deployments
+	myHelmReleases := getAppSubOwnedHelmReleases(allHRs, getAppsubs(multiClusterHub))
+	myHRDeployments := getHelmReleaseOwnedDeployments(allDeploys, myHelmReleases)
+	if err := r.labelDeployments(multiClusterHub, myHRDeployments); err != nil {
+		return reconcile.Result{}, nil
 	}
 
 	// Do not reconcile objects if this instance of mch is labeled "paused"
