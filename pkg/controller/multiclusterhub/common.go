@@ -486,6 +486,7 @@ func addInstallerLabel(d *appsv1.Deployment, name string, ns string) bool {
 		updated = true
 	}
 	if d.Labels["installer.namespace"] != ns {
+		d.Labels["installer.namespace"] = ns
 		updated = true
 	}
 	return updated

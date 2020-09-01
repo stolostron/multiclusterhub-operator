@@ -566,9 +566,10 @@ func Test_addInstallerLabel(t *testing.T) {
 		ns   string
 	}
 	tests := []struct {
-		name string
-		args args
-		want bool
+		name       string
+		args       args
+		want       bool
+		wantDeploy *appsv1.Deployment
 	}{
 		{
 			name: "Deployment has no labels",
@@ -594,11 +595,11 @@ func Test_addInstallerLabel(t *testing.T) {
 			want: false,
 		},
 		{
-			name: "Right installer name, wrong namespace",
+			name: "Wrong installer name and namespace",
 			args: args{
 				d: &appsv1.Deployment{
 					ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{
-						"installer.name":      "foo",
+						"installer.name":      "bar",
 						"installer.namespace": "kube-system",
 					}},
 				},
@@ -612,6 +613,13 @@ func Test_addInstallerLabel(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := addInstallerLabel(tt.args.d, tt.args.name, tt.args.ns); got != tt.want {
 				t.Errorf("addInstallerLabel() = %v, want %v", got, tt.want)
+			}
+			labels := tt.args.d.Labels
+			if gotName := labels["installer.name"]; gotName != tt.args.name {
+				t.Errorf("Name label = %v, want %v", gotName, tt.args.name)
+			}
+			if gotNS := labels["installer.namespace"]; gotNS != tt.args.ns {
+				t.Errorf("Namespace label = %v, want %v", gotNS, tt.args.ns)
 			}
 		})
 	}
