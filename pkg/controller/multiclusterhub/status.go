@@ -42,6 +42,9 @@ const (
 	ResumedReason = "MCHResumed"
 	// ReconcileReason is added when the multiclusterhub is actively reconciling
 	ReconcileReason = "MCHReconciling"
+	// ReconcileReason is added when the multiclusterhub is waiting for the removal
+	// of helm releases
+	HelmReleaseTerminatingReason = "HelmReleaseTerminating"
 )
 
 func getDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
