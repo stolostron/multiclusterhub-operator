@@ -283,35 +283,6 @@ func aggregateStatus(components map[string]operatorsv1.StatusCondition) operator
 	return operatorsv1.HubRunning
 }
 
-// type byTransitionTime []operatorsv1.StatusCondition
-
-// func (a byTransitionTime) Len() int      { return len(a) }
-// func (a byTransitionTime) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-// func (a byTransitionTime) Less(i, j int) bool {
-// 	return a[i].LastTransitionTime.Time.Before(a[j].LastTransitionTime.Time)
-// }
-
-// // Adds the statusCondition to a multiclusterhub
-// func AddCondition(m *operatorsv1.MultiClusterHub, sc operatorsv1.StatusCondition) {
-// 	log.Info("Adding condition", "Condition", sc.Reason)
-// 	for i, x := range m.Status.HubConditions {
-// 		if x.Reason == sc.Reason && x.Status == sc.Status {
-// 			ltt := x.LastTransitionTime
-// 			m.Status.HubConditions[i] = sc
-// 			m.Status.HubConditions[i].LastTransitionTime = ltt
-// 			return
-// 		}
-// 	}
-// 	m.Status.HubConditions = append(m.Status.HubConditions, sc)
-
-// 	// Trim conditions
-// 	sort.Sort(sort.Reverse(byTransitionTime(m.Status.HubConditions)))
-// 	if len(m.Status.HubConditions) > 2 {
-// 		m.Status.HubConditions = m.Status.HubConditions[:1]
-// 	}
-
-// }
-
 // NewHubCondition creates a new hub condition.
 func NewHubCondition(condType operatorsv1.HubConditionType, status v1.ConditionStatus, reason, message string) *operatorsv1.HubCondition {
 	return &operatorsv1.HubCondition{
