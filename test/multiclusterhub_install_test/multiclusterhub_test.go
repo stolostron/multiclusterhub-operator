@@ -92,6 +92,12 @@ func FullInstallTestSuite() {
 			}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
 
 		}
+		Eventually(func() error {
+			if err := utils.ValidateImportHubResourcesExist(true); err != nil {
+				return fmt.Errorf("imported hub resources not created")
+			}
+			return nil
+		}, 30, 1).Should(BeNil())
 		return
 	})
 

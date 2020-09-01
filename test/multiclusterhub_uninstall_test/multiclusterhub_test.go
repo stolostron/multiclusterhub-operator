@@ -28,6 +28,16 @@ var _ = Describe("Multiclusterhub", func() {
 			}
 			return nil
 		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
+
+		Eventually(func() error {
+			fmt.Println("180")
+			res := utils.ValidateImportHubResourcesExist(false)
+			if res != nil {
+				return res
+			}
+			return nil
+		}, 180, 1).Should(BeNil())
+
 	})
 
 	if os.Getenv("full_test_suite") == "true" {
@@ -39,6 +49,8 @@ var _ = Describe("Multiclusterhub", func() {
 			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, false)
 			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).ShouldNot(BeNil())
 			utils.ValidateConditionDuringUninstall()
+
+			Expect(utils.ValidateImportHubResourcesExist(true)).Should(BeNil())
 			Eventually(func() error {
 				err := RemoveFinalizerFromHelmRelease(utils.DynamicKubeClient)
 				if err != nil {
@@ -48,6 +60,8 @@ var _ = Describe("Multiclusterhub", func() {
 			}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
 			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
 			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
+
+			Expect(utils.ValidateImportHubResourcesExist(false)).Should(BeNil())
 		})
 	}
 })

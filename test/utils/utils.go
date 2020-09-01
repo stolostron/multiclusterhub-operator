@@ -88,6 +88,19 @@ var (
 		Resource: "deployments",
 	}
 
+	// GVRManagedCluster
+	GVRManagedCluster = schema.GroupVersionResource{
+		Group: "cluster.open-cluster-management.io",
+		Version: "v1",
+		Resource: "managedclusters",
+	}
+
+	// GVRKlusterletAddonConfig
+	GVRKlusterletAddonConfig = schema.GroupVersionResource{
+		Group: "agent.open-cluster-management.io",
+		Version: "v1",
+		Resource: "klusterletaddonconfigs",
+	}
 	// DefaultImageRegistry ...
 	DefaultImageRegistry = "quay.io/open-cluster-management"
 	// DefaultImagePullSecretName ...
@@ -125,7 +138,7 @@ var (
 	CSVName = "advanced-cluster-management"
 
 	// WaitInMinutesDefault ...
-	WaitInMinutesDefault = 6
+	WaitInMinutesDefault = 12
 )
 
 // GetWaitInMinutes...
@@ -611,6 +624,16 @@ func ValidateMCH() error {
 		}
 	}
 
+	By("- Checking imported hub resources created")
+	When("resources", func() {
+		Eventually(func() error {
+			if err := ValidateImportHubResourcesExist(true); err != nil {
+				return fmt.Errorf("Not all imported resources created")
+			}
+			return nil
+		}, 120, 1).Should(BeNil())
+	})
+
 	currentVersion, err := GetCurrentVersionFromMCH()
 	Expect(err).Should(BeNil())
 	v, err := semver.NewVersion(currentVersion)
@@ -622,6 +645,7 @@ func ValidateMCH() error {
 		_, err = KubeClient.CoreV1().ConfigMaps(MCHNamespace).Get(context.TODO(), fmt.Sprintf("mch-image-manifest-%s", currentVersion), metav1.GetOptions{})
 		Expect(err).Should(BeNil())
 	}
+	
 
 	return nil
 }
@@ -706,6 +730,45 @@ func ValidateStatusesExist() error {
 		return err
 	}
 	return nil
+}
+
+//ValidateImportHubResources confirms the existence of 3 resources that are created when importing hub as managed cluster
+func ValidateImportHubResourcesExist(expected bool) error {
+	By("- Confirming Necessary Resources")
+    //check created namespace exists
+	ns, nsErr := KubeClient.CoreV1().Namespaces().Get(context.TODO(), "local-cluster", metav1.GetOptions{})
+	//check created ManagedCluster exists
+	mc, mcErr := DynamicKubeClient.Resource(GVRManagedCluster).Get(context.TODO(), "local-cluster", metav1.GetOptions{})
+	//check created KlusterletAddonConfig
+	kac, kacErr := DynamicKubeClient.Resource(GVRKlusterletAddonConfig).Namespace("local-cluster").Get(context.TODO(), "local-cluster", metav1.GetOptions{})
+	//mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+    //Expect(err).To(BeNil())
+	//disableHub, ok := mch.Object["spec"].(map[string]interface{})["disableHubSelfManagement"].(string); 
+	if (expected) {
+		if (nsErr != nil || mcErr != nil || kacErr !=nil) {
+			return fmt.Errorf("not all local-cluster resources created")
+		 }
+	} else {
+		fmt.Println("ns: ", ns)
+		fmt.Println("mc: ", mc)
+		fmt.Println("kac: ", kac)
+		if (mc != nil || kac != nil) {
+			return fmt.Errorf("local-cluster resources exist")
+		}
+	}
+    return nil
+}
+
+// ToggleDisableHubSelfManagement toggles the value of spec.disableHubSelfManagement from true to false or false to true
+func ToggleDisableHubSelfManagement() {
+	mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+    Expect(err).To(BeNil())
+	disableHub, ok := mch.Object["spec"].(map[string]interface{})["disableHubSelfManagement"].(string)
+	if (!ok) {
+		mch.Object["spec"].(map[string]interface{})["disableHubSelfManagement"] = "true"
+	} else if (disableHub == "true") {
+		mch.Object["spec"].(map[string]interface{})["disableHubSelfManagement"] = "false"
+	}
 }
 
 // listByGVR keeps polling to get the object for timeout seconds
