@@ -90,10 +90,9 @@ var unknownStatus = operatorsv1.StatusCondition{
 }
 
 // syncHubStatus checks if the status is up-to-date and sync it if necessary
-func (r *ReconcileMultiClusterHub) syncHubStatus(m *operatorsv1.MultiClusterHub, original *operatorsv1.MultiClusterHubStatus) (reconcile.Result, error) {
-	deployList, err := r.listDeployments()
-	hrList, err := r.listHelmReleases()
-	newStatus := calculateStatus(m, deployList, hrList)
+func (r *ReconcileMultiClusterHub) syncHubStatus(m *operatorsv1.MultiClusterHub, original *operatorsv1.MultiClusterHubStatus, allDeps []*appsv1.Deployment, allHRs []*subrelv1.HelmRelease) (reconcile.Result, error) {
+	newStatus := calculateStatus(m, allDeps, allHRs)
+
 	if reflect.DeepEqual(m.Status, original) {
 		log.Info("Status hasn't changed")
 		return reconcile.Result{}, nil
@@ -101,7 +100,7 @@ func (r *ReconcileMultiClusterHub) syncHubStatus(m *operatorsv1.MultiClusterHub,
 
 	newHub := m
 	newHub.Status = newStatus
-	err = r.client.Status().Update(context.TODO(), newHub)
+	err := r.client.Status().Update(context.TODO(), newHub)
 	if err != nil {
 		if errors.IsConflict(err) {
 			// Error from object being modified is normal behavior and should not be treated like an error
@@ -132,7 +131,6 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 	// Copy conditions one by one so we won't mutate the original object.
 	conditions := hub.Status.HubConditions
 	for i := range conditions {
-		log.Info("Conditions exist", "name", conditions[i].Type)
 		status.HubConditions = append(status.HubConditions, conditions[i])
 	}
 
@@ -157,48 +155,34 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 }
 
 // getComponentStatuses populates a complete list of the hub component statuses
-func getComponentStatuses(hub *operatorsv1.MultiClusterHub, hrList []*subrelv1.HelmRelease, dList []*appsv1.Deployment) map[string]operatorsv1.StatusCondition {
+func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allHRs []*subrelv1.HelmRelease, allDeps []*appsv1.Deployment) map[string]operatorsv1.StatusCondition {
 	components := newComponentList(hub)
 
-	for _, hr := range hrList {
+	for _, hr := range allHRs {
 		owner := hr.OwnerReferences[0].Name
 		if _, ok := components[owner]; ok {
 			components[owner] = mapHelmRelease(hr)
+
+			// If helmrelease is labeled successful, check its deployments for readiness
+			if successfulHelmRelease(hr) {
+				hrDeployments := filterDeploymentsByRelease(allDeps, hr.Name)
+				for _, d := range hrDeployments {
+					// Set status reported to first unready deployment
+					if !successfulDeploy(d) {
+						components[owner] = mapDeployment(d)
+						break
+					}
+				}
+			}
 		}
 	}
 
-	for _, d := range dList {
+	for _, d := range allDeps {
 		if _, ok := components[d.Name]; ok {
 			components[d.Name] = mapDeployment(d)
 		}
 	}
 	return components
-}
-
-func (r *ReconcileMultiClusterHub) listDeployments() ([]*appsv1.Deployment, error) {
-	deployList := &appsv1.DeploymentList{}
-	err := r.client.List(context.TODO(), deployList)
-	if err != nil && !errors.IsNotFound(err) {
-		return nil, err
-	}
-	var ret []*appsv1.Deployment
-	for i := 0; i < len(deployList.Items); i++ {
-		ret = append(ret, &deployList.Items[i])
-	}
-	return ret, nil
-}
-
-func (r *ReconcileMultiClusterHub) listHelmReleases() ([]*subrelv1.HelmRelease, error) {
-	hrList := &subrelv1.HelmReleaseList{}
-	err := r.client.List(context.TODO(), hrList)
-	if err != nil && !errors.IsNotFound(err) {
-		return nil, err
-	}
-	var ret []*subrelv1.HelmRelease
-	for i := 0; i < len(hrList.Items); i++ {
-		ret = append(ret, &hrList.Items[i])
-	}
-	return ret, nil
 }
 
 func successfulDeploy(d *appsv1.Deployment) bool {
@@ -278,7 +262,7 @@ func mapHelmRelease(hr *subrelv1.HelmRelease) operatorsv1.StatusCondition {
 	}
 
 	// Ignore success messages
-	if !isErrorType(ret.Type) {
+	if successfulHelmRelease(hr) {
 		ret.Message = ""
 	}
 
@@ -297,13 +281,6 @@ func aggregateStatus(components map[string]operatorsv1.StatusCondition) operator
 		}
 	}
 	return operatorsv1.HubRunning
-}
-
-func isErrorType(cr string) bool {
-	return cr == string(subrelv1.ReasonInstallError) ||
-		cr == string(subrelv1.ReasonUpdateError) ||
-		cr == string(subrelv1.ReasonReconcileError) ||
-		cr == string(subrelv1.ReasonUninstallError)
 }
 
 // NewHubCondition creates a new hub condition.
