@@ -4,8 +4,6 @@ CHANNEL := "release-2.1"
 SOURCE_NAMESPACE := "open-cluster-management"
 SOURCE_NAME := "acm-custom-registry"
 
-unit-test-deps:
-	git config --global url.git@github.com:.insteadOf https://github.com/
 
 ## Run the installer downstream functional tests
 ft-downstream-install:
