@@ -138,7 +138,10 @@ var (
 	CSVName = "advanced-cluster-management"
 
 	// WaitInMinutesDefault ...
-	WaitInMinutesDefault = 12
+	WaitInMinutesDefault = 15
+
+	//localCluster
+	localCluster = "local-cluster"
 )
 
 // GetWaitInMinutes...
@@ -485,6 +488,7 @@ func findCondition(status map[string]interface{}, t string, s string) error {
 	}
 	for i := range conditions {
 		condition := conditions[i]
+		fmt.Println("condition: ", condition)
 		if condition.(map[string]interface{})["type"].(string) == t {
 			if got := condition.(map[string]interface{})["status"].(string); got == s {
 				return nil
@@ -631,7 +635,7 @@ func ValidateMCH() error {
 				return fmt.Errorf("Not all imported resources created")
 			}
 			return nil
-		}, 120, 1).Should(BeNil())
+		}, 600, 1).Should(BeNil())
 	})
 
 	currentVersion, err := GetCurrentVersionFromMCH()
@@ -737,26 +741,87 @@ func ValidateImportHubResourcesExist(expected bool) error {
 	By("- Confirming Necessary Resources")
     //check created namespace exists
 	ns, nsErr := KubeClient.CoreV1().Namespaces().Get(context.TODO(), "local-cluster", metav1.GetOptions{})
+	fmt.Println("ns: ", ns, nsErr)
 	//check created ManagedCluster exists
 	mc, mcErr := DynamicKubeClient.Resource(GVRManagedCluster).Get(context.TODO(), "local-cluster", metav1.GetOptions{})
+	fmt.Println("mc: ", mc, mcErr)
 	//check created KlusterletAddonConfig
 	kac, kacErr := DynamicKubeClient.Resource(GVRKlusterletAddonConfig).Namespace("local-cluster").Get(context.TODO(), "local-cluster", metav1.GetOptions{})
-	//mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
-    //Expect(err).To(BeNil())
-	//disableHub, ok := mch.Object["spec"].(map[string]interface{})["disableHubSelfManagement"].(string); 
+	fmt.Println("kac: ", kac, kacErr)
+	if (mc == nil) {
+		return fmt.Errorf("no mc yet");
+	}
 	if (expected) {
-		if (nsErr != nil || mcErr != nil || kacErr !=nil) {
-			return fmt.Errorf("not all local-cluster resources created")
-		 }
+		if (mc != nil) {
+			if (nsErr != nil || mcErr != nil || kacErr !=nil) {
+				fmt.Println("not created all")
+				return fmt.Errorf("not all local-cluster resources created")
+			}
+			if val := validateManagedClusterConditions(mc); val !=nil {
+				fmt.Println("validateMCC error")
+				return fmt.Errorf("cluster conditions")
+			}
+			if option := validateManagedClusterOwnerRef(mc); option != nil {
+				return fmt.Errorf("options failed")
+			}
+		}
 	} else {
-		fmt.Println("ns: ", ns)
-		fmt.Println("mc: ", mc)
-		fmt.Println("kac: ", kac)
 		if (mc != nil || kac != nil) {
 			return fmt.Errorf("local-cluster resources exist")
 		}
 	}
     return nil
+}
+
+//validateManagedCluster
+func validateManagedCluster() error {
+	//check created ManagedCluster exists
+	mc, _  := DynamicKubeClient.Resource(GVRManagedCluster).Get(context.TODO(), localCluster, metav1.GetOptions{})
+	//if ManagedCluster exists check that hub accepted, joined, and available are true
+	if (mc != nil) {
+		if err := validateManagedClusterConditions(mc); err != nil {
+			return fmt.Errorf("not all conditions")
+		}
+		return nil
+	}
+	return nil
+}
+
+// validateManagedClusterConditions 
+func validateManagedClusterConditions(mc *unstructured.Unstructured) error {
+	By("- Checking ManagedClusterconditions type true")
+	Eventually(func() error {
+		status, ok :=  mc.Object["status"].(map[string]interface{})
+		if ok {
+			joinErr := findCondition(status, "ManagedClusterJoined", "True")
+			avaiErr := findCondition(status, "ManagedClusterConditionAvailable", "True")
+			accpErr := findCondition(status, "HubAcceptedManagedCluster", "True")
+			fmt.Println("joinErr: ", joinErr)
+			fmt.Println("avaiErr: ", avaiErr)
+			fmt.Println("accpErr: ", accpErr)
+			if (joinErr != nil || avaiErr != nil || accpErr !=nil) {
+				return fmt.Errorf("managedcluster conditions not all true")
+			}
+			return nil
+		} else {
+			return fmt.Errorf("no status")
+		}
+	}, 300, 1).Should(BeNil())
+	return nil
+}
+
+// validateManagedClusterOwnerRef helper func to validateManagedCluster
+func validateManagedClusterOwnerRef(mc *unstructured.Unstructured) error {
+	if (mc != nil) {
+		Eventually(func() error {
+			name := mc.Object["metadata"].(map[string]interface{})["ownerReferences"].([]interface{})[0].(map[string]interface{})["name"]
+			if name != MCHName {
+				return fmt.Errorf("owner ref does not match mch name")
+			}
+			return nil
+		}, 30, 1).Should(BeNil())
+	}
+	return nil
 }
 
 // ToggleDisableHubSelfManagement toggles the value of spec.disableHubSelfManagement from true to false or false to true

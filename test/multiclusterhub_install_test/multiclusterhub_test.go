@@ -51,6 +51,10 @@ var _ = Describe("Multiclusterhub", func() {
 				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
 				return
 			}
+			if err := utils.ValidateImportHubResourcesExist(true); err != nil {
+				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				return
+			}
 			return
 		})
 	}
@@ -97,7 +101,7 @@ func FullInstallTestSuite() {
 				return fmt.Errorf("imported hub resources not created")
 			}
 			return nil
-		}, 30, 1).Should(BeNil())
+		}, 600, 1).Should(BeNil())
 		return
 	})
 
@@ -165,6 +169,20 @@ func FullInstallTestSuite() {
 			err = utils.KubeClient.CoreV1().ConfigMaps(utils.MCHNamespace).Delete(context.TODO(), "my-config", metav1.DeleteOptions{})
 			Expect(err).To(BeNil())
 		}
+
+		It("- If `spec.disableHubSelfManagement` is true, ensure no `local-cluster` resources are created", func() {
+			By("- Creating Developer Image Overrides Configmap")
+
+			utils.CreateDefaultMCH()
+			err := utils.ValidateMCH()
+			Expect(err).To(BeNil())
+			Expect(func() error {
+				if err := utils.ValidateImportHubResourcesExist(false); err !=nil {
+					return fmt.Errorf("A `local-cluster` resource exists")
+				}
+				return nil
+			}()).To(BeNil())
+		})
 		return
 	})
 
