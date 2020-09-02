@@ -35,7 +35,6 @@ export CSV_VERSION ?= 2.1.0
 
 export PROJECT_DIR = $(shell 'pwd')
 export GOPACKAGES   = $(shell go list ./... | grep -E -v "manager|test|apis|operators|channel|controller$|version")
-export GOPRIVATE = "github.com/open-cluster-management"
 export COMPONENT_SCRIPTS_PATH = $(shell 'pwd')/cicd-scripts
 
 # Use podman if available, otherwise use docker

@@ -6,7 +6,6 @@ SOURCE_NAME := "acm-custom-registry"
 
 unit-test-deps:
 	git config --global url.git@github.com:.insteadOf https://github.com/
-	export GOPRIVATE="github.com/open-cluster-management"; go get -d github.com/open-cluster-management/multicluster-monitoring-operator
 
 ## Run the installer downstream functional tests
 ft-downstream-install:
