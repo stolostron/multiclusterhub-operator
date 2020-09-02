@@ -42,6 +42,15 @@ const (
 	ResumedReason = "MCHResumed"
 	// ReconcileReason is added when the multiclusterhub is actively reconciling
 	ReconcileReason = "MCHReconciling"
+	// ReconcileReason is added when the multiclusterhub is waiting for the removal
+	// of helm releases
+	HelmReleaseTerminatingReason = "HelmReleaseTerminating"
+	// ManagedClusterTerminatingReason is added when a managed cluster has been deleted and
+	// is waiting to be finalized
+	ManagedClusterTerminatingReason = "ManagedClusterTerminating"
+	// ManagedClusterTerminatingReason is added when a managed cluster's namespace has been deleted and
+	// is waiting to be finalized
+	NamespaceTerminatingReason = "ManagedClusterNamespaceTerminating"
 )
 
 func getDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
@@ -226,15 +235,15 @@ func mapDeployment(ds *appsv1.Deployment) operatorsv1.StatusCondition {
 
 	dcs := latestDeployCondition(ds.Status.Conditions)
 	ret := operatorsv1.StatusCondition{
-		Type:           string(dcs.Type),
-		Status:         metav1.ConditionStatus(string(dcs.Status)),
-		LastUpdateTime: dcs.LastUpdateTime,
-		Reason:         dcs.Reason,
-		Message:        dcs.Message,
+		Type:               string(dcs.Type),
+		Status:             metav1.ConditionStatus(string(dcs.Status)),
+		LastUpdateTime:     dcs.LastUpdateTime,
+		LastTransitionTime: dcs.LastTransitionTime,
+		Reason:             dcs.Reason,
+		Message:            dcs.Message,
 	}
 	if successfulDeploy(ds) {
 		ret.Message = ""
-		ret.LastTransitionTime = dcs.LastTransitionTime
 	}
 
 	return ret
@@ -305,35 +314,6 @@ func isErrorType(cr string) bool {
 		cr == string(subrelv1.ReasonReconcileError) ||
 		cr == string(subrelv1.ReasonUninstallError)
 }
-
-// type byTransitionTime []operatorsv1.StatusCondition
-
-// func (a byTransitionTime) Len() int      { return len(a) }
-// func (a byTransitionTime) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-// func (a byTransitionTime) Less(i, j int) bool {
-// 	return a[i].LastTransitionTime.Time.Before(a[j].LastTransitionTime.Time)
-// }
-
-// // Adds the statusCondition to a multiclusterhub
-// func AddCondition(m *operatorsv1.MultiClusterHub, sc operatorsv1.StatusCondition) {
-// 	log.Info("Adding condition", "Condition", sc.Reason)
-// 	for i, x := range m.Status.HubConditions {
-// 		if x.Reason == sc.Reason && x.Status == sc.Status {
-// 			ltt := x.LastTransitionTime
-// 			m.Status.HubConditions[i] = sc
-// 			m.Status.HubConditions[i].LastTransitionTime = ltt
-// 			return
-// 		}
-// 	}
-// 	m.Status.HubConditions = append(m.Status.HubConditions, sc)
-
-// 	// Trim conditions
-// 	sort.Sort(sort.Reverse(byTransitionTime(m.Status.HubConditions)))
-// 	if len(m.Status.HubConditions) > 2 {
-// 		m.Status.HubConditions = m.Status.HubConditions[:1]
-// 	}
-
-// }
 
 // NewHubCondition creates a new hub condition.
 func NewHubCondition(condType operatorsv1.HubConditionType, status v1.ConditionStatus, reason, message string) *operatorsv1.HubCondition {

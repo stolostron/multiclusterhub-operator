@@ -122,12 +122,16 @@ func (r *ReconcileMultiClusterHub) ensureHubIsExported(m *operatorsv1.MultiClust
 
 	result, err := r.removeManagedCluster(m)
 	if result != nil {
+		waiting := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, ManagedClusterTerminatingReason, "Waiting for local managed cluster to terminate.")
+		SetHubCondition(&m.Status, *waiting)
 		return result, err
 	}
 
 	// Removed by rcm-controller
 	result, err = r.ensureHubNamespaceIsRemoved(m)
 	if result != nil {
+		waiting := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NamespaceTerminatingReason, "Waiting for the local managed cluster's namespace to terminate.")
+		SetHubCondition(&m.Status, *waiting)
 		return result, err
 	}
 	return nil, nil
