@@ -4,6 +4,8 @@ CHANNEL := "release-2.1"
 SOURCE_NAMESPACE := "open-cluster-management"
 SOURCE_NAME := "acm-custom-registry"
 
+unit-test-deps:
+	export GOPRIVATE="github.com/open-cluster-management"; go get -d github.com/open-cluster-management/multicluster-monitoring-operator
 
 ## Run the installer downstream functional tests
 ft-downstream-install:

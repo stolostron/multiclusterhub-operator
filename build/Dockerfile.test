@@ -15,6 +15,4 @@ COPY go.sum .
 
 COPY test ./test
 
-RUN go mod tidy
-
 ENTRYPOINT [ "./test/start-tests.sh" ]
