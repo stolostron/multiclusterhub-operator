@@ -265,6 +265,8 @@ spec:
           - clusterdeployments
           - managedclusterinfos
           - managedclusterinfos/status
+          - managedclustersets
+          - managedclustersetbindings
           - managedclusters
           - managedclusters/accept
           - managedclusters/status
