@@ -144,7 +144,7 @@ local-install: ns secrets og subscriptions observability-crd regop
 	operator-sdk run local --watch-namespace=open-cluster-management --kubeconfig=$(KUBECONFIG)
 
 ## Run as a Deployment inside the cluster
-in-cluster-install: ns secrets og update-image subscriptions observability-crd 
+in-cluster-install: ns secrets og update-image subscriptions observability-crd regop
 	oc apply -f deploy/crds/operator.open-cluster-management.io_multiclusterhubs_crd.yaml
 	yq w -i deploy/kustomization.yaml 'images(name==multiclusterhub-operator).newTag' "${VERSION}"
 	oc apply -k deploy
