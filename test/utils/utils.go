@@ -138,7 +138,7 @@ var (
 	CSVName = "advanced-cluster-management"
 
 	// WaitInMinutesDefault ...
-	WaitInMinutesDefault = 16
+	WaitInMinutesDefault = 20
 
 	//localCluster
 	localCluster = "local-cluster"
@@ -502,7 +502,7 @@ func FindCondition(status map[string]interface{}, t string, s string) error {
 // ValidateMCHUnsuccessful ...
 func ValidateMCHUnsuccessful() error {
 	By("Validating MultiClusterHub Unsuccessful")
-	By(fmt.Sprintf("- Waiting %d minutes", GetWaitInMinutes()*60), func() {
+	By(fmt.Sprintf("- Waiting %d minutes", GetWaitInMinutes()), func() {
 		time.Sleep(time.Duration(GetWaitInMinutes()) * time.Minute)
 	})
 
@@ -627,6 +627,11 @@ func ValidateMCH() error {
 		}
 	}
 
+	By("- Checking Imported Hub Cluster")
+	err = ValidateManagedCluster(true)
+	Expect(err).Should(BeNil())
+
+
 	currentVersion, err := GetCurrentVersionFromMCH()
 	Expect(err).Should(BeNil())
 	v, err := semver.NewVersion(currentVersion)
@@ -748,32 +753,27 @@ func ValidateImportHubResourcesExist(expected bool) error {
 	}
 }
 
-// DeleteManagedClusterBeforeJoined
-func DeleteManagedClusterBeforeJoined() error {
-	if err := ValidateImportHubResourcesExist(true); err != nil {
-		return fmt.Errorf("No ManagedCluster Object yet")
-	}
-	return DynamicKubeClient.Resource(GVRManagedCluster).Delete(context.TODO(), "local-cluster", metav1.DeleteOptions{})
-}
-
-
 // ValidateManagedCluster
-func ValidateManagedCluster(expected bool, length int) error {
+func ValidateManagedCluster(importResourcesShouldExist bool) error {
 	By("- Checking imported hub resources exist or not")
 	When("resources", func() {
 		By("- Confirming Necessary Resources")
 		Eventually(func() error {
-			if err := ValidateImportHubResourcesExist(expected); err != nil {
+			mc, _ := DynamicKubeClient.Resource(GVRManagedCluster).Get(context.TODO(), "local-cluster", metav1.GetOptions{})
+			if err := validateManagedClusterOwnerRef(mc); err != nil {
+				return fmt.Errorf("Owner ref is not mch")
+			}
+			if err := ValidateImportHubResourcesExist(importResourcesShouldExist); err != nil {
 				return fmt.Errorf("Resources are as they shouldn't")
 			}
-			if expected {
+			if importResourcesShouldExist {
 				if val := validateManagedClusterConditions(); val !=nil {
 					return fmt.Errorf("cluster conditions")
 				}
 				return nil
 			}
 			return nil
-		}, length*60, 1).Should(BeNil())
+		}, GetWaitInMinutes()*60, 1).Should(BeNil())
 	})
 	return nil
 }
@@ -781,46 +781,46 @@ func ValidateManagedCluster(expected bool, length int) error {
 // validateManagedClusterConditions 
 func validateManagedClusterConditions() error {
 	By("- Checking ManagedClusterconditions type true")
-	Eventually(func() error {
-		mc, _ := DynamicKubeClient.Resource(GVRManagedCluster).Get(context.TODO(), "local-cluster", metav1.GetOptions{})
-		status, ok :=  mc.Object["status"].(map[string]interface{})
-		if ok {
-			joinErr := FindCondition(status, "ManagedClusterJoined", "True")
-			avaiErr := FindCondition(status, "ManagedClusterConditionAvailable", "True")
-			accpErr := FindCondition(status, "HubAcceptedManagedCluster", "True")
-			if (joinErr != nil || avaiErr != nil || accpErr !=nil) {
-				return fmt.Errorf("managedcluster conditions not all true")
-			}
-			return nil
-		} else {
-			return fmt.Errorf("no status")
+	mc, _ := DynamicKubeClient.Resource(GVRManagedCluster).Get(context.TODO(), "local-cluster", metav1.GetOptions{})
+	status, ok :=  mc.Object["status"].(map[string]interface{})
+	if ok {
+		joinErr := FindCondition(status, "ManagedClusterJoined", "True")
+		avaiErr := FindCondition(status, "ManagedClusterConditionAvailable", "True")
+		accpErr := FindCondition(status, "HubAcceptedManagedCluster", "True")
+		if (joinErr != nil || avaiErr != nil || accpErr !=nil) {
+			return fmt.Errorf("managedcluster conditions not all true")
 		}
-	}, 300, 1).Should(BeNil())
-	return nil
+		return nil
+	} else {
+		return fmt.Errorf("no status")
+	}
 }
 
 // validateManagedClusterOwnerRef helper func to validateManagedCluster
 func validateManagedClusterOwnerRef(mc *unstructured.Unstructured) error {
 	if (mc != nil) {
-		Eventually(func() error {
-			name := mc.Object["metadata"].(map[string]interface{})["ownerReferences"].([]interface{})[0].(map[string]interface{})["name"]
-			if name != MCHName {
-				return fmt.Errorf("owner ref does not match mch name")
-			}
-			return nil
-		}, 30, 1).Should(BeNil())
+		name := mc.Object["metadata"].(map[string]interface{})["ownerReferences"].([]interface{})[0].(map[string]interface{})["name"]
+		if name != MCHName {
+			return fmt.Errorf("owner ref does not match mch name")
+		}
+		return nil
 	}
 	return nil
 }
 
 // ToggleDisableHubSelfManagement toggles the value of spec.disableHubSelfManagement from true to false or false to true
-func ToggleDisableHubSelfManagement(boolean bool) {
+func ToggleDisableHubSelfManagement(disableHubSelfImport bool) error {
 	mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
 	Expect(err).To(BeNil())
-	disableHubSelfManagement := "disableHubSelfManagement"
-	mch.Object["spec"].(map[string]interface{})[disableHubSelfManagement] = boolean
+	disableHubSelfManagementString := "disableHubSelfManagement"
+	mch.Object["spec"].(map[string]interface{})[disableHubSelfManagementString] = disableHubSelfImport
 	mch, err = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
 	Expect(err).To(BeNil())
+	mch, err = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+	if disableHubSelfManagement := mch.Object["spec"].(map[string]interface{})[disableHubSelfManagementString].(bool); disableHubSelfManagement != disableHubSelfImport {
+		return fmt.Errorf("Spec was not updated")
+	}
+	return nil
 }
 
 // listByGVR keeps polling to get the object for timeout seconds

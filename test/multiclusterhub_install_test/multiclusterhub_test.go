@@ -51,7 +51,6 @@ var _ = Describe("Multiclusterhub", func() {
 				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
 				return
 			}
-			utils.ValidateManagedCluster(true, utils.GetWaitInMinutes()*60);
 			return
 		})
 	}
@@ -168,72 +167,36 @@ func FullInstallTestSuite() {
 		utils.CreateDefaultMCH()
 		err := utils.ValidateMCH()
 		Expect(err).To(BeNil())
-		err = utils.ValidateManagedCluster(true, utils.GetWaitInMinutes()*60)
-		Expect(err).To(BeNil())
 
 		By("- Setting `spec.disableHubSelfManagement` to true to remove local-cluster resources")
 		utils.ToggleDisableHubSelfManagement(true)
-		status, _ := utils.GetMCHStatus()
-		Expect(utils.FindCondition(status,"Complete", "False"))
-		Eventually(func() error {
-			if err := utils.FindCondition(status, "Complete", "True"); err != nil {
-				return fmt.Errorf("Status does not show Complete True")
-			}
-			return nil
-		}, utils.GetWaitInMinutes()*60, 1)
-		err = utils.ValidateManagedCluster(false, utils.GetWaitInMinutes()*60)
+		err = utils.ValidateMCH()
 		Expect(err).To(BeNil())
 
 		By("- Setting `spec.disableHubSelfManagement` to false to create local-cluster resources")
 		utils.ToggleDisableHubSelfManagement(false)
-		status, _ = utils.GetMCHStatus()
-		Expect(utils.FindCondition(status,"Complete", "False"))
-		Eventually(func() error {
-			if err := utils.FindCondition(status, "Complete", "True"); err != nil {
-				return fmt.Errorf("Status does not show Complete True")
-			}
-			return nil
-		}, utils.GetWaitInMinutes()*60, 1)
-		err = utils.ValidateManagedCluster(true, utils.GetWaitInMinutes()*60)
+		err = utils.ValidateMCH()
 		Expect(err).To(BeNil())
 
 	})
 
-	It("- Joe Case", func() {
-		By("- Verfiying default install has local-cluster resources")
+	It("- Delete ManagedCluster before it is joined/available", func() {
+		By("- Verifying default install has local-cluster resources")
 		utils.CreateDefaultMCH()
+		//ValidateMCHIMporting func?
 		err := utils.ValidateMCH()
 		Expect(err).To(BeNil())
-		Eventually(func() error {
-			if err := utils.DeleteManagedClusterBeforeJoined(); err != nil {
-				return fmt.Errorf("No ManagedCluster object")
-			}
-			return nil
-		}, 360, 1)
 
 		By("- Setting `spec.disableHubSelfManagement` to true to remove local-cluster resources")
 		utils.ToggleDisableHubSelfManagement(true)
-
-		Eventually(func() error {
-			if err = utils.ValidateManagedCluster(false, utils.GetWaitInMinutes()*60); err != nil {
-				return fmt.Errorf("Managed Clust resources still exist")
-			}
-			return nil
-		}, utils.GetWaitInMinutes()*60, 1)
+		err = utils.ValidateMCH()
+		Expect(err).To(BeNil())
+		
 
 		By("- Setting `spec.disableHubSelfManagement` to false to create local-cluster resources")
 		utils.ToggleDisableHubSelfManagement(false)
-		status, _ := utils.GetMCHStatus()
-		Expect(utils.FindCondition(status,"Complete", "False"))
-		Eventually(func() error {
-			if err := utils.FindCondition(status, "Complete", "True"); err != nil {
-				return fmt.Errorf("Status does not show Complete True")
-			}
-			return nil
-		}, utils.GetWaitInMinutes()*60, 1)
-		err = utils.ValidateManagedCluster(true, utils.GetWaitInMinutes()*60)
+		err = utils.ValidateMCH()
 		Expect(err).To(BeNil())
-
 	})
 
 	
