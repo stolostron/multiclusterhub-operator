@@ -138,7 +138,7 @@ var (
 	CSVName = "advanced-cluster-management"
 
 	// WaitInMinutesDefault ...
-	WaitInMinutesDefault = 15
+	WaitInMinutesDefault = 18
 
 	//localCluster
 	localCluster = "local-cluster"
@@ -503,7 +503,7 @@ func FindCondition(status map[string]interface{}, t string, s string) error {
 func ValidateMCHUnsuccessful() error {
 	By("Validating MultiClusterHub Unsuccessful")
 	By(fmt.Sprintf("- Waiting %d minutes", GetWaitInMinutes()*60), func() {
-		time.Sleep(time.Duration(GetWaitInMinutes()*60) * time.Minute)
+		time.Sleep(time.Duration(GetWaitInMinutes()) * time.Minute)
 	})
 
 	By("- Ensuring MCH is in 'pending' phase")
@@ -758,7 +758,7 @@ func DeleteManagedClusterBeforeJoined() error {
 
 
 // ValidateManagedCluster
-func ValidateManagedCluster(expected bool) error {
+func ValidateManagedCluster(expected bool, length int) error {
 	By("- Checking imported hub resources exist or not")
 	When("resources", func() {
 		By("- Confirming Necessary Resources")
@@ -773,7 +773,7 @@ func ValidateManagedCluster(expected bool) error {
 				return nil
 			}
 			return nil
-		}, 780, 1).Should(BeNil())
+		}, length*60, 1).Should(BeNil())
 	})
 	return nil
 }

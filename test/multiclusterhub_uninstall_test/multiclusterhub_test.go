@@ -28,40 +28,47 @@ var _ = Describe("Multiclusterhub", func() {
 			}
 			return nil
 		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
+
+		err := utils.ValidateManagedCluster(false, 16)
+		Expect(err).To(BeNil())	
 	})
 
 	if os.Getenv("full_test_suite") == "true" {
-		It("SAD CASE: Fail to remove a helmrelease (Left behind finalizer)", func() {
-			By("Creating MultiClusterHub")
-			utils.CreateDefaultMCH()
-			utils.ValidateMCH()
-			AddFinalizerToHelmRelease(utils.DynamicKubeClient)
-			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, false)
-			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).ShouldNot(BeNil())
-			utils.ValidateConditionDuringUninstall()
+		// It("SAD CASE: Fail to remove a helmrelease (Left behind finalizer)", func() {
+		// 	By("Creating MultiClusterHub")
+		// 	utils.CreateDefaultMCH()
+		// 	utils.ValidateMCH()
+		// 	AddFinalizerToHelmRelease(utils.DynamicKubeClient)
+		// 	utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, false)
+		// 	Expect(utils.ValidateDelete(utils.DynamicKubeClient)).ShouldNot(BeNil())
+		// 	utils.ValidateConditionDuringUninstall()
 
-			Eventually(func() error {
-				err := RemoveFinalizerFromHelmRelease(utils.DynamicKubeClient)
-				if err != nil {
-					return err
-				}
-				return nil
-			}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
-			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
-			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
+		// 	Eventually(func() error {
+		// 		err := RemoveFinalizerFromHelmRelease(utils.DynamicKubeClient)
+		// 		if err != nil {
+		// 			return err
+		// 		}
+		// 		return nil
+		// 	}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
+		// 	utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
+		// 	Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
 
-			err := utils.ValidateManagedCluster(false)
-			Expect(err).To(BeNil())		
-		})
+		// 	err := utils.ValidateManagedCluster(false, 16)
+		// 	Expect(err).To(BeNil())		
+		// })
 
 		It("SAD CASE: Fail to remove managedcluster (Left behind finalizer)", func() {
 			By("Creating MultiClusterHub")
 			utils.CreateDefaultMCH()
 			utils.ValidateMCH()
+
+			err := utils.ValidateManagedCluster(true,16)
+			Expect(err).To(BeNil())	
+
 			AddFinalizerToManagedCluster(utils.DynamicKubeClient)
 			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, false)
 			//wait GetWaitInMinutes
-			Expect(utils.ValidateManagedCluster(false)).ShouldNot(BeNil())
+			Expect(utils.ValidateManagedCluster(false, 16)).ShouldNot(BeNil())
 			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).ShouldNot(BeNil())
 			utils.ValidateConditionDuringUninstall()
 
@@ -75,7 +82,7 @@ var _ = Describe("Multiclusterhub", func() {
 			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
 			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
 
-			err := utils.ValidateManagedCluster(false)
+			err = utils.ValidateManagedCluster(false,16)
 			Expect(err).To(BeNil())		
 		})
 	}
