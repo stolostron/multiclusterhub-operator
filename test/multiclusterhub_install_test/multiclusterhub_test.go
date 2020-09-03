@@ -189,6 +189,25 @@ func FullInstallTestSuite() {
 			}
 
 			By("Degrading the installation")
+			oldImage, err := utils.BrickKUI()
+			if err != nil {
+				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				return
+			}
+			if err := utils.ValidateMCHDegraded(); err != nil {
+				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				return
+			}
+			if err := utils.FixKUI(oldImage); err != nil {
+				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				return
+			}
+
+			if err := utils.ValidateMCH(); err != nil {
+				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				return
+			}
+
 			if err := utils.BrickMCHRepo(); err != nil {
 				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
 				return

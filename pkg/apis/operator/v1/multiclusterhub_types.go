@@ -215,6 +215,12 @@ type MultiClusterHubStatus struct {
 
 // StatusCondition contains condition information.
 type StatusCondition struct {
+	// The resource kind this condition represents
+	Kind string `json:"-"`
+
+	// Available indicates whether this component is considered properly running
+	Available bool `json:"-"`
+
 	// Type is the type of the cluster condition.
 	// +required
 	Type string `json:"type,omitempty"`

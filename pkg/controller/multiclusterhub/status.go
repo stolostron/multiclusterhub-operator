@@ -90,6 +90,7 @@ var unknownStatus = operatorsv1.StatusCondition{
 	LastTransitionTime: metav1.Now(),
 	Reason:             "No conditions available",
 	Message:            "No conditions available",
+	Available:          false,
 }
 
 // syncHubStatus checks if the status is up-to-date and sync it if necessary
@@ -189,8 +190,18 @@ func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allHRs []*subrelv1.H
 }
 
 func successfulDeploy(d *appsv1.Deployment) bool {
-	latest := latestDeployCondition(d.Status.Conditions)
-	return latest.Type == appsv1.DeploymentAvailable && latest.Status == corev1.ConditionTrue
+	for _, c := range d.Status.Conditions {
+		if c.Type == appsv1.DeploymentAvailable && c.Status == corev1.ConditionFalse {
+			return false
+		}
+	}
+
+	if d.Status.UnavailableReplicas > 0 {
+		return false
+	}
+
+	return true
+	// latest := latestDeployCondition(d.Status.Conditions)
 }
 
 func latestDeployCondition(conditions []appsv1.DeploymentCondition) appsv1.DeploymentCondition {
@@ -206,6 +217,16 @@ func latestDeployCondition(conditions []appsv1.DeploymentCondition) appsv1.Deplo
 	return latest
 }
 
+func progressingDeployCondition(conditions []appsv1.DeploymentCondition) appsv1.DeploymentCondition {
+	progressing := appsv1.DeploymentCondition{}
+	for i := range conditions {
+		if conditions[i].Type == appsv1.DeploymentProgressing {
+			progressing = conditions[i]
+		}
+	}
+	return progressing
+}
+
 func mapDeployment(ds *appsv1.Deployment) operatorsv1.StatusCondition {
 	if len(ds.Status.Conditions) < 1 {
 		return unknownStatus
@@ -213,6 +234,7 @@ func mapDeployment(ds *appsv1.Deployment) operatorsv1.StatusCondition {
 
 	dcs := latestDeployCondition(ds.Status.Conditions)
 	ret := operatorsv1.StatusCondition{
+		Kind:               "Deployment",
 		Type:               string(dcs.Type),
 		Status:             metav1.ConditionStatus(string(dcs.Status)),
 		LastUpdateTime:     dcs.LastUpdateTime,
@@ -221,7 +243,24 @@ func mapDeployment(ds *appsv1.Deployment) operatorsv1.StatusCondition {
 		Message:            dcs.Message,
 	}
 	if successfulDeploy(ds) {
+		ret.Available = true
 		ret.Message = ""
+	}
+
+	// Because our definition of success is different than the deployment's it is possible we indicate failure
+	// despite an available deployment present. To avoid confusion we should show a different status.
+	if dcs.Type == appsv1.DeploymentAvailable && dcs.Status == corev1.ConditionTrue && ret.Available == false {
+		sub := progressingDeployCondition(ds.Status.Conditions)
+		ret = operatorsv1.StatusCondition{
+			Kind:               "Deployment",
+			Type:               string(sub.Type),
+			Status:             metav1.ConditionStatus(string(sub.Status)),
+			LastUpdateTime:     sub.LastUpdateTime,
+			LastTransitionTime: sub.LastTransitionTime,
+			Reason:             sub.Reason,
+			Message:            sub.Message,
+			Available:          false,
+		}
 	}
 
 	return ret
@@ -229,6 +268,11 @@ func mapDeployment(ds *appsv1.Deployment) operatorsv1.StatusCondition {
 
 func successfulHelmRelease(hr *subrelv1.HelmRelease) bool {
 	latest := latestHelmReleaseCondition(hr.Status.Conditions)
+
+	// Sometimes helmrelease not properly labeled as deployed
+	if latest.Type == subrelv1.ConditionInitialized && hr.Status.DeployedRelease != nil {
+		return true
+	}
 	return latest.Type == subrelv1.ConditionDeployed && latest.Status == subrelv1.StatusTrue
 }
 
@@ -252,6 +296,7 @@ func mapHelmRelease(hr *subrelv1.HelmRelease) operatorsv1.StatusCondition {
 
 	condition := latestHelmReleaseCondition(hr.Status.Conditions)
 	ret := operatorsv1.StatusCondition{
+		Kind:               "HelmRelease",
 		Type:               string(condition.Type),
 		Status:             metav1.ConditionStatus(condition.Status),
 		LastUpdateTime:     metav1.Now(),
@@ -266,20 +311,18 @@ func mapHelmRelease(hr *subrelv1.HelmRelease) operatorsv1.StatusCondition {
 
 	// Ignore success messages
 	if successfulHelmRelease(hr) {
+		ret.Available = true
 		ret.Message = ""
 	}
 
 	return ret
 }
 
-func successfulComponent(sc operatorsv1.StatusCondition) bool {
-	return (sc.Status == metav1.ConditionTrue) && (sc.Type == "Available" || sc.Type == "Deployed" || sc.Type == "DeployedRelease")
-}
+func successfulComponent(sc operatorsv1.StatusCondition) bool { return sc.Available }
 
 func aggregateStatus(components map[string]operatorsv1.StatusCondition) operatorsv1.HubPhaseType {
-	for k, val := range components {
+	for _, val := range components {
 		if !successfulComponent(val) {
-			log.Info("Waiting on", "name", k)
 			return operatorsv1.HubPending
 		}
 	}
