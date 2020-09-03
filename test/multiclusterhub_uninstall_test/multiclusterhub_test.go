@@ -28,16 +28,6 @@ var _ = Describe("Multiclusterhub", func() {
 			}
 			return nil
 		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
-
-		Eventually(func() error {
-			fmt.Println("180")
-			res := utils.ValidateImportHubResourcesExist(false)
-			if res != nil {
-				return res
-			}
-			return nil
-		}, 180, 1).Should(BeNil())
-
 	})
 
 	if os.Getenv("full_test_suite") == "true" {
@@ -50,7 +40,6 @@ var _ = Describe("Multiclusterhub", func() {
 			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).ShouldNot(BeNil())
 			utils.ValidateConditionDuringUninstall()
 
-			Expect(utils.ValidateImportHubResourcesExist(true)).Should(BeNil())
 			Eventually(func() error {
 				err := RemoveFinalizerFromHelmRelease(utils.DynamicKubeClient)
 				if err != nil {
@@ -61,7 +50,33 @@ var _ = Describe("Multiclusterhub", func() {
 			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
 			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
 
-			Expect(utils.ValidateImportHubResourcesExist(false)).Should(BeNil())
+			err := utils.ValidateManagedCluster(false)
+			Expect(err).To(BeNil())		
+		})
+
+		It("SAD CASE: Fail to remove managedcluster (Left behind finalizer)", func() {
+			By("Creating MultiClusterHub")
+			utils.CreateDefaultMCH()
+			utils.ValidateMCH()
+			AddFinalizerToManagedCluster(utils.DynamicKubeClient)
+			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, false)
+			//wait GetWaitInMinutes
+			Expect(utils.ValidateManagedCluster(false)).ShouldNot(BeNil())
+			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).ShouldNot(BeNil())
+			utils.ValidateConditionDuringUninstall()
+
+			Eventually(func() error {
+				err := RemoveFinalizerFromManagedCluster(utils.DynamicKubeClient)
+				if err != nil {
+					return err
+				}
+				return nil
+			}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
+			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
+			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
+
+			err := utils.ValidateManagedCluster(false)
+			Expect(err).To(BeNil())		
 		})
 	}
 })
@@ -84,6 +99,23 @@ func AddFinalizerToHelmRelease(clientHubDynamic dynamic.Interface) error {
 
 	helmRelease.SetFinalizers(finalizers)
 	_, err = helmReleaseLink.Update(context.TODO(), helmRelease, metav1.UpdateOptions{})
+	Expect(err).Should(BeNil())
+
+	return nil
+}
+
+// AddFinalizerToManagedCluster ...
+func AddFinalizerToManagedCluster(clientHubDynamic dynamic.Interface) error {
+	By("Adding a test finalizer to managed cluster")
+
+	mc, err := clientHubDynamic.Resource(utils.GVRManagedCluster).Get(context.TODO(), "local-cluster", metav1.GetOptions{})
+	Expect(err).Should(BeNil())
+
+
+	finalizers := []string{"test-finalizer"}
+
+	mc.SetFinalizers(finalizers)
+	_, err = clientHubDynamic.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Update(context.TODO(), mc, metav1.UpdateOptions{})
 	Expect(err).Should(BeNil())
 
 	return nil
@@ -112,6 +144,24 @@ func RemoveFinalizerFromHelmRelease(clientHubDynamic dynamic.Interface) error {
 	helmRelease.SetFinalizers([]string{})
 
 	_, err = helmReleaseLink.Update(context.TODO(), &helmRelease, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// RemoveFinalizerFromManagedCluster ...
+func RemoveFinalizerFromManagedCluster(clientHubDynamic dynamic.Interface) error {
+	By("Removing test finalizer from helmrelease")
+
+	mc, err := clientHubDynamic.Resource(utils.GVRManagedCluster).Get(context.TODO(), "local-cluster", metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	mc.SetFinalizers([]string{})
+
+	_, err = clientHubDynamic.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Update(context.TODO(), mc, metav1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
