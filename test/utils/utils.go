@@ -138,7 +138,7 @@ var (
 	CSVName = "advanced-cluster-management"
 
 	// WaitInMinutesDefault ...
-	WaitInMinutesDefault = 18
+	WaitInMinutesDefault = 16
 
 	//localCluster
 	localCluster = "local-cluster"
