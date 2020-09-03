@@ -122,7 +122,7 @@ func AddFinalizerToManagedCluster(clientHubDynamic dynamic.Interface) error {
 	finalizers := []string{"test-finalizer"}
 
 	mc.SetFinalizers(finalizers)
-	_, err = clientHubDynamic.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Update(context.TODO(), mc, metav1.UpdateOptions{})
+	_, err = clientHubDynamic.Resource(utils.GVRManagedCluster).Update(context.TODO(), mc, metav1.UpdateOptions{})
 	Expect(err).Should(BeNil())
 
 	return nil
