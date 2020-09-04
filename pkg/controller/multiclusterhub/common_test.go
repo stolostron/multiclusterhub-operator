@@ -530,18 +530,18 @@ func Test_filterDeploymentsByRelease(t *testing.T) {
 		{
 			name: "Deployment with release label",
 			allDeps: []*appsv1.Deployment{
-				{ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"release": "foo-123"}}},
-				{ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"release": "bar-123"}}},
+				{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{"meta.helm.sh/release-name": "foo-123"}}},
+				{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{"meta.helm.sh/release-name": "bar-123"}}},
 			},
 			releaseLabel: "foo-123",
 			want: []*appsv1.Deployment{
-				{ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"release": "foo-123"}}},
+				{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{"meta.helm.sh/release-name": "foo-123"}}},
 			},
 		},
 		{
 			name: "Deployments with no matching release label",
 			allDeps: []*appsv1.Deployment{
-				{ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"release": "bar-123"}}},
+				{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{"meta.helm.sh/release-name": "bar-123"}}},
 			},
 			releaseLabel: "foo-123",
 			want:         []*appsv1.Deployment{},

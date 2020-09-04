@@ -467,7 +467,8 @@ func (r *ReconcileMultiClusterHub) listHelmReleases() ([]*subrelv1.HelmRelease, 
 func filterDeploymentsByRelease(deploys []*appsv1.Deployment, releaseLabel string) []*appsv1.Deployment {
 	var labeledDeps []*appsv1.Deployment
 	for i := range deploys {
-		if release := deploys[i].ObjectMeta.Labels["release"]; release == releaseLabel {
+		anno := deploys[i].GetAnnotations()
+		if anno["meta.helm.sh/release-name"] == releaseLabel {
 			labeledDeps = append(labeledDeps, deploys[i])
 		}
 	}
