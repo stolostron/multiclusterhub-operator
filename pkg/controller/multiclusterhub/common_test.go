@@ -694,8 +694,8 @@ func Test_getAppSubOwnedHelmReleases(t *testing.T) {
 
 func Test_getHelmReleaseOwnedDeployments(t *testing.T) {
 	allDeployments := []*appsv1.Deployment{
-		{ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"release": "foo-123"}}},
-		{ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"release": "foo-123"}}},
+		{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{"meta.helm.sh/release-name": "foo-123"}}},
+		{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{"meta.helm.sh/release-name": "foo-123"}}},
 	}
 	tests := []struct {
 		name   string
