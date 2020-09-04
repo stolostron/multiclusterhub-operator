@@ -183,8 +183,7 @@ func FullInstallTestSuite() {
 	It("- Delete ManagedCluster before it is joined/available", func() {
 		By("- Verifying default install has local-cluster resources")
 		utils.CreateDefaultMCH()
-		//ValidateMCHIMporting func?
-		err := utils.ValidateMCH()
+		err := utils.ValidateImportHubResourcesExist(true)
 		Expect(err).To(BeNil())
 
 		By("- Setting `spec.disableHubSelfManagement` to true to remove local-cluster resources")

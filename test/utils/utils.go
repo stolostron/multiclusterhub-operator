@@ -140,8 +140,6 @@ var (
 	// WaitInMinutesDefault ...
 	WaitInMinutesDefault = 20
 
-	//localCluster
-	localCluster = "local-cluster"
 )
 
 // GetWaitInMinutes...
@@ -780,7 +778,7 @@ func ValidateManagedCluster(importResourcesShouldExist bool) error {
 
 // validateManagedClusterConditions 
 func validateManagedClusterConditions() error {
-	By("- Checking ManagedClusterconditions type true")
+	By("- Checking ManagedClusterConditions type true")
 	mc, _ := DynamicKubeClient.Resource(GVRManagedCluster).Get(context.TODO(), "local-cluster", metav1.GetOptions{})
 	status, ok :=  mc.Object["status"].(map[string]interface{})
 	if ok {
