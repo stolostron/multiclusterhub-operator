@@ -553,8 +553,8 @@ func findCondition(status map[string]interface{}, t string, s string) error {
 // ValidateMCHUnsuccessful ...
 func ValidateMCHUnsuccessful() error {
 	By("Validating MultiClusterHub Unsuccessful")
-	By(fmt.Sprintf("- Waiting %d minutes", GetWaitInMinutes()*60), func() {
-		time.Sleep(time.Duration(GetWaitInMinutes()*60) * time.Minute)
+	By(fmt.Sprintf("- Waiting %d minutes", GetWaitInMinutes()), func() {
+		time.Sleep(time.Duration(GetWaitInMinutes()) * time.Minute)
 	})
 
 	By("- Ensuring MCH is in 'pending' phase")
