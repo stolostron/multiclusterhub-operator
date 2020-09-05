@@ -9,6 +9,7 @@ import (
 	"time"
 
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -186,8 +187,8 @@ func GetContainerEnvVars(dep *appsv1.Deployment) []v1.EnvVar {
 	return dep.Spec.Template.Spec.Containers[0].Env
 }
 
-// GetContainerVolumeMount returns volume mount for first container in deployment
-func GetContainerVolumeMount(dep *appsv1.Deployment) []corev1.VolumeMount {
+// GetContainerVolumeMounts returns volume mount for first container in deployment
+func GetContainerVolumeMounts(dep *appsv1.Deployment) []corev1.VolumeMount {
 	return dep.Spec.Template.Spec.Containers[0].VolumeMounts
 }
 
