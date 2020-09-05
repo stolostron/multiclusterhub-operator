@@ -3,6 +3,7 @@
 package helmrepo
 
 import (
+	"reflect"
 	"strconv"
 
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
@@ -152,10 +153,9 @@ func Service(m *operatorsv1.MultiClusterHub) *corev1.Service {
 
 // ValidateDeployment returns a deep copy of the deployment with the desired spec based on the MultiClusterHub spec.
 // Returns true if an update is needed to reconcile differences with the current spec.
-func ValidateDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]string, dep *appsv1.Deployment) (*appsv1.Deployment, bool) {
+func ValidateDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]string, expected, dep *appsv1.Deployment) (*appsv1.Deployment, bool) {
 	var log = logf.Log.WithValues("Deployment.Namespace", dep.GetNamespace(), "Deployment.Name", dep.GetName())
 	found := dep.DeepCopy()
-
 	pod := &found.Spec.Template.Spec
 	container := &found.Spec.Template.Spec.Containers[0]
 	needsUpdate := false
@@ -189,6 +189,34 @@ func ValidateDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]str
 	if !utils.ContainsMap(pod.NodeSelector, desiredSelectors) {
 		log.Info("Enforcing node selectors from CR spec")
 		pod.NodeSelector = desiredSelectors
+		needsUpdate = true
+	}
+
+	// verify image pull policy
+	if container.ImagePullPolicy != utils.GetImagePullPolicy(m) {
+		log.Info("Enforcing imagePullPolicy")
+		container.ImagePullPolicy = utils.GetImagePullPolicy(m)
+		needsUpdate = true
+	}
+
+	if !reflect.DeepEqual(container.Args, utils.GetContainerArgs(expected)) {
+		log.Info("Enforcing container arguments")
+		args := utils.GetContainerArgs(expected)
+		container.Args = args
+		needsUpdate = true
+	}
+
+	if !reflect.DeepEqual(container.Env, utils.GetContainerEnvVars(expected)) {
+		log.Info("Enforcing container environment variables")
+		envs := utils.GetContainerEnvVars(expected)
+		container.Env = envs
+		needsUpdate = true
+	}
+
+	if !reflect.DeepEqual(container.VolumeMounts, utils.GetContainerVolumeMounts(expected)) {
+		log.Info("Enforcing container volume mounts")
+		vms := utils.GetContainerVolumeMounts(expected)
+		container.VolumeMounts = vms
 		needsUpdate = true
 	}
 

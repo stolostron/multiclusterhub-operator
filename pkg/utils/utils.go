@@ -176,6 +176,21 @@ func GetImagePullPolicy(m *operatorsv1.MultiClusterHub) v1.PullPolicy {
 	return m.Spec.Overrides.ImagePullPolicy
 }
 
+// GetContainerArgs return arguments forfirst container in deployment
+func GetContainerArgs(dep *appsv1.Deployment) []string {
+	return dep.Spec.Template.Spec.Containers[0].Args
+}
+
+// GetContainerEnvVars returns environment variables for first container in deployment
+func GetContainerEnvVars(dep *appsv1.Deployment) []v1.EnvVar {
+	return dep.Spec.Template.Spec.Containers[0].Env
+}
+
+// GetContainerVolumeMount returns volume mount for first container in deployment
+func GetContainerVolumeMount(dep *appsv1.Deployment) []corev1.VolumeMount {
+	return dep.Spec.Template.Spec.Containers[0].VolumeMounts
+}
+
 func IsUnitTest() bool {
 	if unitTest, found := os.LookupEnv(UnitTestEnvVar); found {
 		if unitTest == "true" {
