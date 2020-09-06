@@ -100,7 +100,7 @@ func getKlusterletAddonConfig(version string) *unstructured.Unstructured {
 }
 
 func (r *ReconcileMultiClusterHub) ensureHubIsImported(m *operatorsv1.MultiClusterHub) (*reconcile.Result, error) {
-	if m.Status.Phase != operatorsv1.HubRunning {
+	if r.ComponentsAreRunning(m) != operatorsv1.HubRunning {
 		log.Info("Waiting for mch phase to be 'running' before importing hub cluster")
 		return &reconcile.Result{}, fmt.Errorf("Waiting for mch phase to be 'running' before importing hub cluster")
 	}
@@ -172,6 +172,9 @@ func (r *ReconcileMultiClusterHub) ensureManagedCluster(m *operatorsv1.MultiClus
 	}
 
 	labels := getInstallerLabels(m)
+	for k, v := range managedCluster.GetLabels() {
+		labels[k] = v
+	}
 	labels["local-cluster"] = "true"
 	managedCluster.SetLabels(labels)
 	managedCluster.SetOwnerReferences([]metav1.OwnerReference{
@@ -227,7 +230,12 @@ func (r *ReconcileMultiClusterHub) ensureKlusterletAddonConfig(m *operatorsv1.Mu
 		}
 	}
 
-	klusterletaddonconfig.SetLabels(getInstallerLabels(m))
+	labels := getInstallerLabels(m)
+	for k, v := range klusterletaddonconfig.GetLabels() {
+		labels[k] = v
+	}
+
+	klusterletaddonconfig.SetLabels(labels)
 	klusterletaddonconfig.SetOwnerReferences([]metav1.OwnerReference{
 		*metav1.NewControllerRef(m, m.GetObjectKind().GroupVersionKind()),
 	})
@@ -239,4 +247,34 @@ func (r *ReconcileMultiClusterHub) ensureKlusterletAddonConfig(m *operatorsv1.Mu
 	}
 
 	return nil, nil
+}
+
+func (r *ReconcileMultiClusterHub) ensureHubIsRunning(m *operatorsv1.MultiClusterHub) ([]interface{}, error) {
+	if m.Spec.DisableHubSelfManagement {
+		return nil, nil
+	}
+	if r.ComponentsAreRunning(m) != operatorsv1.HubRunning {
+		log.Info("Waiting for mch phase to be 'running' before ensuring hub is running")
+		return nil, fmt.Errorf("Waiting for mch phase to be 'running' before ensuring hub is running")
+	}
+
+	managedCluster := getManagedCluster()
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: ManagedClusterName}, managedCluster)
+	if err != nil {
+		log.Error(err, "Failed to find managedcluster resource")
+		return nil, err
+	}
+
+	status, ok := managedCluster.Object["status"].(map[string]interface{})
+	if !ok {
+		log.Error(err, "Managedcluster status is not present")
+		return nil, fmt.Errorf("Managedcluster status is not present")
+	}
+	conditions, ok := status["conditions"].([]interface{})
+	if !ok {
+		log.Error(err, "Managedcluster status conditions are not present")
+		return nil, fmt.Errorf("Managedcluster status conditions are not present")
+	}
+
+	return conditions, nil
 }
