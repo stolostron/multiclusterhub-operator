@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
+	"github.com/open-cluster-management/multicloudhub-operator/version"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -55,7 +56,7 @@ func getManagedCluster() *unstructured.Unstructured {
 	return managedCluster
 }
 
-func getKlusterletAddonConfig(version string) *unstructured.Unstructured {
+func getKlusterletAddonConfig() *unstructured.Unstructured {
 	klusterletaddonconfig := &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": "agent.open-cluster-management.io/v1",
@@ -92,7 +93,7 @@ func getKlusterletAddonConfig(version string) *unstructured.Unstructured {
 				"iamPolicyController": map[string]interface{}{
 					"enabled": true,
 				},
-				"version": version,
+				"version": version.Version,
 			},
 		},
 	}
@@ -212,11 +213,11 @@ func (r *ReconcileMultiClusterHub) removeManagedCluster(m *operatorsv1.MultiClus
 }
 
 func (r *ReconcileMultiClusterHub) ensureKlusterletAddonConfig(m *operatorsv1.MultiClusterHub) (*reconcile.Result, error) {
-	klusterletaddonconfig := getKlusterletAddonConfig(m.Status.CurrentVersion)
+	klusterletaddonconfig := getKlusterletAddonConfig()
 
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: KlusterletAddonConfigName, Namespace: ManagedClusterName}, klusterletaddonconfig)
 	if err != nil && errors.IsNotFound(err) {
-		klusterletaddonconfig = getKlusterletAddonConfig(m.Status.CurrentVersion)
+		klusterletaddonconfig = getKlusterletAddonConfig()
 		klusterletaddonconfig.SetLabels(getInstallerLabels(m))
 
 		klusterletaddonconfig.SetOwnerReferences([]metav1.OwnerReference{
@@ -249,7 +250,7 @@ func (r *ReconcileMultiClusterHub) ensureKlusterletAddonConfig(m *operatorsv1.Mu
 	return nil, nil
 }
 
-func (r *ReconcileMultiClusterHub) ensureHubIsRunning(m *operatorsv1.MultiClusterHub) ([]interface{}, error) {
+func (r *ReconcileMultiClusterHub) ensureManagedClusterIsRunning(m *operatorsv1.MultiClusterHub) ([]interface{}, error) {
 	if m.Spec.DisableHubSelfManagement {
 		return nil, nil
 	}

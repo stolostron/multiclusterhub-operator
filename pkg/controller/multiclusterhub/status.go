@@ -100,16 +100,22 @@ var unknownStatus = operatorsv1.StatusCondition{
 
 // ComponentsAreRunning ...
 func (r *ReconcileMultiClusterHub) ComponentsAreRunning(m *operatorsv1.MultiClusterHub) operatorsv1.HubPhaseType {
+	// If unit testing, it is not necessary to ensure all deployments and helmreleases are available first
+	if utils.IsUnitTest() {
+		return operatorsv1.HubRunning
+	}
 	deployList, _ := r.listDeployments()
 	hrList, _ := r.listHelmReleases()
-	return aggregateStatus(getComponentStatuses(m, hrList, deployList, nil))
+	componentStatuses := getComponentStatuses(m, hrList, deployList, nil)
+	delete(componentStatuses, ManagedClusterName)
+	return aggregateStatus(componentStatuses)
 }
 
 // syncHubStatus checks if the status is up-to-date and sync it if necessary
 func (r *ReconcileMultiClusterHub) syncHubStatus(m *operatorsv1.MultiClusterHub, original *operatorsv1.MultiClusterHubStatus) (reconcile.Result, error) {
 	deployList, err := r.listDeployments()
 	hrList, err := r.listHelmReleases()
-	localCluster, err := r.ensureHubIsRunning(m)
+	localCluster, err := r.ensureManagedClusterIsRunning(m)
 	newStatus := calculateStatus(m, deployList, hrList, localCluster)
 	if reflect.DeepEqual(m.Status, original) {
 		log.Info("Status hasn't changed")
@@ -190,7 +196,7 @@ func getComponentStatuses(hub *operatorsv1.MultiClusterHub, hrList []*subrelv1.H
 		}
 	}
 
-	if importClusterStatus != nil {
+	if !hub.Spec.DisableHubSelfManagement {
 		components["local-cluster"] = mapManagedClusterConditions(importClusterStatus)
 	}
 	return components
