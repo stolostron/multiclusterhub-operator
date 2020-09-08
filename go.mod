@@ -3,6 +3,7 @@ module github.com/open-cluster-management/multicloudhub-operator
 go 1.13
 
 require (
+	github.com/Azure/go-autorest/autorest v0.10.0 // indirect
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/semver/v3 v3.1.0
 	github.com/fatih/structs v1.1.0
@@ -11,7 +12,7 @@ require (
 	github.com/onsi/gomega v1.9.0
 	github.com/open-cluster-management/multicloud-operators-subscription v1.0.0-2020-05-12-21-17-19.0.20200610014526-1e0e8c0acfad
 	github.com/open-cluster-management/multicloud-operators-subscription-release v1.0.1-2020-05-28-18-29-00.0.20200603160156-4d66bd136ba3
-	github.com/open-cluster-management/multicluster-monitoring-operator v0.0.0-20200902134122-a4498d659faf
+	github.com/open-cluster-management/multicluster-monitoring-operator v0.0.0-20200908164329-1180bb5d1fab
 	github.com/openshift/api v3.9.1-0.20190424152011-77b8897ec79a+incompatible
 	github.com/operator-framework/operator-sdk v0.18.0
 	github.com/spf13/pflag v1.0.5
@@ -29,6 +30,7 @@ require (
 // Pinned to k8s v0.18.3
 replace (
 	github.com/Azure/go-autorest => github.com/Azure/go-autorest v13.3.2+incompatible // Required by OLM
+	github.com/jetstack/cert-manager => github.com/open-cluster-management/cert-manager v0.0.0-20200821135248-2fd523b053f5
 	k8s.io/api => k8s.io/api v0.18.3
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.18.3
 	k8s.io/apimachinery => k8s.io/apimachinery v0.18.3
@@ -50,4 +52,5 @@ replace (
 	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.18.3
 	k8s.io/metrics => k8s.io/metrics v0.18.3
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.18.3
+
 )
