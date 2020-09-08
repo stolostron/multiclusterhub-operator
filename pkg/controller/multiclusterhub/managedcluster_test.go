@@ -5,29 +5,31 @@ package multiclusterhub
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 )
 
 func Test_ensureHubIsImported(t *testing.T) {
-	pendingMCH := full_mch.DeepCopy()
-	pendingMCH.Status.Phase = "Pending"
 
 	tests := []struct {
-		Name   string
-		MCH    *operatorsv1.MultiClusterHub
-		Result error
+		Name    string
+		MCH     *operatorsv1.MultiClusterHub
+		Running string
+		Result  error
 	}{
 		{
-			Name:   "Status phase 'running'",
-			MCH:    full_mch,
-			Result: nil,
+			Name:    "Status phase 'running'",
+			MCH:     full_mch,
+			Running: "true",
+			Result:  nil,
 		},
 		{
-			Name:   "Status phase 'pending'",
-			MCH:    pendingMCH,
-			Result: fmt.Errorf("Waiting for mch phase to be 'running' before importing hub cluster"),
+			Name:    "Status phase 'pending'",
+			MCH:     full_mch,
+			Running: "false",
+			Result:  fmt.Errorf("Waiting for mch phase to be 'running' before importing hub cluster"),
 		},
 	}
 
@@ -38,6 +40,9 @@ func Test_ensureHubIsImported(t *testing.T) {
 				t.Fatalf("Failed to create test reconciler")
 			}
 
+			os.Setenv("UNIT_TEST", tt.Running)
+			defer os.Unsetenv("UNIT_TEST")
+
 			_, err = r.ensureHubIsImported(tt.MCH)
 			if !errorEquals(err, tt.Result) {
 				t.Fatalf("Err: %s", err)
@@ -47,6 +52,8 @@ func Test_ensureHubIsImported(t *testing.T) {
 }
 
 func Test_ensureHubIsExported(t *testing.T) {
+	os.Setenv("UNIT_TEST", "true")
+	defer os.Unsetenv("UNIT_TEST")
 
 	tests := []struct {
 		Name   string

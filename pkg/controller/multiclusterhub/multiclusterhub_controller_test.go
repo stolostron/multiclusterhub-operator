@@ -103,7 +103,7 @@ func Test_ReconcileMultiClusterHub(t *testing.T) {
 		{
 			Name:     "Without Status",
 			MCH:      mch2,
-			Expected: fmt.Errorf("Waiting for mch phase to be 'running' before importing hub cluster"),
+			Expected: nil,
 		},
 		{
 			Name:     "AvailabilityConfig",
