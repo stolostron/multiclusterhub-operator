@@ -45,7 +45,7 @@ import (
 const hubFinalizer = "finalizer.operator.open-cluster-management.io"
 
 var log = logf.Log.WithName("controller_multiclusterhub")
-var resyncPeriod = time.Second * 45
+var resyncPeriod = time.Second * 20
 
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
@@ -186,7 +186,9 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 			// logic fails, don't remove the finalizer so
 			// that we can retry during the next reconciliation.
 			if err := r.finalizeHub(reqLogger, multiClusterHub); err != nil {
-				return reconcile.Result{RequeueAfter: resyncPeriod}, err
+				// Logging err and returning nil to ensure 45 second wait
+				log.Info(fmt.Sprintf("Finalizing: %s", err.Error()))
+				return reconcile.Result{RequeueAfter: resyncPeriod}, nil
 			}
 
 			// Remove hubFinalizer. Once all finalizers have been

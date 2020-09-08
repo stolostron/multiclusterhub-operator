@@ -147,7 +147,8 @@ func (r *ReconcileMultiClusterHub) ensureHubNamespaceIsRemoved(m *operatorsv1.Mu
 		// Namespace is removed
 		return nil, nil
 	}
-	return &reconcile.Result{}, fmt.Errorf("Waiting on namespace: %s to be removed", HubNamespace.GetName())
+	log.Info(fmt.Sprintf("Waiting on namespace: %s to be removed", HubNamespace.GetName()))
+	return &reconcile.Result{RequeueAfter: resyncPeriod}, nil
 }
 
 func (r *ReconcileMultiClusterHub) ensureManagedCluster(m *operatorsv1.MultiClusterHub) (*reconcile.Result, error) {
@@ -199,7 +200,7 @@ func (r *ReconcileMultiClusterHub) removeManagedCluster(m *operatorsv1.MultiClus
 
 	// Wait for managedcluster to be removed
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: ManagedClusterName}, managedCluster)
-	if err != nil && errors.IsNotFound(err) {
+	if err != nil {
 		// ManagedCluster is removed
 		return nil, nil
 	}
