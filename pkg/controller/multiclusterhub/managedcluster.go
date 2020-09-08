@@ -103,7 +103,7 @@ func getKlusterletAddonConfig() *unstructured.Unstructured {
 func (r *ReconcileMultiClusterHub) ensureHubIsImported(m *operatorsv1.MultiClusterHub) (*reconcile.Result, error) {
 	if r.ComponentsAreRunning(m) != operatorsv1.HubRunning {
 		log.Info("Waiting for mch phase to be 'running' before importing hub cluster")
-		return &reconcile.Result{}, fmt.Errorf("Waiting for mch phase to be 'running' before importing hub cluster")
+		return &reconcile.Result{RequeueAfter: resyncPeriod}, nil
 	}
 
 	result, err := r.ensureManagedCluster(m)
@@ -148,7 +148,7 @@ func (r *ReconcileMultiClusterHub) ensureHubNamespaceIsRemoved(m *operatorsv1.Mu
 		return nil, nil
 	}
 	log.Info(fmt.Sprintf("Waiting on namespace: %s to be removed", HubNamespace.GetName()))
-	return &reconcile.Result{RequeueAfter: resyncPeriod}, nil
+	return &reconcile.Result{RequeueAfter: resyncPeriod}, fmt.Errorf("Waiting on namespace: %s to be removed", HubNamespace.GetName())
 }
 
 func (r *ReconcileMultiClusterHub) ensureManagedCluster(m *operatorsv1.MultiClusterHub) (*reconcile.Result, error) {
@@ -269,12 +269,12 @@ func (r *ReconcileMultiClusterHub) ensureManagedClusterIsRunning(m *operatorsv1.
 
 	status, ok := managedCluster.Object["status"].(map[string]interface{})
 	if !ok {
-		log.Error(err, "Managedcluster status is not present")
+		log.Info("Managedcluster status is not present")
 		return nil, fmt.Errorf("Managedcluster status is not present")
 	}
 	conditions, ok := status["conditions"].([]interface{})
 	if !ok {
-		log.Error(err, "Managedcluster status conditions are not present")
+		log.Info("Managedcluster status conditions are not present")
 		return nil, fmt.Errorf("Managedcluster status conditions are not present")
 	}
 

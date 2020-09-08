@@ -100,10 +100,6 @@ var unknownStatus = operatorsv1.StatusCondition{
 
 // ComponentsAreRunning ...
 func (r *ReconcileMultiClusterHub) ComponentsAreRunning(m *operatorsv1.MultiClusterHub) operatorsv1.HubPhaseType {
-	// If unit testing, it is not necessary to ensure all deployments and helmreleases are available first
-	if utils.IsUnitTest() {
-		return operatorsv1.HubRunning
-	}
 	deployList, _ := r.listDeployments()
 	hrList, _ := r.listHelmReleases()
 	componentStatuses := getComponentStatuses(m, hrList, deployList, nil)
