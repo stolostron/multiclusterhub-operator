@@ -98,7 +98,7 @@ func Deployment(m *operatorsv1.MultiClusterHub, overrides map[string]string) *ap
 						Env: []v1.EnvVar{
 							{
 								Name:      "POD_NAMESPACE",
-								ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.namespace"}},
+								ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{APIVersion: "v1", FieldPath: "metadata.namespace"}},
 							},
 							{
 								Name:  "MCH_REPO_PORT",
