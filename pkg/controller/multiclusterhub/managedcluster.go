@@ -262,7 +262,7 @@ func (r *ReconcileMultiClusterHub) ensureManagedClusterIsRunning(m *operatorsv1.
 	managedCluster := getManagedCluster()
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: ManagedClusterName}, managedCluster)
 	if err != nil {
-		log.Info(err, "Failed to find managedcluster resource")
+		log.Info("Failed to find managedcluster resource")
 		return nil, err
 	}
 
