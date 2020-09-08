@@ -348,7 +348,7 @@ func BrickMCHRepo() error {
 		return err
 	}
 
-	if err = waitForUnavailable(MCHRepoName, time.Duration(90)*time.Second); err != nil {
+	if err = waitForUnavailable(MCHRepoName, time.Duration(GetWaitInMinutes())*time.Minute); err != nil {
 		return err
 	}
 
@@ -368,7 +368,7 @@ func BrickKUI() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	err = waitForUnavailable("kui-web-terminal", time.Duration(90)*time.Second)
+	err = waitForUnavailable("kui-web-terminal", time.Duration(GetWaitInMinutes())*time.Minute)
 
 	return oldImage, err
 }
@@ -380,7 +380,7 @@ func FixKUI(image string) error {
 	if err != nil {
 		return err
 	}
-	err = waitForAvailable("kui-web-terminal", time.Duration(120)*time.Second)
+	err = waitForAvailable("kui-web-terminal", time.Duration(GetWaitInMinutes())*time.Minute)
 	return err
 }
 
