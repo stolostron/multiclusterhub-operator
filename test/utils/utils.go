@@ -138,7 +138,7 @@ var (
 	CSVName = "advanced-cluster-management"
 
 	// WaitInMinutesDefault ...
-	WaitInMinutesDefault = 20
+	WaitInMinutesDefault = 40
 
 )
 
@@ -754,25 +754,20 @@ func ValidateImportHubResourcesExist(expected bool) error {
 // ValidateManagedCluster
 func ValidateManagedCluster(importResourcesShouldExist bool) error {
 	By("- Checking imported hub resources exist or not")
-	When("resources", func() {
-		By("- Confirming Necessary Resources")
-		Eventually(func() error {
-			mc, _ := DynamicKubeClient.Resource(GVRManagedCluster).Get(context.TODO(), "local-cluster", metav1.GetOptions{})
-			if err := validateManagedClusterOwnerRef(mc); err != nil {
-				return fmt.Errorf("Owner ref is not mch")
-			}
-			if err := ValidateImportHubResourcesExist(importResourcesShouldExist); err != nil {
-				return fmt.Errorf("Resources are as they shouldn't")
-			}
-			if importResourcesShouldExist {
-				if val := validateManagedClusterConditions(); val !=nil {
-					return fmt.Errorf("cluster conditions")
-				}
-				return nil
-			}
-			return nil
-		}, GetWaitInMinutes()*60, 1).Should(BeNil())
-	})
+	By("- Confirming Necessary Resources")
+	mc, _ := DynamicKubeClient.Resource(GVRManagedCluster).Get(context.TODO(), "local-cluster", metav1.GetOptions{})
+	if err := validateManagedClusterOwnerRef(mc); err != nil {
+		return fmt.Errorf("Owner ref is not mch")
+	}
+	if err := ValidateImportHubResourcesExist(importResourcesShouldExist); err != nil {
+		return fmt.Errorf("Resources are as they shouldn't")
+	}
+	if importResourcesShouldExist {
+		if val := validateManagedClusterConditions(); val !=nil {
+			return fmt.Errorf("cluster conditions")
+		}
+		return nil
+	}
 	return nil
 }
 
