@@ -490,12 +490,18 @@ func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 			log.Fatalf("failed to get working dir %v", err)
 		}
 		cleanupPath := path.Join(path.Dir(workingDir), "clean-up.sh")
-		os.Setenv("ACM_NAMESPACE", MCHNamespace)
+		err = os.Setenv("ACM_NAMESPACE", MCHNamespace)
+		if err != nil {
+			log.Fatal(err)
+		}
 		out, err := exec.Command("/bin/sh", cleanupPath).Output()
 		if err != nil {
 			log.Fatal(err)
 		}
-		os.Unsetenv("ACM_NAMESPACE")
+		err = os.Unsetenv("ACM_NAMESPACE")
+		if err != nil {
+			log.Fatal(err)
+		}
 		log.Println(fmt.Sprintf("Resources cleaned up by clean-up script:\n %s\n", bytes.NewBuffer(out).String()))
 
 	}
