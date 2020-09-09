@@ -2,10 +2,14 @@
 package utils
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"log"
 	"os"
+	"os/exec"
 	"os/user"
+	"path"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -90,15 +94,15 @@ var (
 
 	// GVRManagedCluster
 	GVRManagedCluster = schema.GroupVersionResource{
-		Group: "cluster.open-cluster-management.io",
-		Version: "v1",
+		Group:    "cluster.open-cluster-management.io",
+		Version:  "v1",
 		Resource: "managedclusters",
 	}
 
 	// GVRKlusterletAddonConfig
 	GVRKlusterletAddonConfig = schema.GroupVersionResource{
-		Group: "agent.open-cluster-management.io",
-		Version: "v1",
+		Group:    "agent.open-cluster-management.io",
+		Version:  "v1",
 		Resource: "klusterletaddonconfigs",
 	}
 	// DefaultImageRegistry ...
@@ -139,7 +143,6 @@ var (
 
 	// WaitInMinutesDefault ...
 	WaitInMinutesDefault = 20
-
 )
 
 // GetWaitInMinutes...
@@ -153,6 +156,11 @@ func GetWaitInMinutes() int {
 		return WaitInMinutesDefault
 	}
 	return waitInMinutesAsInt
+}
+
+func runCleanUpScript() bool {
+	runCleanUpScript, _ := strconv.ParseBool(os.Getenv("runCleanUpScript"))
+	return runCleanUpScript
 }
 
 // CreateNewUnstructured creates resources by using gvr & obj, will get object after create.
@@ -475,6 +483,28 @@ func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 		return nil
 	}, GetWaitInMinutes()*60, 1).Should(BeNil())
 
+	if runCleanUpScript() {
+		By("- Running documented clean up script")
+		workingDir, err := os.Getwd()
+		if err != nil {
+			log.Fatalf("failed to get working dir %v", err)
+		}
+		cleanupPath := path.Join(path.Dir(workingDir), "clean-up.sh")
+		err = os.Setenv("ACM_NAMESPACE", MCHNamespace)
+		if err != nil {
+			log.Fatal(err)
+		}
+		out, err := exec.Command("/bin/sh", cleanupPath).Output()
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = os.Unsetenv("ACM_NAMESPACE")
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Println(fmt.Sprintf("Resources cleaned up by clean-up script:\n %s\n", bytes.NewBuffer(out).String()))
+
+	}
 	return nil
 }
 
@@ -629,7 +659,6 @@ func ValidateMCH() error {
 	err = ValidateManagedCluster(true)
 	Expect(err).Should(BeNil())
 
-
 	currentVersion, err := GetCurrentVersionFromMCH()
 	Expect(err).Should(BeNil())
 	v, err := semver.NewVersion(currentVersion)
@@ -728,15 +757,15 @@ func ValidateStatusesExist() error {
 
 //ValidateImportHubResources confirms the existence of 3 resources that are created when importing hub as managed cluster
 func ValidateImportHubResourcesExist(expected bool) error {
-    //check created namespace exists
+	//check created namespace exists
 	_, nsErr := KubeClient.CoreV1().Namespaces().Get(context.TODO(), "local-cluster", metav1.GetOptions{})
 	//check created ManagedCluster exists
 	mc, mcErr := DynamicKubeClient.Resource(GVRManagedCluster).Get(context.TODO(), "local-cluster", metav1.GetOptions{})
 	//check created KlusterletAddonConfig
 	kac, kacErr := DynamicKubeClient.Resource(GVRKlusterletAddonConfig).Namespace("local-cluster").Get(context.TODO(), "local-cluster", metav1.GetOptions{})
-	if (expected) {
-		if (mc != nil) {
-			if (nsErr != nil || mcErr != nil || kacErr !=nil) {
+	if expected {
+		if mc != nil {
+			if nsErr != nil || mcErr != nil || kacErr != nil {
 				return fmt.Errorf("not all local-cluster resources created")
 			}
 			return nil
@@ -744,7 +773,7 @@ func ValidateImportHubResourcesExist(expected bool) error {
 			return fmt.Errorf("local-cluster resources exist")
 		}
 	} else {
-		if (mc != nil || kac != nil) {
+		if mc != nil || kac != nil {
 			return fmt.Errorf("local-cluster resources exist")
 		}
 		return nil
@@ -763,7 +792,7 @@ func ValidateManagedCluster(importResourcesShouldExist bool) error {
 		return fmt.Errorf("Resources are as they shouldn't")
 	}
 	if importResourcesShouldExist {
-		if val := validateManagedClusterConditions(); val !=nil {
+		if val := validateManagedClusterConditions(); val != nil {
 			return fmt.Errorf("cluster conditions")
 		}
 		return nil
@@ -771,16 +800,16 @@ func ValidateManagedCluster(importResourcesShouldExist bool) error {
 	return nil
 }
 
-// validateManagedClusterConditions 
+// validateManagedClusterConditions
 func validateManagedClusterConditions() error {
 	By("- Checking ManagedClusterConditions type true")
 	mc, _ := DynamicKubeClient.Resource(GVRManagedCluster).Get(context.TODO(), "local-cluster", metav1.GetOptions{})
-	status, ok :=  mc.Object["status"].(map[string]interface{})
+	status, ok := mc.Object["status"].(map[string]interface{})
 	if ok {
 		joinErr := FindCondition(status, "ManagedClusterJoined", "True")
 		avaiErr := FindCondition(status, "ManagedClusterConditionAvailable", "True")
 		accpErr := FindCondition(status, "HubAcceptedManagedCluster", "True")
-		if (joinErr != nil || avaiErr != nil || accpErr !=nil) {
+		if joinErr != nil || avaiErr != nil || accpErr != nil {
 			return fmt.Errorf("managedcluster conditions not all true")
 		}
 		return nil
@@ -791,7 +820,7 @@ func validateManagedClusterConditions() error {
 
 // validateManagedClusterOwnerRef helper func to validateManagedCluster
 func validateManagedClusterOwnerRef(mc *unstructured.Unstructured) error {
-	if (mc != nil) {
+	if mc != nil {
 		name := mc.Object["metadata"].(map[string]interface{})["ownerReferences"].([]interface{})[0].(map[string]interface{})["name"]
 		if name != MCHName {
 			return fmt.Errorf("owner ref does not match mch name")

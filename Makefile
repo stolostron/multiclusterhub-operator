@@ -66,7 +66,7 @@ install:
 	./common/scripts/tests/install.sh
 
 uninstall-cr:
-	bash common/scripts/clean-up.sh
+	bash ./test/clean-up.sh
 
 ## Fully uninstall the MCH CR and operator
 uninstall: uninstall-cr
@@ -111,7 +111,7 @@ csv:
 
 ## Apply the MultiClusterHub CR
 cr:
-	cat deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml | yq w - "spec.imagePullSecret" "quay-secret" | yq w - "spec.availabilityConfig" "Basic" | oc apply -f -
+	cat deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml | yq w - "spec.imagePullSecret" "quay-secret" | oc apply -f -
 
 ## Apply the default OperatorGroup
 og:
