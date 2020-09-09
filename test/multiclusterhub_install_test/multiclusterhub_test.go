@@ -180,25 +180,30 @@ func FullInstallTestSuite() {
 			utils.CreateDefaultMCH()
 			if err := utils.ValidateStatusesExist(); err != nil {
 				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				Expect(err).To(BeNil())
 				return
 			}
 			err := utils.ValidateMCH()
 			if err != nil {
 				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				Expect(err).To(BeNil())
 				return
 			}
 
 			By("Degrading the installation")
 			if err := utils.BrickMCHRepo(); err != nil {
 				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				Expect(err).To(BeNil())
 				return
 			}
 			if err := utils.ValidateMCHDegraded(); err != nil {
 				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				Expect(err).To(BeNil())
 				return
 			}
 			if err := utils.FixMCHRepo(); err != nil {
 				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				Expect(err).To(BeNil())
 				return
 			}
 			return

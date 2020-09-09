@@ -66,7 +66,7 @@ install:
 	./common/scripts/tests/install.sh
 
 uninstall-cr:
-	bash common/scripts/clean-up.sh
+	bash ./test/clean-up.sh
 
 ## Fully uninstall the MCH CR and operator
 uninstall: uninstall-cr
