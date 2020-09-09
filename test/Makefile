@@ -82,6 +82,7 @@ acm-index-install: ns secrets og test-update-image
 
 ## Store Observability resources for tests
 observability-resources:
+	mkdir -p test/resources
 	curl -H "Authorization: token $(shell echo $(GITHUB_TOKEN))" \
 		-H 'Accept: application/vnd.github.v3.raw' \
 		-L https://raw.githubusercontent.com/open-cluster-management/multicluster-monitoring-operator/master/deploy/crds/observability.open-cluster-management.io_v1beta1_multiclusterobservability_cr.yaml -o ./test/resources/observability-cr.yaml
