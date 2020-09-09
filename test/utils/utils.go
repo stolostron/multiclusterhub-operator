@@ -138,7 +138,7 @@ var (
 	CSVName = "advanced-cluster-management"
 
 	// WaitInMinutesDefault ...
-	WaitInMinutesDefault = 40
+	WaitInMinutesDefault = 20
 
 )
 
