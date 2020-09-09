@@ -483,7 +483,7 @@ func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 			log.Fatal(err)
 		}
 		os.Unsetenv("ACM_NAMESPACE")
-		log.Println(fmt.Sprintf("Resources cleaned up by clean-up script\n: %s\n", bytes.NewBuffer(out).String()))
+		log.Println(fmt.Sprintf("Resources cleaned up by clean-up script:\n %s\n", bytes.NewBuffer(out).String()))
 
 	}
 	return nil
