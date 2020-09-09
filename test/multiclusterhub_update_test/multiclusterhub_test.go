@@ -70,18 +70,6 @@ var _ = Describe("Multiclusterhub", func() {
 
 		utils.ValidateMCH()
 
-
-		utils.ToggleDisableHubSelfManagement()
-		When("Spec is Updated - disableHubSelfManagement set to true", func() {
-			Eventually(func() error {
-				if err := utils.ValidateImportHubResourcesExist(false); err == nil {
-					return nil
-				} else {
-					return fmt.Errorf("Resources still exist")
-				}
-			}, 120, 1).Should(BeNil())
-		})
-
 		startVersion, err := semver.NewVersion(os.Getenv(("startVersion")))
 		Expect(err).Should(BeNil())
 		updateVersion, err := semver.NewVersion(os.Getenv(("updateVersion")))
