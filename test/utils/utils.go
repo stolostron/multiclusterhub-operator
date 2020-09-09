@@ -1,9 +1,11 @@
 // Copyright (c) 2020 Red Hat, Inc.
+
 package utils
 
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -11,11 +13,13 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/ghodss/yaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -36,6 +40,20 @@ var (
 
 	// ImageOverridesCMBadImageName...
 	ImageOverridesCMBadImageName = "bad-image-ref"
+
+	// GVRCustomResourceDefinition ...
+	GVRCustomResourceDefinition = schema.GroupVersionResource{
+		Group:    "apiextensions.k8s.io",
+		Version:  "v1beta1",
+		Resource: "customresourcedefinitions",
+	}
+
+	// GVRObservability ...
+	GVRObservability = schema.GroupVersionResource{
+		Group:    "observability.open-cluster-management.io",
+		Version:  "v1beta1",
+		Resource: "multiclusterobservabilities",
+	}
 
 	// GVRMultiClusterHub ...
 	GVRMultiClusterHub = schema.GroupVersionResource{
@@ -90,15 +108,15 @@ var (
 
 	// GVRManagedCluster
 	GVRManagedCluster = schema.GroupVersionResource{
-		Group: "cluster.open-cluster-management.io",
-		Version: "v1",
+		Group:    "cluster.open-cluster-management.io",
+		Version:  "v1",
 		Resource: "managedclusters",
 	}
 
 	// GVRKlusterletAddonConfig
 	GVRKlusterletAddonConfig = schema.GroupVersionResource{
-		Group: "agent.open-cluster-management.io",
-		Version: "v1",
+		Group:    "agent.open-cluster-management.io",
+		Version:  "v1",
 		Resource: "klusterletaddonconfigs",
 	}
 	// DefaultImageRegistry ...
@@ -139,7 +157,6 @@ var (
 
 	// WaitInMinutesDefault ...
 	WaitInMinutesDefault = 20
-
 )
 
 // GetWaitInMinutes...
@@ -629,7 +646,6 @@ func ValidateMCH() error {
 	err = ValidateManagedCluster(true)
 	Expect(err).Should(BeNil())
 
-
 	currentVersion, err := GetCurrentVersionFromMCH()
 	Expect(err).Should(BeNil())
 	v, err := semver.NewVersion(currentVersion)
@@ -728,15 +744,15 @@ func ValidateStatusesExist() error {
 
 //ValidateImportHubResources confirms the existence of 3 resources that are created when importing hub as managed cluster
 func ValidateImportHubResourcesExist(expected bool) error {
-    //check created namespace exists
+	//check created namespace exists
 	_, nsErr := KubeClient.CoreV1().Namespaces().Get(context.TODO(), "local-cluster", metav1.GetOptions{})
 	//check created ManagedCluster exists
 	mc, mcErr := DynamicKubeClient.Resource(GVRManagedCluster).Get(context.TODO(), "local-cluster", metav1.GetOptions{})
 	//check created KlusterletAddonConfig
 	kac, kacErr := DynamicKubeClient.Resource(GVRKlusterletAddonConfig).Namespace("local-cluster").Get(context.TODO(), "local-cluster", metav1.GetOptions{})
-	if (expected) {
-		if (mc != nil) {
-			if (nsErr != nil || mcErr != nil || kacErr !=nil) {
+	if expected {
+		if mc != nil {
+			if nsErr != nil || mcErr != nil || kacErr != nil {
 				return fmt.Errorf("not all local-cluster resources created")
 			}
 			return nil
@@ -744,7 +760,7 @@ func ValidateImportHubResourcesExist(expected bool) error {
 			return fmt.Errorf("local-cluster resources exist")
 		}
 	} else {
-		if (mc != nil || kac != nil) {
+		if mc != nil || kac != nil {
 			return fmt.Errorf("local-cluster resources exist")
 		}
 		return nil
@@ -763,7 +779,7 @@ func ValidateManagedCluster(importResourcesShouldExist bool) error {
 		return fmt.Errorf("Resources are as they shouldn't")
 	}
 	if importResourcesShouldExist {
-		if val := validateManagedClusterConditions(); val !=nil {
+		if val := validateManagedClusterConditions(); val != nil {
 			return fmt.Errorf("cluster conditions")
 		}
 		return nil
@@ -771,16 +787,16 @@ func ValidateManagedCluster(importResourcesShouldExist bool) error {
 	return nil
 }
 
-// validateManagedClusterConditions 
+// validateManagedClusterConditions
 func validateManagedClusterConditions() error {
 	By("- Checking ManagedClusterConditions type true")
 	mc, _ := DynamicKubeClient.Resource(GVRManagedCluster).Get(context.TODO(), "local-cluster", metav1.GetOptions{})
-	status, ok :=  mc.Object["status"].(map[string]interface{})
+	status, ok := mc.Object["status"].(map[string]interface{})
 	if ok {
 		joinErr := FindCondition(status, "ManagedClusterJoined", "True")
 		avaiErr := FindCondition(status, "ManagedClusterConditionAvailable", "True")
 		accpErr := FindCondition(status, "HubAcceptedManagedCluster", "True")
-		if (joinErr != nil || avaiErr != nil || accpErr !=nil) {
+		if joinErr != nil || avaiErr != nil || accpErr != nil {
 			return fmt.Errorf("managedcluster conditions not all true")
 		}
 		return nil
@@ -791,7 +807,7 @@ func validateManagedClusterConditions() error {
 
 // validateManagedClusterOwnerRef helper func to validateManagedCluster
 func validateManagedClusterOwnerRef(mc *unstructured.Unstructured) error {
-	if (mc != nil) {
+	if mc != nil {
 		name := mc.Object["metadata"].(map[string]interface{})["ownerReferences"].([]interface{})[0].(map[string]interface{})["name"]
 		if name != MCHName {
 			return fmt.Errorf("owner ref does not match mch name")
@@ -914,4 +930,69 @@ func GetCurrentVersionFromMCH() (string, error) {
 		return "", fmt.Errorf("MultiClusterHub: %s status has no 'currentVersion' field", mch.GetName())
 	}
 	return version.(string), nil
+}
+
+func CreateObservabilityCRD() {
+	By("- Creating Observability CRD if it does not exist")
+	_, err := DynamicKubeClient.Resource(GVRCustomResourceDefinition).Get(context.TODO(), "multiclusterobservabilities.observability.open-cluster-management.io", metav1.GetOptions{})
+	if err == nil {
+		return
+	}
+
+	crd, err := ioutil.ReadFile("../resources/observability-crd.yaml")
+	Expect(err).To(BeNil())
+
+	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
+	err = yaml.Unmarshal(crd, &unstructuredCRD.Object)
+	Expect(err).To(BeNil())
+
+	_, err = DynamicKubeClient.Resource(GVRCustomResourceDefinition).Create(context.TODO(), unstructuredCRD, metav1.CreateOptions{})
+	Expect(err).To(BeNil())
+}
+
+func CreateObservabilityCR() {
+	By("- Creating Observability CR if it does not exist")
+
+	_, err := DynamicKubeClient.Resource(GVRObservability).Get(context.TODO(), "observability", metav1.GetOptions{})
+	if err == nil {
+		return
+	}
+
+	crd, err := ioutil.ReadFile("../resources/observability-cr.yaml")
+	Expect(err).To(BeNil())
+
+	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
+	err = yaml.Unmarshal(crd, &unstructuredCRD.Object)
+	Expect(err).To(BeNil())
+
+	_, err = DynamicKubeClient.Resource(GVRObservability).Create(context.TODO(), unstructuredCRD, metav1.CreateOptions{})
+	Expect(err).To(BeNil())
+}
+
+func DeleteObservabilityCR() {
+	By("- Deleting Observability CR if it exists")
+
+	crd, err := ioutil.ReadFile("../resources/observability-cr.yaml")
+	Expect(err).To(BeNil())
+
+	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
+	err = yaml.Unmarshal(crd, &unstructuredCRD.Object)
+	Expect(err).To(BeNil())
+
+	err = DynamicKubeClient.Resource(GVRObservability).Delete(context.TODO(), "observability", metav1.DeleteOptions{})
+	Expect(err).To(BeNil())
+}
+
+func DeleteObservabilityCRD() {
+	By("- Deleting Observability CRD if it exists")
+
+	crd, err := ioutil.ReadFile("../resources/observability-crd.yaml")
+	Expect(err).To(BeNil())
+
+	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
+	err = yaml.Unmarshal(crd, &unstructuredCRD.Object)
+	Expect(err).To(BeNil())
+
+	err = DynamicKubeClient.Resource(GVRCustomResourceDefinition).Delete(context.TODO(), "multiclusterobservabilities.observability.open-cluster-management.io", metav1.DeleteOptions{})
+	Expect(err).To(BeNil())
 }

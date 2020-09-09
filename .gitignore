@@ -22,6 +22,7 @@ build-harness-extensions/
 
 test/out
 test/coverage
+test/resources
 test/options.yaml
 test/results/*
 
