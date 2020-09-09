@@ -1,5 +1,6 @@
 FROM golang:1.13 as builder
 
+
 RUN go get github.com/onsi/ginkgo/ginkgo
 RUN go get github.com/onsi/gomega/...
 RUN GO111MODULE=on go get github.com/mikefarah/yq/v3
@@ -7,12 +8,8 @@ RUN GO111MODULE=on go get github.com/mikefarah/yq/v3
 USER root
 
 ENV KUBECONFIG "/opt/.kube/config"
+COPY . ./src/github.com/open-cluster-management/multicloudhub-operator
 
-WORKDIR /usr/src/app
-
-COPY go.mod .
-COPY go.sum .
-
-COPY test ./test
+WORKDIR ./src/github.com/open-cluster-management/multicloudhub-operator
 
 ENTRYPOINT [ "./test/start-tests.sh" ]

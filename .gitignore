@@ -25,6 +25,7 @@ test/coverage
 test/resources
 test/options.yaml
 test/results/*
+vendor/
 
 # override build harness vendoring
 !vbh/.build-harness-vendorized

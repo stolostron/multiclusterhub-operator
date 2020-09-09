@@ -27,6 +27,7 @@ ft-downstream-uninstall:
 		--env sourceNamespace=$(SOURCE_NAMESPACE) \
 		--env name=$(SUBSCRIPTION_NAME) \
 		--env TEST_MODE="uninstall" \
+		--env skipSubscription="true" \
 		--volume ~/.kube/config:/opt/.kube/config \
 		$(REGISTRY)/$(IMG)-tests:$(VERSION)
 
@@ -64,9 +65,11 @@ ft-update:
 		updateVersion="2.1.0";	ginkgo -tags functional -v --slowSpecThreshold=300 test/multiclusterhub_update_test
 
 ## Build the MCH functional test image
-test-image:
+test-image: deps
+	go mod vendor
 	@echo "Building $(REGISTRY)/$(IMG)-tests:$(VERSION)"
 	docker build . -f build/Dockerfile.test -t $(REGISTRY)/$(IMG)-tests:$(VERSION)
+	rm -rf vendor
 
 # Pass downstream bundle image snapshots for beginning version and the desired version to upgrade to 
 # https://quay.io/repository/open-cluster-management/acm-operator-bundle?tab=tags
