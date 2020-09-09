@@ -92,6 +92,10 @@ deps:
 	./cicd-scripts/install-dependencies.sh
 	go mod tidy
 
+## Get logs of MCH Operator
+logs:
+	@oc logs -f $(shell oc get pod -l name=multiclusterhub-operator -o jsonpath="{.items[0].metadata.name}")
+
 ## Update the MultiClusterHub Operator Image
 update-image:
 	operator-sdk build quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION) --go-build-args "-o build/_output/bin/multiclusterhub-operator"

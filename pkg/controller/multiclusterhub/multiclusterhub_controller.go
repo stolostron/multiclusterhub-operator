@@ -186,7 +186,9 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 			// logic fails, don't remove the finalizer so
 			// that we can retry during the next reconciliation.
 			if err := r.finalizeHub(reqLogger, multiClusterHub); err != nil {
-				return reconcile.Result{}, err
+				// Logging err and returning nil to ensure 45 second wait
+				log.Info(fmt.Sprintf("Finalizing: %s", err.Error()))
+				return reconcile.Result{RequeueAfter: resyncPeriod}, nil
 			}
 
 			// Remove hubFinalizer. Once all finalizers have been
@@ -395,6 +397,18 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		return *result, err
 	}
 
+	if !multiClusterHub.Spec.DisableHubSelfManagement {
+		result, err = r.ensureHubIsImported(multiClusterHub)
+		if result != nil {
+			return *result, err
+		}
+	} else {
+		result, err = r.ensureHubIsExported(multiClusterHub)
+		if result != nil {
+			return *result, err
+		}
+	}
+
 	return retQueue, retError
 }
 
@@ -445,6 +459,9 @@ func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1.MultiClusterHub)
 }
 
 func (r *ReconcileMultiClusterHub) finalizeHub(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+	if _, err := r.ensureHubIsExported(m); err != nil {
+		return err
+	}
 	if err := r.cleanupAppSubscriptions(reqLogger, m); err != nil {
 		return err
 	}

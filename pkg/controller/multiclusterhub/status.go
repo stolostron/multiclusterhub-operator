@@ -42,6 +42,15 @@ const (
 	ResumedReason = "MCHResumed"
 	// ReconcileReason is added when the multiclusterhub is actively reconciling
 	ReconcileReason = "MCHReconciling"
+	// HelmReleaseTerminatingReason is added when the multiclusterhub is waiting for the removal
+	// of helm releases
+	HelmReleaseTerminatingReason = "HelmReleaseTerminating"
+	// ManagedClusterTerminatingReason is added when a managed cluster has been deleted and
+	// is waiting to be finalized
+	ManagedClusterTerminatingReason = "ManagedClusterTerminating"
+	// NamespaceTerminatingReason is added when a managed cluster's namespace has been deleted and
+	// is waiting to be finalized
+	NamespaceTerminatingReason = "ManagedClusterNamespaceTerminating"
 )
 
 func getDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
@@ -89,11 +98,21 @@ var unknownStatus = operatorsv1.StatusCondition{
 	Message:            "No conditions available",
 }
 
+// ComponentsAreRunning ...
+func (r *ReconcileMultiClusterHub) ComponentsAreRunning(m *operatorsv1.MultiClusterHub) operatorsv1.HubPhaseType {
+	deployList, _ := r.listDeployments()
+	hrList, _ := r.listHelmReleases()
+	componentStatuses := getComponentStatuses(m, hrList, deployList, nil)
+	delete(componentStatuses, ManagedClusterName)
+	return aggregateStatus(componentStatuses)
+}
+
 // syncHubStatus checks if the status is up-to-date and sync it if necessary
 func (r *ReconcileMultiClusterHub) syncHubStatus(m *operatorsv1.MultiClusterHub, original *operatorsv1.MultiClusterHubStatus) (reconcile.Result, error) {
 	deployList, err := r.listDeployments()
 	hrList, err := r.listHelmReleases()
-	newStatus := calculateStatus(m, deployList, hrList)
+	localCluster, err := r.ensureManagedClusterIsRunning(m)
+	newStatus := calculateStatus(m, deployList, hrList, localCluster)
 	if reflect.DeepEqual(m.Status, original) {
 		log.Info("Status hasn't changed")
 		return reconcile.Result{}, nil
@@ -120,8 +139,8 @@ func (r *ReconcileMultiClusterHub) syncHubStatus(m *operatorsv1.MultiClusterHub,
 	}
 }
 
-func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deployment, allHRs []*subrelv1.HelmRelease) operatorsv1.MultiClusterHubStatus {
-	components := getComponentStatuses(hub, allHRs, allDeps)
+func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deployment, allHRs []*subrelv1.HelmRelease, importClusterStatus []interface{}) operatorsv1.MultiClusterHubStatus {
+	components := getComponentStatuses(hub, allHRs, allDeps, importClusterStatus)
 	status := operatorsv1.MultiClusterHubStatus{
 		CurrentVersion: hub.Status.CurrentVersion,
 		DesiredVersion: version.Version,
@@ -157,7 +176,7 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 }
 
 // getComponentStatuses populates a complete list of the hub component statuses
-func getComponentStatuses(hub *operatorsv1.MultiClusterHub, hrList []*subrelv1.HelmRelease, dList []*appsv1.Deployment) map[string]operatorsv1.StatusCondition {
+func getComponentStatuses(hub *operatorsv1.MultiClusterHub, hrList []*subrelv1.HelmRelease, dList []*appsv1.Deployment, importClusterStatus []interface{}) map[string]operatorsv1.StatusCondition {
 	components := newComponentList(hub)
 
 	for _, hr := range hrList {
@@ -171,6 +190,10 @@ func getComponentStatuses(hub *operatorsv1.MultiClusterHub, hrList []*subrelv1.H
 		if _, ok := components[d.Name]; ok {
 			components[d.Name] = mapDeployment(d)
 		}
+	}
+
+	if !hub.Spec.DisableHubSelfManagement {
+		components["local-cluster"] = mapManagedClusterConditions(importClusterStatus)
 	}
 	return components
 }
@@ -240,6 +263,47 @@ func mapDeployment(ds *appsv1.Deployment) operatorsv1.StatusCondition {
 	return ret
 }
 
+func mapManagedClusterConditions(conditions []interface{}) operatorsv1.StatusCondition {
+	if len(conditions) < 1 {
+		return unknownStatus
+	}
+	accepted, joined, available := false, false, false
+	latestCondition := make(map[string]interface{})
+	for _, condition := range conditions {
+		statusCondition := condition.(map[string]interface{})
+		latestCondition = statusCondition
+		switch statusCondition["type"] {
+		case "HubAcceptedManagedCluster":
+			accepted = true
+		case "ManagedClusterJoined":
+			joined = true
+		case "ManagedClusterConditionAvailable":
+			available = true
+		}
+	}
+
+	if !accepted || !joined || !available {
+		log.Info("Waiting for managedcluster to be available")
+		return operatorsv1.StatusCondition{
+			Type:               latestCondition["type"].(string),
+			Status:             metav1.ConditionStatus(latestCondition["status"].(string)),
+			LastUpdateTime:     metav1.Now(),
+			LastTransitionTime: metav1.Now(),
+			Reason:             latestCondition["reason"].(string),
+			Message:            latestCondition["message"].(string),
+		}
+	}
+
+	return operatorsv1.StatusCondition{
+		Type:               "ManagedClusterImportSuccess",
+		Status:             metav1.ConditionTrue,
+		LastUpdateTime:     metav1.Now(),
+		LastTransitionTime: metav1.Now(),
+		Reason:             "ManagedClusterImported",
+		Message:            "ManagedCluster is accepted, joined, and available",
+	}
+}
+
 func successfulHelmRelease(hr *subrelv1.HelmRelease) bool {
 	latest := latestHelmReleaseCondition(hr.Status.Conditions)
 	return latest.Type == subrelv1.ConditionDeployed && latest.Status == subrelv1.StatusTrue
@@ -286,7 +350,7 @@ func mapHelmRelease(hr *subrelv1.HelmRelease) operatorsv1.StatusCondition {
 }
 
 func successfulComponent(sc operatorsv1.StatusCondition) bool {
-	return (sc.Status == metav1.ConditionTrue) && (sc.Type == "Available" || sc.Type == "Deployed" || sc.Type == "DeployedRelease")
+	return (sc.Status == metav1.ConditionTrue) && (sc.Type == "Available" || sc.Type == "Deployed" || sc.Type == "DeployedRelease" || sc.Type == "ManagedClusterImportSuccess")
 }
 
 func aggregateStatus(components map[string]operatorsv1.StatusCondition) operatorsv1.HubPhaseType {
