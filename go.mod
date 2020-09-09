@@ -7,6 +7,7 @@ require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/semver/v3 v3.1.0
 	github.com/fatih/structs v1.1.0
+	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-logr/logr v0.1.0
 	github.com/onsi/ginkgo v1.12.0
 	github.com/onsi/gomega v1.9.0
@@ -16,6 +17,7 @@ require (
 	github.com/openshift/api v3.9.1-0.20190424152011-77b8897ec79a+incompatible
 	github.com/operator-framework/operator-sdk v0.18.0
 	github.com/spf13/pflag v1.0.5
+	gopkg.in/yaml.v2 v2.3.0
 	k8s.io/api v0.18.3
 	k8s.io/apiextensions-apiserver v0.18.3
 	k8s.io/apimachinery v0.18.3
