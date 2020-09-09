@@ -9,6 +9,11 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
+// getMCHImageRepository...
+func getMCHImageRepository() string {
+	return os.Getenv("mchImageRepository")
+}
+
 // NewMultiClusterHub ...
 func NewMultiClusterHub(name, namespace, imageOverridesConfigmapName string) *unstructured.Unstructured {
 
@@ -17,10 +22,18 @@ func NewMultiClusterHub(name, namespace, imageOverridesConfigmapName string) *un
 		"namespace": namespace,
 	}
 
+	annotations := map[string]interface{}{}
+
 	if imageOverridesConfigmapName != "" {
-		metadata["annotations"] = map[string]interface{}{
-			"mch-imageOverridesCM": imageOverridesConfigmapName,
-		}
+		annotations["mch-imageOverridesCM"] = imageOverridesConfigmapName
+	}
+
+	if getMCHImageRepository() != "" {
+		annotations["mch-imageRepository"] = getMCHImageRepository()
+	}
+
+	if len(annotations) > 0 {
+		metadata["annotations"] = annotations
 	}
 
 	mch := &unstructured.Unstructured{
