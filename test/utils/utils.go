@@ -3,11 +3,15 @@
 package utils
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
+	"os/exec"
 	"os/user"
+	"path"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -170,6 +174,11 @@ func GetWaitInMinutes() int {
 		return WaitInMinutesDefault
 	}
 	return waitInMinutesAsInt
+}
+
+func runCleanUpScript() bool {
+	runCleanUpScript, _ := strconv.ParseBool(os.Getenv("runCleanUpScript"))
+	return runCleanUpScript
 }
 
 // CreateNewUnstructured creates resources by using gvr & obj, will get object after create.
@@ -492,6 +501,28 @@ func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 		return nil
 	}, GetWaitInMinutes()*60, 1).Should(BeNil())
 
+	if runCleanUpScript() {
+		By("- Running documented clean up script")
+		workingDir, err := os.Getwd()
+		if err != nil {
+			log.Fatalf("failed to get working dir %v", err)
+		}
+		cleanupPath := path.Join(path.Dir(workingDir), "clean-up.sh")
+		err = os.Setenv("ACM_NAMESPACE", MCHNamespace)
+		if err != nil {
+			log.Fatal(err)
+		}
+		out, err := exec.Command("/bin/sh", cleanupPath).Output()
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = os.Unsetenv("ACM_NAMESPACE")
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Println(fmt.Sprintf("Resources cleaned up by clean-up script:\n %s\n", bytes.NewBuffer(out).String()))
+
+	}
 	return nil
 }
 
