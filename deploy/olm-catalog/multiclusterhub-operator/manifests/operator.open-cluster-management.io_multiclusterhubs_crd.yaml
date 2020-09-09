@@ -43,6 +43,9 @@ spec:
             customCAConfigmap:
               description: Configuration options for custom CA
               type: string
+            disableHubSelfManagement:
+              description: Disable import of hub as managed cluster
+              type: boolean
             hive:
               description: Spec of hive
               properties:

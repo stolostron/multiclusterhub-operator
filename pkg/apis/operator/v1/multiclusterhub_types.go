@@ -56,6 +56,10 @@ type MultiClusterHubSpec struct {
 	// Configuration options for custom CA
 	// +optional
 	CustomCAConfigmap string `json:"customCAConfigmap,omitempty"`
+
+	// Disable import of hub as managed cluster
+	// +optional
+	DisableHubSelfManagement bool `json:"disableHubSelfManagement,omitempty"`
 }
 
 // Overrides provides developer overrides for MCH installation
