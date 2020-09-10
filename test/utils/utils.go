@@ -1,10 +1,12 @@
 // Copyright (c) 2020 Red Hat, Inc.
+
 package utils
 
 import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -15,11 +17,13 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/ghodss/yaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -40,6 +44,20 @@ var (
 
 	// ImageOverridesCMBadImageName...
 	ImageOverridesCMBadImageName = "bad-image-ref"
+
+	// GVRCustomResourceDefinition ...
+	GVRCustomResourceDefinition = schema.GroupVersionResource{
+		Group:    "apiextensions.k8s.io",
+		Version:  "v1beta1",
+		Resource: "customresourcedefinitions",
+	}
+
+	// GVRObservability ...
+	GVRObservability = schema.GroupVersionResource{
+		Group:    "observability.open-cluster-management.io",
+		Version:  "v1beta1",
+		Resource: "multiclusterobservabilities",
+	}
 
 	// GVRMultiClusterHub ...
 	GVRMultiClusterHub = schema.GroupVersionResource{
@@ -943,4 +961,69 @@ func GetCurrentVersionFromMCH() (string, error) {
 		return "", fmt.Errorf("MultiClusterHub: %s status has no 'currentVersion' field", mch.GetName())
 	}
 	return version.(string), nil
+}
+
+func CreateObservabilityCRD() {
+	By("- Creating Observability CRD if it does not exist")
+	_, err := DynamicKubeClient.Resource(GVRCustomResourceDefinition).Get(context.TODO(), "multiclusterobservabilities.observability.open-cluster-management.io", metav1.GetOptions{})
+	if err == nil {
+		return
+	}
+
+	crd, err := ioutil.ReadFile("../resources/observability-crd.yaml")
+	Expect(err).To(BeNil())
+
+	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
+	err = yaml.Unmarshal(crd, &unstructuredCRD.Object)
+	Expect(err).To(BeNil())
+
+	_, err = DynamicKubeClient.Resource(GVRCustomResourceDefinition).Create(context.TODO(), unstructuredCRD, metav1.CreateOptions{})
+	Expect(err).To(BeNil())
+}
+
+func CreateObservabilityCR() {
+	By("- Creating Observability CR if it does not exist")
+
+	_, err := DynamicKubeClient.Resource(GVRObservability).Get(context.TODO(), "observability", metav1.GetOptions{})
+	if err == nil {
+		return
+	}
+
+	crd, err := ioutil.ReadFile("../resources/observability-cr.yaml")
+	Expect(err).To(BeNil())
+
+	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
+	err = yaml.Unmarshal(crd, &unstructuredCRD.Object)
+	Expect(err).To(BeNil())
+
+	_, err = DynamicKubeClient.Resource(GVRObservability).Create(context.TODO(), unstructuredCRD, metav1.CreateOptions{})
+	Expect(err).To(BeNil())
+}
+
+func DeleteObservabilityCR() {
+	By("- Deleting Observability CR if it exists")
+
+	crd, err := ioutil.ReadFile("../resources/observability-cr.yaml")
+	Expect(err).To(BeNil())
+
+	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
+	err = yaml.Unmarshal(crd, &unstructuredCRD.Object)
+	Expect(err).To(BeNil())
+
+	err = DynamicKubeClient.Resource(GVRObservability).Delete(context.TODO(), "observability", metav1.DeleteOptions{})
+	Expect(err).To(BeNil())
+}
+
+func DeleteObservabilityCRD() {
+	By("- Deleting Observability CRD if it exists")
+
+	crd, err := ioutil.ReadFile("../resources/observability-crd.yaml")
+	Expect(err).To(BeNil())
+
+	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
+	err = yaml.Unmarshal(crd, &unstructuredCRD.Object)
+	Expect(err).To(BeNil())
+
+	err = DynamicKubeClient.Resource(GVRCustomResourceDefinition).Delete(context.TODO(), "multiclusterobservabilities.observability.open-cluster-management.io", metav1.DeleteOptions{})
+	Expect(err).To(BeNil())
 }
