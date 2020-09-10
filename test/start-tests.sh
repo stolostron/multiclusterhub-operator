@@ -12,6 +12,8 @@ fi
 
 echo ""
 
+export GO111MODULE=off
+
 if [[ "$TEST_MODE" == "install" ]]; then
     echo "Beginning Install Tests ..."
     echo ""

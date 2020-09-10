@@ -101,7 +101,7 @@ func getKlusterletAddonConfig() *unstructured.Unstructured {
 }
 
 func (r *ReconcileMultiClusterHub) ensureHubIsImported(m *operatorsv1.MultiClusterHub) (*reconcile.Result, error) {
-	if r.ComponentsAreRunning(m) != operatorsv1.HubRunning {
+	if !r.ComponentsAreRunning(m) {
 		log.Info("Waiting for mch phase to be 'running' before importing hub cluster")
 		return &reconcile.Result{RequeueAfter: resyncPeriod}, nil
 	}
@@ -255,7 +255,7 @@ func (r *ReconcileMultiClusterHub) ensureManagedClusterIsRunning(m *operatorsv1.
 	if m.Spec.DisableHubSelfManagement {
 		return nil, nil
 	}
-	if r.ComponentsAreRunning(m) != operatorsv1.HubRunning {
+	if !r.ComponentsAreRunning(m) {
 		log.Info("Waiting for mch phase to be 'running' before ensuring hub is running")
 		return nil, fmt.Errorf("Waiting for mch phase to be 'running' before ensuring hub is running")
 	}

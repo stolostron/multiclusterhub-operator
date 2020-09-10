@@ -89,6 +89,7 @@ rules:
   - "authorization.k8s.io"
   - "config.openshift.io"
   - "mcm.ibm.com"
+  - "observability.open-cluster-management.io"
   - "operator.open-cluster-management.io"
   - "rbac.authorization.k8s.io"
   resources:
@@ -99,6 +100,7 @@ rules:
   - helmreleases
   - ingresses
   - multiclusterhubs
+  - multiclusterobservabilities
   - namespaces
   - rolebindings
   - servicemonitors

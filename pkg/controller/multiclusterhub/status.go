@@ -96,23 +96,26 @@ var unknownStatus = operatorsv1.StatusCondition{
 	LastTransitionTime: metav1.Now(),
 	Reason:             "No conditions available",
 	Message:            "No conditions available",
+	Available:          false,
 }
 
 // ComponentsAreRunning ...
-func (r *ReconcileMultiClusterHub) ComponentsAreRunning(m *operatorsv1.MultiClusterHub) operatorsv1.HubPhaseType {
+func (r *ReconcileMultiClusterHub) ComponentsAreRunning(m *operatorsv1.MultiClusterHub) bool {
 	deployList, _ := r.listDeployments()
 	hrList, _ := r.listHelmReleases()
 	componentStatuses := getComponentStatuses(m, hrList, deployList, nil)
 	delete(componentStatuses, ManagedClusterName)
-	return aggregateStatus(componentStatuses)
+	if aggregateStatus(componentStatuses) == operatorsv1.HubRunning {
+		return true
+	} else {
+		return false
+	}
 }
 
 // syncHubStatus checks if the status is up-to-date and sync it if necessary
-func (r *ReconcileMultiClusterHub) syncHubStatus(m *operatorsv1.MultiClusterHub, original *operatorsv1.MultiClusterHubStatus) (reconcile.Result, error) {
-	deployList, err := r.listDeployments()
-	hrList, err := r.listHelmReleases()
+func (r *ReconcileMultiClusterHub) syncHubStatus(m *operatorsv1.MultiClusterHub, original *operatorsv1.MultiClusterHubStatus, allDeps []*appsv1.Deployment, allHRs []*subrelv1.HelmRelease) (reconcile.Result, error) {
 	localCluster, err := r.ensureManagedClusterIsRunning(m)
-	newStatus := calculateStatus(m, deployList, hrList, localCluster)
+	newStatus := calculateStatus(m, allDeps, allHRs, localCluster)
 	if reflect.DeepEqual(m.Status, original) {
 		log.Info("Status hasn't changed")
 		return reconcile.Result{}, nil
@@ -151,7 +154,6 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 	// Copy conditions one by one so we won't mutate the original object.
 	conditions := hub.Status.HubConditions
 	for i := range conditions {
-		log.Info("Conditions exist", "name", conditions[i].Type)
 		status.HubConditions = append(status.HubConditions, conditions[i])
 	}
 
@@ -176,17 +178,29 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 }
 
 // getComponentStatuses populates a complete list of the hub component statuses
-func getComponentStatuses(hub *operatorsv1.MultiClusterHub, hrList []*subrelv1.HelmRelease, dList []*appsv1.Deployment, importClusterStatus []interface{}) map[string]operatorsv1.StatusCondition {
+func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allHRs []*subrelv1.HelmRelease, allDeps []*appsv1.Deployment, importClusterStatus []interface{}) map[string]operatorsv1.StatusCondition {
 	components := newComponentList(hub)
 
-	for _, hr := range hrList {
+	for _, hr := range allHRs {
 		owner := hr.OwnerReferences[0].Name
 		if _, ok := components[owner]; ok {
 			components[owner] = mapHelmRelease(hr)
+
+			// If helmrelease is labeled successful, check its deployments for readiness
+			if successfulHelmRelease(hr) {
+				hrDeployments := filterDeploymentsByRelease(allDeps, hr.Name)
+				for _, d := range hrDeployments {
+					// Set status reported to first unready deployment
+					if !successfulDeploy(d) {
+						components[owner] = mapDeployment(d)
+						break
+					}
+				}
+			}
 		}
 	}
 
-	for _, d := range dList {
+	for _, d := range allDeps {
 		if _, ok := components[d.Name]; ok {
 			components[d.Name] = mapDeployment(d)
 		}
@@ -198,35 +212,19 @@ func getComponentStatuses(hub *operatorsv1.MultiClusterHub, hrList []*subrelv1.H
 	return components
 }
 
-func (r *ReconcileMultiClusterHub) listDeployments() ([]*appsv1.Deployment, error) {
-	deployList := &appsv1.DeploymentList{}
-	err := r.client.List(context.TODO(), deployList)
-	if err != nil && !errors.IsNotFound(err) {
-		return nil, err
-	}
-	var ret []*appsv1.Deployment
-	for i := 0; i < len(deployList.Items); i++ {
-		ret = append(ret, &deployList.Items[i])
-	}
-	return ret, nil
-}
-
-func (r *ReconcileMultiClusterHub) listHelmReleases() ([]*subrelv1.HelmRelease, error) {
-	hrList := &subrelv1.HelmReleaseList{}
-	err := r.client.List(context.TODO(), hrList)
-	if err != nil && !errors.IsNotFound(err) {
-		return nil, err
-	}
-	var ret []*subrelv1.HelmRelease
-	for i := 0; i < len(hrList.Items); i++ {
-		ret = append(ret, &hrList.Items[i])
-	}
-	return ret, nil
-}
-
 func successfulDeploy(d *appsv1.Deployment) bool {
-	latest := latestDeployCondition(d.Status.Conditions)
-	return latest.Type == appsv1.DeploymentAvailable && latest.Status == corev1.ConditionTrue
+	for _, c := range d.Status.Conditions {
+		if c.Type == appsv1.DeploymentAvailable && c.Status == corev1.ConditionFalse {
+			return false
+		}
+	}
+
+	if d.Status.UnavailableReplicas > 0 {
+		return false
+	}
+
+	return true
+	// latest := latestDeployCondition(d.Status.Conditions)
 }
 
 func latestDeployCondition(conditions []appsv1.DeploymentCondition) appsv1.DeploymentCondition {
@@ -242,6 +240,16 @@ func latestDeployCondition(conditions []appsv1.DeploymentCondition) appsv1.Deplo
 	return latest
 }
 
+func progressingDeployCondition(conditions []appsv1.DeploymentCondition) appsv1.DeploymentCondition {
+	progressing := appsv1.DeploymentCondition{}
+	for i := range conditions {
+		if conditions[i].Type == appsv1.DeploymentProgressing {
+			progressing = conditions[i]
+		}
+	}
+	return progressing
+}
+
 func mapDeployment(ds *appsv1.Deployment) operatorsv1.StatusCondition {
 	if len(ds.Status.Conditions) < 1 {
 		return unknownStatus
@@ -249,6 +257,7 @@ func mapDeployment(ds *appsv1.Deployment) operatorsv1.StatusCondition {
 
 	dcs := latestDeployCondition(ds.Status.Conditions)
 	ret := operatorsv1.StatusCondition{
+		Kind:               "Deployment",
 		Type:               string(dcs.Type),
 		Status:             metav1.ConditionStatus(string(dcs.Status)),
 		LastUpdateTime:     dcs.LastUpdateTime,
@@ -257,7 +266,24 @@ func mapDeployment(ds *appsv1.Deployment) operatorsv1.StatusCondition {
 		Message:            dcs.Message,
 	}
 	if successfulDeploy(ds) {
+		ret.Available = true
 		ret.Message = ""
+	}
+
+	// Because our definition of success is different than the deployment's it is possible we indicate failure
+	// despite an available deployment present. To avoid confusion we should show a different status.
+	if dcs.Type == appsv1.DeploymentAvailable && dcs.Status == corev1.ConditionTrue && ret.Available == false {
+		sub := progressingDeployCondition(ds.Status.Conditions)
+		ret = operatorsv1.StatusCondition{
+			Kind:               "Deployment",
+			Type:               string(sub.Type),
+			Status:             metav1.ConditionStatus(string(sub.Status)),
+			LastUpdateTime:     sub.LastUpdateTime,
+			LastTransitionTime: sub.LastTransitionTime,
+			Reason:             sub.Reason,
+			Message:            sub.Message,
+			Available:          false,
+		}
 	}
 
 	return ret
@@ -285,27 +311,36 @@ func mapManagedClusterConditions(conditions []interface{}) operatorsv1.StatusCon
 	if !accepted || !joined || !available {
 		log.Info("Waiting for managedcluster to be available")
 		return operatorsv1.StatusCondition{
+			Kind:               "ManagedCluster",
 			Type:               latestCondition["type"].(string),
 			Status:             metav1.ConditionStatus(latestCondition["status"].(string)),
 			LastUpdateTime:     metav1.Now(),
 			LastTransitionTime: metav1.Now(),
 			Reason:             latestCondition["reason"].(string),
 			Message:            latestCondition["message"].(string),
+			Available:          false,
 		}
 	}
 
 	return operatorsv1.StatusCondition{
+		Kind:               "ManagedCluster",
 		Type:               "ManagedClusterImportSuccess",
 		Status:             metav1.ConditionTrue,
 		LastUpdateTime:     metav1.Now(),
 		LastTransitionTime: metav1.Now(),
 		Reason:             "ManagedClusterImported",
 		Message:            "ManagedCluster is accepted, joined, and available",
+		Available:          true,
 	}
 }
 
 func successfulHelmRelease(hr *subrelv1.HelmRelease) bool {
 	latest := latestHelmReleaseCondition(hr.Status.Conditions)
+
+	// Sometimes helmrelease not properly labeled as deployed
+	if latest.Type == subrelv1.ConditionInitialized && hr.Status.DeployedRelease != nil {
+		return true
+	}
 	return latest.Type == subrelv1.ConditionDeployed && latest.Status == subrelv1.StatusTrue
 }
 
@@ -329,6 +364,7 @@ func mapHelmRelease(hr *subrelv1.HelmRelease) operatorsv1.StatusCondition {
 
 	condition := latestHelmReleaseCondition(hr.Status.Conditions)
 	ret := operatorsv1.StatusCondition{
+		Kind:               "HelmRelease",
 		Type:               string(condition.Type),
 		Status:             metav1.ConditionStatus(condition.Status),
 		LastUpdateTime:     metav1.Now(),
@@ -342,32 +378,23 @@ func mapHelmRelease(hr *subrelv1.HelmRelease) operatorsv1.StatusCondition {
 	}
 
 	// Ignore success messages
-	if !isErrorType(ret.Type) {
+	if successfulHelmRelease(hr) {
+		ret.Available = true
 		ret.Message = ""
 	}
 
 	return ret
 }
 
-func successfulComponent(sc operatorsv1.StatusCondition) bool {
-	return (sc.Status == metav1.ConditionTrue) && (sc.Type == "Available" || sc.Type == "Deployed" || sc.Type == "DeployedRelease" || sc.Type == "ManagedClusterImportSuccess")
-}
+func successfulComponent(sc operatorsv1.StatusCondition) bool { return sc.Available }
 
 func aggregateStatus(components map[string]operatorsv1.StatusCondition) operatorsv1.HubPhaseType {
-	for k, val := range components {
+	for _, val := range components {
 		if !successfulComponent(val) {
-			log.Info("Waiting on", "name", k)
 			return operatorsv1.HubPending
 		}
 	}
 	return operatorsv1.HubRunning
-}
-
-func isErrorType(cr string) bool {
-	return cr == string(subrelv1.ReasonInstallError) ||
-		cr == string(subrelv1.ReasonUpdateError) ||
-		cr == string(subrelv1.ReasonReconcileError) ||
-		cr == string(subrelv1.ReasonUninstallError)
 }
 
 // NewHubCondition creates a new hub condition.
