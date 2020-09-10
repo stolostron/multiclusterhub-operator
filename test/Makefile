@@ -27,6 +27,7 @@ ft-downstream-uninstall:
 		--env sourceNamespace=$(SOURCE_NAMESPACE) \
 		--env name=$(SUBSCRIPTION_NAME) \
 		--env TEST_MODE="uninstall" \
+		--env skipSubscription="true" \
 		--volume ~/.kube/config:/opt/.kube/config \
 		$(REGISTRY)/$(IMG)-tests:$(VERSION)
 
@@ -49,7 +50,7 @@ ft-install:
 	export skipSubscription="true";	ginkgo -tags functional -v --slowSpecThreshold=150 test/multiclusterhub_install_test
 
 ## Run the uninstall functional tests directly
-ft-uninstall:
+ft-uninstall: observability-resources
 	export skipSubscription="true";	ginkgo -tags functional -v --slowSpecThreshold=100 test/multiclusterhub_uninstall_test
 
 ## Run the update functional tests directly
@@ -64,9 +65,11 @@ ft-update:
 		updateVersion="2.1.0";	ginkgo -tags functional -v --slowSpecThreshold=300 test/multiclusterhub_update_test
 
 ## Build the MCH functional test image
-test-image:
+test-image: deps
+	go mod vendor
 	@echo "Building $(REGISTRY)/$(IMG)-tests:$(VERSION)"
 	docker build . -f build/Dockerfile.test -t $(REGISTRY)/$(IMG)-tests:$(VERSION)
+	rm -rf vendor
 
 # Pass downstream bundle image snapshots for beginning version and the desired version to upgrade to 
 # https://quay.io/repository/open-cluster-management/acm-operator-bundle?tab=tags
@@ -78,3 +81,14 @@ test-update-image:
 acm-index-install: ns secrets og test-update-image
 	# Run `make  test-update-image` to generate a new index if necessary
 	oc apply -k build/index-install/composite
+
+
+## Store Observability resources for tests
+observability-resources:
+	mkdir -p test/resources
+	curl -H "Authorization: token $(shell echo $(GITHUB_TOKEN))" \
+		-H 'Accept: application/vnd.github.v3.raw' \
+		-L https://raw.githubusercontent.com/open-cluster-management/multicluster-monitoring-operator/master/deploy/crds/observability.open-cluster-management.io_v1beta1_multiclusterobservability_cr.yaml -o ./test/resources/observability-cr.yaml
+	curl -H "Authorization: token $(shell echo $(GITHUB_TOKEN))" \
+		-H 'Accept: application/vnd.github.v3.raw' \
+		-L https://raw.githubusercontent.com/open-cluster-management/multicluster-monitoring-operator/master/deploy/olm-catalog/multicluster-observability-operator/manifests/observability.open-cluster-management.io_multiclusterobservabilities_crd.yaml -o ./test/resources/observability-crd.yaml

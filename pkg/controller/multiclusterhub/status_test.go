@@ -3,6 +3,7 @@
 package multiclusterhub
 
 import (
+	"encoding/json"
 	"reflect"
 	"testing"
 	"time"
@@ -14,8 +15,8 @@ import (
 )
 
 func Test_aggregateStatus(t *testing.T) {
-	available := operatorsv1.StatusCondition{Type: "Available", Status: v1.ConditionTrue}
-	deployed := operatorsv1.StatusCondition{Type: "Available", Status: v1.ConditionTrue}
+	available := operatorsv1.StatusCondition{Type: "Available", Status: v1.ConditionTrue, Available: true}
+	deployed := operatorsv1.StatusCondition{Type: "Available", Status: v1.ConditionTrue, Available: true}
 	unavailable := operatorsv1.StatusCondition{Type: "Available", Status: v1.ConditionFalse}
 	type args struct {
 		components map[string]operatorsv1.StatusCondition
@@ -93,6 +94,30 @@ func Test_latestHelmReleaseCondition(t *testing.T) {
 }
 
 func Test_latestDeployCondition(t *testing.T) {
+	b := `[
+		{
+			"lastTransitionTime": "2020-09-02T21:22:22Z",
+			"lastUpdateTime": "2020-09-02T21:22:22Z",
+			"message": "Deployment has minimum availability.",
+			"reason": "MinimumReplicasAvailable",
+			"status": "True",
+			"type": "Available"
+		},
+		{
+			"lastTransitionTime": "2020-09-03T14:23:47Z",
+			"lastUpdateTime": "2020-09-03T14:23:47Z",
+			"message": "ReplicaSet \"kui-web-terminal-78c4bc769\" has timed out progressing.",
+			"reason": "ProgressDeadlineExceeded",
+			"status": "False",
+			"type": "Progressing"
+		}
+	]`
+	var bs []appsv1.DeploymentCondition
+	err := json.Unmarshal([]byte(b), &bs)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
 	first := appsv1.DeploymentCondition{
 		Type:               appsv1.DeploymentProgressing,
 		LastTransitionTime: v1.NewTime(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
@@ -107,22 +132,29 @@ func Test_latestDeployCondition(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want appsv1.DeploymentCondition
+		want appsv1.DeploymentConditionType
 	}{
 		{
 			name: "Deployed after initialized",
 			args: args{
 				conditions: []appsv1.DeploymentCondition{
-					first,
 					second,
+					first,
 				},
 			},
-			want: second,
+			want: appsv1.DeploymentAvailable,
+		},
+		{
+			name: "Progressing after available",
+			args: args{
+				conditions: bs,
+			},
+			want: appsv1.DeploymentProgressing,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := latestDeployCondition(tt.args.conditions); !reflect.DeepEqual(got, tt.want) {
+			if got := latestDeployCondition(tt.args.conditions); got.Type != tt.want {
 				t.Errorf("latestDeployCondition() = %v, want %v", got, tt.want)
 			}
 		})
