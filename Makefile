@@ -66,7 +66,7 @@ install:
 	./common/scripts/tests/install.sh
 
 uninstall-cr:
-	bash common/scripts/clean-up.sh
+	bash ./test/clean-up.sh
 
 ## Fully uninstall the MCH CR and operator
 uninstall: uninstall-cr
@@ -92,6 +92,10 @@ deps:
 	./cicd-scripts/install-dependencies.sh
 	go mod tidy
 
+## Get logs of MCH Operator
+logs:
+	@oc logs -f $(shell oc get pod -l name=multiclusterhub-operator -o jsonpath="{.items[0].metadata.name}")
+
 ## Update the MultiClusterHub Operator Image
 update-image:
 	operator-sdk build quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION) --go-build-args "-o build/_output/bin/multiclusterhub-operator"
@@ -107,7 +111,7 @@ csv:
 
 ## Apply the MultiClusterHub CR
 cr:
-	cat deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml | yq w - "spec.imagePullSecret" "quay-secret" | yq w - "spec.availabilityConfig" "Basic" | oc apply -f -
+	cat deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml | yq w - "spec.imagePullSecret" "quay-secret" | oc apply -f -
 
 ## Apply the default OperatorGroup
 og:

@@ -39,8 +39,29 @@ var _ = Describe("Multiclusterhub", func() {
 			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, false)
 			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).ShouldNot(BeNil())
 			utils.ValidateConditionDuringUninstall()
+
 			Eventually(func() error {
 				err := RemoveFinalizerFromHelmRelease(utils.DynamicKubeClient)
+				if err != nil {
+					return err
+				}
+				return nil
+			}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
+			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
+			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
+		})
+
+		It("SAD CASE: Fail to remove managedcluster (Left behind finalizer)", func() {
+			By("Creating MultiClusterHub")
+			utils.CreateDefaultMCH()
+			utils.ValidateMCH()
+			AddFinalizerToManagedCluster(utils.DynamicKubeClient)
+			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, false)
+			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).ShouldNot(BeNil())
+			utils.ValidateConditionDuringUninstall()
+
+			Eventually(func() error {
+				err := RemoveFinalizerFromManagedCluster(utils.DynamicKubeClient)
 				if err != nil {
 					return err
 				}
@@ -75,6 +96,24 @@ func AddFinalizerToHelmRelease(clientHubDynamic dynamic.Interface) error {
 	return nil
 }
 
+// AddFinalizerToManagedCluster ...
+func AddFinalizerToManagedCluster(clientHubDynamic dynamic.Interface) error {
+	By("Adding a test finalizer to managed cluster")
+
+	mc, err := clientHubDynamic.Resource(utils.GVRManagedCluster).Get(context.TODO(), "local-cluster", metav1.GetOptions{})
+	Expect(err).Should(BeNil())
+
+
+	finalizers := []string{"test-finalizer"}
+
+	mc.SetFinalizers(finalizers)
+	mcU, err := clientHubDynamic.Resource(utils.GVRManagedCluster).Update(context.TODO(), mc, metav1.UpdateOptions{})
+	fmt.Println("mc ",mcU)
+	Expect(err).Should(BeNil())
+
+	return nil
+}
+
 // RemoveFinalizerFromHelmRelease ...
 func RemoveFinalizerFromHelmRelease(clientHubDynamic dynamic.Interface) error {
 	By("Removing test finalizer from helmrelease")
@@ -98,6 +137,24 @@ func RemoveFinalizerFromHelmRelease(clientHubDynamic dynamic.Interface) error {
 	helmRelease.SetFinalizers([]string{})
 
 	_, err = helmReleaseLink.Update(context.TODO(), &helmRelease, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// RemoveFinalizerFromManagedCluster ...
+func RemoveFinalizerFromManagedCluster(clientHubDynamic dynamic.Interface) error {
+	By("Removing test finalizer from managed cluster")
+
+	mc, err := clientHubDynamic.Resource(utils.GVRManagedCluster).Get(context.TODO(), "local-cluster", metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	mc.SetFinalizers([]string{})
+
+	_, err = clientHubDynamic.Resource(utils.GVRManagedCluster).Update(context.TODO(), mc, metav1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
