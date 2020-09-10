@@ -88,7 +88,7 @@ func TestRepeatedDeploy(t *testing.T) {
 	// Change resource and deploy again
 	annotatedSA := newSA()
 	annotatedSA.SetAnnotations(map[string]string{"foo": "bar"})
-	err, new = Deploy(fakeclient, annotatedSA)
+	err = Deploy(fakeclient, annotatedSA)
 	if err != nil {
 		t.Fatalf("failed to deploy service account: %v", err)
 	}
