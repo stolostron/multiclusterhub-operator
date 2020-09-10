@@ -364,23 +364,110 @@ func CreateMCHImageOverridesAnnotation(imageOverridesConfigmapName string) *unst
 	return mch
 }
 
+// GetDeploymentLabels returns the labels on deployment d
+func GetDeploymentLabels(d string) (map[string]string, error) {
+	deploy, err := KubeClient.AppsV1().Deployments(MCHNamespace).Get(context.TODO(), d, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return deploy.GetLabels(), nil
+}
+
 // BrickMCHRepo modifies the multiclusterhub-repo deployment so it becomes unhealthy
 func BrickMCHRepo() error {
+	By("- Breaking mch repo")
 	deploy, err := KubeClient.AppsV1().Deployments(MCHNamespace).Get(context.TODO(), MCHRepoName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 	// Add non-existent nodeSelector so the pod isn't scheduled
 	deploy.Spec.Template.Spec.NodeSelector = map[string]string{"schedule": "never"}
-	deploy.Spec.Strategy = appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
 
 	_, err = KubeClient.AppsV1().Deployments(MCHNamespace).Update(context.TODO(), deploy, metav1.UpdateOptions{})
-	return err
+	if err != nil {
+		return err
+	}
+
+	if err = waitForUnavailable(MCHRepoName, time.Duration(GetWaitInMinutes())*time.Minute); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // FixMCHRepo deletes the multiclusterhub-repo deployment so it can be recreated by the installer
 func FixMCHRepo() error {
+	By("- Repairing mch-repo")
 	return KubeClient.AppsV1().Deployments(MCHNamespace).Delete(context.TODO(), MCHRepoName, metav1.DeleteOptions{})
+}
+
+// BrickKUI modifies the multiclusterhub-repo deployment so it becomes unhealthy
+func BrickKUI() (string, error) {
+	By("- Breaking kui-web-terminal")
+	oldImage, err := UpdateDeploymentImage("kui-web-terminal", "bad-image")
+	if err != nil {
+		return "", err
+	}
+	err = waitForUnavailable("kui-web-terminal", time.Duration(GetWaitInMinutes())*time.Minute)
+
+	return oldImage, err
+}
+
+// FixKUI deletes the multiclusterhub-repo deployment so it can be recreated by the installer
+func FixKUI(image string) error {
+	By("- Repairing kui-web-terminal")
+	_, err := UpdateDeploymentImage("kui-web-terminal", image)
+	if err != nil {
+		return err
+	}
+	err = waitForAvailable("kui-web-terminal", time.Duration(GetWaitInMinutes())*time.Minute)
+	return err
+}
+
+// UpdateDeploymentImage updates the deployment image
+func UpdateDeploymentImage(dName string, image string) (string, error) {
+	deploy, err := KubeClient.AppsV1().Deployments(MCHNamespace).Get(context.TODO(), dName, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	originalImage := deploy.Spec.Template.Spec.Containers[0].Image
+	deploy.Spec.Template.Spec.Containers[0].Image = image
+
+	_, err = KubeClient.AppsV1().Deployments(MCHNamespace).Update(context.TODO(), deploy, metav1.UpdateOptions{})
+	return originalImage, err
+}
+
+// waitForUnavailable waits for the deployment to go unready, with timeout
+func waitForUnavailable(dName string, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		deploy, err := KubeClient.AppsV1().Deployments(MCHNamespace).Get(context.TODO(), dName, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		if deploy.Status.UnavailableReplicas > 0 {
+			time.Sleep(10 * time.Second)
+			return nil
+		}
+		time.Sleep(2 * time.Second)
+	}
+	return fmt.Errorf("Deploy failed to become unready after %s", timeout)
+}
+
+// waitForAvailable waits for the deployment to be available, with timeout
+func waitForAvailable(dName string, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		deploy, err := KubeClient.AppsV1().Deployments(MCHNamespace).Get(context.TODO(), dName, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		if deploy.Status.UnavailableReplicas == 0 {
+			return nil
+		}
+		time.Sleep(2 * time.Second)
+	}
+	return fmt.Errorf("Repo failed to become unready after %s", timeout)
 }
 
 // GetMCHStatus gets the mch object and parses its status
@@ -408,30 +495,10 @@ func findPhase(status map[string]interface{}, wantPhase string) error {
 	return nil
 }
 
-// waitForRepoUnavailable waits for the multiclusterhub-repo to go unready, with timeout
-func waitForUnavailableRepo(timeout time.Duration) error {
-	deadline := time.Now().Add(timeout)
-	for time.Now().Before(deadline) {
-		deploy, err := KubeClient.AppsV1().Deployments(MCHNamespace).Get(context.TODO(), MCHRepoName, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		if deploy.Status.ReadyReplicas == 0 {
-			return nil
-		}
-		time.Sleep(2 * time.Second)
-	}
-	return fmt.Errorf("Repo failed to become unready after %s", timeout)
-}
-
 // ValidateMCHDegraded validates the install operator responds appropriately when the install components
 // go into a degraded state after a successful install
 func ValidateMCHDegraded() error {
-	By("Validating MultiClusterHub Degraded")
-	By("- Wait for degraded deployment")
-	if err := waitForUnavailableRepo(time.Duration(45) * time.Second); err != nil {
-		return err
-	}
+	By("- Validating MultiClusterHub Degraded")
 
 	status, err := GetMCHStatus()
 	if err != nil {
@@ -688,6 +755,16 @@ func ValidateMCH() error {
 		_, err = KubeClient.CoreV1().ConfigMaps(MCHNamespace).Get(context.TODO(), fmt.Sprintf("mch-image-manifest-%s", currentVersion), metav1.GetOptions{})
 		Expect(err).Should(BeNil())
 	}
+
+	By("- Checking for Installer Labels on Deployments")
+	l, err := GetDeploymentLabels("kui-web-terminal")
+	if err != nil {
+		return err
+	}
+	if l["installer.name"] != MCHName || l["installer.namespace"] != MCHNamespace {
+		return fmt.Errorf("kui-web-terminal missing installer labels: `%s` != `%s`, `%s` != `%s`", l["installer.name"], MCHName, l["installer.namespace"], MCHNamespace)
+	}
+
 	return nil
 }
 

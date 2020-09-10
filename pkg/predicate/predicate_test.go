@@ -12,11 +12,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
-func TestDeletePredicate(t *testing.T) {
-	pod := &corev1.Pod{
+var (
+	pod = &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "biz", Name: "baz"},
 	}
-	labeledPod := &corev1.Pod{
+	labeledPod = &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "biz",
 			Name:      "baz",
@@ -26,61 +26,68 @@ func TestDeletePredicate(t *testing.T) {
 			},
 		},
 	}
+	createEvent = func(p *corev1.Pod) event.CreateEvent {
+		return event.CreateEvent{
+			Object: p,
+			Meta:   p.GetObjectMeta(),
+		}
+	}
+	updateEvent = func(p *corev1.Pod) event.UpdateEvent {
+		return event.UpdateEvent{
+			ObjectOld: p,
+			MetaOld:   p.GetObjectMeta(),
+			ObjectNew: p,
+			MetaNew:   p.GetObjectMeta(),
+		}
+	}
+	deleteEvent = func(p *corev1.Pod) event.DeleteEvent {
+		return event.DeleteEvent{
+			Object: p,
+			Meta:   p.GetObjectMeta(),
+		}
+	}
+	genericEvent = func(p *corev1.Pod) event.GenericEvent {
+		return event.GenericEvent{
+			Object: p,
+			Meta:   p.GetObjectMeta(),
+		}
+	}
+)
+
+func TestDeletePredicate(t *testing.T) {
 	pred := DeletePredicate{}
 
 	t.Run("Create event", func(t *testing.T) {
-		e := event.CreateEvent{
-			Object: labeledPod,
-			Meta:   labeledPod.GetObjectMeta(),
-		}
 		want := false
-		if got := pred.Create(e); got != want {
-			t.Errorf("DeletePredicate.Update() = %v, want %v", got, want)
+		if got := pred.Create(createEvent(labeledPod)); got != want {
+			t.Errorf("DeletePredicate.Create() = %v, want %v", got, want)
 		}
 	})
 
 	t.Run("Update event", func(t *testing.T) {
-		e := event.UpdateEvent{
-			ObjectOld: labeledPod,
-			MetaOld:   labeledPod.GetObjectMeta(),
-			ObjectNew: labeledPod,
-			MetaNew:   labeledPod.GetObjectMeta(),
-		}
 		want := false
-		if got := pred.Update(e); got != want {
+		if got := pred.Update(updateEvent(labeledPod)); got != want {
 			t.Errorf("DeletePredicate.Update() = %v, want %v", got, want)
 		}
 	})
 
 	t.Run("Generic event", func(t *testing.T) {
-		e := event.GenericEvent{
-			Object: labeledPod,
-			Meta:   labeledPod.GetObjectMeta(),
-		}
 		want := false
-		if got := pred.Generic(e); got != want {
-			t.Errorf("DeletePredicate.Update() = %v, want %v", got, want)
+		if got := pred.Generic(genericEvent(labeledPod)); got != want {
+			t.Errorf("DeletePredicate.Generic() = %v, want %v", got, want)
 		}
 	})
 
 	t.Run("Delete without labels", func(t *testing.T) {
-		e := event.DeleteEvent{
-			Object: pod,
-			Meta:   pod.GetObjectMeta(),
-		}
 		want := false
-		if got := pred.Delete(e); got != want {
+		if got := pred.Delete(deleteEvent(pod)); got != want {
 			t.Errorf("DeletePredicate.Delete() = %v, want %v", got, want)
 		}
 	})
 
 	t.Run("Delete with labels", func(t *testing.T) {
-		e := event.DeleteEvent{
-			Object: labeledPod,
-			Meta:   labeledPod.GetObjectMeta(),
-		}
 		want := true
-		if got := pred.Delete(e); got != want {
+		if got := pred.Delete(deleteEvent(labeledPod)); got != want {
 			t.Errorf("DeletePredicate.Delete() = %v, want %v", got, want)
 		}
 	})
@@ -129,6 +136,63 @@ func TestGenerationChangedPredicate(t *testing.T) {
 		want := true
 		if got := pred.Update(e); got != want {
 			t.Errorf("GenerationChangedPredicate.Update() = %v, want %v", got, want)
+		}
+	})
+}
+
+func TestInstallerLabelPredicate(t *testing.T) {
+	pred := InstallerLabelPredicate{}
+
+	t.Run("Create event", func(t *testing.T) {
+		want := false
+		if got := pred.Create(createEvent(pod)); got != want {
+			t.Errorf("TestInstallerLabelPredicate.Create() = %v, want %v", got, want)
+		}
+	})
+	t.Run("Create event with labels", func(t *testing.T) {
+		want := true
+		if got := pred.Create(createEvent(labeledPod)); got != want {
+			t.Errorf("TestInstallerLabelPredicate.Create() = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("Update event", func(t *testing.T) {
+		want := false
+		if got := pred.Update(updateEvent(pod)); got != want {
+			t.Errorf("TestInstallerLabelPredicate.Update() = %v, want %v", got, want)
+		}
+	})
+	t.Run("Update event with labels", func(t *testing.T) {
+		want := true
+		if got := pred.Update(updateEvent(labeledPod)); got != want {
+			t.Errorf("TestInstallerLabelPredicate.Update() = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("Generic event", func(t *testing.T) {
+		want := false
+		if got := pred.Generic(genericEvent(pod)); got != want {
+			t.Errorf("TestInstallerLabelPredicate.Generic() = %v, want %v", got, want)
+		}
+	})
+	t.Run("Generic event with labels", func(t *testing.T) {
+		want := true
+		if got := pred.Generic(genericEvent(labeledPod)); got != want {
+			t.Errorf("TestInstallerLabelPredicate.Generic() = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("Delete without labels", func(t *testing.T) {
+		want := false
+		if got := pred.Delete(deleteEvent(pod)); got != want {
+			t.Errorf("TestInstallerLabelPredicate.Delete() = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("Delete with labels", func(t *testing.T) {
+		want := true
+		if got := pred.Delete(deleteEvent(labeledPod)); got != want {
+			t.Errorf("TestInstallerLabelPredicate.Delete() = %v, want %v", got, want)
 		}
 	})
 }
