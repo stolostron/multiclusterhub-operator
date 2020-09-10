@@ -4,7 +4,7 @@ package deploying
 
 import (
 	"context"
-	"crypto/sha1"
+	"crypto/sha1" // #nosec G505 (not using sha for private encryption)
 	"encoding/hex"
 
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
@@ -87,8 +87,11 @@ func hash(u *unstructured.Unstructured) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	h := sha1.New()
-	h.Write(spec)
+	h := sha1.New() // #nosec G505 (not using sha for private encryption)
+	_, err = h.Write(spec)
+	if err != nil {
+		return "", err
+	}
 	bs := h.Sum(nil)
 	return hex.EncodeToString(bs), nil
 }
