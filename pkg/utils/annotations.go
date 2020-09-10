@@ -15,6 +15,8 @@ var (
 	AnnotationImageRepo = "mch-imageRepository"
 	// AnnotationSuffix sits in multiclusterhub annotations to identify a custom image tag suffix to use
 	AnnotationSuffix = "mch-imageTagSuffix"
+	// AnnotationConfiguration sits in a resource's annotations to identify the configuration last used to create it
+	AnnotationConfiguration = "installer.open-cluster-management.io/last-applied-configuration"
 )
 
 // IsPaused returns true if the multiclusterhub instance is labeled as paused, and false otherwise
