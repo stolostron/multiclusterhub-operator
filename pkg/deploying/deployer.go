@@ -120,10 +120,9 @@ func shasMatch(found, want *unstructured.Unstructured) bool {
 	}
 
 	if existing := found.GetAnnotations()[hashAnnotation]; existing != hx {
-		log.Info("Hashes don't match. Update needed.", "Existing sha", existing, "New sha", hx)
+		log.Info("Hashes don't match. Update needed.", "Name", want.GetName(), "Existing sha", existing, "New sha", hx)
 		return false
 	} else {
-		log.Info("Hashes match.")
 		return true
 	}
 }
