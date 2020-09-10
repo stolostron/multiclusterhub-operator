@@ -91,9 +91,38 @@ func TestRepeatedDeploy(t *testing.T) {
 	if err != nil {
 		t.Errorf("failed to find service account %v", err)
 	}
-	if expected.GetAnnotations()[utils.AnnotationConfiguration] == "" {
+	firstHash := expected.GetAnnotations()[utils.AnnotationConfiguration]
+	if firstHash == "" {
 		t.Errorf("service account has no sha annotation")
 	}
+
+	// Change resource and deploy again
+	annotatedSA := newSA()
+	annotatedSA.SetAnnotations(map[string]string{"foo": "bar"})
+	err, new = Deploy(fakeclient, annotatedSA)
+	if err != nil {
+		t.Fatalf("failed to deploy service account: %v", err)
+	}
+
+	expected2 := &unstructured.Unstructured{}
+	expected2.SetGroupVersionKind(schema.GroupVersionKind{
+		Kind:    "ServiceAccount",
+		Version: "v1",
+	})
+
+	err = fakeclient.Get(context.TODO(), types.NamespacedName{Name: "test", Namespace: "test"}, expected2)
+	if err != nil {
+		t.Errorf("failed to find service account %v", err)
+	}
+	secondHash := expected2.GetAnnotations()[utils.AnnotationConfiguration]
+	if secondHash == firstHash {
+		t.Errorf("Hash should not match; %s == %s", firstHash, secondHash)
+	}
+
+	if expected2.GetAnnotations()["foo"] != "bar" {
+		t.Errorf("Annotation no longer present: got %s, wanted %s", expected2.GetAnnotations()["foo"], "bar")
+	}
+
 }
 
 func newDeployment(name, namespace string, replicas int32) *appsv1.Deployment {
