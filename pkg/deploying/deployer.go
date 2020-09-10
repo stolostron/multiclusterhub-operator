@@ -87,7 +87,7 @@ func hash(u *unstructured.Unstructured) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	h := sha1.New() // #nosec G505 (not using sha for private encryption)
+	h := sha1.New() // #nosec G401 (not using sha for private encryption)
 	_, err = h.Write(spec)
 	if err != nil {
 		return "", err
