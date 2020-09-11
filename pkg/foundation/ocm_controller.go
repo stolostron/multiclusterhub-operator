@@ -56,6 +56,7 @@ func OCMControllerDeployment(m *operatorsv1.MultiClusterHub, overrides map[strin
 						Args: []string{
 							"/controller",
 							"--agent-cafile=/var/run/klusterlet/ca.crt",
+							"--enable-inventory=false",
 						},
 						LivenessProbe: &v1.Probe{
 							Handler: v1.Handler{
