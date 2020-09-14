@@ -54,7 +54,7 @@ kubectl annotate mch <mch-name> mch-imageOverridesCM- --overwrite # Remove annot
 kubectl delete configmap <my-config> # Delete configmap
 ```
 
-If editing the configmap directly instead of creating/deleting it each time, an operator reconcile may be necessary in order to get the changes to take effect. This can be done by cycling the MCH Operator pod - 
+If editing the configmap directly instead of creating/deleting it each time, an operator reconcile may be necessary in order to get the changes to take effect. This can be done by cycling the MCH Operator pod
 
 ```
 kubectl delete pod multiclusterhub-operator-xxxxx-xxxxx
