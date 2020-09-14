@@ -56,6 +56,10 @@ type MultiClusterHubSpec struct {
 	// Configuration options for custom CA
 	// +optional
 	CustomCAConfigmap string `json:"customCAConfigmap,omitempty"`
+
+	// Disable import of hub as managed cluster
+	// +optional
+	DisableHubSelfManagement bool `json:"disableHubSelfManagement,omitempty"`
 }
 
 // Overrides provides developer overrides for MCH installation
@@ -215,6 +219,12 @@ type MultiClusterHubStatus struct {
 
 // StatusCondition contains condition information.
 type StatusCondition struct {
+	// The resource kind this condition represents
+	Kind string `json:"-"`
+
+	// Available indicates whether this component is considered properly running
+	Available bool `json:"-"`
+
 	// Type is the type of the cluster condition.
 	// +required
 	Type string `json:"type,omitempty"`

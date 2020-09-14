@@ -51,7 +51,7 @@ include common/Makefile.common.mk
 lint: lint-all
 
 ## Run unit-tests
-test: component/test/unit
+test: deps component/test/unit
 
 ## Build the MultiClusterHub operator image
 image:
@@ -66,7 +66,7 @@ install:
 	./common/scripts/tests/install.sh
 
 uninstall-cr:
-	bash common/scripts/clean-up.sh
+	bash ./test/clean-up.sh
 
 ## Fully uninstall the MCH CR and operator
 uninstall: uninstall-cr
@@ -92,10 +92,26 @@ deps:
 	./cicd-scripts/install-dependencies.sh
 	go mod tidy
 
+## Get logs of MCH Operator
+logs:
+	@oc logs -f $(shell oc get pod -l name=multiclusterhub-operator -o jsonpath="{.items[0].metadata.name}")
+
 ## Update the MultiClusterHub Operator Image
 update-image:
 	operator-sdk build quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION) --go-build-args "-o build/_output/bin/multiclusterhub-operator"
 	docker push quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
+
+## Apply Observability CR
+observability-cr:
+	curl -H "Authorization: token $(shell echo $(GITHUB_TOKEN))" \
+		-H 'Accept: application/vnd.github.v3.raw' \
+		-L https://raw.githubusercontent.com/open-cluster-management/multicluster-monitoring-operator/master/deploy/crds/observability.open-cluster-management.io_v1beta1_multiclusterobservability_cr.yaml | oc apply -f -
+
+## Apply Observability CRD
+observability-crd:
+	curl -H "Authorization: token $(shell echo $(GITHUB_TOKEN))" \
+		-H 'Accept: application/vnd.github.v3.raw' \
+		-L https://raw.githubusercontent.com/open-cluster-management/multicluster-monitoring-operator/master/deploy/olm-catalog/multicluster-observability-operator/manifests/observability.open-cluster-management.io_multiclusterobservabilities_crd.yaml | oc apply -f -
 
 ## Operator-sdk generate CRD(s)
 crd:
@@ -107,7 +123,7 @@ csv:
 
 ## Apply the MultiClusterHub CR
 cr:
-	cat deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml | yq w - "spec.imagePullSecret" "quay-secret" | yq w - "spec.availabilityConfig" "Basic" | oc apply -f -
+	cat deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml | yq w - "spec.imagePullSecret" "quay-secret" | oc apply -f -
 
 ## Apply the default OperatorGroup
 og:
@@ -123,7 +139,7 @@ subscriptions:
 	oc apply -k build/subscriptions
 
 ## Run operator locally outside the cluster
-local-install: ns secrets og subscriptions regop
+local-install: ns secrets og subscriptions observability-crd regop
 	oc apply -f deploy/crds/operator.open-cluster-management.io_multiclusterhubs_crd.yaml
 	OPERATOR_NAME=multiclusterhub-operator \
 	TEMPLATES_PATH="$(shell pwd)/templates" \
@@ -132,19 +148,19 @@ local-install: ns secrets og subscriptions regop
 	operator-sdk run local --watch-namespace=open-cluster-management --kubeconfig=$(KUBECONFIG)
 
 ## Run as a Deployment inside the cluster
-in-cluster-install: ns secrets og update-image subscriptions regop
+in-cluster-install: ns secrets og update-image subscriptions observability-crd regop
 	oc apply -f deploy/crds/operator.open-cluster-management.io_multiclusterhubs_crd.yaml
 	yq w -i deploy/kustomization.yaml 'images(name==multiclusterhub-operator).newTag' "${VERSION}"
 	oc apply -k deploy
 	# oc apply -f deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml
 
 ## Creates a configmap index and catalogsource that it subscribes to
-cm-install: ns secrets og csv update-image subscriptions regop
+cm-install: ns secrets og csv update-image subscriptions observability-crd regop
 	bash common/scripts/generate-cm-index.sh ${VERSION} ${REGISTRY}
 	oc apply -k build/configmap-install
 
 ## Generates an index image and catalogsource that serves it
-index-install: ns secrets og csv update-image subscriptions regop
+index-install: ns secrets og csv update-image subscriptions observability-crd regop
 	oc patch serviceaccount default -n open-cluster-management -p '{"imagePullSecrets": [{"name": "quay-secret"}]}'
 	bash common/scripts/generate-index.sh ${VERSION} ${REGISTRY}
 	oc apply -k build/index-install/non-composite

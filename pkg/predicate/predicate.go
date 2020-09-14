@@ -57,6 +57,34 @@ func (DeletePredicate) Update(e event.UpdateEvent) bool   { return false }
 func (DeletePredicate) Generic(e event.GenericEvent) bool { return false }
 func (DeletePredicate) Delete(e event.DeleteEvent) bool {
 	labels := e.Meta.GetLabels()
+	return hasInstallerLabels(labels)
+}
+
+// InstallerLabelPredicate will only respond to events where the object has installer labels
+type InstallerLabelPredicate struct {
+	predicate.Funcs
+}
+
+// TODO: Use controller-runtime's 'NewPredicateFuncs' to simplify once available
+func (InstallerLabelPredicate) Create(e event.CreateEvent) bool {
+	labels := e.Meta.GetLabels()
+	return hasInstallerLabels(labels)
+}
+func (InstallerLabelPredicate) Update(e event.UpdateEvent) bool {
+	labels := e.MetaNew.GetLabels()
+	return hasInstallerLabels(labels)
+}
+func (InstallerLabelPredicate) Generic(e event.GenericEvent) bool {
+	labels := e.Meta.GetLabels()
+	return hasInstallerLabels(labels)
+}
+func (InstallerLabelPredicate) Delete(e event.DeleteEvent) bool {
+	labels := e.Meta.GetLabels()
+	return hasInstallerLabels(labels)
+}
+
+// hasInstallerLabels checks if the map has installer label keys
+func hasInstallerLabels(labels map[string]string) bool {
 	_, nameExists := labels["installer.name"]
 	_, namespaceExists := labels["installer.namespace"]
 	return nameExists && namespaceExists

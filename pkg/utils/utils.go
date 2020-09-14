@@ -9,6 +9,7 @@ import (
 	"time"
 
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -174,6 +175,21 @@ func GetImagePullPolicy(m *operatorsv1.MultiClusterHub) v1.PullPolicy {
 		return corev1.PullAlways
 	}
 	return m.Spec.Overrides.ImagePullPolicy
+}
+
+// GetContainerArgs return arguments forfirst container in deployment
+func GetContainerArgs(dep *appsv1.Deployment) []string {
+	return dep.Spec.Template.Spec.Containers[0].Args
+}
+
+// GetContainerEnvVars returns environment variables for first container in deployment
+func GetContainerEnvVars(dep *appsv1.Deployment) []v1.EnvVar {
+	return dep.Spec.Template.Spec.Containers[0].Env
+}
+
+// GetContainerVolumeMounts returns volume mount for first container in deployment
+func GetContainerVolumeMounts(dep *appsv1.Deployment) []corev1.VolumeMount {
+	return dep.Spec.Template.Spec.Containers[0].VolumeMounts
 }
 
 func IsUnitTest() bool {

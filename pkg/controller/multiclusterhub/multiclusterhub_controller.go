@@ -120,6 +120,24 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	err = c.Watch(
+		&source.Kind{Type: &appsv1.Deployment{}},
+		&handler.EnqueueRequestsFromMapFunc{
+			ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
+				return []reconcile.Request{
+					{NamespacedName: types.NamespacedName{
+						Name:      a.Meta.GetLabels()["installer.name"],
+						Namespace: a.Meta.GetLabels()["installer.namespace"],
+					}},
+				}
+			}),
+		},
+		predicate.InstallerLabelPredicate{},
+	)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -160,9 +178,18 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		return reconcile.Result{}, err
 	}
 
+	allDeploys, err := r.listDeployments()
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	allHRs, err := r.listHelmReleases()
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
 	originalStatus := multiClusterHub.Status.DeepCopy()
 	defer func() {
-		statusQueue, statusError := r.syncHubStatus(multiClusterHub, originalStatus)
+		statusQueue, statusError := r.syncHubStatus(multiClusterHub, originalStatus, allDeploys, allHRs)
 		if statusError != nil {
 			log.Error(retError, "Error updating status")
 		}
@@ -186,7 +213,9 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 			// logic fails, don't remove the finalizer so
 			// that we can retry during the next reconciliation.
 			if err := r.finalizeHub(reqLogger, multiClusterHub); err != nil {
-				return reconcile.Result{}, err
+				// Logging err and returning nil to ensure 45 second wait
+				log.Info(fmt.Sprintf("Finalizing: %s", err.Error()))
+				return reconcile.Result{RequeueAfter: resyncPeriod}, nil
 			}
 
 			// Remove hubFinalizer. Once all finalizers have been
@@ -242,6 +271,13 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 	if err != nil {
 		reqLogger.Error(err, "Error storing image manifests in configmap")
 		return reconcile.Result{}, err
+	}
+
+	// Add installer labels to Helm-owned deployments
+	myHelmReleases := getAppSubOwnedHelmReleases(allHRs, getAppsubs(multiClusterHub))
+	myHRDeployments := getHelmReleaseOwnedDeployments(allDeploys, myHelmReleases)
+	if err := r.labelDeployments(multiClusterHub, myHRDeployments); err != nil {
+		return reconcile.Result{}, nil
 	}
 
 	// Do not reconcile objects if this instance of mch is labeled "paused"
@@ -395,6 +431,18 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		return *result, err
 	}
 
+	if !multiClusterHub.Spec.DisableHubSelfManagement {
+		result, err = r.ensureHubIsImported(multiClusterHub)
+		if result != nil {
+			return *result, err
+		}
+	} else {
+		result, err = r.ensureHubIsExported(multiClusterHub)
+		if result != nil {
+			return *result, err
+		}
+	}
+
 	return retQueue, retError
 }
 
@@ -445,6 +493,9 @@ func (r *ReconcileMultiClusterHub) ingressDomain(m *operatorsv1.MultiClusterHub)
 }
 
 func (r *ReconcileMultiClusterHub) finalizeHub(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+	if _, err := r.ensureHubIsExported(m); err != nil {
+		return err
+	}
 	if err := r.cleanupAppSubscriptions(reqLogger, m); err != nil {
 		return err
 	}

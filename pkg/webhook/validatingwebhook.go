@@ -106,19 +106,40 @@ func (m *multiClusterHubValidator) validateUpdate(req admission.Request) error {
 
 func (m *multiClusterHubValidator) validateDelete(req admission.Request) error {
 
-	u := &unstructured.UnstructuredList{}
-	u.SetGroupVersionKind(schema.GroupVersionKind{
+	managedClusterList := &unstructured.UnstructuredList{}
+	managedClusterList.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   "cluster.open-cluster-management.io",
 		Version: "v1",
 		Kind:    "ManagedClusterList",
 	})
-	err := m.client.List(context.TODO(), u)
-	if err != nil {
-		return nil
+	managedClusterErr := m.client.List(context.TODO(), managedClusterList)
+	if managedClusterErr == nil {
+		if len(managedClusterList.Items) > 1 {
+			return errors.New("Cannot delete MultiClusterHub resource because ManagedCluster resource(s) exist")
+		}
+
+		if len(managedClusterList.Items) == 1 {
+			managedCluster := managedClusterList.Items[0]
+			if managedCluster.GetName() != "local-cluster" {
+				return errors.New("Cannot delete MultiClusterHub resource because ManagedCluster resource(s) exist")
+			}
+		}
 	}
-	if len(u.Items) > 0 {
-		return errors.New("Cannot delete MultiClusterHub resource because ManagedCluster resource(s) exist")
+
+	observabilityList := &unstructured.UnstructuredList{}
+	observabilityList.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "observability.open-cluster-management.io",
+		Version: "v1beta1",
+		Kind:    "MultiClusterObservabilityList",
+	})
+
+	observabilityErr := m.client.List(context.TODO(), observabilityList)
+	if observabilityErr == nil {
+		if len(observabilityList.Items) > 0 {
+			return errors.New("Cannot delete MultiClusterHub resource because MultiClusterObservability resource(s) exist")
+		}
 	}
+
 	return nil
 }
 

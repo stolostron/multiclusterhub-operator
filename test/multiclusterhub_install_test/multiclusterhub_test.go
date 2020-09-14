@@ -162,6 +162,65 @@ func FullInstallTestSuite() {
 		return
 	})
 
+	It("- If `spec.disableHubSelfManagement` controls the existence of the related resources", func() {
+		By("- Verfiying default install has local-cluster resources")
+		utils.CreateDefaultMCH()
+		err := utils.ValidateMCH()
+		Expect(err).To(BeNil())
+
+		By("- Setting `spec.disableHubSelfManagement` to true to remove local-cluster resources")
+		utils.ToggleDisableHubSelfManagement(true)
+
+		Eventually(func() error {
+			if err := utils.ValidateImportHubResourcesExist(false); err != nil {
+				return fmt.Errorf("resources still exist")
+			}
+			return nil
+		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
+
+		By("- Setting `spec.disableHubSelfManagement` to false to create local-cluster resources")
+		utils.ToggleDisableHubSelfManagement(false)
+		Eventually(func() error {
+			if err := utils.ValidateImportHubResourcesExist(true); err != nil {
+				return fmt.Errorf("resources still exist")
+			}
+			return nil
+		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
+
+	})
+
+	It("- Delete ManagedCluster before it is joined/available", func() {
+		By("- Verifying default install has local-cluster resources")
+		utils.CreateDefaultMCH()
+		Eventually(func() error {
+			if err := utils.ValidateImportHubResourcesExist(true); err != nil {
+				return fmt.Errorf("resources still exist")
+			}
+			return nil
+		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
+
+		By("- Setting `spec.disableHubSelfManagement` to true to remove local-cluster resources")
+		utils.ToggleDisableHubSelfManagement(true)
+		Eventually(func() error {
+			if err := utils.ValidateImportHubResourcesExist(false); err != nil {
+				return fmt.Errorf("resources still exist")
+			}
+			return nil
+		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
+		
+
+		By("- Setting `spec.disableHubSelfManagement` to false to create local-cluster resources")
+		utils.ToggleDisableHubSelfManagement(false)
+		Eventually(func() error {
+			if err := utils.ValidateImportHubResourcesExist(true); err != nil {
+				return fmt.Errorf("resources still exist")
+			}
+			return nil
+		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
+	})
+
+	
+
 	It(fmt.Sprintf("Installing MCH with bad image reference - should have Pending status"), func() {
 		By("Creating Bad Image Overrides Configmap")
 		imageOverridesCM := utils.NewImageOverridesConfigmapBadImageRef(utils.ImageOverridesCMBadImageName, utils.MCHNamespace)
@@ -180,16 +239,19 @@ func FullInstallTestSuite() {
 			utils.CreateDefaultMCH()
 			if err := utils.ValidateStatusesExist(); err != nil {
 				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				Expect(err).To(BeNil())
 				return
 			}
 			err := utils.ValidateMCH()
 			if err != nil {
 				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				Expect(err).To(BeNil())
 				return
 			}
 
 			By("Degrading the installation")
-			if err := utils.BrickMCHRepo(); err != nil {
+			oldImage, err := utils.BrickKUI()
+			if err != nil {
 				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
 				return
 			}
@@ -197,8 +259,29 @@ func FullInstallTestSuite() {
 				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
 				return
 			}
+			if err := utils.FixKUI(oldImage); err != nil {
+				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				return
+			}
+
+			if err := utils.ValidateMCH(); err != nil {
+				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				return
+			}
+
+			if err := utils.BrickMCHRepo(); err != nil {
+				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				Expect(err).To(BeNil())
+				return
+			}
+			if err := utils.ValidateMCHDegraded(); err != nil {
+				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				Expect(err).To(BeNil())
+				return
+			}
 			if err := utils.FixMCHRepo(); err != nil {
 				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				Expect(err).To(BeNil())
 				return
 			}
 			return

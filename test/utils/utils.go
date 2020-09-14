@@ -1,21 +1,29 @@
 // Copyright (c) 2020 Red Hat, Inc.
+
 package utils
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
+	"os/exec"
 	"os/user"
+	"path"
 	"path/filepath"
 	"strconv"
 	"time"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/ghodss/yaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -36,6 +44,20 @@ var (
 
 	// ImageOverridesCMBadImageName...
 	ImageOverridesCMBadImageName = "bad-image-ref"
+
+	// GVRCustomResourceDefinition ...
+	GVRCustomResourceDefinition = schema.GroupVersionResource{
+		Group:    "apiextensions.k8s.io",
+		Version:  "v1beta1",
+		Resource: "customresourcedefinitions",
+	}
+
+	// GVRObservability ...
+	GVRObservability = schema.GroupVersionResource{
+		Group:    "observability.open-cluster-management.io",
+		Version:  "v1beta1",
+		Resource: "multiclusterobservabilities",
+	}
 
 	// GVRMultiClusterHub ...
 	GVRMultiClusterHub = schema.GroupVersionResource{
@@ -88,6 +110,19 @@ var (
 		Resource: "deployments",
 	}
 
+	// GVRManagedCluster
+	GVRManagedCluster = schema.GroupVersionResource{
+		Group:    "cluster.open-cluster-management.io",
+		Version:  "v1",
+		Resource: "managedclusters",
+	}
+
+	// GVRKlusterletAddonConfig
+	GVRKlusterletAddonConfig = schema.GroupVersionResource{
+		Group:    "agent.open-cluster-management.io",
+		Version:  "v1",
+		Resource: "klusterletaddonconfigs",
+	}
 	// DefaultImageRegistry ...
 	DefaultImageRegistry = "quay.io/open-cluster-management"
 	// DefaultImagePullSecretName ...
@@ -125,7 +160,7 @@ var (
 	CSVName = "advanced-cluster-management"
 
 	// WaitInMinutesDefault ...
-	WaitInMinutesDefault = 6
+	WaitInMinutesDefault = 20
 )
 
 // GetWaitInMinutes...
@@ -139,6 +174,11 @@ func GetWaitInMinutes() int {
 		return WaitInMinutesDefault
 	}
 	return waitInMinutesAsInt
+}
+
+func runCleanUpScript() bool {
+	runCleanUpScript, _ := strconv.ParseBool(os.Getenv("runCleanUpScript"))
+	return runCleanUpScript
 }
 
 // CreateNewUnstructured creates resources by using gvr & obj, will get object after create.
@@ -324,27 +364,114 @@ func CreateMCHImageOverridesAnnotation(imageOverridesConfigmapName string) *unst
 	return mch
 }
 
+// GetDeploymentLabels returns the labels on deployment d
+func GetDeploymentLabels(d string) (map[string]string, error) {
+	deploy, err := KubeClient.AppsV1().Deployments(MCHNamespace).Get(context.TODO(), d, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return deploy.GetLabels(), nil
+}
+
 // BrickMCHRepo modifies the multiclusterhub-repo deployment so it becomes unhealthy
 func BrickMCHRepo() error {
+	By("- Breaking mch repo")
 	deploy, err := KubeClient.AppsV1().Deployments(MCHNamespace).Get(context.TODO(), MCHRepoName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 	// Add non-existent nodeSelector so the pod isn't scheduled
 	deploy.Spec.Template.Spec.NodeSelector = map[string]string{"schedule": "never"}
-	deploy.Spec.Strategy = appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
 
 	_, err = KubeClient.AppsV1().Deployments(MCHNamespace).Update(context.TODO(), deploy, metav1.UpdateOptions{})
-	return err
+	if err != nil {
+		return err
+	}
+
+	if err = waitForUnavailable(MCHRepoName, time.Duration(GetWaitInMinutes())*time.Minute); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // FixMCHRepo deletes the multiclusterhub-repo deployment so it can be recreated by the installer
 func FixMCHRepo() error {
+	By("- Repairing mch-repo")
 	return KubeClient.AppsV1().Deployments(MCHNamespace).Delete(context.TODO(), MCHRepoName, metav1.DeleteOptions{})
 }
 
-// getMCHStatus gets the mch object and parses its status
-func getMCHStatus() (map[string]interface{}, error) {
+// BrickKUI modifies the multiclusterhub-repo deployment so it becomes unhealthy
+func BrickKUI() (string, error) {
+	By("- Breaking kui-web-terminal")
+	oldImage, err := UpdateDeploymentImage("kui-web-terminal", "bad-image")
+	if err != nil {
+		return "", err
+	}
+	err = waitForUnavailable("kui-web-terminal", time.Duration(GetWaitInMinutes())*time.Minute)
+
+	return oldImage, err
+}
+
+// FixKUI deletes the multiclusterhub-repo deployment so it can be recreated by the installer
+func FixKUI(image string) error {
+	By("- Repairing kui-web-terminal")
+	_, err := UpdateDeploymentImage("kui-web-terminal", image)
+	if err != nil {
+		return err
+	}
+	err = waitForAvailable("kui-web-terminal", time.Duration(GetWaitInMinutes())*time.Minute)
+	return err
+}
+
+// UpdateDeploymentImage updates the deployment image
+func UpdateDeploymentImage(dName string, image string) (string, error) {
+	deploy, err := KubeClient.AppsV1().Deployments(MCHNamespace).Get(context.TODO(), dName, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	originalImage := deploy.Spec.Template.Spec.Containers[0].Image
+	deploy.Spec.Template.Spec.Containers[0].Image = image
+
+	_, err = KubeClient.AppsV1().Deployments(MCHNamespace).Update(context.TODO(), deploy, metav1.UpdateOptions{})
+	return originalImage, err
+}
+
+// waitForUnavailable waits for the deployment to go unready, with timeout
+func waitForUnavailable(dName string, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		deploy, err := KubeClient.AppsV1().Deployments(MCHNamespace).Get(context.TODO(), dName, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		if deploy.Status.UnavailableReplicas > 0 {
+			time.Sleep(10 * time.Second)
+			return nil
+		}
+		time.Sleep(2 * time.Second)
+	}
+	return fmt.Errorf("Deploy failed to become unready after %s", timeout)
+}
+
+// waitForAvailable waits for the deployment to be available, with timeout
+func waitForAvailable(dName string, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		deploy, err := KubeClient.AppsV1().Deployments(MCHNamespace).Get(context.TODO(), dName, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		if deploy.Status.UnavailableReplicas == 0 {
+			return nil
+		}
+		time.Sleep(2 * time.Second)
+	}
+	return fmt.Errorf("Repo failed to become unready after %s", timeout)
+}
+
+// GetMCHStatus gets the mch object and parses its status
+func GetMCHStatus() (map[string]interface{}, error) {
 	mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -368,32 +495,12 @@ func findPhase(status map[string]interface{}, wantPhase string) error {
 	return nil
 }
 
-// waitForRepoUnavailable waits for the multiclusterhub-repo to go unready, with timeout
-func waitForUnavailableRepo(timeout time.Duration) error {
-	deadline := time.Now().Add(timeout)
-	for time.Now().Before(deadline) {
-		deploy, err := KubeClient.AppsV1().Deployments(MCHNamespace).Get(context.TODO(), MCHRepoName, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		if deploy.Status.ReadyReplicas == 0 {
-			return nil
-		}
-		time.Sleep(2 * time.Second)
-	}
-	return fmt.Errorf("Repo failed to become unready after %s", timeout)
-}
-
 // ValidateMCHDegraded validates the install operator responds appropriately when the install components
 // go into a degraded state after a successful install
 func ValidateMCHDegraded() error {
-	By("Validating MultiClusterHub Degraded")
-	By("- Wait for degraded deployment")
-	if err := waitForUnavailableRepo(time.Duration(45) * time.Second); err != nil {
-		return err
-	}
+	By("- Validating MultiClusterHub Degraded")
 
-	status, err := getMCHStatus()
+	status, err := GetMCHStatus()
 	if err != nil {
 		return err
 	}
@@ -404,7 +511,7 @@ func ValidateMCHDegraded() error {
 	}
 
 	By("- Ensuring hub condition shows installation as incomplete")
-	if err := findCondition(status, "Complete", "False"); err != nil {
+	if err := FindCondition(status, "Complete", "False"); err != nil {
 		return err
 	}
 
@@ -461,11 +568,33 @@ func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 		return nil
 	}, GetWaitInMinutes()*60, 1).Should(BeNil())
 
+	if runCleanUpScript() {
+		By("- Running documented clean up script")
+		workingDir, err := os.Getwd()
+		if err != nil {
+			log.Fatalf("failed to get working dir %v", err)
+		}
+		cleanupPath := path.Join(path.Dir(workingDir), "clean-up.sh")
+		err = os.Setenv("ACM_NAMESPACE", MCHNamespace)
+		if err != nil {
+			log.Fatal(err)
+		}
+		out, err := exec.Command("/bin/sh", cleanupPath).Output()
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = os.Unsetenv("ACM_NAMESPACE")
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Println(fmt.Sprintf("Resources cleaned up by clean-up script:\n %s\n", bytes.NewBuffer(out).String()))
+
+	}
 	return nil
 }
 
-// findCondition reports whether a hub condition of type 't' exists and matches the status 's'
-func findCondition(status map[string]interface{}, t string, s string) error {
+// FindCondition reports whether a hub condition of type 't' exists and matches the status 's'
+func FindCondition(status map[string]interface{}, t string, s string) error {
 	conditions, ok := status["conditions"].([]interface{})
 	if !ok || conditions == nil {
 		return fmt.Errorf("no hubConditions found")
@@ -514,7 +643,7 @@ func ValidateMCHUnsuccessful() error {
 			mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
 			Expect(err).To(BeNil())
 			status := mch.Object["status"].(map[string]interface{})
-			return findCondition(status, "Progressing", "True")
+			return FindCondition(status, "Progressing", "True")
 		}, 1, 1).Should(BeNil())
 	})
 
@@ -576,7 +705,7 @@ func ValidateMCH() error {
 			mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
 			Expect(err).To(BeNil())
 			status := mch.Object["status"].(map[string]interface{})
-			return findCondition(status, "Complete", "True")
+			return FindCondition(status, "Complete", "True")
 		}, 1, 1).Should(BeNil())
 	})
 
@@ -611,6 +740,10 @@ func ValidateMCH() error {
 		}
 	}
 
+	By("- Checking Imported Hub Cluster")
+	err = ValidateManagedCluster(true)
+	Expect(err).Should(BeNil())
+
 	currentVersion, err := GetCurrentVersionFromMCH()
 	Expect(err).Should(BeNil())
 	v, err := semver.NewVersion(currentVersion)
@@ -621,6 +754,15 @@ func ValidateMCH() error {
 		By("- Ensuring image manifest configmap is created")
 		_, err = KubeClient.CoreV1().ConfigMaps(MCHNamespace).Get(context.TODO(), fmt.Sprintf("mch-image-manifest-%s", currentVersion), metav1.GetOptions{})
 		Expect(err).Should(BeNil())
+	}
+
+	By("- Checking for Installer Labels on Deployments")
+	l, err := GetDeploymentLabels("kui-web-terminal")
+	if err != nil {
+		return err
+	}
+	if l["installer.name"] != MCHName || l["installer.namespace"] != MCHNamespace {
+		return fmt.Errorf("kui-web-terminal missing installer labels: `%s` != `%s`, `%s` != `%s`", l["installer.name"], MCHName, l["installer.namespace"], MCHNamespace)
 	}
 
 	return nil
@@ -672,7 +814,7 @@ func ValidateHubStatusExist() error {
 		if !ok || status == nil {
 			return fmt.Errorf("MultiClusterHub: %s has no 'status' map", mch.GetName())
 		}
-		return findCondition(status, "Progressing", "True")
+		return FindCondition(status, "Progressing", "True")
 	}, GetWaitInMinutes()*60, 1).Should(BeNil())
 	return nil
 }
@@ -684,7 +826,7 @@ func ValidateConditionDuringUninstall() error {
 		mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
 		Expect(err).To(BeNil())
 		status := mch.Object["status"].(map[string]interface{})
-		return findCondition(status, "Terminating", "True")
+		return FindCondition(status, "Terminating", "True")
 	}, GetWaitInMinutes()*60, 1).Should(BeNil())
 	return nil
 }
@@ -704,6 +846,96 @@ func ValidateStatusesExist() error {
 	By("- Ensuring Hub Status exist")
 	if err := ValidateHubStatusExist(); err != nil {
 		return err
+	}
+	return nil
+}
+
+//ValidateImportHubResources confirms the existence of 3 resources that are created when importing hub as managed cluster
+func ValidateImportHubResourcesExist(expected bool) error {
+	//check created namespace exists
+	_, nsErr := KubeClient.CoreV1().Namespaces().Get(context.TODO(), "local-cluster", metav1.GetOptions{})
+	//check created ManagedCluster exists
+	mc, mcErr := DynamicKubeClient.Resource(GVRManagedCluster).Get(context.TODO(), "local-cluster", metav1.GetOptions{})
+	//check created KlusterletAddonConfig
+	kac, kacErr := DynamicKubeClient.Resource(GVRKlusterletAddonConfig).Namespace("local-cluster").Get(context.TODO(), "local-cluster", metav1.GetOptions{})
+	if expected {
+		if mc != nil {
+			if nsErr != nil || mcErr != nil || kacErr != nil {
+				return fmt.Errorf("not all local-cluster resources created")
+			}
+			return nil
+		} else {
+			return fmt.Errorf("local-cluster resources exist")
+		}
+	} else {
+		if mc != nil || kac != nil {
+			return fmt.Errorf("local-cluster resources exist")
+		}
+		return nil
+	}
+}
+
+// ValidateManagedCluster
+func ValidateManagedCluster(importResourcesShouldExist bool) error {
+	By("- Checking imported hub resources exist or not")
+	By("- Confirming Necessary Resources")
+	mc, _ := DynamicKubeClient.Resource(GVRManagedCluster).Get(context.TODO(), "local-cluster", metav1.GetOptions{})
+	if err := validateManagedClusterOwnerRef(mc); err != nil {
+		return fmt.Errorf("Owner ref is not mch")
+	}
+	if err := ValidateImportHubResourcesExist(importResourcesShouldExist); err != nil {
+		return fmt.Errorf("Resources are as they shouldn't")
+	}
+	if importResourcesShouldExist {
+		if val := validateManagedClusterConditions(); val != nil {
+			return fmt.Errorf("cluster conditions")
+		}
+		return nil
+	}
+	return nil
+}
+
+// validateManagedClusterConditions
+func validateManagedClusterConditions() error {
+	By("- Checking ManagedClusterConditions type true")
+	mc, _ := DynamicKubeClient.Resource(GVRManagedCluster).Get(context.TODO(), "local-cluster", metav1.GetOptions{})
+	status, ok := mc.Object["status"].(map[string]interface{})
+	if ok {
+		joinErr := FindCondition(status, "ManagedClusterJoined", "True")
+		avaiErr := FindCondition(status, "ManagedClusterConditionAvailable", "True")
+		accpErr := FindCondition(status, "HubAcceptedManagedCluster", "True")
+		if joinErr != nil || avaiErr != nil || accpErr != nil {
+			return fmt.Errorf("managedcluster conditions not all true")
+		}
+		return nil
+	} else {
+		return fmt.Errorf("no status")
+	}
+}
+
+// validateManagedClusterOwnerRef helper func to validateManagedCluster
+func validateManagedClusterOwnerRef(mc *unstructured.Unstructured) error {
+	if mc != nil {
+		name := mc.Object["metadata"].(map[string]interface{})["ownerReferences"].([]interface{})[0].(map[string]interface{})["name"]
+		if name != MCHName {
+			return fmt.Errorf("owner ref does not match mch name")
+		}
+		return nil
+	}
+	return nil
+}
+
+// ToggleDisableHubSelfManagement toggles the value of spec.disableHubSelfManagement from true to false or false to true
+func ToggleDisableHubSelfManagement(disableHubSelfImport bool) error {
+	mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+	Expect(err).To(BeNil())
+	disableHubSelfManagementString := "disableHubSelfManagement"
+	mch.Object["spec"].(map[string]interface{})[disableHubSelfManagementString] = disableHubSelfImport
+	mch, err = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
+	Expect(err).To(BeNil())
+	mch, err = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+	if disableHubSelfManagement := mch.Object["spec"].(map[string]interface{})[disableHubSelfManagementString].(bool); disableHubSelfManagement != disableHubSelfImport {
+		return fmt.Errorf("Spec was not updated")
 	}
 	return nil
 }
@@ -806,4 +1038,69 @@ func GetCurrentVersionFromMCH() (string, error) {
 		return "", fmt.Errorf("MultiClusterHub: %s status has no 'currentVersion' field", mch.GetName())
 	}
 	return version.(string), nil
+}
+
+func CreateObservabilityCRD() {
+	By("- Creating Observability CRD if it does not exist")
+	_, err := DynamicKubeClient.Resource(GVRCustomResourceDefinition).Get(context.TODO(), "multiclusterobservabilities.observability.open-cluster-management.io", metav1.GetOptions{})
+	if err == nil {
+		return
+	}
+
+	crd, err := ioutil.ReadFile("../resources/observability-crd.yaml")
+	Expect(err).To(BeNil())
+
+	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
+	err = yaml.Unmarshal(crd, &unstructuredCRD.Object)
+	Expect(err).To(BeNil())
+
+	_, err = DynamicKubeClient.Resource(GVRCustomResourceDefinition).Create(context.TODO(), unstructuredCRD, metav1.CreateOptions{})
+	Expect(err).To(BeNil())
+}
+
+func CreateObservabilityCR() {
+	By("- Creating Observability CR if it does not exist")
+
+	_, err := DynamicKubeClient.Resource(GVRObservability).Get(context.TODO(), "observability", metav1.GetOptions{})
+	if err == nil {
+		return
+	}
+
+	crd, err := ioutil.ReadFile("../resources/observability-cr.yaml")
+	Expect(err).To(BeNil())
+
+	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
+	err = yaml.Unmarshal(crd, &unstructuredCRD.Object)
+	Expect(err).To(BeNil())
+
+	_, err = DynamicKubeClient.Resource(GVRObservability).Create(context.TODO(), unstructuredCRD, metav1.CreateOptions{})
+	Expect(err).To(BeNil())
+}
+
+func DeleteObservabilityCR() {
+	By("- Deleting Observability CR if it exists")
+
+	crd, err := ioutil.ReadFile("../resources/observability-cr.yaml")
+	Expect(err).To(BeNil())
+
+	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
+	err = yaml.Unmarshal(crd, &unstructuredCRD.Object)
+	Expect(err).To(BeNil())
+
+	err = DynamicKubeClient.Resource(GVRObservability).Delete(context.TODO(), "observability", metav1.DeleteOptions{})
+	Expect(err).To(BeNil())
+}
+
+func DeleteObservabilityCRD() {
+	By("- Deleting Observability CRD if it exists")
+
+	crd, err := ioutil.ReadFile("../resources/observability-crd.yaml")
+	Expect(err).To(BeNil())
+
+	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
+	err = yaml.Unmarshal(crd, &unstructuredCRD.Object)
+	Expect(err).To(BeNil())
+
+	err = DynamicKubeClient.Resource(GVRCustomResourceDefinition).Delete(context.TODO(), "multiclusterobservabilities.observability.open-cluster-management.io", metav1.DeleteOptions{})
+	Expect(err).To(BeNil())
 }
