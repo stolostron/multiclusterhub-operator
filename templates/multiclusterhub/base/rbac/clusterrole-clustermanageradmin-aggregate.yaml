@@ -32,3 +32,6 @@ rules:
 - apiGroups: ["rbac.authorization.k8s.io"]
   resources: ["clusterroles","clusterrolebindings","roles","rolebindings"]
   verbs: ["create","get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+- apiGroups: ["observability.open-cluster-management.io"]
+  resources: ["multiclusterobservabilities", "multiclusterobservabilities/status"]
+  verbs: ["create","get", "list", "watch", "update", "delete", "deletecollection", "patch"]
