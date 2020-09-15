@@ -96,7 +96,7 @@ func TestValidateDeployment(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := ValidateDeployment(tt.args.m, ovr, tt.args.dep)
+			got, got1 := ValidateDeployment(tt.args.m, ovr, dep, tt.args.dep)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ValidateDeployment() got = %v, want %v", got, tt.want)
 			}

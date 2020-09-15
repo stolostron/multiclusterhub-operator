@@ -51,7 +51,7 @@ include common/Makefile.common.mk
 lint: lint-all
 
 ## Run unit-tests
-test: deps component/test/unit
+test: component/test/unit
 
 ## Build the MultiClusterHub operator image
 image:
