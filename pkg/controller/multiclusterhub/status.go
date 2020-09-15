@@ -177,14 +177,52 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 	return status
 }
 
+// filterDuplicateHRs removes multiple helmreleases owned by the same appsub, keeping the newest
+func filterDuplicateHRs(allHRs []*subrelv1.HelmRelease) []*subrelv1.HelmRelease {
+	reduced := make(map[string]*subrelv1.HelmRelease)
+
+	for _, hr := range allHRs {
+		owners := hr.GetOwnerReferences()
+		if len(owners) == 0 {
+			continue
+		}
+		appsub := owners[0].Name
+
+		existing, ok := reduced[appsub]
+		if !ok {
+			reduced[appsub] = hr
+		} else {
+			existingTime := existing.GetCreationTimestamp().Time
+			thisTime := hr.GetCreationTimestamp().Time
+
+			if thisTime.After(existingTime) {
+				reduced[appsub] = hr
+			}
+		}
+	}
+
+	ret := make([]*subrelv1.HelmRelease, len(reduced))
+	for _, value := range reduced {
+		ret = append(ret, value)
+	}
+	return ret
+}
+
 // getComponentStatuses populates a complete list of the hub component statuses
 func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allHRs []*subrelv1.HelmRelease, allDeps []*appsv1.Deployment, importClusterStatus []interface{}) map[string]operatorsv1.StatusCondition {
 	components := newComponentList(hub)
 
-	for _, hr := range allHRs {
-		owner := hr.OwnerReferences[0].Name
-		if _, ok := components[owner]; ok {
-			components[owner] = mapHelmRelease(hr)
+	filteredHRs := filterDuplicateHRs(allHRs)
+
+	for _, hr := range filteredHRs {
+		owners := hr.GetOwnerReferences()
+		if len(owners) == 0 {
+			continue
+		}
+		appsub := owners[0].Name
+
+		if _, ok := components[appsub]; ok {
+			components[appsub] = mapHelmRelease(hr)
 
 			// If helmrelease is labeled successful, check its deployments for readiness
 			if successfulHelmRelease(hr) {
@@ -192,7 +230,7 @@ func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allHRs []*subrelv1.H
 				for _, d := range hrDeployments {
 					// Set status reported to first unready deployment
 					if !successfulDeploy(d) {
-						components[owner] = mapDeployment(d)
+						components[appsub] = mapDeployment(d)
 						break
 					}
 				}
