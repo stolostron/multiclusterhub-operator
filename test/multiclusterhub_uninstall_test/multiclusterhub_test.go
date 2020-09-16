@@ -31,63 +31,82 @@ var _ = Describe("Multiclusterhub", func() {
 	})
 
 	if os.Getenv("full_test_suite") == "true" {
-		It("Block MCH uninstall if Observability is running", func() {
+		// It("Block MCH uninstall if Observability is running", func() {
+		// 	By("Creating MultiClusterHub")
+		// 	utils.CreateDefaultMCH()
+		// 	utils.ValidateMCH()
+
+		// 	utils.CreateObservabilityCRD()
+		// 	utils.CreateObservabilityCR()
+
+		// 	err := utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Delete(context.TODO(), utils.MCHName, metav1.DeleteOptions{})
+		// 	Expect(err).ToNot(BeNil())
+		// 	Expect(err.Error()).Should(BeEquivalentTo("admission webhook \"multiclusterhub.validating-webhook.open-cluster-management.io\" denied the request: Cannot delete MultiClusterHub resource because MultiClusterObservability resource(s) exist"))
+
+		// 	utils.DeleteObservabilityCR()
+		// 	utils.DeleteObservabilityCRD()
+
+		// 	utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
+		// 	Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
+
+		// })
+		// It("SAD CASE: Fail to remove a helmrelease (Left behind finalizer)", func() {
+		// 	By("Creating MultiClusterHub")
+		// 	utils.CreateDefaultMCH()
+		// 	utils.ValidateMCH()
+		// 	AddFinalizerToHelmRelease(utils.DynamicKubeClient)
+		// 	utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, false)
+		// 	Expect(utils.ValidateDelete(utils.DynamicKubeClient)).ShouldNot(BeNil())
+		// 	utils.ValidateConditionDuringUninstall()
+
+		// 	Eventually(func() error {
+		// 		err := RemoveFinalizerFromHelmRelease(utils.DynamicKubeClient)
+		// 		if err != nil {
+		// 			return err
+		// 		}
+		// 		return nil
+		// 	}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
+		// 	utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
+		// 	Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
+		// })
+
+		// It("SAD CASE: Fail to remove managedcluster (Left behind finalizer)", func() {
+		// 	By("Creating MultiClusterHub")
+		// 	utils.CreateDefaultMCH()
+		// 	utils.ValidateMCH()
+		// 	AddFinalizerToManagedCluster(utils.DynamicKubeClient)
+		// 	utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, false)
+		// 	Expect(utils.ValidateDelete(utils.DynamicKubeClient)).ShouldNot(BeNil())
+		// 	utils.ValidateConditionDuringUninstall()
+
+		// 	Eventually(func() error {
+		// 		err := RemoveFinalizerFromManagedCluster(utils.DynamicKubeClient)
+		// 		if err != nil {
+		// 			return err
+		// 		}
+		// 		return nil
+		// 	}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
+		// 	utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
+		// 	Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
+		// })
+
+		It("Block MCH uninstall if BareMetalAssets exist", func() {
 			By("Creating MultiClusterHub")
 			utils.CreateDefaultMCH()
 			utils.ValidateMCH()
 
-			utils.CreateObservabilityCRD()
-			utils.CreateObservabilityCR()
+			utils.CreateBareMetalAssetsCR()
 
 			err := utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Delete(context.TODO(), utils.MCHName, metav1.DeleteOptions{})
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).Should(BeEquivalentTo("admission webhook \"multiclusterhub.validating-webhook.open-cluster-management.io\" denied the request: Cannot delete MultiClusterHub resource because MultiClusterObservability resource(s) exist"))
+			Expect(err.Error()).Should(BeEquivalentTo("admission webhook \"multiclusterhub.validating-webhook.open-cluster-management.io\" denied the request: Cannot delete MultiClusterHub resource because BareMetalAssets resource(s) exist"))
 
-			utils.DeleteObservabilityCR()
-			utils.DeleteObservabilityCRD()
+
+			utils.DeleteBareMetalAssetsCR()
 
 			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
 			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
 
-		})
-		It("SAD CASE: Fail to remove a helmrelease (Left behind finalizer)", func() {
-			By("Creating MultiClusterHub")
-			utils.CreateDefaultMCH()
-			utils.ValidateMCH()
-			AddFinalizerToHelmRelease(utils.DynamicKubeClient)
-			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, false)
-			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).ShouldNot(BeNil())
-			utils.ValidateConditionDuringUninstall()
-
-			Eventually(func() error {
-				err := RemoveFinalizerFromHelmRelease(utils.DynamicKubeClient)
-				if err != nil {
-					return err
-				}
-				return nil
-			}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
-			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
-			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
-		})
-
-		It("SAD CASE: Fail to remove managedcluster (Left behind finalizer)", func() {
-			By("Creating MultiClusterHub")
-			utils.CreateDefaultMCH()
-			utils.ValidateMCH()
-			AddFinalizerToManagedCluster(utils.DynamicKubeClient)
-			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, false)
-			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).ShouldNot(BeNil())
-			utils.ValidateConditionDuringUninstall()
-
-			Eventually(func() error {
-				err := RemoveFinalizerFromManagedCluster(utils.DynamicKubeClient)
-				if err != nil {
-					return err
-				}
-				return nil
-			}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
-			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
-			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
 		})
 
 	}

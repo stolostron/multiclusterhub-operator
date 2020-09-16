@@ -126,6 +126,20 @@ func (m *multiClusterHubValidator) validateDelete(req admission.Request) error {
 		}
 	}
 
+	bmaList := &unstructured.UnstructuredList{}
+	bmaList.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "inventory.open-cluster-management.io",
+		Version: "v1alpha1",
+		Kind:    "BareMetalAsset",
+	});
+
+	bmaErr := m.client.List(context.TODO(), bmaList)
+	if bmaErr == nil {
+		if len(bmaList.Items) > 0 {
+			return errors.New("Cannot delete MultiClusterHub resource because BareMetalAssets resource(s) exist")
+		}
+	}
+
 	observabilityList := &unstructured.UnstructuredList{}
 	observabilityList.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   "observability.open-cluster-management.io",
