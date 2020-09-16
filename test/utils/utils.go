@@ -1121,23 +1121,14 @@ func CreateBareMetalAssetsCR() {
 	}
 
 	crd, err := ioutil.ReadFile("../resources/baremetalasset-cr.yaml")
-	//fmt.Println("crd", crd)
-	fmt.Printf("file contents: %s", crd)
 	Expect(err).To(BeNil())
 
 	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
-	fmt.Println("AAA: ", unstructuredCRD)
 	err = yaml.Unmarshal(crd, &unstructuredCRD.Object)
 	Expect(err).To(BeNil())
-	fmt.Println("BBB: ", unstructuredCRD)
 
 	_, err = DynamicKubeClient.Resource(GVRBareMetalAsset).Namespace(MCHNamespace).Create(context.TODO(), unstructuredCRD, metav1.CreateOptions{})
 	Expect(err).To(BeNil())
-	fmt.Println("CCC", err)
-
-	list, err := DynamicKubeClient.Resource(GVRBareMetalAsset).Namespace(MCHNamespace).List(context.TODO(), metav1.ListOptions{})
-	fmt.Println("list: ", list)
-	fmt.Println("listErr: ", err)
 }
 
 func DeleteBareMetalAssetsCR() {
@@ -1146,15 +1137,6 @@ func DeleteBareMetalAssetsCR() {
 	_, err := ioutil.ReadFile("../resources/baremetalasset-cr.yaml")
 	Expect(err).To(BeNil())
 
-	list, err := DynamicKubeClient.Resource(GVRBareMetalAsset).Namespace(MCHNamespace).List(context.TODO(), metav1.ListOptions{})
-	fmt.Println("list: ", list)
-	fmt.Println("listErr: ", err)
-
 	err = DynamicKubeClient.Resource(GVRBareMetalAsset).Namespace(MCHNamespace).Delete(context.TODO(), "dc01r3c3b2-powerflex390", metav1.DeleteOptions{})
-	fmt.Println("DelErr: ", err)
-
-	list, err = DynamicKubeClient.Resource(GVRBareMetalAsset).Namespace(MCHNamespace).List(context.TODO(), metav1.ListOptions{})
-	fmt.Println("list: ", list)
-	fmt.Println("listErr: ", err)
 	Expect(err).To(BeNil())
 }
