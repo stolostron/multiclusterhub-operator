@@ -179,33 +179,36 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 
 // filterDuplicateHRs removes multiple helmreleases owned by the same appsub, keeping the newest
 func filterDuplicateHRs(allHRs []*subrelv1.HelmRelease) []*subrelv1.HelmRelease {
-	reduced := make(map[string]*subrelv1.HelmRelease)
+	keys := make(map[string]int)
 
-	for _, hr := range allHRs {
-		owners := hr.GetOwnerReferences()
-		if len(owners) == 0 {
+	for i := range allHRs {
+		entry := allHRs[i].DeepCopy()
+
+		ownerApps := entry.GetOwnerReferences()
+		if len(ownerApps) == 0 {
+			log.Info("Helmrelease has no owner reference!", "Name", entry.GetName())
 			continue
 		}
-		appsub := owners[0].Name
+		ownerApp := ownerApps[0].Name
 
-		existing, ok := reduced[appsub]
+		index, ok := keys[ownerApp]
 		if !ok {
-			reduced[appsub] = hr
+			keys[ownerApp] = i
 		} else {
-			existingTime := existing.GetCreationTimestamp().Time
-			thisTime := hr.GetCreationTimestamp().Time
-
+			log.Info("Competing helmreleases found for same appsub", "New", entry.GetName(), "Old", allHRs[index].GetName())
+			existingTime := allHRs[index].GetCreationTimestamp().Time
+			thisTime := entry.GetCreationTimestamp().Time
 			if thisTime.After(existingTime) {
-				reduced[appsub] = hr
+				keys[ownerApp] = i
 			}
 		}
 	}
 
-	ret := make([]*subrelv1.HelmRelease, len(reduced))
-	for _, value := range reduced {
-		ret = append(ret, value)
+	list := []*subrelv1.HelmRelease{}
+	for _, index := range keys {
+		list = append(list, allHRs[index])
 	}
-	return ret
+	return list
 }
 
 // getComponentStatuses populates a complete list of the hub component statuses
@@ -217,6 +220,7 @@ func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allHRs []*subrelv1.H
 	for _, hr := range filteredHRs {
 		owners := hr.GetOwnerReferences()
 		if len(owners) == 0 {
+			log.Info("Helmrelease has no owner reference!", "Name", hr.GetName())
 			continue
 		}
 		appsub := owners[0].Name
