@@ -47,6 +47,11 @@ func getManagedCluster() *unstructured.Unstructured {
 			"kind":       "ManagedCluster",
 			"metadata": map[string]interface{}{
 				"name": ManagedClusterName,
+				"labels": map[string]interface{}{
+					"local-cluster": "true",
+					"cloud":         "auto-detect",
+					"vendor":        "auto-detect",
+				},
 			},
 			"spec": map[string]interface{}{
 				"hubAcceptsClient": true,
@@ -159,7 +164,12 @@ func (r *ReconcileMultiClusterHub) ensureManagedCluster(m *operatorsv1.MultiClus
 		managedCluster = getManagedCluster()
 
 		labels := getInstallerLabels(m)
+		for k, v := range managedCluster.GetLabels() {
+			labels[k] = v
+		}
 		labels["local-cluster"] = "true"
+		labels["cloud"] = "auto-detect"
+		labels["vendor"] = "auto-detect"
 		managedCluster.SetLabels(labels)
 
 		managedCluster.SetOwnerReferences([]metav1.OwnerReference{
@@ -178,6 +188,8 @@ func (r *ReconcileMultiClusterHub) ensureManagedCluster(m *operatorsv1.MultiClus
 		labels[k] = v
 	}
 	labels["local-cluster"] = "true"
+	labels["cloud"] = "auto-detect"
+	labels["vendor"] = "auto-detect"
 	managedCluster.SetLabels(labels)
 	managedCluster.SetOwnerReferences([]metav1.OwnerReference{
 		*metav1.NewControllerRef(m, m.GetObjectKind().GroupVersionKind()),
