@@ -85,7 +85,7 @@ func getKlusterletAddonConfig() *unstructured.Unstructured {
 					"enabled": true,
 				},
 				"searchCollector": map[string]interface{}{
-					"enabled": true,
+					"enabled": false,
 				},
 				"certPolicyController": map[string]interface{}{
 					"enabled": true,
