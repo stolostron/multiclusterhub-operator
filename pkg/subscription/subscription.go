@@ -8,6 +8,7 @@ import (
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
+	"github.com/open-cluster-management/multicloudhub-operator/version"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -40,6 +41,9 @@ func newSubscription(m *operatorsv1.MultiClusterHub, s *Subscription) *unstructu
 				"name":    s.Name,
 				"placement": map[string]interface{}{
 					"local": true,
+				},
+				"packageFilter": map[string]interface{}{
+					"version": version.Version,
 				},
 				"packageOverrides": []map[string]interface{}{
 					{
