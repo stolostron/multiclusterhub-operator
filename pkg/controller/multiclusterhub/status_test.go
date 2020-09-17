@@ -11,6 +11,7 @@ import (
 	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis/apps/v1"
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 	appsv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -291,6 +292,97 @@ func TestRemoveHubCondition(t *testing.T) {
 			RemoveHubCondition(tt.status, tt.condType)
 			if !reflect.DeepEqual(tt.status, tt.want) {
 				t.Errorf("latestHelmReleaseCondition() = %v, want %v", tt.status, tt.want)
+			}
+		})
+	}
+}
+
+func Test_filterDuplicateHRs(t *testing.T) {
+	tests := []struct {
+		name     string
+		allHRs   []*subrelv1.HelmRelease
+		count    int
+		excludes []string
+	}{
+		{
+			name: "All helmrelease owner references unique",
+			allHRs: []*subrelv1.HelmRelease{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:              "topology-foo",
+						CreationTimestamp: v1.NewTime(time.Date(2020, 5, 29, 0, 0, 0, 0, time.UTC)),
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "apps.open-cluster-management.io/v1",
+								Kind:       "Subscription",
+								Name:       "topology-sub",
+							},
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:              "kui-web-terminal-foo",
+						CreationTimestamp: v1.NewTime(time.Date(2020, 5, 29, 0, 1, 0, 0, time.UTC)),
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "apps.open-cluster-management.io/v1",
+								Kind:       "Subscription",
+								Name:       "kui-web-terminal-sub",
+							},
+						},
+					},
+				},
+			},
+			count:    2,
+			excludes: []string{},
+		},
+		{
+			name: "Two helmreleases with same owning appsub",
+			allHRs: []*subrelv1.HelmRelease{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:              "topology-foo",
+						CreationTimestamp: v1.NewTime(time.Date(2020, 5, 29, 0, 0, 0, 0, time.UTC)),
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "apps.open-cluster-management.io/v1",
+								Kind:       "Subscription",
+								Name:       "topology-sub",
+							},
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:              "topology-bar",
+						CreationTimestamp: v1.NewTime(time.Date(2020, 5, 29, 0, 1, 0, 0, time.UTC)),
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "apps.open-cluster-management.io/v1",
+								Kind:       "Subscription",
+								Name:       "topology-sub",
+							},
+						},
+					},
+				},
+			},
+			count:    1,
+			excludes: []string{"topology-foo"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := filterDuplicateHRs(tt.allHRs)
+			if len(got) != tt.count {
+				t.Errorf("filterDuplicateHRs() returned %d helmreleases, want %d", len(got), tt.count)
+			}
+			for i := range got {
+				for _, name := range tt.excludes {
+					if got[i].Name == name {
+						t.Errorf("filterDuplicateHRs() should have filtered helmrelease %s", name)
+					}
+				}
 			}
 		})
 	}

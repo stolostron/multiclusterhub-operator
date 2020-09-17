@@ -51,7 +51,7 @@ include common/Makefile.common.mk
 lint: lint-all
 
 ## Run unit-tests
-test: deps component/test/unit
+test: component/test/unit
 
 ## Build the MultiClusterHub operator image
 image:
@@ -164,3 +164,10 @@ index-install: ns secrets og csv update-image subscriptions observability-crd re
 	oc patch serviceaccount default -n open-cluster-management -p '{"imagePullSecrets": [{"name": "quay-secret"}]}'
 	bash common/scripts/generate-index.sh ${VERSION} ${REGISTRY}
 	oc apply -k build/index-install/non-composite
+
+
+## Apply BMA CR
+bma-cr:
+	curl -H "Authorization: token $(shell echo $(GITHUB_TOKEN))" \
+		-H 'Accept: application/vnd.github.v3.raw' \
+		-L https://raw.githubusercontent.com/open-cluster-management/demo-subscription-gitops/master/bma/BareMetalAssets/dc01r3c3b2-powerflex390.yaml | oc apply -f -

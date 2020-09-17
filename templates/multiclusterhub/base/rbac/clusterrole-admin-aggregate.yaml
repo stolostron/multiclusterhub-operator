@@ -48,3 +48,6 @@ rules:
 - apiGroups: ["proxy.open-cluster-management.io"]
   resources: ["clusterstatuses/log"]
   verbs: ["get"]
+- apiGroups: ["addon.open-cluster-management.io"]
+  resources: ["managedclusteraddons","managedclusteraddons/status","clustermanagementaddons"]
+  verbs: ["get", "list", "watch"]
