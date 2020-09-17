@@ -177,14 +177,56 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 	return status
 }
 
+// filterDuplicateHRs removes multiple helmreleases owned by the same appsub, keeping the newest
+func filterDuplicateHRs(allHRs []*subrelv1.HelmRelease) []*subrelv1.HelmRelease {
+	keys := make(map[string]int)
+
+	for i := range allHRs {
+		entry := allHRs[i].DeepCopy()
+
+		ownerApps := entry.GetOwnerReferences()
+		if len(ownerApps) == 0 {
+			log.Info("Helmrelease has no owner reference!", "Name", entry.GetName())
+			continue
+		}
+		ownerApp := ownerApps[0].Name
+
+		index, ok := keys[ownerApp]
+		if !ok {
+			keys[ownerApp] = i
+		} else {
+			log.Info("Competing helmreleases found for same appsub", "New", entry.GetName(), "Old", allHRs[index].GetName())
+			existingTime := allHRs[index].GetCreationTimestamp().Time
+			thisTime := entry.GetCreationTimestamp().Time
+			if thisTime.After(existingTime) {
+				keys[ownerApp] = i
+			}
+		}
+	}
+
+	list := []*subrelv1.HelmRelease{}
+	for _, index := range keys {
+		list = append(list, allHRs[index])
+	}
+	return list
+}
+
 // getComponentStatuses populates a complete list of the hub component statuses
 func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allHRs []*subrelv1.HelmRelease, allDeps []*appsv1.Deployment, importClusterStatus []interface{}) map[string]operatorsv1.StatusCondition {
 	components := newComponentList(hub)
 
-	for _, hr := range allHRs {
-		owner := hr.OwnerReferences[0].Name
-		if _, ok := components[owner]; ok {
-			components[owner] = mapHelmRelease(hr)
+	filteredHRs := filterDuplicateHRs(allHRs)
+
+	for _, hr := range filteredHRs {
+		owners := hr.GetOwnerReferences()
+		if len(owners) == 0 {
+			log.Info("Helmrelease has no owner reference!", "Name", hr.GetName())
+			continue
+		}
+		appsub := owners[0].Name
+
+		if _, ok := components[appsub]; ok {
+			components[appsub] = mapHelmRelease(hr)
 
 			// If helmrelease is labeled successful, check its deployments for readiness
 			if successfulHelmRelease(hr) {
@@ -192,7 +234,7 @@ func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allHRs []*subrelv1.H
 				for _, d := range hrDeployments {
 					// Set status reported to first unready deployment
 					if !successfulDeploy(d) {
-						components[owner] = mapDeployment(d)
+						components[appsub] = mapDeployment(d)
 						break
 					}
 				}
