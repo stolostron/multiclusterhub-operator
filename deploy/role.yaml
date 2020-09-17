@@ -238,6 +238,8 @@ rules:
   - managedclusterinfos
   - managedclusterinfos/status
   - managedclustersets
+  - managedclustersets/bind
+  - managedclustersets/status
   - managedclusters
   - managedclusters/accept
   - managedclusters/status
