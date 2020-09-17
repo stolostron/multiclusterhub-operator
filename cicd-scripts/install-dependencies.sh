@@ -30,6 +30,3 @@ if ! [ -x "$(command -v opm)" ]; then
         sudo mv opm /usr/local/bin/opm
     fi
 fi
-
-git config --global url.git@github.com:.insteadOf https://github.com/
-export GOPRIVATE="github.com/open-cluster-management"; go get -d github.com/open-cluster-management/multicluster-monitoring-operator
