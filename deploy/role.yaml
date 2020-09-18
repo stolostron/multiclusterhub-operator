@@ -211,6 +211,7 @@ rules:
   - "config.openshift.io"
   - "compliance.mcm.ibm.com"
   - "hive.openshift.io"
+  - "hiveinternal.openshift.io"
   - "internal.open-cluster-management.io"
   - "inventory.open-cluster-management.io"
   - "mcm.ibm.com"
@@ -279,7 +280,7 @@ rules:
   - subscriptions/status
   - subjectaccessreviews
   - syncsets
-  - syncsetinstances
+  - clustersyncs
   verbs:
   - create
   - get
@@ -291,3 +292,4 @@ rules:
   - patch
   - approve
   - escalate
+  - bind
