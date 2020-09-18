@@ -126,12 +126,14 @@ spec:
           - apiregistration.k8s.io
           - authorization.k8s.io
           - config.openshift.io
+          - inventory.open-cluster-management.io
           - mcm.ibm.com
           - observability.open-cluster-management.io
           - operator.open-cluster-management.io
           - rbac.authorization.k8s.io
           resources:
           - apiservices
+          - baremetalassets
           - clusterjoinrequests
           - configmaps
           - deployments
@@ -268,6 +270,8 @@ spec:
           - managedclusterinfos
           - managedclusterinfos/status
           - managedclustersets
+          - managedclustersets/bind
+          - managedclustersets/status
           - managedclusters
           - managedclusters/accept
           - managedclusters/status
