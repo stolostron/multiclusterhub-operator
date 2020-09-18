@@ -35,3 +35,6 @@ rules:
 - apiGroups: ["observability.open-cluster-management.io"]
   resources: ["multiclusterobservabilities", "multiclusterobservabilities/status"]
   verbs: ["create","get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+- apiGroups: ["cluster.open-cluster-management.io"]
+  resources: ["managedclustersets", "managedclustersets/bind","managedclustersets/status"]
+  verbs: ["create","get", "list", "watch", "update", "delete", "deletecollection", "patch"]
