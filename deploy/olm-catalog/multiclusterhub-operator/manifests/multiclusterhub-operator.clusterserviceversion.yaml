@@ -126,12 +126,14 @@ spec:
           - apiregistration.k8s.io
           - authorization.k8s.io
           - config.openshift.io
+          - inventory.open-cluster-management.io
           - mcm.ibm.com
           - observability.open-cluster-management.io
           - operator.open-cluster-management.io
           - rbac.authorization.k8s.io
           resources:
           - apiservices
+          - baremetalassets
           - clusterjoinrequests
           - configmaps
           - deployments
@@ -319,6 +321,7 @@ spec:
           - patch
           - approve
           - escalate
+          - bind
         serviceAccountName: multiclusterhub-operator
       deployments:
       - name: multiclusterhub-operator
