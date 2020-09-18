@@ -290,3 +290,4 @@ rules:
   - patch
   - approve
   - escalate
+  - bind
