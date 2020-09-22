@@ -207,7 +207,6 @@ func FullInstallTestSuite() {
 			}
 			return nil
 		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
-		
 
 		By("- Setting `spec.disableHubSelfManagement` to false to create local-cluster resources")
 		utils.ToggleDisableHubSelfManagement(false)
@@ -219,9 +218,7 @@ func FullInstallTestSuite() {
 		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
 	})
 
-	
-
-	It(fmt.Sprintf("Installing MCH with bad image reference - should have Pending status"), func() {
+	It(fmt.Sprintf("Installing MCH with bad image reference - should have Installing status"), func() {
 		By("Creating Bad Image Overrides Configmap")
 		imageOverridesCM := utils.NewImageOverridesConfigmapBadImageRef(utils.ImageOverridesCMBadImageName, utils.MCHNamespace)
 		err := utils.CreateNewConfigMap(imageOverridesCM, utils.MCHNamespace)

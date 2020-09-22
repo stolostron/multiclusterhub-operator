@@ -484,13 +484,13 @@ func GetMCHStatus() (map[string]interface{}, error) {
 	return status, nil
 }
 
-// findPhase reports whether the hub status has the desired phase
+// findPhase reports whether the hub status has the desired phase and returns an error if not
 func findPhase(status map[string]interface{}, wantPhase string) error {
 	if _, ok := status["phase"]; !ok {
 		return fmt.Errorf("MCH status has no 'phase' field")
 	}
 	if phase := status["phase"]; phase != wantPhase {
-		return fmt.Errorf("MCH phase equals %s, expected %s", phase, wantPhase)
+		return fmt.Errorf("MCH phase equals `%s`, expected `%s`", phase, wantPhase)
 	}
 	return nil
 }
@@ -619,24 +619,14 @@ func ValidateMCHUnsuccessful() error {
 		time.Sleep(time.Duration(GetWaitInMinutes()) * time.Minute)
 	})
 
-	By("- Ensuring MCH is in 'pending' phase")
-	When("MCH Status should be `Pending`", func() {
-		Eventually(func() error {
-			mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
-			Expect(err).To(BeNil())
-			status, ok := mch.Object["status"].(map[string]interface{})
-			if !ok || status == nil {
-				return fmt.Errorf("MultiClusterHub: %s has no 'status' map", mch.GetName())
-			}
-			if _, ok := status["phase"]; !ok {
-				return fmt.Errorf("MultiClusterHub: %s status has no 'phase' field", mch.GetName())
-			}
-			if status["phase"] != "Pending" {
-				return fmt.Errorf("MultiClusterHub: %s with phase %s is not in pending phase", mch.GetName(), status["phase"])
-			}
-			return nil
-		}, 1, 1).Should(BeNil())
-	})
+	By("- Ensuring MCH is in 'Installing' phase")
+	status, err := GetMCHStatus()
+	if err != nil {
+		return err
+	}
+	if err := findPhase(status, "Installing"); err != nil {
+		return err
+	}
 
 	When("MCH Condition 'type' should be `Progressing` and 'status' should be 'true", func() {
 		Eventually(func() error {
@@ -657,17 +647,12 @@ func ValidateMCH() error {
 	By(fmt.Sprintf("- Ensuring MCH is in 'running' phase within %d minutes", GetWaitInMinutes()))
 	When(fmt.Sprintf("Wait for MultiClusterHub to be in running phase (Will take up to %d minutes)", GetWaitInMinutes()), func() {
 		Eventually(func() error {
-			mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
-			Expect(err).To(BeNil())
-			status, ok := mch.Object["status"].(map[string]interface{})
-			if !ok || status == nil {
-				return fmt.Errorf("MultiClusterHub: %s has no 'status' map", mch.GetName())
+			status, err := GetMCHStatus()
+			if err != nil {
+				return err
 			}
-			if _, ok := status["phase"]; !ok {
-				return fmt.Errorf("MultiClusterHub: %s status has no 'phase' field", mch.GetName())
-			}
-			if status["phase"] != "Running" {
-				return fmt.Errorf("MultiClusterHub: %s with phase %s is not in running phase", mch.GetName(), status["phase"])
+			if err := findPhase(status, "Running"); err != nil {
+				return err
 			}
 			return nil
 		}, GetWaitInMinutes()*60, 1).Should(BeNil())
@@ -686,7 +671,7 @@ func ValidateMCH() error {
 	mch, err = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
 	Expect(err).To(BeNil())
 	status := mch.Object["status"].(map[string]interface{})
-	if status["phase"] == "Running" {
+	if findPhase(status, "Running") == nil {
 		components, ok := mch.Object["status"].(map[string]interface{})["components"]
 		if !ok || components == nil {
 			return fmt.Errorf("MultiClusterHub: %s has no 'Components' map despite reporting 'running'", mch.GetName())
@@ -829,6 +814,16 @@ func ValidateConditionDuringUninstall() error {
 		return FindCondition(status, "Terminating", "True")
 	}, GetWaitInMinutes()*60, 1).Should(BeNil())
 	return nil
+}
+
+// ValidatePhase returns error if MCH phase does not match the provided phase
+func ValidatePhase(phase string) error {
+	By("- Checking HubCondition type")
+	status, err := GetMCHStatus()
+	if err != nil {
+		return err
+	}
+	return findPhase(status, phase)
 }
 
 // ValidateStatusesExist Confirms existence of both overall MCH and Component statuses immediately after MCH creation

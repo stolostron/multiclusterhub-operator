@@ -52,6 +52,7 @@ var _ = Describe("Multiclusterhub", func() {
 		installPlan, err = installPlanLink.Update(context.TODO(), approvedInstallPlan, metav1.UpdateOptions{})
 		Expect(err).To(BeNil())
 
+		var phaseError error
 		When("Operator Is Upgraded, wait for MCH Version to Update", func() {
 			Eventually(func() error {
 				version, err := utils.GetCurrentVersionFromMCH()
@@ -59,6 +60,9 @@ var _ = Describe("Multiclusterhub", func() {
 					return fmt.Errorf("MultiClusterHub: %s status has no 'currentVersion' field", utils.MCHName)
 				}
 				if version != os.Getenv("updateVersion") {
+					if phaseError == nil {
+						phaseError = utils.ValidatePhase("Updating")
+					}
 					return fmt.Errorf("MCH: %s current version mismatch '%s' != %s", utils.MCHName, version, os.Getenv("updateVersion"))
 				}
 				Expect(version).To(Equal(os.Getenv("updateVersion")))
@@ -68,6 +72,7 @@ var _ = Describe("Multiclusterhub", func() {
 			klog.V(1).Info("MCH Operator upgraded successfully")
 		})
 
+		Expect(phaseError).To(BeNil())
 		utils.ValidateMCH()
 
 		startVersion, err := semver.NewVersion(os.Getenv(("startVersion")))
