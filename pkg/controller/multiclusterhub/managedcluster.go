@@ -74,7 +74,7 @@ func getKlusterletAddonConfig() *unstructured.Unstructured {
 				"clusterName":      KlusterletAddonConfigName,
 				"clusterNamespace": ManagedClusterName,
 				"applicationManager": map[string]interface{}{
-					"enabled": false,
+					"enabled": true,
 				},
 				"clusterLabels": map[string]interface{}{
 					"cloud":  "auto-detect",
