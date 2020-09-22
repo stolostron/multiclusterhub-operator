@@ -123,6 +123,13 @@ var (
 		Version:  "v1",
 		Resource: "klusterletaddonconfigs",
 	}
+
+	// GVRBareMetalAsset
+	GVRBareMetalAsset = schema.GroupVersionResource{
+		Group: 	  "inventory.open-cluster-management.io",
+		Version:  "v1alpha1",
+		Resource: "baremetalassets",
+	}
 	// DefaultImageRegistry ...
 	DefaultImageRegistry = "quay.io/open-cluster-management"
 	// DefaultImagePullSecretName ...
@@ -1097,5 +1104,34 @@ func DeleteObservabilityCRD() {
 	Expect(err).To(BeNil())
 
 	err = DynamicKubeClient.Resource(GVRCustomResourceDefinition).Delete(context.TODO(), "multiclusterobservabilities.observability.open-cluster-management.io", metav1.DeleteOptions{})
+	Expect(err).To(BeNil())
+}
+
+func CreateBareMetalAssetsCR() {
+	By("- Creating BareMetalAsset CR if it does not exist")
+
+	_, err := DynamicKubeClient.Resource(GVRBareMetalAsset).Namespace(MCHNamespace).Get(context.TODO(), "dc01r3c3b2-powerflex390", metav1.GetOptions{})
+	if err == nil {
+		return
+	}
+
+	crd, err := ioutil.ReadFile("../resources/baremetalasset-cr.yaml")
+	Expect(err).To(BeNil())
+
+	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
+	err = yaml.Unmarshal(crd, &unstructuredCRD.Object)
+	Expect(err).To(BeNil())
+
+	_, err = DynamicKubeClient.Resource(GVRBareMetalAsset).Namespace(MCHNamespace).Create(context.TODO(), unstructuredCRD, metav1.CreateOptions{})
+	Expect(err).To(BeNil())
+}
+
+func DeleteBareMetalAssetsCR() {
+	By("- Deleting BareMetal CR if it exists")
+
+	_, err := ioutil.ReadFile("../resources/baremetalasset-cr.yaml")
+	Expect(err).To(BeNil())
+
+	err = DynamicKubeClient.Resource(GVRBareMetalAsset).Namespace(MCHNamespace).Delete(context.TODO(), "dc01r3c3b2-powerflex390", metav1.DeleteOptions{})
 	Expect(err).To(BeNil())
 }
