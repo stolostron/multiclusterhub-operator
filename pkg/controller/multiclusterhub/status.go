@@ -114,7 +114,7 @@ func (r *ReconcileMultiClusterHub) ComponentsAreRunning(m *operatorsv1.MultiClus
 	hrList, _ := r.listHelmReleases()
 	componentStatuses := getComponentStatuses(m, hrList, deployList, nil)
 	delete(componentStatuses, ManagedClusterName)
-	return aggregateStatus(componentStatuses)
+	return allComponentsSuccessful(componentStatuses)
 }
 
 // syncHubStatus checks if the status is up-to-date and sync it if necessary
@@ -155,30 +155,13 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 		Components:     components,
 	}
 
-	// Set overall phase
-
-	successful := aggregateStatus(components)
-	isHubMarkedToBeDeleted := hub.GetDeletionTimestamp() != nil
-	if isHubMarkedToBeDeleted {
-		// Hub cleaning up
-		status.Phase = operatorsv1.HubUninstalling
-	} else if !successful {
-		if status.CurrentVersion == "" {
-			// Hub has not reached success for first time
-			status.Phase = operatorsv1.HubInstalling
-		} else if status.CurrentVersion != version.Version {
-			// Hub has not completed upgrade to newest version
-			status.Phase = operatorsv1.HubUpdating
-		} else {
-			// Hub has reached desired version, but degraded
-			status.Phase = operatorsv1.HubPending
-		}
-	} else {
-		status.Phase = operatorsv1.HubRunning
+	// Set current version
+	successful := allComponentsSuccessful(components)
+	if successful {
 		status.CurrentVersion = version.Version
 	}
 
-	// Copy conditions one by one so we won't mutate the original object.
+	// Copy conditions one by one to not affect original object
 	conditions := hub.Status.HubConditions
 	for i := range conditions {
 		status.HubConditions = append(status.HubConditions, conditions[i])
@@ -199,6 +182,15 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 			unavailable := NewHubCondition(operatorsv1.Complete, v1.ConditionFalse, ComponentsUnavailableReason, "Not all hub components ready.")
 			SetHubCondition(&status, *unavailable)
 		}
+	}
+
+	// Set overall phase
+	isHubMarkedToBeDeleted := hub.GetDeletionTimestamp() != nil
+	if isHubMarkedToBeDeleted {
+		// Hub cleaning up
+		status.Phase = operatorsv1.HubUninstalling
+	} else {
+		status.Phase = aggregatePhase(status)
 	}
 
 	return status
@@ -462,14 +454,37 @@ func mapHelmRelease(hr *subrelv1.HelmRelease) operatorsv1.StatusCondition {
 
 func successfulComponent(sc operatorsv1.StatusCondition) bool { return sc.Available }
 
-// aggregateStatus returns true if all components are successful, otherwise false
-func aggregateStatus(components map[string]operatorsv1.StatusCondition) bool {
+// allComponentsSuccessful returns true if all components are successful, otherwise false
+func allComponentsSuccessful(components map[string]operatorsv1.StatusCondition) bool {
 	for _, val := range components {
 		if !successfulComponent(val) {
 			return false
 		}
 	}
 	return true
+}
+
+// aggregatePhase calculates overall HubPhaseType based on hub status. This does NOT account for
+// a hub in the process of deletion.
+func aggregatePhase(status operatorsv1.MultiClusterHubStatus) operatorsv1.HubPhaseType {
+	successful := allComponentsSuccessful(status.Components)
+	if successful {
+		// Hub running
+		return operatorsv1.HubRunning
+	}
+
+	switch cv := status.CurrentVersion; {
+	case cv == "":
+		// Hub has not reached success for first time
+		return operatorsv1.HubInstalling
+	case cv != version.Version:
+		// Hub has not completed upgrade to newest version
+		return operatorsv1.HubUpdating
+	default:
+		// Hub has reached desired version, but degraded
+		return operatorsv1.HubPending
+	}
+
 }
 
 // NewHubCondition creates a new hub condition.
