@@ -172,10 +172,6 @@ func (r *ReconcileMultiClusterHub) ensureManagedCluster(m *operatorsv1.MultiClus
 		labels["vendor"] = "auto-detect"
 		managedCluster.SetLabels(labels)
 
-		managedCluster.SetOwnerReferences([]metav1.OwnerReference{
-			*metav1.NewControllerRef(m, m.GetObjectKind().GroupVersionKind()),
-		})
-
 		err = r.client.Create(context.TODO(), managedCluster)
 		if err != nil {
 			log.Error(err, "Failed to create managedcluster resource")
@@ -191,9 +187,6 @@ func (r *ReconcileMultiClusterHub) ensureManagedCluster(m *operatorsv1.MultiClus
 	labels["cloud"] = "auto-detect"
 	labels["vendor"] = "auto-detect"
 	managedCluster.SetLabels(labels)
-	managedCluster.SetOwnerReferences([]metav1.OwnerReference{
-		*metav1.NewControllerRef(m, m.GetObjectKind().GroupVersionKind()),
-	})
 
 	err = r.client.Update(context.TODO(), managedCluster)
 	if err != nil {
@@ -233,10 +226,6 @@ func (r *ReconcileMultiClusterHub) ensureKlusterletAddonConfig(m *operatorsv1.Mu
 		klusterletaddonconfig = getKlusterletAddonConfig()
 		klusterletaddonconfig.SetLabels(getInstallerLabels(m))
 
-		klusterletaddonconfig.SetOwnerReferences([]metav1.OwnerReference{
-			*metav1.NewControllerRef(m, m.GetObjectKind().GroupVersionKind()),
-		})
-
 		err = r.client.Create(context.TODO(), klusterletaddonconfig)
 		if err != nil {
 			log.Error(err, "Failed to create klusterletaddonconfig resource")
@@ -250,10 +239,6 @@ func (r *ReconcileMultiClusterHub) ensureKlusterletAddonConfig(m *operatorsv1.Mu
 	}
 
 	klusterletaddonconfig.SetLabels(labels)
-	klusterletaddonconfig.SetOwnerReferences([]metav1.OwnerReference{
-		*metav1.NewControllerRef(m, m.GetObjectKind().GroupVersionKind()),
-	})
-
 	err = r.client.Update(context.TODO(), klusterletaddonconfig)
 	if err != nil {
 		log.Error(err, "Failed to update klusterletaddonconfig resource")
