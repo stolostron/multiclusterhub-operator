@@ -1105,7 +1105,7 @@ func CreateBareMetalAssetsCR() {
 		return
 	}
 
-	crd, err := ioutil.ReadFile("../resources/baremetalasset-cr.yaml")
+	crd, err := ioutil.ReadFile("../baremetalasset-cr.yaml")
 	Expect(err).To(BeNil())
 
 	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
@@ -1119,7 +1119,7 @@ func CreateBareMetalAssetsCR() {
 func DeleteBareMetalAssetsCR() {
 	By("- Deleting BareMetal CR if it exists")
 
-	_, err := ioutil.ReadFile("../resources/baremetalasset-cr.yaml")
+	_, err := ioutil.ReadFile("../baremetalasset-cr.yaml")
 	Expect(err).To(BeNil())
 
 	err = DynamicKubeClient.Resource(GVRBareMetalAsset).Namespace(MCHNamespace).Delete(context.TODO(), "dc01r3c3b2-powerflex390", metav1.DeleteOptions{})
