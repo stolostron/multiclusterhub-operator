@@ -886,7 +886,7 @@ func ValidateImportHubResourcesExist(expected bool) error {
 func ValidateManagedCluster(importResourcesShouldExist bool) error {
 	By("- Checking imported hub resources exist or not")
 	By("- Confirming Necessary Resources")
-	mc, _ := DynamicKubeClient.Resource(GVRManagedCluster).Get(context.TODO(), "local-cluster", metav1.GetOptions{})
+	// mc, _ := DynamicKubeClient.Resource(GVRManagedCluster).Get(context.TODO(), "local-cluster", metav1.GetOptions{})
 	if err := ValidateImportHubResourcesExist(importResourcesShouldExist); err != nil {
 		return fmt.Errorf("Resources are as they shouldn't")
 	}
