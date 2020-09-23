@@ -126,7 +126,7 @@ var (
 
 	// GVRBareMetalAsset
 	GVRBareMetalAsset = schema.GroupVersionResource{
-		Group: 	  "inventory.open-cluster-management.io",
+		Group:    "inventory.open-cluster-management.io",
 		Version:  "v1alpha1",
 		Resource: "baremetalassets",
 	}
@@ -887,9 +887,6 @@ func ValidateManagedCluster(importResourcesShouldExist bool) error {
 	By("- Checking imported hub resources exist or not")
 	By("- Confirming Necessary Resources")
 	mc, _ := DynamicKubeClient.Resource(GVRManagedCluster).Get(context.TODO(), "local-cluster", metav1.GetOptions{})
-	if err := validateManagedClusterOwnerRef(mc); err != nil {
-		return fmt.Errorf("Owner ref is not mch")
-	}
 	if err := ValidateImportHubResourcesExist(importResourcesShouldExist); err != nil {
 		return fmt.Errorf("Resources are as they shouldn't")
 	}
@@ -918,18 +915,6 @@ func validateManagedClusterConditions() error {
 	} else {
 		return fmt.Errorf("no status")
 	}
-}
-
-// validateManagedClusterOwnerRef helper func to validateManagedCluster
-func validateManagedClusterOwnerRef(mc *unstructured.Unstructured) error {
-	if mc != nil {
-		name := mc.Object["metadata"].(map[string]interface{})["ownerReferences"].([]interface{})[0].(map[string]interface{})["name"]
-		if name != MCHName {
-			return fmt.Errorf("owner ref does not match mch name")
-		}
-		return nil
-	}
-	return nil
 }
 
 // ToggleDisableHubSelfManagement toggles the value of spec.disableHubSelfManagement from true to false or false to true
