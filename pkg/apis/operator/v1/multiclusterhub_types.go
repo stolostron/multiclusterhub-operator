@@ -189,8 +189,11 @@ type IngressSpec struct {
 type HubPhaseType string
 
 const (
-	HubPending HubPhaseType = "Pending"
-	HubRunning HubPhaseType = "Running"
+	HubPending      HubPhaseType = "Pending"
+	HubRunning      HubPhaseType = "Running"
+	HubInstalling   HubPhaseType = "Installing"
+	HubUpdating     HubPhaseType = "Updating"
+	HubUninstalling HubPhaseType = "Uninstalling"
 )
 
 // MultiClusterHubStatus defines the observed state of MultiClusterHub
