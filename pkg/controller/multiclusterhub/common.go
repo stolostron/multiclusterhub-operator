@@ -29,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -437,29 +438,48 @@ func (r *ReconcileMultiClusterHub) maintainImageManifestConfigmap(mch *operators
 	return nil
 }
 
-func (r *ReconcileMultiClusterHub) listDeployments() ([]*appsv1.Deployment, error) {
-	deployList := &appsv1.DeploymentList{}
-	err := r.client.List(context.TODO(), deployList)
-	if err != nil && !errors.IsNotFound(err) {
-		return nil, err
-	}
+// listDeployments gets all deployments in the given namespaces
+func (r *ReconcileMultiClusterHub) listDeployments(namespaces []string) ([]*appsv1.Deployment, error) {
 	var ret []*appsv1.Deployment
-	for i := 0; i < len(deployList.Items); i++ {
-		ret = append(ret, &deployList.Items[i])
+
+	for _, n := range namespaces {
+		deployList := &appsv1.DeploymentList{}
+		err := r.client.List(context.TODO(), deployList, client.InNamespace(n))
+		log.Info("Found this many in namespace", n, len(deployList.Items))
+		if err != nil && !errors.IsNotFound(err) {
+			return nil, err
+		}
+		if errors.IsNotFound(err) {
+			log.Info("IsNotFound error", "ns", n)
+		}
+
+		for i := 0; i < len(deployList.Items); i++ {
+			ret = append(ret, &deployList.Items[i])
+		}
 	}
 	return ret, nil
 }
 
-func (r *ReconcileMultiClusterHub) listHelmReleases() ([]*subrelv1.HelmRelease, error) {
-	hrList := &subrelv1.HelmReleaseList{}
-	err := r.client.List(context.TODO(), hrList)
-	if err != nil && !errors.IsNotFound(err) {
-		return nil, err
-	}
+// listHelmReleases gets all helmreleases in the given namespaces
+func (r *ReconcileMultiClusterHub) listHelmReleases(namespaces []string) ([]*subrelv1.HelmRelease, error) {
 	var ret []*subrelv1.HelmRelease
-	for i := 0; i < len(hrList.Items); i++ {
-		ret = append(ret, &hrList.Items[i])
+
+	for _, n := range namespaces {
+		hrList := &subrelv1.HelmReleaseList{}
+		err := r.client.List(context.TODO(), hrList, client.InNamespace(n))
+		log.Info("Found this many in namespace", n, len(hrList.Items))
+		if err != nil && !errors.IsNotFound(err) {
+			return nil, err
+		}
+		if errors.IsNotFound(err) {
+			log.Info("IsNotFound error", "ns", n)
+		}
+
+		for i := 0; i < len(hrList.Items); i++ {
+			ret = append(ret, &hrList.Items[i])
+		}
 	}
+
 	return ret, nil
 }
 
