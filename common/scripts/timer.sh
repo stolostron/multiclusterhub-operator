@@ -8,7 +8,7 @@ do
         echo "RUNNING!"
         break
     fi
-    echo "NOT YET..."
+    echo "$(oc get mch | tail -n 1 | awk '{ print $3 }')"
     sleep 1
 done
 NOW=$(date +%s)
