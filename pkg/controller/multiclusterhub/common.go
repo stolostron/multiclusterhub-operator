@@ -445,12 +445,8 @@ func (r *ReconcileMultiClusterHub) listDeployments(namespaces []string) ([]*apps
 	for _, n := range namespaces {
 		deployList := &appsv1.DeploymentList{}
 		err := r.client.List(context.TODO(), deployList, client.InNamespace(n))
-		log.Info("Found this many in namespace", n, len(deployList.Items))
 		if err != nil && !errors.IsNotFound(err) {
 			return nil, err
-		}
-		if errors.IsNotFound(err) {
-			log.Info("IsNotFound error", "ns", n)
 		}
 
 		for i := 0; i < len(deployList.Items); i++ {
@@ -467,12 +463,8 @@ func (r *ReconcileMultiClusterHub) listHelmReleases(namespaces []string) ([]*sub
 	for _, n := range namespaces {
 		hrList := &subrelv1.HelmReleaseList{}
 		err := r.client.List(context.TODO(), hrList, client.InNamespace(n))
-		log.Info("Found this many in namespace", n, len(hrList.Items))
 		if err != nil && !errors.IsNotFound(err) {
 			return nil, err
-		}
-		if errors.IsNotFound(err) {
-			log.Info("IsNotFound error", "ns", n)
 		}
 
 		for i := 0; i < len(hrList.Items); i++ {

@@ -179,19 +179,12 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 	}
 
 	trackedNamespaces := utils.TrackedNamespaces(multiClusterHub)
-	log.Info("Tracking namespaces", "name", trackedNamespaces)
 
 	allDeploys, err := r.listDeployments(trackedNamespaces)
-	for d := range allDeploys {
-		log.Info("All deploy", "name", allDeploys[d].Name)
-	}
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 	allHRs, err := r.listHelmReleases(trackedNamespaces)
-	for h := range allHRs {
-		log.Info("All hr", "name", allHRs[h].Name)
-	}
 	if err != nil {
 		return reconcile.Result{}, err
 	}
