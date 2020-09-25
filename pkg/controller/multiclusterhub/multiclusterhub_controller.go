@@ -330,6 +330,11 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		return *result, err
 	}
 
+	result, _ = r.ensureWebhookIsAvailable(multiClusterHub)
+	if result != nil {
+		return *result, nil
+	}
+
 	result, err = r.ensureSubscription(multiClusterHub, subscription.ConfigWatcher(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err

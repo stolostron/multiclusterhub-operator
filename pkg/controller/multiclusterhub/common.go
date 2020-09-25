@@ -537,3 +537,18 @@ func (r *ReconcileMultiClusterHub) labelDeployments(hub *operatorsv1.MultiCluste
 	}
 	return nil
 }
+
+func (r *ReconcileMultiClusterHub) ensureWebhookIsAvailable(mch *operatorsv1.MultiClusterHub) (*reconcile.Result, error) {
+	if _, ok := mch.Status.Components["cert-manager-webhook-sub"]; !ok {
+		log.Info("Waiting for cert-manager-webhook status")
+		return &reconcile.Result{RequeueAfter: resyncPeriod}, fmt.Errorf("Waiting for cert-manager-webhook status")
+	}
+
+	component := mch.Status.Components["cert-manager-webhook-sub"]
+	if !(component.Type == "Deployed" && component.Status == "True") {
+		log.Info("Waiting for cert-manager-webhook to be available")
+		return &reconcile.Result{RequeueAfter: resyncPeriod}, fmt.Errorf("Waiting for cert-manager-webhook to be available")
+	}
+
+	return nil, nil
+}
