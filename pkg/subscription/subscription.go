@@ -87,6 +87,12 @@ func Validate(found *unstructured.Unstructured, want *unstructured.Unstructured)
 		return found, true
 	}
 
+	// Remove owner reference if it shouldn't be there
+	if want.GetOwnerReferences() == nil && found.GetOwnerReferences() != nil {
+		found.SetOwnerReferences(nil)
+		return found, true
+	}
+
 	return nil, false
 }
 

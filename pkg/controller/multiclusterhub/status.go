@@ -110,8 +110,10 @@ var wrongVersionStatus = operatorsv1.StatusCondition{
 
 // ComponentsAreRunning ...
 func (r *ReconcileMultiClusterHub) ComponentsAreRunning(m *operatorsv1.MultiClusterHub) bool {
-	deployList, _ := r.listDeployments()
-	hrList, _ := r.listHelmReleases()
+	trackedNamespaces := utils.TrackedNamespaces(m)
+
+	deployList, _ := r.listDeployments(trackedNamespaces)
+	hrList, _ := r.listHelmReleases(trackedNamespaces)
 	componentStatuses := getComponentStatuses(m, hrList, deployList, nil)
 	delete(componentStatuses, ManagedClusterName)
 	return allComponentsSuccessful(componentStatuses)

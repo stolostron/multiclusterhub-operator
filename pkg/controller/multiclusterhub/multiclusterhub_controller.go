@@ -178,11 +178,13 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		return reconcile.Result{}, err
 	}
 
-	allDeploys, err := r.listDeployments()
+	trackedNamespaces := utils.TrackedNamespaces(multiClusterHub)
+
+	allDeploys, err := r.listDeployments(trackedNamespaces)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	allHRs, err := r.listHelmReleases()
+	allHRs, err := r.listHelmReleases(trackedNamespaces)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
