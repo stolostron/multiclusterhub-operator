@@ -4,7 +4,6 @@ package multiclusterhub_install_test
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -55,7 +54,7 @@ var _ = Describe("Multiclusterhub", func() {
 				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
 				return
 			}
-			log.Printf("Installation Time: %s", time.Since(start))
+			fmt.Printf("Installation Time: %s\n", time.Since(start))
 			return
 		})
 	}
