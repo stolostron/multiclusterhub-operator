@@ -38,7 +38,13 @@ func CertManager(m *operatorsv1.MultiClusterHub, overrides map[string]string) *u
 	}
 	setCustomCA(m, sub)
 
-	return newSubscription(m, sub)
+	// Remove owner reference if appsub is being installed in a different namespace
+	if sub.Namespace == m.Namespace {
+		return newSubscription(m, sub)
+	}
+	uSub := newSubscription(m, sub)
+	uSub.SetOwnerReferences(nil)
+	return uSub
 }
 
 // CertWebhook overrides the cert-manager-webhook chart
@@ -76,7 +82,13 @@ func CertWebhook(m *operatorsv1.MultiClusterHub, overrides map[string]string) *u
 
 	sub.Overrides["cainjector"] = cainjector
 
-	return newSubscription(m, sub)
+	// Remove owner reference if appsub is being installed in a different namespace
+	if sub.Namespace == m.Namespace {
+		return newSubscription(m, sub)
+	}
+	uSub := newSubscription(m, sub)
+	uSub.SetOwnerReferences(nil)
+	return uSub
 }
 
 // ConfigWatcher overrides the configmap-watcher chart
@@ -101,5 +113,11 @@ func ConfigWatcher(m *operatorsv1.MultiClusterHub, overrides map[string]string) 
 		},
 	}
 
-	return newSubscription(m, sub)
+	// Remove owner reference if appsub is being installed in a different namespace
+	if sub.Namespace == m.Namespace {
+		return newSubscription(m, sub)
+	}
+	uSub := newSubscription(m, sub)
+	uSub.SetOwnerReferences(nil)
+	return uSub
 }

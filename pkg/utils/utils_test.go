@@ -247,3 +247,34 @@ func TestFormatSSLCiphers(t *testing.T) {
 		})
 	}
 }
+
+func TestTrackedNamespaces(t *testing.T) {
+	tests := []struct {
+		name string
+		mch  *operatorsv1.MultiClusterHub
+		want []string
+	}{
+		{
+			name: "Watching only in same namespace",
+			mch:  &operatorsv1.MultiClusterHub{ObjectMeta: metav1.ObjectMeta{Namespace: "test"}},
+			want: []string{"test"},
+		},
+		{
+			name: "Watching current and cert-manager namespace",
+			mch: &operatorsv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
+				Spec: operatorsv1.MultiClusterHubSpec{
+					SeparateCertificateManagement: true,
+				},
+			},
+			want: []string{"test", CertManagerNamespace},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := TrackedNamespaces(tt.mch); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("TrackedNamespaces() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
