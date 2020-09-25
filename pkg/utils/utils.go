@@ -206,3 +206,12 @@ func IsUnitTest() bool {
 func FormatSSLCiphers(ciphers []string) string {
 	return strings.Join(ciphers, ":")
 }
+
+// TrackedNamespaces returns the list of namespaces we deploy components to and should track
+func TrackedNamespaces(m *operatorsv1.MultiClusterHub) []string {
+	trackedNamespaces := []string{m.Namespace}
+	if m.Spec.SeparateCertificateManagement {
+		trackedNamespaces = append(trackedNamespaces, CertManagerNamespace)
+	}
+	return trackedNamespaces
+}
