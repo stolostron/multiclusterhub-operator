@@ -4,7 +4,9 @@ package multiclusterhub_install_test
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
+	"time"
 
 	"github.com/Masterminds/semver"
 	. "github.com/onsi/ginkgo"
@@ -41,6 +43,8 @@ var _ = Describe("Multiclusterhub", func() {
 		By("Beginning Basic Install Test Suite ...")
 		It("Install Default MCH CR", func() {
 			By("Creating MultiClusterHub")
+			start := time.Now()
+
 			utils.CreateDefaultMCH()
 			if err := utils.ValidateStatusesExist(); err != nil {
 				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
@@ -51,6 +55,7 @@ var _ = Describe("Multiclusterhub", func() {
 				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
 				return
 			}
+			log.Printf("Installation Time: %s", time.Since(start))
 			return
 		})
 	}
