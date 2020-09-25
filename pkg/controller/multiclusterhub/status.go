@@ -99,17 +99,24 @@ var unknownStatus = operatorsv1.StatusCondition{
 	Available:          false,
 }
 
+var wrongVersionStatus = operatorsv1.StatusCondition{
+	Type:               "Available",
+	Status:             metav1.ConditionFalse,
+	LastUpdateTime:     metav1.Now(),
+	LastTransitionTime: metav1.Now(),
+	Reason:             "WrongVersion",
+	Available:          false,
+}
+
 // ComponentsAreRunning ...
 func (r *ReconcileMultiClusterHub) ComponentsAreRunning(m *operatorsv1.MultiClusterHub) bool {
-	deployList, _ := r.listDeployments()
-	hrList, _ := r.listHelmReleases()
+	trackedNamespaces := utils.TrackedNamespaces(m)
+
+	deployList, _ := r.listDeployments(trackedNamespaces)
+	hrList, _ := r.listHelmReleases(trackedNamespaces)
 	componentStatuses := getComponentStatuses(m, hrList, deployList, nil)
 	delete(componentStatuses, ManagedClusterName)
-	if aggregateStatus(componentStatuses) == operatorsv1.HubRunning {
-		return true
-	} else {
-		return false
-	}
+	return allComponentsSuccessful(componentStatuses)
 }
 
 // syncHubStatus checks if the status is up-to-date and sync it if necessary
@@ -148,19 +155,24 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 		CurrentVersion: hub.Status.CurrentVersion,
 		DesiredVersion: version.Version,
 		Components:     components,
-		Phase:          aggregateStatus(components),
 	}
 
-	// Copy conditions one by one so we won't mutate the original object.
+	// Set current version
+	successful := allComponentsSuccessful(components)
+	if successful {
+		status.CurrentVersion = version.Version
+	}
+
+	// Copy conditions one by one to not affect original object
 	conditions := hub.Status.HubConditions
 	for i := range conditions {
 		status.HubConditions = append(status.HubConditions, conditions[i])
 	}
 
-	if status.Phase == operatorsv1.HubRunning {
+	// Update hub conditions
+	if successful {
 		available := NewHubCondition(operatorsv1.Complete, v1.ConditionTrue, ComponentsAvailableReason, "All hub components ready.")
 		SetHubCondition(&status, *available)
-		status.CurrentVersion = version.Version
 	} else {
 		// hub is progressing unless otherwise specified
 		if !HubConditionPresent(status, operatorsv1.Progressing) {
@@ -172,6 +184,15 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 			unavailable := NewHubCondition(operatorsv1.Complete, v1.ConditionFalse, ComponentsUnavailableReason, "Not all hub components ready.")
 			SetHubCondition(&status, *unavailable)
 		}
+	}
+
+	// Set overall phase
+	isHubMarkedToBeDeleted := hub.GetDeletionTimestamp() != nil
+	if isHubMarkedToBeDeleted {
+		// Hub cleaning up
+		status.Phase = operatorsv1.HubUninstalling
+	} else {
+		status.Phase = aggregatePhase(status)
 	}
 
 	return status
@@ -419,10 +440,15 @@ func mapHelmRelease(hr *subrelv1.HelmRelease) operatorsv1.StatusCondition {
 		ret.Type = "DeployedRelease"
 	}
 
-	// Ignore success messages
 	if successfulHelmRelease(hr) {
 		ret.Available = true
 		ret.Message = ""
+
+		// Check if using desired chart version
+		if v := hr.Repo.Version; v != version.Version {
+			ret = wrongVersionStatus
+			ret.Message = fmt.Sprintf("expected version `%s`, current version is `%s`", version.Version, v)
+		}
 	}
 
 	return ret
@@ -430,13 +456,37 @@ func mapHelmRelease(hr *subrelv1.HelmRelease) operatorsv1.StatusCondition {
 
 func successfulComponent(sc operatorsv1.StatusCondition) bool { return sc.Available }
 
-func aggregateStatus(components map[string]operatorsv1.StatusCondition) operatorsv1.HubPhaseType {
+// allComponentsSuccessful returns true if all components are successful, otherwise false
+func allComponentsSuccessful(components map[string]operatorsv1.StatusCondition) bool {
 	for _, val := range components {
 		if !successfulComponent(val) {
-			return operatorsv1.HubPending
+			return false
 		}
 	}
-	return operatorsv1.HubRunning
+	return true
+}
+
+// aggregatePhase calculates overall HubPhaseType based on hub status. This does NOT account for
+// a hub in the process of deletion.
+func aggregatePhase(status operatorsv1.MultiClusterHubStatus) operatorsv1.HubPhaseType {
+	successful := allComponentsSuccessful(status.Components)
+	if successful {
+		// Hub running
+		return operatorsv1.HubRunning
+	}
+
+	switch cv := status.CurrentVersion; {
+	case cv == "":
+		// Hub has not reached success for first time
+		return operatorsv1.HubInstalling
+	case cv != version.Version:
+		// Hub has not completed upgrade to newest version
+		return operatorsv1.HubUpdating
+	default:
+		// Hub has reached desired version, but degraded
+		return operatorsv1.HubPending
+	}
+
 }
 
 // NewHubCondition creates a new hub condition.

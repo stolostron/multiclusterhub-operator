@@ -10,12 +10,13 @@ import (
 
 	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis/apps/v1"
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
+	"github.com/open-cluster-management/multicloudhub-operator/version"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func Test_aggregateStatus(t *testing.T) {
+func Test_allComponentsSuccessful(t *testing.T) {
 	available := operatorsv1.StatusCondition{Type: "Available", Status: v1.ConditionTrue, Available: true}
 	deployed := operatorsv1.StatusCondition{Type: "Available", Status: v1.ConditionTrue, Available: true}
 	unavailable := operatorsv1.StatusCondition{Type: "Available", Status: v1.ConditionFalse}
@@ -25,7 +26,7 @@ func Test_aggregateStatus(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want operatorsv1.HubPhaseType
+		want bool
 	}{
 		{
 			name: "Single available component",
@@ -35,7 +36,7 @@ func Test_aggregateStatus(t *testing.T) {
 					"bar": deployed,
 				},
 			},
-			want: operatorsv1.HubRunning,
+			want: true,
 		},
 		{
 			name: "Single unavailable component",
@@ -45,13 +46,13 @@ func Test_aggregateStatus(t *testing.T) {
 					"bar": deployed,
 				},
 			},
-			want: operatorsv1.HubPending,
+			want: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := aggregateStatus(tt.args.components); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("aggregateStatus() = %v, want %v", got, tt.want)
+			if got := allComponentsSuccessful(tt.args.components); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("allComponentsSuccessful() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -383,6 +384,85 @@ func Test_filterDuplicateHRs(t *testing.T) {
 						t.Errorf("filterDuplicateHRs() should have filtered helmrelease %s", name)
 					}
 				}
+			}
+		})
+	}
+}
+
+func Test_aggregatePhase(t *testing.T) {
+	available := operatorsv1.StatusCondition{Type: "Available", Status: v1.ConditionTrue, Available: true}
+	unavailable := operatorsv1.StatusCondition{Type: "Available", Status: v1.ConditionFalse}
+
+	tests := []struct {
+		name   string
+		status operatorsv1.MultiClusterHubStatus
+		want   operatorsv1.HubPhaseType
+	}{
+		{
+			name: "Running hub with previous version",
+			status: operatorsv1.MultiClusterHubStatus{
+				CurrentVersion: "1.0.0",
+				Components: map[string]operatorsv1.StatusCondition{
+					"foo": available,
+				},
+			},
+			want: operatorsv1.HubRunning,
+		},
+		{
+			name: "Running hub with current version",
+			status: operatorsv1.MultiClusterHubStatus{
+				CurrentVersion: version.Version,
+				Components: map[string]operatorsv1.StatusCondition{
+					"foo": available,
+				},
+			},
+			want: operatorsv1.HubRunning,
+		},
+		{
+			name: "Progressing hub with previous version",
+			status: operatorsv1.MultiClusterHubStatus{
+				CurrentVersion: "1.0.0",
+				Components: map[string]operatorsv1.StatusCondition{
+					"foo": unavailable,
+				},
+			},
+			want: operatorsv1.HubUpdating,
+		},
+		{
+			name: "Progressing hub with current version",
+			status: operatorsv1.MultiClusterHubStatus{
+				CurrentVersion: version.Version,
+				Components: map[string]operatorsv1.StatusCondition{
+					"foo": unavailable,
+				},
+			},
+			want: operatorsv1.HubPending,
+		},
+		{
+			name: "Progressing hub with no version",
+			status: operatorsv1.MultiClusterHubStatus{
+				CurrentVersion: "",
+				Components: map[string]operatorsv1.StatusCondition{
+					"foo": unavailable,
+				},
+			},
+			want: operatorsv1.HubInstalling,
+		},
+		{
+			name: "Running hub with no version",
+			status: operatorsv1.MultiClusterHubStatus{
+				CurrentVersion: "",
+				Components: map[string]operatorsv1.StatusCondition{
+					"foo": available,
+				},
+			},
+			want: operatorsv1.HubRunning,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := aggregatePhase(tt.status); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("aggregatePhase() = %v, want %v", got, tt.want)
 			}
 		})
 	}

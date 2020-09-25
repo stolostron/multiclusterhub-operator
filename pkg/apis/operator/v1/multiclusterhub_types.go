@@ -189,8 +189,11 @@ type IngressSpec struct {
 type HubPhaseType string
 
 const (
-	HubPending HubPhaseType = "Pending"
-	HubRunning HubPhaseType = "Running"
+	HubPending      HubPhaseType = "Pending"
+	HubRunning      HubPhaseType = "Running"
+	HubInstalling   HubPhaseType = "Installing"
+	HubUpdating     HubPhaseType = "Updating"
+	HubUninstalling HubPhaseType = "Uninstalling"
 )
 
 // MultiClusterHubStatus defines the observed state of MultiClusterHub
@@ -293,6 +296,8 @@ type HubCondition struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=multiclusterhubs,scope=Namespaced,shortName=mch
 // +operator-sdk:gen-csv:customresourcedefinitions.displayName="MultiClusterHub"
+// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase",description="The overall status of the multiclusterhub"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type MultiClusterHub struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
