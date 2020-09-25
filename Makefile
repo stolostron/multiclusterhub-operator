@@ -171,3 +171,6 @@ bma-cr:
 	curl -H "Authorization: token $(shell echo $(GITHUB_TOKEN))" \
 		-H 'Accept: application/vnd.github.v3.raw' \
 		-L https://raw.githubusercontent.com/open-cluster-management/demo-subscription-gitops/master/bma/BareMetalAssets/dc01r3c3b2-powerflex390.yaml | oc apply -f -
+
+time:
+	bash common/scripts/timer.sh
