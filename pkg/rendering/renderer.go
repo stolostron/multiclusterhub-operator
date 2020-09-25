@@ -312,10 +312,10 @@ func UpdateNamespace(u *unstructured.Unstructured) bool {
 	metadata, ok := u.Object["metadata"].(map[string]interface{})
 	updateNamespace := true
 	if ok {
-		annotations, ok := metadata["annotations"].(map[string]interface{})
+		annotations, ok := metadata["annotations"].(map[string]string)
 		if ok {
 			if annotations["update-namespace"] != "" {
-				updateNamespace, _ = strconv.ParseBool(annotations["update-namespace"].(string))
+				updateNamespace, _ = strconv.ParseBool(annotations["update-namespace"])
 			}
 		}
 	}
