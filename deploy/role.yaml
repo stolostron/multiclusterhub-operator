@@ -229,6 +229,7 @@ rules:
   - applicationrelationships/status
   - baremetalassets
   - baremetalassets/status
+  - baremetalassets/finalizers
   - certificatesigningrequests
   - certificatesigningrequests/approval
   - channels
