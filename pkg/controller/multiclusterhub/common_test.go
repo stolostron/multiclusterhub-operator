@@ -731,3 +731,56 @@ func Test_getHelmReleaseOwnedDeployments(t *testing.T) {
 		})
 	}
 }
+
+func Test_ensureWebhookIsAvailable(t *testing.T) {
+	availableWebhook := full_mch.DeepCopy()
+	unavailableWebhook := full_mch.DeepCopy()
+
+	statusConditionAvailable := operatorsv1.StatusCondition{
+		Type:   "Deployed",
+		Status: "True",
+	}
+	statusConditionUnavailable := operatorsv1.StatusCondition{
+		Type:   "Error",
+		Status: "False",
+	}
+	availableWebhook.Status.Components = make(map[string]operatorsv1.StatusCondition)
+	unavailableWebhook.Status.Components = make(map[string]operatorsv1.StatusCondition)
+
+	availableWebhook.Status.Components["cert-manager-webhook-sub"] = statusConditionAvailable
+	unavailableWebhook.Status.Components["cert-manager-webhook-sub"] = statusConditionUnavailable
+
+	tests := []struct {
+		name   string
+		mch    *operatorsv1.MultiClusterHub
+		result error
+	}{
+		{
+			name:   "No status",
+			mch:    full_mch,
+			result: fmt.Errorf("Waiting for cert-manager-webhook status"),
+		},
+		{
+			name:   "Webhook is Unavailable",
+			mch:    unavailableWebhook,
+			result: fmt.Errorf("Waiting for cert-manager-webhook to be available"),
+		},
+		{
+			name:   "Webhook is available",
+			mch:    availableWebhook,
+			result: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r, err := getTestReconciler(full_mch)
+			if err != nil {
+				t.Fatalf("Failed to create test reconciler")
+			}
+			_, err = r.ensureWebhookIsAvailable(tt.mch)
+			if !errorEquals(err, tt.result) {
+				t.Fatalf("Improper webhook status")
+			}
+		})
+	}
+}
