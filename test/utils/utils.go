@@ -1095,7 +1095,7 @@ func DeleteObservabilityCRD() {
 func CreateBareMetalAssetsCR() {
 	By("- Creating BareMetalAsset CR if it does not exist")
 
-	_, err := DynamicKubeClient.Resource(GVRBareMetalAsset).Namespace(MCHNamespace).Get(context.TODO(), "dc01r3c3b2-powerflex390", metav1.GetOptions{})
+	_, err := DynamicKubeClient.Resource(GVRBareMetalAsset).Namespace(MCHNamespace).Get(context.TODO(), "dc01r3c1b3-powerflex390", metav1.GetOptions{})
 	if err == nil {
 		return
 	}
@@ -1117,6 +1117,6 @@ func DeleteBareMetalAssetsCR() {
 	_, err := ioutil.ReadFile("../resources/baremetalasset-cr.yaml")
 	Expect(err).To(BeNil())
 
-	err = DynamicKubeClient.Resource(GVRBareMetalAsset).Namespace(MCHNamespace).Delete(context.TODO(), "dc01r3c3b2-powerflex390", metav1.DeleteOptions{})
+	err = DynamicKubeClient.Resource(GVRBareMetalAsset).Namespace(MCHNamespace).Delete(context.TODO(), "dc01r3c1b3-powerflex390", metav1.DeleteOptions{})
 	Expect(err).To(BeNil())
 }
