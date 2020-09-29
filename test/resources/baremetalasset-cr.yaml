@@ -1,0 +1,9 @@
+apiVersion: inventory.open-cluster-management.io/v1alpha1
+kind: BareMetalAsset
+metadata:
+  name: mch-test-bma
+spec:
+  bmc:
+    address: 3.3.3.3
+    credentialsName: dc01r3c1b3-powerflex390-bmc-secret
+  bootMACAddress: "00:33:33:22:33:00"
