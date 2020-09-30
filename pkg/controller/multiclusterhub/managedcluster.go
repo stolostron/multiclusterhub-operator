@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 	"github.com/open-cluster-management/multicloudhub-operator/version"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -161,31 +162,34 @@ func (r *ReconcileMultiClusterHub) ensureManagedCluster(m *operatorsv1.MultiClus
 
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: ManagedClusterName}, managedCluster)
 	if err != nil && errors.IsNotFound(err) {
-		managedCluster = getManagedCluster()
+		// Creating new managedCluster
+		newManagedCluster := getManagedCluster()
+		utils.AddInstallerLabel(newManagedCluster, m.GetName(), m.GetNamespace())
 
-		labels := getInstallerLabels(m)
-		for k, v := range managedCluster.GetLabels() {
-			labels[k] = v
-		}
-		labels["local-cluster"] = "true"
-		labels["cloud"] = "auto-detect"
-		labels["vendor"] = "auto-detect"
-		managedCluster.SetLabels(labels)
-
-		err = r.client.Create(context.TODO(), managedCluster)
+		err = r.client.Create(context.TODO(), newManagedCluster)
 		if err != nil {
 			log.Error(err, "Failed to create managedcluster resource")
 			return &reconcile.Result{}, err
 		}
+		// ManagedCluster was successful
+		log.Info("Created a new ManagedCluster")
+		return nil, nil
+	} else if err != nil {
+		// Error that isn't due to the managedcluster not existing
+		log.Error(err, "Failed to get ManagedCluster")
+		return &reconcile.Result{}, err
 	}
 
+	// Ensure labels set
 	labels := getInstallerLabels(m)
-	for k, v := range managedCluster.GetLabels() {
-		labels[k] = v
-	}
 	labels["local-cluster"] = "true"
 	labels["cloud"] = "auto-detect"
 	labels["vendor"] = "auto-detect"
+
+	// Overwrite with existing labels
+	for k, v := range managedCluster.GetLabels() {
+		labels[k] = v
+	}
 	managedCluster.SetLabels(labels)
 
 	err = r.client.Update(context.TODO(), managedCluster)
@@ -223,22 +227,22 @@ func (r *ReconcileMultiClusterHub) ensureKlusterletAddonConfig(m *operatorsv1.Mu
 
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: KlusterletAddonConfigName, Namespace: ManagedClusterName}, klusterletaddonconfig)
 	if err != nil && errors.IsNotFound(err) {
-		klusterletaddonconfig = getKlusterletAddonConfig()
-		klusterletaddonconfig.SetLabels(getInstallerLabels(m))
+		// Creating new klusterletAddonConfig
+		newKlusterletaddonconfig := getKlusterletAddonConfig()
+		utils.AddInstallerLabel(newKlusterletaddonconfig, m.GetName(), m.GetNamespace())
 
-		err = r.client.Create(context.TODO(), klusterletaddonconfig)
+		err = r.client.Create(context.TODO(), newKlusterletaddonconfig)
 		if err != nil {
 			log.Error(err, "Failed to create klusterletaddonconfig resource")
 			return &reconcile.Result{}, err
 		}
+		// KlusterletAddonConfig was successful
+		log.Info("Created a new KlusterletAddonConfig")
+		return nil, nil
 	}
 
-	labels := getInstallerLabels(m)
-	for k, v := range klusterletaddonconfig.GetLabels() {
-		labels[k] = v
-	}
+	utils.AddInstallerLabel(klusterletaddonconfig, m.GetName(), m.GetNamespace())
 
-	klusterletaddonconfig.SetLabels(labels)
 	err = r.client.Update(context.TODO(), klusterletaddonconfig)
 	if err != nil {
 		log.Error(err, "Failed to update klusterletaddonconfig resource")
