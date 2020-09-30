@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) 2020 Red Hat, Inc.
+
 
 namespaces=$(oc get ns | grep "open-cluster-management\|local-cluster\|kube-system" | awk '{print $1}')
 
