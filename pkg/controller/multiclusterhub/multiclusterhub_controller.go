@@ -246,7 +246,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		return *result, err
 	}
 
-	log.Info("Refreshing image cache")
 	// Read image overrides
 	imageOverrides, err := manifest.GetImageOverrides(multiClusterHub)
 	if err != nil {
