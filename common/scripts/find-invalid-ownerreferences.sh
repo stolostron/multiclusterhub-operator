@@ -105,7 +105,6 @@ validateResources() {
                     echo "$resourceType/$resourceName --namespace $namespace" >> improper-owner-references.txt
                 fi
             done <<< "$resources"
-        # or do whatever with individual element of the array
         done <<< "$namespaces"
     else
         oc get $resourceType > /dev/null 2>&1
