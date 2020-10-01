@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mch-catalog-source
+  labels:
+    app: mch-catalog-source
+spec:
+  selector:
+    matchLabels:
+      app: mch-catalog-source
+  template:
+    metadata:
+      labels:
+        app: mch-catalog-source
+    spec:
+      containers:
+      - name: multiclusterhub-operator
+        image: multiclusterhub-operator:1.0.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 50051
+      imagePullSecrets:
+      - name: multiclusterhub-operator-pull-secret

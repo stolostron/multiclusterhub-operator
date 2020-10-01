@@ -23,42 +23,64 @@ const (
 // +k8s:openapi-gen=true
 type MultiClusterHubSpec struct {
 
-	// Pull secret of the MultiCluster hub images
+	// Pull secret for the MultiClusterHub images
 	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Image Pull Secret"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:io.kubernetes:Secret,urn:alm:descriptor:com.tectonic.ui:advanced"
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
 
-	// ReplicaCount for HA support. Does not affect data stores.
-	// Enabled will toggle HA support. This will provide better support in cases of failover
-	// but consumes more resources. Options are: Basic and High (default).
+	// ReplicaCount for HA support. Options are: Basic and High (default).
 	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Availability Configuration"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:select:High,urn:alm:descriptor:com.tectonic.ui:select:Basic"
 	AvailabilityConfig AvailabilityType `json:"availabilityConfig,omitempty"`
 
-	// Flag to install cert-manager into its own namespace.
+	// Install cert-manager into its own namespace.
 	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Separate Certificate Management"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
 	SeparateCertificateManagement bool `json:"separateCertificateManagement"`
 
-	// Spec of NodeSelector
+	// Set the nodeselectors
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
-	// Spec of hive
+	// Override the default HiveConfig spec
 	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Hive Config"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced"
 	Hive HiveConfigSpec `json:"hive"`
 
 	// Configuration options for ingress management
 	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Ingress Management"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced"
 	Ingress IngressSpec `json:"ingress,omitempty"`
 
-	// Overrides
+	// Developer Overrides
 	// +optional
-	Overrides `json:"overrides,omitempty"`
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Developer Overrides"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:hidden"
+	Overrides Overrides `json:"overrides,omitempty"`
 
 	// Configuration options for custom CA
 	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Custom CA Configmap"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:io.kubernetes:ConfigMap"
 	CustomCAConfigmap string `json:"customCAConfigmap,omitempty"`
 
 	// Disable import of hub as managed cluster
 	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Disable Hub Self Management"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:io.kubernetes:booleanSwitch"
 	DisableHubSelfManagement bool `json:"disableHubSelfManagement,omitempty"`
 }
 

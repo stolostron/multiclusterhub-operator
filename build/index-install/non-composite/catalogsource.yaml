@@ -4,7 +4,5 @@ metadata:
   name: mch-catalog-source
   namespace: open-cluster-management
 spec:
-  displayName: Multiclusterhub Installer
-  description: Installs Multiclusterhub
   sourceType: grpc
-  image: quay.io/rhibmcollab/multiclusterhub-operator:index
+  address: mch-catalog-source.open-cluster-management.svc:50051
