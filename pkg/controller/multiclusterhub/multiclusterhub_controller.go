@@ -436,7 +436,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		return *result, err
 	}
 
-	result, err = r.ensureClusterManager(multiClusterHub, foundation.ClusterManager(multiClusterHub, r.CacheSpec.ImageOverrides))
+	result, err = r.ensureUnstructuredResource(multiClusterHub, foundation.ClusterManager(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
 	}

@@ -81,7 +81,7 @@ func getAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 
 func getCustomResources(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	return []types.NamespacedName{
-		{Name: "cluster-manager", Namespace: ""},
+		{Name: "cluster-manager-cr", Namespace: ""},
 	}
 }
 
@@ -285,7 +285,7 @@ func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allHRs []*subrelv1.H
 			continue
 		}
 		if cr.GetName() == "cluster-manager" {
-			components["cluster-manager"] = mapClusterManager(cr)
+			components["cluster-manager-cr"] = mapClusterManager(cr)
 		}
 	}
 

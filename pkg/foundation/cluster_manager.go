@@ -61,6 +61,7 @@ func ValidateClusterManager(found *unstructured.Unstructured, want *unstructured
 	return nil, false
 }
 
+// GetClusterManager returns the cluster-manager instance found on the cluster
 func GetClusterManager(client client.Client) (*unstructured.Unstructured, error) {
 	cm := &unstructured.Unstructured{
 		Object: map[string]interface{}{
@@ -79,8 +80,10 @@ func GetClusterManager(client client.Client) (*unstructured.Unstructured, error)
 	}, cm)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			return cm, nil
+			// Error due to cluster-manager not existing
+			return cm, err
 		}
+		// Error likely due to cluster-manager not existing
 		return cm, err
 	}
 	return cm, nil
