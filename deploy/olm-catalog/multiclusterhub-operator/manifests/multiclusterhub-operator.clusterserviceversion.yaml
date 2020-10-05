@@ -33,31 +33,34 @@ spec:
       kind: MultiClusterHub
       name: multiclusterhubs.operator.open-cluster-management.io
       specDescriptors:
-      - description: 'ReplicaCount for HA support. Options are: Basic and High (default).'
+      - description: 'Specifies deployment replication for improved availability.
+          Options are: Basic and High (default)'
         displayName: Availability Configuration
         path: availabilityConfig
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:select:Basic
         - urn:alm:descriptor:com.tectonic.ui:select:High
-      - description: Configuration options for custom CA
+      - description: Provide the customized OpenShift default ingress CA certificate
+          to RHACM
         displayName: Custom CA Configmap
         path: customCAConfigmap
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:io.kubernetes:ConfigMap
-      - description: Disable import of hub as managed cluster
+      - description: Disable automatic import of the hub cluster as a managed cluster
         displayName: Disable Hub Self Management
         path: disableHubSelfManagement
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:io.kubernetes:booleanSwitch
-      - description: Override the default HiveConfig spec
+      - description: Overrides for the default HiveConfig spec
         displayName: Hive Config
         path: hive
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: Pull secret for the MultiClusterHub images
+      - description: Override pull secret for accessing MultiClusterHub operand and
+          endpoint images
         displayName: Image Pull Secret
         path: imagePullSecret
         x-descriptors:
@@ -73,7 +76,7 @@ spec:
         path: overrides
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Install cert-manager into its own namespace.
+      - description: Install cert-manager into its own namespace
         displayName: Separate Certificate Management
         path: separateCertificateManagement
         x-descriptors:

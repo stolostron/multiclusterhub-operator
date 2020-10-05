@@ -23,21 +23,21 @@ const (
 // +k8s:openapi-gen=true
 type MultiClusterHubSpec struct {
 
-	// Pull secret for the MultiClusterHub images
+	// Override pull secret for accessing MultiClusterHub operand and endpoint images
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Image Pull Secret"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:io.kubernetes:Secret,urn:alm:descriptor:com.tectonic.ui:advanced"
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
 
-	// ReplicaCount for HA support. Options are: Basic and High (default).
+	// Specifies deployment replication for improved availability. Options are: Basic and High (default)
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Availability Configuration"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:select:High,urn:alm:descriptor:com.tectonic.ui:select:Basic"
 	AvailabilityConfig AvailabilityType `json:"availabilityConfig,omitempty"`
 
-	// Install cert-manager into its own namespace.
+	// Install cert-manager into its own namespace
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Separate Certificate Management"
@@ -48,7 +48,7 @@ type MultiClusterHubSpec struct {
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
-	// Override the default HiveConfig spec
+	// Overrides for the default HiveConfig spec
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Hive Config"
@@ -69,14 +69,14 @@ type MultiClusterHubSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:hidden"
 	Overrides Overrides `json:"overrides,omitempty"`
 
-	// Configuration options for custom CA
+	// Provide the customized OpenShift default ingress CA certificate to RHACM
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Custom CA Configmap"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:io.kubernetes:ConfigMap"
 	CustomCAConfigmap string `json:"customCAConfigmap,omitempty"`
 
-	// Disable import of hub as managed cluster
+	// Disable automatic import of the hub cluster as a managed cluster
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Disable Hub Self Management"
@@ -203,7 +203,7 @@ type ExternalDNSGCPConfig struct {
 
 // IngressSpec specifies configuration options for ingress management
 type IngressSpec struct {
-	// List of SSL ciphers for management ingress to support
+	// List of SSL ciphers enabled for management ingress. Defaults to full list of supported ciphers
 	// +optional
 	SSLCiphers []string `json:"sslCiphers,omitempty"`
 }
