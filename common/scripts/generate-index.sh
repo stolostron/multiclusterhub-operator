@@ -35,14 +35,28 @@ opm alpha bundle build --directory ./bundles/$version/manifests \
 # Push bundle image to quay
 docker push $registry/multiclusterhub-operator:$version-bundle
 
+mkdir "database"
+
+opm registry add -b $registry/multiclusterhub-operator:$version-bundle -d "database/index.db"
+
 # Generate index from bundle
-opm index add \
---bundles $registry/multiclusterhub-operator:$version-bundle \
---tag $registry/multiclusterhub-operator:$version-index \
--c docker
+# opm index add \
+# --bundles $registry/multiclusterhub-operator:$version-bundle \
+# --tag $registry/multiclusterhub-operator:$version-index \
+# -c docker
+
+cp build/dockerfile.index .
+mkdir "etc"
+touch "etc/nsswitch.conf"
+chmod a+r "etc/nsswitch.conf"
+docker build -f dockerfile.index -t $registry/multiclusterhub-operator:$version-index .
+
+rm -rf database
+rm dockerfile.index
+rm -rf etc/
 
 # Push index image to quay
 docker push $registry/multiclusterhub-operator:$version-index 
 
 # Update catalogsource image
-yq w -i build/index-install/non-composite/catalogsource.yaml 'spec.image' "$registry/multiclusterhub-operator:$version-index"
+yq w -i build/index-install/non-composite/kustomization.yaml 'images[0].newTag' "$version-index"

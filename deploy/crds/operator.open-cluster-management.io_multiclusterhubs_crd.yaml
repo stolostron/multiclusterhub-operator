@@ -43,19 +43,19 @@ spec:
           description: MultiClusterHubSpec defines the desired state of MultiClusterHub
           properties:
             availabilityConfig:
-              description: 'ReplicaCount for HA support. Does not affect data stores.
-                Enabled will toggle HA support. This will provide better support in
-                cases of failover but consumes more resources. Options are: Basic
-                and High (default).'
+              description: 'Specifies deployment replication for improved availability.
+                Options are: Basic and High (default)'
               type: string
             customCAConfigmap:
-              description: Configuration options for custom CA
+              description: Provide the customized OpenShift default ingress CA certificate
+                to RHACM
               type: string
             disableHubSelfManagement:
-              description: Disable import of hub as managed cluster
+              description: Disable automatic import of the hub cluster as a managed
+                cluster
               type: boolean
             hive:
-              description: Spec of hive
+              description: Overrides for the default HiveConfig spec
               properties:
                 additionalCertificateAuthorities:
                   description: AdditionalCertificateAuthorities is a list of references
@@ -171,13 +171,15 @@ spec:
               - failedProvisionConfig
               type: object
             imagePullSecret:
-              description: Pull secret of the MultiCluster hub images
+              description: Override pull secret for accessing MultiClusterHub operand
+                and endpoint images
               type: string
             ingress:
               description: Configuration options for ingress management
               properties:
                 sslCiphers:
-                  description: List of SSL ciphers for management ingress to support
+                  description: List of SSL ciphers enabled for management ingress.
+                    Defaults to full list of supported ciphers
                   items:
                     type: string
                   type: array
@@ -185,17 +187,17 @@ spec:
             nodeSelector:
               additionalProperties:
                 type: string
-              description: Spec of NodeSelector
+              description: Set the nodeselectors
               type: object
             overrides:
-              description: Overrides
+              description: Developer Overrides
               properties:
                 imagePullPolicy:
                   description: Pull policy of the MultiCluster hub images
                   type: string
               type: object
             separateCertificateManagement:
-              description: Flag to install cert-manager into its own namespace.
+              description: Install cert-manager into its own namespace
               type: boolean
           type: object
         status:
