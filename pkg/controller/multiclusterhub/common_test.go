@@ -306,7 +306,7 @@ func Test_ensureSubscription(t *testing.T) {
 	}
 }
 
-func Test_ensureClusterManager(t *testing.T) {
+func Test_ensureUnstructuredResource(t *testing.T) {
 	r, err := getTestReconciler(full_mch)
 	if err != nil {
 		t.Fatalf("Failed to create test reconciler")
@@ -323,7 +323,7 @@ func Test_ensureClusterManager(t *testing.T) {
 		Result         error
 	}{
 		{
-			Name:           "Test: ensureClusterManager - ClusterManager",
+			Name:           "Test: ensureUnstructuredResource - ClusterManager",
 			MCH:            full_mch,
 			ClusterManager: foundation.ClusterManager(full_mch, imageOverrides),
 			Result:         nil,
@@ -332,7 +332,7 @@ func Test_ensureClusterManager(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
-			_, err = r.ensureClusterManager(tt.MCH, tt.ClusterManager)
+			_, err = r.ensureUnstructuredResource(tt.MCH, tt.ClusterManager)
 			if !errorEquals(err, tt.Result) {
 				t.Fatalf("Failed to ensure ClusterManager: %s", err)
 			}
