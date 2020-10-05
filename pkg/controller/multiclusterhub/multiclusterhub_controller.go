@@ -188,10 +188,14 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+	allCRs, err := r.listCustomResources()
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 
 	originalStatus := multiClusterHub.Status.DeepCopy()
 	defer func() {
-		statusQueue, statusError := r.syncHubStatus(multiClusterHub, originalStatus, allDeploys, allHRs)
+		statusQueue, statusError := r.syncHubStatus(multiClusterHub, originalStatus, allDeploys, allHRs, allCRs)
 		if statusError != nil {
 			log.Error(retError, "Error updating status")
 		}

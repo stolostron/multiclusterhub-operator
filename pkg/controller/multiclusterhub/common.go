@@ -231,6 +231,60 @@ func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1.MultiCluste
 	return nil, nil
 }
 
+func (r *ReconcileMultiClusterHub) ensureUnstructuredResource(m *operatorsv1.MultiClusterHub, u *unstructured.Unstructured) (*reconcile.Result, error) {
+	obLog := log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName(), "Kind", u.GetKind())
+
+	found := &unstructured.Unstructured{}
+	found.SetGroupVersionKind(u.GroupVersionKind())
+
+	// Try to get API group instance
+	err := r.client.Get(context.TODO(), types.NamespacedName{
+		Name:      u.GetName(),
+		Namespace: u.GetNamespace(),
+	}, found)
+	if err != nil && errors.IsNotFound(err) {
+		// Resource doesn't exist so create it
+		err := r.client.Create(context.TODO(), u)
+		if err != nil {
+			// Creation failed
+			obLog.Error(err, "Failed to create new instance")
+			return &reconcile.Result{}, err
+		}
+		// Creation was successful
+		obLog.Info("Created new resource")
+		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+		SetHubCondition(&m.Status, *condition)
+		return nil, nil
+
+	} else if err != nil {
+		// Error that isn't due to the resource not existing
+		obLog.Error(err, "Failed to get resource")
+		return &reconcile.Result{}, err
+	}
+
+	// Validate object based on name
+	var desired *unstructured.Unstructured
+	var needsUpdate bool
+
+	switch found.GetKind() {
+	case "ClusterManager":
+		desired, needsUpdate = foundation.ValidateClusterManager(found, u)
+	default:
+		obLog.Info("Could not validate unstrucuted resource with type.", "Type", found.GetKind())
+		return nil, nil
+	}
+
+	if needsUpdate {
+		obLog.Info("Updating resource")
+		err = r.client.Update(context.TODO(), desired)
+		if err != nil {
+			obLog.Error(err, "Failed to update resource.")
+			return &reconcile.Result{}, err
+		}
+	}
+	return nil, nil
+}
+
 func (r *ReconcileMultiClusterHub) ensureClusterManager(m *operatorsv1.MultiClusterHub, u *unstructured.Unstructured) (*reconcile.Result, error) {
 	obLog := log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName(), "Kind", u.GetKind())
 
@@ -472,6 +526,18 @@ func (r *ReconcileMultiClusterHub) listHelmReleases(namespaces []string) ([]*sub
 		}
 	}
 
+	return ret, nil
+}
+
+// listCustomResources gets custom resources the installer observes
+func (r *ReconcileMultiClusterHub) listCustomResources() ([]*unstructured.Unstructured, error) {
+	var ret []*unstructured.Unstructured
+
+	cr, err := foundation.GetClusterManager(r.client)
+	if err != nil {
+		return nil, err
+	}
+	ret = append(ret, cr)
 	return ret, nil
 }
 

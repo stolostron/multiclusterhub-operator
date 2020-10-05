@@ -19,6 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -78,6 +79,12 @@ func getAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	}
 }
 
+func getCustomResources(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
+	return []types.NamespacedName{
+		{Name: "cluster-manager", Namespace: ""},
+	}
+}
+
 func newComponentList(m *operatorsv1.MultiClusterHub) map[string]operatorsv1.StatusCondition {
 	components := make(map[string]operatorsv1.StatusCondition)
 	for _, d := range getDeployments(m) {
@@ -85,6 +92,9 @@ func newComponentList(m *operatorsv1.MultiClusterHub) map[string]operatorsv1.Sta
 	}
 	for _, s := range getAppsubs(m) {
 		components[s.Name] = unknownStatus
+	}
+	for _, cr := range getCustomResources(m) {
+		components[cr.Name] = unknownStatus
 	}
 	return components
 }
@@ -114,15 +124,16 @@ func (r *ReconcileMultiClusterHub) ComponentsAreRunning(m *operatorsv1.MultiClus
 
 	deployList, _ := r.listDeployments(trackedNamespaces)
 	hrList, _ := r.listHelmReleases(trackedNamespaces)
-	componentStatuses := getComponentStatuses(m, hrList, deployList, nil)
+	crList, _ := r.listCustomResources()
+	componentStatuses := getComponentStatuses(m, hrList, deployList, crList, nil)
 	delete(componentStatuses, ManagedClusterName)
 	return allComponentsSuccessful(componentStatuses)
 }
 
 // syncHubStatus checks if the status is up-to-date and sync it if necessary
-func (r *ReconcileMultiClusterHub) syncHubStatus(m *operatorsv1.MultiClusterHub, original *operatorsv1.MultiClusterHubStatus, allDeps []*appsv1.Deployment, allHRs []*subrelv1.HelmRelease) (reconcile.Result, error) {
+func (r *ReconcileMultiClusterHub) syncHubStatus(m *operatorsv1.MultiClusterHub, original *operatorsv1.MultiClusterHubStatus, allDeps []*appsv1.Deployment, allHRs []*subrelv1.HelmRelease, allCRs []*unstructured.Unstructured) (reconcile.Result, error) {
 	localCluster, err := r.ensureManagedClusterIsRunning(m)
-	newStatus := calculateStatus(m, allDeps, allHRs, localCluster)
+	newStatus := calculateStatus(m, allDeps, allHRs, allCRs, localCluster)
 	if reflect.DeepEqual(m.Status, original) {
 		log.Info("Status hasn't changed")
 		return reconcile.Result{}, nil
@@ -149,8 +160,8 @@ func (r *ReconcileMultiClusterHub) syncHubStatus(m *operatorsv1.MultiClusterHub,
 	}
 }
 
-func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deployment, allHRs []*subrelv1.HelmRelease, importClusterStatus []interface{}) operatorsv1.MultiClusterHubStatus {
-	components := getComponentStatuses(hub, allHRs, allDeps, importClusterStatus)
+func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deployment, allHRs []*subrelv1.HelmRelease, allCRs []*unstructured.Unstructured, importClusterStatus []interface{}) operatorsv1.MultiClusterHubStatus {
+	components := getComponentStatuses(hub, allHRs, allDeps, allCRs, importClusterStatus)
 	status := operatorsv1.MultiClusterHubStatus{
 		CurrentVersion: hub.Status.CurrentVersion,
 		DesiredVersion: version.Version,
@@ -233,7 +244,7 @@ func filterDuplicateHRs(allHRs []*subrelv1.HelmRelease) []*subrelv1.HelmRelease 
 }
 
 // getComponentStatuses populates a complete list of the hub component statuses
-func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allHRs []*subrelv1.HelmRelease, allDeps []*appsv1.Deployment, importClusterStatus []interface{}) map[string]operatorsv1.StatusCondition {
+func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allHRs []*subrelv1.HelmRelease, allDeps []*appsv1.Deployment, allCRs []*unstructured.Unstructured, importClusterStatus []interface{}) map[string]operatorsv1.StatusCondition {
 	components := newComponentList(hub)
 
 	filteredHRs := filterDuplicateHRs(allHRs)
@@ -266,6 +277,15 @@ func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allHRs []*subrelv1.H
 	for _, d := range allDeps {
 		if _, ok := components[d.Name]; ok {
 			components[d.Name] = mapDeployment(d)
+		}
+	}
+
+	for _, cr := range allCRs {
+		if cr == nil {
+			continue
+		}
+		if cr.GetName() == "cluster-manager" {
+			components["cluster-manager"] = mapClusterManager(cr)
 		}
 	}
 
@@ -395,6 +415,56 @@ func mapManagedClusterConditions(conditions []interface{}) operatorsv1.StatusCon
 		Message:            "ManagedCluster is accepted, joined, and available",
 		Available:          true,
 	}
+}
+
+func mapClusterManager(cm *unstructured.Unstructured) operatorsv1.StatusCondition {
+	if cm == nil {
+		return unknownStatus
+	}
+
+	status, ok := cm.Object["status"].(map[string]interface{})
+	if !ok {
+		return unknownStatus
+	}
+	conditions, ok := status["conditions"].([]interface{})
+	if !ok {
+		return unknownStatus
+	}
+
+	componentCondition := operatorsv1.StatusCondition{}
+
+	for _, condition := range conditions {
+		statusCondition, ok := condition.(map[string]interface{})
+		if !ok {
+			log.Info("ClusterManager status conditions not properly formatted")
+			return unknownStatus
+		}
+
+		sType, _ := statusCondition["type"].(string)
+		status, _ := statusCondition["status"].(string)
+		message, _ := statusCondition["message"].(string)
+		reason, _ := statusCondition["reason"].(string)
+
+		componentCondition = operatorsv1.StatusCondition{
+			Kind:               "ClusterManager",
+			Type:               sType,
+			Status:             metav1.ConditionStatus(status),
+			LastUpdateTime:     metav1.Now(),
+			LastTransitionTime: metav1.Now(),
+			Reason:             reason,
+			Message:            message,
+			Available:          false,
+		}
+
+		// Return condition with Applied = true
+		if sType == "Applied" && status == "True" {
+			componentCondition.Available = true
+			return componentCondition
+		}
+	}
+
+	// If no condition with applied true, then return last condition in list
+	return componentCondition
 }
 
 func successfulHelmRelease(hr *subrelv1.HelmRelease) bool {
