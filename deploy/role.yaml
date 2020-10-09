@@ -241,7 +241,9 @@ rules:
   - managedclusterinfos/status
   - managedclustersets
   - managedclustersets/bind
+  - managedclustersets/join
   - managedclustersets/status
+  - managedclustersetbindings
   - managedclusters
   - managedclusters/accept
   - managedclusters/status
