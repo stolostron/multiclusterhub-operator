@@ -20,10 +20,10 @@ oc delete clusterimageset --all
 oc delete configmap -n $ACM_NAMESPACE cert-manager-controller cert-manager-cainjector-leader-election cert-manager-cainjector-leader-election-core
 oc delete consolelink acm-console-link
 oc delete crd klusterletaddonconfigs.agent.open-cluster-management.io placementbindings.policy.open-cluster-management.io policies.policy.open-cluster-management.io userpreferences.console.open-cluster-management.io
-oc delete mutatingwebhookconfiguration cert-manager-webhook
+oc delete mutatingwebhookconfiguration cert-manager-webhook-v1alpha1
 oc delete oauthclient multicloudingress
 oc delete rolebinding -n kube-system cert-manager-webhook-webhook-authentication-reader
 oc delete scc kui-proxy-scc
-oc delete validatingwebhookconfiguration cert-manager-webhook
+oc delete validatingwebhookconfiguration cert-manager-webhook-v1alpha1
 
 exit 0
