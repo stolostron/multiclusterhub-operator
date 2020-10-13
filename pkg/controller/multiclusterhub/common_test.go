@@ -265,7 +265,7 @@ func Test_ensureSubscription(t *testing.T) {
 		{
 			Name:         "Test: ensureSubscription - KUI",
 			MCH:          full_mch,
-			Subscription: subscription.KUIWebTerminal(full_mch, cacheSpec.ImageOverrides),
+			Subscription: subscription.KUIWebTerminal(full_mch, cacheSpec.ImageOverrides, cacheSpec.IngressDomain),
 			Result:       nil,
 		},
 		{
