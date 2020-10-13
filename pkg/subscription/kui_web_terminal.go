@@ -9,12 +9,13 @@ import (
 )
 
 // KUIWebTerminal overrides the kui-web-terminal chart
-func KUIWebTerminal(m *operatorsv1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
+func KUIWebTerminal(m *operatorsv1.MultiClusterHub, overrides map[string]string, ingress string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "kui-web-terminal",
 		Namespace: m.Namespace,
 		Overrides: map[string]interface{}{
 			"pullSecret": m.Spec.ImagePullSecret,
+			"ocpingress": ingress,
 			"proxy": map[string]interface{}{
 				"clusterIP": "icp-management-ingress",
 			},
