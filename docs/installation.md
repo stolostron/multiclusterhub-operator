@@ -24,7 +24,7 @@ export VERSION=<A_UNIQUE_VERSION>
 ```
 ### Replace image manifest
 
-Populate the json file located in `image-manifests/` with proper values. Values can be found in https://github.com/open-cluster-management/pipeline/tree/2.1-integration/snapshots
+Populate the json file located in `image-manifests/` with proper values. Values can be found in https://github.com/open-cluster-management/pipeline/tree/2.2-integration/snapshots
 
 ### Install Options
 
