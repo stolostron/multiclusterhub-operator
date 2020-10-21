@@ -7,11 +7,13 @@ oc delete MultiClusterHub --all --ignore-not-found
 oc delete helmrelease --all --ignore-not-found
 
 # Delete subscriptions
+oc delete sub cluster-manager-stable-community-operator-openshift-marketplace --ignore-not-found
 oc delete sub multicluster-operators-subscription-alpha-community-operators-openshift-marketplace --ignore-not-found
 oc delete sub hive-operator-alpha-community-operators-openshift-marketplace --ignore-not-found
 oc delete sub multiclusterhub-operator --ignore-not-found
 
 # Delete CSVs
+oc get csv | grep "cluster-manager" | awk '{ print $1 }' | xargs oc delete csv --wait=false --ignore-not-found || true
 oc get csv | grep "hive-operator" | awk '{ print $1 }' | xargs oc delete csv --wait=false --ignore-not-found || true
 oc get csv | grep "multicluster-operators-subscription" | awk '{ print $1 }' | xargs oc delete csv --wait=false --ignore-not-found || true
 oc get csv | grep "multiclusterhub-operator" | awk '{ print $1 }' | xargs oc delete csv --wait=false --ignore-not-found || true
