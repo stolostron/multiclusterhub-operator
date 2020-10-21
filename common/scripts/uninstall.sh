@@ -7,11 +7,13 @@ oc delete MultiClusterHub --all --ignore-not-found
 oc delete helmrelease --all --ignore-not-found
 
 # Delete subscriptions
+oc delete sub cluster-manager-stable-community-operator-openshift-marketplace --ignore-not-found
 oc delete sub multicluster-operators-subscription-alpha-community-operators-openshift-marketplace --ignore-not-found
 oc delete sub hive-operator-alpha-community-operators-openshift-marketplace --ignore-not-found
 oc delete sub multiclusterhub-operator --ignore-not-found
 
 # Delete CSVs
+oc get csv | grep "cluster-manager" | awk '{ print $1 }' | xargs oc delete csv --wait=false --ignore-not-found || true
 oc get csv | grep "hive-operator" | awk '{ print $1 }' | xargs oc delete csv --wait=false --ignore-not-found || true
 oc get csv | grep "multicluster-operators-subscription" | awk '{ print $1 }' | xargs oc delete csv --wait=false --ignore-not-found || true
 oc get csv | grep "multiclusterhub-operator" | awk '{ print $1 }' | xargs oc delete csv --wait=false --ignore-not-found || true
@@ -60,21 +62,3 @@ oc delete -k deploy/
 
 # Other
 oc delete consolelink acm-console-link --ignore-not-found
-
-# Delete Registration Operator
-_regOpDir=build/registration-operator
-if [ -d "$_regOpDir" ]; then
-    oc delete clustermanager --all
-    cd $_regOpDir
-    make clean-hub OLM_NAMESPACE=openshift-operator-lifecycle-manager
-    cd ../..
-    oc delete deploy cluster-manager || true
-    oc get csv | grep "cluster-manager" | awk '{ print $1 }' | xargs oc delete csv --wait=false --ignore-not-found || true
-    oc get sub | grep "cluster-manager" | awk '{ print $1 }' | xargs oc delete sub --wait=false --ignore-not-found || true
-
-    # Uncomment for complete uninstall of cluster-manager. Cluster-manager stands up much quicker if we leave these resources. 
-    
-    # oc delete configmap cluster-manager-registry-bundles -n openshift-operator-lifecycle-manager || true
-    # oc delete deploy cluster-manager-registry-server -n openshift-operator-lifecycle-manager || true
-    # oc delete service cluster-manager-registry-server -n openshift-operator-lifecycle-manager || true
-fi

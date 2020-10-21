@@ -14,7 +14,7 @@ endif
 
 BUILD_DIR ?= build
 
-VERSION ?= 2.1.0
+VERSION ?= 2.2.0
 IMG ?= multiclusterhub-operator
 SECRET_REGISTRY ?= quay.io
 REGISTRY ?= quay.io/rhibmcollab
@@ -30,7 +30,7 @@ export ACM_NAMESPACE :=$(NAMESPACE)
 # For OCP OLM
 export IMAGE ?= $(shell echo $(REGISTRY)/$(IMG):$(VERSION))
 export CSV_CHANNEL ?= alpha
-export CSV_VERSION ?= 2.1.0
+export CSV_VERSION ?= 2.2.0
 
 
 export PROJECT_DIR = $(shell 'pwd')
@@ -71,10 +71,6 @@ uninstall-cr:
 ## Fully uninstall the MCH CR and operator
 uninstall: uninstall-cr
 	bash common/scripts/uninstall.sh
-
-## Install Registration-Operator hub
-regop:
-	@bash ./common/scripts/install_regop.sh
 
 ## Create secrets for pulling images
 secrets: 
@@ -139,7 +135,7 @@ subscriptions:
 	oc apply -k build/subscriptions
 
 ## Run operator locally outside the cluster
-local-install: ns secrets og subscriptions observability-crd regop
+local-install: ns secrets og subscriptions observability-crd
 	oc apply -f deploy/crds/operator.open-cluster-management.io_multiclusterhubs_crd.yaml
 	OPERATOR_NAME=multiclusterhub-operator \
 	TEMPLATES_PATH="$(shell pwd)/templates" \
@@ -148,19 +144,19 @@ local-install: ns secrets og subscriptions observability-crd regop
 	operator-sdk run local --watch-namespace=open-cluster-management --kubeconfig=$(KUBECONFIG)
 
 ## Run as a Deployment inside the cluster
-in-cluster-install: ns secrets og update-image subscriptions observability-crd regop
+in-cluster-install: ns secrets og update-image subscriptions observability-crd
 	oc apply -f deploy/crds/operator.open-cluster-management.io_multiclusterhubs_crd.yaml
 	yq w -i deploy/kustomization.yaml 'images(name==multiclusterhub-operator).newTag' "${VERSION}"
 	oc apply -k deploy
 	# oc apply -f deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml
 
 ## Creates a configmap index and catalogsource that it subscribes to
-cm-install: ns secrets og csv update-image subscriptions observability-crd regop
+cm-install: ns secrets og csv update-image subscriptions observability-crd
 	bash common/scripts/generate-cm-index.sh ${VERSION} ${REGISTRY}
 	oc apply -k build/configmap-install
 
 ## Generates an index image and catalogsource that serves it
-index-install: ns secrets og csv update-image subscriptions observability-crd regop
+index-install: ns secrets og csv update-image subscriptions observability-crd
 	oc patch serviceaccount default -n open-cluster-management -p '{"imagePullSecrets": [{"name": "quay-secret"}]}'
 	bash common/scripts/generate-index.sh ${VERSION} ${REGISTRY}
 	oc apply -k build/index-install/non-composite
