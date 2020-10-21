@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
 - hive-op.yaml
 - subscription-op.yaml
+- cluster-manager-op.yaml
