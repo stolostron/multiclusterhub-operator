@@ -92,10 +92,6 @@ jobs:
           make 
           make pipeline-manifest/update PIPELINE_MANIFEST_COMPONENT_SHA256=${TRAVIS_COMMIT} PIPELINE_MANIFEST_COMPONENT_REPO=${TRAVIS_REPO_SLUG} PIPELINE_MANIFEST_BRANCH=${TRAVIS_BRANCH}
           rm -rf pipeline
-          echo "Waiting 60s before publishing bundle image..." && sleep 60
-          COMPONENT_NAME=multiclusterhub-operator-bundle
-          make pipeline-manifest/update PIPELINE_MANIFEST_COMPONENT_SHA256=${TRAVIS_COMMIT} PIPELINE_MANIFEST_COMPONENT_REPO=${TRAVIS_REPO_SLUG} PIPELINE_MANIFEST_BRANCH=${TRAVIS_BRANCH}
-          rm -rf pipeline
-          echo "Waiting 60s before publishing bundle image..." && sleep 60
+          echo "Waiting 60s before publishing test image..." && sleep 60
           COMPONENT_NAME=multiclusterhub-operator-tests
           make pipeline-manifest/update PIPELINE_MANIFEST_COMPONENT_SHA256=${TRAVIS_COMMIT} PIPELINE_MANIFEST_COMPONENT_REPO=${TRAVIS_REPO_SLUG} PIPELINE_MANIFEST_BRANCH=${TRAVIS_BRANCH}
