@@ -170,3 +170,6 @@ bma-cr:
 
 time:
 	bash common/scripts/timer.sh
+
+update-version:
+	./common/scripts/update-version.sh $(OLD_VERSION) $(NEW_VERSION)
