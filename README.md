@@ -26,7 +26,7 @@ Remove or edit this annotation to resume installer operations
 kubectl annotate mch <mch-name> mch-pause=false --overwrite
 ```
 
-## Add Image Overrides Via Configmap
+## Add Image Overrides Via Configmap  
 
 Developer image overrides can be added by specifiying a configmap containing the overrides for the MCH resource. This configmap must be in the same namespace as the MCH resource.
 
