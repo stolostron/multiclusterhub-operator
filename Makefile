@@ -12,7 +12,7 @@ endif
 
 BUILD_DIR ?= build
 
-VERSION ?= 2.0.5
+VERSION ?= 2.0.6
 IMG ?= multiclusterhub-operator
 SECRET_REGISTRY ?= quay.io
 REGISTRY ?= quay.io/rhibmcollab
@@ -27,7 +27,7 @@ NAMESPACE ?= open-cluster-management
 # For OCP OLM
 export IMAGE ?= $(shell echo $(REGISTRY)/$(IMG):$(VERSION))
 export CSV_CHANNEL ?= alpha
-export CSV_VERSION ?= 2.0.5
+export CSV_VERSION ?= 2.0.6
 
 
 export PROJECT_DIR = $(shell 'pwd')
@@ -167,3 +167,6 @@ index-install: ns secrets og csv update-image regop
 	oc patch serviceaccount default -n open-cluster-management -p '{"imagePullSecrets": [{"name": "quay-secret"}]}'
 	bash common/scripts/generate-index.sh ${VERSION} ${REGISTRY}
 	oc apply -k build/index-install
+
+update-version:
+	./common/scripts/update-version.sh $(OLD_VERSION) $(NEW_VERSION)
