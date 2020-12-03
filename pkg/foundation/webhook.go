@@ -39,7 +39,7 @@ func WebhookDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]stri
 					ImagePullSecrets:   []corev1.LocalObjectReference{{Name: m.Spec.ImagePullSecret}},
 					ServiceAccountName: ServiceAccount,
 					NodeSelector:       m.Spec.NodeSelector,
-					Affinity:           utils.DistributePods("app", WebhookName),
+					Affinity:           utils.DistributePods("ocm-antiaffinity-selector", WebhookName),
 					Volumes: []corev1.Volume{
 						{
 							Name: "webhook-cert",

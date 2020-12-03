@@ -40,7 +40,7 @@ func OCMProxyServerDeployment(m *operatorsv1.MultiClusterHub, overrides map[stri
 					ImagePullSecrets:   []corev1.LocalObjectReference{{Name: m.Spec.ImagePullSecret}},
 					ServiceAccountName: ServiceAccount,
 					NodeSelector:       m.Spec.NodeSelector,
-					Affinity:           utils.DistributePods("app", OCMProxyServerName),
+					Affinity:           utils.DistributePods("ocm-antiaffinity-selector", OCMProxyServerName),
 					Volumes: []corev1.Volume{
 						{
 							Name: "klusterlet-certs",
