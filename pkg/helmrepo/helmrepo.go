@@ -31,7 +31,8 @@ var Port = 3000
 
 func labels() map[string]string {
 	return map[string]string{
-		"app": HelmRepoName,
+		"app":                       HelmRepoName,
+		"ocm-antiaffinity-selector": HelmRepoName,
 	}
 }
 
