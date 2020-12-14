@@ -54,6 +54,12 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:io.kubernetes:booleanSwitch
+      - description: Disable automatic update of ClusterImageSets
+        displayName: Disable Update ClusterImageSets
+        path: disableUpdateClusterImageSets
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:booleanSwitch
       - description: Overrides for the default HiveConfig spec
         displayName: Hive Config
         path: hive

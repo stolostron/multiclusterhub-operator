@@ -49,7 +49,10 @@ make ft-downstream-install
 
 Running the uninstall composite functional test will first attempt to remove the MCH CR. After the CR has been validated as removed, the subscriptions will and related resources will be removed.
 
-```
+```bash
+# If you want all install tests, export full_test_suite
+export full_test_suite=true
+
 make ft-downstream-uninstall
 ```
 

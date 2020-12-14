@@ -193,6 +193,39 @@ func FullInstallTestSuite() {
 
 	})
 
+	It("- If `spec.disableUpdateClusterImageSets` controls the automatic updates of clusterImageSets", func() {
+		By("- Verfiying default ")
+		utils.CreateDefaultMCH()
+		err := utils.ValidateMCH()
+		Expect(err).To(BeNil())
+
+		// Test initial case with no setting, is equivalent to disableUpdateClusterImageSets: false
+		err = utils.ValidateClusterImageSetsSubscriptionPause("false")
+		Expect(err).To(BeNil())
+
+		// Set the disableUpdateCluterImageSets: true
+		By("- Setting `spec.disableUpdateClusterImageSets` to true to disable automatic updates of clusterImageSets")
+		utils.ToggleDisableUpdateClusterImageSets(true)
+
+		Eventually(func() error {
+			if err := utils.ValidateClusterImageSetsSubscriptionPause("true"); err != nil {
+				return fmt.Errorf("resources still exist")
+			}
+			return nil
+		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
+
+		// Set the disableUpdateCluterImageSets: false
+		By("- Setting `spec.disableUpdateClusterImageSets` to false to enable automatic updates of clusterImageSets")
+		utils.ToggleDisableUpdateClusterImageSets(false)
+
+		Eventually(func() error {
+			if err := utils.ValidateClusterImageSetsSubscriptionPause("false"); err != nil {
+				return fmt.Errorf("resources still exist")
+			}
+			return nil
+		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
+	})
+
 	It("- Delete ManagedCluster before it is joined/available", func() {
 		By("- Verifying default install has local-cluster resources")
 		utils.CreateDefaultMCH()

@@ -82,6 +82,13 @@ type MultiClusterHubSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Disable Hub Self Management"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:io.kubernetes:booleanSwitch"
 	DisableHubSelfManagement bool `json:"disableHubSelfManagement,omitempty"`
+
+	// Disable automatic update of ClusterImageSets
+	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Disable Update ClusterImageSets"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:io.kubernetes:booleanSwitch"
+	DisableUpdateClusterImageSets bool `json:"disableUpdateClusterImageSets,omitempty"`
 }
 
 // Overrides provides developer overrides for MCH installation

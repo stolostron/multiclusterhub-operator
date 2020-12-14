@@ -215,3 +215,11 @@ func TrackedNamespaces(m *operatorsv1.MultiClusterHub) []string {
 	}
 	return trackedNamespaces
 }
+
+// GetDisableClusterImageSets returns true or false for whether auto update for clusterImageSets should be disabled
+func GetDisableClusterImageSets(m *operatorsv1.MultiClusterHub) string {
+	if m.Spec.DisableUpdateClusterImageSets {
+		return "true"
+	}
+	return "false"
+}
