@@ -150,6 +150,9 @@ var (
 	// OCMSubscriptionName ...
 	OCMSubscriptionName = os.Getenv("name")
 
+	// AppSubName ClusterImageSets subscription name
+	AppSubName = "hive-clusterimagesets-subscription-fast-0"
+
 	// SubList contains the list of subscriptions to delete
 	SubList = [...]string{
 		OCMSubscriptionName,
@@ -923,6 +926,31 @@ func ToggleDisableHubSelfManagement(disableHubSelfImport bool) error {
 	mch, err = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
 	if disableHubSelfManagement := mch.Object["spec"].(map[string]interface{})[disableHubSelfManagementString].(bool); disableHubSelfManagement != disableHubSelfImport {
 		return fmt.Errorf("Spec was not updated")
+	}
+	return nil
+}
+
+// ToggleDisableUpdateClusterImageSets toggles the value of spec.disableUpdateClusterImageSets from true to false or false to true
+func ToggleDisableUpdateClusterImageSets(disableUpdateCIS bool) error {
+	mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+	Expect(err).To(BeNil())
+	disableUpdateClusterImageSetsString := "disableUpdateClusterImageSets"
+	mch.Object["spec"].(map[string]interface{})[disableUpdateClusterImageSetsString] = disableUpdateCIS
+	mch, err = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
+	Expect(err).To(BeNil())
+	mch, err = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+	if disableUpdateClusterImageSets := mch.Object["spec"].(map[string]interface{})[disableUpdateClusterImageSetsString].(bool); disableUpdateClusterImageSets != disableUpdateCIS {
+		return fmt.Errorf("Spec was not updated")
+	}
+	return nil
+}
+
+// Validate that the console-chart-sub created ClusterImageSets subscription is either subscription-pause true or false
+func ValidateClusterImageSetsSubscriptionPause(expected string) error {
+	appsub, err := DynamicKubeClient.Resource(GVRAppSub).Namespace(MCHNamespace).Get(context.TODO(), AppSubName, metav1.GetOptions{})
+	Expect(err).To(BeNil())
+	if subscriptionPauseValue := appsub.GetLabels()["subscription-pause"]; subscriptionPauseValue != expected {
+		return fmt.Errorf("subscription-pause label is not correct")
 	}
 	return nil
 }

@@ -27,6 +27,9 @@ func Console(m *operatorsv1.MultiClusterHub, overrides map[string]string, ingres
 				"imageOverrides": overrides,
 				"pullPolicy":     utils.GetImagePullPolicy(m),
 			},
+			"clusterImageSets": map[string]interface{}{
+				"subscriptionPause": utils.GetDisableClusterImageSets(m),
+			},
 		},
 	}
 	setCustomCA(m, sub)
