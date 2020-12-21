@@ -784,3 +784,87 @@ func Test_ensureWebhookIsAvailable(t *testing.T) {
 		})
 	}
 }
+
+func Test_getDeploymentByName(t *testing.T) {
+	foo := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}
+	bar := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "bar"}}
+	allDeployments := []*appsv1.Deployment{foo, bar}
+	tests := []struct {
+		name          string
+		allDeps       []*appsv1.Deployment
+		desiredDeploy string
+		want          *appsv1.Deployment
+		want1         bool
+	}{
+		{
+			name:          "Deployment found",
+			allDeps:       allDeployments,
+			desiredDeploy: "foo",
+			want:          foo,
+			want1:         true,
+		},
+		{
+			name:          "Deployment not found",
+			allDeps:       allDeployments,
+			desiredDeploy: "baz",
+			want:          nil,
+			want1:         false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1 := getDeploymentByName(tt.allDeps, tt.desiredDeploy)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getDeploymentByName() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("getDeploymentByName() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
+}
+
+func Test_isOLMManaged(t *testing.T) {
+	foo := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}
+	bar := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   "bar",
+			Labels: map[string]string{"bar": "bar"},
+		},
+	}
+	olmDeploy := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   "olm",
+			Labels: map[string]string{"olm.owner": "foobar"},
+		},
+	}
+
+	tests := []struct {
+		name   string
+		deploy *appsv1.Deployment
+		want   bool
+	}{
+		{
+			name:   "Not OLM managed, no labels",
+			deploy: foo,
+			want:   false,
+		},
+		{
+			name:   "Not OLM managed, with labels",
+			deploy: bar,
+			want:   false,
+		},
+		{
+			name:   "OLM installed",
+			deploy: olmDeploy,
+			want:   true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isOLMManaged(tt.deploy); got != tt.want {
+				t.Errorf("isOLMManaged() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

@@ -589,17 +589,34 @@ func (r *ReconcileMultiClusterHub) ensureSubscriptionOperatorIsRunning(mch *oper
 		log.Info("Not upgrading, skipping check")
 		return nil, nil
 	}
-	// skip check if not in bundle
-	if !isACMBundle(allDeps) {
+
+	selfDeployment, exists := getDeploymentByName(allDeps, utils.MCHOperatorName)
+	if !exists {
+		return &reconcile.Result{RequeueAfter: time.Second * 10}, fmt.Errorf("MCH operator deployment not found")
+	}
+
+	// skip check if not deployed by OLM
+	if !isOLMManaged(selfDeployment) {
 		log.Info("Not running in ACM bundle, skipping check")
 		return nil, nil
 	}
 
-	subscriptionDeploy, exists := getSubscriptionOperator(allDeps)
+	subscriptionDeploy, exists := getDeploymentByName(allDeps, utils.SubscriptionOperatorName)
 	if !exists {
 		return &reconcile.Result{RequeueAfter: time.Second * 10}, fmt.Errorf("Standalone subscription deployment not found")
 	}
 
+	// Check that the owning CSV version of the deployments match
+	if selfDeployment.GetLabels() == nil || subscriptionDeploy.GetLabels() == nil {
+		log.Info("Missing labels on either MCH operator or subscription operator deployment")
+		return &reconcile.Result{RequeueAfter: time.Second * 10}, nil
+	}
+	if selfDeployment.Labels["olm.owner"] != subscriptionDeploy.Labels["olm.owner"] {
+		log.Info("OLM owner labels do not match. Requeuing.", "MCH operator label", selfDeployment.Labels["olm.owner"], "Subscription operator label", subscriptionDeploy.Labels["olm.owner"])
+		return &reconcile.Result{RequeueAfter: time.Second * 10}, nil
+	}
+
+	// Check that the standalone subscription deployment is available
 	if successfulDeploy(subscriptionDeploy) {
 		log.Info("Subscription operator is running")
 		return nil, nil
@@ -609,14 +626,9 @@ func (r *ReconcileMultiClusterHub) ensureSubscriptionOperatorIsRunning(mch *oper
 	}
 }
 
-// isACMBundle returns whether this application was deployment by the bundled ACM csv
-func isACMBundle(allDeps []*appsv1.Deployment) bool {
-	selfDeployment, exists := getSelfDeployment(allDeps)
-	if !exists {
-		return false
-	}
-
-	labels := selfDeployment.GetLabels()
+// isOLMManaged returns whether this application is managed by OLM
+func isOLMManaged(deploy *appsv1.Deployment) bool {
+	labels := deploy.GetLabels()
 	if labels == nil {
 		return false
 	}
@@ -626,20 +638,10 @@ func isACMBundle(allDeps []*appsv1.Deployment) bool {
 	return false
 }
 
-// getSubscriptionOperator returns the deployment that operates helm subscriptions based on name
-func getSubscriptionOperator(allDeps []*appsv1.Deployment) (*appsv1.Deployment, bool) {
+// getDeploymentByName returns the deployment with the matching name found from a list
+func getDeploymentByName(allDeps []*appsv1.Deployment, desiredDeploy string) (*appsv1.Deployment, bool) {
 	for i := range allDeps {
-		if allDeps[i].Name == utils.SubscriptionOperatorName {
-			return allDeps[i], true
-		}
-	}
-	return nil, false
-}
-
-// getSelfDeployment returns the multiclusterhub-operator deployment based on name
-func getSelfDeployment(allDeps []*appsv1.Deployment) (*appsv1.Deployment, bool) {
-	for i := range allDeps {
-		if allDeps[i].Name == utils.MCHOperatorName {
+		if allDeps[i].Name == desiredDeploy {
 			return allDeps[i], true
 		}
 	}
