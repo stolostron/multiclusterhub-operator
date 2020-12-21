@@ -586,7 +586,6 @@ func (r *ReconcileMultiClusterHub) ensureWebhookIsAvailable(mch *operatorsv1.Mul
 func (r *ReconcileMultiClusterHub) ensureSubscriptionOperatorIsRunning(mch *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deployment) (*reconcile.Result, error) {
 	// skip check if not upgrading
 	if mch.Status.CurrentVersion == version.Version {
-		log.Info("Not upgrading, skipping check")
 		return nil, nil
 	}
 
@@ -597,7 +596,6 @@ func (r *ReconcileMultiClusterHub) ensureSubscriptionOperatorIsRunning(mch *oper
 
 	// skip check if not deployed by OLM
 	if !isOLMManaged(selfDeployment) {
-		log.Info("Not running in ACM bundle, skipping check")
 		return nil, nil
 	}
 
@@ -618,10 +616,9 @@ func (r *ReconcileMultiClusterHub) ensureSubscriptionOperatorIsRunning(mch *oper
 
 	// Check that the standalone subscription deployment is available
 	if successfulDeploy(subscriptionDeploy) {
-		log.Info("Subscription operator is running")
 		return nil, nil
 	} else {
-		log.Info("Standalone subscription deployment is not running")
+		log.Info("Standalone subscription deployment is not running. Requeuing.")
 		return &reconcile.Result{RequeueAfter: time.Second * 10}, nil
 	}
 }
