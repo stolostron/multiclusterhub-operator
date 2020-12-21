@@ -582,7 +582,7 @@ func (r *ReconcileMultiClusterHub) ensureWebhookIsAvailable(mch *operatorsv1.Mul
 }
 
 // ensureSubscriptionOperatorIsRunning verifies that the subscription operator that manages helm subscriptions exists and
-// is running. This validation is only intended to run during upgrade and when run as a bundled product
+// is running. This validation is only intended to run during upgrade and when run as an OLM managed deployment
 func (r *ReconcileMultiClusterHub) ensureSubscriptionOperatorIsRunning(mch *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deployment) (*reconcile.Result, error) {
 	// skip check if not upgrading
 	if mch.Status.CurrentVersion == version.Version {
