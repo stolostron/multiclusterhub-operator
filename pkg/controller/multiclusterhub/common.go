@@ -18,6 +18,7 @@ import (
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/manifest"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
+	"github.com/open-cluster-management/multicloudhub-operator/version"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -578,4 +579,69 @@ func (r *ReconcileMultiClusterHub) ensureWebhookIsAvailable(mch *operatorsv1.Mul
 	}
 
 	return nil, nil
+}
+
+// ensureSubscriptionOperatorIsRunning verifies that the subscription operator that manages helm subscriptions exists and
+// is running. This validation is only intended to run during upgrade and when run as a bundled product
+func (r *ReconcileMultiClusterHub) ensureSubscriptionOperatorIsRunning(mch *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deployment) (*reconcile.Result, error) {
+	// skip check if not upgrading
+	if mch.Status.CurrentVersion == version.Version {
+		log.Info("Not upgrading, skipping check")
+		return nil, nil
+	}
+	// skip check if not in bundle
+	if !isACMBundle(allDeps) {
+		log.Info("Not running in ACM bundle, skipping check")
+		return nil, nil
+	}
+
+	subscriptionDeploy, exists := getSubscriptionOperator(allDeps)
+	if !exists {
+		return &reconcile.Result{RequeueAfter: time.Second * 10}, fmt.Errorf("Standalone subscription deployment not found")
+	}
+
+	if successfulDeploy(subscriptionDeploy) {
+		log.Info("Subscription operator is running")
+		return nil, nil
+	} else {
+		log.Info("Standalone subscription deployment is not running")
+		return &reconcile.Result{RequeueAfter: time.Second * 10}, nil
+	}
+}
+
+// isACMBundle returns whether this application was deployment by the bundled ACM csv
+func isACMBundle(allDeps []*appsv1.Deployment) bool {
+	selfDeployment, exists := getSelfDeployment(allDeps)
+	if !exists {
+		return false
+	}
+
+	labels := selfDeployment.GetLabels()
+	if labels == nil {
+		return false
+	}
+	if _, ok := labels["olm.owner"]; ok {
+		return true
+	}
+	return false
+}
+
+// getSubscriptionOperator returns the deployment that operates helm subscriptions based on name
+func getSubscriptionOperator(allDeps []*appsv1.Deployment) (*appsv1.Deployment, bool) {
+	for i := range allDeps {
+		if allDeps[i].Name == utils.SubscriptionOperatorName {
+			return allDeps[i], true
+		}
+	}
+	return nil, false
+}
+
+// getSelfDeployment returns the multiclusterhub-operator deployment based on name
+func getSelfDeployment(allDeps []*appsv1.Deployment) (*appsv1.Deployment, bool) {
+	for i := range allDeps {
+		if allDeps[i].Name == utils.MCHOperatorName {
+			return allDeps[i], true
+		}
+	}
+	return nil, false
 }
