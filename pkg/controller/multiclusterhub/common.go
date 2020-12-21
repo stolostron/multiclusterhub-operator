@@ -18,6 +18,7 @@ import (
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/manifest"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
+	"github.com/open-cluster-management/multicloudhub-operator/version"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -578,4 +579,70 @@ func (r *ReconcileMultiClusterHub) ensureWebhookIsAvailable(mch *operatorsv1.Mul
 	}
 
 	return nil, nil
+}
+
+// ensureSubscriptionOperatorIsRunning verifies that the subscription operator that manages helm subscriptions exists and
+// is running. This validation is only intended to run during upgrade and when run as an OLM managed deployment
+func (r *ReconcileMultiClusterHub) ensureSubscriptionOperatorIsRunning(mch *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deployment) (*reconcile.Result, error) {
+	// skip check if not upgrading
+	if mch.Status.CurrentVersion == version.Version {
+		return nil, nil
+	}
+
+	selfDeployment, exists := getDeploymentByName(allDeps, utils.MCHOperatorName)
+	if !exists {
+		err := fmt.Errorf("MCH operator deployment not found")
+		return &reconcile.Result{}, err
+	}
+
+	// skip check if not deployed by OLM
+	if !isOLMManaged(selfDeployment) {
+		return nil, nil
+	}
+
+	subscriptionDeploy, exists := getDeploymentByName(allDeps, utils.SubscriptionOperatorName)
+	if !exists {
+		err := fmt.Errorf("Standalone subscription deployment not found")
+		return &reconcile.Result{}, err
+	}
+
+	// Check that the owning CSV version of the deployments match
+	if selfDeployment.GetLabels() == nil || subscriptionDeploy.GetLabels() == nil {
+		log.Info("Missing labels on either MCH operator or subscription operator deployment")
+		return &reconcile.Result{RequeueAfter: time.Second * 10}, nil
+	}
+	if selfDeployment.Labels["olm.owner"] != subscriptionDeploy.Labels["olm.owner"] {
+		log.Info("OLM owner labels do not match. Requeuing.", "MCH operator label", selfDeployment.Labels["olm.owner"], "Subscription operator label", subscriptionDeploy.Labels["olm.owner"])
+		return &reconcile.Result{RequeueAfter: time.Second * 10}, nil
+	}
+
+	// Check that the standalone subscription deployment is available
+	if successfulDeploy(subscriptionDeploy) {
+		return nil, nil
+	} else {
+		log.Info("Standalone subscription deployment is not running. Requeuing.")
+		return &reconcile.Result{RequeueAfter: time.Second * 10}, nil
+	}
+}
+
+// isOLMManaged returns whether this application is managed by OLM
+func isOLMManaged(deploy *appsv1.Deployment) bool {
+	labels := deploy.GetLabels()
+	if labels == nil {
+		return false
+	}
+	if _, ok := labels["olm.owner"]; ok {
+		return true
+	}
+	return false
+}
+
+// getDeploymentByName returns the deployment with the matching name found from a list
+func getDeploymentByName(allDeps []*appsv1.Deployment, desiredDeploy string) (*appsv1.Deployment, bool) {
+	for i := range allDeps {
+		if allDeps[i].Name == desiredDeploy {
+			return allDeps[i], true
+		}
+	}
+	return nil, false
 }

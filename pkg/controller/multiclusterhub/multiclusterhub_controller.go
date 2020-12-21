@@ -292,6 +292,11 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		return reconcile.Result{}, nil
 	}
 
+	result, err = r.ensureSubscriptionOperatorIsRunning(multiClusterHub, allDeploys)
+	if result != nil {
+		return *result, err
+	}
+
 	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
