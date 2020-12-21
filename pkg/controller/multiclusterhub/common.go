@@ -591,7 +591,8 @@ func (r *ReconcileMultiClusterHub) ensureSubscriptionOperatorIsRunning(mch *oper
 
 	selfDeployment, exists := getDeploymentByName(allDeps, utils.MCHOperatorName)
 	if !exists {
-		return &reconcile.Result{RequeueAfter: time.Second * 10}, fmt.Errorf("MCH operator deployment not found")
+		err := fmt.Errorf("MCH operator deployment not found")
+		return &reconcile.Result{}, err
 	}
 
 	// skip check if not deployed by OLM
@@ -601,7 +602,8 @@ func (r *ReconcileMultiClusterHub) ensureSubscriptionOperatorIsRunning(mch *oper
 
 	subscriptionDeploy, exists := getDeploymentByName(allDeps, utils.SubscriptionOperatorName)
 	if !exists {
-		return &reconcile.Result{RequeueAfter: time.Second * 10}, fmt.Errorf("Standalone subscription deployment not found")
+		err := fmt.Errorf("Standalone subscription deployment not found")
+		return &reconcile.Result{}, err
 	}
 
 	// Check that the owning CSV version of the deployments match
