@@ -54,6 +54,9 @@ spec:
               description: Disable automatic import of the hub cluster as a managed
                 cluster
               type: boolean
+            disableUpdateClusterImageSets:
+              description: Disable automatic update of ClusterImageSets
+              type: boolean
             hive:
               description: Overrides for the default HiveConfig spec
               properties:

@@ -311,6 +311,7 @@ spec:
           - operator.open-cluster-management.io
           - register.open-cluster-management.io
           - coordination.k8s.io
+          - search.open-cluster-management.io
           resources:
           - applications
           - applications/status
@@ -374,6 +375,7 @@ spec:
           - syncsets
           - clustersyncs
           - leases
+          - searchcustomizations
           verbs:
           - create
           - get
