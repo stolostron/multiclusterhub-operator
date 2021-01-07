@@ -314,7 +314,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 			SetHubCondition(&multiClusterHub.Status, *condition)
 		}
 	}
-	return reconcile.Result{}, nil
 
 	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
