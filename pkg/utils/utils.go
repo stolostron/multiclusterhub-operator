@@ -36,6 +36,12 @@ const (
 
 	// UnitTestEnvVar ...
 	UnitTestEnvVar = "UNIT_TEST"
+
+	// MCHOperatorName is the name of this operator deployment
+	MCHOperatorName = "multiclusterhub-operator"
+
+	// SubscriptionOperatorName is the name of the operator deployment managing application subscriptions
+	SubscriptionOperatorName = "multicluster-operators-standalone-subscription"
 )
 
 var (
