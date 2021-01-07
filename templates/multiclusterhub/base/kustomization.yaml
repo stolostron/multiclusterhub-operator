@@ -1,6 +1,5 @@
 resources:
 - rbac
-- crds
 - apiserver
 - operands
 - webhook
