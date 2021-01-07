@@ -416,6 +416,8 @@ spec:
                   value: /usr/local/templates
                 - name: MANIFESTS_PATH
                   value: /image-manifests
+                - name: CRDS_PATH
+                  value: /crds
                 image: multiclusterhub-operator:2.1.2
                 imagePullPolicy: Always
                 name: multiclusterhub-operator

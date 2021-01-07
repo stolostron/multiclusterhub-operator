@@ -29,7 +29,7 @@ func Deploy(c runtimeclient.Client, obj *unstructured.Unstructured) (error, bool
 	if err != nil {
 		if errors.IsNotFound(err) {
 			log.Info("Creating resource", "Kind", obj.GetKind(), "Name", obj.GetName())
-			if kind := found.GetKind(); kind == "ServiceAccount" {
+			if kind := found.GetKind(); kind == "ServiceAccount" || kind == "CustomResourceDefinition" {
 				annotate(obj)
 			}
 			return c.Create(context.TODO(), obj), true
@@ -49,8 +49,8 @@ func Deploy(c runtimeclient.Client, obj *unstructured.Unstructured) (error, bool
 		}
 	}
 
-	// Update service account only if hash doesn't match
-	if kind := found.GetKind(); kind == "ServiceAccount" {
+	// Update if hash doesn't match
+	if kind := found.GetKind(); kind == "ServiceAccount" || kind == "CustomResourceDefinition" {
 		if shasMatch(found, obj) {
 			return nil, false
 		}

@@ -48,3 +48,5 @@ spec:
               value: "/usr/local/templates"
             - name: MANIFESTS_PATH
               value: "/image-manifests"
+            - name: CRDS_PATH
+              value: "/crds"
