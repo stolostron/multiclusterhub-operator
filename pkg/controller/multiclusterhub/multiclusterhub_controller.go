@@ -292,6 +292,30 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		return reconcile.Result{}, nil
 	}
 
+	// Render CRD templates
+	crdRenderer, err := rendering.NewCRDRenderer(multiClusterHub)
+	if err != nil {
+		reqLogger.Error(err, "Failed to read CRD templates")
+		return reconcile.Result{}, err
+	}
+	crdResources, err := crdRenderer.Render()
+	if err != nil {
+		reqLogger.Error(err, "Failed to render CRD templates")
+		return reconcile.Result{}, err
+	}
+	for _, crd := range crdResources {
+		err, ok := deploying.Deploy(r.client, crd)
+		if err != nil {
+			reqLogger.Error(err, fmt.Sprintf("Failed to deploy %s %s", crd.GetKind(), crd.GetName()))
+			return reconcile.Result{}, err
+		}
+		if ok {
+			condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+			SetHubCondition(&multiClusterHub.Status, *condition)
+		}
+	}
+	return reconcile.Result{}, nil
+
 	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err

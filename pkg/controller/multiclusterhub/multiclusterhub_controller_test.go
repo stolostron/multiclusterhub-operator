@@ -74,9 +74,11 @@ func Test_ReconcileMultiClusterHub(t *testing.T) {
 	os.Setenv("UNIT_TEST", "true")
 	os.Setenv("TEMPLATES_PATH", "../../../templates")
 	os.Setenv("MANIFESTS_PATH", "../../../image-manifests")
+	os.Setenv("CRDS_PATH", "../../../crds")
 	defer os.Unsetenv("TEMPLATES_PATH")
 	defer os.Unsetenv("MANIFESTS_PATH")
 	defer os.Unsetenv("UNIT_TEST")
+	defer os.Unsetenv("CRDS_PATH")
 
 	// Without Status Prefilled
 	mch2 := full_mch.DeepCopy()
