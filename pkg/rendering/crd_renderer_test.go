@@ -47,34 +47,3 @@ func TestCRDRender(t *testing.T) {
 		}
 	})
 }
-
-// func TestCRDRenderer_Render(t *testing.T) {
-// 	type fields struct {
-// 		directory string
-// 		cr        *operatorsv1.MultiClusterHub
-// 	}
-// 	tests := []struct {
-// 		name    string
-// 		fields  fields
-// 		want    []*unstructured.Unstructured
-// 		wantErr bool
-// 	}{
-// 		// TODO: Add test cases.
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			r := &CRDRenderer{
-// 				directory: tt.fields.directory,
-// 				cr:        tt.fields.cr,
-// 			}
-// 			got, err := r.Render()
-// 			if (err != nil) != tt.wantErr {
-// 				t.Errorf("CRDRenderer.Render() error = %v, wantErr %v", err, tt.wantErr)
-// 				return
-// 			}
-// 			if !reflect.DeepEqual(got, tt.want) {
-// 				t.Errorf("CRDRenderer.Render() = %v, want %v", got, tt.want)
-// 			}
-// 		})
-// 	}
-// }
