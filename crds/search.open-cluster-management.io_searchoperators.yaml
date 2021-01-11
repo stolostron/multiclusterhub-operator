@@ -1,0 +1,120 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: searchoperators.search.open-cluster-management.io
+spec:
+  group: search.open-cluster-management.io
+  names:
+    kind: SearchOperator
+    listKind: SearchOperatorList
+    plural: searchoperators
+    shortNames:
+    - srcho
+    singular: searchoperator
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: SearchOperator is the Schema for the searchoperators API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: SearchOperatorSpec defines the desired state of SearchOperator
+          properties:
+            nodeselector:
+              properties:
+                customlabelselector:
+                  type: string
+                customlabelvalue:
+                  type: string
+                enabled:
+                  type: boolean
+                os:
+                  type: string
+              required:
+              - enabled
+              type: object
+            pullpolicy:
+              type: string
+            pullsecret:
+              type: string
+            redisgraph_resource:
+              properties:
+                limit_cpu:
+                  description: Limit CPU
+                  type: string
+                  pattern: "[0-9\\.]+m?"
+                limit_memory:
+                  description: Limit Memory
+                  type: string
+                  pattern: "[0-9\\.]+(G|Gi|M|Mi|K|Ki)?"
+                request_cpu:
+                  description: Request CPU
+                  type: string
+                  pattern: "[0-9\\.]+m?"
+                request_memory:
+                  description: Request memory
+                  type: string
+                  pattern: "[0-9\\.]+(G|Gi|M|Mi|K|Ki)?"
+              required:
+              - limit_memory
+              - request_cpu
+              - request_memory
+              type: object
+            searchimageoverrides:
+              description: Image to use in deployment
+              properties:
+                redisgraph_tls:
+                  type: string
+                search_aggregator:
+                  type: string
+                search_api:
+                  type: string
+                search_collector:
+                  type: string
+              required:
+              - redisgraph_tls
+              type: object
+          required:
+          - redisgraph_resource
+          - searchimageoverrides
+          type: object
+        status:
+          description: SearchOperatorStatus defines the observed state of SearchOperator
+          properties:
+            persistence:
+              description: Reflects the current status of the RedisGraph pod using
+                a Persistence mode (PVC/EmptyDir/Degraded)
+              type: string
+          required:
+          - persistence
+          type: object
+      type: object
+  version: v1
+  versions:
+  - name: v1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

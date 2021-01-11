@@ -174,3 +174,6 @@ time:
 
 update-version:
 	./common/scripts/update-version.sh $(OLD_VERSION) $(NEW_VERSION)
+
+update-crds:
+	bash common/scripts/gather-crds.sh
