@@ -5,9 +5,6 @@ metadata:
   name: challenges.certmanager.k8s.io
   labels:
     app: cert-manager
-    chart: {{ template "cert-manager-crd.chart" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
 spec:
   additionalPrinterColumns:
   - JSONPath: .status.state
