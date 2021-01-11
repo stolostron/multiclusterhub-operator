@@ -578,6 +578,33 @@ func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 		return nil
 	}, GetWaitInMinutes()*60, 1).Should(BeNil())
 
+	By("- Validating CRDs were deleted")
+	os.Setenv("CRDS_PATH", "../../crds")
+	defer os.Unsetenv("CRDS_PATH")
+
+	crdDir, found := os.LookupEnv("CRDS_PATH")
+	if !found {
+		return fmt.Errorf("CRDS_PATH environment variable is required")
+	}
+
+	files, err := ioutil.ReadDir(crdDir)
+	Expect(err).To(BeNil())
+	for _, file := range files {
+		filePath := path.Join(crdDir, file.Name())
+		src, err := ioutil.ReadFile(filepath.Clean(filePath)) // #nosec G304 (filepath cleaned)
+		Expect(err).To(BeNil())
+
+		crd := &unstructured.Unstructured{}
+		err = yaml.Unmarshal(src, crd)
+		Expect(err).To(BeNil())
+
+		crdName, _, err := unstructured.NestedString(crd.Object, "metadata", "name")
+		Expect(err).To(BeNil())
+
+		_, err = DynamicKubeClient.Resource(GVRCustomResourceDefinition).Get(context.TODO(), crdName, metav1.GetOptions{})
+		Expect(err).ToNot(BeNil())
+	}
+
 	if runCleanUpScript() {
 		By("- Running documented clean up script")
 		workingDir, err := os.Getwd()
@@ -676,6 +703,32 @@ func ValidateMCH() error {
 	Expect(err).To(BeNil())
 	Expect(deploy.Status.AvailableReplicas).ShouldNot(Equal(0))
 	Expect(IsOwner(mch, &deploy.ObjectMeta)).To(Equal(true))
+
+	By("- Validating CRDs were created successfully")
+	os.Setenv("CRDS_PATH", "../../crds")
+	defer os.Unsetenv("CRDS_PATH")
+
+	crdDir, found := os.LookupEnv("CRDS_PATH")
+	if !found {
+		return fmt.Errorf("CRDS_PATH environment variable is required")
+	}
+
+	files, err := ioutil.ReadDir(crdDir)
+	Expect(err).To(BeNil())
+	for _, file := range files {
+		filePath := path.Join(crdDir, file.Name())
+		src, err := ioutil.ReadFile(filepath.Clean(filePath)) // #nosec G304 (filepath cleaned)
+		Expect(err).To(BeNil())
+
+		crd := &unstructured.Unstructured{}
+		err = yaml.Unmarshal(src, crd)
+		Expect(err).To(BeNil())
+		// Retrieve name of CRD
+		crdName, _, err := unstructured.NestedString(crd.Object, "metadata", "name")
+		Expect(err).To(BeNil())
+		_, err = DynamicKubeClient.Resource(GVRCustomResourceDefinition).Get(context.TODO(), crdName, metav1.GetOptions{})
+		Expect(err).To(BeNil())
+	}
 
 	By("- Ensuring components have status 'true' when MCH is in 'running' phase")
 	mch, err = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
