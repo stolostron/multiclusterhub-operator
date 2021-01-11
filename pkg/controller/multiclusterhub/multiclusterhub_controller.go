@@ -292,6 +292,11 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		return reconcile.Result{}, nil
 	}
 
+	result, err = r.ensureSubscriptionOperatorIsRunning(multiClusterHub, allDeploys)
+	if result != nil {
+		return *result, err
+	}
+
 	// Render CRD templates
 	crdRenderer, err := rendering.NewCRDRenderer(multiClusterHub)
 	if err != nil {
