@@ -578,6 +578,15 @@ func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 		return nil
 	}, GetWaitInMinutes()*60, 1).Should(BeNil())
 
+	By("- Validating CRDs were deleted")
+	crds, err := getCRDs()
+	Expect(err).Should(BeNil())
+
+	for _, crd := range crds {
+		_, err = DynamicKubeClient.Resource(GVRCustomResourceDefinition).Get(context.TODO(), crd, metav1.GetOptions{})
+		Expect(err).ToNot(BeNil())
+	}
+
 	if runCleanUpScript() {
 		By("- Running documented clean up script")
 		workingDir, err := os.Getwd()
@@ -676,6 +685,15 @@ func ValidateMCH() error {
 	Expect(err).To(BeNil())
 	Expect(deploy.Status.AvailableReplicas).ShouldNot(Equal(0))
 	Expect(IsOwner(mch, &deploy.ObjectMeta)).To(Equal(true))
+
+	By("- Validating CRDs were created successfully")
+	crds, err := getCRDs()
+	Expect(err).Should(BeNil())
+
+	for _, crd := range crds {
+		_, err = DynamicKubeClient.Resource(GVRCustomResourceDefinition).Get(context.TODO(), crd, metav1.GetOptions{})
+		Expect(err).To(BeNil())
+	}
 
 	By("- Ensuring components have status 'true' when MCH is in 'running' phase")
 	mch, err = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
@@ -855,7 +873,7 @@ func ValidateStatusesExist() error {
 	return nil
 }
 
-//ValidateImportHubResources confirms the existence of 3 resources that are created when importing hub as managed cluster
+//ValidateImportHubResourcesExist confirms the existence of 3 resources that are created when importing hub as managed cluster
 func ValidateImportHubResourcesExist(expected bool) error {
 	//check created namespace exists
 	_, nsErr := KubeClient.CoreV1().Namespaces().Get(context.TODO(), "local-cluster", metav1.GetOptions{})
@@ -880,7 +898,7 @@ func ValidateImportHubResourcesExist(expected bool) error {
 	}
 }
 
-// ValidateManagedCluster
+// ValidateManagedCluster ...
 func ValidateManagedCluster(importResourcesShouldExist bool) error {
 	By("- Checking imported hub resources exist or not")
 	By("- Confirming Necessary Resources")
@@ -945,7 +963,7 @@ func ToggleDisableUpdateClusterImageSets(disableUpdateCIS bool) error {
 	return nil
 }
 
-// Validate that the console-chart-sub created ClusterImageSets subscription is either subscription-pause true or false
+// ValidateClusterImageSetsSubscriptionPause validates that the console-chart-sub created ClusterImageSets subscription is either subscription-pause true or false
 func ValidateClusterImageSetsSubscriptionPause(expected string) error {
 	appsub, err := DynamicKubeClient.Resource(GVRAppSub).Namespace(MCHNamespace).Get(context.TODO(), AppSubName, metav1.GetOptions{})
 	Expect(err).To(BeNil())
@@ -977,7 +995,7 @@ func listByGVR(clientHubDynamic dynamic.Interface, gvr schema.GroupVersionResour
 			return err
 		}
 		if len(obj.Items) < expectedTotal {
-			return fmt.Errorf("Not all resources created in time. %d/%d appsubs found.", len(obj.Items), expectedTotal)
+			return fmt.Errorf("not all resources created in time. %d/%d appsubs found", len(obj.Items), expectedTotal)
 		}
 		return nil
 	}, timeout, 1).Should(BeNil())
@@ -1041,6 +1059,7 @@ func ShouldSkipSubscription() bool {
 	return false
 }
 
+// GetCurrentVersionFromMCH ...
 func GetCurrentVersionFromMCH() (string, error) {
 	mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
 	Expect(err).To(BeNil())
@@ -1055,6 +1074,7 @@ func GetCurrentVersionFromMCH() (string, error) {
 	return version.(string), nil
 }
 
+// CreateObservabilityCRD ...
 func CreateObservabilityCRD() {
 	By("- Creating Observability CRD if it does not exist")
 	_, err := DynamicKubeClient.Resource(GVRCustomResourceDefinition).Get(context.TODO(), "multiclusterobservabilities.observability.open-cluster-management.io", metav1.GetOptions{})
@@ -1073,6 +1093,7 @@ func CreateObservabilityCRD() {
 	Expect(err).To(BeNil())
 }
 
+// CreateObservabilityCR ...
 func CreateObservabilityCR() {
 	By("- Creating Observability CR if it does not exist")
 
@@ -1092,6 +1113,7 @@ func CreateObservabilityCR() {
 	Expect(err).To(BeNil())
 }
 
+// DeleteObservabilityCR ...
 func DeleteObservabilityCR() {
 	By("- Deleting Observability CR if it exists")
 
@@ -1106,6 +1128,7 @@ func DeleteObservabilityCR() {
 	Expect(err).To(BeNil())
 }
 
+// DeleteObservabilityCRD ...
 func DeleteObservabilityCRD() {
 	By("- Deleting Observability CRD if it exists")
 
@@ -1120,6 +1143,7 @@ func DeleteObservabilityCRD() {
 	Expect(err).To(BeNil())
 }
 
+// CreateBareMetalAssetsCR ...
 func CreateBareMetalAssetsCR() {
 	By("- Creating BareMetalAsset CR if it does not exist")
 
@@ -1139,6 +1163,7 @@ func CreateBareMetalAssetsCR() {
 	Expect(err).To(BeNil())
 }
 
+// DeleteBareMetalAssetsCR ...
 func DeleteBareMetalAssetsCR() {
 	By("- Deleting BareMetal CR if it exists")
 
@@ -1147,4 +1172,41 @@ func DeleteBareMetalAssetsCR() {
 
 	err = DynamicKubeClient.Resource(GVRBareMetalAsset).Namespace(MCHNamespace).Delete(context.TODO(), "mch-test-bma", metav1.DeleteOptions{})
 	Expect(err).To(BeNil())
+}
+
+func getCRDs() ([]string, error) {
+	err := os.Setenv("CRDS_PATH", "../../crds")
+	if err != nil {
+		return nil, err
+	}
+	defer os.Unsetenv("CRDS_PATH")
+	crdDir, found := os.LookupEnv("CRDS_PATH")
+	if !found {
+		return nil, fmt.Errorf("CRDS_PATH environment variable is required")
+	}
+
+	var crds []string
+	files, err := ioutil.ReadDir(crdDir)
+	Expect(err).To(BeNil())
+	for _, file := range files {
+		filePath := path.Join(crdDir, file.Name())
+		src, err := ioutil.ReadFile(filepath.Clean(filePath)) // #nosec G304 (filepath cleaned)
+		if err != nil {
+			return nil, err
+		}
+
+		crd := &unstructured.Unstructured{}
+		err = yaml.Unmarshal(src, crd)
+		if err != nil {
+			return nil, err
+		}
+
+		crdName, _, err := unstructured.NestedString(crd.Object, "metadata", "name")
+		if err != nil {
+			return nil, err
+		}
+
+		crds = append(crds, crdName)
+	}
+	return crds, nil
 }
