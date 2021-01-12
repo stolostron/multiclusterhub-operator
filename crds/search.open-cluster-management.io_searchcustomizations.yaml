@@ -1,0 +1,82 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: searchcustomizations.search.open-cluster-management.io
+spec:
+  group: search.open-cluster-management.io
+  names:
+    kind: SearchCustomization
+    listKind: SearchCustomizationList
+    plural: searchcustomizations
+    shortNames:
+    - srchc
+    singular: searchcustomization
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: SearchCustomization is the schema for the search customizations API.
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: SearchCustomizationSpec defines the desired state of SearchCustomization
+            properties.
+          properties:
+            persistence:
+              description: If set to true, then a PVC is created on the storageClass
+                that is specified. If there is no storageClass specified, default storageClass
+                is used to persist Redisgraph data. If set to false, persisting to filesystem is disabled.
+              type: boolean
+              pattern: "(true|false)"
+            storageClass:
+              description: If specified, this storageClass is used. Otherwise the default
+                storageClass is used by Kubernetes. 
+              type: string
+            storageSize:
+              description: Size of the PVC which is used by search-redisgraph pod. Once PVC is created, updates to size should be done in PVC defenition.
+              type: string
+              pattern: "^[1-9](Gi)|^[1-9][0-9](Gi)"
+          type: object
+        status:
+          description: SearchCustomizationStatus defines the observed state of SearchCustomization.
+          properties:
+            persistence:
+              type: boolean
+            storageClass:
+              type: string
+            storageSize:
+              type: string
+          required:
+          - persistence
+          - storageClass
+          - storageSize
+          type: object
+      type: object
+  version: v1
+  versions:
+  - name: v1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

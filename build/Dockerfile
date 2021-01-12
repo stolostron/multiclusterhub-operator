@@ -15,6 +15,9 @@ COPY image-manifests /image-manifests
 # install templates
 COPY templates /usr/local/templates
 
+# install CRDs
+COPY crds /crds
+
 # install operator binary
 COPY build/_output/bin/multiclusterhub-operator ${OPERATOR}
 

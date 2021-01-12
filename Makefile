@@ -140,6 +140,7 @@ local-install: ns secrets og subscriptions observability-crd
 	OPERATOR_NAME=multiclusterhub-operator \
 	TEMPLATES_PATH="$(shell pwd)/templates" \
 	MANIFESTS_PATH="$(shell pwd)/image-manifests" \
+	CRDS_PATH="$(shell pwd)/crds" \
 	POD_NAMESPACE="open-cluster-management" \
 	operator-sdk run local --watch-namespace=open-cluster-management --kubeconfig=$(KUBECONFIG)
 
@@ -173,3 +174,6 @@ time:
 
 update-version:
 	./common/scripts/update-version.sh $(OLD_VERSION) $(NEW_VERSION)
+
+update-crds:
+	bash common/scripts/gather-crds.sh
