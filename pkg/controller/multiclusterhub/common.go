@@ -591,8 +591,8 @@ func (r *ReconcileMultiClusterHub) ensureSubscriptionOperatorIsRunning(mch *oper
 
 	selfDeployment, exists := getDeploymentByName(allDeps, utils.MCHOperatorName)
 	if !exists {
-		err := fmt.Errorf("MCH operator deployment not found")
-		return &reconcile.Result{}, err
+		// Deployment doesn't exist so this is either being run locally or with unit tests
+		return nil, nil
 	}
 
 	// skip check if not deployed by OLM
