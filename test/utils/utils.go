@@ -1175,7 +1175,10 @@ func DeleteBareMetalAssetsCR() {
 }
 
 func getCRDs() ([]string, error) {
-	os.Setenv("CRDS_PATH", "../../crds")
+	err := os.Setenv("CRDS_PATH", "../../crds")
+	if err != nil {
+		return nil, err
+	}
 	defer os.Unsetenv("CRDS_PATH")
 	crdDir, found := os.LookupEnv("CRDS_PATH")
 	if !found {
