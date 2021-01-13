@@ -15,9 +15,9 @@ import (
 // UpgradeHubSelfMgmtHackRequired checks the the current version and if hub self management is enabled
 // to determine if special upgrade logic is required
 func (r *ReconcileMultiClusterHub) UpgradeHubSelfMgmtHackRequired(mch *operatorsv1.MultiClusterHub) (bool, error) {
-	c, err := semver.NewConstraint("< 2.1.2")
+	c, err := semver.NewConstraint("< 2.1.2, >= 2.1.0")
 	if err != nil {
-		return false, fmt.Errorf("Error setting semver constraint < 2.1.2")
+		return false, fmt.Errorf("Error setting semver constraint < 2.1.2, >=2.1.0")
 	}
 
 	if mch.Status.CurrentVersion == "" {
@@ -56,12 +56,12 @@ func (r *ReconcileMultiClusterHub) EndEnsuringHubIsUpgradeable(mch *operatorsv1.
 	return nil, nil
 }
 
-// getImageFromManifestByKey - Returns image associated with key for currentVersion of MCH
+// getImageFromManifestByKey - Returns image associated with key for desiredVersion of MCH (retrieves new image)
 func (r *ReconcileMultiClusterHub) getImageFromManifestByKey(mch *operatorsv1.MultiClusterHub, key string) (string, error) {
 	log.Info(fmt.Sprintf("Checking for image associated with key: %s", key))
 	configmap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("mch-image-manifest-%s", mch.Status.CurrentVersion),
+			Name:      fmt.Sprintf("mch-image-manifest-%s", mch.Status.DesiredVersion),
 			Namespace: mch.Namespace,
 		},
 	}
