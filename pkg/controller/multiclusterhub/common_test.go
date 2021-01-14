@@ -920,11 +920,11 @@ func TestReconcileMultiClusterHub_ensureSubscriptionOperatorIsRunning(t *testing
 			wantErr:    nil,
 		},
 		{
-			name:       "MCH operator is missing",
+			name:       "Not running MCH operator in deployment",
 			mch:        full_mch,
 			allDeps:    []*appsv1.Deployment{subOperatorOld},
-			wantResult: &reconcile.Result{RequeueAfter: time.Second * 10},
-			wantErr:    fmt.Errorf("MCH operator deployment not found"),
+			wantResult: nil,
+			wantErr:    nil,
 		},
 		{
 			name:       "Subscription operator is missing",

@@ -199,6 +199,7 @@ spec:
           - subjectaccessreviews
           - subscriptions
           - validatingwebhookconfigurations
+          - pods
           verbs:
           - list
         - apiGroups:
@@ -223,6 +224,7 @@ spec:
           - multiclusterhubs
           - namespaces
           - rolebindings
+          - pods
           - secrets
           - services
           - subjectaccessreviews

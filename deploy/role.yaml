@@ -111,6 +111,7 @@ rules:
   - subjectaccessreviews
   - subscriptions
   - validatingwebhookconfigurations
+  - pods
   verbs:
   - list
 
@@ -136,6 +137,7 @@ rules:
   - multiclusterhubs
   - namespaces
   - rolebindings
+  - pods
   - secrets
   - services
   - subjectaccessreviews

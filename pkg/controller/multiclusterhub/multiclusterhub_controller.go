@@ -278,6 +278,20 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		return reconcile.Result{}, err
 	}
 
+	UpgradeHackRequired, err := r.UpgradeHubSelfMgmtHackRequired(multiClusterHub)
+	if err != nil {
+		reqLogger.Error(err, "Error determining if upgrade specific logic is required")
+		return reconcile.Result{}, err
+	}
+
+	if UpgradeHackRequired {
+		result, err = r.BeginEnsuringHubIsUpgradeable(multiClusterHub)
+		if err != nil {
+			log.Info(fmt.Sprintf("Error starting to ensure local-cluster hub is upgradeable: %s", err.Error()))
+			return reconcile.Result{RequeueAfter: resyncPeriod}, nil
+		}
+	}
+
 	// Add installer labels to Helm-owned deployments
 	myHelmReleases := getAppSubOwnedHelmReleases(allHRs, getAppsubs(multiClusterHub))
 	myHRDeployments := getHelmReleaseOwnedDeployments(allDeploys, myHelmReleases)
@@ -470,7 +484,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 	}
 
 	if !multiClusterHub.Spec.DisableHubSelfManagement {
-		result, err = r.ensureHubIsImported(multiClusterHub)
+		result, err = r.ensureHubIsImported(multiClusterHub, UpgradeHackRequired)
 		if result != nil {
 			return *result, err
 		}
