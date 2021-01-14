@@ -270,16 +270,6 @@ func (r *ReconcileMultiClusterHub) BeginEnsuringHubIsUpgradeable(mch *operatorsv
 // EndEnsuringHubIsUpgradeable - end hook for ensuring the hub is upgradeable
 func (r *ReconcileMultiClusterHub) EndEnsuringHubIsUpgradeable(mch *operatorsv1.MultiClusterHub) (*reconcile.Result, error) {
 	log.Info("Ending Upgrade Specific Logic!")
-	log.Info("Starting local-cluster klusterletaddonconfig")
-	if err := ensureKlusterletAddonConfigPausedStatus(
-		r.client,
-		KlusterletAddonConfigName,
-		ManagedClusterName,
-		false,
-	); err != nil && !errors.IsNotFound(err) {
-		log.Error(err, "failed to resume klusterletaddonconfig")
-		return &reconcile.Result{}, err
-	}
 	return nil, nil
 }
 
