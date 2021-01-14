@@ -164,8 +164,8 @@ func ensureAppmgrManifestWorkImage(c client.Client, clusterName string, imageKey
 	return nil
 }
 
-// ensureAppmgrPodImage makes sure no appmgr pod is using an incorrect image
-// returns error if detected any pods that are not using correct image
+// ensureAppmgrPodImage makes sure no appmgr pod is using an incorrect image.
+// returns error if detected any running pods that are not using correct image.
 func ensureAppmgrPodImage(c client.Client, imageValue string) error {
 	podList := &corev1.PodList{}
 
@@ -184,9 +184,18 @@ func ensureAppmgrPodImage(c client.Client, imageValue string) error {
 	if len(podList.Items) == 0 {
 		return nil
 	}
-
 	for _, pod := range podList.Items {
 		hasOneMatch := false
+		// check status skip not running pods
+		if status, err := getJSONPath(
+			pod,
+			"{.status.phase}",
+		); err == nil && status != string(corev1.PodRunning) {
+			// ignore pods not running - pods not scheduled or has no container running
+			continue
+		} else if err != nil {
+			log.Error(err, "failed to get pod status")
+		}
 		// at least one container is using the expected image
 		for _, c := range pod.Spec.Containers {
 			if c.Image == imageValue {
