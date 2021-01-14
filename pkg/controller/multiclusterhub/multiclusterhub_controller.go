@@ -483,16 +483,8 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		return *result, err
 	}
 
-	if UpgradeHackRequired {
-		result, err = r.EndEnsuringHubIsUpgradeable(multiClusterHub)
-		if err != nil {
-			log.Info(fmt.Sprintf("Error ending ensuring local-cluster hub is upgradeable: %s", err.Error()))
-			return reconcile.Result{RequeueAfter: resyncPeriod}, nil
-		}
-	}
-
 	if !multiClusterHub.Spec.DisableHubSelfManagement {
-		result, err = r.ensureHubIsImported(multiClusterHub)
+		result, err = r.ensureHubIsImported(multiClusterHub, UpgradeHackRequired)
 		if result != nil {
 			return *result, err
 		}
