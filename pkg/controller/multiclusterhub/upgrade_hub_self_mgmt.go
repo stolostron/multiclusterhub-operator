@@ -24,12 +24,17 @@ import (
 // UpgradeHubSelfMgmtHackRequired checks the the current version and if hub self management is enabled
 // to determine if special upgrade logic is required
 func (r *ReconcileMultiClusterHub) UpgradeHubSelfMgmtHackRequired(mch *operatorsv1.MultiClusterHub) (bool, error) {
-	c, err := semver.NewConstraint("< 2.1.2, >= 2.1.0")
+	currentVersionConstraint, err := semver.NewConstraint("< 2.1.2, >= 2.1.0")
 	if err != nil {
-		return false, fmt.Errorf("Error setting semver constraint < 2.1.2, >=2.1.0")
+		return false, fmt.Errorf("Error setting semver current version constraint < 2.1.2, >=2.1.0")
 	}
 
-	if mch.Status.CurrentVersion == "" {
+	desiredVersionConstraint, err := semver.NewConstraint(">= 2.1.2")
+	if err != nil {
+		return false, fmt.Errorf("Error setting semver desired version constraint = 2.1.2")
+	}
+
+	if mch.Status.CurrentVersion == "" || mch.Status.DesiredVersion == "" {
 		// Current Version is not available yet
 		return false, nil
 	}
@@ -39,8 +44,14 @@ func (r *ReconcileMultiClusterHub) UpgradeHubSelfMgmtHackRequired(mch *operators
 		return false, fmt.Errorf("Error setting semver currentversion: %s", mch.Status.CurrentVersion)
 	}
 
-	versionValidation := c.Check(currentVersion)
-	if versionValidation && !mch.Spec.DisableHubSelfManagement {
+	desiredVersion, err := semver.NewVersion(mch.Status.DesiredVersion)
+	if err != nil {
+		return false, fmt.Errorf("Error setting semver currentversion: %s", mch.Status.CurrentVersion)
+	}
+
+	currVersionValidation := currentVersionConstraint.Check(currentVersion)
+	desVersionValidation := desiredVersionConstraint.Check(desiredVersion)
+	if currVersionValidation && !mch.Spec.DisableHubSelfManagement && desVersionValidation {
 		return true, nil
 	}
 	return false, nil

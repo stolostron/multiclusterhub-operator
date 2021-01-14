@@ -224,6 +224,7 @@ spec:
           - multiclusterhubs
           - namespaces
           - rolebindings
+          - pods
           - secrets
           - services
           - subjectaccessreviews
