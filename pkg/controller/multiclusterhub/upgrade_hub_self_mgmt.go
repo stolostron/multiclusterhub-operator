@@ -267,12 +267,6 @@ func (r *ReconcileMultiClusterHub) BeginEnsuringHubIsUpgradeable(mch *operatorsv
 	return nil, nil
 }
 
-// EndEnsuringHubIsUpgradeable - end hook for ensuring the hub is upgradeable
-func (r *ReconcileMultiClusterHub) EndEnsuringHubIsUpgradeable(mch *operatorsv1.MultiClusterHub) (*reconcile.Result, error) {
-	log.Info("Ending Upgrade Specific Logic!")
-	return nil, nil
-}
-
 // getImageFromManifestByKey - Returns image associated with key for desiredVersion of MCH (retrieves new image)
 func (r *ReconcileMultiClusterHub) getImageFromManifestByKey(mch *operatorsv1.MultiClusterHub, key string) (string, error) {
 	log.Info(fmt.Sprintf("Checking for image associated with key: %s", key))

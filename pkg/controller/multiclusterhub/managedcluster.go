@@ -106,20 +106,22 @@ func getKlusterletAddonConfig() *unstructured.Unstructured {
 	return klusterletaddonconfig
 }
 
-func (r *ReconcileMultiClusterHub) ensureHubIsImported(m *operatorsv1.MultiClusterHub) (*reconcile.Result, error) {
+func (r *ReconcileMultiClusterHub) ensureHubIsImported(m *operatorsv1.MultiClusterHub, UpgradeHackRequired bool) (*reconcile.Result, error) {
 	if !r.ComponentsAreRunning(m) {
 		log.Info("Waiting for mch phase to be 'running' before importing hub cluster")
 		return &reconcile.Result{RequeueAfter: resyncPeriod}, nil
 	}
 
 	// resume klusterletaddonconfig ignore error
-	if err := ensureKlusterletAddonConfigPausedStatus(
-		r.client,
-		KlusterletAddonConfigName,
-		ManagedClusterName,
-		false,
-	); err != nil && !errors.IsNotFound(err) {
-		log.Error(err, "failed to resume klusterletaddonconfig")
+	if UpgradeHackRequired {
+		if err := ensureKlusterletAddonConfigPausedStatus(
+			r.client,
+			KlusterletAddonConfigName,
+			ManagedClusterName,
+			false,
+		); err != nil && !errors.IsNotFound(err) {
+			log.Error(err, "failed to resume klusterletaddonconfig")
+		}
 	}
 
 	result, err := r.ensureManagedCluster(m)
