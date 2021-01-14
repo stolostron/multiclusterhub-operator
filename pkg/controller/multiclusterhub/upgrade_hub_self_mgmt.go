@@ -124,8 +124,10 @@ func ensureAppmgrManifestWorkImage(c client.Client, clusterName string, imageKey
 	}
 	// look through the manifests, and find the one with manifest
 	index := -1
-
-	for i := 0; true; i++ {
+	// iterate through the manifests in case the order is changed
+	// the generated manifest should not have more than 2 manifests, set 10 to be safe
+	// the loop will be finished when i is out of array's bound or when find AppilcationManager manifest
+	for i := 0; i < 10; i++ {
 		// check if it's applicationmanager
 		template := fmt.Sprintf("{.spec.workload.manifests[%d].kind}", i)
 		kind, err := getJSONPath(manifestWork.Object, template)
