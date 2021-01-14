@@ -199,6 +199,7 @@ spec:
           - subjectaccessreviews
           - subscriptions
           - validatingwebhookconfigurations
+          - pods
           verbs:
           - list
         - apiGroups:

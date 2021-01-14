@@ -111,6 +111,7 @@ rules:
   - subjectaccessreviews
   - subscriptions
   - validatingwebhookconfigurations
+  - pods
   verbs:
   - list
 
