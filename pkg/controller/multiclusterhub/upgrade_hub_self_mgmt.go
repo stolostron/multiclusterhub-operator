@@ -241,7 +241,7 @@ func (r *ReconcileMultiClusterHub) BeginEnsuringHubIsUpgradeable(mch *operatorsv
 		ManagedClusterName,
 		appmgrImageKey,
 		image,
-	); err != nil && errors.IsNotFound(err) {
+	); err != nil && !errors.IsNotFound(err) {
 		log.Error(err, "failed to sync appmgr ManifestWork with current image")
 		return &reconcile.Result{}, err
 	}
