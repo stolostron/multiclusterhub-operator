@@ -484,7 +484,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 	}
 
 	if !multiClusterHub.Spec.DisableHubSelfManagement {
-		result, err = r.ensureHubIsImported(multiClusterHub, UpgradeHackRequired)
+		result, err = r.ensureHubIsImported(multiClusterHub)
 		if result != nil {
 			return *result, err
 		}
