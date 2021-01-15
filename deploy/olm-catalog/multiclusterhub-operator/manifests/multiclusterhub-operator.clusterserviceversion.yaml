@@ -54,6 +54,12 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:io.kubernetes:booleanSwitch
+      - description: Disable automatic update of ClusterImageSets
+        displayName: Disable Update ClusterImageSets
+        path: disableUpdateClusterImageSets
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:booleanSwitch
       - description: Overrides for the default HiveConfig spec
         displayName: Hive Config
         path: hive
@@ -199,6 +205,7 @@ spec:
           - subjectaccessreviews
           - subscriptions
           - validatingwebhookconfigurations
+          - pods
           verbs:
           - list
         - apiGroups:
@@ -227,6 +234,7 @@ spec:
           - services
           - subjectaccessreviews
           - validatingwebhookconfigurations
+          - pods
           verbs:
           - watch
         - apiGroups:
@@ -305,6 +313,7 @@ spec:
           - operator.open-cluster-management.io
           - register.open-cluster-management.io
           - coordination.k8s.io
+          - search.open-cluster-management.io
           resources:
           - applications
           - applications/status
@@ -368,6 +377,7 @@ spec:
           - syncsets
           - clustersyncs
           - leases
+          - searchcustomizations
           verbs:
           - create
           - get
@@ -418,6 +428,8 @@ spec:
                   value: /usr/local/templates
                 - name: MANIFESTS_PATH
                   value: /image-manifests
+                - name: CRDS_PATH
+                  value: /crds
                 image: multiclusterhub-operator:2.2.0
                 imagePullPolicy: Always
                 name: multiclusterhub-operator

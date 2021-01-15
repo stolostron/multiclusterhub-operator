@@ -36,6 +36,12 @@ const (
 
 	// UnitTestEnvVar ...
 	UnitTestEnvVar = "UNIT_TEST"
+
+	// MCHOperatorName is the name of this operator deployment
+	MCHOperatorName = "multiclusterhub-operator"
+
+	// SubscriptionOperatorName is the name of the operator deployment managing application subscriptions
+	SubscriptionOperatorName = "multicluster-operators-standalone-subscription"
 )
 
 var (
@@ -214,4 +220,12 @@ func TrackedNamespaces(m *operatorsv1.MultiClusterHub) []string {
 		trackedNamespaces = append(trackedNamespaces, CertManagerNamespace)
 	}
 	return trackedNamespaces
+}
+
+// GetDisableClusterImageSets returns true or false for whether auto update for clusterImageSets should be disabled
+func GetDisableClusterImageSets(m *operatorsv1.MultiClusterHub) string {
+	if m.Spec.DisableUpdateClusterImageSets {
+		return "true"
+	}
+	return "false"
 }

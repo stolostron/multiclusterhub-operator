@@ -8,6 +8,7 @@ import (
 	"os"
 	"reflect"
 	"testing"
+	"time"
 
 	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis/apps/v1"
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
@@ -23,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 func kind(kind string) schema.GroupKind {
@@ -783,4 +785,176 @@ func Test_ensureWebhookIsAvailable(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_getDeploymentByName(t *testing.T) {
+	foo := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}
+	bar := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "bar"}}
+	allDeployments := []*appsv1.Deployment{foo, bar}
+	tests := []struct {
+		name          string
+		allDeps       []*appsv1.Deployment
+		desiredDeploy string
+		want          *appsv1.Deployment
+		want1         bool
+	}{
+		{
+			name:          "Deployment found",
+			allDeps:       allDeployments,
+			desiredDeploy: "foo",
+			want:          foo,
+			want1:         true,
+		},
+		{
+			name:          "Deployment not found",
+			allDeps:       allDeployments,
+			desiredDeploy: "baz",
+			want:          nil,
+			want1:         false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1 := getDeploymentByName(tt.allDeps, tt.desiredDeploy)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getDeploymentByName() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("getDeploymentByName() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
+}
+
+func Test_isOLMManaged(t *testing.T) {
+	foo := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}
+	bar := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   "bar",
+			Labels: map[string]string{"bar": "bar"},
+		},
+	}
+	olmDeploy := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   "olm",
+			Labels: map[string]string{"olm.owner": "foobar"},
+		},
+	}
+
+	tests := []struct {
+		name   string
+		deploy *appsv1.Deployment
+		want   bool
+	}{
+		{
+			name:   "Not OLM managed, no labels",
+			deploy: foo,
+			want:   false,
+		},
+		{
+			name:   "Not OLM managed, with labels",
+			deploy: bar,
+			want:   false,
+		},
+		{
+			name:   "OLM installed",
+			deploy: olmDeploy,
+			want:   true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isOLMManaged(tt.deploy); got != tt.want {
+				t.Errorf("isOLMManaged() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestReconcileMultiClusterHub_ensureSubscriptionOperatorIsRunning(t *testing.T) {
+	r, err := getTestReconciler(full_mch)
+	if err != nil {
+		t.Fatalf("Failed to create test reconciler")
+	}
+
+	mchOperator := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   "multiclusterhub-operator",
+			Labels: map[string]string{"olm.owner": "advanced-cluster-management.v2.1.2"},
+		},
+	}
+
+	subOperator := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   "multicluster-operators-standalone-subscription",
+			Labels: map[string]string{"olm.owner": "advanced-cluster-management.v2.1.2"},
+		},
+	}
+
+	subOperatorOld := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   "multicluster-operators-standalone-subscription",
+			Labels: map[string]string{"olm.owner": "advanced-cluster-management.v2.1.1"},
+		},
+	}
+
+	tests := []struct {
+		name       string
+		mch        *operatorsv1.MultiClusterHub
+		allDeps    []*appsv1.Deployment
+		wantResult *reconcile.Result
+		wantErr    error
+	}{
+		{
+			name:       "Operators are in sync",
+			mch:        full_mch,
+			allDeps:    []*appsv1.Deployment{mchOperator, subOperator},
+			wantResult: nil,
+			wantErr:    nil,
+		},
+		{
+			name:       "Subscription operator is not up-to-date",
+			mch:        full_mch,
+			allDeps:    []*appsv1.Deployment{mchOperator, subOperatorOld},
+			wantResult: &reconcile.Result{RequeueAfter: time.Second * 10},
+			wantErr:    nil,
+		},
+		{
+			name:       "Not running MCH operator in deployment",
+			mch:        full_mch,
+			allDeps:    []*appsv1.Deployment{subOperatorOld},
+			wantResult: nil,
+			wantErr:    nil,
+		},
+		{
+			name:       "Subscription operator is missing",
+			mch:        full_mch,
+			allDeps:    []*appsv1.Deployment{mchOperator},
+			wantResult: &reconcile.Result{RequeueAfter: time.Second * 10},
+			wantErr:    fmt.Errorf("Standalone subscription deployment not found"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := r.ensureSubscriptionOperatorIsRunning(tt.mch, tt.allDeps)
+			if tt.wantResult != nil && result == nil {
+				t.Errorf("ensureSubscriptionOperatorIsRunning() got = %v, want %v", result, tt.wantResult)
+			}
+			if tt.wantResult == nil && result != nil {
+				t.Errorf("ensureSubscriptionOperatorIsRunning() got = %v, want %v", result, tt.wantResult)
+			}
+			if tt.wantErr == nil {
+				if err != nil {
+					t.Fatalf("ensureSubscriptionOperatorIsRunning() error = %v, wantErr %v", err, tt.wantErr)
+				}
+			} else {
+				if err == nil {
+					t.Fatalf("ensureSubscriptionOperatorIsRunning() error = %v, wantErr %v", err, tt.wantErr)
+				}
+
+			}
+		})
+	}
+
 }
