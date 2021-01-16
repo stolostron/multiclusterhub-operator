@@ -34,7 +34,7 @@ func (r *ReconcileMultiClusterHub) UpgradeHubSelfMgmtHackRequired(mch *operators
 	if err != nil {
 		return false, fmt.Errorf("Error setting semver desired version constraint = 2.1.2")
 	}
-	if mch.Status.CurrentVersion != version.Version {
+	if mch.Status.DesiredVersion != version.Version {
 		return false, fmt.Errorf("Error checking desired version. Expected %s, but got %s.", version.Version, mch.Status.CurrentVersion)
 	}
 
