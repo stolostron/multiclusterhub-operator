@@ -34,9 +34,6 @@ func (r *ReconcileMultiClusterHub) UpgradeHubSelfMgmtHackRequired(mch *operators
 	if err != nil {
 		return false, fmt.Errorf("Error setting semver desired version constraint = 2.1.2")
 	}
-	if mch.Status.DesiredVersion != version.Version {
-		return false, fmt.Errorf("Error checking desired version. Expected %s, but got %s.", version.Version, mch.Status.CurrentVersion)
-	}
 
 	if mch.Status.CurrentVersion == "" || mch.Status.DesiredVersion == "" {
 		// Current Version is not available yet
@@ -48,9 +45,9 @@ func (r *ReconcileMultiClusterHub) UpgradeHubSelfMgmtHackRequired(mch *operators
 		return false, fmt.Errorf("Error setting semver currentversion: %s", mch.Status.CurrentVersion)
 	}
 
-	desiredVersion, err := semver.NewVersion(mch.Status.DesiredVersion)
+	desiredVersion, err := semver.NewVersion(version.Version)
 	if err != nil {
-		return false, fmt.Errorf("Error setting semver currentversion: %s", mch.Status.CurrentVersion)
+		return false, fmt.Errorf("Error setting semver desiredversion: %s", version.Version)
 	}
 
 	currVersionValidation := currentVersionConstraint.Check(currentVersion)
@@ -276,7 +273,7 @@ func (r *ReconcileMultiClusterHub) getImageFromManifestByKey(mch *operatorsv1.Mu
 	log.Info(fmt.Sprintf("Checking for image associated with key: %s", key))
 	configmap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("mch-image-manifest-%s", mch.Status.DesiredVersion),
+			Name:      fmt.Sprintf("mch-image-manifest-%s", version.Version),
 			Namespace: mch.Namespace,
 		},
 	}
