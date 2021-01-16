@@ -167,7 +167,7 @@ func ensureAppmgrManifestWorkImage(c client.Client, clusterName string, imageKey
 
 	// update with json patch
 	if currImage != imageValue {
-		log.Info("current image: %s. Will update to %s\n", currImage, imageValue)
+		log.Info(fmt.Sprintf("current image: %s. Will update to %s\n", currImage, imageValue))
 		jsonPathTemplate := fmt.Sprintf(
 			`[{"op":"replace","path":"/spec/workload/manifests/%d/spec/global/imageOverrides/%s","value":"%s"}]`,
 			index, imageKey, imageValue)
