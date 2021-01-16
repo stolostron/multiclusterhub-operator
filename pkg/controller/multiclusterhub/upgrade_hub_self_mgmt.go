@@ -10,6 +10,7 @@ import (
 
 	"github.com/Masterminds/semver"
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
+	"github.com/open-cluster-management/multicloudhub-operator/version"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,6 +33,9 @@ func (r *ReconcileMultiClusterHub) UpgradeHubSelfMgmtHackRequired(mch *operators
 	desiredVersionConstraint, err := semver.NewConstraint(">= 2.1.2")
 	if err != nil {
 		return false, fmt.Errorf("Error setting semver desired version constraint = 2.1.2")
+	}
+	if mch.Status.CurrentVersion != version.Version {
+		return false, fmt.Errorf("Error checking desired version. Expected %s, but got %s.", version.Version, mch.Status.CurrentVersion)
 	}
 
 	if mch.Status.CurrentVersion == "" || mch.Status.DesiredVersion == "" {
