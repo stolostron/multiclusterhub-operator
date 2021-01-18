@@ -10,6 +10,7 @@ import (
 
 	"github.com/Masterminds/semver"
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
+	"github.com/open-cluster-management/multicloudhub-operator/version"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,9 +45,9 @@ func (r *ReconcileMultiClusterHub) UpgradeHubSelfMgmtHackRequired(mch *operators
 		return false, fmt.Errorf("Error setting semver currentversion: %s", mch.Status.CurrentVersion)
 	}
 
-	desiredVersion, err := semver.NewVersion(mch.Status.DesiredVersion)
+	desiredVersion, err := semver.NewVersion(version.Version)
 	if err != nil {
-		return false, fmt.Errorf("Error setting semver currentversion: %s", mch.Status.CurrentVersion)
+		return false, fmt.Errorf("Error setting semver desiredversion: %s", version.Version)
 	}
 
 	currVersionValidation := currentVersionConstraint.Check(currentVersion)
@@ -163,7 +164,7 @@ func ensureAppmgrManifestWorkImage(c client.Client, clusterName string, imageKey
 
 	// update with json patch
 	if currImage != imageValue {
-		log.Info("current image: %s. Will update to %s\n", currImage, imageValue)
+		log.Info(fmt.Sprintf("current image: %s. Will update to %s\n", currImage, imageValue))
 		jsonPathTemplate := fmt.Sprintf(
 			`[{"op":"replace","path":"/spec/workload/manifests/%d/spec/global/imageOverrides/%s","value":"%s"}]`,
 			index, imageKey, imageValue)
@@ -272,7 +273,7 @@ func (r *ReconcileMultiClusterHub) getImageFromManifestByKey(mch *operatorsv1.Mu
 	log.Info(fmt.Sprintf("Checking for image associated with key: %s", key))
 	configmap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("mch-image-manifest-%s", mch.Status.DesiredVersion),
+			Name:      fmt.Sprintf("mch-image-manifest-%s", version.Version),
 			Namespace: mch.Namespace,
 		},
 	}

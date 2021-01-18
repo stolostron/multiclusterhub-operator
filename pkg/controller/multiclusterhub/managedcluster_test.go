@@ -31,7 +31,7 @@ func Test_ensureHubIsImported(t *testing.T) {
 				t.Fatalf("Failed to create test reconciler")
 			}
 
-			_, err = r.ensureHubIsImported(tt.MCH, false)
+			_, err = r.ensureHubIsImported(tt.MCH)
 			if !errorEquals(err, tt.Result) {
 				t.Fatalf("Err: %s", err)
 			}
@@ -59,7 +59,7 @@ func Test_ensureHubIsExported(t *testing.T) {
 				t.Fatalf("Failed to create test reconciler")
 			}
 
-			_, err = r.ensureHubIsImported(tt.MCH, false)
+			_, err = r.ensureHubIsImported(tt.MCH)
 			if !errorEquals(err, tt.Result) {
 				t.Fatalf("Err: %s", err)
 			}
