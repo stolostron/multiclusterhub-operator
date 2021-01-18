@@ -31,7 +31,8 @@ var Port = 3000
 
 func labels() map[string]string {
 	return map[string]string{
-		"app": HelmRepoName,
+		"app":                       HelmRepoName,
+		"ocm-antiaffinity-selector": HelmRepoName,
 	}
 }
 
@@ -112,7 +113,7 @@ func Deployment(m *operatorsv1.MultiClusterHub, overrides map[string]string) *ap
 					}},
 					ImagePullSecrets: []corev1.LocalObjectReference{{Name: m.Spec.ImagePullSecret}},
 					NodeSelector:     m.Spec.NodeSelector,
-					Affinity:         utils.DistributePods("app", HelmRepoName),
+					Affinity:         utils.DistributePods("ocm-antiaffinity-selector", HelmRepoName),
 					// ServiceAccountName: "default",
 				},
 			},
