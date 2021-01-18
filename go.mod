@@ -31,7 +31,7 @@ require (
 
 )
 
-// Pinned to k8s v0.18.3
+// Pinned to k8s v0.19.0
 replace (
 	github.com/Azure/go-autorest => github.com/Azure/go-autorest v13.3.2+incompatible // Required by OLM
 	github.com/jetstack/cert-manager => github.com/open-cluster-management/cert-manager v0.0.0-20200821135248-2fd523b053f5
@@ -40,27 +40,27 @@ replace (
 	github.com/terraform-providers/terraform-provider-aws => github.com/openshift/terraform-provider-aws v1.60.1-0.20200630224953-76d1fb4e5699
 	github.com/terraform-providers/terraform-provider-azurerm => github.com/openshift/terraform-provider-azurerm v1.40.1-0.20200707062554-97ea089cc12a
 	github.com/terraform-providers/terraform-provider-ignition/v2 => github.com/community-terraform-providers/terraform-provider-ignition/v2 v2.1.0
-	k8s.io/api => k8s.io/api v0.18.3
-	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.18.3
-	k8s.io/apimachinery => k8s.io/apimachinery v0.18.3
-	k8s.io/apiserver => k8s.io/apiserver v0.18.3
-	k8s.io/cli-runtime => k8s.io/cli-runtime v0.18.3
-	k8s.io/client-go => k8s.io/client-go v0.18.3 // Required by prometheus-operator
-	k8s.io/cloud-provider => k8s.io/cloud-provider v0.18.3
-	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.18.3
-	k8s.io/code-generator => k8s.io/code-generator v0.18.3
-	k8s.io/component-base => k8s.io/component-base v0.18.3
-	k8s.io/cri-api => k8s.io/cri-api v0.18.3
-	k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.18.3
-	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.18.3
-	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.18.3
-	k8s.io/kube-proxy => k8s.io/kube-proxy v0.18.3
-	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.18.3
-	k8s.io/kubectl => k8s.io/kubectl v0.18.3
-	k8s.io/kubelet => k8s.io/kubelet v0.18.3
-	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.18.3
-	k8s.io/metrics => k8s.io/metrics v0.18.3
-	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.18.3
+	k8s.io/api => k8s.io/api v0.19.0
+	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.19.0
+	k8s.io/apimachinery => k8s.io/apimachinery v0.19.0
+	k8s.io/apiserver => k8s.io/apiserver v0.19.0
+	k8s.io/cli-runtime => k8s.io/cli-runtime v0.19.0
+	k8s.io/client-go => k8s.io/client-go v0.19.0 // Required by prometheus-operator
+	k8s.io/cloud-provider => k8s.io/cloud-provider v0.19.0
+	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.19.0
+	k8s.io/code-generator => k8s.io/code-generator v0.19.0
+	k8s.io/component-base => k8s.io/component-base v0.19.0
+	k8s.io/cri-api => k8s.io/cri-api v0.19.0
+	k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.19.0
+	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.19.0
+	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.19.0
+	k8s.io/kube-proxy => k8s.io/kube-proxy v0.19.0
+	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.19.0
+	k8s.io/kubectl => k8s.io/kubectl v0.19.0
+	k8s.io/kubelet => k8s.io/kubelet v0.19.0
+	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.19.0
+	k8s.io/metrics => k8s.io/metrics v0.19.0
+	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.19.0
 	// HiveConfig import dependancies
 	sigs.k8s.io/cluster-api-provider-aws => github.com/openshift/cluster-api-provider-aws v0.2.1-0.20200506073438-9d49428ff837
 	sigs.k8s.io/cluster-api-provider-azure => github.com/openshift/cluster-api-provider-azure v0.1.0-alpha.3.0.20200120114645-8a9592f1f87b
