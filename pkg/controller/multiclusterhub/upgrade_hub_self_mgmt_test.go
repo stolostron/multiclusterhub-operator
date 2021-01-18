@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/open-cluster-management/multicloudhub-operator/version"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -18,7 +19,6 @@ import (
 
 func Test_getImageFromManifestByKey(t *testing.T) {
 
-	full_mch.Status.DesiredVersion = "2.1.2"
 	tests := []struct {
 		Name      string
 		ImageKey  string
@@ -30,7 +30,7 @@ func Test_getImageFromManifestByKey(t *testing.T) {
 			ImageKey: "multicluster_operators_subscription",
 			ConfigMap: &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      fmt.Sprintf("mch-image-manifest-%s", full_mch.Status.DesiredVersion),
+					Name:      fmt.Sprintf("mch-image-manifest-%s", version.Version),
 					Namespace: full_mch.Namespace,
 				},
 				Data: map[string]string{
@@ -44,7 +44,7 @@ func Test_getImageFromManifestByKey(t *testing.T) {
 			ImageKey: "nonexistant_image_key",
 			ConfigMap: &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      fmt.Sprintf("mch-image-manifest-%s", full_mch.Status.DesiredVersion),
+					Name:      fmt.Sprintf("mch-image-manifest-%s", version.Version),
 					Namespace: full_mch.Namespace,
 				},
 				Data: map[string]string{
