@@ -3,45 +3,43 @@ module github.com/open-cluster-management/multicloudhub-operator
 go 1.13
 
 require (
-	cloud.google.com/go v0.54.0 // indirect
-	github.com/Azure/go-autorest/autorest v0.10.0 // indirect
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/semver/v3 v3.1.0
 	github.com/fatih/structs v1.1.0
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
-	github.com/go-logr/logr v0.1.0
-	github.com/golang/protobuf v1.4.2 // indirect
-	github.com/gophercloud/gophercloud v0.8.0 // indirect
-	github.com/kr/pretty v0.2.0 // indirect
-	github.com/onsi/ginkgo v1.12.0
-	github.com/onsi/gomega v1.9.0
+	github.com/go-logr/logr v0.2.1
+	github.com/go-logr/zapr v0.3.0 // indirect
+	github.com/onsi/ginkgo v1.12.1
+	github.com/onsi/gomega v1.10.1
 	github.com/open-cluster-management/multicloud-operators-subscription v1.0.0-2020-05-12-21-17-19.0.20200610014526-1e0e8c0acfad
 	github.com/open-cluster-management/multicloud-operators-subscription-release v1.0.1-2020-05-28-18-29-00.0.20200603160156-4d66bd136ba3
-	github.com/openshift/api v3.9.1-0.20190424152011-77b8897ec79a+incompatible
+	github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible
+	github.com/openshift/hive v1.0.18-0.20210111213735-a5c3afe06777
 	github.com/operator-framework/operator-sdk v0.18.0
-	github.com/prometheus/procfs v0.0.11 // indirect
 	github.com/spf13/pflag v1.0.5
 	go.uber.org/zap v1.15.0 // indirect
-	golang.org/x/net v0.0.0-20200625001655-4c5254603344 // indirect
-	golang.org/x/sys v0.0.0-20200413165638-669c56c373c4 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect
-	gopkg.in/yaml.v2 v2.3.0 // indirect
-	k8s.io/api v0.18.3
-	k8s.io/apiextensions-apiserver v0.18.3
-	k8s.io/apimachinery v0.18.3
+	k8s.io/api v0.19.0
+	k8s.io/apiextensions-apiserver v0.19.0
+	k8s.io/apimachinery v0.19.0
 	k8s.io/client-go v13.0.0+incompatible
 	k8s.io/klog v1.0.0
-	k8s.io/kube-aggregator v0.18.3
-	k8s.io/utils v0.0.0-20200327001022-6496210b90e8 // indirect
-	sigs.k8s.io/controller-runtime v0.6.0
+	k8s.io/kube-aggregator v0.19.0
+	sigs.k8s.io/controller-runtime v0.6.2
 	sigs.k8s.io/kustomize/v3 v3.3.1
 	sigs.k8s.io/yaml v1.2.0
+
 )
 
 // Pinned to k8s v0.18.3
 replace (
 	github.com/Azure/go-autorest => github.com/Azure/go-autorest v13.3.2+incompatible // Required by OLM
 	github.com/jetstack/cert-manager => github.com/open-cluster-management/cert-manager v0.0.0-20200821135248-2fd523b053f5
+	github.com/metal3-io/baremetal-operator => github.com/openshift/baremetal-operator v0.0.0-20200715132148-0f91f62a41fe
+	github.com/metal3-io/cluster-api-provider-baremetal => github.com/openshift/cluster-api-provider-baremetal v0.0.0-20190821174549-a2a477909c1d
+	github.com/terraform-providers/terraform-provider-aws => github.com/openshift/terraform-provider-aws v1.60.1-0.20200630224953-76d1fb4e5699
+	github.com/terraform-providers/terraform-provider-azurerm => github.com/openshift/terraform-provider-azurerm v1.40.1-0.20200707062554-97ea089cc12a
+	github.com/terraform-providers/terraform-provider-ignition/v2 => github.com/community-terraform-providers/terraform-provider-ignition/v2 v2.1.0
 	k8s.io/api => k8s.io/api v0.18.3
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.18.3
 	k8s.io/apimachinery => k8s.io/apimachinery v0.18.3
@@ -63,5 +61,8 @@ replace (
 	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.18.3
 	k8s.io/metrics => k8s.io/metrics v0.18.3
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.18.3
-
+	// HiveConfig import dependancies
+	sigs.k8s.io/cluster-api-provider-aws => github.com/openshift/cluster-api-provider-aws v0.2.1-0.20200506073438-9d49428ff837
+	sigs.k8s.io/cluster-api-provider-azure => github.com/openshift/cluster-api-provider-azure v0.1.0-alpha.3.0.20200120114645-8a9592f1f87b
+	sigs.k8s.io/cluster-api-provider-openstack => github.com/openshift/cluster-api-provider-openstack v0.0.0-20200526112135-319a35b2e38e
 )

@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"reflect"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -94,10 +93,6 @@ func (m *multiClusterHubValidator) validateUpdate(req admission.Request) error {
 		return errors.New("Updating SeparateCertificateManagement is forbidden")
 	}
 
-	if !reflect.DeepEqual(existingMCH.Spec.Hive, newMCH.Spec.Hive) {
-		return errors.New("Hive updates are forbidden")
-	}
-
 	if !utils.AvailabilityConfigIsValid(newMCH.Spec.AvailabilityConfig) && newMCH.Spec.AvailabilityConfig != "" {
 		return errors.New("Invalid AvailabilityConfig given")
 	}
@@ -131,7 +126,7 @@ func (m *multiClusterHubValidator) validateDelete(req admission.Request) error {
 		Group:   "inventory.open-cluster-management.io",
 		Version: "v1alpha1",
 		Kind:    "BareMetalAsset",
-	});
+	})
 
 	bmaErr := m.client.List(context.TODO(), bmaList)
 	if bmaErr == nil {

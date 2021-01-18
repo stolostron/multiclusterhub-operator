@@ -13,6 +13,7 @@ import (
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/foundation"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
+	hive "github.com/openshift/hive/pkg/apis/hive/v1"
 	v1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -253,7 +254,7 @@ func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructu
 
 func (r *Renderer) renderHiveConfig(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
-	HiveConfig := operatorsv1.HiveConfigSpec{}
+	HiveConfig := hive.HiveConfigSpec{}
 
 	if !reflect.DeepEqual(structs.Map(r.cr.Spec.Hive), structs.Map(HiveConfig)) {
 		u.Object["spec"] = structs.Map(r.cr.Spec.Hive)
