@@ -41,7 +41,8 @@ func WorkImage(overrides map[string]string) string {
 
 func defaultLabels(app string) map[string]string {
 	return map[string]string{
-		"app": app,
+		"app":                       app,
+		"ocm-antiaffinity-selector": app,
 	}
 }
 
