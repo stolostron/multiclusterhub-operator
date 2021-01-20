@@ -30,6 +30,7 @@ deploy/operator.yaml
 deploy/subscription.yaml
 docs/installation.md
 pkg/controller/multiclusterhub/common_test.go
+pkg/controller/multiclusterhub/upgrade_hub_self_mgmt_test.go
 pkg/manifest/manifest_test.go
 test/Makefile
 test/multiclusterhub_install_test/multiclusterhub_test.go
