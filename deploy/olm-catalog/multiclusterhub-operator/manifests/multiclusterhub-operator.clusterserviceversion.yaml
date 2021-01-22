@@ -60,11 +60,11 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:io.kubernetes:booleanSwitch
-      - description: Overrides for the default HiveConfig spec
+      - description: 'DEPRECATED: Overrides for the default HiveConfig spec'
         displayName: Hive Config
         path: hive
         x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Override pull secret for accessing MultiClusterHub operand and
           endpoint images
         displayName: Image Pull Secret
