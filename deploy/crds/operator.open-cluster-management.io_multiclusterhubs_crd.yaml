@@ -173,6 +173,8 @@ spec:
                     types. This should rarely be needed. Sets replicas to 0 for the
                     hive-controllers deployment to accomplish this.
                   type: boolean
+              required:
+              - failedProvisionConfig
               type: object
             imagePullSecret:
               description: Override pull secret for accessing MultiClusterHub operand

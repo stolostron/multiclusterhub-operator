@@ -124,7 +124,7 @@ type HiveConfigSpec struct {
 	Backup BackupConfig `json:"backup,omitempty"`
 
 	// (Deprecated) FailedProvisionConfig is used to configure settings related to handling provision failures.
-	FailedProvisionConfig FailedProvisionConfig `json:"failedProvisionConfig,omitempty"`
+	FailedProvisionConfig FailedProvisionConfig `json:"failedProvisionConfig"`
 
 	// (Deprecated) MaintenanceMode can be set to true to disable the hive controllers in situations where we need to ensure
 	// nothing is running that will add or act upon finalizers on Hive types. This should rarely be needed.
