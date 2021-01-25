@@ -107,7 +107,7 @@ spec:
                     will not be deployed.
                   properties:
                     aws:
-                      description: (Deprecated) WS contains AWS-specific settings
+                      description: (Deprecated) AWS contains AWS-specific settings
                         for external DNS
                       properties:
                         credentials:

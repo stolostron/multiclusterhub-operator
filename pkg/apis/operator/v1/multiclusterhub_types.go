@@ -174,7 +174,7 @@ type FailedProvisionConfig struct {
 // environment.
 type ExternalDNSConfig struct {
 
-	// (Deprecated) WS contains AWS-specific settings for external DNS
+	// (Deprecated) AWS contains AWS-specific settings for external DNS
 	// +optional
 	AWS *ExternalDNSAWSConfig `json:"aws,omitempty"`
 
