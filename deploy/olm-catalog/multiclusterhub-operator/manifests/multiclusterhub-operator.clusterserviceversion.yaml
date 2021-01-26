@@ -60,7 +60,7 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:io.kubernetes:booleanSwitch
-      - description: Overrides for the default HiveConfig spec
+      - description: (Deprecated) Overrides for the default HiveConfig spec
         displayName: Hive Config
         path: hive
         x-descriptors:
