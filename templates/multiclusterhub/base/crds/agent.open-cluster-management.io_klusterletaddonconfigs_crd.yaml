@@ -37,7 +37,8 @@ spec:
               description: KlusterletAddonConfigApplicationManagerSpec defines configuration
                 for the ApplicationManager component
               properties:
-                argocdCluster:
+                argocdCluster: 
+                  description: argocdCluster attribute is not currently in use
                   type: boolean
                 enabled:
                   type: boolean
