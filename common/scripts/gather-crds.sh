@@ -1,25 +1,19 @@
 #!/bin/bash
 # Copyright (c) 2020 Red Hat, Inc.
 # Tested on Mac only
+# Clones hub-crds repo and copies all crds into the crds/ directory
 
+# Remove existing files
+rm -rf crd-temp
+rm -rf crds/
+mkdir -p crds/
+mkdir -p crd-temp
 
-rm -rf common/chart-temp
-# rm -rf chartCRDs/
-# mkdir -p chartCRDs/
+# Clone hub-crds into crd-temp
+git clone https://github.com/open-cluster-management/hub-crds --branch main crd-temp
 
-# Loop through charts in common/config/chartSHA.csv and clone
-while IFS=, read -r gitURL branch
-do
-    mkdir -p common/chart-temp
-    git clone $gitURL --branch $branch common/chart-temp
-    cd common/chart-temp
+# Recursively copy yaml files
+find crd-temp -name \*.yaml -exec cp {} crds  \;
 
-    for crd in $(find . | xargs grep CustomResourceDefinition 2> /dev/null | cut -d ':' -f1)
-    do
-        echo $crd
-        cp $crd ../../crds/
-    done
-
-    cd ../..
-    rm -rf common/chart-temp
-done < common/config/chartSHA.csv
+# Delete clone directory
+rm -rf crd-temp
