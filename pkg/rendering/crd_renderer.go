@@ -46,6 +46,9 @@ func (r *CRDRenderer) Render() ([]*unstructured.Unstructured, error) {
 
 	var crdBytes [][]byte
 	for _, file := range files {
+		if filepath.Ext(file.Name()) != ".yaml" {
+			continue
+		}
 		filePath := path.Join(r.directory, file.Name())
 		src, err := ioutil.ReadFile(filepath.Clean(filePath)) // #nosec G304 (filepath cleaned)
 		if err != nil {
