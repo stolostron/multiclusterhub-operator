@@ -417,6 +417,16 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		}
 	}
 
+	result, err = r.ensureDeployment(multiClusterHub, foundation.WebhookDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
+	if result != nil {
+		return *result, err
+	}
+
+	result, err = r.ensureService(multiClusterHub, foundation.WebhookService(multiClusterHub))
+	if result != nil {
+		return *result, err
+	}
+
 	// Install the rest of the subscriptions in no particular order
 	result, err = r.ensureSubscription(multiClusterHub, subscription.ManagementIngress(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
 	if result != nil {
@@ -447,15 +457,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		return *result, err
 	}
 	result, err = r.ensureSubscription(multiClusterHub, subscription.Topology(multiClusterHub, r.CacheSpec.ImageOverrides))
-	if result != nil {
-		return *result, err
-	}
-	result, err = r.ensureDeployment(multiClusterHub, foundation.WebhookDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
-	if result != nil {
-		return *result, err
-	}
-
-	result, err = r.ensureService(multiClusterHub, foundation.WebhookService(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}
