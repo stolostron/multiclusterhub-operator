@@ -20,7 +20,7 @@ BRANCH_NAME="${VERSION%.*}-integration"
 rm -rf pipeline-temp
 mkdir -p pipeline-temp
 
-# Clone hub-crds into crd-temp
+# Clone cicd pipeline repo
 git clone https://github.com/open-cluster-management/pipeline --branch ${BRANCH_NAME} pipeline-temp
 
 # Find manifest from the latest snapshot
