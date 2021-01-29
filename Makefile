@@ -177,3 +177,6 @@ update-version:
 
 update-crds:
 	bash common/scripts/gather-crds.sh
+
+update-manifest:
+	bash common/scripts/update-image-manifest.sh
