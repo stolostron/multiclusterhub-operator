@@ -164,7 +164,7 @@ var (
 	AppSubSlice = [...]string{"application-chart-sub", "cert-manager-sub",
 		"cert-manager-webhook-sub", "configmap-watcher-sub", "console-chart-sub",
 		"grc-sub", "kui-web-terminal-sub", "management-ingress-sub",
-		"rcm-sub", "search-prod-sub", "topology-sub"}
+		"rcm-sub", "search-prod-sub"}
 
 	// CSVName ...
 	CSVName = "advanced-cluster-management"
