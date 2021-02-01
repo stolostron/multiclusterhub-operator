@@ -427,6 +427,12 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		return *result, err
 	}
 
+	// Wait for ocm-webhook to be fully available before applying rest of subscriptions
+	if !(multiClusterHub.Status.Components["ocm-webhook"].Type == "Available" || multiClusterHub.Status.Components["ocm-webhook"].Status == metav1.ConditionTrue) {
+		reqLogger.Info(fmt.Sprintf("Waiting for component 'ocm-webhook' to be available"))
+		return reconcile.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
 	// Install the rest of the subscriptions in no particular order
 	result, err = r.ensureSubscription(multiClusterHub, subscription.ManagementIngress(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
 	if result != nil {
