@@ -428,7 +428,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 	}
 
 	// Wait for ocm-webhook to be fully available before applying rest of subscriptions
-	if !(multiClusterHub.Status.Components["ocm-webhook"].Type == "Available" || multiClusterHub.Status.Components["ocm-webhook"].Status == metav1.ConditionTrue) {
+	if !(multiClusterHub.Status.Components["ocm-webhook"].Type == "Available" && multiClusterHub.Status.Components["ocm-webhook"].Status == metav1.ConditionTrue) {
 		reqLogger.Info(fmt.Sprintf("Waiting for component 'ocm-webhook' to be available"))
 		return reconcile.Result{RequeueAfter: resyncPeriod}, nil
 	}
