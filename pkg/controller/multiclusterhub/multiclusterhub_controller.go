@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	hive "github.com/openshift/hive/pkg/apis/hive/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -115,6 +116,23 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 			},
 		},
 		predicate.DeletePredicate{},
+	)
+	if err != nil {
+		return err
+	}
+
+	err = c.Watch(
+		&source.Kind{Type: &hive.HiveConfig{}},
+		&handler.Funcs{
+			DeleteFunc: func(e event.DeleteEvent, q workqueue.RateLimitingInterface) {
+				labels := e.Meta.GetLabels()
+				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
+					Name:      labels["installer.name"],
+					Namespace: labels["installer.namespace"],
+				}})
+			},
+		},
+		predicate.InstallerLabelPredicate{},
 	)
 	if err != nil {
 		return err
