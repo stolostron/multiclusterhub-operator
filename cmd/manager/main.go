@@ -42,6 +42,8 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+
+	clustermanager "github.com/open-cluster-management/api/operator/v1"
 )
 
 // Change below variables to serve metrics on different host or port.
@@ -164,6 +166,11 @@ func main() {
 	}
 
 	if err := hive.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Error(err, "")
+		os.Exit(1)
+	}
+
+	if err := clustermanager.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Error(err, "")
 		os.Exit(1)
 	}

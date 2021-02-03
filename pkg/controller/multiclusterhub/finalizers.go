@@ -210,7 +210,8 @@ func (r *ReconcileMultiClusterHub) cleanupClusterManagers(reqLogger logr.Logger,
 	}, found)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			reqLogger.Info("No matching ClusterManagers to finalize. Continuing.")
+			// ClusterManager successfully removed
+			reqLogger.Info("ClusterManagers finalized")
 			return nil
 		}
 		reqLogger.Error(err, "Error while deleting ClusterManagers")
@@ -224,9 +225,8 @@ func (r *ReconcileMultiClusterHub) cleanupClusterManagers(reqLogger logr.Logger,
 		reqLogger.Error(err, "Error while deleting clustermanager instances")
 		return err
 	}
-
-	reqLogger.Info("ClusterManagers finalized")
-	return nil
+	// Return error, since deletion does not confirm the object was removed
+	return fmt.Errorf("Attempted deletion of ClusterManager. Unable to confirm if ClusterManager was removed")
 }
 
 func (r *ReconcileMultiClusterHub) cleanupAppSubscriptions(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
