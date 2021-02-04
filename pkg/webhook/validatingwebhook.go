@@ -5,8 +5,11 @@ package webhook
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"reflect"
+
+	clustermanager "github.com/open-cluster-management/api/operator/v1"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -28,6 +31,20 @@ func (m *multiClusterHubValidator) Handle(ctx context.Context, req admission.Req
 	multiClusterHubs := &operatorsv1.MultiClusterHubList{}
 	if err := m.client.List(context.TODO(), multiClusterHubs); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
+	}
+
+	if req.Kind.Kind == "ClusterManager" {
+		if req.Operation == "DELETE" {
+			err := m.validateClusterManagerDelete(req, multiClusterHubs)
+			if err != nil {
+				log.Info("Delete denied")
+				return admission.Denied(err.Error())
+			}
+			log.Info("Delete successful")
+			return admission.Allowed("")
+		}
+		// No other paths should exist
+		return admission.Allowed("")
 	}
 
 	if req.Operation == "CREATE" {
@@ -154,6 +171,31 @@ func (m *multiClusterHubValidator) validateDelete(req admission.Request) error {
 		}
 	}
 
+	return nil
+}
+
+func (m *multiClusterHubValidator) validateClusterManagerDelete(req admission.Request, mchList *operatorsv1.MultiClusterHubList) error {
+	clusterManager := &clustermanager.ClusterManager{}
+	err := m.decoder.DecodeRaw(req.OldObject, clusterManager)
+	if err != nil {
+		return err
+	}
+
+	if len(mchList.Items) != 1 {
+		return fmt.Errorf("Only one MCH resource can exist")
+	}
+	mchName := mchList.Items[0].Name
+	mchNamespace := mchList.Items[0].Namespace
+	nameLabel, nameLabelExists := clusterManager.Labels["installer.name"]
+	namespaceLabel, namespaceLabelExists := clusterManager.Labels["installer.namespace"]
+
+	if nameLabelExists && namespaceLabelExists && nameLabel == mchName && namespaceLabel == mchNamespace {
+		if mchList.Items[0].GetDeletionTimestamp() != nil {
+			log.Info("MultiClusterHub is being uninstalled, allow for deletion of clustermanager")
+			return nil
+		}
+		return fmt.Errorf("Cannot delete cluster-manager, mch resource must be removed first")
+	}
 	return nil
 }
 
