@@ -131,7 +131,7 @@ func (m *multiClusterHubValidator) validateDelete(req admission.Request) error {
 		Group:   "inventory.open-cluster-management.io",
 		Version: "v1alpha1",
 		Kind:    "BareMetalAsset",
-	});
+	})
 
 	bmaErr := m.client.List(context.TODO(), bmaList)
 	if bmaErr == nil {

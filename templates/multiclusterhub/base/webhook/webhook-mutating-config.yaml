@@ -1,16 +1,25 @@
-apiVersion: admissionregistration.k8s.io/v1beta1
+apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
-  name: ocm-mutating-webhook
   labels:
     app: ocm-webhook
+  name: ocm-mutating-webhook
 webhooks:
-- name: ocm.mutating.webhook.admission.open-cluster-management.io
+- admissionReviewVersions:
+  - v1beta1
+  clientConfig:
+    caBundle: abc
+    service:
+      name: ocm-webhook
+      path: /mutating
+      port: 443
+  name: ocm.mutating.webhook.admission.open-cluster-management.io
+  sideEffects: None
   rules:
   - apiGroups:
-    - 'apps.open-cluster-management.io'
+    - apps.open-cluster-management.io
     apiVersions:
-    - 'v1'
+    - v1
     operations:
     - CREATE
     resources:
@@ -18,18 +27,14 @@ webhooks:
     - channels
     - subscriptions
     - placementrules
+    scope: '*'
   - apiGroups:
-    - 'app.k8s.io'
+    - app.k8s.io
     apiVersions:
-    - 'v1beta1'
+    - v1beta1
     operations:
     - CREATE
     - UPDATE
     resources:
     - applications
-  clientConfig:
-    service:
-      name: ocm-webhook
-      port: 443
-      path: /mutating
-    caBundle: abc
+    scope: '*'
