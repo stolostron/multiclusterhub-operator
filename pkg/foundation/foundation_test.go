@@ -47,6 +47,10 @@ func TestValidateDeployment(t *testing.T) {
 	dep5 := dep.DeepCopy()
 	dep5.Spec.Replicas = new(int32)
 
+	// 7. Modified Tolerations
+	dep6 := dep.DeepCopy()
+	dep6.Spec.Template.Spec.Tolerations = nil
+
 	type args struct {
 		m   *operatorsv1.MultiClusterHub
 		dep *appsv1.Deployment
@@ -90,6 +94,12 @@ func TestValidateDeployment(t *testing.T) {
 		{
 			name:  "Modified number of replicas",
 			args:  args{mch, dep5},
+			want:  dep,
+			want1: true,
+		},
+		{
+			name:  "Modified Tolerations",
+			args:  args{mch, dep6},
 			want:  dep,
 			want1: true,
 		},

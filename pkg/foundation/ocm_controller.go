@@ -40,6 +40,7 @@ func OCMControllerDeployment(m *operatorsv1.MultiClusterHub, overrides map[strin
 					ImagePullSecrets:   []corev1.LocalObjectReference{{Name: m.Spec.ImagePullSecret}},
 					ServiceAccountName: ServiceAccount,
 					NodeSelector:       m.Spec.NodeSelector,
+					Tolerations:        defaultTolerations(),
 					Affinity:           utils.DistributePods("ocm-antiaffinity-selector", OCMControllerName),
 					Volumes: []corev1.Volume{
 						{
