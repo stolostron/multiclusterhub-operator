@@ -39,6 +39,7 @@ func OCMProxyServerDeployment(m *operatorsv1.MultiClusterHub, overrides map[stri
 				Spec: corev1.PodSpec{
 					ImagePullSecrets:   []corev1.LocalObjectReference{{Name: m.Spec.ImagePullSecret}},
 					ServiceAccountName: ServiceAccount,
+					Tolerations:        defaultTolerations(),
 					NodeSelector:       m.Spec.NodeSelector,
 					Affinity:           utils.DistributePods("ocm-antiaffinity-selector", OCMProxyServerName),
 					Volumes: []corev1.Volume{
