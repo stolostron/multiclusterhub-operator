@@ -150,7 +150,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 				}})
 			},
 			UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
-				labels := e.MetaNew.GetLabels()
+				labels := e.MetaOld.GetLabels()
 				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
 					Name:      labels["installer.name"],
 					Namespace: labels["installer.namespace"],
