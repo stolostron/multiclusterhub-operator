@@ -46,6 +46,16 @@ func defaultLabels(app string) map[string]string {
 	}
 }
 
+func defaultTolerations() []corev1.Toleration {
+	return []corev1.Toleration{
+		{
+			Effect:   "NoSchedule",
+			Key:      "node-role.kubernetes.io/infra",
+			Operator: "Exists",
+		},
+	}
+}
+
 func getReplicaCount(mch *operatorsv1.MultiClusterHub) int32 {
 	if mch.Spec.AvailabilityConfig == operatorsv1.HABasic {
 		return 1
@@ -94,7 +104,6 @@ func ValidateDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]str
 		pod.NodeSelector = desiredSelectors
 		needsUpdate = true
 	}
-
 	// verify replica count
 	if *found.Spec.Replicas != getReplicaCount(m) {
 		log.Info("Enforcing number of replicas")
@@ -114,6 +123,12 @@ func ValidateDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]str
 		log.Info("Enforcing container environment variables")
 		envs := utils.GetContainerEnvVars(expected)
 		container.Env = envs
+		needsUpdate = true
+	}
+
+	if !reflect.DeepEqual(pod.Tolerations, defaultTolerations()) {
+		log.Info("Enforcing spec tolerations")
+		pod.Tolerations = defaultTolerations()
 		needsUpdate = true
 	}
 
