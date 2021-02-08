@@ -31,7 +31,7 @@ func TestGetImageOverrideType(t *testing.T) {
 func Test_readManifestFile(t *testing.T) {
 	t.Run("Get manifest", func(t *testing.T) {
 		os.Setenv(ManifestsPathEnvVar, "../../image-manifests")
-		version := "2.3.0"
+		version := "2.2.0"
 		_, err := readManifestFile(version)
 		if err != nil {
 			t.Errorf("readManifestFile() error = %v, wantErr %v", err, nil)
@@ -49,7 +49,7 @@ func Test_readManifestFile(t *testing.T) {
 
 	t.Run("Env var missing", func(t *testing.T) {
 		os.Unsetenv(ManifestsPathEnvVar)
-		version := "2.3.0"
+		version := "2.2.0"
 		_, err := readManifestFile(version)
 		if err == nil {
 			t.Errorf("readManifestFile() did not return error")
@@ -61,7 +61,7 @@ func Test_buildFullImageReference(t *testing.T) {
 	mi := ManifestImage{
 		ImageKey:     "test_app",
 		ImageName:    "test-app",
-		ImageVersion: "2.3.0",
+		ImageVersion: "2.2.0",
 		ImageRemote:  "quay.io/open-cluster-management",
 		ImageDigest:  "sha256:abc123",
 	}
@@ -97,7 +97,7 @@ func Test_buildFullImageReference(t *testing.T) {
 		{
 			name: "Use image suffix format",
 			args: args{mch3, mi},
-			want: "quay.io/open-cluster-management/test-app:2.3.0-baz",
+			want: "quay.io/open-cluster-management/test-app:2.2.0-baz",
 		},
 	}
 	for _, tt := range tests {
