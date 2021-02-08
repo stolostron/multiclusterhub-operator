@@ -19,7 +19,7 @@ build/registration-operator/
 .idea/
 build-harness/
 build-harness-extensions/
-crds/
+
 test/out
 test/coverage
 test/resources
@@ -43,6 +43,3 @@ bundles/
 build/configmap-install/index-configmap.yaml
 bundle.Dockerfile
 *.tap
-
-# Ignore yaml files in crds/
-crds/*.yaml

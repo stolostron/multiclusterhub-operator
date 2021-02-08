@@ -14,7 +14,7 @@ endif
 
 BUILD_DIR ?= build
 
-VERSION ?= 2.3.0
+VERSION ?= 2.2.0
 IMG ?= multiclusterhub-operator
 SECRET_REGISTRY ?= quay.io
 REGISTRY ?= quay.io/rhibmcollab
@@ -30,7 +30,7 @@ export ACM_NAMESPACE :=$(NAMESPACE)
 # For OCP OLM
 export IMAGE ?= $(shell echo $(REGISTRY)/$(IMG):$(VERSION))
 export CSV_CHANNEL ?= alpha
-export CSV_VERSION ?= 2.3.0
+export CSV_VERSION ?= 2.2.0
 
 
 export PROJECT_DIR = $(shell 'pwd')
@@ -111,7 +111,7 @@ observability-crd:
 
 ## Operator-sdk generate CRD(s)
 crd:
-	operator-sdk generate crds --crd-version=v1
+	operator-sdk generate crds --crd-version=v1beta1
 
 ## Operator-sdk regenerate CSV
 csv:
@@ -177,6 +177,3 @@ update-version:
 
 update-crds:
 	bash common/scripts/gather-crds.sh
-
-update-manifest:
-	bash common/scripts/update-image-manifest.sh

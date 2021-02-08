@@ -21,7 +21,7 @@ metadata:
     description: Open management of Openshift and Kubernetes clusters
     repository: https://github.com/open-cluster-management/multicloudhub-operator
     support: The Open Cluster Management Project
-  name: multiclusterhub-operator.v2.3.0
+  name: multiclusterhub-operator.v2.2.0
   namespace: open-cluster-management
 spec:
   apiservicedefinitions: {}
@@ -187,7 +187,6 @@ spec:
           - observability.open-cluster-management.io
           - operator.open-cluster-management.io
           - rbac.authorization.k8s.io
-          - hive.openshift.io
           resources:
           - apiservices
           - baremetalassets
@@ -199,7 +198,6 @@ spec:
           - multiclusterhubs
           - multiclusterobservabilities
           - namespaces
-          - hiveconfigs
           - rolebindings
           - servicemonitors
           - secrets
@@ -222,11 +220,9 @@ spec:
           - rbac.authorization.k8s.io
           - storage.k8s.io
           - apps.open-cluster-management.io
-          - hive.openshift.io
           resources:
           - apiservices
           - helmreleases
-          - hiveconfigs
           - configmaps
           - clusterjoinrequests
           - deployments
@@ -434,7 +430,7 @@ spec:
                   value: /image-manifests
                 - name: CRDS_PATH
                   value: /crds
-                image: multiclusterhub-operator:2.3.0
+                image: multiclusterhub-operator:2.2.0
                 imagePullPolicy: Always
                 name: multiclusterhub-operator
                 resources:
@@ -465,4 +461,4 @@ spec:
   maturity: alpha
   provider:
     name: Redhat
-  version: 2.3.0
+  version: 2.2.0

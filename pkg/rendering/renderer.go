@@ -255,7 +255,7 @@ func (r *Renderer) renderHiveConfig(res *resource.Resource) (*unstructured.Unstr
 	u := &unstructured.Unstructured{Object: res.Map()}
 	HiveConfig := operatorsv1.HiveConfigSpec{}
 
-	if r.cr.Spec.Hive != nil && !reflect.DeepEqual(structs.Map(r.cr.Spec.Hive), structs.Map(HiveConfig)) {
+	if !reflect.DeepEqual(structs.Map(r.cr.Spec.Hive), structs.Map(HiveConfig)) {
 		u.Object["spec"] = structs.Map(r.cr.Spec.Hive)
 	}
 	utils.AddInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
