@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	hive "github.com/openshift/hive/pkg/apis/hive/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -115,6 +116,23 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 			},
 		},
 		predicate.DeletePredicate{},
+	)
+	if err != nil {
+		return err
+	}
+
+	err = c.Watch(
+		&source.Kind{Type: &hive.HiveConfig{}},
+		&handler.Funcs{
+			DeleteFunc: func(e event.DeleteEvent, q workqueue.RateLimitingInterface) {
+				labels := e.Meta.GetLabels()
+				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
+					Name:      labels["installer.name"],
+					Namespace: labels["installer.namespace"],
+				}})
+			},
+		},
+		predicate.InstallerLabelPredicate{},
 	)
 	if err != nil {
 		return err
@@ -417,6 +435,22 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		}
 	}
 
+	result, err = r.ensureDeployment(multiClusterHub, foundation.WebhookDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
+	if result != nil {
+		return *result, err
+	}
+
+	result, err = r.ensureService(multiClusterHub, foundation.WebhookService(multiClusterHub))
+	if result != nil {
+		return *result, err
+	}
+
+	// Wait for ocm-webhook to be fully available before applying rest of subscriptions
+	if !(multiClusterHub.Status.Components["ocm-webhook"].Type == "Available" && multiClusterHub.Status.Components["ocm-webhook"].Status == metav1.ConditionTrue) {
+		reqLogger.Info(fmt.Sprintf("Waiting for component 'ocm-webhook' to be available"))
+		return reconcile.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
 	// Install the rest of the subscriptions in no particular order
 	result, err = r.ensureSubscription(multiClusterHub, subscription.ManagementIngress(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
 	if result != nil {
@@ -443,19 +477,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		return *result, err
 	}
 	result, err = r.ensureSubscription(multiClusterHub, subscription.Search(multiClusterHub, r.CacheSpec.ImageOverrides))
-	if result != nil {
-		return *result, err
-	}
-	result, err = r.ensureSubscription(multiClusterHub, subscription.Topology(multiClusterHub, r.CacheSpec.ImageOverrides))
-	if result != nil {
-		return *result, err
-	}
-	result, err = r.ensureDeployment(multiClusterHub, foundation.WebhookDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
-	if result != nil {
-		return *result, err
-	}
-
-	result, err = r.ensureService(multiClusterHub, foundation.WebhookService(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}
