@@ -48,7 +48,7 @@ var (
 	// GVRCustomResourceDefinition ...
 	GVRCustomResourceDefinition = schema.GroupVersionResource{
 		Group:    "apiextensions.k8s.io",
-		Version:  "v1",
+		Version:  "v1beta1",
 		Resource: "customresourcedefinitions",
 	}
 
@@ -70,12 +70,6 @@ var (
 		Group:    "apps.open-cluster-management.io",
 		Version:  "v1",
 		Resource: "subscriptions",
-	}
-	// GVRHiveConfig ...
-	GVRHiveConfig = schema.GroupVersionResource{
-		Group:    "hive.openshift.io",
-		Version:  "v1",
-		Resource: "hiveconfigs",
 	}
 	// GVRSub ...
 	GVRSub = schema.GroupVersionResource{
@@ -156,9 +150,6 @@ var (
 	// OCMSubscriptionName ...
 	OCMSubscriptionName = os.Getenv("name")
 
-	// HiveConfigName ...
-	HiveConfigName = "hive"
-
 	// AppSubName ClusterImageSets subscription name
 	AppSubName = "hive-clusterimagesets-subscription-fast-0"
 
@@ -173,7 +164,7 @@ var (
 	AppSubSlice = [...]string{"application-chart-sub", "cert-manager-sub",
 		"cert-manager-webhook-sub", "configmap-watcher-sub", "console-chart-sub",
 		"grc-sub", "kui-web-terminal-sub", "management-ingress-sub",
-		"rcm-sub", "search-prod-sub"}
+		"rcm-sub", "search-prod-sub", "topology-sub"}
 
 	// CSVName ...
 	CSVName = "advanced-cluster-management"
@@ -595,11 +586,6 @@ func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 		_, err = DynamicKubeClient.Resource(GVRCustomResourceDefinition).Get(context.TODO(), crd, metav1.GetOptions{})
 		Expect(err).ToNot(BeNil())
 	}
-
-	By("- Validating HiveConfig was deleted")
-	hiveConfigLink := clientHubDynamic.Resource(GVRHiveConfig)
-	_, err = hiveConfigLink.Get(context.TODO(), HiveConfigName, metav1.GetOptions{})
-	Expect(err).ShouldNot(BeNil())
 
 	if runCleanUpScript() {
 		By("- Running documented clean up script")
@@ -1203,9 +1189,6 @@ func getCRDs() ([]string, error) {
 	files, err := ioutil.ReadDir(crdDir)
 	Expect(err).To(BeNil())
 	for _, file := range files {
-		if filepath.Ext(file.Name()) != ".yaml" {
-			continue
-		}
 		filePath := path.Join(crdDir, file.Name())
 		src, err := ioutil.ReadFile(filepath.Clean(filePath)) // #nosec G304 (filepath cleaned)
 		if err != nil {
