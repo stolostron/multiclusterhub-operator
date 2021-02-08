@@ -181,6 +181,11 @@ func (m *multiClusterHubValidator) validateClusterManagerDelete(req admission.Re
 		return err
 	}
 
+	username := req.UserInfo.Username
+	if username == "" {
+		return fmt.Errorf("ValidatingWebhook admission request must include Userinfo username")
+	}
+
 	if len(mchList.Items) != 1 {
 		return fmt.Errorf("Only one MCH resource can exist")
 	}
@@ -190,11 +195,11 @@ func (m *multiClusterHubValidator) validateClusterManagerDelete(req admission.Re
 	namespaceLabel, namespaceLabelExists := clusterManager.Labels["installer.namespace"]
 
 	if nameLabelExists && namespaceLabelExists && nameLabel == mchName && namespaceLabel == mchNamespace {
-		if mchList.Items[0].GetDeletionTimestamp() != nil {
+		if username == fmt.Sprintf("system:serviceaccount:%s:multiclusterhub-operator", mchNamespace) {
 			log.Info("MultiClusterHub is being uninstalled, allow for deletion of clustermanager")
 			return nil
 		}
-		return fmt.Errorf("Cannot delete cluster-manager, mch resource must be removed first")
+		return fmt.Errorf("Unauthorized deletion of clustermanager resource")
 	}
 	return nil
 }
