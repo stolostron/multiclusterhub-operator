@@ -53,7 +53,7 @@ type MultiClusterHubSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Hive Config"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced"
-	Hive HiveConfigSpec `json:"hive"`
+	Hive *HiveConfigSpec `json:"hive,omitempty"`
 
 	// Configuration options for ingress management
 	// +optional
@@ -67,7 +67,7 @@ type MultiClusterHubSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Developer Overrides"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:hidden"
-	Overrides Overrides `json:"overrides,omitempty"`
+	Overrides *Overrides `json:"overrides,omitempty"`
 
 	// Provide the customized OpenShift default ingress CA certificate to RHACM
 	// +optional

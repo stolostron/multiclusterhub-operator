@@ -34,7 +34,9 @@ func TestValidate(t *testing.T) {
 
 	// 3. Modified ImagePullPolicy
 	mch2 := mch.DeepCopy()
-	mch2.Spec.Overrides.ImagePullPolicy = corev1.PullNever
+	mch2.Spec.Overrides = &operatorsv1.Overrides{
+		ImagePullPolicy: corev1.PullNever,
+	}
 	sub2 := KUIWebTerminal(mch2, ovr, "")
 
 	// 4. Modified ImageRepository
@@ -135,7 +137,6 @@ func TestSubscriptions(t *testing.T) {
 		{"ManagementIngress subscription", ManagementIngress(mch, ovr, "")},
 		{"RCM subscription", RCM(mch, ovr)},
 		{"Search subscription", Search(mch, ovr)},
-		{"Topology subscription", Topology(mch, ovr)},
 	}
 
 	for _, tt := range tests {

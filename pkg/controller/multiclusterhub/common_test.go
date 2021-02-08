@@ -283,12 +283,6 @@ func Test_ensureSubscription(t *testing.T) {
 			Result:       nil,
 		},
 		{
-			Name:         "Test: ensureSubscription - Topology",
-			MCH:          full_mch,
-			Subscription: subscription.Topology(full_mch, cacheSpec.ImageOverrides),
-			Result:       nil,
-		},
-		{
 			Name:         "Test: ensureSubscription - Empty Sub",
 			MCH:          full_mch,
 			Subscription: &unstructured.Unstructured{},
@@ -630,7 +624,7 @@ func Test_addInstallerLabel(t *testing.T) {
 func Test_getAppSubOwnedHelmReleases(t *testing.T) {
 	appsubs := []types.NamespacedName{
 		{Name: "search-prod-sub", Namespace: "default"},
-		{Name: "topology-sub", Namespace: "default"},
+		{Name: "console-sub", Namespace: "default"},
 	}
 
 	tests := []struct {
@@ -663,7 +657,7 @@ func Test_getAppSubOwnedHelmReleases(t *testing.T) {
 						{
 							APIVersion: "apps.open-cluster-management.io/v1",
 							Kind:       "Subscription",
-							Name:       "topology-sub",
+							Name:       "console-sub",
 						},
 					},
 				}},
@@ -675,7 +669,7 @@ func Test_getAppSubOwnedHelmReleases(t *testing.T) {
 						{
 							APIVersion: "apps.open-cluster-management.io/v1",
 							Kind:       "Subscription",
-							Name:       "topology-sub",
+							Name:       "console-sub",
 						},
 					},
 				}},

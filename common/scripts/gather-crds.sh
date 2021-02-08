@@ -4,9 +4,8 @@
 # Clones hub-crds repo and copies all crds into the crds/ directory
 
 # Remove existing files
+rm crds/*.yaml
 rm -rf crd-temp
-rm -rf crds/
-mkdir -p crds/
 mkdir -p crd-temp
 
 # Clone hub-crds into crd-temp

@@ -93,6 +93,7 @@ rules:
   - "observability.open-cluster-management.io"
   - "operator.open-cluster-management.io"
   - "rbac.authorization.k8s.io"
+  - "hive.openshift.io"
   resources:
   - apiservices
   - baremetalassets
@@ -104,6 +105,7 @@ rules:
   - multiclusterhubs
   - multiclusterobservabilities
   - namespaces
+  - hiveconfigs
   - rolebindings
   - servicemonitors
   - secrets
@@ -127,9 +129,11 @@ rules:
   - "rbac.authorization.k8s.io"
   - "storage.k8s.io"
   - "apps.open-cluster-management.io"
+  - "hive.openshift.io"
   resources:
   - apiservices
   - helmreleases
+  - hiveconfigs
   - configmaps
   - clusterjoinrequests
   - deployments
