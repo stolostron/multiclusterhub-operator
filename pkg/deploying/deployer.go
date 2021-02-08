@@ -37,7 +37,7 @@ func Deploy(c runtimeclient.Client, obj *unstructured.Unstructured) (error, bool
 		return err, false
 	}
 
-	// Do not update webhook configurations or cert secrets
+	// Do not update webhook configurations, cert secrets, or hiveconfig
 	if kind := found.GetKind(); kind == "MutatingWebhookConfiguration" || kind == "ValidatingWebhookConfiguration" {
 		if name := found.GetName(); name == "ocm-mutating-webhook" || name == "ocm-validating-webhook" {
 			return nil, false
@@ -47,6 +47,9 @@ func Deploy(c runtimeclient.Client, obj *unstructured.Unstructured) (error, bool
 		if name := found.GetName(); name == "ocm-klusterlet-self-signed-secrets" || name == "ocm-webhook-secret" {
 			return nil, false
 		}
+	}
+	if kind := found.GetKind(); kind == "HiveConfig" {
+		return nil, false
 	}
 
 	// Update if hash doesn't match

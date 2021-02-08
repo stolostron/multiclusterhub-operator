@@ -62,6 +62,70 @@ var _ = Describe("Multiclusterhub", func() {
 
 func FullInstallTestSuite() {
 
+	It("Test Hiveconfig", func() {
+		By("- If HiveConfig is edited directly, ensure changes are persisted")
+
+		utils.CreateDefaultMCH()
+		err := utils.ValidateMCH()
+		Expect(err).To(BeNil())
+
+		By("- Editing HiveConfig")
+		hiveConfig, err := utils.DynamicKubeClient.Resource(utils.GVRHiveConfig).Get(context.TODO(), utils.HiveConfigName, metav1.GetOptions{})
+		Expect(err).To(BeNil()) // If HiveConfig does not exist, err
+
+		spec, ok := hiveConfig.Object["spec"].(map[string]interface{})
+		Expect(ok).To(BeTrue())
+		spec["TargetNamespace"] = "test-hive"
+		spec["logLevel"] = "info"
+		hiveConfig, err = utils.DynamicKubeClient.Resource(utils.GVRHiveConfig).Update(context.TODO(), hiveConfig, metav1.UpdateOptions{})
+		Expect(err).To(BeNil()) // If HiveConfig does not exist, err
+
+		By("- Restart MCH Operator to ensure HiveConfig is not updated on reconcile")
+		// Delete MCH Operator pod to force reconcile
+		labelSelector := fmt.Sprintf("name=%s", "multiclusterhub-operator")
+		listOptions := metav1.ListOptions{
+			LabelSelector: labelSelector,
+			Limit:         1,
+		}
+		err = utils.KubeClient.CoreV1().Pods(utils.MCHNamespace).DeleteCollection(context.TODO(), metav1.DeleteOptions{}, listOptions)
+		Expect(err).To(BeNil()) // Deletion should always be successful
+		time.Sleep(60 * time.Second)
+
+		hiveConfig, err = utils.DynamicKubeClient.Resource(utils.GVRHiveConfig).Get(context.TODO(), utils.HiveConfigName, metav1.GetOptions{})
+		Expect(err).To(BeNil()) // If HiveConfig does not exist, err
+		spec, ok = hiveConfig.Object["spec"].(map[string]interface{})
+		Expect(ok).To(BeTrue())
+		Expect(spec["TargetNamespace"]).To(BeEquivalentTo("test-hive"))
+		Expect(spec["logLevel"]).To(BeEquivalentTo("info"))
+
+		By("- If HiveConfig is Deleted, ensure it is recreated")
+		err = utils.DynamicKubeClient.Resource(utils.GVRHiveConfig).Delete(context.TODO(), utils.HiveConfigName, metav1.DeleteOptions{})
+		Expect(err).To(BeNil()) // If HiveConfig does not exist, err
+		Eventually(func() error {
+			hiveConfig, err = utils.DynamicKubeClient.Resource(utils.GVRHiveConfig).Get(context.TODO(), utils.HiveConfigName, metav1.GetOptions{})
+			if err != nil {
+				return fmt.Errorf("HiveConfig has not been recreated")
+			}
+			return nil
+		}, utils.GetWaitInMinutes()*2, 1).Should(BeNil())
+
+		By("- If MCH.spec.hive is edited, ensure edit is blocked")
+		mch, err := utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Get(context.TODO(), utils.MCHName, metav1.GetOptions{})
+		Expect(err).To(BeNil())
+
+		spec, ok = mch.Object["spec"].(map[string]interface{})
+		Expect(ok).To(BeTrue())
+		spec["hive"] = map[string]interface{}{
+			"maintenanceMode": true,
+			"failedProvisionConfig": map[string]interface{}{
+				"skipGatherLogs": true,
+			},
+		}
+		_, err = utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
+		Expect(err.Error()).To(BeEquivalentTo("admission webhook \"multiclusterhub.validating-webhook.open-cluster-management.io\" denied the request: Hive updates are forbidden"))
+		return
+	})
+
 	It("Testing Image Overrides Configmap", func() {
 		By("- If configmap is manually overwitten, ensure MCH Operator will overwrite")
 

@@ -175,7 +175,7 @@ func TestGetImagePullPolicy(t *testing.T) {
 	noPullPolicyMCH := &operatorsv1.MultiClusterHub{}
 	pullPolicyMCH := &operatorsv1.MultiClusterHub{
 		Spec: operatorsv1.MultiClusterHubSpec{
-			Overrides: operatorsv1.Overrides{ImagePullPolicy: v1.PullIfNotPresent},
+			Overrides: &operatorsv1.Overrides{ImagePullPolicy: v1.PullIfNotPresent},
 		},
 	}
 
