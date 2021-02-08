@@ -761,7 +761,7 @@ func ValidateMCH() error {
 	Expect(err).Should(BeNil())
 	v, err := semver.NewVersion(currentVersion)
 	Expect(err).Should(BeNil())
-	c, err := semver.NewConstraint(">= 2.3.0")
+	c, err := semver.NewConstraint(">= 2.2.0")
 	Expect(err).Should(BeNil())
 	if c.Check(v) {
 		By("- Ensuring image manifest configmap is created")

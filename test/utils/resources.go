@@ -77,7 +77,7 @@ func NewImageOverridesConfigmapBadImageRef(name, namespace string) *corev1.Confi
 			"single-bad-image-reference.json": `[
 				{
 					"image-name": "multiclusterhub-repo",
-					"image-version": "2.3",
+					"image-version": "2.2",
 					"git-sha256": "8b551bb18e4d89529f9b07c61b49a1dd67b5435a",
 					"git-repository": "open-cluster-management/multicloudhub-repo",
 					"image-remote": "quay.io/open-cluster-management",
