@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	admissionregistration "k8s.io/api/admissionregistration/v1"
+	admissionregistration "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -52,7 +52,7 @@ func Setup(mgr manager.Manager) error {
 	}
 
 	log.Info("Registering webhooks to the webhook server.")
-	validatingPath := "/validate-v1-multiclusterhub"
+	validatingPath := "/validate-v1beta1-multiclusterhub"
 	hookServer.Register(validatingPath, &webhook.Admission{Handler: &multiClusterHubValidator{}})
 
 	go createWebhookService(mgr.GetClient(), ns)
@@ -152,24 +152,11 @@ func newWebhookService(namespace string) *corev1.Service {
 }
 
 func newValidatingWebhookCfg(namespace, path string, ca []byte) *admissionregistration.ValidatingWebhookConfiguration {
-	sideEffect := admissionregistration.SideEffectClassNone
-
 	return &admissionregistration.ValidatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: validatingCfgName,
 		},
 		Webhooks: []admissionregistration.ValidatingWebhook{{
-			AdmissionReviewVersions: []string{
-				"v1beta1",
-			},
-			ClientConfig: admissionregistration.WebhookClientConfig{
-				Service: &admissionregistration.ServiceReference{
-					Name:      utils.WebhookServiceName,
-					Namespace: namespace,
-					Path:      &path,
-				},
-				CABundle: ca,
-			},
 			Name: validatingWebhookName,
 			Rules: []admissionregistration.RuleWithOperations{{
 				Rule: admissionregistration.Rule{
@@ -183,7 +170,14 @@ func newValidatingWebhookCfg(namespace, path string, ca []byte) *admissionregist
 					admissionregistration.Delete,
 				},
 			}},
-			SideEffects: &sideEffect,
+			ClientConfig: admissionregistration.WebhookClientConfig{
+				Service: &admissionregistration.ServiceReference{
+					Name:      utils.WebhookServiceName,
+					Namespace: namespace,
+					Path:      &path,
+				},
+				CABundle: ca,
+			},
 		}},
 	}
 }

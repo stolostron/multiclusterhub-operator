@@ -75,6 +75,7 @@ func getAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 		{Name: "management-ingress-sub", Namespace: m.Namespace},
 		{Name: "rcm-sub", Namespace: m.Namespace},
 		{Name: "search-prod-sub", Namespace: m.Namespace},
+		{Name: "topology-sub", Namespace: m.Namespace},
 	}
 }
 

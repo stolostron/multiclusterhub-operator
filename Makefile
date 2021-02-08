@@ -111,7 +111,7 @@ observability-crd:
 
 ## Operator-sdk generate CRD(s)
 crd:
-	operator-sdk generate crds --crd-version=v1
+	operator-sdk generate crds --crd-version=v1beta1
 
 ## Operator-sdk regenerate CSV
 csv:
@@ -177,6 +177,3 @@ update-version:
 
 update-crds:
 	bash common/scripts/gather-crds.sh
-
-update-manifest:
-	bash common/scripts/update-image-manifest.sh

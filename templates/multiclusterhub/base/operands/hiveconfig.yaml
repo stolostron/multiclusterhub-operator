@@ -2,4 +2,10 @@ apiVersion: hive.openshift.io/v1
 kind: HiveConfig
 metadata:
   name: hive
-spec: {}
+spec:
+  additionalCertificateAuthorities:
+    - name: letsencrypt-ca
+  failedProvisionConfig:
+    skipGatherLogs: true
+  globalPullSecret:
+    name: private-secret
