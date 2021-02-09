@@ -137,7 +137,6 @@ func TestSubscriptions(t *testing.T) {
 		{"ManagementIngress subscription", ManagementIngress(mch, ovr, "")},
 		{"RCM subscription", RCM(mch, ovr)},
 		{"Search subscription", Search(mch, ovr)},
-		{"Topology subscription", Topology(mch, ovr)},
 	}
 
 	for _, tt := range tests {

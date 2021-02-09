@@ -180,7 +180,7 @@ var (
 	AppSubSlice = [...]string{"application-chart-sub", "cert-manager-sub",
 		"cert-manager-webhook-sub", "configmap-watcher-sub", "console-chart-sub",
 		"grc-sub", "kui-web-terminal-sub", "management-ingress-sub",
-		"rcm-sub", "search-prod-sub", "topology-sub"}
+		"rcm-sub", "search-prod-sub"}
 
 	// CSVName ...
 	CSVName = "advanced-cluster-management"
@@ -787,7 +787,7 @@ func ValidateMCH() error {
 	Expect(err).Should(BeNil())
 	v, err := semver.NewVersion(currentVersion)
 	Expect(err).Should(BeNil())
-	c, err := semver.NewConstraint(">= 2.2.0")
+	c, err := semver.NewConstraint(">= 2.3.0")
 	Expect(err).Should(BeNil())
 	if c.Check(v) {
 		By("- Ensuring image manifest configmap is created")

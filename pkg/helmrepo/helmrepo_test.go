@@ -84,6 +84,10 @@ func TestValidateDeployment(t *testing.T) {
 	dep4 := dep.DeepCopy()
 	dep4.Spec.Template.Spec.NodeSelector = nil
 
+	// 6. Modified Tolerations
+	dep5 := dep.DeepCopy()
+	dep5.Spec.Template.Spec.Tolerations = nil
+
 	type args struct {
 		m   *operatorsv1.MultiClusterHub
 		dep *appsv1.Deployment
@@ -121,6 +125,12 @@ func TestValidateDeployment(t *testing.T) {
 		{
 			name:  "Modified NodeSelector",
 			args:  args{mch, dep4},
+			want:  dep,
+			want1: true,
+		},
+		{
+			name:  "Modified Tolerations",
+			args:  args{mch, dep5},
 			want:  dep,
 			want1: true,
 		},

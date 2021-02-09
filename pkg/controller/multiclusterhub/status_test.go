@@ -310,13 +310,13 @@ func Test_filterDuplicateHRs(t *testing.T) {
 			allHRs: []*subrelv1.HelmRelease{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:              "topology-foo",
+						Name:              "console-foo",
 						CreationTimestamp: v1.NewTime(time.Date(2020, 5, 29, 0, 0, 0, 0, time.UTC)),
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: "apps.open-cluster-management.io/v1",
 								Kind:       "Subscription",
-								Name:       "topology-sub",
+								Name:       "console-sub",
 							},
 						},
 					},
@@ -343,33 +343,33 @@ func Test_filterDuplicateHRs(t *testing.T) {
 			allHRs: []*subrelv1.HelmRelease{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:              "topology-foo",
+						Name:              "console-foo",
 						CreationTimestamp: v1.NewTime(time.Date(2020, 5, 29, 0, 0, 0, 0, time.UTC)),
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: "apps.open-cluster-management.io/v1",
 								Kind:       "Subscription",
-								Name:       "topology-sub",
+								Name:       "console-sub",
 							},
 						},
 					},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:              "topology-bar",
+						Name:              "console-bar",
 						CreationTimestamp: v1.NewTime(time.Date(2020, 5, 29, 0, 1, 0, 0, time.UTC)),
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: "apps.open-cluster-management.io/v1",
 								Kind:       "Subscription",
-								Name:       "topology-sub",
+								Name:       "console-sub",
 							},
 						},
 					},
 				},
 			},
 			count:    1,
-			excludes: []string{"topology-foo"},
+			excludes: []string{"console-foo"},
 		},
 	}
 	for _, tt := range tests {
