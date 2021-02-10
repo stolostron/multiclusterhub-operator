@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	clustermanager "github.com/open-cluster-management/api/operator/v1"
 	admissionregistration "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -29,6 +30,7 @@ var log = logf.Log.WithName("multiclusterhub_webhook")
 
 const (
 	resourceName          = "multiclusterhubs"
+	clusterManagerName    = "clustermanagers"
 	operatorName          = "multiclusterhub-operator"
 	validatingWebhookName = "multiclusterhub.validating-webhook.open-cluster-management.io"
 	validatingCfgName     = "multiclusterhub-operator-validating-webhook"
@@ -180,6 +182,15 @@ func newValidatingWebhookCfg(namespace, path string, ca []byte) *admissionregist
 				Operations: []admissionregistration.OperationType{
 					admissionregistration.Create,
 					admissionregistration.Update,
+					admissionregistration.Delete,
+				},
+			}, {
+				Rule: admissionregistration.Rule{
+					APIGroups:   []string{clustermanager.SchemeGroupVersion.Group},
+					APIVersions: []string{clustermanager.SchemeGroupVersion.Version},
+					Resources:   []string{clusterManagerName},
+				},
+				Operations: []admissionregistration.OperationType{
 					admissionregistration.Delete,
 				},
 			}},

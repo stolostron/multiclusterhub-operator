@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/go-logr/logr"
+	clustermanager "github.com/open-cluster-management/api/operator/v1"
 	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis/apps/v1"
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
@@ -126,6 +127,30 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		&handler.Funcs{
 			DeleteFunc: func(e event.DeleteEvent, q workqueue.RateLimitingInterface) {
 				labels := e.Meta.GetLabels()
+				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
+					Name:      labels["installer.name"],
+					Namespace: labels["installer.namespace"],
+				}})
+			},
+		},
+		predicate.InstallerLabelPredicate{},
+	)
+	if err != nil {
+		return err
+	}
+
+	err = c.Watch(
+		&source.Kind{Type: &clustermanager.ClusterManager{}},
+		&handler.Funcs{
+			DeleteFunc: func(e event.DeleteEvent, q workqueue.RateLimitingInterface) {
+				labels := e.Meta.GetLabels()
+				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
+					Name:      labels["installer.name"],
+					Namespace: labels["installer.namespace"],
+				}})
+			},
+			UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
+				labels := e.MetaOld.GetLabels()
 				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
 					Name:      labels["installer.name"],
 					Namespace: labels["installer.namespace"],

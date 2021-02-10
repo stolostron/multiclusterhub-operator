@@ -42,7 +42,7 @@ var (
 	// DynamicKubeClient ...
 	DynamicKubeClient = NewKubeClientDynamic("", "", "")
 
-	// ImageOverridesCMBadImageName...
+	// ImageOverridesCMBadImageName ...
 	ImageOverridesCMBadImageName = "bad-image-ref"
 
 	// GVRCustomResourceDefinition ...
@@ -50,6 +50,13 @@ var (
 		Group:    "apiextensions.k8s.io",
 		Version:  "v1",
 		Resource: "customresourcedefinitions",
+	}
+
+	// GVRClusterManager ...
+	GVRClusterManager = schema.GroupVersionResource{
+		Group:    "operator.open-cluster-management.io",
+		Version:  "v1",
+		Resource: "clustermanagers",
 	}
 
 	// GVRObservability ...
@@ -595,6 +602,11 @@ func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 		_, err = DynamicKubeClient.Resource(GVRCustomResourceDefinition).Get(context.TODO(), crd, metav1.GetOptions{})
 		Expect(err).ToNot(BeNil())
 	}
+
+	By("- Validating ClusterManager was deleted")
+	clusterManagerLink := clientHubDynamic.Resource(GVRClusterManager)
+	_, err = clusterManagerLink.Get(context.TODO(), "cluster-manager", metav1.GetOptions{})
+	Expect(err).ShouldNot(BeNil())
 
 	By("- Validating HiveConfig was deleted")
 	hiveConfigLink := clientHubDynamic.Resource(GVRHiveConfig)

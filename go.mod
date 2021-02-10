@@ -11,6 +11,7 @@ require (
 	github.com/go-logr/zapr v0.3.0 // indirect
 	github.com/onsi/ginkgo v1.12.1
 	github.com/onsi/gomega v1.10.1
+	github.com/open-cluster-management/api v0.0.0-20201210143210-581cab55c797
 	github.com/open-cluster-management/multicloud-operators-subscription v1.0.0-2020-05-12-21-17-19.0.20200610014526-1e0e8c0acfad
 	github.com/open-cluster-management/multicloud-operators-subscription-release v1.0.1-2020-05-28-18-29-00.0.20200603160156-4d66bd136ba3
 	github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible
