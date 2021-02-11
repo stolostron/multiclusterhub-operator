@@ -33,6 +33,10 @@ const (
 	ComponentsUnavailableReason = "ComponentsUnavailable"
 	// NewComponentReason is added when the hub creates a new install resource successfully
 	NewComponentReason = "NewResourceCreated"
+	// NewComponentReason is added when the hub creates a new install resource successfully
+	OldComponentRemovedReason = "OldResourceDeleted"
+	// NewComponentReason is added when the hub creates a new install resource successfully
+	OldComponentNotRemovedReason = "OldResourceDeleteFailed"
 	// CertManagerReason is added when the hub is waiting for cert manager CRDs to come up
 	CertManagerReason = "CertManagerInitializing"
 	// DeleteTimestampReason is added when the multiclusterhub has been targeted for delete

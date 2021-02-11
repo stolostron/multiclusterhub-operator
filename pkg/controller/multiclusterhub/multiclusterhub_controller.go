@@ -541,6 +541,14 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		}
 	}
 
+	// Cleanup unused resources once components up-to-date
+	if r.ComponentsAreRunning(multiClusterHub) {
+		result, err = r.ensureRemovalsGone(multiClusterHub)
+		if result != nil {
+			return *result, err
+		}
+	}
+
 	return retQueue, retError
 }
 

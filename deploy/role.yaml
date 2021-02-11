@@ -194,10 +194,12 @@ rules:
   - ""
   - "apps"
   - "apps.open-cluster-management.io"
+  - "apiextensions.k8s.io"
   resources:
   - deployments
   - services
   - channels
+  - customresourcedefinitions
   verbs:
   - delete
 
