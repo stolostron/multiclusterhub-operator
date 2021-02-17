@@ -29,7 +29,7 @@ var (
 			// searchservices CRD replaced in 2.2.0
 			newUnstructured(
 				types.NamespacedName{Name: "searchservices.search.acm.com"},
-				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1beta1"},
+				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1"},
 			),
 		}
 	}
