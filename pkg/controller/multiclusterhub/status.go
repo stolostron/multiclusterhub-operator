@@ -33,10 +33,12 @@ const (
 	ComponentsUnavailableReason = "ComponentsUnavailable"
 	// NewComponentReason is added when the hub creates a new install resource successfully
 	NewComponentReason = "NewResourceCreated"
-	// NewComponentReason is added when the hub creates a new install resource successfully
+	// OldComponentRemovedReason is added when the hub calls delete on an old resource
 	OldComponentRemovedReason = "OldResourceDeleted"
-	// NewComponentReason is added when the hub creates a new install resource successfully
+	// OldComponentNotRemovedReason is added when a component the hub is trying to delete has not been removed successfully
 	OldComponentNotRemovedReason = "OldResourceDeleteFailed"
+	// AllOldComponentsRemovedReason is added when the hub successfully prunes all old resources
+	AllOldComponentsRemovedReason = "AllOldResourcesDeleted"
 	// CertManagerReason is added when the hub is waiting for cert manager CRDs to come up
 	CertManagerReason = "CertManagerInitializing"
 	// DeleteTimestampReason is added when the multiclusterhub has been targeted for delete
@@ -185,8 +187,17 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 
 	// Update hub conditions
 	if successful {
-		available := NewHubCondition(operatorsv1.Complete, v1.ConditionTrue, ComponentsAvailableReason, "All hub components ready.")
-		SetHubCondition(&status, *available)
+		// don't label as complete until component pruning succeeds
+		if !hubPruning(status) {
+			available := NewHubCondition(operatorsv1.Complete, v1.ConditionTrue, ComponentsAvailableReason, "All hub components ready.")
+			SetHubCondition(&status, *available)
+		} else {
+			// only add unavailable status if complete status already present
+			if HubConditionPresent(status, operatorsv1.Complete) {
+				unavailable := NewHubCondition(operatorsv1.Complete, v1.ConditionFalse, OldComponentNotRemovedReason, "Not all components successfully pruned.")
+				SetHubCondition(&status, *unavailable)
+			}
+		}
 	} else {
 		// hub is progressing unless otherwise specified
 		if !HubConditionPresent(status, operatorsv1.Progressing) {
@@ -544,6 +555,11 @@ func allComponentsSuccessful(components map[string]operatorsv1.StatusCondition) 
 func aggregatePhase(status operatorsv1.MultiClusterHubStatus) operatorsv1.HubPhaseType {
 	successful := allComponentsSuccessful(status.Components)
 	if successful {
+		if hubPruning(status) {
+			// hub is in pruning phase
+			return operatorsv1.HubPending
+		}
+
 		// Hub running
 		return operatorsv1.HubRunning
 	}
@@ -602,6 +618,17 @@ func GetHubCondition(status operatorsv1.MultiClusterHubStatus, condType operator
 		}
 	}
 	return nil
+}
+
+// hubPruning returns true when the status reports hub is in the process of pruning
+func hubPruning(status operatorsv1.MultiClusterHubStatus) bool {
+	progressingCondition := GetHubCondition(status, operatorsv1.Progressing)
+	if progressingCondition != nil {
+		if progressingCondition.Reason == OldComponentRemovedReason || progressingCondition.Reason == OldComponentNotRemovedReason {
+			return true
+		}
+	}
+	return false
 }
 
 // filterOutCondition returns a new slice of hub conditions without conditions with the provided type.

@@ -26,9 +26,9 @@ var (
 				types.NamespacedName{Name: "topology-sub", Namespace: m.Namespace},
 				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
 			),
-			// searchcollectors CRD replaced in ?.?.?
+			// searchservices CRD replaced in 2.2.0
 			newUnstructured(
-				types.NamespacedName{Name: "searchcollectors.agent.open-cluster-management.io"},
+				types.NamespacedName{Name: "searchservices.search.acm.com"},
 				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1beta1"},
 			),
 		}
@@ -46,41 +46,74 @@ func newUnstructured(nn types.NamespacedName, gvk schema.GroupVersionKind) *unst
 // ensureRemovalsGone validates successful removal of everything in the uninstallList. Return on first error encounter.
 func (r *ReconcileMultiClusterHub) ensureRemovalsGone(m *operatorsv1.MultiClusterHub) (*reconcile.Result, error) {
 	removals := uninstallList(m)
+	allResourcesDeleted := true
 	for i := range removals {
-		rr, err := r.uninstall(m, removals[i])
-		if rr != nil {
-			return rr, err
+		gone, err := r.uninstall(m, removals[i])
+		if err != nil {
+			return &reconcile.Result{}, err
+		}
+		log.Info("Removal", "gone is", gone)
+		if !gone {
+			allResourcesDeleted = false
 		}
 	}
+
+	if !allResourcesDeleted {
+		return &reconcile.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	log.Info("All resources must have been deleted")
+	// Emit hubcondition once pruning complete if other pruning condition present
+	progressingCondition := GetHubCondition(m.Status, operatorsv1.Progressing)
+	if progressingCondition != nil {
+		if progressingCondition.Reason == OldComponentRemovedReason || progressingCondition.Reason == OldComponentNotRemovedReason {
+			condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, AllOldComponentsRemovedReason, "All old resources pruned")
+			SetHubCondition(&m.Status, *condition)
+		}
+	}
+
 	return nil, nil
 }
 
-func (r *ReconcileMultiClusterHub) uninstall(m *operatorsv1.MultiClusterHub, u *unstructured.Unstructured) (*reconcile.Result, error) {
+// uninstall return true if resource does not exist and returns an error if a GET or DELETE errors unexpectedly. A false response without error
+// means the resource is in the process of deleting.
+func (r *ReconcileMultiClusterHub) uninstall(m *operatorsv1.MultiClusterHub, u *unstructured.Unstructured) (bool, error) {
 	obLog := log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName(), "Kind", u.GetKind())
 
-	found := u.NewEmptyInstance()
 	err := r.client.Get(context.TODO(), types.NamespacedName{
 		Name:      u.GetName(),
 		Namespace: u.GetNamespace(),
-	}, found)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return nil, nil
-		}
-		// Error that isn't due to the resource not existing
-		obLog.Error(err, "Error getting resource")
-		return &reconcile.Result{}, err
+	}, u)
+
+	if errors.IsNotFound(err) {
+		return true, nil
 	}
 
-	err = r.client.Delete(context.TODO(), found)
+	// Get resource. Successful if it doesn't exist.
+	if err != nil {
+		// Error that isn't due to the resource not existing
+		obLog.Error(err, "Error getting resource")
+		return false, err
+	}
+
+	// If resource has deletionTimestamp then re-reconcile and don't try deleting
+	if u.GetDeletionTimestamp() != nil {
+		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionFalse, OldComponentNotRemovedReason, fmt.Sprintf("Resource %s/%s finalizing", u.GetKind(), u.GetName()))
+		SetHubCondition(&m.Status, *condition)
+		obLog.Info("Waiting for resource to finalize")
+		return false, nil
+	}
+
+	// Attempt deleting resource. No error does not necessarily mean the resource is gone.
+	err = r.client.Delete(context.TODO(), u)
 	if err != nil {
 		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionFalse, OldComponentNotRemovedReason, fmt.Sprintf("Failed to remove resource %s/%s", u.GetKind(), u.GetName()))
 		SetHubCondition(&m.Status, *condition)
 		obLog.Error(err, "Failed to delete resource")
-		return &reconcile.Result{}, err
+		return false, err
 	}
 	condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, OldComponentRemovedReason, "Removed old resource")
 	SetHubCondition(&m.Status, *condition)
 	obLog.Info("Deleted instance")
-	return nil, nil
+	return false, nil
 }
