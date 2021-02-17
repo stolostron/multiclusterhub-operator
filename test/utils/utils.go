@@ -427,6 +427,43 @@ func FixMCHRepo() error {
 	return KubeClient.AppsV1().Deployments(MCHNamespace).Delete(context.TODO(), MCHRepoName, metav1.DeleteOptions{})
 }
 
+// DeleteMCHRepo deletes the multiclusterhub-repo deployment
+func DeleteMCHRepo() error {
+	return KubeClient.AppsV1().Deployments(MCHNamespace).Delete(context.TODO(), MCHRepoName, metav1.DeleteOptions{})
+}
+
+func PauseMCH() error {
+	mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	labels := mch.GetLabels()
+	if labels == nil {
+		labels = map[string]string{"mch-pause": "true"}
+	} else {
+		labels["mch-pause"] = "true"
+	}
+	mch.SetLabels(labels)
+	_, err = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
+	return err
+}
+
+func UnpauseMCH() error {
+	mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	labels := mch.GetLabels()
+	if labels == nil {
+		labels = map[string]string{"mch-pause": "false"}
+	} else {
+		labels["mch-pause"] = "false"
+	}
+	mch.SetLabels(labels)
+	_, err = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
+	return err
+}
+
 // BrickKUI modifies the multiclusterhub-repo deployment so it becomes unhealthy
 func BrickKUI() (string, error) {
 	By("- Breaking kui-web-terminal")
@@ -524,19 +561,17 @@ func findPhase(status map[string]interface{}, wantPhase string) error {
 // ValidateMCHDegraded validates the install operator responds appropriately when the install components
 // go into a degraded state after a successful install
 func ValidateMCHDegraded() error {
-	By("- Validating MultiClusterHub Degraded")
-
 	status, err := GetMCHStatus()
 	if err != nil {
 		return err
 	}
 
-	By("- Ensuring MCH is in 'pending' phase")
+	// Ensuring MCH is in 'pending' phase
 	if err := findPhase(status, "Pending"); err != nil {
 		return err
 	}
 
-	By("- Ensuring hub condition shows installation as incomplete")
+	// Ensuring hub condition shows installation as incomplete
 	if err := FindCondition(status, "Complete", "False"); err != nil {
 		return err
 	}
