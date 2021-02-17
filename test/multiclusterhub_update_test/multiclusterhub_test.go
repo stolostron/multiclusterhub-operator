@@ -11,6 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	utils "github.com/open-cluster-management/multicloudhub-operator/test/utils"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
 )
@@ -74,6 +75,12 @@ var _ = Describe("Multiclusterhub", func() {
 
 		Expect(phaseError).To(BeNil())
 		utils.ValidateMCH()
+
+		By("Verifying old component has been removed")
+		k8sClient := utils.DynamicKubeClient.Resource(utils.GVRAppSub).Namespace(utils.MCHNamespace)
+		subName := "topology-sub"
+		_, err = k8sClient.Get(context.TODO(), subName, metav1.GetOptions{})
+		Expect(errors.IsNotFound(err)).To(BeTrue(), "should have been deleted by the reconciler and return a NotFound error")
 
 		startVersion, err := semver.NewVersion(os.Getenv(("startVersion")))
 		Expect(err).Should(BeNil())
