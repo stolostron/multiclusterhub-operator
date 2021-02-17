@@ -52,7 +52,6 @@ func (r *ReconcileMultiClusterHub) ensureRemovalsGone(m *operatorsv1.MultiCluste
 		if err != nil {
 			return &reconcile.Result{}, err
 		}
-		log.Info("Removal", "gone is", gone)
 		if !gone {
 			allResourcesDeleted = false
 		}
@@ -62,7 +61,6 @@ func (r *ReconcileMultiClusterHub) ensureRemovalsGone(m *operatorsv1.MultiCluste
 		return &reconcile.Result{RequeueAfter: resyncPeriod}, nil
 	}
 
-	log.Info("All resources must have been deleted")
 	// Emit hubcondition once pruning complete if other pruning condition present
 	progressingCondition := GetHubCondition(m.Status, operatorsv1.Progressing)
 	if progressingCondition != nil {

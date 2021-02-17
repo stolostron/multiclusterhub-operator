@@ -11,7 +11,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 func Test_newUnstructured(t *testing.T) {
@@ -99,39 +98,23 @@ func TestReconcileMultiClusterHub_uninstall(t *testing.T) {
 		name    string
 		mch     *operatorsv1.MultiClusterHub
 		obj     *unstructured.Unstructured
-		want    *reconcile.Result
+		want    bool
 		wantErr bool
 	}{
 		{
 			name:    "Uninstall existing CRD",
 			mch:     full_mch,
 			obj:     createdCRD,
-			want:    nil,
+			want:    false,
 			wantErr: false,
 		},
 		{
 			name:    "Uninstall nonexisting CRD",
 			mch:     full_mch,
 			obj:     nonexistingCRD,
-			want:    nil,
+			want:    true,
 			wantErr: false,
 		},
-		// {
-		// 	name: "Uninstall DicoveryConfig",
-		// 	mch:  full_mch,
-		// 	obj: &unstructured.Unstructured{
-		// 		Object: map[string]interface{}{
-		// 			"apiVersion": "discovery.open-cluster-management.io/v1",
-		// 			"kind":       "DiscoveryConfig",
-		// 			"metadata": map[string]interface{}{
-		// 				"name":      "discoveryconfig",
-		// 				"namespace": "test",
-		// 			},
-		// 		},
-		// 	},
-		// 	want:    nil,
-		// 	wantErr: false,
-		// },
 	}
 
 	for _, tt := range tests {
