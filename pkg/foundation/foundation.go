@@ -139,10 +139,12 @@ func ValidateDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]str
 		needsUpdate = true
 	}
 
-	if !reflect.DeepEqual(container.Resources, utils.GetContainerResourcesRequirements(expected)) {
+	expected_resource_list = utils.GetContainerResources(expected)
+	if !reflect.DeepEqual(container.Resources.Requests.Cpu().MilliValue(), expected_resource_list.Cpu().MilliValue()) {
+
 		log.Info("Enforcing container resource requests and limits")
-		resrec := utils.GetContainerResourcesRequirements(expected)
-		container.Resources = resrec
+		resrec := utils.GetContainerResources(expected)
+		container.Resources.Requests = resrec
 		needsUpdate = true
 	}
 
