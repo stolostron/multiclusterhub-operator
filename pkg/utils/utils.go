@@ -198,6 +198,11 @@ func GetContainerVolumeMounts(dep *appsv1.Deployment) []corev1.VolumeMount {
 	return dep.Spec.Template.Spec.Containers[0].VolumeMounts
 }
 
+//GetContainerRequestResources returns Request Requirements for first container in deployment
+func GetContainerRequestResources(dep *appsv1.Deployment) corev1.ResourceList {
+	return dep.Spec.Template.Spec.Containers[0].Resources.Requests
+}
+
 func IsUnitTest() bool {
 	if unitTest, found := os.LookupEnv(UnitTestEnvVar); found {
 		if unitTest == "true" {

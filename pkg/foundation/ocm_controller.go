@@ -78,7 +78,7 @@ func OCMControllerDeployment(m *operatorsv1.MultiClusterHub, overrides map[strin
 						},
 						Resources: v1.ResourceRequirements{
 							Requests: v1.ResourceList{
-								v1.ResourceCPU:    resource.MustParse("200m"),
+								v1.ResourceCPU:    resource.MustParse("100m"),
 								v1.ResourceMemory: resource.MustParse("256Mi"),
 							},
 							Limits: v1.ResourceList{
