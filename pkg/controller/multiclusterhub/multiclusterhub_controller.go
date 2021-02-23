@@ -34,6 +34,7 @@ import (
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/deploying"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/foundation"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
+	"github.com/open-cluster-management/multicloudhub-operator/pkg/imageoverrides"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/manifest"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/predicate"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering"
@@ -294,10 +295,16 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 	}
 
 	// Read image overrides
-	imageOverrides, err := manifest.GetImageOverrides(multiClusterHub)
-	if err != nil {
-		reqLogger.Error(err, "Could not get map of image overrides")
-		return reconcile.Result{}, err
+	// First, attempt to read image overrides from environmental variables
+	imageOverrides := imageoverrides.GetImageOverrides()
+	if len(imageOverrides) == 0 {
+		// If imageoverrides are not set from environmental variables, read from manifest
+		reqLogger.Info("Image Overrides not set from environment variables. Checking for overrides in manifest")
+		imageOverrides, err = manifest.GetImageOverrides(multiClusterHub)
+		if err != nil {
+			reqLogger.Error(err, "Could not get map of image overrides")
+			return reconcile.Result{}, err
+		}
 	}
 
 	// Check for developer overrides
