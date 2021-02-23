@@ -27,7 +27,7 @@ func GetImageOverrides() map[string]string {
 	}
 
 	if len(imageOverrides) > 0 {
-		logf.Info("Found image override values from environmental variables")
+		logf.Info("Found image overrides from environment variables")
 	}
 
 	return imageOverrides

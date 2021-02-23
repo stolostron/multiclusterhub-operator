@@ -299,7 +299,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 	imageOverrides := imageoverrides.GetImageOverrides()
 	if len(imageOverrides) == 0 {
 		// If imageoverrides are not set from environmental variables, read from manifest
-		reqLogger.Info("Image Overrides not set from environmental variables. Checking for overrides in manifest.")
+		reqLogger.Info("Image Overrides not set from environment variables. Checking for overrides in manifest")
 		imageOverrides, err = manifest.GetImageOverrides(multiClusterHub)
 		if err != nil {
 			reqLogger.Error(err, "Could not get map of image overrides")
