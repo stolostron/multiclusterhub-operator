@@ -1,3 +1,5 @@
+// Copyright (c) 2020 Red Hat, Inc.
+
 package imageoverrides
 
 import (
@@ -10,7 +12,7 @@ import (
 var logf = log.Log.WithName("controller_multiclusterhub")
 
 // imagePrefix ...
-const imagePrefix = "RELEASES_IMAGE_"
+const imagePrefix = "RELATED_IMAGE_"
 
 // GetImageOverrides Reads and formats full image reference from image manifest file.
 func GetImageOverrides() map[string]string {

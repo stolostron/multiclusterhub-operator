@@ -1,11 +1,13 @@
 #!/bin/bash
+# Copyright (c) 2020 Red Hat, Inc.
+# Tested on Mac only
 
 ### This is a temp developer script to test enablement of enviornmental variables to replace the image manifest
 ## To define env vars in your terminal, make sure to source this script
 
 jq -c '.[]' image-manifests/2.3.0.json | while read imageRef; do
     imageKey=$(echo $imageRef | jq -r '."image-key"' | awk '{print toupper($0)}')
-    imageKey="RELEASES_IMAGE_$imageKey"  
+    imageKey="RELATED_IMAGE_$imageKey"  
 
     imageRemote=$(echo $imageRef | jq -r '."image-remote"')
     imageName=$(echo $imageRef | jq -r '."image-name"')

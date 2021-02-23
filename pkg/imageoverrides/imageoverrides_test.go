@@ -1,3 +1,5 @@
+// Copyright (c) 2020 Red Hat, Inc.
+
 package imageoverrides
 
 import (
@@ -6,13 +8,17 @@ import (
 )
 
 func TestGetImageOverrides(t *testing.T) {
-	os.Setenv("RELEASES_IMAGE_APPLICATION_UI", "quay.io/open-cluster-management/application-ui:test-image")
-	os.Setenv("RELEASES_IMAGE_CERT_POLICY_CONTROLLER", "quay.io/open-cluster-management/cert-policy-controller:test-image")
-	defer os.Unsetenv("RELEASES_IMAGE_APPLICATION_UI")
-	defer os.Unsetenv("RELEASES_IMAGE_CERT_POLICY_CONTROLLER")
+	os.Setenv("RELATED_IMAGE_APPLICATION_UI", "quay.io/open-cluster-management/application-ui:test-image")
+	os.Setenv("RELATED_IMAGE_CERT_POLICY_CONTROLLER", "quay.io/open-cluster-management/cert-policy-controller:test-image")
 
-	imageOverrides := GetImageOverrides()
-	if len(imageOverrides) == 0 {
-		t.Fatal("Expected Image overrides")
+	if len(GetImageOverrides()) == 0 {
+		t.Fatal("Expected image overrides")
+	}
+
+	os.Unsetenv("RELATED_IMAGE_APPLICATION_UI")
+	os.Unsetenv("RELATED_IMAGE_CERT_POLICY_CONTROLLER")
+
+	if len(GetImageOverrides()) != 0 {
+		t.Fatal("Expected no image overrides")
 	}
 }
