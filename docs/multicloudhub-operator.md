@@ -10,7 +10,7 @@ For enterprise user, we provide an operator (MultiClusterHub Operator) to deploy
 
 ### MultiClusterHub Operator
 
-The MultiClusterHub Operator is implemented by using [Operator SDK](https://github.com/operator-framework/operator-sdk/blob/master/doc/user-guide.md), we bundle the CRD and `ClusterServiceVersion` of this operator to a package (see [operator-registry](https://github.com/operator-framework/operator-registry#operator-registry)) and publish it to [OpenShift OperatorHub](https://docs.openshift.com/container-platform/4.2/operators/olm-understanding-operatorhub.html). User can define an OpenShift Operator Lifecycle Manager (OLM) `Subscription` to deploy this operator, e.g.
+The MultiClusterHub Operator is implemented by using [Operator SDK](https://github.com/operator-framework/operator-sdk/), we bundle the CRD and `ClusterServiceVersion` of this operator to a package (see [operator-registry](https://github.com/operator-framework/operator-registry#operator-registry)) and publish it to [OpenShift OperatorHub](https://docs.openshift.com/container-platform/4.2/operators/olm-understanding-operatorhub.html). User can define an OpenShift Operator Lifecycle Manager (OLM) `Subscription` to deploy this operator, e.g.
 
 ```yaml
 apiVersion: operators.coreos.com/v1alpha1
