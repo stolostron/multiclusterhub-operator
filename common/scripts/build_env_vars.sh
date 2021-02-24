@@ -7,7 +7,7 @@
 
 jq -c '.[]' image-manifests/2.3.0.json | while read imageRef; do
     imageKey=$(echo $imageRef | jq -r '."image-key"' | awk '{print toupper($0)}')
-    imageKey="RELATED_IMAGE_$imageKey"  
+    imageKey="OPERAND_IMAGE_$imageKey"  
 
     imageRemote=$(echo $imageRef | jq -r '."image-remote"')
     imageName=$(echo $imageRef | jq -r '."image-name"')
