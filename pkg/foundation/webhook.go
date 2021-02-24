@@ -80,7 +80,7 @@ func WebhookDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]stri
 						Resources: v1.ResourceRequirements{
 							Requests: v1.ResourceList{
 								v1.ResourceMemory: resource.MustParse("128Mi"),
-								v1.ResourceCPU:    resource.MustParse("100m"),
+								v1.ResourceCPU:    resource.MustParse("50m"),
 							},
 							Limits: v1.ResourceList{
 								v1.ResourceMemory: resource.MustParse("256Mi"),
