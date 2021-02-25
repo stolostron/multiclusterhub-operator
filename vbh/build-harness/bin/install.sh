@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 #!/bin/bash
 export BUILD_HARNESS_ORG=${1:-cloudposse}
 export BUILD_HARNESS_PROJECT=${2:-build-harness}

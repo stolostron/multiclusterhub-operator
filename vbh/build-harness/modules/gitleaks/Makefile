@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 export GITLEAKS_VERSION ?= 1.2.0
 
 GITLEAKS ?= gitleaks

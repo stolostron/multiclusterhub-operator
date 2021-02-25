@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 apiVersion: hive.openshift.io/v1
 kind: HiveConfig
 metadata:

@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 #!/bin/bash
 
 which awk 2>&1 >/dev/null || ( echo "awk not available"; exit 1)

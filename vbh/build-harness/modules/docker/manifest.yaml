@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 image: __DOCKER_REGISTRY__/__DOCKER_NAMESPACE__/__DOCKER_IMAGE__:__DOCKER_TAG__
 manifests:
   - image: __DOCKER_REGISTRY__/__DOCKER_NAMESPACE__/__DOCKER_IMAGE__-amd64:__DOCKER_TAG__

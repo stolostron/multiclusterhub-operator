@@ -1,3 +1,5 @@
+[comment]: # ( Copyright Contributors to the Open Cluster Management project )
+
 # MultiClusterHub Operator Functional Testss
 
 ## Background

@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 .PHONY: go/gosec-install
 ## Installs latest release of Gosec
 go/gosec-install:

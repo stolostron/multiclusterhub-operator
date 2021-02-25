@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 # Set to true to add reviewers to pull requests
 addReviewers: true
 

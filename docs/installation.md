@@ -1,3 +1,5 @@
+[comment]: # ( Copyright Contributors to the Open Cluster Management project )
+
 # Installation
 
 The below guidelines will explain how to build and install the operator on a remote cluster.

@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 # Flag used to indicate if bash completion rules for make have already been installed
 BASH_COMPLETION_FLAG ?= ~/.make.bash.completion
 

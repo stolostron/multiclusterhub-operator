@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 TMP ?= /tmp
 TERRAFORM ?= $(BUILD_HARNESS_PATH)/vendor/terraform
 TERRAFORM_VERSION ?= 0.11.11

@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 #!/bin/bash
 export BUILD_HARNESS_EXTENSIONS_ORG=${1:-open-cluster-management}
 export BUILD_HARNESS_EXTENSIONS_PROJECT=${2:-build-harness-extensions}

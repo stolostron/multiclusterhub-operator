@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 export OS ?= $(shell uname -s | tr '[:upper:]' '[:lower:]')
 export BUILD_HARNESS_PATH ?= $(shell 'pwd')
 export BUILD_HARNESS_EXTENSIONS_PATH ?= $(BUILD_HARNESS_PATH)/../build-harness-extensions

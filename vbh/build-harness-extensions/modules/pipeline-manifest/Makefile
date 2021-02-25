@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 # GITHUB_USER containing '@' char must be escaped with '%40'
 GITHUB_USER := $(shell echo $(GITHUB_USER) | sed 's/@/%40/g')
 GITHUB_TOKEN ?=

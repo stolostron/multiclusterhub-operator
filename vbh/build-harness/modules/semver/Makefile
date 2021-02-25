@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 ifneq ($(wildcard .git),)
 ## Array of all possible versions based on this git commit
 SEMVERSIONS :=

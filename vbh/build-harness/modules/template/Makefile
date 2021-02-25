@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 export GOMPLATE ?= $(BUILD_HARNESS_PATH)/vendor/gomplate
 
 ## Install dependencies

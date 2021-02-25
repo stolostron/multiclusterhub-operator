@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 export SLACK_NOTIFIER ?= slack-notifier
 
 export SLACK_USER_NAME ?= CodeFresh

@@ -1,3 +1,5 @@
+[comment]: # ( Copyright Contributors to the Open Cluster Management project )
+
 # multiclusterhub Configurations
 
 This directory contains examples that cover various configurations for multiclusterhub.

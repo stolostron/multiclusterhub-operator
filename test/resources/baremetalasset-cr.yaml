@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 apiVersion: inventory.open-cluster-management.io/v1alpha1
 kind: BareMetalAsset
 metadata:

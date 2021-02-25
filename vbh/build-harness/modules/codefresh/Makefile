@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 CF_TRIGGER_TYPE ?= build
 CF_TRIGGER_REPO_NAME ?= $(CF_REPO_NAME)
 CF_TRIGGER_BRANCH ?= $(CF_BRANCH)

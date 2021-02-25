@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 ## Run a Jenkins Job to Deploy $(APP) with $(CANONICAL_TAG)
 geodesic/deploy:
 	$(call assert-set,APP)

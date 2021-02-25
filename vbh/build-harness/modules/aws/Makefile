@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 export AWSCLI_VERSION ?= 1.11.185
 
 WITH_AWS ?= aws-vault exec $(AWS_PROFILE) --

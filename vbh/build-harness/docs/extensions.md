@@ -1,3 +1,5 @@
+[comment]: # ( Copyright Contributors to the Open Cluster Management project )
+
 ## Extending `build-harness` with targets from another repo
 
 It is possible to extend the `build-harness` with targets and entire modules of your own, without having to fork or modify `build-harness` itself.

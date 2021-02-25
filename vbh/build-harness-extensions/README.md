@@ -1,3 +1,5 @@
+[comment]: # ( Copyright Contributors to the Open Cluster Management project )
+
 ## Extensions to `build-harness`
 
 This repo is structured just like `build-harness`, and is pulled in via:
