@@ -1,3 +1,5 @@
+// Copyright Contributors to the Open Cluster Management project
+
 // NOTE: Boilerplate only.  Ignore this file.
 
 // Package v1 contains API Schema definitions for the operators v1 API group

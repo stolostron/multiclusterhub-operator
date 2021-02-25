@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 export JENKINS_HOST ?= localhost
 export JENKINS_URL ?= https://$(JENKINS_HOST)/buildByToken/buildWithParameters
 

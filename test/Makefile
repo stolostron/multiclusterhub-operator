@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 SUBSCRIPTION_NAME := "advanced-cluster-management"
 PULL_SECRET_NAME := "multiclusterhub-operator-pull-secret"
 CHANNEL := "release-2.3"

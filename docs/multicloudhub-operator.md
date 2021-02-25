@@ -1,3 +1,5 @@
+[comment]: # ( Copyright Contributors to the Open Cluster Management project )
+
 # MultiClusterHub Operator
 
 There are two proposals to deploy the multicloud hub with operators in OpenShift

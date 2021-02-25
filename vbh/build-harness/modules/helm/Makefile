@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 CURL ?= curl
 HELM_PLATFORM ?= $(OS)-amd64
 HELM ?= helm

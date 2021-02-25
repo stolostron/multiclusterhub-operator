@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 ## Lint all bash scripts
 bash/lint:
 	@set -o pipefail; \

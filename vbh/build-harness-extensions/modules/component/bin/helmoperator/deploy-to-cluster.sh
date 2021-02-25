@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 # PreReqs: kubectl installed with a valid KUBECONFIG for the target cluster.
 
 # Patch the pre-existing resource with a new image source/version.  

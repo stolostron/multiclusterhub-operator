@@ -1,5 +1,7 @@
-#!/bin/bash
 # Copyright (c) 2020 Red Hat, Inc.
+# Copyright Contributors to the Open Cluster Management project
+
+#!/bin/bash
 # Tested on Mac only
 # Replaces the image-manifest contents with the latest integration snapshot from the pipeline repo
 

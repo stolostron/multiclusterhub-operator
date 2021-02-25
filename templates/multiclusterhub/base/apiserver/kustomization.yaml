@@ -1,2 +1,4 @@
+# Copyright Contributors to the Open Cluster Management project
+
 resources:
 - apiservice-proxy-server_v1beta1.yaml

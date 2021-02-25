@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 #!/bin/bash
 # gets/puts file to S3
 # s3_persist [put|get] <s3_folder_path> <absolute_path_to_file>

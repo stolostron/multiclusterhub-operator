@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 ifeq ($(wildcard .git),)
   ifeq ($(DEBUG),true)
     $(warning disabling git bootstrapping)

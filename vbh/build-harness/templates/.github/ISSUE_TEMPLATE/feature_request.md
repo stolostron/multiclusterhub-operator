@@ -1,3 +1,5 @@
+[comment]: # ( Copyright Contributors to the Open Cluster Management project )
+
 ---
 name: Feature Request
 about: Suggest an idea for this project

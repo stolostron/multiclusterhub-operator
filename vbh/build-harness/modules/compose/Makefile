@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 DOCKER_NETWORK ?= $(COMPOSE_PROJECT_NAME)_default
 
 DOCKER_MONITOR_TABLE ?= 'table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}\t{{.BlockIO}}'

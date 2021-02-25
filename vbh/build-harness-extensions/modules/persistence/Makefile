@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 # Simple persistence (fancy word for saving, loading, and deleting) via S3
 
 # The following environment variables must be defined so the persistence script can see them:

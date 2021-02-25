@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 export README_LINT ?= $(TMP)/README.md
 export README_FILE ?= README.md
 export README_YAML ?= README.yaml

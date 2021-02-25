@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 namespace: open-cluster-management
 images: # updates operator.yaml with the dev image
 - name: multiclusterhub-operator
