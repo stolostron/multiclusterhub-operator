@@ -1,6 +1,6 @@
+#!/bin/bash
 # Copyright Contributors to the Open Cluster Management project
 
-#!/bin/bash
 
 OPERATOR_SDK_VERSION=v0.15.0
 

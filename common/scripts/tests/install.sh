@@ -1,7 +1,6 @@
+#!/bin/bash
 # Copyright (c) 2020 Red Hat, Inc.
 # Copyright Contributors to the Open Cluster Management project
-
-#!/bin/bash
 
 # 1. Check Variables Are Defined
 # 2. Test Docker Login
