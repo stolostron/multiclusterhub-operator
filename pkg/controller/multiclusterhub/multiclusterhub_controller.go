@@ -330,13 +330,13 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		return reconcile.Result{}, err
 	}
 
-	UpgradeHackRequired, err := r.UpgradeHubSelfMgmtHackRequired(multiClusterHub)
+	CustomUpgradeRequired, err := r.CustomSelfMgmtHubUpgradeRequired(multiClusterHub)
 	if err != nil {
 		reqLogger.Error(err, "Error determining if upgrade specific logic is required")
 		return reconcile.Result{}, err
 	}
 
-	if UpgradeHackRequired {
+	if CustomUpgradeRequired {
 		result, err = r.BeginEnsuringHubIsUpgradeable(multiClusterHub)
 		if err != nil {
 			log.Info(fmt.Sprintf("Error starting to ensure local-cluster hub is upgradeable: %s", err.Error()))

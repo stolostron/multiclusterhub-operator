@@ -24,9 +24,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// UpgradeHubSelfMgmtHackRequired checks the the current version and if hub self management is enabled
+// CustomSelfMgmtHubUpgradeRequired checks the the current version and if hub self management is enabled
 // to determine if special upgrade logic is required
-func (r *ReconcileMultiClusterHub) UpgradeHubSelfMgmtHackRequired(mch *operatorsv1.MultiClusterHub) (bool, error) {
+func (r *ReconcileMultiClusterHub) CustomSelfMgmtHubUpgradeRequired(mch *operatorsv1.MultiClusterHub) (bool, error) {
 	currentVersionConstraint, err := semver.NewConstraint("< 2.1.2, >= 2.1.0")
 	if err != nil {
 		return false, fmt.Errorf("Error setting semver current version constraint < 2.1.2, >=2.1.0")
