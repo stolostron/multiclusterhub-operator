@@ -1,3 +1,5 @@
+[comment]: # ( Copyright Contributors to the Open Cluster Management project )
+
 ## What
 * Added targets to sync codefresh pipelines from code with templates
 

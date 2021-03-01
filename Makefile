@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 # GITHUB_USER containing '@' char must be escaped with '%40'
 GITHUB_USER := $(shell echo $(GITHUB_USER) | sed 's/@/%40/g')
 GITHUB_TOKEN ?=
@@ -34,7 +36,7 @@ export CSV_VERSION ?= 2.3.0
 
 
 export PROJECT_DIR = $(shell 'pwd')
-export GOPACKAGES   = $(shell go list ./... | grep -E -v "manager|test|apis|operators|channel|controller$|version")
+export GOPACKAGES   = $(shell go list ./... | grep -E -v "manager|^test|apis|operators|channel|controller$|version")
 export COMPONENT_SCRIPTS_PATH = $(shell 'pwd')/cicd-scripts
 
 # Use podman if available, otherwise use docker
@@ -180,3 +182,6 @@ update-crds:
 
 update-manifest:
 	bash common/scripts/update-image-manifest.sh
+
+set-copyright:
+	@bash ./cicd-scripts/set-copyright.sh

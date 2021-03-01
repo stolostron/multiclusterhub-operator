@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 resources:
 - ocm-klusterlet-self-signed-secrets.yaml
 - ocm-webhook-secret.yaml

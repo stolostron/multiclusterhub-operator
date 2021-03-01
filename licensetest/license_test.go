@@ -1,7 +1,9 @@
 // Copyright (c) 2020 Red Hat, Inc.
+// Copyright Contributors to the Open Cluster Management project
+
 
 // Package license scans the repo for missing license or copyright headers
-package license
+package licensetest
 
 import (
 	"io/ioutil"
@@ -32,7 +34,7 @@ var skip = map[string]bool{
 	"../build-harness-extensions":    true,
 	"../build-harness":               true,
 	"../build/registration-operator": true,
-	"../build":                    true,
+	"../build":                       true,
 }
 
 func TestLicense(t *testing.T) {

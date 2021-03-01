@@ -1,3 +1,5 @@
+[comment]: # ( Copyright Contributors to the Open Cluster Management project )
+
 ## what
 * Describe high-level what changed as a result of these commits (i.e. in plain-english, what do these changes mean?)
 * Use bullet points to be concise and to the point.

@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 VENDORIZATION_DIRECTORY ?= vbh
 VENDORIZATION_TEMPLATE_FILE ?= $(BUILD_HARNESS_EXTENSIONS_PATH)/templates/Makefile.build-harness-vendorized
 

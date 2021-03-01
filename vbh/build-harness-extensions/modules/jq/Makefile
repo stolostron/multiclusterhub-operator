@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 CURL := $(shell which curl)
 TMP ?= /tmp
 JQ_VERSION ?= 1.5

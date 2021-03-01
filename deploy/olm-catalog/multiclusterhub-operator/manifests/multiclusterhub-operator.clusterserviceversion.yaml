@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:

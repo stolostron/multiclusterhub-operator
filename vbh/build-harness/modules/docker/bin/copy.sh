@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright Contributors to the Open Cluster Management project
+
 
 export FROM_DOCKER_USER=${1:-}
 export FROM_DOCKER_PASS=${2:-}

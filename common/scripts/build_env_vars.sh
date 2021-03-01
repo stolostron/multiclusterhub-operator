@@ -1,5 +1,7 @@
 #!/bin/bash
 # Copyright (c) 2020 Red Hat, Inc.
+# Copyright Contributors to the Open Cluster Management project
+
 # Tested on Mac only
 
 ### This is a temp developer script to test enablement of enviornmental variables to replace the image manifest

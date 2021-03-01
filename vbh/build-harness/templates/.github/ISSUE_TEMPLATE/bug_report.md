@@ -1,3 +1,5 @@
+[comment]: # ( Copyright Contributors to the Open Cluster Management project )
+
 ---
 name: Bug report
 about: Create a report to help us improve

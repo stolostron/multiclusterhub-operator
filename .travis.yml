@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 #
 # Sample .travis.yml using the mvp-helloworld image (a helmoperator)
 #
@@ -76,7 +78,7 @@ jobs:
           make component/test/e2e
     - stage: release-ff
       name: "Push commits to current release branch"
-      if: type = push AND branch =~ /^master$/
+      if: type = push AND branch =~ /^main$/
       script:
         - make
         - make release-ff

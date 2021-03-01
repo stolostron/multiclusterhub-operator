@@ -1,4 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
+// Copyright Contributors to the Open Cluster Management project
+
 
 // Package predicate defines custom predicates used to filter event triggers
 package predicate

@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright Contributors to the Open Cluster Management project
+
 
 export TIMEOUT=3
 export STDOUT=${STDOUT:-/dev/null}

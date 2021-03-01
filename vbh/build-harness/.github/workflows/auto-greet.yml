@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 name: auto-greet
 
 on: [pull_request, issues]

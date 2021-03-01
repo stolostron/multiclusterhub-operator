@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 # The bin of commands to run by default
 COMPONENT_TYPE ?= component
 

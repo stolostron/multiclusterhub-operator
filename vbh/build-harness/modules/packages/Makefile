@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 export INSTALL_PATH ?= $(BUILD_HARNESS_PATH)/vendor
 export PACKAGES_VERSION ?= 0.95.0
 export PACKAGES_PATH ?= $(BUILD_HARNESS_PATH)/vendor/packages

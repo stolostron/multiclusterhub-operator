@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 modules/aws: modules/aws/**
 modules/bash: modules/bash/**
 modules/chamber: modules/chamber/**

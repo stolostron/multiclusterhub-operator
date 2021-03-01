@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 service:
   # When updating this, also update the version stored in docker/build-tools/Dockerfile in the multicloudlab/tools repo.
   golangci-lint-version: 1.18.x # use the fixed version to not introduce new linters unexpectedly

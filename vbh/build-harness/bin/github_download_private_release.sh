@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 #!/usr/bin/env bash
 #
 # github_download_private_release.sh! It works!

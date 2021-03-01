@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 CURL ?= curl
 CHAMBER_VERSION ?= 2.0.0
 CHAMBER ?= chamber

@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 # Full path to this modules' scripts directory.
 SECURITYSCANS_DIR=${BUILD_HARNESS_PATH}/../build-harness-extensions/modules/security-scans/scripts
 

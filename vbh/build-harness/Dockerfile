@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 FROM golang:1.13.4-alpine3.10
 LABEL maintainer="Cloud Posse <hello@cloudposse.com>"
 
