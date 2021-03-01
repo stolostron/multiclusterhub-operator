@@ -1,7 +1,6 @@
+#!/bin/bash
 # Copyright (c) 2020 Red Hat, Inc.
 # Copyright Contributors to the Open Cluster Management project
-
-#!/bin/bash
 
 
 namespaces=$(oc get ns | grep "open-cluster-management\|local-cluster\|kube-system" | awk '{print $1}')
