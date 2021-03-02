@@ -36,61 +36,11 @@ env:
 
 stages:
   - build
-  - unit-test
-  - test-e2e
-  - release-ff
-  - publish
 
 jobs:
   include:
     - stage: build
       name: "Build the component and test images and push them"
       script:
-        - if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then export COMPONENT_TAG_EXTENSION="-PR${TRAVIS_PULL_REQUEST}-${TRAVIS_COMMIT}"; fi;
-        - |
-          make
-          make component/build
-          make component/push
-          make security/scans
-          COMPONENT_NAME=multiclusterhub-operator-tests COMPONENT_BUILD_COMMAND=${TRAVIS_BUILD_DIR}/cicd-scripts/build-test-image.sh
-          make component/build
-          make component/push
-    - stage: unit-test
-      name: "Run unit tests"
-      script:
-        # Set the image tag differently for PRs
-        - if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then export COMPONENT_TAG_EXTENSION="-PR${TRAVIS_PULL_REQUEST}-${TRAVIS_COMMIT}"; fi;
-        # Bootstrap the build harness, pull test image, and run unit tests.  
-        - | 
-          make 
-          make test
-          make component/pull 
-          make sonar/go
-    - stage: test-e2e
-      name: "Deploy the image to a cluster and run e2e tests"
-      if: type = pull_request
-      script:
-        #Check out a clusterpool, set up oc, deploy, run e2e tests, and return clusterpool cluster
-        - if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then export COMPONENT_TAG_EXTENSION="-PR${TRAVIS_PULL_REQUEST}-${TRAVIS_COMMIT}"; fi;
-        - |
-          make 
-          make component/pull 
-          make component/test/e2e
-    - stage: release-ff
-      name: "Push commits to current release branch"
-      if: type = push AND branch =~ /^main$/
-      script:
-        - make
-        - make release-ff
-    - stage: publish
-      name: "Publish the component image to quay with an official version/sha tag and publish entry to integration pipeline stage"
-      if: type = push AND branch =~ /^release-[0-9]+\..*$/
-      script:
-        - |
-          make 
-          make pipeline-manifest/update PIPELINE_MANIFEST_COMPONENT_SHA256=${TRAVIS_COMMIT} PIPELINE_MANIFEST_COMPONENT_REPO=${TRAVIS_REPO_SLUG} PIPELINE_MANIFEST_BRANCH=${TRAVIS_BRANCH}
-          rm -rf pipeline
-          echo "Waiting 60s before publishing test image..." && sleep 60
-          COMPONENT_NAME=multiclusterhub-operator-tests
-          make pipeline-manifest/update PIPELINE_MANIFEST_COMPONENT_SHA256=${TRAVIS_COMMIT} PIPELINE_MANIFEST_COMPONENT_REPO=${TRAVIS_REPO_SLUG} PIPELINE_MANIFEST_BRANCH=${TRAVIS_BRANCH}
-
+        - echo "Hello World"
+          
