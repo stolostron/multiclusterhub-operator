@@ -2,7 +2,7 @@ namespace: open-cluster-management
 images: # updates operator.yaml with the dev image
 - name: multiclusterhub-operator
   newName: quay.io/rhibmcollab/multiclusterhub-operator
-  newTag: 2.0.8
+  newTag: 2.0.9
 resources:
 - role.yaml
 - role_binding.yaml

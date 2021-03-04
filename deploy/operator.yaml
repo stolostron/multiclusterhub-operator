@@ -17,7 +17,7 @@ spec:
       - name: multiclusterhub-operator-pull-secret
       containers:
         - name: multiclusterhub-operator
-          image: multiclusterhub-operator:2.0.8
+          image: multiclusterhub-operator:2.0.9
           imagePullPolicy: Always
           command:
           - multiclusterhub-operator
