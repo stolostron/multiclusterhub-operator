@@ -65,3 +65,6 @@ rules:
   - apiGroups: ["coordination.k8s.io"]
     resources: ["leases"]
     verbs: ["get", "create", "update"]
+  - apiGroups: ["clusterview.open-cluster-management.io"]
+    resources: ["managedclusters","managedclustersets"]
+    verbs: ["list", "get", "watch"]

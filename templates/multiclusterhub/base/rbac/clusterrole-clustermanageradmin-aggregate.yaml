@@ -43,3 +43,6 @@ rules:
 - apiGroups: ["search.open-cluster-management.io"]
   resources: ["searchcustomizations"]
   verbs: ["create","get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+- apiGroups: [ "clusterview.open-cluster-management.io" ]
+  resources: [ "managedclusters","managedclustersets" ]
+  verbs: [ "list","get","watch" ]
