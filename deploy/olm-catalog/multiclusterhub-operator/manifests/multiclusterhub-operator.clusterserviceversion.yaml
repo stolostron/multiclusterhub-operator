@@ -115,6 +115,7 @@ spec:
           - proxy.open-cluster-management.io
           - rbac.authorization.k8s.io
           - security.openshift.io
+          - clusterview.open-cluster-management.io
           resources:
           - apiservices
           - channels
@@ -137,6 +138,8 @@ spec:
           - subjectaccessreviews
           - subscriptions
           - helmreleases
+          - managedclusters
+          - managedclustersets
           verbs:
           - get
         - apiGroups:
@@ -190,6 +193,7 @@ spec:
           - operator.open-cluster-management.io
           - rbac.authorization.k8s.io
           - hive.openshift.io
+          - clusterview.open-cluster-management.io
           resources:
           - apiservices
           - baremetalassets
@@ -210,6 +214,8 @@ spec:
           - subscriptions
           - validatingwebhookconfigurations
           - pods
+          - managedclusters
+          - managedclustersets
           verbs:
           - list
         - apiGroups:
@@ -225,6 +231,7 @@ spec:
           - storage.k8s.io
           - apps.open-cluster-management.io
           - hive.openshift.io
+          - clusterview.open-cluster-management.io
           resources:
           - apiservices
           - helmreleases
@@ -241,6 +248,8 @@ spec:
           - subjectaccessreviews
           - validatingwebhookconfigurations
           - pods
+          - managedclusters
+          - managedclustersets
           verbs:
           - watch
         - apiGroups:

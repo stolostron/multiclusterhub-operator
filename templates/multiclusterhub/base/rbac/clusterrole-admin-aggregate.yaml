@@ -53,3 +53,6 @@ rules:
 - apiGroups: ["addon.open-cluster-management.io"]
   resources: ["managedclusteraddons","managedclusteraddons/status","clustermanagementaddons"]
   verbs: ["get", "list", "watch"]
+- apiGroups: ["clusterview.open-cluster-management.io"]
+  resources: ["managedclusters","managedclustersets"]
+  verbs: ["list","get","watch"]
