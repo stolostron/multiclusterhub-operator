@@ -506,7 +506,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureSubscription(multiClusterHub, subscription.cluster-lifecycle(multiClusterHub, r.CacheSpec.ImageOverrides))
+	result, err = r.ensureSubscription(multiClusterHub, subscription.ClusterLifecycle(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
 	}

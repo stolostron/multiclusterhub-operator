@@ -11,7 +11,7 @@ import (
 )
 
 // cluster-lifecycle overrides the cluster-lifecycle chart
-func cluster-lifecycle(m *operatorsv1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
+func ClusterLifecycle(m *operatorsv1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "cluster-lifecycle",
 		Namespace: m.Namespace,

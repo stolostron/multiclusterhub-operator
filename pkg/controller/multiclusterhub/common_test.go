@@ -275,7 +275,7 @@ func Test_ensureSubscription(t *testing.T) {
 		{
 			Name:         "Test: ensureSubscription - cluster-lifecycle",
 			MCH:          full_mch,
-			Subscription: subscription.cluster-lifecycle(full_mch, cacheSpec.ImageOverrides),
+			Subscription: subscription.ClusterLifecycle(full_mch, cacheSpec.ImageOverrides),
 			Result:       nil,
 		},
 		{
