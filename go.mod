@@ -65,3 +65,6 @@ replace (
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.18.3
 
 )
+
+// Resolves CVE-2020-14040
+replace golang.org/x/text => golang.org/x/text v0.3.5
