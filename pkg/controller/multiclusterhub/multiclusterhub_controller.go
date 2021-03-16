@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package multiclusterhub
 
 import (
@@ -307,6 +306,11 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 			reqLogger.Error(err, "Could not get map of image overrides")
 			return reconcile.Result{}, err
 		}
+	}
+
+	if imageRepo := utils.GetImageRepository(multiClusterHub); imageRepo != "" {
+		reqLogger.Info(fmt.Sprintf("Overriding Image Repository from annotation 'mch-imageRepository': %s", imageRepo))
+		imageOverrides = utils.OverrideImageRepository(imageOverrides, imageRepo)
 	}
 
 	// Check for developer overrides
