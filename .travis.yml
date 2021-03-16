@@ -36,7 +36,6 @@ env:
 
 stages:
   - build
-  - release-ff
 
 jobs:
   include:
@@ -52,9 +51,3 @@ jobs:
           COMPONENT_NAME=multiclusterhub-operator-tests COMPONENT_BUILD_COMMAND=${TRAVIS_BUILD_DIR}/cicd-scripts/build-test-image.sh
           make component/build
           make component/push
-    - stage: release-ff
-      name: "Push commits to current release branch"
-      if: type = push AND branch =~ /^main$/
-      script:
-        - make
-        - make release-ff
