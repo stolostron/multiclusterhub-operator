@@ -1,7 +1,12 @@
 # Copyright Contributors to the Open Cluster Management project
 
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest as cloner
+
+RUN microdnf install git findutils
+COPY cicd-scripts cicd-scripts
+RUN ./cicd-scripts/gather-crds.sh https://github.com/open-cluster-management/hub-crds.git $(cat cicd-scripts/currentCRDs.txt) ./crds
+
 FROM registry.ci.openshift.org/open-cluster-management/builder:go1.13-linux-amd64 AS builder
-# FROM golang:1.13 as builder
 
 WORKDIR /workspace
 COPY . .
@@ -25,7 +30,7 @@ COPY image-manifests /image-manifests
 COPY templates /usr/local/templates
 
 # install CRDs
-COPY crds /crds
+COPY --from=cloner crds /crds
 
 # install operator binary
 COPY --from=builder /workspace/manager ${OPERATOR}
