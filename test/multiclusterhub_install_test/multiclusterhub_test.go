@@ -346,15 +346,10 @@ func FullInstallTestSuite() {
 					"namespace": utils.MCHNamespace,
 				},
 				"spec": map[string]interface{}{
-					"channel": "test",
+					"channel": fmt.Sprintf("%s/charts-v1", utils.MCHNamespace),
 					"name":    "test",
 					"placement": map[string]interface{}{
 						"local": true,
-					},
-					"packageOverrides": []map[string]interface{}{
-						{
-							"packageName": subName,
-						},
 					},
 				},
 			},
@@ -415,7 +410,7 @@ func FullInstallTestSuite() {
 		return
 	})
 
-	FIt(fmt.Sprintf("Installing MCH with old rcm component on cluster"), func() {
+	It(fmt.Sprintf("Installing MCH with old rcm component on cluster"), func() {
 		By("Installing old component")
 		subName := "rcm-sub"
 		sub := &unstructured.Unstructured{
@@ -427,15 +422,10 @@ func FullInstallTestSuite() {
 					"namespace": utils.MCHNamespace,
 				},
 				"spec": map[string]interface{}{
-					"channel": "test",
+					"channel": fmt.Sprintf("%s/charts-v1", utils.MCHNamespace),
 					"name":    "test",
 					"placement": map[string]interface{}{
 						"local": true,
-					},
-					"packageOverrides": []map[string]interface{}{
-						{
-							"packageName": subName,
-						},
 					},
 				},
 			},
