@@ -178,7 +178,7 @@ update-version:
 	./common/scripts/update-version.sh $(OLD_VERSION) $(NEW_VERSION)
 
 update-crds:
-	bash cicd-scripts/gather-crds.sh https://github.com/open-cluster-management/hub-crds.git main ./crds
+	bash common/scripts/gather-crds.sh
 
 update-manifest:
 	bash common/scripts/update-image-manifest.sh
