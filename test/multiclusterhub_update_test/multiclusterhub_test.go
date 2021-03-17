@@ -81,8 +81,11 @@ var _ = Describe("Multiclusterhub", func() {
 		By("Verifying old component has been removed")
 		k8sClient := utils.DynamicKubeClient.Resource(utils.GVRAppSub).Namespace(utils.MCHNamespace)
 		subName := "topology-sub"
+		rcmSubName := "rcm-sub"
 		_, err = k8sClient.Get(context.TODO(), subName, metav1.GetOptions{})
 		Expect(errors.IsNotFound(err)).To(BeTrue(), "should have been deleted by the reconciler and return a NotFound error")
+		_, err = k8sClient.Get(context.TODO(), rcmSubName, metav1.GetOptions{})
+		Expect(errors.IsNotFound(err)).To(BeTrue(), "should have been deleted by the reconciler and return a NotFound error")	
 
 		startVersion, err := semver.NewVersion(os.Getenv(("startVersion")))
 		Expect(err).Should(BeNil())
