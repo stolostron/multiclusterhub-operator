@@ -42,8 +42,7 @@ crd_repo_clone_url="$1"
 what_to_checkout="$2"
 dest_dir="$3"
 
-tmp_root="${TMPDIR:-/tmp}"
-clone_to_spot=$(mktemp -d -p "$tmp_root"  "$me.XXXXXXXX")
+clone_to_spot=$(mktemp -dt  "$me.XXXXXXXX")
 
 # Supress the git CLI's SSH known-host checking in case we use "git@" repo refs.
 # (Note: We undo this config change at the end.)
