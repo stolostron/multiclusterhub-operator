@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package multiclusterhub
 
 import (
@@ -618,6 +617,20 @@ func Test_cleanupFoundation(t *testing.T) {
 
 			//OCM proxy server service
 			result, err = r.ensureService(tt.MCH, foundation.OCMProxyServerService(tt.MCH))
+			if result != nil {
+				t.Fatalf("Failed to ensure foundation resource: %s", err)
+			}
+
+			// OCM apiServices
+			result, err = r.ensureAPIService(tt.MCH, foundation.OCMProxyAPIService(tt.MCH))
+			if result != nil {
+				t.Fatalf("Failed to ensure foundation resource: %s", err)
+			}
+			result, err = r.ensureAPIService(tt.MCH, foundation.OCMClusterViewV1APIService(tt.MCH))
+			if result != nil {
+				t.Fatalf("Failed to ensure foundation resource: %s", err)
+			}
+			result, err = r.ensureAPIService(tt.MCH, foundation.OCMClusterViewV1alpha1APIService(tt.MCH))
 			if result != nil {
 				t.Fatalf("Failed to ensure foundation resource: %s", err)
 			}
