@@ -31,7 +31,7 @@ func TestGetImageOverrideType(t *testing.T) {
 func Test_readManifestFile(t *testing.T) {
 	t.Run("Get manifest", func(t *testing.T) {
 		os.Setenv(ManifestsPathEnvVar, "../../image-manifests")
-		version := "2.0.9"
+		version := "2.0.10"
 		_, err := readManifestFile(version)
 		if err != nil {
 			t.Errorf("readManifestFile() error = %v, wantErr %v", err, nil)
