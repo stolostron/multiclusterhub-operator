@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 // Package license scans the repo for missing license or copyright headers
 package licensetest
 
@@ -14,10 +13,12 @@ import (
 )
 
 // slashScanner is for validating the copyright comment in Go files
-var slashScanner = regexp.MustCompile(`// Copyright \(c\) 2020 Red Hat, Inc\.`)
+var slashScanner = regexp.MustCompile(`// Copyright \(c\) 2021 Red Hat, Inc\.`)
+var slashScanner2020 = regexp.MustCompile(`// Copyright \(c\) 2020 Red Hat, Inc\.`)
 
 // poundScanner is for validating the copyright comment in shell and Python files
-var poundScanner = regexp.MustCompile(`\# Copyright \(c\) 2020 Red Hat, Inc\.`)
+var poundScanner = regexp.MustCompile(`\# Copyright \(c\) 2021 Red Hat, Inc\.`)
+var poundScanner2020 = regexp.MustCompile(`\# Copyright \(c\) 2020 Red Hat, Inc\.`)
 
 var skip = map[string]bool{
 	// Operator SDK boilerplate
@@ -63,12 +64,12 @@ func TestLicense(t *testing.T) {
 
 		// Find license
 		if filepath.Ext(path) == ".go" {
-			if !slashScanner.Match(src) {
+			if !slashScanner.Match(src) && !slashScanner2020.Match(src) {
 				t.Errorf("%v: license header not present", path)
 				return nil
 			}
 		} else {
-			if !poundScanner.Match(src) {
+			if !poundScanner.Match(src) && !poundScanner2020.Match(src) {
 				t.Errorf("%v: license header not present", path)
 				return nil
 			}
