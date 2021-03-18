@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.HUB_OPERATOR_TOKEN }}
 
       - name: Auto Trigger info
         if: github.event_name == 'repository_dispatch'
