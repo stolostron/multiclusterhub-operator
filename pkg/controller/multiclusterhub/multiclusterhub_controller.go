@@ -531,6 +531,24 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		return *result, err
 	}
 
+	// OCM proxy apiService
+	result, err = r.ensureAPIService(multiClusterHub, foundation.OCMProxyAPIService(multiClusterHub))
+	if result != nil {
+		return *result, err
+	}
+
+	// OCM clusterView v1 apiService
+	result, err = r.ensureAPIService(multiClusterHub, foundation.OCMClusterViewV1APIService(multiClusterHub))
+	if result != nil {
+		return *result, err
+	}
+
+	// OCM clusterView v1alpha1 apiService
+	result, err = r.ensureAPIService(multiClusterHub, foundation.OCMClusterViewV1alpha1APIService(multiClusterHub))
+	if result != nil {
+		return *result, err
+	}
+
 	//OCM controller deployment
 	result, err = r.ensureDeployment(multiClusterHub, foundation.OCMControllerDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {

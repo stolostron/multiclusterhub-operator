@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package multiclusterhub
 
 import (
@@ -327,6 +326,27 @@ func (r *ReconcileMultiClusterHub) cleanupFoundation(reqLogger logr.Logger, m *o
 	err := r.client.Delete(context.TODO(), foundation.OCMControllerDeployment(m, emptyOverrides))
 	if err != nil && !errors.IsNotFound(err) {
 		reqLogger.Error(err, "Error deleting OCM controller deployment")
+		return err
+	}
+
+	reqLogger.Info("Deleting OCM proxy apiService")
+	err = r.client.Delete(context.TODO(), foundation.OCMProxyAPIService(m))
+	if err != nil && !errors.IsNotFound(err) {
+		reqLogger.Error(err, "Error deleting OCM proxy  apiService")
+		return err
+	}
+
+	reqLogger.Info("Deleting OCM clusterView v1 apiService")
+	err = r.client.Delete(context.TODO(), foundation.OCMClusterViewV1APIService(m))
+	if err != nil && !errors.IsNotFound(err) {
+		reqLogger.Error(err, "Error deleting OCM clusterView v1 apiService")
+		return err
+	}
+
+	reqLogger.Info("Deleting OCM  clusterView v1alpha1 apiService")
+	err = r.client.Delete(context.TODO(), foundation.OCMClusterViewV1alpha1APIService(m))
+	if err != nil && !errors.IsNotFound(err) {
+		reqLogger.Error(err, "Error deleting OCM clusterView v1alpha1 apiService")
 		return err
 	}
 

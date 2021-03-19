@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package foundation
 
 import (
@@ -13,10 +12,19 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 )
 
-// OCMProxyServerName is the name of the ocm proxy server deployment
-const OCMProxyServerName string = "ocm-proxyserver"
+const (
+	// OCMProxyServerName is the name of the ocm proxy server deployment
+	OCMProxyServerName string = "ocm-proxyserver"
+
+	OCMProxyAPIServiceName               string = "v1beta1.proxy.open-cluster-management.io"
+	OCMClusterViewV1APIServiceName       string = "v1.clusterview.open-cluster-management.io"
+	OCMClusterViewV1alpha1APIServiceName string = "v1alpha1.clusterview.open-cluster-management.io"
+	OCMProxyGroup                        string = "proxy.open-cluster-management.io"
+	OCMClusterViewGroup                  string = "clusterview.open-cluster-management.io"
+)
 
 // OCMProxyServerDeployment creates the deployment for the ocm proxy server
 func OCMProxyServerDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
@@ -131,5 +139,71 @@ func OCMProxyServerService(m *operatorsv1.MultiClusterHub) *corev1.Service {
 	s.SetOwnerReferences([]metav1.OwnerReference{
 		*metav1.NewControllerRef(m, m.GetObjectKind().GroupVersionKind()),
 	})
+	return s
+}
+
+// OCMProxyAPIService creates an apiservice object for the ocm proxy api
+func OCMProxyAPIService(m *operatorsv1.MultiClusterHub) *apiregistrationv1.APIService {
+	s := &apiregistrationv1.APIService{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: OCMProxyAPIServiceName,
+		},
+		Spec: apiregistrationv1.APIServiceSpec{
+			Service: &apiregistrationv1.ServiceReference{
+				Namespace: m.Namespace,
+				Name:      OCMProxyServerName,
+			},
+			Group:                 OCMProxyGroup,
+			Version:               "v1beta1",
+			InsecureSkipTLSVerify: true,
+			GroupPriorityMinimum:  10000,
+			VersionPriority:       20,
+		},
+	}
+
+	return s
+}
+
+// OCMClusterViewV1APIService creates an apiservice object for the ocm clusterview api v1
+func OCMClusterViewV1APIService(m *operatorsv1.MultiClusterHub) *apiregistrationv1.APIService {
+	s := &apiregistrationv1.APIService{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: OCMClusterViewV1APIServiceName,
+		},
+		Spec: apiregistrationv1.APIServiceSpec{
+			Service: &apiregistrationv1.ServiceReference{
+				Namespace: m.Namespace,
+				Name:      OCMProxyServerName,
+			},
+			Group:                 OCMClusterViewGroup,
+			Version:               "v1",
+			InsecureSkipTLSVerify: true,
+			GroupPriorityMinimum:  10,
+			VersionPriority:       20,
+		},
+	}
+
+	return s
+}
+
+// OCMClusterViewV1alpha1APIService creates an apiservice object for the ocm clusterview api V1alpha1
+func OCMClusterViewV1alpha1APIService(m *operatorsv1.MultiClusterHub) *apiregistrationv1.APIService {
+	s := &apiregistrationv1.APIService{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: OCMClusterViewV1alpha1APIServiceName,
+		},
+		Spec: apiregistrationv1.APIServiceSpec{
+			Service: &apiregistrationv1.ServiceReference{
+				Namespace: m.Namespace,
+				Name:      OCMProxyServerName,
+			},
+			Group:                 OCMClusterViewGroup,
+			Version:               "v1alpha1",
+			InsecureSkipTLSVerify: true,
+			GroupPriorityMinimum:  10,
+			VersionPriority:       20,
+		},
+	}
+
 	return s
 }
