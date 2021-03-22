@@ -73,7 +73,7 @@ if [[ $? -ne 0 ]]; then
    exit 3
 fi
 
-find "$clone_to_spot" -name '*.yaml' -print0 | xargs -I '{}' -0 cp '{}' "$dest_dir"
+find "$clone_to_spot/crds" -name '*.yaml' -print0 | xargs -I '{}' -0 cp '{}' "$dest_dir"
 
 # Clean up our temp stuff.
 
