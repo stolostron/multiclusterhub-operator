@@ -204,6 +204,7 @@ rules:
 - apiGroups:
   - ""
   - "apps"
+  - "apiregistration.k8s.io"
   - "apps.open-cluster-management.io"
   - "apiextensions.k8s.io"
   resources:
@@ -211,6 +212,7 @@ rules:
   - services
   - channels
   - customresourcedefinitions
+  - apiservices
   verbs:
   - delete
 
