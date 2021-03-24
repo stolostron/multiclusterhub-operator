@@ -3,7 +3,7 @@ kind: Kustomization
 images:
 - name: multiclusterhub-operator
   newName: quay.io/rhibmcollab/multiclusterhub-operator
-  newTag: 2.1.5-index
+  newTag: 2.1.6-index
 resources:
 - catalogsource.yaml
 - service.yaml
