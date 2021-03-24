@@ -41,7 +41,7 @@ ft-downstream-update:
 		--env name=$(SUBSCRIPTION_NAME) \
 		--env TEST_MODE="update" \
 		--env startVersion="2.0.0" \
-		--env updateVersion="2.1.5" \
+		--env updateVersion="2.1.6" \
 		--volume ~/.kube/config:/opt/.kube/config \
 		$(REGISTRY)/$(IMG)-tests:$(VERSION)
 
@@ -62,7 +62,7 @@ ft-update:
 		name=$(SUBSCRIPTION_NAME) \
 		TEST_MODE="update" \
 		startVersion="2.0.1" \
-		updateVersion="2.1.5";	ginkgo -tags functional -v --slowSpecThreshold=300 test/multiclusterhub_update_test
+		updateVersion="2.1.6";	ginkgo -tags functional -v --slowSpecThreshold=300 test/multiclusterhub_update_test
 
 ## Build the MCH functional test image
 test-image: deps
@@ -76,7 +76,7 @@ test-image: deps
 # Usage: common/scripts/bundle-acm.sh "<Starting Snapshot>" <Update Snapshot> <Start Version> <Update Version>
 ## Creates an index image to test updates
 test-update-image:
-	bash common/scripts/bundle-acm.sh "2.0.1-SNAPSHOT-2020-08-20-19-07-00" "2.1.5-SNAPSHOT-2020-08-21-16-48-23" "2.0.1" "2.1.5"
+	bash common/scripts/bundle-acm.sh "2.0.1-SNAPSHOT-2020-08-20-19-07-00" "2.1.6-SNAPSHOT-2020-08-21-16-48-23" "2.0.1" "2.1.6"
 
 acm-index-install: ns secrets og test-update-image
 	# Run `make  test-update-image` to generate a new index if necessary
