@@ -346,15 +346,86 @@ func FullInstallTestSuite() {
 					"namespace": utils.MCHNamespace,
 				},
 				"spec": map[string]interface{}{
-					"channel": "test",
+					"channel": fmt.Sprintf("%s/charts-v1", utils.MCHNamespace),
 					"name":    "test",
 					"placement": map[string]interface{}{
 						"local": true,
 					},
-					"packageOverrides": []map[string]interface{}{
-						{
-							"packageName": subName,
-						},
+				},
+			},
+		}
+		k8sClient := utils.DynamicKubeClient.Resource(utils.GVRAppSub).Namespace(utils.MCHNamespace)
+		_, err := k8sClient.Create(context.TODO(), sub, metav1.CreateOptions{})
+		Expect(err).ToNot(HaveOccurred())
+		// Clean up resource manually in case of failure
+		defer k8sClient.Delete(context.TODO(), subName, metav1.DeleteOptions{})
+
+		By("Installing MCH")
+		utils.CreateDefaultMCH()
+		Expect(utils.ValidateMCH()).To(Succeed())
+
+		By("Verifying old component has been removed")
+		_, err = k8sClient.Get(context.TODO(), subName, metav1.GetOptions{})
+		Expect(errors.IsNotFound(err)).To(BeTrue(), "should have been deleted by the reconciler and return a NotFound error")
+
+		By("Verifying status is not complete while a resource has not been successfully pruned")
+		// Create appsub again, this time with a finalizer
+		finalizer := []string{"test-finalizer"}
+		sub.SetFinalizers(finalizer)
+		_, err = k8sClient.Create(context.TODO(), sub, metav1.CreateOptions{})
+		Expect(err).ToNot(HaveOccurred())
+		// Remove finalizer manually in case of failure
+		defer func() {
+			dsub, err := k8sClient.Get(context.TODO(), subName, metav1.GetOptions{})
+			if err != nil {
+				return
+			}
+			dsub.SetFinalizers([]string{})
+			k8sClient.Update(context.TODO(), dsub, metav1.UpdateOptions{})
+		}()
+
+		// Force reconcile
+		Expect(utils.DeleteMCHRepo()).To(Succeed())
+
+		timeout := 2 * time.Minute
+		interval := time.Second * 2
+		Eventually(func() error {
+			status, err := utils.GetMCHStatus()
+			if err != nil {
+				return err
+			}
+			return utils.FindCondition(status, "Progressing", "False")
+		}, timeout, interval).Should(Succeed(), "the blocked resource deletion should prevent progress")
+
+		By("Verifying status recovers once the blocked resource is cleaned up")
+		Eventually(func() error {
+			unblockedSub, _ := k8sClient.Get(context.TODO(), subName, metav1.GetOptions{})
+			unblockedSub.SetFinalizers([]string{})
+			_, err = k8sClient.Update(context.TODO(), unblockedSub, metav1.UpdateOptions{})
+			return err
+		}, time.Minute, time.Second).Should(Succeed(), "the blocked resource deletion should prevent progress")
+
+		Expect(utils.ValidateMCH()).To(Succeed())
+
+		return
+	})
+
+	It(fmt.Sprintf("Installing MCH with old rcm component on cluster"), func() {
+		By("Installing old component")
+		subName := "rcm-sub"
+		sub := &unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"apiVersion": "apps.open-cluster-management.io/v1",
+				"kind":       "Subscription",
+				"metadata": map[string]interface{}{
+					"name":      subName,
+					"namespace": utils.MCHNamespace,
+				},
+				"spec": map[string]interface{}{
+					"channel": fmt.Sprintf("%s/charts-v1", utils.MCHNamespace),
+					"name":    "test",
+					"placement": map[string]interface{}{
+						"local": true,
 					},
 				},
 			},

@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package multiclusterhub
 
 import (
@@ -309,6 +308,11 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		}
 	}
 
+	if imageRepo := utils.GetImageRepository(multiClusterHub); imageRepo != "" {
+		reqLogger.Info(fmt.Sprintf("Overriding Image Repository from annotation 'mch-imageRepository': %s", imageRepo))
+		imageOverrides = utils.OverrideImageRepository(imageOverrides, imageRepo)
+	}
+
 	// Check for developer overrides
 	if imageOverridesConfigmap := utils.GetImageOverridesConfigmap(multiClusterHub); imageOverridesConfigmap != "" {
 		imageOverrides, err = r.OverrideImagesFromConfigmap(imageOverrides, multiClusterHub.GetNamespace(), imageOverridesConfigmap)
@@ -506,7 +510,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureSubscription(multiClusterHub, subscription.RCM(multiClusterHub, r.CacheSpec.ImageOverrides))
+	result, err = r.ensureSubscription(multiClusterHub, subscription.ClusterLifecycle(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
 	}
@@ -523,6 +527,24 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 
 	//OCM proxy server service
 	result, err = r.ensureService(multiClusterHub, foundation.OCMProxyServerService(multiClusterHub))
+	if result != nil {
+		return *result, err
+	}
+
+	// OCM proxy apiService
+	result, err = r.ensureAPIService(multiClusterHub, foundation.OCMProxyAPIService(multiClusterHub))
+	if result != nil {
+		return *result, err
+	}
+
+	// OCM clusterView v1 apiService
+	result, err = r.ensureAPIService(multiClusterHub, foundation.OCMClusterViewV1APIService(multiClusterHub))
+	if result != nil {
+		return *result, err
+	}
+
+	// OCM clusterView v1alpha1 apiService
+	result, err = r.ensureAPIService(multiClusterHub, foundation.OCMClusterViewV1alpha1APIService(multiClusterHub))
 	if result != nil {
 		return *result, err
 	}

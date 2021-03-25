@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package multiclusterhub
 
 import (
@@ -9,6 +8,7 @@ import (
 	"encoding/json"
 	e "errors"
 	"fmt"
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"reflect"
 
 	"time"
@@ -133,6 +133,39 @@ func (r *ReconcileMultiClusterHub) ensureService(m *operatorsv1.MultiClusterHub,
 	} else if err != nil {
 		// Error that isn't due to the service not existing
 		svlog.Error(err, "Failed to get Service")
+		return &reconcile.Result{}, err
+	}
+
+	return nil, nil
+}
+
+func (r *ReconcileMultiClusterHub) ensureAPIService(m *operatorsv1.MultiClusterHub, s *apiregistrationv1.APIService) (*reconcile.Result, error) {
+	svlog := log.WithValues("Service.Name", s.Name)
+
+	found := &apiregistrationv1.APIService{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{
+		Name: s.Name,
+	}, found)
+	if err != nil && errors.IsNotFound(err) {
+
+		// Create the apiService
+		err = r.client.Create(context.TODO(), s)
+
+		if err != nil {
+			// Creation failed
+			svlog.Error(err, "Failed to create new apiService")
+			return &reconcile.Result{}, err
+		}
+
+		// Creation was successful
+		svlog.Info("Created a new apiService")
+		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+		SetHubCondition(&m.Status, *condition)
+		return nil, nil
+
+	} else if err != nil {
+		// Error that isn't due to the apiService not existing
+		svlog.Error(err, "Failed to get apiService")
 		return &reconcile.Result{}, err
 	}
 

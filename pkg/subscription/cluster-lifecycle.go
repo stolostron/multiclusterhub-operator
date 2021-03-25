@@ -10,10 +10,10 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-// RCM overrides the rcm chart
-func RCM(m *operatorsv1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
+// cluster-lifecycle overrides the cluster-lifecycle chart
+func ClusterLifecycle(m *operatorsv1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
 	sub := &Subscription{
-		Name:      "rcm",
+		Name:      "cluster-lifecycle",
 		Namespace: m.Namespace,
 		Overrides: map[string]interface{}{
 			"hubconfig": map[string]interface{}{

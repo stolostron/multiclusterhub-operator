@@ -273,9 +273,9 @@ func Test_ensureSubscription(t *testing.T) {
 			Result:       nil,
 		},
 		{
-			Name:         "Test: ensureSubscription - RCM",
+			Name:         "Test: ensureSubscription - cluster-lifecycle",
 			MCH:          full_mch,
-			Subscription: subscription.RCM(full_mch, cacheSpec.ImageOverrides),
+			Subscription: subscription.ClusterLifecycle(full_mch, cacheSpec.ImageOverrides),
 			Result:       nil,
 		},
 		{

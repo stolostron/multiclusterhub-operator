@@ -1,10 +1,10 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package utils
 
 import (
+	"fmt"
 	"strings"
 
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
@@ -67,4 +67,12 @@ func GetImageSuffix(instance *operatorsv1.MultiClusterHub) string {
 // GetImageOverridesConfigmap returns the images override configmap annotation, or an empty string if not set
 func GetImageOverridesConfigmap(instance *operatorsv1.MultiClusterHub) string {
 	return getAnnotation(instance, AnnotationImageOverridesCM)
+}
+
+func OverrideImageRepository(imageOverrides map[string]string, imageRepo string) map[string]string {
+	for imageKey, imageRef := range imageOverrides {
+		image := strings.LastIndex(imageRef, "/")
+		imageOverrides[imageKey] = fmt.Sprintf("%s%s", imageRepo, imageRef[image:])
+	}
+	return imageOverrides
 }

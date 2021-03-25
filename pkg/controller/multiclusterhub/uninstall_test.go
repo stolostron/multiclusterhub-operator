@@ -43,6 +43,23 @@ func Test_newUnstructured(t *testing.T) {
 			},
 		},
 		{
+			name: "RcmSubscription",
+			args: args{
+				nn:  types.NamespacedName{Name: "rcm-sub", Namespace: "test"},
+				gvk: schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
+			},
+			want: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps.open-cluster-management.io/v1",
+					"kind":       "Subscription",
+					"metadata": map[string]interface{}{
+						"name":      "rcm-sub",
+						"namespace": "test",
+					},
+				},
+			},
+		},
+		{
 			name: "CRD",
 			args: args{
 				nn:  types.NamespacedName{Name: "searchcollectors.agent.open-cluster-management.io", Namespace: "test"},
