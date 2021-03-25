@@ -221,6 +221,7 @@ rules:
   - ""
   - "action.open-cluster-management.io"
   - "agent.open-cluster-management.io"
+  - "argoproj.io"
   - "cluster.open-cluster-management.io"
   - "work.open-cluster-management.io"
   - "app.k8s.io"
