@@ -8,51 +8,208 @@ metadata:
     rbac.authorization.k8s.io/aggregate-to-ocm-cluster-manager-admin: "true"
   name: open-cluster-management:admin-aggregate
 rules:
-- apiGroups: ["cluster.open-cluster-management.io"]
-  resources: ["managedclusters", "managedclusters/status"]
-  verbs: ["get", "list", "watch", "update","delete", "deletecollection", "patch"]
-- apiGroups: ["work.open-cluster-management.io"]
-  resources: ["manifestworks", "manifestworks/status"]
-  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
-- apiGroups: ["action.open-cluster-management.io"]
-  resources: ["managedclusteractions", "managedclusteractions/status"]
-  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
-- apiGroups: ["view.open-cluster-management.io"]
-  resources: ["managedclusterviews", "managedclusterviews/status"]
-  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
-- apiGroups: ["internal.open-cluster-management.io"]
-  resources: ["managedclusterinfos", "managedclusterinfos/status"]
-  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
-- apiGroups: ["mcm.ibm.com"]
-  resources: ["deployables", "deployables/status", "deployableoverrides", "deployableoverrides/status", "applicationrelationships", "applicationrelationships/status"]
-  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
-- apiGroups: ["apps.open-cluster-management.io"]
-  resources: [ "deployables", "deployables/status", "placementrules", "placementrules/status", "channels", "channels/status", "subscriptions", "subscriptions/status"]
-  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
-- apiGroups: ["app.k8s.io"]
-  resources: [ "applications", "applications/status"]
-  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
-- apiGroups: ["policy.open-cluster-management.io"]
-  resources: ["policies","policies/status","placementbindings"]
-  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
-- apiGroups: ["agent.open-cluster-management.io"]
-  resources: ["klusterletaddonconfigs"]
-  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
-- apiGroups: ["hive.openshift.io"]
-  resources: ["clusterdeployments", "machinepools"]
-  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
-- apiGroups: ["config.openshift.io"]
-  resources: ["clusterversions"]
-  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
-- apiGroups: ["inventory.open-cluster-management.io"]
-  resources: ["baremetalassets"]
-  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
-- apiGroups: ["proxy.open-cluster-management.io"]
-  resources: ["clusterstatuses/log"]
-  verbs: ["get"]
-- apiGroups: ["addon.open-cluster-management.io"]
-  resources: ["managedclusteraddons","managedclusteraddons/status","clustermanagementaddons"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["clusterview.open-cluster-management.io"]
-  resources: ["managedclusters","managedclustersets"]
-  verbs: ["list","get","watch"]
+  - apiGroups: ["cluster.open-cluster-management.io"]
+    resources: ["managedclusters", "managedclusters/status"]
+    verbs:
+      ["get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+  - apiGroups: ["work.open-cluster-management.io"]
+    resources: ["manifestworks", "manifestworks/status"]
+    verbs:
+      [
+        "create",
+        "get",
+        "list",
+        "watch",
+        "update",
+        "delete",
+        "deletecollection",
+        "patch",
+      ]
+  - apiGroups: ["action.open-cluster-management.io"]
+    resources: ["managedclusteractions", "managedclusteractions/status"]
+    verbs:
+      [
+        "create",
+        "get",
+        "list",
+        "watch",
+        "update",
+        "delete",
+        "deletecollection",
+        "patch",
+      ]
+  - apiGroups: ["view.open-cluster-management.io"]
+    resources: ["managedclusterviews", "managedclusterviews/status"]
+    verbs:
+      [
+        "create",
+        "get",
+        "list",
+        "watch",
+        "update",
+        "delete",
+        "deletecollection",
+        "patch",
+      ]
+  - apiGroups: ["internal.open-cluster-management.io"]
+    resources: ["managedclusterinfos", "managedclusterinfos/status"]
+    verbs:
+      [
+        "create",
+        "get",
+        "list",
+        "watch",
+        "update",
+        "delete",
+        "deletecollection",
+        "patch",
+      ]
+  - apiGroups: ["mcm.ibm.com"]
+    resources:
+      [
+        "deployables",
+        "deployables/status",
+        "deployableoverrides",
+        "deployableoverrides/status",
+        "applicationrelationships",
+        "applicationrelationships/status",
+      ]
+    verbs:
+      [
+        "create",
+        "get",
+        "list",
+        "watch",
+        "update",
+        "delete",
+        "deletecollection",
+        "patch",
+      ]
+  - apiGroups: ["apps.open-cluster-management.io"]
+    resources:
+      [
+        "deployables",
+        "deployables/status",
+        "placementrules",
+        "placementrules/status",
+        "channels",
+        "channels/status",
+        "subscriptions",
+        "subscriptions/status",
+      ]
+    verbs:
+      [
+        "create",
+        "get",
+        "list",
+        "watch",
+        "update",
+        "delete",
+        "deletecollection",
+        "patch",
+      ]
+  - apiGroups: ["app.k8s.io"]
+    resources: ["applications", "applications/status"]
+    verbs:
+      [
+        "create",
+        "get",
+        "list",
+        "watch",
+        "update",
+        "delete",
+        "deletecollection",
+        "patch",
+      ]
+  - apiGroups: ["argoproj.io"]
+    resources: ["applications", "applications/status"]
+    verbs:
+      [
+        "create",
+        "get",
+        "list",
+        "watch",
+        "update",
+        "delete",
+        "deletecollection",
+        "patch",
+      ]
+  - apiGroups: ["policy.open-cluster-management.io"]
+    resources: ["policies", "policies/status", "placementbindings"]
+    verbs:
+      [
+        "create",
+        "get",
+        "list",
+        "watch",
+        "update",
+        "delete",
+        "deletecollection",
+        "patch",
+      ]
+  - apiGroups: ["agent.open-cluster-management.io"]
+    resources: ["klusterletaddonconfigs"]
+    verbs:
+      [
+        "create",
+        "get",
+        "list",
+        "watch",
+        "update",
+        "delete",
+        "deletecollection",
+        "patch",
+      ]
+  - apiGroups: ["hive.openshift.io"]
+    resources: ["clusterdeployments", "machinepools"]
+    verbs:
+      [
+        "create",
+        "get",
+        "list",
+        "watch",
+        "update",
+        "delete",
+        "deletecollection",
+        "patch",
+      ]
+  - apiGroups: ["config.openshift.io"]
+    resources: ["clusterversions"]
+    verbs:
+      [
+        "create",
+        "get",
+        "list",
+        "watch",
+        "update",
+        "delete",
+        "deletecollection",
+        "patch",
+      ]
+  - apiGroups: ["inventory.open-cluster-management.io"]
+    resources: ["baremetalassets"]
+    verbs:
+      [
+        "create",
+        "get",
+        "list",
+        "watch",
+        "update",
+        "delete",
+        "deletecollection",
+        "patch",
+      ]
+  - apiGroups: ["proxy.open-cluster-management.io"]
+    resources: ["clusterstatuses/log"]
+    verbs: ["get"]
+  - apiGroups: ["addon.open-cluster-management.io"]
+    resources:
+      [
+        "managedclusteraddons",
+        "managedclusteraddons/status",
+        "clustermanagementaddons",
+      ]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["clusterview.open-cluster-management.io"]
+    resources: ["managedclusters", "managedclustersets"]
+    verbs: ["list", "get", "watch"]

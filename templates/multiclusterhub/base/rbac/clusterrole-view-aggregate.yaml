@@ -7,51 +7,77 @@ metadata:
     rbac.authorization.k8s.io/aggregate-to-view: "true"
   name: open-cluster-management:view-aggregate
 rules:
-- apiGroups: ["cluster.open-cluster-management.io"]
-  resources: ["managedclusters", "managedclusters/status"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["work.open-cluster-management.io"]
-  resources: ["manifestworks", "manifestworks/status"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["action.open-cluster-management.io"]
-  resources: ["managedclusteractions", "managedclusteractions/status"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["view.open-cluster-management.io"]
-  resources: ["managedclusterviews", "managedclusterviews/status"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["internal.open-cluster-management.io"]
-  resources: ["managedclusterinfos", "managedclusterinfos/status"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["mcm.ibm.com"]
-  resources: ["deployables", "deployables/status", "deployableoverrides", "deployableoverrides/status", "applicationrelationships", "applicationrelationships/status"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["apps.open-cluster-management.io"]
-  resources: [ "deployables", "deployables/status", "placementrules", "placementrules/status", "channels", "channels/status", "subscriptions", "subscriptions/status"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["app.k8s.io"]
-  resources: [ "applications", "applications/status"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["policy.open-cluster-management.io"]
-  resources: ["policies","policies/status","placementbindings"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["agent.open-cluster-management.io"]
-  resources: ["klusterletaddonconfigs"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["hive.openshift.io"]
-  resources: ["clusterdeployments", "machinepools"]
-  verbs: ["get", "list"]
-- apiGroups: ["config.openshift.io"]
-  resources: ["clusterversions"]
-  verbs: ["get", "list"]
-- apiGroups: ["inventory.open-cluster-management.io"]
-  resources: ["baremetalassets"]
-  verbs: ["get", "list"]
-- apiGroups: ["proxy.open-cluster-management.io"]
-  resources: ["clusterstatuses/log"]
-  verbs: ["get"]
-- apiGroups: ["addon.open-cluster-management.io"]
-  resources: ["managedclusteraddons","managedclusteraddons/status","clustermanagementaddons"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["clusterview.open-cluster-management.io"]
-  resources: ["managedclusters","managedclustersets"]
-  verbs: ["list","get","watch"]
+  - apiGroups: ["cluster.open-cluster-management.io"]
+    resources: ["managedclusters", "managedclusters/status"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["work.open-cluster-management.io"]
+    resources: ["manifestworks", "manifestworks/status"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["action.open-cluster-management.io"]
+    resources: ["managedclusteractions", "managedclusteractions/status"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["view.open-cluster-management.io"]
+    resources: ["managedclusterviews", "managedclusterviews/status"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["internal.open-cluster-management.io"]
+    resources: ["managedclusterinfos", "managedclusterinfos/status"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["mcm.ibm.com"]
+    resources:
+      [
+        "deployables",
+        "deployables/status",
+        "deployableoverrides",
+        "deployableoverrides/status",
+        "applicationrelationships",
+        "applicationrelationships/status",
+      ]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps.open-cluster-management.io"]
+    resources:
+      [
+        "deployables",
+        "deployables/status",
+        "placementrules",
+        "placementrules/status",
+        "channels",
+        "channels/status",
+        "subscriptions",
+        "subscriptions/status",
+      ]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["app.k8s.io"]
+    resources: ["applications", "applications/status"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["argoproj.io"]
+    resources: ["applications", "applications/status"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["policy.open-cluster-management.io"]
+    resources: ["policies", "policies/status", "placementbindings"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["agent.open-cluster-management.io"]
+    resources: ["klusterletaddonconfigs"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["hive.openshift.io"]
+    resources: ["clusterdeployments", "machinepools"]
+    verbs: ["get", "list"]
+  - apiGroups: ["config.openshift.io"]
+    resources: ["clusterversions"]
+    verbs: ["get", "list"]
+  - apiGroups: ["inventory.open-cluster-management.io"]
+    resources: ["baremetalassets"]
+    verbs: ["get", "list"]
+  - apiGroups: ["proxy.open-cluster-management.io"]
+    resources: ["clusterstatuses/log"]
+    verbs: ["get"]
+  - apiGroups: ["addon.open-cluster-management.io"]
+    resources:
+      [
+        "managedclusteraddons",
+        "managedclusteraddons/status",
+        "clustermanagementaddons",
+      ]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["clusterview.open-cluster-management.io"]
+    resources: ["managedclusters", "managedclustersets"]
+    verbs: ["list", "get", "watch"]
