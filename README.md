@@ -66,7 +66,6 @@ If editing the configmap directly instead of creating/deleting it each time, an 
 kubectl delete pod multiclusterhub-operator-xxxxx-xxxxx
 ```
 
-
 [install_guide]: /docs/installation.md
 [config_guide]: /docs/configuration.md
 [deploy]: https://github.com/open-cluster-management/deploy
