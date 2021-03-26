@@ -8,7 +8,7 @@ metadata:
   name: ocm-mutating-webhook
 webhooks:
 - admissionReviewVersions:
-  - v1beta1
+  - v1
   clientConfig:
     caBundle: abc
     service:
