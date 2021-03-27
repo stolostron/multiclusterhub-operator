@@ -1,4 +1,4 @@
-FROM registry.ci.openshift.org/open-cluster-management/builder:go1.13-linux-amd64 AS builder
+FROM registry.ci.openshift.org/open-cluster-management/builder:go1.16-linux-amd64 AS builder
 
 RUN go get github.com/onsi/ginkgo/ginkgo
 RUN go get github.com/onsi/gomega/...
