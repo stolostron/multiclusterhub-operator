@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package manifest
 
 import (
@@ -108,6 +107,10 @@ func buildFullImageReference(mch *operatorsv1.MultiClusterHub, mi ManifestImage)
 func manifestFormat(mi ManifestImage, registry string) string {
 	image := mi.ImageName
 	digest := mi.ImageDigest
+	tag := mi.ImageTag
+	if digest == "" {
+		return fmt.Sprintf("%s/%s:%s", registry, image, tag)
+	}
 	return fmt.Sprintf("%s/%s@%s", registry, image, digest)
 }
 
