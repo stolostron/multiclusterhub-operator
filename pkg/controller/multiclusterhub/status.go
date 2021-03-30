@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package multiclusterhub
 
 import (
@@ -60,6 +59,8 @@ const (
 	// NamespaceTerminatingReason is added when a managed cluster's namespace has been deleted and
 	// is waiting to be finalized
 	NamespaceTerminatingReason = "ManagedClusterNamespaceTerminating"
+	// ResourceRenderReason is added when an error occurs while rendering a deployable resource
+	ResourceRenderReason = "FailedRenderingResource"
 )
 
 func getDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
