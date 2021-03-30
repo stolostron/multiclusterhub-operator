@@ -6,11 +6,11 @@ RUN microdnf install git findutils
 COPY cicd-scripts cicd-scripts
 RUN ./cicd-scripts/gather-crds.sh https://github.com/open-cluster-management/hub-crds.git $(cat cicd-scripts/currentCRDs.txt) ./crds
 
-FROM registry.ci.openshift.org/open-cluster-management/builder:go1.13-linux-amd64 AS builder
+FROM registry.ci.openshift.org/open-cluster-management/builder:go1.16-linux-amd64 AS builder
 
 WORKDIR /workspace
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -o manager ./cmd/manager
+RUN go build -o manager ./cmd/manager
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
