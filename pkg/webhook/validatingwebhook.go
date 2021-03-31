@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package webhook
 
 import (
@@ -173,6 +172,19 @@ func (m *multiClusterHubValidator) validateDelete(req admission.Request) error {
 		}
 	}
 
+	discoveryConfigList := &unstructured.UnstructuredList{}
+	discoveryConfigList.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "discovery.open-cluster-management.io",
+		Version: "v1",
+		Kind:    "DiscoveryConfigList",
+	})
+
+	discoveryConfigErr := m.client.List(context.TODO(), discoveryConfigList)
+	if discoveryConfigErr == nil {
+		if len(discoveryConfigList.Items) > 0 {
+			return errors.New("Cannot delete MultiClusterHub resource because DiscoveryConfig resource(s) exist")
+		}
+	}
 	return nil
 }
 

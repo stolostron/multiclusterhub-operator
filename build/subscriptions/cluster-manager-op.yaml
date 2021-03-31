@@ -11,4 +11,3 @@ spec:
   name: cluster-manager
   source: community-operators
   sourceNamespace: openshift-marketplace
-  startingCSV: cluster-manager.v0.2.0

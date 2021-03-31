@@ -33,6 +33,23 @@ var _ = Describe("Multiclusterhub", func() {
 	})
 
 	if os.Getenv("full_test_suite") == "true" {
+		It("Block MCH uninstall if DiscoveryConfig exists", func() {
+			By("Creating MultiClusterHub")
+			utils.CreateDefaultMCH()
+			utils.ValidateMCH()
+
+			utils.CreateDiscoveryConfig()
+
+			err := utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Delete(context.TODO(), utils.MCHName, metav1.DeleteOptions{})
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).Should(BeEquivalentTo("admission webhook \"multiclusterhub.validating-webhook.open-cluster-management.io\" denied the request: Cannot delete MultiClusterHub resource because DiscoveryConfig resource(s) exist"))
+
+			utils.DeleteDiscoveryConfig()
+
+			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
+			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
+
+		})
 		It("Block MCH uninstall if Observability is running", func() {
 			By("Creating MultiClusterHub")
 			utils.CreateDefaultMCH()
@@ -103,7 +120,6 @@ var _ = Describe("Multiclusterhub", func() {
 			err := utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Delete(context.TODO(), utils.MCHName, metav1.DeleteOptions{})
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).Should(BeEquivalentTo("admission webhook \"multiclusterhub.validating-webhook.open-cluster-management.io\" denied the request: Cannot delete MultiClusterHub resource because BareMetalAssets resource(s) exist"))
-
 
 			utils.DeleteBareMetalAssetsCR()
 
