@@ -1,6 +1,0 @@
-# Copyright Contributors to the Open Cluster Management project
-
-./terraform
-.idea
-.project
-build-harness.iml
