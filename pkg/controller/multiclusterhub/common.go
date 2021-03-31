@@ -8,8 +8,10 @@ import (
 	"encoding/json"
 	e "errors"
 	"fmt"
-	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"reflect"
+	"strings"
+
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 
 	"time"
 
@@ -631,7 +633,7 @@ func (r *ReconcileMultiClusterHub) ensureSubscriptionOperatorIsRunning(mch *oper
 	}
 
 	// skip check if not deployed by OLM
-	if !isOLMManaged(selfDeployment) {
+	if !isACMManaged(selfDeployment) {
 		return nil, nil
 	}
 
@@ -660,14 +662,16 @@ func (r *ReconcileMultiClusterHub) ensureSubscriptionOperatorIsRunning(mch *oper
 	}
 }
 
-// isOLMManaged returns whether this application is managed by OLM
-func isOLMManaged(deploy *appsv1.Deployment) bool {
+// isACMManaged returns whether this application is managed by OLM via an ACM subscription
+func isACMManaged(deploy *appsv1.Deployment) bool {
 	labels := deploy.GetLabels()
 	if labels == nil {
 		return false
 	}
-	if _, ok := labels["olm.owner"]; ok {
-		return true
+	if owner, ok := labels["olm.owner"]; ok {
+		if strings.Contains(owner, "advanced-cluster-management") {
+			return true
+		}
 	}
 	return false
 }

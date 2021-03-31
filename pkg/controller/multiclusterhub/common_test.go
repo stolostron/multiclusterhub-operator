@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package multiclusterhub
 
 import (
@@ -822,7 +821,7 @@ func Test_getDeploymentByName(t *testing.T) {
 	}
 }
 
-func Test_isOLMManaged(t *testing.T) {
+func Test_isACMManaged(t *testing.T) {
 	foo := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}
 	bar := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -834,6 +833,12 @@ func Test_isOLMManaged(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "olm",
 			Labels: map[string]string{"olm.owner": "foobar"},
+		},
+	}
+	acmDeploy := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   "olm",
+			Labels: map[string]string{"olm.owner": "advanced-cluster-management.v2.3.0"},
 		},
 	}
 
@@ -853,14 +858,19 @@ func Test_isOLMManaged(t *testing.T) {
 			want:   false,
 		},
 		{
-			name:   "OLM installed",
+			name:   "OLM managed",
 			deploy: olmDeploy,
+			want:   false,
+		},
+		{
+			name:   "OLM managed by ACM",
+			deploy: acmDeploy,
 			want:   true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := isOLMManaged(tt.deploy); got != tt.want {
+			if got := isACMManaged(tt.deploy); got != tt.want {
 				t.Errorf("isOLMManaged() = %v, want %v", got, tt.want)
 			}
 		})

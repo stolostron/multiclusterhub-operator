@@ -109,8 +109,8 @@ observability-cr:
 observability-crd:
 	curl -H "Authorization: token $(shell echo $(GITHUB_TOKEN))" \
 		-H 'Accept: application/vnd.github.v3.raw' \
-		-L https://raw.githubusercontent.com/open-cluster-management/multicluster-monitoring-operator/master/deploy/olm-catalog/multicluster-observability-operator/manifests/observability.open-cluster-management.io_multiclusterobservabilities_crd.yaml | oc apply -f -
-
+		-L https://raw.githubusercontent.com/open-cluster-management/multicluster-observability-operator/main/bundle/manifests/observability.open-cluster-management.io_multiclusterobservabilities.yaml | oc apply -f -
+		
 ## Operator-sdk generate CRD(s)
 crd:
 	operator-sdk generate crds --crd-version=v1
