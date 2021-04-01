@@ -6,6 +6,7 @@ package multiclusterhub
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	hive "github.com/openshift/hive/pkg/apis/hive/v1"
@@ -673,12 +674,18 @@ func (r *ReconcileMultiClusterHub) installCRDs(reqLogger logr.Logger, m *operato
 		SetHubCondition(&m.Status, *condition)
 		return fmt.Errorf("failed to setup CRD templates: %w", err)
 	}
-	crdResources, err := crdRenderer.Render()
-	if err != nil {
-		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionFalse, ResourceRenderReason, fmt.Sprintf("Error rendering CRD templates: %s", err.Error()))
+	crdResources, errs := crdRenderer.Render()
+	if errs != nil && len(errs) > 0 {
+		errStrings := []string{}
+		for _, e := range errs {
+			errStrings = append(errStrings, e.Error())
+		}
+		message := strings.Join(errStrings, " ; ")
+		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionFalse, ResourceRenderReason, fmt.Sprintf("Error rendering CRD templates: %s", message))
 		SetHubCondition(&m.Status, *condition)
-		return fmt.Errorf("failed to render CRD templates: %w", err)
+		return fmt.Errorf("failed to render CRD templates: %s", message)
 	}
+
 	for _, crd := range crdResources {
 		err, ok := deploying.Deploy(r.client, crd)
 		if err != nil {

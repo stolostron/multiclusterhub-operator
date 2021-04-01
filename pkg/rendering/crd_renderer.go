@@ -10,7 +10,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
@@ -38,14 +37,14 @@ func NewCRDRenderer(mch *operatorsv1.MultiClusterHub) (*CRDRenderer, error) {
 }
 
 // Render renders Templates under TEMPLATES_PATH
-func (r *CRDRenderer) Render() ([]*unstructured.Unstructured, error) {
+func (r *CRDRenderer) Render() ([]*unstructured.Unstructured, []error) {
 	var crds []*unstructured.Unstructured
-	errs := []string{}
+	errs := []error{}
 
 	// Read CRD files
 	files, err := ioutil.ReadDir(r.directory)
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
 
 	// Convert bytes to Unstructured resources
@@ -57,30 +56,30 @@ func (r *CRDRenderer) Render() ([]*unstructured.Unstructured, error) {
 		filePath := path.Join(r.directory, file.Name())
 		src, err := ioutil.ReadFile(filepath.Clean(filePath)) // #nosec G304 (filepath cleaned)
 		if err != nil {
-			errs = append(errs, fmt.Sprintf("%s - error reading file: %v", file.Name(), err.Error()))
+			errs = append(errs, fmt.Errorf("%s - error reading file: %v", file.Name(), err.Error()))
 			continue
 		}
 
 		crd := &unstructured.Unstructured{}
 		if err = yaml.Unmarshal(src, crd); err != nil {
-			errs = append(errs, fmt.Sprintf("%s - error unmarshalling file to unstructured: %v", file.Name(), err.Error()))
+			errs = append(errs, fmt.Errorf("%s - error unmarshalling file to unstructured: %v", file.Name(), err.Error()))
 			continue
 		}
 
 		// Check that it is actually a CRD
 		crdKind, _, err := unstructured.NestedString(crd.Object, "spec", "names", "kind")
 		if err != nil {
-			errs = append(errs, fmt.Sprintf("%s - error getting Kind field: %v", file.Name(), err.Error()))
+			errs = append(errs, fmt.Errorf("%s - error getting Kind field: %v", file.Name(), err.Error()))
 			continue
 		}
 		crdGroup, _, err := unstructured.NestedString(crd.Object, "spec", "group")
 		if err != nil {
-			errs = append(errs, fmt.Sprintf("%s - error getting Group field: %v", file.Name(), err.Error()))
+			errs = append(errs, fmt.Errorf("%s - error getting Group field: %v", file.Name(), err.Error()))
 			continue
 		}
 
 		if crd.GetKind() != "CustomResourceDefinition" || crdKind == "" || crdGroup == "" {
-			errs = append(errs, fmt.Sprintf("%s - CRD file bad format", file.Name()))
+			errs = append(errs, fmt.Errorf("%s - CRD file bad format", file.Name()))
 			continue
 		}
 
@@ -89,8 +88,7 @@ func (r *CRDRenderer) Render() ([]*unstructured.Unstructured, error) {
 	}
 
 	if len(errs) > 0 {
-		errString := strings.Join(errs, ";")
-		return crds, errors.New(errString)
+		return crds, errs
 	}
 
 	// Return resource list

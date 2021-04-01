@@ -52,8 +52,8 @@ func TestCRDRender(t *testing.T) {
 			directory: path.Join(testCrdsPath, "success"),
 			cr:        mch,
 		}
-		_, err = renderer.Render()
-		if err != nil {
+		_, errs := renderer.Render()
+		if errs != nil {
 			t.Errorf("CRDRenderer.Render() error = %v, wantErr %v", err, nil)
 		}
 	})
@@ -63,9 +63,9 @@ func TestCRDRender(t *testing.T) {
 			directory: path.Join(testCrdsPath, "failure"),
 			cr:        mch,
 		}
-		_, err = renderer.Render()
-		if err == nil {
-			t.Errorf("CRDRenderer.Render() failed to return an error")
+		_, errs := renderer.Render()
+		if len(errs) != 2 {
+			t.Errorf("CRDRenderer.Render() error = %v, wanted %d errors", err, 2)
 		}
 	})
 }
