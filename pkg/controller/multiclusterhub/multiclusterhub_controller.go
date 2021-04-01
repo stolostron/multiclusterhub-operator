@@ -676,11 +676,7 @@ func (r *ReconcileMultiClusterHub) installCRDs(reqLogger logr.Logger, m *operato
 	}
 	crdResources, errs := crdRenderer.Render()
 	if errs != nil && len(errs) > 0 {
-		errStrings := []string{}
-		for _, e := range errs {
-			errStrings = append(errStrings, e.Error())
-		}
-		message := strings.Join(errStrings, " ; ")
+		message := mergeErrors(errs)
 		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionFalse, ResourceRenderReason, fmt.Sprintf("Error rendering CRD templates: %s", message))
 		SetHubCondition(&m.Status, *condition)
 		return fmt.Errorf("failed to render CRD templates: %s", message)
@@ -689,7 +685,10 @@ func (r *ReconcileMultiClusterHub) installCRDs(reqLogger logr.Logger, m *operato
 	for _, crd := range crdResources {
 		err, ok := deploying.Deploy(r.client, crd)
 		if err != nil {
-			reqLogger.Error(err, fmt.Sprintf("Failed to deploy %s %s", crd.GetKind(), crd.GetName()))
+			message := fmt.Sprintf("Failed to deploy %s %s", crd.GetKind(), crd.GetName())
+			reqLogger.Error(err, message)
+			condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionFalse, ResourceRenderReason, message)
+			SetHubCondition(&m.Status, *condition)
 			return err
 		}
 		if ok {
@@ -735,4 +734,13 @@ func remove(list []string, s string) []string {
 		}
 	}
 	return list
+}
+
+// mergeErrors combines errors into a single string
+func mergeErrors(errs []error) string {
+	errStrings := []string{}
+	for _, e := range errs {
+		errStrings = append(errStrings, e.Error())
+	}
+	return strings.Join(errStrings, " ; ")
 }
