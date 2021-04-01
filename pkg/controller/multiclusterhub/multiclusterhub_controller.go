@@ -669,9 +669,9 @@ func (r *ReconcileMultiClusterHub) addFinalizer(reqLogger logr.Logger, m *operat
 func (r *ReconcileMultiClusterHub) installCRDs(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	crdRenderer, err := rendering.NewCRDRenderer(m)
 	if err != nil {
-		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionFalse, ResourceRenderReason, fmt.Sprintf("Error reading CRD templates: %s", err.Error()))
+		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionFalse, ResourceRenderReason, fmt.Sprintf("Error creating CRD renderer: %s", err.Error()))
 		SetHubCondition(&m.Status, *condition)
-		return fmt.Errorf("failed to read CRD templates: %w", err)
+		return fmt.Errorf("failed to setup CRD templates: %w", err)
 	}
 	crdResources, err := crdRenderer.Render()
 	if err != nil {

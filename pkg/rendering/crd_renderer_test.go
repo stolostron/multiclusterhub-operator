@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package rendering
 
 import (
@@ -19,7 +18,7 @@ func TestCRDRender(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get working dir %v", err)
 	}
-	crdsPath := path.Join(path.Dir(path.Dir(wd)), "crds")
+	testCrdsPath := path.Join(wd, "testdata")
 
 	mch := &operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
@@ -27,6 +26,16 @@ func TestCRDRender(t *testing.T) {
 			Namespace: "test",
 		},
 	}
+
+	t.Run("New renderer", func(t *testing.T) {
+		os.Setenv(CRDsPathEnvVar, testCrdsPath)
+		defer os.Unsetenv(CRDsPathEnvVar)
+
+		_, err := NewCRDRenderer(mch)
+		if err != nil {
+			t.Errorf("NewCRDRenderer() error = %v, wantErr %v", err, nil)
+		}
+	})
 
 	t.Run("Missing env variable", func(t *testing.T) {
 		os.Unsetenv(CRDsPathEnvVar)
@@ -39,13 +48,24 @@ func TestCRDRender(t *testing.T) {
 	})
 
 	t.Run("Render successfully", func(t *testing.T) {
-		os.Setenv(CRDsPathEnvVar, crdsPath)
-		defer os.Unsetenv(CRDsPathEnvVar)
-
-		renderer, err := NewCRDRenderer(mch)
+		renderer := &CRDRenderer{
+			directory: path.Join(testCrdsPath, "success"),
+			cr:        mch,
+		}
 		_, err = renderer.Render()
 		if err != nil {
 			t.Errorf("CRDRenderer.Render() error = %v, wantErr %v", err, nil)
+		}
+	})
+
+	t.Run("Render error", func(t *testing.T) {
+		renderer := &CRDRenderer{
+			directory: path.Join(testCrdsPath, "failure"),
+			cr:        mch,
+		}
+		_, err = renderer.Render()
+		if err == nil {
+			t.Errorf("CRDRenderer.Render() failed to return an error")
 		}
 	})
 }

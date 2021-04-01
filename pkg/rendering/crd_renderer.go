@@ -1,15 +1,16 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package rendering
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
@@ -39,6 +40,7 @@ func NewCRDRenderer(mch *operatorsv1.MultiClusterHub) (*CRDRenderer, error) {
 // Render renders Templates under TEMPLATES_PATH
 func (r *CRDRenderer) Render() ([]*unstructured.Unstructured, error) {
 	var crds []*unstructured.Unstructured
+	errs := []string{}
 
 	// Read CRD files
 	files, err := ioutil.ReadDir(r.directory)
@@ -46,42 +48,49 @@ func (r *CRDRenderer) Render() ([]*unstructured.Unstructured, error) {
 		return nil, err
 	}
 
-	var crdBytes [][]byte
+	// Convert bytes to Unstructured resources
 	for _, file := range files {
 		if filepath.Ext(file.Name()) != ".yaml" {
 			continue
 		}
+
 		filePath := path.Join(r.directory, file.Name())
 		src, err := ioutil.ReadFile(filepath.Clean(filePath)) // #nosec G304 (filepath cleaned)
 		if err != nil {
-			return nil, err
+			errs = append(errs, fmt.Sprintf("%s - error reading file: %v", file.Name(), err.Error()))
+			continue
 		}
-		crdBytes = append(crdBytes, src)
-	}
 
-	// Convert bytes to Unstructured resources
-	for _, file := range crdBytes {
 		crd := &unstructured.Unstructured{}
-		if err = yaml.Unmarshal(file, crd); err != nil {
-			return nil, err
+		if err = yaml.Unmarshal(src, crd); err != nil {
+			errs = append(errs, fmt.Sprintf("%s - error unmarshalling file to unstructured: %v", file.Name(), err.Error()))
+			continue
 		}
 
 		// Check that it is actually a CRD
 		crdKind, _, err := unstructured.NestedString(crd.Object, "spec", "names", "kind")
 		if err != nil {
-			return nil, err
+			errs = append(errs, fmt.Sprintf("%s - error getting Kind field: %v", file.Name(), err.Error()))
+			continue
 		}
 		crdGroup, _, err := unstructured.NestedString(crd.Object, "spec", "group")
 		if err != nil {
-			return nil, err
+			errs = append(errs, fmt.Sprintf("%s - error getting Group field: %v", file.Name(), err.Error()))
+			continue
 		}
 
 		if crd.GetKind() != "CustomResourceDefinition" || crdKind == "" || crdGroup == "" {
+			errs = append(errs, fmt.Sprintf("%s - CRD file bad format", file.Name()))
 			continue
 		}
 
 		utils.AddInstallerLabel(crd, r.cr.GetName(), r.cr.GetNamespace())
 		crds = append(crds, crd)
+	}
+
+	if len(errs) > 0 {
+		errString := strings.Join(errs, ";")
+		return crds, errors.New(errString)
 	}
 
 	// Return resource list
