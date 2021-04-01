@@ -34,6 +34,8 @@ const (
 	ComponentsUnavailableReason = "ComponentsUnavailable"
 	// NewComponentReason is added when the hub creates a new install resource successfully
 	NewComponentReason = "NewResourceCreated"
+	// DeployFailedReason is added when the hub fails to deploy a resource
+	DeployFailedReason = "FailedDeployingComponent"
 	// OldComponentRemovedReason is added when the hub calls delete on an old resource
 	OldComponentRemovedReason = "OldResourceDeleted"
 	// OldComponentNotRemovedReason is added when a component the hub is trying to delete has not been removed successfully

@@ -687,7 +687,7 @@ func (r *ReconcileMultiClusterHub) installCRDs(reqLogger logr.Logger, m *operato
 		if err != nil {
 			message := fmt.Sprintf("Failed to deploy %s %s", crd.GetKind(), crd.GetName())
 			reqLogger.Error(err, message)
-			condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionFalse, ResourceRenderReason, message)
+			condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionFalse, DeployFailedReason, message)
 			SetHubCondition(&m.Status, *condition)
 			return err
 		}
