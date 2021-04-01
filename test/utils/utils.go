@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package utils
 
 import (
@@ -64,7 +63,7 @@ var (
 	// GVRObservability ...
 	GVRObservability = schema.GroupVersionResource{
 		Group:    "observability.open-cluster-management.io",
-		Version:  "v1beta1",
+		Version:  "v1beta2",
 		Resource: "multiclusterobservabilities",
 	}
 
@@ -144,6 +143,13 @@ var (
 		Group:    "inventory.open-cluster-management.io",
 		Version:  "v1alpha1",
 		Resource: "baremetalassets",
+	}
+
+	// GVRDiscoveryConfig
+	GVRDiscoveryConfig = schema.GroupVersionResource{
+		Group:    "discovery.open-cluster-management.io",
+		Version:  "v1",
+		Resource: "discoveryconfigs",
 	}
 	// DefaultImageRegistry ...
 	DefaultImageRegistry = "quay.io/open-cluster-management"
@@ -1135,6 +1141,41 @@ func GetCurrentVersionFromMCH() (string, error) {
 		return "", fmt.Errorf("MultiClusterHub: %s status has no 'currentVersion' field", mch.GetName())
 	}
 	return version.(string), nil
+}
+
+// CreateDiscoveryConfig ...
+func CreateDiscoveryConfig() {
+	By("- Creating DiscoveryConfig CR if it does not exist")
+
+	_, err := DynamicKubeClient.Resource(GVRDiscoveryConfig).Namespace(MCHNamespace).Get(context.TODO(), "discoveryconfig", metav1.GetOptions{})
+	if err == nil {
+		return
+	}
+
+	discoveryConfigByte, err := ioutil.ReadFile("../resources/discoveryconfig.yaml")
+	Expect(err).To(BeNil())
+
+	discoveryConfig := &unstructured.Unstructured{Object: map[string]interface{}{}}
+	err = yaml.Unmarshal(discoveryConfigByte, &discoveryConfig.Object)
+	Expect(err).To(BeNil())
+
+	_, err = DynamicKubeClient.Resource(GVRDiscoveryConfig).Namespace(MCHNamespace).Create(context.TODO(), discoveryConfig, metav1.CreateOptions{})
+	Expect(err).To(BeNil())
+}
+
+// DeleteDiscoveryConfig ...
+func DeleteDiscoveryConfig() {
+	By("- Deleting DiscoveryConfig CR if it exists")
+
+	discoveryConfigByte, err := ioutil.ReadFile("../resources/discoveryconfig.yaml")
+	Expect(err).To(BeNil())
+
+	discoveryConfig := &unstructured.Unstructured{Object: map[string]interface{}{}}
+	err = yaml.Unmarshal(discoveryConfigByte, &discoveryConfig.Object)
+	Expect(err).To(BeNil())
+
+	err = DynamicKubeClient.Resource(GVRDiscoveryConfig).Namespace(MCHNamespace).Delete(context.TODO(), discoveryConfig.GetName(), metav1.DeleteOptions{})
+	Expect(err).To(BeNil())
 }
 
 // CreateObservabilityCRD ...

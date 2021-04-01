@@ -20,6 +20,7 @@ rules:
   - "rbac.authorization.k8s.io"
   - "security.openshift.io"
   - "clusterview.open-cluster-management.io"
+  - "discovery.open-cluster-management.io"
   resources:
   - apiservices
   - channels
@@ -29,6 +30,7 @@ rules:
   - configmaps
   - customresourcedefinitions
   - deployments
+  - discoveryconfigs
   - hiveconfigs
   - mutatingwebhookconfigurations
   - validatingwebhookconfigurations
@@ -100,12 +102,14 @@ rules:
   - "rbac.authorization.k8s.io"
   - "hive.openshift.io"
   - "clusterview.open-cluster-management.io"
+  - "discovery.open-cluster-management.io"
   resources:
   - apiservices
   - baremetalassets
   - clusterjoinrequests
   - configmaps
   - deployments
+  - discoveryconfigs
   - helmreleases
   - ingresses
   - multiclusterhubs
