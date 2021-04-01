@@ -24,7 +24,6 @@ build-harness-extensions/
 crds/
 test/out
 test/coverage
-test/resources
 test/options.yaml
 test/results/*
 vendor/

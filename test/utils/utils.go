@@ -63,7 +63,7 @@ var (
 	// GVRObservability ...
 	GVRObservability = schema.GroupVersionResource{
 		Group:    "observability.open-cluster-management.io",
-		Version:  "v1beta1",
+		Version:  "v1beta2",
 		Resource: "multiclusterobservabilities",
 	}
 
