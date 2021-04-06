@@ -6,6 +6,7 @@ package multiclusterhub
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	hive "github.com/openshift/hive/pkg/apis/hive/v1"
@@ -368,26 +369,9 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 	}
 
 	// Render CRD templates
-	crdRenderer, err := rendering.NewCRDRenderer(multiClusterHub)
+	err = r.installCRDs(reqLogger, multiClusterHub)
 	if err != nil {
-		reqLogger.Error(err, "Failed to read CRD templates")
 		return reconcile.Result{}, err
-	}
-	crdResources, err := crdRenderer.Render()
-	if err != nil {
-		reqLogger.Error(err, "Failed to render CRD templates")
-		return reconcile.Result{}, err
-	}
-	for _, crd := range crdResources {
-		err, ok := deploying.Deploy(r.client, crd)
-		if err != nil {
-			reqLogger.Error(err, fmt.Sprintf("Failed to deploy %s %s", crd.GetKind(), crd.GetName()))
-			return reconcile.Result{}, err
-		}
-		if ok {
-			condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
-			SetHubCondition(&multiClusterHub.Status, *condition)
-		}
 	}
 
 	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub, r.CacheSpec.ImageOverrides))
@@ -683,6 +667,38 @@ func (r *ReconcileMultiClusterHub) addFinalizer(reqLogger logr.Logger, m *operat
 	return nil
 }
 
+func (r *ReconcileMultiClusterHub) installCRDs(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+	crdRenderer, err := rendering.NewCRDRenderer(m)
+	if err != nil {
+		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionFalse, ResourceRenderReason, fmt.Sprintf("Error creating CRD renderer: %s", err.Error()))
+		SetHubCondition(&m.Status, *condition)
+		return fmt.Errorf("failed to setup CRD templates: %w", err)
+	}
+	crdResources, errs := crdRenderer.Render()
+	if errs != nil && len(errs) > 0 {
+		message := mergeErrors(errs)
+		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionFalse, ResourceRenderReason, fmt.Sprintf("Error rendering CRD templates: %s", message))
+		SetHubCondition(&m.Status, *condition)
+		return fmt.Errorf("failed to render CRD templates: %s", message)
+	}
+
+	for _, crd := range crdResources {
+		err, ok := deploying.Deploy(r.client, crd)
+		if err != nil {
+			message := fmt.Sprintf("Failed to deploy %s %s", crd.GetKind(), crd.GetName())
+			reqLogger.Error(err, message)
+			condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionFalse, DeployFailedReason, message)
+			SetHubCondition(&m.Status, *condition)
+			return err
+		}
+		if ok {
+			condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+			SetHubCondition(&m.Status, *condition)
+		}
+	}
+	return nil
+}
+
 func updatePausedCondition(m *operatorsv1.MultiClusterHub) {
 	c := GetHubCondition(m.Status, operatorsv1.Progressing)
 
@@ -718,4 +734,13 @@ func remove(list []string, s string) []string {
 		}
 	}
 	return list
+}
+
+// mergeErrors combines errors into a single string
+func mergeErrors(errs []error) string {
+	errStrings := []string{}
+	for _, e := range errs {
+		errStrings = append(errStrings, e.Error())
+	}
+	return strings.Join(errStrings, " ; ")
 }

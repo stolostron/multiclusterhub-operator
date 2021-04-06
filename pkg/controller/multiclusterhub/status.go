@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package multiclusterhub
 
 import (
@@ -35,6 +34,8 @@ const (
 	ComponentsUnavailableReason = "ComponentsUnavailable"
 	// NewComponentReason is added when the hub creates a new install resource successfully
 	NewComponentReason = "NewResourceCreated"
+	// DeployFailedReason is added when the hub fails to deploy a resource
+	DeployFailedReason = "FailedDeployingComponent"
 	// OldComponentRemovedReason is added when the hub calls delete on an old resource
 	OldComponentRemovedReason = "OldResourceDeleted"
 	// OldComponentNotRemovedReason is added when a component the hub is trying to delete has not been removed successfully
@@ -60,6 +61,8 @@ const (
 	// NamespaceTerminatingReason is added when a managed cluster's namespace has been deleted and
 	// is waiting to be finalized
 	NamespaceTerminatingReason = "ManagedClusterNamespaceTerminating"
+	// ResourceRenderReason is added when an error occurs while rendering a deployable resource
+	ResourceRenderReason = "FailedRenderingResource"
 )
 
 func getDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
