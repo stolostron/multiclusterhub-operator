@@ -11,9 +11,11 @@ import (
 	"reflect"
 
 	clustermanager "github.com/open-cluster-management/api/operator/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/discovery"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -123,6 +125,15 @@ func (m *multiClusterHubValidator) validateUpdate(req admission.Request) error {
 }
 
 func (m *multiClusterHubValidator) validateDelete(req admission.Request) error {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return err
+	}
+
+	c, err := discovery.NewDiscoveryClientForConfig(cfg)
+	if err != nil {
+		return err
+	}
 
 	managedClusterList := &unstructured.UnstructuredList{}
 	managedClusterList.SetGroupVersionKind(schema.GroupVersionKind{
@@ -130,17 +141,24 @@ func (m *multiClusterHubValidator) validateDelete(req admission.Request) error {
 		Version: "v1",
 		Kind:    "ManagedClusterList",
 	})
-	managedClusterErr := m.client.List(context.TODO(), managedClusterList)
-	if managedClusterErr == nil {
-		if len(managedClusterList.Items) > 1 {
-			return errors.New("Cannot delete MultiClusterHub resource because ManagedCluster resource(s) exist")
-		}
-
-		if len(managedClusterList.Items) == 1 {
-			managedCluster := managedClusterList.Items[0]
-			if managedCluster.GetName() != "local-cluster" {
+	gv := schema.GroupVersion{Group: "cluster.open-cluster-management.io", Version: "v1"}
+	supportErr := discovery.ServerSupportsVersion(c, gv)
+	if supportErr == nil {
+		managedClusterErr := m.client.List(context.TODO(), managedClusterList)
+		if managedClusterErr == nil {
+			if len(managedClusterList.Items) > 1 {
 				return errors.New("Cannot delete MultiClusterHub resource because ManagedCluster resource(s) exist")
 			}
+
+			if len(managedClusterList.Items) == 1 {
+				managedCluster := managedClusterList.Items[0]
+				if managedCluster.GetName() != "local-cluster" {
+					return errors.New("Cannot delete MultiClusterHub resource because ManagedCluster resource(s) exist")
+				}
+			}
+		}
+		if managedClusterErr != nil {
+			log.Info("mc error", "error", managedClusterErr.Error())
 		}
 	}
 
@@ -150,25 +168,37 @@ func (m *multiClusterHubValidator) validateDelete(req admission.Request) error {
 		Version: "v1alpha1",
 		Kind:    "BareMetalAsset",
 	})
-
-	bmaErr := m.client.List(context.TODO(), bmaList)
-	if bmaErr == nil {
-		if len(bmaList.Items) > 0 {
-			return errors.New("Cannot delete MultiClusterHub resource because BareMetalAssets resource(s) exist")
+	gv = schema.GroupVersion{Group: "inventory.open-cluster-management.io", Version: "v1alpha1"}
+	supportErr = discovery.ServerSupportsVersion(c, gv)
+	if supportErr == nil {
+		bmaErr := m.client.List(context.TODO(), bmaList)
+		if bmaErr == nil {
+			if len(bmaList.Items) > 0 {
+				return errors.New("Cannot delete MultiClusterHub resource because BareMetalAssets resource(s) exist")
+			}
+		}
+		if bmaErr != nil {
+			log.Info("bma error", "error", bmaErr.Error())
 		}
 	}
 
 	observabilityList := &unstructured.UnstructuredList{}
 	observabilityList.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   "observability.open-cluster-management.io",
-		Version: "v1beta1",
+		Version: "v1beta2",
 		Kind:    "MultiClusterObservabilityList",
 	})
-
-	observabilityErr := m.client.List(context.TODO(), observabilityList)
-	if observabilityErr == nil {
-		if len(observabilityList.Items) > 0 {
-			return errors.New("Cannot delete MultiClusterHub resource because MultiClusterObservability resource(s) exist")
+	gv = schema.GroupVersion{Group: "observability.open-cluster-management.io", Version: "v1beta2"}
+	supportErr = discovery.ServerSupportsVersion(c, gv)
+	if supportErr == nil {
+		observabilityErr := m.client.List(context.TODO(), observabilityList)
+		if observabilityErr == nil {
+			if len(observabilityList.Items) > 0 {
+				return errors.New("Cannot delete MultiClusterHub resource because MultiClusterObservability resource(s) exist")
+			}
+		}
+		if observabilityErr != nil {
+			log.Info("obs error", "error", observabilityErr.Error())
 		}
 	}
 
@@ -178,13 +208,20 @@ func (m *multiClusterHubValidator) validateDelete(req admission.Request) error {
 		Version: "v1",
 		Kind:    "DiscoveryConfigList",
 	})
-
-	discoveryConfigErr := m.client.List(context.TODO(), discoveryConfigList)
-	if discoveryConfigErr == nil {
-		if len(discoveryConfigList.Items) > 0 {
-			return errors.New("Cannot delete MultiClusterHub resource because DiscoveryConfig resource(s) exist")
+	gv = schema.GroupVersion{Group: "discovery.open-cluster-management.io", Version: "v1"}
+	supportErr = discovery.ServerSupportsVersion(c, gv)
+	if supportErr == nil {
+		discoveryConfigErr := m.client.List(context.TODO(), discoveryConfigList)
+		if discoveryConfigErr == nil {
+			if len(discoveryConfigList.Items) > 0 {
+				return errors.New("Cannot delete MultiClusterHub resource because DiscoveryConfig resource(s) exist")
+			}
+		}
+		if discoveryConfigErr != nil {
+			log.Info("dc error", "error", discoveryConfigErr.Error())
 		}
 	}
+
 	return nil
 }
 
