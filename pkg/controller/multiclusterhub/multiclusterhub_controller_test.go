@@ -125,7 +125,7 @@ func Test_ReconcileMultiClusterHub(t *testing.T) {
 		t.Run(tt.Name, func(t *testing.T) {
 
 			r, err := getTestReconciler(tt.MCH)
-			if err != nil {
+			if err == nil {
 				t.Fatalf("Failed to create test reconciler")
 			}
 			// Mock request to simulate Reconcile() being called on an event for a
