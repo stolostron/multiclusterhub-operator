@@ -276,6 +276,8 @@ rules:
   - namespaces
   - placementrules
   - placementrules/status
+  - pods
+  - pods/log
   - policies
   - policies/status
   - placementbindings
