@@ -374,6 +374,10 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		return reconcile.Result{}, err
 	}
 
+	if proxySet, proxyVars := utils.GetProxyEnvVars(); proxySet == true {
+		log.Info(fmt.Sprintf("Proxy configuration environment variables is set. HTTP_PROXY: %s, HTTPS_PROXY: %s, NO_PROXY: %s", proxyVars["HTTP_PROXY"], proxyVars["HTTPS_PROXY"], proxyVars["NO_PROXY"]))
+	}
+
 	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err

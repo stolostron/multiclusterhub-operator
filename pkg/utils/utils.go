@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package utils
 
 import (
@@ -235,4 +234,21 @@ func GetDisableClusterImageSets(m *operatorsv1.MultiClusterHub) string {
 		return "true"
 	}
 	return "false"
+}
+
+// GetProxyEnvVars ...
+// OLM handles these environment variables as a unit;
+// if at least one of them is set, all three are considered overridden
+// and the cluster-wide defaults are not used for the deployments of the subscribed Operator.
+// https://docs.openshift.com/container-platform/4.6/operators/admin/olm-configuring-proxy-support.html
+// GetProxyEnvVars
+func GetProxyEnvVars() (bool, map[string]string) {
+	if os.Getenv("HTTP_PROXY") != "" || os.Getenv("HTTPS_PROXY") != "" || os.Getenv("NO_PROXY") != "" {
+		return true, map[string]string{
+			"HTTP_PROXY":  os.Getenv("HTTP_PROXY"),
+			"HTTPS_PROXY": os.Getenv("HTTPS_PROXY"),
+			"NO_PROXY":    os.Getenv("NO_PROXY"),
+		}
+	}
+	return false, nil
 }
