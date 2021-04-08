@@ -16,7 +16,7 @@ rules:
   verbs: ["get", "list", "watch"]
 - apiGroups: ["view.open-cluster-management.io"]
   resources: ["managedclusterviews", "managedclusterviews/status"]
-  verbs: ["get", "list", "watch"]
+  verbs: ["create", "delete", "get", "list", "watch"]
 - apiGroups: ["internal.open-cluster-management.io"]
   resources: ["managedclusterinfos", "managedclusterinfos/status"]
   verbs: ["get", "list", "watch"]
