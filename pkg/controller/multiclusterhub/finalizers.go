@@ -142,6 +142,28 @@ func (r *ReconcileMultiClusterHub) cleanupMutatingWebhooks(reqLogger logr.Logger
 	return nil
 }
 
+func (r *ReconcileMultiClusterHub) cleanupValidatingWebhooks(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+	err := r.client.DeleteAllOf(
+		context.TODO(),
+		&admissionregistrationv1beta1.ValidatingWebhookConfiguration{},
+		client.MatchingLabels{
+			"installer.name":      m.GetName(),
+			"installer.namespace": m.GetNamespace(),
+		})
+
+	if err != nil {
+		if errors.IsNotFound(err) {
+			reqLogger.Info("No matching ValidatingWebhookConfigurations to finalize. Continuing.")
+			return nil
+		}
+		reqLogger.Error(err, "Error while deleting ValidatingWebhookConfigurations")
+		return err
+	}
+
+	reqLogger.Info("ValidatingWebhookConfiguration finalized")
+	return nil
+}
+
 func (r *ReconcileMultiClusterHub) cleanupPullSecret(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	// TODO: Handle scenario where ImagePullSecret is changed after install
 	if m.Spec.ImagePullSecret == "" {

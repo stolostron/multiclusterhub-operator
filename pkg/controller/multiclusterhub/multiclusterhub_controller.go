@@ -638,6 +638,9 @@ func (r *ReconcileMultiClusterHub) finalizeHub(reqLogger logr.Logger, m *operato
 	if err := r.cleanupMutatingWebhooks(reqLogger, m); err != nil {
 		return err
 	}
+	if err := r.cleanupValidatingWebhooks(reqLogger, m); err != nil {
+		return err
+	}
 	if err := r.cleanupCRDs(reqLogger, m); err != nil {
 		return err
 	}
