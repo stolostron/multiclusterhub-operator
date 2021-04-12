@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package manifest
 
 import (
@@ -11,24 +10,6 @@ import (
 	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
 )
-
-func TestGetImageOverrideType(t *testing.T) {
-	mch := &operatorsv1.MultiClusterHub{}
-	t.Run("Manifest format", func(t *testing.T) {
-		want := Manifest
-		if got := GetImageOverrideType(mch); got != want {
-			t.Errorf("GetImageOverrideType() = %v, want %v", got, want)
-		}
-	})
-
-	mch.SetAnnotations(map[string]string{utils.AnnotationSuffix: "foo"})
-	t.Run("Suffix format", func(t *testing.T) {
-		want := Suffix
-		if got := GetImageOverrideType(mch); got != want {
-			t.Errorf("GetImageOverrideType() = %v, want %v", got, want)
-		}
-	})
-}
 
 func Test_readManifestFile(t *testing.T) {
 	t.Run("Get manifest", func(t *testing.T) {
@@ -74,9 +55,6 @@ func Test_buildFullImageReference(t *testing.T) {
 	mch2 := mch.DeepCopy()
 	mch2.SetAnnotations(map[string]string{utils.AnnotationImageRepo: "foo.io/bar"})
 
-	mch3 := mch.DeepCopy()
-	mch3.SetAnnotations(map[string]string{utils.AnnotationSuffix: "baz"})
-
 	type args struct {
 		mch *operatorsv1.MultiClusterHub
 		mi  ManifestImage
@@ -95,11 +73,6 @@ func Test_buildFullImageReference(t *testing.T) {
 			name: "Custom registry",
 			args: args{mch2, mi},
 			want: "foo.io/bar/test-app@sha256:abc123",
-		},
-		{
-			name: "Use image suffix format",
-			args: args{mch3, mi},
-			want: "quay.io/open-cluster-management/test-app:2.3.0-baz",
 		},
 	}
 	for _, tt := range tests {

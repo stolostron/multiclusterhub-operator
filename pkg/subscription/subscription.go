@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package subscription
 
 import (
@@ -103,12 +102,4 @@ func setCustomCA(m *operatorsv1.MultiClusterHub, sub *Subscription) {
 	if m.Spec.CustomCAConfigmap != "" {
 		sub.Overrides["hubconfig"].(map[string]interface{})["customCAConfigmap"] = m.Spec.CustomCAConfigmap
 	}
-}
-
-func imageSuffix(m *operatorsv1.MultiClusterHub) (s string) {
-	s = utils.GetImageSuffix(m)
-	if s != "" {
-		s = "-" + s
-	}
-	return
 }
