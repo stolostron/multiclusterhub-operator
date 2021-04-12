@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -963,4 +964,188 @@ func TestReconcileMultiClusterHub_ensureSubscriptionOperatorIsRunning(t *testing
 		})
 	}
 
+}
+
+func TestAddProxyEnvVarsToDeployment(t *testing.T) {
+
+	cacheSpec := CacheSpec{
+		IngressDomain:  "",
+		ImageOverrides: map[string]string{},
+	}
+
+	tests := []struct {
+		deploy       *appsv1.Deployment
+		envVars      map[string]string
+		expectedVars map[string]string
+	}{
+		{
+			deploy: helmrepo.Deployment(full_mch, cacheSpec.ImageOverrides),
+			envVars: map[string]string{
+				"HTTP_PROXY":  "test_http_proxy",
+				"HTTPS_PROXY": "test_https_proxy",
+				"NO_PROXY":    "no_proxy",
+			},
+			expectedVars: map[string]string{
+				"HTTP_PROXY":  "test_http_proxy",
+				"HTTPS_PROXY": "test_https_proxy",
+				"NO_PROXY":    "no_proxy",
+			},
+		}, {
+			deploy: foundation.WebhookDeployment(full_mch, cacheSpec.ImageOverrides),
+			envVars: map[string]string{
+				"HTTP_PROXY":  "test_http_proxy",
+				"HTTPS_PROXY": "test_https_proxy",
+			},
+			expectedVars: map[string]string{
+				"HTTP_PROXY":  "test_http_proxy",
+				"HTTPS_PROXY": "test_https_proxy",
+				"NO_PROXY":    "",
+			},
+		},
+		{
+			deploy: foundation.OCMProxyServerDeployment(full_mch, cacheSpec.ImageOverrides),
+			envVars: map[string]string{
+				"HTTP_PROXY": "test_http_proxy",
+			},
+			expectedVars: map[string]string{
+				"HTTP_PROXY": "test_http_proxy",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		for key, value := range tt.envVars {
+			os.Setenv(key, value)
+		}
+		dep := addProxyEnvVarsToDeployment(tt.deploy)
+		containers := dep.Spec.Template.Spec.Containers
+		for _, container := range containers {
+			for expectedKey, expectedVal := range tt.expectedVars {
+				found := false
+				for _, val := range container.Env {
+					if expectedKey == val.Name && expectedVal == val.Value {
+						found = true
+					}
+				}
+				if !found {
+					t.Logf("Expected Variables: %+v\n", tt.expectedVars)
+					t.Logf("Found Variables: %+v\n", container.Env)
+					t.Fatalf("Expected proxy overrides not found")
+				}
+			}
+		}
+		for key := range tt.envVars {
+			os.Unsetenv(key)
+		}
+	}
+}
+
+func TestAddProxyEnvVarsToSub(t *testing.T) {
+
+	cacheSpec := CacheSpec{
+		IngressDomain:  "",
+		ImageOverrides: map[string]string{},
+	}
+
+	tests := []struct {
+		sub          *unstructured.Unstructured
+		envVars      map[string]string
+		expectedVars map[string]string
+	}{
+		{
+			sub: subscription.CertManager(full_mch, cacheSpec.ImageOverrides),
+			envVars: map[string]string{
+				"HTTP_PROXY":  "test_http_proxy",
+				"HTTPS_PROXY": "test_https_proxy",
+				"NO_PROXY":    "no_proxy",
+			},
+			expectedVars: map[string]string{
+				"HTTP_PROXY":  "test_http_proxy",
+				"HTTPS_PROXY": "test_https_proxy",
+				"NO_PROXY":    "no_proxy",
+			},
+		},
+		{
+			sub: subscription.CertWebhook(full_mch, cacheSpec.ImageOverrides),
+			envVars: map[string]string{
+				"HTTP_PROXY":  "test_http_proxy",
+				"HTTPS_PROXY": "test_https_proxy",
+			},
+			expectedVars: map[string]string{
+				"HTTP_PROXY":  "test_http_proxy",
+				"HTTPS_PROXY": "test_https_proxy",
+			},
+		},
+		{
+			sub: subscription.ConfigWatcher(full_mch, cacheSpec.ImageOverrides),
+			envVars: map[string]string{
+				"NO_PROXY": "no_proxy",
+			},
+			expectedVars: map[string]string{
+				"NO_PROXY": "no_proxy",
+			},
+		},
+		{
+			sub:          subscription.ManagementIngress(full_mch, cacheSpec.ImageOverrides, cacheSpec.IngressDomain),
+			envVars:      map[string]string{},
+			expectedVars: map[string]string{},
+		},
+	}
+
+	for _, tt := range tests {
+		for key, value := range tt.envVars {
+			os.Setenv(key, value)
+		}
+		sub := addProxyEnvVarsToSub(tt.sub)
+
+		path := "spec.packageOverrides[].packageOverrides[].value.hubconfig.proxyConfigs."
+		proxyOverrides, err := getMapFromUnstructured(sub.Object, path)
+		if err != nil {
+			t.Fatalf("Failed to find proxyConfigs: %s", err.Error())
+		}
+
+		for expectedKey, expectedVal := range tt.expectedVars {
+			found := false
+			for key, val := range proxyOverrides {
+				if expectedKey == key && expectedVal == val.(string) {
+					found = true
+				}
+			}
+			if !found {
+				t.Logf("Expected Variables: %+v\n", tt.expectedVars)
+				t.Logf("Found Variables: %+v\n", proxyOverrides)
+				t.Fatalf("Expected proxy overrides not found")
+			}
+		}
+	}
+}
+
+// Currently function has limitation of only retrieving the first map
+func getMapFromUnstructured(u map[string]interface{}, path string) (map[string]interface{}, error) {
+	currentKey := strings.Split(path, ".")[0]
+	isArr := false
+	if strings.HasSuffix(currentKey, "[]") {
+		isArr = true
+	}
+	currentKey = strings.TrimSuffix(currentKey, "[]")
+	if i := strings.Index(path, "."); i >= 0 {
+		// Determine remaining path
+		path = path[(i + 1):]
+		// If Arr, loop through each element of array
+		if isArr {
+			nextMap, ok := u[currentKey].([]map[string]interface{})
+			if !ok {
+				return u, fmt.Errorf("Failed to find key: %s", currentKey)
+			}
+			return getMapFromUnstructured(nextMap[0], path)
+		} else {
+			nextMap, ok := u[currentKey].(map[string]interface{})
+			if !ok {
+				return u, fmt.Errorf("Failed to find key: %s", currentKey)
+			}
+			return getMapFromUnstructured(nextMap, path)
+		}
+	} else {
+		return u, nil
+	}
 }
