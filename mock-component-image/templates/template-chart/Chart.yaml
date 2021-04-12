@@ -1,0 +1,4 @@
+apiVersion: v1
+description: This chart is a placeholder chart for testing the MultiClusterHub Operator
+name: CHARTNAME
+version: CHARTVERSION
