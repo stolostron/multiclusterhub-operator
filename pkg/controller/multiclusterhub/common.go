@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	e "errors"
 	"fmt"
+	"os"
 	"reflect"
 	"strings"
 
@@ -52,6 +53,10 @@ type CacheSpec struct {
 
 func (r *ReconcileMultiClusterHub) ensureDeployment(m *operatorsv1.MultiClusterHub, dep *appsv1.Deployment) (*reconcile.Result, error) {
 	dplog := log.WithValues("Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
+
+	if utils.ProxyEnvVarsAreSet() {
+		dep = addProxyEnvVarsToDeployment(dep)
+	}
 
 	// See if deployment already exists and create if it doesn't
 	found := &appsv1.Deployment{}
@@ -214,6 +219,10 @@ func (r *ReconcileMultiClusterHub) ensureChannel(m *operatorsv1.MultiClusterHub,
 
 func (r *ReconcileMultiClusterHub) ensureSubscription(m *operatorsv1.MultiClusterHub, u *unstructured.Unstructured) (*reconcile.Result, error) {
 	obLog := log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName(), "Kind", u.GetKind())
+
+	if utils.ProxyEnvVarsAreSet() {
+		u = addProxyEnvVarsToSub(u)
+	}
 
 	found := &unstructured.Unstructured{}
 	found.SetGroupVersionKind(schema.GroupVersionKind{
@@ -684,4 +693,83 @@ func getDeploymentByName(allDeps []*appsv1.Deployment, desiredDeploy string) (*a
 		}
 	}
 	return nil, false
+}
+
+func addProxyEnvVarsToDeployment(dep *appsv1.Deployment) *appsv1.Deployment {
+	proxyEnvVars := []corev1.EnvVar{
+		{
+			Name:  "HTTP_PROXY",
+			Value: os.Getenv("HTTP_PROXY"),
+		},
+		{
+			Name:  "HTTPS_PROXY",
+			Value: os.Getenv("HTTPS_PROXY"),
+		},
+		{
+			Name:  "NO_PROXY",
+			Value: os.Getenv("NO_PROXY"),
+		},
+	}
+	for i := 0; i < len(dep.Spec.Template.Spec.Containers); i++ {
+		dep.Spec.Template.Spec.Containers[i].Env = append(dep.Spec.Template.Spec.Containers[i].Env, proxyEnvVars...)
+	}
+
+	return dep
+}
+
+func addProxyEnvVarsToSub(u *unstructured.Unstructured) *unstructured.Unstructured {
+	path := "spec.packageOverrides[].packageOverrides[].value.hubconfig."
+
+	sub, err := injectMapIntoUnstructured(u.Object, path, map[string]interface{}{
+		"proxyConfigs": map[string]interface{}{
+			"HTTP_PROXY":  os.Getenv("HTTP_PROXY"),
+			"HTTPS_PROXY": os.Getenv("HTTPS_PROXY"),
+			"NO_PROXY":    os.Getenv("NO_PROXY"),
+		},
+	})
+	if err != nil {
+		log.Info(fmt.Sprintf("Error inject proxy environmental variables into '%s' subscription: %s", u.GetName(), err.Error()))
+	}
+	u.Object = sub
+
+	return u
+}
+
+// injects map into an unstructured objects map based off a given path
+func injectMapIntoUnstructured(u map[string]interface{}, path string, mapToInject map[string]interface{}) (map[string]interface{}, error) {
+
+	currentKey := strings.Split(path, ".")[0]
+	isArr := false
+	if strings.HasSuffix(currentKey, "[]") {
+		isArr = true
+	}
+	currentKey = strings.TrimSuffix(currentKey, "[]")
+	if i := strings.Index(path, "."); i >= 0 {
+		// Determine remaining path
+		path = path[(i + 1):]
+		// If Arr, loop through each element of array
+		if isArr {
+			nextMap, ok := u[currentKey].([]map[string]interface{})
+			if !ok {
+				return u, fmt.Errorf("Failed to find key: %s", currentKey)
+			}
+			for i := 0; i < len(nextMap); i++ {
+				injectMapIntoUnstructured(nextMap[i], path, mapToInject)
+			}
+			return u, nil
+		} else {
+			nextMap, ok := u[currentKey].(map[string]interface{})
+			if !ok {
+				return u, fmt.Errorf("Failed to find key: %s", currentKey)
+			}
+			injectMapIntoUnstructured(nextMap, path, mapToInject)
+			return u, nil
+		}
+	} else {
+		for key, val := range mapToInject {
+			u[key] = val
+			break
+		}
+		return u, nil
+	}
 }

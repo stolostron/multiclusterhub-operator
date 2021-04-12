@@ -6,6 +6,7 @@ package multiclusterhub
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -374,8 +375,8 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		return reconcile.Result{}, err
 	}
 
-	if proxySet, proxyVars := utils.GetProxyEnvVars(); proxySet == true {
-		log.Info(fmt.Sprintf("Proxy configuration environment variables is set. HTTP_PROXY: %s, HTTPS_PROXY: %s, NO_PROXY: %s", proxyVars["HTTP_PROXY"], proxyVars["HTTPS_PROXY"], proxyVars["NO_PROXY"]))
+	if utils.ProxyEnvVarsAreSet() {
+		log.Info(fmt.Sprintf("Proxy configuration environment variables are set. HTTP_PROXY: %s, HTTPS_PROXY: %s, NO_PROXY: %s", os.Getenv("HTTP_PROXY"), os.Getenv("HTTPS_PROXY"), os.Getenv("NO_PROXY")))
 	}
 
 	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub, r.CacheSpec.ImageOverrides))
