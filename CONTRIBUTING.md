@@ -66,7 +66,9 @@ This approach _only_ tests MultiClusterHub Operator functionality (not the funct
 
     - `HUB_IMAGE_REGISTRY` correlates to the `multiclusterhub-operator` image, which is built from the `multiclusterhub-operator` codebase. The resulting image will be pushed to `$HUB_IMAGE_REGISTRY/multiclusterhub-operator`
 
-    - `MOCK_IMAGE_REGISTRY` correlates to the `hub-mock-component-image`, which is built from the `mock-component-image` subdirectory within the `multiclusterhub-operator` GitHub repository. This mock image acts as a multi-purpose place-holder for all other images required by the `multiclusterhub-operator`. The resulting image will be pushed to `$MOCK_IMAGE_REGISTRY/multiclusterhub-operator`. **The `hub-mock-component-image` should be built without any changes to the `mock-component-image` subdirectory**
+    - `MOCK_IMAGE_REGISTRY` correlates to the `hub-mock-component-image`, which is built from the `mock-component-image` subdirectory within the `multiclusterhub-operator` GitHub repository. This mock image acts as a multi-purpose place-holder for all other images required by the `multiclusterhub-operator`. The resulting image will be pushed to `$MOCK_IMAGE_REGISTRY/mock-component-image`. **The `hub-mock-component-image` should be built without any changes to the `mock-component-image` subdirectory**
+
+    These images are assumed to be public to eliminate any requirement for pull secrets.
 
 4. Run the following `make` commands to install the `multiclusterhub-operator` with a "mock" component image.
 
