@@ -14,7 +14,7 @@ import (
 	foundation "github.com/open-cluster-management/multicloudhub-operator/pkg/foundation"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -123,7 +123,7 @@ func (r *ReconcileMultiClusterHub) cleanupClusterRoleBindings(reqLogger logr.Log
 func (r *ReconcileMultiClusterHub) cleanupMutatingWebhooks(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	err := r.client.DeleteAllOf(
 		context.TODO(),
-		&admissionregistrationv1beta1.MutatingWebhookConfiguration{},
+		&admissionregistrationv1.MutatingWebhookConfiguration{},
 		client.MatchingLabels{
 			"installer.name":      m.GetName(),
 			"installer.namespace": m.GetNamespace(),
@@ -145,7 +145,7 @@ func (r *ReconcileMultiClusterHub) cleanupMutatingWebhooks(reqLogger logr.Logger
 func (r *ReconcileMultiClusterHub) cleanupValidatingWebhooks(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	err := r.client.DeleteAllOf(
 		context.TODO(),
-		&admissionregistrationv1beta1.ValidatingWebhookConfiguration{},
+		&admissionregistrationv1.ValidatingWebhookConfiguration{},
 		client.MatchingLabels{
 			"installer.name":      m.GetName(),
 			"installer.namespace": m.GetNamespace(),

@@ -14,7 +14,7 @@ import (
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/foundation"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
 	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -287,16 +287,16 @@ func Test_cleanupClusterRoleBindings(t *testing.T) {
 }
 
 func Test_cleanupMutatingWebhooks(t *testing.T) {
-	MWC := &admissionregistrationv1beta1.MutatingWebhookConfiguration{
+	MWC := &admissionregistrationv1.MutatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-mutatingwebhookconfiguration",
 			Namespace: mch_namespace,
 		},
-		Webhooks: []admissionregistrationv1beta1.MutatingWebhook{
+		Webhooks: []admissionregistrationv1.MutatingWebhook{
 			{
 				Name: "ocm.mutating.webhook.admission.open-cluster-management.io",
-				ClientConfig: admissionregistrationv1beta1.WebhookClientConfig{
-					Service: &admissionregistrationv1beta1.ServiceReference{
+				ClientConfig: admissionregistrationv1.WebhookClientConfig{
+					Service: &admissionregistrationv1.ServiceReference{
 						Name: "ocm-webhook",
 					},
 				},
@@ -313,7 +313,7 @@ func Test_cleanupMutatingWebhooks(t *testing.T) {
 	tests := []struct {
 		Name   string
 		MCH    *operatorsv1.MultiClusterHub
-		MWC    *admissionregistrationv1beta1.MutatingWebhookConfiguration
+		MWC    *admissionregistrationv1.MutatingWebhookConfiguration
 		Result error
 	}{
 		{
@@ -350,7 +350,7 @@ func Test_cleanupMutatingWebhooks(t *testing.T) {
 				t.Fatal("Failed to cleanup mutatingwebhookconfigurations")
 			}
 
-			emptyMWC := &admissionregistrationv1beta1.MutatingWebhookConfiguration{}
+			emptyMWC := &admissionregistrationv1.MutatingWebhookConfiguration{}
 			err = r.client.Get(context.TODO(), types.NamespacedName{
 				Name:      tt.MWC.Name,
 				Namespace: tt.MWC.Namespace,
@@ -363,16 +363,16 @@ func Test_cleanupMutatingWebhooks(t *testing.T) {
 }
 
 func Test_cleanupValidatingWebhooks(t *testing.T) {
-	MWC := &admissionregistrationv1beta1.ValidatingWebhookConfiguration{
+	MWC := &admissionregistrationv1.ValidatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-validatingwebhookconfiguration",
 			Namespace: mch_namespace,
 		},
-		Webhooks: []admissionregistrationv1beta1.ValidatingWebhook{
+		Webhooks: []admissionregistrationv1.ValidatingWebhook{
 			{
 				Name: "ocm.validating.webhook.admission.open-cluster-management.io",
-				ClientConfig: admissionregistrationv1beta1.WebhookClientConfig{
-					Service: &admissionregistrationv1beta1.ServiceReference{
+				ClientConfig: admissionregistrationv1.WebhookClientConfig{
+					Service: &admissionregistrationv1.ServiceReference{
 						Name: "ocm-webhook",
 					},
 				},
@@ -389,7 +389,7 @@ func Test_cleanupValidatingWebhooks(t *testing.T) {
 	tests := []struct {
 		Name   string
 		MCH    *operatorsv1.MultiClusterHub
-		MWC    *admissionregistrationv1beta1.ValidatingWebhookConfiguration
+		MWC    *admissionregistrationv1.ValidatingWebhookConfiguration
 		Result error
 	}{
 		{
@@ -426,7 +426,7 @@ func Test_cleanupValidatingWebhooks(t *testing.T) {
 				t.Fatal("Failed to cleanup validatingwebhookconfiguration")
 			}
 
-			emptyMWC := &admissionregistrationv1beta1.ValidatingWebhookConfiguration{}
+			emptyMWC := &admissionregistrationv1.ValidatingWebhookConfiguration{}
 			err = r.client.Get(context.TODO(), types.NamespacedName{
 				Name:      tt.MWC.Name,
 				Namespace: tt.MWC.Namespace,
