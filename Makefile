@@ -5,13 +5,15 @@ GITHUB_USER := $(shell echo $(GITHUB_USER) | sed 's/@/%40/g')
 GITHUB_TOKEN ?=
 
 -include test/Makefile
+-include mock-component-image/Makefile
+-include Makefile.prow
 
 BUILD_DIR ?= build
 
 VERSION ?= 2.3.0
 IMG ?= multiclusterhub-operator
 SECRET_REGISTRY ?= quay.io
-REGISTRY ?= quay.io/rhibmcollab
+HUB_IMAGE_REGISTRY ?= quay.io/rhibmcollab
 BUNDLE_REGISTRY ?= quay.io/open-cluster-management
 GIT_VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
                  git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8)
@@ -22,7 +24,7 @@ NAMESPACE ?= open-cluster-management
 export ACM_NAMESPACE :=$(NAMESPACE)
 
 # For OCP OLM
-export IMAGE ?= $(shell echo $(REGISTRY)/$(IMG):$(VERSION))
+export IMAGE ?= $(shell echo $(HUB_IMAGE_REGISTRY)/$(IMG):$(VERSION))
 export CSV_CHANNEL ?= alpha
 export CSV_VERSION ?= 2.3.0
 
@@ -49,11 +51,11 @@ test: component/test/unit
 
 ## Build the MultiClusterHub operator image
 image:
-	./cicd-scripts/build.sh "$(REGISTRY)/$(IMG):$(VERSION)"
+	./cicd-scripts/build.sh "$(HUB_IMAGE_REGISTRY)/$(IMG):$(VERSION)"
 
 ## Push the MultiClusterHub operator image
 push:
-	./common/scripts/push.sh "$(REGISTRY)/$(IMG):$(VERSION)"
+	./common/scripts/push.sh "$(HUB_IMAGE_REGISTRY)/$(IMG):$(VERSION)"
 
 ## Developer install script to automate full MCH operator and CR installation
 install:
@@ -88,8 +90,8 @@ logs:
 
 ## Update the MultiClusterHub Operator Image
 update-image:
-	operator-sdk build quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION) --go-build-args "-o build/_output/bin/multiclusterhub-operator"
-	docker push quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
+	operator-sdk build $(HUB_IMAGE_REGISTRY)/multiclusterhub-operator:$(VERSION) --go-build-args "-o build/_output/bin/multiclusterhub-operator"
+	docker push $(HUB_IMAGE_REGISTRY)/multiclusterhub-operator:$(VERSION)
 
 ## Apply Observability CR
 observability-cr:
@@ -143,17 +145,16 @@ in-cluster-install: ns secrets og update-image subscriptions observability-crd
 	oc apply -f deploy/crds/operator.open-cluster-management.io_multiclusterhubs_crd.yaml
 	yq w -i deploy/kustomization.yaml 'images(name==multiclusterhub-operator).newTag' "${VERSION}"
 	oc apply -k deploy
-	# oc apply -f deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml
-
+	
 ## Creates a configmap index and catalogsource that it subscribes to
 cm-install: ns secrets og csv update-image subscriptions observability-crd
-	bash common/scripts/generate-cm-index.sh ${VERSION} ${REGISTRY}
+	bash common/scripts/generate-cm-index.sh ${VERSION} ${HUB_IMAGE_REGISTRY}
 	oc apply -k build/configmap-install
 
 ## Generates an index image and catalogsource that serves it
 index-install: ns secrets og csv update-image subscriptions observability-crd
 	oc patch serviceaccount default -n open-cluster-management -p '{"imagePullSecrets": [{"name": "quay-secret"}]}'
-	bash common/scripts/generate-index.sh ${VERSION} ${REGISTRY}
+	bash common/scripts/generate-index.sh ${VERSION} ${HUB_IMAGE_REGISTRY}
 	oc apply -k build/index-install/non-composite
 
 
@@ -177,3 +178,27 @@ update-manifest:
 
 set-copyright:
 	@bash ./cicd-scripts/set-copyright.sh
+
+build-mock-image:
+	make mock-build-image
+
+cleanup-mock-image:
+	make mock-cleanup
+
+prep-mock-install:
+	export PRODUCT_VERSION=$(shell cat COMPONENT_VERSION); \
+	make build-mock-image
+	cp mock-component-image/results/* ./image-manifests
+	echo "mock install prepped!"
+
+# different from `in-cluster-install` (no secrets, no observability-crd)
+mock-install: update-crds ns og update-image subscriptions 
+	oc apply -f deploy/crds/operator.open-cluster-management.io_multiclusterhubs_crd.yaml
+	yq w -i deploy/kustomization.yaml 'images(name==multiclusterhub-operator).newTag' "${VERSION}"
+	yq w -i deploy/kustomization.yaml 'images(name==multiclusterhub-operator).newName' "${HUB_IMAGE_REGISTRY}/${IMG}"
+	oc apply -k deploy
+
+
+## Apply the MultiClusterHub CR (with no self management and no secrets)
+mock-cr:
+	cat deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml | yq w - "spec.disableHubSelfManagement" "true" |  oc apply -f -
