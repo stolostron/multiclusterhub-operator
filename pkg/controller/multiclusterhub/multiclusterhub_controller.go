@@ -325,9 +325,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 	}
 	r.CacheSpec.ImageOverrides = imageOverrides
 	r.CacheSpec.ManifestVersion = version.Version
-	r.CacheSpec.ImageOverrideType = manifest.GetImageOverrideType(multiClusterHub)
 	r.CacheSpec.ImageRepository = utils.GetImageRepository(multiClusterHub)
-	r.CacheSpec.ImageSuffix = utils.GetImageSuffix(multiClusterHub)
 	r.CacheSpec.ImageOverridesCM = utils.GetImageOverridesConfigmap(multiClusterHub)
 
 	err = r.maintainImageManifestConfigmap(multiClusterHub)

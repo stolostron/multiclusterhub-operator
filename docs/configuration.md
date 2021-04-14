@@ -56,7 +56,7 @@ spec:
 
 ## Dev Configurations
 
-### Custom image repository and tag suffix
+### Custom image repository
 
 ```yaml
 apiVersion: operator.open-cluster-management.io/v1
@@ -66,7 +66,6 @@ metadata:
   namespace: open-cluster-management
   annotations:
     "mch-imageRepository": "quay.io/open-cluster-management"
-    "mch-imageTagSuffix": "SNAPSHOT-2020-06-18-13-43-50"
 ```
 
 ### Disable install operator actions

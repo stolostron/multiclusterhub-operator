@@ -42,13 +42,11 @@ import (
 
 // CacheSpec ...
 type CacheSpec struct {
-	IngressDomain     string
-	ImageOverrides    map[string]string
-	ImageOverrideType manifest.OverrideType
-	ImageRepository   string
-	ImageSuffix       string
-	ManifestVersion   string
-	ImageOverridesCM  string
+	IngressDomain    string
+	ImageOverrides   map[string]string
+	ImageRepository  string
+	ManifestVersion  string
+	ImageOverridesCM string
 }
 
 func (r *ReconcileMultiClusterHub) ensureDeployment(m *operatorsv1.MultiClusterHub, dep *appsv1.Deployment) (*reconcile.Result, error) {

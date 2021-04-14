@@ -15,8 +15,6 @@ var (
 	AnnotationMCHPause = "mch-pause"
 	// AnnotationImageRepo sits in multiclusterhub annotations to identify a custom image repository to use
 	AnnotationImageRepo = "mch-imageRepository"
-	// AnnotationSuffix sits in multiclusterhub annotations to identify a custom image tag suffix to use
-	AnnotationSuffix = "mch-imageTagSuffix"
 	// AnnotationImageOverridesCM sits in multiclusterhub annotations to identify a custom configmap containing image overrides
 	AnnotationImageOverridesCM = "mch-imageOverridesCM"
 	// AnnotationConfiguration sits in a resource's annotations to identify the configuration last used to create it
@@ -41,7 +39,6 @@ func IsPaused(instance *operatorsv1.MultiClusterHub) bool {
 func AnnotationsMatch(old, new map[string]string) bool {
 	return old[AnnotationMCHPause] == new[AnnotationMCHPause] &&
 		old[AnnotationImageRepo] == new[AnnotationImageRepo] &&
-		old[AnnotationSuffix] == new[AnnotationSuffix] &&
 		old[AnnotationImageOverridesCM] == new[AnnotationImageOverridesCM]
 }
 
@@ -57,11 +54,6 @@ func getAnnotation(instance *operatorsv1.MultiClusterHub, key string) string {
 // GetImageRepository returns the image repo annotation, or an empty string if not set
 func GetImageRepository(instance *operatorsv1.MultiClusterHub) string {
 	return getAnnotation(instance, AnnotationImageRepo)
-}
-
-// GetImageSuffix returns the image tag suffix annotation, or an empty string if not set
-func GetImageSuffix(instance *operatorsv1.MultiClusterHub) string {
-	return getAnnotation(instance, AnnotationSuffix)
 }
 
 // GetImageOverridesConfigmap returns the images override configmap annotation, or an empty string if not set

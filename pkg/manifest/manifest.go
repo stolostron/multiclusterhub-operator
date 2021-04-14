@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package manifest
 
 import (
@@ -23,15 +22,6 @@ var log = logf.Log.WithName("manifest")
 
 const ManifestsPathEnvVar = "MANIFESTS_PATH"
 
-// OverrideType is an enumeration of possible image format options
-type OverrideType int
-
-const (
-	Unknown OverrideType = iota
-	Manifest
-	Suffix
-)
-
 // ManifestImage contains details for a specific image version
 type ManifestImage struct {
 	ImageKey     string `json:"image-key"`
@@ -45,16 +35,6 @@ type ManifestImage struct {
 	ImageDigest string `json:"image-digest"`
 
 	ImageTag string `json:"image-tag"`
-}
-
-// GetImageOverrideType returns an image format type based on the MultiClusterHub
-// object content
-func GetImageOverrideType(m *operatorsv1.MultiClusterHub) OverrideType {
-	if utils.GetImageSuffix(m) == "" {
-		return Manifest
-	} else {
-		return Suffix
-	}
 }
 
 // GetImageOverrides Reads and formats full image reference from image manifest file.
@@ -92,33 +72,13 @@ func buildFullImageReference(mch *operatorsv1.MultiClusterHub, mi ManifestImage)
 	if reg := utils.GetImageRepository(mch); reg != "" {
 		registry = reg
 	}
-
-	switch imageFormat := GetImageOverrideType(mch); imageFormat {
-	case Suffix:
-		suffix := utils.GetImageSuffix(mch)
-		return suffixFormat(mi, registry, suffix)
-	case Manifest:
-		fallthrough
-	default:
-		// Default is Manifest format
-		return manifestFormat(mi, registry)
-	}
+	return manifestFormat(mi, registry)
 }
 
 func manifestFormat(mi ManifestImage, registry string) string {
 	image := mi.ImageName
 	digest := mi.ImageDigest
 	return fmt.Sprintf("%s/%s@%s", registry, image, digest)
-}
-
-func suffixFormat(mi ManifestImage, registry string, suffix string) string {
-	image := mi.ImageName
-	version := mi.ImageVersion
-	// TODO: Remove hardcoded value
-	if mi.ImageKey == "oauth_proxy" {
-		return fmt.Sprintf("%s/%s:%s", registry, image, version)
-	}
-	return fmt.Sprintf("%s/%s:%s-%s", registry, image, version, suffix)
 }
 
 // readManifestFile returns the byte content of a versioned image manifest file

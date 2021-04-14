@@ -47,7 +47,8 @@ include common/Makefile.common.mk
 lint: lint-all
 
 ## Run unit-tests
-test: component/test/unit
+test:
+	./cicd-scripts/run-unit-tests.sh
 
 ## Build the MultiClusterHub operator image
 image:

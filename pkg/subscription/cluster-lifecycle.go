@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package subscription
 
 import (
@@ -24,7 +23,6 @@ func ClusterLifecycle(m *operatorsv1.MultiClusterHub, overrides map[string]strin
 				"pullPolicy":      utils.GetImagePullPolicy(m),
 				"imagePullSecret": m.Spec.ImagePullSecret,
 				"imageRepository": utils.GetImageRepository(m),
-				"imageTagPostfix": imageSuffix(m),
 				"imageOverrides":  overrides,
 			},
 		},
