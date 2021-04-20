@@ -261,6 +261,12 @@ func Test_ensureSubscription(t *testing.T) {
 			Result:       nil,
 		},
 		{
+			Name:         "Test: ensureSubscription - Insights",
+			MCH:          full_mch,
+			Subscription: subscription.Insights(full_mch, cacheSpec.ImageOverrides, cacheSpec.IngressDomain),
+			Result:       nil,
+		},
+		{
 			Name:         "Test: ensureSubscription - GRC",
 			MCH:          full_mch,
 			Subscription: subscription.GRC(full_mch, cacheSpec.ImageOverrides),
