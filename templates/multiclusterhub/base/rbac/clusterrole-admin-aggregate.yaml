@@ -9,7 +9,7 @@ metadata:
   name: open-cluster-management:admin-aggregate
 rules:
 - apiGroups: ["cluster.open-cluster-management.io"]
-  resources: ["managedclusters", "managedclusters/status"]
+  resources: ["managedclusters", "managedclustersets", "managedclusters/status"]
   verbs: ["get", "list", "watch", "update","delete", "deletecollection", "patch"]
 - apiGroups: ["work.open-cluster-management.io"]
   resources: ["manifestworks", "manifestworks/status"]
@@ -42,7 +42,7 @@ rules:
   resources: ["klusterletaddonconfigs"]
   verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
 - apiGroups: ["hive.openshift.io"]
-  resources: ["clusterdeployments", "machinepools"]
+  resources: ["clusterdeployments", "clusterpools", "clusterclaims", "machinepools"]
   verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
 - apiGroups: ["config.openshift.io"]
   resources: ["clusterversions"]
