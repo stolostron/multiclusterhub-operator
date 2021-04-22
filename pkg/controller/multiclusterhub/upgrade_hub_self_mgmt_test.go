@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package multiclusterhub
 
 import (
@@ -10,7 +9,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/open-cluster-management/multicloudhub-operator/version"
+	"github.com/open-cluster-management/multiclusterhub-operator/version"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"

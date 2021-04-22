@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	utils "github.com/open-cluster-management/multicloudhub-operator/test/utils"
+	utils "github.com/open-cluster-management/multiclusterhub-operator/test/utils"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
@@ -85,7 +85,7 @@ var _ = Describe("Multiclusterhub", func() {
 		_, err = k8sClient.Get(context.TODO(), subName, metav1.GetOptions{})
 		Expect(errors.IsNotFound(err)).To(BeTrue(), "should have been deleted by the reconciler and return a NotFound error")
 		_, err = k8sClient.Get(context.TODO(), rcmSubName, metav1.GetOptions{})
-		Expect(errors.IsNotFound(err)).To(BeTrue(), "should have been deleted by the reconciler and return a NotFound error")	
+		Expect(errors.IsNotFound(err)).To(BeTrue(), "should have been deleted by the reconciler and return a NotFound error")
 
 		startVersion, err := semver.NewVersion(os.Getenv(("startVersion")))
 		Expect(err).Should(BeNil())

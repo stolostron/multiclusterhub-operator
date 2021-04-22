@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package templates
 
 import (
@@ -21,7 +20,7 @@ import (
 	"sigs.k8s.io/kustomize/v3/pkg/resource"
 	"sigs.k8s.io/kustomize/v3/pkg/target"
 
-	"github.com/open-cluster-management/multicloudhub-operator/version"
+	"github.com/open-cluster-management/multiclusterhub-operator/version"
 )
 
 const TemplatesPathEnvVar = "TEMPLATES_PATH"

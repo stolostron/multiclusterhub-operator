@@ -17,7 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
-	utils "github.com/open-cluster-management/multicloudhub-operator/test/utils"
+	utils "github.com/open-cluster-management/multiclusterhub-operator/test/utils"
 )
 
 var _ = Describe("Multiclusterhub", func() {
