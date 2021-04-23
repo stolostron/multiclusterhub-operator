@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package main
 
 import (
@@ -101,7 +100,7 @@ func main() {
 
 	ctx := context.TODO()
 	// Become the leader before proceeding
-	err = leader.Become(ctx, "multiclusterhub-operator-lock")
+	err = leader.Become(ctx, "multicloudhub-operator-lock") // not naming to multiclusterhub to avoid possible upgrade error w/ leader election
 	if err != nil {
 		log.Error(err, "")
 		os.Exit(1)
