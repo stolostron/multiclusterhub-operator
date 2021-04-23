@@ -435,7 +435,7 @@
     "image-version": "2.1.0",
     "image-tag": "2.1.0-a2c1f2711c8aa57b11e444e522360cea1a02fc7d",
     "git-sha256": "a2c1f2711c8aa57b11e444e522360cea1a02fc7d",
-    "git-repository": "open-cluster-management/multicloudhub-operator",
+    "git-repository": "open-cluster-management/multiclusterhub-operator",
     "image-remote": "quay.io/open-cluster-management",
     "image-digest": "sha256:default-image-sha",
     "image-key": "multiclusterhub_operator"
@@ -445,7 +445,7 @@
     "image-version": "2.1.0",
     "image-tag": "2.1.0-a2c1f2711c8aa57b11e444e522360cea1a02fc7d",
     "git-sha256": "a2c1f2711c8aa57b11e444e522360cea1a02fc7d",
-    "git-repository": "open-cluster-management/multicloudhub-operator",
+    "git-repository": "open-cluster-management/multiclusterhub-operator",
     "image-remote": "quay.io/open-cluster-management",
     "image-digest": "sha256:default-image-sha",
     "image-key": "multiclusterhub_operator_tests"
@@ -455,7 +455,7 @@
     "image-version": "2.2",
     "image-tag": "2.2-fbd3848c9182511b6fa169f3ce0b0f6643618dc8",
     "git-sha256": "fbd3848c9182511b6fa169f3ce0b0f6643618dc8",
-    "git-repository": "open-cluster-management/multicloudhub-repo",
+    "git-repository": "open-cluster-management/multiclusterhub-repo",
     "image-remote": "quay.io/open-cluster-management",
     "image-digest": "sha256:default-image-sha",
     "image-key": "multiclusterhub_repo"

@@ -11,8 +11,8 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver"
-	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
-	"github.com/open-cluster-management/multicloudhub-operator/version"
+	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/pkg/apis/operator/v1"
+	"github.com/open-cluster-management/multiclusterhub-operator/version"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

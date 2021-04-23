@@ -9,8 +9,8 @@ import (
 	"path"
 	"testing"
 
-	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/rendering/templates"
+	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/pkg/apis/operator/v1"
+	"github.com/open-cluster-management/multiclusterhub-operator/pkg/rendering/templates"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

@@ -3,7 +3,7 @@
 package apis
 
 import (
-	v1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
+	v1 "github.com/open-cluster-management/multiclusterhub-operator/pkg/apis/operator/v1"
 )
 
 func init() {

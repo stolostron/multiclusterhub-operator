@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package multiclusterhub
 
 import (
@@ -9,7 +8,7 @@ import (
 	"fmt"
 	"testing"
 
-	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
+	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/pkg/apis/operator/v1"
 )
 
 func Test_ensureHubIsImported(t *testing.T) {

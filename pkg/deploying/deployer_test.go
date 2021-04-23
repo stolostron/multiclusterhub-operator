@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package deploying
 
 import (
@@ -9,7 +8,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
+	"github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"

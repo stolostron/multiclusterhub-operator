@@ -1,11 +1,10 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package controller
 
 import (
-	multiclusterhub "github.com/open-cluster-management/multicloudhub-operator/pkg/controller/multiclusterhub"
+	multiclusterhub "github.com/open-cluster-management/multiclusterhub-operator/pkg/controller/multiclusterhub"
 )
 
 func init() {

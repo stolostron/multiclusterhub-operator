@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package main
 
 import (
@@ -19,10 +18,10 @@ import (
 
 	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis"
 	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/apis"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/controller"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/webhook"
-	"github.com/open-cluster-management/multicloudhub-operator/version"
+	"github.com/open-cluster-management/multiclusterhub-operator/pkg/apis"
+	"github.com/open-cluster-management/multiclusterhub-operator/pkg/controller"
+	"github.com/open-cluster-management/multiclusterhub-operator/pkg/webhook"
+	"github.com/open-cluster-management/multiclusterhub-operator/version"
 	netv1 "github.com/openshift/api/config/v1"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 
@@ -101,7 +100,7 @@ func main() {
 
 	ctx := context.TODO()
 	// Become the leader before proceeding
-	err = leader.Become(ctx, "multicloudhub-operator-lock")
+	err = leader.Become(ctx, "multicloudhub-operator-lock") // not naming to multiclusterhub to avoid possible upgrade error w/ leader election
 	if err != nil {
 		log.Error(err, "")
 		os.Exit(1)

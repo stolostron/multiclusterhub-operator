@@ -1,14 +1,13 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 // Package predicate defines custom predicates used to filter event triggers
 package predicate
 
 import (
 	"testing"
 
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
+	"github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/event"
