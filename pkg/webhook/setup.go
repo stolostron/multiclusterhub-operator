@@ -40,7 +40,7 @@ const (
 
 func Setup(mgr manager.Manager) error {
 	certDir := filepath.Join("/tmp", "webhookcert")
-	ns, ca, err := utils.GenerateWebhookCerts(certDir)
+	ns, _, err := utils.GenerateWebhookCerts(certDir)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func Setup(mgr manager.Manager) error {
 	hookServer.Register(validatingPath, &webhook.Admission{Handler: &multiClusterHubValidator{}})
 
 	go createWebhookService(mgr.GetClient(), ns)
-	go createOrUpdateValiatingWebhook(mgr.GetClient(), ns, validatingPath, ca)
+	go createOrUpdateValiatingWebhook(mgr.GetClient(), ns, validatingPath)
 
 	return nil
 }
@@ -71,6 +71,7 @@ func createWebhookService(c client.Client, namespace string) {
 	for {
 		if err := c.Get(context.TODO(), key, service); err != nil {
 			if errors.IsNotFound(err) {
+				log.Info(fmt.Sprintf("CAM!!!"))
 				service := newWebhookService(namespace)
 				setOwnerReferences(c, namespace, service)
 				if err := c.Create(context.TODO(), service); err != nil {
@@ -94,13 +95,13 @@ func createWebhookService(c client.Client, namespace string) {
 	}
 }
 
-func createOrUpdateValiatingWebhook(c client.Client, namespace, path string, ca []byte) {
+func createOrUpdateValiatingWebhook(c client.Client, namespace, path string) {
 	validator := &admissionregistration.ValidatingWebhookConfiguration{}
 	key := types.NamespacedName{Name: validatingCfgName}
 	for {
 		if err := c.Get(context.TODO(), key, validator); err != nil {
 			if errors.IsNotFound(err) {
-				cfg := newValidatingWebhookCfg(namespace, path, ca)
+				cfg := newValidatingWebhookCfg(namespace, path)
 				setOwnerReferences(c, namespace, cfg)
 				if err := c.Create(context.TODO(), cfg); err != nil {
 					log.Error(err, fmt.Sprintf("Failed to create validating webhook %s", validatingCfgName))
@@ -120,7 +121,7 @@ func createOrUpdateValiatingWebhook(c client.Client, namespace, path string, ca 
 		}
 
 		validator.Webhooks[0].ClientConfig.Service.Namespace = namespace
-		validator.Webhooks[0].ClientConfig.CABundle = ca
+		// validator.Webhooks[0].ClientConfig.CABundle = ca
 		if err := c.Update(context.TODO(), validator); err != nil {
 			log.Error(err, fmt.Sprintf("Failed to update validating webhook %s", validatingCfgName))
 			return
@@ -147,6 +148,7 @@ func newWebhookService(namespace string) *corev1.Service {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      utils.WebhookServiceName,
 			Namespace: namespace,
+			
 		},
 		Spec: corev1.ServiceSpec{
 			Ports:    []corev1.ServicePort{{Port: 443, TargetPort: intstr.FromInt(8443)}},
@@ -155,12 +157,13 @@ func newWebhookService(namespace string) *corev1.Service {
 	}
 }
 
-func newValidatingWebhookCfg(namespace, path string, ca []byte) *admissionregistration.ValidatingWebhookConfiguration {
+func newValidatingWebhookCfg(namespace, path string) *admissionregistration.ValidatingWebhookConfiguration {
 	sideEffect := admissionregistration.SideEffectClassNone
 
 	return &admissionregistration.ValidatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: validatingCfgName,
+			Annotations: map[string]string{"service.beta.openshift.io/inject-cabundle": "true"},
 		},
 		Webhooks: []admissionregistration.ValidatingWebhook{{
 			AdmissionReviewVersions: []string{
@@ -172,7 +175,7 @@ func newValidatingWebhookCfg(namespace, path string, ca []byte) *admissionregist
 					Namespace: namespace,
 					Path:      &path,
 				},
-				CABundle: ca,
+				// CABundle: ca,
 			},
 			Name: validatingWebhookName,
 			Rules: []admissionregistration.RuleWithOperations{{
