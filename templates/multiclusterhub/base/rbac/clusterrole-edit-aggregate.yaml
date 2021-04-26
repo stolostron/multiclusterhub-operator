@@ -8,7 +8,7 @@ metadata:
   name: open-cluster-management:edit-aggregate
 rules:
 - apiGroups: ["cluster.open-cluster-management.io"]
-  resources: ["managedclusters", "managedclusters/status"]
+  resources: ["managedclusters", "managedclustersets", "managedclusters/status"]
   verbs: ["get", "list", "watch", "update", "patch"]
 - apiGroups: ["work.open-cluster-management.io"]
   resources: ["manifestworks", "manifestworks/status"]
@@ -41,7 +41,7 @@ rules:
   resources: ["klusterletaddonconfigs"]
   verbs: ["get", "list", "watch", "update", "patch"]
 - apiGroups: ["hive.openshift.io"]
-  resources: ["clusterdeployments", "machinepools"]
+  resources: ["clusterdeployments", "clusterpools", "clusterclaims", "machinepools"]
   verbs: ["get", "list", "watch", "update", "patch"]
 - apiGroups: ["config.openshift.io"]
   resources: ["clusterversions"]

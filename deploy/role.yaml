@@ -265,6 +265,8 @@ rules:
   - managedclusteractions
   - managedclusteractions/status
   - clusterdeployments
+  - clusterpools
+  - clusterclaims
   - managedclusterinfos
   - managedclusterinfos/status
   - managedclustersets
