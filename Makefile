@@ -14,7 +14,7 @@ endif
 
 BUILD_DIR ?= build
 
-VERSION ?= 2.1.6
+VERSION ?= 2.1.7
 IMG ?= multiclusterhub-operator
 SECRET_REGISTRY ?= quay.io
 REGISTRY ?= quay.io/rhibmcollab
@@ -30,7 +30,7 @@ export ACM_NAMESPACE :=$(NAMESPACE)
 # For OCP OLM
 export IMAGE ?= $(shell echo $(REGISTRY)/$(IMG):$(VERSION))
 export CSV_CHANNEL ?= alpha
-export CSV_VERSION ?= 2.1.6
+export CSV_VERSION ?= 2.1.7
 
 
 export PROJECT_DIR = $(shell 'pwd')

@@ -11,12 +11,12 @@ import (
 	"time"
 
 	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis/apps/v1"
-	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/channel"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/foundation"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/helmrepo"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/manifest"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/subscription"
+	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/pkg/apis/operator/v1"
+	"github.com/open-cluster-management/multiclusterhub-operator/pkg/channel"
+	"github.com/open-cluster-management/multiclusterhub-operator/pkg/foundation"
+	"github.com/open-cluster-management/multiclusterhub-operator/pkg/helmrepo"
+	"github.com/open-cluster-management/multiclusterhub-operator/pkg/manifest"
+	"github.com/open-cluster-management/multiclusterhub-operator/pkg/subscription"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -384,7 +384,7 @@ func Test_OverrideImagesFromConfigmap(t *testing.T) {
 					"overrides.json:": `[
 						{
 						  "image-name": "multiclusterhub-repo",
-						  "image-tag": "2.1.6-test",
+						  "image-tag": "2.1.7-test",
 						  "image-remote": "quay.io/open-cluster-management",
 						  "image-key": "multiclusterhub_repo"
 						}
@@ -394,7 +394,7 @@ func Test_OverrideImagesFromConfigmap(t *testing.T) {
 			ManifestImage: manifest.ManifestImage{
 				ImageKey:    "multiclusterhub_repo",
 				ImageRemote: "quay.io/open-cluster-management",
-				ImageTag:    "2.1.6-test",
+				ImageTag:    "2.1.7-test",
 				ImageName:   "multiclusterhub-repo",
 			},
 			Result: nil,
@@ -469,7 +469,7 @@ func Test_maintainImageManifestConfigmap(t *testing.T) {
 			"console_api":    "quay.io/open-cluster-management/console-api@sha256:3ef1043b4e61a09b07ff37f9ad8fc6e707af9813936cf2c0d52f2fa0e489c75f",
 			"rcm_controller": " quay.io/open-cluster-management/rcm-controller@sha256:8fab4d788241bf364dbc1b8c1ea5ccf18d3145a640dbd456b0dc7ba204e36819",
 		},
-		ManifestVersion: "2.1.6",
+		ManifestVersion: "2.1.7",
 	}
 
 	configmapName := fmt.Sprintf("mch-image-manifest-%s", r.CacheSpec.ManifestVersion)
@@ -880,14 +880,14 @@ func TestReconcileMultiClusterHub_ensureSubscriptionOperatorIsRunning(t *testing
 	mchOperator := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "multiclusterhub-operator",
-			Labels: map[string]string{"olm.owner": "advanced-cluster-management.v2.1.6"},
+			Labels: map[string]string{"olm.owner": "advanced-cluster-management.v2.1.7"},
 		},
 	}
 
 	subOperator := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "multicluster-operators-standalone-subscription",
-			Labels: map[string]string{"olm.owner": "advanced-cluster-management.v2.1.6"},
+			Labels: map[string]string{"olm.owner": "advanced-cluster-management.v2.1.7"},
 		},
 	}
 

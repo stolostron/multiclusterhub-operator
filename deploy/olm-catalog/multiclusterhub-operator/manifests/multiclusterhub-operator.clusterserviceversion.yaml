@@ -19,9 +19,9 @@ metadata:
     certified: "false"
     createdAt: "2020-04-29T15:57:12Z"
     description: Open management of Openshift and Kubernetes clusters
-    repository: https://github.com/open-cluster-management/multicloudhub-operator
+    repository: https://github.com/open-cluster-management/multiclusterhub-operator
     support: The Open Cluster Management Project
-  name: multiclusterhub-operator.v2.1.6
+  name: multiclusterhub-operator.v2.1.7
   namespace: open-cluster-management
 spec:
   apiservicedefinitions: {}
@@ -418,7 +418,7 @@ spec:
                   value: /usr/local/templates
                 - name: MANIFESTS_PATH
                   value: /image-manifests
-                image: multiclusterhub-operator:2.1.6
+                image: multiclusterhub-operator:2.1.7
                 imagePullPolicy: Always
                 name: multiclusterhub-operator
                 resources:
@@ -449,4 +449,4 @@ spec:
   maturity: alpha
   provider:
     name: Redhat
-  version: 2.1.6
+  version: 2.1.7

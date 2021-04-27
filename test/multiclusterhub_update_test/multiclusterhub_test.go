@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	utils "github.com/open-cluster-management/multicloudhub-operator/test/utils"
+	utils "github.com/open-cluster-management/multiclusterhub-operator/test/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
 )
@@ -80,7 +80,7 @@ var _ = Describe("Multiclusterhub", func() {
 		updateVersion, err := semver.NewVersion(os.Getenv(("updateVersion")))
 		Expect(err).Should(BeNil())
 
-		c, err := semver.NewConstraint(">= 2.1.6")
+		c, err := semver.NewConstraint(">= 2.1.7")
 		Expect(err).Should(BeNil())
 		configmapCount := 0
 		if c.Check(startVersion) {
