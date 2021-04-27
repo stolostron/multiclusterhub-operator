@@ -752,7 +752,10 @@ func injectMapIntoUnstructured(u map[string]interface{}, path string, mapToInjec
 				return u, fmt.Errorf("Failed to find key: %s", currentKey)
 			}
 			for i := 0; i < len(nextMap); i++ {
-				injectMapIntoUnstructured(nextMap[i], path, mapToInject)
+				_, err := injectMapIntoUnstructured(nextMap[i], path, mapToInject)
+				if err != nil {
+					return u, err
+				}
 			}
 			return u, nil
 		} else {
@@ -760,7 +763,10 @@ func injectMapIntoUnstructured(u map[string]interface{}, path string, mapToInjec
 			if !ok {
 				return u, fmt.Errorf("Failed to find key: %s", currentKey)
 			}
-			injectMapIntoUnstructured(nextMap, path, mapToInject)
+			_, err := injectMapIntoUnstructured(nextMap, path, mapToInject)
+			if err != nil {
+				return u, err
+			}
 			return u, nil
 		}
 	} else {

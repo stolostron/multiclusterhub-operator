@@ -1,3 +1,6 @@
+# Copyright (c) 2021 Red Hat, Inc.
+# Copyright Contributors to the Open Cluster Management project
+
 import shutil
 from check_env_vars import _product_version
 import os
