@@ -52,3 +52,13 @@ spec:
               value: "/image-manifests"
             - name: CRDS_PATH
               value: "/crds"
+          volumes: 
+            - name: webhook-secret
+              secret:
+                secretName: multiclusterhub-operator-webhook
+                optional: true
+                items:
+                - key: tls.crt
+                  path: /tmp/webhookcert/tls.crt
+                - key: tls.key
+                  path: /tmp/webhookcert/tls.key

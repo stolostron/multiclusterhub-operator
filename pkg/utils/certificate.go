@@ -37,7 +37,7 @@ type Certificate struct {
 
 // GenerateWebhookCerts ...
 func GenerateWebhookCerts(certDir string) (string, []byte, error) {
-	namespace, err := findNamespace()
+	namespace, err := FindNamespace()
 	if err != nil {
 		return "", nil, err
 	}
@@ -72,7 +72,7 @@ func GenerateWebhookCerts(certDir string) (string, []byte, error) {
 
 // GenerateKlusterletSecret ...
 func GenerateKlusterletSecret(client runtimeclient.Client, multiClusterHub *operatorsv1.MultiClusterHub) error {
-	namespace, err := findNamespace()
+	namespace, err := FindNamespace()
 	if err != nil {
 		return err
 	}
@@ -235,7 +235,7 @@ func getCertAndKey(
 	return certBuffer.String(), keyBuffer.String(), nil
 }
 
-func findNamespace() (string, error) {
+func FindNamespace() (string, error) {
 	ns, found := os.LookupEnv(podNamespaceEnvVar)
 	if !found {
 		return "", fmt.Errorf("%s envvar is not set", podNamespaceEnvVar)

@@ -41,16 +41,17 @@ const (
 
 func Setup(mgr manager.Manager) error {
 	certDir := filepath.Join("/tmp", "webhookcert")
-	ns, _, err := utils.GenerateWebhookCerts(certDir)	
-	// ns, err := utils.FindNamespace()
+	// ns, _, err := utils.GenerateWebhookCerts(certDir)	
+	ns, err := utils.FindNamespace()
 	if err != nil {
 		return err
 	}
+	go createWebhookService(mgr.GetClient(), ns)
 	// ns, found := os.LookupEnv(podNamespaceEnvVar)
 	// if !found {
 	// 	return fmt.Errorf("%s envvar is not set", podNamespaceEnvVar)
 	// }
-
+	time.Sleep(5*time.Second)
 	hookServer := &webhook.Server{
 		Port:    8443,
 		CertDir: certDir,
@@ -65,7 +66,7 @@ func Setup(mgr manager.Manager) error {
 	validatingPath := "/validate-v1-multiclusterhub"
 	hookServer.Register(validatingPath, &webhook.Admission{Handler: &multiClusterHubValidator{}})
 
-	go createWebhookService(mgr.GetClient(), ns)
+	// go createWebhookService(mgr.GetClient(), ns)
 	go createOrUpdateValiatingWebhook(mgr.GetClient(), ns, validatingPath)
 
 	return nil
