@@ -16,7 +16,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -388,44 +387,6 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 	}
 
 	result, err = r.ensureChannel(multiClusterHub, channel.Channel(multiClusterHub))
-	if result != nil {
-		return *result, err
-	}
-
-	if multiClusterHub.Spec.SeparateCertificateManagement && multiClusterHub.Spec.ImagePullSecret != "" {
-		result, err = r.copyPullSecret(multiClusterHub, utils.CertManagerNamespace)
-		if result != nil {
-			return *result, err
-		}
-	}
-
-	result, err = r.ensureSubscription(multiClusterHub, subscription.CertManager(multiClusterHub, r.CacheSpec.ImageOverrides))
-	if result != nil {
-		return *result, err
-	}
-
-	certGV := schema.GroupVersion{Group: "certmanager.k8s.io", Version: "v1alpha1"}
-	// Skip wait for API to be ready on unit test
-	if !utils.IsUnitTest() {
-		// condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, CertManagerReason, "Waiting for cert manager CRDs")
-		// SetHubCondition(&multiClusterHub.Status, *condition)
-		result, err = r.apiReady(certGV)
-		if result != nil {
-			return *result, err
-		}
-	}
-
-	result, err = r.ensureSubscription(multiClusterHub, subscription.CertWebhook(multiClusterHub, r.CacheSpec.ImageOverrides))
-	if result != nil {
-		return *result, err
-	}
-
-	result, _ = r.ensureWebhookIsAvailable(multiClusterHub)
-	if result != nil {
-		return *result, nil
-	}
-
-	result, err = r.ensureSubscription(multiClusterHub, subscription.ConfigWatcher(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
 	}

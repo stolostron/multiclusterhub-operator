@@ -77,9 +77,6 @@ func getDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 func getAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	return []types.NamespacedName{
 		{Name: "application-chart-sub", Namespace: m.Namespace},
-		{Name: "cert-manager-sub", Namespace: utils.CertManagerNS(m)},
-		{Name: "cert-manager-webhook-sub", Namespace: utils.CertManagerNS(m)},
-		{Name: "configmap-watcher-sub", Namespace: utils.CertManagerNS(m)},
 		{Name: "console-chart-sub", Namespace: m.Namespace},
 		{Name: "insights-chart-sub", Namespace: m.Namespace},
 		{Name: "grc-sub", Namespace: m.Namespace},

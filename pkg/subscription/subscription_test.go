@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package subscription
 
 import (
@@ -130,9 +129,6 @@ func TestSubscriptions(t *testing.T) {
 		got  *unstructured.Unstructured
 	}{
 		{"ApplicationUI subscription", ApplicationUI(mch, ovr)},
-		{"CertManager subscription", CertManager(mch, ovr)},
-		{"CertWebhook subscription", CertWebhook(mch, ovr)},
-		{"ConfigWatcher subscription", ConfigWatcher(mch, ovr)},
 		{"Console subscription", Console(mch, ovr, "")},
 		{"GRC subscription", GRC(mch, ovr)},
 		{"Insights subscription", Insights(mch, ovr, "")},
