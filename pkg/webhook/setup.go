@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"time"
+	// "os"
 
 	clustermanager "github.com/open-cluster-management/api/operator/v1"
 	admissionregistration "k8s.io/api/admissionregistration/v1"
@@ -40,10 +41,15 @@ const (
 
 func Setup(mgr manager.Manager) error {
 	certDir := filepath.Join("/tmp", "webhookcert")
-	ns, _, err := utils.GenerateWebhookCerts(certDir)
+	ns, _, err := utils.GenerateWebhookCerts(certDir)	
+	// ns, err := utils.FindNamespace()
 	if err != nil {
 		return err
 	}
+	// ns, found := os.LookupEnv(podNamespaceEnvVar)
+	// if !found {
+	// 	return fmt.Errorf("%s envvar is not set", podNamespaceEnvVar)
+	// }
 
 	hookServer := &webhook.Server{
 		Port:    8443,
@@ -71,7 +77,7 @@ func createWebhookService(c client.Client, namespace string) {
 	for {
 		if err := c.Get(context.TODO(), key, service); err != nil {
 			if errors.IsNotFound(err) {
-				log.Info(fmt.Sprintf("CAM!!!"))
+				
 				service := newWebhookService(namespace)
 				setOwnerReferences(c, namespace, service)
 				if err := c.Create(context.TODO(), service); err != nil {
@@ -148,6 +154,7 @@ func newWebhookService(namespace string) *corev1.Service {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      utils.WebhookServiceName,
 			Namespace: namespace,
+			Annotations: map[string]string{"service.beta.openshift.io/serving-cert-secret-name": "multiclusterhub-operator-webhook"},
 			
 		},
 		Spec: corev1.ServiceSpec{
