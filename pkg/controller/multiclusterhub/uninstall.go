@@ -36,7 +36,7 @@ var (
 				types.NamespacedName{Name: "searchservices.search.acm.com"},
 				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1"},
 			),
-			// searchservices CRD replaced in 2.3.0
+			// mirroredmanagedclusters CRD removed in 2.3.0
 			newUnstructured(
 				types.NamespacedName{Name: "mirroredmanagedclusters.cluster.open-cluster-management.io"},
 				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1"},
