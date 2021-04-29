@@ -3,9 +3,9 @@
 package multiclusterhub
 
 import (
-	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/manifest"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
+	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/pkg/apis/operator/v1"
+	"github.com/open-cluster-management/multiclusterhub-operator/pkg/manifest"
+	"github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
 )
 
 // CacheSpec ...

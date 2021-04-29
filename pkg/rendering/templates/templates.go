@@ -19,7 +19,7 @@ import (
 	"sigs.k8s.io/kustomize/v3/pkg/resource"
 	"sigs.k8s.io/kustomize/v3/pkg/target"
 
-	"github.com/open-cluster-management/multicloudhub-operator/version"
+	"github.com/open-cluster-management/multiclusterhub-operator/version"
 )
 
 const TemplatesPathEnvVar = "TEMPLATES_PATH"

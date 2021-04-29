@@ -4,7 +4,7 @@ package multiclusterhub_uninstall_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	utils "github.com/open-cluster-management/multicloudhub-operator/test/utils"
+	utils "github.com/open-cluster-management/multiclusterhub-operator/test/utils"
 )
 
 var _ = Describe("Multiclusterhub", func() {
