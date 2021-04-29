@@ -1,4 +1,4 @@
-module github.com/open-cluster-management/multicloudhub-operator
+module github.com/open-cluster-management/multiclusterhub-operator
 
 go 1.13
 

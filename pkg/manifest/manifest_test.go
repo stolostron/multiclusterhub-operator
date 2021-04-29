@@ -6,8 +6,8 @@ import (
 	"os"
 	"testing"
 
-	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
+	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/pkg/apis/operator/v1"
+	"github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
 )
 
 func TestGetImageOverrideType(t *testing.T) {
@@ -31,7 +31,7 @@ func TestGetImageOverrideType(t *testing.T) {
 func Test_readManifestFile(t *testing.T) {
 	t.Run("Get manifest", func(t *testing.T) {
 		os.Setenv(ManifestsPathEnvVar, "../../image-manifests")
-		version := "2.0.10"
+		version := "2.0.11"
 		_, err := readManifestFile(version)
 		if err != nil {
 			t.Errorf("readManifestFile() error = %v, wantErr %v", err, nil)
