@@ -136,6 +136,7 @@ func TestSubscriptions(t *testing.T) {
 		{"Console subscription", Console(mch, ovr, "")},
 		{"GRC subscription", GRC(mch, ovr)},
 		{"Insights subscription", Insights(mch, ovr, "")},
+		{"Discovery subscription", Discovery(mch, ovr, "")},
 		{"KUIWebTerminal subscription", KUIWebTerminal(mch, ovr, "")},
 		{"ManagementIngress subscription", ManagementIngress(mch, ovr, "")},
 		{"cluster-lifecycle subscription", ClusterLifecycle(mch, ovr)},
