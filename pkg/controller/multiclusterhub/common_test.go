@@ -225,24 +225,6 @@ func Test_ensureSubscription(t *testing.T) {
 		Result       error
 	}{
 		{
-			Name:         "Test: ensureSubscription - Cert-manager",
-			MCH:          full_mch,
-			Subscription: subscription.CertManager(full_mch, cacheSpec.ImageOverrides),
-			Result:       nil,
-		},
-		{
-			Name:         "Test: ensureSubscription - Cert-webhook",
-			MCH:          full_mch,
-			Subscription: subscription.CertWebhook(full_mch, cacheSpec.ImageOverrides),
-			Result:       nil,
-		},
-		{
-			Name:         "Test: ensureSubscription - Config-watcher",
-			MCH:          full_mch,
-			Subscription: subscription.ConfigWatcher(full_mch, cacheSpec.ImageOverrides),
-			Result:       nil,
-		},
-		{
 			Name:         "Test: ensureSubscription - Management-ingress",
 			MCH:          full_mch,
 			Subscription: subscription.ManagementIngress(full_mch, cacheSpec.ImageOverrides, cacheSpec.IngressDomain),
@@ -736,59 +718,6 @@ func Test_getHelmReleaseOwnedDeployments(t *testing.T) {
 	}
 }
 
-func Test_ensureWebhookIsAvailable(t *testing.T) {
-	availableWebhook := full_mch.DeepCopy()
-	unavailableWebhook := full_mch.DeepCopy()
-
-	statusConditionAvailable := operatorsv1.StatusCondition{
-		Type:   "Deployed",
-		Status: "True",
-	}
-	statusConditionUnavailable := operatorsv1.StatusCondition{
-		Type:   "Error",
-		Status: "False",
-	}
-	availableWebhook.Status.Components = make(map[string]operatorsv1.StatusCondition)
-	unavailableWebhook.Status.Components = make(map[string]operatorsv1.StatusCondition)
-
-	availableWebhook.Status.Components["cert-manager-webhook-sub"] = statusConditionAvailable
-	unavailableWebhook.Status.Components["cert-manager-webhook-sub"] = statusConditionUnavailable
-
-	tests := []struct {
-		name   string
-		mch    *operatorsv1.MultiClusterHub
-		result error
-	}{
-		{
-			name:   "No status",
-			mch:    full_mch,
-			result: fmt.Errorf("Waiting for cert-manager-webhook status"),
-		},
-		{
-			name:   "Webhook is Unavailable",
-			mch:    unavailableWebhook,
-			result: fmt.Errorf("Waiting for cert-manager-webhook to be available"),
-		},
-		{
-			name:   "Webhook is available",
-			mch:    availableWebhook,
-			result: nil,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r, err := getTestReconciler(full_mch)
-			if err != nil {
-				t.Fatalf("Failed to create test reconciler")
-			}
-			_, err = r.ensureWebhookIsAvailable(tt.mch)
-			if !errorEquals(err, tt.result) {
-				t.Fatalf("Improper webhook status")
-			}
-		})
-	}
-}
-
 func Test_getDeploymentByName(t *testing.T) {
 	foo := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}
 	bar := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "bar"}}
@@ -1058,39 +987,6 @@ func TestAddProxyEnvVarsToSub(t *testing.T) {
 		envVars      map[string]string
 		expectedVars map[string]string
 	}{
-		{
-			sub: subscription.CertManager(full_mch, cacheSpec.ImageOverrides),
-			envVars: map[string]string{
-				"HTTP_PROXY":  "test_http_proxy",
-				"HTTPS_PROXY": "test_https_proxy",
-				"NO_PROXY":    "no_proxy",
-			},
-			expectedVars: map[string]string{
-				"HTTP_PROXY":  "test_http_proxy",
-				"HTTPS_PROXY": "test_https_proxy",
-				"NO_PROXY":    "no_proxy",
-			},
-		},
-		{
-			sub: subscription.CertWebhook(full_mch, cacheSpec.ImageOverrides),
-			envVars: map[string]string{
-				"HTTP_PROXY":  "test_http_proxy",
-				"HTTPS_PROXY": "test_https_proxy",
-			},
-			expectedVars: map[string]string{
-				"HTTP_PROXY":  "test_http_proxy",
-				"HTTPS_PROXY": "test_https_proxy",
-			},
-		},
-		{
-			sub: subscription.ConfigWatcher(full_mch, cacheSpec.ImageOverrides),
-			envVars: map[string]string{
-				"NO_PROXY": "no_proxy",
-			},
-			expectedVars: map[string]string{
-				"NO_PROXY": "no_proxy",
-			},
-		},
 		{
 			sub:          subscription.ManagementIngress(full_mch, cacheSpec.ImageOverrides, cacheSpec.IngressDomain),
 			envVars:      map[string]string{},

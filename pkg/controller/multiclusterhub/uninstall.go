@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/pkg/apis/operator/v1"
+	"github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,7 +22,7 @@ var (
 	// The uninstallList is the list of all resources from previous installs to remove. Items can be removed
 	// from this list in future releases if they are sure to not exist prior to the current installer version
 	uninstallList = func(m *operatorsv1.MultiClusterHub) []*unstructured.Unstructured {
-		return []*unstructured.Unstructured{
+		removals := []*unstructured.Unstructured{
 			// topology-sub removed in 2.3.0
 			newUnstructured(
 				types.NamespacedName{Name: "topology-sub", Namespace: m.Namespace},
@@ -41,7 +42,52 @@ var (
 				types.NamespacedName{Name: "mirroredmanagedclusters.cluster.open-cluster-management.io"},
 				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1"},
 			),
+			// cert-manager removed in 2.3.0
+			newUnstructured(
+				types.NamespacedName{Name: "cert-manager-sub", Namespace: utils.CertManagerNS(m)},
+				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
+			),
+			newUnstructured(
+				types.NamespacedName{Name: "cert-manager-webhook-sub", Namespace: utils.CertManagerNS(m)},
+				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
+			),
+			newUnstructured(
+				types.NamespacedName{Name: "configmap-watcher-sub", Namespace: utils.CertManagerNS(m)},
+				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
+			),
+			newUnstructured(
+				types.NamespacedName{Name: "certificates.certmanager.k8s.io"},
+				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1beta1"},
+			),
+			newUnstructured(
+				types.NamespacedName{Name: "certificaterequests.certmanager.k8s.io"},
+				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1beta1"},
+			),
+			newUnstructured(
+				types.NamespacedName{Name: "challenges.certmanager.k8s.io"},
+				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1beta1"},
+			),
+			newUnstructured(
+				types.NamespacedName{Name: "clusterissuers.certmanager.k8s.io"},
+				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1beta1"},
+			),
+			newUnstructured(
+				types.NamespacedName{Name: "issuers.certmanager.k8s.io"},
+				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1beta1"},
+			),
+			newUnstructured(
+				types.NamespacedName{Name: "orders.certmanager.k8s.io"},
+				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1beta1"},
+			),
 		}
+
+		if m.Spec.SeparateCertificateManagement && m.Spec.ImagePullSecret != "" {
+			removals = append(removals, newUnstructured(
+				types.NamespacedName{Name: m.Spec.ImagePullSecret, Namespace: utils.CertManagerNamespace},
+				schema.GroupVersionKind{Group: "", Kind: "Secret", Version: "v1"},
+			))
+		}
+		return removals
 	}
 )
 

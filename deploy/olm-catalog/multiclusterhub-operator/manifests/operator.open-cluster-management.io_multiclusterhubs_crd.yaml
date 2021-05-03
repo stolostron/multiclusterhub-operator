@@ -205,7 +205,7 @@ spec:
                     type: string
                 type: object
               separateCertificateManagement:
-                description: Install cert-manager into its own namespace
+                description: (Deprecated) Install cert-manager into its own namespace
                 type: boolean
             type: object
           status:

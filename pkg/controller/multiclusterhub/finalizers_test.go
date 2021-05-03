@@ -636,17 +636,7 @@ func Test_cleanupAppSubscriptions(t *testing.T) {
 
 			var emptyOverrides map[string]string
 
-			result, err := r.ensureSubscription(tt.MCH, subscription.CertWebhook(tt.MCH, emptyOverrides))
-			if result != nil {
-				t.Fatalf("Failed to ensure foundation resource: %s", err)
-			}
-
-			result, err = r.ensureSubscription(tt.MCH, subscription.ConfigWatcher(tt.MCH, emptyOverrides))
-			if result != nil {
-				t.Fatalf("Failed to ensure foundation resource: %s", err)
-			}
-
-			result, err = r.ensureSubscription(tt.MCH, subscription.Search(tt.MCH, emptyOverrides))
+			result, err := r.ensureSubscription(tt.MCH, subscription.Search(tt.MCH, emptyOverrides))
 			if result != nil {
 				t.Fatalf("Failed to ensure foundation resource: %s", err)
 			}
