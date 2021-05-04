@@ -269,7 +269,7 @@ func Test_ensureSubscription(t *testing.T) {
 		{
 			Name:         "Test: ensureSubscription - Discovery",
 			MCH:          full_mch,
-			Subscription: subscription.Discovery(full_mch, cacheSpec.ImageOverrides, cacheSpec.IngressDomain),
+			Subscription: subscription.Discovery(full_mch, cacheSpec.ImageOverrides),
 			Result:       nil,
 		},
 		{

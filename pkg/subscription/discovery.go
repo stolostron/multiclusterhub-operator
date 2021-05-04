@@ -11,7 +11,7 @@ import (
 )
 
 // Discovery overrides the discovery chart
-func Discovery(m *operatorsv1.MultiClusterHub, overrides map[string]string, ingress string) *unstructured.Unstructured {
+func Discovery(m *operatorsv1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "discovery-operator",
 		Namespace: m.Namespace,

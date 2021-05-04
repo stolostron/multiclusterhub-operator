@@ -493,7 +493,7 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 	if result != nil {
 		return *result, err
 	}
-	result, err = r.ensureSubscription(multiClusterHub, subscription.Discovery(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
+	result, err = r.ensureSubscription(multiClusterHub, subscription.Discovery(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
 	}
