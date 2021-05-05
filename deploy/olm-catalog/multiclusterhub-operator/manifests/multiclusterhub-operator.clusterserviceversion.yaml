@@ -393,6 +393,7 @@ spec:
           - policies
           - policies/status
           - placementbindings
+          - policyautomations
           - roles
           - rolebindings
           - secrets
