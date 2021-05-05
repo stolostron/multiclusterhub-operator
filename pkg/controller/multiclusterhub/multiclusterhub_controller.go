@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Red Hat, Inc.
+// Copyright (c) 2021 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
 package multiclusterhub
@@ -451,6 +451,10 @@ func (r *ReconcileMultiClusterHub) Reconcile(request reconcile.Request) (retQueu
 		return *result, err
 	}
 	result, err = r.ensureSubscription(multiClusterHub, subscription.Insights(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
+	if result != nil {
+		return *result, err
+	}
+	result, err = r.ensureSubscription(multiClusterHub, subscription.Discovery(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != nil {
 		return *result, err
 	}

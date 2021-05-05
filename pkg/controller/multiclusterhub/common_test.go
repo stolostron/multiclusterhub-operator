@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Red Hat, Inc.
+// Copyright (c) 2021 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
 package multiclusterhub
@@ -246,6 +246,12 @@ func Test_ensureSubscription(t *testing.T) {
 			Name:         "Test: ensureSubscription - Insights",
 			MCH:          full_mch,
 			Subscription: subscription.Insights(full_mch, cacheSpec.ImageOverrides, cacheSpec.IngressDomain),
+			Result:       nil,
+		},
+		{
+			Name:         "Test: ensureSubscription - Discovery",
+			MCH:          full_mch,
+			Subscription: subscription.Discovery(full_mch, cacheSpec.ImageOverrides),
 			Result:       nil,
 		},
 		{
