@@ -53,16 +53,6 @@ func (r *CRDRenderer) Render() ([]*unstructured.Unstructured, []error) {
 			continue
 		}
 
-		// Skip cert-mgr CRDs
-		if file.Name() == "certificate-crd.yaml" ||
-			file.Name() == "certificate-resource-crd.yaml" ||
-			file.Name() == "challenge-crd.yaml" ||
-			file.Name() == "clusterissuer-crd.yaml" ||
-			file.Name() == "issuer-crd.yaml" ||
-			file.Name() == "order-crd.yaml" {
-			continue
-		}
-
 		filePath := path.Join(r.directory, file.Name())
 		src, err := ioutil.ReadFile(filepath.Clean(filePath)) // #nosec G304 (filepath cleaned)
 		if err != nil {
