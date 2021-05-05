@@ -17,6 +17,7 @@ _mch_repo_dir=os.path.join(_git_repo_base_dir, "multiclusterhub")
 _mch_repo_charts_dir=os.path.join(_mch_repo_dir, "charts")
 _chart_names=["application-chart", "cluster-lifecycle", "console-chart", "insights-chart", "discovery-operator", "grc", "kui-web-terminal", "management-ingress", "search-prod"]
 
+
 # clean up old charts if they exist
 if os.path.isdir(_mch_repo_dir):
     shutil.rmtree(_mch_repo_dir)

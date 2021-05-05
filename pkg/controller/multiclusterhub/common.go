@@ -6,7 +6,6 @@ package multiclusterhub
 import (
 	"context"
 	"encoding/json"
-	e "errors"
 	"fmt"
 	"os"
 	"reflect"
@@ -27,16 +26,13 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/discovery"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -330,77 +326,6 @@ func (r *ReconcileMultiClusterHub) ensureUnstructuredResource(m *operatorsv1.Mul
 	return nil, nil
 }
 
-func (r *ReconcileMultiClusterHub) apiReady(gv schema.GroupVersion) (*reconcile.Result, error) {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		log.Error(err, "Failed to create rest config")
-		return &reconcile.Result{}, err
-	}
-
-	c, err := discovery.NewDiscoveryClientForConfig(cfg)
-	if err != nil {
-		log.Error(err, "Failed to create discovery client")
-		return &reconcile.Result{}, err
-	}
-
-	err = discovery.ServerSupportsVersion(c, gv)
-	if err != nil {
-		// Wait a little and try again
-		log.Info("Waiting for API group to be available", "API group", gv)
-		// condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Waiting for cert manager CRD availability")
-		// SetHubCondition(&m.Status, *condition)
-		return &reconcile.Result{RequeueAfter: time.Second * 10}, nil
-	}
-	return nil, nil
-}
-
-func (r *ReconcileMultiClusterHub) copyPullSecret(m *operatorsv1.MultiClusterHub, newNS string) (*reconcile.Result, error) {
-	sublog := log.WithValues("Copying Secret to cert-manager namespace", m.Spec.ImagePullSecret, "Namespace.Name", utils.CertManagerNamespace)
-
-	if m.Spec.ImagePullSecret == "" {
-		err := e.New("imagePullSecret is empty")
-		sublog.Error(err, "copyPullSecret requires a valid secret to copy")
-		return &reconcile.Result{}, err
-	}
-
-	pullSecret := &v1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{
-		Name:      m.Spec.ImagePullSecret,
-		Namespace: m.Namespace,
-	}, pullSecret)
-	if err != nil {
-		sublog.Error(err, "Failed to get secret")
-		return &reconcile.Result{}, err
-	}
-
-	pullSecret.SetNamespace(newNS)
-	pullSecret.SetSelfLink("")
-	pullSecret.SetResourceVersion("")
-	pullSecret.SetUID("")
-
-	unstructuredPullSecret, err := utils.CoreToUnstructured(pullSecret)
-	if err != nil {
-		sublog.Error(err, "Failed to unmarshal into unstructured object")
-		return &reconcile.Result{}, err
-	}
-	utils.AddInstallerLabel(unstructuredPullSecret, m.Name, m.Namespace)
-
-	err = r.client.Get(context.TODO(), types.NamespacedName{
-		Name:      unstructuredPullSecret.GetName(),
-		Namespace: newNS,
-	}, unstructuredPullSecret)
-
-	if err != nil && errors.IsNotFound(err) {
-		sublog.Info(fmt.Sprintf("Creating secret %s in namespace %s", unstructuredPullSecret.GetName(), utils.CertManagerNamespace))
-		err = r.client.Create(context.TODO(), unstructuredPullSecret)
-		if err != nil {
-			sublog.Error(err, "Failed to create secret")
-			return &reconcile.Result{}, err
-		}
-	}
-	return nil, nil
-}
-
 // OverrideImagesFromConfigmap ...
 func (r *ReconcileMultiClusterHub) OverrideImagesFromConfigmap(imageOverrides map[string]string, namespace, configmapName string) (map[string]string, error) {
 	log.Info(fmt.Sprintf("Overriding images from configmap: %s/%s", namespace, configmapName))
@@ -607,22 +532,6 @@ func (r *ReconcileMultiClusterHub) labelDeployments(hub *operatorsv1.MultiCluste
 		}
 	}
 	return nil
-}
-
-func (r *ReconcileMultiClusterHub) ensureWebhookIsAvailable(mch *operatorsv1.MultiClusterHub) (*reconcile.Result, error) {
-	duration := time.Second * 5
-	if _, ok := mch.Status.Components["cert-manager-webhook-sub"]; !ok {
-		log.Info("Waiting for cert-manager-webhook status")
-		return &reconcile.Result{RequeueAfter: duration}, fmt.Errorf("Waiting for cert-manager-webhook status")
-	}
-
-	component := mch.Status.Components["cert-manager-webhook-sub"]
-	if !((component.Type == "Deployed" || component.Type == "DeployedRelease") && component.Status == "True") {
-		log.Info("Waiting for cert-manager-webhook to be available")
-		return &reconcile.Result{RequeueAfter: duration}, fmt.Errorf("Waiting for cert-manager-webhook to be available")
-	}
-
-	return nil, nil
 }
 
 // ensureSubscriptionOperatorIsRunning verifies that the subscription operator that manages helm subscriptions exists and
