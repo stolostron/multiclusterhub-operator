@@ -394,7 +394,7 @@
       "image-version": "2.1.0",
       "image-tag": "2.1.0-0d1f29199bdb64bc354c6e822d481ac10a3fac6e",
       "git-sha256": "0d1f29199bdb64bc354c6e822d481ac10a3fac6e",
-      "git-repository": "open-cluster-management/multicloudhub-operator",
+      "git-repository": "open-cluster-management/multiclusterhub-operator",
       "image-remote": "quay.io/open-cluster-management",
       "image-digest": "sha256:ccfd01e043adbd8ea54946d9f81362016e53838894adc44f0b4733581f2d8ab6",
       "image-key": "multiclusterhub_operator"
@@ -404,7 +404,7 @@
       "image-version": "2.1.0",
       "image-tag": "2.1.0-0a50a5a4e06a4b806c44e7b2e143a113b7c36846",
       "git-sha256": "0a50a5a4e06a4b806c44e7b2e143a113b7c36846",
-      "git-repository": "open-cluster-management/multicloudhub-operator",
+      "git-repository": "open-cluster-management/multiclusterhub-operator",
       "image-remote": "quay.io/open-cluster-management",
       "image-digest": "sha256:38a5cf63a74a879ee6b634bf96135eb93089c224aa6df87de3345012943f2252",
       "image-key": "multiclusterhub_operator_bundle"
@@ -414,7 +414,7 @@
       "image-version": "2.1.0",
       "image-tag": "2.1.0-0d1f29199bdb64bc354c6e822d481ac10a3fac6e",
       "git-sha256": "0d1f29199bdb64bc354c6e822d481ac10a3fac6e",
-      "git-repository": "open-cluster-management/multicloudhub-operator",
+      "git-repository": "open-cluster-management/multiclusterhub-operator",
       "image-remote": "quay.io/open-cluster-management",
       "image-digest": "sha256:f3a21ac1033e9adea35ba15593f98abae9a8c79f94c607e23d0e6a81a83d93cc",
       "image-key": "multiclusterhub_operator_tests"
@@ -424,7 +424,7 @@
       "image-version": "2.1",
       "image-tag": "2.1-ef3d555e8720c843ab68374b396e02efc24a3f65",
       "git-sha256": "ef3d555e8720c843ab68374b396e02efc24a3f65",
-      "git-repository": "open-cluster-management/multicloudhub-repo",
+      "git-repository": "open-cluster-management/multiclusterhub-repo",
       "image-remote": "quay.io/open-cluster-management",
       "image-digest": "sha256:d9523ce68eb93c1f66574c02424d7ee925838f0feabb26b92bb2b996c7987580",
       "image-key": "multiclusterhub_repo"

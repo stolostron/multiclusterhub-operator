@@ -4,7 +4,7 @@
       "image-version": "2.1",
       "image-tag": "2.1-ef3d555e8720c843ab68374b396e02efc24a3f65",
       "git-sha256": "ef3d555e8720c843ab68374b396e02efc24a3f65",
-      "git-repository": "open-cluster-management/multicloudhub-repo",
+      "git-repository": "open-cluster-management/multiclusterhub-repo",
       "image-remote": "quay.io/open-cluster-management",
       "image-digest": "sha256:9be2ca81e72e5edd9b3d1d9860a126fe4a3a389a1b2c87eefd36629aef2a62a9",
       "image-key": "multiclusterhub_repo"

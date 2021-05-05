@@ -13,8 +13,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	operatorsv1 "github.com/open-cluster-management/multicloudhub-operator/pkg/apis/operator/v1"
-	"github.com/open-cluster-management/multicloudhub-operator/pkg/utils"
+	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/pkg/apis/operator/v1"
+	"github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
 )
 
 type multiClusterHubValidator struct {
@@ -131,7 +131,7 @@ func (m *multiClusterHubValidator) validateDelete(req admission.Request) error {
 		Group:   "inventory.open-cluster-management.io",
 		Version: "v1alpha1",
 		Kind:    "BareMetalAsset",
-	});
+	})
 
 	bmaErr := m.client.List(context.TODO(), bmaList)
 	if bmaErr == nil {

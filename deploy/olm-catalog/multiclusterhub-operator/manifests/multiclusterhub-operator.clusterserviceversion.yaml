@@ -19,7 +19,7 @@ metadata:
     certified: "false"
     createdAt: "2020-04-29T15:57:12Z"
     description: Open management of Openshift and Kubernetes clusters
-    repository: https://github.com/open-cluster-management/multicloudhub-operator
+    repository: https://github.com/open-cluster-management/multiclusterhub-operator
     support: The Open Cluster Management Project
   name: multiclusterhub-operator.v2.2.4
   namespace: open-cluster-management
