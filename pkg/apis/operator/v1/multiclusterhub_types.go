@@ -39,7 +39,7 @@ type MultiClusterHubSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:select:High,urn:alm:descriptor:com.tectonic.ui:select:Basic"
 	AvailabilityConfig AvailabilityType `json:"availabilityConfig,omitempty"`
 
-	// Install cert-manager into its own namespace
+	// (Deprecated) Install cert-manager into its own namespace
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Separate Certificate Management"
