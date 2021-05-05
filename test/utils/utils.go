@@ -598,7 +598,7 @@ func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 		if err != nil {
 			log.Fatal(err)
 		}
-		out, err := exec.Command("/bin/sh", cleanupPath).Output()
+		out, err := exec.Command("/bin/sh", cleanupPath).Output() // #nosec G204 (Subprocess launched with variable)
 		if err != nil {
 			log.Fatal(err)
 		}
