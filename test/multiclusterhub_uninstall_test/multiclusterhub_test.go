@@ -11,7 +11,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	utils "github.com/open-cluster-management/multicloudhub-operator/test/utils"
+	utils "github.com/open-cluster-management/multiclusterhub-operator/test/utils"
 	"k8s.io/client-go/dynamic"
 )
 
@@ -101,7 +101,6 @@ var _ = Describe("Multiclusterhub", func() {
 			err := utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Delete(context.TODO(), utils.MCHName, metav1.DeleteOptions{})
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).Should(BeEquivalentTo("admission webhook \"multiclusterhub.validating-webhook.open-cluster-management.io\" denied the request: Cannot delete MultiClusterHub resource because BareMetalAssets resource(s) exist"))
-
 
 			utils.DeleteBareMetalAssetsCR()
 

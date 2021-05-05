@@ -598,7 +598,7 @@ func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 		if err != nil {
 			log.Fatal(err)
 		}
-		out, err := exec.Command("/bin/sh", cleanupPath).Output()
+		out, err := exec.Command("/bin/sh", cleanupPath).Output() // #nosec G204 (Subprocess launched with variable)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -761,7 +761,7 @@ func ValidateMCH() error {
 	Expect(err).Should(BeNil())
 	v, err := semver.NewVersion(currentVersion)
 	Expect(err).Should(BeNil())
-	c, err := semver.NewConstraint(">= 2.2.3")
+	c, err := semver.NewConstraint(">= 2.2.4")
 	Expect(err).Should(BeNil())
 	if c.Check(v) {
 		By("- Ensuring image manifest configmap is created")
