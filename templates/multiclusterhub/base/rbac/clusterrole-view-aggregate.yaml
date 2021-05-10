@@ -8,7 +8,7 @@ metadata:
   name: open-cluster-management:view-aggregate
 rules:
 - apiGroups: ["cluster.open-cluster-management.io"]
-  resources: ["managedclusters", "managedclustersets", "managedclusters/status", "clustercurator"]
+  resources: ["managedclusters", "managedclustersets", "managedclusters/status", "clustercurators"]
   verbs: ["get", "list", "watch"]
 - apiGroups: ["work.open-cluster-management.io"]
   resources: ["manifestworks", "manifestworks/status"]
