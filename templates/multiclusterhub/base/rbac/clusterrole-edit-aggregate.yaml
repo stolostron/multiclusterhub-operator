@@ -15,7 +15,7 @@ rules:
   verbs: ["get", "list", "watch", "update", "patch"]
 - apiGroups: ["action.open-cluster-management.io"]
   resources: ["managedclusteractions", "managedclusteractions/status"]
-  verbs: ["get", "list", "watch", "update", "patch"]s
+  verbs: ["get", "list", "watch", "update", "patch"]
 - apiGroups: ["view.open-cluster-management.io"]
   resources: ["managedclusterviews", "managedclusterviews/status"]
   verbs: ["get", "list", "watch", "update", "patch"]
