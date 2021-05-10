@@ -9,6 +9,7 @@ spec:
   selector:
     matchLabels:
       app: {{ .Values.appName }}
+  replicas: {{ .Values.hubconfig.replicaCount }}
   template:
     metadata:
       labels:
@@ -19,7 +20,6 @@ spec:
       hostIPC: false
       securityContext:
         runAsNonRoot: true
-      replicas: {{ .Values.hubconfig.replicaCount }}
       tolerations:
         - key: dedicated
           operator: Exists
