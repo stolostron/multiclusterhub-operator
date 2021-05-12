@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package foundation
 
 import (
@@ -30,6 +29,7 @@ func ClusterManager(m *operatorsv1.MultiClusterHub, overrides map[string]string)
 			"spec": map[string]interface{}{
 				"registrationImagePullSpec": RegistrationImage(overrides),
 				"workImagePullSpec":         WorkImage(overrides),
+				"placementImagePullSpec":    PlacementImage(overrides),
 			},
 		},
 	}
