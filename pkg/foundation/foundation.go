@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package foundation
 
 import (
@@ -23,6 +22,9 @@ const RegistrationImageKey = "registration"
 // WorkImageKey used by work deployments
 const WorkImageKey = "work"
 
+// PlacementImageKey used by placement deployments
+const PlacementImageKey = "placement"
+
 // ServiceAccount used by ocm deployments
 const ServiceAccount = "ocm-foundation-sa"
 
@@ -39,6 +41,11 @@ func RegistrationImage(overrides map[string]string) string {
 // WorkImage ...
 func WorkImage(overrides map[string]string) string {
 	return overrides[WorkImageKey]
+}
+
+// PlacementImage ...
+func PlacementImage(overrides map[string]string) string {
+	return overrides[PlacementImageKey]
 }
 
 func defaultLabels(app string) map[string]string {
