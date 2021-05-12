@@ -367,6 +367,7 @@ spec:
           - managedclusterviews/status
           - manifestworks
           - manifestworks/status
+          - clustercurators
           - clustermanagers
           - clusterroles
           - clusterrolebindings
