@@ -24,7 +24,7 @@ rules:
   resources: ["managedclusters/accept"]
   verbs: ["update"]
 - apiGroups: [""]
-  resources: ["configmaps","endpoints","secrets","serviceaccounts","services","pods"]
+  resources: ["configmaps","endpoints","secrets","serviceaccounts","services","pods", "pods/log"]
   verbs: ["create","get", "list", "watch", "update", "delete", "deletecollection", "patch"]
 - apiGroups: ["apps"]
   resources: ["daemonsets","deployments","replicasets","statefulsets"]
