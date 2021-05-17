@@ -276,11 +276,15 @@ rules:
   - placementrules
   - placementrules/status
   - policies
+  - pods
+  - pods/log
   - policies/status
   - placementbindings
   - roles
   - rolebindings
   - secrets
+  - serviceaccounts
+  - services
   - signers
   - subscriptions
   - subscriptions/status
