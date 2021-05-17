@@ -239,6 +239,7 @@ rules:
   - managedclusteractions
   - managedclusteractions/status
   - clusterdeployments
+  - clusterimagesets
   - managedclusterinfos
   - managedclusterinfos/status
   - managedclustersets
