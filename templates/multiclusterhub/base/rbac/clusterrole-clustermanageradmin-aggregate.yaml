@@ -8,7 +8,7 @@ metadata:
   name: open-cluster-management:cluster-manager-admin-aggregate
 rules:
 - apiGroups: ["cluster.open-cluster-management.io"]
-  resources: ["managedclusters", "managedclusters/accept","managedclusters/status"]
+  resources: ["managedclusters", "managedclusters/accept","managedclusters/status", "clustercurators"]
   verbs: ["create","get", "list", "watch", "update", "delete", "deletecollection", "patch"]
 - apiGroups: [""]
   resources: ["namespaces"]

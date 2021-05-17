@@ -75,6 +75,23 @@ func Test_newUnstructured(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "MirroredManaged",
+			args: args{
+				nn:  types.NamespacedName{Name: "mirroredmanagedclusters.cluster.open-cluster-management.io", Namespace: "test"},
+				gvk: schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1"},
+			},
+			want: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apiextensions.k8s.io/v1",
+					"kind":       "CustomResourceDefinition",
+					"metadata": map[string]interface{}{
+						"name":      "mirroredmanagedclusters.cluster.open-cluster-management.io",
+						"namespace": "test",
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

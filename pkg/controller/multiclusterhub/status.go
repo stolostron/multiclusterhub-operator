@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Red Hat, Inc.
+// Copyright (c) 2021 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
 package multiclusterhub
@@ -77,15 +77,15 @@ func getDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 func getAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	return []types.NamespacedName{
 		{Name: "application-chart-sub", Namespace: m.Namespace},
-		{Name: "cert-manager-sub", Namespace: utils.CertManagerNS(m)},
-		{Name: "cert-manager-webhook-sub", Namespace: utils.CertManagerNS(m)},
-		{Name: "configmap-watcher-sub", Namespace: utils.CertManagerNS(m)},
 		{Name: "console-chart-sub", Namespace: m.Namespace},
+		{Name: "insights-chart-sub", Namespace: m.Namespace},
 		{Name: "grc-sub", Namespace: m.Namespace},
 		{Name: "kui-web-terminal-sub", Namespace: m.Namespace},
 		{Name: "management-ingress-sub", Namespace: m.Namespace},
 		{Name: "cluster-lifecycle-sub", Namespace: m.Namespace},
 		{Name: "search-prod-sub", Namespace: m.Namespace},
+		{Name: "discovery-operator-sub", Namespace: m.Namespace},
+		{Name: "assisted-service-sub", Namespace: m.Namespace},
 	}
 }
 

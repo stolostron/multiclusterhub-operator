@@ -40,3 +40,14 @@ webhooks:
     resources:
     - applications
     scope: '*'
+  - apiGroups:
+      - hive.openshift.io
+    operations:
+      - CREATE
+    apiVersions:
+      - "v1"
+    resources:
+      - clusterdeployments
+      - clusterpools
+      - clusterclaims
+    scope: '*'

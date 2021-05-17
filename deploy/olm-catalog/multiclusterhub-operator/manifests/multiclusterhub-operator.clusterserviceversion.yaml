@@ -82,7 +82,7 @@ spec:
         path: overrides
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Install cert-manager into its own namespace
+      - description: (Deprecated) Install cert-manager into its own namespace
         displayName: Separate Certificate Management
         path: separateCertificateManagement
         x-descriptors:
@@ -351,6 +351,8 @@ spec:
           - managedclusteractions
           - managedclusteractions/status
           - clusterdeployments
+          - clusterpools
+          - clusterclaims
           - managedclusterinfos
           - managedclusterinfos/status
           - managedclustersets
@@ -365,6 +367,7 @@ spec:
           - managedclusterviews/status
           - manifestworks
           - manifestworks/status
+          - clustercurators
           - clustermanagers
           - clusterroles
           - clusterrolebindings
@@ -391,6 +394,7 @@ spec:
           - policies
           - policies/status
           - placementbindings
+          - policyautomations
           - roles
           - rolebindings
           - secrets
