@@ -336,6 +336,7 @@ spec:
           - register.open-cluster-management.io
           - coordination.k8s.io
           - search.open-cluster-management.io
+          - discovery.open-cluster-management.io
           resources:
           - applications
           - applications/status
@@ -353,6 +354,8 @@ spec:
           - clusterdeployments
           - clusterpools
           - clusterclaims
+          - discoveryconfigs
+          - discoveredclusters
           - managedclusterinfos
           - managedclusterinfos/status
           - managedclustersets
