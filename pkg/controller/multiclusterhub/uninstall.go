@@ -55,30 +55,6 @@ var (
 				types.NamespacedName{Name: "configmap-watcher-sub", Namespace: utils.CertManagerNS(m)},
 				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
 			),
-			newUnstructured(
-				types.NamespacedName{Name: "certificates.certmanager.k8s.io"},
-				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1beta1"},
-			),
-			newUnstructured(
-				types.NamespacedName{Name: "certificaterequests.certmanager.k8s.io"},
-				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1beta1"},
-			),
-			newUnstructured(
-				types.NamespacedName{Name: "challenges.certmanager.k8s.io"},
-				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1beta1"},
-			),
-			newUnstructured(
-				types.NamespacedName{Name: "clusterissuers.certmanager.k8s.io"},
-				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1beta1"},
-			),
-			newUnstructured(
-				types.NamespacedName{Name: "issuers.certmanager.k8s.io"},
-				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1beta1"},
-			),
-			newUnstructured(
-				types.NamespacedName{Name: "orders.certmanager.k8s.io"},
-				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1beta1"},
-			),
 		}
 
 		if m.Spec.SeparateCertificateManagement && m.Spec.ImagePullSecret != "" {
