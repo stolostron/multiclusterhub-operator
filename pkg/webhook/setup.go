@@ -47,6 +47,7 @@ func Setup(mgr manager.Manager) error {
 	if err != nil {
 		return err
 	}
+	log.Info("Creating Service")
 	go createWebhookService(mgr.GetClient(), ns)
 	// ns, found := os.LookupEnv(podNamespaceEnvVar)
 	// if !found {
@@ -54,7 +55,7 @@ func Setup(mgr manager.Manager) error {
 	// }
 	
 	go getSecret(mgr.GetClient(), ns, certDir)
-	time.Sleep(time.Second*30)
+	time.Sleep(time.Second*15)
 	
 	
 	
@@ -74,15 +75,17 @@ func Setup(mgr manager.Manager) error {
 	hookServer.Register(validatingPath, &webhook.Admission{Handler: &multiClusterHubValidator{}})
 
 	// go createWebhookService(mgr.GetClient(), ns)
-	go createOrUpdateValiatingWebhook(mgr.GetClient(), ns, validatingPath)
+	go createOrUpdateValiatingWebhook(mgr.GetClient(), ns, validatingPath, certDir)
 
 	return nil
 }
 
 func createWebhookService(c client.Client, namespace string) {
+	log.Info("service function called")
 	service := &corev1.Service{}
 	key := types.NamespacedName{Name: utils.WebhookServiceName, Namespace: namespace}
 	for {
+		log.Info("loop cycle continues")
 		if err := c.Get(context.TODO(), key, service); err != nil {
 			if errors.IsNotFound(err) {
 				
@@ -109,7 +112,15 @@ func createWebhookService(c client.Client, namespace string) {
 	}
 }
 
-func createOrUpdateValiatingWebhook(c client.Client, namespace, path string) {
+func createOrUpdateValiatingWebhook(c client.Client, namespace, path string, certDir string) {
+	for {
+		if _, err := os.Stat(filepath.Join(certDir, "tls.crt")); err != nil {
+			time.Sleep(time.Second)
+			log.Error(err, fmt.Sprintf("not finding file"))
+			continue
+		}
+		break
+	}
 	validator := &admissionregistration.ValidatingWebhookConfiguration{}
 	key := types.NamespacedName{Name: validatingCfgName}
 	for {
