@@ -115,6 +115,7 @@ spec:
           - security.openshift.io
           - clusterview.open-cluster-management.io
           - discovery.open-cluster-management.io
+          - wgpolicyk8s.io
           resources:
           - apiservices
           - channels
@@ -130,6 +131,7 @@ spec:
           - validatingwebhookconfigurations
           - namespaces
           - pods
+          - policyreports
           - replicasets
           - rolebindings
           - secrets
@@ -195,6 +197,7 @@ spec:
           - hive.openshift.io
           - clusterview.open-cluster-management.io
           - discovery.open-cluster-management.io
+          - wgpolicyk8s.io
           resources:
           - apiservices
           - baremetalassets
@@ -216,6 +219,7 @@ spec:
           - subscriptions
           - validatingwebhookconfigurations
           - pods
+          - policyreports
           - managedclusters
           - managedclustersets
           verbs:

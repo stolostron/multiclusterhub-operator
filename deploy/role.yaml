@@ -21,6 +21,7 @@ rules:
   - "security.openshift.io"
   - "clusterview.open-cluster-management.io"
   - "discovery.open-cluster-management.io"
+  - "wgpolicyk8s.io"
   resources:
   - apiservices
   - channels
@@ -36,6 +37,7 @@ rules:
   - validatingwebhookconfigurations
   - namespaces
   - pods
+  - policyreports
   - replicasets
   - rolebindings
   - secrets
@@ -103,6 +105,7 @@ rules:
   - "hive.openshift.io"
   - "clusterview.open-cluster-management.io"
   - "discovery.open-cluster-management.io"
+  - "wgpolicyk8s.io"
   resources:
   - apiservices
   - baremetalassets
@@ -124,6 +127,7 @@ rules:
   - subscriptions
   - validatingwebhookconfigurations
   - pods
+  - policyreports
   - managedclusters
   - managedclustersets
   verbs:
