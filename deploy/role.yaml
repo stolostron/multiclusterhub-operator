@@ -147,6 +147,7 @@ rules:
   - "apps.open-cluster-management.io"
   - "hive.openshift.io"
   - "clusterview.open-cluster-management.io"
+  - "wgpolicyk8s.io"
   resources:
   - apiservices
   - helmreleases
@@ -163,6 +164,7 @@ rules:
   - subjectaccessreviews
   - validatingwebhookconfigurations
   - pods
+  - policyreports
   - managedclusters
   - managedclustersets
   verbs:
