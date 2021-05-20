@@ -62,3 +62,6 @@ rules:
 - apiGroups: ["clusterview.open-cluster-management.io"]
   resources: ["managedclusters","managedclustersets"]
   verbs: ["list","get","watch"]
+- apiGroups: ["wgpolicyk8s.io"]
+  resources: ["policyreports"]
+  verbs: ["get", "list", "watch"]
