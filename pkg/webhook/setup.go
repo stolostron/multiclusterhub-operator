@@ -9,7 +9,8 @@ import (
 	"fmt"
 	"path/filepath"
 	"time"
-	// "os"
+	"os"
+	"io/ioutil"
 
 	clustermanager "github.com/open-cluster-management/api/operator/v1"
 	admissionregistration "k8s.io/api/admissionregistration/v1"
@@ -51,7 +52,13 @@ func Setup(mgr manager.Manager) error {
 	// if !found {
 	// 	return fmt.Errorf("%s envvar is not set", podNamespaceEnvVar)
 	// }
-	time.Sleep(5*time.Second)
+	
+	go getSecret(mgr.GetClient(), ns, certDir)
+	time.Sleep(time.Second*30)
+	
+	
+	
+	// hookServer := newServer(certDir)
 	hookServer := &webhook.Server{
 		Port:    8443,
 		CertDir: certDir,
@@ -148,6 +155,59 @@ func setOwnerReferences(c client.Client, namespace string, obj metav1.Object) {
 
 	obj.SetOwnerReferences([]metav1.OwnerReference{
 		*metav1.NewControllerRef(owner, owner.GetObjectKind().GroupVersionKind())})
+}
+
+func getSecret(c client.Client, namespace string, certDir string){
+	secret := &corev1.Secret{}
+	key := types.NamespacedName{Name: "multiclusterhub-operator-webhook", Namespace: namespace}
+	// count := 0
+	
+	for {
+		if err := c.Get(context.TODO(), key, secret); err != nil {
+			
+			switch err.(type) {
+			case *cache.ErrCacheNotStarted:
+				time.Sleep(time.Second)
+				continue
+			default:
+				time.Sleep(time.Second)
+				log.Error(err, fmt.Sprintf("Fails to return secret"))
+				continue
+			}
+		}
+	log.Info(fmt.Sprintf("Successfully returned secret"))
+	
+	
+	if err := os.MkdirAll(certDir, os.ModePerm); err != nil {
+		log.Error(err, fmt.Sprintf("trouble creating directory"))
+		return 
+	}
+	if err := ioutil.WriteFile(filepath.Join(certDir, "tls.crt"), secret.Data["tls.crt"], os.FileMode(0644)); err != nil {
+		log.Error(err, fmt.Sprintf("trouble writing crt"))
+		return
+	}
+	if err := ioutil.WriteFile(filepath.Join(certDir, "tls.key"), secret.Data["tls.key"], os.FileMode(0644)); err != nil {
+		log.Error(err, fmt.Sprintf("trouble writing key"))
+		return 
+	}
+	return
+	}
+}
+
+func newServer(certDir string) *webhook.Server {
+	
+	for {
+		if _, err := os.Stat(filepath.Join(certDir, "tls.crt")); err != nil {
+			time.Sleep(time.Second)
+			log.Error(err, fmt.Sprintf("not finding file"))
+			continue
+		}
+		log.Info(fmt.Sprintf("found file"))
+		return &webhook.Server{
+			Port:    8443,
+			CertDir: certDir,
+		}
+	}
 }
 
 func newWebhookService(namespace string) *corev1.Service {
