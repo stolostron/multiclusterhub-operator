@@ -47,16 +47,25 @@ func Setup(mgr manager.Manager) error {
 	if err != nil {
 		return err
 	}
+	done := make(chan struct{})
 	log.Info("Creating Service")
-	go createWebhookService(mgr.GetClient(), ns)
+	go createWebhookService(mgr.GetClient(), ns, done)
 	// ns, found := os.LookupEnv(podNamespaceEnvVar)
 	// if !found {
 	// 	return fmt.Errorf("%s envvar is not set", podNamespaceEnvVar)
 	// }
-	
+	<- done
 	go getSecret(mgr.GetClient(), ns, certDir)
-	time.Sleep(time.Second*15)
 	
+	
+	// for {
+	// 	if _, err := os.Stat(filepath.Join(certDir, "tls.crt")); err != nil {
+	// 		time.Sleep(time.Second)
+	// 		log.Info("not finding file")
+	// 		continue
+	// 	}
+	// 	break
+	// }
 	
 	
 	// hookServer := newServer(certDir)
@@ -80,7 +89,7 @@ func Setup(mgr manager.Manager) error {
 	return nil
 }
 
-func createWebhookService(c client.Client, namespace string) {
+func createWebhookService(c client.Client, namespace string, done chan<- struct{}) {
 	log.Info("service function called")
 	service := &corev1.Service{}
 	key := types.NamespacedName{Name: utils.WebhookServiceName, Namespace: namespace}
@@ -96,11 +105,13 @@ func createWebhookService(c client.Client, namespace string) {
 					return
 				}
 				log.Info(fmt.Sprintf("Create %s/%s service", namespace, utils.WebhookServiceName))
+				done <- struct{}{}
 				return
 			}
 			switch err.(type) {
 			case *cache.ErrCacheNotStarted:
-				time.Sleep(time.Second)
+				log.Info("cash error")
+				time.Sleep(time.Second)				
 				continue
 			default:
 				log.Error(err, fmt.Sprintf("Failed to get %s/%s service", namespace, utils.WebhookServiceName))
@@ -108,19 +119,13 @@ func createWebhookService(c client.Client, namespace string) {
 			}
 		}
 		log.Info(fmt.Sprintf("%s/%s service is found", namespace, utils.WebhookServiceName))
+		done <- struct{}{}
 		return
 	}
 }
 
 func createOrUpdateValiatingWebhook(c client.Client, namespace, path string, certDir string) {
-	for {
-		if _, err := os.Stat(filepath.Join(certDir, "tls.crt")); err != nil {
-			time.Sleep(time.Second)
-			log.Error(err, fmt.Sprintf("not finding file"))
-			continue
-		}
-		break
-	}
+	
 	validator := &admissionregistration.ValidatingWebhookConfiguration{}
 	key := types.NamespacedName{Name: validatingCfgName}
 	for {
