@@ -58,7 +58,7 @@ func Setup(mgr manager.Manager) error {
 	// }
 	
 	go getSecret(mgr.GetClient(), ns, certDir, done)
-	// <-done
+	<-done
 	time.Sleep(time.Second)
 	
 	// watcher, err := fsnotify.NewWatcher()
@@ -206,10 +206,10 @@ func getSecret(c client.Client, namespace string, certDir string, done chan<- st
 	log.Info(fmt.Sprintf("Successfully returned secret"))
 	
 	
-	// if err := os.MkdirAll(certDir, os.ModePerm); err != nil {
-	// 	log.Error(err, fmt.Sprintf("trouble creating directory"))
-	// 	return 
-	// }
+	if err := os.MkdirAll(certDir, os.ModePerm); err != nil {
+		log.Error(err, fmt.Sprintf("trouble creating directory"))
+		return 
+	}
 	if err := ioutil.WriteFile(filepath.Join(certDir, "tls.crt"), secret.Data["tls.crt"], os.FileMode(0644)); err != nil {
 		log.Error(err, fmt.Sprintf("trouble writing crt"))
 		return
