@@ -11,6 +11,7 @@ import (
 	"time"
 	"os"
 	"io/ioutil"
+	// "github.com/fsnotify/fsnotify"
 
 	clustermanager "github.com/open-cluster-management/api/operator/v1"
 	admissionregistration "k8s.io/api/admissionregistration/v1"
@@ -42,6 +43,7 @@ const (
 
 func Setup(mgr manager.Manager) error {
 	certDir := filepath.Join("/tmp", "webhookcert")
+	
 	// ns, _, err := utils.GenerateWebhookCerts(certDir)	
 	ns, err := utils.FindNamespace()
 	if err != nil {
@@ -49,15 +51,25 @@ func Setup(mgr manager.Manager) error {
 	}
 	done := make(chan struct{})
 	log.Info("Creating Service")
-	go createWebhookService(mgr.GetClient(), ns, done)
+	go createWebhookService(mgr.GetClient(), ns)
 	// ns, found := os.LookupEnv(podNamespaceEnvVar)
 	// if !found {
 	// 	return fmt.Errorf("%s envvar is not set", podNamespaceEnvVar)
 	// }
-	<- done
-	go getSecret(mgr.GetClient(), ns, certDir)
 	
+	go getSecret(mgr.GetClient(), ns, certDir, done)
+	// <-done
+	time.Sleep(time.Second)
 	
+	// watcher, err := fsnotify.NewWatcher()
+	// if err != nil {
+	// 	return err
+	// }
+	// err = Start(watcher, certDir)
+	// if err != nil {
+	// 	log.Error(err, fmt.Sprintf("The watcher didn't work"))
+	// }
+	// time.Sleep(time.Second*30)
 	// for {
 	// 	if _, err := os.Stat(filepath.Join(certDir, "tls.crt")); err != nil {
 	// 		time.Sleep(time.Second)
@@ -89,7 +101,7 @@ func Setup(mgr manager.Manager) error {
 	return nil
 }
 
-func createWebhookService(c client.Client, namespace string, done chan<- struct{}) {
+func createWebhookService(c client.Client, namespace string) {
 	log.Info("service function called")
 	service := &corev1.Service{}
 	key := types.NamespacedName{Name: utils.WebhookServiceName, Namespace: namespace}
@@ -105,7 +117,7 @@ func createWebhookService(c client.Client, namespace string, done chan<- struct{
 					return
 				}
 				log.Info(fmt.Sprintf("Create %s/%s service", namespace, utils.WebhookServiceName))
-				done <- struct{}{}
+				
 				return
 			}
 			switch err.(type) {
@@ -119,7 +131,7 @@ func createWebhookService(c client.Client, namespace string, done chan<- struct{
 			}
 		}
 		log.Info(fmt.Sprintf("%s/%s service is found", namespace, utils.WebhookServiceName))
-		done <- struct{}{}
+		
 		return
 	}
 }
@@ -173,7 +185,7 @@ func setOwnerReferences(c client.Client, namespace string, obj metav1.Object) {
 		*metav1.NewControllerRef(owner, owner.GetObjectKind().GroupVersionKind())})
 }
 
-func getSecret(c client.Client, namespace string, certDir string){
+func getSecret(c client.Client, namespace string, certDir string, done chan<- struct{}){
 	secret := &corev1.Secret{}
 	key := types.NamespacedName{Name: "multiclusterhub-operator-webhook", Namespace: namespace}
 	// count := 0
@@ -194,10 +206,10 @@ func getSecret(c client.Client, namespace string, certDir string){
 	log.Info(fmt.Sprintf("Successfully returned secret"))
 	
 	
-	if err := os.MkdirAll(certDir, os.ModePerm); err != nil {
-		log.Error(err, fmt.Sprintf("trouble creating directory"))
-		return 
-	}
+	// if err := os.MkdirAll(certDir, os.ModePerm); err != nil {
+	// 	log.Error(err, fmt.Sprintf("trouble creating directory"))
+	// 	return 
+	// }
 	if err := ioutil.WriteFile(filepath.Join(certDir, "tls.crt"), secret.Data["tls.crt"], os.FileMode(0644)); err != nil {
 		log.Error(err, fmt.Sprintf("trouble writing crt"))
 		return
@@ -206,6 +218,7 @@ func getSecret(c client.Client, namespace string, certDir string){
 		log.Error(err, fmt.Sprintf("trouble writing key"))
 		return 
 	}
+	done <- struct{}{}
 	return
 	}
 }
@@ -286,4 +299,13 @@ func newValidatingWebhookCfg(namespace, path string) *admissionregistration.Vali
 			SideEffects: &sideEffect,
 		}},
 	}
+}
+
+func createFiles(certDir string){
+	if err := os.MkdirAll(certDir, os.ModePerm); err != nil {
+		log.Error(err, fmt.Sprintf("trouble creating directory"))
+		return 
+	}
+	os.OpenFile(filepath.Join(certDir, "tls.crt"), os.O_RDONLY|os.O_CREATE, 0666)
+	os.OpenFile(filepath.Join(certDir, "tls.key"), os.O_RDONLY|os.O_CREATE, 0666)
 }
