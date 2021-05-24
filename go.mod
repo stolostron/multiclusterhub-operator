@@ -6,6 +6,7 @@ require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/semver/v3 v3.1.0
 	github.com/fatih/structs v1.1.0
+	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-logr/logr v0.2.1
 	github.com/go-logr/zapr v0.3.0 // indirect
