@@ -74,3 +74,6 @@ replace github.com/openshift/library-go => github.com/openshift/library-go v0.0.
 
 // Resolves CVE-2020-14040
 replace golang.org/x/text => golang.org/x/text v0.3.5
+
+// Resolves CVE-2021-29482
+replace github.com/ulikunitz/xz => github.com/ulikunitz/xz v0.5.10
