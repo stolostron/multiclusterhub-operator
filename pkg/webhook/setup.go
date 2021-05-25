@@ -44,7 +44,7 @@ const (
 func Setup(mgr manager.Manager) error {
 	certDir := filepath.Join("/tmp", "webhookcert")
 
-	// ns, _, err := utils.GenerateWebhookCerts(certDir)
+	
 	ns, err := utils.FindNamespace()
 	if err != nil {
 		return err
@@ -52,10 +52,7 @@ func Setup(mgr manager.Manager) error {
 
 	done := make(chan string)
 	go createWebhookService(mgr.GetClient(), ns)
-	// ns, found := os.LookupEnv(podNamespaceEnvVar)
-	// if !found {
-	// 	return fmt.Errorf("%s envvar is not set", podNamespaceEnvVar)
-	// }
+
 
 	go getSecret(mgr.GetClient(), ns, certDir, done)
 
@@ -64,38 +61,20 @@ func Setup(mgr manager.Manager) error {
 			select {
 			case x, ok := <-done:
 				if ok && x == "success" {
-					log.Info("Secrets")
+					log.Info("Secret has been successfully read. Moving to create service.")
 					finalizeWebhook(mgr, ns, certDir)
 					return
 				} else {
-					fmt.Println("NOT DONE")
+					log.Info("Channel returned with no secret value")
+					return
 				}
 			default:
-				fmt.Println("No value ready, moving on.")
+				log.Info("Still waiting for secret value.")
 			}
 			time.Sleep(5 * time.Second)
 		}
 	}()
 
-	// watcher, err := fsnotify.NewWatcher()
-	// if err != nil {
-	// 	return err
-	// }
-	// err = Start(watcher, certDir)
-	// if err != nil {
-	// 	log.Error(err, fmt.Sprintf("The watcher didn't work"))
-	// }
-	// time.Sleep(time.Second*30)
-	// for {
-	// 	if _, err := os.Stat(filepath.Join(certDir, "tls.crt")); err != nil {
-	// 		time.Sleep(time.Second)
-	// 		log.Info("not finding file")
-	// 		continue
-	// 	}
-	// 	break
-	// }
-
-	// hookServer := newServer(certDir)
 	return nil
 }
 
@@ -114,7 +93,6 @@ func finalizeWebhook(mgr manager.Manager, ns, certDir string) error {
 	validatingPath := "/validate-v1-multiclusterhub"
 	hookServer.Register(validatingPath, &webhook.Admission{Handler: &multiClusterHubValidator{}})
 
-	// go createWebhookService(mgr.GetClient(), ns)
 	go createOrUpdateValiatingWebhook(mgr.GetClient(), ns, validatingPath, certDir)
 	return nil
 }
@@ -124,7 +102,6 @@ func createWebhookService(c client.Client, namespace string) {
 	service := &corev1.Service{}
 	key := types.NamespacedName{Name: utils.WebhookServiceName, Namespace: namespace}
 	for {
-		log.Info("loop cycle continues")
 		if err := c.Get(context.TODO(), key, service); err != nil {
 			if errors.IsNotFound(err) {
 
@@ -140,7 +117,6 @@ func createWebhookService(c client.Client, namespace string) {
 			}
 			switch err.(type) {
 			case *cache.ErrCacheNotStarted:
-				log.Info("cash error")
 				time.Sleep(time.Second)
 				continue
 			default:
@@ -181,7 +157,6 @@ func createOrUpdateValiatingWebhook(c client.Client, namespace, path string, cer
 		}
 
 		validator.Webhooks[0].ClientConfig.Service.Namespace = namespace
-		// validator.Webhooks[0].ClientConfig.CABundle = ca
 		if err := c.Update(context.TODO(), validator); err != nil {
 			log.Error(err, fmt.Sprintf("Failed to update validating webhook %s", validatingCfgName))
 			return
@@ -206,7 +181,6 @@ func setOwnerReferences(c client.Client, namespace string, obj metav1.Object) {
 func getSecret(c client.Client, namespace string, certDir string, done chan<- string) {
 	secret := &corev1.Secret{}
 	key := types.NamespacedName{Name: "multiclusterhub-operator-webhook", Namespace: namespace}
-	// count := 0
 
 	for {
 		if err := c.Get(context.TODO(), key, secret); err != nil {
@@ -288,7 +262,6 @@ func newValidatingWebhookCfg(namespace, path string) *admissionregistration.Vali
 					Namespace: namespace,
 					Path:      &path,
 				},
-				// CABundle: ca,
 			},
 			Name: validatingWebhookName,
 			Rules: []admissionregistration.RuleWithOperations{{
