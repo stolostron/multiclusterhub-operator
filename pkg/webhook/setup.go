@@ -1,14 +1,16 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package webhook
 
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"time"
+
 
 	clustermanager "github.com/open-cluster-management/api/operator/v1"
 	admissionregistration "k8s.io/api/admissionregistration/v1"
@@ -40,11 +42,42 @@ const (
 
 func Setup(mgr manager.Manager) error {
 	certDir := filepath.Join("/tmp", "webhookcert")
-	ns, ca, err := utils.GenerateWebhookCerts(certDir)
+
+	
+	ns, err := utils.FindNamespace()
 	if err != nil {
 		return err
 	}
 
+	done := make(chan string)
+	go createWebhookService(mgr.GetClient(), ns)
+
+
+	go getSecret(mgr.GetClient(), ns, certDir, done)
+
+	go func() {
+		for {
+			select {
+			case x, ok := <-done:
+				if ok && x == "success" {
+					log.Info("Secret has been successfully read. Moving to create service.")
+					finalizeWebhook(mgr, ns, certDir)
+					return
+				} else {
+					log.Info("Channel returned with no secret value")
+					return
+				}
+			default:
+				log.Info("Still waiting for secret value.")
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}()
+
+	return nil
+}
+
+func finalizeWebhook(mgr manager.Manager, ns, certDir string) error {
 	hookServer := &webhook.Server{
 		Port:    8443,
 		CertDir: certDir,
@@ -59,18 +92,18 @@ func Setup(mgr manager.Manager) error {
 	validatingPath := "/validate-v1-multiclusterhub"
 	hookServer.Register(validatingPath, &webhook.Admission{Handler: &multiClusterHubValidator{}})
 
-	go createWebhookService(mgr.GetClient(), ns)
-	go createOrUpdateValiatingWebhook(mgr.GetClient(), ns, validatingPath, ca)
-
+	go createOrUpdateValiatingWebhook(mgr.GetClient(), ns, validatingPath, certDir)
 	return nil
 }
 
 func createWebhookService(c client.Client, namespace string) {
+	log.Info("service function called")
 	service := &corev1.Service{}
 	key := types.NamespacedName{Name: utils.WebhookServiceName, Namespace: namespace}
 	for {
 		if err := c.Get(context.TODO(), key, service); err != nil {
 			if errors.IsNotFound(err) {
+
 				service := newWebhookService(namespace)
 				setOwnerReferences(c, namespace, service)
 				if err := c.Create(context.TODO(), service); err != nil {
@@ -78,6 +111,7 @@ func createWebhookService(c client.Client, namespace string) {
 					return
 				}
 				log.Info(fmt.Sprintf("Create %s/%s service", namespace, utils.WebhookServiceName))
+
 				return
 			}
 			switch err.(type) {
@@ -90,17 +124,19 @@ func createWebhookService(c client.Client, namespace string) {
 			}
 		}
 		log.Info(fmt.Sprintf("%s/%s service is found", namespace, utils.WebhookServiceName))
+
 		return
 	}
 }
 
-func createOrUpdateValiatingWebhook(c client.Client, namespace, path string, ca []byte) {
+func createOrUpdateValiatingWebhook(c client.Client, namespace, path string, certDir string) {
+
 	validator := &admissionregistration.ValidatingWebhookConfiguration{}
 	key := types.NamespacedName{Name: validatingCfgName}
 	for {
 		if err := c.Get(context.TODO(), key, validator); err != nil {
 			if errors.IsNotFound(err) {
-				cfg := newValidatingWebhookCfg(namespace, path, ca)
+				cfg := newValidatingWebhookCfg(namespace, path)
 				setOwnerReferences(c, namespace, cfg)
 				if err := c.Create(context.TODO(), cfg); err != nil {
 					log.Error(err, fmt.Sprintf("Failed to create validating webhook %s", validatingCfgName))
@@ -120,7 +156,6 @@ func createOrUpdateValiatingWebhook(c client.Client, namespace, path string, ca 
 		}
 
 		validator.Webhooks[0].ClientConfig.Service.Namespace = namespace
-		validator.Webhooks[0].ClientConfig.CABundle = ca
 		if err := c.Update(context.TODO(), validator); err != nil {
 			log.Error(err, fmt.Sprintf("Failed to update validating webhook %s", validatingCfgName))
 			return
@@ -142,11 +177,64 @@ func setOwnerReferences(c client.Client, namespace string, obj metav1.Object) {
 		*metav1.NewControllerRef(owner, owner.GetObjectKind().GroupVersionKind())})
 }
 
+func getSecret(c client.Client, namespace string, certDir string, done chan<- string) {
+	secret := &corev1.Secret{}
+	key := types.NamespacedName{Name: "multiclusterhub-operator-webhook", Namespace: namespace}
+
+	for {
+		if err := c.Get(context.TODO(), key, secret); err != nil {
+
+			switch err.(type) {
+			case *cache.ErrCacheNotStarted:
+				time.Sleep(time.Second)
+				continue
+			default:
+				time.Sleep(time.Second)
+				log.Error(err, fmt.Sprintf("Fails to return secret"))
+				continue
+			}
+		}
+		log.Info(fmt.Sprintf("Successfully returned secret"))
+
+		if err := os.MkdirAll(certDir, os.ModePerm); err != nil {
+			log.Error(err, fmt.Sprintf("trouble creating directory"))
+			return
+		}
+		if err := ioutil.WriteFile(filepath.Join(certDir, "tls.crt"), secret.Data["tls.crt"], os.FileMode(0644)); err != nil {
+			log.Error(err, fmt.Sprintf("trouble writing crt"))
+			return
+		}
+		if err := ioutil.WriteFile(filepath.Join(certDir, "tls.key"), secret.Data["tls.key"], os.FileMode(0644)); err != nil {
+			log.Error(err, fmt.Sprintf("trouble writing key"))
+			return
+		}
+		done <- "success"
+		return
+	}
+}
+
+func newServer(certDir string) *webhook.Server {
+
+	for {
+		if _, err := os.Stat(filepath.Join(certDir, "tls.crt")); err != nil {
+			time.Sleep(time.Second)
+			log.Error(err, fmt.Sprintf("not finding file"))
+			continue
+		}
+		log.Info(fmt.Sprintf("found file"))
+		return &webhook.Server{
+			Port:    8443,
+			CertDir: certDir,
+		}
+	}
+}
+
 func newWebhookService(namespace string) *corev1.Service {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      utils.WebhookServiceName,
-			Namespace: namespace,
+			Name:        utils.WebhookServiceName,
+			Namespace:   namespace,
+			Annotations: map[string]string{"service.beta.openshift.io/serving-cert-secret-name": "multiclusterhub-operator-webhook"},
 		},
 		Spec: corev1.ServiceSpec{
 			Ports:    []corev1.ServicePort{{Port: 443, TargetPort: intstr.FromInt(8443)}},
@@ -155,12 +243,13 @@ func newWebhookService(namespace string) *corev1.Service {
 	}
 }
 
-func newValidatingWebhookCfg(namespace, path string, ca []byte) *admissionregistration.ValidatingWebhookConfiguration {
+func newValidatingWebhookCfg(namespace, path string) *admissionregistration.ValidatingWebhookConfiguration {
 	sideEffect := admissionregistration.SideEffectClassNone
 
 	return &admissionregistration.ValidatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: validatingCfgName,
+			Name:        validatingCfgName,
+			Annotations: map[string]string{"service.beta.openshift.io/inject-cabundle": "true"},
 		},
 		Webhooks: []admissionregistration.ValidatingWebhook{{
 			AdmissionReviewVersions: []string{
@@ -172,7 +261,6 @@ func newValidatingWebhookCfg(namespace, path string, ca []byte) *admissionregist
 					Namespace: namespace,
 					Path:      &path,
 				},
-				CABundle: ca,
 			},
 			Name: validatingWebhookName,
 			Rules: []admissionregistration.RuleWithOperations{{
