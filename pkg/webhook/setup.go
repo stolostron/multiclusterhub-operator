@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"time"
 
-	// "github.com/fsnotify/fsnotify"
 
 	clustermanager "github.com/open-cluster-management/api/operator/v1"
 	admissionregistration "k8s.io/api/admissionregistration/v1"
