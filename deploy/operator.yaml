@@ -52,4 +52,3 @@ spec:
               value: "/image-manifests"
             - name: CRDS_PATH
               value: "/crds"
-          
