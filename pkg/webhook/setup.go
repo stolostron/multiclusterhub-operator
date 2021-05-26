@@ -289,12 +289,3 @@ func newValidatingWebhookCfg(namespace, path string) *admissionregistration.Vali
 		}},
 	}
 }
-
-func createFiles(certDir string) {
-	if err := os.MkdirAll(certDir, os.ModePerm); err != nil {
-		log.Error(err, fmt.Sprintf("trouble creating directory"))
-		return
-	}
-	os.OpenFile(filepath.Join(certDir, "tls.crt"), os.O_RDONLY|os.O_CREATE, 0666)
-	os.OpenFile(filepath.Join(certDir, "tls.key"), os.O_RDONLY|os.O_CREATE, 0666)
-}
