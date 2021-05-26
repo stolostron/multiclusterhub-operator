@@ -205,10 +205,10 @@ func (m *multiClusterHubValidator) validateDelete(req admission.Request) error {
 	discoveryConfigList := &unstructured.UnstructuredList{}
 	discoveryConfigList.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   "discovery.open-cluster-management.io",
-		Version: "v1",
+		Version: "v1alpha1",
 		Kind:    "DiscoveryConfigList",
 	})
-	gv = schema.GroupVersion{Group: "discovery.open-cluster-management.io", Version: "v1"}
+	gv = schema.GroupVersion{Group: "discovery.open-cluster-management.io", Version: "v1alpha1"}
 	supportErr = discovery.ServerSupportsVersion(c, gv)
 	if supportErr == nil {
 		discoveryConfigErr := m.client.List(context.TODO(), discoveryConfigList)
