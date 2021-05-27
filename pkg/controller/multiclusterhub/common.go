@@ -17,6 +17,7 @@ import (
 
 	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis/apps/v1"
 	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/pkg/apis/operator/v1"
+	"github.com/open-cluster-management/multiclusterhub-operator/pkg/channel"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/foundation"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/helmrepo"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/manifest"
@@ -187,7 +188,6 @@ func (r *ReconcileMultiClusterHub) ensureChannel(m *operatorsv1.MultiClusterHub,
 		Namespace: m.Namespace,
 	}, found)
 	if err != nil && errors.IsNotFound(err) {
-
 		// Create the Channel
 		err = r.client.Create(context.TODO(), u)
 		if err != nil {
@@ -206,6 +206,18 @@ func (r *ReconcileMultiClusterHub) ensureChannel(m *operatorsv1.MultiClusterHub,
 		// Error that isn't due to the Channel not existing
 		selog.Error(err, "Failed to get Channel")
 		return &reconcile.Result{}, err
+	}
+
+	updated, needsUpdate := channel.Validate(found)
+	if needsUpdate {
+		selog.Info("Updating channel")
+		err = r.client.Update(context.TODO(), updated)
+		if err != nil {
+			// Update failed
+			selog.Error(err, "Failed to update channel")
+			return &reconcile.Result{}, err
+		}
+		return nil, nil
 	}
 
 	return nil, nil

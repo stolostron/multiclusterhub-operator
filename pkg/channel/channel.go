@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package channel
 
 import (
@@ -20,6 +19,11 @@ var ChannelName = "charts-v1"
 
 // Schema is the GVK for an application subscription channel
 var Schema = schema.GroupVersionResource{Group: "apps.open-cluster-management.io", Version: "v1", Resource: "channels"}
+
+// custom annotation to reduce reconcilation rate to once per hour (default is 15 minutes)
+var Annotation = map[string]string{
+	"apps.open-cluster-management.io/reconcile-rate": "low",
+}
 
 // build Helm pathname from repo name and por
 func channelURL(m *operatorsv1.MultiClusterHub) string {
@@ -42,8 +46,40 @@ func Channel(m *operatorsv1.MultiClusterHub) *unstructured.Unstructured {
 			},
 		},
 	}
+	ch.SetAnnotations(Annotation)
 	ch.SetOwnerReferences([]metav1.OwnerReference{
 		*metav1.NewControllerRef(m, m.GetObjectKind().GroupVersionKind()),
 	})
 	return ch
+}
+
+// Validate returns true if an update is needed to reconcile differences with the current spec. If an update
+// is needed it returns the object with the new spec to update with.
+func Validate(found *unstructured.Unstructured) (*unstructured.Unstructured, bool) {
+	updateNeeded := false
+
+	// Verify reconcile-rate annotation is set
+	if checkAnnotation(found) == false {
+		setAnnotation(found)
+		updateNeeded = true
+	}
+	return found, updateNeeded
+}
+
+func checkAnnotation(u *unstructured.Unstructured) bool {
+	a := u.GetAnnotations()
+	if a == nil || a["apps.open-cluster-management.io/reconcile-rate"] != "low" {
+		return false
+	}
+	return true
+}
+
+func setAnnotation(u *unstructured.Unstructured) {
+	a := u.GetAnnotations()
+	if a == nil {
+		u.SetAnnotations(Annotation)
+	} else {
+		a["apps.open-cluster-management.io/reconcile-rate"] = "low"
+		u.SetAnnotations(a)
+	}
 }
