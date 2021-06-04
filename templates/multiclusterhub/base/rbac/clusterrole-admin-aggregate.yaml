@@ -9,8 +9,11 @@ metadata:
   name: open-cluster-management:admin-aggregate
 rules:
 - apiGroups: ["cluster.open-cluster-management.io"]
-  resources: ["managedclusters", "managedclustersets", "managedclusters/status", "clustercurators"]
+  resources: ["managedclusters", "managedclusters/status", "clustercurators"]
   verbs: ["get", "list", "watch", "update","delete", "deletecollection", "patch"]
+- apiGroups: ["cluster.open-cluster-management.io"]
+  resources: ["managedclustersets"]
+  verbs: ["get", "list", "watch", "update", "patch"]
 - apiGroups: ["discovery.open-cluster-management.io"]
   resources: ["discoveryconfigs", "discoveredclusters"]
   verbs: ["get", "list", "watch", "update","delete", "deletecollection", "patch"]
