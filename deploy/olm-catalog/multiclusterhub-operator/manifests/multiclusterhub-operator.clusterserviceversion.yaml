@@ -316,6 +316,7 @@ spec:
         - apiGroups:
           - ""
           - action.open-cluster-management.io
+          - addon.open-cluster-management.io
           - agent.open-cluster-management.io
           - argoproj.io
           - cluster.open-cluster-management.io
@@ -325,7 +326,6 @@ spec:
           - authorization.k8s.io
           - certificates.k8s.io
           - clusterregistry.k8s.io
-          - cluster.open-cluster-management.io
           - config.openshift.io
           - compliance.mcm.ibm.com
           - hive.openshift.io
@@ -342,6 +342,7 @@ spec:
           - register.open-cluster-management.io
           - coordination.k8s.io
           - search.open-cluster-management.io
+          - submarineraddon.open-cluster-management.i
           - discovery.open-cluster-management.io
           resources:
           - applications
@@ -355,6 +356,7 @@ spec:
           - certificatesigningrequests/approval
           - channels
           - channels/status
+          - clustermanagementaddons
           - managedclusteractions
           - managedclusteractions/status
           - clusterdeployments
@@ -362,6 +364,8 @@ spec:
           - clusterclaims
           - discoveryconfigs
           - discoveredclusters
+          - managedclusteraddons
+          - managedclusteraddons/status
           - managedclusterinfos
           - managedclusterinfos/status
           - managedclustersets
@@ -396,6 +400,10 @@ spec:
           - klusterletaddonconfigs
           - machinepools
           - namespaces
+          - placements
+          - placementrules/status
+          - placementdecisions
+          - placementdecisions/status
           - placementrules
           - placementrules/status
           - pods
@@ -411,6 +419,8 @@ spec:
           - subscriptions
           - subscriptions/status
           - subjectaccessreviews
+          - submarinerconfigs
+          - submarinerconfigs/status
           - syncsets
           - clustersyncs
           - leases
