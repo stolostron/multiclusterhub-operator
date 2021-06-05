@@ -3,6 +3,7 @@ name: Installer Function Tests (Mock Image)
 on: 
   # Trigger when PR is submitted to main
   pull_request:
+    types: [ labeled ]
     branches:
       - main
       - add-pull-request-function-tests #Testing only
@@ -12,18 +13,19 @@ on:
 
 jobs:
   function-test:
+    if: ${{ github.event.label.name == 'ok-to-test' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: NathanielHill/check-pr-label-action@v4.0.0
-        with:
-          github-token: ${{ secrets.FF_TOKEN }}
-          valid-labels: ok-to-test
-          
       - uses: actions/checkout@v2
-
-      - name: Run Function Tests
+      - name: Removing 'ok-to-test' label
+        uses: buildsville/add-remove-label@v1
+        with:
+          token: ${{secrets.FF_TOKEN}}
+          label: ok-to-test
+          type: remove
+      - name: Run Function Tests (Requires 'ok-to-test' label)
         run: |
           echo "Running Pull Request Function Tests ..."
-          ./common/scripts/pull-request-function-test.sh
+          bash ./common/scripts/pull-request-function-test.sh
         env:
-          COLLECTIVE_TOKEN: ${secrets.COLLECTIVE_TOKEN}
+          COLLECTIVE_TOKEN: ${{ secrets.COLLECTIVE_TOKEN }}
