@@ -194,7 +194,7 @@ var (
 	CSVName = "advanced-cluster-management"
 
 	// WaitInMinutesDefault ...
-	WaitInMinutesDefault = 20
+	WaitInMinutesDefault = 10
 )
 
 // GetWaitInMinutes...
@@ -599,11 +599,15 @@ func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 
 	appSubLink := clientHubDynamic.Resource(GVRAppSub)
 	appSubs, err := appSubLink.List(context.TODO(), listOptions)
-	Expect(err).Should(BeNil())
+	if err != nil {
+		return err
+	}
 
 	helmReleaseLink := clientHubDynamic.Resource(GVRHelmRelease)
 	helmReleases, err := helmReleaseLink.List(context.TODO(), listOptions)
-	Expect(err).Should(BeNil())
+	if err != nil {
+		return err
+	}
 
 	By("- Ensuring Application Subscriptions have terminated")
 	if len(appSubs.Items) != 0 {
@@ -619,7 +623,9 @@ func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 	By("- Ensuring MCH Repo deployment has been terminated")
 	deploymentLink := clientHubDynamic.Resource(GVRDeployment).Namespace(MCHNamespace)
 	_, err = deploymentLink.Get(context.TODO(), "multiclusterhub-repo", metav1.GetOptions{})
-	Expect(err).ShouldNot(BeNil())
+	if err != nil && !errors.IsNotFound(err) {
+		return err
+	}
 
 	By("- Ensuring MCH image manifest configmap is terminated")
 	labelSelector = fmt.Sprintf("ocm-configmap-type=%s", "image-manifest")
@@ -639,7 +645,9 @@ func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 
 	By("- Validating CRDs were deleted")
 	crds, err := getCRDs()
-	Expect(err).Should(BeNil())
+	if err != nil {
+		return err
+	}
 
 	for _, crd := range crds {
 		_, err = DynamicKubeClient.Resource(GVRCustomResourceDefinition).Get(context.TODO(), crd, metav1.GetOptions{})
@@ -823,8 +831,10 @@ func ValidateMCH() error {
 	}
 
 	By("- Checking Imported Hub Cluster")
-	err = ValidateManagedCluster(true)
-	Expect(err).Should(BeNil())
+	if os.Getenv("MOCK") != "true" {
+		err = ValidateManagedCluster(true)
+		Expect(err).Should(BeNil())
+	}
 
 	currentVersion, err := GetCurrentVersionFromMCH()
 	Expect(err).Should(BeNil())

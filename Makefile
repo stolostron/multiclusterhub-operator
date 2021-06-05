@@ -144,7 +144,7 @@ local-install: ns secrets og subscriptions observability-crd
 ## Run as a Deployment inside the cluster
 in-cluster-install: ns secrets og update-image subscriptions observability-crd
 	oc apply -f deploy/crds/operator.open-cluster-management.io_multiclusterhubs_crd.yaml
-	yq w -i deploy/kustomization.yaml 'images(name==multiclusterhub-operator).newTag' "${VERSION}"
+	VERSION="${VERSION}" yq eval '.images.[0].newTag = env(VERSION)' -i deploy/kustomization.yaml
 	oc apply -k deploy
 	
 ## Creates a configmap index and catalogsource that it subscribes to
@@ -180,26 +180,23 @@ update-manifest:
 set-copyright:
 	@bash ./cicd-scripts/set-copyright.sh
 
-build-mock-image:
-	make mock-build-image
-
 cleanup-mock-image:
 	make mock-cleanup
 
 prep-mock-install:
 	export PRODUCT_VERSION=$(shell cat COMPONENT_VERSION); \
-	make build-mock-image
+	make mock-build-image
 	cp mock-component-image/results/* ./image-manifests
 	echo "mock install prepped!"
 
 # different from `in-cluster-install` (no secrets, no observability-crd)
-mock-install: update-crds ns og update-image subscriptions 
+mock-install: ns og subscriptions update-crds update-image
 	oc apply -f deploy/crds/operator.open-cluster-management.io_multiclusterhubs_crd.yaml
-	yq w -i deploy/kustomization.yaml 'images(name==multiclusterhub-operator).newTag' "${VERSION}"
-	yq w -i deploy/kustomization.yaml 'images(name==multiclusterhub-operator).newName' "${HUB_IMAGE_REGISTRY}/${IMG}"
+	VERSION="${VERSION}" yq eval '.images.[0].newTag = env(VERSION)' -i deploy/kustomization.yaml
+	MOCK_REGISTRY="${HUB_IMAGE_REGISTRY}/${IMG}" yq eval '.images.[0].newName = env(MOCK_REGISTRY)' -i deploy/kustomization.yaml
 	oc apply -k deploy
 
 
 ## Apply the MultiClusterHub CR (with no self management and no secrets)
 mock-cr:
-	cat deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml | yq w - "spec.disableHubSelfManagement" "true" |  oc apply -f -
+	cat deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml | yq eval '.spec.disableHubSelfManagement = true' - |  oc apply -f -
