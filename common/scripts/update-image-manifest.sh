@@ -26,7 +26,7 @@ mkdir -p pipeline-temp
 git clone https://github.com/open-cluster-management/pipeline --branch ${BRANCH_NAME} pipeline-temp
 
 # Find manifest from the latest snapshot
-LATEST_SNAPSHOT=$(find pipeline-temp/snapshots | sort | tail -n 1)
+LATEST_SNAPSHOT=$(find pipeline-temp/snapshots -name 'manifest-*' | sort | tail -n 1)
 if [ -z "${LATEST_SNAPSHOT}" ]; then
   echo "LATEST_SNAPSHOT is unset or set to the empty string"
   rm -rf pipeline-temp
