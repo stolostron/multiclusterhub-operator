@@ -12,6 +12,7 @@ The MultiCusterHub operator manages the install of Open Cluster Management (OCM)
 
 For steps on how to contribute and test the MultiClusterHub Operator component, see [CONTRIBUTING](./CONTRIBUTING.md) guidelines.
 
+
 ## Development Tools
 ### Disabling MultiClusterHub Operator
 
