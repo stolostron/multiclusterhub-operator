@@ -44,6 +44,7 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v4.9.2
         with:
           commit_message: ${{ env.commit_message }}
+          commit_options: '--signoff'
           file_pattern: cicd-scripts/currentCRDs.txt
           skip_fetch: true
           commit_user_name: GitHub Actions
