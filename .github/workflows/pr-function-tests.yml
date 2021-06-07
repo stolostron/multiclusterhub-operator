@@ -23,8 +23,12 @@ jobs:
           token: ${{secrets.FF_TOKEN}}
           label: ok-to-test
           type: remove
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '^1.16.4' # The Go version to download (if necessary) and use.
       - name: Run Function Tests (Requires 'ok-to-test' label)
         run: |
+          echo "${{ secrets.QUAY_TOKEN }}" | docker login quay.io/rhibmcollab -u "${{ secrets.QUAY_USER }}" --password-stdin
           echo "Running Pull Request Function Tests ..."
           bash ./common/scripts/pull-request-function-test.sh
         env:
