@@ -6,7 +6,7 @@ metadata:
   name: hive-operator-alpha-community-operators-openshift-marketplace
   namespace: open-cluster-management
 spec:
-  channel: alpha
+  channel: ocm-2.3
   config:
     resources: {}
   installPlanApproval: Automatic

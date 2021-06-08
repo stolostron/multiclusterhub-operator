@@ -1,0 +1,33 @@
+name: Installer Function Tests (Mock Image)
+
+on: 
+  pull_request_target:
+    types: [ labeled ]
+    branches:
+      - main
+
+  # manual trigger
+  workflow_dispatch:
+
+jobs:
+  function-test:
+    if: contains(github.event.pull_request.labels.*.name, 'ok-to-test')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '^1.16.4' # The Go version to download (if necessary) and use.
+      - name: Removing 'ok-to-test' label
+        uses: buildsville/add-remove-label@v1
+        with:
+          token: ${{secrets.HUB_OPERATOR_TOKEN}}
+          label: ok-to-test
+          type: remove
+      - name: Run Function Tests (Requires 'ok-to-test' label)
+        run: |
+          echo "${{ secrets.QUAY_TOKEN }}" | docker login quay.io/open-cluster-management -u "${{ secrets.QUAY_USER }}" --password-stdin
+          echo "Running Pull Request Function Tests ..."
+          bash ./common/scripts/pull-request-function-test.sh
+        env:
+          COLLECTIVE_TOKEN: ${{ secrets.COLLECTIVE_TOKEN }}

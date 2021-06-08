@@ -38,14 +38,21 @@ func NewMultiClusterHub(name, namespace, imageOverridesConfigmapName string) *un
 		metadata["annotations"] = annotations
 	}
 
+	spec := map[string]interface{}{
+		"imagePullSecret": "multiclusterhub-operator-pull-secret",
+	}
+
+	if os.Getenv("MOCK") == "true" {
+		spec["availabilityConfig"] = "Basic"
+		spec["disableHubSelfManagement"] = true
+	}
+
 	mch := &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": "operator.open-cluster-management.io/v1",
 			"kind":       "MultiClusterHub",
 			"metadata":   metadata,
-			"spec": map[string]interface{}{
-				"imagePullSecret": "multiclusterhub-operator-pull-secret",
-			},
+			"spec":       spec,
 		},
 	}
 
