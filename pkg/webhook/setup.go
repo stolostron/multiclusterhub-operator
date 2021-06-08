@@ -50,7 +50,7 @@ func Setup(mgr manager.Manager) error {
 	}
 
 	done := make(chan string)
-	go createWebhookService(mgr.GetClient(), ns)
+	go createOrUpdateWebhookService(mgr.GetClient(), ns)
 
 
 	go getSecret(mgr.GetClient(), ns, certDir, done)
@@ -96,7 +96,7 @@ func finalizeWebhook(mgr manager.Manager, ns, certDir string) error {
 	return nil
 }
 
-func createWebhookService(c client.Client, namespace string) {
+func createOrUpdateWebhookService(c client.Client, namespace string) {
 	log.Info("service function called")
 	service := &corev1.Service{}
 	key := types.NamespacedName{Name: utils.WebhookServiceName, Namespace: namespace}
@@ -123,8 +123,13 @@ func createWebhookService(c client.Client, namespace string) {
 				return
 			}
 		}
-		log.Info(fmt.Sprintf("%s/%s service is found", namespace, utils.WebhookServiceName))
-
+		// log.Info(fmt.Sprintf("%s/%s service is found", namespace, utils.WebhookServiceName))
+		// service := newWebhookService(namespace)
+		metav1.SetMetaDataAnnotation(&service.ObjectMeta, "service.beta.openshift.io/serving-cert-secret-name", "multiclusterhub-operator-webhook") 
+		if err := c.Update(context.TODO(), service); err != nil {
+			log.Error(err, fmt.Sprintf("Failed to update service %s", utils.WebhookServiceName))
+			return
+		}
 		return
 	}
 }
@@ -155,7 +160,9 @@ func createOrUpdateValiatingWebhook(c client.Client, namespace, path string, cer
 			}
 		}
 
-		validator.Webhooks[0].ClientConfig.Service.Namespace = namespace
+		
+		// cfg := newValidatingWebhookCfg(namespace, path)
+		metav1.SetMetaDataAnnotation(&validator.ObjectMeta, "service.beta.openshift.io/inject-cabundle", "true")
 		if err := c.Update(context.TODO(), validator); err != nil {
 			log.Error(err, fmt.Sprintf("Failed to update validating webhook %s", validatingCfgName))
 			return
