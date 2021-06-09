@@ -122,9 +122,7 @@ func createOrUpdateWebhookService(c client.Client, namespace string) {
 				log.Error(err, fmt.Sprintf("Failed to get %s/%s service", namespace, utils.WebhookServiceName))
 				return
 			}
-		}
-		// log.Info(fmt.Sprintf("%s/%s service is found", namespace, utils.WebhookServiceName))
-		// service := newWebhookService(namespace)
+		}		
 		metav1.SetMetaDataAnnotation(&service.ObjectMeta, "service.beta.openshift.io/serving-cert-secret-name", "multiclusterhub-operator-webhook") 
 		if err := c.Update(context.TODO(), service); err != nil {
 			log.Error(err, fmt.Sprintf("Failed to update service %s", utils.WebhookServiceName))
@@ -161,7 +159,6 @@ func createOrUpdateValiatingWebhook(c client.Client, namespace, path string, cer
 		}
 
 		
-		// cfg := newValidatingWebhookCfg(namespace, path)
 		metav1.SetMetaDataAnnotation(&validator.ObjectMeta, "service.beta.openshift.io/inject-cabundle", "true")
 		if err := c.Update(context.TODO(), validator); err != nil {
 			log.Error(err, fmt.Sprintf("Failed to update validating webhook %s", validatingCfgName))
