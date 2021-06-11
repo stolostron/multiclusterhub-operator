@@ -47,7 +47,7 @@ func WebhookDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]stri
 						{
 							Name: "webhook-cert",
 							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{SecretName: "ocm-webhook-secret"},
+								Secret: &corev1.SecretVolumeSource{SecretName: WebhookName},
 							},
 						},
 					},
@@ -110,6 +110,9 @@ func WebhookService(m *operatorsv1.MultiClusterHub) *corev1.Service {
 			Name:      WebhookName,
 			Namespace: m.Namespace,
 			Labels:    defaultLabels(WebhookName),
+			Annotations: map[string]string{
+				"service.beta.openshift.io/serving-cert-secret-name": WebhookName,
+			},
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: defaultLabels(WebhookName),
