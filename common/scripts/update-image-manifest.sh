@@ -16,7 +16,7 @@ if [ -z "${VERSION}" ]; then
 fi
 
 # Branch excludes patch version
-BRANCH_NAME="${VERSION%.*}-integration"
+BRANCH_NAME="${VERSION%.*}-edge"
 
 # Remove existing files
 rm -rf pipeline-temp
@@ -32,6 +32,8 @@ if [ -z "${LATEST_SNAPSHOT}" ]; then
   rm -rf pipeline-temp
   exit 1
 fi
+
+echo "Using manifest file ${LATEST_SNAPSHOT}"
 
 # Verify the snapshot file exists
 if [ ! -f ${LATEST_SNAPSHOT} ]; then
