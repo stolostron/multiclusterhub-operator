@@ -21,7 +21,7 @@ BRANCH_NAME="${VERSION%.*}-edge"
 # Remove existing files
 rm -rf pipeline-temp
 mkdir -p pipeline-temp
-
+echo "USER: ${GH_USER} </end>"
 # Clone cicd pipeline repo
 if [ -z "${GH_USER}" ] || [ -z "${GH_TOKEN}" ]; then
   git clone https://github.com/open-cluster-management/pipeline --branch ${BRANCH_NAME} pipeline-temp
