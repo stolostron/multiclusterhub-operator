@@ -29,4 +29,4 @@ jobs:
           GH_USER: ${{ secrets.GH_USER }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           DOCKER_USER: ${{ secrets.QUAY_USER }}
-          DOCKER_PASS: ${{ secret.QUAY_TOKEN }}
+          DOCKER_PASS: ${{ secrets.QUAY_TOKEN }}
