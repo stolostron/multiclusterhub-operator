@@ -19,7 +19,7 @@ export CLUSTERCLAIM_LIFETIME=4h
 export CLUSTERPOOL_TARGET_NAMESPACE=install
 export CLUSTERPOOL_NAME=installer-function-test
 export CLUSTERCLAIM_GROUP_NAME=Installer
-export CLUSTERCLAIM_NAME=install-function-test
+export CLUSTERCLAIM_NAME=install-nightly-function-test
 
 export COLLECTIVE_SERVER=https://api.collective.aws.red-chesterfield.com:6443
 
