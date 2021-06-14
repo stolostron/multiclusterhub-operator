@@ -142,7 +142,7 @@ local-install: ns secrets og subscriptions observability-crd
 	operator-sdk run local --watch-namespace=open-cluster-management --kubeconfig=$(KUBECONFIG)
 
 ## Run as a Deployment inside the cluster
-in-cluster-install: ns secrets og update-image subscriptions observability-crd
+in-cluster-install: ns secrets og update-crds update-image subscriptions observability-crd
 	oc apply -f deploy/crds/operator.open-cluster-management.io_multiclusterhubs_crd.yaml
 	VERSION="${VERSION}" yq eval '.images.[0].newTag = env(VERSION)' -i deploy/kustomization.yaml
 	oc apply -k deploy
@@ -189,7 +189,7 @@ prep-mock-install:
 	cp mock-component-image/results/* ./image-manifests
 	echo "mock install prepped!"
 
-# different from `in-cluster-install` (no secrets, no observability-crd)
+# different from `in-cluster-install` (call update-crds, no secrets, no observability-crd)
 mock-install: ns og subscriptions update-crds update-image
 	oc apply -f deploy/crds/operator.open-cluster-management.io_multiclusterhubs_crd.yaml
 	VERSION="${VERSION}" yq eval '.images.[0].newTag = env(VERSION)' -i deploy/kustomization.yaml
