@@ -23,11 +23,13 @@ rm -rf pipeline-temp
 mkdir -p pipeline-temp
 echo "USER: ${GH_USER} </end>"
 # Clone cicd pipeline repo
-if [ -z "${GH_USER}" ] || [ -z "${GH_TOKEN}" ]; then
-  git clone https://github.com/open-cluster-management/pipeline --branch ${BRANCH_NAME} pipeline-temp
-else
-  git clone https://${GH_USER}:${GH_TOKEN}@github.com/open-cluster-management/pipeline --branch ${BRANCH_NAME} pipeline-temp
-fi
+# if [ -z "${GH_USER}" ] || [ -z "${GH_TOKEN}" ]; then
+#   git clone https://github.com/open-cluster-management/pipeline --branch ${BRANCH_NAME} pipeline-temp
+# else
+#   git clone https://${GH_USER}:${GH_TOKEN}@github.com/open-cluster-management/pipeline --branch ${BRANCH_NAME} pipeline-temp
+# fi
+
+git clone https://${GH_USER}:${GH_TOKEN}@github.com/open-cluster-management/pipeline --branch ${BRANCH_NAME} pipeline-temp
 
 # Find manifest from the latest snapshot
 LATEST_SNAPSHOT=$(find pipeline-temp/snapshots -name 'manifest-*' | sort | tail -n 1)
