@@ -1,0 +1,28 @@
+name: Installer Function Tests (Mock Image)
+
+# Controls when the action will run. 
+on:
+  # Triggers the workflow to run ~~every day~~ first of the month (will switch back to once a day once everything's working)
+  # will trigger manually for testing
+  schedule:
+    - cron: "0 0 1 * *"
+
+  # manual trigger
+  workflow_dispatch:
+
+jobs:
+  function-test:
+    if: contains(github.event.pull_request.labels.*.name, 'ok-to-test')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '^1.16.4' # The Go version to download (if necessary) and use.
+      - name: Run FULL Function Tests
+        run: |
+          echo "${{ secrets.QUAY_TOKEN }}" | docker login quay.io/open-cluster-management -u "${{ secrets.QUAY_USER }}" --password-stdin
+          echo "Running Pull Request Function Tests ..."
+          bash ./common/scripts/nightly-full-function-test.sh
+        env:
+          COLLECTIVE_TOKEN: ${{ secrets.COLLECTIVE_TOKEN }}
