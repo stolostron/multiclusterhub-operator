@@ -22,8 +22,9 @@ jobs:
         run: |
           echo "${{ secrets.QUAY_TOKEN }}" | docker login quay.io/open-cluster-management -u "${{ secrets.QUAY_USER }}" --password-stdin
           echo "Running Pull Request Function Tests ..."
+          echo "USER FROM SECRET: ${{ secrets.GH_USER }}"
           bash ./common/scripts/nightly-full-function-test.sh
         env:
           COLLECTIVE_TOKEN: ${{ secrets.COLLECTIVE_TOKEN }}
           GH_USER: ${{ secrets.GH_USER }}
-          GH_PASS: ${{ secrets.GH_PASS}}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }
