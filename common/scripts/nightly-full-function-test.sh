@@ -90,7 +90,7 @@ oc project
 
 make update-manifest
 make in-cluster-install HUB_IMAGE_REGISTRY='quay.io/rhibmcollab' VERSION='nightly'
-make ft-install
+make ft-install full_test_suite=true
 
 echo "Deleting clusterclaim ..."
 oc login --token="${COLLECTIVE_TOKEN}" --server="${COLLECTIVE_SERVER}"  --insecure-skip-tls-verify
