@@ -1,4 +1,4 @@
-name: Installer Function Tests (Mock Image)
+name: Nightly Full Function Tests
 
 # Controls when the action will run. 
 on:
