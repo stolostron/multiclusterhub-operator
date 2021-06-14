@@ -80,7 +80,7 @@ test-image: deps
 # Usage: common/scripts/bundle-acm.sh "<Starting Snapshot>" <Update Snapshot> <Start Version> <Update Version>
 ## Creates an index image to test updates
 test-update-image:
-	bash common/scripts/bundle-acm.sh "2.1.0-SNAPSHOT-2020-08-21-16-48-23" "2.3.0-snapshot-here" "2.1.0" "2.3.0"
+	bash common/scripts/bundle-acm.sh "2.2.4-SNAPSHOT-2021-06-14-15-47-00" "2.3.0-SNAPSHOT-2021-06-10-00-23-36" "2.2.4" "2.3.0"
 
 acm-index-install: ns secrets og test-update-image
 	# Run `make  test-update-image` to generate a new index if necessary
