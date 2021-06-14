@@ -89,7 +89,7 @@ done
 oc project
 
 make update-manifest
-make in-cluster-install HUB_IMAGE_REGISTRY='quay.io/open-cluster-management' VERSION='nightly'
+make in-cluster-install HUB_IMAGE_REGISTRY='quay.io/rhibmcollab' VERSION='nightly'
 make ft-install
 
 echo "Deleting clusterclaim ..."
