@@ -54,7 +54,11 @@ then
     go install github.com/onsi/ginkgo/ginkgo
 fi
 
+echo "Logging into collective cluster ..."
+
 oc login ${COLLECTIVE_SERVER} --insecure-skip-tls-verify --token="${COLLECTIVE_TOKEN}"
+
+echo "Cloning lifeguard ..."
 
 git clone https://github.com/open-cluster-management/lifeguard.git
 
@@ -89,13 +93,13 @@ done
 oc project
 
 SLEEP_IN_MINUTES=20
-echo "Sleeping for ${SLEEP_IN_MINUTES} minutes while cluster wakes from hibernation..."
+echo "Sleeping for ${SLEEP_IN_MINUTES} minutes while cluster wakes from hibernation ..."
 have_slept_in_minutes=0
 until [ "$have_slept_in_minutes" -ge $SLEEP_IN_MINUTES ]
 do
     sleep 60
     have_slept_in_minutes=$((have_slept_in_minutes+1))
-    echo "...slept ${have_slept_in_minutes} minutes..."
+    echo "... slept ${have_slept_in_minutes} minutes ..."
 done
 echo "Sleeping complete!
 
