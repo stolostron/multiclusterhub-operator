@@ -92,6 +92,10 @@ done
 
 oc project
 
+make update-manifest
+make update-crds
+make in-cluster-install HUB_IMAGE_REGISTRY='quay.io/rhibmcollab' VERSION='nightly'
+
 SLEEP_IN_MINUTES=20
 echo "Sleeping for ${SLEEP_IN_MINUTES} minutes while cluster wakes from hibernation ..."
 have_slept_in_minutes=0
@@ -101,13 +105,10 @@ do
     have_slept_in_minutes=$((have_slept_in_minutes+1))
     echo "... slept ${have_slept_in_minutes} minutes ..."
     echo "Pods at this moment:"
-    oc get pods
+    oc get pods --all-namespaces
 done
 echo "Sleeping complete!"
 
-make update-manifest
-make update-crds
-make in-cluster-install HUB_IMAGE_REGISTRY='quay.io/rhibmcollab' VERSION='nightly'
 make ft-install full_test_suite=true
 
 echo "Deleting clusterclaim ..."
