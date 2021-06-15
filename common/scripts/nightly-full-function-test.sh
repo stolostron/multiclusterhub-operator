@@ -105,7 +105,7 @@ do
     have_slept_in_minutes=$((have_slept_in_minutes+1))
     echo "... slept ${have_slept_in_minutes} minutes ..."
     echo "Pods at this moment:"
-    oc get pods --all-namespaces
+    oc get pods
 done
 echo "Sleeping complete!"
 
