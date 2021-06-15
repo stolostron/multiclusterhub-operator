@@ -100,8 +100,10 @@ do
     sleep 60
     have_slept_in_minutes=$((have_slept_in_minutes+1))
     echo "... slept ${have_slept_in_minutes} minutes ..."
+    echo "Pods at this moment:"
+    oc get pods
 done
-echo "Sleeping complete!
+echo "Sleeping complete!"
 
 make update-manifest
 make update-crds
