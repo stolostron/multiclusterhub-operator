@@ -88,7 +88,19 @@ done
 
 oc project
 
+SLEEP_IN_MINUTES=20
+echo "Sleeping for ${SLEEP_IN_MINUTES} minutes while cluster wakes from hibernation..."
+have_slept_in_minutes=0
+until [ "$have_slept_in_minutes" -ge $SLEEP_IN_MINUTES ]
+do
+    sleep 60
+    have_slept_in_minutes=$((have_slept_in_minutes+1))
+    echo "...slept ${have_slept_in_minutes} minutes..."
+done
+echo "Sleeping complete!
+
 make update-manifest
+make update-crds
 make in-cluster-install HUB_IMAGE_REGISTRY='quay.io/rhibmcollab' VERSION='nightly'
 make ft-install full_test_suite=true
 
