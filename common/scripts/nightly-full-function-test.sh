@@ -96,7 +96,7 @@ make update-manifest
 make update-crds
 make in-cluster-install HUB_IMAGE_REGISTRY='quay.io/rhibmcollab' VERSION='nightly'
 
-SLEEP_IN_MINUTES=20
+SLEEP_IN_MINUTES=10
 echo "Sleeping for ${SLEEP_IN_MINUTES} minutes while cluster wakes from hibernation ..."
 have_slept_in_minutes=0
 until [ "$have_slept_in_minutes" -ge $SLEEP_IN_MINUTES ]
