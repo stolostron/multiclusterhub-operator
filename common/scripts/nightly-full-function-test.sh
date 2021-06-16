@@ -111,11 +111,11 @@ echo "Sleeping complete!"
 
 make ft-install full_test_suite=true
 
-echo "Deleting clusterclaim ..."
-oc login --token="${COLLECTIVE_TOKEN}" --server="${COLLECTIVE_SERVER}"  --insecure-skip-tls-verify
+# echo "Deleting clusterclaim ..."
+# oc login --token="${COLLECTIVE_TOKEN}" --server="${COLLECTIVE_SERVER}"  --insecure-skip-tls-verify
 
-cd ./lifeguard/clusterclaims/
-echo "Y" | ./delete.sh
+# cd ./lifeguard/clusterclaims/
+# echo "Y" | ./delete.sh
 
-echo "Pull request function tests completed successfully!"
+# echo "Pull request function tests completed successfully!"
 exit 0
