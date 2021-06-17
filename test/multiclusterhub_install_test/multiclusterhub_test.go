@@ -235,7 +235,7 @@ func FullInstallTestSuite() {
 	})
 
 	It("- If `spec.disableHubSelfManagement` controls the existence of the related resources", func() {
-		By("- Verfiying default install has local-cluster resources")
+		By("- Verifying default install has local-cluster resources")
 		utils.CreateDefaultMCH()
 		err := utils.ValidateMCH()
 		Expect(err).To(BeNil())
@@ -256,7 +256,7 @@ func FullInstallTestSuite() {
 		utils.ToggleDisableHubSelfManagement(false)
 		Eventually(func() error {
 			if err := utils.ValidateImportHubResourcesExist(true); err != nil {
-				return fmt.Errorf("resources still exist")
+				return fmt.Errorf("resources don't exist")
 			}
 			return nil
 		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
