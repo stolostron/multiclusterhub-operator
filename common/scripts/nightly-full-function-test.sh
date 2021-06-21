@@ -109,7 +109,7 @@ do
 done
 echo "Sleeping complete!"
 
-make ft-install #full_test_suite=true for quick report testing
+make ft-install full_test_suite=true
 
 make slack-bot-message RESULTS_PATH="./test/results/install-results.xml"
 
