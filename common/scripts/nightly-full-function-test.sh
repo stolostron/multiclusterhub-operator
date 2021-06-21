@@ -109,7 +109,9 @@ do
 done
 echo "Sleeping complete!"
 
-make ft-install full_test_suite=true
+make ft-install | tee tmp-results.txt #full_test_suite=true for quick report testing
+
+make slack-bot-message SLACK_MESSAGE=$(cat tmp-results.txt| tail -1)
 
 echo "Deleting clusterclaim ..."
 oc login --token="${COLLECTIVE_TOKEN}" --server="${COLLECTIVE_SERVER}"  --insecure-skip-tls-verify
@@ -117,5 +119,5 @@ oc login --token="${COLLECTIVE_TOKEN}" --server="${COLLECTIVE_SERVER}"  --insecu
 cd ./lifeguard/clusterclaims/
 echo "Y" | ./delete.sh
 
-echo "Pull request function tests completed successfully!"
+echo "Nightly full function tests completed successfully!"
 exit 0

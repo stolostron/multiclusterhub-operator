@@ -200,3 +200,7 @@ mock-install: ns og subscriptions update-crds update-image
 ## Apply the MultiClusterHub CR (with no self management and no secrets)
 mock-cr:
 	cat deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml | yq eval '.spec.disableHubSelfManagement = true' - |  oc apply -f -
+
+## for nightly and automated tests
+slack-bot-message:
+	bash common/scripts/slack-bot-message.sh $(SLACK_MESSAGE)

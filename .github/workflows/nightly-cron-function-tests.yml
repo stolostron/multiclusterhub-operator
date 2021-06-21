@@ -31,3 +31,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           DOCKER_USER: ${{ secrets.QUAY_USER }}
           DOCKER_PASS: ${{ secrets.QUAY_TOKEN }}
+          SLACKBOT_WEBHOOK_URL: ${{ secrets.SLACKBOT_WEBHOOK_URL }}
