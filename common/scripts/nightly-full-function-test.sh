@@ -109,9 +109,9 @@ do
 done
 echo "Sleeping complete!"
 
-make ft-install | tee tmp-results.txt #full_test_suite=true for quick report testing
+make ft-install #full_test_suite=true for quick report testing
 
-make slack-bot-message SLACK_MESSAGE="$(cat tmp-results.txt| tail -1)"
+make slack-bot-message RESULTS_PATH="./test/results/install-results.xml"
 
 echo "Deleting clusterclaim ..."
 oc login --token="${COLLECTIVE_TOKEN}" --server="${COLLECTIVE_SERVER}"  --insecure-skip-tls-verify

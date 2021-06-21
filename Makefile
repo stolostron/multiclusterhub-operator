@@ -203,4 +203,4 @@ mock-cr:
 
 ## for nightly and automated tests
 slack-bot-message:
-	bash common/scripts/slack-bot-message.sh "${SLACK_MESSAGE}"
+	bash common/scripts/slack-bot-message.sh "${RESULTS_PATH}"
