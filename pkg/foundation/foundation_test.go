@@ -52,6 +52,15 @@ func TestValidateDeployment(t *testing.T) {
 	dep6 := dep.DeepCopy()
 	dep6.Spec.Template.Spec.Tolerations = nil
 
+	// 8. Modified volumes
+	dep7 := dep.DeepCopy()
+	dep7.Spec.Template.Spec.Volumes = []corev1.Volume{
+		{Name: "webhook-cert",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{SecretName: "abc"},
+			},
+		},
+	}
 	type args struct {
 		m   *operatorsv1.MultiClusterHub
 		dep *appsv1.Deployment
@@ -101,6 +110,12 @@ func TestValidateDeployment(t *testing.T) {
 		{
 			name:  "Modified Tolerations",
 			args:  args{mch, dep6},
+			want:  dep,
+			want1: true,
+		},
+		{
+			name:  "Modified volumes",
+			args:  args{mch, dep7},
 			want:  dep,
 			want1: true,
 		},

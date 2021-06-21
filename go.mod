@@ -16,6 +16,7 @@ require (
 	github.com/open-cluster-management/multicloud-operators-subscription-release v1.0.1-2020-05-28-18-29-00.0.20200603160156-4d66bd136ba3
 	github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible
 	github.com/openshift/hive v1.0.18-0.20210129211840-21bce609f1f4
+	github.com/openshift/library-go v0.0.0-20200918101923-1e4c94603efe
 	github.com/operator-framework/operator-sdk v0.18.0
 	github.com/spf13/pflag v1.0.5
 	go.uber.org/zap v1.15.0 // indirect
