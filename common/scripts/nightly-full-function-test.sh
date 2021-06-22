@@ -3,6 +3,13 @@
 # Copyright Contributors to the Open Cluster Management project
 
 function delete_cluster() {
+
+    echo "Tests failed. Handling failure."
+
+    echo "Sending status message to slack"
+    make slack-bot-message RESULTS_PATH="./test/results/install-results.xml"
+
+
     oc get pods
     echo "Deleting clusterclaim ..."
     oc login --token="${COLLECTIVE_TOKEN}" --server="${COLLECTIVE_SERVER}"  --insecure-skip-tls-verify
@@ -111,6 +118,7 @@ echo "Sleeping complete!"
 
 make ft-install full_test_suite=true
 
+echo "Sending status message to slack"
 make slack-bot-message RESULTS_PATH="./test/results/install-results.xml"
 
 echo "Deleting clusterclaim ..."

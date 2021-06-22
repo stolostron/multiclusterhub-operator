@@ -1,6 +1,5 @@
 #!/bin/bash
 
-#!/bin/bash
 RESULTS_PATH=$1
 RES=$(cat $RESULTS_PATH)
 SLACK_MESSAGE="TESTS FAILED! :("
