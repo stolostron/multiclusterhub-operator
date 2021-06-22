@@ -116,7 +116,7 @@ do
 done
 echo "Sleeping complete!"
 
-make ft-install full_test_suite=true
+make ft-install #full_test_suite=true
 
 echo "Sending status message to slack"
 make slack-bot-message RESULTS_PATH="./test/results/install-results.xml"
