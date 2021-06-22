@@ -15,7 +15,7 @@ _templates_dir = os.path.join(_git_repo_base_dir, "templates")
 _template_chart_dir=os.path.join(_templates_dir, "template-chart")
 _mch_repo_dir=os.path.join(_git_repo_base_dir, "multiclusterhub")
 _mch_repo_charts_dir=os.path.join(_mch_repo_dir, "charts")
-_chart_names=["application-chart", "assisted-service", "cluster-lifecycle", "console-chart", "insights-chart", "discovery-operator", "grc", "kui-web-terminal", "management-ingress", "search-prod"]
+_chart_names=["application-chart", "assisted-service", "cluster-lifecycle", "console-chart", "policyreport", "discovery-operator", "grc", "kui-web-terminal", "management-ingress", "search-prod"]
 
 
 # clean up old charts if they exist
