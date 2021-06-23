@@ -22,9 +22,6 @@ const (
 	// WebhookServiceName ...
 	WebhookServiceName = "multiclusterhub-operator-webhook"
 
-	// KlusterletSecretName ...
-	KlusterletSecretName = "ocm-klusterlet-self-signed-secrets" // #nosec G101 (no confidential credentials)
-
 	// CertManagerNamespace ...
 	CertManagerNamespace = "cert-manager"
 

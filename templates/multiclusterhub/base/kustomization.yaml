@@ -4,4 +4,3 @@ resources:
 - rbac
 - operands
 - webhook
-- certificates
