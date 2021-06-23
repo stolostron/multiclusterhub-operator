@@ -5,7 +5,6 @@
 package rendering
 
 import (
-	"encoding/base64"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -53,7 +52,6 @@ func NewRenderer(multipleClusterHub *operatorsv1.MultiClusterHub) *Renderer {
 		"ClusterRole":                    renderer.renderClusterRole,
 		"MutatingWebhookConfiguration":   renderer.renderMutatingWebhookConfiguration,
 		"ValidatingWebhookConfiguration": renderer.renderValidatingWebhookConfiguration,
-		"Secret":                         renderer.renderSecret,
 		"Subscription":                   renderer.renderNamespace,
 		"StatefulSet":                    renderer.renderNamespace,
 		"Channel":                        renderer.renderNamespace,
@@ -200,40 +198,6 @@ func (r *Renderer) renderValidatingWebhookConfiguration(res *resource.Resource) 
 	return u, nil
 }
 
-func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructured, error) {
-	caCert, tlsCert, tlsKey := "ca.crt", "tls.crt", "tls.key"
-	u := &unstructured.Unstructured{Object: res.Map()}
-	metadata, ok := u.Object["metadata"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("failed to find metadata field")
-	}
-	data, ok := u.Object["data"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf(metadataErr)
-	}
-
-	metadata["namespace"] = r.cr.Namespace
-
-	name := res.GetName()
-
-	switch name {
-	case "ocm-klusterlet-self-signed-secrets":
-		ca, err := utils.GenerateSelfSignedCACert("multiclusterhub-klusterlet")
-		if err != nil {
-			return nil, err
-		}
-		cert, err := utils.GenerateSignedCert("multicluterhub-klusterlet", []string{}, ca)
-		if err != nil {
-			return nil, err
-		}
-		data[caCert] = base64.StdEncoding.EncodeToString([]byte(ca.Cert))
-		data[tlsCert] = base64.StdEncoding.EncodeToString([]byte(cert.Cert))
-		data[tlsKey] = base64.StdEncoding.EncodeToString([]byte(cert.Key))
-		return u, nil
-	}
-
-	return u, nil
-}
 
 func (r *Renderer) renderHiveConfig(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}

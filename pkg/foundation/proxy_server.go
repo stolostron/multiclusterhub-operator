@@ -17,7 +17,8 @@ import (
 
 const (
 	// OCMProxyServerName is the name of the ocm proxy server deployment
-	OCMProxyServerName string = "ocm-proxyserver"
+	OCMProxyServerName   string = "ocm-proxyserver"
+	KlusterletSecretName string = "ocm-klusterlet-self-signed-secrets"
 
 	OCMProxyAPIServiceName               string = "v1beta1.proxy.open-cluster-management.io"
 	OCMClusterViewV1APIServiceName       string = "v1.clusterview.open-cluster-management.io"
@@ -56,7 +57,7 @@ func OCMProxyServerDeployment(m *operatorsv1.MultiClusterHub, overrides map[stri
 						{
 							Name: "klusterlet-certs",
 							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{DefaultMode: &mode, SecretName: utils.KlusterletSecretName},
+								Secret: &corev1.SecretVolumeSource{DefaultMode: &mode, SecretName: KlusterletSecretName},
 							},
 						},
 						{

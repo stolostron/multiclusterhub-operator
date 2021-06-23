@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package foundation
 
 import (
@@ -21,7 +20,6 @@ const OCMControllerName string = "ocm-controller"
 // OCMControllerDeployment creates the deployment for the ocm controller
 func OCMControllerDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
 	replicas := getReplicaCount(m)
-	mode := int32(420)
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -44,21 +42,12 @@ func OCMControllerDeployment(m *operatorsv1.MultiClusterHub, overrides map[strin
 					NodeSelector:       m.Spec.NodeSelector,
 					Tolerations:        defaultTolerations(),
 					Affinity:           utils.DistributePods("ocm-antiaffinity-selector", OCMControllerName),
-					Volumes: []corev1.Volume{
-						{
-							Name: "klusterlet-certs",
-							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{DefaultMode: &mode, SecretName: utils.KlusterletSecretName},
-							},
-						},
-					},
 					Containers: []corev1.Container{{
 						Image:           Image(overrides),
 						ImagePullPolicy: utils.GetImagePullPolicy(m),
 						Name:            OCMControllerName,
 						Args: []string{
 							"/controller",
-							"--agent-cafile=/var/run/klusterlet/ca.crt",
 						},
 						LivenessProbe: &v1.Probe{
 							Handler: v1.Handler{
@@ -86,9 +75,6 @@ func OCMControllerDeployment(m *operatorsv1.MultiClusterHub, overrides map[strin
 							Limits: v1.ResourceList{
 								v1.ResourceMemory: resource.MustParse("2048Mi"),
 							},
-						},
-						VolumeMounts: []corev1.VolumeMount{
-							{Name: "klusterlet-certs", MountPath: "/var/run/klusterlet"},
 						},
 					}},
 				},
