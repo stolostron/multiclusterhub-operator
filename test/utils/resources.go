@@ -17,7 +17,7 @@ func getMCHImageRepository() string {
 }
 
 // NewMultiClusterHub ...
-func NewMultiClusterHub(name, namespace, imageOverridesConfigmapName string) *unstructured.Unstructured {
+func NewMultiClusterHub(name, namespace, imageOverridesConfigmapName string, disableHubSelfManagement bool) *unstructured.Unstructured {
 
 	metadata := map[string]interface{}{
 		"name":      name,
@@ -42,9 +42,12 @@ func NewMultiClusterHub(name, namespace, imageOverridesConfigmapName string) *un
 		"imagePullSecret": "multiclusterhub-operator-pull-secret",
 	}
 
+	if disableHubSelfManagement {
+		spec["disableHubSelfManagement"] = true
+	}
+
 	if os.Getenv("MOCK") == "true" {
 		spec["availabilityConfig"] = "Basic"
-		spec["disableHubSelfManagement"] = true
 	}
 
 	mch := &unstructured.Unstructured{

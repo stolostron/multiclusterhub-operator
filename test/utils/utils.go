@@ -148,7 +148,7 @@ var (
 	// GVRDiscoveryConfig
 	GVRDiscoveryConfig = schema.GroupVersionResource{
 		Group:    "discovery.open-cluster-management.io",
-		Version:  "v1",
+		Version:  "v1alpha1",
 		Resource: "discoveryconfigs",
 	}
 	// DefaultImageRegistry ...
@@ -186,7 +186,7 @@ var (
 
 	// AppSubSlice ...
 	AppSubSlice = [...]string{"application-chart-sub", "assisted-service-sub",
-		"console-chart-sub", "policyreport-sub", "discovery-operator-sub",
+		"console-chart-sub", "insights-chart-sub", "discovery-operator-sub",
 		"grc-sub", "kui-web-terminal-sub", "management-ingress-sub",
 		"rcm-sub", "search-prod-sub"}
 
@@ -195,6 +195,9 @@ var (
 
 	// WaitInMinutesDefault ...
 	WaitInMinutesDefault = 20
+
+	// DisableHubSelfManagementString ...
+	DisableHubSelfManagementString = "disableHubSelfManagement"
 )
 
 // GetWaitInMinutes...
@@ -384,16 +387,22 @@ func IsOwner(owner *unstructured.Unstructured, obj interface{}) bool {
 	return false
 }
 
-// CreateDefaultMCH ...
-func CreateDefaultMCH() *unstructured.Unstructured {
-	mch := NewMultiClusterHub(MCHName, MCHNamespace, "")
+// CreateMCHNotManaged ...
+func CreateMCHNotManaged() *unstructured.Unstructured {
+	mch := NewMultiClusterHub(MCHName, MCHNamespace, "", true)
 	CreateNewUnstructured(DynamicKubeClient, GVRMultiClusterHub, mch, MCHName, MCHNamespace)
 	return mch
 }
 
 // CreateMCHImageOverridesAnnotation ...
 func CreateMCHImageOverridesAnnotation(imageOverridesConfigmapName string) *unstructured.Unstructured {
-	mch := NewMultiClusterHub(MCHName, MCHNamespace, imageOverridesConfigmapName)
+	mch := NewMultiClusterHub(MCHName, MCHNamespace, imageOverridesConfigmapName, true)
+	CreateNewUnstructured(DynamicKubeClient, GVRMultiClusterHub, mch, MCHName, MCHNamespace)
+	return mch
+}
+
+func CreateDefaultMCH() *unstructured.Unstructured {
+	mch := NewMultiClusterHub(MCHName, MCHNamespace, "", false)
 	CreateNewUnstructured(DynamicKubeClient, GVRMultiClusterHub, mch, MCHName, MCHNamespace)
 	return mch
 }
@@ -553,6 +562,24 @@ func GetMCHStatus() (map[string]interface{}, error) {
 		return nil, fmt.Errorf("MultiClusterHub: %s has no 'status' map", mch.GetName())
 	}
 	return status, nil
+}
+
+// IsMCHSelfManaged returns the opposite of `spec.disableHubSelfManagement`
+func IsMCHSelfManaged() (bool, error) {
+	mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+	if err != nil {
+		return true, err
+	}
+	spec, ok := mch.Object["spec"].(map[string]interface{})
+	if !ok || spec == nil {
+		return true, fmt.Errorf("MultiClusterHub: %s has no 'spec' map", mch.GetName())
+	}
+	disableHubSelfManagement, ok := spec[DisableHubSelfManagementString]
+	if !ok || disableHubSelfManagement == nil {
+		return true, nil // if spec not set, default to managed
+	}
+	selfManaged := !(disableHubSelfManagement.(bool))
+	return selfManaged, nil
 }
 
 // findPhase reports whether the hub status has the desired phase and returns an error if not
@@ -832,7 +859,9 @@ func ValidateMCH() error {
 
 	By("- Checking Imported Hub Cluster")
 	if os.Getenv("MOCK") != "true" {
-		err = ValidateManagedCluster(true)
+		selfManaged, err := IsMCHSelfManaged()
+		Expect(err).Should(BeNil())
+		err = ValidateManagedCluster(selfManaged)
 		Expect(err).Should(BeNil())
 	}
 
@@ -1016,12 +1045,11 @@ func validateManagedClusterConditions() error {
 func ToggleDisableHubSelfManagement(disableHubSelfImport bool) error {
 	mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
 	Expect(err).To(BeNil())
-	disableHubSelfManagementString := "disableHubSelfManagement"
-	mch.Object["spec"].(map[string]interface{})[disableHubSelfManagementString] = disableHubSelfImport
+	mch.Object["spec"].(map[string]interface{})[DisableHubSelfManagementString] = disableHubSelfImport
 	mch, err = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
 	Expect(err).To(BeNil())
 	mch, err = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
-	if disableHubSelfManagement := mch.Object["spec"].(map[string]interface{})[disableHubSelfManagementString].(bool); disableHubSelfManagement != disableHubSelfImport {
+	if disableHubSelfManagement := mch.Object["spec"].(map[string]interface{})[DisableHubSelfManagementString].(bool); disableHubSelfManagement != disableHubSelfImport {
 		return fmt.Errorf("Spec was not updated")
 	}
 	return nil
@@ -1326,4 +1354,9 @@ func getCRDs() ([]string, error) {
 		crds = append(crds, crdName)
 	}
 	return crds, nil
+}
+
+// CoffeeBreak ...
+func CoffeeBreak() {
+	time.Sleep(10 * time.Minute)
 }

@@ -189,7 +189,7 @@ prep-mock-install:
 	cp mock-component-image/results/* ./image-manifests
 	echo "mock install prepped!"
 
-# different from `in-cluster-install` (no secrets, no observability-crd)
+# different from `in-cluster-install` (call update-crds, no secrets, no observability-crd)
 mock-install: ns og subscriptions update-crds update-image
 	oc apply -f deploy/crds/operator.open-cluster-management.io_multiclusterhubs_crd.yaml
 	VERSION="${VERSION}" yq eval '.images.[0].newTag = env(VERSION)' -i deploy/kustomization.yaml
@@ -200,3 +200,7 @@ mock-install: ns og subscriptions update-crds update-image
 ## Apply the MultiClusterHub CR (with no self management and no secrets)
 mock-cr:
 	cat deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml | yq eval '.spec.disableHubSelfManagement = true' - |  oc apply -f -
+
+## for nightly and automated tests
+slack-bot-message:
+	bash common/scripts/slack-bot-message.sh "${RESULTS_PATH}"

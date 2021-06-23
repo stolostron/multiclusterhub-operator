@@ -36,7 +36,7 @@ var _ = Describe("Multiclusterhub", func() {
 	By("Beginning Basic Update Test Suite ...")
 	It("Install Default MCH CR", func() {
 		By("Creating MultiClusterHub")
-		utils.CreateDefaultMCH()
+		utils.CreateMCHNotManaged()
 		utils.ValidateMCH()
 
 		By("Approving Update InstallPlan")
