@@ -101,7 +101,7 @@ oc project
 
 make update-manifest
 make update-crds
-make in-cluster-install HUB_IMAGE_REGISTRY='quay.io/rhibmcollab' VERSION='nightly'
+make in-cluster-install HUB_IMAGE_REGISTRY='quay.io/open-cluster-management' VERSION='nightly'
 
 SLEEP_IN_MINUTES=10
 echo "Sleeping for ${SLEEP_IN_MINUTES} minutes while cluster wakes from hibernation ..."
