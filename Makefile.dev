@@ -1,0 +1,19 @@
+.PHONY: update-manifest update-crds
+
+deps:
+	curl -sL https://github.com/operator-framework/operator-sdk/releases/download/v1.9.0/operator-sdk_darwin_amd64 -o bin/operator-sdk
+	chmod +x bin/operator-sdk
+
+update-manifest:
+	bash hack/scripts/update-image-manifest.sh
+
+update-crds:
+	bash hack/scripts/gather-crds-dev.sh
+
+subscriptions:
+	oc apply -k hack/subscriptions
+
+prereqs:
+	oc apply -k hack/prereqs
+
+install: prereqs manifests update-manifest update-crds subscriptions docker-build docker-push deploy

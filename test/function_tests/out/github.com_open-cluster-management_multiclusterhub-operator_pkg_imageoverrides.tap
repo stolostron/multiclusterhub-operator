@@ -1,0 +1,5 @@
+TAP version 13
+ok 1 - TestGetImageOverridesRelatedImage (0.00s)
+ok 2 - TestGetImageOverridesOperandImage (0.00s)
+ok 3 - TestGetImageOverridesBothEnvVars (0.00s)
+1..3

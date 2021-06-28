@@ -30,27 +30,22 @@ var (
 	createEvent = func(p *corev1.Pod) event.CreateEvent {
 		return event.CreateEvent{
 			Object: p,
-			Meta:   p.GetObjectMeta(),
 		}
 	}
 	updateEvent = func(p *corev1.Pod) event.UpdateEvent {
 		return event.UpdateEvent{
 			ObjectOld: p,
-			MetaOld:   p.GetObjectMeta(),
 			ObjectNew: p,
-			MetaNew:   p.GetObjectMeta(),
 		}
 	}
 	deleteEvent = func(p *corev1.Pod) event.DeleteEvent {
 		return event.DeleteEvent{
 			Object: p,
-			Meta:   p.GetObjectMeta(),
 		}
 	}
 	genericEvent = func(p *corev1.Pod) event.GenericEvent {
 		return event.GenericEvent{
 			Object: p,
-			Meta:   p.GetObjectMeta(),
 		}
 	}
 )
@@ -117,9 +112,7 @@ func TestGenerationChangedPredicate(t *testing.T) {
 	t.Run("Update event - no annotations", func(t *testing.T) {
 		e := event.UpdateEvent{
 			ObjectOld: pod,
-			MetaOld:   pod.GetObjectMeta(),
 			ObjectNew: pod,
-			MetaNew:   pod.GetObjectMeta(),
 		}
 		want := false
 		if got := pred.Update(e); got != want {
@@ -130,9 +123,7 @@ func TestGenerationChangedPredicate(t *testing.T) {
 	t.Run("Update event - annotations changed", func(t *testing.T) {
 		e := event.UpdateEvent{
 			ObjectOld: oldAnnotatedPod,
-			MetaOld:   oldAnnotatedPod.GetObjectMeta(),
 			ObjectNew: newAnnotatedPod,
-			MetaNew:   newAnnotatedPod.GetObjectMeta(),
 		}
 		want := true
 		if got := pred.Update(e); got != want {

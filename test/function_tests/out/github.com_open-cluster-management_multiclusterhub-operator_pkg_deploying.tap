@@ -1,0 +1,10 @@
+TAP version 13
+ok 1 - TestNewDeployment (0.00s)
+ok 2 - TestListDeployments (0.01s)
+ok 3 - TestRepeatedDeploy (0.00s)
+ok 4 - Test_shasMatch (0.00s)
+# --- PASS: Test_shasMatch/Matching_shas (0.00s)
+# --- PASS: Test_shasMatch/Matching_shas#01 (0.00s)
+ok 5 - Test_annotate (0.00s)
+# --- PASS: Test_annotate/Keep_existing_annotations (0.00s)
+1..5

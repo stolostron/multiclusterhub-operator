@@ -37,4 +37,3 @@ func TestGenerateSignedWebhookCertificates(t *testing.T) {
 		t.Errorf("Generate signed certificate failed")
 	}
 }
-

@@ -23,10 +23,6 @@ type GenerationChangedPredicate struct {
 
 // Update implements default UpdateEvent filter for validating generation change
 func (GenerationChangedPredicate) Update(e event.UpdateEvent) bool {
-	if e.MetaOld == nil {
-		log.Error(nil, "Update event has no old metadata", "event", e)
-		return false
-	}
 	if e.ObjectOld == nil {
 		log.Error(nil, "Update event has no old runtime object to update", "event", e)
 		return false
@@ -35,17 +31,13 @@ func (GenerationChangedPredicate) Update(e event.UpdateEvent) bool {
 		log.Error(nil, "Update event has no new runtime object for update", "event", e)
 		return false
 	}
-	if e.MetaNew == nil {
-		log.Error(nil, "Update event has no new metadata", "event", e)
-		return false
-	}
 
-	if !utils.AnnotationsMatch(e.MetaOld.GetAnnotations(), e.MetaNew.GetAnnotations()) {
+	if !utils.AnnotationsMatch(e.ObjectOld.GetAnnotations(), e.ObjectNew.GetAnnotations()) {
 		log.Info("Metadata annotations have changed")
 		return true
 	}
 
-	return e.MetaNew.GetGeneration() != e.MetaOld.GetGeneration()
+	return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
 }
 
 // DeletePredicate will only respond to delete events where the object has installer labels
@@ -57,7 +49,7 @@ func (DeletePredicate) Create(e event.CreateEvent) bool   { return false }
 func (DeletePredicate) Update(e event.UpdateEvent) bool   { return false }
 func (DeletePredicate) Generic(e event.GenericEvent) bool { return false }
 func (DeletePredicate) Delete(e event.DeleteEvent) bool {
-	labels := e.Meta.GetLabels()
+	labels := e.Object.GetLabels()
 	return hasInstallerLabels(labels)
 }
 
@@ -68,19 +60,19 @@ type InstallerLabelPredicate struct {
 
 // TODO: Use controller-runtime's 'NewPredicateFuncs' to simplify once available
 func (InstallerLabelPredicate) Create(e event.CreateEvent) bool {
-	labels := e.Meta.GetLabels()
+	labels := e.Object.GetLabels()
 	return hasInstallerLabels(labels)
 }
 func (InstallerLabelPredicate) Update(e event.UpdateEvent) bool {
-	labels := e.MetaNew.GetLabels()
+	labels := e.ObjectNew.GetLabels()
 	return hasInstallerLabels(labels)
 }
 func (InstallerLabelPredicate) Generic(e event.GenericEvent) bool {
-	labels := e.Meta.GetLabels()
+	labels := e.Object.GetLabels()
 	return hasInstallerLabels(labels)
 }
 func (InstallerLabelPredicate) Delete(e event.DeleteEvent) bool {
-	labels := e.Meta.GetLabels()
+	labels := e.Object.GetLabels()
 	return hasInstallerLabels(labels)
 }
 

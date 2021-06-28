@@ -1,0 +1,8 @@
+TAP version 13
+ok 1 - TestCRDRender (0.00s)
+# --- PASS: TestCRDRender/New_renderer (0.00s)
+# --- PASS: TestCRDRender/Missing_env_variable (0.00s)
+# --- PASS: TestCRDRender/Render_successfully (0.00s)
+# --- PASS: TestCRDRender/Render_error (0.00s)
+ok 2 - TestRender (0.31s)
+1..2

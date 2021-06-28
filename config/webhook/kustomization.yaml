@@ -1,0 +1,11 @@
+resources:
+- manifests.yaml
+- service.yaml
+
+namespace: open-cluster-management
+namePrefix: multiclusterhub-
+configurations:
+- kustomizeconfig.yaml
+
+patchesStrategicMerge:
+- patch_annotation.yaml

@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package rendering
 
 import (
@@ -9,9 +8,11 @@ import (
 	"path"
 	"testing"
 
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/pkg/apis/operator/v1"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/rendering/templates"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
+
+	"github.com/open-cluster-management/multiclusterhub-operator/pkg/rendering/templates"
 )
 
 func TestRender(t *testing.T) {
@@ -19,7 +20,7 @@ func TestRender(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get working dir %v", err)
 	}
-	templatesPath := path.Join(path.Dir(path.Dir(wd)), "templates")
+	templatesPath := path.Join(path.Dir(path.Dir(wd)), "pkg", "templates")
 	os.Setenv(templates.TemplatesPathEnvVar, templatesPath)
 	defer os.Unsetenv(templates.TemplatesPathEnvVar)
 

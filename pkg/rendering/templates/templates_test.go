@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package templates
 
 import (
@@ -15,7 +14,7 @@ func TestGetCoreTemplates(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get working dir %v", err)
 	}
-	templatesPath := path.Join(path.Dir(path.Dir(path.Dir(wd))), "templates")
+	templatesPath := path.Join(path.Dir(path.Dir(path.Dir(wd))), "pkg", "templates")
 	os.Setenv(TemplatesPathEnvVar, templatesPath)
 	defer os.Unsetenv(TemplatesPathEnvVar)
 

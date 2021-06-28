@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package deploying
 
 import (
@@ -42,7 +41,7 @@ func Deploy(c runtimeclient.Client, obj *unstructured.Unstructured) (error, bool
 	// Do not update cert secrets, or hiveconfig
 
 	if kind := found.GetKind(); kind == "Secret" {
-		if name := found.GetName(); name == "ocm-klusterlet-self-signed-secrets"  {
+		if name := found.GetName(); name == "ocm-klusterlet-self-signed-secrets" {
 			return nil, false
 		}
 	}

@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"time"
 
-
 	clustermanager "github.com/open-cluster-management/api/operator/v1"
 	admissionregistration "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -26,7 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/pkg/apis/operator/v1"
+	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
 )
 
@@ -43,7 +42,6 @@ const (
 func Setup(mgr manager.Manager) error {
 	certDir := filepath.Join("/tmp", "webhookcert")
 
-	
 	ns, err := utils.FindNamespace()
 	if err != nil {
 		return err
@@ -51,7 +49,6 @@ func Setup(mgr manager.Manager) error {
 
 	done := make(chan string)
 	go createOrUpdateWebhookService(mgr.GetClient(), ns)
-
 
 	go getSecret(mgr.GetClient(), ns, certDir, done)
 
@@ -122,8 +119,8 @@ func createOrUpdateWebhookService(c client.Client, namespace string) {
 				log.Error(err, fmt.Sprintf("Failed to get %s/%s service", namespace, utils.WebhookServiceName))
 				return
 			}
-		}		
-		metav1.SetMetaDataAnnotation(&service.ObjectMeta, "service.beta.openshift.io/serving-cert-secret-name", "multiclusterhub-operator-webhook") 
+		}
+		metav1.SetMetaDataAnnotation(&service.ObjectMeta, "service.beta.openshift.io/serving-cert-secret-name", "multiclusterhub-operator-webhook")
 		if err := c.Update(context.TODO(), service); err != nil {
 			log.Error(err, fmt.Sprintf("Failed to update service %s", utils.WebhookServiceName))
 			return
@@ -158,7 +155,6 @@ func createOrUpdateValiatingWebhook(c client.Client, namespace, path string, cer
 			}
 		}
 
-		
 		metav1.SetMetaDataAnnotation(&validator.ObjectMeta, "service.beta.openshift.io/inject-cabundle", "true")
 		if err := c.Update(context.TODO(), validator); err != nil {
 			log.Error(err, fmt.Sprintf("Failed to update validating webhook %s", validatingCfgName))
@@ -257,6 +253,7 @@ func newValidatingWebhookCfg(namespace, path string) *admissionregistration.Vali
 		},
 		Webhooks: []admissionregistration.ValidatingWebhook{{
 			AdmissionReviewVersions: []string{
+				"v1",
 				"v1beta1",
 			},
 			ClientConfig: admissionregistration.WebhookClientConfig{
@@ -269,8 +266,8 @@ func newValidatingWebhookCfg(namespace, path string) *admissionregistration.Vali
 			Name: validatingWebhookName,
 			Rules: []admissionregistration.RuleWithOperations{{
 				Rule: admissionregistration.Rule{
-					APIGroups:   []string{operatorsv1.SchemeGroupVersion.Group},
-					APIVersions: []string{operatorsv1.SchemeGroupVersion.Version},
+					APIGroups:   []string{operatorsv1.GroupVersion.Group},
+					APIVersions: []string{operatorsv1.GroupVersion.Version},
 					Resources:   []string{resourceName},
 				},
 				Operations: []admissionregistration.OperationType{
