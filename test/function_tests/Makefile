@@ -6,9 +6,6 @@ CHANNEL := "release-2.3"
 SOURCE_NAMESPACE := "open-cluster-management"
 SOURCE_NAME := "acm-custom-registry"
 
-REGISTRY ?= $(HUB_IMAGE_REGISTRY)
-
-
 ## Run the installer downstream functional tests
 ft-downstream-install:
 	docker run --network host \

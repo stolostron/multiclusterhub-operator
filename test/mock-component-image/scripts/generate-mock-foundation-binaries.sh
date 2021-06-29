@@ -8,11 +8,11 @@ fi
 
 mkdir ./bin
 
-GOOS=linux go build ./templates/foundation-controller.go
+GOOS=linux go build ./templates/controller/foundation-controller.go
 mv foundation-controller ./bin/controller
 
-GOOS=linux go build ./templates/foundation-webhook.go
+GOOS=linux go build ./templates/webhook/foundation-webhook.go
 mv foundation-webhook ./bin/webhook
 
-GOOS=linux go build ./templates/foundation-proxyserver.go
+GOOS=linux go build ./templates/proxyserver/foundation-proxyserver.go
 mv foundation-proxyserver ./bin/proxyserver

@@ -50,12 +50,12 @@ mock-cleanup:
 	make del-mock-image-manifests 
 	make del-mock-bins
 
-mock-build-image: 
-	make check-env-vars
-	make mock-cleanup 
-	make gen-mock-charts 
-	make gen-helm-repo-index 
-	make gen-foundation-binaries
-	make gen-and-push-image
-	make get-image-sha
-	make gen-mock-image-manifest
+mock-build-image:
+	make check-env-vars 			PRODUCT_VERSION=$(VERSION) MOCK_IMAGE_REGISTRY=$(REGISTRY) MOCK_IMAGE_SHA="sha256:test"
+	make mock-cleanup 				PRODUCT_VERSION=$(VERSION) MOCK_IMAGE_REGISTRY=$(REGISTRY) MOCK_IMAGE_SHA="sha256:test"
+	make gen-mock-charts 			PRODUCT_VERSION=$(VERSION) MOCK_IMAGE_REGISTRY=$(REGISTRY) MOCK_IMAGE_SHA="sha256:test"
+	make gen-helm-repo-index 		PRODUCT_VERSION=$(VERSION) MOCK_IMAGE_REGISTRY=$(REGISTRY) MOCK_IMAGE_SHA="sha256:test"
+	make gen-foundation-binaries 	PRODUCT_VERSION=$(VERSION) MOCK_IMAGE_REGISTRY=$(REGISTRY) MOCK_IMAGE_SHA="sha256:test"
+	make gen-and-push-image 		PRODUCT_VERSION=$(VERSION) MOCK_IMAGE_REGISTRY=$(REGISTRY) MOCK_IMAGE_SHA="sha256:test"
+	make get-image-sha 				PRODUCT_VERSION=$(VERSION) MOCK_IMAGE_REGISTRY=$(REGISTRY) MOCK_IMAGE_SHA="sha256:test"
+	make gen-mock-image-manifest 	PRODUCT_VERSION=$(VERSION) MOCK_IMAGE_REGISTRY=$(REGISTRY) MOCK_IMAGE_SHA="sha256:test"

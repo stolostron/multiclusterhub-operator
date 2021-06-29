@@ -12,6 +12,10 @@ testbin/*
 
 hack/prereqs/pull-secret.yaml
 
+test/mock-component-image/bin
+test/mock-component-image/results
+test/mock-component-image/scripts/__pycache__
+test/mock-component-image/multiclusterhub
 # Test binary, build with `go test -c`
 *.test
 
