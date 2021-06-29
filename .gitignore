@@ -8,6 +8,8 @@
 bin
 testbin/*
 
+.DS_Store
+
 hack/prereqs/pull-secret.yaml
 
 # Test binary, build with `go test -c`
