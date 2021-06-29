@@ -135,7 +135,7 @@ kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
-PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
+PROJECT_DIR := $(shell pwd)
 define go-get-tool
 @[ -f $(1) ] || { \
 set -e ;\
