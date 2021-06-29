@@ -48,11 +48,11 @@ ft-downstream-update:
 
 ## Run the install functional tests directly
 ft-install: 
-	export skipSubscription="true";	ginkgo -tags functional -v --slowSpecThreshold=150 test/multiclusterhub_install_test
+	export skipSubscription="true";	ginkgo -tags functional -v --slowSpecThreshold=150 test/function_tests/multiclusterhub_install_test
 
 ## Run the uninstall functional tests directly
 ft-uninstall:
-	export skipSubscription="true"; ginkgo -tags functional -v --slowSpecThreshold=100 test/multiclusterhub_uninstall_test
+	export skipSubscription="true"; ginkgo -tags functional -v --slowSpecThreshold=100 test/function_tests/multiclusterhub_uninstall_test
 
 ## Run the update functional tests directly
 ft-update:
@@ -63,13 +63,13 @@ ft-update:
 		name=$(SUBSCRIPTION_NAME) \
 		TEST_MODE="update" \
 		startVersion="2.1.0" \
-		updateVersion="2.3.0";	ginkgo -tags functional -v --slowSpecThreshold=300 test/multiclusterhub_update_test
+		updateVersion="2.3.0";	ginkgo -tags functional -v --slowSpecThreshold=300 test/function_tests/multiclusterhub_update_test
 
 ## Build the MCH functional test image
 test-image: deps
 	go mod vendor
-	@echo "Building $(REGISTRY)/$(IMG)-tests:$(VERSION)"
-	docker build . -f build/Dockerfile.test -t $(REGISTRY)/$(IMG)-tests:$(VERSION)
+	@echo "Building $(REGISTRY)/multiclusterhub-operator-tests:$(VERSION)"
+	docker build . -f build/Dockerfile.test.prow -t $(REGISTRY)/multiclusterhub-operator-tests:$(VERSION)
 	rm -rf vendor
 
 # Pass downstream bundle image snapshots for beginning version and the desired version to upgrade to 

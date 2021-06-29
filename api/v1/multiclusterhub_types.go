@@ -49,6 +49,7 @@ type MultiClusterHubSpec struct {
 
 	// (Deprecated) Install cert-manager into its own namespace
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Separate Certificate Management",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
+	// +optional
 	SeparateCertificateManagement bool `json:"separateCertificateManagement"`
 
 	// Set the nodeselectors
@@ -207,6 +208,7 @@ type MultiClusterHubStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Represents the running phase of the MultiClusterHub
+	// +optional
 	Phase HubPhaseType `json:"phase"`
 
 	// CurrentVersion indicates the current version
@@ -309,7 +311,7 @@ type MultiClusterHub struct {
 
 //+kubebuilder:object:root=true
 
-// MultiClusterHubList contains a list of Test
+// MultiClusterHubList contains a list of MultiClusterHub
 type MultiClusterHubList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

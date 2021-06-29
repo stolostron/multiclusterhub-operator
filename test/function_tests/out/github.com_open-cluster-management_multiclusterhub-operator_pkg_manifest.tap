@@ -1,9 +1,0 @@
-TAP version 13
-ok 1 - Test_readManifestFile (0.00s)
-# --- PASS: Test_readManifestFile/Get_manifest (0.00s)
-# --- PASS: Test_readManifestFile/File_not_found (0.00s)
-# --- PASS: Test_readManifestFile/Env_var_missing (0.00s)
-ok 2 - Test_buildFullImageReference (0.00s)
-# --- PASS: Test_buildFullImageReference/Default_(sha_format) (0.00s)
-# --- PASS: Test_buildFullImageReference/Custom_registry (0.00s)
-1..2

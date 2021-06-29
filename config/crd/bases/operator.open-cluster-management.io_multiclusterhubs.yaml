@@ -212,8 +212,6 @@ spec:
               separateCertificateManagement:
                 description: (Deprecated) Install cert-manager into its own namespace
                 type: boolean
-            required:
-            - separateCertificateManagement
             type: object
           status:
             description: MultiClusterHubStatus defines the observed state of MultiClusterHub
@@ -286,8 +284,6 @@ spec:
               phase:
                 description: Represents the running phase of the MultiClusterHub
                 type: string
-            required:
-            - phase
             type: object
         type: object
     served: true

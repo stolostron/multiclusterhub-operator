@@ -5,13 +5,16 @@
 *.dll
 *.so
 *.dylib
+*.tap
 bin
 testbin/*
+vendor/
 
 .DS_Store
 
 hack/prereqs/pull-secret.yaml
 
+test/function_tests/results
 test/mock-component-image/bin
 test/mock-component-image/results
 test/mock-component-image/scripts/__pycache__
