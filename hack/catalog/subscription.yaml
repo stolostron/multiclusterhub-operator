@@ -1,0 +1,12 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  creationTimestamp: "2021-06-30T16:30:41Z"
+  name: multiclusterhub-operator
+  namespace: default
+spec:
+  channel: stable
+  installPlanApproval: Automatic
+  name: multiclusterhub-operator
+  source: multiclusterhub-catalog
+  sourceNamespace: open-cluster-management

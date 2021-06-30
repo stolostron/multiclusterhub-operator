@@ -101,6 +101,7 @@ func main() {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "multicloudhub-operator-lock",
+		// LeaderElectionNamespace: "open-cluster-management", // Uncomment this line to run operator locally using `make run`
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -116,7 +117,7 @@ func main() {
 	}
 
 	// TODO: Get Webhook Working. Some troubles w/ kubebuilder generation prevented me from
-	// creating the same webhook spec.
+	// creating the same webhook spec. May be able to get past this with Kustomize.
 	// if err = (&operatorv1.MultiClusterHub{}).SetupWebhookWithManager(mgr); err != nil {
 	// 	setupLog.Error(err, "unable to create webhook", "webhook", "MultiClusterHub")
 	// 	os.Exit(1)

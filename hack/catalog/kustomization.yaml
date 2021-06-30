@@ -6,6 +6,5 @@ kind: Kustomization
 namespace: open-cluster-management
 
 resources:
-- hive-operator.yaml
-- subscription-operator.yaml
-- cluster-manager-operator.yaml
+- catalogsource.yaml
+- subscription.yaml

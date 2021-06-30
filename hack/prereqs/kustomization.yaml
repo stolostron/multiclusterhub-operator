@@ -12,3 +12,4 @@ namespace: open-cluster-management
 resources:
   - namespace.yaml
   - pull-secret.yaml
+  - operatorgroup.yaml
