@@ -174,8 +174,8 @@ var (
 	// HiveConfigName ...
 	HiveConfigName = "hive"
 
-	// AppSubName ClusterImageSets subscription name
-	AppSubName = "hive-clusterimagesets-subscription-fast-0"
+	// AppSubName console-chart-sub where clusterset pause is set
+	AppSubName = "console-chart-sub"
 
 	// SubList contains the list of subscriptions to delete
 	SubList = [...]string{
@@ -1074,8 +1074,34 @@ func ToggleDisableUpdateClusterImageSets(disableUpdateCIS bool) error {
 func ValidateClusterImageSetsSubscriptionPause(expected string) error {
 	appsub, err := DynamicKubeClient.Resource(GVRAppSub).Namespace(MCHNamespace).Get(context.TODO(), AppSubName, metav1.GetOptions{})
 	Expect(err).To(BeNil())
-	if subscriptionPauseValue := appsub.GetLabels()["subscription-pause"]; subscriptionPauseValue != expected {
-		return fmt.Errorf("subscription-pause label is not correct")
+	spec, ok := appsub.Object["spec"].(map[string]interface{})
+	if !ok || spec == nil {
+		return fmt.Errorf("MultiClusterHub: %s has no 'spec' map", appsub.GetName())
+	}
+	packageoverrides_outer, ok := spec["packageOverrides"].([]interface{})
+	if !ok || packageoverrides_outer == nil {
+		return fmt.Errorf("MultiClusterHub: %s has no 'packageoverrides' outer map", appsub.GetName())
+	}
+	packageoverrides_outer_first := packageoverrides_outer[0].(map[string]interface{})
+	packageoverrides_inner, ok := packageoverrides_outer_first["packageOverrides"].([]interface{})
+	if !ok || packageoverrides_inner == nil {
+		return fmt.Errorf("MultiClusterHub: %s has no 'packageoverrides' inner map", appsub.GetName())
+	}
+	packageoverrides_inner_first := packageoverrides_inner[0].(map[string]interface{})
+	value, ok := packageoverrides_inner_first["value"].(map[string]interface{})
+	if !ok || value == nil {
+		return fmt.Errorf("MultiClusterHub: %s has no 'value' map", appsub.GetName())
+	}
+	clusterimageset, ok := value["clusterImageSets"].(map[string]interface{})
+	if !ok || clusterimageset == nil {
+		return fmt.Errorf("MultiClusterHub: %s has no 'clusterimageset' map", appsub.GetName())
+	}
+	subscriptionPauseValue, ok := clusterimageset["subscriptionPause"]
+	if !ok || subscriptionPauseValue == nil {
+		return fmt.Errorf("MultiClusterHub: %s has no 'subscriptionPauseValue'", appsub.GetName())
+	}
+	if subscriptionPauseValue != expected {
+		return fmt.Errorf("subscriptionPause attribute is not correct")
 	}
 	return nil
 }
@@ -1357,6 +1383,6 @@ func getCRDs() ([]string, error) {
 }
 
 // CoffeeBreak ...
-func CoffeeBreak() {
-	time.Sleep(10 * time.Minute)
+func CoffeeBreak(minutes int) {
+	time.Sleep(time.Duration(minutes) * time.Minute)
 }
