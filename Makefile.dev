@@ -24,7 +24,10 @@ prereqs:
 copyright:
 	bash ./hack/scripts/copyright.sh
 
+update-version:
+	./hack/scripts/update-version.sh <START_VERSION> <UPDATE_VERSION>
+
 ## Ensure the quay repos are open or pull secrets are configured
 full-catalog-install: manifests generate bundle bundle-build bundle-push catalog-build catalog-push prereqs subscriptions catalog
 
-full-dev-install: prereqs manifests update-manifest update-crds subscriptions docker-build docker-push deploy
+full-dev-install: prereqs manifests generate update-manifest update-crds subscriptions docker-build docker-push deploy

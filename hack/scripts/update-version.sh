@@ -23,26 +23,19 @@ NEW_VERSION_NO_Z=$(echo $NEW_VERSION | cut -d'.' -f 1-2)
 FILES="COMPONENT_VERSION
 Makefile
 README.md
-build/configmap-install/package.yaml
-build/index-install/composite/kustomization.yaml
-build/index-install/non-composite/kustomization.yaml
-deploy/kustomization.yaml
-deploy/olm-catalog/multiclusterhub-operator/manifests/multiclusterhub-operator.clusterserviceversion.yaml
-deploy/operator.yaml
-deploy/subscription.yaml
 docs/installation.md
-pkg/controller/multiclusterhub/common_test.go
+controllers/common_test.go
 pkg/manifest/manifest_test.go
-test/Makefile
-test/multiclusterhub_install_test/multiclusterhub_test.go
-test/multiclusterhub_update_test/multiclusterhub_test.go
-test/utils/resources.go
-test/utils/utils.go
-version/version.go"
+test/function_tests/Makefile
+test/function_tests/multiclusterhub_install_test/multiclusterhub_test.go
+test/function_tests/multiclusterhub_update_test/multiclusterhub_test.go
+test/function_tests/utils/resources.go
+test/function_tests/utils/utils.go
+pkg/version/version.go"
 
 # SPECIAL CASE
 
-mv ./image-manifests/$OLD_VERSION.json ./image-manifests/$NEW_VERSION.json
+mv ./bin/image-manifests/$OLD_VERSION.json ./bin/image-manifests/$NEW_VERSION.json
 
 # BULK CASE
 

@@ -5,6 +5,7 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -244,4 +245,13 @@ func ProxyEnvVarsAreSet() bool {
 		return true
 	}
 	return false
+}
+
+// FindNamespace
+func FindNamespace() (string, error) {
+	ns, found := os.LookupEnv(podNamespaceEnvVar)
+	if !found {
+		return "", fmt.Errorf("%s envvar is not set", podNamespaceEnvVar)
+	}
+	return ns, nil
 }

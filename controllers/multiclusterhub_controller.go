@@ -58,7 +58,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/go-logr/logr"
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
 	operatorv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
 	utils "github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -309,7 +308,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			return reconcile.Result{}, err
 		}
 		if ok {
-			condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
 			SetHubCondition(&multiClusterHub.Status, *condition)
 		}
 	}
@@ -326,7 +325,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	// Wait for ocm-webhook to be fully available before applying rest of subscriptions
 	if !(multiClusterHub.Status.Components["ocm-webhook"].Type == "Available" && multiClusterHub.Status.Components["ocm-webhook"].Status == metav1.ConditionTrue) {
-		r.log.Info(fmt.Sprintf("Waiting for component 'ocm-webhook' to be available"))
+		r.log.Info("Waiting for component 'ocm-webhook' to be available")
 		return reconcile.Result{RequeueAfter: resyncPeriod}, nil
 	}
 
@@ -443,15 +442,15 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&operatorv1.MultiClusterHub{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Watches(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
 			IsController: true,
-			OwnerType:    &operatorsv1.MultiClusterHub{},
+			OwnerType:    &operatorv1.MultiClusterHub{},
 		}).
 		Watches(&source.Kind{Type: &appsubv1.Subscription{}}, &handler.EnqueueRequestForOwner{
 			IsController: true,
-			OwnerType:    &operatorsv1.MultiClusterHub{},
+			OwnerType:    &operatorv1.MultiClusterHub{},
 		}).
 		Watches(&source.Kind{Type: &corev1.ConfigMap{}}, &handler.EnqueueRequestForOwner{
 			IsController: true,
-			OwnerType:    &operatorsv1.MultiClusterHub{},
+			OwnerType:    &operatorv1.MultiClusterHub{},
 		}).
 		Watches(&source.Kind{Type: &apiregistrationv1.APIService{}}, handler.Funcs{
 			DeleteFunc: func(e event.DeleteEvent, q workqueue.RateLimitingInterface) {
@@ -500,7 +499,7 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 // ingressDomain is discovered from Openshift cluster configuration resources
-func (r *MultiClusterHubReconciler) ingressDomain(m *operatorsv1.MultiClusterHub) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) ingressDomain(m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	if r.CacheSpec.IngressDomain != "" {
 		return ctrl.Result{}, nil
 	}
@@ -519,7 +518,7 @@ func (r *MultiClusterHubReconciler) ingressDomain(m *operatorsv1.MultiClusterHub
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operatorv1.MultiClusterHub) error {
 	if _, err := r.ensureHubIsExported(m); err != nil {
 		return err
 	}
@@ -563,7 +562,7 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 	return nil
 }
 
-func (r *MultiClusterHubReconciler) addFinalizer(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+func (r *MultiClusterHubReconciler) addFinalizer(reqLogger logr.Logger, m *operatorv1.MultiClusterHub) error {
 	reqLogger.Info("Adding Finalizer for the multiClusterHub")
 	m.SetFinalizers(append(m.GetFinalizers(), hubFinalizer))
 
@@ -576,17 +575,17 @@ func (r *MultiClusterHubReconciler) addFinalizer(reqLogger logr.Logger, m *opera
 	return nil
 }
 
-func (r *MultiClusterHubReconciler) installCRDs(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+func (r *MultiClusterHubReconciler) installCRDs(reqLogger logr.Logger, m *operatorv1.MultiClusterHub) error {
 	crdRenderer, err := rendering.NewCRDRenderer(m)
 	if err != nil {
-		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionFalse, ResourceRenderReason, fmt.Sprintf("Error creating CRD renderer: %s", err.Error()))
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, ResourceRenderReason, fmt.Sprintf("Error creating CRD renderer: %s", err.Error()))
 		SetHubCondition(&m.Status, *condition)
 		return fmt.Errorf("failed to setup CRD templates: %w", err)
 	}
 	crdResources, errs := crdRenderer.Render()
-	if errs != nil && len(errs) > 0 {
+	if len(errs) > 0 {
 		message := mergeErrors(errs)
-		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionFalse, ResourceRenderReason, fmt.Sprintf("Error rendering CRD templates: %s", message))
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, ResourceRenderReason, fmt.Sprintf("Error rendering CRD templates: %s", message))
 		SetHubCondition(&m.Status, *condition)
 		return fmt.Errorf("failed to render CRD templates: %s", message)
 	}
@@ -596,38 +595,38 @@ func (r *MultiClusterHubReconciler) installCRDs(reqLogger logr.Logger, m *operat
 		if err != nil {
 			message := fmt.Sprintf("Failed to deploy %s %s", crd.GetKind(), crd.GetName())
 			reqLogger.Error(err, message)
-			condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionFalse, DeployFailedReason, message)
+			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, DeployFailedReason, message)
 			SetHubCondition(&m.Status, *condition)
 			return err
 		}
 		if ok {
-			condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
 			SetHubCondition(&m.Status, *condition)
 		}
 	}
 	return nil
 }
 
-func updatePausedCondition(m *operatorsv1.MultiClusterHub) {
-	c := GetHubCondition(m.Status, operatorsv1.Progressing)
+func updatePausedCondition(m *operatorv1.MultiClusterHub) {
+	c := GetHubCondition(m.Status, operatorv1.Progressing)
 
 	if utils.IsPaused(m) {
 		// Pause condition needs to go on
 		if c == nil || c.Reason != PausedReason {
-			condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionUnknown, PausedReason, "Multiclusterhub is paused")
+			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionUnknown, PausedReason, "Multiclusterhub is paused")
 			SetHubCondition(&m.Status, *condition)
 		}
 	} else {
 		// Pause condition needs to come off
 		if c != nil && c.Reason == PausedReason {
-			condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, ResumedReason, "Multiclusterhub is resumed")
+			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, ResumedReason, "Multiclusterhub is resumed")
 			SetHubCondition(&m.Status, *condition)
 		}
 
 	}
 }
 
-func (r *MultiClusterHubReconciler) setDefaults(m *operatorsv1.MultiClusterHub) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	if utils.MchIsValid(m) {
 		return ctrl.Result{}, nil
 	}
@@ -638,7 +637,7 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorsv1.MultiClusterHub) 
 	}
 
 	if !utils.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {
-		m.Spec.AvailabilityConfig = operatorsv1.HAHigh
+		m.Spec.AvailabilityConfig = operatorv1.HAHigh
 	}
 
 	// Apply defaults to server
