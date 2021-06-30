@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 apiVersion: scorecard.operatorframework.io/v1alpha3
 kind: Configuration
 metadata:

@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 .PHONY: update-manifest update-crds
 
 deps:
@@ -18,6 +20,9 @@ catalog:
 
 prereqs:
 	oc apply -k hack/prereqs
+
+copyright:
+	bash ./hack/scripts/copyright.sh
 
 ## Ensure the quay repos are open or pull secrets are configured
 full-catalog-install: manifests generate bundle bundle-build bundle-push catalog-build catalog-push prereqs subscriptions catalog

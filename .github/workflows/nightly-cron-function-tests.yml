@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 name: Nightly Full Function Tests
 
 # Controls when the action will run. 

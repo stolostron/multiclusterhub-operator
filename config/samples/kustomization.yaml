@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 ## Append samples you want in your CSV to this file as resources ##
 namespace: open-cluster-management
 

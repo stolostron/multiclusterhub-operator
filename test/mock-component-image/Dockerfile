@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 FROM node:14
 
 WORKDIR /usr/src/app

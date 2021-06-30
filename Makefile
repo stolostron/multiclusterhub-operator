@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 -include Makefile.dev
 -include test/function_tests/Makefile
 -include test/mock-component-image/Makefile

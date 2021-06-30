@@ -1,3 +1,5 @@
+// Copyright Contributors to the Open Cluster Management project
+
 /*
 Copyright 2021.
 
@@ -36,8 +38,6 @@ const (
 
 // MultiClusterHubSpec defines the desired state of MultiClusterHub
 type MultiClusterHubSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
 
 	// Override pull secret for accessing MultiClusterHub operand and endpoint images
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secret",xDescriptors={"urn:alm:descriptor:io.kubernetes:Secret","urn:alm:descriptor:com.tectonic.ui:advanced"}
@@ -76,7 +76,7 @@ type MultiClusterHubSpec struct {
 	DisableHubSelfManagement bool `json:"disableHubSelfManagement,omitempty"`
 
 	// Disable automatic update of ClusterImageSets
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Disable Update ClusterImageSet",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:booleanSwitch"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Disable Update ClusterImageSets",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:booleanSwitch"}
 	DisableUpdateClusterImageSets bool `json:"disableUpdateClusterImageSets,omitempty"`
 }
 
@@ -204,8 +204,6 @@ const (
 
 // MultiClusterHubStatus defines the observed state of MultiClusterHub
 type MultiClusterHubStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
 
 	// Represents the running phase of the MultiClusterHub
 	// +optional

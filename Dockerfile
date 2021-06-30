@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 # Build the multiclusterhub-operator binary
 FROM golang:1.16 as builder
 

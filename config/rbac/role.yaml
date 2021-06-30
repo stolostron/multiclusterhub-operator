@@ -8,344 +8,114 @@ metadata:
 rules:
 - apiGroups:
   - ""
-  resources:
-  - configmaps
-  - endpoints
-  - events
-  - namespaces
-  - pods
-  - pods/log
-  - secrets
-  - serviceaccounts
-  - services
-  - services/finalizers
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - action.open-cluster-management.io
-  resources:
-  - managedclusteractions
-  - managedclusteractions/status
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - addon.open-cluster-management.io
-  resources:
-  - clustermanagementaddons
-  - managedclusteraddons
-  - managedclusteraddons/status
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - mutatingwebhookconfigurations
-  - validatingwebhookconfigurations
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - agent.open-cluster-management.io
-  resources:
-  - klusterletaddonconfigs
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - apiextensions.k8s.io
-  resources:
-  - customresourcedefinitions
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - apiregistration.k8s.io
-  resources:
-  - apiservices
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - app.k8s.io
+  - apps.open-cluster-management.io
+  - argoproj.io
+  - authorization.k8s.io
+  - certificates.k8s.io
+  - cluster.open-cluster-management.io
+  - clusterregistry.k8s.io
+  - compliance.mcm.ibm.com
+  - config.openshift.io
+  - coordination.k8s.io
+  - discovery.open-cluster-management.io
+  - hive.openshift.io
+  - hiveinternal.openshift.io
+  - internal.open-cluster-management.io
+  - inventory.open-cluster-management.io
+  - mcm.ibm.com
+  - multicloud.ibm.com
+  - operator.open-cluster-management.io
+  - policy.open-cluster-management.io
+  - proxy.open-cluster-management.io
+  - rbac.authorization.k8s.io
+  - register.open-cluster-management.io
+  - search.open-cluster-management.io
+  - submarineraddon.open-cluster-management.io
+  - view.open-cluster-management.io
+  - work.open-cluster-management.io
   resources:
+  - applicationrelationships
+  - applicationrelationships/status
   - applications
   - applications/status
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - apps
-  resources:
-  - deployments
-  - deployments/finalizers
-  - replicasets
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - apps.open-cluster-management.io
-  resources:
-  - channels
-  - channels/status
-  - deployables
-  - deployables/status
-  - helmreleases
-  - placementrules
-  - placementrules/status
-  - subscriptions
-  - subscriptions/status
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - authorization.k8s.io
-  resources:
-  - subjectaccessreviews
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - certificates.k8s.io
-  resources:
+  - baremetalassets
+  - baremetalassets/finalizers
+  - baremetalassets/status
   - certificatesigningrequests
   - certificatesigningrequests/approval
-  - signers
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cluster.open-cluster-management.io
-  resources:
+  - channels
+  - channels/status
   - clusterclaims
   - clustercurators
+  - clusterdeployments
+  - clustermanagementaddons
+  - clustermanagers
+  - clusterpools
+  - clusterrolebindings
+  - clusterroles
+  - clusterstatuses/aggregator
+  - clustersyncs
+  - clusterversions
+  - compliances
+  - configmaps
+  - deployableoverrides
+  - deployableoverrides/status
+  - deployables
+  - deployables/status
+  - discoveredclusters
+  - discoveryconfigs
+  - endpointconfigs
+  - endpoints
+  - events
+  - helmrepos
+  - helmrepos/status
+  - klusterletaddonconfigs
+  - leases
+  - machinepools
+  - managedclusteractions
+  - managedclusteractions/status
+  - managedclusteraddons
+  - managedclusteraddons/status
+  - managedclusterinfos
+  - managedclusterinfos/status
   - managedclusters
+  - managedclusters/accept
+  - managedclusters/status
   - managedclustersetbindings
   - managedclustersets
   - managedclustersets/bind
   - managedclustersets/join
   - managedclustersets/status
+  - managedclusterviews
+  - managedclusterviews/status
+  - manifestworks
+  - manifestworks/status
+  - namespaces
+  - placementbindings
   - placementdecisions
   - placementdecisions/status
+  - placementrules
+  - placementrules/status
   - placements
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - clusterview.open-cluster-management.io
-  resources:
-  - managedclusters
-  - managedclusters/accept
-  - managedclusters/status
-  - managedclustersets
-  - managedclustersets/bind
-  - managedclustersets/join
-  - managedclustersets/status
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - compliance.mcm.ibm.com
-  resources:
-  - compliances
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - config.openshift.io
-  resources:
-  - clusterversions
-  - ingresses
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - coordination.k8s.io
-  resources:
-  - leases
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - discovery.open-cluster-management.io
-  resources:
-  - discoveredclusters
-  - discoveryconfigs
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - hive.openshift.io
-  resources:
-  - clusterclaims
-  - clusterdeployments
-  - clusterpools
-  - hiveconfigs
-  - machinepools
+  - pods
+  - pods/log
+  - policies
+  - policies/status
+  - policyautomations
+  - rolebindings
+  - roles
+  - searchcustomizations
+  - secrets
+  - signers
+  - subjectaccessreviews
+  - submarinerconfigs
+  - submarinerconfigs/status
+  - subscriptions
+  - subscriptions/status
   - syncsets
   verbs:
   - approve
@@ -360,299 +130,214 @@ rules:
   - update
   - watch
 - apiGroups:
-  - hiveinternal.openshift.io
-  resources:
-  - clustersyncs
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - internal.open-cluster-management.io
-  resources:
-  - managedclusterinfos
-  - managedclusterinfos/status
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - inventory.open-cluster-management.io
-  resources:
-  - baremetalassets
-  - baremetalassets/finalizers
-  - baremetalassets/status
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
+  - ""
+  - admissionregistration.k8s.io
+  - apiextensions.k8s.io
+  - apiregistration.k8s.io
+  - apps
+  - apps.open-cluster-management.io
+  - authorization.k8s.io
+  - clusterview.open-cluster-management.io
+  - discovery.open-cluster-management.io
+  - hive.openshift.io
   - mcm.ibm.com
+  - proxy.open-cluster-management.io
+  - rbac.authorization.k8s.io
+  - security.openshift.io
+  - wgpolicyk8s.io
   resources:
-  - applicationrelationships
-  - applicationrelationships/status
+  - apiservices
+  - channels
   - clusterjoinrequests
-  - deployableoverrides
-  - deployableoverrides/status
-  - deployables
-  - deployables/status
-  - helmrepos
-  - helmrepos/status
+  - clusterrolebindings
+  - clusterstatuses/log
+  - configmaps
+  - customresourcedefinitions
+  - deployments
+  - discoveryconfigs
+  - helmreleases
+  - hiveconfigs
+  - managedclusters
+  - managedclustersets
+  - mutatingwebhookconfigurations
+  - namespaces
+  - pods
+  - policyreports
+  - replicasets
+  - rolebindings
+  - secrets
+  - serviceaccounts
+  - services
+  - subjectaccessreviews
+  - subscriptions
+  - validatingwebhookconfigurations
   verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
   - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
+  - ""
+  - admissionregistration.k8s.io
+  - apiextensions.k8s.io
+  - apiregistration.k8s.io
+  - apps
+  - apps.open-cluster-management.io
+  - authorization.k8s.io
+  - hive.openshift.io
+  - mcm.ibm.com
   - monitoring.coreos.com
+  - rbac.authorization.k8s.io
+  - security.openshift.io
   resources:
+  - apiservices
+  - channels
+  - clusterjoinrequests
+  - clusterrolebindings
+  - clusterroles
+  - configmaps
+  - customresourcedefinitions
+  - deployments
+  - hiveconfigs
+  - mutatingwebhookconfigurations
+  - namespaces
+  - rolebindings
+  - secrets
+  - serviceaccounts
   - servicemonitors
-  - servicemonitors/finalizers
+  - services
+  - subjectaccessreviews
+  - subscriptions
+  - validatingwebhookconfigurations
   verbs:
-  - approve
-  - bind
   - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
   - update
-  - watch
 - apiGroups:
-  - multicloud.ibm.com
-  resources:
-  - endpointconfigs
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
+  - ""
+  - admissionregistration.k8s.io
+  - apiregistration.k8s.io
+  - apps
+  - apps.open-cluster-management.io
+  - authorization.k8s.io
+  - clusterview.open-cluster-management.io
+  - config.openshift.io
+  - discovery.open-cluster-management.io
+  - hive.openshift.io
+  - inventory.open-cluster-management.io
+  - mcm.ibm.com
   - observability.open-cluster-management.io
+  - operator.open-cluster-management.io
+  - rbac.authorization.k8s.io
+  - wgpolicyk8s.io
   resources:
+  - apiservices
+  - baremetalassets
+  - clusterjoinrequests
+  - configmaps
+  - deployments
+  - discoveryconfigs
+  - helmreleases
+  - hiveconfigs
+  - ingresses
+  - managedclusters
+  - managedclustersets
+  - multiclusterhubs
   - multiclusterobservabilities
+  - namespaces
+  - pods
+  - policyreports
+  - rolebindings
+  - secrets
+  - servicemonitors
+  - services
+  - subjectaccessreviews
+  - subscriptions
+  - validatingwebhookconfigurations
   verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
   - list
-  - patch
-  - update
+- apiGroups:
+  - ""
+  - admissionregistration.k8s.io
+  - apiregistration.k8s.io
+  - apps
+  - apps.open-cluster-management.io
+  - authorization.k8s.io
+  - clusterview.open-cluster-management.io
+  - config.openshift.io
+  - hive.openshift.io
+  - mcm.ibm.com
+  - operator.open-cluster-management.io
+  - rbac.authorization.k8s.io
+  - storage.k8s.io
+  - wgpolicyk8s.io
+  resources:
+  - apiservices
+  - clusterjoinrequests
+  - configmaps
+  - deployments
+  - helmreleases
+  - hiveconfigs
+  - ingresses
+  - managedclusters
+  - managedclustersets
+  - multiclusterhubs
+  - namespaces
+  - pods
+  - policyreports
+  - rolebindings
+  - secrets
+  - services
+  - subjectaccessreviews
+  - validatingwebhookconfigurations
+  verbs:
   - watch
 - apiGroups:
+  - ""
+  - admissionregistration.k8s.io
+  - apps
+  - apps.open-cluster-management.io
+  - mcm.ibm.com
+  - monitoring.coreos.com
   - operator.open-cluster-management.io
   resources:
-  - clustermanagers
+  - deployments
+  - deployments/finalizers
+  - helmreleases
   - multiclusterhubs
   - multiclusterhubs/finalizers
   - multiclusterhubs/status
+  - servicemonitors
+  - servicemonitors/finalizers
+  - services
+  - services/finalizers
+  - validatingwebhookconfigurations
   verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
   - update
-  - watch
 - apiGroups:
-  - policy.open-cluster-management.io
+  - ""
+  - apiextensions.k8s.io
+  - apiregistration.k8s.io
+  - apps
+  - apps.open-cluster-management.io
   resources:
-  - placementbindings
-  - policies
-  - policies/status
-  - policyautomations
+  - apiservices
+  - channels
+  - customresourcedefinitions
+  - deployments
+  - services
   verbs:
-  - approve
-  - bind
-  - create
   - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
-  - proxy.open-cluster-management.io
-  resources:
-  - clusterstatuses/aggregator
-  - clusterstatuses/log
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
+  - admissionregistration.k8s.io
+  - apiextensions.k8s.io
+  - apiregistration.k8s.io
+  - hive.openshift.io
+  - mcm.ibm.com
   - rbac.authorization.k8s.io
   resources:
+  - apiservices
   - clusterrolebindings
   - clusterroles
-  - rolebindings
-  - roles
+  - customresourcedefinitions
+  - hiveconfigs
+  - mutatingwebhookconfigurations
+  - validatingwebhookconfigurations
   verbs:
-  - approve
-  - bind
-  - create
-  - delete
   - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - register.open-cluster-management.io
-  resources:
-  - managedclusters/accept
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - search.open-cluster-management.io
-  resources:
-  - searchcustomizations
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - submarineraddon.open-cluster-management.io
-  resources:
-  - submarinerconfigs
-  - submarinerconfigs/status
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - view.open-cluster-management.io
-  resources:
-  - managedclusterviews
-  - managedclusterviews/status
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - wgpolicyk8s.io
-  resources:
-  - policyreports
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - work.open-cluster-management.io
-  resources:
-  - manifestworks
-  - manifestworks/status
-  verbs:
-  - approve
-  - bind
-  - create
-  - delete
-  - deletecollection
-  - escalate
-  - get
-  - list
-  - patch
-  - update
-  - watch

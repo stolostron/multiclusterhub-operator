@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 SHELL := /bin/bash
 CURR_DIR := "$(PWD)/test/mock-component-image"
 
