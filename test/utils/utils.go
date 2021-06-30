@@ -1384,5 +1384,12 @@ func getCRDs() ([]string, error) {
 
 // CoffeeBreak ...
 func CoffeeBreak(minutes int) {
-	time.Sleep(time.Duration(minutes) * time.Minute)
+	log.Println(fmt.Sprintf("Starting coffee break for %d minutes...\n", minutes))
+	slept_minutes := 0
+	for slept_minutes < minutes {
+		time.Sleep(time.Duration(1) * time.Minute)
+		slept_minutes += 1
+		log.Println(fmt.Sprintf("... slept %d minutes...\n", slept_minutes))
+	}
+	log.Println(fmt.Sprintf("... ending coffee break after %d minutes!\n", slept_minutes))
 }
