@@ -497,7 +497,7 @@ func FullInstallTestSuite() {
 		By("- Setting `spec.disableHubSelfManagement` to true to remove local-cluster resources")
 		utils.ToggleDisableHubSelfManagement(true)
 		By("- Sleeping some compulsory 60 minutes because of some foundation bug")
-		utils.CoffeeBreak(60)
+		utils.CoffeeBreak(15)
 		By("- Returning from compulsory coffee break")
 		Eventually(func() error {
 			if err := utils.ValidateImportHubResourcesExist(false); err != nil {

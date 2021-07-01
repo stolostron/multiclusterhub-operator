@@ -194,7 +194,7 @@ var (
 	CSVName = "advanced-cluster-management"
 
 	// WaitInMinutesDefault ...
-	WaitInMinutesDefault = 20
+	WaitInMinutesDefault = 22
 
 	// DisableHubSelfManagementString ...
 	DisableHubSelfManagementString = "disableHubSelfManagement"
