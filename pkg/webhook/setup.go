@@ -50,6 +50,7 @@ func Setup(mgr manager.Manager) error {
 	}
 
 	done := make(chan string)
+	
 	go createOrUpdateWebhookService(mgr.GetClient(), ns)
 
 
@@ -73,7 +74,7 @@ func Setup(mgr manager.Manager) error {
 			time.Sleep(5 * time.Second)
 		}
 	}()
-
+	go checkSecret(mgr, mgr.GetClient(), ns, certDir)
 	return nil
 }
 
@@ -181,6 +182,37 @@ func setOwnerReferences(c client.Client, namespace string, obj metav1.Object) {
 		*metav1.NewControllerRef(owner, owner.GetObjectKind().GroupVersionKind())})
 }
 
+func checkSecret(mgr manager.Manager, c client.Client, namespace string, certDir string ) {
+	baseSecret := &corev1.Secret{}
+	newSecret := &corev1.Secret{}
+	key := types.NamespacedName{Name: "multiclusterhub-operator-webhook", Namespace: namespace}
+	
+	for {
+		log.Info("checking for changes")
+		time.Sleep(time.Minute)
+
+	for {
+		if err := c.Get(context.TODO(), key, newSecret); err != nil {
+
+			switch err.(type) {
+			case *cache.ErrCacheNotStarted:
+				time.Sleep(time.Second)
+				continue
+			default:
+				time.Sleep(time.Second)
+				log.Error(err, fmt.Sprintf("Fails to return secret"))
+				continue
+			}
+		}
+	if newSecret != baseSecret {
+		finished := make(chan string)
+		getSecret(c, namespace, certDir, finished)
+		finalizeWebhook(mgr, namespace, certDir)
+		baseSecret = newSecret
+	}
+	}
+}
+}
 func getSecret(c client.Client, namespace string, certDir string, done chan<- string) {
 	secret := &corev1.Secret{}
 	key := types.NamespacedName{Name: "multiclusterhub-operator-webhook", Namespace: namespace}
