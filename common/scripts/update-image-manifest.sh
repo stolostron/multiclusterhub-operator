@@ -16,14 +16,17 @@ if [ -z "${VERSION}" ]; then
 fi
 
 # Branch excludes patch version
-BRANCH_NAME="${VERSION%.*}-integration"
+BRANCH_NAME="${VERSION%.*}-edge"
 
 # Remove existing files
 rm -rf pipeline-temp
 mkdir -p pipeline-temp
-
 # Clone cicd pipeline repo
-git clone https://github.com/open-cluster-management/pipeline --branch ${BRANCH_NAME} pipeline-temp
+if [ -z "${GH_USER}" ] || [ -z "${GH_TOKEN}" ]; then
+  git clone https://github.com/open-cluster-management/pipeline --branch ${BRANCH_NAME} pipeline-temp
+else # clone from private repo 
+  git clone https://${GH_USER}:${GH_TOKEN}@github.com/open-cluster-management/pipeline --branch ${BRANCH_NAME} pipeline-temp
+fi
 
 # Find manifest from the latest snapshot
 LATEST_SNAPSHOT=$(find pipeline-temp/snapshots -name 'manifest-*' | sort | tail -n 1)
@@ -32,6 +35,8 @@ if [ -z "${LATEST_SNAPSHOT}" ]; then
   rm -rf pipeline-temp
   exit 1
 fi
+
+echo "Using manifest file ${LATEST_SNAPSHOT}"
 
 # Verify the snapshot file exists
 if [ ! -f ${LATEST_SNAPSHOT} ]; then

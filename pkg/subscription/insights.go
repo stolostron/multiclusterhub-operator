@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package subscription
 
 import (
@@ -13,10 +12,10 @@ import (
 // Insights overrides the insights chart
 func Insights(m *operatorsv1.MultiClusterHub, overrides map[string]string, ingress string) *unstructured.Unstructured {
 	sub := &Subscription{
-		Name:      "insights-chart",
+		Name:      "policyreport",
 		Namespace: m.Namespace,
 		Overrides: map[string]interface{}{
-			"pullSecret":   m.Spec.ImagePullSecret,
+			"pullSecret": m.Spec.ImagePullSecret,
 			"hubconfig": map[string]interface{}{
 				"replicaCount": utils.DefaultReplicaCount(m),
 				"nodeSelector": m.Spec.NodeSelector,

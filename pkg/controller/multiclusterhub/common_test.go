@@ -6,6 +6,9 @@ package multiclusterhub
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/apimachinery/pkg/runtime"
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"os"
 	"reflect"
 	"strings"
@@ -105,40 +108,55 @@ func Test_ensureDeployment(t *testing.T) {
 }
 
 func Test_ensureService(t *testing.T) {
-	r, err := getTestReconciler(full_mch)
-	if err != nil {
-		t.Fatalf("Failed to create test reconciler")
-	}
+	expectedWebhookService := foundation.WebhookService(full_mch)
+	expectedWebhookService.SetAnnotations(map[string]string{"service.beta.openshift.io/serving-cert-secret-name": "test"})
 
 	tests := []struct {
-		Name    string
-		MCH     *operatorsv1.MultiClusterHub
-		Service *corev1.Service
-		Result  error
+		Name           string
+		MCH            *operatorsv1.MultiClusterHub
+		ExistedService *corev1.Service
+		ExpectService  *corev1.Service
+		Result         error
 	}{
 		{
-			Name:    "Test: ensureService - Multiclusterhub-repo",
-			MCH:     full_mch,
-			Service: helmrepo.Service(full_mch),
-			Result:  nil,
+			Name:          "Test: ensureService - Multiclusterhub-repo",
+			MCH:           full_mch,
+			ExpectService: helmrepo.Service(full_mch),
+			Result:        nil,
 		},
 		{
-			Name:    "Test: ensureService - Webhook",
-			MCH:     full_mch,
-			Service: foundation.WebhookService(full_mch),
-			Result:  nil,
+			Name:          "Test: ensureService - Webhook",
+			MCH:           full_mch,
+			ExpectService: foundation.WebhookService(full_mch),
+			Result:        nil,
 		},
 		{
-			Name:    "Test: ensureService - Empty service",
-			MCH:     full_mch,
-			Service: &corev1.Service{},
-			Result:  errors.NewInvalid(kind("Test"), "", nil),
+			Name:           "Test: ensureService - update Webhook Service",
+			MCH:            full_mch,
+			ExistedService: foundation.WebhookService(full_mch),
+			ExpectService:  expectedWebhookService,
+			Result:         nil,
+		},
+		{
+			Name:          "Test: ensureService - Empty service",
+			MCH:           full_mch,
+			ExpectService: &corev1.Service{},
+			Result:        errors.NewInvalid(kind("Test"), "", nil),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
-			_, err = r.ensureService(tt.MCH, tt.Service)
+			objs := []runtime.Object{tt.MCH}
+			if tt.ExistedService != nil {
+				objs = append(objs, tt.ExistedService)
+			}
+			r, err := getTestReconcilerWithObjs(objs)
+			if err != nil {
+				t.Fatalf("Failed to create test reconciler")
+			}
+
+			_, err = r.ensureService(tt.MCH, tt.ExpectService)
 
 			if tt.Result != nil {
 				// Check if error matches desired error
@@ -152,12 +170,88 @@ func Test_ensureService(t *testing.T) {
 
 				service := &corev1.Service{}
 				err = r.client.Get(context.TODO(), types.NamespacedName{
-					Name:      tt.Service.Name,
-					Namespace: tt.Service.Namespace,
+					Name:      tt.ExpectService.Name,
+					Namespace: tt.ExpectService.Namespace,
 				}, service)
 				if err != tt.Result {
-					t.Fatalf("Could not find created '%s' service: %s", tt.Service.Name, err.Error())
+					t.Fatalf("Could not find created '%s' service: %s", tt.ExpectService.Name, err.Error())
 				}
+				if tt.ExistedService != nil {
+					if !equality.Semantic.DeepEqual(service.Annotations, tt.ExpectService.Annotations) &&
+						!equality.Semantic.DeepEqual(service.Labels, tt.ExpectService.Labels) {
+						t.Fatalf("could not create/upgrade the right service")
+					}
+				}
+
+			}
+		})
+	}
+}
+
+func Test_ensureAPIService(t *testing.T) {
+	expectedAPIService := foundation.OCMProxyAPIService(full_mch)
+	expectedAPIService.SetAnnotations(map[string]string{"service.beta.openshift.io/serving-cert-secret-name": "test"})
+
+	tests := []struct {
+		Name           string
+		MCH            *operatorsv1.MultiClusterHub
+		ExistedService *apiregistrationv1.APIService
+		ExpectService  *apiregistrationv1.APIService
+		Result         error
+	}{
+		{
+			Name:          "Test: ensureAPIService - OCMProxyServer",
+			MCH:           full_mch,
+			ExpectService: foundation.OCMProxyAPIService(full_mch),
+			Result:        nil,
+		},
+		{
+			Name:           "Test: ensureService - update Webhook Service",
+			MCH:            full_mch,
+			ExistedService: foundation.OCMProxyAPIService(full_mch),
+			ExpectService:  expectedAPIService,
+			Result:         nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.Name, func(t *testing.T) {
+			objs := []runtime.Object{tt.MCH}
+			if tt.ExistedService != nil {
+				objs = append(objs, tt.ExistedService)
+			}
+			r, err := getTestReconcilerWithObjs(objs)
+			if err != nil {
+				t.Fatalf("Failed to create test reconciler")
+			}
+
+			_, err = r.ensureAPIService(tt.MCH, tt.ExpectService)
+
+			if tt.Result != nil {
+				// Check if error matches desired error
+				if errors.ReasonForError(err) != errors.ReasonForError(tt.Result) {
+					t.Fatalf("ensureAPIService() error = %v, wantErr %v", err, tt.Result)
+				}
+			} else {
+				if err != nil {
+					t.Fatalf("ensureAPIService() error = %v, wantErr %v", err, tt.Result)
+				}
+
+				service := &apiregistrationv1.APIService{}
+				err = r.client.Get(context.TODO(), types.NamespacedName{
+					Name:      tt.ExpectService.Name,
+					Namespace: tt.ExpectService.Namespace,
+				}, service)
+				if err != tt.Result {
+					t.Fatalf("Could not find created '%s' APIService: %s", tt.ExpectService.Name, err.Error())
+				}
+				if tt.ExistedService != nil {
+					if !equality.Semantic.DeepEqual(service.Annotations, tt.ExpectService.Annotations) &&
+						!equality.Semantic.DeepEqual(service.Labels, tt.ExpectService.Labels) {
+						t.Fatalf("could not create/upgrade the right APIService")
+					}
+				}
+
 			}
 		})
 	}

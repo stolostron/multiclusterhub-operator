@@ -10,6 +10,7 @@ import (
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -152,6 +153,12 @@ func ValidateDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]str
 	if !reflect.DeepEqual(container.Resources.Requests.Cpu().MilliValue(), expectedRequestResourceList.Cpu().MilliValue()) {
 		log.Info("Enforcing container resource requests and limits")
 		container.Resources.Requests = expectedRequestResourceList
+		needsUpdate = true
+	}
+
+	if !equality.Semantic.DeepEqual(pod.Volumes, expected.Spec.Template.Spec.Volumes) {
+		log.Info("Enforcing pod volumes")
+		pod.Volumes = expected.Spec.Template.Spec.Volumes
 		needsUpdate = true
 	}
 

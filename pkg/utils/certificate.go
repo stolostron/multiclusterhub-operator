@@ -5,7 +5,6 @@ package utils
 
 import (
 	"bytes"
-	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -19,14 +18,6 @@ import (
 	"os"
 	"path/filepath"
 	"time"
-
-	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/pkg/apis/operator/v1"
 )
 
 // Certificate ...
@@ -68,42 +59,6 @@ func GenerateWebhookCerts(certDir string) (string, []byte, error) {
 	}
 
 	return namespace, []byte(ca.Cert), nil
-}
-
-// GenerateKlusterletSecret ...
-func GenerateKlusterletSecret(client runtimeclient.Client, multiClusterHub *operatorsv1.MultiClusterHub) error {
-	namespace, err := FindNamespace()
-	if err != nil {
-		return err
-	}
-	err = client.Get(context.TODO(), types.NamespacedName{Name: KlusterletSecretName, Namespace: namespace}, &corev1.Secret{})
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			ca, err := GenerateSelfSignedCACert("multiclusterhub-klusterlet")
-			if err != nil {
-				return err
-			}
-			cert, err := GenerateSignedCert("multiclusterhub-klusterlet", []string{}, ca)
-			if err != nil {
-				return err
-			}
-			return client.Create(context.TODO(), &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      KlusterletSecretName,
-					Namespace: namespace,
-					OwnerReferences: []metav1.OwnerReference{
-						*metav1.NewControllerRef(multiClusterHub, multiClusterHub.GetObjectKind().GroupVersionKind())},
-				},
-				Data: map[string][]byte{
-					"ca.crt":  []byte(ca.Cert),
-					"tls.crt": []byte(cert.Cert),
-					"tls.key": []byte(cert.Key),
-				},
-			})
-		}
-		return err
-	}
-	return nil
 }
 
 // GenerateSelfSignedCACert ...

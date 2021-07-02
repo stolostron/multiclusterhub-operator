@@ -246,3 +246,32 @@ func getTestReconciler(m *operatorsv1.MultiClusterHub) (*ReconcileMultiClusterHu
 	// Create a ReconcileMultiClusterHub object with the scheme and fake client.
 	return &ReconcileMultiClusterHub{client: cl, scheme: s}, nil
 }
+
+func getTestReconcilerWithObjs(objs []runtime.Object) (*ReconcileMultiClusterHub, error) {
+	// Register operator types with the runtime scheme.
+	s := scheme.Scheme
+
+	if err := netv1.AddToScheme(s); err != nil {
+		return nil, fmt.Errorf("Could not add ingress to test scheme")
+	}
+
+	if err := apiregistrationv1.AddToScheme(s); err != nil {
+		return nil, fmt.Errorf("Could not add rbac to test scheme")
+	}
+
+	if err := apixv1.AddToScheme(s); err != nil {
+		return nil, fmt.Errorf("Could not add CRDs to test scheme")
+	}
+
+	if err := appsubv1.AddToScheme(s); err != nil {
+		log.Error(err, "")
+		os.Exit(1)
+	}
+	s.AddKnownTypes(operatorsv1.SchemeGroupVersion, &operatorsv1.MultiClusterHub{})
+
+	// Create a fake client to mock API calls.
+	cl := fake.NewFakeClient(objs...)
+
+	// Create a ReconcileMultiClusterHub object with the scheme and fake client.
+	return &ReconcileMultiClusterHub{client: cl, scheme: s}, nil
+}

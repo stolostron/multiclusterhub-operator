@@ -28,6 +28,8 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 
+	"github.com/openshift/library-go/pkg/operator/resource/resourcemerge"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -138,6 +140,29 @@ func (r *ReconcileMultiClusterHub) ensureService(m *operatorsv1.MultiClusterHub,
 		return &reconcile.Result{}, err
 	}
 
+	modified := resourcemerge.BoolPtr(false)
+	existingCopy := found.DeepCopy()
+	resourcemerge.EnsureObjectMeta(modified, &existingCopy.ObjectMeta, s.ObjectMeta)
+	selectorSame := equality.Semantic.DeepEqual(existingCopy.Spec.Selector, s.Spec.Selector)
+
+	typeSame := false
+	requiredIsEmpty := len(s.Spec.Type) == 0
+	existingCopyIsCluster := existingCopy.Spec.Type == corev1.ServiceTypeClusterIP
+	if (requiredIsEmpty && existingCopyIsCluster) || equality.Semantic.DeepEqual(existingCopy.Spec.Type, s.Spec.Type) {
+		typeSame = true
+	}
+
+	if selectorSame && typeSame && !*modified {
+		return nil, nil
+	}
+
+	existingCopy.Spec.Selector = s.Spec.Selector
+	existingCopy.Spec.Type = s.Spec.Type
+	err = r.client.Update(context.TODO(), existingCopy)
+	if err != nil {
+		svlog.Error(err, "Failed to update Service")
+		return &reconcile.Result{}, err
+	}
 	return nil, nil
 }
 
@@ -171,6 +196,24 @@ func (r *ReconcileMultiClusterHub) ensureAPIService(m *operatorsv1.MultiClusterH
 		return &reconcile.Result{}, err
 	}
 
+	modified := resourcemerge.BoolPtr(false)
+	existingCopy := found.DeepCopy()
+
+	resourcemerge.EnsureObjectMeta(modified, &existingCopy.ObjectMeta, s.ObjectMeta)
+	serviceSame := equality.Semantic.DeepEqual(existingCopy.Spec.Service, s.Spec.Service)
+	prioritySame := existingCopy.Spec.VersionPriority == s.Spec.VersionPriority && existingCopy.Spec.GroupPriorityMinimum == s.Spec.GroupPriorityMinimum
+	insecureSame := existingCopy.Spec.InsecureSkipTLSVerify == s.Spec.InsecureSkipTLSVerify
+
+	if !*modified && serviceSame && prioritySame && insecureSame {
+		return nil, nil
+	}
+
+	existingCopy.Spec = s.Spec
+	err = r.client.Update(context.TODO(), existingCopy)
+	if err != nil {
+		svlog.Error(err, "Failed to update apiService")
+		return &reconcile.Result{}, err
+	}
 	return nil, nil
 }
 

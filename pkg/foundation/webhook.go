@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package foundation
 
 import (
@@ -21,6 +20,7 @@ const WebhookName string = "ocm-webhook"
 // WebhookDeployment creates the deployment for the foundation webhook
 func WebhookDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]string) *appsv1.Deployment {
 	replicas := getReplicaCount(m)
+	mode := int32(420)
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -47,7 +47,7 @@ func WebhookDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]stri
 						{
 							Name: "webhook-cert",
 							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{SecretName: "ocm-webhook-secret"},
+								Secret: &corev1.SecretVolumeSource{DefaultMode: &mode, SecretName: WebhookName},
 							},
 						},
 					},
@@ -110,6 +110,9 @@ func WebhookService(m *operatorsv1.MultiClusterHub) *corev1.Service {
 			Name:      WebhookName,
 			Namespace: m.Namespace,
 			Labels:    defaultLabels(WebhookName),
+			Annotations: map[string]string{
+				"service.beta.openshift.io/serving-cert-secret-name": WebhookName,
+			},
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: defaultLabels(WebhookName),

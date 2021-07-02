@@ -232,6 +232,7 @@ github.com/bitly/go-hostpool v0.0.0-20171023180738-a3a6125de932/go.mod h1:NOuUCS
 github.com/bitly/go-simplejson v0.5.0/go.mod h1:cXHtHw4XUPsvGaxgjIAn8PhEWG9NfngEKAMDJEczWVA=
 github.com/blang/semver v3.1.0+incompatible/go.mod h1:kRBLl5iJ+tD4TcOOxsy/0fnwebNt5EWlYSAyrTnjyyk=
 github.com/blang/semver v3.5.0+incompatible/go.mod h1:kRBLl5iJ+tD4TcOOxsy/0fnwebNt5EWlYSAyrTnjyyk=
+github.com/blang/semver v3.5.1+incompatible h1:cQNTCjp13qL8KC3Nbxr/y2Bqb63oX6wdnnjpJbkM4JQ=
 github.com/blang/semver v3.5.1+incompatible/go.mod h1:kRBLl5iJ+tD4TcOOxsy/0fnwebNt5EWlYSAyrTnjyyk=
 github.com/blang/semver/v4 v4.0.0/go.mod h1:IbckMUScFkM3pff0VJDNKRiT6TG/YpiHIM2yvyW5YoQ=
 github.com/bmatcuk/doublestar v1.1.5/go.mod h1:wiQtGV+rzVYxB7WIlirSN++5HPtPlXEo9MEoZQC/PmE=
@@ -1288,6 +1289,7 @@ github.com/openshift/generic-admission-server v1.14.1-0.20200903115324-4ddcdd976
 github.com/openshift/hive v1.0.18-0.20210129211840-21bce609f1f4 h1:ldBsGuMAYYYT6FGn6hVp6DInrYkxXLbw3iXHN6ItjJE=
 github.com/openshift/hive v1.0.18-0.20210129211840-21bce609f1f4/go.mod h1:Hv5v6eoEY4SrYZE2TWA7euqY5ldyxg+YH6pR9RzUv8I=
 github.com/openshift/installer v0.9.0-master.0.20201103204150-888dc5bab60c/go.mod h1:FsTPqP4aUu5/bcxbtRyWFF7n/YXR/d/VRe7+hTNldGA=
+github.com/openshift/library-go v0.0.0-20200918101923-1e4c94603efe h1:MJqGN0NVONnTLDYPVIEH4uo6i3gAK7LAkhLnyFO8Je0=
 github.com/openshift/library-go v0.0.0-20200918101923-1e4c94603efe/go.mod h1:NI6xOQGuTnLXeHW8Z2glKSFhF7X+YxlAlqlBMaK0zEM=
 github.com/openshift/machine-api-operator v0.0.0-20190312153711-9650e16c9880/go.mod h1:7HeAh0v04zQn1L+4ItUjvpBQYsm2Nf81WaZLiXTcnkc=
 github.com/openshift/machine-api-operator v0.2.1-0.20191128180243-986b771e661d/go.mod h1:9qQPF00anuIsc6RiHYfHE0+cZZImbvFNLln0NRBVVMg=
@@ -2261,6 +2263,7 @@ k8s.io/cluster-bootstrap v0.19.0/go.mod h1:kBn1DKyqoM245wzz+AAnGkuysJ+9GqVbPYveT
 k8s.io/cluster-registry v0.0.6 h1:zSzuBlDybN72jty3veddOALhWyzeXfF80u8NZg3FMFM=
 k8s.io/cluster-registry v0.0.6/go.mod h1:/F+o1rvzjBdLbg782rR8eKrOb20hPy7us+Zu/pjBtAY=
 k8s.io/code-generator v0.19.0/go.mod h1:moqLn7w0t9cMs4+5CQyxnfA/HV8MF6aAVENF+WZZhgk=
+k8s.io/component-base v0.19.0 h1:OueXf1q3RW7NlLlUCj2Dimwt7E1ys6ZqRnq53l2YuoE=
 k8s.io/component-base v0.19.0/go.mod h1:dKsY8BxkA+9dZIAh2aWJLL/UdASFDNtGYTCItL4LM7Y=
 k8s.io/gengo v0.0.0-20190128074634-0689ccc1d7d6/go.mod h1:ezvh/TsK7cY6rbqRK0oQQ8IAqLxYwwyPxAX1Pzy0ii0=
 k8s.io/gengo v0.0.0-20190907103519-ebc107f98eab/go.mod h1:ezvh/TsK7cY6rbqRK0oQQ8IAqLxYwwyPxAX1Pzy0ii0=

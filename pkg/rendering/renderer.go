@@ -5,7 +5,6 @@
 package rendering
 
 import (
-	"encoding/base64"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -53,7 +52,6 @@ func NewRenderer(multipleClusterHub *operatorsv1.MultiClusterHub) *Renderer {
 		"ClusterRole":                    renderer.renderClusterRole,
 		"MutatingWebhookConfiguration":   renderer.renderMutatingWebhookConfiguration,
 		"ValidatingWebhookConfiguration": renderer.renderValidatingWebhookConfiguration,
-		"Secret":                         renderer.renderSecret,
 		"Subscription":                   renderer.renderNamespace,
 		"StatefulSet":                    renderer.renderNamespace,
 		"Channel":                        renderer.renderNamespace,
@@ -95,11 +93,7 @@ func (r *Renderer) renderTemplates(templates []*resource.Resource) ([]*unstructu
 
 	}
 
-	// ocm-mutating-webhook and ocm-validating-webhook have a section `webhooks.clientConfig.caBundle` created
-	// in secret ocm-webhook-secrets.
-	// Current render mechanism cannot handle this dependence scenario. So re-render template dependence in the end.
-	uobjs, err := reRenderDependence(uobjs)
-	return uobjs, err
+	return uobjs, nil
 }
 
 func (r *Renderer) renderAPIServices(res *resource.Resource) (*unstructured.Unstructured, error) {
@@ -204,54 +198,6 @@ func (r *Renderer) renderValidatingWebhookConfiguration(res *resource.Resource) 
 	return u, nil
 }
 
-func (r *Renderer) renderSecret(res *resource.Resource) (*unstructured.Unstructured, error) {
-	caCert, tlsCert, tlsKey := "ca.crt", "tls.crt", "tls.key"
-	u := &unstructured.Unstructured{Object: res.Map()}
-	metadata, ok := u.Object["metadata"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("failed to find metadata field")
-	}
-	data, ok := u.Object["data"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf(metadataErr)
-	}
-
-	metadata["namespace"] = r.cr.Namespace
-
-	name := res.GetName()
-
-	switch name {
-	case "ocm-klusterlet-self-signed-secrets":
-		ca, err := utils.GenerateSelfSignedCACert("multiclusterhub-klusterlet")
-		if err != nil {
-			return nil, err
-		}
-		cert, err := utils.GenerateSignedCert("multicluterhub-klusterlet", []string{}, ca)
-		if err != nil {
-			return nil, err
-		}
-		data[caCert] = base64.StdEncoding.EncodeToString([]byte(ca.Cert))
-		data[tlsCert] = base64.StdEncoding.EncodeToString([]byte(cert.Cert))
-		data[tlsKey] = base64.StdEncoding.EncodeToString([]byte(cert.Key))
-		return u, nil
-	case "ocm-webhook-secret":
-		cn := "ocm-webhook." + r.cr.Namespace + ".svc"
-		ca, err := utils.GenerateSelfSignedCACert(cn)
-		if err != nil {
-			return nil, err
-		}
-		cert, err := utils.GenerateSignedCert(cn, []string{}, ca)
-		if err != nil {
-			return nil, err
-		}
-		data[caCert] = base64.StdEncoding.EncodeToString([]byte(ca.Cert))
-		data[tlsCert] = base64.StdEncoding.EncodeToString([]byte(cert.Cert))
-		data[tlsKey] = base64.StdEncoding.EncodeToString([]byte(cert.Key))
-		return u, nil
-	}
-
-	return u, nil
-}
 
 func (r *Renderer) renderHiveConfig(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
@@ -262,51 +208,6 @@ func (r *Renderer) renderHiveConfig(res *resource.Resource) (*unstructured.Unstr
 	}
 	utils.AddInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
 	return u, nil
-}
-
-func reRenderDependence(objs []*unstructured.Unstructured) ([]*unstructured.Unstructured, error) {
-	var ca interface{}
-	var mutatingConfig *unstructured.Unstructured
-	var validatingConfig *unstructured.Unstructured
-	for _, obj := range objs {
-		if obj.GetKind() == "Secret" && obj.GetName() == "ocm-webhook-secret" {
-			data, ok := obj.Object["data"].(map[string]interface{})
-			if !ok {
-				return nil, fmt.Errorf("failed to get ca in ocm-webhook-secrets")
-			}
-			ca = data["ca.crt"]
-		}
-
-		if obj.GetKind() == "MutatingWebhookConfiguration" && obj.GetName() == "ocm-mutating-webhook" {
-			mutatingConfig = obj
-		}
-
-		if obj.GetKind() == "ValidatingWebhookConfiguration" && obj.GetName() == "ocm-validating-webhook" {
-			validatingConfig = obj
-		}
-	}
-
-	if ca != nil && mutatingConfig != nil {
-		webooks, ok := mutatingConfig.Object["webhooks"].([]interface{})
-		if !ok {
-			return nil, fmt.Errorf("failed to find webhooks spec field")
-		}
-		webhook := webooks[0].(map[string]interface{})
-		clientConfig := webhook["clientConfig"].(map[string]interface{})
-		clientConfig["caBundle"] = ca
-	}
-
-	if ca != nil && validatingConfig != nil {
-		webooks, ok := validatingConfig.Object["webhooks"].([]interface{})
-		if !ok {
-			return nil, fmt.Errorf("failed to find webhooks spec field")
-		}
-		webhook := webooks[0].(map[string]interface{})
-		clientConfig := webhook["clientConfig"].(map[string]interface{})
-		clientConfig["caBundle"] = ca
-	}
-
-	return objs, nil
 }
 
 // UpdateNamespace checks for annotiation to update NS

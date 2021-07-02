@@ -35,7 +35,7 @@ var _ = Describe("Multiclusterhub", func() {
 	if os.Getenv("full_test_suite") == "true" {
 		It("Block MCH uninstall if DiscoveryConfig exists", func() {
 			By("Creating MultiClusterHub")
-			utils.CreateDefaultMCH()
+			utils.CreateMCHNotManaged()
 			utils.ValidateMCH()
 
 			utils.CreateDiscoveryConfig()
@@ -52,7 +52,7 @@ var _ = Describe("Multiclusterhub", func() {
 		})
 		It("Block MCH uninstall if Observability is running", func() {
 			By("Creating MultiClusterHub")
-			utils.CreateDefaultMCH()
+			utils.CreateMCHNotManaged()
 			utils.ValidateMCH()
 
 			utils.CreateObservabilityCRD()
@@ -71,7 +71,7 @@ var _ = Describe("Multiclusterhub", func() {
 		})
 		It("SAD CASE: Fail to remove a helmrelease (Left behind finalizer)", func() {
 			By("Creating MultiClusterHub")
-			utils.CreateDefaultMCH()
+			utils.CreateMCHNotManaged()
 			utils.ValidateMCH()
 			AddFinalizerToHelmRelease(utils.DynamicKubeClient)
 			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, false)
@@ -112,7 +112,7 @@ var _ = Describe("Multiclusterhub", func() {
 
 		It("Block MCH uninstall if BareMetalAssets exist", func() {
 			By("Creating MultiClusterHub")
-			utils.CreateDefaultMCH()
+			utils.CreateMCHNotManaged()
 			utils.ValidateMCH()
 
 			utils.CreateBareMetalAssetsCR()

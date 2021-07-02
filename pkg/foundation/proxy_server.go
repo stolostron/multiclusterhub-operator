@@ -17,7 +17,8 @@ import (
 
 const (
 	// OCMProxyServerName is the name of the ocm proxy server deployment
-	OCMProxyServerName string = "ocm-proxyserver"
+	OCMProxyServerName   string = "ocm-proxyserver"
+	KlusterletSecretName string = "ocm-klusterlet-self-signed-secrets"
 
 	OCMProxyAPIServiceName               string = "v1beta1.proxy.open-cluster-management.io"
 	OCMClusterViewV1APIServiceName       string = "v1.clusterview.open-cluster-management.io"
@@ -56,7 +57,13 @@ func OCMProxyServerDeployment(m *operatorsv1.MultiClusterHub, overrides map[stri
 						{
 							Name: "klusterlet-certs",
 							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{DefaultMode: &mode, SecretName: utils.KlusterletSecretName},
+								Secret: &corev1.SecretVolumeSource{DefaultMode: &mode, SecretName: KlusterletSecretName},
+							},
+						},
+						{
+							Name: "apiservice-certs",
+							VolumeSource: corev1.VolumeSource{
+								Secret: &corev1.SecretVolumeSource{DefaultMode: &mode, SecretName: OCMProxyServerName},
 							},
 						},
 					},
@@ -67,7 +74,8 @@ func OCMProxyServerDeployment(m *operatorsv1.MultiClusterHub, overrides map[stri
 						Args: []string{
 							"/proxyserver",
 							"--secure-port=6443",
-							"--cert-dir=/tmp",
+							"--tls-cert-file=/var/run/apiservice/tls.crt",
+							"--tls-private-key-file=/var/run/apiservice/tls.key",
 							"--agent-cafile=/var/run/klusterlet/ca.crt",
 							"--agent-certfile=/var/run/klusterlet/tls.crt",
 							"--agent-keyfile=/var/run/klusterlet/tls.key",
@@ -104,6 +112,7 @@ func OCMProxyServerDeployment(m *operatorsv1.MultiClusterHub, overrides map[stri
 						},
 						VolumeMounts: []corev1.VolumeMount{
 							{Name: "klusterlet-certs", MountPath: "/var/run/klusterlet"},
+							{Name: "apiservice-certs", MountPath: "/var/run/apiservice"},
 						},
 					}},
 				},
@@ -124,6 +133,9 @@ func OCMProxyServerService(m *operatorsv1.MultiClusterHub) *corev1.Service {
 			Name:      OCMProxyServerName,
 			Namespace: m.Namespace,
 			Labels:    defaultLabels(OCMProxyServerName),
+			Annotations: map[string]string{
+				"service.beta.openshift.io/serving-cert-secret-name": OCMProxyServerName,
+			},
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: defaultLabels(OCMProxyServerName),
@@ -147,17 +159,19 @@ func OCMProxyAPIService(m *operatorsv1.MultiClusterHub) *apiregistrationv1.APISe
 	s := &apiregistrationv1.APIService{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: OCMProxyAPIServiceName,
+			Annotations: map[string]string{
+				"service.beta.openshift.io/inject-cabundle": "true",
+			},
 		},
 		Spec: apiregistrationv1.APIServiceSpec{
 			Service: &apiregistrationv1.ServiceReference{
 				Namespace: m.Namespace,
 				Name:      OCMProxyServerName,
 			},
-			Group:                 OCMProxyGroup,
-			Version:               "v1beta1",
-			InsecureSkipTLSVerify: true,
-			GroupPriorityMinimum:  10000,
-			VersionPriority:       20,
+			Group:                OCMProxyGroup,
+			Version:              "v1beta1",
+			GroupPriorityMinimum: 10000,
+			VersionPriority:      20,
 		},
 	}
 
@@ -169,17 +183,19 @@ func OCMClusterViewV1APIService(m *operatorsv1.MultiClusterHub) *apiregistration
 	s := &apiregistrationv1.APIService{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: OCMClusterViewV1APIServiceName,
+			Annotations: map[string]string{
+				"service.beta.openshift.io/inject-cabundle": "true",
+			},
 		},
 		Spec: apiregistrationv1.APIServiceSpec{
 			Service: &apiregistrationv1.ServiceReference{
 				Namespace: m.Namespace,
 				Name:      OCMProxyServerName,
 			},
-			Group:                 OCMClusterViewGroup,
-			Version:               "v1",
-			InsecureSkipTLSVerify: true,
-			GroupPriorityMinimum:  10,
-			VersionPriority:       20,
+			Group:                OCMClusterViewGroup,
+			Version:              "v1",
+			GroupPriorityMinimum: 10,
+			VersionPriority:      20,
 		},
 	}
 
@@ -191,17 +207,19 @@ func OCMClusterViewV1alpha1APIService(m *operatorsv1.MultiClusterHub) *apiregist
 	s := &apiregistrationv1.APIService{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: OCMClusterViewV1alpha1APIServiceName,
+			Annotations: map[string]string{
+				"service.beta.openshift.io/inject-cabundle": "true",
+			},
 		},
 		Spec: apiregistrationv1.APIServiceSpec{
 			Service: &apiregistrationv1.ServiceReference{
 				Namespace: m.Namespace,
 				Name:      OCMProxyServerName,
 			},
-			Group:                 OCMClusterViewGroup,
-			Version:               "v1alpha1",
-			InsecureSkipTLSVerify: true,
-			GroupPriorityMinimum:  10,
-			VersionPriority:       20,
+			Group:                OCMClusterViewGroup,
+			Version:              "v1alpha1",
+			GroupPriorityMinimum: 10,
+			VersionPriority:      20,
 		},
 	}
 

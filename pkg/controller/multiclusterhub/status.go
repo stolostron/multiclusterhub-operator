@@ -78,7 +78,7 @@ func getAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	return []types.NamespacedName{
 		{Name: "application-chart-sub", Namespace: m.Namespace},
 		{Name: "console-chart-sub", Namespace: m.Namespace},
-		{Name: "insights-chart-sub", Namespace: m.Namespace},
+		{Name: "policyreport-sub", Namespace: m.Namespace},
 		{Name: "grc-sub", Namespace: m.Namespace},
 		{Name: "kui-web-terminal-sub", Namespace: m.Namespace},
 		{Name: "management-ingress-sub", Namespace: m.Namespace},
