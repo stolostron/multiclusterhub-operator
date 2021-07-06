@@ -79,7 +79,7 @@ func FullInstallTestSuite() {
 
 		spec, ok := hiveConfig.Object["spec"].(map[string]interface{})
 		Expect(ok).To(BeTrue())
-		spec["TargetNamespace"] = "test-hive"
+		spec["targetNamespace"] = "test-hive"
 		spec["logLevel"] = "info"
 		hiveConfig, err = utils.DynamicKubeClient.Resource(utils.GVRHiveConfig).Update(context.TODO(), hiveConfig, metav1.UpdateOptions{})
 		Expect(err).To(BeNil()) // If HiveConfig does not exist, err
@@ -503,6 +503,9 @@ func FullInstallTestSuite() {
 
 		By("- Setting `spec.disableHubSelfManagement` to false to create local-cluster resources")
 		utils.ToggleDisableHubSelfManagement(false)
+		By("- Sleeping some compulsory 60 minutes because of some foundation bug")
+		utils.CoffeeBreak(20)
+		By("- Returning from compulsory coffee break")
 		Eventually(func() error {
 			if err := utils.ValidateImportHubResourcesExist(true); err != nil {
 				return fmt.Errorf("resources don't exist")
