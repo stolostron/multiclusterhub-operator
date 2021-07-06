@@ -206,11 +206,7 @@ func FullInstallTestSuite() {
 			// Annotate MCH
 			annotations := make(map[string]string)
 			annotations["mch-imageOverridesCM"] = "my-config"
-			mch, err := utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Get(context.TODO(), utils.MCHName, metav1.GetOptions{})
-			Expect(err).To(BeNil())
-			mch.SetAnnotations(annotations)
-			mch, err = utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
-			Expect(err).To(BeNil())
+			utils.UpdateAnnotations(annotations)
 
 			Eventually(func() error {
 				configmap, err = utils.KubeClient.CoreV1().ConfigMaps(utils.MCHNamespace).Get(context.TODO(), fmt.Sprintf("mch-image-manifest-%s", currentVersion), metav1.GetOptions{})
@@ -224,8 +220,7 @@ func FullInstallTestSuite() {
 			}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
 
 			annotations = make(map[string]string)
-			_, err = utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
-			Expect(err).To(BeNil())
+			utils.UpdateAnnotations(annotations)
 
 			err = utils.KubeClient.CoreV1().ConfigMaps(utils.MCHNamespace).Delete(context.TODO(), "my-config", metav1.DeleteOptions{})
 			Expect(err).To(BeNil())
@@ -497,7 +492,7 @@ func FullInstallTestSuite() {
 		By("- Setting `spec.disableHubSelfManagement` to true to remove local-cluster resources")
 		utils.ToggleDisableHubSelfManagement(true)
 		By("- Sleeping some compulsory 60 minutes because of some foundation bug")
-		utils.CoffeeBreak(15)
+		utils.CoffeeBreak(20)
 		By("- Returning from compulsory coffee break")
 		Eventually(func() error {
 			if err := utils.ValidateImportHubResourcesExist(false); err != nil {

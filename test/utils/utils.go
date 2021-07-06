@@ -1070,6 +1070,15 @@ func ToggleDisableUpdateClusterImageSets(disableUpdateCIS bool) error {
 	return nil
 }
 
+// UpdateAnnotations
+func UpdateAnnotations(annotations map[string]string) {
+	mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+	Expect(err).To(BeNil())
+	mch.SetAnnotations(annotations)
+	mch, err = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
+	Expect(err).To(BeNil())
+}
+
 // ValidateClusterImageSetsSubscriptionPause validates that the console-chart-sub created ClusterImageSets subscription is either subscription-pause true or false
 func ValidateClusterImageSetsSubscriptionPause(expected string) error {
 	appsub, err := DynamicKubeClient.Resource(GVRAppSub).Namespace(MCHNamespace).Get(context.TODO(), AppSubName, metav1.GetOptions{})
