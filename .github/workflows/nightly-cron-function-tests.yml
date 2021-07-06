@@ -5,7 +5,7 @@ on:
   # Triggers the workflow to run ~~every day~~ first of the month (will switch back to once a day once everything's working)
   # will trigger manually for testing
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "0 0 * * 1-5"
 
   # manual trigger
   workflow_dispatch:
