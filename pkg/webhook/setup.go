@@ -75,7 +75,7 @@ func Setup(mgr manager.Manager) error {
 }
 
 // registerWebhook adds the webhook server to the manager
-func registerWebhook(mgr manager.Manager, ns string) error {
+func registerWebhook(mgr manager.Manager, ns string) {
 	hookServer := &webhook.Server{
 		Port:    8443,
 		CertDir: certDir,
@@ -83,13 +83,13 @@ func registerWebhook(mgr manager.Manager, ns string) error {
 
 	log.Info("Add the webhook server.")
 	if err := mgr.Add(hookServer); err != nil {
-		return err
+		// Failure to add the webhook should cause the container to fail
+		log.Error(err, "failed to add the webhook server to the manager")
+		os.Exit(1)
 	}
 
 	log.Info("Registering webhooks to the webhook server.")
 	hookServer.Register(validatingPath, &webhook.Admission{Handler: &multiClusterHubValidator{}})
-
-	return nil
 }
 
 // createOrUpdateWebhookService creates or updates a service with the Openshift self-serving-cert
