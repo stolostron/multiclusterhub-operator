@@ -18,7 +18,7 @@ import (
 const (
 	// OCMProxyServerName is the name of the ocm proxy server deployment
 	OCMProxyServerName   string = "ocm-proxyserver"
-	KlusterletSecretName string = "ocm-klusterlet-self-signed-secrets"
+	KlusterletSecretName string = "ocm-klusterlet-self-signed-secrets" // #nosec G101 (not credentials)
 
 	OCMProxyAPIServiceName               string = "v1beta1.proxy.open-cluster-management.io"
 	OCMClusterViewV1APIServiceName       string = "v1.clusterview.open-cluster-management.io"

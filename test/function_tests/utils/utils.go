@@ -174,8 +174,8 @@ var (
 	// HiveConfigName ...
 	HiveConfigName = "hive"
 
-	// AppSubName ClusterImageSets subscription name
-	AppSubName = "hive-clusterimagesets-subscription-fast-0"
+	// AppSubName console-chart-sub where clusterset pause is set
+	AppSubName = "console-chart-sub"
 
 	// SubList contains the list of subscriptions to delete
 	SubList = [...]string{
@@ -194,7 +194,7 @@ var (
 	CSVName = "advanced-cluster-management"
 
 	// WaitInMinutesDefault ...
-	WaitInMinutesDefault = 20
+	WaitInMinutesDefault = 22
 
 	// DisableHubSelfManagementString ...
 	DisableHubSelfManagementString = "disableHubSelfManagement"
@@ -1070,12 +1070,47 @@ func ToggleDisableUpdateClusterImageSets(disableUpdateCIS bool) error {
 	return nil
 }
 
+// UpdateAnnotations
+func UpdateAnnotations(annotations map[string]string) {
+	mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+	Expect(err).To(BeNil())
+	mch.SetAnnotations(annotations)
+	mch, err = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
+	Expect(err).To(BeNil())
+}
+
 // ValidateClusterImageSetsSubscriptionPause validates that the console-chart-sub created ClusterImageSets subscription is either subscription-pause true or false
 func ValidateClusterImageSetsSubscriptionPause(expected string) error {
 	appsub, err := DynamicKubeClient.Resource(GVRAppSub).Namespace(MCHNamespace).Get(context.TODO(), AppSubName, metav1.GetOptions{})
 	Expect(err).To(BeNil())
-	if subscriptionPauseValue := appsub.GetLabels()["subscription-pause"]; subscriptionPauseValue != expected {
-		return fmt.Errorf("subscription-pause label is not correct")
+	spec, ok := appsub.Object["spec"].(map[string]interface{})
+	if !ok || spec == nil {
+		return fmt.Errorf("MultiClusterHub: %s has no 'spec' map", appsub.GetName())
+	}
+	packageoverrides_outer, ok := spec["packageOverrides"].([]interface{})
+	if !ok || packageoverrides_outer == nil {
+		return fmt.Errorf("MultiClusterHub: %s has no 'packageoverrides' outer map", appsub.GetName())
+	}
+	packageoverrides_outer_first := packageoverrides_outer[0].(map[string]interface{})
+	packageoverrides_inner, ok := packageoverrides_outer_first["packageOverrides"].([]interface{})
+	if !ok || packageoverrides_inner == nil {
+		return fmt.Errorf("MultiClusterHub: %s has no 'packageoverrides' inner map", appsub.GetName())
+	}
+	packageoverrides_inner_first := packageoverrides_inner[0].(map[string]interface{})
+	value, ok := packageoverrides_inner_first["value"].(map[string]interface{})
+	if !ok || value == nil {
+		return fmt.Errorf("MultiClusterHub: %s has no 'value' map", appsub.GetName())
+	}
+	clusterimageset, ok := value["clusterImageSets"].(map[string]interface{})
+	if !ok || clusterimageset == nil {
+		return fmt.Errorf("MultiClusterHub: %s has no 'clusterimageset' map", appsub.GetName())
+	}
+	subscriptionPauseValue, ok := clusterimageset["subscriptionPause"]
+	if !ok || subscriptionPauseValue == nil {
+		return fmt.Errorf("MultiClusterHub: %s has no 'subscriptionPauseValue'", appsub.GetName())
+	}
+	if subscriptionPauseValue != expected {
+		return fmt.Errorf("subscriptionPause attribute is not correct")
 	}
 	return nil
 }
@@ -1357,6 +1392,13 @@ func getCRDs() ([]string, error) {
 }
 
 // CoffeeBreak ...
-func CoffeeBreak() {
-	time.Sleep(10 * time.Minute)
+func CoffeeBreak(minutes int) {
+	log.Println(fmt.Sprintf("Starting coffee break for %d minutes...\n", minutes))
+	slept_minutes := 0
+	for slept_minutes < minutes {
+		time.Sleep(time.Duration(1) * time.Minute)
+		slept_minutes += 1
+		log.Println(fmt.Sprintf("... slept %d minutes...\n", slept_minutes))
+	}
+	log.Println(fmt.Sprintf("... ending coffee break after %d minutes!\n", slept_minutes))
 }
