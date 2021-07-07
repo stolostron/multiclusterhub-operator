@@ -13,7 +13,7 @@ BUILD_DIR ?= build
 VERSION ?= 2.3.0
 IMG ?= multiclusterhub-operator
 SECRET_REGISTRY ?= quay.io
-HUB_IMAGE_REGISTRY ?= quay.io/rhibmcollab
+HUB_IMAGE_REGISTRY ?= quay.io/open-cluster-management
 BUNDLE_REGISTRY ?= quay.io/open-cluster-management
 GIT_VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
                  git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8)

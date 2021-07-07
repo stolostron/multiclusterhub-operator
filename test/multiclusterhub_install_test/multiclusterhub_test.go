@@ -79,10 +79,18 @@ func FullInstallTestSuite() {
 
 		spec, ok := hiveConfig.Object["spec"].(map[string]interface{})
 		Expect(ok).To(BeTrue())
-		spec["TargetNamespace"] = "test-hive"
+		spec["targetNamespace"] = "test-hive"
 		spec["logLevel"] = "info"
 		hiveConfig, err = utils.DynamicKubeClient.Resource(utils.GVRHiveConfig).Update(context.TODO(), hiveConfig, metav1.UpdateOptions{})
 		Expect(err).To(BeNil()) // If HiveConfig does not exist, err
+
+		By("- Confirming edit was successful")
+		hiveConfig, err = utils.DynamicKubeClient.Resource(utils.GVRHiveConfig).Get(context.TODO(), utils.HiveConfigName, metav1.GetOptions{})
+		Expect(err).To(BeNil()) // If HiveConfig does not exist, err
+		spec, ok = hiveConfig.Object["spec"].(map[string]interface{})
+		Expect(ok).To(BeTrue())
+		Expect(spec["targetNamespace"]).To(BeEquivalentTo("test-hive"))
+		Expect(spec["logLevel"]).To(BeEquivalentTo("info"))
 
 		By("- Restart MCH Operator to ensure HiveConfig is not updated on reconcile")
 		// Delete MCH Operator pod to force reconcile
@@ -99,7 +107,7 @@ func FullInstallTestSuite() {
 		Expect(err).To(BeNil()) // If HiveConfig does not exist, err
 		spec, ok = hiveConfig.Object["spec"].(map[string]interface{})
 		Expect(ok).To(BeTrue())
-		Expect(spec["TargetNamespace"]).To(BeEquivalentTo("test-hive"))
+		Expect(spec["targetNamespace"]).To(BeEquivalentTo("test-hive"))
 		Expect(spec["logLevel"]).To(BeEquivalentTo("info"))
 
 		By("- If HiveConfig is Deleted, ensure it is recreated")
@@ -206,11 +214,7 @@ func FullInstallTestSuite() {
 			// Annotate MCH
 			annotations := make(map[string]string)
 			annotations["mch-imageOverridesCM"] = "my-config"
-			mch, err := utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Get(context.TODO(), utils.MCHName, metav1.GetOptions{})
-			Expect(err).To(BeNil())
-			mch.SetAnnotations(annotations)
-			mch, err = utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
-			Expect(err).To(BeNil())
+			utils.UpdateAnnotations(annotations)
 
 			Eventually(func() error {
 				configmap, err = utils.KubeClient.CoreV1().ConfigMaps(utils.MCHNamespace).Get(context.TODO(), fmt.Sprintf("mch-image-manifest-%s", currentVersion), metav1.GetOptions{})
@@ -224,43 +228,12 @@ func FullInstallTestSuite() {
 			}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
 
 			annotations = make(map[string]string)
-			mch.SetAnnotations(annotations)
-			_, err = utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
-			Expect(err).To(BeNil())
+			utils.UpdateAnnotations(annotations)
 
 			err = utils.KubeClient.CoreV1().ConfigMaps(utils.MCHNamespace).Delete(context.TODO(), "my-config", metav1.DeleteOptions{})
 			Expect(err).To(BeNil())
 		}
 		return
-	})
-
-	It("- If `spec.disableHubSelfManagement` controls the existence of the related resources", func() {
-		By("- Verifying default install has local-cluster resources")
-		utils.CreateDefaultMCH()
-		err := utils.ValidateMCH()
-		Expect(err).To(BeNil())
-
-		By("- Setting `spec.disableHubSelfManagement` to true to remove local-cluster resources")
-		utils.ToggleDisableHubSelfManagement(true)
-		By("- Sleeping some compulsory 10 minutes because of some foundation bug")
-		utils.CoffeeBreak()
-		By("- Returning from compulsory coffee break")
-		Eventually(func() error {
-			if err := utils.ValidateImportHubResourcesExist(false); err != nil {
-				return fmt.Errorf("resources still exist")
-			}
-			return nil
-		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
-
-		By("- Setting `spec.disableHubSelfManagement` to false to create local-cluster resources")
-		utils.ToggleDisableHubSelfManagement(false)
-		Eventually(func() error {
-			if err := utils.ValidateImportHubResourcesExist(true); err != nil {
-				return fmt.Errorf("resources don't exist")
-			}
-			return nil
-		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
-
 	})
 
 	It("- If `spec.disableUpdateClusterImageSets` controls the automatic updates of clusterImageSets", func() {
@@ -279,7 +252,7 @@ func FullInstallTestSuite() {
 
 		Eventually(func() error {
 			if err := utils.ValidateClusterImageSetsSubscriptionPause("true"); err != nil {
-				return fmt.Errorf("resources still exist")
+				return fmt.Errorf("Console AppSub not updated")
 			}
 			return nil
 		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
@@ -290,36 +263,7 @@ func FullInstallTestSuite() {
 
 		Eventually(func() error {
 			if err := utils.ValidateClusterImageSetsSubscriptionPause("false"); err != nil {
-				return fmt.Errorf("resources still exist")
-			}
-			return nil
-		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
-	})
-
-	It("- Delete ManagedCluster before it is joined/available", func() {
-		By("- Verifying install has local-cluster resources")
-		utils.CreateDefaultMCH()
-		Eventually(func() error {
-			if err := utils.ValidateImportHubResourcesExist(true); err != nil {
-				return fmt.Errorf("resources still exist")
-			}
-			return nil
-		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
-
-		By("- Setting `spec.disableHubSelfManagement` to true to remove local-cluster resources")
-		utils.ToggleDisableHubSelfManagement(true)
-		Eventually(func() error {
-			if err := utils.ValidateImportHubResourcesExist(false); err != nil {
-				return fmt.Errorf("resources still exist")
-			}
-			return nil
-		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
-
-		By("- Setting `spec.disableHubSelfManagement` to false to create local-cluster resources")
-		utils.ToggleDisableHubSelfManagement(false)
-		Eventually(func() error {
-			if err := utils.ValidateImportHubResourcesExist(true); err != nil {
-				return fmt.Errorf("resources still exist")
+				return fmt.Errorf("Console AppSub not updated")
 			}
 			return nil
 		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
@@ -546,4 +490,66 @@ func FullInstallTestSuite() {
 			break
 		}
 	}
+
+	It("- If `spec.disableHubSelfManagement` controls the existence of the related resources", func() {
+		By("- Verifying default install has local-cluster resources")
+		utils.CreateDefaultMCH()
+		err := utils.ValidateMCH()
+		Expect(err).To(BeNil())
+
+		By("- Setting `spec.disableHubSelfManagement` to true to remove local-cluster resources")
+		utils.ToggleDisableHubSelfManagement(true)
+		By("- Sleeping some compulsory 60 minutes because of some foundation bug")
+		utils.CoffeeBreak(60)
+		By("- Returning from compulsory coffee break")
+		Eventually(func() error {
+			if err := utils.ValidateImportHubResourcesExist(false); err != nil {
+				return fmt.Errorf("resources still exist")
+			}
+			return nil
+		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
+
+		By("- Setting `spec.disableHubSelfManagement` to false to create local-cluster resources")
+		utils.ToggleDisableHubSelfManagement(false)
+		By("- Sleeping some compulsory 60 minutes because of some foundation bug")
+		utils.CoffeeBreak(60)
+		By("- Returning from compulsory coffee break")
+		Eventually(func() error {
+			if err := utils.ValidateImportHubResourcesExist(true); err != nil {
+				return fmt.Errorf("resources don't exist")
+			}
+			return nil
+		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
+
+	})
+
+	// It("- Delete ManagedCluster before it is joined/available", func() {
+	// 	By("- Verifying install has local-cluster resources")
+	// 	utils.CreateDefaultMCH()
+	// 	Eventually(func() error {
+	// 		if err := utils.ValidateImportHubResourcesExist(true); err != nil {
+	// 			return fmt.Errorf("resources still exist")
+	// 		}
+	// 		return nil
+	// 	}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
+
+	// 	By("- Setting `spec.disableHubSelfManagement` to true to remove local-cluster resources")
+	// 	utils.ToggleDisableHubSelfManagement(true)
+	// 	Eventually(func() error {
+	// 		if err := utils.ValidateImportHubResourcesExist(false); err != nil {
+	// 			return fmt.Errorf("resources still exist")
+	// 		}
+	// 		return nil
+	// 	}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
+
+	// 	By("- Setting `spec.disableHubSelfManagement` to false to create local-cluster resources")
+	// 	utils.ToggleDisableHubSelfManagement(false)
+	// 	Eventually(func() error {
+	// 		if err := utils.ValidateImportHubResourcesExist(true); err != nil {
+	// 			return fmt.Errorf("resources don't exist")
+	// 		}
+	// 		return nil
+	// 	}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
+	// })
+
 }
