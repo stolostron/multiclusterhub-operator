@@ -84,6 +84,14 @@ func FullInstallTestSuite() {
 		hiveConfig, err = utils.DynamicKubeClient.Resource(utils.GVRHiveConfig).Update(context.TODO(), hiveConfig, metav1.UpdateOptions{})
 		Expect(err).To(BeNil()) // If HiveConfig does not exist, err
 
+		By("- Confirming edit was successful")
+		hiveConfig, err = utils.DynamicKubeClient.Resource(utils.GVRHiveConfig).Get(context.TODO(), utils.HiveConfigName, metav1.GetOptions{})
+		Expect(err).To(BeNil()) // If HiveConfig does not exist, err
+		spec, ok = hiveConfig.Object["spec"].(map[string]interface{})
+		Expect(ok).To(BeTrue())
+		Expect(spec["targetNamespace"]).To(BeEquivalentTo("test-hive"))
+		Expect(spec["logLevel"]).To(BeEquivalentTo("info"))
+
 		By("- Restart MCH Operator to ensure HiveConfig is not updated on reconcile")
 		// Delete MCH Operator pod to force reconcile
 		labelSelector := fmt.Sprintf("name=%s", "multiclusterhub-operator")
@@ -99,7 +107,7 @@ func FullInstallTestSuite() {
 		Expect(err).To(BeNil()) // If HiveConfig does not exist, err
 		spec, ok = hiveConfig.Object["spec"].(map[string]interface{})
 		Expect(ok).To(BeTrue())
-		Expect(spec["TargetNamespace"]).To(BeEquivalentTo("test-hive"))
+		Expect(spec["targetNamespace"]).To(BeEquivalentTo("test-hive"))
 		Expect(spec["logLevel"]).To(BeEquivalentTo("info"))
 
 		By("- If HiveConfig is Deleted, ensure it is recreated")
@@ -492,7 +500,7 @@ func FullInstallTestSuite() {
 		By("- Setting `spec.disableHubSelfManagement` to true to remove local-cluster resources")
 		utils.ToggleDisableHubSelfManagement(true)
 		By("- Sleeping some compulsory 60 minutes because of some foundation bug")
-		utils.CoffeeBreak(20)
+		utils.CoffeeBreak(60)
 		By("- Returning from compulsory coffee break")
 		Eventually(func() error {
 			if err := utils.ValidateImportHubResourcesExist(false); err != nil {
@@ -504,7 +512,7 @@ func FullInstallTestSuite() {
 		By("- Setting `spec.disableHubSelfManagement` to false to create local-cluster resources")
 		utils.ToggleDisableHubSelfManagement(false)
 		By("- Sleeping some compulsory 60 minutes because of some foundation bug")
-		utils.CoffeeBreak(20)
+		utils.CoffeeBreak(60)
 		By("- Returning from compulsory coffee break")
 		Eventually(func() error {
 			if err := utils.ValidateImportHubResourcesExist(true); err != nil {
