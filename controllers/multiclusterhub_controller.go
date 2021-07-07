@@ -68,7 +68,7 @@ type MultiClusterHubReconciler struct {
 	Client    client.Client
 	CacheSpec CacheSpec
 	Scheme    *runtime.Scheme
-	log       logr.Logger
+	Log       logr.Logger
 }
 
 var resyncPeriod = time.Second * 20
@@ -78,7 +78,7 @@ const hubFinalizer = "finalizer.operator.open-cluster-management.io"
 //+kubebuilder:rbac:groups="";"admissionregistration.k8s.io";"apiextensions.k8s.io";"apiregistration.k8s.io";"apps";"apps.open-cluster-management.io";"authorization.k8s.io";"hive.openshift.io";"mcm.ibm.com";"proxy.open-cluster-management.io";"rbac.authorization.k8s.io";"security.openshift.io";"clusterview.open-cluster-management.io";"discovery.open-cluster-management.io";"wgpolicyk8s.io",resources=apiservices;channels;clusterjoinrequests;clusterrolebindings;clusterstatuses/log;configmaps;customresourcedefinitions;deployments;discoveryconfigs;hiveconfigs;mutatingwebhookconfigurations;validatingwebhookconfigurations;namespaces;pods;policyreports;replicasets;rolebindings;secrets;serviceaccounts;services;subjectaccessreviews;subscriptions;helmreleases;managedclusters;managedclustersets,verbs=get
 //+kubebuilder:rbac:groups="";"admissionregistration.k8s.io";"apiextensions.k8s.io";"apiregistration.k8s.io";"apps";"apps.open-cluster-management.io";"authorization.k8s.io";"hive.openshift.io";"monitoring.coreos.com";"rbac.authorization.k8s.io";"mcm.ibm.com";"security.openshift.io",resources=apiservices;channels;clusterjoinrequests;clusterrolebindings;clusterroles;configmaps;customresourcedefinitions;deployments;hiveconfigs;mutatingwebhookconfigurations;validatingwebhookconfigurations;namespaces;rolebindings;secrets;serviceaccounts;services;servicemonitors;subjectaccessreviews;subscriptions;validatingwebhookconfigurations,verbs=create;update
 //+kubebuilder:rbac:groups="";"apps";"apps.open-cluster-management.io";"admissionregistration.k8s.io";"apiregistration.k8s.io";"authorization.k8s.io";"config.openshift.io";"inventory.open-cluster-management.io";"mcm.ibm.com";"observability.open-cluster-management.io";"operator.open-cluster-management.io";"rbac.authorization.k8s.io";"hive.openshift.io";"clusterview.open-cluster-management.io";"discovery.open-cluster-management.io";"wgpolicyk8s.io",resources=apiservices;baremetalassets;clusterjoinrequests;configmaps;deployments;discoveryconfigs;helmreleases;ingresses;multiclusterhubs;multiclusterobservabilities;namespaces;hiveconfigs;rolebindings;servicemonitors;secrets;services;subjectaccessreviews;subscriptions;validatingwebhookconfigurations;pods;policyreports;managedclusters;managedclustersets,verbs=list
-//+kubebuilder:rbac:groups="";"admissionregistration.k8s.io";"apiregistration.k8s.io";"apps";"authorization.k8s.io";"config.openshift.io";"mcm.ibm.com";"operator.open-cluster-management.io";"rbac.authorization.k8s.io";"storage.k8s.io";"apps.open-cluster-management.io";"hive.openshift.io";"clusterview.open-cluster-management.io";"wgpolicyk8s.io",resources=apiservices;helmreleases;hiveconfigs;configmaps;clusterjoinrequests;deployments;ingresses;multiclusterhubs;namespaces;rolebindings;secrets;services;subjectaccessreviews;validatingwebhookconfigurations;pods;policyreports;managedclusters;managedclustersets,verbs=watch
+//+kubebuilder:rbac:groups="";"admissionregistration.k8s.io";"apiregistration.k8s.io";"apps";"authorization.k8s.io";"config.openshift.io";"mcm.ibm.com";"operator.open-cluster-management.io";"rbac.authorization.k8s.io";"storage.k8s.io";"apps.open-cluster-management.io";"hive.openshift.io";"clusterview.open-cluster-management.io";"wgpolicyk8s.io",resources=apiservices;helmreleases;hiveconfigs;configmaps;clusterjoinrequests;deployments;ingresses;multiclusterhubs;namespaces;rolebindings;secrets;services;subjectaccessreviews;validatingwebhookconfigurations;pods;policyreports;managedclusters;managedclustersets,verbs=watch;list
 //+kubebuilder:rbac:groups="";"admissionregistration.k8s.io";"apps";"apps.open-cluster-management.io";"mcm.ibm.com";"monitoring.coreos.com";"operator.open-cluster-management.io";,resources=deployments;deployments/finalizers;helmreleases;services;services/finalizers;servicemonitors;servicemonitors/finalizers;validatingwebhookconfigurations;multiclusterhubs;multiclusterhubs/finalizers;multiclusterhubs/status,verbs=update
 //+kubebuilder:rbac:groups="admissionregistration.k8s.io";"apiextensions.k8s.io";"apiregistration.k8s.io";"hive.openshift.io";"mcm.ibm.com";"rbac.authorization.k8s.io";,resources=apiservices;clusterroles;clusterrolebindings;customresourcedefinitions;hiveconfigs;mutatingwebhookconfigurations;validatingwebhookconfigurations,verbs=deletecollection
 //+kubebuilder:rbac:groups="";"apps";"apiregistration.k8s.io";"apps.open-cluster-management.io";"apiextensions.k8s.io";,resources=deployments;services;channels;customresourcedefinitions;apiservices,verbs=delete
@@ -94,9 +94,9 @@ const hubFinalizer = "finalizer.operator.open-cluster-management.io"
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Request) (retQueue ctrl.Result, retError error) {
-	r.log = log.FromContext(ctx)
+	r.Log = log.FromContext(ctx)
 
-	r.log.Info("Reconciling MultiClusterHub")
+	r.Log.Info("Reconciling MultiClusterHub")
 
 	// Fetch the MultiClusterHub instance
 	multiClusterHub := &operatorv1.MultiClusterHub{}
@@ -106,11 +106,11 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			r.log.Info("MultiClusterHub resource not found. Ignoring since object must be deleted")
+			r.Log.Info("MultiClusterHub resource not found. Ignoring since object must be deleted")
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		r.log.Error(err, "Failed to get MultiClusterHub CR")
+		r.Log.Error(err, "Failed to get MultiClusterHub CR")
 		return ctrl.Result{}, err
 	}
 
@@ -135,7 +135,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	defer func() {
 		statusQueue, statusError := r.syncHubStatus(multiClusterHub, originalStatus, allDeploys, allHRs, allCRs)
 		if statusError != nil {
-			r.log.Error(retError, "Error updating status")
+			r.Log.Error(retError, "Error updating status")
 		}
 		if empty := (reconcile.Result{}); retQueue == empty {
 			retQueue = statusQueue
@@ -156,9 +156,9 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			// Run finalization logic. If the finalization
 			// logic fails, don't remove the finalizer so
 			// that we can retry during the next reconciliation.
-			if err := r.finalizeHub(r.log, multiClusterHub); err != nil {
+			if err := r.finalizeHub(r.Log, multiClusterHub); err != nil {
 				// Logging err and returning nil to ensure 45 second wait
-				r.log.Info(fmt.Sprintf("Finalizing: %s", err.Error()))
+				r.Log.Info(fmt.Sprintf("Finalizing: %s", err.Error()))
 				return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 			}
 
@@ -177,7 +177,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	// Add finalizer for this CR
 	if !contains(multiClusterHub.GetFinalizers(), hubFinalizer) {
-		if err := r.addFinalizer(r.log, multiClusterHub); err != nil {
+		if err := r.addFinalizer(r.Log, multiClusterHub); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
@@ -193,16 +193,16 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	imageOverrides := imageoverrides.GetImageOverrides()
 	if len(imageOverrides) == 0 {
 		// If imageoverrides are not set from environmental variables, read from manifest
-		r.log.Info("Image Overrides not set from environment variables. Checking for overrides in manifest")
+		r.Log.Info("Image Overrides not set from environment variables. Checking for overrides in manifest")
 		imageOverrides, err = manifest.GetImageOverrides(multiClusterHub)
 		if err != nil {
-			r.log.Error(err, "Could not get map of image overrides")
+			r.Log.Error(err, "Could not get map of image overrides")
 			return ctrl.Result{}, err
 		}
 	}
 
 	if imageRepo := utils.GetImageRepository(multiClusterHub); imageRepo != "" {
-		r.log.Info(fmt.Sprintf("Overriding Image Repository from annotation 'mch-imageRepository': %s", imageRepo))
+		r.Log.Info(fmt.Sprintf("Overriding Image Repository from annotation 'mch-imageRepository': %s", imageRepo))
 		imageOverrides = utils.OverrideImageRepository(imageOverrides, imageRepo)
 	}
 
@@ -210,7 +210,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if imageOverridesConfigmap := utils.GetImageOverridesConfigmap(multiClusterHub); imageOverridesConfigmap != "" {
 		imageOverrides, err = r.OverrideImagesFromConfigmap(imageOverrides, multiClusterHub.GetNamespace(), imageOverridesConfigmap)
 		if err != nil {
-			r.log.Error(err, fmt.Sprintf("Could not find image override configmap: %s/%s", multiClusterHub.GetNamespace(), imageOverridesConfigmap))
+			r.Log.Error(err, fmt.Sprintf("Could not find image override configmap: %s/%s", multiClusterHub.GetNamespace(), imageOverridesConfigmap))
 			return ctrl.Result{}, err
 		}
 	}
@@ -221,26 +221,26 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	err = r.maintainImageManifestConfigmap(multiClusterHub)
 	if err != nil {
-		r.log.Error(err, "Error storing image manifests in configmap")
+		r.Log.Error(err, "Error storing image manifests in configmap")
 		return ctrl.Result{}, err
 	}
 
 	CustomUpgradeRequired, err := r.CustomSelfMgmtHubUpgradeRequired(multiClusterHub)
 	if err != nil {
-		r.log.Error(err, "Error determining if upgrade specific logic is required")
+		r.Log.Error(err, "Error determining if upgrade specific logic is required")
 		return ctrl.Result{}, err
 	}
 
 	if CustomUpgradeRequired {
 		result, err = r.BeginEnsuringHubIsUpgradeable(multiClusterHub)
 		if err != nil {
-			r.log.Info(fmt.Sprintf("Error starting to ensure local-cluster hub is upgradeable: %s", err.Error()))
+			r.Log.Info(fmt.Sprintf("Error starting to ensure local-cluster hub is upgradeable: %s", err.Error()))
 			return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 		}
 	}
 
 	// Add installer labels to Helm-owned deployments
-	myHelmReleases := getAppSubOwnedHelmReleases(allHRs, getAppsubs(multiClusterHub))
+	myHelmReleases := getAppSubOwnedHelmReleases(allHRs, utils.GetAppsubs(multiClusterHub))
 	myHRDeployments := getHelmReleaseOwnedDeployments(allDeploys, myHelmReleases)
 	if err := r.labelDeployments(multiClusterHub, myHRDeployments); err != nil {
 		return ctrl.Result{}, nil
@@ -249,7 +249,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	// Do not reconcile objects if this instance of mch is labeled "paused"
 	updatePausedCondition(multiClusterHub)
 	if utils.IsPaused(multiClusterHub) {
-		r.log.Info("MultiClusterHub reconciliation is paused. Nothing more to do.")
+		r.Log.Info("MultiClusterHub reconciliation is paused. Nothing more to do.")
 		return ctrl.Result{}, nil
 	}
 
@@ -259,13 +259,13 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	// Render CRD templates
-	err = r.installCRDs(r.log, multiClusterHub)
+	err = r.installCRDs(r.Log, multiClusterHub)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
 	if utils.ProxyEnvVarsAreSet() {
-		r.log.Info(fmt.Sprintf("Proxy configuration environment variables are set. HTTP_PROXY: %s, HTTPS_PROXY: %s, NO_PROXY: %s", os.Getenv("HTTP_PROXY"), os.Getenv("HTTPS_PROXY"), os.Getenv("NO_PROXY")))
+		r.Log.Info(fmt.Sprintf("Proxy configuration environment variables are set. HTTP_PROXY: %s, HTTPS_PROXY: %s, NO_PROXY: %s", os.Getenv("HTTP_PROXY"), os.Getenv("HTTPS_PROXY"), os.Getenv("NO_PROXY")))
 	}
 
 	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub, r.CacheSpec.ImageOverrides))
@@ -287,24 +287,23 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
-
 	//Render the templates with a specified CR
 	renderer := rendering.NewRenderer(multiClusterHub)
 	toDeploy, err := renderer.Render(r.Client)
 	if err != nil {
-		r.log.Error(err, "Failed to render MultiClusterHub templates")
+		r.Log.Error(err, "Failed to render MultiClusterHub templates")
 		return reconcile.Result{}, err
 	}
 	//Deploy the resources
 	for _, res := range toDeploy {
 		if res.GetNamespace() == multiClusterHub.Namespace {
 			if err := controllerutil.SetControllerReference(multiClusterHub, res, r.Scheme); err != nil {
-				r.log.Error(err, "Failed to set controller reference")
+				r.Log.Error(err, "Failed to set controller reference")
 			}
 		}
 		err, ok := deploying.Deploy(r.Client, res)
 		if err != nil {
-			r.log.Error(err, fmt.Sprintf("Failed to deploy %s %s/%s", res.GetKind(), multiClusterHub.Namespace, res.GetName()))
+			r.Log.Error(err, fmt.Sprintf("Failed to deploy %s %s/%s", res.GetKind(), multiClusterHub.Namespace, res.GetName()))
 			return reconcile.Result{}, err
 		}
 		if ok {
@@ -324,9 +323,11 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	// Wait for ocm-webhook to be fully available before applying rest of subscriptions
-	if !(multiClusterHub.Status.Components["ocm-webhook"].Type == "Available" && multiClusterHub.Status.Components["ocm-webhook"].Status == metav1.ConditionTrue) {
-		r.log.Info("Waiting for component 'ocm-webhook' to be available")
-		return reconcile.Result{RequeueAfter: resyncPeriod}, nil
+	if !utils.IsUnitTest() {
+		if !(multiClusterHub.Status.Components["ocm-webhook"].Type == "Available" && multiClusterHub.Status.Components["ocm-webhook"].Status == metav1.ConditionTrue) {
+			r.Log.Info("Waiting for component 'ocm-webhook' to be available")
+			return reconcile.Result{RequeueAfter: resyncPeriod}, nil
+		}
 	}
 
 	// Install the rest of the subscriptions in no particular order
@@ -412,15 +413,17 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 
-	if !multiClusterHub.Spec.DisableHubSelfManagement {
-		result, err = r.ensureHubIsImported(multiClusterHub)
-		if result != (ctrl.Result{}) {
-			return result, err
-		}
-	} else {
-		result, err = r.ensureHubIsExported(multiClusterHub)
-		if result != (ctrl.Result{}) {
-			return result, err
+	if !utils.IsUnitTest() {
+		if !multiClusterHub.Spec.DisableHubSelfManagement {
+			result, err = r.ensureHubIsImported(multiClusterHub)
+			if result != (ctrl.Result{}) {
+				return result, err
+			}
+		} else {
+			result, err = r.ensureHubIsExported(multiClusterHub)
+			if result != (ctrl.Result{}) {
+				return result, err
+			}
 		}
 	}
 
@@ -500,17 +503,16 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 // ingressDomain is discovered from Openshift cluster configuration resources
 func (r *MultiClusterHubReconciler) ingressDomain(m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
-	if r.CacheSpec.IngressDomain != "" {
+	if r.CacheSpec.IngressDomain != "" || utils.IsUnitTest() {
 		return ctrl.Result{}, nil
 	}
-
 	ingress := &netv1.Ingress{}
 	err := r.Client.Get(context.TODO(), types.NamespacedName{
 		Name: "cluster",
 	}, ingress)
 	// Don't fail on a unit test (Fake client won't find "cluster" Ingress)
-	if err != nil && !utils.IsUnitTest() {
-		r.log.Error(err, "Failed to get Ingress")
+	if err != nil {
+		r.Log.Error(err, "Failed to get Ingress")
 		return ctrl.Result{}, err
 	}
 
@@ -630,7 +632,7 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub) (
 	if utils.MchIsValid(m) {
 		return ctrl.Result{}, nil
 	}
-	r.log.Info("MultiClusterHub is Invalid. Updating with proper defaults")
+	r.Log.Info("MultiClusterHub is Invalid. Updating with proper defaults")
 
 	if len(m.Spec.Ingress.SSLCiphers) == 0 {
 		m.Spec.Ingress.SSLCiphers = utils.DefaultSSLCiphers
@@ -643,10 +645,10 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub) (
 	// Apply defaults to server
 	err := r.Client.Update(context.TODO(), m)
 	if err != nil {
-		r.log.Error(err, "Failed to update MultiClusterHub", "MultiClusterHub.Namespace", m.Namespace, "MultiClusterHub.Name", m.Name)
+		r.Log.Error(err, "Failed to update MultiClusterHub", "MultiClusterHub.Namespace", m.Namespace, "MultiClusterHub.Name", m.Name)
 		return ctrl.Result{}, err
 	}
 
-	r.log.Info("MultiClusterHub successfully updated")
+	r.Log.Info("MultiClusterHub successfully updated")
 	return ctrl.Result{Requeue: true}, nil
 }

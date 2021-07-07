@@ -20,7 +20,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
 	operatorv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/channel"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/foundation"
@@ -48,7 +47,7 @@ type CacheSpec struct {
 }
 
 func (r *MultiClusterHubReconciler) ensureDeployment(m *operatorv1.MultiClusterHub, dep *appsv1.Deployment) (ctrl.Result, error) {
-	r.log.Info("Reconciling MultiClusterHub")
+	r.Log.Info("Reconciling MultiClusterHub")
 
 	if utils.ProxyEnvVarsAreSet() {
 		dep = addProxyEnvVarsToDeployment(dep)
@@ -66,19 +65,19 @@ func (r *MultiClusterHubReconciler) ensureDeployment(m *operatorv1.MultiClusterH
 		err = r.Client.Create(context.TODO(), dep)
 		if err != nil {
 			// Deployment failed
-			r.log.Error(err, "Failed to create new Deployment")
+			r.Log.Error(err, "Failed to create new Deployment")
 			return ctrl.Result{}, err
 		}
 
 		// Deployment was successful
-		r.log.Info("Created a new Deployment")
-		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+		r.Log.Info("Created a new Deployment")
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
 		SetHubCondition(&m.Status, *condition)
 		return ctrl.Result{}, nil
 
 	} else if err != nil {
 		// Error that isn't due to the deployment not existing
-		r.log.Error(err, "Failed to get Deployment")
+		r.Log.Error(err, "Failed to get Deployment")
 		return ctrl.Result{}, err
 	}
 
@@ -92,14 +91,14 @@ func (r *MultiClusterHubReconciler) ensureDeployment(m *operatorv1.MultiClusterH
 	case foundation.OCMControllerName, foundation.OCMProxyServerName, foundation.WebhookName:
 		desired, needsUpdate = foundation.ValidateDeployment(m, r.CacheSpec.ImageOverrides, dep, found)
 	default:
-		r.log.Info("Could not validate deployment; unknown name")
+		r.Log.Info("Could not validate deployment; unknown name")
 		return ctrl.Result{}, nil
 	}
 
 	if needsUpdate {
 		err = r.Client.Update(context.TODO(), desired)
 		if err != nil {
-			r.log.Error(err, "Failed to update Deployment.")
+			r.Log.Error(err, "Failed to update Deployment.")
 			return ctrl.Result{}, err
 		}
 		// Spec updated - return
@@ -108,8 +107,8 @@ func (r *MultiClusterHubReconciler) ensureDeployment(m *operatorv1.MultiClusterH
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterHubReconciler) ensureService(m *operatorsv1.MultiClusterHub, s *corev1.Service) (ctrl.Result, error) {
-	svlog := r.log.WithValues("Service.Namespace", s.Namespace, "Service.Name", s.Name)
+func (r *MultiClusterHubReconciler) ensureService(m *operatorv1.MultiClusterHub, s *corev1.Service) (ctrl.Result, error) {
+	svlog := r.Log.WithValues("Service.Namespace", s.Namespace, "Service.Name", s.Name)
 
 	found := &corev1.Service{}
 	err := r.Client.Get(context.TODO(), types.NamespacedName{
@@ -129,7 +128,7 @@ func (r *MultiClusterHubReconciler) ensureService(m *operatorsv1.MultiClusterHub
 
 		// Creation was successful
 		svlog.Info("Created a new Service")
-		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
 		SetHubCondition(&m.Status, *condition)
 		return ctrl.Result{}, nil
 
@@ -165,8 +164,8 @@ func (r *MultiClusterHubReconciler) ensureService(m *operatorsv1.MultiClusterHub
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterHubReconciler) ensureAPIService(m *operatorsv1.MultiClusterHub, s *apiregistrationv1.APIService) (ctrl.Result, error) {
-	svlog := r.log.WithValues("Service.Name", s.Name)
+func (r *MultiClusterHubReconciler) ensureAPIService(m *operatorv1.MultiClusterHub, s *apiregistrationv1.APIService) (ctrl.Result, error) {
+	svlog := r.Log.WithValues("Service.Name", s.Name)
 
 	found := &apiregistrationv1.APIService{}
 	err := r.Client.Get(context.TODO(), types.NamespacedName{
@@ -185,7 +184,7 @@ func (r *MultiClusterHubReconciler) ensureAPIService(m *operatorsv1.MultiCluster
 
 		// Creation was successful
 		svlog.Info("Created a new apiService")
-		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
 		SetHubCondition(&m.Status, *condition)
 		return ctrl.Result{}, nil
 
@@ -216,8 +215,8 @@ func (r *MultiClusterHubReconciler) ensureAPIService(m *operatorsv1.MultiCluster
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterHubReconciler) ensureChannel(m *operatorsv1.MultiClusterHub, u *unstructured.Unstructured) (ctrl.Result, error) {
-	selog := r.log.WithValues("Channel.Namespace", u.GetNamespace(), "Channel.Name", u.GetName())
+func (r *MultiClusterHubReconciler) ensureChannel(m *operatorv1.MultiClusterHub, u *unstructured.Unstructured) (ctrl.Result, error) {
+	selog := r.Log.WithValues("Channel.Namespace", u.GetNamespace(), "Channel.Name", u.GetName())
 
 	found := &unstructured.Unstructured{}
 	found.SetGroupVersionKind(schema.GroupVersionKind{
@@ -240,7 +239,7 @@ func (r *MultiClusterHubReconciler) ensureChannel(m *operatorsv1.MultiClusterHub
 
 		// Creation was successful
 		selog.Info("Created a new Channel")
-		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
 		SetHubCondition(&m.Status, *condition)
 		return ctrl.Result{}, nil
 
@@ -265,8 +264,8 @@ func (r *MultiClusterHubReconciler) ensureChannel(m *operatorsv1.MultiClusterHub
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterHubReconciler) ensureSubscription(m *operatorsv1.MultiClusterHub, u *unstructured.Unstructured) (ctrl.Result, error) {
-	obLog := r.log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName(), "Kind", u.GetKind())
+func (r *MultiClusterHubReconciler) ensureSubscription(m *operatorv1.MultiClusterHub, u *unstructured.Unstructured) (ctrl.Result, error) {
+	obLog := r.Log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName(), "Kind", u.GetKind())
 
 	if utils.ProxyEnvVarsAreSet() {
 		u = addProxyEnvVarsToSub(u)
@@ -297,7 +296,7 @@ func (r *MultiClusterHubReconciler) ensureSubscription(m *operatorsv1.MultiClust
 
 		// Creation was successful
 		obLog.Info("Created new object")
-		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
 		SetHubCondition(&m.Status, *condition)
 		return ctrl.Result{}, nil
 
@@ -326,8 +325,8 @@ func (r *MultiClusterHubReconciler) ensureSubscription(m *operatorsv1.MultiClust
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterHubReconciler) ensureUnstructuredResource(m *operatorsv1.MultiClusterHub, u *unstructured.Unstructured) (ctrl.Result, error) {
-	obLog := r.log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName(), "Kind", u.GetKind())
+func (r *MultiClusterHubReconciler) ensureUnstructuredResource(m *operatorv1.MultiClusterHub, u *unstructured.Unstructured) (ctrl.Result, error) {
+	obLog := r.Log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName(), "Kind", u.GetKind())
 
 	found := &unstructured.Unstructured{}
 	found.SetGroupVersionKind(u.GroupVersionKind())
@@ -347,7 +346,7 @@ func (r *MultiClusterHubReconciler) ensureUnstructuredResource(m *operatorsv1.Mu
 		}
 		// Creation was successful
 		obLog.Info("Created new resource")
-		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
 		SetHubCondition(&m.Status, *condition)
 		return ctrl.Result{}, nil
 
@@ -382,7 +381,7 @@ func (r *MultiClusterHubReconciler) ensureUnstructuredResource(m *operatorsv1.Mu
 
 // OverrideImagesFromConfigmap ...
 func (r *MultiClusterHubReconciler) OverrideImagesFromConfigmap(imageOverrides map[string]string, namespace, configmapName string) (map[string]string, error) {
-	r.log.Info(fmt.Sprintf("Overriding images from configmap: %s/%s", namespace, configmapName))
+	r.Log.Info(fmt.Sprintf("Overriding images from configmap: %s/%s", namespace, configmapName))
 
 	configmap := &corev1.ConfigMap{}
 	err := r.Client.Get(context.TODO(), types.NamespacedName{
@@ -418,7 +417,7 @@ func (r *MultiClusterHubReconciler) OverrideImagesFromConfigmap(imageOverrides m
 	return imageOverrides, nil
 }
 
-func (r *MultiClusterHubReconciler) maintainImageManifestConfigmap(mch *operatorsv1.MultiClusterHub) error {
+func (r *MultiClusterHubReconciler) maintainImageManifestConfigmap(mch *operatorv1.MultiClusterHub) error {
 	// Define configmap
 	configmap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -573,14 +572,14 @@ func getHelmReleaseOwnedDeployments(allDeps []*appsv1.Deployment, hrList []*subr
 }
 
 // labelDeployments updates deployments with installer labels if not already present
-func (r *MultiClusterHubReconciler) labelDeployments(hub *operatorsv1.MultiClusterHub, dList []*appsv1.Deployment) error {
+func (r *MultiClusterHubReconciler) labelDeployments(hub *operatorv1.MultiClusterHub, dList []*appsv1.Deployment) error {
 	for _, d := range dList {
 		// Attach installer labels so we can keep our eyes on the deployment
 		if addInstallerLabel(d, hub.Name, hub.Namespace) {
-			r.log.Info("Adding installer labels to deployment", "Name", d.Name)
+			r.Log.Info("Adding installer labels to deployment", "Name", d.Name)
 			err := r.Client.Update(context.TODO(), d)
 			if err != nil {
-				r.log.Error(err, "Failed to update Deployment", "Name", d.Name)
+				r.Log.Error(err, "Failed to update Deployment", "Name", d.Name)
 				return err
 			}
 		}
@@ -590,7 +589,7 @@ func (r *MultiClusterHubReconciler) labelDeployments(hub *operatorsv1.MultiClust
 
 // ensureSubscriptionOperatorIsRunning verifies that the subscription operator that manages helm subscriptions exists and
 // is running. This validation is only intended to run during upgrade and when run as an OLM managed deployment
-func (r *MultiClusterHubReconciler) ensureSubscriptionOperatorIsRunning(mch *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deployment) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) ensureSubscriptionOperatorIsRunning(mch *operatorv1.MultiClusterHub, allDeps []*appsv1.Deployment) (ctrl.Result, error) {
 	// skip check if not upgrading
 	if mch.Status.CurrentVersion == version.Version {
 		return ctrl.Result{}, nil
@@ -615,11 +614,11 @@ func (r *MultiClusterHubReconciler) ensureSubscriptionOperatorIsRunning(mch *ope
 
 	// Check that the owning CSV version of the deployments match
 	if selfDeployment.GetLabels() == nil || subscriptionDeploy.GetLabels() == nil {
-		r.log.Info("Missing labels on either MCH operator or subscription operator deployment")
+		r.Log.Info("Missing labels on either MCH operator or subscription operator deployment")
 		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 	}
 	if selfDeployment.Labels["olm.owner"] != subscriptionDeploy.Labels["olm.owner"] {
-		r.log.Info("OLM owner labels do not match. Requeuing.", "MCH operator label", selfDeployment.Labels["olm.owner"], "Subscription operator label", subscriptionDeploy.Labels["olm.owner"])
+		r.Log.Info("OLM owner labels do not match. Requeuing.", "MCH operator label", selfDeployment.Labels["olm.owner"], "Subscription operator label", subscriptionDeploy.Labels["olm.owner"])
 		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 	}
 
@@ -627,7 +626,7 @@ func (r *MultiClusterHubReconciler) ensureSubscriptionOperatorIsRunning(mch *ope
 	if successfulDeploy(subscriptionDeploy) {
 		return ctrl.Result{}, nil
 	} else {
-		r.log.Info("Standalone subscription deployment is not running. Requeuing.")
+		r.Log.Info("Standalone subscription deployment is not running. Requeuing.")
 		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 	}
 }

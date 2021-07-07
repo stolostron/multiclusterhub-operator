@@ -1,9 +1,5 @@
 # Copyright Contributors to the Open Cluster Management project
 
--include Makefile.dev
--include test/function_tests/Makefile
--include test/mock-component-image/Makefile
-
 # VERSION defines the project version for the bundle.
 # Update this value when you upgrade the version of your project.
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
@@ -95,7 +91,7 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
-test: manifests generate fmt vet ## Run tests.
+test: update-crds manifests generate fmt vet ## Run tests.
 	mkdir -p ${ENVTEST_ASSETS_DIR}
 	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.8.3/hack/setup-envtest.sh
 	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test $(shell go list ./... | grep -E -v "test") -coverprofile cover.out
@@ -207,3 +203,8 @@ catalog-build: opm ## Build a catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
+
+
+-include Makefile.dev
+-include test/function_tests/Makefile
+-include test/mock-component-image/Makefile

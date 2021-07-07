@@ -4,9 +4,21 @@
 package controllers
 
 import (
+	"context"
+	"fmt"
+	"reflect"
+	"time"
+
 	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
+	utils "github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
+	resources "github.com/open-cluster-management/multiclusterhub-operator/test/unit-tests"
+
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var (
@@ -45,6 +57,70 @@ var (
 		Namespace: mch_namespace,
 	}
 )
+
+const (
+	timeout  = time.Second * 10
+	duration = time.Second * 10
+	interval = time.Millisecond * 250
+)
+
+func ApplyPrereqs() {
+	By("Applying Namespace")
+	ctx := context.Background()
+
+	Expect(k8sClient.Create(ctx, resources.OCMNamespace)).Should(Succeed())
+}
+
+var _ = Describe("MultiClusterHub controller", func() {
+	// Define utility constants for object names and testing timeouts/durations and intervals.
+
+	Context("When updating Multiclusterhub status", func() {
+		It("Should get to a running state", func() {
+			By("By creating a new Multiclusterhub")
+			ctx := context.Background()
+
+			ApplyPrereqs()
+			Expect(k8sClient.Create(ctx, resources.EmptyMCH)).Should(Succeed())
+
+			// Ensures MCH is Created
+			mchLookupKey := types.NamespacedName{Name: resources.MulticlusterhubName, Namespace: resources.MulticlusterhubNamespace}
+			createdMCH := &operatorsv1.MultiClusterHub{}
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, mchLookupKey, createdMCH)
+				return err == nil
+			}, timeout, interval).Should(BeTrue())
+
+			By("- Ensuring Defaults are set")
+			// Ensures defaults are set
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, mchLookupKey, createdMCH)
+				Expect(err).Should(BeNil())
+				return reflect.DeepEqual(createdMCH.Spec.Ingress.SSLCiphers, utils.DefaultSSLCiphers) && createdMCH.Spec.AvailabilityConfig == operatorsv1.HAHigh
+			}, timeout, interval).Should(BeTrue())
+
+			// Ensure Deployments
+			Eventually(func() bool {
+				deploymentReferences := utils.GetDeployments(createdMCH)
+				result := true
+				for _, deploymentReference := range deploymentReferences {
+					deployment := &appsv1.Deployment{}
+					err := k8sClient.Get(ctx, deploymentReference, deployment)
+					if err != nil {
+						fmt.Println(err.Error())
+						result = false
+					}
+				}
+				return result
+			}, timeout, interval).Should(BeTrue())
+
+			Eventually(func() bool {
+				return createdMCH.Status.Phase == operatorsv1.HubRunning
+			}, timeout, interval).Should(BeTrue())
+
+		})
+	})
+
+})
 
 // func Test_ReconcileMultiClusterHub(t *testing.T) {
 

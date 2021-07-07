@@ -11,7 +11,9 @@ metadata:
             "name": "multiclusterhub",
             "namespace": "open-cluster-management"
           },
-          "spec": {}
+          "spec": {
+            "imagePullSecret": "multiclusterhub-operator-pull-secret"
+          }
         }
       ]
     capabilities: Basic Install
@@ -382,6 +384,7 @@ spec:
           - subjectaccessreviews
           - validatingwebhookconfigurations
           verbs:
+          - list
           - watch
         - apiGroups:
           - ""

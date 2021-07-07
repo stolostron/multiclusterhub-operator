@@ -108,7 +108,7 @@ func (r *MultiClusterHubReconciler) ensureRemovalsGone(m *operatorsv1.MultiClust
 // uninstall return true if resource does not exist and returns an error if a GET or DELETE errors unexpectedly. A false response without error
 // means the resource is in the process of deleting.
 func (r *MultiClusterHubReconciler) uninstall(m *operatorsv1.MultiClusterHub, u *unstructured.Unstructured) (bool, error) {
-	obLog := r.log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName(), "Kind", u.GetKind())
+	obLog := r.Log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName(), "Kind", u.GetKind())
 
 	err := r.Client.Get(context.TODO(), types.NamespacedName{
 		Name:      u.GetName(),

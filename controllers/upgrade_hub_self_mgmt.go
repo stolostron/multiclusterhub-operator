@@ -230,24 +230,24 @@ func ensureAppmgrPodImage(c client.Client, imageValue string) error {
 // BeginEnsuringHubIsUpgradeable - beginning hook for ensuring the hub is upgradeable
 // will make sure appmgr pod on hub is using the right image
 func (r *MultiClusterHubReconciler) BeginEnsuringHubIsUpgradeable(mch *operatorsv1.MultiClusterHub) (ctrl.Result, error) {
-	r.log.Info("Beginning upgrade specific logic")
+	r.Log.Info("Beginning upgrade specific logic")
 	appmgrImageKey := "multicluster_operators_subscription"
 
 	// get and sync klusterletaddonconfig, will ignore if not found
-	r.log.Info("Stopping local-cluster klusterletaddonconfig")
+	r.Log.Info("Stopping local-cluster klusterletaddonconfig")
 	if err := ensureKlusterletAddonConfigPausedStatus(
 		r.Client,
 		KlusterletAddonConfigName,
 		ManagedClusterName,
 		true,
 	); err != nil && !errors.IsNotFound(err) {
-		r.log.Error(err, "failed to pause klusterletaddonconfig")
+		r.Log.Error(err, "failed to pause klusterletaddonconfig")
 		return ctrl.Result{}, err
 	}
 
 	image, err := r.getImageFromManifestByKey(mch, appmgrImageKey)
 	if err != nil {
-		r.log.Error(err, "failed to get the image for appmgr")
+		r.Log.Error(err, "failed to get the image for appmgr")
 		return ctrl.Result{}, err
 	}
 
@@ -257,12 +257,12 @@ func (r *MultiClusterHubReconciler) BeginEnsuringHubIsUpgradeable(mch *operators
 		appmgrImageKey,
 		image,
 	); err != nil && !errors.IsNotFound(err) {
-		r.log.Error(err, "failed to sync appmgr ManifestWork with current image")
+		r.Log.Error(err, "failed to sync appmgr ManifestWork with current image")
 		return ctrl.Result{}, err
 	}
-	r.log.Info(fmt.Sprintf("Check if the appmgr pod is using the correct image: %s", image))
+	r.Log.Info(fmt.Sprintf("Check if the appmgr pod is using the correct image: %s", image))
 	if err := ensureAppmgrPodImage(r.Client, image); err != nil {
-		r.log.Error(err, "failed to check if appmgr is using the correct image")
+		r.Log.Error(err, "failed to check if appmgr is using the correct image")
 		return ctrl.Result{}, err
 	}
 
@@ -271,7 +271,7 @@ func (r *MultiClusterHubReconciler) BeginEnsuringHubIsUpgradeable(mch *operators
 
 // getImageFromManifestByKey - Returns image associated with key for desiredVersion of MCH (retrieves new image)
 func (r *MultiClusterHubReconciler) getImageFromManifestByKey(mch *operatorsv1.MultiClusterHub, key string) (string, error) {
-	r.log.Info(fmt.Sprintf("Checking for image associated with key: %s", key))
+	r.Log.Info(fmt.Sprintf("Checking for image associated with key: %s", key))
 	configmap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("mch-image-manifest-%s", version.Version),

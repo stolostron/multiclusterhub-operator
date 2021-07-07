@@ -24,17 +24,10 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
-	corev1 "k8s.io/api/core/v1"
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-
-	"k8s.io/apimachinery/pkg/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	clustermanager "github.com/open-cluster-management/api/operator/v1"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
+
 	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis"
 	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis"
 	operatorv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
@@ -42,9 +35,15 @@ import (
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/webhook"
 	netv1 "github.com/openshift/api/config/v1"
 	hive "github.com/openshift/hive/apis/hive/v1"
-
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
+
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -58,21 +57,19 @@ func init() {
 
 	utilruntime.Must(operatorv1.AddToScheme(scheme))
 
-	utilruntime.Must(corev1.AddToScheme(scheme))
-
-	utilruntime.Must(clustermanager.AddToScheme(scheme))
+	utilruntime.Must(appsubv1.AddToScheme(scheme))
 
 	utilruntime.Must(apiregistrationv1.AddToScheme(scheme))
+
+	utilruntime.Must(hive.AddToScheme(scheme))
+
+	utilruntime.Must(clustermanager.AddToScheme(scheme))
 
 	utilruntime.Must(apixv1.AddToScheme(scheme))
 
 	utilruntime.Must(netv1.AddToScheme(scheme))
 
-	utilruntime.Must(appsubv1.AddToScheme(scheme))
-
 	utilruntime.Must(subrelv1.AddToScheme(scheme))
-
-	utilruntime.Must(hive.AddToScheme(scheme))
 
 	utilruntime.Must(clustermanager.AddToScheme(scheme))
 
@@ -97,13 +94,13 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   8443,
-		HealthProbeBindAddress: probeAddr,
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "multicloudhub-operator-lock",
-		// LeaderElectionNamespace: "open-cluster-management", // Uncomment this line to run operator locally using `make run`
+		Scheme:                  scheme,
+		MetricsBindAddress:      metricsAddr,
+		Port:                    8443,
+		HealthProbeBindAddress:  probeAddr,
+		LeaderElection:          enableLeaderElection,
+		LeaderElectionID:        "multicloudhub-operator-lock",
+		LeaderElectionNamespace: "open-cluster-management", // Uncomment this line to run operator locally. https://sdk.operatorframework.io/docs/building-operators/golang/advanced-topics/#leader-with-lease
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -113,6 +110,7 @@ func main() {
 	if err = (&controllers.MultiClusterHubReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
+		Log:    ctrl.Log.WithName("Controller").WithName("Multiclusterhub"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "MultiClusterHub")
 		os.Exit(1)

@@ -110,7 +110,7 @@ func getKlusterletAddonConfig() *unstructured.Unstructured {
 
 func (r *MultiClusterHubReconciler) ensureHubIsImported(m *operatorsv1.MultiClusterHub) (ctrl.Result, error) {
 	if !r.ComponentsAreRunning(m) {
-		r.log.Info("Waiting for mch phase to be 'running' before importing hub cluster")
+		r.Log.Info("Waiting for mch phase to be 'running' before importing hub cluster")
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
 
@@ -121,7 +121,7 @@ func (r *MultiClusterHubReconciler) ensureHubIsImported(m *operatorsv1.MultiClus
 		ManagedClusterName,
 		false,
 	); err != nil && !errors.IsNotFound(err) {
-		r.log.Error(err, "failed to resume klusterletaddonconfig")
+		r.Log.Error(err, "failed to resume klusterletaddonconfig")
 	}
 
 	result, err := r.ensureManagedCluster(m)
@@ -137,7 +137,7 @@ func (r *MultiClusterHubReconciler) ensureHubIsImported(m *operatorsv1.MultiClus
 }
 
 func (r *MultiClusterHubReconciler) ensureHubIsExported(m *operatorsv1.MultiClusterHub) (ctrl.Result, error) {
-	r.log.Info("Ensuring managed cluster hub resources are removed")
+	r.Log.Info("Ensuring managed cluster hub resources are removed")
 
 	result, err := r.removeManagedCluster(m)
 	if result != (ctrl.Result{}) {
@@ -165,7 +165,7 @@ func (r *MultiClusterHubReconciler) ensureHubNamespaceIsRemoved(m *operatorsv1.M
 		// Namespace is removed
 		return ctrl.Result{}, nil
 	}
-	r.log.Info(fmt.Sprintf("Waiting on namespace: %s to be removed", HubNamespace.GetName()))
+	r.Log.Info(fmt.Sprintf("Waiting on namespace: %s to be removed", HubNamespace.GetName()))
 	return ctrl.Result{RequeueAfter: resyncPeriod}, fmt.Errorf("Waiting on namespace: %s to be removed", HubNamespace.GetName())
 }
 
@@ -180,15 +180,15 @@ func (r *MultiClusterHubReconciler) ensureManagedCluster(m *operatorsv1.MultiClu
 
 		err = r.Client.Create(context.TODO(), newManagedCluster)
 		if err != nil {
-			r.log.Error(err, "Failed to create managedcluster resource")
+			r.Log.Error(err, "Failed to create managedcluster resource")
 			return ctrl.Result{}, err
 		}
 		// ManagedCluster was successful
-		r.log.Info("Created a new ManagedCluster")
+		r.Log.Info("Created a new ManagedCluster")
 		return ctrl.Result{}, nil
 	} else if err != nil {
 		// Error that isn't due to the managedcluster not existing
-		r.log.Error(err, "Failed to get ManagedCluster")
+		r.Log.Error(err, "Failed to get ManagedCluster")
 		return ctrl.Result{}, err
 	}
 
@@ -206,7 +206,7 @@ func (r *MultiClusterHubReconciler) ensureManagedCluster(m *operatorsv1.MultiClu
 
 	err = r.Client.Update(context.TODO(), managedCluster)
 	if err != nil {
-		r.log.Error(err, "Failed to update managedcluster resource")
+		r.Log.Error(err, "Failed to update managedcluster resource")
 		return ctrl.Result{}, err
 	}
 
@@ -228,7 +228,7 @@ func (r *MultiClusterHubReconciler) removeManagedCluster(m *operatorsv1.MultiClu
 
 	err = r.Client.Delete(context.TODO(), getManagedCluster())
 	if err != nil && !errors.IsNotFound(err) {
-		r.log.Error(err, "Error deleting managedcluster")
+		r.Log.Error(err, "Error deleting managedcluster")
 		return ctrl.Result{}, err
 	}
 	return ctrl.Result{}, nil
@@ -245,11 +245,11 @@ func (r *MultiClusterHubReconciler) ensureKlusterletAddonConfig(m *operatorsv1.M
 
 		err = r.Client.Create(context.TODO(), newKlusterletaddonconfig)
 		if err != nil {
-			r.log.Error(err, "Failed to create klusterletaddonconfig resource")
+			r.Log.Error(err, "Failed to create klusterletaddonconfig resource")
 			return ctrl.Result{}, err
 		}
 		// KlusterletAddonConfig was successful
-		r.log.Info("Created a new KlusterletAddonConfig")
+		r.Log.Info("Created a new KlusterletAddonConfig")
 		return ctrl.Result{}, nil
 	}
 
@@ -257,7 +257,7 @@ func (r *MultiClusterHubReconciler) ensureKlusterletAddonConfig(m *operatorsv1.M
 
 	err = r.Client.Update(context.TODO(), klusterletaddonconfig)
 	if err != nil {
-		r.log.Error(err, "Failed to update klusterletaddonconfig resource")
+		r.Log.Error(err, "Failed to update klusterletaddonconfig resource")
 		return ctrl.Result{}, err
 	}
 
@@ -269,25 +269,25 @@ func (r *MultiClusterHubReconciler) ensureManagedClusterIsRunning(m *operatorsv1
 		return nil, nil
 	}
 	if !r.ComponentsAreRunning(m) {
-		r.log.Info("Waiting for mch phase to be 'running' before ensuring hub is running")
+		r.Log.Info("Waiting for mch phase to be 'running' before ensuring hub is running")
 		return nil, fmt.Errorf("Waiting for mch phase to be 'running' before ensuring hub is running")
 	}
 
 	managedCluster := getManagedCluster()
 	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: ManagedClusterName}, managedCluster)
 	if err != nil {
-		r.log.Info("Failed to find managedcluster resource")
+		r.Log.Info("Failed to find managedcluster resource")
 		return nil, err
 	}
 
 	status, ok := managedCluster.Object["status"].(map[string]interface{})
 	if !ok {
-		r.log.Info("Managedcluster status is not present")
+		r.Log.Info("Managedcluster status is not present")
 		return nil, fmt.Errorf("Managedcluster status is not present")
 	}
 	conditions, ok := status["conditions"].([]interface{})
 	if !ok {
-		r.log.Info("Managedcluster status conditions are not present")
+		r.Log.Info("Managedcluster status conditions are not present")
 		return nil, fmt.Errorf("Managedcluster status conditions are not present")
 	}
 
