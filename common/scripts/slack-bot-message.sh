@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) 2020 Red Hat, Inc.
+# Copyright Contributors to the Open Cluster Management project
 
 RESULTS_PATH=$1
 RES=$(cat $RESULTS_PATH)
