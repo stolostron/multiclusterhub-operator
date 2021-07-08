@@ -15,6 +15,7 @@ RUN chmod 777 localhost.key
 
 COPY . .
 
+COPY ./bin/kubectl /
 COPY ./bin/controller /
 COPY ./bin/proxyserver /
 COPY ./bin/webhook /
