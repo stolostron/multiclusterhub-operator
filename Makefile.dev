@@ -27,6 +27,16 @@ copyright:
 update-version:
 	./hack/scripts/update-version.sh <START_VERSION> <UPDATE_VERSION>
 
+prep-mock-install:
+	export PRODUCT_VERSION=$(shell cat COMPONENT_VERSION); \
+	make mock-build-image PRODUCT_VERSION=$(VERSION) MOCK_IMAGE_REGISTRY=$(REGISTRY) MOCK_IMAGE_SHA="sha256:test"
+	cp test/mock-component-image/results/* ./bin/image-manifests
+	echo "mock install prepped!"
+
+# different from `in-cluster-install` (call update-crds, no secrets, no observability-crd)
+mock-install: prereqs subscriptions update-crds  docker-build docker-push deploy
+
+
 ## Ensure the quay repos are open or pull secrets are configured
 full-catalog-install: manifests generate bundle bundle-build bundle-push catalog-build catalog-push prereqs subscriptions catalog
 

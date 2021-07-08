@@ -89,7 +89,7 @@ done
 oc project
 
 make prep-mock-install MOCK_IMAGE_REGISTRY='quay.io/open-cluster-management' MOCK_IMAGE_NAME='multiclusterhub-operator' MOCK_IMAGE_TAG='mock'
-make mock-install HUB_IMAGE_REGISTRY='quay.io/open-cluster-management' VERSION='mock-img' MOCK_IMAGE_REGISTRY='quay.io/open-cluster-management' MOCK_IMAGE_NAME='multiclusterhub-operator' MOCK_IMAGE_TAG='mock'
+make mock-install REGISTRY='quay.io/open-cluster-management' VERSION='mock-img' MOCK_IMAGE_REGISTRY='quay.io/open-cluster-management' MOCK_IMAGE_NAME='multiclusterhub-operator' MOCK_IMAGE_TAG='mock'
 make ft-install MOCK=true
 
 echo "Deleting clusterclaim ..."
