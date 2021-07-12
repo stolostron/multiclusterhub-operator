@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package multiclusterhub
 
 import (
@@ -174,18 +173,30 @@ func (r *ReconcileMultiClusterHub) ensureManagedCluster(m *operatorsv1.MultiClus
 
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: ManagedClusterName}, managedCluster)
 	if err != nil && errors.IsNotFound(err) {
-		// Creating new managedCluster
-		newManagedCluster := getManagedCluster()
-		utils.AddInstallerLabel(newManagedCluster, m.GetName(), m.GetNamespace())
+		localNS := getHubNamespace()
+		localNS.SetLabels(getInstallerLabels(m))
+		err := r.client.Get(context.TODO(), types.NamespacedName{Name: localNS.GetName()}, localNS)
+		if err == nil {
+			// Wait for local-cluster ns to be deleted before creating managedCluster
+			log.Info("Waiting on namespace to be removed before creating managedCluster", "Namespace", localNS.GetName())
+			return &reconcile.Result{RequeueAfter: resyncPeriod}, nil
+		} else if errors.IsNotFound(err) {
+			// Namespace is removed. Creating new managedCluster
+			newManagedCluster := getManagedCluster()
+			utils.AddInstallerLabel(newManagedCluster, m.GetName(), m.GetNamespace())
 
-		err = r.client.Create(context.TODO(), newManagedCluster)
-		if err != nil {
-			log.Error(err, "Failed to create managedcluster resource")
+			err = r.client.Create(context.TODO(), newManagedCluster)
+			if err != nil {
+				log.Error(err, "Failed to create managedcluster resource")
+				return &reconcile.Result{}, err
+			}
+			log.Info("Created a new ManagedCluster")
+			return nil, nil
+		} else {
+			log.Error(err, "Failed to get local-cluster namespace")
 			return &reconcile.Result{}, err
 		}
-		// ManagedCluster was successful
-		log.Info("Created a new ManagedCluster")
-		return nil, nil
+
 	} else if err != nil {
 		// Error that isn't due to the managedcluster not existing
 		log.Error(err, "Failed to get ManagedCluster")
