@@ -9,7 +9,7 @@ spec:
   displayName: MultiClusterHub Operator
   publisher: Red Hat
   sourceType: grpc
-  image: quay.io/open-cluster-management/multiclusterhub-operator-catalog:v2.3.0
+  image: quay.io/open-cluster-management/multiclusterhub-operator-catalog:v2.4.0
   updateStrategy:
     registryPoll:
       interval: 10m

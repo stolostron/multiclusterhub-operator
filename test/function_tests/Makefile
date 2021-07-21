@@ -2,7 +2,7 @@
 
 SUBSCRIPTION_NAME := "advanced-cluster-management"
 PULL_SECRET_NAME := "multiclusterhub-operator-pull-secret"
-CHANNEL := "release-2.3"
+CHANNEL := "release-2.4"
 SOURCE_NAMESPACE := "open-cluster-management"
 SOURCE_NAME := "acm-custom-registry"
 
@@ -42,7 +42,7 @@ ft-downstream-update:
 		--env name=$(SUBSCRIPTION_NAME) \
 		--env TEST_MODE="update" \
 		--env startVersion="2.1.0" \
-		--env updateVersion="2.3.0" \
+		--env updateVersion="2.4.0" \
 		--volume ~/.kube/config:/opt/.kube/config \
 		$(REGISTRY)/$(IMG)-tests:$(VERSION)
 
@@ -63,7 +63,7 @@ ft-update:
 		name=$(SUBSCRIPTION_NAME) \
 		TEST_MODE="update" \
 		startVersion="2.1.0" \
-		updateVersion="2.3.0";	ginkgo -tags functional -v --slowSpecThreshold=300 test/function_tests/multiclusterhub_update_test
+		updateVersion="2.4.0";	ginkgo -tags functional -v --slowSpecThreshold=300 test/function_tests/multiclusterhub_update_test
 
 ## Build the MCH functional test image
 test-image: deps
@@ -77,7 +77,7 @@ test-image: deps
 # Usage: common/scripts/bundle-acm.sh "<Starting Snapshot>" <Update Snapshot> <Start Version> <Update Version>
 ## Creates an index image to test updates
 test-update-image:
-	bash common/scripts/bundle-acm.sh "2.1.0-SNAPSHOT-2020-08-21-16-48-23" "2.3.0-snapshot-here" "2.1.0" "2.3.0"
+	bash common/scripts/bundle-acm.sh "2.1.0-SNAPSHOT-2020-08-21-16-48-23" "2.4.0-snapshot-here" "2.1.0" "2.4.0"
 
 acm-index-install: ns secrets og test-update-image
 	# Run `make  test-update-image` to generate a new index if necessary
