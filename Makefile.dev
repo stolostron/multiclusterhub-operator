@@ -36,6 +36,9 @@ prep-mock-install:
 # different from `in-cluster-install` (call update-crds, no secrets, no observability-crd)
 mock-install: prereqs subscriptions update-crds  docker-build docker-push deploy
 
+cr: 
+	oc apply -k config/samples
+
 
 ## Ensure the quay repos are open or pull secrets are configured
 full-catalog-install: manifests generate bundle bundle-build bundle-push catalog-build catalog-push prereqs subscriptions catalog
