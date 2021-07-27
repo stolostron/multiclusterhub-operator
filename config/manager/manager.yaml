@@ -34,7 +34,7 @@ spec:
         args:
         - --leader-elect
         image: controller:latest
-        name: manager
+        name: multiclusterhub-operator
         securityContext:
           allowPrivilegeEscalation: false
         livenessProbe:
