@@ -1,206 +1,210 @@
 # Copyright Contributors to the Open Cluster Management project
 
-# GITHUB_USER containing '@' char must be escaped with '%40'
-GITHUB_USER := $(shell echo $(GITHUB_USER) | sed 's/@/%40/g')
-GITHUB_TOKEN ?=
-
--include test/Makefile
--include mock-component-image/Makefile
--include Makefile.prow
-
-BUILD_DIR ?= build
-
+# VERSION defines the project version for the bundle.
+# Update this value when you upgrade the version of your project.
+# To re-generate a bundle for another specific version without changing the standard setup, you can:
+# - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
+# - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
 VERSION ?= 2.4.0
-IMG ?= multiclusterhub-operator
-SECRET_REGISTRY ?= quay.io
-HUB_IMAGE_REGISTRY ?= quay.io/open-cluster-management
-BUNDLE_REGISTRY ?= quay.io/open-cluster-management
-GIT_VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
-                 git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8)
 
-DOCKER_USER := $(shell echo $(DOCKER_USER))
-DOCKER_PASS := $(shell echo $(DOCKER_PASS))
-NAMESPACE ?= open-cluster-management
-export ACM_NAMESPACE :=$(NAMESPACE)
-
-# For OCP OLM
-export IMAGE ?= $(shell echo $(HUB_IMAGE_REGISTRY)/$(IMG):$(VERSION))
-export CSV_CHANNEL ?= alpha
-export CSV_VERSION ?= 2.4.0
-
-
-export PROJECT_DIR = $(shell 'pwd')
-export GOPACKAGES = $(shell go list ./... | grep -E -v "manager|test|apis|operators|channel|controller$|version")
-export COMPONENT_SCRIPTS_PATH = $(shell 'pwd')/cicd-scripts
-
-# Use podman if available, otherwise use docker
-ifeq ($(CONTAINER_ENGINE),)
-	CONTAINER_ENGINE = $(shell podman version > /dev/null && echo podman || echo docker)
+# CHANNELS define the bundle channels used in the bundle.
+# Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
+# To re-generate a bundle for other specific channels without changing the standard setup, you can:
+# - use the CHANNELS as arg of the bundle target (e.g make bundle CHANNELS=candidate,fast,stable)
+# - use environment variables to overwrite this value (e.g export CHANNELS="candidate,fast,stable")
+CHANNELS = "stable"
+ifneq ($(origin CHANNELS), undefined)
+BUNDLE_CHANNELS := --channels=$(CHANNELS)
 endif
 
-.PHONY: lint image clean
+# DEFAULT_CHANNEL defines the default channel used in the bundle.
+# Add a new line here if you would like to change its default config. (E.g DEFAULT_CHANNEL = "stable")
+# To re-generate a bundle for any other default channel without changing the default setup, you can:
+# - use the DEFAULT_CHANNEL as arg of the bundle target (e.g make bundle DEFAULT_CHANNEL=stable)
+# - use environment variables to overwrite this value (e.g export DEFAULT_CHANNEL="stable")
+DEFAULT_CHANNEL = "stable"
+ifneq ($(origin DEFAULT_CHANNEL), undefined)
+BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
+endif
+BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
-all: clean lint test image
+# IMAGE_TAG_BASE defines the docker.io namespace and part of the image name for remote images.
+# This variable is used to construct full image tags for bundle and catalog images.
+#
+# For example, running 'make bundle-build bundle-push catalog-build catalog-push' will build and push both
+# operator.open-cluster-management.io/multiclusterhub-operator-bundle:$VERSION and operator.open-cluster-management.io/multiclusterhub-operator-catalog:$VERSION.
+IMAGE_TAG_BASE ?= quay.io/open-cluster-management/multiclusterhub-operator
 
-include common/Makefile.common.mk
+# BUNDLE_IMG defines the image:tag used for the bundle.
+# You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
+BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 
-lint: lint-all
+# Image URL to use all building/pushing image targets
+REGISTRY ?= quay.io/open-cluster-management
+IMG ?= $(REGISTRY)/multiclusterhub-operator:$(VERSION)
+# Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
+CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 
-## Run unit-tests
-test:
-	./cicd-scripts/run-unit-tests.sh
+# Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
+ifeq (,$(shell go env GOBIN))
+GOBIN=$(shell go env GOPATH)/bin
+else
+GOBIN=$(shell go env GOBIN)
+endif
 
-## Build the MultiClusterHub operator image
-image:
-	./cicd-scripts/build.sh "$(HUB_IMAGE_REGISTRY)/$(IMG):$(VERSION)"
+# Setting SHELL to bash allows bash commands to be executed by recipes.
+# This is a requirement for 'setup-envtest.sh' in the test target.
+# Options are set to exit when a recipe line exits non-zero or a piped command fails.
+SHELL = /usr/bin/env bash -o pipefail
+.SHELLFLAGS = -ec
 
-## Push the MultiClusterHub operator image
-push:
-	./common/scripts/push.sh "$(HUB_IMAGE_REGISTRY)/$(IMG):$(VERSION)"
+all: build
 
-## Developer install script to automate full MCH operator and CR installation
-install:
-	./common/scripts/tests/install.sh
+##@ General
 
-uninstall-cr:
-	bash ./test/clean-up.sh
+# The help target prints out all targets with their descriptions organized
+# beneath their categories. The categories are represented by '##@' and the
+# target descriptions by '##'. The awk commands is responsible for reading the
+# entire set of makefiles included in this invocation, looking for lines of the
+# file as xyz: ## something, and then pretty-format the target and help. Then,
+# if there's a line with ##@ something, that gets pretty-printed as a category.
+# More info on the usage of ANSI control characters for terminal formatting:
+# https://en.wikipedia.org/wiki/ANSI_escape_code#SGR_parameters
+# More info on the awk command:
+# http://linuxcommand.org/lc3_adv_awk.php
 
-## Fully uninstall the MCH CR and operator
-uninstall: uninstall-cr
-	bash common/scripts/uninstall.sh
+help: ## Display this help.
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
-## Create secrets for pulling images
-secrets: 
-	@oc create secret docker-registry multiclusterhub-operator-pull-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
-	@oc create secret docker-registry quay-secret --docker-server=$(SECRET_REGISTRY) --docker-username=$(DOCKER_USER) --docker-password=$(DOCKER_PASS) || true
+##@ Development
 
-## Uninstall and reinstall MCH Operator
-reinstall: uninstall cm-install
+manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=multiclusterhub-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
-## Subscribe is an alias for the configmap installation method
-subscribe: cm-install
+generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
-## Install required dependancies
-deps:
-	./cicd-scripts/install-dependencies.sh
-	go mod tidy
+fmt: ## Run go fmt against code.
+	go fmt ./...
 
-## Get logs of MCH Operator
-logs:
-	@oc logs -f $(shell oc get pod -l name=multiclusterhub-operator -o jsonpath="{.items[0].metadata.name}")
+vet: ## Run go vet against code.
+	go vet ./...
 
-## Update the MultiClusterHub Operator Image
-update-image:
-	operator-sdk build $(HUB_IMAGE_REGISTRY)/multiclusterhub-operator:$(VERSION) --go-build-args "-o build/_output/bin/multiclusterhub-operator"
-	docker push $(HUB_IMAGE_REGISTRY)/multiclusterhub-operator:$(VERSION)
+ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
+test: update-crds manifests generate fmt vet ## Run tests.
+	mkdir -p ${ENVTEST_ASSETS_DIR}
+	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.8.3/hack/setup-envtest.sh
+	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test $(shell go list ./... | grep -E -v "test") -coverprofile cover.out
 
-## Apply Observability CR
-observability-cr:
-	curl -H "Authorization: token $(shell echo $(GITHUB_TOKEN))" \
-		-H 'Accept: application/vnd.github.v3.raw' \
-		-L https://raw.githubusercontent.com/open-cluster-management/multicluster-monitoring-operator/master/deploy/crds/observability.open-cluster-management.io_v1beta1_multiclusterobservability_cr.yaml | oc apply -f -
+##@ Build
 
-## Apply Observability CRD
-observability-crd:
-	curl -H "Authorization: token $(shell echo $(GITHUB_TOKEN))" \
-		-H 'Accept: application/vnd.github.v3.raw' \
-		-L https://raw.githubusercontent.com/open-cluster-management/multicluster-observability-operator/main/operators/multiclusterobservability/bundle/manifests/observability.open-cluster-management.io_multiclusterobservabilities.yaml | oc apply -f -
-		
-## Operator-sdk generate CRD(s)
-crd:
-	operator-sdk generate crds --crd-version=v1
+build: generate fmt vet ## Build manager binary.
+	go build -o bin/multiclusterhub-operator main.go
 
-## Operator-sdk regenerate CSV
-csv:
-	operator-sdk generate csv --operator-name=multiclusterhub-operator
+run: manifests generate fmt vet ## Run a controller from your host.
+	go run ./main.go
 
-## Apply the MultiClusterHub CR
-cr:
-	cat deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml | yq w - "spec.imagePullSecret" "quay-secret" | oc apply -f -
+docker-build: ## test ## Build docker image with the manager.
+	docker build -t ${IMG} .
 
-## Apply the default OperatorGroup
-og:
-	oc apply -f build/operatorgroup.yaml
+docker-push: ## Push docker image with the manager.
+	docker push ${IMG}
 
-## Apply and switch to the open-cluster-management namesapce
-ns:
-	oc apply -f build/namespace.yaml
-	oc project open-cluster-management
+##@ Deployment
 
-## Apply subscriptions normally created by OLM
-subscriptions:
-	oc apply -k build/subscriptions
+install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
+	$(KUSTOMIZE) build config/crd | kubectl apply -f -
 
-## Run operator locally outside the cluster
-local-install: ns secrets og subscriptions observability-crd
-	oc apply -f deploy/crds/operator.open-cluster-management.io_multiclusterhubs_crd.yaml
-	OPERATOR_NAME=multiclusterhub-operator \
-	TEMPLATES_PATH="$(shell pwd)/templates" \
-	MANIFESTS_PATH="$(shell pwd)/image-manifests" \
-	CRDS_PATH="$(shell pwd)/crds" \
-	POD_NAMESPACE="open-cluster-management" \
-	operator-sdk run local --watch-namespace=open-cluster-management --kubeconfig=$(KUBECONFIG)
+uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
+	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
-## Run as a Deployment inside the cluster
-in-cluster-install: ns secrets og update-image subscriptions observability-crd
-	oc apply -f deploy/crds/operator.open-cluster-management.io_multiclusterhubs_crd.yaml
-	VERSION="${VERSION}" yq eval '.images.[0].newTag = env(VERSION)' -i deploy/kustomization.yaml
-	oc apply -k deploy
-	
-## Creates a configmap index and catalogsource that it subscribes to
-cm-install: ns secrets og csv update-image subscriptions observability-crd
-	bash common/scripts/generate-cm-index.sh ${VERSION} ${HUB_IMAGE_REGISTRY}
-	oc apply -k build/configmap-install
+deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
-## Generates an index image and catalogsource that serves it
-index-install: ns secrets og csv update-image subscriptions observability-crd
-	oc patch serviceaccount default -n open-cluster-management -p '{"imagePullSecrets": [{"name": "quay-secret"}]}'
-	bash common/scripts/generate-index.sh ${VERSION} ${HUB_IMAGE_REGISTRY}
-	oc apply -k build/index-install/non-composite
+undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
+	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
 
-## Apply BMA CR
-bma-cr:
-	curl -H "Authorization: token $(shell echo $(GITHUB_TOKEN))" \
-		-H 'Accept: application/vnd.github.v3.raw' \
-		-L https://raw.githubusercontent.com/open-cluster-management/demo-subscription-gitops/master/bma/BareMetalAssets/dc01r3c3b2-powerflex390.yaml | oc apply -f -
+CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
+controller-gen: ## Download controller-gen locally if necessary.
+	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1)
 
-time:
-	bash common/scripts/timer.sh
+KUSTOMIZE = $(shell pwd)/bin/kustomize
+kustomize: ## Download kustomize locally if necessary.
+	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
 
-update-version:
-	./common/scripts/update-version.sh $(OLD_VERSION) $(NEW_VERSION)
+# go-get-tool will 'go get' any package $2 and install it to $1.
+PROJECT_DIR := $(shell pwd)
+define go-get-tool
+@[ -f $(1) ] || { \
+set -e ;\
+TMP_DIR=$$(mktemp -d) ;\
+cd $$TMP_DIR ;\
+go mod init tmp ;\
+echo "Downloading $(2)" ;\
+GOBIN=$(PROJECT_DIR)/bin go get $(2) ;\
+rm -rf $$TMP_DIR ;\
+}
+endef
 
-update-crds:
-	bash common/scripts/gather-crds.sh
+.PHONY: bundle
+bundle: manifests kustomize ## Generate bundle manifests and metadata, then validate generated files.
+	operator-sdk generate kustomize manifests -q
+	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
+	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+	operator-sdk bundle validate ./bundle
 
-update-manifest:
-	bash common/scripts/update-image-manifest.sh
+.PHONY: bundle-build
+bundle-build: ## Build the bundle image.
+	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
-set-copyright:
-	@bash ./cicd-scripts/set-copyright.sh
+.PHONY: bundle-push
+bundle-push: ## Push the bundle image.
+	$(MAKE) docker-push IMG=$(BUNDLE_IMG)
 
-cleanup-mock-image:
-	make mock-cleanup
+.PHONY: opm
+OPM = ./bin/opm
+opm: ## Download opm locally if necessary.
+ifeq (,$(wildcard $(OPM)))
+ifeq (,$(shell which opm 2>/dev/null))
+	@{ \
+	set -e ;\
+	mkdir -p $(dir $(OPM)) ;\
+	OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
+	curl -sSLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v1.15.1/$${OS}-$${ARCH}-opm ;\
+	chmod +x $(OPM) ;\
+	}
+else
+OPM = $(shell which opm)
+endif
+endif
 
-prep-mock-install:
-	export PRODUCT_VERSION=$(shell cat COMPONENT_VERSION); \
-	make mock-build-image
-	cp mock-component-image/results/* ./image-manifests
-	echo "mock install prepped!"
+# A comma-separated list of bundle images (e.g. make catalog-build BUNDLE_IMGS=example.com/operator-bundle:v0.1.0,example.com/operator-bundle:v0.2.0).
+# These images MUST exist in a registry and be pull-able.
+BUNDLE_IMGS ?= $(BUNDLE_IMG)
 
-# different from `in-cluster-install` (call update-crds, no secrets, no observability-crd)
-mock-install: ns og subscriptions update-crds update-image
-	oc apply -f deploy/crds/operator.open-cluster-management.io_multiclusterhubs_crd.yaml
-	VERSION="${VERSION}" yq eval '.images.[0].newTag = env(VERSION)' -i deploy/kustomization.yaml
-	MOCK_REGISTRY="${HUB_IMAGE_REGISTRY}/${IMG}" yq eval '.images.[0].newName = env(MOCK_REGISTRY)' -i deploy/kustomization.yaml
-	oc apply -k deploy
+# The image tag given to the resulting catalog image (e.g. make catalog-build CATALOG_IMG=example.com/operator-catalog:v0.2.0).
+CATALOG_IMG ?= $(IMAGE_TAG_BASE)-catalog:v$(VERSION)
+
+# Set CATALOG_BASE_IMG to an existing catalog image tag to add $BUNDLE_IMGS to that image.
+ifneq ($(origin CATALOG_BASE_IMG), undefined)
+FROM_INDEX_OPT := --from-index $(CATALOG_BASE_IMG)
+endif
+
+# Build a catalog image by adding bundle images to an empty catalog using the operator package manager tool, 'opm'.
+# This recipe invokes 'opm' in 'semver' bundle add mode. For more information on add modes, see:
+# https://github.com/operator-framework/community-operators/blob/7f1438c/docs/packaging-operator.md#updating-your-existing-operator
+.PHONY: catalog-build
+catalog-build: opm ## Build a catalog image.
+	$(OPM) index add --container-tool docker --mode semver --tag $(CATALOG_IMG) --bundles $(BUNDLE_IMGS) $(FROM_INDEX_OPT)
+
+# Push the catalog image.
+.PHONY: catalog-push
+catalog-push: ## Push a catalog image.
+	$(MAKE) docker-push IMG=$(CATALOG_IMG)
 
 
-## Apply the MultiClusterHub CR (with no self management and no secrets)
-mock-cr:
-	cat deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml | yq eval '.spec.disableHubSelfManagement = true' - |  oc apply -f -
-
-## for nightly and automated tests
-slack-bot-message:
-	bash common/scripts/slack-bot-message.sh "${RESULTS_PATH}"
+-include Makefile.dev
+-include test/function_tests/Makefile
+-include test/mock-component-image/Makefile

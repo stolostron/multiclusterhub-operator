@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package rendering
 
 import (
@@ -10,7 +9,7 @@ import (
 	"strconv"
 
 	"github.com/fatih/structs"
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/pkg/apis/operator/v1"
+	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/foundation"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/rendering/templates"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
@@ -197,7 +196,6 @@ func (r *Renderer) renderValidatingWebhookConfiguration(res *resource.Resource) 
 	utils.AddInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
 	return u, nil
 }
-
 
 func (r *Renderer) renderHiveConfig(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}

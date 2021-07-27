@@ -7,13 +7,14 @@ import (
 	"os"
 	"testing"
 
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/pkg/apis/operator/v1"
+	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
 )
 
 func Test_readManifestFile(t *testing.T) {
+
 	t.Run("Get manifest", func(t *testing.T) {
-		os.Setenv(ManifestsPathEnvVar, "../../image-manifests")
+		os.Setenv(ManifestsPathEnvVar, "../../bin/image-manifests")
 		version := "2.4.0"
 		_, err := readManifestFile(version)
 		if err != nil {
@@ -22,7 +23,7 @@ func Test_readManifestFile(t *testing.T) {
 	})
 
 	t.Run("File not found", func(t *testing.T) {
-		os.Setenv(ManifestsPathEnvVar, "../../image-manifests")
+		os.Setenv(ManifestsPathEnvVar, "../../bin/image-manifests")
 		version := "0.0.0"
 		_, err := readManifestFile(version)
 		if err == nil {

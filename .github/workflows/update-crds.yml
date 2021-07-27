@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 name: Update CRDs sha
 
 on: 
@@ -38,14 +40,14 @@ jobs:
           echo 'EOF' >> $GITHUB_ENV
 
       - name: Update SHA
-        run: bash cicd-scripts/sync-hub-crds.sh
+        run: bash hack/scripts/sync-hub-crds.sh
 
       - name: Commit changes
         uses: stefanzweifel/git-auto-commit-action@v4.9.2
         with:
           commit_message: ${{ env.commit_message }}
           commit_options: '--signoff'
-          file_pattern: cicd-scripts/currentCRDs.txt
+          file_pattern: hack/scripts/currentCRDs.txt
           skip_fetch: true
           commit_user_name: GitHub Actions
           commit_user_email: noreply@github.com

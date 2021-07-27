@@ -1,7 +1,0 @@
-# Copyright Contributors to the Open Cluster Management project
-
-packageName: multiclusterhub-operator
-channels:
-- name: latest
-  currentCSV: multiclusterhub-operator.v2.4.0
-defaultChannel: latest

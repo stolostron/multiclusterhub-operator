@@ -11,4 +11,4 @@ COPY . ./src/github.com/open-cluster-management/multiclusterhub-operator
 
 WORKDIR ./src/github.com/open-cluster-management/multiclusterhub-operator
 
-ENTRYPOINT [ "./test/start-tests.sh" ]
+ENTRYPOINT [ "./test/function_tests/start-tests.sh" ]

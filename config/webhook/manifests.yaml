@@ -1,0 +1,30 @@
+
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-v1-multiclusterhub
+  failurePolicy: Fail
+  name: multiclusterhub.validating-webhook.open-cluster-management.io
+  rules:
+  - apiGroups:
+    - operator.open-cluster-management.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+    resources:
+    - multiclusterhubs
+  sideEffects: None

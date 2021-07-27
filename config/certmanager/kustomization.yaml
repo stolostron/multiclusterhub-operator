@@ -1,0 +1,7 @@
+# Copyright Contributors to the Open Cluster Management project
+
+resources:
+- certificate.yaml
+
+configurations:
+- kustomizeconfig.yaml

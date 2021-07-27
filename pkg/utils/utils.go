@@ -5,17 +5,19 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"strings"
 	"time"
 
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/pkg/apis/operator/v1"
+	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
@@ -244,4 +246,42 @@ func ProxyEnvVarsAreSet() bool {
 		return true
 	}
 	return false
+}
+
+// FindNamespace
+func FindNamespace() (string, error) {
+	ns, found := os.LookupEnv(podNamespaceEnvVar)
+	if !found {
+		return "", fmt.Errorf("%s envvar is not set", podNamespaceEnvVar)
+	}
+	return ns, nil
+}
+
+func GetDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
+	return []types.NamespacedName{
+		{Name: "multiclusterhub-repo", Namespace: m.Namespace},
+		{Name: "ocm-controller", Namespace: m.Namespace},
+		{Name: "ocm-proxyserver", Namespace: m.Namespace},
+		{Name: "ocm-webhook", Namespace: m.Namespace},
+	}
+}
+
+func GetAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
+	return []types.NamespacedName{
+		{Name: "application-chart-sub", Namespace: m.Namespace},
+		{Name: "console-chart-sub", Namespace: m.Namespace},
+		{Name: "policyreport-sub", Namespace: m.Namespace},
+		{Name: "grc-sub", Namespace: m.Namespace},
+		{Name: "management-ingress-sub", Namespace: m.Namespace},
+		{Name: "cluster-lifecycle-sub", Namespace: m.Namespace},
+		{Name: "search-prod-sub", Namespace: m.Namespace},
+		{Name: "discovery-operator-sub", Namespace: m.Namespace},
+		{Name: "assisted-service-sub", Namespace: m.Namespace},
+	}
+}
+
+func GetCustomResources(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
+	return []types.NamespacedName{
+		{Name: "cluster-manager-cr", Namespace: ""},
+	}
 }

@@ -1,0 +1,71 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    control-plane: multiclusterhub-operator
+  name: system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: multiclusterhub-operator
+  namespace: system
+  labels:
+    control-plane: multiclusterhub-operator
+spec:
+  selector:
+    matchLabels:
+      control-plane: multiclusterhub-operator
+      name: multiclusterhub-operator
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        control-plane: multiclusterhub-operator
+        name: multiclusterhub-operator
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+      - command:
+        - /multiclusterhub-operator
+        args:
+        - --leader-elect
+        image: controller:latest
+        name: manager
+        securityContext:
+          allowPrivilegeEscalation: false
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        env:
+          - name: MANIFESTS_PATH
+            value: "/usr/local/image-manifests"
+          - name: CRDS_PATH
+            value: "/usr/local/crds"
+          - name: TEMPLATES_PATH
+            value: "/usr/local/templates"
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+        resources:
+          limits:
+            cpu: 100m
+            memory: 2048Mi
+          requests:
+            memory: 256Mi
+            cpu: 100m
+      serviceAccountName: multiclusterhub-operator
+      terminationGracePeriodSeconds: 10

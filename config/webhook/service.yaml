@@ -1,0 +1,16 @@
+# Copyright Contributors to the Open Cluster Management project
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: multiclusterhub-operator-webhook
+  namespace: system
+  annotations:
+    "service.beta.openshift.io/serving-cert-secret-name": "multiclusterhub-operator-webhook"
+spec:
+  ports:
+    - port: 443
+      targetPort: 8443
+  selector:
+    control-plane: multiclusterhub-operator

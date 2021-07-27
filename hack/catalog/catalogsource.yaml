@@ -1,0 +1,15 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: multiclusterhub-catalog
+  namespace: default
+spec:
+  displayName: MultiClusterHub Operator
+  publisher: Red Hat
+  sourceType: grpc
+  image: quay.io/open-cluster-management/multiclusterhub-operator-catalog:v2.4.0
+  updateStrategy:
+    registryPoll:
+      interval: 10m

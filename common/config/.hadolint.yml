@@ -1,7 +1,0 @@
-# Copyright Contributors to the Open Cluster Management project
-
-trustedRegistries:
-  - gcr.io
-  - docker.io
-  - quay.io
-  - registry.access.redhat.com

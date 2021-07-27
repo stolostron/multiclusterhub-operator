@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 name: Installer Function Tests (Mock Image)
 
 on: 
@@ -30,6 +32,6 @@ jobs:
         run: |
           echo "${{ secrets.QUAY_TOKEN }}" | docker login quay.io/open-cluster-management -u "${{ secrets.QUAY_USER }}" --password-stdin
           echo "Running Pull Request Function Tests ..."
-          bash ./common/scripts/pull-request-function-test.sh
+          bash ./hack/scripts/pull-request-function-test.sh
         env:
           COLLECTIVE_TOKEN: ${{ secrets.COLLECTIVE_TOKEN }}

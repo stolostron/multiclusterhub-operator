@@ -1,0 +1,46 @@
+# Copyright Contributors to the Open Cluster Management project
+
+.PHONY: update-manifest update-crds
+
+deps:
+	curl -sL https://github.com/operator-framework/operator-sdk/releases/download/v1.9.0/operator-sdk_darwin_amd64 -o bin/operator-sdk
+	chmod +x bin/operator-sdk
+
+update-manifest:
+	bash hack/scripts/update-image-manifest.sh
+
+update-crds:
+	bash hack/scripts/gather-crds-dev.sh
+
+subscriptions:
+	oc apply -k hack/subscriptions
+
+catalog:
+	oc apply -k hack/catalog
+
+prereqs:
+	oc apply -k hack/prereqs
+
+copyright:
+	bash ./hack/scripts/copyright.sh
+
+update-version:
+	./hack/scripts/update-version.sh <START_VERSION> <UPDATE_VERSION>
+
+prep-mock-install:
+	export PRODUCT_VERSION=$(shell cat COMPONENT_VERSION); \
+	make mock-build-image PRODUCT_VERSION=$(VERSION) MOCK_IMAGE_REGISTRY=$(REGISTRY) MOCK_IMAGE_SHA="sha256:test"
+	cp test/mock-component-image/results/* ./bin/image-manifests
+	echo "mock install prepped!"
+
+# different from `in-cluster-install` (call update-crds, no secrets, no observability-crd)
+mock-install: prereqs subscriptions update-crds  docker-build docker-push deploy
+
+cr: 
+	oc apply -k config/samples
+
+
+## Ensure the quay repos are open or pull secrets are configured
+full-catalog-install: manifests generate bundle bundle-build bundle-push catalog-build catalog-push prereqs subscriptions catalog
+
+full-dev-install: prereqs manifests generate update-manifest update-crds subscriptions docker-build docker-push deploy

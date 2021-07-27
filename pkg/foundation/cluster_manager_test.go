@@ -6,7 +6,7 @@ package foundation
 import (
 	"testing"
 
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/pkg/apis/operator/v1"
+	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
 )
 
 func TestClusterManager(t *testing.T) {

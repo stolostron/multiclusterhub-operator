@@ -1,0 +1,21 @@
+# Copyright Contributors to the Open Cluster Management project
+
+resources:
+- manager.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+namespace: open-cluster-management
+
+
+# configMapGenerator:
+# - files:
+#   - controller_manager_config.yaml
+#   name: multicloudhub-operator-lock
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+images:
+- name: controller
+  newName: quay.io/open-cluster-management/multiclusterhub-operator
+  newTag: 2.4.0

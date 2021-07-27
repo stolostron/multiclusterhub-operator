@@ -3,41 +3,47 @@
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest as cloner
 
 RUN microdnf install git findutils
-COPY cicd-scripts cicd-scripts
-RUN ./cicd-scripts/gather-crds.sh https://github.com/open-cluster-management/hub-crds.git $(cat cicd-scripts/currentCRDs.txt) ./crds
+COPY hack/scripts hack/scripts
+RUN ./hack/scripts/gather-crds-prow.sh https://github.com/open-cluster-management/hub-crds.git $(cat hack/scripts/currentCRDs.txt) ./crds
 
 FROM registry.ci.openshift.org/open-cluster-management/builder:go1.16-linux AS builder
 
 WORKDIR /workspace
-COPY . .
-RUN go build -o manager ./cmd/manager
+# Copy the Go Modules manifests
+COPY go.mod go.mod
+COPY go.sum go.sum
+# cache deps before building and copying source so that we don't need to re-download as much
+# and so that source changes don't invalidate our downloaded layer
+RUN go mod download
+
+# Copy the go source
+COPY main.go main.go
+COPY api/ api/
+COPY controllers/ controllers/
+COPY pkg/ pkg/
+
+# Copy required files
+
+COPY bin/image-manifests/ image-manifests/
+COPY --from=cloner crds/ crds/
+COPY pkg/templates/ templates/
+
+# Build
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o multiclusterhub-operator main.go
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
-
-ENV OPERATOR=/usr/local/bin/multiclusterhub-operator \
-    USER_UID=1001 \
-    USER_NAME=multiclusterhub-operator
 
 LABEL org.label-schema.vendor="Red Hat" \
       org.label-schema.name="multiclusterhub-operator" \
       org.label-schema.description="Installer operator for Red Hat Advanced Cluster Management" \
       org.label-schema.license="Red Hat Advanced Cluster Management for Kubernetes EULA"
 
-# install manifest files
-COPY image-manifests /image-manifests
+WORKDIR /
+COPY --from=builder /workspace/multiclusterhub-operator .
+COPY --from=builder /workspace/image-manifests/ usr/local/image-manifests/
+COPY --from=builder /workspace/crds/ usr/local/crds/
+COPY --from=builder /workspace/templates/ usr/local/templates/
 
-# install templates
-COPY templates /usr/local/templates
+USER 65532:65532
 
-# install CRDs
-COPY --from=cloner crds /crds
-
-# install operator binary
-COPY --from=builder /workspace/manager ${OPERATOR}
-
-COPY build/bin /usr/local/bin
-RUN  /usr/local/bin/user_setup
-
-ENTRYPOINT ["/usr/local/bin/entrypoint"]
-
-USER ${USER_UID}
+ENTRYPOINT ["/multiclusterhub-operator"]

@@ -1,0 +1,12 @@
+# Copyright Contributors to the Open Cluster Management project
+
+appName: APPNAME
+
+global:
+  imageOverrides:
+    pullPolicy: Always
+    hub_mock_component_image: "" # Overwritten by hub installer
+
+hubconfig: # Also overwritten by hub installer
+  nodeSelector: null
+  replicaCount: 1
