@@ -28,11 +28,11 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o multiclusterhub-operato
 # Use ubi minimal base image to package the multiclusterhub-operator binary
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 WORKDIR /
-COPY --from=builder /workspace/multiclusterhub-operator .
+COPY --from=builder /workspace/multiclusterhub-operator /usr/local/bin/multiclusterhub-operator
 COPY --from=builder /workspace/image-manifests/ /image-manifests
 COPY --from=builder /workspace/crds/ /crds
 COPY --from=builder /workspace/templates/ /usr/local/templates/
 
 USER 65532:65532
 
-ENTRYPOINT ["/multiclusterhub-operator"]
+ENTRYPOINT ["multiclusterhub-operator"]
