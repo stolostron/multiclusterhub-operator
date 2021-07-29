@@ -459,12 +459,12 @@ spec:
               - args:
                 - --leader-elect
                 command:
-                - /multiclusterhub-operator
+                - multiclusterhub-operator
                 env:
                 - name: MANIFESTS_PATH
-                  value: /usr/local/image-manifests
+                  value: /image-manifests
                 - name: CRDS_PATH
-                  value: /usr/local/crds
+                  value: /crds
                 - name: TEMPLATES_PATH
                   value: /usr/local/templates
                 - name: POD_NAMESPACE
@@ -472,6 +472,7 @@ spec:
                     fieldRef:
                       fieldPath: metadata.namespace
                 image: quay.io/open-cluster-management/multiclusterhub-operator:2.4.0
+                imagePullPolicy: Always
                 livenessProbe:
                   httpGet:
                     path: /healthz
