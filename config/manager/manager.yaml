@@ -30,7 +30,7 @@ spec:
         runAsNonRoot: true
       containers:
       - command:
-        - /multiclusterhub-operator
+        - multiclusterhub-operator
         args:
         - --leader-elect
         image: controller:latest

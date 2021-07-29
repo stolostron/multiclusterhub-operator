@@ -40,9 +40,9 @@ LABEL org.label-schema.vendor="Red Hat" \
 
 WORKDIR /
 COPY --from=builder /workspace/multiclusterhub-operator .
-COPY --from=builder /workspace/image-manifests/ usr/local/image-manifests/
-COPY --from=builder /workspace/crds/ usr/local/crds/
-COPY --from=builder /workspace/templates/ usr/local/templates/
+COPY --from=builder /workspace/image-manifests/ /image-manifests
+COPY --from=builder /workspace/crds/ /crds
+COPY --from=builder /workspace/templates/ /usr/local/templates/
 
 USER 65532:65532
 

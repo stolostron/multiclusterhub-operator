@@ -459,7 +459,7 @@ spec:
               - args:
                 - --leader-elect
                 command:
-                - /multiclusterhub-operator
+                - multiclusterhub-operator
                 env:
                 - name: MANIFESTS_PATH
                   value: /usr/local/image-manifests
