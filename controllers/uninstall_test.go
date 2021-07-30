@@ -40,6 +40,23 @@ func Test_newUnstructured(t *testing.T) {
 			},
 		},
 		{
+			name: "Kuisubscription",
+			args: args{
+				nn:  types.NamespacedName{Name: "kui-web-terminal-sub", Namespace: "test"},
+				gvk: schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
+			},
+			want: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps.open-cluster-management.io/v1",
+					"kind":       "Subscription",
+					"metadata": map[string]interface{}{
+						"name":      "kui-web-terminal-sub",
+						"namespace": "test",
+					},
+				},
+			},
+		},
+		{
 			name: "RcmSubscription",
 			args: args{
 				nn:  types.NamespacedName{Name: "rcm-sub", Namespace: "test"},

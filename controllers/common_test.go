@@ -310,12 +310,6 @@ func kind(kind string) schema.GroupKind {
 // 			Result:       nil,
 // 		},
 // 		{
-// 			Name:         "Test: ensureSubscription - KUI",
-// 			MCH:          full_mch,
-// 			Subscription: subscription.KUIWebTerminal(full_mch, cacheSpec.ImageOverrides, cacheSpec.IngressDomain),
-// 			Result:       nil,
-// 		},
-// 		{
 // 			Name:         "Test: ensureSubscription - cluster-lifecycle",
 // 			MCH:          full_mch,
 // 			Subscription: subscription.ClusterLifecycle(full_mch, cacheSpec.ImageOverrides),

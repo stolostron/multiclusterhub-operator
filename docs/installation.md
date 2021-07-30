@@ -11,7 +11,8 @@ The below guidelines will explain how to build and install the operator on a rem
 - [opm][opm] v1.12.5+
 - yq
 - docker
-- quay credentials for https://quay.io/organization/rhibmcollab and https://quay.io/organization/open-cluster-management
+- quay credentials
+- Add your valid quay pull-secret.yaml file in `hack/prereqs/pull-secret.yaml`
 
 ### Declare Required Variables
 
@@ -24,9 +25,6 @@ It is also recommended to set a unique version label
 ```bash
 export VERSION=<A_UNIQUE_VERSION>
 ```
-### Replace image manifest
-
-Populate the json file located in `image-manifests/` with proper values. Values can be found in https://github.com/open-cluster-management/pipeline/tree/2.4-integration/snapshots
 
 ### Install Options
 
@@ -84,7 +82,7 @@ Once the operator is installed in the cluster, initiate an installation by creat
 ```bash
 make cr
 ```
-> To customize the instance, first modify the spec in `deploy/crds/operator.open-cluster-management.io_v1_multiclusterhub_cr.yaml`.
+> To customize the instance, first modify the spec in `config/samples/operator_v1_multiclusterhub.yaml`.
 
 ## Cleanup
 Delete multiclusterhub instance if it exists

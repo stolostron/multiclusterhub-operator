@@ -30,11 +30,12 @@ spec:
         runAsNonRoot: true
       containers:
       - command:
-        - /multiclusterhub-operator
+        - multiclusterhub-operator
         args:
         - --leader-elect
         image: controller:latest
-        name: manager
+        imagePullPolicy: Always
+        name: multiclusterhub-operator
         securityContext:
           allowPrivilegeEscalation: false
         livenessProbe:
@@ -51,9 +52,9 @@ spec:
           periodSeconds: 10
         env:
           - name: MANIFESTS_PATH
-            value: "/usr/local/image-manifests"
+            value: "/image-manifests"
           - name: CRDS_PATH
-            value: "/usr/local/crds"
+            value: "/crds"
           - name: TEMPLATES_PATH
             value: "/usr/local/templates"
           - name: POD_NAMESPACE

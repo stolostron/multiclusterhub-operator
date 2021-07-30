@@ -26,34 +26,34 @@ func TestValidate(t *testing.T) {
 	ovr := map[string]string{}
 
 	// 1. Valid mch
-	sub := KUIWebTerminal(mch, ovr, "")
+	sub := ClusterLifecycle(mch, ovr, "")
 
 	// 2. Modified ImagePullSecret
 	mch1 := mch.DeepCopy()
 	mch1.Spec.ImagePullSecret = "notTest"
-	sub1 := KUIWebTerminal(mch1, ovr, "")
+	sub1 := ClusterLifecycle(mch1, ovr, "")
 
 	// 3. Modified ImagePullPolicy
 	mch2 := mch.DeepCopy()
 	mch2.Spec.Overrides = &operatorsv1.Overrides{
 		ImagePullPolicy: corev1.PullNever,
 	}
-	sub2 := KUIWebTerminal(mch2, ovr, "")
+	sub2 := ClusterLifecycle(mch2, ovr, "")
 
 	// 4. Modified ImageRepository
 	mch3 := mch.DeepCopy()
 	mch3.SetAnnotations(map[string]string{utils.AnnotationImageRepo: "notquay.io/closed-cluster-management"})
-	sub3 := KUIWebTerminal(mch3, ovr, "")
+	sub3 := ClusterLifecycle(mch3, ovr, "")
 
 	// 5. Activate HA mode
 	mch4 := mch.DeepCopy()
 	mch4.Spec.AvailabilityConfig = operatorsv1.HABasic
-	sub4 := KUIWebTerminal(mch4, ovr, "")
+	sub4 := ClusterLifecycle(mch4, ovr, "")
 
 	// 6. Modified CustomCAConfigmap
 	mch6 := mch.DeepCopy()
 	mch6.Spec.CustomCAConfigmap = ""
-	sub5 := KUIWebTerminal(mch6, ovr, "")
+	sub5 := ClusterLifecycle(mch6, ovr, "")
 
 	type args struct {
 		found *unstructured.Unstructured
@@ -134,7 +134,6 @@ func TestSubscriptions(t *testing.T) {
 		{"GRC subscription", GRC(mch, ovr)},
 		{"Insights subscription", Insights(mch, ovr, "")},
 		{"Discovery subscription", Discovery(mch, ovr)},
-		{"KUIWebTerminal subscription", KUIWebTerminal(mch, ovr, "")},
 		{"ManagementIngress subscription", ManagementIngress(mch, ovr, "")},
 		{"cluster-lifecycle subscription", ClusterLifecycle(mch, ovr)},
 		{"Search subscription", Search(mch, ovr)},

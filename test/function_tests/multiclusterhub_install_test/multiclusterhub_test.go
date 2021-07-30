@@ -450,7 +450,7 @@ func FullInstallTestSuite() {
 			}
 
 			By("Degrading the installation")
-			oldImage, err := utils.BrickKUI()
+			oldImage, err := utils.BrickCLC()
 			if err != nil {
 				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
 				return
@@ -459,7 +459,7 @@ func FullInstallTestSuite() {
 				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
 				return
 			}
-			if err := utils.FixKUI(oldImage); err != nil {
+			if err := utils.FixCLC(oldImage); err != nil {
 				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
 				return
 			}
