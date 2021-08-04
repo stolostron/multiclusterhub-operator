@@ -260,26 +260,6 @@
       "image-key": "iam_policy_controller"
     },
     {
-      "image-name": "kui-web-terminal",
-      "image-version": "3.7.0",
-      "image-tag": "3.7.0-99d0463b41063d65a90d6dd4dc55e99672ccc186",
-      "git-sha256": "99d0463b41063d65a90d6dd4dc55e99672ccc186",
-      "git-repository": "open-cluster-management/kui-web-terminal",
-      "image-remote": "quay.io/open-cluster-management",
-      "image-digest": "sha256:ba0d7a21e0e9d45330a4534cdf82830cf9fb1973a62a1c324f7e2711ed7ec8bc",
-      "image-key": "kui_web_terminal"
-    },
-    {
-      "image-name": "kui-web-terminal-tests",
-      "image-version": "3.7.0",
-      "image-tag": "3.7.0-99d0463b41063d65a90d6dd4dc55e99672ccc186",
-      "git-sha256": "99d0463b41063d65a90d6dd4dc55e99672ccc186",
-      "git-repository": "open-cluster-management/kui-web-terminal",
-      "image-remote": "quay.io/open-cluster-management",
-      "image-digest": "sha256:662aed02fbc154112c26c12fc2a5c4679a57fb6fd677c3d6db99064376f5d6f4",
-      "image-key": "kui_web_terminal_tests"
-    },
-    {
       "image-name": "management-ingress",
       "image-version": "1.0.0",
       "image-tag": "1.0.0-41989535249b3337b3096417c2240fe366296f8c",

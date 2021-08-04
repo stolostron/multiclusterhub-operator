@@ -28,6 +28,11 @@ var (
 				types.NamespacedName{Name: "topology-sub", Namespace: m.Namespace},
 				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
 			),
+			
+			newUnstructured(
+				types.NamespacedName{Name: "kui-web-terminal-sub", Namespace: m.Namespace},
+				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
+			),
 			newUnstructured(
 				types.NamespacedName{Name: "rcm-sub", Namespace: m.Namespace},
 				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
