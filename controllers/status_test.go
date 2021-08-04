@@ -105,6 +105,14 @@ func Test_latestDeployCondition(t *testing.T) {
 			"reason": "MinimumReplicasAvailable",
 			"status": "True",
 			"type": "Available"
+		},
+		{
+			"lastTransitionTime": "2020-09-03T14:23:47Z",
+			"lastUpdateTime": "2020-09-03T14:23:47Z",
+			"message": "ReplicaSet \"cluster-lifecycle-78c4bc769\" has timed out progressing.",
+			"reason": "ProgressDeadlineExceeded",
+			"status": "False",
+			"type": "Progressing"
 		}
 	]`
 	var bs []appsv1.DeploymentCondition
@@ -310,6 +318,19 @@ func Test_filterDuplicateHRs(t *testing.T) {
 								APIVersion: "apps.open-cluster-management.io/v1",
 								Kind:       "Subscription",
 								Name:       "console-sub",
+							},
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:              "cluster-lifecycle-foo",
+						CreationTimestamp: v1.NewTime(time.Date(2020, 5, 29, 0, 1, 0, 0, time.UTC)),
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "apps.open-cluster-management.io/v1",
+								Kind:       "Subscription",
+								Name:       "cluster-lifecycle-sub",
 							},
 						},
 					},
