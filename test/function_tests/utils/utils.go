@@ -187,7 +187,7 @@ var (
 	// AppSubSlice ...
 	AppSubSlice = [...]string{"application-chart-sub", "assisted-service-sub",
 		"console-chart-sub", "policyreport-sub", "discovery-operator-sub",
-		"grc-sub", "kui-web-terminal-sub", "management-ingress-sub",
+		"grc-sub",  "management-ingress-sub",
 		"rcm-sub", "search-prod-sub"}
 
 	// CSVName ...
@@ -481,26 +481,26 @@ func UnpauseMCH() error {
 	return err
 }
 
-// BrickKUI modifies the multiclusterhub-repo deployment so it becomes unhealthy
-func BrickKUI() (string, error) {
-	By("- Breaking kui-web-terminal")
-	oldImage, err := UpdateDeploymentImage("kui-web-terminal", "bad-image")
+// BrickCLC modifies the multiclusterhub-repo deployment so it becomes unhealthy
+func BrickCLC() (string, error) {
+	By("- Breaking cluster-lifecycle")
+	oldImage, err := UpdateDeploymentImage("cluster-lifecycle", "bad-image")
 	if err != nil {
 		return "", err
 	}
-	err = waitForUnavailable("kui-web-terminal", time.Duration(GetWaitInMinutes())*time.Minute)
-
+	err = waitForUnavailable("cluster-lifecycle", time.Duration(GetWaitInMinutes())*time.Minute)
+	
 	return oldImage, err
 }
 
-// FixKUI deletes the multiclusterhub-repo deployment so it can be recreated by the installer
-func FixKUI(image string) error {
-	By("- Repairing kui-web-terminal")
-	_, err := UpdateDeploymentImage("kui-web-terminal", image)
+// FiCLC deletes the multiclusterhub-repo deployment so it can be recreated by the installer
+func FixCLC(image string) error {
+	By("- Repairing cluster-lifecycle")
+	_, err := UpdateDeploymentImage("cluster-lifecycle", image)
 	if err != nil {
 		return err
 	}
-	err = waitForAvailable("kui-web-terminal", time.Duration(GetWaitInMinutes())*time.Minute)
+	err = waitForAvailable("cluster-lifecycle", time.Duration(GetWaitInMinutes())*time.Minute)
 	return err
 }
 
@@ -878,12 +878,12 @@ func ValidateMCH() error {
 	}
 
 	By("- Checking for Installer Labels on Deployments")
-	l, err := GetDeploymentLabels("kui-web-terminal")
+	l, err := GetDeploymentLabels("cluster-lifecycle")
 	if err != nil {
 		return err
 	}
 	if l["installer.name"] != MCHName || l["installer.namespace"] != MCHNamespace {
-		return fmt.Errorf("kui-web-terminal missing installer labels: `%s` != `%s`, `%s` != `%s`", l["installer.name"], MCHName, l["installer.namespace"], MCHNamespace)
+		return fmt.Errorf("cluster-lifecycle missing installer labels: `%s` != `%s`, `%s` != `%s`", l["installer.name"], MCHName, l["installer.namespace"], MCHNamespace)
 	}
 
 	return nil

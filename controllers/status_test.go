@@ -109,7 +109,7 @@ func Test_latestDeployCondition(t *testing.T) {
 		{
 			"lastTransitionTime": "2020-09-03T14:23:47Z",
 			"lastUpdateTime": "2020-09-03T14:23:47Z",
-			"message": "ReplicaSet \"kui-web-terminal-78c4bc769\" has timed out progressing.",
+			"message": "ReplicaSet \"cluster-lifecycle-78c4bc769\" has timed out progressing.",
 			"reason": "ProgressDeadlineExceeded",
 			"status": "False",
 			"type": "Progressing"
@@ -324,13 +324,13 @@ func Test_filterDuplicateHRs(t *testing.T) {
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:              "kui-web-terminal-foo",
+						Name:              "cluster-lifecycle-foo",
 						CreationTimestamp: v1.NewTime(time.Date(2020, 5, 29, 0, 1, 0, 0, time.UTC)),
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: "apps.open-cluster-management.io/v1",
 								Kind:       "Subscription",
-								Name:       "kui-web-terminal-sub",
+								Name:       "cluster-lifecycle-sub",
 							},
 						},
 					},
