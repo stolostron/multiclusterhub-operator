@@ -174,18 +174,29 @@ func (r *MultiClusterHubReconciler) ensureManagedCluster(m *operatorsv1.MultiClu
 
 	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: ManagedClusterName}, managedCluster)
 	if err != nil && errors.IsNotFound(err) {
-		// Creating new managedCluster
-		newManagedCluster := getManagedCluster()
-		utils.AddInstallerLabel(newManagedCluster, m.GetName(), m.GetNamespace())
+		localNS := getHubNamespace()
+		localNS.SetLabels(getInstallerLabels(m))
+		err := r.Client.Get(context.TODO(), types.NamespacedName{Name: localNS.GetName()}, localNS)
+		if err == nil {
+			// Wait for local-cluster ns to be deleted before creating managedCluster
+			r.Log.Info("Waiting on namespace to be removed before creating managedCluster", "Namespace", localNS.GetName())
+			return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+		} else if errors.IsNotFound(err) {
+			// Namespace is removed. Creating new managedCluster
+			newManagedCluster := getManagedCluster()
+			utils.AddInstallerLabel(newManagedCluster, m.GetName(), m.GetNamespace())
 
-		err = r.Client.Create(context.TODO(), newManagedCluster)
-		if err != nil {
-			r.Log.Error(err, "Failed to create managedcluster resource")
+			err = r.Client.Create(context.TODO(), newManagedCluster)
+			if err != nil {
+				r.Log.Error(err, "Failed to create managedcluster resource")
+				return ctrl.Result{}, err
+			}
+			r.Log.Info("Created a new ManagedCluster")
+			return ctrl.Result{}, nil
+		} else {
+			r.Log.Error(err, "Failed to get local-cluster namespace")
 			return ctrl.Result{}, err
 		}
-		// ManagedCluster was successful
-		r.Log.Info("Created a new ManagedCluster")
-		return ctrl.Result{}, nil
 	} else if err != nil {
 		// Error that isn't due to the managedcluster not existing
 		r.Log.Error(err, "Failed to get ManagedCluster")
