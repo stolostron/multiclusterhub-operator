@@ -384,7 +384,7 @@ func Test_OverrideImagesFromConfigmap(t *testing.T) {
 					"overrides.json:": `[
 						{
 						  "image-name": "multiclusterhub-repo",
-						  "image-tag": "2.2.6-test",
+						  "image-tag": "2.2.7-test",
 						  "image-remote": "quay.io/open-cluster-management",
 						  "image-key": "multiclusterhub_repo"
 						}
@@ -394,7 +394,7 @@ func Test_OverrideImagesFromConfigmap(t *testing.T) {
 			ManifestImage: manifest.ManifestImage{
 				ImageKey:    "multiclusterhub_repo",
 				ImageRemote: "quay.io/open-cluster-management",
-				ImageTag:    "2.2.6-test",
+				ImageTag:    "2.2.7-test",
 				ImageName:   "multiclusterhub-repo",
 			},
 			Result: nil,
@@ -469,7 +469,7 @@ func Test_maintainImageManifestConfigmap(t *testing.T) {
 			"console_api":    "quay.io/open-cluster-management/console-api@sha256:3ef1043b4e61a09b07ff37f9ad8fc6e707af9813936cf2c0d52f2fa0e489c75f",
 			"rcm_controller": " quay.io/open-cluster-management/rcm-controller@sha256:8fab4d788241bf364dbc1b8c1ea5ccf18d3145a640dbd456b0dc7ba204e36819",
 		},
-		ManifestVersion: "2.2.6",
+		ManifestVersion: "2.2.7",
 	}
 
 	configmapName := fmt.Sprintf("mch-image-manifest-%s", r.CacheSpec.ManifestVersion)
