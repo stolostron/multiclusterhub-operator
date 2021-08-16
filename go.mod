@@ -5,7 +5,7 @@ go 1.16
 require (
 	github.com/Azure/go-autorest/autorest v0.11.6 // indirect
 	github.com/Masterminds/semver v1.5.0
-	github.com/Masterminds/semver/v3 v3.0.3
+	github.com/Masterminds/semver/v3 v3.1.0
 	github.com/emicklei/go-restful v2.14.2+incompatible // indirect
 	github.com/fatih/structs v1.1.0
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
@@ -25,6 +25,7 @@ require (
 	github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible
 	github.com/openshift/hive/apis v1.1.6
 	github.com/openshift/library-go v0.0.0-20210622153508-f77a17e0269f
+	github.com/operator-framework/operator-sdk v0.19.4
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43 // indirect
 	golang.org/x/sys v0.0.0-20210521090106-6ca3eb03dfc2 // indirect
