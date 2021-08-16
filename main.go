@@ -26,6 +26,7 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 
 	clustermanager "github.com/open-cluster-management/api/operator/v1"
+	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis"
@@ -93,6 +94,12 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
+	ns, err := k8sutil.GetOperatorNamespace()
+	if err != nil {
+		setupLog.Error(err, "failed to get operator namespace")
+		os.Exit(1)
+	}
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                  scheme,
 		MetricsBindAddress:      metricsAddr,
@@ -100,7 +107,7 @@ func main() {
 		HealthProbeBindAddress:  probeAddr,
 		LeaderElection:          enableLeaderElection,
 		LeaderElectionID:        "multicloudhub-operator-lock",
-		LeaderElectionNamespace: "open-cluster-management", // Uncomment this line to run operator locally. https://sdk.operatorframework.io/docs/building-operators/golang/advanced-topics/#leader-with-lease
+		LeaderElectionNamespace: ns, // Uncomment this line to run operator locally. https://sdk.operatorframework.io/docs/building-operators/golang/advanced-topics/#leader-with-lease
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
