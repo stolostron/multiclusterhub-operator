@@ -60,6 +60,6 @@ kubectl delete pod multiclusterhub-operator-xxxxx-xxxxx
 ```
 ### Other Development Documents
 
-[install_guide]: /docs/installation.md
-[config_guide]: /docs/configuration.md
-[deploy]: https://github.com/open-cluster-management/deploy
+- [Installation Guide](/docs/installation.md)
+- [Configuration Guide](/docs/configuration.md)
+- [Deploy automation](https://github.com/open-cluster-management/deploy)
