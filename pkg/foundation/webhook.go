@@ -115,7 +115,7 @@ func WebhookService(m *operatorsv1.MultiClusterHub) *corev1.Service {
 			},
 		},
 		Spec: corev1.ServiceSpec{
-			Selector: defaultLabels(WebhookName),
+			Selector: selectorLabels(WebhookName),
 			Ports: []corev1.ServicePort{{
 				Port:       443,
 				TargetPort: intstr.FromInt(8000),

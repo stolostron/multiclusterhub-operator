@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package helmrepo
 
 import (
@@ -35,6 +34,12 @@ func labels() map[string]string {
 	return map[string]string{
 		"app":                       HelmRepoName,
 		"ocm-antiaffinity-selector": HelmRepoName,
+	}
+}
+
+func selectorLabels() map[string]string {
+	return map[string]string{
+		"app": HelmRepoName,
 	}
 }
 
@@ -141,7 +146,7 @@ func Deployment(m *operatorsv1.MultiClusterHub, overrides map[string]string) *ap
 
 // Service for the helm repo serving charts
 func Service(m *operatorsv1.MultiClusterHub) *corev1.Service {
-	labels := labels()
+	labels := selectorLabels()
 
 	s := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -210,6 +215,18 @@ func ValidateDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]str
 	if container.ImagePullPolicy != utils.GetImagePullPolicy(m) {
 		log.Info("Enforcing imagePullPolicy")
 		container.ImagePullPolicy = utils.GetImagePullPolicy(m)
+		needsUpdate = true
+	}
+
+	// add missing labels to deployment
+	if utils.AddDeploymentLabels(found, expected.Labels) {
+		log.Info("Enforcing deployment labels")
+		needsUpdate = true
+	}
+
+	// add missing pod labels
+	if utils.AddPodLabels(found, expected.Spec.Template.Labels) {
+		log.Info("Enforcing pod labels")
 		needsUpdate = true
 	}
 
