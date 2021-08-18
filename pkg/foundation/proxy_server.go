@@ -138,7 +138,7 @@ func OCMProxyServerService(m *operatorsv1.MultiClusterHub) *corev1.Service {
 			},
 		},
 		Spec: corev1.ServiceSpec{
-			Selector: defaultLabels(OCMProxyServerName),
+			Selector: selectorLabels(OCMProxyServerName),
 			Ports: []corev1.ServicePort{{
 				Name:       "secure",
 				Protocol:   corev1.ProtocolTCP,

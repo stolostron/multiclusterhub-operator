@@ -96,6 +96,44 @@ func AddInstallerLabel(u *unstructured.Unstructured, name string, ns string) {
 	u.SetLabels(labels)
 }
 
+// addCustomLabels adds the labels to a deployment's labels, without removing existing ones.
+// Returns false if all the labels are already present.
+func AddDeploymentLabels(d *appsv1.Deployment, labels map[string]string) bool {
+	updated := false
+	if d.Labels == nil {
+		d.Labels = labels
+		return true
+	}
+
+	for k, v := range labels {
+		if d.Labels[k] != v {
+			d.Labels[k] = v
+			updated = true
+		}
+	}
+
+	return updated
+}
+
+// addCustomLabels adds the labels to a deployment's labels, without removing existing ones.
+// Returns false if all the labels are already present.
+func AddPodLabels(d *appsv1.Deployment, labels map[string]string) bool {
+	updated := false
+	if d.Spec.Template.Labels == nil {
+		d.Spec.Template.Labels = labels
+		return true
+	}
+
+	for k, v := range labels {
+		if d.Spec.Template.Labels[k] != v {
+			d.Spec.Template.Labels[k] = v
+			updated = true
+		}
+	}
+
+	return updated
+}
+
 // CoreToUnstructured converts a Core Kube resource to unstructured
 func CoreToUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) {
 	content, err := json.Marshal(obj)

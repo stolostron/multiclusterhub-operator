@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package helmrepo
 
 import (
@@ -90,6 +89,14 @@ func TestValidateDeployment(t *testing.T) {
 	dep5 := dep.DeepCopy()
 	dep5.Spec.Template.Spec.Tolerations = nil
 
+	// 7. Missing deployment labels
+	dep6 := dep.DeepCopy()
+	dep6.Labels = selectorLabels()
+
+	// 8. Missing deployment labels
+	dep7 := dep.DeepCopy()
+	dep7.Spec.Template.Labels = selectorLabels()
+
 	type args struct {
 		m   *operatorsv1.MultiClusterHub
 		dep *appsv1.Deployment
@@ -133,6 +140,18 @@ func TestValidateDeployment(t *testing.T) {
 		{
 			name:  "Modified Tolerations",
 			args:  args{mch, dep5},
+			want:  dep,
+			want1: true,
+		},
+		{
+			name:  "Missing deployment labels",
+			args:  args{mch, dep6},
+			want:  dep,
+			want1: true,
+		},
+		{
+			name:  "Missing pod labels",
+			args:  args{mch, dep7},
 			want:  dep,
 			want1: true,
 		},

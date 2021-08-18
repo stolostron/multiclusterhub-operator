@@ -61,6 +61,15 @@ func TestValidateDeployment(t *testing.T) {
 			},
 		},
 	}
+
+	// 9. Missing deployment labels
+	dep8 := dep.DeepCopy()
+	dep8.Labels = nil
+
+	// 10. Missing pod labels
+	dep9 := dep.DeepCopy()
+	dep9.Spec.Template.Labels = nil
+
 	type args struct {
 		m   *operatorsv1.MultiClusterHub
 		dep *appsv1.Deployment
@@ -116,6 +125,18 @@ func TestValidateDeployment(t *testing.T) {
 		{
 			name:  "Modified volumes",
 			args:  args{mch, dep7},
+			want:  dep,
+			want1: true,
+		},
+		{
+			name:  "Missing deployment labels",
+			args:  args{mch, dep8},
+			want:  dep,
+			want1: true,
+		},
+		{
+			name:  "Missing pod labels",
+			args:  args{mch, dep9},
 			want:  dep,
 			want1: true,
 		},

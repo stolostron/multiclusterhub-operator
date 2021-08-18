@@ -56,6 +56,12 @@ func defaultLabels(app string) map[string]string {
 	}
 }
 
+func selectorLabels(app string) map[string]string {
+	return map[string]string{
+		"app": app,
+	}
+}
+
 func defaultTolerations() []corev1.Toleration {
 	return []corev1.Toleration{
 		{
@@ -119,6 +125,18 @@ func ValidateDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]str
 		log.Info("Enforcing number of replicas")
 		replicas := getReplicaCount(m)
 		found.Spec.Replicas = &replicas
+		needsUpdate = true
+	}
+
+	// add missing labels to deployment
+	if utils.AddDeploymentLabels(found, expected.Labels) {
+		log.Info("Enforcing deployment labels")
+		needsUpdate = true
+	}
+
+	// add missing pod labels
+	if utils.AddPodLabels(found, expected.Spec.Template.Labels) {
+		log.Info("Enforcing pod labels")
 		needsUpdate = true
 	}
 
