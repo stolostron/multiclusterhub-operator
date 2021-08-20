@@ -131,6 +131,7 @@ func TestSubscriptions(t *testing.T) {
 		{"ApplicationUI subscription", ApplicationUI(mch, ovr)},
 		{"AssistedService subscription", AssistedService(mch, ovr)},
 		{"Console subscription", Console(mch, ovr, "")},
+		{"Cluster Proxy Addon subscription", ClusterProxyAddon(mch, ovr)},
 		{"GRC subscription", GRC(mch, ovr)},
 		{"Insights subscription", Insights(mch, ovr, "")},
 		{"Discovery subscription", Discovery(mch, ovr)},

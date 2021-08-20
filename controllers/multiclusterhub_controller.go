@@ -367,6 +367,10 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
+	result, err = r.ensureSubscription(multiClusterHub, subscription.ClusterProxyAddon(multiClusterHub, r.CacheSpec.ImageOverrides))
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
 
 	//OCM proxy server deployment
 	result, err = r.ensureDeployment(multiClusterHub, foundation.OCMProxyServerDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
