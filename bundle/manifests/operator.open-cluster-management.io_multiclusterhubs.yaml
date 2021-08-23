@@ -60,6 +60,9 @@ spec:
               disableUpdateClusterImageSets:
                 description: Disable automatic update of ClusterImageSets
                 type: boolean
+              enableClusterProxyAddon:
+                description: Enable cluster proxy addon
+                type: boolean
               hive:
                 description: (Deprecated) Overrides for the default HiveConfig spec
                 properties:

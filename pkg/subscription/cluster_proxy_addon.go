@@ -10,12 +10,13 @@ import (
 )
 
 // ClusterProxyAddon overrides the cluster-proxy-addon chart
-func ClusterProxyAddon(m *operatorsv1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
+func ClusterProxyAddon(m *operatorsv1.MultiClusterHub, overrides map[string]string, ingress string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "cluster-proxy-addon",
 		Namespace: m.Namespace,
 		Overrides: map[string]interface{}{
-			"pullSecret": m.Spec.ImagePullSecret,
+			"cluster_basedomain": ingress,
+			"pullSecret":         m.Spec.ImagePullSecret,
 			"hubconfig": map[string]interface{}{
 				"replicaCount": utils.DefaultReplicaCount(m),
 				"nodeSelector": m.Spec.NodeSelector,

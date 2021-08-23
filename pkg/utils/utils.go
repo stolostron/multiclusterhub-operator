@@ -267,7 +267,7 @@ func GetDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 }
 
 func GetAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
-	return []types.NamespacedName{
+	appsubs := []types.NamespacedName{
 		{Name: "application-chart-sub", Namespace: m.Namespace},
 		{Name: "console-chart-sub", Namespace: m.Namespace},
 		{Name: "policyreport-sub", Namespace: m.Namespace},
@@ -277,8 +277,11 @@ func GetAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 		{Name: "search-prod-sub", Namespace: m.Namespace},
 		{Name: "discovery-operator-sub", Namespace: m.Namespace},
 		{Name: "assisted-service-sub", Namespace: m.Namespace},
-		{Name: "cluster-proxy-addon-sub", Namespace: m.Namespace},
 	}
+	if m.Spec.EnableClusterProxyAddon {
+		appsubs = append(appsubs, types.NamespacedName{Name: "cluster-proxy-addon-sub", Namespace: m.Namespace})
+	}
+	return appsubs
 }
 
 func GetCustomResources(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
