@@ -121,6 +121,7 @@ spec:
           - discovery.open-cluster-management.io
           - hive.openshift.io
           - hiveinternal.openshift.io
+          - imageregistry.open-cluster-management.io
           - internal.open-cluster-management.io
           - inventory.open-cluster-management.io
           - mcm.ibm.com
@@ -177,6 +178,8 @@ spec:
           - managedclusteractions/status
           - managedclusteraddons
           - managedclusteraddons/status
+          - managedclusterimageregistries
+          - managedclusterimageregistries/status
           - managedclusterinfos
           - managedclusterinfos/status
           - managedclusters

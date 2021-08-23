@@ -79,3 +79,6 @@ rules:
 - apiGroups: ["cluster.open-cluster-management.io"]
   resources: ["placements", "placements/status", "placementdecisions", "placementdecisions/status"]
   verbs: ["get", "list", "watch", "update", "patch"]
+- apiGroups: [ "imageregistry.open-cluster-management.io" ]
+  resources: [ "managedclusterimageregistries","managedclusterimageregistries/status" ]
+  verbs: ["get", "list", "watch", "update", "patch"]
