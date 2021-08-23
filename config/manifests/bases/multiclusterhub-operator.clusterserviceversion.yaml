@@ -48,6 +48,12 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:io.kubernetes:booleanSwitch
+      - description: Enable cluster proxy addon
+        displayName: Enable Cluster Proxy Addon
+        path: enableClusterProxyAddon
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:booleanSwitch
       - description: (Deprecated) Overrides for the default HiveConfig spec
         displayName: Hive Config
         path: hive

@@ -78,6 +78,10 @@ type MultiClusterHubSpec struct {
 	// Disable automatic update of ClusterImageSets
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Disable Update ClusterImageSets",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:booleanSwitch"}
 	DisableUpdateClusterImageSets bool `json:"disableUpdateClusterImageSets,omitempty"`
+
+	// Enable cluster proxy addon
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Cluster Proxy Addon",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:booleanSwitch"}
+	EnableClusterProxyAddon bool `json:"enableClusterProxyAddon,omitempty"`
 }
 
 // Overrides provides developer overrides for MCH installation

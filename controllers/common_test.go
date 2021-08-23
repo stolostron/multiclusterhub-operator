@@ -294,7 +294,7 @@ func kind(kind string) schema.GroupKind {
 // 		{
 // 			Name:         "Test: ensureSubscription - Cluster Proxy Addon",
 // 			MCH:          full_mch,
-// 			Subscription: subscription.ClusterProxyAddon(full_mch, cacheSpec.ImageOverrides),
+// 			Subscription: subscription.ClusterProxyAddon(full_mch, cacheSpec.ImageOverrides, cacheSpec.IngressDomain),
 // 			Result:       nil,
 // 		},
 // 		{
