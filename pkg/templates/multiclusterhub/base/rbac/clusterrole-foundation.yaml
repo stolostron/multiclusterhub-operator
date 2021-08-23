@@ -5,7 +5,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: open-cluster-management:installer:foundation
 rules:
-  - apiGroups: [""]
+  - apiGroups: ["","events.k8s.io"]
     resources: ["configmaps", "namespaces", "events", "endpoints", "secrets"]
     verbs: ["get", "list", "watch", "create", "update", "delete", "deletecollection", "patch"]
   - apiGroups: ["rbac.authorization.k8s.io"]
@@ -27,8 +27,11 @@ rules:
     resources: ["deployables", "deployables/status"]
     verbs: ["get", "list", "watch", "update", "patch"]
   - apiGroups: ["cluster.open-cluster-management.io"]
-    resources: ["managedclusters", "managedclustersets"]
+    resources: ["managedclusters", "managedclustersets", "placementdecisions", "placementdecisions/status"]
     verbs: ["get", "list", "watch", "update"]
+  - apiGroups: [ "imageregistry.open-cluster-management.io" ]
+    resources: [ "managedclusterimageregistries", "managedclusterimageregistries/status" ]
+    verbs: [ "get", "list", "watch", "update" ]
   - apiGroups: [ "cluster.open-cluster-management.io" ]
     resources: [ "managedclusters/status"]
     verbs: ["patch", "update" ]
