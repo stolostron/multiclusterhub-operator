@@ -455,13 +455,11 @@ spec:
           replicas: 1
           selector:
             matchLabels:
-              control-plane: multiclusterhub-operator
               name: multiclusterhub-operator
           strategy: {}
           template:
             metadata:
               labels:
-                control-plane: multiclusterhub-operator
                 name: multiclusterhub-operator
             spec:
               containers:
