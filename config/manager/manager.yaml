@@ -17,13 +17,11 @@ metadata:
 spec:
   selector:
     matchLabels:
-      control-plane: multiclusterhub-operator
       name: multiclusterhub-operator
   replicas: 1
   template:
     metadata:
       labels:
-        control-plane: multiclusterhub-operator
         name: multiclusterhub-operator
     spec:
       securityContext:
