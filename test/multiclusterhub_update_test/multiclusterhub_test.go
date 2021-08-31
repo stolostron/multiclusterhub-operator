@@ -80,7 +80,7 @@ var _ = Describe("Multiclusterhub", func() {
 		updateVersion, err := semver.NewVersion(os.Getenv(("updateVersion")))
 		Expect(err).Should(BeNil())
 
-		c, err := semver.NewConstraint(">= 2.1.10")
+		c, err := semver.NewConstraint(">= 2.1.11")
 		Expect(err).Should(BeNil())
 		configmapCount := 0
 		if c.Check(startVersion) {
