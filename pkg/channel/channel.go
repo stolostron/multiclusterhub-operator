@@ -12,6 +12,7 @@ import (
 
 	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/helmrepo"
+	"github.com/open-cluster-management/multiclusterhub-operator/pkg/version"
 )
 
 // ChannelName is the name of the open-cluster-management.io channel
@@ -21,8 +22,13 @@ var ChannelName = "charts-v1"
 var Schema = schema.GroupVersionResource{Group: "apps.open-cluster-management.io", Version: "v1", Resource: "channels"}
 
 // custom annotation to reduce reconcilation rate to once per hour (default is 15 minutes)
-var Annotation = map[string]string{
+var AnnotationRateLow = map[string]string{
 	"apps.open-cluster-management.io/reconcile-rate": "low",
+}
+
+// custom annotation to increase reconcilation rate to once every two minutes (default is 15 minutes)
+var AnnotationRateHigh = map[string]string{
+	"apps.open-cluster-management.io/reconcile-rate": "high",
 }
 
 // build Helm pathname from repo name and por
@@ -46,7 +52,12 @@ func Channel(m *operatorsv1.MultiClusterHub) *unstructured.Unstructured {
 			},
 		},
 	}
-	ch.SetAnnotations(Annotation)
+	if m.Status.CurrentVersion != version.Version {
+		ch.SetAnnotations(AnnotationRateHigh)
+	} else {
+		ch.SetAnnotations(AnnotationRateLow)
+	}
+
 	ch.SetOwnerReferences([]metav1.OwnerReference{
 		*metav1.NewControllerRef(m, m.GetObjectKind().GroupVersionKind()),
 	})
@@ -55,31 +66,47 @@ func Channel(m *operatorsv1.MultiClusterHub) *unstructured.Unstructured {
 
 // Validate returns true if an update is needed to reconcile differences with the current spec. If an update
 // is needed it returns the object with the new spec to update with.
-func Validate(found *unstructured.Unstructured) (*unstructured.Unstructured, bool) {
+func Validate(m *operatorsv1.MultiClusterHub, found *unstructured.Unstructured) (*unstructured.Unstructured, bool) {
 	updateNeeded := false
 
 	// Verify reconcile-rate annotation is set
-	if checkAnnotation(found) == false {
-		setAnnotation(found)
+	if annotationsCorrect(m, found) == false {
+		setAnnotation(m, found)
 		updateNeeded = true
 	}
 	return found, updateNeeded
 }
 
-func checkAnnotation(u *unstructured.Unstructured) bool {
+func annotationsCorrect(m *operatorsv1.MultiClusterHub, u *unstructured.Unstructured) bool {
 	a := u.GetAnnotations()
-	if a == nil || a["apps.open-cluster-management.io/reconcile-rate"] != "low" {
+	if a == nil || a["apps.open-cluster-management.io/reconcile-rate"] != desiredRate(m) {
 		return false
 	}
 	return true
 }
 
-func setAnnotation(u *unstructured.Unstructured) {
+func setAnnotation(m *operatorsv1.MultiClusterHub, u *unstructured.Unstructured) {
 	a := u.GetAnnotations()
 	if a == nil {
-		u.SetAnnotations(Annotation)
+		u.SetAnnotations(desiredAnnotation(m))
 	} else {
-		a["apps.open-cluster-management.io/reconcile-rate"] = "low"
+		a["apps.open-cluster-management.io/reconcile-rate"] = desiredRate(m)
 		u.SetAnnotations(a)
+	}
+}
+
+func desiredAnnotation(m *operatorsv1.MultiClusterHub) map[string]string {
+	if m.Status.CurrentVersion != version.Version {
+		return AnnotationRateHigh
+	} else {
+		return AnnotationRateLow
+	}
+}
+
+func desiredRate(m *operatorsv1.MultiClusterHub) string {
+	if m.Status.CurrentVersion != version.Version {
+		return "high"
+	} else {
+		return "low"
 	}
 }

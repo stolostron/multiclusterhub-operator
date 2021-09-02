@@ -249,7 +249,7 @@ func (r *MultiClusterHubReconciler) ensureChannel(m *operatorv1.MultiClusterHub,
 		return ctrl.Result{}, err
 	}
 
-	updated, needsUpdate := channel.Validate(found)
+	updated, needsUpdate := channel.Validate(m, found)
 	if needsUpdate {
 		selog.Info("Updating channel")
 		err = r.Client.Update(context.TODO(), updated)
