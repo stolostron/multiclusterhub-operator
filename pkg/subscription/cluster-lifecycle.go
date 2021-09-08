@@ -21,6 +21,7 @@ func ClusterLifecycle(m *operatorsv1.MultiClusterHub, overrides map[string]strin
 			},
 			"global": map[string]interface{}{
 				"pullPolicy":      utils.GetImagePullPolicy(m),
+				"imagePullPolicy": utils.GetImagePullPolicy(m),
 				"imagePullSecret": m.Spec.ImagePullSecret,
 				"imageRepository": utils.GetImageRepository(m),
 				"imageOverrides":  overrides,
