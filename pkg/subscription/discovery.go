@@ -15,7 +15,6 @@ func Discovery(m *operatorsv1.MultiClusterHub, overrides map[string]string) *uns
 		Name:      "discovery-operator",
 		Namespace: m.Namespace,
 		Overrides: map[string]interface{}{
-			"pullSecret": m.Spec.ImagePullSecret,
 			"hubconfig": map[string]interface{}{
 				"replicaCount": utils.DefaultReplicaCount(m),
 				"nodeSelector": m.Spec.NodeSelector,
@@ -25,6 +24,7 @@ func Discovery(m *operatorsv1.MultiClusterHub, overrides map[string]string) *uns
 			"global": map[string]interface{}{
 				"imageOverrides": overrides,
 				"pullPolicy":     utils.GetImagePullPolicy(m),
+				"pullSecret":     m.Spec.ImagePullSecret,
 			},
 			"clusterImageSets": map[string]interface{}{
 				"subscriptionPause": utils.GetDisableClusterImageSets(m),
