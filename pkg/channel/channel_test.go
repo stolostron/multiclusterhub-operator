@@ -14,7 +14,7 @@ import (
 
 func TestValidate(t *testing.T) {
 	m := &operatorsv1.MultiClusterHub{ObjectMeta: metav1.ObjectMeta{Namespace: "test"}}
-	annotatedCurrent := &unstructured.Unstructured{
+	current := &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": "apps.open-cluster-management.io/v1",
 			"kind":       "Channel",
@@ -28,12 +28,26 @@ func TestValidate(t *testing.T) {
 			},
 		},
 	}
-	annotatedCurrent.SetAnnotations(map[string]string{"foo": "bar"})
+
+	annotatedCurrent := current.DeepCopy()
+	annotatedCurrent.SetAnnotations(map[string]string{
+		"foo": "bar"},
+	)
 
 	annotatedDesired := Channel(m)
 	annotatedDesired.SetAnnotations(map[string]string{
 		"foo": "bar",
+		"apps.open-cluster-management.io/reconcile-rate": "high",
+	})
+
+	wrongRateCurrent := current.DeepCopy()
+	wrongRateCurrent.SetAnnotations(map[string]string{
 		"apps.open-cluster-management.io/reconcile-rate": "low",
+	})
+
+	wrongRateDesired := Channel(m)
+	wrongRateDesired.SetAnnotations(map[string]string{
+		"apps.open-cluster-management.io/reconcile-rate": "high",
 	})
 
 	tests := []struct {
@@ -73,10 +87,16 @@ func TestValidate(t *testing.T) {
 			want:  annotatedDesired,
 			want1: true,
 		},
+		{
+			name:  "Existing channel with wrong reconcile rate",
+			found: wrongRateCurrent,
+			want:  wrongRateDesired,
+			want1: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := Validate(tt.found)
+			got, got1 := Validate(m, tt.found)
 			if !reflect.DeepEqual(got.GetAnnotations(), tt.want.GetAnnotations()) {
 				t.Errorf("Validate() annotations got = %v, want %v", got.GetAnnotations(), tt.want.GetAnnotations())
 			}
