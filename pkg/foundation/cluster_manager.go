@@ -19,6 +19,10 @@ import (
 
 func ClusterManager(m *operatorsv1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
 
+	nodeSelector := map[string]interface{}{}
+	for k, v := range m.Spec.NodeSelector {
+		nodeSelector[k] = v
+	}
 	cm := &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": "operator.open-cluster-management.io/v1",
@@ -27,6 +31,16 @@ func ClusterManager(m *operatorsv1.MultiClusterHub, overrides map[string]string)
 				"name": "cluster-manager",
 			},
 			"spec": map[string]interface{}{
+				"nodePlacement": map[string]interface{}{
+					"nodeSelector": nodeSelector,
+					"tolerations": []map[string]interface{}{
+						{
+							"effect":   "NoSchedule",
+							"key":      "node-role.kubernetes.io/infra",
+							"operator": "Exists",
+						},
+					},
+				},
 				"registrationImagePullSpec": RegistrationImage(overrides),
 				"workImagePullSpec":         WorkImage(overrides),
 				"placementImagePullSpec":    PlacementImage(overrides),
