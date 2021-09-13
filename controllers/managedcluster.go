@@ -5,6 +5,7 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
@@ -25,6 +26,9 @@ const (
 
 	// KlusterletAddonConfigName name of the hub cluster managedcluster resource
 	KlusterletAddonConfigName = "local-cluster"
+
+	// AnnotationNodeSelector key name of nodeSelector annotation synced from mch
+	AnnotationNodeSelector = "open-cluster-management/nodeSelector"
 )
 
 func getInstallerLabels(m *operatorsv1.MultiClusterHub) map[string]string {
@@ -214,6 +218,20 @@ func (r *MultiClusterHubReconciler) ensureManagedCluster(m *operatorsv1.MultiClu
 		labels[k] = v
 	}
 	managedCluster.SetLabels(labels)
+
+	annotations := managedCluster.GetAnnotations()
+	if len(m.Spec.NodeSelector) != 0 {
+		nodeSelectors, err := json.Marshal(m.Spec.NodeSelector)
+		if err != nil {
+			r.Log.Error(err, "Failed to marshal nodeSelector")
+			return ctrl.Result{}, err
+		}
+		annotations[AnnotationNodeSelector] = string(nodeSelectors)
+		managedCluster.SetAnnotations(annotations)
+	} else if _, ok := annotations[AnnotationNodeSelector]; ok {
+		delete(annotations, AnnotationNodeSelector)
+		managedCluster.SetAnnotations(annotations)
+	}
 
 	err = r.Client.Update(context.TODO(), managedCluster)
 	if err != nil {
