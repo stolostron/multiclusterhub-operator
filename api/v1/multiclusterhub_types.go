@@ -82,6 +82,11 @@ type MultiClusterHubSpec struct {
 	// Enable cluster proxy addon
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Cluster Proxy Addon",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:booleanSwitch"}
 	EnableClusterProxyAddon bool `json:"enableClusterProxyAddon,omitempty"`
+
+	// Enable cluster backup
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Cluster Backup",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:booleanSwitch"}
+	// +optional
+	EnableClusterBackup bool `json:"enableClusterBackup"`
 }
 
 // Overrides provides developer overrides for MCH installation
