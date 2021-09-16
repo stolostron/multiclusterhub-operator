@@ -454,6 +454,12 @@ spec:
           - validatingwebhookconfigurations
           verbs:
           - deletecollection
+        - apiGroups:
+          - multicluster.openshift.io
+          resources:
+          - multiclusterengines
+          verbs:
+          - list
         serviceAccountName: multiclusterhub-operator
       deployments:
       - name: multiclusterhub-operator

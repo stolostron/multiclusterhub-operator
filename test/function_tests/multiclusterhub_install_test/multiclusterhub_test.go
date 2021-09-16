@@ -65,6 +65,17 @@ var _ = Describe("Multiclusterhub", func() {
 })
 
 func FullInstallTestSuite() {
+	It("If certain resources exist, block creation", func() {
+		By("Creating MultiClusterEngine")
+		utils.CreateMultiClusterEngineCRD()
+		utils.CreateMultiClusterEngineCR()
+		mch := utils.NewMultiClusterHub("test-mch", "open-cluster-management", "", true)
+		_, err := utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace("open-cluster-management").Create(context.TODO(), mch, metav1.CreateOptions{})
+		Expect(err.Error()).To(BeEquivalentTo("admission webhook \"multiclusterhub.validating-webhook.open-cluster-management.io\" denied the request: cannot create test-mch resource. Existing MultiClusterEngine resources must first be deleted"))
+
+		utils.DeleteMultiClusterEngineCR()
+		utils.DeleteMultiClusterEngineCRD()
+	})
 
 	It("Test Hiveconfig", func() {
 		By("- If HiveConfig is edited directly, ensure changes are persisted")
