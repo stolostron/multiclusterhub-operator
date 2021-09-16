@@ -311,6 +311,7 @@ func GetAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 		{Name: "search-prod-sub", Namespace: m.Namespace},
 		{Name: "discovery-operator-sub", Namespace: m.Namespace},
 		{Name: "assisted-service-sub", Namespace: m.Namespace},
+		{Name: "volsync-sub", Namespace: m.Namespace},
 	}
 	if m.Spec.EnableClusterBackup {
 		appsubs = append(appsubs, types.NamespacedName{Name: "cluster-backup-chart-sub", Namespace: m.Namespace})
