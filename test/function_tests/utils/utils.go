@@ -187,8 +187,8 @@ var (
 	// AppSubSlice ...
 	AppSubSlice = [...]string{"application-chart-sub", "assisted-service-sub",
 		"console-chart-sub", "policyreport-sub", "discovery-operator-sub",
-		"grc-sub",  "management-ingress-sub",
-		"rcm-sub", "search-prod-sub"}
+		"grc-sub", "management-ingress-sub",
+		"rcm-sub", "search-prod-sub", "volsync-sub"}
 
 	// CSVName ...
 	CSVName = "advanced-cluster-management"
@@ -489,7 +489,7 @@ func BrickCLC() (string, error) {
 		return "", err
 	}
 	err = waitForUnavailable("cluster-lifecycle", time.Duration(GetWaitInMinutes())*time.Minute)
-	
+
 	return oldImage, err
 }
 
