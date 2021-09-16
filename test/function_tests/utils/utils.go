@@ -67,6 +67,13 @@ var (
 		Resource: "multiclusterobservabilities",
 	}
 
+	// GVRMultiClusterEngine ...
+	GVRMultiClusterEngine = schema.GroupVersionResource{
+		Group:    "multicluster.openshift.io",
+		Version:  "v1alpha1",
+		Resource: "multiclusterengines",
+	}
+
 	// GVRMultiClusterHub ...
 	GVRMultiClusterHub = schema.GroupVersionResource{
 		Group:    "operator.open-cluster-management.io",
@@ -878,12 +885,12 @@ func ValidateMCH() error {
 	}
 
 	By("- Checking for Installer Labels on Deployments")
-	l, err := GetDeploymentLabels("cluster-lifecycle")
+	l, err := GetDeploymentLabels("infrastructure-operator")
 	if err != nil {
 		return err
 	}
 	if l["installer.name"] != MCHName || l["installer.namespace"] != MCHNamespace {
-		return fmt.Errorf("cluster-lifecycle missing installer labels: `%s` != `%s`, `%s` != `%s`", l["installer.name"], MCHName, l["installer.namespace"], MCHNamespace)
+		return fmt.Errorf("infrastructure-operator missing installer labels: `%s` != `%s`, `%s` != `%s`", l["installer.name"], MCHName, l["installer.namespace"], MCHNamespace)
 	}
 
 	return nil
@@ -1267,6 +1274,75 @@ func CreateObservabilityCRD() {
 	Expect(err).To(BeNil())
 
 	_, err = DynamicKubeClient.Resource(GVRCustomResourceDefinition).Create(context.TODO(), unstructuredCRD, metav1.CreateOptions{})
+	Expect(err).To(BeNil())
+}
+
+// CreateMultiClusterEngineCRD ...
+func CreateMultiClusterEngineCRD() {
+	By("- Creating MultiClusterEngine CRD if it does not exist")
+	_, err := DynamicKubeClient.Resource(GVRCustomResourceDefinition).Get(context.TODO(), "multiclusterengines.multicluster.openshift.io", metav1.GetOptions{})
+	if err == nil {
+		return
+	}
+
+	crd, err := ioutil.ReadFile("../resources/multiclusterengine-crd.yaml")
+	Expect(err).To(BeNil())
+
+	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
+	err = yaml.Unmarshal(crd, &unstructuredCRD.Object)
+	Expect(err).To(BeNil())
+
+	_, err = DynamicKubeClient.Resource(GVRCustomResourceDefinition).Create(context.TODO(), unstructuredCRD, metav1.CreateOptions{})
+	Expect(err).To(BeNil())
+}
+
+// CreateMultiClusterEngineCR ...
+func CreateMultiClusterEngineCR() {
+	By("- Creating MultiClusterEngine CR if it does not exist")
+
+	_, err := DynamicKubeClient.Resource(GVRMultiClusterEngine).Get(context.TODO(), "multiclusterengine-sample", metav1.GetOptions{})
+	if err == nil {
+		return
+	}
+
+	crd, err := ioutil.ReadFile("../resources/multiclusterengine-cr.yaml")
+	Expect(err).To(BeNil())
+
+	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
+	err = yaml.Unmarshal(crd, &unstructuredCRD.Object)
+	Expect(err).To(BeNil())
+
+	_, err = DynamicKubeClient.Resource(GVRMultiClusterEngine).Create(context.TODO(), unstructuredCRD, metav1.CreateOptions{})
+	Expect(err).To(BeNil())
+}
+
+// DeleteMultiClusterEngineCR ...
+func DeleteMultiClusterEngineCR() {
+	By("- Deleting MultiClusterEngine CR if it exists")
+
+	crd, err := ioutil.ReadFile("../resources/multiclusterengine-cr.yaml")
+	Expect(err).To(BeNil())
+
+	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
+	err = yaml.Unmarshal(crd, &unstructuredCRD.Object)
+	Expect(err).To(BeNil())
+
+	err = DynamicKubeClient.Resource(GVRMultiClusterEngine).Delete(context.TODO(), "multiclusterengine-sample", metav1.DeleteOptions{})
+	Expect(err).To(BeNil())
+}
+
+// DeleteMultiClusterEngineCRD ...
+func DeleteMultiClusterEngineCRD() {
+	By("- Deleting MultiClusterEngine CRD if it exists")
+
+	crd, err := ioutil.ReadFile("../resources/multiclusterengine-crd.yaml")
+	Expect(err).To(BeNil())
+
+	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
+	err = yaml.Unmarshal(crd, &unstructuredCRD.Object)
+	Expect(err).To(BeNil())
+
+	err = DynamicKubeClient.Resource(GVRCustomResourceDefinition).Delete(context.TODO(), "multiclusterengines.multicluster.openshift.io", metav1.DeleteOptions{})
 	Expect(err).To(BeNil())
 }
 

@@ -33,37 +33,39 @@ var _ = Describe("Multiclusterhub", func() {
 	})
 
 	if os.Getenv("full_test_suite") == "true" {
-		It("Block MCH uninstall if DiscoveryConfig exists", func() {
+		It("Block MCH uninstall if certain resources exists", func() {
 			By("Creating MultiClusterHub")
 			utils.CreateMCHNotManaged()
 			utils.ValidateMCH()
-
 			utils.CreateDiscoveryConfig()
 
+			By("Validating DiscoveryConfig blocks deletion")
 			err := utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Delete(context.TODO(), utils.MCHName, metav1.DeleteOptions{})
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).Should(BeEquivalentTo("admission webhook \"multiclusterhub.validating-webhook.open-cluster-management.io\" denied the request: Cannot delete MultiClusterHub resource because DiscoveryConfig resource(s) exist"))
 
 			utils.DeleteDiscoveryConfig()
 
-			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
-			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
-
-		})
-		It("Block MCH uninstall if Observability is running", func() {
-			By("Creating MultiClusterHub")
-			utils.CreateMCHNotManaged()
-			utils.ValidateMCH()
+			By("Validating MultiClusterObservability blocks deletion")
 
 			utils.CreateObservabilityCRD()
 			utils.CreateObservabilityCR()
-
-			err := utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Delete(context.TODO(), utils.MCHName, metav1.DeleteOptions{})
+			err = utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Delete(context.TODO(), utils.MCHName, metav1.DeleteOptions{})
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).Should(BeEquivalentTo("admission webhook \"multiclusterhub.validating-webhook.open-cluster-management.io\" denied the request: Cannot delete MultiClusterHub resource because MultiClusterObservability resource(s) exist"))
 
 			utils.DeleteObservabilityCR()
 			utils.DeleteObservabilityCRD()
+
+			By("Validating BareMetalAssets blocks deletion")
+
+			utils.CreateBareMetalAssetsCR()
+
+			err = utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Delete(context.TODO(), utils.MCHName, metav1.DeleteOptions{})
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).Should(BeEquivalentTo("admission webhook \"multiclusterhub.validating-webhook.open-cluster-management.io\" denied the request: Cannot delete MultiClusterHub resource because BareMetalAsset resource(s) exist"))
+
+			utils.DeleteBareMetalAssetsCR()
 
 			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
 			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
@@ -109,25 +111,6 @@ var _ = Describe("Multiclusterhub", func() {
 			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
 			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
 		})
-
-		It("Block MCH uninstall if BareMetalAssets exist", func() {
-			By("Creating MultiClusterHub")
-			utils.CreateMCHNotManaged()
-			utils.ValidateMCH()
-
-			utils.CreateBareMetalAssetsCR()
-
-			err := utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Delete(context.TODO(), utils.MCHName, metav1.DeleteOptions{})
-			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).Should(BeEquivalentTo("admission webhook \"multiclusterhub.validating-webhook.open-cluster-management.io\" denied the request: Cannot delete MultiClusterHub resource because BareMetalAssets resource(s) exist"))
-
-			utils.DeleteBareMetalAssetsCR()
-
-			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
-			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
-
-		})
-
 	}
 })
 
@@ -164,8 +147,7 @@ func AddFinalizerToManagedCluster(clientHubDynamic dynamic.Interface) error {
 	finalizers := []string{"test-finalizer"}
 
 	mc.SetFinalizers(finalizers)
-	mcU, err := clientHubDynamic.Resource(utils.GVRManagedCluster).Update(context.TODO(), mc, metav1.UpdateOptions{})
-	fmt.Println("mc ", mcU)
+	_, err = clientHubDynamic.Resource(utils.GVRManagedCluster).Update(context.TODO(), mc, metav1.UpdateOptions{})
 	Expect(err).Should(BeNil())
 
 	return nil

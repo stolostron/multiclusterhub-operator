@@ -345,3 +345,9 @@ rules:
   - validatingwebhookconfigurations
   verbs:
   - deletecollection
+- apiGroups:
+  - multicluster.openshift.io
+  resources:
+  - multiclusterengines
+  verbs:
+  - list

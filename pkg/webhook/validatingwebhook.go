@@ -9,6 +9,9 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"strings"
+
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 
 	clustermanager "github.com/open-cluster-management/api/operator/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -27,6 +30,70 @@ type multiClusterHubValidator struct {
 	client  client.Client
 	decoder *admission.Decoder
 }
+
+var (
+	blockCreationResources = []struct {
+		Name string
+		GVK  schema.GroupVersionKind
+	}{
+		{
+			Name: "MultiClusterEngine",
+			GVK: schema.GroupVersionKind{
+				Group:   "multicluster.openshift.io",
+				Version: "v1alpha1",
+				Kind:    "MultiClusterEngineList",
+			},
+		},
+	}
+
+	blockDeletionResources = []struct {
+		Name           string
+		GVK            schema.GroupVersionKind
+		ExceptionTotal int
+		Exceptions     []string
+	}{
+		{
+			Name: "ManagedCluster",
+			GVK: schema.GroupVersionKind{
+				Group:   "cluster.open-cluster-management.io",
+				Version: "v1",
+				Kind:    "ManagedClusterList",
+			},
+			ExceptionTotal: 1,
+			Exceptions:     []string{"local-cluster"},
+		},
+		{
+			Name: "BareMetalAsset",
+			GVK: schema.GroupVersionKind{
+				Group:   "inventory.open-cluster-management.io",
+				Version: "v1alpha1",
+				Kind:    "BareMetalAssetList",
+			},
+			ExceptionTotal: 0,
+			Exceptions:     []string{},
+		},
+		{
+			Name: "MultiClusterObservability",
+			GVK: schema.GroupVersionKind{
+				Group:   "observability.open-cluster-management.io",
+				Version: "v1beta2",
+				Kind:    "MultiClusterObservabilityList",
+			},
+			ExceptionTotal: 0,
+			Exceptions:     []string{},
+		},
+		{
+			Name: "DiscoveryConfig",
+			GVK: schema.GroupVersionKind{
+				Group:   "discovery.open-cluster-management.io",
+				Version: "v1alpha1",
+				Kind:    "DiscoveryConfigList",
+			},
+			ExceptionTotal: 0,
+			Exceptions:     []string{},
+		},
+	}
+)
 
 // Handle set the default values to every incoming MultiClusterHub cr.
 // Currently only handles create/update
@@ -87,9 +154,46 @@ func (m *multiClusterHubValidator) Handle(ctx context.Context, req admission.Req
 }
 
 func (m *multiClusterHubValidator) validateCreate(req admission.Request) error {
+	mch := &operatorsv1.MultiClusterHub{}
+	err := m.decoder.DecodeRaw(req.Object, mch)
+	if err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+	log.Info("validate create", "name", req.Name)
+
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return err
+	}
+
+	c, err := discovery.NewDiscoveryClientForConfig(cfg)
+	if err != nil {
+		return err
+	}
+
+	for _, resource := range blockCreationResources {
+		list := &unstructured.UnstructuredList{}
+		list.SetGroupVersionKind(resource.GVK)
+		err := discovery.ServerSupportsVersion(c, list.GroupVersionKind().GroupVersion())
+		if err == nil {
+			if err := m.client.List(ctx, list); err != nil {
+				// Server may support Group Version, but explicitly also exempt Kind
+				if strings.Contains(err.Error(), "no matches for kind") || k8serrors.IsNotFound(err) {
+					continue
+				}
+				return fmt.Errorf("unable to list %s: %s", resource.Name, err)
+			}
+			if len(list.Items) == 0 {
+				continue
+			}
+			return fmt.Errorf("cannot create %s resource. Existing %s resources must first be deleted", mch.Name, resource.Name)
+		}
+	}
 
 	creatingMCH := &operatorsv1.MultiClusterHub{}
-	err := m.decoder.DecodeRaw(req.Object, creatingMCH)
+	err = m.decoder.DecodeRaw(req.Object, creatingMCH)
 	if err != nil {
 		return err
 	}
@@ -125,6 +229,15 @@ func (m *multiClusterHubValidator) validateUpdate(req admission.Request) error {
 }
 
 func (m *multiClusterHubValidator) validateDelete(req admission.Request) error {
+
+	ctx := context.Background()
+
+	mch := &operatorsv1.MultiClusterHub{}
+	err := m.decoder.DecodeRaw(req.OldObject, mch)
+	if err != nil {
+		return err
+	}
+
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return err
@@ -135,90 +248,27 @@ func (m *multiClusterHubValidator) validateDelete(req admission.Request) error {
 		return err
 	}
 
-	managedClusterList := &unstructured.UnstructuredList{}
-	managedClusterList.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "cluster.open-cluster-management.io",
-		Version: "v1",
-		Kind:    "ManagedClusterList",
-	})
-	gv := schema.GroupVersion{Group: "cluster.open-cluster-management.io", Version: "v1"}
-	supportErr := discovery.ServerSupportsVersion(c, gv)
-	if supportErr == nil {
-		managedClusterErr := m.client.List(context.TODO(), managedClusterList)
-		if managedClusterErr == nil {
-			if len(managedClusterList.Items) > 1 {
-				return errors.New("Cannot delete MultiClusterHub resource because ManagedCluster resource(s) exist")
+	for _, resource := range blockDeletionResources {
+		list := &unstructured.UnstructuredList{}
+		list.SetGroupVersionKind(resource.GVK)
+		err := discovery.ServerSupportsVersion(c, list.GroupVersionKind().GroupVersion())
+		if err == nil {
+			// List all resources
+			if err := m.client.List(ctx, list); err != nil {
+				return fmt.Errorf("unable to list %s: %s", resource.Name, err)
 			}
-
-			if len(managedClusterList.Items) == 1 {
-				managedCluster := managedClusterList.Items[0]
-				if managedCluster.GetName() != "local-cluster" {
-					return errors.New("Cannot delete MultiClusterHub resource because ManagedCluster resource(s) exist")
+			// If there are any unexpected resources, deny deletion
+			if len(list.Items) > resource.ExceptionTotal {
+				return fmt.Errorf("Cannot delete MultiClusterHub resource because %s resource(s) exist", resource.Name)
+			}
+			// if exception resources are present, check if they are the same as the exception resources
+			if resource.ExceptionTotal > 0 {
+				for _, item := range list.Items {
+					if !contains(resource.Exceptions, item.GetName()) {
+						return fmt.Errorf("Cannot delete MultiClusterHub resource because %s resource(s) exist", resource.Name)
+					}
 				}
 			}
-		}
-		if managedClusterErr != nil {
-			log.Info("mc error", "error", managedClusterErr.Error())
-		}
-	}
-
-	bmaList := &unstructured.UnstructuredList{}
-	bmaList.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "inventory.open-cluster-management.io",
-		Version: "v1alpha1",
-		Kind:    "BareMetalAsset",
-	})
-	gv = schema.GroupVersion{Group: "inventory.open-cluster-management.io", Version: "v1alpha1"}
-	supportErr = discovery.ServerSupportsVersion(c, gv)
-	if supportErr == nil {
-		bmaErr := m.client.List(context.TODO(), bmaList)
-		if bmaErr == nil {
-			if len(bmaList.Items) > 0 {
-				return errors.New("Cannot delete MultiClusterHub resource because BareMetalAssets resource(s) exist")
-			}
-		}
-		if bmaErr != nil {
-			log.Info("bma error", "error", bmaErr.Error())
-		}
-	}
-
-	observabilityList := &unstructured.UnstructuredList{}
-	observabilityList.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "observability.open-cluster-management.io",
-		Version: "v1beta2",
-		Kind:    "MultiClusterObservabilityList",
-	})
-	gv = schema.GroupVersion{Group: "observability.open-cluster-management.io", Version: "v1beta2"}
-	supportErr = discovery.ServerSupportsVersion(c, gv)
-	if supportErr == nil {
-		observabilityErr := m.client.List(context.TODO(), observabilityList)
-		if observabilityErr == nil {
-			if len(observabilityList.Items) > 0 {
-				return errors.New("Cannot delete MultiClusterHub resource because MultiClusterObservability resource(s) exist")
-			}
-		}
-		if observabilityErr != nil {
-			log.Info("obs error", "error", observabilityErr.Error())
-		}
-	}
-
-	discoveryConfigList := &unstructured.UnstructuredList{}
-	discoveryConfigList.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "discovery.open-cluster-management.io",
-		Version: "v1alpha1",
-		Kind:    "DiscoveryConfigList",
-	})
-	gv = schema.GroupVersion{Group: "discovery.open-cluster-management.io", Version: "v1alpha1"}
-	supportErr = discovery.ServerSupportsVersion(c, gv)
-	if supportErr == nil {
-		discoveryConfigErr := m.client.List(context.TODO(), discoveryConfigList)
-		if discoveryConfigErr == nil {
-			if len(discoveryConfigList.Items) > 0 {
-				return errors.New("Cannot delete MultiClusterHub resource because DiscoveryConfig resource(s) exist")
-			}
-		}
-		if discoveryConfigErr != nil {
-			log.Info("dc error", "error", discoveryConfigErr.Error())
 		}
 	}
 
@@ -271,4 +321,13 @@ func (m *multiClusterHubValidator) InjectClient(c client.Client) error {
 func (m *multiClusterHubValidator) InjectDecoder(d *admission.Decoder) error {
 	m.decoder = d
 	return nil
+}
+
+func contains(list []string, s string) bool {
+	for _, v := range list {
+		if v == s {
+			return true
+		}
+	}
+	return false
 }

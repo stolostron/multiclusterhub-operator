@@ -5,7 +5,6 @@ kind: DiscoveryConfig
 metadata:
   name: discoveryconfig
 spec:
-  providerConnections:
-    - ocm-api-token
+  credential: ocm-api-token
   filters:
     lastActive: 7
