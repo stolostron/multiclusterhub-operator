@@ -13,7 +13,7 @@ import (
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 
-	clustermanager "github.com/open-cluster-management/api/operator/v1"
+	clustermanager "open-cluster-management.io/api/operator/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"

@@ -38,7 +38,7 @@ func Test_newUnstructured(t *testing.T) {
 					},
 				},
 			},
-		},		
+		},
 		{
 			name: "Kuisubscription",
 			args: args{
