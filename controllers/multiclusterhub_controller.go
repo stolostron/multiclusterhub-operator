@@ -24,8 +24,8 @@ import (
 	"os"
 	"time"
 
-	clustermanager "github.com/open-cluster-management/api/operator/v1"
 	hive "github.com/openshift/hive/apis/hive/v1"
+	clustermanager "open-cluster-management.io/api/operator/v1"
 
 	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis/apps/v1"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/channel"

@@ -58,7 +58,7 @@ This approach _only_ tests MultiClusterHub Operator functionality (not the funct
 0. Confirm the following are installed and configured on your local machine:
 
     - `docker`
-    - `go` (version 1.16 minimum)
+    - `go` (version 1.17 minimum)
     - `python3`
     - `make`
 

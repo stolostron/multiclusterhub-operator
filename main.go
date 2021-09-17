@@ -25,9 +25,9 @@ import (
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 
-	clustermanager "github.com/open-cluster-management/api/operator/v1"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	clustermanager "open-cluster-management.io/api/operator/v1"
 
 	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis"
 	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis"
