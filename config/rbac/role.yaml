@@ -345,6 +345,8 @@ rules:
   - validatingwebhookconfigurations
   verbs:
   - deletecollection
+  - list
+  - watch
 - apiGroups:
   - multicluster.openshift.io
   resources:

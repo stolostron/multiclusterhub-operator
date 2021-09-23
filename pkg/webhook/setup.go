@@ -11,8 +11,9 @@ import (
 	"path/filepath"
 	"time"
 
+	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+
 	admissionregistration "k8s.io/api/admissionregistration/v1"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,6 +39,7 @@ const (
 	validatingWebhookName = "multiclusterhub.validating-webhook.open-cluster-management.io"
 	validatingCfgName     = "multiclusterhub-operator-validating-webhook"
 	webhookSecretName     = "multiclusterhub-operator-webhook"
+	crdName               = "multiclusterhubs.operator.open-cluster-management.io"
 )
 
 var (
@@ -164,15 +166,21 @@ func createOrUpdateValidatingWebhook(c client.Client, namespace, path string, ce
 }
 
 func setOwnerReferences(c client.Client, namespace string, obj metav1.Object) {
-	key := types.NamespacedName{Name: operatorName, Namespace: namespace}
-	owner := &appsv1.Deployment{}
+	key := types.NamespacedName{Name: crdName}
+	owner := &apixv1.CustomResourceDefinition{}
 	if err := c.Get(context.TODO(), key, owner); err != nil {
 		log.Error(err, fmt.Sprintf("Failed to set owner references for %s", obj.GetName()))
 		return
 	}
 
 	obj.SetOwnerReferences([]metav1.OwnerReference{
-		*metav1.NewControllerRef(owner, owner.GetObjectKind().GroupVersionKind())})
+		{
+			APIVersion: owner.APIVersion,
+			Kind:       owner.Kind,
+			Name:       owner.Name,
+			UID:        owner.UID,
+		},
+	})
 }
 
 // updateCertDir reads the webhook secret and saves the cert info to the cert directory if the resourceVersion is
