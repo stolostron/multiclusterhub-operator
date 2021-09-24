@@ -18,7 +18,7 @@ import (
 
 func Test_getImageFromManifestByKey(t *testing.T) {
 
-	full_mch.Status.DesiredVersion = "2.1.11"
+	full_mch.Status.DesiredVersion = "2.1.12"
 	tests := []struct {
 		Name      string
 		ImageKey  string
