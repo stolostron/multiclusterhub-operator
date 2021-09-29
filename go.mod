@@ -10,8 +10,8 @@ require (
 	github.com/go-logr/logr v0.4.0
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.15.0
-	github.com/open-cluster-management/multicloud-operators-subscription v1.2.4-0-20210817-7443bc9
-	github.com/open-cluster-management/multicloud-operators-subscription-release v1.2.4-0-20210823-3c187e8
+	github.com/open-cluster-management/multicloud-operators-subscription v1.2.4-0-20210915-3eda062.0.20210923221443-91919cf42424
+	github.com/open-cluster-management/multicloud-operators-subscription-release v1.2.4-0-20210823-a494067
 	github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible
 	github.com/openshift/hive/apis v1.1.6
 	github.com/openshift/library-go v0.0.0-20210622153508-f77a17e0269f
@@ -105,13 +105,6 @@ replace (
 	github.com/Azure/go-autorest/autorest/azure/cli => github.com/Azure/go-autorest/autorest/azure/cli v0.3.1
 	github.com/Azure/go-autorest/autorest/date => github.com/Azure/go-autorest/autorest/date v0.2.0
 	github.com/Azure/go-autorest/autorest/validation => github.com/Azure/go-autorest/autorest/validation v0.2.1-0.20191028180845-3492b2aff503
-	//AppSub
-	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20191216044856-a8371794149d
-	github.com/docker/docker => github.com/moby/moby v17.12.0-ce-rc1.0.20200618181300-9dc6525e6118+incompatible
-	github.com/jetstack/cert-manager => github.com/open-cluster-management/cert-manager v0.0.0-20200821135248-2fd523b053f5
-	github.com/kubevirt/terraform-provider-kubevirt => github.com/nirarg/terraform-provider-kubevirt v0.0.0-20201222125919-101cee051ed3
-	github.com/metal3-io/baremetal-operator => github.com/openshift/baremetal-operator v0.0.0-20200715132148-0f91f62a41fe
-	github.com/metal3-io/cluster-api-provider-baremetal => github.com/openshift/cluster-api-provider-baremetal v0.0.0-20190821174549-a2a477909c1d
 
 	github.com/openshift/hive/apis => github.com/openshift/hive/apis v0.0.0-20210521175321-356f6bf08f83
 	github.com/terraform-providers/terraform-provider-aws => github.com/openshift/terraform-provider-aws v1.60.1-0.20200630224953-76d1fb4e5699
