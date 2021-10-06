@@ -138,7 +138,6 @@ func TestSubscriptions(t *testing.T) {
 		{"ManagementIngress subscription", ManagementIngress(mch, ovr, "")},
 		{"cluster-lifecycle subscription", ClusterLifecycle(mch, ovr)},
 		{"Search subscription", Search(mch, ovr)},
-		{"Volsync subscription", Volsync(mch, ovr)},
 	}
 
 	for _, tt := range tests {
