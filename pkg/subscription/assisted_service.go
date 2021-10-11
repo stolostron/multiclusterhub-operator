@@ -15,7 +15,6 @@ func AssistedService(m *operatorsv1.MultiClusterHub, overrides map[string]string
 		Name:      "assisted-service",
 		Namespace: m.Namespace,
 		Overrides: map[string]interface{}{
-			"pullSecret": m.Spec.ImagePullSecret,
 			"hubconfig": map[string]interface{}{
 				"replicaCount": utils.DefaultReplicaCount(m),
 				"nodeSelector": m.Spec.NodeSelector,
@@ -25,6 +24,7 @@ func AssistedService(m *operatorsv1.MultiClusterHub, overrides map[string]string
 			"global": map[string]interface{}{
 				"imageOverrides": overrides,
 				"pullPolicy":     utils.GetImagePullPolicy(m),
+				"pullSecret":     m.Spec.ImagePullSecret,
 			},
 		},
 	}
