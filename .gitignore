@@ -45,3 +45,5 @@ bundle.Dockerfile
 *.tap
 
 bin/
+
+hack/prereqs
