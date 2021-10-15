@@ -1,7 +1,7 @@
 FROM golang:1.13 as builder
 
 
-RUN go get github.com/onsi/ginkgo/ginkgo
+RUN GO111MODULE=on go get github.com/onsi/ginkgo/ginkgo@v1.15.2
 RUN GO111MODULE=on go get github.com/mikefarah/yq/v3
 
 USER root
