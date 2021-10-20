@@ -53,3 +53,6 @@ mock-component-image/bin
 mock-component-image/results
 mock-component-image/scripts/__pycache__
 mock-component-image/multiclusterhub
+
+bin/
+hack/
