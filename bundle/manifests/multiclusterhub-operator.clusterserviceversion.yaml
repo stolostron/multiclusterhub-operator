@@ -20,7 +20,7 @@ metadata:
     categories: Integration & Delivery
     certified: "false"
     description: Open management of Openshift and Kubernetes clusters
-    operators.operatorframework.io/builder: operator-sdk-v1.12.0
+    operators.operatorframework.io/builder: operator-sdk-v1.13.1
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/open-cluster-management/multiclusterhub-operator
     support: The Open Cluster Management Project
@@ -56,25 +56,25 @@ spec:
         path: disableHubSelfManagement
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:io.kubernetes:booleanSwitch
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
       - description: Disable automatic update of ClusterImageSets
         displayName: Disable Update ClusterImageSets
         path: disableUpdateClusterImageSets
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:io.kubernetes:booleanSwitch
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
       - description: Enable cluster backup
         displayName: Enable Cluster Backup
         path: enableClusterBackup
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:io.kubernetes:booleanSwitch
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
       - description: Enable cluster proxy addon
         displayName: Enable Cluster Proxy Addon
         path: enableClusterProxyAddon
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:io.kubernetes:booleanSwitch
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
       - description: (Deprecated) Overrides for the default HiveConfig spec
         displayName: Hive Config
         path: hive
