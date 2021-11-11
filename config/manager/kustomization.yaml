@@ -18,4 +18,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: quay.io/open-cluster-management/multiclusterhub-operator
-  newTag: 2.4.0
+  newTag: 2.5.0
