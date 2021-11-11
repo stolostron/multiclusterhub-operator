@@ -8,7 +8,7 @@
 *.so
 *.dylib
 *.tap
-bin
+
 testbin/*
 vendor/
 
@@ -23,6 +23,11 @@ test/mock-component-image/bin
 test/mock-component-image/results
 test/mock-component-image/scripts/__pycache__
 test/mock-component-image/multiclusterhub
+
+bin/*
+!bin/image-manifests
+build/_output/*
+
 # Test binary, build with `go test -c`
 *.test
 
