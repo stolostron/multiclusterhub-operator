@@ -11,16 +11,14 @@ metadata:
             "name": "multiclusterhub",
             "namespace": "open-cluster-management"
           },
-          "spec": {
-            "imagePullSecret": "multiclusterhub-operator-pull-secret"
-          }
+          "spec": {}
         }
       ]
     capabilities: Basic Install
     categories: Integration & Delivery
     certified: "false"
     description: Open management of Openshift and Kubernetes clusters
-    operators.operatorframework.io/builder: operator-sdk-v1.12.0
+    operators.operatorframework.io/builder: operator-sdk-v1.13.1
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/open-cluster-management/multiclusterhub-operator
     support: The Open Cluster Management Project
