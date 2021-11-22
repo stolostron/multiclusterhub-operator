@@ -1,5 +1,0 @@
-# Copyright Contributors to the Open Cluster Management project
-
-resources:
-- webhook-mutating-config.yaml
-- webhook-validating-config.yaml

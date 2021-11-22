@@ -30,7 +30,6 @@ import (
 	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis/apps/v1"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/channel"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/deploying"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/foundation"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/helmrepo"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/imageoverrides"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/manifest"
@@ -313,24 +312,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 	}
 
-	result, err = r.ensureDeployment(multiClusterHub, foundation.WebhookDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	result, err = r.ensureService(multiClusterHub, foundation.WebhookService(multiClusterHub))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	// Wait for ocm-webhook to be fully available before applying rest of subscriptions
-	if !utils.IsUnitTest() {
-		if !(multiClusterHub.Status.Components["ocm-webhook"].Type == "Available" && multiClusterHub.Status.Components["ocm-webhook"].Status == metav1.ConditionTrue) {
-			r.Log.Info("Waiting for component 'ocm-webhook' to be available")
-			return reconcile.Result{RequeueAfter: resyncPeriod}, nil
-		}
-	}
-
 	// Install the rest of the subscriptions in no particular order
 	result, err = r.ensureSubscription(multiClusterHub, subscription.ManagementIngress(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
 	if result != (ctrl.Result{}) {
@@ -390,47 +371,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
-	}
-
-	//OCM proxy server deployment
-	result, err = r.ensureDeployment(multiClusterHub, foundation.OCMProxyServerDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	//OCM proxy server service
-	result, err = r.ensureService(multiClusterHub, foundation.OCMProxyServerService(multiClusterHub))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	// OCM proxy apiService
-	result, err = r.ensureAPIService(multiClusterHub, foundation.OCMProxyAPIService(multiClusterHub))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	// OCM clusterView v1 apiService
-	result, err = r.ensureAPIService(multiClusterHub, foundation.OCMClusterViewV1APIService(multiClusterHub))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	// OCM clusterView v1alpha1 apiService
-	result, err = r.ensureAPIService(multiClusterHub, foundation.OCMClusterViewV1alpha1APIService(multiClusterHub))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	//OCM controller deployment
-	result, err = r.ensureDeployment(multiClusterHub, foundation.OCMControllerDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	result, err = r.ensureUnstructuredResource(multiClusterHub, foundation.ClusterManager(multiClusterHub, r.CacheSpec.ImageOverrides))
-	if result != (ctrl.Result{}) {
-		return result, err
 	}
 
 	if !utils.IsUnitTest() {
@@ -569,9 +509,6 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 		return err
 	}
 	if err := r.cleanupCRDs(reqLogger, m); err != nil {
-		return err
-	}
-	if err := r.cleanupClusterManagers(reqLogger, m); err != nil {
 		return err
 	}
 	if m.Spec.SeparateCertificateManagement {
