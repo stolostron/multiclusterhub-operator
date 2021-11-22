@@ -1048,16 +1048,16 @@ func validateManagedClusterConditions() error {
 	}
 }
 
-func ValidateDeploymentPolicies()  error{
-	unstructuredDeployments:= listByGVR(DynamicKubeClient, GVRDeployment, MCHNamespace, 60, 3)
+func ValidateDeploymentPolicies() error {
+	unstructuredDeployments := listByGVR(DynamicKubeClient, GVRDeployment, MCHNamespace, 60, 3)
 
 	for _, deployment := range unstructuredDeployments.Items {
 		deploymentName := deployment.GetName()
-		if deploymentName != "multicluster-operators-application" && deploymentName != "hive-operator" && deploymentName != "multicluster-operators-channel" && deploymentName != "multicluster-operators-hub-subscription" && deploymentName != "multicluster-operators-standalone-subscription"{
+		if deploymentName != "multicluster-operators-application" && deploymentName != "hive-operator" && deploymentName != "multicluster-operators-channel" && deploymentName != "multicluster-operators-hub-subscription" && deploymentName != "multicluster-operators-standalone-subscription" {
 			policy := deployment.Object["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"].(map[string]interface{})["containers"].([]interface{})[0].(map[string]interface{})["imagePullPolicy"]
 			fmt.Println(fmt.Sprintf(deploymentName))
 			Expect(policy).To(BeEquivalentTo("IfNotPresent"))
-		} 
+		}
 	}
 	return nil
 }

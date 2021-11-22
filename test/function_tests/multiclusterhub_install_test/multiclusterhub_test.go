@@ -156,7 +156,7 @@ func FullInstallTestSuite() {
 		err := utils.ValidateMCH()
 		Expect(err).To(BeNil())
 
-		By ("- listing each deployment in the MCH namespace and checking")
+		By("- listing each deployment in the MCH namespace and checking")
 
 		err = utils.ValidateDeploymentPolicies()
 		Expect(err).To(BeNil())
