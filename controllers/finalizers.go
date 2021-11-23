@@ -216,43 +216,6 @@ func (r *MultiClusterHubReconciler) cleanupCRDs(log logr.Logger, m *operatorsv1.
 	return nil
 }
 
-func (r *MultiClusterHubReconciler) cleanupClusterManagers(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
-
-	listOptions := client.MatchingLabels{
-		"installer.name":      m.GetName(),
-		"installer.namespace": m.GetNamespace(),
-	}
-
-	found := &unstructured.Unstructured{}
-	found.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "operator.open-cluster-management.io",
-		Kind:    "ClusterManager",
-		Version: "v1",
-	})
-	err := r.Client.Get(context.TODO(), types.NamespacedName{
-		Name: "cluster-manager",
-	}, found)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			// ClusterManager successfully removed
-			reqLogger.Info("ClusterManagers finalized")
-			return nil
-		}
-		reqLogger.Error(err, "Error while deleting ClusterManagers")
-		return err
-	}
-
-	// Delete ClusterManager if it exists
-	reqLogger.Info("Deleting clustermanager", "Resource.Name", found.GetName())
-	err = r.Client.DeleteAllOf(context.TODO(), found, listOptions)
-	if err != nil {
-		reqLogger.Error(err, "Error while deleting clustermanager instances")
-		return err
-	}
-	// Return error, since deletion does not confirm the object was removed
-	return fmt.Errorf("Attempted deletion of ClusterManager. Unable to confirm if ClusterManager was removed")
-}
-
 func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	installerLabels := client.MatchingLabels{
 		"installer.name":      m.GetName(),

@@ -6,7 +6,7 @@ metadata:
   name: hive-operator
   namespace: open-cluster-management
 spec:
-  channel: ocm-2.3
+  channel: ocm-2.4
   installPlanApproval: Automatic
   name: hive-operator
   source: community-operators

@@ -9,11 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
-	"strings"
 
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-
-	clustermanager "open-cluster-management.io/api/operator/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -32,20 +28,6 @@ type multiClusterHubValidator struct {
 }
 
 var (
-	blockCreationResources = []struct {
-		Name string
-		GVK  schema.GroupVersionKind
-	}{
-		{
-			Name: "MultiClusterEngine",
-			GVK: schema.GroupVersionKind{
-				Group:   "multicluster.openshift.io",
-				Version: "v1alpha1",
-				Kind:    "MultiClusterEngineList",
-			},
-		},
-	}
-
 	blockDeletionResources = []struct {
 		Name           string
 		GVK            schema.GroupVersionKind
@@ -103,20 +85,6 @@ func (m *multiClusterHubValidator) Handle(ctx context.Context, req admission.Req
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	if req.Kind.Kind == "ClusterManager" {
-		if req.Operation == "DELETE" {
-			err := m.validateClusterManagerDelete(req, multiClusterHubs)
-			if err != nil {
-				log.Info("Delete denied")
-				return admission.Denied(err.Error())
-			}
-			log.Info("Delete successful")
-			return admission.Allowed("")
-		}
-		// No other paths should exist
-		return admission.Allowed("")
-	}
-
 	if req.Operation == "CREATE" {
 		if len(multiClusterHubs.Items) == 0 {
 			err := m.validateCreate(req)
@@ -156,44 +124,6 @@ func (m *multiClusterHubValidator) Handle(ctx context.Context, req admission.Req
 func (m *multiClusterHubValidator) validateCreate(req admission.Request) error {
 	mch := &operatorsv1.MultiClusterHub{}
 	err := m.decoder.DecodeRaw(req.Object, mch)
-	if err != nil {
-		return err
-	}
-
-	ctx := context.Background()
-	log.Info("validate create", "name", req.Name)
-
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return err
-	}
-
-	c, err := discovery.NewDiscoveryClientForConfig(cfg)
-	if err != nil {
-		return err
-	}
-
-	for _, resource := range blockCreationResources {
-		list := &unstructured.UnstructuredList{}
-		list.SetGroupVersionKind(resource.GVK)
-		err := discovery.ServerSupportsVersion(c, list.GroupVersionKind().GroupVersion())
-		if err == nil {
-			if err := m.client.List(ctx, list); err != nil {
-				// Server may support Group Version, but explicitly also exempt Kind
-				if strings.Contains(err.Error(), "no matches for kind") || k8serrors.IsNotFound(err) {
-					continue
-				}
-				return fmt.Errorf("unable to list %s: %s", resource.Name, err)
-			}
-			if len(list.Items) == 0 {
-				continue
-			}
-			return fmt.Errorf("cannot create %s resource. Existing %s resources must first be deleted", mch.Name, resource.Name)
-		}
-	}
-
-	creatingMCH := &operatorsv1.MultiClusterHub{}
-	err = m.decoder.DecodeRaw(req.Object, creatingMCH)
 	if err != nil {
 		return err
 	}
@@ -272,36 +202,6 @@ func (m *multiClusterHubValidator) validateDelete(req admission.Request) error {
 		}
 	}
 
-	return nil
-}
-
-func (m *multiClusterHubValidator) validateClusterManagerDelete(req admission.Request, mchList *operatorsv1.MultiClusterHubList) error {
-	clusterManager := &clustermanager.ClusterManager{}
-	err := m.decoder.DecodeRaw(req.OldObject, clusterManager)
-	if err != nil {
-		return err
-	}
-
-	username := req.UserInfo.Username
-	if username == "" {
-		return fmt.Errorf("ValidatingWebhook admission request must include Userinfo username")
-	}
-
-	if len(mchList.Items) != 1 {
-		return fmt.Errorf("Only one MCH resource can exist")
-	}
-	mchName := mchList.Items[0].Name
-	mchNamespace := mchList.Items[0].Namespace
-	nameLabel, nameLabelExists := clusterManager.Labels["installer.name"]
-	namespaceLabel, namespaceLabelExists := clusterManager.Labels["installer.namespace"]
-
-	if nameLabelExists && namespaceLabelExists && nameLabel == mchName && namespaceLabel == mchNamespace {
-		if username == fmt.Sprintf("system:serviceaccount:%s:multiclusterhub-operator", mchNamespace) {
-			log.Info("MultiClusterHub is being uninstalled, allow for deletion of clustermanager")
-			return nil
-		}
-		return fmt.Errorf("Unauthorized deletion of clustermanager resource")
-	}
 	return nil
 }
 

@@ -294,9 +294,6 @@ func FindNamespace() (string, error) {
 func GetDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	return []types.NamespacedName{
 		{Name: "multiclusterhub-repo", Namespace: m.Namespace},
-		{Name: "ocm-controller", Namespace: m.Namespace},
-		{Name: "ocm-proxyserver", Namespace: m.Namespace},
-		{Name: "ocm-webhook", Namespace: m.Namespace},
 	}
 }
 

@@ -6,7 +6,7 @@ metadata:
   name: multicluster-subscription-operator
   namespace: open-cluster-management
 spec:
-  channel: release-2.3
+  channel: release-2.4
   installPlanApproval: Automatic
   name: multicluster-operators-subscription
   source: community-operators
