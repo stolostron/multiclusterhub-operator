@@ -149,6 +149,20 @@ func FullInstallTestSuite() {
 		return
 	})
 
+	It("Test PullPolicy", func() {
+		By("- When creating the MCH, ensure that all deployments use the IfNotPresent pullPolicy")
+
+		utils.CreateMCHNotManaged()
+		err := utils.ValidateMCH()
+		Expect(err).To(BeNil())
+
+		By("- listing each deployment in the MCH namespace and checking")
+
+		err = utils.ValidateDeploymentPolicies()
+		Expect(err).To(BeNil())
+
+	})
+
 	It("Testing Image Overrides Configmap", func() {
 		By("- If configmap is manually overwitten, ensure MCH Operator will overwrite")
 

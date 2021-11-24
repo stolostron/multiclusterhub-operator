@@ -181,7 +181,7 @@ func TestGetImagePullPolicy(t *testing.T) {
 	}
 
 	t.Run("No pull policy set", func(t *testing.T) {
-		want := v1.PullAlways
+		want := v1.PullIfNotPresent
 		if got := GetImagePullPolicy(noPullPolicyMCH); got != want {
 			t.Errorf("GetImagePullPolicy() = %v, want %v", got, want)
 		}
