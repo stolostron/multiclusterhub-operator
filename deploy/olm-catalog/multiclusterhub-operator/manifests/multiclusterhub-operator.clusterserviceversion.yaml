@@ -478,7 +478,7 @@ spec:
                 - name: CRDS_PATH
                   value: /crds
                 image: multiclusterhub-operator:2.3.5
-                imagePullPolicy: Always
+                imagePullPolicy: IfNotPresent
                 name: multiclusterhub-operator
                 resources:
                   limits:

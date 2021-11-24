@@ -20,7 +20,7 @@ spec:
       containers:
         - name: multiclusterhub-operator
           image: multiclusterhub-operator:2.3.5
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           command:
           - multiclusterhub-operator
           resources:
