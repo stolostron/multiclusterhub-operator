@@ -18,7 +18,7 @@ spec:
       containers:
       - name: multiclusterhub-operator
         image: multiclusterhub-operator:1.0.0
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 50051
       imagePullSecrets:
