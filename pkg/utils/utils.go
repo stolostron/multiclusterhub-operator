@@ -11,6 +11,7 @@ import (
 	"time"
 
 	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
+	"github.com/open-cluster-management/multiclusterhub-operator/pkg/multiclusterengine"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
@@ -321,6 +322,8 @@ func GetAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 
 func GetCustomResources(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	return []types.NamespacedName{
-		{Name: "cluster-manager-cr", Namespace: ""},
+		{Name: "multicluster-engine-sub", Namespace: multiclusterengine.SubscriptionNamespace},
+		{Name: "multicluster-engine-csv", Namespace: multiclusterengine.SubscriptionNamespace},
+		{Name: "multicluster-engine"},
 	}
 }

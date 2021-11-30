@@ -24,10 +24,12 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
+	mcev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
+	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 
+	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	clustermanager "open-cluster-management.io/api/operator/v1"
 
 	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis"
 	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis"
@@ -35,7 +37,6 @@ import (
 	"github.com/open-cluster-management/multiclusterhub-operator/controllers"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/webhook"
 	netv1 "github.com/openshift/api/config/v1"
-	hive "github.com/openshift/hive/apis/hive/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -62,17 +63,17 @@ func init() {
 
 	utilruntime.Must(apiregistrationv1.AddToScheme(scheme))
 
-	utilruntime.Must(hive.AddToScheme(scheme))
-
-	utilruntime.Must(clustermanager.AddToScheme(scheme))
-
 	utilruntime.Must(apixv1.AddToScheme(scheme))
 
 	utilruntime.Must(netv1.AddToScheme(scheme))
 
 	utilruntime.Must(subrelv1.AddToScheme(scheme))
 
-	utilruntime.Must(clustermanager.AddToScheme(scheme))
+	utilruntime.Must(subv1alpha1.AddToScheme(scheme))
+
+	utilruntime.Must(mcev1alpha1.AddToScheme(scheme))
+
+	utilruntime.Must(olmv1.AddToScheme(scheme))
 
 	//+kubebuilder:scaffold:scheme
 }

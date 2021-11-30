@@ -7,13 +7,16 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 
+	mcev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis/apps/v1"
 	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
+	"github.com/open-cluster-management/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/version"
 
 	utils "github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
@@ -104,7 +107,7 @@ func (r *MultiClusterHubReconciler) ComponentsAreRunning(m *operatorsv1.MultiClu
 
 	deployList, _ := r.listDeployments(trackedNamespaces)
 	hrList, _ := r.listHelmReleases(trackedNamespaces)
-	crList, _ := r.listCustomResources()
+	crList, _ := r.listCustomResources(m)
 	componentStatuses := getComponentStatuses(m, hrList, deployList, crList, nil)
 	delete(componentStatuses, ManagedClusterName)
 	return allComponentsSuccessful(componentStatuses)
@@ -273,8 +276,12 @@ func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allHRs []*subrelv1.H
 		if cr == nil {
 			continue
 		}
-		if cr.GetName() == "cluster-manager" {
-			components["cluster-manager-cr"] = mapClusterManager(cr)
+		if cr.GetName() == multiclusterengine.SubscriptionName && cr.GetKind() == "Subscription" {
+			components["multicluster-engine-sub"] = mapSubscription(cr)
+		} else if strings.Contains(cr.GetName(), multiclusterengine.SubscriptionName) && cr.GetKind() == "ClusterServiceVersion" {
+			components["multicluster-engine-csv"] = mapCSV(cr)
+		} else if cr.GetName() == multiclusterengine.MulticlusterengineName && cr.GetKind() == "MultiClusterEngine" {
+			components["multicluster-engine"] = mapMultiClusterEngine(cr)
 		}
 	}
 
@@ -406,12 +413,49 @@ func mapManagedClusterConditions(conditions []interface{}) operatorsv1.StatusCon
 	}
 }
 
-func mapClusterManager(cm *unstructured.Unstructured) operatorsv1.StatusCondition {
-	if cm == nil {
+func mapSubscription(sub *unstructured.Unstructured) operatorsv1.StatusCondition {
+	if sub == nil {
+		return unknownStatus
+	}
+	spec, ok := sub.Object["spec"].(map[string]interface{})
+	if !ok {
+		return unknownStatus
+	}
+	status, ok := sub.Object["status"].(map[string]interface{})
+	if !ok {
+		return unknownStatus
+	}
+	installPlanRef, ok := status["installPlanRef"].(map[string]interface{})
+	if !ok {
 		return unknownStatus
 	}
 
-	status, ok := cm.Object["status"].(map[string]interface{})
+	componentStatus := "True"
+	reason, _ := status["state"].(string)
+	installPlanApproval, _ := spec["installPlanApproval"].(string)
+	installPlanNamespace, _ := installPlanRef["namespace"].(string)
+	installPlanName, _ := installPlanRef["name"].(string)
+
+	message := fmt.Sprintf("installPlanApproval: %s. installPlan: %s/%s",
+		installPlanApproval, installPlanNamespace, installPlanName)
+
+	return operatorsv1.StatusCondition{
+		Kind:               "Subscription",
+		Status:             metav1.ConditionStatus(componentStatus),
+		LastUpdateTime:     metav1.Now(),
+		LastTransitionTime: metav1.Now(),
+		Reason:             reason,
+		Message:            message,
+		Available:          true,
+	}
+}
+
+func mapMultiClusterEngine(mce *unstructured.Unstructured) operatorsv1.StatusCondition {
+	if mce == nil {
+		return unknownStatus
+	}
+
+	status, ok := mce.Object["status"].(map[string]interface{})
 	if !ok {
 		return unknownStatus
 	}
@@ -429,14 +473,67 @@ func mapClusterManager(cm *unstructured.Unstructured) operatorsv1.StatusConditio
 			return unknownStatus
 		}
 
-		sType, _ := statusCondition["type"].(string)
 		status, _ := statusCondition["status"].(string)
 		message, _ := statusCondition["message"].(string)
 		reason, _ := statusCondition["reason"].(string)
+		conditionType, _ := statusCondition["type"].(string)
 
 		componentCondition = operatorsv1.StatusCondition{
-			Kind:               "ClusterManager",
-			Type:               sType,
+			Kind:               "ClusterServiceVersion",
+			Status:             metav1.ConditionStatus(status),
+			LastUpdateTime:     metav1.Now(),
+			LastTransitionTime: metav1.Now(),
+			Reason:             reason,
+			Message:            message,
+			Type:               conditionType,
+			Available:          false,
+		}
+
+		// Return condition with Applied = true
+		if conditionType == string(mcev1alpha1.MultiClusterEngineAvailable) && status == "True" {
+			componentCondition.Available = true
+			return componentCondition
+		}
+	}
+
+	// If no condition with applied true, then return last condition in list
+	return componentCondition
+}
+
+func mapCSV(csv *unstructured.Unstructured) operatorsv1.StatusCondition {
+	if csv == nil {
+		return unknownStatus
+	}
+
+	status, ok := csv.Object["status"].(map[string]interface{})
+	if !ok {
+		return unknownStatus
+	}
+	conditions, ok := status["conditions"].([]interface{})
+	if !ok {
+		return unknownStatus
+	}
+
+	componentCondition := operatorsv1.StatusCondition{}
+
+	for _, condition := range conditions {
+		statusCondition, ok := condition.(map[string]interface{})
+		if !ok {
+			// log.Info("ClusterManager status conditions not properly formatted")
+			return unknownStatus
+		}
+
+		phase, _ := statusCondition["phase"].(string)
+		message, _ := statusCondition["message"].(string)
+		reason, _ := statusCondition["reason"].(string)
+		status := "False"
+
+		if phase == "Succeeded" {
+			status = "True"
+		}
+
+		componentCondition = operatorsv1.StatusCondition{
+			Kind:               "ClusterServiceVersion",
 			Status:             metav1.ConditionStatus(status),
 			LastUpdateTime:     metav1.Now(),
 			LastTransitionTime: metav1.Now(),
@@ -446,7 +543,7 @@ func mapClusterManager(cm *unstructured.Unstructured) operatorsv1.StatusConditio
 		}
 
 		// Return condition with Applied = true
-		if sType == "Applied" && status == "True" {
+		if phase == "Succeeded" && reason == "InstallSucceeded" {
 			componentCondition.Available = true
 			return componentCondition
 		}

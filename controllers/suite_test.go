@@ -29,7 +29,6 @@ import (
 	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis"
 	operatorv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
 	netv1 "github.com/openshift/api/config/v1"
-	hive "github.com/openshift/hive/apis/hive/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -84,8 +83,6 @@ var _ = BeforeSuite(func(done Done) {
 	err = appsubv1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 	err = apiregistrationv1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-	err = hive.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 	err = clustermanager.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())

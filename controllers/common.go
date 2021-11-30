@@ -12,19 +12,25 @@ import (
 	"strings"
 	"time"
 
+	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
+
+	mcev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
+
 	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis/apps/v1"
 	"github.com/openshift/library-go/pkg/operator/resource/resourcemerge"
+	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 
 	operatorv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/channel"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/foundation"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/helmrepo"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/manifest"
+	"github.com/open-cluster-management/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/subscription"
 	utils "github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/version"
@@ -88,8 +94,6 @@ func (r *MultiClusterHubReconciler) ensureDeployment(m *operatorv1.MultiClusterH
 	switch found.Name {
 	case helmrepo.HelmRepoName:
 		desired, needsUpdate = helmrepo.ValidateDeployment(m, r.CacheSpec.ImageOverrides, dep, found)
-	case foundation.OCMControllerName, foundation.OCMProxyServerName, foundation.WebhookName:
-		desired, needsUpdate = foundation.ValidateDeployment(m, r.CacheSpec.ImageOverrides, dep, found)
 	default:
 		r.Log.Info("Could not validate deployment; unknown name")
 		return ctrl.Result{}, nil
@@ -159,57 +163,6 @@ func (r *MultiClusterHubReconciler) ensureService(m *operatorv1.MultiClusterHub,
 	err = r.Client.Update(context.TODO(), existingCopy)
 	if err != nil {
 		svlog.Error(err, "Failed to update Service")
-		return ctrl.Result{}, err
-	}
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureAPIService(m *operatorv1.MultiClusterHub, s *apiregistrationv1.APIService) (ctrl.Result, error) {
-	svlog := r.Log.WithValues("Service.Name", s.Name)
-
-	found := &apiregistrationv1.APIService{}
-	err := r.Client.Get(context.TODO(), types.NamespacedName{
-		Name: s.Name,
-	}, found)
-	if err != nil && errors.IsNotFound(err) {
-
-		// Create the apiService
-		err = r.Client.Create(context.TODO(), s)
-
-		if err != nil {
-			// Creation failed
-			svlog.Error(err, "Failed to create new apiService")
-			return ctrl.Result{}, err
-		}
-
-		// Creation was successful
-		svlog.Info("Created a new apiService")
-		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
-		SetHubCondition(&m.Status, *condition)
-		return ctrl.Result{}, nil
-
-	} else if err != nil {
-		// Error that isn't due to the apiService not existing
-		svlog.Error(err, "Failed to get apiService")
-		return ctrl.Result{}, err
-	}
-
-	modified := resourcemerge.BoolPtr(false)
-	existingCopy := found.DeepCopy()
-
-	resourcemerge.EnsureObjectMeta(modified, &existingCopy.ObjectMeta, s.ObjectMeta)
-	serviceSame := equality.Semantic.DeepEqual(existingCopy.Spec.Service, s.Spec.Service)
-	prioritySame := existingCopy.Spec.VersionPriority == s.Spec.VersionPriority && existingCopy.Spec.GroupPriorityMinimum == s.Spec.GroupPriorityMinimum
-	insecureSame := existingCopy.Spec.InsecureSkipTLSVerify == s.Spec.InsecureSkipTLSVerify
-
-	if !*modified && serviceSame && prioritySame && insecureSame {
-		return ctrl.Result{}, nil
-	}
-
-	existingCopy.Spec = s.Spec
-	err = r.Client.Update(context.TODO(), existingCopy)
-	if err != nil {
-		svlog.Error(err, "Failed to update apiService")
 		return ctrl.Result{}, err
 	}
 	return ctrl.Result{}, nil
@@ -364,27 +317,155 @@ func (r *MultiClusterHubReconciler) ensureUnstructuredResource(m *operatorv1.Mul
 		return ctrl.Result{}, err
 	}
 
-	// Validate object based on name
-	var desired *unstructured.Unstructured
-	var needsUpdate bool
+	return ctrl.Result{}, nil
+}
 
-	switch found.GetKind() {
-	case "ClusterManager":
-		desired, needsUpdate = foundation.ValidateClusterManager(found, u)
-	default:
-		obLog.Info("Could not validate unstrucuted resource with type.", "Type", found.GetKind())
+func (r *MultiClusterHubReconciler) ensureNamespace(m *operatorv1.MultiClusterHub, ns *corev1.Namespace) (ctrl.Result, error) {
+	ctx := context.Background()
+
+	r.Log.Info(fmt.Sprintf("Ensuring namespace: %s", ns.GetName()))
+	force := true
+
+	err := r.Client.Patch(ctx, ns, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
+	if err != nil {
+		r.Log.Info(fmt.Sprintf("Error: %s", err.Error()))
+		return ctrl.Result{Requeue: true}, nil
+	}
+	condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+	SetHubCondition(&m.Status, *condition)
+
+	existingNS := &corev1.Namespace{}
+	err = r.Client.Get(ctx, types.NamespacedName{
+		Name: ns.GetName(),
+	}, existingNS)
+	if err != nil {
+		r.Log.Info(fmt.Sprintf("error locating namespace: %s. Error: %s", ns.GetName(), err.Error()))
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	if existingNS.Status.Phase == corev1.NamespaceActive {
+		return ctrl.Result{}, nil
+	}
+	r.Log.Info(fmt.Sprintf("namespace '%s' is not in an active state", ns.GetName()))
+	return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureOperatorGroup(m *operatorv1.MultiClusterHub, og *olmv1.OperatorGroup) (ctrl.Result, error) {
+	ctx := context.Background()
+
+	r.Log.Info(fmt.Sprintf("Ensuring operator group exists in ns: %s", og.GetNamespace()))
+
+	operatorGroupList := &olmv1.OperatorGroupList{}
+	err := r.Client.List(ctx, operatorGroupList, client.InNamespace(og.GetNamespace()))
+	if err != nil {
+		r.Log.Info(fmt.Sprintf("error listing operatorgroups in ns: %s. Error: %s", og.GetNamespace(), err.Error()))
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	if len(operatorGroupList.Items) > 1 {
+		r.Log.Error(fmt.Errorf("found more than one operator group in namespace %s", og.GetNamespace()), "fatal error")
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	} else if len(operatorGroupList.Items) == 1 {
 		return ctrl.Result{}, nil
 	}
 
-	if needsUpdate {
-		obLog.Info("Updating resource")
-		err = r.Client.Update(context.TODO(), desired)
-		if err != nil {
-			obLog.Error(err, "Failed to update resource.")
-			return ctrl.Result{}, err
-		}
+	force := true
+	err = r.Client.Patch(ctx, og, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
+	if err != nil {
+		r.Log.Info(fmt.Sprintf("Error: %s", err.Error()))
+		return ctrl.Result{Requeue: true}, nil
 	}
+	condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+	SetHubCondition(&m.Status, *condition)
+
+	existingOperatorGroup := &olmv1.OperatorGroup{}
+	err = r.Client.Get(ctx, types.NamespacedName{
+		Name: og.GetName(),
+	}, existingOperatorGroup)
+	if err != nil {
+		r.Log.Info(fmt.Sprintf("error locating operatorgroup: %s/%s. Error: %s", og.GetNamespace(), og.GetName(), err.Error()))
+		return ctrl.Result{Requeue: true}, nil
+	}
+
 	return ctrl.Result{}, nil
+
+}
+
+func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(m *operatorv1.MultiClusterHub, mce *mcev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
+	ctx := context.Background()
+
+	r.Log.Info(fmt.Sprintf("Ensuring Multicluster Engine custom resource: %s", mce.GetName()))
+	force := true
+	err := r.Client.Patch(ctx, mce, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
+	if err != nil {
+		r.Log.Info(fmt.Sprintf("Error: %s", err.Error()))
+		return ctrl.Result{Requeue: true}, nil
+	}
+	condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+	SetHubCondition(&m.Status, *condition)
+
+	existingMCE := &mcev1alpha1.MultiClusterEngine{}
+	err = r.Client.Get(ctx, types.NamespacedName{
+		Name: mce.GetName(),
+	}, existingMCE)
+	if err != nil {
+		r.Log.Info(fmt.Sprintf("error locating MCE: %s. Error: %s", mce.GetName(), err.Error()))
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	if existingMCE.Status.Phase == mcev1alpha1.MultiClusterEnginePhaseAvailable {
+		return ctrl.Result{}, nil
+	}
+	r.Log.Info(fmt.Sprintf("Multiclusterengine: %s is not yet available", mce.GetName()))
+	return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+
+}
+
+func (r *MultiClusterHubReconciler) ensureOLMSubscription(m *operatorv1.MultiClusterHub, sub *subv1alpha1.Subscription) (ctrl.Result, error) {
+	ctx := context.Background()
+
+	r.Log.Info(fmt.Sprintf("Ensuring OLM %s/%s subscription", sub.GetNamespace(), sub.GetName()))
+	force := true
+
+	err := r.Client.Patch(ctx, sub, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
+	if err != nil {
+		r.Log.Info(fmt.Sprintf("Error: %s", err.Error()))
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+	SetHubCondition(&m.Status, *condition)
+
+	existingSub := &subv1alpha1.Subscription{}
+	err = r.Client.Get(ctx, types.NamespacedName{
+		Name:      sub.GetName(),
+		Namespace: sub.GetNamespace(),
+	}, existingSub)
+	if err != nil {
+		r.Log.Info(fmt.Sprintf("error locating subscription: %s/%s. Error: %s", sub.GetNamespace(), sub.GetName(), err.Error()))
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	currentCSV := existingSub.Status.CurrentCSV
+	if currentCSV == "" {
+		return ctrl.Result{RequeueAfter: resyncPeriod}, fmt.Errorf("CSV not located for subscription: %s/%s", sub.GetNamespace(), sub.GetName())
+	}
+
+	existingCSV := &subv1alpha1.ClusterServiceVersion{}
+	err = r.Client.Get(ctx, types.NamespacedName{
+		Name:      currentCSV,
+		Namespace: sub.GetNamespace()}, existingCSV)
+	if err != nil {
+		r.Log.Info(fmt.Sprintf("CSV not located for subscription: %s/%s", sub.GetNamespace(), sub.GetName()))
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+	if existingCSV.Status.Phase == "Succeeded" {
+		return ctrl.Result{}, nil
+	}
+
+	r.Log.Info(fmt.Sprintf("%s/%s CSV is not yet in a successful state", sub.GetNamespace(), sub.GetName()))
+	return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+
 }
 
 // OverrideImagesFromConfigmap ...
@@ -508,15 +589,25 @@ func (r *MultiClusterHubReconciler) listHelmReleases(namespaces []string) ([]*su
 }
 
 // listCustomResources gets custom resources the installer observes
-func (r *MultiClusterHubReconciler) listCustomResources() ([]*unstructured.Unstructured, error) {
+func (r *MultiClusterHubReconciler) listCustomResources(m *operatorv1.MultiClusterHub) ([]*unstructured.Unstructured, error) {
 	var ret []*unstructured.Unstructured
 
-	cr, err := foundation.GetClusterManager(r.Client)
+	mceSub, err := r.GetSubscription(multiclusterengine.Subscription(m))
 	if err != nil {
-		// Return nil on error to prevent blocking status updates
-		cr = nil
+		mceSub = nil
 	}
-	ret = append(ret, cr)
+
+	mceCSV, err := r.GetCSVFromSubscription(multiclusterengine.Subscription(m))
+	if err != nil {
+		mceCSV = nil
+	}
+
+	mce, err := r.GetMultiClusterEngine(multiclusterengine.MultiClusterEngine(m))
+	if err != nil {
+		mce = nil
+	}
+
+	ret = append(ret, mceSub, mceCSV, mce)
 	return ret, nil
 }
 
@@ -637,6 +728,72 @@ func (r *MultiClusterHubReconciler) ensureSubscriptionOperatorIsRunning(mch *ope
 		r.Log.Info("Standalone subscription deployment is not running. Requeuing.")
 		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 	}
+}
+
+// GetSubscriptionIPInformation retrieves the current subscriptions installplan information for status
+func (r *MultiClusterHubReconciler) GetSubscription(sub *subv1alpha1.Subscription) (*unstructured.Unstructured, error) {
+	mceSubscription := &subv1alpha1.Subscription{}
+	err := r.Client.Get(context.Background(), types.NamespacedName{
+		Name:      sub.GetName(),
+		Namespace: sub.GetNamespace(),
+	}, mceSubscription)
+	if err != nil {
+		return nil, err
+	}
+	unstructuredSub, err := runtime.DefaultUnstructuredConverter.ToUnstructured(mceSubscription)
+	if err != nil {
+		r.Log.Error(err, "Failed to unmarshal subscription")
+		return nil, err
+	}
+	return &unstructured.Unstructured{Object: unstructuredSub}, nil
+}
+
+func (r *MultiClusterHubReconciler) GetMultiClusterEngine(mce *mcev1alpha1.MultiClusterEngine) (*unstructured.Unstructured, error) {
+	multiClusterEngine := &mcev1alpha1.MultiClusterEngine{}
+	err := r.Client.Get(context.Background(), types.NamespacedName{
+		Name: mce.GetName(),
+	}, multiClusterEngine)
+	if err != nil {
+		return nil, err
+	}
+
+	unstructuredMCE, err := runtime.DefaultUnstructuredConverter.ToUnstructured(multiClusterEngine)
+	if err != nil {
+		r.Log.Error(err, "Failed to unmarshal multiclusterengine")
+		return nil, err
+	}
+	return &unstructured.Unstructured{Object: unstructuredMCE}, nil
+}
+
+// GetCSVFromSubscription retrieves CSV status information from the related subscription for status
+func (r *MultiClusterHubReconciler) GetCSVFromSubscription(sub *subv1alpha1.Subscription) (*unstructured.Unstructured, error) {
+	mceSubscription := &subv1alpha1.Subscription{}
+	err := r.Client.Get(context.Background(), types.NamespacedName{
+		Name:      sub.GetName(),
+		Namespace: sub.GetNamespace(),
+	}, mceSubscription)
+	if err != nil {
+		return nil, err
+	}
+
+	currentCSV := mceSubscription.Status.CurrentCSV
+	if currentCSV == "" {
+		return nil, fmt.Errorf("currentCSV is empty")
+	}
+
+	mceCSV := &subv1alpha1.ClusterServiceVersion{}
+	err = r.Client.Get(context.Background(), types.NamespacedName{
+		Name:      currentCSV,
+		Namespace: sub.GetNamespace(),
+	}, mceCSV)
+	if err != nil {
+		return nil, err
+	}
+	csv, err := runtime.DefaultUnstructuredConverter.ToUnstructured(mceCSV)
+	if err != nil {
+		return nil, err
+	}
+	return &unstructured.Unstructured{Object: csv}, nil
 }
 
 // isACMManaged returns whether this application is managed by OLM via an ACM subscription
