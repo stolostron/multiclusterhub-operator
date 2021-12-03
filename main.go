@@ -31,7 +31,6 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis"
 	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis"
 	operatorv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
 	"github.com/open-cluster-management/multiclusterhub-operator/controllers"
@@ -66,8 +65,6 @@ func init() {
 	utilruntime.Must(apixv1.AddToScheme(scheme))
 
 	utilruntime.Must(netv1.AddToScheme(scheme))
-
-	utilruntime.Must(subrelv1.AddToScheme(scheme))
 
 	utilruntime.Must(subv1alpha1.AddToScheme(scheme))
 

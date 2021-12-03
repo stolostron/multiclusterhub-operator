@@ -23,8 +23,13 @@ import (
 	"path/filepath"
 	"testing"
 
+	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+
+	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	mcev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis"
 	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis"
 	operatorv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
@@ -33,9 +38,9 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
-	clustermanager "open-cluster-management.io/api/operator/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -78,25 +83,16 @@ var _ = BeforeSuite(func(done Done) {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	err = operatorv1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-	err = appsubv1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-	err = apiregistrationv1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-	err = clustermanager.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-
-	err = apixv1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-	err = netv1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-
-	err = subrelv1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-
-	err = clustermanager.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
+	Expect(scheme.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
+	Expect(operatorv1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
+	Expect(appsubv1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
+	Expect(apiregistrationv1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
+	Expect(apixv1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
+	Expect(netv1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
+	Expect(subrelv1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
+	Expect(olmv1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
+	Expect(subv1alpha1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
+	Expect(mcev1alpha1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
 
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme: scheme.Scheme,

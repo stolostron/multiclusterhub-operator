@@ -237,14 +237,11 @@ func (r *MultiClusterHubReconciler) ensureSubscription(m *operatorv1.MultiCluste
 	}, found)
 	if err != nil && errors.IsNotFound(err) {
 
-		// Create the resource. Skip on unit test
-		if !utils.IsUnitTest() {
-			err := r.Client.Create(context.TODO(), u)
-			if err != nil {
-				// Creation failed
-				obLog.Error(err, "Failed to create new instance")
-				return ctrl.Result{}, err
-			}
+		err := r.Client.Create(context.TODO(), u)
+		if err != nil {
+			// Creation failed
+			obLog.Error(err, "Failed to create new instance")
+			return ctrl.Result{}, err
 		}
 
 		// Creation was successful
@@ -413,7 +410,7 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(m *operatorv1.Multi
 		return ctrl.Result{Requeue: true}, nil
 	}
 
-	if existingMCE.Status.Phase == mcev1alpha1.MultiClusterEnginePhaseAvailable {
+	if existingMCE.Status.Phase == mcev1alpha1.MultiClusterEnginePhaseAvailable || utils.IsUnitTest() {
 		return ctrl.Result{}, nil
 	}
 	r.Log.Info(fmt.Sprintf("Multiclusterengine: %s is not yet available", mce.GetName()))
@@ -444,6 +441,11 @@ func (r *MultiClusterHubReconciler) ensureOLMSubscription(m *operatorv1.MultiClu
 	if err != nil {
 		r.Log.Info(fmt.Sprintf("error locating subscription: %s/%s. Error: %s", sub.GetNamespace(), sub.GetName(), err.Error()))
 		return ctrl.Result{Requeue: true}, nil
+	}
+
+	if utils.IsUnitTest() {
+		r.Log.Info("Skipping CSV check in unit test mode")
+		return ctrl.Result{}, nil
 	}
 
 	currentCSV := existingSub.Status.CurrentCSV
