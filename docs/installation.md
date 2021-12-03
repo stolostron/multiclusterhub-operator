@@ -6,7 +6,7 @@ The below guidelines will explain how to build and install the operator on a rem
 
 ### Prerequisites
 
-- [go][go_tool] version v1.16+
+- [go][go_tool] version v1.17+
 - [operator SDK][osdk] v0.18.0+
 - [opm][opm] v1.12.5+
 - yq
