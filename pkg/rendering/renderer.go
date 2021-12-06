@@ -4,13 +4,9 @@
 package rendering
 
 import (
-	"fmt"
-	"reflect"
 	"strconv"
 
-	"github.com/fatih/structs"
 	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/foundation"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/rendering/templates"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
 	v1 "k8s.io/api/rbac/v1"
@@ -19,11 +15,6 @@ import (
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/kustomize/v3/pkg/resource"
-)
-
-const (
-	metadataErr         = "failed to find metadata field"
-	proxyApiServiceName = "v1beta1.proxy.open-cluster-management.io"
 )
 
 var log = logf.Log.WithName("renderer")
@@ -42,20 +33,16 @@ func NewRenderer(multipleClusterHub *operatorsv1.MultiClusterHub) *Renderer {
 		cr: multipleClusterHub,
 	}
 	renderer.renderFns = map[string]renderFn{
-		"APIService":                     renderer.renderAPIServices,
-		"Deployment":                     renderer.renderNamespace,
-		"Service":                        renderer.renderNamespace,
-		"ServiceAccount":                 renderer.renderNamespace,
-		"ConfigMap":                      renderer.renderNamespace,
-		"ClusterRoleBinding":             renderer.renderClusterRoleBinding,
-		"ClusterRole":                    renderer.renderClusterRole,
-		"MutatingWebhookConfiguration":   renderer.renderMutatingWebhookConfiguration,
-		"ValidatingWebhookConfiguration": renderer.renderValidatingWebhookConfiguration,
-		"Subscription":                   renderer.renderNamespace,
-		"StatefulSet":                    renderer.renderNamespace,
-		"Channel":                        renderer.renderNamespace,
-		"HiveConfig":                     renderer.renderHiveConfig,
-		"CustomResourceDefinition":       renderer.renderCRD,
+		"Deployment":               renderer.renderNamespace,
+		"Service":                  renderer.renderNamespace,
+		"ServiceAccount":           renderer.renderNamespace,
+		"ConfigMap":                renderer.renderNamespace,
+		"ClusterRoleBinding":       renderer.renderClusterRoleBinding,
+		"ClusterRole":              renderer.renderClusterRole,
+		"Subscription":             renderer.renderNamespace,
+		"StatefulSet":              renderer.renderNamespace,
+		"Channel":                  renderer.renderNamespace,
+		"CustomResourceDefinition": renderer.renderCRD,
 	}
 	return renderer
 }
@@ -93,26 +80,6 @@ func (r *Renderer) renderTemplates(templates []*resource.Resource) ([]*unstructu
 	}
 
 	return uobjs, nil
-}
-
-func (r *Renderer) renderAPIServices(res *resource.Resource) (*unstructured.Unstructured, error) {
-	u := &unstructured.Unstructured{Object: res.Map()}
-	spec, ok := u.Object["spec"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("failed to find apiservices spec field")
-	}
-	metadata, ok := u.Object["metadata"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("failed to find metadata field")
-	}
-	if metadata["name"] == proxyApiServiceName {
-		spec["service"] = map[string]interface{}{
-			"namespace": r.cr.Namespace,
-			"name":      foundation.OCMProxyServerName,
-		}
-	}
-	utils.AddInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
-	return u, nil
 }
 
 func (r *Renderer) renderNamespace(res *resource.Resource) (*unstructured.Unstructured, error) {
@@ -163,47 +130,6 @@ func (r *Renderer) renderClusterRoleBinding(res *resource.Resource) (*unstructur
 
 func (r *Renderer) renderCRD(res *resource.Resource) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{Object: res.Map()}
-	utils.AddInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
-	return u, nil
-}
-
-func (r *Renderer) renderMutatingWebhookConfiguration(res *resource.Resource) (*unstructured.Unstructured, error) {
-	u := &unstructured.Unstructured{Object: res.Map()}
-	webooks, ok := u.Object["webhooks"].([]interface{})
-	if !ok {
-		return nil, fmt.Errorf("failed to find webhooks spec field")
-	}
-	webhook := webooks[0].(map[string]interface{})
-	clientConfig := webhook["clientConfig"].(map[string]interface{})
-	service := clientConfig["service"].(map[string]interface{})
-
-	service["namespace"] = r.cr.Namespace
-	utils.AddInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
-	return u, nil
-}
-
-func (r *Renderer) renderValidatingWebhookConfiguration(res *resource.Resource) (*unstructured.Unstructured, error) {
-	u := &unstructured.Unstructured{Object: res.Map()}
-	webooks, ok := u.Object["webhooks"].([]interface{})
-	if !ok {
-		return nil, fmt.Errorf("failed to find webhooks spec field")
-	}
-	webhook := webooks[0].(map[string]interface{})
-	clientConfig := webhook["clientConfig"].(map[string]interface{})
-	service := clientConfig["service"].(map[string]interface{})
-
-	service["namespace"] = r.cr.Namespace
-	utils.AddInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
-	return u, nil
-}
-
-func (r *Renderer) renderHiveConfig(res *resource.Resource) (*unstructured.Unstructured, error) {
-	u := &unstructured.Unstructured{Object: res.Map()}
-	HiveConfig := operatorsv1.HiveConfigSpec{}
-
-	if r.cr.Spec.Hive != nil && !reflect.DeepEqual(structs.Map(r.cr.Spec.Hive), structs.Map(HiveConfig)) {
-		u.Object["spec"] = structs.Map(r.cr.Spec.Hive)
-	}
 	utils.AddInstallerLabel(u, r.cr.GetName(), r.cr.GetNamespace())
 	return u, nil
 }

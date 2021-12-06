@@ -636,33 +636,6 @@ package controllers
 // 			if result != (ctrl.Result{}) {
 // 				t.Fatalf("Failed to ensure foundation resource: %s", err)
 // 			}
-
-// 			//OCM proxy server service
-// 			result, err = r.ensureService(tt.MCH, foundation.OCMProxyServerService(tt.MCH))
-// 			if result != (ctrl.Result{}) {
-// 				t.Fatalf("Failed to ensure foundation resource: %s", err)
-// 			}
-
-// 			// OCM apiServices
-// 			result, err = r.ensureAPIService(tt.MCH, foundation.OCMProxyAPIService(tt.MCH))
-// 			if result != (ctrl.Result{}) {
-// 				t.Fatalf("Failed to ensure foundation resource: %s", err)
-// 			}
-// 			result, err = r.ensureAPIService(tt.MCH, foundation.OCMClusterViewV1APIService(tt.MCH))
-// 			if result != (ctrl.Result{}) {
-// 				t.Fatalf("Failed to ensure foundation resource: %s", err)
-// 			}
-// 			result, err = r.ensureAPIService(tt.MCH, foundation.OCMClusterViewV1alpha1APIService(tt.MCH))
-// 			if result != (ctrl.Result{}) {
-// 				t.Fatalf("Failed to ensure foundation resource: %s", err)
-// 			}
-
-// 			//OCM controller deployment
-// 			result, err = r.ensureDeployment(tt.MCH, foundation.OCMControllerDeployment(tt.MCH, emptyOverrides))
-// 			if result != (ctrl.Result{}) {
-// 				t.Fatalf("Failed to ensure foundation resource: %s", err)
-// 			}
-
 // 			err = r.cleanupFoundation(r.log, tt.MCH)
 // 			if err != tt.Result {
 // 				t.Fatalf("Failed to cleanup foundation: %s", err)

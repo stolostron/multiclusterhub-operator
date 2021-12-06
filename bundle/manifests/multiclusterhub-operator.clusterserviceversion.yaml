@@ -459,7 +459,27 @@ spec:
           resources:
           - multiclusterengines
           verbs:
+          - create
+          - delete
+          - get
           - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - operators.coreos.com
+          resources:
+          - clusterserviceversions
+          - operatorgroups
+          - subscriptions
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
         serviceAccountName: multiclusterhub-operator
       deployments:
       - name: multiclusterhub-operator

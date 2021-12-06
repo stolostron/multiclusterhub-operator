@@ -9,11 +9,13 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
+	mcev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/channel"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/foundation"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/helmrepo"
+	"github.com/open-cluster-management/multiclusterhub-operator/pkg/multiclusterengine"
 	utils "github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
+	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -21,45 +23,11 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/types"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-func (r *MultiClusterHubReconciler) cleanupHiveConfigs(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
-
-	listOptions := client.MatchingLabels{
-		"installer.name":      m.GetName(),
-		"installer.namespace": m.GetNamespace(),
-	}
-
-	found := &unstructured.Unstructured{}
-	found.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "hive.openshift.io",
-		Kind:    "HiveConfig",
-		Version: "v1",
-	})
-	err := r.Client.Get(context.TODO(), types.NamespacedName{
-		Name: "hive",
-	}, found)
-	if err != nil && errors.IsNotFound(err) {
-		// No HiveConfigs. Return nil
-		return nil
-	}
-
-	// Delete HiveConfig if it exists
-	reqLogger.Info("Deleting hiveconfig", "Resource.Name", found.GetName())
-	err = r.Client.DeleteAllOf(context.TODO(), found, listOptions)
-	if err != nil {
-		reqLogger.Error(err, "Error while deleting hiveconfig instances")
-		return err
-	}
-
-	reqLogger.Info("Hiveconfigs finalized")
-	return nil
-}
 
 func (r *MultiClusterHubReconciler) cleanupAPIServices(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	err := r.Client.DeleteAllOf(
@@ -121,50 +89,6 @@ func (r *MultiClusterHubReconciler) cleanupClusterRoleBindings(reqLogger logr.Lo
 	return nil
 }
 
-func (r *MultiClusterHubReconciler) cleanupMutatingWebhooks(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
-	err := r.Client.DeleteAllOf(
-		context.TODO(),
-		&admissionregistrationv1.MutatingWebhookConfiguration{},
-		client.MatchingLabels{
-			"installer.name":      m.GetName(),
-			"installer.namespace": m.GetNamespace(),
-		})
-
-	if err != nil {
-		if errors.IsNotFound(err) {
-			reqLogger.Info("No matching MutatingWebhookConfigurations to finalize. Continuing.")
-			return nil
-		}
-		reqLogger.Error(err, "Error while deleting MutatingWebhookConfigurations")
-		return err
-	}
-
-	reqLogger.Info("MutatingWebhookConfigurations finalized")
-	return nil
-}
-
-func (r *MultiClusterHubReconciler) cleanupValidatingWebhooks(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
-	err := r.Client.DeleteAllOf(
-		context.TODO(),
-		&admissionregistrationv1.ValidatingWebhookConfiguration{},
-		client.MatchingLabels{
-			"installer.name":      m.GetName(),
-			"installer.namespace": m.GetNamespace(),
-		})
-
-	if err != nil {
-		if errors.IsNotFound(err) {
-			reqLogger.Info("No matching ValidatingWebhookConfigurations to finalize. Continuing.")
-			return nil
-		}
-		reqLogger.Error(err, "Error while deleting ValidatingWebhookConfigurations")
-		return err
-	}
-
-	reqLogger.Info("ValidatingWebhookConfiguration finalized")
-	return nil
-}
-
 func (r *MultiClusterHubReconciler) cleanupPullSecret(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	// TODO: Handle scenario where ImagePullSecret is changed after install
 	if m.Spec.ImagePullSecret == "" {
@@ -213,6 +137,62 @@ func (r *MultiClusterHubReconciler) cleanupCRDs(log logr.Logger, m *operatorsv1.
 	}
 
 	log.Info("CRDs finalized")
+	return nil
+}
+
+func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m *operatorsv1.MultiClusterHub) error {
+	ctx := context.Background()
+
+	err := r.Client.Get(ctx, types.NamespacedName{Name: multiclusterengine.MulticlusterengineName}, &mcev1alpha1.MultiClusterEngine{})
+	if err == nil {
+		r.Log.Info("Deleting MultiClusterEngine resources")
+		err := r.Client.Delete(ctx, multiclusterengine.MultiClusterEngine(m))
+		if err != nil && (!errors.IsNotFound(err) || !errors.IsGone(err)) {
+			return err
+		}
+		return fmt.Errorf("MCE has not yet been terminated")
+	}
+
+	csv, err := r.GetCSVFromSubscription(multiclusterengine.Subscription(m))
+	if err == nil { // CSV Exists
+		err = r.Client.Delete(ctx, csv)
+		if err != nil && !errors.IsNotFound(err) {
+			return err
+		}
+		err = r.Client.Get(ctx,
+			types.NamespacedName{Name: csv.GetName(), Namespace: multiclusterengine.SubscriptionNamespace},
+			csv)
+		if err == nil {
+			return fmt.Errorf("CSV has not yet been terminated")
+		}
+	}
+
+	err = r.Client.Get(ctx,
+		types.NamespacedName{Name: multiclusterengine.SubscriptionName, Namespace: multiclusterengine.SubscriptionNamespace},
+		&subv1alpha1.Subscription{})
+	if err == nil {
+		err = r.Client.Delete(ctx, multiclusterengine.Subscription(m))
+		if err != nil && !errors.IsNotFound(err) {
+			return err
+		}
+		return fmt.Errorf("subscription has not yet been terminated")
+	}
+
+	err = r.Client.Delete(ctx, multiclusterengine.OperatorGroup())
+	if err != nil && !errors.IsNotFound(err) {
+		return err
+	}
+
+	mceNamespace := &corev1.Namespace{}
+	err = r.Client.Get(ctx, types.NamespacedName{Name: multiclusterengine.Namespace().Name}, mceNamespace)
+	if err == nil {
+		err = r.Client.Delete(ctx, multiclusterengine.Namespace())
+		if err != nil && !errors.IsNotFound(err) {
+			return err
+		}
+		return fmt.Errorf("namespace has not yet been terminated")
+	}
+
 	return nil
 }
 
@@ -308,64 +288,8 @@ func (r *MultiClusterHubReconciler) cleanupFoundation(reqLogger logr.Logger, m *
 
 	var emptyOverrides map[string]string
 
-	reqLogger.Info("Deleting OCM controller deployment")
-	err := r.Client.Delete(context.TODO(), foundation.OCMControllerDeployment(m, emptyOverrides))
-	if err != nil && !errors.IsNotFound(err) {
-		reqLogger.Error(err, "Error deleting OCM controller deployment")
-		return err
-	}
-
-	reqLogger.Info("Deleting OCM proxy apiService")
-	err = r.Client.Delete(context.TODO(), foundation.OCMProxyAPIService(m))
-	if err != nil && !errors.IsNotFound(err) {
-		reqLogger.Error(err, "Error deleting OCM proxy  apiService")
-		return err
-	}
-
-	reqLogger.Info("Deleting OCM clusterView v1 apiService")
-	err = r.Client.Delete(context.TODO(), foundation.OCMClusterViewV1APIService(m))
-	if err != nil && !errors.IsNotFound(err) {
-		reqLogger.Error(err, "Error deleting OCM clusterView v1 apiService")
-		return err
-	}
-
-	reqLogger.Info("Deleting OCM  clusterView v1alpha1 apiService")
-	err = r.Client.Delete(context.TODO(), foundation.OCMClusterViewV1alpha1APIService(m))
-	if err != nil && !errors.IsNotFound(err) {
-		reqLogger.Error(err, "Error deleting OCM clusterView v1alpha1 apiService")
-		return err
-	}
-
-	reqLogger.Info("Deleting OCM proxy server service")
-	err = r.Client.Delete(context.TODO(), foundation.OCMProxyServerService(m))
-	if err != nil && !errors.IsNotFound(err) {
-		reqLogger.Error(err, "Error deleting OCM proxy server service")
-		return err
-	}
-
-	reqLogger.Info("Deleting OCM proxy server deployment")
-	err = r.Client.Delete(context.TODO(), foundation.OCMProxyServerDeployment(m, emptyOverrides))
-	if err != nil && !errors.IsNotFound(err) {
-		reqLogger.Error(err, "Error deleting OCM proxy server deployment")
-		return err
-	}
-
-	reqLogger.Info("Deleting OCM webhook service")
-	err = r.Client.Delete(context.TODO(), foundation.WebhookService(m))
-	if err != nil && !errors.IsNotFound(err) {
-		reqLogger.Error(err, "Error deleting OCM webhook service")
-		return err
-	}
-
-	reqLogger.Info("Deleting OCM webhook deployment")
-	err = r.Client.Delete(context.TODO(), foundation.WebhookDeployment(m, emptyOverrides))
-	if err != nil && !errors.IsNotFound(err) {
-		reqLogger.Error(err, "Error deleting OCM webhook deployment")
-		return err
-	}
-
 	reqLogger.Info("Deleting MultiClusterHub repo deployment")
-	err = r.Client.Delete(context.TODO(), helmrepo.Deployment(m, emptyOverrides))
+	err := r.Client.Delete(context.TODO(), helmrepo.Deployment(m, emptyOverrides))
 	if err != nil && !errors.IsNotFound(err) {
 		reqLogger.Error(err, "Error deleting MultiClusterHub repo deployment")
 		return err
