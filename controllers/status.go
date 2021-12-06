@@ -439,6 +439,12 @@ func mapSubscription(sub *unstructured.Unstructured) operatorsv1.StatusCondition
 	message := fmt.Sprintf("installPlanApproval: %s. installPlan: %s/%s",
 		installPlanApproval, installPlanNamespace, installPlanName)
 
+	if reason == "UpgradePending" {
+		currentCSV, _ := status["currentCSV"].(string)
+		installedCSV, _ := status["installedCSV"].(string)
+		message = fmt.Sprintf("Upgrade pending. Installed CSV: %s. Pending CSV: %s", currentCSV, installedCSV)
+	}
+
 	return operatorsv1.StatusCondition{
 		Kind:               "Subscription",
 		Status:             metav1.ConditionStatus(componentStatus),
