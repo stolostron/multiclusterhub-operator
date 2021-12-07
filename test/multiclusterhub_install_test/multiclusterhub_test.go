@@ -165,7 +165,7 @@ func FullInstallTestSuite() {
 		Expect(err).To(BeNil())
 		v, err := semver.NewVersion(currentVersion)
 		Expect(err).Should(BeNil())
-		c, err := semver.NewConstraint(">= 2.3.5")
+		c, err := semver.NewConstraint(">= 2.3.6")
 		Expect(err).Should(BeNil())
 
 		if c.Check(v) {
@@ -220,7 +220,7 @@ func FullInstallTestSuite() {
 
 		v, err := semver.NewVersion(currentVersion)
 		Expect(err).Should(BeNil())
-		c, err := semver.NewConstraint(">= 2.3.5")
+		c, err := semver.NewConstraint(">= 2.3.6")
 		Expect(err).Should(BeNil())
 		if c.Check(v) {
 			_, err = utils.KubeClient.CoreV1().ConfigMaps(utils.MCHNamespace).Create(context.TODO(), configmap, metav1.CreateOptions{})
