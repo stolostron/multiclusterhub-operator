@@ -144,6 +144,11 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		if retError == nil {
 			retError = statusError
 		}
+		if retError == nil && retQueue == (reconcile.Result{}) {
+			r.Log.Info("Successfully reconciled MultiClusterHub. Heart beating in 30 seconds")
+			retQueue = ctrl.Result{RequeueAfter: time.Second * 30}
+		}
+
 	}()
 
 	// Check if the multiClusterHub instance is marked to be deleted, which is
