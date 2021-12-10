@@ -19,6 +19,9 @@ var (
 	AnnotationImageOverridesCM = "mch-imageOverridesCM"
 	// AnnotationConfiguration sits in a resource's annotations to identify the configuration last used to create it
 	AnnotationConfiguration = "installer.open-cluster-management.io/last-applied-configuration"
+
+	// AnnotationMCESubscriptionSpec sits in multiclusterhub annotations to identify the subscription spec last used to create the multiclustengine
+	AnnotationMCESubscriptionSpec = "mce-subscription-spec"
 )
 
 // IsPaused returns true if the multiclusterhub instance is labeled as paused, and false otherwise
@@ -39,7 +42,8 @@ func IsPaused(instance *operatorsv1.MultiClusterHub) bool {
 func AnnotationsMatch(old, new map[string]string) bool {
 	return old[AnnotationMCHPause] == new[AnnotationMCHPause] &&
 		old[AnnotationImageRepo] == new[AnnotationImageRepo] &&
-		old[AnnotationImageOverridesCM] == new[AnnotationImageOverridesCM]
+		old[AnnotationImageOverridesCM] == new[AnnotationImageOverridesCM] &&
+		old[AnnotationMCESubscriptionSpec] == new[AnnotationMCESubscriptionSpec]
 }
 
 // getAnnotation returns the annotation value for a given key, or an empty string if not set
@@ -67,4 +71,8 @@ func OverrideImageRepository(imageOverrides map[string]string, imageRepo string)
 		imageOverrides[imageKey] = fmt.Sprintf("%s%s", imageRepo, imageRef[image:])
 	}
 	return imageOverrides
+}
+
+func GetMCEAnnotationOverrides(instance *operatorsv1.MultiClusterHub) string {
+	return getAnnotation(instance, AnnotationMCESubscriptionSpec)
 }

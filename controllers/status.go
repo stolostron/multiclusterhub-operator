@@ -276,9 +276,9 @@ func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allHRs []*subrelv1.H
 		if cr == nil {
 			continue
 		}
-		if cr.GetName() == multiclusterengine.SubscriptionName && cr.GetKind() == "Subscription" {
+		if cr.GetName() == utils.MCESubscriptionName && cr.GetKind() == "Subscription" {
 			components["multicluster-engine-sub"] = mapSubscription(cr)
-		} else if strings.Contains(cr.GetName(), multiclusterengine.SubscriptionName) && cr.GetKind() == "ClusterServiceVersion" {
+		} else if strings.Contains(cr.GetName(), utils.MCESubscriptionName) && cr.GetKind() == "ClusterServiceVersion" {
 			components["multicluster-engine-csv"] = mapCSV(cr)
 		} else if cr.GetName() == multiclusterengine.MulticlusterengineName && cr.GetKind() == "MultiClusterEngine" {
 			components["multicluster-engine"] = mapMultiClusterEngine(cr)

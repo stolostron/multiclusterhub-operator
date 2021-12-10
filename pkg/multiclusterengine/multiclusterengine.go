@@ -4,18 +4,21 @@
 package multiclusterengine
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
+
 	mcev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
+	"github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var (
-	SubscriptionName      = "multicluster-engine"
-	SubscriptionNamespace = "multicluster-engine"
-
 	channel                = "stable-2.0"
 	installPlanApproval    = subv1alpha1.ApprovalAutomatic
 	packageName            = "multicluster-engine"
@@ -56,8 +59,8 @@ func Subscription(m *operatorsv1.MultiClusterHub) *subv1alpha1.Subscription {
 			Kind:       subv1alpha1.SubscriptionKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      SubscriptionName,
-			Namespace: SubscriptionNamespace,
+			Name:      utils.MCESubscriptionName,
+			Namespace: utils.MCESubscriptionNamespace,
 			Labels:    labels(m),
 		},
 		Spec: &subv1alpha1.SubscriptionSpec{
@@ -69,6 +72,41 @@ func Subscription(m *operatorsv1.MultiClusterHub) *subv1alpha1.Subscription {
 		},
 	}
 
+	if mceAnnotationOverrides := utils.GetMCEAnnotationOverrides(m); mceAnnotationOverrides != "" {
+		sub = overrideSub(sub, mceAnnotationOverrides)
+	}
+
+	return sub
+}
+
+func overrideSub(sub *subv1alpha1.Subscription, mceAnnotationOverrides string) *subv1alpha1.Subscription {
+	log := log.FromContext(context.Background())
+	log.Info(fmt.Sprintf("Overridding MultiClusterEngine Subscription: %s", mceAnnotationOverrides))
+	mceSub := &subv1alpha1.SubscriptionSpec{}
+	err := json.Unmarshal([]byte(mceAnnotationOverrides), mceSub)
+	if err != nil {
+		log.Info("Failed to unmarshal MultiClusterEngine annotation: %s.", "mceSubSpec", mceAnnotationOverrides)
+		return sub
+	}
+
+	if mceSub.Channel != "" {
+		sub.Spec.Channel = mceSub.Channel
+	}
+	if mceSub.Package != "" {
+		sub.Spec.Package = mceSub.Package
+	}
+	if mceSub.CatalogSource != "" {
+		sub.Spec.CatalogSource = mceSub.CatalogSource
+	}
+	if mceSub.CatalogSourceNamespace != "" {
+		sub.Spec.CatalogSourceNamespace = mceSub.CatalogSourceNamespace
+	}
+	if mceSub.StartingCSV != "" {
+		sub.Spec.StartingCSV = mceSub.StartingCSV
+	}
+	if mceSub.InstallPlanApproval != "" {
+		sub.Spec.InstallPlanApproval = mceSub.InstallPlanApproval
+	}
 	return sub
 }
 
@@ -79,7 +117,7 @@ func Namespace() *corev1.Namespace {
 			Kind:       "Namespace",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: SubscriptionNamespace,
+			Name: utils.MCESubscriptionNamespace,
 		},
 	}
 }
@@ -92,10 +130,10 @@ func OperatorGroup() *olmv1.OperatorGroup {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      operatorGroupName,
-			Namespace: SubscriptionNamespace,
+			Namespace: utils.MCESubscriptionNamespace,
 		},
 		Spec: olmv1.OperatorGroupSpec{
-			TargetNamespaces: []string{SubscriptionNamespace},
+			TargetNamespaces: []string{utils.MCESubscriptionNamespace},
 		},
 	}
 }
