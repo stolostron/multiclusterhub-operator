@@ -85,7 +85,7 @@ func overrideSub(sub *subv1alpha1.Subscription, mceAnnotationOverrides string) *
 	mceSub := &subv1alpha1.SubscriptionSpec{}
 	err := json.Unmarshal([]byte(mceAnnotationOverrides), mceSub)
 	if err != nil {
-		log.Info("Failed to unmarshal MultiClusterEngine annotation: %s.", "mceSubSpec", mceAnnotationOverrides)
+		log.Info(fmt.Sprintf("Failed to unmarshal MultiClusterEngine annotation: %s.", mceAnnotationOverrides))
 		return sub
 	}
 
