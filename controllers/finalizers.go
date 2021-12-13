@@ -160,7 +160,7 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 			return err
 		}
 		err = r.Client.Get(ctx,
-			types.NamespacedName{Name: csv.GetName(), Namespace: multiclusterengine.SubscriptionNamespace},
+			types.NamespacedName{Name: csv.GetName(), Namespace: utils.MCESubscriptionNamespace},
 			csv)
 		if err == nil {
 			return fmt.Errorf("CSV has not yet been terminated")
@@ -168,7 +168,7 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 	}
 
 	err = r.Client.Get(ctx,
-		types.NamespacedName{Name: multiclusterengine.SubscriptionName, Namespace: multiclusterengine.SubscriptionNamespace},
+		types.NamespacedName{Name: utils.MCESubscriptionName, Namespace: utils.MCESubscriptionNamespace},
 		&subv1alpha1.Subscription{})
 	if err == nil {
 		err = r.Client.Delete(ctx, multiclusterengine.Subscription(m))
