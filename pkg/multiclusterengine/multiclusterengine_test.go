@@ -20,21 +20,21 @@ func TestSubscription(t *testing.T) {
 	// 2. All MCE Annotations
 	mch1 := emptyMCH.DeepCopy()
 	mch1.ObjectMeta.Annotations = map[string]string{
-		"mce-subscription-spec": `{"channel": "channel-1.0","installPlanApproval": "Manual","name":
+		"installer.open-cluster-management.io/mce-subscription-spec": `{"channel": "channel-1.0","installPlanApproval": "Manual","name":
       	"package","source": "catalogsource","sourceNamespace": "catalogsourcenamespace","startingCSV":
       	"csv-1.0"}`,
 	}
 	// 3. Override Only Channel
 	mch2 := emptyMCH.DeepCopy()
 	mch2.ObjectMeta.Annotations = map[string]string{
-		"mce-subscription-spec": `{
+		"installer.open-cluster-management.io/mce-subscription-spec": `{
 			"channel": "channel-1.0"
 		}`,
 	}
 	// 3. Override startingCSV and installPlanApproval
 	mch3 := emptyMCH.DeepCopy()
 	mch3.ObjectMeta.Annotations = map[string]string{
-		"mce-subscription-spec": `{
+		"installer.open-cluster-management.io/mce-subscription-spec": `{
 			"startingCSV": "csv-1.0",
 			"installPlanApproval": "Manual"
 		}`,
@@ -48,10 +48,10 @@ func TestSubscription(t *testing.T) {
 			name: "Empty MCH (No MCE annotations)",
 			MCH:  emptyMCH,
 			want: &subv1alpha1.SubscriptionSpec{
-				Channel:                "stable-2.0",
+				Channel:                "stable-1.0",
 				InstallPlanApproval:    subv1alpha1.ApprovalAutomatic,
 				Package:                "multicluster-engine",
-				CatalogSource:          "multiclusterengine-catalog",
+				CatalogSource:          "redhat-operators",
 				CatalogSourceNamespace: "openshift-marketplace",
 			},
 		},
@@ -74,7 +74,7 @@ func TestSubscription(t *testing.T) {
 				Channel:                "channel-1.0",
 				InstallPlanApproval:    subv1alpha1.ApprovalAutomatic,
 				Package:                "multicluster-engine",
-				CatalogSource:          "multiclusterengine-catalog",
+				CatalogSource:          "redhat-operators",
 				CatalogSourceNamespace: "openshift-marketplace",
 			},
 		},
@@ -82,10 +82,10 @@ func TestSubscription(t *testing.T) {
 			name: "MCE Annotations set (StartingCSV and InstallPlanApproval)",
 			MCH:  mch3,
 			want: &subv1alpha1.SubscriptionSpec{
-				Channel:                "stable-2.0",
+				Channel:                "stable-1.0",
 				InstallPlanApproval:    subv1alpha1.ApprovalManual,
 				Package:                "multicluster-engine",
-				CatalogSource:          "multiclusterengine-catalog",
+				CatalogSource:          "redhat-operators",
 				CatalogSourceNamespace: "openshift-marketplace",
 				StartingCSV:            "csv-1.0",
 			},

@@ -61,15 +61,15 @@ kubectl delete pod multiclusterhub-operator-xxxxx-xxxxx
 
 ### Overriding MultiCluster Engine Subscription
 
-The multicluster engine subscription is stood up by default as part of a standard MCH installation. The spec of the subscription can be overriden by providing the following annotation to the MCH resource. One or many parameters can be provided from the ones listed in the `mce-subscription-spec` annotation below
+The multicluster engine subscription is stood up by default as part of a standard MCH installation. The spec of the subscription can be overriden by providing the following annotation to the MCH resource. One or many parameters can be provided from the ones listed in the `installer.open-cluster-management.io/mce-subscription-spec` annotation below
 
 ```yaml
 apiVersion: operator.open-cluster-management.io/v1
 kind: MultiClusterHub
 metadata:
   annotations:
-    mce-subscription-spec: '{"channel": "channel-1.0","installPlanApproval": "Manual","name":
-      	"package","source": "catalogsource","sourceNamespace": "catalogsourcenamespace","startingCSV":
+    installer.open-cluster-management.io/mce-subscription-spec: '{"channel": "stable-2.0","installPlanApproval": "Manual","name":
+      	"multicluster-engine","source": "multiclusterengine-catalog","sourceNamespace": "catalogsourcenamespace","startingCSV":
       	"csv-1.0"}'
   name: multiclusterhub
 spec: {}

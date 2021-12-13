@@ -19,9 +19,8 @@ var (
 	AnnotationImageOverridesCM = "mch-imageOverridesCM"
 	// AnnotationConfiguration sits in a resource's annotations to identify the configuration last used to create it
 	AnnotationConfiguration = "installer.open-cluster-management.io/last-applied-configuration"
-
 	// AnnotationMCESubscriptionSpec sits in multiclusterhub annotations to identify the subscription spec last used to create the multiclustengine
-	AnnotationMCESubscriptionSpec = "mce-subscription-spec"
+	AnnotationMCESubscriptionSpec = "installer.open-cluster-management.io/mce-subscription-spec"
 )
 
 // IsPaused returns true if the multiclusterhub instance is labeled as paused, and false otherwise
