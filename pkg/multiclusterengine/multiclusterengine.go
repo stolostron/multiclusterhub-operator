@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	channel                = "stable-1.0"
+	channel                = "stable-2.0"
 	installPlanApproval    = subv1alpha1.ApprovalAutomatic
 	packageName            = "multicluster-engine"
 	catalogSourceName      = "redhat-operators"
