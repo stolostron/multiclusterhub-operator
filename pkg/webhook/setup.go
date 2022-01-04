@@ -19,7 +19,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	clustermanager "open-cluster-management.io/api/operator/v1"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -267,15 +266,6 @@ func newValidatingWebhookCfg(namespace, path string) *admissionregistration.Vali
 				Operations: []admissionregistration.OperationType{
 					admissionregistration.Create,
 					admissionregistration.Update,
-					admissionregistration.Delete,
-				},
-			}, {
-				Rule: admissionregistration.Rule{
-					APIGroups:   []string{clustermanager.SchemeGroupVersion.Group},
-					APIVersions: []string{clustermanager.SchemeGroupVersion.Version},
-					Resources:   []string{clusterManagerName},
-				},
-				Operations: []admissionregistration.OperationType{
 					admissionregistration.Delete,
 				},
 			}},

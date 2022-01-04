@@ -24,16 +24,13 @@ import (
 	"os"
 	"time"
 
-	hive "github.com/openshift/hive/apis/hive/v1"
-	clustermanager "open-cluster-management.io/api/operator/v1"
-
 	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis/apps/v1"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/channel"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/deploying"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/foundation"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/helmrepo"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/imageoverrides"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/manifest"
+	"github.com/open-cluster-management/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/predicate"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/rendering"
 	"github.com/open-cluster-management/multiclusterhub-operator/pkg/subscription"
@@ -83,7 +80,8 @@ const hubFinalizer = "finalizer.operator.open-cluster-management.io"
 //+kubebuilder:rbac:groups="admissionregistration.k8s.io";"apiextensions.k8s.io";"apiregistration.k8s.io";"hive.openshift.io";"mcm.ibm.com";"rbac.authorization.k8s.io";,resources=apiservices;clusterroles;clusterrolebindings;customresourcedefinitions;hiveconfigs;mutatingwebhookconfigurations;validatingwebhookconfigurations,verbs=deletecollection;list;watch
 //+kubebuilder:rbac:groups="";"apps";"apiregistration.k8s.io";"apps.open-cluster-management.io";"apiextensions.k8s.io";,resources=deployments;services;channels;customresourcedefinitions;apiservices,verbs=delete
 //+kubebuilder:rbac:groups="";"action.open-cluster-management.io";"addon.open-cluster-management.io";"agent.open-cluster-management.io";"argoproj.io";"cluster.open-cluster-management.io";"work.open-cluster-management.io";"app.k8s.io";"apps.open-cluster-management.io";"authorization.k8s.io";"certificates.k8s.io";"clusterregistry.k8s.io";"config.openshift.io";"compliance.mcm.ibm.com";"hive.openshift.io";"hiveinternal.openshift.io";"internal.open-cluster-management.io";"inventory.open-cluster-management.io";"mcm.ibm.com";"multicloud.ibm.com";"policy.open-cluster-management.io";"proxy.open-cluster-management.io";"rbac.authorization.k8s.io";"view.open-cluster-management.io";"operator.open-cluster-management.io";"register.open-cluster-management.io";"coordination.k8s.io";"search.open-cluster-management.io";"submarineraddon.open-cluster-management.io";"discovery.open-cluster-management.io";"imageregistry.open-cluster-management.io",resources=applications;applications/status;applicationrelationships;applicationrelationships/status;baremetalassets;baremetalassets/status;baremetalassets/finalizers;certificatesigningrequests;certificatesigningrequests/approval;channels;channels/status;clustermanagementaddons;managedclusteractions;managedclusteractions/status;clusterdeployments;clusterpools;clusterclaims;discoveryconfigs;discoveredclusters;managedclusteraddons;managedclusteraddons/status;managedclusterinfos;managedclusterinfos/status;managedclustersets;managedclustersets/bind;managedclustersets/join;managedclustersets/status;managedclustersetbindings;managedclusters;managedclusters/accept;managedclusters/status;managedclusterviews;managedclusterviews/status;manifestworks;manifestworks/status;clustercurators;clustermanagers;clusterroles;clusterrolebindings;clusterstatuses/aggregator;clusterversions;compliances;configmaps;deployables;deployables/status;deployableoverrides;deployableoverrides/status;endpoints;endpointconfigs;events;helmrepos;helmrepos/status;klusterletaddonconfigs;machinepools;namespaces;placements;placementrules/status;placementdecisions;placementdecisions/status;placementrules;placementrules/status;pods;pods/log;policies;policies/status;placementbindings;policyautomations;roles;rolebindings;secrets;signers;subscriptions;subscriptions/status;subjectaccessreviews;submarinerconfigs;submarinerconfigs/status;syncsets;clustersyncs;leases;searchcustomizations;managedclusterimageregistries;managedclusterimageregistries/status,verbs=create;get;list;watch;update;delete;deletecollection;patch;approve;escalate;bind
-//+kubebuilder:rbac:groups="multicluster.openshift.io",resources=multiclusterengines,verbs=list
+//+kubebuilder:rbac:groups="operators.coreos.com",resources=subscriptions;clusterserviceversions;operatorgroups,verbs=create;get;list;patch;update;delete;watch
+//+kubebuilder:rbac:groups="multicluster.openshift.io",resources=multiclusterengines,verbs=create;get;list;patch;update;delete;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -127,7 +125,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	allCRs, err := r.listCustomResources()
+	allCRs, err := r.listCustomResources(multiClusterHub)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -284,6 +282,26 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 
+	result, err = r.ensureNamespace(multiClusterHub, multiclusterengine.Namespace())
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	result, err = r.ensureOperatorGroup(multiClusterHub, multiclusterengine.OperatorGroup())
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	result, err = r.ensureOLMSubscription(multiClusterHub, multiclusterengine.Subscription(multiClusterHub))
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	result, err = r.ensureMultiClusterEngine(multiClusterHub, multiclusterengine.MultiClusterEngine(multiClusterHub))
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
 	result, err = r.ingressDomain(multiClusterHub)
 	if result != (ctrl.Result{}) {
 		return result, err
@@ -310,24 +328,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		if ok {
 			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
 			SetHubCondition(&multiClusterHub.Status, *condition)
-		}
-	}
-
-	result, err = r.ensureDeployment(multiClusterHub, foundation.WebhookDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	result, err = r.ensureService(multiClusterHub, foundation.WebhookService(multiClusterHub))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	// Wait for ocm-webhook to be fully available before applying rest of subscriptions
-	if !utils.IsUnitTest() {
-		if !(multiClusterHub.Status.Components["ocm-webhook"].Type == "Available" && multiClusterHub.Status.Components["ocm-webhook"].Status == metav1.ConditionTrue) {
-			r.Log.Info("Waiting for component 'ocm-webhook' to be available")
-			return reconcile.Result{RequeueAfter: resyncPeriod}, nil
 		}
 	}
 
@@ -392,47 +392,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 	}
 
-	//OCM proxy server deployment
-	result, err = r.ensureDeployment(multiClusterHub, foundation.OCMProxyServerDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	//OCM proxy server service
-	result, err = r.ensureService(multiClusterHub, foundation.OCMProxyServerService(multiClusterHub))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	// OCM proxy apiService
-	result, err = r.ensureAPIService(multiClusterHub, foundation.OCMProxyAPIService(multiClusterHub))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	// OCM clusterView v1 apiService
-	result, err = r.ensureAPIService(multiClusterHub, foundation.OCMClusterViewV1APIService(multiClusterHub))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	// OCM clusterView v1alpha1 apiService
-	result, err = r.ensureAPIService(multiClusterHub, foundation.OCMClusterViewV1alpha1APIService(multiClusterHub))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	//OCM controller deployment
-	result, err = r.ensureDeployment(multiClusterHub, foundation.OCMControllerDeployment(multiClusterHub, r.CacheSpec.ImageOverrides))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	result, err = r.ensureUnstructuredResource(multiClusterHub, foundation.ClusterManager(multiClusterHub, r.CacheSpec.ImageOverrides))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
 	if !utils.IsUnitTest() {
 		if !multiClusterHub.Spec.DisableHubSelfManagement {
 			result, err = r.ensureHubIsImported(multiClusterHub)
@@ -484,31 +443,6 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				}})
 			},
 		}, builder.WithPredicates(predicate.DeletePredicate{})).
-		Watches(&source.Kind{Type: &hive.HiveConfig{}}, &handler.Funcs{
-			DeleteFunc: func(e event.DeleteEvent, q workqueue.RateLimitingInterface) {
-				labels := e.Object.GetLabels()
-				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
-					Name:      labels["installer.name"],
-					Namespace: labels["installer.namespace"],
-				}})
-			},
-		}, builder.WithPredicates(predicate.InstallerLabelPredicate{})).
-		Watches(&source.Kind{Type: &clustermanager.ClusterManager{}}, &handler.Funcs{
-			DeleteFunc: func(e event.DeleteEvent, q workqueue.RateLimitingInterface) {
-				labels := e.Object.GetLabels()
-				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
-					Name:      labels["installer.name"],
-					Namespace: labels["installer.namespace"],
-				}})
-			},
-			UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
-				labels := e.ObjectOld.GetLabels()
-				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
-					Name:      labels["installer.name"],
-					Namespace: labels["installer.namespace"],
-				}})
-			},
-		}, builder.WithPredicates(predicate.InstallerLabelPredicate{})).
 		Watches(&source.Kind{Type: &appsv1.Deployment{}},
 			handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
 				return []reconcile.Request{
@@ -550,28 +484,16 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 	if err := r.cleanupFoundation(reqLogger, m); err != nil {
 		return err
 	}
-	if err := r.cleanupHiveConfigs(reqLogger, m); err != nil {
-		return err
-	}
-	if err := r.cleanupAPIServices(reqLogger, m); err != nil {
-		return err
-	}
 	if err := r.cleanupClusterRoles(reqLogger, m); err != nil {
 		return err
 	}
 	if err := r.cleanupClusterRoleBindings(reqLogger, m); err != nil {
 		return err
 	}
-	if err := r.cleanupMutatingWebhooks(reqLogger, m); err != nil {
-		return err
-	}
-	if err := r.cleanupValidatingWebhooks(reqLogger, m); err != nil {
+	if err := r.cleanupMultiClusterEngine(reqLogger, m); err != nil {
 		return err
 	}
 	if err := r.cleanupCRDs(reqLogger, m); err != nil {
-		return err
-	}
-	if err := r.cleanupClusterManagers(reqLogger, m); err != nil {
 		return err
 	}
 	if m.Spec.SeparateCertificateManagement {

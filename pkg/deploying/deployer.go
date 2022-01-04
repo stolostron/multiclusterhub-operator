@@ -38,17 +38,13 @@ func Deploy(c runtimeclient.Client, obj *unstructured.Unstructured) (error, bool
 		return err, false
 	}
 
-	// Do not update cert secrets, or hiveconfig
+	// Do not update cert secrets
 
 	if kind := found.GetKind(); kind == "Secret" {
 		if name := found.GetName(); name == "ocm-klusterlet-self-signed-secrets" {
 			return nil, false
 		}
 	}
-	if kind := found.GetKind(); kind == "HiveConfig" {
-		return nil, false
-	}
-
 	// Update if hash doesn't match
 	if kind := found.GetKind(); kind == "ServiceAccount" || kind == "CustomResourceDefinition" {
 		if shasMatch(found, obj) {

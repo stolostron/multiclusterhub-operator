@@ -352,4 +352,24 @@ rules:
   resources:
   - multiclusterengines
   verbs:
+  - create
+  - delete
+  - get
   - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - operators.coreos.com
+  resources:
+  - clusterserviceversions
+  - operatorgroups
+  - subscriptions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch

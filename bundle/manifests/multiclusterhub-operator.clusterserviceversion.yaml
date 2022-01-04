@@ -54,25 +54,25 @@ spec:
         path: disableHubSelfManagement
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:io.kubernetes:booleanSwitch
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
       - description: Disable automatic update of ClusterImageSets
         displayName: Disable Update ClusterImageSets
         path: disableUpdateClusterImageSets
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:io.kubernetes:booleanSwitch
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
       - description: Enable cluster backup
         displayName: Enable Cluster Backup
         path: enableClusterBackup
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:io.kubernetes:booleanSwitch
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
       - description: Enable cluster proxy addon
         displayName: Enable Cluster Proxy Addon
         path: enableClusterProxyAddon
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:io.kubernetes:booleanSwitch
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
       - description: (Deprecated) Overrides for the default HiveConfig spec
         displayName: Hive Config
         path: hive
@@ -459,7 +459,27 @@ spec:
           resources:
           - multiclusterengines
           verbs:
+          - create
+          - delete
+          - get
           - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - operators.coreos.com
+          resources:
+          - clusterserviceversions
+          - operatorgroups
+          - subscriptions
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
         serviceAccountName: multiclusterhub-operator
       deployments:
       - name: multiclusterhub-operator

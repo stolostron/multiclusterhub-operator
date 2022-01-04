@@ -42,6 +42,9 @@ const (
 
 	// SubscriptionOperatorName is the name of the operator deployment managing application subscriptions
 	SubscriptionOperatorName = "multicluster-operators-standalone-subscription"
+
+	MCESubscriptionName      = "multicluster-engine"
+	MCESubscriptionNamespace = "multicluster-engine"
 )
 
 var (
@@ -294,9 +297,6 @@ func FindNamespace() (string, error) {
 func GetDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	return []types.NamespacedName{
 		{Name: "multiclusterhub-repo", Namespace: m.Namespace},
-		{Name: "ocm-controller", Namespace: m.Namespace},
-		{Name: "ocm-proxyserver", Namespace: m.Namespace},
-		{Name: "ocm-webhook", Namespace: m.Namespace},
 	}
 }
 
@@ -324,6 +324,8 @@ func GetAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 
 func GetCustomResources(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	return []types.NamespacedName{
-		{Name: "cluster-manager-cr", Namespace: ""},
+		{Name: "multicluster-engine-sub", Namespace: MCESubscriptionNamespace},
+		{Name: "multicluster-engine-csv", Namespace: MCESubscriptionNamespace},
+		{Name: "multicluster-engine"},
 	}
 }
