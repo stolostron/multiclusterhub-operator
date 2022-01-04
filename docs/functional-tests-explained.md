@@ -2,7 +2,7 @@
 
 ## Background
 
-Our functional tests leverage ginkgo and gomega to test install, uninstall, and upgrade of the MultiClusterHub. Our tests are packaged as an image and can be pulled from [Quay](https://quay.io/repository/open-cluster-management/multiclusterhub-operator-tests?tab=tags).
+Our functional tests leverage ginkgo and gomega to test install, uninstall, and upgrade of the MultiClusterHub. Our tests are packaged as an image and can be pulled from [Quay](https://quay.io/repository/stolostron/multiclusterhub-operator-tests?tab=tags).
 Currently, our functional tests have 2 types of targets, one intended for the development flow, and the other intended for the fully containerized test approach.
 
 ## Running development functional tests

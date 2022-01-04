@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis"
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/pkg/apis/operator/v1"
 	netv1 "github.com/openshift/api/config/v1"
+	operatorsv1 "github.com/stolostron/multiclusterhub-operator/pkg/apis/operator/v1"
 	corev1 "k8s.io/api/core/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

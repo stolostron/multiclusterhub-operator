@@ -3,7 +3,7 @@
 package controller
 
 import (
-	multiclusterhub "github.com/open-cluster-management/multiclusterhub-operator/pkg/controller/multiclusterhub"
+	multiclusterhub "github.com/stolostron/multiclusterhub-operator/pkg/controller/multiclusterhub"
 )
 
 func init() {
