@@ -7,8 +7,8 @@ RUN GO111MODULE=on go get github.com/mikefarah/yq/v3
 USER root
 
 ENV KUBECONFIG "/opt/.kube/config"
-COPY . ./src/github.com/open-cluster-management/multiclusterhub-operator
+COPY . ./src/github.com/stolostron/multiclusterhub-operator
 
-WORKDIR ./src/github.com/open-cluster-management/multiclusterhub-operator
+WORKDIR ./src/github.com/stolostron/multiclusterhub-operator
 
 ENTRYPOINT [ "./test/start-tests.sh" ]

@@ -56,7 +56,7 @@ fi
 
 oc login ${COLLECTIVE_SERVER} --insecure-skip-tls-verify --token="${COLLECTIVE_TOKEN}"
 
-git clone https://github.com/open-cluster-management/lifeguard.git
+git clone https://github.com/stolostron/lifeguard.git
 
 cd lifeguard/clusterclaims/
 
@@ -88,8 +88,8 @@ done
 
 oc project
 
-make prep-mock-install MOCK_IMAGE_REGISTRY='quay.io/open-cluster-management' MOCK_IMAGE_NAME='multiclusterhub-operator' MOCK_IMAGE_TAG='mock'
-make mock-install HUB_IMAGE_REGISTRY='quay.io/open-cluster-management' VERSION='mock-img' MOCK_IMAGE_REGISTRY='quay.io/open-cluster-management' MOCK_IMAGE_NAME='multiclusterhub-operator' MOCK_IMAGE_TAG='mock'
+make prep-mock-install MOCK_IMAGE_REGISTRY='quay.io/stolostron' MOCK_IMAGE_NAME='multiclusterhub-operator' MOCK_IMAGE_TAG='mock'
+make mock-install HUB_IMAGE_REGISTRY='quay.io/stolostron' VERSION='mock-img' MOCK_IMAGE_REGISTRY='quay.io/stolostron' MOCK_IMAGE_NAME='multiclusterhub-operator' MOCK_IMAGE_TAG='mock'
 make ft-install MOCK=true
 
 echo "Deleting clusterclaim ..."

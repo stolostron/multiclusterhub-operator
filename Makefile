@@ -13,8 +13,8 @@ BUILD_DIR ?= build
 VERSION ?= 2.3.6
 IMG ?= multiclusterhub-operator
 SECRET_REGISTRY ?= quay.io
-HUB_IMAGE_REGISTRY ?= quay.io/open-cluster-management
-BUNDLE_REGISTRY ?= quay.io/open-cluster-management
+HUB_IMAGE_REGISTRY ?= quay.io/stolostron
+BUNDLE_REGISTRY ?= quay.io/stolostron
 GIT_VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
                  git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8)
 

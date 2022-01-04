@@ -6,22 +6,23 @@ package multiclusterhub
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/api/equality"
-	"k8s.io/apimachinery/pkg/runtime"
-	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"os"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
 
+	"k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/apimachinery/pkg/runtime"
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
+
 	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis/apps/v1"
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/pkg/apis/operator/v1"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/channel"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/foundation"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/helmrepo"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/manifest"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/subscription"
+	operatorsv1 "github.com/stolostron/multiclusterhub-operator/pkg/apis/operator/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/channel"
+	"github.com/stolostron/multiclusterhub-operator/pkg/foundation"
+	"github.com/stolostron/multiclusterhub-operator/pkg/helmrepo"
+	"github.com/stolostron/multiclusterhub-operator/pkg/manifest"
+	"github.com/stolostron/multiclusterhub-operator/pkg/subscription"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -45,9 +46,9 @@ func Test_ensureDeployment(t *testing.T) {
 	cacheSpec := CacheSpec{
 		IngressDomain: "apps.smart-buck.dev01.red-chesterfield.com",
 		ImageOverrides: map[string]string{
-			"application_ui": "quay.io/open-cluster-management/application-ui@sha256:c740fc7bac067f003145ab909504287360564016b7a4a51b7ad4987aca123ac1",
-			"console_api":    "quay.io/open-cluster-management/console-api@sha256:3ef1043b4e61a09b07ff37f9ad8fc6e707af9813936cf2c0d52f2fa0e489c75f",
-			"rcm_controller": " quay.io/open-cluster-management/rcm-controller@sha256:8fab4d788241bf364dbc1b8c1ea5ccf18d3145a640dbd456b0dc7ba204e36819",
+			"application_ui": "quay.io/stolostron/application-ui@sha256:c740fc7bac067f003145ab909504287360564016b7a4a51b7ad4987aca123ac1",
+			"console_api":    "quay.io/stolostron/console-api@sha256:3ef1043b4e61a09b07ff37f9ad8fc6e707af9813936cf2c0d52f2fa0e489c75f",
+			"rcm_controller": " quay.io/stolostron/rcm-controller@sha256:8fab4d788241bf364dbc1b8c1ea5ccf18d3145a640dbd456b0dc7ba204e36819",
 		},
 	}
 
@@ -306,9 +307,9 @@ func Test_ensureSubscription(t *testing.T) {
 	cacheSpec := CacheSpec{
 		IngressDomain: "apps.smart-buck.dev01.red-chesterfield.com",
 		ImageOverrides: map[string]string{
-			"application_ui": "quay.io/open-cluster-management/application-ui@sha256:c740fc7bac067f003145ab909504287360564016b7a4a51b7ad4987aca123ac1",
-			"console_api":    "quay.io/open-cluster-management/console-api@sha256:3ef1043b4e61a09b07ff37f9ad8fc6e707af9813936cf2c0d52f2fa0e489c75f",
-			"rcm_controller": " quay.io/open-cluster-management/rcm-controller@sha256:8fab4d788241bf364dbc1b8c1ea5ccf18d3145a640dbd456b0dc7ba204e36819",
+			"application_ui": "quay.io/stolostron/application-ui@sha256:c740fc7bac067f003145ab909504287360564016b7a4a51b7ad4987aca123ac1",
+			"console_api":    "quay.io/stolostron/console-api@sha256:3ef1043b4e61a09b07ff37f9ad8fc6e707af9813936cf2c0d52f2fa0e489c75f",
+			"rcm_controller": " quay.io/stolostron/rcm-controller@sha256:8fab4d788241bf364dbc1b8c1ea5ccf18d3145a640dbd456b0dc7ba204e36819",
 		},
 	}
 
@@ -399,7 +400,7 @@ func Test_ensureUnstructuredResource(t *testing.T) {
 	}
 
 	imageOverrides := map[string]string{
-		"registration": "quay.io/open-cluster-management/registration@sha256:fe95bca419976ca8ffe608bc66afcead6ef333b863f22be55df57c89ded75dda",
+		"registration": "quay.io/stolostron/registration@sha256:fe95bca419976ca8ffe608bc66afcead6ef333b863f22be55df57c89ded75dda",
 	}
 
 	tests := []struct {
@@ -469,7 +470,7 @@ func Test_OverrideImagesFromConfigmap(t *testing.T) {
 						{
 						  "image-name": "multiclusterhub-repo",
 						  "image-tag": "2.3.6-test",
-						  "image-remote": "quay.io/open-cluster-management",
+						  "image-remote": "quay.io/stolostron",
 						  "image-key": "multiclusterhub_repo"
 						}
 					  ]`,
@@ -477,7 +478,7 @@ func Test_OverrideImagesFromConfigmap(t *testing.T) {
 			},
 			ManifestImage: manifest.ManifestImage{
 				ImageKey:    "multiclusterhub_repo",
-				ImageRemote: "quay.io/open-cluster-management",
+				ImageRemote: "quay.io/stolostron",
 				ImageTag:    "2.3.6-test",
 				ImageName:   "multiclusterhub-repo",
 			},
@@ -497,7 +498,7 @@ func Test_OverrideImagesFromConfigmap(t *testing.T) {
 						{
 						  "image-name": "non-existent-image",
 						  "image-digest": "sha256:e728a4cdf4a11b78b927b7b280d75babca7b3880450fbf190d80b194f7d064b6",
-						  "image-remote": "quay.io/open-cluster-management",
+						  "image-remote": "quay.io/stolostron",
 						  "image-key": "non_existent_image"
 						}
 					  ]`,
@@ -505,7 +506,7 @@ func Test_OverrideImagesFromConfigmap(t *testing.T) {
 			},
 			ManifestImage: manifest.ManifestImage{
 				ImageKey:    "non_existent_image",
-				ImageRemote: "quay.io/open-cluster-management",
+				ImageRemote: "quay.io/stolostron",
 				ImageDigest: "sha256:e728a4cdf4a11b78b927b7b280d75babca7b3880450fbf190d80b194f7d064b6",
 				ImageName:   "non-existent-image",
 			},
@@ -549,9 +550,9 @@ func Test_maintainImageManifestConfigmap(t *testing.T) {
 
 	r.CacheSpec = CacheSpec{
 		ImageOverrides: map[string]string{
-			"application_ui": "quay.io/open-cluster-management/application-ui@sha256:c740fc7bac067f003145ab909504287360564016b7a4a51b7ad4987aca123ac1",
-			"console_api":    "quay.io/open-cluster-management/console-api@sha256:3ef1043b4e61a09b07ff37f9ad8fc6e707af9813936cf2c0d52f2fa0e489c75f",
-			"rcm_controller": " quay.io/open-cluster-management/rcm-controller@sha256:8fab4d788241bf364dbc1b8c1ea5ccf18d3145a640dbd456b0dc7ba204e36819",
+			"application_ui": "quay.io/stolostron/application-ui@sha256:c740fc7bac067f003145ab909504287360564016b7a4a51b7ad4987aca123ac1",
+			"console_api":    "quay.io/stolostron/console-api@sha256:3ef1043b4e61a09b07ff37f9ad8fc6e707af9813936cf2c0d52f2fa0e489c75f",
+			"rcm_controller": " quay.io/stolostron/rcm-controller@sha256:8fab4d788241bf364dbc1b8c1ea5ccf18d3145a640dbd456b0dc7ba204e36819",
 		},
 		ManifestVersion: "2.3.6",
 	}

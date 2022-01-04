@@ -11,7 +11,7 @@ The below guidelines will explain how to build and install the operator on a rem
 - [opm][opm] v1.12.5+
 - yq
 - docker
-- quay credentials for https://quay.io/organization/rhibmcollab and https://quay.io/organization/open-cluster-management
+- quay credentials for https://quay.io/organization/rhibmcollab and https://quay.io/organization/stolostron
 
 ### Declare Required Variables
 
@@ -26,7 +26,7 @@ export VERSION=<A_UNIQUE_VERSION>
 ```
 ### Replace image manifest
 
-Populate the json file located in `image-manifests/` with proper values. Values can be found in https://github.com/open-cluster-management/pipeline/tree/2.3-integration/snapshots
+Populate the json file located in `image-manifests/` with proper values. Values can be found in https://github.com/stolostron/pipeline/tree/2.3-integration/snapshots
 
 ### Install Options
 
@@ -102,7 +102,7 @@ Clean up the operator and its resources:
 make uninstall
 ```
 
-If not all resources are properly cleaned up, follow the uninstall instructions at https://github.com/open-cluster-management/deploy to manually clean up remaining resources.
+If not all resources are properly cleaned up, follow the uninstall instructions at https://github.com/stolostron/deploy to manually clean up remaining resources.
 
 
 [go_tool]:https://golang.org/dl/

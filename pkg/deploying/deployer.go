@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package deploying
 
 import (
@@ -9,7 +8,7 @@ import (
 	"crypto/sha1" // #nosec G505 (not using sha for private encryption)
 	"encoding/hex"
 
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
+	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -42,7 +41,7 @@ func Deploy(c runtimeclient.Client, obj *unstructured.Unstructured) (error, bool
 	// Do not update cert secrets, or hiveconfig
 
 	if kind := found.GetKind(); kind == "Secret" {
-		if name := found.GetName(); name == "ocm-klusterlet-self-signed-secrets"  {
+		if name := found.GetName(); name == "ocm-klusterlet-self-signed-secrets" {
 			return nil, false
 		}
 	}

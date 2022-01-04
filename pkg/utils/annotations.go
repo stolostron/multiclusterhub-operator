@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/pkg/apis/operator/v1"
+	operatorsv1 "github.com/stolostron/multiclusterhub-operator/pkg/apis/operator/v1"
 )
 
 var (

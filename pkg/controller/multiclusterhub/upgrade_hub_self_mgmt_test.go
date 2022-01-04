@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/open-cluster-management/multiclusterhub-operator/version"
+	"github.com/stolostron/multiclusterhub-operator/version"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"

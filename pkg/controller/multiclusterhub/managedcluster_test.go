@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"testing"
 
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/pkg/apis/operator/v1"
+	operatorsv1 "github.com/stolostron/multiclusterhub-operator/pkg/apis/operator/v1"
 )
 
 func Test_ensureHubIsImported(t *testing.T) {

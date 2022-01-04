@@ -67,7 +67,7 @@ oc login ${COLLECTIVE_SERVER} --insecure-skip-tls-verify --token="${COLLECTIVE_T
 
 echo "Cloning lifeguard ..."
 
-git clone https://github.com/open-cluster-management/lifeguard.git
+git clone https://github.com/stolostron/lifeguard.git
 
 cd lifeguard/clusterclaims/
 
@@ -101,7 +101,7 @@ oc project
 
 make update-manifest
 make update-crds
-make in-cluster-install HUB_IMAGE_REGISTRY='quay.io/open-cluster-management' VERSION='nightly'
+make in-cluster-install HUB_IMAGE_REGISTRY='quay.io/stolostron' VERSION='nightly'
 
 SLEEP_IN_MINUTES=10
 echo "Sleeping for ${SLEEP_IN_MINUTES} minutes while cluster wakes from hibernation ..."
