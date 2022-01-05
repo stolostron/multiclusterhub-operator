@@ -139,7 +139,7 @@ metadata:
   namespace: mutilcloud-system
 spec:
   version: 3.3.0
-  imageRepository: "quay.io/rhibmcollab"
+  imageRepository: "quay.io/stolostron"
   imagePullPolicy: Always
   imagePullSecret: ""
   nodeSelector:

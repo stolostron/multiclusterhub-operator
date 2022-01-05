@@ -11,7 +11,7 @@ BUILD_DIR ?= build
 VERSION ?= 2.2.11
 IMG ?= multiclusterhub-operator
 SECRET_REGISTRY ?= quay.io
-REGISTRY ?= quay.io/rhibmcollab
+REGISTRY ?= quay.io/stolostron
 BUNDLE_REGISTRY ?= quay.io/stolostron
 GIT_VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
                  git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8)
@@ -88,8 +88,8 @@ logs:
 
 ## Update the MultiClusterHub Operator Image
 update-image:
-	operator-sdk build quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION) --go-build-args "-o build/_output/bin/multiclusterhub-operator"
-	docker push quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
+	operator-sdk build quay.io/stolostron/multiclusterhub-operator:$(VERSION) --go-build-args "-o build/_output/bin/multiclusterhub-operator"
+	docker push quay.io/stolostron/multiclusterhub-operator:$(VERSION)
 
 ## Apply Observability CR
 observability-cr:
