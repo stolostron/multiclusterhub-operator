@@ -6,10 +6,10 @@ package subscription
 import (
 	"bytes"
 
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/channel"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/version"
+	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/channel"
+	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
+	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"

@@ -9,9 +9,9 @@ import (
 	"reflect"
 	"time"
 
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
-	utils "github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
-	resources "github.com/open-cluster-management/multiclusterhub-operator/test/unit-tests"
+	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
+	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
 
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

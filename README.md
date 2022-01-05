@@ -29,7 +29,7 @@ kubectl annotate mch <mch-name> mch-pause=false --overwrite
 
 Developer image overrides can be added by specifiying a configmap containing the overrides for the MCH resource. This configmap must be in the same namespace as the MCH resource.
 
-This is done by creating a configmap from a new [manifest](https://github.com/open-cluster-management/pipeline/tree/2.4-integration/snapshots). A developer may use this to override any 1 or all images.
+This is done by creating a configmap from a new [manifest](https://github.com/stolostron/pipeline/tree/2.4-integration/snapshots). A developer may use this to override any 1 or all images.
 
 
 If overriding individual images, the minimum required parameters required to build the image reference are - 
@@ -62,4 +62,4 @@ kubectl delete pod multiclusterhub-operator-xxxxx-xxxxx
 
 - [Installation Guide](/docs/installation.md)
 - [Configuration Guide](/docs/configuration.md)
-- [Deploy automation](https://github.com/open-cluster-management/deploy)
+- [Deploy automation](https://github.com/stolostron/deploy)

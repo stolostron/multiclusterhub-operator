@@ -91,8 +91,8 @@ func NewImageOverridesConfigmapBadImageRef(name, namespace string) *corev1.Confi
 					"image-name": "multiclusterhub-repo",
 					"image-version": "2.4",
 					"git-sha256": "8b551bb18e4d89529f9b07c61b49a1dd67b5435a",
-					"git-repository": "open-cluster-management/multiclusterhub-repo",
-					"image-remote": "quay.io/open-cluster-management",
+					"git-repository": "stolostron/multiclusterhub-repo",
+					"image-remote": "quay.io/stolostron",
 					"image-digest": "sha256:bad-image-sha",
 					"image-key": "multiclusterhub_repo"
 				}

@@ -13,7 +13,7 @@ fi
 # Determine whether we are pulling a branch or a specific sha
 if [[ $DESIRED == main ]] || [[ $DESIRED == master ]] || [[ $DESIRED == release* ]]; then
     # This is a branch
-    LATEST_SHA=$(curl -s -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/open-cluster-management/hub-crds/git/refs/heads/${DESIRED} | jq -r '.object.sha')
+    LATEST_SHA=$(curl -s -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/stolostron/hub-crds/git/refs/heads/${DESIRED} | jq -r '.object.sha')
 
     if [[ -z "$LATEST_SHA" ]] || [[ $LATEST_SHA == null ]]; then 
         echo "Error getting most recent sha in branch ${DESIRED}. LATEST_SHA is ${LATEST_SHA}."

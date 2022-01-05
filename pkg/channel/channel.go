@@ -10,9 +10,9 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/helmrepo"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/version"
+	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/helmrepo"
+	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 )
 
 // ChannelName is the name of the open-cluster-management.io channel
