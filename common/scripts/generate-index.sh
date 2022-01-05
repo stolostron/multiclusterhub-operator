@@ -12,7 +12,7 @@ indent() {
 
 channel=latest
 version=$1
-registry=quay.io/rhibmcollab
+registry=quay.io/stolostron
 
 # Generate bundle files with SDK
 operator-sdk generate bundle \

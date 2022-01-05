@@ -11,7 +11,7 @@ The below guidelines will explain how to build and install the operator on a rem
 - [opm][opm] v1.12.5+
 - yq
 - docker
-- quay credentials for https://quay.io/organization/rhibmcollab and https://quay.io/organization/stolostron
+- quay credentials for https://quay.io/organization/stolostron and https://quay.io/organization/stolostron
 
 ### Declare Required Variables
 
