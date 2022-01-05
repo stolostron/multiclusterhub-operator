@@ -32,10 +32,10 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis"
-	operatorv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
-	"github.com/open-cluster-management/multiclusterhub-operator/controllers"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/webhook"
 	netv1 "github.com/openshift/api/config/v1"
+	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	"github.com/stolostron/multiclusterhub-operator/controllers"
+	"github.com/stolostron/multiclusterhub-operator/pkg/webhook"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"

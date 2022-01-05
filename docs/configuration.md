@@ -65,7 +65,7 @@ metadata:
   name: multiclusterhub
   namespace: open-cluster-management
   annotations:
-    "mch-imageRepository": "quay.io/open-cluster-management"
+    "mch-imageRepository": "quay.io/stolostron"
 ```
 
 ### Disable install operator actions

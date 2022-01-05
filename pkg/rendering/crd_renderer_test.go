@@ -9,7 +9,7 @@ import (
 	"path"
 	"testing"
 
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
+	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

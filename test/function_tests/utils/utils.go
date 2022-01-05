@@ -159,7 +159,7 @@ var (
 		Resource: "discoveryconfigs",
 	}
 	// DefaultImageRegistry ...
-	DefaultImageRegistry = "quay.io/open-cluster-management"
+	DefaultImageRegistry = "quay.io/stolostron"
 	// DefaultImagePullSecretName ...
 	DefaultImagePullSecretName = "multiclusterhub-operator-pull-secret"
 

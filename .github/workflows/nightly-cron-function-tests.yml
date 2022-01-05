@@ -22,7 +22,7 @@ jobs:
           go-version: '^1.17.1' # The Go version to download (if necessary) and use.
       - name: Run FULL Function Tests
         run: |
-          echo "${{ secrets.QUAY_TOKEN }}" | docker login quay.io/open-cluster-management -u "${{ secrets.QUAY_USER }}" --password-stdin
+          echo "${{ secrets.QUAY_TOKEN }}" | docker login quay.io/stolostron -u "${{ secrets.QUAY_USER }}" --password-stdin
           echo "Running Nightly Function Tests ..."
           bash ./hack/scripts/nightly-full-function-test.sh
         env:

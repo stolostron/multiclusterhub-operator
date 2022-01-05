@@ -26,14 +26,15 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	operatorv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/channel"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/helmrepo"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/manifest"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/multiclusterengine"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/subscription"
-	utils "github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/version"
+	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
+
+	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/channel"
+	"github.com/stolostron/multiclusterhub-operator/pkg/helmrepo"
+	"github.com/stolostron/multiclusterhub-operator/pkg/manifest"
+	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
+	"github.com/stolostron/multiclusterhub-operator/pkg/subscription"
+	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"

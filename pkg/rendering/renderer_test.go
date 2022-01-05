@@ -10,9 +10,9 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
+	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/rendering/templates"
+	"github.com/stolostron/multiclusterhub-operator/pkg/rendering/templates"
 )
 
 func TestRender(t *testing.T) {

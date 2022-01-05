@@ -30,7 +30,7 @@ jobs:
           type: remove
       - name: Run Function Tests (Requires 'ok-to-test' label)
         run: |
-          echo "${{ secrets.QUAY_TOKEN }}" | docker login quay.io/open-cluster-management -u "${{ secrets.QUAY_USER }}" --password-stdin
+          echo "${{ secrets.QUAY_TOKEN }}" | docker login quay.io/stolostron -u "${{ secrets.QUAY_USER }}" --password-stdin
           echo "Running Pull Request Function Tests ..."
           bash ./hack/scripts/pull-request-function-test.sh
         env:

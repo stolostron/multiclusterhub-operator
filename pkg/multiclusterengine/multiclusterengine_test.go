@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
