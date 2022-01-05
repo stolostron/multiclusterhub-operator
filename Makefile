@@ -1,6 +1,21 @@
 # GITHUB_USER containing '@' char must be escaped with '%40'
 GITHUB_USER := $(shell echo $(GITHUB_USER) | sed 's/@/%40/g')
-GITHUB_TOKEN ?=
+.PHONY: default
+default:: init;
+.PHONY: init\:
+init::
+ifndef DOCKER_USER
+	$(info DOCKER_USER not defined)
+	exit -1
+endif
+ifndef DOCKER_PASS
+	$(info DOCKER_PASS not defined)
+	exit -1
+endif
+ifndef GITHUB_TOKEN
+	$(info GITHUB_TOKEN not defined)
+	exit -1
+endif
 
 -include $(shell [ -f ".build-harness-bootstrap" ] || curl -sL -o .build-harness-bootstrap -H "Authorization: token $(GITHUB_TOKEN)" -H "Accept: application/vnd.github.v3.raw" "https://raw.github.com/stolostron/build-harness-extensions/main/templates/Makefile.build-harness-bootstrap"; echo .build-harness-bootstrap)
 
@@ -11,7 +26,7 @@ BUILD_DIR ?= build
 VERSION ?= 2.2.11
 IMG ?= multiclusterhub-operator
 SECRET_REGISTRY ?= quay.io
-REGISTRY ?= quay.io/rhibmcollab
+REGISTRY ?= quay.io/stolostron
 BUNDLE_REGISTRY ?= quay.io/stolostron
 GIT_VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
                  git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8)
@@ -88,8 +103,8 @@ logs:
 
 ## Update the MultiClusterHub Operator Image
 update-image:
-	operator-sdk build quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION) --go-build-args "-o build/_output/bin/multiclusterhub-operator"
-	docker push quay.io/rhibmcollab/multiclusterhub-operator:$(VERSION)
+	operator-sdk build quay.io/stolostron/multiclusterhub-operator:$(VERSION) --go-build-args "-o build/_output/bin/multiclusterhub-operator"
+	docker push quay.io/stolostron/multiclusterhub-operator:$(VERSION)
 
 ## Apply Observability CR
 observability-cr:
