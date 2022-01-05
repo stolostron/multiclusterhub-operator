@@ -25,7 +25,7 @@ contribution. See the [DCO](DCO) file for details.
 
 ## DCO Sign Off
 
-You must sign off your commit to state that you certify the [DCO](https://github.com/stolostron/community/blob/main/DCO). To certify your commit for DCO, add a line like the following at the end of your commit message:
+You must sign off your commit to state that you certify the [DCO](https://github.com/open-cluster-management-io/community/blob/main/DCO). To certify your commit for DCO, add a line like the following at the end of your commit message:
 
 ```
 Signed-off-by: John Smith <john@example.com>
