@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/pkg/apis/operator/v1"
+	operatorsv1 "github.com/stolostron/multiclusterhub-operator/pkg/apis/operator/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
@@ -32,7 +32,7 @@ const (
 	duration365d       = time.Hour * 24 * 365
 
 	// DefaultRepository ...
-	DefaultRepository = "quay.io/open-cluster-management"
+	DefaultRepository = "quay.io/stolostron"
 
 	// UnitTestEnvVar ...
 	UnitTestEnvVar = "UNIT_TEST"

@@ -2,13 +2,7 @@
 GITHUB_USER := $(shell echo $(GITHUB_USER) | sed 's/@/%40/g')
 GITHUB_TOKEN ?=
 
-USE_VENDORIZED_BUILD_HARNESS ?=
-
-ifndef USE_VENDORIZED_BUILD_HARNESS
--include $(shell curl -s -H 'Authorization: token ${GITHUB_TOKEN}' -H 'Accept: application/vnd.github.v4.raw' -L https://api.github.com/repos/open-cluster-management/build-harness-extensions/contents/templates/Makefile.build-harness-bootstrap -o .build-harness-bootstrap; echo .build-harness-bootstrap)
-else
--include vbh/.build-harness-vendorized
-endif
+-include $(shell [ -f ".build-harness-bootstrap" ] || curl -sL -o .build-harness-bootstrap -H "Authorization: token $(GITHUB_TOKEN)" -H "Accept: application/vnd.github.v3.raw" "https://raw.github.com/stolostron/build-harness-extensions/main/templates/Makefile.build-harness-bootstrap"; echo .build-harness-bootstrap)
 
 -include test/Makefile
 
@@ -18,7 +12,7 @@ VERSION ?= 2.2.11
 IMG ?= multiclusterhub-operator
 SECRET_REGISTRY ?= quay.io
 REGISTRY ?= quay.io/rhibmcollab
-BUNDLE_REGISTRY ?= quay.io/open-cluster-management
+BUNDLE_REGISTRY ?= quay.io/stolostron
 GIT_VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
                  git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8)
 
@@ -101,13 +95,13 @@ update-image:
 observability-cr:
 	curl -H "Authorization: token $(shell echo $(GITHUB_TOKEN))" \
 		-H 'Accept: application/vnd.github.v3.raw' \
-		-L https://raw.githubusercontent.com/open-cluster-management/multicluster-monitoring-operator/master/deploy/crds/observability.open-cluster-management.io_v1beta1_multiclusterobservability_cr.yaml | oc apply -f -
+		-L https://raw.githubusercontent.com/stolostron/multicluster-monitoring-operator/master/deploy/crds/observability.open-cluster-management.io_v1beta1_multiclusterobservability_cr.yaml | oc apply -f -
 
 ## Apply Observability CRD
 observability-crd:
 	curl -H "Authorization: token $(shell echo $(GITHUB_TOKEN))" \
 		-H 'Accept: application/vnd.github.v3.raw' \
-		-L https://raw.githubusercontent.com/open-cluster-management/multicluster-monitoring-operator/master/deploy/olm-catalog/multicluster-observability-operator/manifests/observability.open-cluster-management.io_multiclusterobservabilities_crd.yaml | oc apply -f -
+		-L https://raw.githubusercontent.com/stolostron/multicluster-monitoring-operator/master/deploy/olm-catalog/multicluster-observability-operator/manifests/observability.open-cluster-management.io_multiclusterobservabilities_crd.yaml | oc apply -f -
 
 ## Operator-sdk generate CRD(s)
 crd:
@@ -167,7 +161,7 @@ index-install: ns secrets og csv update-image subscriptions observability-crd
 bma-cr:
 	curl -H "Authorization: token $(shell echo $(GITHUB_TOKEN))" \
 		-H 'Accept: application/vnd.github.v3.raw' \
-		-L https://raw.githubusercontent.com/open-cluster-management/demo-subscription-gitops/master/bma/BareMetalAssets/dc01r3c3b2-powerflex390.yaml | oc apply -f -
+		-L https://raw.githubusercontent.com/stolostron/demo-subscription-gitops/master/bma/BareMetalAssets/dc01r3c3b2-powerflex390.yaml | oc apply -f -
 
 time:
 	bash common/scripts/timer.sh

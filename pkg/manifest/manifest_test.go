@@ -6,8 +6,8 @@ import (
 	"os"
 	"testing"
 
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/pkg/apis/operator/v1"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
+	operatorsv1 "github.com/stolostron/multiclusterhub-operator/pkg/apis/operator/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 )
 
 func TestGetImageOverrideType(t *testing.T) {
@@ -62,7 +62,7 @@ func Test_buildFullImageReference(t *testing.T) {
 		ImageKey:     "test_app",
 		ImageName:    "test-app",
 		ImageVersion: "2.2.11",
-		ImageRemote:  "quay.io/open-cluster-management",
+		ImageRemote:  "quay.io/stolostron",
 		ImageDigest:  "sha256:abc123",
 	}
 	mch := &operatorsv1.MultiClusterHub{}
@@ -87,7 +87,7 @@ func Test_buildFullImageReference(t *testing.T) {
 		{
 			name: "Default (sha format)",
 			args: args{mch1, mi},
-			want: "quay.io/open-cluster-management/test-app@sha256:abc123",
+			want: "quay.io/stolostron/test-app@sha256:abc123",
 		},
 		{
 			name: "Custom registry",
@@ -97,7 +97,7 @@ func Test_buildFullImageReference(t *testing.T) {
 		{
 			name: "Use image suffix format",
 			args: args{mch3, mi},
-			want: "quay.io/open-cluster-management/test-app:2.2.11-baz",
+			want: "quay.io/stolostron/test-app:2.2.11-baz",
 		},
 	}
 	for _, tt := range tests {

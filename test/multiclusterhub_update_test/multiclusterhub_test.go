@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	utils "github.com/open-cluster-management/multiclusterhub-operator/test/utils"
+	utils "github.com/stolostron/multiclusterhub-operator/test/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
 )

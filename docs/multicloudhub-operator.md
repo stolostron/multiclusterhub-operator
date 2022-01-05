@@ -66,7 +66,7 @@ spec: {}
 Then the MultiClusterHub operator will deploy the multicloud hub to namespace `mutilcloud-system`, it will follow below steps
 
 - For mongo and etcd, if user does not configure the external servers for them, the operator will deploy their operators with OLM subscriptions, then the operator creates the corresponding CR with the defined configuration to deploy them
-- Deploy the multicloud foundation operator, hive operator, and [subscription operator](https://github.com/open-cluster-management/cp4mcm-manifest/tree/master/base/subscription-operator) with their OLM subscription, then the operator creates the corresponding CR with the defined configuration to deploy them
+- Deploy the multicloud foundation operator, hive operator, and [subscription operator](https://github.com/stolostron/cp4mcm-manifest/tree/master/base/subscription-operator) with their OLM subscription, then the operator creates the corresponding CR with the defined configuration to deploy them
 - For subscription operator, the operator creates helm channel and subscription CR with the defined configuration, the subscription operator deploys the `console`, `topology`, `security_advisor`, `rcm` and `security_advisor` components with the helm channel and subscription CR (If each component has its own operator in OperatorHub, we can replace this step by deploying the component with OLM subscription directly)
 
 After user apply the MultiClusterHub CR, user can query the CR to get the defualt configuration and status
@@ -189,7 +189,7 @@ Then the MultiClusterHub operator will deploy the multiCloud hub to namespace `m
 
 ## Proposal #2
 
-For enterprise user, we provide an operator (MultiClusterHub Operator) to deploy all of multicloud hub components, and we also package the [subscription operator](https://github.com/open-cluster-management/cp4mcm-manifest/tree/master/base/subscription-operator) and publish it to OpenShift OperatorHub, in this operator package (`packagemanifests`), we define two channels, one is `community` and the other is `enterprise`, user can define an OLM `Subscription` to subscribe `community` channel to install community multicloud hub.
+For enterprise user, we provide an operator (MultiClusterHub Operator) to deploy all of multicloud hub components, and we also package the [subscription operator](https://github.com/stolostron/cp4mcm-manifest/tree/master/base/subscription-operator) and publish it to OpenShift OperatorHub, in this operator package (`packagemanifests`), we define two channels, one is `community` and the other is `enterprise`, user can define an OLM `Subscription` to subscribe `community` channel to install community multicloud hub.
 
 ![](images/multiclusterhub-operator2.png)
 

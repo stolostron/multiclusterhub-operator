@@ -11,7 +11,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	utils "github.com/open-cluster-management/multiclusterhub-operator/test/utils"
+	utils "github.com/stolostron/multiclusterhub-operator/test/utils"
 	"k8s.io/client-go/dynamic"
 )
 
