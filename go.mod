@@ -1,4 +1,4 @@
-module github.com/open-cluster-management/multiclusterhub-operator
+module github.com/stolostron/multiclusterhub-operator
 
 go 1.13
 
@@ -41,7 +41,7 @@ require (
 // Pinned to k8s v0.18.3
 replace (
 	github.com/Azure/go-autorest => github.com/Azure/go-autorest v13.3.2+incompatible // Required by OLM
-	github.com/jetstack/cert-manager => github.com/open-cluster-management/cert-manager v0.0.0-20200821135248-2fd523b053f5
+	github.com/jetstack/cert-manager => github.com/stolostron/cert-manager v0.0.0-20200821135248-2fd523b053f5
 	k8s.io/api => k8s.io/api v0.18.3
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.18.3
 	k8s.io/apimachinery => k8s.io/apimachinery v0.18.3

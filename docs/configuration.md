@@ -63,7 +63,7 @@ metadata:
   name: multiclusterhub
   namespace: open-cluster-management
   annotations:
-    "mch-imageRepository": "quay.io/open-cluster-management"
+    "mch-imageRepository": "quay.io/stolostron"
     "mch-imageTagSuffix": "SNAPSHOT-2020-06-18-13-43-50"
 ```
 

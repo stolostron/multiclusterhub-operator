@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/open-cluster-management/multiclusterhub-operator/version"
+	"github.com/stolostron/multiclusterhub-operator/version"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -34,10 +34,10 @@ func Test_getImageFromManifestByKey(t *testing.T) {
 					Namespace: full_mch.Namespace,
 				},
 				Data: map[string]string{
-					"multicluster_operators_subscription": "quay.io/rhibmcollab/multicluster-operators-subscription-image@sha256:test",
+					"multicluster_operators_subscription": "quay.io/stolostron/multicluster-operators-subscription-image@sha256:test",
 				},
 			},
-			Result: "quay.io/rhibmcollab/multicluster-operators-subscription-image@sha256:test",
+			Result: "quay.io/stolostron/multicluster-operators-subscription-image@sha256:test",
 		},
 		{
 			Name:     "Improper image key given",
@@ -48,7 +48,7 @@ func Test_getImageFromManifestByKey(t *testing.T) {
 					Namespace: full_mch.Namespace,
 				},
 				Data: map[string]string{
-					"multicluster_operators_subscription": "quay.io/rhibmcollab/multicluster-operators-subscription-image@sha256:test",
+					"multicluster_operators_subscription": "quay.io/stolostron/multicluster-operators-subscription-image@sha256:test",
 				},
 			},
 			Result: "",

@@ -72,7 +72,7 @@ test-image: deps
 	rm -rf vendor
 
 # Pass downstream bundle image snapshots for beginning version and the desired version to upgrade to 
-# https://quay.io/repository/open-cluster-management/acm-operator-bundle?tab=tags
+# https://quay.io/repository/stolostron/acm-operator-bundle?tab=tags
 # Usage: common/scripts/bundle-acm.sh "<Starting Snapshot>" <Update Snapshot> <Start Version> <Update Version>
 ## Creates an index image to test updates
 test-update-image:
@@ -88,7 +88,7 @@ observability-resources:
 	mkdir -p test/resources
 	curl -H "Authorization: token $(shell echo $(GITHUB_TOKEN))" \
 		-H 'Accept: application/vnd.github.v3.raw' \
-		-L https://raw.githubusercontent.com/open-cluster-management/multicluster-monitoring-operator/master/deploy/crds/observability.open-cluster-management.io_v1beta1_multiclusterobservability_cr.yaml -o ./test/resources/observability-cr.yaml
+		-L https://raw.githubusercontent.com/stolostron/multicluster-monitoring-operator/master/deploy/crds/observability.open-cluster-management.io_v1beta1_multiclusterobservability_cr.yaml -o ./test/resources/observability-cr.yaml
 	curl -H "Authorization: token $(shell echo $(GITHUB_TOKEN))" \
 		-H 'Accept: application/vnd.github.v3.raw' \
-		-L https://raw.githubusercontent.com/open-cluster-management/multicluster-monitoring-operator/master/deploy/olm-catalog/multicluster-observability-operator/manifests/observability.open-cluster-management.io_multiclusterobservabilities_crd.yaml -o ./test/resources/observability-crd.yaml
+		-L https://raw.githubusercontent.com/stolostron/multicluster-monitoring-operator/master/deploy/olm-catalog/multicluster-observability-operator/manifests/observability.open-cluster-management.io_multiclusterobservabilities_crd.yaml -o ./test/resources/observability-crd.yaml

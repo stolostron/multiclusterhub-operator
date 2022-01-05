@@ -5,7 +5,7 @@ package foundation
 import (
 	"testing"
 
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/pkg/apis/operator/v1"
+	operatorsv1 "github.com/stolostron/multiclusterhub-operator/pkg/apis/operator/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

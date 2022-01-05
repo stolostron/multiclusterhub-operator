@@ -9,10 +9,10 @@ import (
 	"strconv"
 
 	"github.com/fatih/structs"
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/pkg/apis/operator/v1"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/foundation"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/rendering/templates"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
+	operatorsv1 "github.com/stolostron/multiclusterhub-operator/pkg/apis/operator/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/foundation"
+	"github.com/stolostron/multiclusterhub-operator/pkg/rendering/templates"
+	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	v1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -23,7 +23,7 @@ import (
 
 const (
 	metadataErr         = "failed to find metadata field"
-	proxyApiServiceName = "v1beta1.proxy.open-cluster-management.io"
+	proxyApiServiceName = "v1beta1.proxy.stolostron.io"
 )
 
 var log = logf.Log.WithName("renderer")

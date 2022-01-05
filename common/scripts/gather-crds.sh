@@ -10,7 +10,7 @@ mkdir -p crds/
 mkdir -p crd-temp
 
 # Clone hub-crds into crd-temp
-git clone https://github.com/open-cluster-management/hub-crds --branch main crd-temp
+git clone https://github.com/stolostron/hub-crds --branch main crd-temp
 
 # Recursively copy yaml files
 find crd-temp -name \*.yaml -exec cp {} crds  \;
