@@ -6,7 +6,7 @@ RUN microdnf install git findutils
 COPY hack/scripts hack/scripts
 RUN ./hack/scripts/gather-crds-prow.sh https://github.com/stolostron/hub-crds.git $(cat hack/scripts/currentCRDs.txt) ./crds
 
-FROM registry.ci.openshift.org/open-cluster-management/builder:go1.17-linux AS builder
+FROM registry.ci.openshift.org/stolostron/builder:go1.17-linux AS builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
