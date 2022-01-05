@@ -73,7 +73,7 @@ test-image: deps
 	rm -rf vendor
 
 # Pass downstream bundle image snapshots for beginning version and the desired version to upgrade to 
-# https://quay.io/repository/open-cluster-management/acm-operator-bundle?tab=tags
+# https://quay.io/repository/stolostron/acm-operator-bundle?tab=tags
 # Usage: common/scripts/bundle-acm.sh "<Starting Snapshot>" <Update Snapshot> <Start Version> <Update Version>
 ## Creates an index image to test updates
 test-update-image:

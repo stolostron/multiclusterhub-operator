@@ -8,9 +8,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
-	utils "github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/version"
+	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
+	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -1,4 +1,4 @@
-module github.com/open-cluster-management/multiclusterhub-operator
+module github.com/stolostron/multiclusterhub-operator
 
 go 1.17
 

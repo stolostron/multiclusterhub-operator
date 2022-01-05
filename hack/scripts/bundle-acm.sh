@@ -27,8 +27,8 @@ if [ "$#" -ne 4 ]; then
 fi
 
 
-startBundle="quay.io/open-cluster-management/acm-operator-bundle:$1"
-updateBundle="quay.io/open-cluster-management/acm-operator-bundle:$2"
+startBundle="quay.io/stolostron/acm-operator-bundle:$1"
+updateBundle="quay.io/stolostron/acm-operator-bundle:$2"
 startVersion=$3
 updateVersion=$4
 

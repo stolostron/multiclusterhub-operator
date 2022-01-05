@@ -23,9 +23,9 @@ rm -rf pipeline-temp
 mkdir -p pipeline-temp
 # Clone cicd pipeline repo
 if [ -z "${GH_USER}" ] || [ -z "${GH_TOKEN}" ]; then
-  git clone https://github.com/open-cluster-management/pipeline --branch ${BRANCH_NAME} pipeline-temp
+  git clone https://github.com/stolostron/pipeline --branch ${BRANCH_NAME} pipeline-temp
 else # clone from private repo 
-  git clone https://${GH_USER}:${GH_TOKEN}@github.com/open-cluster-management/pipeline --branch ${BRANCH_NAME} pipeline-temp
+  git clone https://${GH_USER}:${GH_TOKEN}@github.com/stolostron/pipeline --branch ${BRANCH_NAME} pipeline-temp
 fi
 
 # Find manifest from the latest snapshot
