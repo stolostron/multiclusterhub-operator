@@ -8,12 +8,13 @@ import (
 	"fmt"
 	"strings"
 
+	foundation "github.com/stolostron/multiclusterhub-operator/pkg/foundation"
+
 	"github.com/go-logr/logr"
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/pkg/apis/operator/v1"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/channel"
-	foundation "github.com/open-cluster-management/multiclusterhub-operator/pkg/foundation"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/helmrepo"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
+	operatorsv1 "github.com/stolostron/multiclusterhub-operator/pkg/apis/operator/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/channel"
+	"github.com/stolostron/multiclusterhub-operator/pkg/helmrepo"
+	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"

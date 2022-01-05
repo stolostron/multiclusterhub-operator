@@ -16,13 +16,15 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 
-	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis"
-	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/apis"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/controller"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/webhook"
-	"github.com/open-cluster-management/multiclusterhub-operator/version"
 	netv1 "github.com/openshift/api/config/v1"
+
+	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis"
+
+	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis"
+	"github.com/stolostron/multiclusterhub-operator/pkg/apis"
+	"github.com/stolostron/multiclusterhub-operator/pkg/controller"
+	"github.com/stolostron/multiclusterhub-operator/pkg/webhook"
+	"github.com/stolostron/multiclusterhub-operator/version"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"

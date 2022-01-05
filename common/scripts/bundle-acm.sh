@@ -27,13 +27,13 @@ if [ "$#" -ne 4 ]; then
 fi
 
 
-startBundle="quay.io/open-cluster-management/acm-operator-bundle:$1"
-updateBundle="quay.io/open-cluster-management/acm-operator-bundle:$2"
+startBundle="quay.io/stolostron/acm-operator-bundle:$1"
+updateBundle="quay.io/stolostron/acm-operator-bundle:$2"
 startVersion=$3
 updateVersion=$4
 
-registry="quay.io/rhibmcollab"
-indexImage="quay.io/rhibmcollab/multiclusterhub-operator:$updateVersion-index"
+registry="quay.io/stolostron"
+indexImage="quay.io/stolostron/multiclusterhub-operator:$updateVersion-index"
 
 # Pull and tag images
 docker pull $startBundle

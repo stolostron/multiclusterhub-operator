@@ -7,8 +7,8 @@ import (
 	"os"
 	"testing"
 
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/pkg/apis/operator/v1"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
+	operatorsv1 "github.com/stolostron/multiclusterhub-operator/pkg/apis/operator/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 )
 
 func Test_readManifestFile(t *testing.T) {
@@ -45,7 +45,7 @@ func Test_buildFullImageReference(t *testing.T) {
 		ImageKey:     "test_app",
 		ImageName:    "test-app",
 		ImageVersion: "2.3.6",
-		ImageRemote:  "quay.io/open-cluster-management",
+		ImageRemote:  "quay.io/stolostron",
 		ImageDigest:  "sha256:abc123",
 	}
 	mch := &operatorsv1.MultiClusterHub{}
@@ -67,7 +67,7 @@ func Test_buildFullImageReference(t *testing.T) {
 		{
 			name: "Default (sha format)",
 			args: args{mch1, mi},
-			want: "quay.io/open-cluster-management/test-app@sha256:abc123",
+			want: "quay.io/stolostron/test-app@sha256:abc123",
 		},
 		{
 			name: "Custom registry",

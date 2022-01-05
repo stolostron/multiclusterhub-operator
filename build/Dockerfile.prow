@@ -4,9 +4,9 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:latest as cloner
 
 RUN microdnf install git findutils
 COPY cicd-scripts cicd-scripts
-RUN ./cicd-scripts/gather-crds.sh https://github.com/open-cluster-management/hub-crds.git $(cat cicd-scripts/currentCRDs.txt) ./crds
+RUN ./cicd-scripts/gather-crds.sh https://github.com/stolostron/hub-crds.git $(cat cicd-scripts/currentCRDs.txt) ./crds
 
-FROM registry.ci.openshift.org/open-cluster-management/builder:go1.17-linux AS builder
+FROM registry.ci.openshift.org/stolostron/builder:go1.17-linux AS builder
 
 WORKDIR /workspace
 COPY . .

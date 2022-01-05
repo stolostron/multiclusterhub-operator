@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
-	utils "github.com/open-cluster-management/multiclusterhub-operator/test/utils"
+	utils "github.com/stolostron/multiclusterhub-operator/test/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

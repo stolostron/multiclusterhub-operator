@@ -17,7 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
-	utils "github.com/open-cluster-management/multiclusterhub-operator/test/utils"
+	utils "github.com/stolostron/multiclusterhub-operator/test/utils"
 )
 
 var _ = Describe("Multiclusterhub", func() {
@@ -138,7 +138,6 @@ func FullInstallTestSuite() {
 		return
 	})
 
-
 	It("Test PullPolicy", func() {
 		By("- When creating the MCH, ensure that all deployments use the IfNotPresent pullPolicy")
 
@@ -207,7 +206,7 @@ func FullInstallTestSuite() {
 					{
 					  "image-name": "application-ui",
 					  "image-tag": "not-a-real-tag",
-					  "image-remote": "quay.io/open-cluster-management",
+					  "image-remote": "quay.io/stolostron",
 					  "image-key": "application_ui"
 					}
 				  ]`,
@@ -236,7 +235,7 @@ func FullInstallTestSuite() {
 				if len(configmap.Data) == 0 {
 					return fmt.Errorf("Configmap has not been updated")
 				}
-				if configmap.Data["application_ui"] != "quay.io/open-cluster-management/application-ui:not-a-real-tag" {
+				if configmap.Data["application_ui"] != "quay.io/stolostron/application-ui:not-a-real-tag" {
 					return fmt.Errorf("Configmap has not been updated from overrides CM.")
 				}
 				return nil

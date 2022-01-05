@@ -1,4 +1,4 @@
-module github.com/open-cluster-management/multiclusterhub-operator
+module github.com/stolostron/multiclusterhub-operator
 
 go 1.17
 
@@ -102,7 +102,7 @@ require (
 // Pinned to k8s v0.19.0
 replace (
 	github.com/Azure/go-autorest => github.com/Azure/go-autorest v13.3.2+incompatible // Required by OLM
-	github.com/jetstack/cert-manager => github.com/open-cluster-management/cert-manager v0.0.0-20200821135248-2fd523b053f5
+	github.com/jetstack/cert-manager => github.com/stolostron/cert-manager v0.0.0-20200821135248-2fd523b053f5
 	github.com/metal3-io/baremetal-operator => github.com/openshift/baremetal-operator v0.0.0-20200715132148-0f91f62a41fe
 	github.com/metal3-io/cluster-api-provider-baremetal => github.com/openshift/cluster-api-provider-baremetal v0.0.0-20190821174549-a2a477909c1d
 	github.com/terraform-providers/terraform-provider-aws => github.com/openshift/terraform-provider-aws v1.60.1-0.20200630224953-76d1fb4e5699
