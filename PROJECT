@@ -5,7 +5,7 @@ plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
 projectName: multiclusterhub-operator
-repo: github.com/open-cluster-management/multiclusterhub-operator
+repo: github.com/stolostron/multiclusterhub-operator
 resources:
 - api:
     crdVersion: v1
@@ -14,7 +14,7 @@ resources:
   domain: open-cluster-management.io
   group: operator
   kind: MultiClusterHub
-  path: github.com/open-cluster-management/multiclusterhub-operator/api/v1
+  path: github.com/stolostron/multiclusterhub-operator/api/v1
   version: v1
   webhooks:
     defaulting: true

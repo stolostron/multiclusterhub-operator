@@ -1,4 +1,4 @@
-module github.com/open-cluster-management/multiclusterhub-operator
+module github.com/stolostron/multiclusterhub-operator
 
 go 1.17
 
@@ -16,14 +16,12 @@ require (
 	github.com/openshift/library-go v0.0.0-20210622153508-f77a17e0269f
 	github.com/operator-framework/api v0.10.0
 	github.com/operator-framework/operator-sdk v0.19.4
-	github.com/pkg/errors v0.9.1
 	k8s.io/api v0.22.1
 	k8s.io/apiextensions-apiserver v0.22.1
 	k8s.io/apimachinery v0.22.1
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/klog v1.0.0
 	k8s.io/kube-aggregator v0.22.1
-	open-cluster-management.io/api v0.0.0-20210908005819-815ac23c7308
 	sigs.k8s.io/controller-runtime v0.10.0
 	sigs.k8s.io/kustomize/v3 v3.3.1
 	sigs.k8s.io/yaml v1.2.0
@@ -72,6 +70,7 @@ require (
 	github.com/open-cluster-management/multicloud-operators-channel v1.2.4-0-20210817-0d8714a // indirect
 	github.com/open-cluster-management/multicloud-operators-deployable v1.2.4-0-20210816-f9fe854 // indirect
 	github.com/open-cluster-management/multicloud-operators-placementrule v1.2.4-0-20210816-699e5 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.11.0 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.26.0 // indirect

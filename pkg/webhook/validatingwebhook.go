@@ -18,8 +18,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
+	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 )
 
 type multiClusterHubValidator struct {

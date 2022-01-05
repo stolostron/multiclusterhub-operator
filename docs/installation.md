@@ -95,7 +95,7 @@ Clean up the operator and its resources:
 make undeploy
 ```
 
-If not all resources are properly cleaned up, follow the uninstall instructions at https://github.com/open-cluster-management/deploy to manually clean up remaining resources.
+If not all resources are properly cleaned up, follow the uninstall instructions at https://github.com/stolostron/deploy to manually clean up remaining resources.
 
 
 [go_tool]:https://golang.org/dl/

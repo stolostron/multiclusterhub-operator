@@ -25,7 +25,7 @@ contribution. See the [DCO](DCO) file for details.
 
 ## DCO Sign Off
 
-You must sign off your commit to state that you certify the [DCO](https://github.com/open-cluster-management/community/blob/main/DCO). To certify your commit for DCO, add a line like the following at the end of your commit message:
+You must sign off your commit to state that you certify the [DCO](https://github.com/open-cluster-management-io/community/blob/main/DCO). To certify your commit for DCO, add a line like the following at the end of your commit message:
 
 ```
 Signed-off-by: John Smith <john@example.com>
@@ -38,7 +38,7 @@ This can be done with the `--signoff` option to `git commit`. See the [Git docum
 Anyone may create issues, comment in issues, create pull requests, and submit reviews for pull requests.
 
 In order to be assigned an issue or pull request, you must be a member of the
-[open-cluster-management](https://github.com/open-cluster-management) GitHub organization.
+[stolostron](https://github.com/stolostron) GitHub organization.
 
 To have a pull request merged, it will require approval from a [repository owner](OWNERS).
 
@@ -87,7 +87,7 @@ This approach _only_ tests MultiClusterHub Operator functionality (not the funct
     make prep-mock-install
     ```
 
-    ... builds and pushes the mock image, copies required Hub CRDs into the `multiclusterhub-operator` codebase from the [Hub CRDs GitHub Repo](https://github.com/open-cluster-management/hub-crds) (for the next step), and preps the image manifest to use the freshly-built mock image
+    ... builds and pushes the mock image, copies required Hub CRDs into the `multiclusterhub-operator` codebase from the [Hub CRDs GitHub Repo](https://github.com/stolostron/hub-crds) (for the next step), and preps the image manifest to use the freshly-built mock image
 
     ```bash
     make mock-install

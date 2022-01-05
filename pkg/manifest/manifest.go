@@ -12,9 +12,9 @@ import (
 	"path"
 	"path/filepath"
 
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/version"
+	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
+	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 

@@ -30,10 +30,10 @@ import (
 // 					Namespace: full_mch.Namespace,
 // 				},
 // 				Data: map[string]string{
-// 					"multicluster_operators_subscription": "quay.io/rhibmcollab/multicluster-operators-subscription-image@sha256:test",
+// 					"multicluster_operators_subscription": "quay.io/stolostron/multicluster-operators-subscription-image@sha256:test",
 // 				},
 // 			},
-// 			Result: "quay.io/rhibmcollab/multicluster-operators-subscription-image@sha256:test",
+// 			Result: "quay.io/stolostron/multicluster-operators-subscription-image@sha256:test",
 // 		},
 // 		{
 // 			Name:     "Improper image key given",
@@ -44,7 +44,7 @@ import (
 // 					Namespace: full_mch.Namespace,
 // 				},
 // 				Data: map[string]string{
-// 					"multicluster_operators_subscription": "quay.io/rhibmcollab/multicluster-operators-subscription-image@sha256:test",
+// 					"multicluster_operators_subscription": "quay.io/stolostron/multicluster-operators-subscription-image@sha256:test",
 // 				},
 // 			},
 // 			Result: "",

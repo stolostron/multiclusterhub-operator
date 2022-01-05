@@ -20,9 +20,9 @@ func kind(kind string) schema.GroupKind {
 // 	cacheSpec := CacheSpec{
 // 		IngressDomain: "apps.smart-buck.dev01.red-chesterfield.com",
 // 		ImageOverrides: map[string]string{
-// 			"application_ui": "quay.io/open-cluster-management/application-ui@sha256:c740fc7bac067f003145ab909504287360564016b7a4a51b7ad4987aca123ac1",
-// 			"console_api":    "quay.io/open-cluster-management/console-api@sha256:3ef1043b4e61a09b07ff37f9ad8fc6e707af9813936cf2c0d52f2fa0e489c75f",
-// 			"rcm_controller": " quay.io/open-cluster-management/rcm-controller@sha256:8fab4d788241bf364dbc1b8c1ea5ccf18d3145a640dbd456b0dc7ba204e36819",
+// 			"application_ui": "quay.io/stolostron/application-ui@sha256:c740fc7bac067f003145ab909504287360564016b7a4a51b7ad4987aca123ac1",
+// 			"console_api":    "quay.io/stolostron/console-api@sha256:3ef1043b4e61a09b07ff37f9ad8fc6e707af9813936cf2c0d52f2fa0e489c75f",
+// 			"rcm_controller": " quay.io/stolostron/rcm-controller@sha256:8fab4d788241bf364dbc1b8c1ea5ccf18d3145a640dbd456b0dc7ba204e36819",
 // 		},
 // 	}
 
@@ -192,9 +192,9 @@ func kind(kind string) schema.GroupKind {
 // 	cacheSpec := CacheSpec{
 // 		IngressDomain: "apps.smart-buck.dev01.red-chesterfield.com",
 // 		ImageOverrides: map[string]string{
-// 			"application_ui": "quay.io/open-cluster-management/application-ui@sha256:c740fc7bac067f003145ab909504287360564016b7a4a51b7ad4987aca123ac1",
-// 			"console_api":    "quay.io/open-cluster-management/console-api@sha256:3ef1043b4e61a09b07ff37f9ad8fc6e707af9813936cf2c0d52f2fa0e489c75f",
-// 			"rcm_controller": " quay.io/open-cluster-management/rcm-controller@sha256:8fab4d788241bf364dbc1b8c1ea5ccf18d3145a640dbd456b0dc7ba204e36819",
+// 			"application_ui": "quay.io/stolostron/application-ui@sha256:c740fc7bac067f003145ab909504287360564016b7a4a51b7ad4987aca123ac1",
+// 			"console_api":    "quay.io/stolostron/console-api@sha256:3ef1043b4e61a09b07ff37f9ad8fc6e707af9813936cf2c0d52f2fa0e489c75f",
+// 			"rcm_controller": " quay.io/stolostron/rcm-controller@sha256:8fab4d788241bf364dbc1b8c1ea5ccf18d3145a640dbd456b0dc7ba204e36819",
 // 		},
 // 	}
 
@@ -285,7 +285,7 @@ func kind(kind string) schema.GroupKind {
 // 	}
 
 // 	imageOverrides := map[string]string{
-// 		"registration": "quay.io/open-cluster-management/registration@sha256:fe95bca419976ca8ffe608bc66afcead6ef333b863f22be55df57c89ded75dda",
+// 		"registration": "quay.io/stolostron/registration@sha256:fe95bca419976ca8ffe608bc66afcead6ef333b863f22be55df57c89ded75dda",
 // 	}
 
 // 	tests := []struct {
@@ -355,7 +355,7 @@ func kind(kind string) schema.GroupKind {
 // 						{
 // 						  "image-name": "multiclusterhub-repo",
 // 						  "image-tag": "2.3.0-test",
-// 						  "image-remote": "quay.io/open-cluster-management",
+// 						  "image-remote": "quay.io/stolostron",
 // 						  "image-key": "multiclusterhub_repo"
 // 						}
 // 					  ]`,
@@ -363,7 +363,7 @@ func kind(kind string) schema.GroupKind {
 // 			},
 // 			ManifestImage: manifest.ManifestImage{
 // 				ImageKey:    "multiclusterhub_repo",
-// 				ImageRemote: "quay.io/open-cluster-management",
+// 				ImageRemote: "quay.io/stolostron",
 // 				ImageTag:    "2.3.0-test",
 // 				ImageName:   "multiclusterhub-repo",
 // 			},
@@ -383,7 +383,7 @@ func kind(kind string) schema.GroupKind {
 // 						{
 // 						  "image-name": "non-existent-image",
 // 						  "image-digest": "sha256:e728a4cdf4a11b78b927b7b280d75babca7b3880450fbf190d80b194f7d064b6",
-// 						  "image-remote": "quay.io/open-cluster-management",
+// 						  "image-remote": "quay.io/stolostron",
 // 						  "image-key": "non_existent_image"
 // 						}
 // 					  ]`,
@@ -391,7 +391,7 @@ func kind(kind string) schema.GroupKind {
 // 			},
 // 			ManifestImage: manifest.ManifestImage{
 // 				ImageKey:    "non_existent_image",
-// 				ImageRemote: "quay.io/open-cluster-management",
+// 				ImageRemote: "quay.io/stolostron",
 // 				ImageDigest: "sha256:e728a4cdf4a11b78b927b7b280d75babca7b3880450fbf190d80b194f7d064b6",
 // 				ImageName:   "non-existent-image",
 // 			},
@@ -435,9 +435,9 @@ func kind(kind string) schema.GroupKind {
 
 // 	r.CacheSpec = CacheSpec{
 // 		ImageOverrides: map[string]string{
-// 			"application_ui": "quay.io/open-cluster-management/application-ui@sha256:c740fc7bac067f003145ab909504287360564016b7a4a51b7ad4987aca123ac1",
-// 			"console_api":    "quay.io/open-cluster-management/console-api@sha256:3ef1043b4e61a09b07ff37f9ad8fc6e707af9813936cf2c0d52f2fa0e489c75f",
-// 			"rcm_controller": " quay.io/open-cluster-management/rcm-controller@sha256:8fab4d788241bf364dbc1b8c1ea5ccf18d3145a640dbd456b0dc7ba204e36819",
+// 			"application_ui": "quay.io/stolostron/application-ui@sha256:c740fc7bac067f003145ab909504287360564016b7a4a51b7ad4987aca123ac1",
+// 			"console_api":    "quay.io/stolostron/console-api@sha256:3ef1043b4e61a09b07ff37f9ad8fc6e707af9813936cf2c0d52f2fa0e489c75f",
+// 			"rcm_controller": " quay.io/stolostron/rcm-controller@sha256:8fab4d788241bf364dbc1b8c1ea5ccf18d3145a640dbd456b0dc7ba204e36819",
 // 		},
 // 		ManifestVersion: "2.3.0",
 // 	}

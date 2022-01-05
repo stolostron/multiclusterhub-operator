@@ -11,10 +11,10 @@ import (
 
 	mcev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis/apps/v1"
-	operatorsv1 "github.com/open-cluster-management/multiclusterhub-operator/api/v1"
-	"github.com/open-cluster-management/multiclusterhub-operator/pkg/multiclusterengine"
-	utils "github.com/open-cluster-management/multiclusterhub-operator/pkg/utils"
-	resources "github.com/open-cluster-management/multiclusterhub-operator/test/unit-tests"
+	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
+	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
+	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
 
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
