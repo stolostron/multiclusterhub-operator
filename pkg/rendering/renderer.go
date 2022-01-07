@@ -23,7 +23,7 @@ import (
 
 const (
 	metadataErr         = "failed to find metadata field"
-	proxyApiServiceName = "v1beta1.proxy.stolostron.io"
+	proxyApiServiceName = "v1beta1.proxy.open-cluster-management.io"
 )
 
 var log = logf.Log.WithName("renderer")
