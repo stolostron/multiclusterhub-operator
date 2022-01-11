@@ -60,6 +60,18 @@ var (
 				types.NamespacedName{Name: "configmap-watcher-sub", Namespace: utils.CertManagerNS(m)},
 				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
 			),
+			newUnstructured(
+				types.NamespacedName{Name: "ocm-controller", Namespace: m.Namespace},
+				schema.GroupVersionKind{Group: "apps", Kind: "Deployment", Version: "v1"},
+			),
+			newUnstructured(
+				types.NamespacedName{Name: "ocm-proxyserver", Namespace: m.Namespace},
+				schema.GroupVersionKind{Group: "apps", Kind: "Deployment", Version: "v1"},
+			),
+			newUnstructured(
+				types.NamespacedName{Name: "ocm-webhook", Namespace: m.Namespace},
+				schema.GroupVersionKind{Group: "apps", Kind: "Deployment", Version: "v1"},
+			),
 		}
 
 		if m.Spec.SeparateCertificateManagement && m.Spec.ImagePullSecret != "" {
