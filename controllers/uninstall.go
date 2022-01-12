@@ -60,6 +60,19 @@ var (
 				types.NamespacedName{Name: "configmap-watcher-sub", Namespace: utils.CertManagerNS(m)},
 				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
 			),
+		}
+
+		if m.Spec.SeparateCertificateManagement && m.Spec.ImagePullSecret != "" {
+			removals = append(removals, newUnstructured(
+				types.NamespacedName{Name: m.Spec.ImagePullSecret, Namespace: utils.CertManagerNamespace},
+				schema.GroupVersionKind{Group: "", Kind: "Secret", Version: "v1"},
+			))
+		}
+		return removals
+	}
+
+	mceUninstallList = func(m *operatorsv1.MultiClusterHub) []*unstructured.Unstructured {
+		removals := []*unstructured.Unstructured{
 			newUnstructured(
 				types.NamespacedName{Name: "ocm-controller", Namespace: m.Namespace},
 				schema.GroupVersionKind{Group: "apps", Kind: "Deployment", Version: "v1"},
@@ -72,13 +85,26 @@ var (
 				types.NamespacedName{Name: "ocm-webhook", Namespace: m.Namespace},
 				schema.GroupVersionKind{Group: "apps", Kind: "Deployment", Version: "v1"},
 			),
-		}
-
-		if m.Spec.SeparateCertificateManagement && m.Spec.ImagePullSecret != "" {
-			removals = append(removals, newUnstructured(
-				types.NamespacedName{Name: m.Spec.ImagePullSecret, Namespace: utils.CertManagerNamespace},
-				schema.GroupVersionKind{Group: "", Kind: "Secret", Version: "v1"},
-			))
+			newUnstructured(
+				types.NamespacedName{Name: "ocm-validating-webhook"},
+				schema.GroupVersionKind{Group: "admissionregistration.k8s.io", Kind: "ValidatingWebhookConfiguration", Version: "v1"},
+			),
+			newUnstructured(
+				types.NamespacedName{Name: "ocm-mutating-webhook"},
+				schema.GroupVersionKind{Group: "admissionregistration.k8s.io", Kind: "MutatingWebhookConfiguration", Version: "v1"},
+			),
+			newUnstructured(
+				types.NamespacedName{Name: "v1alpha1.clusterview.open-cluster-management.io"},
+				schema.GroupVersionKind{Group: "apiregistration.k8s.io", Kind: "APIService", Version: "v1"},
+			),
+			newUnstructured(
+				types.NamespacedName{Name: "v1.clusterview.open-cluster-management.io"},
+				schema.GroupVersionKind{Group: "apiregistration.k8s.io", Kind: "APIService", Version: "v1"},
+			),
+			newUnstructured(
+				types.NamespacedName{Name: "v1beta1.proxy.open-cluster-management.io"},
+				schema.GroupVersionKind{Group: "apiregistration.k8s.io", Kind: "APIService", Version: "v1"},
+			),
 		}
 		return removals
 	}
@@ -95,6 +121,37 @@ func newUnstructured(nn types.NamespacedName, gvk schema.GroupVersionKind) *unst
 // ensureRemovalsGone validates successful removal of everything in the uninstallList. Return on first error encounter.
 func (r *MultiClusterHubReconciler) ensureRemovalsGone(m *operatorsv1.MultiClusterHub) (ctrl.Result, error) {
 	removals := uninstallList(m)
+	allResourcesDeleted := true
+	for i := range removals {
+		gone, err := r.uninstall(m, removals[i])
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		if !gone {
+			allResourcesDeleted = false
+		}
+	}
+
+	if !allResourcesDeleted {
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// Emit hubcondition once pruning complete if other pruning condition present
+	progressingCondition := GetHubCondition(m.Status, operatorsv1.Progressing)
+	if progressingCondition != nil {
+		if progressingCondition.Reason == OldComponentRemovedReason || progressingCondition.Reason == OldComponentNotRemovedReason {
+			condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, AllOldComponentsRemovedReason, "All old resources pruned")
+			SetHubCondition(&m.Status, *condition)
+		}
+	}
+
+	return ctrl.Result{}, nil
+}
+
+// ensureConflictingMCEComponentsGone validates that resources owned by the MCH, that would cause a conflcit with the install
+// of the MCE, are removed. This allows for the MCE to recreate the resources as expected
+func (r *MultiClusterHubReconciler) ensureConflictingMCEComponentsGone(m *operatorsv1.MultiClusterHub) (ctrl.Result, error) {
+	removals := mceUninstallList(m)
 	allResourcesDeleted := true
 	for i := range removals {
 		gone, err := r.uninstall(m, removals[i])
