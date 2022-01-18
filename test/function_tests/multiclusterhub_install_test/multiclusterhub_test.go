@@ -163,6 +163,28 @@ func FullInstallTestSuite() {
 
 	})
 
+	It("Test MCE propagation", func() {
+		By("- When creating the MCH, ensure that fields are applied to the owned MCE")
+
+		utils.CreateMCHNotManaged()
+		err := utils.ValidateMCH()
+		Expect(err).To(BeNil())
+
+		By("- inspecting MCE spec")
+		k8sClient := utils.DynamicKubeClient.Resource(utils.GVRMultiClusterEngine)
+		mce := &unstructured.Unstructured{}
+		mce, err = k8sClient.Get(context.TODO(), "multiclusterengine", metav1.GetOptions{})
+		Expect(err).To(BeNil())
+
+		pullSecret := mce.Object["spec"].(map[string]interface{})["imagePullSecret"]
+		Expect(pullSecret).To(BeEquivalentTo("multiclusterhub-operator-pull-secret"))
+
+		By("- checking imagepullsecret clone created")
+		_, err = utils.KubeClient.CoreV1().Secrets("multicluster-engine").Get(context.TODO(), "multiclusterhub-operator-pull-secret", metav1.GetOptions{})
+		Expect(err).To(BeNil())
+
+	})
+
 	It("Testing Image Overrides Configmap", func() {
 		By("- If configmap is manually overwitten, ensure MCH Operator will overwrite")
 
