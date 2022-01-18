@@ -130,20 +130,13 @@ func createOrUpdateWebhookService(c client.Client, namespace string) {
 }
 
 func createOrUpdateValidatingWebhook(c client.Client, namespace, path string, certDir string) {
-	validator := &admissionregistration.ValidatingWebhookConfiguration{}
-	key := types.NamespacedName{Name: validatingCfgName}
+	ctx := context.Background()
+	cfg := newValidatingWebhookCfg(namespace, path)
+	setOwnerReferences(c, namespace, cfg)
+	force := true
+
 	for {
-		if err := c.Get(context.TODO(), key, validator); err != nil {
-			if errors.IsNotFound(err) {
-				cfg := newValidatingWebhookCfg(namespace, path)
-				setOwnerReferences(c, namespace, cfg)
-				if err := c.Create(context.TODO(), cfg); err != nil {
-					log.Error(err, fmt.Sprintf("Failed to create validating webhook %s", validatingCfgName))
-					return
-				}
-				log.Info(fmt.Sprintf("Create validating webhook %s", validatingCfgName))
-				return
-			}
+		if err := c.Patch(ctx, cfg, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"}); err != nil {
 			switch err.(type) {
 			case *cache.ErrCacheNotStarted:
 				time.Sleep(time.Second)
@@ -152,12 +145,6 @@ func createOrUpdateValidatingWebhook(c client.Client, namespace, path string, ce
 				log.Error(err, fmt.Sprintf("Failed to get validating webhook %s", validatingCfgName))
 				return
 			}
-		}
-
-		metav1.SetMetaDataAnnotation(&validator.ObjectMeta, "service.beta.openshift.io/inject-cabundle", "true")
-		if err := c.Update(context.TODO(), validator); err != nil {
-			log.Error(err, fmt.Sprintf("Failed to update validating webhook %s", validatingCfgName))
-			return
 		}
 		log.Info(fmt.Sprintf("Update validating webhook %s", validatingCfgName))
 		return
@@ -240,6 +227,10 @@ func newValidatingWebhookCfg(namespace, path string) *admissionregistration.Vali
 	sideEffect := admissionregistration.SideEffectClassNone
 
 	return &admissionregistration.ValidatingWebhookConfiguration{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "admissionregistration.k8s.io/v1",
+			Kind:       "ValidatingWebhookConfiguration",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        validatingCfgName,
 			Annotations: map[string]string{"service.beta.openshift.io/inject-cabundle": "true"},

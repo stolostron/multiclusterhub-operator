@@ -344,8 +344,10 @@ rules:
   - mutatingwebhookconfigurations
   - validatingwebhookconfigurations
   verbs:
+  - delete
   - deletecollection
   - list
+  - patch
   - watch
 - apiGroups:
   - multicluster.openshift.io

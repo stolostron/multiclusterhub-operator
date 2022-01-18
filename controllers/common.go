@@ -389,7 +389,7 @@ func (r *MultiClusterHubReconciler) ensureOperatorGroup(m *operatorv1.MultiClust
 
 }
 
-func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(m *operatorv1.MultiClusterHub, mce *mcev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(m *operatorv1.MultiClusterHub, mce *mcev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
 	ctx := context.Background()
 
 	r.Log.Info(fmt.Sprintf("Ensuring Multicluster Engine custom resource: %s", mce.GetName()))
@@ -766,6 +766,60 @@ func (r *MultiClusterHubReconciler) GetMultiClusterEngine(mce *mcev1alpha1.Multi
 		return nil, err
 	}
 	return &unstructured.Unstructured{Object: unstructuredMCE}, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+
+	result, err := r.prepareForMultiClusterEngineInstall(multiClusterHub)
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	result, err = r.ensureNamespace(multiClusterHub, multiclusterengine.Namespace())
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	result, err = r.ensureOperatorGroup(multiClusterHub, multiclusterengine.OperatorGroup())
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	result, err = r.ensureOLMSubscription(multiClusterHub, multiclusterengine.Subscription(multiClusterHub))
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	result, err = r.ensureMultiClusterEngineCR(multiClusterHub, multiclusterengine.MultiClusterEngine(multiClusterHub))
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) prepareForMultiClusterEngineInstall(multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+	ctx := context.Background()
+
+	existingMCE := &mcev1alpha1.MultiClusterEngine{}
+	err := r.Client.Get(ctx, types.NamespacedName{
+		Name: multiclusterengine.MulticlusterengineName,
+	}, existingMCE)
+	if err != nil && !errors.IsNotFound(err) {
+		r.Log.Info(fmt.Sprintf("error locating MCE: %s. Error: %s", multiclusterengine.MulticlusterengineName, err.Error()))
+		return ctrl.Result{Requeue: true}, nil
+	} else if err == nil {
+		// MCE already exists, no need to clean up resources
+		return ctrl.Result{}, nil
+	}
+
+	r.Log.Info("Preparing for MCE installation. Removing existing resources that will be recreated by the MCE")
+	result, err := r.ensureConflictingMCEComponentsGone(multiClusterHub)
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+	r.Log.Info("Conflicting resources removed. Proceeding with MCE installation")
+	return ctrl.Result{}, nil
 }
 
 // GetCSVFromSubscription retrieves CSV status information from the related subscription for status

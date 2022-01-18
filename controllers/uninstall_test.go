@@ -107,6 +107,23 @@ func Test_newUnstructured(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Deployment",
+			args: args{
+				nn:  types.NamespacedName{Name: "ocm-webhook", Namespace: "test"},
+				gvk: schema.GroupVersionKind{Group: "apps", Kind: "Deployment", Version: "v1"},
+			},
+			want: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "ocm-webhook",
+						"namespace": "test",
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
