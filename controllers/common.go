@@ -471,6 +471,71 @@ func (r *MultiClusterHubReconciler) ensureOLMSubscription(m *operatorv1.MultiClu
 
 }
 
+// copies the imagepullsecret from mch to the newNS namespace
+func (r *MultiClusterHubReconciler) ensurePullSecret(m *operatorv1.MultiClusterHub, newNS string) (ctrl.Result, error) {
+	if m.Spec.ImagePullSecret == "" {
+		// Delete imagepullsecret in MCE namespace if present
+		secretList := &corev1.SecretList{}
+		err := r.Client.List(
+			context.TODO(),
+			secretList,
+			client.MatchingLabels{
+				"installer.name":      m.GetName(),
+				"installer.namespace": m.GetNamespace(),
+			},
+			client.InNamespace(newNS),
+		)
+		if err != nil {
+			return ctrl.Result{Requeue: true}, err
+		}
+		for i, secret := range secretList.Items {
+			r.Log.Info("Deleting imagePullSecret", "Name", secret.Name, "Namespace", secret.Namespace)
+			err = r.Client.Delete(context.TODO(), &secretList.Items[i])
+			if err != nil {
+				r.Log.Error(err, fmt.Sprintf("Error deleting imagepullsecret: %s", secret.GetName()))
+				return ctrl.Result{Requeue: true}, err
+			}
+		}
+
+		return ctrl.Result{}, nil
+	}
+
+	pullSecret := &corev1.Secret{}
+	err := r.Client.Get(context.TODO(), types.NamespacedName{
+		Name:      m.Spec.ImagePullSecret,
+		Namespace: m.Namespace,
+	}, pullSecret)
+	if err != nil {
+		return ctrl.Result{Requeue: true}, err
+	}
+
+	mceSecret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: pullSecret.APIVersion,
+			Kind:       pullSecret.Kind,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      pullSecret.Name,
+			Namespace: newNS,
+			Labels:    pullSecret.Labels,
+		},
+		Data: pullSecret.Data,
+	}
+	mceSecret.SetName(m.Spec.ImagePullSecret)
+	mceSecret.SetNamespace(newNS)
+	mceSecret.SetLabels(pullSecret.Labels)
+	addInstallerLabelSecret(mceSecret, m.Name, m.Namespace)
+
+	force := true
+	err = r.Client.Patch(context.TODO(), mceSecret, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
+	if err != nil {
+		r.Log.Info(fmt.Sprintf("Error applying pullSecret to mce namespace: %s", err.Error()))
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	return ctrl.Result{}, nil
+}
+
 // OverrideImagesFromConfigmap ...
 func (r *MultiClusterHubReconciler) OverrideImagesFromConfigmap(imageOverrides map[string]string, namespace, configmapName string) (map[string]string, error) {
 	r.Log.Info(fmt.Sprintf("Overriding images from configmap: %s/%s", namespace, configmapName))
@@ -644,6 +709,24 @@ func addInstallerLabel(d *appsv1.Deployment, name string, ns string) bool {
 	return updated
 }
 
+// addInstallerLabelSecret adds the installer name and namespace to a secret's labels
+// so it can be watched. Returns false if the labels are already present.
+func addInstallerLabelSecret(d *corev1.Secret, name string, ns string) bool {
+	updated := false
+	if d.Labels == nil {
+		d.Labels = map[string]string{}
+	}
+	if d.Labels["installer.name"] != name {
+		d.Labels["installer.name"] = name
+		updated = true
+	}
+	if d.Labels["installer.namespace"] != ns {
+		d.Labels["installer.namespace"] = ns
+		updated = true
+	}
+	return updated
+}
+
 // getAppSubOwnedHelmReleases gets a subset of helmreleases created by the appsubs
 func getAppSubOwnedHelmReleases(allHRs []*subrelv1.HelmRelease, appsubs []types.NamespacedName) []*subrelv1.HelmRelease {
 	subMap := make(map[string]bool)
@@ -776,6 +859,11 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(multiClusterHub *op
 	}
 
 	result, err = r.ensureNamespace(multiClusterHub, multiclusterengine.Namespace())
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	result, err = r.ensurePullSecret(multiClusterHub, multiclusterengine.Namespace().Name)
 	if result != (ctrl.Result{}) {
 		return result, err
 	}

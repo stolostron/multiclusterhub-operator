@@ -46,7 +46,9 @@ func MultiClusterEngine(m *operatorsv1.MultiClusterHub) *mcev1alpha1.MultiCluste
 		ObjectMeta: metav1.ObjectMeta{
 			Name: MulticlusterengineName,
 		},
-		Spec: mcev1alpha1.MultiClusterEngineSpec{},
+		Spec: mcev1alpha1.MultiClusterEngineSpec{
+			ImagePullSecret: m.Spec.ImagePullSecret,
+		},
 	}
 	return mce
 }
