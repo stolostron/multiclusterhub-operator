@@ -194,7 +194,7 @@ func FullInstallTestSuite() {
 
 		By("- checking the spec values of the deployment which is created")
 
-		err := utils.ValidateMCESub()
+		err = utils.ValidateMCESub()
 		Expect(err).To(BeNil())
 
 	})
