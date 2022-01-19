@@ -660,12 +660,12 @@ func (r *MultiClusterHubReconciler) listHelmReleases(namespaces []string) ([]*su
 func (r *MultiClusterHubReconciler) listCustomResources(m *operatorv1.MultiClusterHub) ([]*unstructured.Unstructured, error) {
 	var ret []*unstructured.Unstructured
 
-	mceSub, err := r.GetSubscription(multiclusterengine.Subscription(m))
+	mceSub, err := r.GetSubscription(multiclusterengine.Subscription(m, r.GetSubConfig()))
 	if err != nil {
 		mceSub = nil
 	}
 
-	mceCSV, err := r.GetCSVFromSubscription(multiclusterengine.Subscription(m))
+	mceCSV, err := r.GetCSVFromSubscription(multiclusterengine.Subscription(m, r.GetSubConfig()))
 	if err != nil {
 		mceCSV = nil
 	}
@@ -873,7 +873,7 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(multiClusterHub *op
 		return result, err
 	}
 
-	result, err = r.ensureOLMSubscription(multiClusterHub, multiclusterengine.Subscription(multiClusterHub))
+	result, err = r.ensureOLMSubscription(multiClusterHub, multiclusterengine.Subscription(multiClusterHub, r.GetSubConfig()))
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
@@ -1077,4 +1077,51 @@ func mergeErrors(errs []error) string {
 		errStrings = append(errStrings, e.Error())
 	}
 	return strings.Join(errStrings, " ; ")
+}
+
+func (r *MultiClusterHubReconciler) GetSubConfig() *subv1alpha1.SubscriptionConfig {
+	configEnvVars := []corev1.EnvVar{}
+	found := &appsv1.Deployment{}
+
+	namespace, _ := utils.FindNamespace()
+	r.Client.Get(context.TODO(), types.NamespacedName{
+		Name:      utils.MCHOperatorName,
+		Namespace: namespace,
+	}, found)
+
+	foundSubscription := &subv1alpha1.Subscription{}
+
+	proxyEnv := []corev1.EnvVar{}
+	if utils.ProxyEnvVarsAreSet() {
+		proxyEnv = []corev1.EnvVar{
+			corev1.EnvVar{
+				Name:  "HTTP_PROXY",
+				Value: os.Getenv("HTTP_PROXY"),
+			},
+			corev1.EnvVar{
+				Name:  "HTTPS_PROXY",
+				Value: os.Getenv("HTTPS_PROXY"),
+			},
+			corev1.EnvVar{
+				Name:  "NO_PROXY",
+				Value: os.Getenv("NO_PROXY"),
+			},
+		}
+		err := r.Client.Get(context.TODO(), types.NamespacedName{
+			Name:      "multicluster-engine",
+			Namespace: utils.MCESubscriptionNamespace,
+		}, foundSubscription)
+		if err != nil && errors.IsNotFound(err) {
+			configEnvVars = proxyEnv
+		} else {
+			configEnvVars = utils.AppendProxyVariables(foundSubscription.Spec.Config.Env, proxyEnv)
+		}
+
+	}
+	return &subv1alpha1.SubscriptionConfig{
+		NodeSelector: found.Spec.Template.Spec.NodeSelector,
+		Tolerations:  found.Spec.Template.Spec.Tolerations,
+		Env:          configEnvVars,
+	}
+
 }

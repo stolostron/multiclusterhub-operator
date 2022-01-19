@@ -185,6 +185,20 @@ func FullInstallTestSuite() {
 
 	})
 
+	It("Test Subscription Propagation", func() {
+		By("- When creating the MCH, ensure that the MCE subscription is propagated")
+
+		utils.CreateMCHNotManaged()
+		err := utils.ValidateMCH()
+		Expect(err).To(BeNil())
+
+		By("- checking the spec values of the deployment which is created")
+
+		err := utils.ValidateMCESub()
+		Expect(err).To(BeNil())
+
+	})
+
 	It("Testing Image Overrides Configmap", func() {
 		By("- If configmap is manually overwitten, ensure MCH Operator will overwrite")
 
