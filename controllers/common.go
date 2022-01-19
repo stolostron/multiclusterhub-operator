@@ -894,8 +894,10 @@ func (r *MultiClusterHubReconciler) prepareForMultiClusterEngineInstall(multiClu
 		Name: multiclusterengine.MulticlusterengineName,
 	}, existingMCE)
 	if err != nil && !errors.IsNotFound(err) {
-		r.Log.Info(fmt.Sprintf("error locating MCE: %s. Error: %s", multiclusterengine.MulticlusterengineName, err.Error()))
-		return ctrl.Result{Requeue: true}, nil
+		if !strings.Contains(err.Error(), "no matches for kind \"MultiClusterEngine\"") {
+			r.Log.Info(fmt.Sprintf("error locating MCE: %s. Error: %s", multiclusterengine.MulticlusterengineName, err.Error()))
+			return ctrl.Result{Requeue: true}, nil
+		}
 	} else if err == nil {
 		// MCE already exists, no need to clean up resources
 		return ctrl.Result{}, nil
