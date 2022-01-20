@@ -7,10 +7,27 @@ import (
 
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestSubscription(t *testing.T) {
+
+	testSubscriptionConfig := &subv1alpha1.SubscriptionConfig{
+		NodeSelector: map[string]string{"test": "test"},
+		Tolerations: []corev1.Toleration{
+			{
+				Operator: "Exists",
+			},
+		},
+		Env: []corev1.EnvVar{
+			corev1.EnvVar{
+				Name:  "HTTP_PROXY",
+				Value: "test1",
+			},
+		},
+	}
+
 	// 1. No MCE Annotation
 	emptyMCH := &operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
@@ -53,6 +70,7 @@ func TestSubscription(t *testing.T) {
 				Package:                "multicluster-engine",
 				CatalogSource:          "redhat-operators",
 				CatalogSourceNamespace: "openshift-marketplace",
+				Config:                 testSubscriptionConfig,
 			},
 		},
 		{
@@ -65,6 +83,7 @@ func TestSubscription(t *testing.T) {
 				CatalogSource:          "catalogsource",
 				CatalogSourceNamespace: "catalogsourcenamespace",
 				StartingCSV:            "csv-1.0",
+				Config:                 testSubscriptionConfig,
 			},
 		},
 		{
@@ -76,6 +95,7 @@ func TestSubscription(t *testing.T) {
 				Package:                "multicluster-engine",
 				CatalogSource:          "redhat-operators",
 				CatalogSourceNamespace: "openshift-marketplace",
+				Config:                 testSubscriptionConfig,
 			},
 		},
 		{
@@ -88,12 +108,14 @@ func TestSubscription(t *testing.T) {
 				CatalogSource:          "redhat-operators",
 				CatalogSourceNamespace: "openshift-marketplace",
 				StartingCSV:            "csv-1.0",
+				Config:                 testSubscriptionConfig,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sub := Subscription(tt.MCH)
+
+			sub := Subscription(tt.MCH, testSubscriptionConfig)
 			if !reflect.DeepEqual(sub.Spec, tt.want) {
 				fmt.Printf("%+v\n", sub.Spec)
 				fmt.Printf("%+v\n", tt.want)

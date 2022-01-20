@@ -153,8 +153,13 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 		}
 		return fmt.Errorf("MCE has not yet been terminated")
 	}
+	// subConfig = &subv1alpha1.SubscriptionConfig{}
+	subConfig, err := r.GetSubConfig()
+	if err != nil {
+		return err
+	}
 
-	csv, err := r.GetCSVFromSubscription(multiclusterengine.Subscription(m))
+	csv, err := r.GetCSVFromSubscription(multiclusterengine.Subscription(m, subConfig))
 	if err == nil { // CSV Exists
 		err = r.Client.Delete(ctx, csv)
 		if err != nil && !errors.IsNotFound(err) {
@@ -172,7 +177,8 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 		types.NamespacedName{Name: utils.MCESubscriptionName, Namespace: utils.MCESubscriptionNamespace},
 		&subv1alpha1.Subscription{})
 	if err == nil {
-		err = r.Client.Delete(ctx, multiclusterengine.Subscription(m))
+		
+		err = r.Client.Delete(ctx, multiclusterengine.Subscription(m, subConfig))
 		if err != nil && !errors.IsNotFound(err) {
 			return err
 		}

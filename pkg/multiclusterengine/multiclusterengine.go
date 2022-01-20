@@ -54,7 +54,7 @@ func MultiClusterEngine(m *operatorsv1.MultiClusterHub) *mcev1alpha1.MultiCluste
 }
 
 // Subscription for the helm repo serving charts
-func Subscription(m *operatorsv1.MultiClusterHub) *subv1alpha1.Subscription {
+func Subscription(m *operatorsv1.MultiClusterHub, c *subv1alpha1.SubscriptionConfig) *subv1alpha1.Subscription {
 	sub := &subv1alpha1.Subscription{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: subv1alpha1.SubscriptionCRDAPIVersion,
@@ -71,17 +71,18 @@ func Subscription(m *operatorsv1.MultiClusterHub) *subv1alpha1.Subscription {
 			Package:                packageName,
 			CatalogSource:          catalogSourceName,
 			CatalogSourceNamespace: catalogSourceNamespace,
+			Config:                 c,
 		},
 	}
 
 	if mceAnnotationOverrides := utils.GetMCEAnnotationOverrides(m); mceAnnotationOverrides != "" {
-		sub = overrideSub(sub, mceAnnotationOverrides)
+		sub = overrideSub(sub, mceAnnotationOverrides, c)
 	}
 
 	return sub
 }
 
-func overrideSub(sub *subv1alpha1.Subscription, mceAnnotationOverrides string) *subv1alpha1.Subscription {
+func overrideSub(sub *subv1alpha1.Subscription, mceAnnotationOverrides string, c *subv1alpha1.SubscriptionConfig) *subv1alpha1.Subscription {
 	log := log.FromContext(context.Background())
 	log.Info(fmt.Sprintf("Overridding MultiClusterEngine Subscription: %s", mceAnnotationOverrides))
 	mceSub := &subv1alpha1.SubscriptionSpec{}
@@ -109,6 +110,7 @@ func overrideSub(sub *subv1alpha1.Subscription, mceAnnotationOverrides string) *
 	if mceSub.InstallPlanApproval != "" {
 		sub.Spec.InstallPlanApproval = mceSub.InstallPlanApproval
 	}
+	sub.Spec.Config = c
 	return sub
 }
 
