@@ -1066,17 +1066,23 @@ func ValidateDeploymentPolicies() error {
 
 func ValidateMCESub() error {
 
-	expectedNodeSelector := map[string]string{"beta.kubernetes.io/os": "linux"}
-	expectedTolerations := []map[string]interface{}{map[string]interface{}{"operator": "Exists"}}
-	expectedEnv := []map[string]interface{}{map[string]interface{}{"name": "HTTPS_PROXY", "value": "test"}}
+	expectedNodeSelector := map[string]interface{}{"beta.kubernetes.io/os": "linux"}
+	expectedTolerations := []interface{}{map[string]interface{}{"operator": "Exists"}}
+	expectedEnv := make([]interface{}, 3, 4)
 
+	expectedEnv[0] = map[string]interface{}{"name": "HTTP_PROXY", "value": "test"}
+	expectedEnv[1] = map[string]interface{}{"name": "HTTPS_PROXY"}
+	expectedEnv[2] = map[string]interface{}{"name": "NO_PROXY"}
 	Eventually(func() error {
 		sub, err := DynamicKubeClient.Resource(GVRSub).Namespace("multicluster-engine").Get(context.TODO(), "multicluster-engine", metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
 
-		config := sub.Object["spec"].(map[string]interface{})["Config"].(map[string]interface{})
-		Expect(config["nodeSelector"].(map[string]string)).To(BeEquivalentTo(expectedNodeSelector))
-		Expect(config["Toleration"].(map[string]interface{})).To(BeEquivalentTo(expectedTolerations))
-		Expect(config["Env"].(map[string]interface{})).To(BeEquivalentTo(expectedEnv))
+		config := sub.Object["spec"].(map[string]interface{})["config"].(map[string]interface{})
+		Expect(config["nodeSelector"].(map[string]interface{})).To(BeEquivalentTo(expectedNodeSelector))
+		Expect(config["tolerations"].([]interface{})).To(BeEquivalentTo(expectedTolerations))
+		Expect(config["env"].([]interface{})).To(BeEquivalentTo(expectedEnv))
 		return err
 	}, 3, 1).Should(BeNil())
 
