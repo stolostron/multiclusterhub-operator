@@ -45,6 +45,8 @@ const (
 
 	MCESubscriptionName      = "multicluster-engine"
 	MCESubscriptionNamespace = "multicluster-engine"
+
+	MCEManagedByLabel = "multiclusterhubs.operator.open-cluster-management.io/managed-by"
 )
 
 var (
@@ -328,4 +330,22 @@ func GetCustomResources(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 		{Name: "multicluster-engine-csv", Namespace: MCESubscriptionNamespace},
 		{Name: "multicluster-engine"},
 	}
+}
+
+func RemoveString(s []string, r string) []string {
+	for i, v := range s {
+		if v == r {
+			return append(s[:i], s[i+1:]...)
+		}
+	}
+	return s
+}
+
+func Contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
 }

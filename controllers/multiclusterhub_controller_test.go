@@ -9,14 +9,15 @@ import (
 	"reflect"
 	"time"
 
-	mcev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis/apps/v1"
+	mcev1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
 
 	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -75,28 +76,41 @@ func ApplyPrereqs() {
 }
 
 var _ = Describe("MultiClusterHub controller", func() {
-	// Define utility constants for object names and testing timeouts/durations and intervals.
-
 	Context("When updating Multiclusterhub status", func() {
+		// Define utility constants for object names and testing timeouts/durations and intervals.
+		AfterEach(func() {
+			Eventually(func() bool {
+				ctx := context.Background()
+				mch := &operatorsv1.MultiClusterHub{}
+				err := k8sClient.Get(ctx, resources.MCHLookupKey, mch)
+				if err != nil && errors.IsNotFound(err) {
+					return true
+				} else {
+					mch := resources.EmptyMCH
+					k8sClient.Delete(ctx, &mch)
+				}
+				return false
+			}, timeout, interval).Should(BeTrue())
+		})
 		It("Should get to a running state", func() {
 			By("By creating a new Multiclusterhub")
 			ctx := context.Background()
 
 			ApplyPrereqs()
-			Expect(k8sClient.Create(ctx, resources.EmptyMCH)).Should(Succeed())
+			mch := resources.EmptyMCH
+			Expect(k8sClient.Create(ctx, &mch)).Should(Succeed())
 
 			// Ensures MCH is Created
-			mchLookupKey := types.NamespacedName{Name: resources.MulticlusterhubName, Namespace: resources.MulticlusterhubNamespace}
 			createdMCH := &operatorsv1.MultiClusterHub{}
 			Eventually(func() bool {
-				err := k8sClient.Get(ctx, mchLookupKey, createdMCH)
+				err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
 
 			By("- Ensuring Defaults are set")
 			// Ensures defaults are set
 			Eventually(func() bool {
-				err := k8sClient.Get(ctx, mchLookupKey, createdMCH)
+				err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
 				Expect(err).Should(BeNil())
 				return reflect.DeepEqual(createdMCH.Spec.Ingress.SSLCiphers, utils.DefaultSSLCiphers) && createdMCH.Spec.AvailabilityConfig == operatorsv1.HAHigh
 			}, timeout, interval).Should(BeTrue())
@@ -119,8 +133,13 @@ var _ = Describe("MultiClusterHub controller", func() {
 			// Ensure MultiClusterEngine
 			Eventually(func() bool {
 				mce := &mcev1alpha1.MultiClusterEngine{}
+				result := true
 				err := k8sClient.Get(ctx, types.NamespacedName{Name: multiclusterengine.MulticlusterengineName}, mce)
-				return err == nil
+				if err != nil {
+					fmt.Println(err.Error())
+					result = false
+				}
+				return result
 			}, timeout, interval).Should(BeTrue())
 
 			// Ensure Appsubs
@@ -141,6 +160,59 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Eventually(func() bool {
 				return createdMCH.Status.Phase == operatorsv1.HubRunning
 			}, timeout, interval).Should(BeTrue())
+		})
+
+		It("Should Manage Preexisting MCE", func() {
+			ctx := context.Background()
+			mce := resources.EmptyMCE
+
+			// Create MCE
+			Expect(k8sClient.Create(ctx, &mce)).Should(Succeed())
+
+			mch := resources.EmptyMCH
+			// Create MCH
+			Expect(k8sClient.Create(ctx, &mch)).Should(Succeed())
+
+			// Wait for MCH to get to Running state
+			Eventually(func() bool {
+				mch := &operatorsv1.MultiClusterHub{}
+				err := k8sClient.Get(ctx, resources.MCHLookupKey, mch)
+				if err == nil {
+					return mch.Status.Phase == operatorsv1.HubRunning
+				}
+				return false
+			}, timeout, interval).Should(BeTrue())
+
+			// Validates Managedby label is added to MCE
+			Eventually(func() bool {
+				existingMCE := &mcev1alpha1.MultiClusterEngine{}
+				Expect(k8sClient.Get(ctx, resources.MCELookupKey, existingMCE)).Should(Succeed())
+				labels := existingMCE.GetLabels()
+				if labels == nil {
+					return false
+				}
+				if val, ok := labels[utils.MCEManagedByLabel]; ok && val == "true" {
+					return true
+				}
+				return false
+			}, timeout, interval).Should(BeTrue())
+
+			// Delete and wait for MCH to terminate
+			Eventually(func() bool {
+				ctx := context.Background()
+				mch := &operatorsv1.MultiClusterHub{}
+				err := k8sClient.Get(ctx, resources.MCHLookupKey, mch)
+				if err != nil && errors.IsNotFound(err) {
+					return true
+				} else {
+					mch := resources.EmptyMCH
+					k8sClient.Delete(ctx, &mch)
+				}
+				return false
+			}, timeout, interval).Should(BeTrue())
+
+			// Ensure MCE remains
+			Expect(k8sClient.Get(ctx, resources.MCELookupKey, &mcev1alpha1.MultiClusterEngine{})).Should(Succeed())
 
 		})
 	})

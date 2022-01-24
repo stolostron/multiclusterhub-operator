@@ -486,6 +486,10 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 		}
 	}
 
+	if err := r.orphanOwnedMultiClusterEngine(m); err != nil {
+		return err
+	}
+
 	reqLogger.Info("Successfully finalized multiClusterHub")
 	return nil
 }

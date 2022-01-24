@@ -8,9 +8,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	mcev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	mcev1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -44,7 +44,8 @@ func MultiClusterEngine(m *operatorsv1.MultiClusterHub) *mcev1alpha1.MultiCluste
 			Kind:       "MultiClusterEngine",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: MulticlusterengineName,
+			Name:   MulticlusterengineName,
+			Labels: labels(m),
 		},
 		Spec: mcev1alpha1.MultiClusterEngineSpec{
 			ImagePullSecret: m.Spec.ImagePullSecret,
@@ -83,7 +84,6 @@ func Subscription(m *operatorsv1.MultiClusterHub) *subv1alpha1.Subscription {
 
 func overrideSub(sub *subv1alpha1.Subscription, mceAnnotationOverrides string) *subv1alpha1.Subscription {
 	log := log.FromContext(context.Background())
-	log.Info(fmt.Sprintf("Overridding MultiClusterEngine Subscription: %s", mceAnnotationOverrides))
 	mceSub := &subv1alpha1.SubscriptionSpec{}
 	err := json.Unmarshal([]byte(mceAnnotationOverrides), mceSub)
 	if err != nil {

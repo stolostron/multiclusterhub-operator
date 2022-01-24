@@ -24,8 +24,8 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
-	mcev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
+	mcev1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
 
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
