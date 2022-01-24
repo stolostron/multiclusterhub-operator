@@ -80,12 +80,14 @@ var (
 		Version:  "v1",
 		Resource: "multiclusterhubs",
 	}
+
 	// GVRAppSub ...
 	GVRAppSub = schema.GroupVersionResource{
 		Group:    "apps.open-cluster-management.io",
 		Version:  "v1",
 		Resource: "subscriptions",
 	}
+
 	// GVRHiveConfig ...
 	GVRHiveConfig = schema.GroupVersionResource{
 		Group:    "hive.openshift.io",
@@ -1062,6 +1064,32 @@ func ValidateDeploymentPolicies() error {
 	return nil
 }
 
+func ValidateMCESub() error {
+
+	expectedNodeSelector := map[string]interface{}{"beta.kubernetes.io/os": "linux"}
+	expectedTolerations := []interface{}{map[string]interface{}{"operator": "Exists"}}
+	expectedEnv := make([]interface{}, 3, 4)
+
+	expectedEnv[0] = map[string]interface{}{"name": "HTTP_PROXY", "value": "test"}
+	expectedEnv[1] = map[string]interface{}{"name": "HTTPS_PROXY"}
+	expectedEnv[2] = map[string]interface{}{"name": "NO_PROXY"}
+	Eventually(func() error {
+		sub, err := DynamicKubeClient.Resource(GVRSub).Namespace("multicluster-engine").Get(context.TODO(), "multicluster-engine", metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+
+		config := sub.Object["spec"].(map[string]interface{})["config"].(map[string]interface{})
+		Expect(config["nodeSelector"].(map[string]interface{})).To(BeEquivalentTo(expectedNodeSelector))
+		Expect(config["tolerations"].([]interface{})).To(BeEquivalentTo(expectedTolerations))
+		Expect(config["env"].([]interface{})).To(BeEquivalentTo(expectedEnv))
+		return err
+	}, 3, 1).Should(BeNil())
+
+	return nil
+
+}
+
 // ToggleDisableHubSelfManagement toggles the value of spec.disableHubSelfManagement from true to false or false to true
 func ToggleDisableHubSelfManagement(disableHubSelfImport bool) error {
 	mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
@@ -1183,6 +1211,7 @@ func GetSubscriptionSpec() map[string]interface{} {
 		"channel":             os.Getenv("channel"),
 		"installPlanApproval": "Automatic",
 		"name":                os.Getenv("name"),
+		"config":              map[string]interface{}{"nodeSelector": map[string]string{"beta.kubernetes.io/os": "linux"}, "tolerations": []map[string]interface{}{map[string]interface{}{"operator": "Exists"}}, "env": []map[string]interface{}{map[string]interface{}{"name": "HTTPS_PROXY", "value": "test"}}},
 	}
 }
 

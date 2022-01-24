@@ -6,6 +6,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"os"
 	"reflect"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
+	corev1 "k8s.io/api/core/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -46,6 +48,37 @@ var (
 			Phase:          "Running",
 		},
 	}
+	envs = []corev1.EnvVar{
+		{
+			Name:  "test",
+			Value: "test",
+		},
+	}
+	containers = []corev1.Container{
+		{
+			Name:            "test",
+			Image:           "test",
+			ImagePullPolicy: "Always",
+			Env:             envs,
+			Command:         []string{"/iks.sh"},
+		},
+	}
+	specLabels              = &metav1.LabelSelector{MatchLabels: map[string]string{"test": "test"}}
+	templateMetadata        = metav1.ObjectMeta{Labels: map[string]string{"test": "test"}}
+	basicOperatorDeployment = &appsv1.Deployment{
+		TypeMeta:   metav1.TypeMeta{Kind: "Deployment", APIVersion: "apps/v1"},
+		ObjectMeta: metav1.ObjectMeta{Name: mch_name, Namespace: mch_namespace},
+		Spec: appsv1.DeploymentSpec{
+			Selector: specLabels,
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: templateMetadata,
+				Spec: corev1.PodSpec{
+					Containers: containers,
+				},
+			},
+		},
+	}
+
 	// A MultiClusterHub object with metadata and spec.
 	empty_mch = &operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
@@ -71,7 +104,7 @@ const (
 func ApplyPrereqs() {
 	By("Applying Namespace")
 	ctx := context.Background()
-
+	os.Setenv("POD_NAMESPACE", "open-cluster-management")
 	Expect(k8sClient.Create(ctx, resources.OCMNamespace)).Should(Succeed())
 }
 
@@ -99,6 +132,8 @@ var _ = Describe("MultiClusterHub controller", func() {
 			ApplyPrereqs()
 			mch := resources.EmptyMCH
 			Expect(k8sClient.Create(ctx, &mch)).Should(Succeed())
+
+			Expect(k8sClient.Create(ctx, basicOperatorDeployment)).Should(Succeed())
 
 			// Ensures MCH is Created
 			createdMCH := &operatorsv1.MultiClusterHub{}

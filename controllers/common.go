@@ -660,13 +660,17 @@ func (r *MultiClusterHubReconciler) listHelmReleases(namespaces []string) ([]*su
 // listCustomResources gets custom resources the installer observes
 func (r *MultiClusterHubReconciler) listCustomResources(m *operatorv1.MultiClusterHub) ([]*unstructured.Unstructured, error) {
 	var ret []*unstructured.Unstructured
-
-	mceSub, err := r.GetSubscription(multiclusterengine.Subscription(m))
+	subConfig := &subv1alpha1.SubscriptionConfig{}
+	subConfig, err := r.GetSubConfig()
+	if err != nil {
+		return nil, err
+	}
+	mceSub, err := r.GetSubscription(multiclusterengine.Subscription(m, subConfig))
 	if err != nil {
 		mceSub = nil
 	}
 
-	mceCSV, err := r.GetCSVFromSubscription(multiclusterengine.Subscription(m))
+	mceCSV, err := r.GetCSVFromSubscription(multiclusterengine.Subscription(m, subConfig))
 	if err != nil {
 		mceCSV = nil
 	}
@@ -864,6 +868,12 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(multiClusterHub *op
 
 	ctx := context.Background()
 	// Deletes conflicting components and adds adoption label to MCE if necessary
+	subConfig := &subv1alpha1.SubscriptionConfig{}
+	subConfig, err := r.GetSubConfig()
+	if err != nil {
+		return ctrl.Result{Requeue: true}, err
+	}
+
 	result, err := r.prepareForMultiClusterEngineInstall(multiClusterHub)
 	if result != (ctrl.Result{}) {
 		return result, err
@@ -906,7 +916,7 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(multiClusterHub *op
 		r.Log.Info(fmt.Sprintf("Overridding MultiClusterEngine Subscription: %s", mceAnnotationOverrides))
 	}
 
-	result, err = r.ensureOLMSubscription(multiClusterHub, multiclusterengine.Subscription(multiClusterHub))
+	result, err = r.ensureOLMSubscription(multiClusterHub, multiclusterengine.Subscription(multiClusterHub, subConfig))
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
@@ -1162,4 +1172,61 @@ func (r *MultiClusterHubReconciler) ManagedByMCEExists() (*mcev1alpha1.MultiClus
 	}
 	// No MCE exists, return
 	return nil, nil
+}
+
+func (r *MultiClusterHubReconciler) GetSubConfig() (*subv1alpha1.SubscriptionConfig, error) {
+	configEnvVars := []corev1.EnvVar{}
+	found := &appsv1.Deployment{}
+
+	namespace, err := utils.FindNamespace()
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.Client.Get(context.TODO(), types.NamespacedName{
+		Name:      utils.MCHOperatorName,
+		Namespace: namespace,
+	}, found)
+
+	if err != nil {
+		return nil, err
+	}
+
+	foundSubscription := &subv1alpha1.Subscription{}
+
+	proxyEnv := []corev1.EnvVar{}
+	if utils.ProxyEnvVarsAreSet() {
+		proxyEnv = []corev1.EnvVar{
+			corev1.EnvVar{
+				Name:  "HTTP_PROXY",
+				Value: os.Getenv("HTTP_PROXY"),
+			},
+			corev1.EnvVar{
+				Name:  "HTTPS_PROXY",
+				Value: os.Getenv("HTTPS_PROXY"),
+			},
+			corev1.EnvVar{
+				Name:  "NO_PROXY",
+				Value: os.Getenv("NO_PROXY"),
+			},
+		}
+		err = r.Client.Get(context.TODO(), types.NamespacedName{
+			Name:      "multicluster-engine",
+			Namespace: utils.MCESubscriptionNamespace,
+		}, foundSubscription)
+		if err != nil && errors.IsNotFound(err) {
+			configEnvVars = proxyEnv
+		} else if err != nil {
+			return nil, err
+		} else {
+			configEnvVars = utils.AppendProxyVariables(foundSubscription.Spec.Config.Env, proxyEnv)
+		}
+
+	}
+	return &subv1alpha1.SubscriptionConfig{
+		NodeSelector: found.Spec.Template.Spec.NodeSelector,
+		Tolerations:  found.Spec.Template.Spec.Tolerations,
+		Env:          configEnvVars,
+	}, nil
+
 }

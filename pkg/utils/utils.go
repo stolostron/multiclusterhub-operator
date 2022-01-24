@@ -349,3 +349,21 @@ func Contains(s []string, e string) bool {
 	}
 	return false
 }
+
+func AppendProxyVariables(existing []corev1.EnvVar, added []corev1.EnvVar) []corev1.EnvVar {
+
+	for i := 0; i < len(added); i++ {
+		existing = appendIfMissing(existing, added[i])
+	}
+	return existing
+}
+
+func appendIfMissing(slice []corev1.EnvVar, s corev1.EnvVar) []corev1.EnvVar {
+	for i := 0; i < len(slice); i++ {
+		if slice[i].Name == s.Name {
+			slice[i].Value = s.Value
+			return slice
+		}
+	}
+	return append(slice, s)
+}
