@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 func (r *MultiClusterHubReconciler) cleanupAPIServices(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
@@ -350,7 +351,7 @@ func (r *MultiClusterHubReconciler) orphanOwnedMultiClusterEngine(m *operatorsv1
 		return nil
 	}
 	r.Log.Info("Preexisting MCE exists, orphaning resource")
-	managedByMCE.Finalizers = utils.RemoveString(managedByMCE.Finalizers, hubFinalizer)
+	controllerutil.RemoveFinalizer(managedByMCE, hubFinalizer)
 	labels := managedByMCE.GetLabels()
 	delete(labels, utils.MCEManagedByLabel)
 	managedByMCE.SetLabels(labels)
