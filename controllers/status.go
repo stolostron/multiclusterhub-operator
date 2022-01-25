@@ -11,12 +11,11 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	mcev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
+	mcev1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis/apps/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
-	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
@@ -80,6 +79,16 @@ func newComponentList(m *operatorsv1.MultiClusterHub) map[string]operatorsv1.Sta
 		components[cr.Name] = unknownStatus
 	}
 	return components
+}
+
+var unmanagedStatus = operatorsv1.StatusCondition{
+	Type:               "Available",
+	Status:             metav1.ConditionTrue,
+	LastUpdateTime:     metav1.Now(),
+	LastTransitionTime: metav1.Now(),
+	Reason:             "ComponentUnmanaged",
+	Message:            "Component is installed separately and not managed by the multiclusterhub",
+	Available:          true,
 }
 
 var unknownStatus = operatorsv1.StatusCondition{
@@ -272,6 +281,7 @@ func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allHRs []*subrelv1.H
 		}
 	}
 
+	preexistingMCE := false
 	for _, cr := range allCRs {
 		if cr == nil {
 			continue
@@ -280,9 +290,18 @@ func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allHRs []*subrelv1.H
 			components["multicluster-engine-sub"] = mapSubscription(cr)
 		} else if strings.Contains(cr.GetName(), utils.MCESubscriptionName) && cr.GetKind() == "ClusterServiceVersion" {
 			components["multicluster-engine-csv"] = mapCSV(cr)
-		} else if cr.GetName() == multiclusterengine.MulticlusterengineName && cr.GetKind() == "MultiClusterEngine" {
+		} else if cr.GetKind() == "MultiClusterEngine" {
 			components["multicluster-engine"] = mapMultiClusterEngine(cr)
+			labels := cr.GetLabels()
+			if val, ok := labels[utils.MCEManagedByLabel]; labels != nil && ok && val == "true" {
+				preexistingMCE = true
+			}
 		}
+	}
+
+	if preexistingMCE {
+		components["multicluster-engine-csv"] = unmanagedStatus
+		components["multicluster-engine-sub"] = unmanagedStatus
 	}
 
 	if !hub.Spec.DisableHubSelfManagement {

@@ -11,8 +11,8 @@ import (
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 
 	"github.com/go-logr/logr"
-	mcev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	mcev1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/channel"
 	"github.com/stolostron/multiclusterhub-operator/pkg/helmrepo"
@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 func (r *MultiClusterHubReconciler) cleanupAPIServices(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
@@ -144,7 +145,20 @@ func (r *MultiClusterHubReconciler) cleanupCRDs(log logr.Logger, m *operatorsv1.
 func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	ctx := context.Background()
 
-	err := r.Client.Get(ctx, types.NamespacedName{Name: multiclusterengine.MulticlusterengineName}, &mcev1alpha1.MultiClusterEngine{})
+	managedByMCE, err := r.ManagedByMCEExists()
+	if err != nil {
+		return err
+	}
+
+	if err == nil && managedByMCE != nil {
+		// Preexisting MCE exists, no need to terminate resources
+		r.Log.Info("Preexisting MCE exists, skipping MCE finalization")
+		return nil
+	}
+
+	// If no preexisting MCE exists, proceed with finalization of installed MCE and its resources
+	existingMCE := &mcev1alpha1.MultiClusterEngine{}
+	err = r.Client.Get(ctx, types.NamespacedName{Name: multiclusterengine.MulticlusterengineName}, existingMCE)
 	if err == nil {
 		r.Log.Info("Deleting MultiClusterEngine resources")
 		err := r.Client.Delete(ctx, multiclusterengine.MultiClusterEngine(m))
@@ -157,6 +171,10 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 	subConfig, err := r.GetSubConfig()
 	if err != nil {
 		return err
+	}
+
+	if utils.IsUnitTest() {
+		return nil
 	}
 
 	csv, err := r.GetCSVFromSubscription(multiclusterengine.Subscription(m, subConfig))
@@ -177,7 +195,7 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 		types.NamespacedName{Name: utils.MCESubscriptionName, Namespace: utils.MCESubscriptionNamespace},
 		&subv1alpha1.Subscription{})
 	if err == nil {
-		
+
 		err = r.Client.Delete(ctx, multiclusterengine.Subscription(m, subConfig))
 		if err != nil && !errors.IsNotFound(err) {
 			return err
@@ -318,5 +336,28 @@ func (r *MultiClusterHubReconciler) cleanupFoundation(reqLogger logr.Logger, m *
 
 	reqLogger.Info("All foundation artefacts have been terminated")
 
+	return nil
+}
+
+func (r *MultiClusterHubReconciler) orphanOwnedMultiClusterEngine(m *operatorsv1.MultiClusterHub) error {
+	ctx := context.Background()
+
+	managedByMCE, err := r.ManagedByMCEExists()
+	if err != nil {
+		return err
+	}
+	if managedByMCE == nil {
+		// MCE does not exist
+		return nil
+	}
+	r.Log.Info("Preexisting MCE exists, orphaning resource")
+	controllerutil.RemoveFinalizer(managedByMCE, hubFinalizer)
+	labels := managedByMCE.GetLabels()
+	delete(labels, utils.MCEManagedByLabel)
+	managedByMCE.SetLabels(labels)
+	if err = r.Client.Update(ctx, managedByMCE); err != nil {
+		return err
+	}
+	r.Log.Info("MCE orphaned")
 	return nil
 }

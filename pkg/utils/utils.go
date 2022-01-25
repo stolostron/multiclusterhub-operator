@@ -45,6 +45,8 @@ const (
 
 	MCESubscriptionName      = "multicluster-engine"
 	MCESubscriptionNamespace = "multicluster-engine"
+
+	MCEManagedByLabel = "multiclusterhubs.operator.open-cluster-management.io/managed-by"
 )
 
 var (
@@ -330,6 +332,24 @@ func GetCustomResources(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	}
 }
 
+func RemoveString(s []string, r string) []string {
+	for i, v := range s {
+		if v == r {
+			return append(s[:i], s[i+1:]...)
+		}
+	}
+	return s
+}
+
+func Contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
 func AppendProxyVariables(existing []corev1.EnvVar, added []corev1.EnvVar) []corev1.EnvVar {
 
 	for i := 0; i < len(added); i++ {
@@ -337,6 +357,7 @@ func AppendProxyVariables(existing []corev1.EnvVar, added []corev1.EnvVar) []cor
 	}
 	return existing
 }
+
 func appendIfMissing(slice []corev1.EnvVar, s corev1.EnvVar) []corev1.EnvVar {
 	for i := 0; i < len(slice); i++ {
 		if slice[i].Name == s.Name {

@@ -14,7 +14,7 @@ import (
 
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 
-	mcev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
+	mcev1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
 
 	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis/apps/v1"
 	"github.com/openshift/library-go/pkg/operator/resource/resourcemerge"
@@ -23,6 +23,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
@@ -42,6 +43,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 // CacheSpec ...
@@ -839,14 +841,22 @@ func (r *MultiClusterHubReconciler) GetSubscription(sub *subv1alpha1.Subscriptio
 }
 
 func (r *MultiClusterHubReconciler) GetMultiClusterEngine(mce *mcev1alpha1.MultiClusterEngine) (*unstructured.Unstructured, error) {
-	multiClusterEngine := &mcev1alpha1.MultiClusterEngine{}
-	err := r.Client.Get(context.Background(), types.NamespacedName{
-		Name: mce.GetName(),
-	}, multiClusterEngine)
+	multiClusterEngine, err := r.ManagedByMCEExists()
 	if err != nil {
+		fmt.Println(err.Error())
 		return nil, err
 	}
 
+	// Detect if preexisint MCE exists, if so update MCE spec. Otherwise, install all MCE resources
+	if multiClusterEngine == nil {
+		multiClusterEngine = &mcev1alpha1.MultiClusterEngine{}
+		err := r.Client.Get(context.Background(), types.NamespacedName{
+			Name: mce.GetName(),
+		}, multiClusterEngine)
+		if err != nil {
+			return nil, err
+		}
+	}
 	unstructuredMCE, err := runtime.DefaultUnstructuredConverter.ToUnstructured(multiClusterEngine)
 	if err != nil {
 		r.Log.Error(err, "Failed to unmarshal multiclusterengine")
@@ -857,15 +867,34 @@ func (r *MultiClusterHubReconciler) GetMultiClusterEngine(mce *mcev1alpha1.Multi
 
 func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 
-	subConfig := &subv1alpha1.SubscriptionConfig{}
+	ctx := context.Background()
 	subConfig, err := r.GetSubConfig()
 	if err != nil {
 		return ctrl.Result{Requeue: true}, err
 	}
 
+	// Deletes conflicting components and adds managedby label to MCE if necessary
 	result, err := r.prepareForMultiClusterEngineInstall(multiClusterHub)
 	if result != (ctrl.Result{}) {
 		return result, err
+	}
+
+	existingMCE, err := r.ManagedByMCEExists()
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// Detect if preexisting MCE exists, if so update MCE spec. Otherwise, install all MCE resources
+	if existingMCE != nil {
+		r.Log.Info("Updating preexisting MCE")
+		existingMCE.Spec.AvailabilityConfig = mcev1alpha1.AvailabilityType(multiClusterHub.Spec.AvailabilityConfig)
+		existingMCE.Spec.NodeSelector = multiClusterHub.Spec.NodeSelector
+		if err := r.Client.Update(ctx, existingMCE); err != nil {
+			r.Log.Error(err, "Failed to update preexisting MCE with MCH spec")
+			return ctrl.Result{}, err
+		}
+		r.Log.Info("Preexisting MCE successfully updated")
+		return ctrl.Result{}, nil
 	}
 
 	result, err = r.ensureNamespace(multiClusterHub, multiclusterengine.Namespace())
@@ -881,6 +910,10 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(multiClusterHub *op
 	result, err = r.ensureOperatorGroup(multiClusterHub, multiclusterengine.OperatorGroup())
 	if result != (ctrl.Result{}) {
 		return result, err
+	}
+
+	if mceAnnotationOverrides := utils.GetMCEAnnotationOverrides(multiClusterHub); mceAnnotationOverrides != "" {
+		r.Log.Info(fmt.Sprintf("Overridding MultiClusterEngine Subscription: %s", mceAnnotationOverrides))
 	}
 
 	result, err = r.ensureOLMSubscription(multiClusterHub, multiclusterengine.Subscription(multiClusterHub, subConfig))
@@ -899,18 +932,46 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(multiClusterHub *op
 func (r *MultiClusterHubReconciler) prepareForMultiClusterEngineInstall(multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	ctx := context.Background()
 
-	existingMCE := &mcev1alpha1.MultiClusterEngine{}
-	err := r.Client.Get(ctx, types.NamespacedName{
-		Name: multiclusterengine.MulticlusterengineName,
-	}, existingMCE)
+	existingMCEList := &mcev1alpha1.MultiClusterEngineList{}
+	err := r.Client.List(ctx, existingMCEList)
 	if err != nil && !errors.IsNotFound(err) {
 		if !strings.Contains(err.Error(), "no matches for kind \"MultiClusterEngine\"") {
 			r.Log.Info(fmt.Sprintf("error locating MCE: %s. Error: %s", multiclusterengine.MulticlusterengineName, err.Error()))
 			return ctrl.Result{Requeue: true}, nil
 		}
 	} else if err == nil {
-		// MCE already exists, no need to clean up resources
-		return ctrl.Result{}, nil
+		// Detect status of MCE
+		// If 1 exists, add label if preexisting, return if created by us
+		// If none exist, ensure conflicting resources are removed
+		// if > 1 exists, error
+		if len(existingMCEList.Items) == 1 {
+			existingMCE := &existingMCEList.Items[0]
+			labels := existingMCE.GetLabels()
+			if labels == nil {
+				labels = make(map[string]string)
+			}
+			if name, ok := labels["installer.name"]; ok && name == multiClusterHub.GetName() {
+				if namespace, ok := labels["installer.namespace"]; ok && namespace == multiClusterHub.GetNamespace() {
+					// MCE is installed by the MCH, no need to manage. Return
+					return ctrl.Result{}, nil
+				}
+			}
+
+			r.Log.Info(fmt.Sprintf("Preexisting MCE already exists: %s. Managing multiclusterengine resource", existingMCE.GetName()))
+			labels[utils.MCEManagedByLabel] = "true"
+			existingMCE.SetLabels(labels)
+
+			if !controllerutil.ContainsFinalizer(existingMCE, hubFinalizer) {
+				controllerutil.AddFinalizer(existingMCE, hubFinalizer)
+			}
+
+			err = r.Client.Update(ctx, existingMCE)
+			if err != nil {
+				r.Log.Info(fmt.Sprintf("Error: %s", err.Error()))
+				return ctrl.Result{Requeue: true}, nil
+			}
+			return ctrl.Result{}, nil
+		}
 	}
 
 	r.Log.Info("Preparing for MCE installation. Removing existing resources that will be recreated by the MCE")
@@ -1089,6 +1150,30 @@ func mergeErrors(errs []error) string {
 	return strings.Join(errStrings, " ; ")
 }
 
+func (r *MultiClusterHubReconciler) ManagedByMCEExists() (*mcev1alpha1.MultiClusterEngine, error) {
+	ctx := context.Background()
+	// First check if MCE is preexisting
+	mceList := &mcev1alpha1.MultiClusterEngineList{}
+	err := r.Client.List(ctx, mceList, &client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(map[string]string{
+			utils.MCEManagedByLabel: "true",
+		}),
+	})
+	if err != nil && !errors.IsNotFound(err) {
+		if !strings.Contains(err.Error(), "no matches for kind \"MultiClusterEngine\"") {
+			r.Log.Info(fmt.Sprintf("error locating MCE: %s. Error: %s", multiclusterengine.MulticlusterengineName, err.Error()))
+			return nil, err
+		}
+	} else if err == nil && len(mceList.Items) == 1 {
+		// Preexisting MCE exists, no need to terminate resources
+		return &mceList.Items[0], nil
+	} else if len(mceList.Items) > 1 {
+		return nil, fmt.Errorf("multiple MCEs found. Only one MCE is allowed per cluster")
+	}
+	// No MCE exists, return
+	return nil, nil
+}
+
 func (r *MultiClusterHubReconciler) GetSubConfig() (*subv1alpha1.SubscriptionConfig, error) {
 	configEnvVars := []corev1.EnvVar{}
 	found := &appsv1.Deployment{}
@@ -1102,11 +1187,10 @@ func (r *MultiClusterHubReconciler) GetSubConfig() (*subv1alpha1.SubscriptionCon
 		Name:      utils.MCHOperatorName,
 		Namespace: namespace,
 	}, found)
-	
+
 	if err != nil {
 		return nil, err
 	}
-
 
 	foundSubscription := &subv1alpha1.Subscription{}
 
@@ -1134,8 +1218,7 @@ func (r *MultiClusterHubReconciler) GetSubConfig() (*subv1alpha1.SubscriptionCon
 			configEnvVars = proxyEnv
 		} else if err != nil {
 			return nil, err
-			} else
-		{
+		} else {
 			configEnvVars = utils.AppendProxyVariables(foundSubscription.Spec.Config.Env, proxyEnv)
 		}
 
