@@ -43,6 +43,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 // CacheSpec ...
@@ -960,8 +961,8 @@ func (r *MultiClusterHubReconciler) prepareForMultiClusterEngineInstall(multiClu
 			labels[utils.MCEManagedByLabel] = "true"
 			existingMCE.SetLabels(labels)
 
-			if !utils.Contains(existingMCE.Finalizers, hubFinalizer) {
-				existingMCE.Finalizers = append(existingMCE.Finalizers, hubFinalizer)
+			if !controllerutil.ContainsFinalizer(existingMCE, hubFinalizer) {
+				controllerutil.AddFinalizer(existingMCE, hubFinalizer)
 			}
 
 			err = r.Client.Update(ctx, existingMCE)
