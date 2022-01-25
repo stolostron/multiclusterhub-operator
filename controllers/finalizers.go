@@ -150,12 +150,12 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 	}
 
 	if err == nil && managedByMCE != nil {
-		// Adopted MCE exists, no need to terminate resources
-		r.Log.Info("Adopted MCE exists, skipping MCE finalization")
+		// Preexisting MCE exists, no need to terminate resources
+		r.Log.Info("Preexisting MCE exists, skipping MCE finalization")
 		return nil
 	}
 
-	// If no adopted MCE exists, proceed with finalization of installed MCE and its resources
+	// If no preexisting MCE exists, proceed with finalization of installed MCE and its resources
 	existingMCE := &mcev1alpha1.MultiClusterEngine{}
 	err = r.Client.Get(ctx, types.NamespacedName{Name: multiclusterengine.MulticlusterengineName}, existingMCE)
 	if err == nil {
@@ -349,7 +349,7 @@ func (r *MultiClusterHubReconciler) orphanOwnedMultiClusterEngine(m *operatorsv1
 		// MCE does not exist
 		return nil
 	}
-	r.Log.Info("Adopted MCE exists, orphaning resource")
+	r.Log.Info("Preexisting MCE exists, orphaning resource")
 	managedByMCE.Finalizers = utils.RemoveString(managedByMCE.Finalizers, hubFinalizer)
 	labels := managedByMCE.GetLabels()
 	delete(labels, utils.MCEManagedByLabel)
