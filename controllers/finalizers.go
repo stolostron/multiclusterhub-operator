@@ -12,7 +12,7 @@ import (
 
 	"github.com/go-logr/logr"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-	mcev1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
+	mcev1 "github.com/stolostron/backplane-operator/api/v1alpha1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/channel"
 	"github.com/stolostron/multiclusterhub-operator/pkg/helmrepo"
@@ -157,7 +157,7 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 	}
 
 	// If no preexisting MCE exists, proceed with finalization of installed MCE and its resources
-	existingMCE := &mcev1alpha1.MultiClusterEngine{}
+	existingMCE := &mcev1.MultiClusterEngine{}
 	err = r.Client.Get(ctx, types.NamespacedName{Name: multiclusterengine.MulticlusterengineName}, existingMCE)
 	if err == nil {
 		r.Log.Info("Deleting MultiClusterEngine resources")

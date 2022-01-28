@@ -11,7 +11,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	mcev1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
+	mcev1 "github.com/stolostron/backplane-operator/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis/apps/v1"
@@ -515,7 +515,7 @@ func mapMultiClusterEngine(mce *unstructured.Unstructured) operatorsv1.StatusCon
 		}
 
 		// Return condition with Applied = true
-		if conditionType == string(mcev1alpha1.MultiClusterEngineAvailable) && status == "True" {
+		if conditionType == string(mcev1.MultiClusterEngineAvailable) && status == "True" {
 			componentCondition.Available = true
 			return componentCondition
 		}

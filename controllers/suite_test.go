@@ -32,7 +32,7 @@ import (
 	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis"
 	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis"
 	netv1 "github.com/openshift/api/config/v1"
-	mcev1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
+	mcev1 "github.com/stolostron/backplane-operator/api/v1alpha1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -92,7 +92,7 @@ var _ = BeforeSuite(func(done Done) {
 	Expect(subrelv1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
 	Expect(olmv1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
 	Expect(subv1alpha1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
-	Expect(mcev1alpha1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
+	Expect(mcev1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
 
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme: scheme.Scheme,
