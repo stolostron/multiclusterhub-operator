@@ -79,6 +79,11 @@ type MultiClusterHubSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Disable Update ClusterImageSets",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	DisableUpdateClusterImageSets bool `json:"disableUpdateClusterImageSets,omitempty"`
 
+	// Provides optional configuration for components
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Component Configuration",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	// +optional
+	ComponentConfig *ComponentConfig `json:"componentConfig,omitempty"`
+
 	// Enable cluster proxy addon
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Cluster Proxy Addon",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	EnableClusterProxyAddon bool `json:"enableClusterProxyAddon,omitempty"`
@@ -93,6 +98,19 @@ type MultiClusterHubSpec struct {
 type Overrides struct {
 	// Pull policy of the MultiCluster hub images
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
+}
+
+// ComponentConfig provides optional configuration items for individual components
+type ComponentConfig struct {
+	// +optional
+	Search *SearchConfig `json:"search,omitempty"`
+}
+
+// Optional configuration items for the search component
+type SearchConfig struct {
+	// Do not install search or uninstall it if already installed
+	// +optional
+	Disable bool `json:"disable,omitempty"`
 }
 
 type HiveConfigSpec struct {

@@ -49,6 +49,18 @@ spec:
                 description: 'Specifies deployment replication for improved availability.
                   Options are: Basic and High (default)'
                 type: string
+              componentConfig:
+                description: Provides optional configuration for components
+                properties:
+                  search:
+                    description: Optional configuration items for the search component
+                    properties:
+                      disable:
+                        description: Do not install search or uninstall it if already
+                          installed
+                        type: boolean
+                    type: object
+                type: object
               customCAConfigmap:
                 description: Provide the customized OpenShift default ingress CA certificate
                   to RHACM
