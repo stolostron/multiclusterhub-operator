@@ -38,7 +38,7 @@ rules:
   resources: [ "applications", "applications/status"]
   verbs: ["get", "list", "watch"]
 - apiGroups: ["policy.open-cluster-management.io"]
-  resources: ["policies","policies/status","placementbindings","policyautomations"]
+  resources: ["policies","policies/status","placementbindings","policyautomations", "policysets"]
   verbs: ["get", "list", "watch"]
 - apiGroups: ["agent.open-cluster-management.io"]
   resources: ["klusterletaddonconfigs"]
