@@ -109,6 +109,8 @@ rules:
   - policies
   - policies/status
   - policyautomations
+  - policysets
+  - policysets/status
   - rolebindings
   - roles
   - searchcustomizations
