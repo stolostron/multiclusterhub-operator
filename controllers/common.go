@@ -14,7 +14,7 @@ import (
 
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 
-	mcev1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
+	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 
 	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis/apps/v1"
 	"github.com/openshift/library-go/pkg/operator/resource/resourcemerge"
@@ -391,7 +391,7 @@ func (r *MultiClusterHubReconciler) ensureOperatorGroup(m *operatorv1.MultiClust
 
 }
 
-func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(m *operatorv1.MultiClusterHub, mce *mcev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(m *operatorv1.MultiClusterHub, mce *mcev1.MultiClusterEngine) (ctrl.Result, error) {
 	ctx := context.Background()
 
 	r.Log.Info(fmt.Sprintf("Ensuring Multicluster Engine custom resource: %s", mce.GetName()))
@@ -404,7 +404,7 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(m *operatorv1.Mul
 	condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
 	SetHubCondition(&m.Status, *condition)
 
-	existingMCE := &mcev1alpha1.MultiClusterEngine{}
+	existingMCE := &mcev1.MultiClusterEngine{}
 	err = r.Client.Get(ctx, types.NamespacedName{
 		Name: mce.GetName(),
 	}, existingMCE)
@@ -413,7 +413,7 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(m *operatorv1.Mul
 		return ctrl.Result{Requeue: true}, nil
 	}
 
-	if existingMCE.Status.Phase == mcev1alpha1.MultiClusterEnginePhaseAvailable || utils.IsUnitTest() {
+	if existingMCE.Status.Phase == mcev1.MultiClusterEnginePhaseAvailable || utils.IsUnitTest() {
 		return ctrl.Result{}, nil
 	}
 	r.Log.Info(fmt.Sprintf("Multiclusterengine: %s is not yet available", mce.GetName()))
@@ -840,7 +840,7 @@ func (r *MultiClusterHubReconciler) GetSubscription(sub *subv1alpha1.Subscriptio
 	return &unstructured.Unstructured{Object: unstructuredSub}, nil
 }
 
-func (r *MultiClusterHubReconciler) GetMultiClusterEngine(mce *mcev1alpha1.MultiClusterEngine) (*unstructured.Unstructured, error) {
+func (r *MultiClusterHubReconciler) GetMultiClusterEngine(mce *mcev1.MultiClusterEngine) (*unstructured.Unstructured, error) {
 	multiClusterEngine, err := r.ManagedByMCEExists()
 	if err != nil {
 		fmt.Println(err.Error())
@@ -849,7 +849,7 @@ func (r *MultiClusterHubReconciler) GetMultiClusterEngine(mce *mcev1alpha1.Multi
 
 	// Detect if preexisint MCE exists, if so update MCE spec. Otherwise, install all MCE resources
 	if multiClusterEngine == nil {
-		multiClusterEngine = &mcev1alpha1.MultiClusterEngine{}
+		multiClusterEngine = &mcev1.MultiClusterEngine{}
 		err := r.Client.Get(context.Background(), types.NamespacedName{
 			Name: mce.GetName(),
 		}, multiClusterEngine)
@@ -887,7 +887,7 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(multiClusterHub *op
 	// Detect if preexisting MCE exists, if so update MCE spec. Otherwise, install all MCE resources
 	if existingMCE != nil {
 		r.Log.Info("Updating preexisting MCE")
-		existingMCE.Spec.AvailabilityConfig = mcev1alpha1.AvailabilityType(multiClusterHub.Spec.AvailabilityConfig)
+		existingMCE.Spec.AvailabilityConfig = mcev1.AvailabilityType(multiClusterHub.Spec.AvailabilityConfig)
 		existingMCE.Spec.NodeSelector = multiClusterHub.Spec.NodeSelector
 		if err := r.Client.Update(ctx, existingMCE); err != nil {
 			r.Log.Error(err, "Failed to update preexisting MCE with MCH spec")
@@ -932,7 +932,7 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(multiClusterHub *op
 func (r *MultiClusterHubReconciler) prepareForMultiClusterEngineInstall(multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	ctx := context.Background()
 
-	existingMCEList := &mcev1alpha1.MultiClusterEngineList{}
+	existingMCEList := &mcev1.MultiClusterEngineList{}
 	err := r.Client.List(ctx, existingMCEList)
 	if err != nil && !errors.IsNotFound(err) {
 		if !strings.Contains(err.Error(), "no matches for kind \"MultiClusterEngine\"") {
@@ -1150,10 +1150,10 @@ func mergeErrors(errs []error) string {
 	return strings.Join(errStrings, " ; ")
 }
 
-func (r *MultiClusterHubReconciler) ManagedByMCEExists() (*mcev1alpha1.MultiClusterEngine, error) {
+func (r *MultiClusterHubReconciler) ManagedByMCEExists() (*mcev1.MultiClusterEngine, error) {
 	ctx := context.Background()
 	// First check if MCE is preexisting
-	mceList := &mcev1alpha1.MultiClusterEngineList{}
+	mceList := &mcev1.MultiClusterEngineList{}
 	err := r.Client.List(ctx, mceList, &client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(map[string]string{
 			utils.MCEManagedByLabel: "true",

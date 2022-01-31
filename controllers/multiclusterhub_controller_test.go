@@ -11,7 +11,7 @@ import (
 	"time"
 
 	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis/apps/v1"
-	mcev1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
+	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
@@ -167,7 +167,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 			// Ensure MultiClusterEngine
 			Eventually(func() bool {
-				mce := &mcev1alpha1.MultiClusterEngine{}
+				mce := &mcev1.MultiClusterEngine{}
 				result := true
 				err := k8sClient.Get(ctx, types.NamespacedName{Name: multiclusterengine.MulticlusterengineName}, mce)
 				if err != nil {
@@ -220,7 +220,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 			// Validates Managedby label is added to MCE
 			Eventually(func() bool {
-				existingMCE := &mcev1alpha1.MultiClusterEngine{}
+				existingMCE := &mcev1.MultiClusterEngine{}
 				Expect(k8sClient.Get(ctx, resources.MCELookupKey, existingMCE)).Should(Succeed())
 				labels := existingMCE.GetLabels()
 				if labels == nil {
@@ -247,7 +247,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 			}, timeout, interval).Should(BeTrue())
 
 			// Ensure MCE remains
-			Expect(k8sClient.Get(ctx, resources.MCELookupKey, &mcev1alpha1.MultiClusterEngine{})).Should(Succeed())
+			Expect(k8sClient.Get(ctx, resources.MCELookupKey, &mcev1.MultiClusterEngine{})).Should(Succeed())
 
 		})
 	})

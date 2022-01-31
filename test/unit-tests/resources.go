@@ -4,7 +4,7 @@
 package resources
 
 import (
-	mcev1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
+	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
 
@@ -37,10 +37,10 @@ var (
 		Spec: operatorsv1.MultiClusterHubSpec{},
 	}
 
-	EmptyMCE = mcev1alpha1.MultiClusterEngine{
+	EmptyMCE = mcev1.MultiClusterEngine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: MultiClusterEngineName,
 		},
-		Spec: mcev1alpha1.MultiClusterEngineSpec{},
+		Spec: mcev1.MultiClusterEngineSpec{},
 	}
 )

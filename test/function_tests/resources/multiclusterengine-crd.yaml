@@ -24,7 +24,7 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
-    name: v1alpha1
+    name: v1
     schema:
       openAPIV3Schema:
         description: MultiClusterEngine is the Schema for the multiclusterengines
@@ -45,9 +45,9 @@ spec:
           spec:
             description: MultiClusterEngineSpec defines the desired state of MultiClusterEngine
             properties:
-              foo:
-                description: Foo is an example field of MultiClusterEngine. Edit multiclusterengine_types.go
-                  to remove/update
+              availabilityConfig:
+                description: 'Specifies deployment replication for improved availability.
+                  Options are: Basic and High (default)'
                 type: string
               imagePullSecret:
                 description: Override pull secret for accessing MultiClusterEngine
@@ -58,6 +58,16 @@ spec:
                   type: string
                 description: Set the nodeselectors
                 type: object
+              overrides:
+                description: Developer Overrides
+                properties:
+                  imagePullPolicy:
+                    description: Pull policy for the MCE images
+                    type: string
+                type: object
+              targetNamespace:
+                description: Location where MCE resources will be placed
+                type: string
               tolerations:
                 description: Tolerations causes all components to tolerate any taints.
                 items:
