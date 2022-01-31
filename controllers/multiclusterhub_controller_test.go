@@ -11,7 +11,7 @@ import (
 	"time"
 
 	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis/apps/v1"
-	mcev1 "github.com/stolostron/backplane-operator/api/v1alpha1"
+	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"

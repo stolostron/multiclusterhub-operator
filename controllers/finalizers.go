@@ -12,7 +12,7 @@ import (
 
 	"github.com/go-logr/logr"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-	mcev1 "github.com/stolostron/backplane-operator/api/v1alpha1"
+	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/channel"
 	"github.com/stolostron/multiclusterhub-operator/pkg/helmrepo"

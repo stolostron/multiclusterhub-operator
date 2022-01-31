@@ -4,7 +4,7 @@
 package resources
 
 import (
-	mcev1 "github.com/stolostron/backplane-operator/api/v1alpha1"
+	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
 
