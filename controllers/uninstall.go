@@ -74,6 +74,10 @@ var (
 	mceUninstallList = func(m *operatorsv1.MultiClusterHub) []*unstructured.Unstructured {
 		removals := []*unstructured.Unstructured{
 			newUnstructured(
+				types.NamespacedName{Name: "discovery-operator-sub", Namespace: m.Namespace},
+				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
+			),
+			newUnstructured(
 				types.NamespacedName{Name: "ocm-controller", Namespace: m.Namespace},
 				schema.GroupVersionKind{Group: "apps", Kind: "Deployment", Version: "v1"},
 			),

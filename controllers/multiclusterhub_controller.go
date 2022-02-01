@@ -332,10 +332,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
-	result, err = r.ensureSubscription(multiClusterHub, subscription.Discovery(multiClusterHub, r.CacheSpec.ImageOverrides))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
 	result, err = r.ensureSubscription(multiClusterHub, subscription.GRC(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != (ctrl.Result{}) {
 		return result, err
