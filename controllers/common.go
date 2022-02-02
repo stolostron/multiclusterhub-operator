@@ -279,8 +279,10 @@ func (r *MultiClusterHubReconciler) ensureSubscription(m *operatorv1.MultiCluste
 }
 
 func (r *MultiClusterHubReconciler) ensureNoSubscription(m *operatorv1.MultiClusterHub, u *unstructured.Unstructured) (ctrl.Result, error) {
+	subLog := r.Log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName(), "Kind", u.GetKind())
 	_, err := r.uninstall(m, u)
 	if err != nil {
+		subLog.Error(err, "Failed to uninstall subscription")
 		return ctrl.Result{}, err
 	}
 	return ctrl.Result{}, nil

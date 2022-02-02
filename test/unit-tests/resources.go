@@ -22,25 +22,47 @@ const (
 var (
 	MCHLookupKey = types.NamespacedName{Name: MulticlusterhubName, Namespace: MulticlusterhubNamespace}
 	MCELookupKey = types.NamespacedName{Name: MultiClusterEngineName}
+)
 
-	OCMNamespace = &corev1.Namespace{
+func EmptyMCE() mcev1.MultiClusterEngine {
+	return mcev1.MultiClusterEngine{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: MulticlusterhubNamespace,
+			Name: MultiClusterEngineName,
 		},
+		Spec: mcev1.MultiClusterEngineSpec{},
 	}
+}
 
-	EmptyMCH = operatorsv1.MultiClusterHub{
+func EmptyMCH() operatorsv1.MultiClusterHub {
+	return operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      MulticlusterhubName,
 			Namespace: MulticlusterhubNamespace,
 		},
 		Spec: operatorsv1.MultiClusterHubSpec{},
 	}
+}
 
-	EmptyMCE = mcev1.MultiClusterEngine{
+func NoSearchMCH() operatorsv1.MultiClusterHub {
+	return operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: MultiClusterEngineName,
+			Name:      MulticlusterhubName,
+			Namespace: MulticlusterhubNamespace,
 		},
-		Spec: mcev1.MultiClusterEngineSpec{},
+		Spec: operatorsv1.MultiClusterHubSpec{
+			ComponentConfig: &operatorsv1.ComponentConfig{
+				Search: &operatorsv1.SearchConfig{
+					Disable: true,
+				},
+			},
+		},
 	}
-)
+}
+
+func OCMNamespace() *corev1.Namespace {
+	return &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: MulticlusterhubNamespace,
+		},
+	}
+}
