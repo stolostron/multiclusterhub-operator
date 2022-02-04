@@ -345,10 +345,10 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
-	if multiClusterHub.SearchDisabled() {
-		result, err = r.ensureNoSubscription(multiClusterHub, subscription.Search(multiClusterHub, r.CacheSpec.ImageOverrides))
-	} else {
+	if multiClusterHub.ComponentEnabled(operatorv1.Search) {
 		result, err = r.ensureSubscription(multiClusterHub, subscription.Search(multiClusterHub, r.CacheSpec.ImageOverrides))
+	} else {
+		result, err = r.ensureNoSubscription(multiClusterHub, subscription.Search(multiClusterHub, r.CacheSpec.ImageOverrides))
 	}
 	if result != (ctrl.Result{}) {
 		return result, err

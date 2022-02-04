@@ -49,6 +49,11 @@ func MultiClusterEngine(m *operatorsv1.MultiClusterHub) *mcev1.MultiClusterEngin
 		},
 		Spec: mcev1.MultiClusterEngineSpec{
 			ImagePullSecret: m.Spec.ImagePullSecret,
+			ComponentConfig: &mcev1.ComponentConfig{
+				ManagedServiceAccount: &mcev1.ManagedServiceAccountConfig{
+					Enable: m.ComponentEnabled(operatorsv1.ManagedServiceAccount),
+				},
+			},
 		},
 	}
 	return mce
