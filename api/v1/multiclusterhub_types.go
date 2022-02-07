@@ -55,6 +55,9 @@ type MultiClusterHubSpec struct {
 	// Set the nodeselectors
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
+	// Tolerations causes all components to tolerate any taints.
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+
 	// (Deprecated) Overrides for the default HiveConfig spec
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Hive Config",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Hive *HiveConfigSpec `json:"hive,omitempty"`

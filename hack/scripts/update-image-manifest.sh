@@ -16,7 +16,7 @@ if [ -z "${VERSION}" ]; then
 fi
 
 # Branch excludes patch version
-BRANCH_NAME="${VERSION%.*}-edge"
+BRANCH_NAME="${VERSION%.*}-integration"
 
 # Remove existing files
 rm -rf pipeline-temp

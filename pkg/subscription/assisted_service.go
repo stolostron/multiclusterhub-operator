@@ -20,6 +20,7 @@ func AssistedService(m *operatorsv1.MultiClusterHub, overrides map[string]string
 				"nodeSelector": m.Spec.NodeSelector,
 				"name":         m.Name,
 				"namespace":    m.Namespace,
+				"tolerations":  utils.GetTolerations(m),
 			},
 			"global": map[string]interface{}{
 				"imageOverrides": overrides,
