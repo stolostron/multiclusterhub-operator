@@ -957,7 +957,12 @@ func (r *MultiClusterHubReconciler) prepareForMultiClusterEngineInstall(multiClu
 				}
 			}
 
-			r.Log.Info(fmt.Sprintf("Preexisting MCE already exists: %s. Managing multiclusterengine resource", existingMCE.GetName()))
+			if _, ok := labels[utils.MCEManagedByLabel]; ok {
+				// MCE is managed by the MCH, return
+				return ctrl.Result{}, nil
+			}
+
+			r.Log.Info(fmt.Sprintf("Preexisting MCE exists: %s. Managing multiclusterengine resource", existingMCE.GetName()))
 			labels[utils.MCEManagedByLabel] = "true"
 			existingMCE.SetLabels(labels)
 
@@ -970,16 +975,22 @@ func (r *MultiClusterHubReconciler) prepareForMultiClusterEngineInstall(multiClu
 				r.Log.Info(fmt.Sprintf("Error: %s", err.Error()))
 				return ctrl.Result{Requeue: true}, nil
 			}
-			return ctrl.Result{}, nil
+			return ctrl.Result{Requeue: true}, nil
+		} else if len(existingMCEList.Items) > 1 {
+			r.Log.Error(err, "multiple MCEs found. Only one is allowed")
+			return ctrl.Result{}, fmt.Errorf("multiple preexisting MCEs found. Only one is allowed")
 		}
 	}
 
-	r.Log.Info("Preparing for MCE installation. Removing existing resources that will be recreated by the MCE")
-	result, err := r.ensureConflictingMCEComponentsGone(multiClusterHub)
-	if result != (ctrl.Result{}) {
-		return result, err
+	if len(existingMCEList.Items) == 0 {
+		r.Log.Info("Preparing for MCE installation. Removing existing resources that will be recreated by the MCE")
+		result, err := r.ensureConflictingMCEComponentsGone(multiClusterHub)
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+		r.Log.Info("Conflicting resources removed. Proceeding with MCE installation")
 	}
-	r.Log.Info("Conflicting resources removed. Proceeding with MCE installation")
+
 	return ctrl.Result{}, nil
 }
 

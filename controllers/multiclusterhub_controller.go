@@ -26,6 +26,7 @@ import (
 
 	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis/apps/v1"
 	netv1 "github.com/openshift/api/config/v1"
+	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/channel"
 	"github.com/stolostron/multiclusterhub-operator/pkg/deploying"
 	"github.com/stolostron/multiclusterhub-operator/pkg/helmrepo"
@@ -428,6 +429,15 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			},
 		}, builder.WithPredicates(predicate.DeletePredicate{})).
 		Watches(&source.Kind{Type: &appsv1.Deployment{}},
+			handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
+				return []reconcile.Request{
+					{NamespacedName: types.NamespacedName{
+						Name:      a.GetLabels()["installer.name"],
+						Namespace: a.GetLabels()["installer.namespace"],
+					}},
+				}
+			}), builder.WithPredicates(predicate.InstallerLabelPredicate{})).
+		Watches(&source.Kind{Type: &mcev1.MultiClusterEngine{}},
 			handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
 				return []reconcile.Request{
 					{NamespacedName: types.NamespacedName{
