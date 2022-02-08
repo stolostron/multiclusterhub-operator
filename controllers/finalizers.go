@@ -160,12 +160,22 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 	existingMCE := &mcev1.MultiClusterEngine{}
 	err = r.Client.Get(ctx, types.NamespacedName{Name: multiclusterengine.MulticlusterengineName}, existingMCE)
 	if err == nil {
-		r.Log.Info("Deleting MultiClusterEngine resources")
-		err := r.Client.Delete(ctx, multiclusterengine.MultiClusterEngine(m))
-		if err != nil && (!errors.IsNotFound(err) || !errors.IsGone(err)) {
-			return err
+		labels := existingMCE.Labels
+		if name, ok := labels["installer.name"]; ok && name == m.GetName() {
+			if namespace, ok := labels["installer.namespace"]; ok && namespace == m.GetNamespace() {
+				// MCE is installed by the MCH, no need to manage. Return
+				r.Log.Info("Deleting MultiClusterEngine resources")
+				err := r.Client.Delete(ctx, multiclusterengine.MultiClusterEngine(m))
+				if err != nil && (!errors.IsNotFound(err) || !errors.IsGone(err)) {
+					return err
+				}
+				return fmt.Errorf("MCE has not yet been terminated")
+			}
+		} else {
+			r.Log.Info("MCE is not managed by this MCH, skipping MCE finalization")
+			return nil
 		}
-		return fmt.Errorf("MCE has not yet been terminated")
+
 	}
 	// subConfig = &subv1alpha1.SubscriptionConfig{}
 	subConfig, err := r.GetSubConfig()
