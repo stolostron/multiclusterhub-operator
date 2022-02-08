@@ -19,43 +19,24 @@ limitations under the License.
 package controllers
 
 import (
+	"context"
 	"os"
-	"path/filepath"
 	"testing"
 
-	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-
-	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis"
-	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis"
-	netv1 "github.com/openshift/api/config/v1"
-	mcev1 "github.com/stolostron/backplane-operator/api/v1"
-	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
-	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
-	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	//+kubebuilder:scaffold:imports
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
-var cfg *rest.Config
-var k8sClient client.Client
-var testEnv *envtest.Environment
-
-func TestAPIs(t *testing.T) {
+func TestController(t *testing.T) {
 	RegisterFailHandler(Fail)
 
 	RunSpecsWithDefaultAndCustomReporters(t,
@@ -63,66 +44,19 @@ func TestAPIs(t *testing.T) {
 		[]Reporter{printer.NewlineReporter{}})
 }
 
-var _ = BeforeSuite(func(done Done) {
+var signalHandlerContext context.Context
+
+var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
-	By("bootstrapping test environment")
-	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{
-			filepath.Join("..", "config", "crd", "bases"),
-			filepath.Join("..", "test", "unit-tests", "crds"),
-		},
-		ErrorIfCRDPathMissing: true,
-	}
+	// SetupSignalHandler can only be called once, so we'll save the
+	// context it returns and reuse it each time we start a new
+	// manager.
+	signalHandlerContext = ctrl.SetupSignalHandler()
+
+	os.Setenv("POD_NAMESPACE", "open-cluster-management")
 	os.Setenv("MANIFESTS_PATH", "../bin/image-manifests/")
 	os.Setenv("CRDS_PATH", "../bin/crds")
 	os.Setenv("TEMPLATES_PATH", "../pkg/templates")
 	os.Setenv("UNIT_TEST", "true")
-
-	cfg, err := testEnv.Start()
-	Expect(err).NotTo(HaveOccurred())
-	Expect(cfg).NotTo(BeNil())
-
-	Expect(scheme.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
-	Expect(operatorv1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
-	Expect(appsubv1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
-	Expect(apiregistrationv1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
-	Expect(apixv1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
-	Expect(netv1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
-	Expect(subrelv1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
-	Expect(olmv1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
-	Expect(subv1alpha1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
-	Expect(mcev1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
-
-	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme: scheme.Scheme,
-	})
-	Expect(err).ToNot(HaveOccurred())
-
-	err = (&MultiClusterHubReconciler{
-		Client: k8sManager.GetClient(),
-		Scheme: k8sManager.GetScheme(),
-		Log:    ctrl.Log.WithName("controllers").WithName("MultiClusterHub"),
-	}).SetupWithManager(k8sManager)
-	Expect(err).ToNot(HaveOccurred())
-
-	go func() {
-		err = k8sManager.Start(ctrl.SetupSignalHandler())
-		Expect(err).ToNot(HaveOccurred())
-	}()
-
-	k8sClient = k8sManager.GetClient()
-	Expect(k8sClient).ToNot(BeNil())
-	close(done)
-}, 60)
-
-var _ = AfterSuite(func() {
-	By("tearing down the test environment")
-	os.Unsetenv("MANIFESTS_PATH")
-	os.Unsetenv("CRDS_PATH")
-	os.Unsetenv("TEMPLATES_PATH")
-	os.Unsetenv("UNIT_TEST")
-
-	err := testEnv.Stop()
-	Expect(err).NotTo(HaveOccurred())
 })

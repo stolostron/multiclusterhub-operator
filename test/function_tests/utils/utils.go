@@ -157,7 +157,7 @@ var (
 	// GVRDiscoveryConfig
 	GVRDiscoveryConfig = schema.GroupVersionResource{
 		Group:    "discovery.open-cluster-management.io",
-		Version:  "v1alpha1",
+		Version:  "v1",
 		Resource: "discoveryconfigs",
 	}
 	// DefaultImageRegistry ...

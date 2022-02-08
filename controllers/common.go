@@ -279,8 +279,10 @@ func (r *MultiClusterHubReconciler) ensureSubscription(m *operatorv1.MultiCluste
 }
 
 func (r *MultiClusterHubReconciler) ensureNoSubscription(m *operatorv1.MultiClusterHub, u *unstructured.Unstructured) (ctrl.Result, error) {
+	subLog := r.Log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName(), "Kind", u.GetKind())
 	_, err := r.uninstall(m, u)
 	if err != nil {
+		subLog.Error(err, "Failed to uninstall subscription")
 		return ctrl.Result{}, err
 	}
 	return ctrl.Result{}, nil
@@ -324,24 +326,24 @@ func (r *MultiClusterHubReconciler) ensureNamespace(m *operatorv1.MultiClusterHu
 	ctx := context.Background()
 
 	r.Log.Info(fmt.Sprintf("Ensuring namespace: %s", ns.GetName()))
-	force := true
-
-	err := r.Client.Patch(ctx, ns, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
-	if err != nil {
-		r.Log.Info(fmt.Sprintf("Error: %s", err.Error()))
-		return ctrl.Result{Requeue: true}, nil
-	}
-	condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
-	SetHubCondition(&m.Status, *condition)
 
 	existingNS := &corev1.Namespace{}
-	err = r.Client.Get(ctx, types.NamespacedName{
+	err := r.Client.Get(ctx, types.NamespacedName{
 		Name: ns.GetName(),
 	}, existingNS)
-	if err != nil {
+	if err != nil && errors.IsNotFound(err) {
+		err = r.Client.Create(ctx, ns)
+		if err != nil {
+			r.Log.Info(fmt.Sprintf("Error creating namespace: %s", err.Error()))
+			return ctrl.Result{Requeue: true}, nil
+		}
+	} else if err != nil {
 		r.Log.Info(fmt.Sprintf("error locating namespace: %s. Error: %s", ns.GetName(), err.Error()))
 		return ctrl.Result{Requeue: true}, nil
 	}
+
+	condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+	SetHubCondition(&m.Status, *condition)
 
 	if existingNS.Status.Phase == corev1.NamespaceActive {
 		return ctrl.Result{}, nil
