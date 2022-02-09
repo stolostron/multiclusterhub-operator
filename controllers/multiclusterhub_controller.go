@@ -24,7 +24,6 @@ import (
 	"os"
 	"time"
 
-	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/channel"
 	"github.com/stolostron/multiclusterhub-operator/pkg/deploying"
@@ -434,15 +433,6 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			},
 		}, builder.WithPredicates(predicate.DeletePredicate{})).
 		Watches(&source.Kind{Type: &appsv1.Deployment{}},
-			handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
-				return []reconcile.Request{
-					{NamespacedName: types.NamespacedName{
-						Name:      a.GetLabels()["installer.name"],
-						Namespace: a.GetLabels()["installer.namespace"],
-					}},
-				}
-			}), builder.WithPredicates(predicate.InstallerLabelPredicate{})).
-		Watches(&source.Kind{Type: &mcev1.MultiClusterEngine{}},
 			handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
 				return []reconcile.Request{
 					{NamespacedName: types.NamespacedName{
