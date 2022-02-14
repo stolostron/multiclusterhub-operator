@@ -60,6 +60,31 @@ var (
 				types.NamespacedName{Name: "configmap-watcher-sub", Namespace: utils.CertManagerNS(m)},
 				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
 			),
+			// backups.velero.io CRD removed in 2.5.0
+			newUnstructured(
+				types.NamespacedName{Name: "backups.velero.io"},
+				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1"},
+			),
+			// backupstoragelocations.velero.io CRD removed in 2.5.0
+			newUnstructured(
+				types.NamespacedName{Name: "backupstoragelocations.velero.io"},
+				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1"},
+			),
+			// deletebackuprequests.velero.io CRD removed in 2.5.0
+			newUnstructured(
+				types.NamespacedName{Name: "deletebackuprequests.velero.io"},
+				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1"},
+			),
+			// restores.velero.io CRD removed in 2.5.0
+			newUnstructured(
+				types.NamespacedName{Name: "restores.velero.io"},
+				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1"},
+			),
+			// schedules.velero.io CRD removed in 2.5.0
+			newUnstructured(
+				types.NamespacedName{Name: "schedules.velero.io"},
+				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1"},
+			),
 		}
 
 		if m.Spec.SeparateCertificateManagement && m.Spec.ImagePullSecret != "" {
@@ -73,6 +98,10 @@ var (
 
 	mceUninstallList = func(m *operatorsv1.MultiClusterHub) []*unstructured.Unstructured {
 		removals := []*unstructured.Unstructured{
+			newUnstructured(
+				types.NamespacedName{Name: "discovery-operator-sub", Namespace: m.Namespace},
+				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
+			),
 			newUnstructured(
 				types.NamespacedName{Name: "ocm-controller", Namespace: m.Namespace},
 				schema.GroupVersionKind{Group: "apps", Kind: "Deployment", Version: "v1"},

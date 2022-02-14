@@ -2,9 +2,6 @@
 
 
 resources:
-- serviceaccount-foundation.yaml
-- clusterrole-foundation.yaml
-- clusterrolebinding-foundation.yaml
 - clusterrole-admin-aggregate.yaml
 - clusterrole-edit-aggregate.yaml
 - clusterrole-view-aggregate.yaml
