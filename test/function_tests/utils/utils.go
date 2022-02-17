@@ -194,7 +194,7 @@ var (
 	}
 
 	// AppSubSlice ...
-	AppSubSlice = [...]string{"application-chart-sub", "assisted-service-sub",
+	AppSubSlice = [...]string{"application-chart-sub",
 		"console-chart-sub", "policyreport-sub", "discovery-operator-sub",
 		"grc-sub", "management-ingress-sub",
 		"rcm-sub", "search-prod-sub"}
