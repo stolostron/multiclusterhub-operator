@@ -85,6 +85,11 @@ var (
 				types.NamespacedName{Name: "schedules.velero.io"},
 				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1"},
 			),
+			// AI is migrated to MCE in 2.5.0
+			newUnstructured(
+				types.NamespacedName{Name: "assisted-service-sub", Namespace: m.Namespace},
+				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
+			),
 		}
 
 		if m.Spec.SeparateCertificateManagement && m.Spec.ImagePullSecret != "" {
@@ -100,6 +105,10 @@ var (
 		removals := []*unstructured.Unstructured{
 			newUnstructured(
 				types.NamespacedName{Name: "discovery-operator-sub", Namespace: m.Namespace},
+				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
+			),
+			newUnstructured(
+				types.NamespacedName{Name: "assisted-service-sub", Namespace: m.Namespace},
 				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
 			),
 			newUnstructured(
