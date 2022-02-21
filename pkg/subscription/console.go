@@ -19,10 +19,11 @@ func Console(m *operatorsv1.MultiClusterHub, overrides map[string]string, ingres
 			"ocpingress":   ingress,
 			"cfcRouterUrl": "https://management-ingress:443",
 			"hubconfig": map[string]interface{}{
-				"replicaCount": utils.DefaultReplicaCount(m),
-				"nodeSelector": m.Spec.NodeSelector,
 				"name":         m.Name,
 				"namespace":    m.Namespace,
+				"replicaCount": utils.DefaultReplicaCount(m),
+				"nodeSelector": m.Spec.NodeSelector,
+				"tolerations":  utils.GetTolerations(m),
 			},
 			"global": map[string]interface{}{
 				"imageOverrides": overrides,

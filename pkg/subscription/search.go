@@ -15,14 +15,15 @@ func Search(m *operatorsv1.MultiClusterHub, overrides map[string]string) *unstru
 		Name:      "search-prod",
 		Namespace: m.Namespace,
 		Overrides: map[string]interface{}{
+			"hubconfig": map[string]interface{}{
+				"replicaCount": utils.DefaultReplicaCount(m),
+				"nodeSelector": m.Spec.NodeSelector,
+				"tolerations":  utils.GetTolerations(m),
+			},
 			"global": map[string]interface{}{
 				"pullSecret":     m.Spec.ImagePullSecret,
 				"imageOverrides": overrides,
 				"pullPolicy":     utils.GetImagePullPolicy(m),
-			},
-			"hubconfig": map[string]interface{}{
-				"replicaCount": utils.DefaultReplicaCount(m),
-				"nodeSelector": m.Spec.NodeSelector,
 			},
 		},
 	}

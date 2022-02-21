@@ -3,15 +3,7 @@
 # Copyright Contributors to the Open Cluster Management project
 
 
-
 echo "Starting Installer Functional Tests ..."
-echo ""
-
-if [ -z "$TEST_MODE" ]; then
-    echo "TEST_MODE not exported. Must be of type 'install', 'uninstall', or 'update'"
-    exit 1
-fi
-
 echo ""
 
 export GO111MODULE=off
@@ -28,4 +20,8 @@ elif [[ "$TEST_MODE" == "update" ]]; then
     echo "Beginning Update Tests ..."
     echo ""
     ginkgo -tags functional -v --slowSpecThreshold=900 test/multiclusterhub_update_test
+else
+    echo "TEST_MODE not exported. Must be of type 'install', 'uninstall', or 'update'"
+    echo ""
+    exit 1
 fi
