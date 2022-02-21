@@ -49,6 +49,7 @@ func MultiClusterEngine(m *operatorsv1.MultiClusterHub) *mcev1.MultiClusterEngin
 		},
 		Spec: mcev1.MultiClusterEngineSpec{
 			ImagePullSecret: m.Spec.ImagePullSecret,
+			Tolerations:     utils.GetTolerations(m),
 		},
 	}
 	return mce

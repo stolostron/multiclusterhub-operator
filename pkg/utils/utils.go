@@ -330,6 +330,19 @@ func GetCustomResources(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	}
 }
 
+func GetTolerations(m *operatorsv1.MultiClusterHub) []corev1.Toleration {
+	if len(m.Spec.Tolerations) == 0 {
+		return []corev1.Toleration{
+			{
+				Effect:   "NoSchedule",
+				Key:      "node-role.kubernetes.io/infra",
+				Operator: "Exists",
+			},
+		}
+	}
+	return m.Spec.Tolerations
+}
+
 func RemoveString(s []string, r string) []string {
 	for i, v := range s {
 		if v == r {
