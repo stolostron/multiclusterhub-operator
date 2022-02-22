@@ -19,21 +19,22 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/ghodss/yaml"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
 
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var (
@@ -70,7 +71,7 @@ var (
 	// GVRMultiClusterEngine ...
 	GVRMultiClusterEngine = schema.GroupVersionResource{
 		Group:    "multicluster.openshift.io",
-		Version:  "v1alpha1",
+		Version:  "v1",
 		Resource: "multiclusterengines",
 	}
 
@@ -194,10 +195,26 @@ var (
 	}
 
 	// AppSubSlice ...
-	AppSubSlice = [...]string{"application-chart-sub", "assisted-service-sub",
-		"console-chart-sub", "policyreport-sub", "discovery-operator-sub",
-		"grc-sub", "management-ingress-sub",
-		"rcm-sub", "search-prod-sub"}
+	AppSubSlice = [...]string{
+		"application-chart-sub",
+		"assisted-service-sub",
+		"console-chart-sub",
+		"grc-sub",
+		"management-ingress-sub",
+		"policyreport-sub",
+		"rcm-sub",
+		"search-prod-sub",
+	}
+
+	// AppMap ...
+	AppMap = map[string]struct{}{
+		"application-chart": struct{}{},
+		"console-chart-v2":  struct{}{},
+		"grc":               struct{}{},
+		"policyreport":      struct{}{},
+		"search":            struct{}{},
+		"search-prod":       struct{}{},
+	}
 
 	// CSVName ...
 	CSVName = "advanced-cluster-management"
@@ -399,6 +416,13 @@ func IsOwner(owner *unstructured.Unstructured, obj interface{}) bool {
 // CreateMCHNotManaged ...
 func CreateMCHNotManaged() *unstructured.Unstructured {
 	mch := NewMultiClusterHub(MCHName, MCHNamespace, "", true)
+	CreateNewUnstructured(DynamicKubeClient, GVRMultiClusterHub, mch, MCHName, MCHNamespace)
+	return mch
+}
+
+// CreateMCHTolerations ...
+func CreateMCHTolerations() *unstructured.Unstructured {
+	mch := NewMCHTolerations(MCHName, MCHNamespace, "", true)
 	CreateNewUnstructured(DynamicKubeClient, GVRMultiClusterHub, mch, MCHName, MCHNamespace)
 	return mch
 }
@@ -1088,6 +1112,44 @@ func ValidateMCESub() error {
 
 	return nil
 
+}
+
+// ValidateMCHTolerations ...
+func ValidateMCHTolerations() error {
+	ns := DynamicKubeClient.Resource(GVRDeployment).Namespace(MCHNamespace)
+	labelSelector := fmt.Sprintf("installer.name=%s", MCHName)
+	listOptions := metav1.ListOptions{
+		LabelSelector: labelSelector,
+	}
+	deployments, err := ns.List(context.Background(), listOptions)
+	if err != nil {
+		return err
+	}
+
+	for _, deployment := range deployments.Items {
+		var d appsv1.Deployment
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(deployment.Object, &d)
+		if err != nil {
+			return fmt.Errorf("Could not convert from unstructured to deployment for %s: %s", deployment.GetName(), err)
+		}
+		if _, ok := AppMap[d.Labels["app"]]; !ok {
+			continue
+		}
+		tolerations := d.Spec.Template.Spec.Tolerations
+		for _, testToleration := range TestTolerations() {
+			found := false
+			for _, toleration := range tolerations {
+				if testToleration.MatchToleration(&toleration) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return fmt.Errorf("Test toleration not found on deployment %s: %#v", d.Name, testToleration)
+			}
+		}
+	}
+	return nil
 }
 
 // ToggleDisableHubSelfManagement toggles the value of spec.disableHubSelfManagement from true to false or false to true

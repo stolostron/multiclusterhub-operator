@@ -317,6 +317,13 @@ func (in *MultiClusterHubSpec) DeepCopyInto(out *MultiClusterHubSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.Tolerations != nil {
+		in, out := &in.Tolerations, &out.Tolerations
+		*out = make([]corev1.Toleration, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	if in.Hive != nil {
 		in, out := &in.Hive, &out.Hive
 		*out = new(HiveConfigSpec)

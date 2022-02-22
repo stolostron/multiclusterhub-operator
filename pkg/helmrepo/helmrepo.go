@@ -43,16 +43,6 @@ func selectorLabels() map[string]string {
 	}
 }
 
-func tolerations() []corev1.Toleration {
-	return []corev1.Toleration{
-		{
-			Effect:   "NoSchedule",
-			Key:      "node-role.kubernetes.io/infra",
-			Operator: "Exists",
-		},
-	}
-}
-
 // Image returns image reference for multiclusterhub-repo
 func Image(overrides map[string]string) string {
 	return overrides[ImageKey]
@@ -130,7 +120,7 @@ func Deployment(m *operatorsv1.MultiClusterHub, overrides map[string]string) *ap
 					}},
 					ImagePullSecrets: []corev1.LocalObjectReference{{Name: m.Spec.ImagePullSecret}},
 					NodeSelector:     m.Spec.NodeSelector,
-					Tolerations:      tolerations(),
+					Tolerations:      utils.GetTolerations(m),
 					Affinity:         utils.DistributePods("ocm-antiaffinity-selector", HelmRepoName),
 					// ServiceAccountName: "default",
 				},
@@ -251,9 +241,9 @@ func ValidateDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]str
 		needsUpdate = true
 	}
 
-	if !reflect.DeepEqual(pod.Tolerations, tolerations()) {
+	if !reflect.DeepEqual(pod.Tolerations, utils.GetTolerations(m)) {
 		log.Info("Enforcing spec tolerations")
-		pod.Tolerations = tolerations()
+		pod.Tolerations = utils.GetTolerations(m)
 		needsUpdate = true
 	}
 
