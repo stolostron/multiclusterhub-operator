@@ -107,6 +107,8 @@ type Overrides struct {
 type ComponentConfig struct {
 	// +optional
 	Search *SearchConfig `json:"search,omitempty"`
+	// +optional
+	ManagedServiceAccount *ManagedServiceAccountConfig `json:"managedServiceAccount,omitempty"`
 }
 
 // Optional configuration items for the search component
@@ -114,6 +116,13 @@ type SearchConfig struct {
 	// Do not install search or uninstall it if already installed
 	// +optional
 	Disable bool `json:"disable,omitempty"`
+}
+
+// Optional configuration items for the managed-serviceaccount component
+type ManagedServiceAccountConfig struct {
+	// Enable managed-serviceaccount component (Tech Preview).
+	// +optional
+	Enable bool `json:"enable,omitempty"`
 }
 
 type HiveConfigSpec struct {
@@ -221,6 +230,13 @@ type IngressSpec struct {
 	// List of SSL ciphers enabled for management ingress. Defaults to full list of supported ciphers
 	SSLCiphers []string `json:"sslCiphers,omitempty"`
 }
+
+type ComponentEnabled string
+
+const (
+	ManagedServiceAccount ComponentEnabled = "Managed-ServiceAccount"
+	Search                ComponentEnabled = "Search"
+)
 
 type HubPhaseType string
 
