@@ -52,6 +52,15 @@ spec:
               componentConfig:
                 description: Provides optional configuration for components
                 properties:
+                  managedServiceAccount:
+                    description: Optional configuration items for the managed-serviceaccount
+                      component
+                    properties:
+                      enable:
+                        description: Enable managed-serviceaccount component (Tech
+                          Preview).
+                        type: boolean
+                    type: object
                   search:
                     description: Optional configuration items for the search component
                     properties:

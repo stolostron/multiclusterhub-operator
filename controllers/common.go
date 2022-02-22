@@ -891,6 +891,10 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(multiClusterHub *op
 		r.Log.Info("Updating preexisting MCE")
 		existingMCE.Spec.AvailabilityConfig = mcev1.AvailabilityType(multiClusterHub.Spec.AvailabilityConfig)
 		existingMCE.Spec.NodeSelector = multiClusterHub.Spec.NodeSelector
+		if (multiClusterHub.ComponentEnabled(operatorv1.ManagedServiceAccount)){
+			existingMCE.Spec.ComponentConfig = multiclusterengine.GetComponentConfig(multiClusterHub)
+		}
+		existingMCE.Spec.ComponentConfig = multiclusterengine.GetComponentConfig(multiClusterHub)
 		if err := r.Client.Update(ctx, existingMCE); err != nil {
 			r.Log.Error(err, "Failed to update preexisting MCE with MCH spec")
 			return ctrl.Result{}, err
