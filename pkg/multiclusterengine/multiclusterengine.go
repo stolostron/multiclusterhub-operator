@@ -52,7 +52,19 @@ func MultiClusterEngine(m *operatorsv1.MultiClusterHub) *mcev1.MultiClusterEngin
 			Tolerations:     utils.GetTolerations(m),
 		},
 	}
+	if (m.ComponentEnabled(operatorsv1.ManagedServiceAccount)){
+		mce.Spec.ComponentConfig = GetComponentConfig(m)
+	}
 	return mce
+}
+
+func GetComponentConfig(m *operatorsv1.MultiClusterHub) *mcev1.ComponentConfig {
+	componentConfig := &mcev1.ComponentConfig{
+		ManagedServiceAccount: &mcev1.ManagedServiceAccountConfig{
+			Enable: m.ComponentEnabled(operatorsv1.ManagedServiceAccount),
+		},
+	}
+	return componentConfig
 }
 
 // Subscription for the helm repo serving charts
