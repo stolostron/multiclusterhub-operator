@@ -8,9 +8,6 @@ metadata:
     rbac.authorization.k8s.io/aggregate-to-ocm-cluster-manager-admin: "true"
   name: open-cluster-management:admin-aggregate
 rules:
-- apiGroups: ["discovery.open-cluster-management.io"] # TODO: REMOVE ONCE DISCOVERY IS MIGRATED
-  resources: ["discoveryconfigs", "discoveredclusters"]
-  verbs: ["get", "list", "watch", "update","delete", "deletecollection", "patch"]
 - apiGroups: ["apps.open-cluster-management.io"]
   resources: [ "deployables", "deployables/status", "placementrules", "placementrules/status", "channels", "channels/status", "subscriptions", "subscriptions/status"]
   verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
@@ -31,14 +28,4 @@ rules:
   verbs: ["get", "list", "watch"]
 - apiGroups: ["submarineraddon.open-cluster-management.io"]
   resources: ["submarinerconfigs", "submarinerconfigs/status"]
-  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
-# TODO: REMOVE ONCE AI IS MIGRATED
-- apiGroups: [ "metal3.io" ]
-  resources: [ "baremetalhosts" ]
-  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
-- apiGroups: [ "agent-install.openshift.io" ]
-  resources: [ "agents", "infraenvs" ]
-  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
-- apiGroups: [ "extensions.hive.openshift.io" ]
-  resources: [ "agentclusterinstalls" ]
   verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]

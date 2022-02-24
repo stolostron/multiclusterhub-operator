@@ -7,9 +7,6 @@ metadata:
     rbac.authorization.k8s.io/aggregate-to-view: "true"
   name: open-cluster-management:view-aggregate
 rules:
-- apiGroups: ["discovery.open-cluster-management.io"] # TODO: REMOVE ONCE DISCOVERY IS MIGRATED
-  resources: ["discoveryconfigs", "discoveredclusters"]
-  verbs: ["get", "list", "watch"]
 - apiGroups: ["apps.open-cluster-management.io"]
   resources: [ "deployables", "deployables/status", "placementrules", "placementrules/status", "channels", "channels/status", "subscriptions", "subscriptions/status"]
   verbs: ["get", "list", "watch"]
@@ -30,13 +27,4 @@ rules:
   verbs: ["get", "list", "watch"]
 - apiGroups: ["submarineraddon.open-cluster-management.io"]
   resources: ["submarinerconfigs", "submarinerconfigs/status"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: [ "metal3.io" ] # TODO: REMOVE ONCE ASSISTED INSTALLER IS MIGRATED
-  resources: [ "baremetalhosts" ]
-  verbs: ["get", "list", "watch"]
-- apiGroups: [ "agent-install.openshift.io" ]
-  resources: [ "agents", "infraenvs" ]
-  verbs: ["get", "list", "watch"]
-- apiGroups: [ "extensions.hive.openshift.io" ]
-  resources: [ "agentclusterinstalls" ]
   verbs: ["get", "list", "watch"]
