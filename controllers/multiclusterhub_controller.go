@@ -24,6 +24,8 @@ import (
 	"os"
 	"time"
 
+	configv1 "github.com/openshift/api/config/v1"
+
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/channel"
 	"github.com/stolostron/multiclusterhub-operator/pkg/deploying"
@@ -556,10 +558,13 @@ func updatePausedCondition(m *operatorv1.MultiClusterHub) {
 }
 
 func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
-	if utils.MchIsValid(m) {
+	ctx := context.Background()
+	log := r.Log
+
+	if utils.MchIsValid(m) && os.Getenv("ACM_HUB_OCP_VERSION") != "" {
 		return ctrl.Result{}, nil
 	}
-	r.Log.Info("MultiClusterHub is Invalid. Updating with proper defaults")
+	log.Info("MultiClusterHub is Invalid. Updating with proper defaults")
 
 	if len(m.Spec.Ingress.SSLCiphers) == 0 {
 		m.Spec.Ingress.SSLCiphers = utils.DefaultSSLCiphers
@@ -569,8 +574,33 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub) (
 		m.Spec.AvailabilityConfig = operatorv1.HAHigh
 	}
 
+	// If OCP 4.10+ then set then enable the MCE console. Else ensure it is disabled
+	clusterVersion := &configv1.ClusterVersion{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: "version"}, clusterVersion)
+	if err != nil {
+		log.Error(err, "Failed to detect clusterversion")
+		return ctrl.Result{}, err
+	}
+	currentClusterVersion := ""
+	if len(clusterVersion.Status.History) == 0 {
+		if !utils.IsUnitTest() {
+			log.Error(err, "Failed to detect status in clusterversion.status.history")
+			return ctrl.Result{}, err
+		}
+	}
+
+	if utils.IsUnitTest() {
+		// If unit test pass along a version, Can't set status in unit test
+		currentClusterVersion = "4.9.0"
+	} else {
+		currentClusterVersion = clusterVersion.Status.History[0].Version
+	}
+
+	// Set OCP version as env var, so that charts can render this value
+	os.Setenv("ACM_HUB_OCP_VERSION", currentClusterVersion)
+
 	// Apply defaults to server
-	err := r.Client.Update(context.TODO(), m)
+	err = r.Client.Update(ctx, m)
 	if err != nil {
 		r.Log.Error(err, "Failed to update MultiClusterHub", "MultiClusterHub.Namespace", m.Namespace, "MultiClusterHub.Name", m.Name)
 		return ctrl.Result{}, err
