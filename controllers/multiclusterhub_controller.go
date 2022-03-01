@@ -22,6 +22,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"regexp"
 	"time"
 
 	configv1 "github.com/openshift/api/config/v1"
@@ -146,7 +147,24 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			retError = statusError
 		}
 	}()
+	matchCurrent, _ := regexp.MatchString("^2.4", multiClusterHub.Status.CurrentVersion)
+	matchDesired, _ := regexp.MatchString("^2.5", multiClusterHub.Status.DesiredVersion)
 
+	if (matchCurrent) && (matchDesired) {
+		if multiClusterHub.Spec.EnableClusterBackup == true {
+			r.Log.Info(fmt.Sprintf("When upgrading from version 2.4 to 2.5, cluster backup must be disabled"))
+			blocking := NewHubCondition(operatorv1.Blocked, metav1.ConditionTrue, ResourceBlockReason, "When upgrading from version 2.4 to 2.5, cluster backup must be disabled")
+			SetHubCondition(&multiClusterHub.Status, *blocking)
+			return ctrl.Result{}, nil
+		} else {
+			res, err := r.ensureNoSubscription(multiClusterHub, subscription.OldClusterBackup(multiClusterHub))
+			if res != (ctrl.Result{}) {
+				return res, err
+			}
+			proceeding := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, BlockRemovedReason, "Cluster Backup and affiliated resources have been removed")
+			SetHubCondition(&multiClusterHub.Status, *proceeding)
+		}
+	}
 	// Check if the multiClusterHub instance is marked to be deleted, which is
 	// indicated by the deletion timestamp being set.
 	isHubMarkedToBeDeleted := multiClusterHub.GetDeletionTimestamp() != nil
@@ -356,12 +374,20 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 	if multiClusterHub.Spec.EnableClusterBackup {
+		result, err = r.ensureNamespace(multiClusterHub, subscription.Namespace())
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
 		result, err = r.ensureSubscription(multiClusterHub, subscription.ClusterBackup(multiClusterHub, r.CacheSpec.ImageOverrides))
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
 	} else {
 		result, err = r.ensureNoSubscription(multiClusterHub, subscription.ClusterBackup(multiClusterHub, r.CacheSpec.ImageOverrides))
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+		result, err = r.ensureNoNamespace(multiClusterHub, subscription.NamespaceUnstructured())
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
@@ -477,6 +503,9 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 		return err
 	}
 	if err := r.cleanupAppSubscriptions(reqLogger, m); err != nil {
+		return err
+	}
+	if err := r.cleanupNamespaces(reqLogger); err != nil {
 		return err
 	}
 	if err := r.cleanupFoundation(reqLogger, m); err != nil {

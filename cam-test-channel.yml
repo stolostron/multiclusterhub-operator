@@ -1,0 +1,47 @@
+apiVersion: apps.open-cluster-management.io/v1
+kind: Channel
+metadata:
+  annotations:
+    apps.open-cluster-management.io/reconcile-rate: high
+  creationTimestamp: "2022-02-23T21:00:31Z"
+  generation: 1
+  managedFields:
+  - apiVersion: apps.open-cluster-management.io/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          .: {}
+          f:apps.open-cluster-management.io/reconcile-rate: {}
+        f:ownerReferences:
+          .: {}
+          k:{"uid":"2d2e75a1-b376-4381-8f71-346e3fce19a3"}:
+            .: {}
+            f:apiVersion: {}
+            f:blockOwnerDeletion: {}
+            f:controller: {}
+            f:kind: {}
+            f:name: {}
+            f:uid: {}
+      f:spec:
+        .: {}
+        f:pathname: {}
+        f:type: {}
+    manager: multiclusterhub-operator
+    operation: Update
+    time: "2022-02-23T21:00:31Z"
+  name: charts-v2
+  namespace: cluster-backup
+  ownerReferences:
+  - apiVersion: operator.open-cluster-management.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: MultiClusterHub
+    name: multiclusterhub
+    uid: 2d2e75a1-b376-4381-8f71-346e3fce19a3
+  resourceVersion: "418438"
+  selfLink: /apis/apps.open-cluster-management.io/v1/namespaces/open-cluster-management/channels/charts-v1
+  uid: 72255b95-dd6a-49a6-b10c-210a16fda110
+spec:
+  pathname: http://multiclusterhub-repo.open-cluster-management.svc.cluster.local:3000/charts
+  type: HelmRepo

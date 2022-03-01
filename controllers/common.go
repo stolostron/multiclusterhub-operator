@@ -291,6 +291,16 @@ func (r *MultiClusterHubReconciler) ensureNoSubscription(m *operatorv1.MultiClus
 	return ctrl.Result{}, nil
 }
 
+func (r *MultiClusterHubReconciler) ensureNoNamespace(m *operatorv1.MultiClusterHub, u *unstructured.Unstructured) (ctrl.Result, error) {
+	subLog := r.Log.WithValues("Name", u.GetName(), "Kind", u.GetKind())
+	_, err := r.uninstall(m, u)
+	if err != nil {
+		subLog.Error(err, "Failed to uninstall namespace")
+		return ctrl.Result{}, err
+	}
+	return ctrl.Result{}, nil
+}
+
 func (r *MultiClusterHubReconciler) ensureUnstructuredResource(m *operatorv1.MultiClusterHub, u *unstructured.Unstructured) (ctrl.Result, error) {
 	obLog := r.Log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName(), "Kind", u.GetKind())
 

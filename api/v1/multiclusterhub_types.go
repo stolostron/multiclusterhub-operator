@@ -241,11 +241,12 @@ const (
 type HubPhaseType string
 
 const (
-	HubPending      HubPhaseType = "Pending"
-	HubRunning      HubPhaseType = "Running"
-	HubInstalling   HubPhaseType = "Installing"
-	HubUpdating     HubPhaseType = "Updating"
-	HubUninstalling HubPhaseType = "Uninstalling"
+	HubPending         HubPhaseType = "Pending"
+	HubRunning         HubPhaseType = "Running"
+	HubInstalling      HubPhaseType = "Installing"
+	HubUpdating        HubPhaseType = "Updating"
+	HubUninstalling    HubPhaseType = "Uninstalling"
+	HubUpdatingBlocked HubPhaseType = "UpdatingBlocked"
 )
 
 // MultiClusterHubStatus defines the observed state of MultiClusterHub
@@ -310,6 +311,9 @@ const (
 
 	// Terminating means that the multiclusterhub has been deleted and is cleaning up.
 	Terminating HubConditionType = "Terminating"
+
+	// Bocked means there is something preventing an update from occurring
+	Blocked HubConditionType = "Blocked"
 )
 
 // StatusCondition contains condition information.

@@ -1,0 +1,395 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"rbac.authorization.k8s.io/v1","kind":"ClusterRole","metadata":{"annotations":{},"creationTimestamp":null,"name":"multiclusterhub-role"},"rules":[{"apiGroups":["","action.open-cluster-management.io","addon.open-cluster-management.io","agent.open-cluster-management.io","app.k8s.io","apps.open-cluster-management.io","argoproj.io","authorization.k8s.io","certificates.k8s.io","cluster.open-cluster-management.io","clusterregistry.k8s.io","compliance.mcm.ibm.com","config.openshift.io","coordination.k8s.io","discovery.open-cluster-management.io","hive.openshift.io","hiveinternal.openshift.io","imageregistry.open-cluster-management.io","internal.open-cluster-management.io","inventory.open-cluster-management.io","mcm.ibm.com","multicloud.ibm.com","operator.open-cluster-management.io","policy.open-cluster-management.io","proxy.open-cluster-management.io","rbac.authorization.k8s.io","register.open-cluster-management.io","search.open-cluster-management.io","submarineraddon.open-cluster-management.io","view.open-cluster-management.io","work.open-cluster-management.io"],"resources":["applicationrelationships","applicationrelationships/status","applications","applications/status","baremetalassets","baremetalassets/finalizers","baremetalassets/status","certificatesigningrequests","certificatesigningrequests/approval","channels","channels/status","clusterclaims","clustercurators","clusterdeployments","clustermanagementaddons","clustermanagers","clusterpools","clusterrolebindings","clusterroles","clusterstatuses/aggregator","clustersyncs","clusterversions","compliances","configmaps","deployableoverrides","deployableoverrides/status","deployables","deployables/status","discoveredclusters","discoveryconfigs","endpointconfigs","endpoints","events","helmrepos","helmrepos/status","klusterletaddonconfigs","leases","machinepools","managedclusteractions","managedclusteractions/status","managedclusteraddons","managedclusteraddons/status","managedclusterimageregistries","managedclusterimageregistries/status","managedclusterinfos","managedclusterinfos/status","managedclusters","managedclusters/accept","managedclusters/status","managedclustersetbindings","managedclustersets","managedclustersets/bind","managedclustersets/join","managedclustersets/status","managedclusterviews","managedclusterviews/status","manifestworks","manifestworks/status","namespaces","placementbindings","placementdecisions","placementdecisions/status","placementrules","placementrules/status","placements","pods","pods/log","policies","policies/status","policyautomations","policysets","policysets/status","rolebindings","roles","searchcustomizations","secrets","signers","subjectaccessreviews","submarinerconfigs","submarinerconfigs/status","subscriptions","subscriptions/status","syncsets"],"verbs":["approve","bind","create","delete","deletecollection","escalate","get","list","patch","update","watch"]},{"apiGroups":["","admissionregistration.k8s.io","apiextensions.k8s.io","apiregistration.k8s.io","apps","apps.open-cluster-management.io","authorization.k8s.io","clusterview.open-cluster-management.io","discovery.open-cluster-management.io","hive.openshift.io","mcm.ibm.com","proxy.open-cluster-management.io","rbac.authorization.k8s.io","security.openshift.io","wgpolicyk8s.io"],"resources":["apiservices","channels","clusterjoinrequests","clusterrolebindings","clusterstatuses/log","configmaps","customresourcedefinitions","deployments","discoveryconfigs","helmreleases","hiveconfigs","managedclusters","managedclustersets","mutatingwebhookconfigurations","namespaces","pods","policyreports","replicasets","rolebindings","secrets","serviceaccounts","services","subjectaccessreviews","subscriptions","validatingwebhookconfigurations"],"verbs":["get"]},{"apiGroups":["","admissionregistration.k8s.io","apiextensions.k8s.io","apiregistration.k8s.io","apps","apps.open-cluster-management.io","authorization.k8s.io","hive.openshift.io","mcm.ibm.com","monitoring.coreos.com","rbac.authorization.k8s.io","security.openshift.io"],"resources":["apiservices","channels","clusterjoinrequests","clusterrolebindings","clusterroles","configmaps","customresourcedefinitions","deployments","hiveconfigs","mutatingwebhookconfigurations","namespaces","rolebindings","secrets","serviceaccounts","servicemonitors","services","subjectaccessreviews","subscriptions","validatingwebhookconfigurations"],"verbs":["create","update"]},{"apiGroups":["","admissionregistration.k8s.io","apiregistration.k8s.io","apps","apps.open-cluster-management.io","authorization.k8s.io","clusterview.open-cluster-management.io","config.openshift.io","discovery.open-cluster-management.io","hive.openshift.io","inventory.open-cluster-management.io","mcm.ibm.com","observability.open-cluster-management.io","operator.open-cluster-management.io","rbac.authorization.k8s.io","wgpolicyk8s.io"],"resources":["apiservices","baremetalassets","clusterjoinrequests","configmaps","deployments","discoveryconfigs","helmreleases","hiveconfigs","ingresses","managedclusters","managedclustersets","multiclusterhubs","multiclusterobservabilities","namespaces","pods","policyreports","rolebindings","secrets","servicemonitors","services","subjectaccessreviews","subscriptions","validatingwebhookconfigurations"],"verbs":["list"]},{"apiGroups":["","admissionregistration.k8s.io","apiregistration.k8s.io","apps","apps.open-cluster-management.io","authorization.k8s.io","clusterview.open-cluster-management.io","config.openshift.io","hive.openshift.io","mcm.ibm.com","operator.open-cluster-management.io","rbac.authorization.k8s.io","storage.k8s.io","wgpolicyk8s.io"],"resources":["apiservices","clusterjoinrequests","configmaps","deployments","helmreleases","hiveconfigs","ingresses","managedclusters","managedclustersets","multiclusterhubs","namespaces","pods","policyreports","rolebindings","secrets","services","subjectaccessreviews","validatingwebhookconfigurations"],"verbs":["list","watch"]},{"apiGroups":["","admissionregistration.k8s.io","apps","apps.open-cluster-management.io","mcm.ibm.com","monitoring.coreos.com","operator.open-cluster-management.io"],"resources":["deployments","deployments/finalizers","helmreleases","multiclusterhubs","multiclusterhubs/finalizers","multiclusterhubs/status","servicemonitors","servicemonitors/finalizers","services","services/finalizers","validatingwebhookconfigurations"],"verbs":["update"]},{"apiGroups":["","apiextensions.k8s.io","apiregistration.k8s.io","apps","apps.open-cluster-management.io"],"resources":["apiservices","channels","customresourcedefinitions","deployments","services"],"verbs":["delete"]},{"apiGroups":["admissionregistration.k8s.io","apiextensions.k8s.io","apiregistration.k8s.io","hive.openshift.io","mcm.ibm.com","rbac.authorization.k8s.io"],"resources":["apiservices","clusterrolebindings","clusterroles","customresourcedefinitions","hiveconfigs","mutatingwebhookconfigurations","validatingwebhookconfigurations"],"verbs":["delete","deletecollection","list","patch","watch"]},{"apiGroups":["multicluster.openshift.io"],"resources":["multiclusterengines"],"verbs":["create","delete","get","list","patch","update","watch"]},{"apiGroups":["operators.coreos.com"],"resources":["clusterserviceversions","operatorgroups","subscriptions"],"verbs":["create","delete","get","list","patch","update","watch"]}]}
+  creationTimestamp: "2022-02-26T00:08:32Z"
+  managedFields:
+  - apiVersion: rbac.authorization.k8s.io/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          .: {}
+          f:kubectl.kubernetes.io/last-applied-configuration: {}
+      f:rules: {}
+    manager: kubectl-client-side-apply
+    operation: Update
+    time: "2022-02-26T00:08:32Z"
+  name: multiclusterhub-role
+  resourceVersion: "224822"
+  selfLink: /apis/rbac.authorization.k8s.io/v1/clusterroles/multiclusterhub-role
+  uid: 6da5d319-96b2-4e7f-a110-9ade0306107d
+rules:
+- apiGroups:
+  - ""
+  - action.open-cluster-management.io
+  - addon.open-cluster-management.io
+  - agent.open-cluster-management.io
+  - app.k8s.io
+  - apps.open-cluster-management.io
+  - argoproj.io
+  - authorization.k8s.io
+  - certificates.k8s.io
+  - cluster.open-cluster-management.io
+  - clusterregistry.k8s.io
+  - compliance.mcm.ibm.com
+  - config.openshift.io
+  - coordination.k8s.io
+  - discovery.open-cluster-management.io
+  - hive.openshift.io
+  - hiveinternal.openshift.io
+  - imageregistry.open-cluster-management.io
+  - internal.open-cluster-management.io
+  - inventory.open-cluster-management.io
+  - mcm.ibm.com
+  - multicloud.ibm.com
+  - operator.open-cluster-management.io
+  - policy.open-cluster-management.io
+  - proxy.open-cluster-management.io
+  - rbac.authorization.k8s.io
+  - register.open-cluster-management.io
+  - search.open-cluster-management.io
+  - submarineraddon.open-cluster-management.io
+  - view.open-cluster-management.io
+  - work.open-cluster-management.io
+  resources:
+  - applicationrelationships
+  - applicationrelationships/status
+  - applications
+  - applications/status
+  - baremetalassets
+  - baremetalassets/finalizers
+  - baremetalassets/status
+  - certificatesigningrequests
+  - certificatesigningrequests/approval
+  - channels
+  - channels/status
+  - clusterclaims
+  - clustercurators
+  - clusterdeployments
+  - clustermanagementaddons
+  - clustermanagers
+  - clusterpools
+  - clusterrolebindings
+  - clusterroles
+  - clusterstatuses/aggregator
+  - clustersyncs
+  - clusterversions
+  - compliances
+  - configmaps
+  - deployableoverrides
+  - deployableoverrides/status
+  - deployables
+  - deployables/status
+  - discoveredclusters
+  - discoveryconfigs
+  - endpointconfigs
+  - endpoints
+  - events
+  - helmrepos
+  - helmrepos/status
+  - klusterletaddonconfigs
+  - leases
+  - machinepools
+  - managedclusteractions
+  - managedclusteractions/status
+  - managedclusteraddons
+  - managedclusteraddons/status
+  - managedclusterimageregistries
+  - managedclusterimageregistries/status
+  - managedclusterinfos
+  - managedclusterinfos/status
+  - managedclusters
+  - managedclusters/accept
+  - managedclusters/status
+  - managedclustersetbindings
+  - managedclustersets
+  - managedclustersets/bind
+  - managedclustersets/join
+  - managedclustersets/status
+  - managedclusterviews
+  - managedclusterviews/status
+  - manifestworks
+  - manifestworks/status
+  - namespaces
+  - placementbindings
+  - placementdecisions
+  - placementdecisions/status
+  - placementrules
+  - placementrules/status
+  - placements
+  - pods
+  - pods/log
+  - policies
+  - policies/status
+  - policyautomations
+  - policysets
+  - policysets/status
+  - rolebindings
+  - roles
+  - searchcustomizations
+  - secrets
+  - signers
+  - subjectaccessreviews
+  - submarinerconfigs
+  - submarinerconfigs/status
+  - subscriptions
+  - subscriptions/status
+  - syncsets
+  verbs:
+  - approve
+  - bind
+  - create
+  - delete
+  - deletecollection
+  - escalate
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  - admissionregistration.k8s.io
+  - apiextensions.k8s.io
+  - apiregistration.k8s.io
+  - apps
+  - apps.open-cluster-management.io
+  - authorization.k8s.io
+  - clusterview.open-cluster-management.io
+  - discovery.open-cluster-management.io
+  - hive.openshift.io
+  - mcm.ibm.com
+  - proxy.open-cluster-management.io
+  - rbac.authorization.k8s.io
+  - security.openshift.io
+  - wgpolicyk8s.io
+  resources:
+  - apiservices
+  - channels
+  - clusterjoinrequests
+  - clusterrolebindings
+  - clusterstatuses/log
+  - configmaps
+  - customresourcedefinitions
+  - deployments
+  - discoveryconfigs
+  - helmreleases
+  - hiveconfigs
+  - managedclusters
+  - managedclustersets
+  - mutatingwebhookconfigurations
+  - namespaces
+  - pods
+  - policyreports
+  - replicasets
+  - rolebindings
+  - secrets
+  - serviceaccounts
+  - services
+  - subjectaccessreviews
+  - subscriptions
+  - validatingwebhookconfigurations
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  - admissionregistration.k8s.io
+  - apiextensions.k8s.io
+  - apiregistration.k8s.io
+  - apps
+  - apps.open-cluster-management.io
+  - authorization.k8s.io
+  - hive.openshift.io
+  - mcm.ibm.com
+  - monitoring.coreos.com
+  - rbac.authorization.k8s.io
+  - security.openshift.io
+  resources:
+  - apiservices
+  - channels
+  - clusterjoinrequests
+  - clusterrolebindings
+  - clusterroles
+  - configmaps
+  - customresourcedefinitions
+  - deployments
+  - hiveconfigs
+  - mutatingwebhookconfigurations
+  - namespaces
+  - rolebindings
+  - secrets
+  - serviceaccounts
+  - servicemonitors
+  - services
+  - subjectaccessreviews
+  - subscriptions
+  - validatingwebhookconfigurations
+  verbs:
+  - create
+  - update
+- apiGroups:
+  - ""
+  - admissionregistration.k8s.io
+  - apiregistration.k8s.io
+  - apps
+  - apps.open-cluster-management.io
+  - authorization.k8s.io
+  - clusterview.open-cluster-management.io
+  - config.openshift.io
+  - discovery.open-cluster-management.io
+  - hive.openshift.io
+  - inventory.open-cluster-management.io
+  - mcm.ibm.com
+  - observability.open-cluster-management.io
+  - operator.open-cluster-management.io
+  - rbac.authorization.k8s.io
+  - wgpolicyk8s.io
+  resources:
+  - apiservices
+  - baremetalassets
+  - clusterjoinrequests
+  - configmaps
+  - deployments
+  - discoveryconfigs
+  - helmreleases
+  - hiveconfigs
+  - ingresses
+  - managedclusters
+  - managedclustersets
+  - multiclusterhubs
+  - multiclusterobservabilities
+  - namespaces
+  - pods
+  - policyreports
+  - rolebindings
+  - secrets
+  - servicemonitors
+  - services
+  - subjectaccessreviews
+  - subscriptions
+  - validatingwebhookconfigurations
+  verbs:
+  - list
+- apiGroups:
+  - ""
+  - admissionregistration.k8s.io
+  - apiregistration.k8s.io
+  - apps
+  - apps.open-cluster-management.io
+  - authorization.k8s.io
+  - clusterview.open-cluster-management.io
+  - config.openshift.io
+  - hive.openshift.io
+  - mcm.ibm.com
+  - operator.open-cluster-management.io
+  - rbac.authorization.k8s.io
+  - storage.k8s.io
+  - wgpolicyk8s.io
+  resources:
+  - apiservices
+  - clusterjoinrequests
+  - configmaps
+  - deployments
+  - helmreleases
+  - hiveconfigs
+  - ingresses
+  - managedclusters
+  - managedclustersets
+  - multiclusterhubs
+  - namespaces
+  - pods
+  - policyreports
+  - rolebindings
+  - secrets
+  - services
+  - subjectaccessreviews
+  - validatingwebhookconfigurations
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - ""
+  - admissionregistration.k8s.io
+  - apps
+  - apps.open-cluster-management.io
+  - mcm.ibm.com
+  - monitoring.coreos.com
+  - operator.open-cluster-management.io
+  resources:
+  - deployments
+  - deployments/finalizers
+  - helmreleases
+  - multiclusterhubs
+  - multiclusterhubs/finalizers
+  - multiclusterhubs/status
+  - servicemonitors
+  - servicemonitors/finalizers
+  - services
+  - services/finalizers
+  - validatingwebhookconfigurations
+  verbs:
+  - update
+- apiGroups:
+  - ""
+  - apiextensions.k8s.io
+  - apiregistration.k8s.io
+  - apps
+  - apps.open-cluster-management.io
+  resources:
+  - apiservices
+  - channels
+  - customresourcedefinitions
+  - deployments
+  - services
+  verbs:
+  - delete
+- apiGroups:
+  - admissionregistration.k8s.io
+  - apiextensions.k8s.io
+  - apiregistration.k8s.io
+  - hive.openshift.io
+  - mcm.ibm.com
+  - rbac.authorization.k8s.io
+  resources:
+  - apiservices
+  - clusterrolebindings
+  - clusterroles
+  - customresourcedefinitions
+  - hiveconfigs
+  - mutatingwebhookconfigurations
+  - validatingwebhookconfigurations
+  verbs:
+  - delete
+  - deletecollection
+  - list
+  - patch
+  - watch
+- apiGroups:
+  - multicluster.openshift.io
+  resources:
+  - multiclusterengines
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - operators.coreos.com
+  resources:
+  - clusterserviceversions
+  - operatorgroups
+  - subscriptions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
