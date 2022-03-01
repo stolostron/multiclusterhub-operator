@@ -19,6 +19,7 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/ghodss/yaml"
+	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -27,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -161,6 +163,21 @@ var (
 		Version:  "v1",
 		Resource: "discoveryconfigs",
 	}
+
+	// GVRClusterVersion
+	GVRClusterVersion = schema.GroupVersionResource{
+		Group:    "config.openshift.io",
+		Version:  "v1",
+		Resource: "clusterversions",
+	}
+
+	// GVRConsole
+	GVRConsole = schema.GroupVersionResource{
+		Group:    "operator.openshift.io",
+		Version:  "v1",
+		Resource: "consoles",
+	}
+
 	// DefaultImageRegistry ...
 	DefaultImageRegistry = "quay.io/stolostron"
 	// DefaultImagePullSecretName ...
@@ -197,13 +214,11 @@ var (
 	// AppSubSlice ...
 	AppSubSlice = [...]string{
 		"application-chart-sub",
-		"assisted-service-sub",
+		"cluster-lifecycle-sub",
 		"console-chart-sub",
 		"grc-sub",
 		"management-ingress-sub",
 		"policyreport-sub",
-		"rcm-sub",
-		"search-prod-sub",
 	}
 
 	// AppMap ...
@@ -911,12 +926,47 @@ func ValidateMCH() error {
 	}
 
 	By("- Checking for Installer Labels on Deployments")
-	l, err := GetDeploymentLabels("infrastructure-operator")
+	l, err := GetDeploymentLabels("search-operator")
 	if err != nil {
 		return err
 	}
 	if l["installer.name"] != MCHName || l["installer.namespace"] != MCHNamespace {
-		return fmt.Errorf("infrastructure-operator missing installer labels: `%s` != `%s`, `%s` != `%s`", l["installer.name"], MCHName, l["installer.namespace"], MCHNamespace)
+		return fmt.Errorf("search-operator missing installer labels: `%s` != `%s`, `%s` != `%s`", l["installer.name"], MCHName, l["installer.namespace"], MCHNamespace)
+	}
+
+	clusterVersionKey := types.NamespacedName{Name: "version"}
+	clusterVersion, err := DynamicKubeClient.Resource(GVRClusterVersion).Get(context.TODO(), clusterVersionKey.Name, metav1.GetOptions{})
+	Expect(err).To(BeNil())
+	status, ok := clusterVersion.Object["status"].(map[string]interface{})
+	Expect(ok).To(BeTrue())
+	history, ok := status["history"].([]interface{})
+	Expect(ok).To(BeTrue())
+	Expect(len(history)).To(BeNumerically(">", 0))
+	latestHistory := history[0].(map[string]interface{})
+	version := latestHistory["version"].(string)
+
+	consoleConstraint, err := semver.NewConstraint(">= 4.10.0-0")
+	Expect(err).To(BeNil(), "Error creating semver constraint")
+	semverVersion, err := semver.NewVersion(version)
+	Expect(err).To(BeNil(), "Error creating semver constraint")
+
+	if consoleConstraint.Check(semverVersion) {
+		By("OCP 4.10+ cluster detected. Checking MCE Console is installed")
+		consoleKey := types.NamespacedName{Name: "cluster"}
+		console, err := DynamicKubeClient.Resource(GVRConsole).Get(context.TODO(), consoleKey.Name, metav1.GetOptions{})
+		Expect(err).To(BeNil())
+		By("Ensuring mce plugin is enabled in openshift console")
+		spec, ok := console.Object["spec"].(map[string]interface{})
+		Expect(ok).To(BeTrue())
+		plugins, ok := spec["plugins"].([]interface{})
+		Expect(ok).To(BeTrue())
+		pluginsSlice := make([]string, len(plugins))
+		for i, v := range plugins {
+			pluginsSlice[i] = fmt.Sprint(v)
+		}
+		Expect(utils.Contains(pluginsSlice, "acm")).To(BeTrue(), "Expected ACM plugin to be enabled in console resource")
+	} else {
+		By("OCP cluster below 4.10 detected. Skipping plugin check")
 	}
 
 	return nil
@@ -1237,13 +1287,13 @@ func listByGVR(clientHubDynamic dynamic.Interface, gvr schema.GroupVersionResour
 		var err error
 		namespace := clientHubDynamic.Resource(gvr).Namespace(namespace)
 
-		// labelSelector := fmt.Sprintf("installer.name=%s, installer.namespace=%s", MCHName, MCHNamespace)
-		// listOptions := metav1.ListOptions{
-		// 	LabelSelector: labelSelector,
-		// 	Limit:         100,
-		// }
+		labelSelector := fmt.Sprintf("installer.name=%s, installer.namespace=%s", MCHName, MCHNamespace)
+		listOptions := metav1.ListOptions{
+			LabelSelector: labelSelector,
+			Limit:         100,
+		}
 
-		obj, err = namespace.List(context.TODO(), metav1.ListOptions{})
+		obj, err = namespace.List(context.TODO(), listOptions)
 		if err != nil {
 			return err
 		}
