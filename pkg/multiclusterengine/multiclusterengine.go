@@ -52,7 +52,7 @@ func MultiClusterEngine(m *operatorsv1.MultiClusterHub) *mcev1.MultiClusterEngin
 			Tolerations:     utils.GetTolerations(m),
 		},
 	}
-	if (m.ComponentEnabled(operatorsv1.ManagedServiceAccount)){
+	if m.ComponentEnabled(operatorsv1.ManagedServiceAccount) {
 		mce.Spec.ComponentConfig = GetComponentConfig(m)
 	}
 	return mce

@@ -352,12 +352,34 @@ rules:
   - patch
   - watch
 - apiGroups:
+  - console.openshift.io
+  resources:
+  - consoleplugins
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - multicluster.openshift.io
   resources:
   - multiclusterengines
   verbs:
   - create
   - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - operator.openshift.io
+  resources:
+  - consoles
+  verbs:
   - get
   - list
   - patch

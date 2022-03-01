@@ -12,6 +12,9 @@ import (
 	"strings"
 	"time"
 
+	consolev1 "github.com/openshift/api/operator/v1"
+
+	"github.com/Masterminds/semver"
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
@@ -891,7 +894,7 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(multiClusterHub *op
 		r.Log.Info("Updating preexisting MCE")
 		existingMCE.Spec.AvailabilityConfig = mcev1.AvailabilityType(multiClusterHub.Spec.AvailabilityConfig)
 		existingMCE.Spec.NodeSelector = multiClusterHub.Spec.NodeSelector
-		if (multiClusterHub.ComponentEnabled(operatorv1.ManagedServiceAccount)){
+		if multiClusterHub.ComponentEnabled(operatorv1.ManagedServiceAccount) {
 			existingMCE.Spec.ComponentConfig = multiclusterengine.GetComponentConfig(multiClusterHub)
 		}
 		existingMCE.Spec.ComponentConfig = multiclusterengine.GetComponentConfig(multiClusterHub)
@@ -1246,4 +1249,102 @@ func (r *MultiClusterHubReconciler) GetSubConfig() (*subv1alpha1.SubscriptionCon
 		Env:          configEnvVars,
 	}, nil
 
+}
+
+func (r *MultiClusterHubReconciler) pluginIsSupported(multiClusterHub *operatorv1.MultiClusterHub) bool {
+	// -0 allows for prerelease builds to pass the validation.
+	// If -0 is removed, developer/rc builds will not pass this check
+	log := r.Log
+	constraint, err := semver.NewConstraint(">= 4.10.0-0")
+	if err != nil {
+		log.Error(err, "Failed to set constraint of minimum supported version for plugins")
+		return false
+	}
+
+	currentOCPVersion := ""
+	if hubOCPVersion, ok := os.LookupEnv("ACM_HUB_OCP_VERSION"); !ok {
+		log.Info("ACM_HUB_OCP_VERSION environment variable not set")
+		return false
+	} else {
+		currentOCPVersion = hubOCPVersion
+	}
+
+	currentVersion, err := semver.NewVersion(currentOCPVersion)
+	if err != nil {
+		log.Error(err, "Failed to convert hubOCPVersion of cluster to semver compatible value for comparison")
+		return false
+	}
+
+	if constraint.Check(currentVersion) {
+		log.Info("Dynamic plugins are supported. Adding ACM plugin to console")
+		return true
+	} else {
+		log.Info("Dynamic plugins not supported.")
+		return false
+	}
+}
+
+func (r *MultiClusterHubReconciler) addPluginToConsole(multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+	ctx := context.Background()
+	log := r.Log
+	console := &consolev1.Console{}
+	// If trying to check this resource from the CLI run - `oc get consoles.operator.openshift.io cluster`.
+	// The default `console` is not the correct resource
+	err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster"}, console)
+	if err != nil {
+		log.Info("Failed to find console: cluster")
+		return ctrl.Result{Requeue: true}, err
+	}
+
+	if console.Spec.Plugins == nil {
+		console.Spec.Plugins = []string{}
+	}
+
+	// Add acm to the plugins list if it is not already there
+	if !utils.Contains(console.Spec.Plugins, "acm") {
+		log.Info("Ready to add plugin")
+		console.Spec.Plugins = append(console.Spec.Plugins, "acm")
+		err = r.Client.Update(ctx, console)
+		if err != nil {
+			log.Info("Failed to add acm consoleplugin to console")
+			return ctrl.Result{Requeue: true}, err
+		} else {
+			log.Info("Added acm consoleplugin to console")
+		}
+	}
+
+	return ctrl.Result{}, nil
+}
+
+// removePluginFromConsoleResource ...
+func (r *MultiClusterHubReconciler) removePluginFromConsole(multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+	ctx := context.Background()
+	log := r.Log
+	console := &consolev1.Console{}
+	// If trying to check this resource from the CLI run - `oc get consoles.operator.openshift.io cluster`.
+	// The default `console` is not the correct resource
+	err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster"}, console)
+	if err != nil {
+		log.Info("Failed to find console: cluster")
+		return ctrl.Result{Requeue: true}, err
+	}
+
+	// If No plugins, it is already removed
+	if console.Spec.Plugins == nil {
+		return ctrl.Result{}, nil
+	}
+
+	// Remove mce to the plugins list if it is not already there
+	if utils.Contains(console.Spec.Plugins, "acm") {
+		console.Spec.Plugins = utils.RemoveString(console.Spec.Plugins, "acm")
+		err = r.Client.Update(ctx, console)
+		if err != nil {
+			log.Info("Failed to remove acm consoleplugin to console")
+			return ctrl.Result{Requeue: true}, err
+		} else {
+			log.Info("Removed acm consoleplugin to console")
+		}
+	}
+
+	return ctrl.Result{}, nil
 }

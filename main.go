@@ -24,6 +24,7 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
+	configv1 "github.com/openshift/api/config/v1"
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 
@@ -33,6 +34,7 @@ import (
 
 	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis"
 	netv1 "github.com/openshift/api/config/v1"
+	consolev1 "github.com/openshift/api/operator/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/controllers"
 	"github.com/stolostron/multiclusterhub-operator/pkg/webhook"
@@ -71,6 +73,10 @@ func init() {
 	utilruntime.Must(mcev1.AddToScheme(scheme))
 
 	utilruntime.Must(olmv1.AddToScheme(scheme))
+
+	utilruntime.Must(configv1.AddToScheme(scheme))
+
+	utilruntime.Must(consolev1.AddToScheme(scheme))
 
 	//+kubebuilder:scaffold:scheme
 }

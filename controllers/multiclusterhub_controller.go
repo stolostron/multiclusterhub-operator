@@ -25,7 +25,6 @@ import (
 	"time"
 
 	configv1 "github.com/openshift/api/config/v1"
-
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/channel"
 	"github.com/stolostron/multiclusterhub-operator/pkg/deploying"
@@ -84,6 +83,8 @@ const hubFinalizer = "finalizer.operator.open-cluster-management.io"
 //+kubebuilder:rbac:groups="";"action.open-cluster-management.io";"addon.open-cluster-management.io";"agent.open-cluster-management.io";"argoproj.io";"cluster.open-cluster-management.io";"work.open-cluster-management.io";"app.k8s.io";"apps.open-cluster-management.io";"authorization.k8s.io";"certificates.k8s.io";"clusterregistry.k8s.io";"config.openshift.io";"compliance.mcm.ibm.com";"hive.openshift.io";"hiveinternal.openshift.io";"internal.open-cluster-management.io";"inventory.open-cluster-management.io";"mcm.ibm.com";"multicloud.ibm.com";"policy.open-cluster-management.io";"proxy.open-cluster-management.io";"rbac.authorization.k8s.io";"view.open-cluster-management.io";"operator.open-cluster-management.io";"register.open-cluster-management.io";"coordination.k8s.io";"search.open-cluster-management.io";"submarineraddon.open-cluster-management.io";"discovery.open-cluster-management.io";"imageregistry.open-cluster-management.io",resources=applications;applications/status;applicationrelationships;applicationrelationships/status;baremetalassets;baremetalassets/status;baremetalassets/finalizers;certificatesigningrequests;certificatesigningrequests/approval;channels;channels/status;clustermanagementaddons;managedclusteractions;managedclusteractions/status;clusterdeployments;clusterpools;clusterclaims;discoveryconfigs;discoveredclusters;managedclusteraddons;managedclusteraddons/status;managedclusterinfos;managedclusterinfos/status;managedclustersets;managedclustersets/bind;managedclustersets/join;managedclustersets/status;managedclustersetbindings;managedclusters;managedclusters/accept;managedclusters/status;managedclusterviews;managedclusterviews/status;manifestworks;manifestworks/status;clustercurators;clustermanagers;clusterroles;clusterrolebindings;clusterstatuses/aggregator;clusterversions;compliances;configmaps;deployables;deployables/status;deployableoverrides;deployableoverrides/status;endpoints;endpointconfigs;events;helmrepos;helmrepos/status;klusterletaddonconfigs;machinepools;namespaces;placements;placementrules/status;placementdecisions;placementdecisions/status;placementrules;placementrules/status;pods;pods/log;policies;policies/status;placementbindings;policyautomations;policysets;policysets/status;roles;rolebindings;secrets;signers;subscriptions;subscriptions/status;subjectaccessreviews;submarinerconfigs;submarinerconfigs/status;syncsets;clustersyncs;leases;searchcustomizations;managedclusterimageregistries;managedclusterimageregistries/status,verbs=create;get;list;watch;update;delete;deletecollection;patch;approve;escalate;bind
 //+kubebuilder:rbac:groups="operators.coreos.com",resources=subscriptions;clusterserviceversions;operatorgroups,verbs=create;get;list;patch;update;delete;watch
 //+kubebuilder:rbac:groups="multicluster.openshift.io",resources=multiclusterengines,verbs=create;get;list;patch;update;delete;watch
+//+kubebuilder:rbac:groups=console.openshift.io,resources=consoleplugins,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=operator.openshift.io,resources=consoles,verbs=get;list;watch;update;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -187,6 +188,9 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	result, err = r.setDefaults(multiClusterHub)
 	if result != (ctrl.Result{}) {
 		return ctrl.Result{}, err
+	}
+	if err != nil {
+		return ctrl.Result{Requeue: true}, err
 	}
 
 	// Read image overrides
@@ -391,6 +395,12 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	// Cleanup unused resources once components up-to-date
 	if r.ComponentsAreRunning(multiClusterHub) {
+		if r.pluginIsSupported(multiClusterHub) {
+			result, err = r.addPluginToConsole(multiClusterHub)
+			if result != (ctrl.Result{}) {
+				return result, err
+			}
+		}
 		result, err = r.ensureRemovalsGone(multiClusterHub)
 		if result != (ctrl.Result{}) {
 			return result, err
@@ -458,6 +468,11 @@ func (r *MultiClusterHubReconciler) ingressDomain(m *operatorv1.MultiClusterHub)
 }
 
 func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operatorv1.MultiClusterHub) error {
+	if r.pluginIsSupported(m) {
+		if _, err := r.removePluginFromConsole(m); err != nil {
+			return err
+		}
+	}
 	if _, err := r.ensureHubIsExported(m); err != nil {
 		return err
 	}
@@ -561,6 +576,8 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub) (
 	ctx := context.Background()
 	log := r.Log
 
+	updateNecessary := false
+
 	if utils.MchIsValid(m) && os.Getenv("ACM_HUB_OCP_VERSION") != "" {
 		return ctrl.Result{}, nil
 	}
@@ -568,10 +585,12 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub) (
 
 	if len(m.Spec.Ingress.SSLCiphers) == 0 {
 		m.Spec.Ingress.SSLCiphers = utils.DefaultSSLCiphers
+		updateNecessary = true
 	}
 
 	if !utils.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {
 		m.Spec.AvailabilityConfig = operatorv1.HAHigh
+		updateNecessary = true
 	}
 
 	// If OCP 4.10+ then set then enable the MCE console. Else ensure it is disabled
@@ -599,13 +618,18 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub) (
 	// Set OCP version as env var, so that charts can render this value
 	os.Setenv("ACM_HUB_OCP_VERSION", currentClusterVersion)
 
-	// Apply defaults to server
-	err = r.Client.Update(ctx, m)
-	if err != nil {
-		r.Log.Error(err, "Failed to update MultiClusterHub", "MultiClusterHub.Namespace", m.Namespace, "MultiClusterHub.Name", m.Name)
-		return ctrl.Result{}, err
-	}
+	if updateNecessary {
+		// Apply defaults to server
+		err = r.Client.Update(ctx, m)
+		if err != nil {
+			r.Log.Error(err, "Failed to update MultiClusterHub", "MultiClusterHub.Namespace", m.Namespace, "MultiClusterHub.Name", m.Name)
+			return ctrl.Result{}, err
+		}
+		r.Log.Info("MultiClusterHub successfully updated")
+		return ctrl.Result{Requeue: true}, nil
 
-	r.Log.Info("MultiClusterHub successfully updated")
-	return ctrl.Result{Requeue: true}, nil
+	}
+	log.Info("No updates to defaults detected")
+	return ctrl.Result{}, nil
+
 }

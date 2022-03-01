@@ -10,6 +10,10 @@ import (
 	"reflect"
 	"time"
 
+	consolev1 "github.com/openshift/api/operator/v1"
+
+	configv1 "github.com/openshift/api/config/v1"
+
 	mchov1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
@@ -112,9 +116,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 				},
 			},
 		}
-	})
 
-	JustBeforeEach(func() {
 		By("bootstrapping test environment")
 		Eventually(func() error {
 			var err error
@@ -133,6 +135,8 @@ var _ = Describe("MultiClusterHub controller", func() {
 		Expect(olmv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(subv1alpha1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(mcev1.AddToScheme(clientScheme)).Should(Succeed())
+		Expect(configv1.AddToScheme(clientScheme)).Should(Succeed())
+		Expect(consolev1.AddToScheme(clientScheme)).Should(Succeed())
 
 		k8sManager, err := ctrl.NewManager(clientConfig, ctrl.Options{
 			Scheme:                 clientScheme,
@@ -159,6 +163,20 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 			Expect(k8sManager.Start(signalHandlerContext)).Should(Succeed())
 		}()
+	})
+
+	JustBeforeEach(func() {
+		// Create ClusterVersion
+		// Attempted to Store Version in status. Unable to get it to stick.
+		Expect(k8sClient.Create(context.Background(), &configv1.ClusterVersion{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "version",
+			},
+			Spec: configv1.ClusterVersionSpec{
+				Channel:   "stable-4.9",
+				ClusterID: "12345678910",
+			},
+		})).To(Succeed())
 	})
 
 	Context("When updating Multiclusterhub status", func() {
