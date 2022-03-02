@@ -9,9 +9,9 @@ require (
 	github.com/go-logr/logr v1.2.0
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.16.0
-	github.com/open-cluster-management/multicloud-operators-subscription v1.2.4-0-20210915-3eda062.0.20210923221443-91919cf42424
+	github.com/open-cluster-management/multicloud-operators-subscription v1.2.2-2-20201130-59f96
 	github.com/open-cluster-management/multicloud-operators-subscription-release v1.2.4-0-20210823-a494067
-	github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible
+	github.com/openshift/api v0.0.0-20220124143425-d74727069f6f
 	github.com/openshift/library-go v0.0.0-20210622153508-f77a17e0269f
 	github.com/operator-framework/api v0.10.0
 	github.com/operator-framework/operator-sdk v0.19.4
@@ -67,9 +67,9 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/open-cluster-management/api v0.0.0-20210513122330-d76f10481f05 // indirect
-	github.com/open-cluster-management/multicloud-operators-channel v1.2.4-0-20210817-0d8714a // indirect
-	github.com/open-cluster-management/multicloud-operators-deployable v1.2.4-0-20210816-f9fe854 // indirect
-	github.com/open-cluster-management/multicloud-operators-placementrule v1.2.4-0-20210816-699e5 // indirect
+	github.com/open-cluster-management/multicloud-operators-channel v1.2.2-20201130-pre // indirect
+	github.com/open-cluster-management/multicloud-operators-deployable v1.2.2-2-20210330-e1b7a8 // indirect
+	github.com/open-cluster-management/multicloud-operators-placementrule v1.2.2-2-20201130-98cfd // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.11.0 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
@@ -82,10 +82,11 @@ require (
 	go.uber.org/zap v1.19.0 // indirect
 	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect
-	golang.org/x/sys v0.0.0-20210817190340-bfb29a6856f2 // indirect
+	golang.org/x/sys v0.0.0-20210831042530-f4d43177bf5e // indirect
 	golang.org/x/term v0.0.0-20210220032956-6a3ed077a48d // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
+	golang.org/x/tools v0.1.7 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.26.0 // indirect
@@ -95,7 +96,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	k8s.io/component-base v0.22.1 // indirect
 	k8s.io/klog/v2 v2.30.0 // indirect
-	k8s.io/kube-openapi v0.0.0-20210421082810-95288971da7e // indirect
+	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65 // indirect
 	k8s.io/utils v0.0.0-20210930125809-cb0fa318a74b // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.1.2 // indirect
 )

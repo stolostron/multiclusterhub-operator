@@ -4,6 +4,8 @@
 package subscription
 
 import (
+	"os"
+
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -24,6 +26,7 @@ func Console(m *operatorsv1.MultiClusterHub, overrides map[string]string, ingres
 				"replicaCount": utils.DefaultReplicaCount(m),
 				"nodeSelector": m.Spec.NodeSelector,
 				"tolerations":  utils.GetTolerations(m),
+				"ocpVersion":   os.Getenv("ACM_HUB_OCP_VERSION"),
 			},
 			"global": map[string]interface{}{
 				"imageOverrides": overrides,
