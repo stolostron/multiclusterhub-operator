@@ -403,8 +403,27 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(m *operatorv1.Mul
 	force := true
 	err := r.Client.Patch(ctx, mce, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
 	if err != nil {
-		r.Log.Info(fmt.Sprintf("Error: %s", err.Error()))
-		return ctrl.Result{Requeue: true}, nil
+		// If a nodeSelector was set in MCE, and was removed, the patch Operation will fail.
+		// tldr you cant patch an `object` with null - https://datatracker.ietf.org/doc/html/rfc6902#section-4.3
+		// If patch fails with nodeSelector, directly update it
+		if strings.Contains(err.Error(), "spec.nodeSelector") {
+			existingMCE := &mcev1.MultiClusterEngine{}
+			err := r.Client.Get(ctx, types.NamespacedName{Name: mce.GetName()}, existingMCE)
+			if err != nil {
+				r.Log.Info(fmt.Sprintf("Error getting resource: %s", err.Error()))
+				return ctrl.Result{Requeue: true}, nil
+			}
+			existingMCE.Spec.NodeSelector = mce.Spec.NodeSelector // directly set nodeselector and force update
+			err = r.Client.Update(ctx, existingMCE)
+			if err != nil {
+				r.Log.Info(fmt.Sprintf("Error updating resource: %s", err.Error()))
+				return ctrl.Result{Requeue: true}, nil
+			}
+			return ctrl.Result{Requeue: true}, nil // requeue again just to ensure a patch is performed after in case of other updates
+		} else {
+			r.Log.Info(fmt.Sprintf("Error: %s", err.Error()))
+			return ctrl.Result{Requeue: true}, nil
+		}
 	}
 	condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
 	SetHubCondition(&m.Status, *condition)
