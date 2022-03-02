@@ -160,11 +160,26 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			if res != (ctrl.Result{}) {
 				return res, err
 			}
-			r.removeCRDIfLabelsMatch("backupschedules.cluster.open-cluster-management.io", multiClusterHub)
-			r.removeCRDIfLabelsMatch("restores.cluster.open-cluster-management.io", multiClusterHub)
-			r.removeCRDIfLabelsMatch("backups.velero.io", multiClusterHub)
-			r.removeCRDIfLabelsMatch("backupstoragelocations.velero.io", multiClusterHub)
-			r.removeCRDIfLabelsMatch("schedules.velero.io", multiClusterHub)
+			err = r.removeCRDIfLabelsMatch("backupschedules.cluster.open-cluster-management.io", multiClusterHub)
+			if err != nil {
+				return ctrl.Result{RequeueAfter: resyncPeriod}, err
+			}
+			err = r.removeCRDIfLabelsMatch("restores.cluster.open-cluster-management.io", multiClusterHub)
+			if err != nil {
+				return ctrl.Result{RequeueAfter: resyncPeriod}, err
+			}
+			err = r.removeCRDIfLabelsMatch("backups.velero.io", multiClusterHub)
+			if err != nil {
+				return ctrl.Result{RequeueAfter: resyncPeriod}, err
+			}
+			err = r.removeCRDIfLabelsMatch("backupstoragelocations.velero.io", multiClusterHub)
+			if err != nil {
+				return ctrl.Result{RequeueAfter: resyncPeriod}, err
+			}
+			err = r.removeCRDIfLabelsMatch("schedules.velero.io", multiClusterHub)
+			if err != nil {
+				return ctrl.Result{RequeueAfter: resyncPeriod}, err
+			}
 			RemoveHubCondition(&multiClusterHub.Status, operatorv1.Blocked)
 		}
 	}
