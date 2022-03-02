@@ -179,6 +179,12 @@ var _ = Describe("MultiClusterHub controller", func() {
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
 
+			annotations := map[string]string{
+				"mch-imageRepository": "quay.io/test",
+			}
+			createdMCH.SetAnnotations(annotations)
+			Expect(k8sClient.Update(ctx, createdMCH)).Should(Succeed())
+
 			By("Ensuring Defaults are set")
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
@@ -208,6 +214,10 @@ var _ = Describe("MultiClusterHub controller", func() {
 				err := k8sClient.Get(ctx, types.NamespacedName{Name: multiclusterengine.MulticlusterengineName}, mce)
 				if err != nil {
 					fmt.Println(err.Error())
+					result = false
+				}
+				mceAnnotations := mce.GetAnnotations()
+				if val, ok := mceAnnotations["imageRepository"]; !ok || val != "quay.io/test" {
 					result = false
 				}
 				return result

@@ -44,18 +44,31 @@ func MultiClusterEngine(m *operatorsv1.MultiClusterHub) *mcev1.MultiClusterEngin
 			Kind:       "MultiClusterEngine",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   MulticlusterengineName,
-			Labels: labels(m),
+			Name:        MulticlusterengineName,
+			Labels:      labels(m),
+			Annotations: GetSupportedAnnotations(m),
 		},
 		Spec: mcev1.MultiClusterEngineSpec{
 			ImagePullSecret: m.Spec.ImagePullSecret,
 			Tolerations:     utils.GetTolerations(m),
+			NodeSelector:    m.Spec.NodeSelector,
 		},
 	}
-	if (m.ComponentEnabled(operatorsv1.ManagedServiceAccount)){
+	if m.ComponentEnabled(operatorsv1.ManagedServiceAccount) {
 		mce.Spec.ComponentConfig = GetComponentConfig(m)
 	}
 	return mce
+}
+
+// GetSupportedAnnotations ...
+func GetSupportedAnnotations(m *operatorsv1.MultiClusterHub) map[string]string {
+	mceAnnotations := make(map[string]string)
+	if m.GetAnnotations() != nil {
+		if val, ok := m.GetAnnotations()[utils.AnnotationImageRepo]; ok && val != "" {
+			mceAnnotations["imageRepository"] = val
+		}
+	}
+	return mceAnnotations
 }
 
 func GetComponentConfig(m *operatorsv1.MultiClusterHub) *mcev1.ComponentConfig {
