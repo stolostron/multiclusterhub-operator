@@ -152,7 +152,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	if (matchCurrent) && (matchDesired) {
 		if multiClusterHub.Spec.EnableClusterBackup == true {
-			r.Log.Info(fmt.Sprintf("When upgrading from version 2.4 to 2.5, cluster backup must be disabled"))
 			blocking := NewHubCondition(operatorv1.Blocked, metav1.ConditionTrue, ResourceBlockReason, "When upgrading from version 2.4 to 2.5, cluster backup must be disabled")
 			SetHubCondition(&multiClusterHub.Status, *blocking)
 			return ctrl.Result{}, nil
@@ -161,8 +160,12 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			if res != (ctrl.Result{}) {
 				return res, err
 			}
-			proceeding := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, BlockRemovedReason, "Cluster Backup and affiliated resources have been removed")
-			SetHubCondition(&multiClusterHub.Status, *proceeding)
+			r.removeCRDIfLabelsMatch("backupschedules.cluster.open-cluster-management.io", multiClusterHub)
+			r.removeCRDIfLabelsMatch("restores.cluster.open-cluster-management.io", multiClusterHub)
+			r.removeCRDIfLabelsMatch("backups.velero.io", multiClusterHub)
+			r.removeCRDIfLabelsMatch("backupstoragelocations.velero.io", multiClusterHub)
+			r.removeCRDIfLabelsMatch("schedules.velero.io", multiClusterHub)
+			RemoveHubCondition(&multiClusterHub.Status, operatorv1.Blocked)
 		}
 	}
 	// Check if the multiClusterHub instance is marked to be deleted, which is

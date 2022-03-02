@@ -40,8 +40,6 @@ const (
 	DeployFailedReason = "FailedDeployingComponent"
 	//ResourceBlockReason is added when there is an existing resource that prevents an upgrade from progressing
 	ResourceBlockReason = "BlockingUpgrade"
-	//BlockRemovedReason is added when the resource blocking a successful upgrade has been removed
-	BlockRemovedReason = "UpgradeProceeding"
 	// OldComponentRemovedReason is added when the hub calls delete on an old resource
 	OldComponentRemovedReason = "OldResourceDeleted"
 	// OldComponentNotRemovedReason is added when a component the hub is trying to delete has not been removed successfully

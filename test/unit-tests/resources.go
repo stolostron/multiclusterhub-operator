@@ -55,7 +55,6 @@ func NoSearchMCH() operatorsv1.MultiClusterHub {
 					Disable: true,
 				},
 			},
-			EnableClusterBackup: false,
 		},
 	}
 }

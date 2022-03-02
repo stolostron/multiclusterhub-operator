@@ -97,6 +97,12 @@ var (
 		Version:  "v1",
 		Resource: "hiveconfigs",
 	}
+	// GVRNamespace ...
+	GVRNamespace = schema.GroupVersionResource{
+		Group:    "",
+		Version:  "v1",
+		Resource: "namespaces",
+	}
 	// GVRSub ...
 	GVRSub = schema.GroupVersionResource{
 		Group:    "operators.coreos.com",
