@@ -63,7 +63,9 @@ var (
 			// AI is migrated to MCE in 2.5.0
 			newUnstructured(
 				types.NamespacedName{Name: "assisted-service-sub", Namespace: m.Namespace},
-				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
+				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},	
+			},
+			newUnstructured{
 				types.NamespacedName{Name: "backups.velero.io"},
 				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1"},
 			),
