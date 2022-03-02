@@ -84,7 +84,7 @@ spec:
                 description: Disable automatic update of ClusterImageSets
                 type: boolean
               enableClusterBackup:
-                description: Enable cluster backup
+                description: (Deprecated) Enable cluster backup
                 type: boolean
               enableClusterProxyAddon:
                 description: Enable cluster proxy addon

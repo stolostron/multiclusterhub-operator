@@ -91,7 +91,7 @@ type MultiClusterHubSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Cluster Proxy Addon",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	EnableClusterProxyAddon bool `json:"enableClusterProxyAddon,omitempty"`
 
-	// Enable cluster backup
+	// (Deprecated) Enable cluster backup
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Cluster Backup",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	// +optional
 	EnableClusterBackup bool `json:"enableClusterBackup"`
