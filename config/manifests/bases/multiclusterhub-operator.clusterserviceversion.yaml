@@ -53,7 +53,7 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: Enable cluster backup
+      - description: (Deprecated) Enable cluster backup
         displayName: Enable Cluster Backup
         path: enableClusterBackup
         x-descriptors:

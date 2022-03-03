@@ -4,6 +4,7 @@
 package multiclusterhub_install_test
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"time"
@@ -12,6 +13,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	utils "github.com/stolostron/multiclusterhub-operator/test/function_tests/utils"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = Describe("Multiclusterhub", func() {
@@ -64,5 +66,25 @@ func FullInstallTestSuite() {
 	Describe("Test MCH API fields", testMCHAPI())
 	Describe("Test MCH sanity checks", testSanityChecks())
 	Describe("Test managedcluster", testManagedCluster())
+	It("- If the cluster backup namespace is created", func() {
+		By("- Verfiying default ")
+		utils.CreateMCHNotManaged()
+		err := utils.ValidateMCH()
+		Expect(err).To(BeNil())
+
+		By("- enabling cluster backup and checking for namespace")
+
+		mch, err := utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Get(context.TODO(), utils.MCHName, metav1.GetOptions{})
+		Expect(err).To(BeNil())
+		mch.Object["spec"].(map[string]interface{})["enableClusterBackup"] = true
+		mch, err = utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
+		Expect(err).To(BeNil())
+
+		Eventually(func() error {
+			_, err = utils.DynamicKubeClient.Resource(utils.GVRNamespace).Get(context.TODO(), "cluster-backup", metav1.GetOptions{})
+			return err
+		}, utils.GetWaitInMinutes()*2, 1).Should(BeNil())
+
+	})
 
 }

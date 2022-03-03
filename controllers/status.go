@@ -38,6 +38,8 @@ const (
 	NewComponentReason = "NewResourceCreated"
 	// DeployFailedReason is added when the hub fails to deploy a resource
 	DeployFailedReason = "FailedDeployingComponent"
+	//ResourceBlockReason is added when there is an existing resource that prevents an upgrade from progressing
+	ResourceBlockReason = "BlockingUpgrade"
 	// OldComponentRemovedReason is added when the hub calls delete on an old resource
 	OldComponentRemovedReason = "OldResourceDeleted"
 	// OldComponentNotRemovedReason is added when a component the hub is trying to delete has not been removed successfully
@@ -669,8 +671,13 @@ func aggregatePhase(status operatorsv1.MultiClusterHubStatus) operatorsv1.HubPha
 		// Hub has not reached success for first time
 		return operatorsv1.HubInstalling
 	case cv != version.Version:
-		// Hub has not completed upgrade to newest version
-		return operatorsv1.HubUpdating
+
+		if HubConditionPresent(status, operatorsv1.Blocked) {
+			return operatorsv1.HubUpdatingBlocked
+		} else {
+			// Hub has not completed upgrade to newest version
+			return operatorsv1.HubUpdating
+		}
 	default:
 		// Hub has reached desired version, but degraded
 		return operatorsv1.HubPending

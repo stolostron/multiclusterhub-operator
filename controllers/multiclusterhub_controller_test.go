@@ -410,6 +410,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 				return false
 			}, timeout, interval).Should(BeTrue())
 		})
+
 	})
 
 	AfterEach(func() {

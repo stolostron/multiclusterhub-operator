@@ -22,6 +22,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"regexp"
 	"time"
 
 	configv1 "github.com/openshift/api/config/v1"
@@ -258,6 +259,35 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, nil
 	}
 
+	matchCurrent, _ := regexp.MatchString("^2.4", multiClusterHub.Status.CurrentVersion)
+	matchDesired, _ := regexp.MatchString("^2.5", multiClusterHub.Status.DesiredVersion)
+
+	if (matchCurrent) && (matchDesired) {
+		if multiClusterHub.Spec.EnableClusterBackup == true {
+			blocking := NewHubCondition(operatorv1.Blocked, metav1.ConditionTrue, ResourceBlockReason, "When upgrading from version 2.4 to 2.5, cluster backup must be disabled")
+			SetHubCondition(&multiClusterHub.Status, *blocking)
+			return ctrl.Result{}, nil
+		} else {
+			res, err := r.ensureNoSubscription(multiClusterHub, subscription.OldClusterBackup(multiClusterHub))
+			if res != (ctrl.Result{}) {
+				return res, err
+			}
+			err = r.removeCRDIfLabelsMatch("backups.velero.io", multiClusterHub)
+			if err != nil {
+				return ctrl.Result{RequeueAfter: resyncPeriod}, err
+			}
+			err = r.removeCRDIfLabelsMatch("backupstoragelocations.velero.io", multiClusterHub)
+			if err != nil {
+				return ctrl.Result{RequeueAfter: resyncPeriod}, err
+			}
+			err = r.removeCRDIfLabelsMatch("schedules.velero.io", multiClusterHub)
+			if err != nil {
+				return ctrl.Result{RequeueAfter: resyncPeriod}, err
+			}
+			RemoveHubCondition(&multiClusterHub.Status, operatorv1.Blocked)
+		}
+	}
+
 	result, err = r.ensureSubscriptionOperatorIsRunning(multiClusterHub, allDeploys)
 	if result != (ctrl.Result{}) {
 		return result, err
@@ -356,12 +386,20 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 	if multiClusterHub.Spec.EnableClusterBackup {
+		result, err = r.ensureNamespace(multiClusterHub, subscription.Namespace())
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
 		result, err = r.ensureSubscription(multiClusterHub, subscription.ClusterBackup(multiClusterHub, r.CacheSpec.ImageOverrides))
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
 	} else {
 		result, err = r.ensureNoSubscription(multiClusterHub, subscription.ClusterBackup(multiClusterHub, r.CacheSpec.ImageOverrides))
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+		result, err = r.ensureNoNamespace(multiClusterHub, subscription.NamespaceUnstructured())
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
@@ -477,6 +515,9 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 		return err
 	}
 	if err := r.cleanupAppSubscriptions(reqLogger, m); err != nil {
+		return err
+	}
+	if err := r.cleanupNamespaces(reqLogger); err != nil {
 		return err
 	}
 	if err := r.cleanupFoundation(reqLogger, m); err != nil {
