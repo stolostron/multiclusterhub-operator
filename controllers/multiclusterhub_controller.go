@@ -272,14 +272,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			if res != (ctrl.Result{}) {
 				return res, err
 			}
-			err = r.removeCRDIfLabelsMatch("backupschedules.cluster.open-cluster-management.io", multiClusterHub)
-			if err != nil {
-				return ctrl.Result{RequeueAfter: resyncPeriod}, err
-			}
-			err = r.removeCRDIfLabelsMatch("restores.cluster.open-cluster-management.io", multiClusterHub)
-			if err != nil {
-				return ctrl.Result{RequeueAfter: resyncPeriod}, err
-			}
 			err = r.removeCRDIfLabelsMatch("backups.velero.io", multiClusterHub)
 			if err != nil {
 				return ctrl.Result{RequeueAfter: resyncPeriod}, err

@@ -65,41 +65,6 @@ var (
 				types.NamespacedName{Name: "assisted-service-sub", Namespace: m.Namespace},
 				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
 			),
-			// backups.velero.io CRD is removed in 2.5.0
-			newUnstructured(
-				types.NamespacedName{Name: "backups.velero.io"},
-				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1"},
-			),
-			// backupschedules.cluster.open-cluster-management.io CRD removed in 2.5.0
-			newUnstructured(
-				types.NamespacedName{Name: "backupschedules.cluster.open-cluster-management.io "},
-				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1"},
-			),
-			// restores.cluster.open-cluster-management.io CRD removed in 2.5.0
-			newUnstructured(
-				types.NamespacedName{Name: "restores.cluster.open-cluster-management.io"},
-				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1"},
-			),
-			// backupstoragelocations.velero.io CRD removed in 2.5.0
-			newUnstructured(
-				types.NamespacedName{Name: "backupstoragelocations.velero.io"},
-				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1"},
-			),
-			// deletebackuprequests.velero.io CRD removed in 2.5.0
-			newUnstructured(
-				types.NamespacedName{Name: "deletebackuprequests.velero.io"},
-				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1"},
-			),
-			// restores.velero.io CRD removed in 2.5.0
-			newUnstructured(
-				types.NamespacedName{Name: "restores.velero.io"},
-				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1"},
-			),
-			// schedules.velero.io CRD removed in 2.5.0
-			newUnstructured(
-				types.NamespacedName{Name: "schedules.velero.io"},
-				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1"},
-			),
 		}
 
 		if m.Spec.SeparateCertificateManagement && m.Spec.ImagePullSecret != "" {
