@@ -1,5 +1,6 @@
 [comment]: # ( Copyright Contributors to the Open Cluster Management project ) 
 
+
 # WORK IN PROGRESS
 
 We are in the process of enabling this repo for community contribution. See wiki [here](https://open-cluster-management.io/concepts/architecture/). 
@@ -39,6 +40,7 @@ If overriding individual images, the minimum required parameters required to bui
 - `image-key`
 - `image-digest` or `image-tag`, both can optionally be provided, if so the `image-digest` will be preferred.
 
+-
 ```bash
 kubectl create configmap <my-config> --from-file=docs/examples/manifest-oneimage.json # Override 1 image example
 kubectl create configmap <my-config> --from-file=docs/examples/manifest-allimages.json # Overriding all images example
