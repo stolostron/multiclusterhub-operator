@@ -332,6 +332,60 @@ func GetCustomResources(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	}
 }
 
+func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
+	nn := []types.NamespacedName{}
+	if m.Enabled("multiclusterhub-repo") {
+		nn = append(nn, types.NamespacedName{Name: "multiclusterhub-repo", Namespace: m.Namespace})
+	}
+	return nn
+}
+
+func GetAppsubsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
+	nn := []types.NamespacedName{}
+	if m.Enabled(operatorsv1.ApplicationUI) {
+		nn = append(nn, types.NamespacedName{Name: "application-chart-sub", Namespace: m.Namespace})
+	}
+	if m.Enabled(operatorsv1.Console) {
+		nn = append(nn, types.NamespacedName{Name: "console-chart-sub", Namespace: m.Namespace})
+	}
+	if m.Enabled(operatorsv1.Insights) {
+		nn = append(nn, types.NamespacedName{Name: "policyreport-sub", Namespace: m.Namespace})
+	}
+	if m.Enabled(operatorsv1.GRC) {
+		nn = append(nn, types.NamespacedName{Name: "grc-sub", Namespace: m.Namespace})
+	}
+	if m.Enabled(operatorsv1.ManagementIngress) {
+		nn = append(nn, types.NamespacedName{Name: "management-ingress-sub", Namespace: m.Namespace})
+	}
+	if m.Enabled(operatorsv1.ClusterLifecycle) {
+		nn = append(nn, types.NamespacedName{Name: "cluster-lifecycle-sub", Namespace: m.Namespace})
+	}
+	if m.Enabled(operatorsv1.Search) {
+		nn = append(nn, types.NamespacedName{Name: "search-prod-sub", Namespace: m.Namespace})
+	}
+	if m.Enabled(operatorsv1.ClusterBackup) {
+		nn = append(nn, types.NamespacedName{Name: "cluster-backup-chart-sub", Namespace: m.Namespace})
+	}
+	if m.Enabled(operatorsv1.ClusterProxyAddon) {
+		nn = append(nn, types.NamespacedName{Name: "cluster-proxy-addon-sub", Namespace: m.Namespace})
+	}
+	if m.Enabled(operatorsv1.Volsync) {
+		nn = append(nn, types.NamespacedName{Name: "volsync-addon-controller-sub", Namespace: m.Namespace})
+	}
+	return nn
+}
+
+func GetCustomResourcesForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
+	if m.Enabled(operatorsv1.MultiClusterEngine) {
+		return []types.NamespacedName{
+			{Name: "multicluster-engine-sub", Namespace: MCESubscriptionNamespace},
+			{Name: "multicluster-engine-csv", Namespace: MCESubscriptionNamespace},
+			{Name: "multicluster-engine"},
+		}
+	}
+	return []types.NamespacedName{}
+}
+
 func GetTolerations(m *operatorsv1.MultiClusterHub) []corev1.Toleration {
 	if len(m.Spec.Tolerations) == 0 {
 		return []corev1.Toleration{
@@ -379,4 +433,22 @@ func appendIfMissing(slice []corev1.EnvVar, s corev1.EnvVar) []corev1.EnvVar {
 		}
 	}
 	return append(slice, s)
+}
+
+// SetDefaultComponents returns true if changes are made
+func SetDefaultComponents(m *operatorsv1.MultiClusterHub) bool {
+	updated := false
+	for _, c := range operatorsv1.DefaultEnabledComponents {
+		if !m.ComponentPresent(c) {
+			m.Enable(c)
+			updated = true
+		}
+	}
+	for _, c := range operatorsv1.DefaultDisabledComponents {
+		if !m.ComponentPresent(c) {
+			m.Disable(c)
+			updated = true
+		}
+	}
+	return updated
 }

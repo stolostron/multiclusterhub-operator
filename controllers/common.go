@@ -292,6 +292,54 @@ func (r *MultiClusterHubReconciler) ensureNoSubscription(m *operatorv1.MultiClus
 	return ctrl.Result{}, nil
 }
 
+func (r *MultiClusterHubReconciler) ensureNoDeployment(m *operatorv1.MultiClusterHub, dep *appsv1.Deployment) (ctrl.Result, error) {
+	dplog := r.Log.WithValues("Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
+
+	unstructuredMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(dep)
+	if err != nil {
+		r.Log.Error(err, "Failed to unmarshal deployment")
+		return ctrl.Result{}, err
+	}
+	u := &unstructured.Unstructured{Object: unstructuredMap}
+	u.SetGroupVersionKind(schema.GroupVersionKind{Group: "apps", Kind: "Deployment", Version: "v1"})
+
+	_, err = r.uninstall(m, u)
+	if err != nil {
+		dplog.Error(err, "Failed to uninstall subscription")
+		return ctrl.Result{}, err
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureNoService(m *operatorv1.MultiClusterHub, s *corev1.Service) (ctrl.Result, error) {
+	svlog := r.Log.WithValues("Service.Namespace", s.Namespace, "Service.Name", s.Name)
+
+	unstructuredMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(s)
+	if err != nil {
+		r.Log.Error(err, "Failed to unmarshal deployment")
+		return ctrl.Result{}, err
+	}
+	u := &unstructured.Unstructured{Object: unstructuredMap}
+	u.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Kind: "Service", Version: "v1"})
+
+	_, err = r.uninstall(m, u)
+	if err != nil {
+		svlog.Error(err, "Failed to uninstall subscription")
+		return ctrl.Result{}, err
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureNoUnstructured(m *operatorv1.MultiClusterHub, u *unstructured.Unstructured) (ctrl.Result, error) {
+	subLog := r.Log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName(), "Kind", u.GetKind())
+	_, err := r.uninstall(m, u)
+	if err != nil {
+		subLog.Error(err, "Failed to uninstall subscription")
+		return ctrl.Result{}, err
+	}
+	return ctrl.Result{}, nil
+}
+
 func (r *MultiClusterHubReconciler) ensureNoNamespace(m *operatorv1.MultiClusterHub, u *unstructured.Unstructured) (ctrl.Result, error) {
 	subLog := r.Log.WithValues("Name", u.GetName(), "Kind", u.GetKind())
 	gone, err := r.uninstall(m, u)
@@ -928,10 +976,10 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(multiClusterHub *op
 		r.Log.Info("Updating preexisting MCE")
 		existingMCE.Spec.AvailabilityConfig = mcev1.AvailabilityType(multiClusterHub.Spec.AvailabilityConfig)
 		existingMCE.Spec.NodeSelector = multiClusterHub.Spec.NodeSelector
-		if multiClusterHub.ComponentEnabled(operatorv1.ManagedServiceAccount) {
-			existingMCE.Spec.ComponentConfig = multiclusterengine.GetComponentConfig(multiClusterHub)
-		}
-		existingMCE.Spec.ComponentConfig = multiclusterengine.GetComponentConfig(multiClusterHub)
+		// if multiClusterHub.Enabled(operatorv1.ManagedServiceAccount) {
+		// 	existingMCE.Spec.ComponentConfig = multiclusterengine.GetComponentConfig(multiClusterHub)
+		// }
+		// existingMCE.Spec.ComponentConfig = multiclusterengine.GetComponentConfig(multiClusterHub)
 		if err := r.Client.Update(ctx, existingMCE); err != nil {
 			r.Log.Error(err, "Failed to update preexisting MCE with MCH spec")
 			return ctrl.Result{}, err

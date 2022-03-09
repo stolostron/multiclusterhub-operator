@@ -259,9 +259,9 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, nil
 	}
 
+	// 2.4->2.5 upgrade logic for cluster-backup
 	matchCurrent, _ := regexp.MatchString("^2.4", multiClusterHub.Status.CurrentVersion)
 	matchDesired, _ := regexp.MatchString("^2.5", multiClusterHub.Status.DesiredVersion)
-
 	if (matchCurrent) && (matchDesired) {
 		if multiClusterHub.Spec.EnableClusterBackup == true {
 			blocking := NewHubCondition(operatorv1.Blocked, metav1.ConditionTrue, ResourceBlockReason, "When upgrading from version 2.4 to 2.5, cluster backup must be disabled")
@@ -288,8 +288,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 	}
 
-	volsyncEnabled := true
-
 	result, err = r.ensureSubscriptionOperatorIsRunning(multiClusterHub, allDeploys)
 	if result != (ctrl.Result{}) {
 		return result, err
@@ -305,19 +303,36 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		r.Log.Info(fmt.Sprintf("Proxy configuration environment variables are set. HTTP_PROXY: %s, HTTPS_PROXY: %s, NO_PROXY: %s", os.Getenv("HTTP_PROXY"), os.Getenv("HTTPS_PROXY"), os.Getenv("NO_PROXY")))
 	}
 
-	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub, r.CacheSpec.ImageOverrides))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
+	if multiClusterHub.Enabled(operatorv1.Repo) {
+		result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub, r.CacheSpec.ImageOverrides))
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
 
-	result, err = r.ensureService(multiClusterHub, helmrepo.Service(multiClusterHub))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
+		result, err = r.ensureService(multiClusterHub, helmrepo.Service(multiClusterHub))
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
 
-	result, err = r.ensureChannel(multiClusterHub, channel.Channel(multiClusterHub))
-	if result != (ctrl.Result{}) {
-		return result, err
+		result, err = r.ensureChannel(multiClusterHub, channel.Channel(multiClusterHub))
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+	} else {
+		result, err = r.ensureNoDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub, r.CacheSpec.ImageOverrides))
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+
+		result, err = r.ensureNoService(multiClusterHub, helmrepo.Service(multiClusterHub))
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+
+		result, err = r.ensureNoUnstructured(multiClusterHub, channel.Channel(multiClusterHub))
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
 	}
 
 	result, err = r.ensureMultiClusterEngine(multiClusterHub)
@@ -355,31 +370,55 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	// Install the rest of the subscriptions in no particular order
-	result, err = r.ensureSubscription(multiClusterHub, subscription.ManagementIngress(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
+	if multiClusterHub.Enabled(operatorv1.ManagementIngress) {
+		result, err = r.ensureSubscription(multiClusterHub, subscription.ManagementIngress(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
+	} else {
+		result, err = r.ensureNoSubscription(multiClusterHub, subscription.ManagementIngress(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
+	}
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
-	result, err = r.ensureSubscription(multiClusterHub, subscription.ApplicationUI(multiClusterHub, r.CacheSpec.ImageOverrides))
+	if multiClusterHub.Enabled(operatorv1.ApplicationUI) {
+		result, err = r.ensureSubscription(multiClusterHub, subscription.ApplicationUI(multiClusterHub, r.CacheSpec.ImageOverrides))
+	} else {
+		result, err = r.ensureSubscription(multiClusterHub, subscription.ApplicationUI(multiClusterHub, r.CacheSpec.ImageOverrides))
+	}
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
-	result, err = r.ensureSubscription(multiClusterHub, subscription.Console(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
+	if multiClusterHub.Enabled(operatorv1.Console) {
+		result, err = r.ensureSubscription(multiClusterHub, subscription.Console(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
+	} else {
+		result, err = r.ensureSubscription(multiClusterHub, subscription.Console(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
+	}
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
-	result, err = r.ensureSubscription(multiClusterHub, subscription.Insights(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
+	if multiClusterHub.Enabled(operatorv1.Insights) {
+		result, err = r.ensureSubscription(multiClusterHub, subscription.Insights(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
+	} else {
+		result, err = r.ensureSubscription(multiClusterHub, subscription.Insights(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
+	}
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
-	result, err = r.ensureSubscription(multiClusterHub, subscription.GRC(multiClusterHub, r.CacheSpec.ImageOverrides))
+	if multiClusterHub.Enabled(operatorv1.GRC) {
+		result, err = r.ensureSubscription(multiClusterHub, subscription.GRC(multiClusterHub, r.CacheSpec.ImageOverrides))
+	} else {
+		result, err = r.ensureSubscription(multiClusterHub, subscription.GRC(multiClusterHub, r.CacheSpec.ImageOverrides))
+	}
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
-	result, err = r.ensureSubscription(multiClusterHub, subscription.ClusterLifecycle(multiClusterHub, r.CacheSpec.ImageOverrides))
+	if multiClusterHub.Enabled(operatorv1.ClusterLifecycle) {
+		result, err = r.ensureSubscription(multiClusterHub, subscription.ClusterLifecycle(multiClusterHub, r.CacheSpec.ImageOverrides))
+	} else {
+		result, err = r.ensureSubscription(multiClusterHub, subscription.ClusterLifecycle(multiClusterHub, r.CacheSpec.ImageOverrides))
+	}
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
-	if volsyncEnabled {
+	if multiClusterHub.Enabled(operatorv1.Volsync) {
 		result, err = r.ensureSubscription(multiClusterHub, subscription.Volsync(multiClusterHub, r.CacheSpec.ImageOverrides))
 	} else {
 		result, err = r.ensureNoSubscription(multiClusterHub, subscription.Volsync(multiClusterHub, r.CacheSpec.ImageOverrides))
@@ -387,7 +426,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
-	if multiClusterHub.ComponentEnabled(operatorv1.Search) {
+	if multiClusterHub.Enabled(operatorv1.Search) {
 		result, err = r.ensureSubscription(multiClusterHub, subscription.Search(multiClusterHub, r.CacheSpec.ImageOverrides))
 	} else {
 		result, err = r.ensureNoSubscription(multiClusterHub, subscription.Search(multiClusterHub, r.CacheSpec.ImageOverrides))
@@ -395,7 +434,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
-	if multiClusterHub.Spec.EnableClusterBackup {
+	if multiClusterHub.Enabled(operatorv1.ClusterBackup) {
 		result, err = r.ensureNamespace(multiClusterHub, subscription.Namespace())
 		if result != (ctrl.Result{}) {
 			return result, err
@@ -414,17 +453,13 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			return result, err
 		}
 	}
-
-	if multiClusterHub.Spec.EnableClusterProxyAddon {
+	if multiClusterHub.Enabled(operatorv1.ClusterProxyAddon) {
 		result, err = r.ensureSubscription(multiClusterHub, subscription.ClusterProxyAddon(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
-		if result != (ctrl.Result{}) {
-			return result, err
-		}
 	} else {
 		result, err = r.ensureNoSubscription(multiClusterHub, subscription.ClusterProxyAddon(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
-		if result != (ctrl.Result{}) {
-			return result, err
-		}
+	}
+	if result != (ctrl.Result{}) {
+		return result, err
 	}
 
 	if !utils.IsUnitTest() {
@@ -629,7 +664,11 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub) (
 
 	updateNecessary := false
 
-	if utils.MchIsValid(m) && os.Getenv("ACM_HUB_OCP_VERSION") != "" {
+	if utils.SetDefaultComponents(m) {
+		updateNecessary = true
+	}
+
+	if utils.MchIsValid(m) && os.Getenv("ACM_HUB_OCP_VERSION") != "" && !updateNecessary {
 		return ctrl.Result{}, nil
 	}
 	log.Info("MultiClusterHub is Invalid. Updating with proper defaults")

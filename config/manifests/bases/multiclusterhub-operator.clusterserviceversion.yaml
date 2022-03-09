@@ -31,7 +31,7 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:select:Basic
       - description: Provides optional configuration for components
         displayName: Component Configuration
-        path: componentConfig
+        path: components
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Provide the customized OpenShift default ingress CA certificate

@@ -82,11 +82,6 @@ type MultiClusterHubSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Disable Update ClusterImageSets",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	DisableUpdateClusterImageSets bool `json:"disableUpdateClusterImageSets,omitempty"`
 
-	// Provides optional configuration for components
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Component Configuration",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
-	// +optional
-	ComponentConfig *ComponentConfig `json:"componentConfig,omitempty"`
-
 	// Enable cluster proxy addon
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Cluster Proxy Addon",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	EnableClusterProxyAddon bool `json:"enableClusterProxyAddon,omitempty"`
@@ -95,6 +90,11 @@ type MultiClusterHubSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Cluster Backup",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	// +optional
 	EnableClusterBackup bool `json:"enableClusterBackup"`
+
+	// Provides optional configuration for components
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Component Configuration",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	// +optional
+	Components []ComponentConfig `json:"components,omitempty"`
 }
 
 // Overrides provides developer overrides for MCH installation
@@ -105,24 +105,8 @@ type Overrides struct {
 
 // ComponentConfig provides optional configuration items for individual components
 type ComponentConfig struct {
-	// +optional
-	Search *SearchConfig `json:"search,omitempty"`
-	// +optional
-	ManagedServiceAccount *ManagedServiceAccountConfig `json:"managedServiceAccount,omitempty"`
-}
-
-// Optional configuration items for the search component
-type SearchConfig struct {
-	// Do not install search or uninstall it if already installed
-	// +optional
-	Disable bool `json:"disable,omitempty"`
-}
-
-// Optional configuration items for the managed-serviceaccount component
-type ManagedServiceAccountConfig struct {
-	// Enable managed-serviceaccount component (Tech Preview).
-	// +optional
-	Enable bool `json:"enable,omitempty"`
+	Name    string `json:"name"`
+	Enabled bool   `json:"enabled"`
 }
 
 type HiveConfigSpec struct {
@@ -230,13 +214,6 @@ type IngressSpec struct {
 	// List of SSL ciphers enabled for management ingress. Defaults to full list of supported ciphers
 	SSLCiphers []string `json:"sslCiphers,omitempty"`
 }
-
-type ComponentEnabled string
-
-const (
-	ManagedServiceAccount ComponentEnabled = "Managed-ServiceAccount"
-	Search                ComponentEnabled = "Search"
-)
 
 type HubPhaseType string
 

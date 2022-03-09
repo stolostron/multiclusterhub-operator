@@ -54,9 +54,9 @@ func MultiClusterEngine(m *operatorsv1.MultiClusterHub) *mcev1.MultiClusterEngin
 			NodeSelector:    m.Spec.NodeSelector,
 		},
 	}
-	if m.ComponentEnabled(operatorsv1.ManagedServiceAccount) {
-		mce.Spec.ComponentConfig = GetComponentConfig(m)
-	}
+	// if m.Enabled(operatorsv1.ManagedServiceAccount) {
+	// 	mce.Spec.ComponentConfig = GetComponentConfig(m)
+	// }
 	return mce
 }
 
@@ -71,14 +71,14 @@ func GetSupportedAnnotations(m *operatorsv1.MultiClusterHub) map[string]string {
 	return mceAnnotations
 }
 
-func GetComponentConfig(m *operatorsv1.MultiClusterHub) *mcev1.ComponentConfig {
-	componentConfig := &mcev1.ComponentConfig{
-		ManagedServiceAccount: &mcev1.ManagedServiceAccountConfig{
-			Enable: m.ComponentEnabled(operatorsv1.ManagedServiceAccount),
-		},
-	}
-	return componentConfig
-}
+// func GetComponentConfig(m *operatorsv1.MultiClusterHub) *mcev1.ComponentConfig {
+// 	componentConfig := &mcev1.ComponentConfig{
+// 		ManagedServiceAccount: &mcev1.ManagedServiceAccountConfig{
+// 			Enable: m.ComponentEnabled(operatorsv1.ManagedServiceAccount),
+// 		},
+// 	}
+// 	return componentConfig
+// }
 
 // Subscription for the helm repo serving charts
 func Subscription(m *operatorsv1.MultiClusterHub, c *subv1alpha1.SubscriptionConfig) *subv1alpha1.Subscription {
