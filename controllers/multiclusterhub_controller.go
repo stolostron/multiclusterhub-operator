@@ -288,6 +288,8 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 	}
 
+	volsyncEnabled := true
+
 	result, err = r.ensureSubscriptionOperatorIsRunning(multiClusterHub, allDeploys)
 	if result != (ctrl.Result{}) {
 		return result, err
@@ -374,6 +376,14 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 	result, err = r.ensureSubscription(multiClusterHub, subscription.ClusterLifecycle(multiClusterHub, r.CacheSpec.ImageOverrides))
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+	if volsyncEnabled {
+		result, err = r.ensureSubscription(multiClusterHub, subscription.Volsync(multiClusterHub, r.CacheSpec.ImageOverrides))
+	} else {
+		result, err = r.ensureNoSubscription(multiClusterHub, subscription.Volsync(multiClusterHub, r.CacheSpec.ImageOverrides))
+	}
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
