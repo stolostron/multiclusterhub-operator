@@ -82,7 +82,7 @@ type MultiClusterHubSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Disable Update ClusterImageSets",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	DisableUpdateClusterImageSets bool `json:"disableUpdateClusterImageSets,omitempty"`
 
-	// Enable cluster proxy addon
+	// (Deprecated) Enable cluster proxy addon
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Cluster Proxy Addon",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	EnableClusterProxyAddon bool `json:"enableClusterProxyAddon,omitempty"`
 

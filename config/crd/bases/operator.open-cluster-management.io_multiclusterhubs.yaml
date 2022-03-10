@@ -81,7 +81,7 @@ spec:
                 description: (Deprecated) Enable cluster backup
                 type: boolean
               enableClusterProxyAddon:
-                description: Enable cluster proxy addon
+                description: (Deprecated) Enable cluster proxy addon
                 type: boolean
               hive:
                 description: (Deprecated) Overrides for the default HiveConfig spec

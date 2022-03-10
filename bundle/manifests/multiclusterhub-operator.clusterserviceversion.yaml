@@ -18,7 +18,7 @@ metadata:
     categories: Integration & Delivery
     certified: "false"
     description: Open management of Openshift and Kubernetes clusters
-    operators.operatorframework.io/builder: operator-sdk-v1.16.0
+    operators.operatorframework.io/builder: operator-sdk-v1.16.0+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/open-cluster-management/multiclusterhub-operator
     support: The Open Cluster Management Project
@@ -72,7 +72,7 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: Enable cluster proxy addon
+      - description: (Deprecated) Enable cluster proxy addon
         displayName: Enable Cluster Proxy Addon
         path: enableClusterProxyAddon
         x-descriptors:
