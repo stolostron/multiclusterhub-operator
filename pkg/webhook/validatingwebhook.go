@@ -128,6 +128,16 @@ func (m *multiClusterHubValidator) validateCreate(req admission.Request) error {
 		return err
 	}
 
+	// Validate components
+	for _, c := range mch.Spec.Components {
+		if !operatorsv1.ValidComponent(c) {
+			return errors.New(fmt.Sprintf("invalid component config: %s is not a known component", c.Name))
+		}
+	}
+	if err := operatorsv1.RequiredComponentsPresentCheck(mch); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -155,6 +165,17 @@ func (m *multiClusterHubValidator) validateUpdate(req admission.Request) error {
 	if !utils.AvailabilityConfigIsValid(newMCH.Spec.AvailabilityConfig) && newMCH.Spec.AvailabilityConfig != "" {
 		return errors.New("Invalid AvailabilityConfig given")
 	}
+
+	// Validate components
+	for _, c := range newMCH.Spec.Components {
+		if !operatorsv1.ValidComponent(c) {
+			return errors.New(fmt.Sprintf("invalid component config: %s is not a known component", c.Name))
+		}
+	}
+	if err := operatorsv1.RequiredComponentsPresentCheck(newMCH); err != nil {
+		return err
+	}
+
 	return nil
 }
 

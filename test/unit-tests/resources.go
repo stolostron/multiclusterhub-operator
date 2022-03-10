@@ -50,9 +50,10 @@ func NoSearchMCH() operatorsv1.MultiClusterHub {
 			Namespace: MulticlusterhubNamespace,
 		},
 		Spec: operatorsv1.MultiClusterHubSpec{
-			ComponentConfig: &operatorsv1.ComponentConfig{
-				Search: &operatorsv1.SearchConfig{
-					Disable: true,
+			Components: []operatorsv1.ComponentConfig{
+				{
+					Name:    operatorsv1.Search,
+					Enabled: false,
 				},
 			},
 		},

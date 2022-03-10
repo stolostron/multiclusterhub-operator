@@ -51,27 +51,21 @@ spec:
                 description: 'Specifies deployment replication for improved availability.
                   Options are: Basic and High (default)'
                 type: string
-              componentConfig:
+              components:
                 description: Provides optional configuration for components
-                properties:
-                  managedServiceAccount:
-                    description: Optional configuration items for the managed-serviceaccount
-                      component
-                    properties:
-                      enable:
-                        description: Enable managed-serviceaccount component (Tech
-                          Preview).
-                        type: boolean
-                    type: object
-                  search:
-                    description: Optional configuration items for the search component
-                    properties:
-                      disable:
-                        description: Do not install search or uninstall it if already
-                          installed
-                        type: boolean
-                    type: object
-                type: object
+                items:
+                  description: ComponentConfig provides optional configuration items
+                    for individual components
+                  properties:
+                    enabled:
+                      type: boolean
+                    name:
+                      type: string
+                  required:
+                  - enabled
+                  - name
+                  type: object
+                type: array
               customCAConfigmap:
                 description: Provide the customized OpenShift default ingress CA certificate
                   to RHACM
@@ -87,7 +81,7 @@ spec:
                 description: (Deprecated) Enable cluster backup
                 type: boolean
               enableClusterProxyAddon:
-                description: Enable cluster proxy addon
+                description: (Deprecated) Enable cluster proxy addon
                 type: boolean
               hive:
                 description: (Deprecated) Overrides for the default HiveConfig spec

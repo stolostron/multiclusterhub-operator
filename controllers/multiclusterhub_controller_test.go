@@ -15,6 +15,7 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 
 	mchov1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	v1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
@@ -376,7 +377,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 				err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
-			createdMCH.Spec.ComponentConfig.Search.Disable = false
+			createdMCH.Enable(v1.Search)
 			Expect(k8sClient.Update(ctx, createdMCH)).Should(Succeed())
 
 			By("Ensuring search is subscribed")
@@ -393,7 +394,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 				err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
-			createdMCH.Spec.ComponentConfig.Search.Disable = true
+			createdMCH.Disable(v1.Search)
 			Expect(k8sClient.Update(ctx, createdMCH)).Should(Succeed())
 
 			By("Ensuring search is not subscribed")

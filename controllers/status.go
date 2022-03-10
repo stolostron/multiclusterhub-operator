@@ -71,13 +71,13 @@ const (
 
 func newComponentList(m *operatorsv1.MultiClusterHub) map[string]operatorsv1.StatusCondition {
 	components := make(map[string]operatorsv1.StatusCondition)
-	for _, d := range utils.GetDeployments(m) {
+	for _, d := range utils.GetDeploymentsForStatus(m) {
 		components[d.Name] = unknownStatus
 	}
-	for _, s := range utils.GetAppsubs(m) {
+	for _, s := range utils.GetAppsubsForStatus(m) {
 		components[s.Name] = unknownStatus
 	}
-	for _, cr := range utils.GetCustomResources(m) {
+	for _, cr := range utils.GetCustomResourcesForStatus(m) {
 		components[cr.Name] = unknownStatus
 	}
 	return components
