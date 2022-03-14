@@ -45,7 +45,7 @@ const (
 
 	MCESubscriptionName          = "multicluster-engine"
 	MCESubscriptionNamespace     = "multicluster-engine"
-	ClusterSubscriptionNamespace = "cluster-backup"
+	ClusterSubscriptionNamespace = "open-cluster-management-backup"
 
 	MCEManagedByLabel = "multiclusterhubs.operator.open-cluster-management.io/managed-by"
 )
@@ -264,6 +264,9 @@ func TrackedNamespaces(m *operatorsv1.MultiClusterHub) []string {
 	if m.Spec.SeparateCertificateManagement {
 		trackedNamespaces = append(trackedNamespaces, CertManagerNamespace)
 	}
+	if m.Spec.EnableClusterBackup {
+		trackedNamespaces = append(trackedNamespaces, ClusterSubscriptionNamespace)
+	}
 	return trackedNamespaces
 }
 
@@ -315,7 +318,7 @@ func GetAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 		{Name: "volsync-addon-controller-sub", Namespace: m.Namespace},
 	}
 	if m.Spec.EnableClusterBackup {
-		appsubs = append(appsubs, types.NamespacedName{Name: "cluster-backup-chart-sub", Namespace: m.Namespace})
+		appsubs = append(appsubs, types.NamespacedName{Name: "cluster-backup-chart-sub", Namespace: "open-cluster-management-backup"})
 
 	}
 	if m.Spec.EnableClusterProxyAddon {
