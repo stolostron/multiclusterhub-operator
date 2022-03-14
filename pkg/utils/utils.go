@@ -305,7 +305,6 @@ func GetDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 
 func GetAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	appsubs := []types.NamespacedName{
-		{Name: "application-chart-sub", Namespace: m.Namespace},
 		{Name: "console-chart-sub", Namespace: m.Namespace},
 		{Name: "policyreport-sub", Namespace: m.Namespace},
 		{Name: "grc-sub", Namespace: m.Namespace},
@@ -342,9 +341,6 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedN
 
 func GetAppsubsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	nn := []types.NamespacedName{}
-	if m.Enabled(operatorsv1.ApplicationUI) {
-		nn = append(nn, types.NamespacedName{Name: "application-chart-sub", Namespace: m.Namespace})
-	}
 	if m.Enabled(operatorsv1.Console) {
 		nn = append(nn, types.NamespacedName{Name: "console-chart-sub", Namespace: m.Namespace})
 	}

@@ -219,7 +219,6 @@ var (
 
 	// AppSubSlice ...
 	AppSubSlice = [...]string{
-		"application-chart-sub",
 		"cluster-lifecycle-sub",
 		"console-chart-sub",
 		"grc-sub",
@@ -229,12 +228,11 @@ var (
 
 	// AppMap ...
 	AppMap = map[string]struct{}{
-		"application-chart": struct{}{},
-		"console-chart-v2":  struct{}{},
-		"grc":               struct{}{},
-		"policyreport":      struct{}{},
-		"search":            struct{}{},
-		"search-prod":       struct{}{},
+		"console-chart-v2": struct{}{},
+		"grc":              struct{}{},
+		"policyreport":     struct{}{},
+		"search":           struct{}{},
+		"search-prod":      struct{}{},
 	}
 
 	// CSVName ...

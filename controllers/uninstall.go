@@ -65,6 +65,11 @@ var (
 				types.NamespacedName{Name: "assisted-service-sub", Namespace: m.Namespace},
 				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
 			),
+			// application-ui is migrated to console starting in 2.5.0
+			newUnstructured(
+				types.NamespacedName{Name: "application-chart-sub", Namespace: m.Namespace},
+				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
+			),
 		}
 
 		if m.Spec.SeparateCertificateManagement && m.Spec.ImagePullSecret != "" {

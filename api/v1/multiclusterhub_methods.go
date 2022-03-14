@@ -8,7 +8,6 @@ import (
 const (
 	Search             string = "search"
 	ManagementIngress  string = "management-ingress"
-	ApplicationUI      string = "application-ui"
 	Console            string = "console"
 	Insights           string = "insights"
 	GRC                string = "grc"
@@ -35,7 +34,6 @@ var allComponents = []string{
 	Repo,
 	Search,
 	ManagementIngress,
-	ApplicationUI,
 	Console,
 	Insights,
 	GRC,
@@ -69,7 +67,6 @@ var mceComponents = []string{
 var requiredComponents = []string{
 	Repo,
 	ManagementIngress,
-	ApplicationUI,
 	Console,
 	Insights,
 	GRC,
@@ -81,7 +78,6 @@ var DefaultEnabledComponents = []string{
 	Repo,
 	Search,
 	ManagementIngress,
-	ApplicationUI,
 	Console,
 	Insights,
 	GRC,

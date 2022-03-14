@@ -378,14 +378,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
-	if multiClusterHub.Enabled(operatorv1.ApplicationUI) {
-		result, err = r.ensureSubscription(multiClusterHub, subscription.ApplicationUI(multiClusterHub, r.CacheSpec.ImageOverrides))
-	} else {
-		result, err = r.ensureNoSubscription(multiClusterHub, subscription.ApplicationUI(multiClusterHub, r.CacheSpec.ImageOverrides))
-	}
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
 	if multiClusterHub.Enabled(operatorv1.Console) {
 		result, err = r.ensureSubscription(multiClusterHub, subscription.Console(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
 	} else {

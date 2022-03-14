@@ -128,7 +128,6 @@ func TestSubscriptions(t *testing.T) {
 		name string
 		got  *unstructured.Unstructured
 	}{
-		{"ApplicationUI subscription", ApplicationUI(mch, ovr)},
 		{"Console subscription", Console(mch, ovr, "")},
 		{"Cluster Proxy Addon subscription", ClusterProxyAddon(mch, ovr, "")},
 		{"GRC subscription", GRC(mch, ovr)},
