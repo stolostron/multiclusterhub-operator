@@ -119,7 +119,7 @@ func AddFinalizerToHelmRelease(clientHubDynamic dynamic.Interface) error {
 	By("Adding a test finalizer to a helmrelease")
 
 	appSubLink := clientHubDynamic.Resource(utils.GVRAppSub).Namespace(utils.MCHNamespace)
-	appSub, err := appSubLink.Get(context.TODO(), "application-chart-sub", metav1.GetOptions{})
+	appSub, err := appSubLink.Get(context.TODO(), "console-chart-sub", metav1.GetOptions{})
 	Expect(err).Should(BeNil())
 
 	helmReleaseName := fmt.Sprintf("%s-%s", strings.Replace(appSub.GetName(), "-sub", "", 1), appSub.GetUID()[0:5])
