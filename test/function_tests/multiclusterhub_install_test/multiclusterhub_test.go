@@ -81,7 +81,7 @@ func FullInstallTestSuite() {
 		Expect(err).To(BeNil())
 
 		Eventually(func() error {
-			_, err = utils.DynamicKubeClient.Resource(utils.GVRNamespace).Get(context.TODO(), "cluster-backup", metav1.GetOptions{})
+			_, err = utils.DynamicKubeClient.Resource(utils.GVRNamespace).Get(context.TODO(), "open-cluster-management-backup", metav1.GetOptions{})
 			return err
 		}, utils.GetWaitInMinutes()*2, 1).Should(BeNil())
 

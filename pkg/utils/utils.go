@@ -45,7 +45,7 @@ const (
 
 	MCESubscriptionName          = "multicluster-engine"
 	MCESubscriptionNamespace     = "multicluster-engine"
-	ClusterSubscriptionNamespace = "cluster-backup"
+	ClusterSubscriptionNamespace = "open-cluster-management-backup"
 
 	MCEManagedByLabel = "multiclusterhubs.operator.open-cluster-management.io/managed-by"
 )
@@ -264,6 +264,9 @@ func TrackedNamespaces(m *operatorsv1.MultiClusterHub) []string {
 	if m.Spec.SeparateCertificateManagement {
 		trackedNamespaces = append(trackedNamespaces, CertManagerNamespace)
 	}
+	if m.Enabled(operatorsv1.ClusterBackup) {
+		trackedNamespaces = append(trackedNamespaces, ClusterSubscriptionNamespace)
+	}
 	return trackedNamespaces
 }
 
@@ -314,7 +317,7 @@ func GetAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 		{Name: "volsync-addon-controller-sub", Namespace: m.Namespace},
 	}
 	if m.Spec.EnableClusterBackup {
-		appsubs = append(appsubs, types.NamespacedName{Name: "cluster-backup-chart-sub", Namespace: m.Namespace})
+		appsubs = append(appsubs, types.NamespacedName{Name: "cluster-backup-chart-sub", Namespace: ClusterSubscriptionNamespace})
 
 	}
 	if m.Spec.EnableClusterProxyAddon {
@@ -360,7 +363,7 @@ func GetAppsubsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedName 
 		nn = append(nn, types.NamespacedName{Name: "search-prod-sub", Namespace: m.Namespace})
 	}
 	if m.Enabled(operatorsv1.ClusterBackup) {
-		nn = append(nn, types.NamespacedName{Name: "cluster-backup-chart-sub", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "cluster-backup-chart-sub", Namespace: ClusterSubscriptionNamespace})
 	}
 	if m.Enabled(operatorsv1.ClusterProxyAddon) {
 		nn = append(nn, types.NamespacedName{Name: "cluster-proxy-addon-sub", Namespace: m.Namespace})

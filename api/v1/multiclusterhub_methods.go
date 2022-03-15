@@ -84,10 +84,10 @@ var DefaultEnabledComponents = []string{
 	ClusterLifecycle,
 	Volsync,
 	MultiClusterEngine,
+	ClusterBackup,
 }
 
 var DefaultDisabledComponents = []string{
-	ClusterBackup,
 	ClusterProxyAddon,
 }
 
