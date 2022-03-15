@@ -39,7 +39,14 @@ func EmptyMCH() operatorsv1.MultiClusterHub {
 			Name:      MulticlusterhubName,
 			Namespace: MulticlusterhubNamespace,
 		},
-		Spec: operatorsv1.MultiClusterHubSpec{},
+		Spec: operatorsv1.MultiClusterHubSpec{
+			Components: []operatorsv1.ComponentConfig{
+				{
+					Name:    operatorsv1.ClusterBackup,
+					Enabled: false,
+				},
+			},
+		},
 	}
 }
 
@@ -53,6 +60,10 @@ func NoSearchMCH() operatorsv1.MultiClusterHub {
 			Components: []operatorsv1.ComponentConfig{
 				{
 					Name:    operatorsv1.Search,
+					Enabled: false,
+				},
+				{
+					Name:    operatorsv1.ClusterBackup,
 					Enabled: false,
 				},
 			},
