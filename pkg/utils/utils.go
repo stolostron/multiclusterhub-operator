@@ -264,7 +264,7 @@ func TrackedNamespaces(m *operatorsv1.MultiClusterHub) []string {
 	if m.Spec.SeparateCertificateManagement {
 		trackedNamespaces = append(trackedNamespaces, CertManagerNamespace)
 	}
-	if m.Spec.EnableClusterBackup {
+	if m.Enabled(operatorsv1.ClusterBackup) {
 		trackedNamespaces = append(trackedNamespaces, ClusterSubscriptionNamespace)
 	}
 	return trackedNamespaces
