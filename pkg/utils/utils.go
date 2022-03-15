@@ -318,7 +318,7 @@ func GetAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 		{Name: "volsync-addon-controller-sub", Namespace: m.Namespace},
 	}
 	if m.Spec.EnableClusterBackup {
-		appsubs = append(appsubs, types.NamespacedName{Name: "cluster-backup-chart-sub", Namespace: "open-cluster-management-backup"})
+		appsubs = append(appsubs, types.NamespacedName{Name: "cluster-backup-chart-sub", Namespace: ClusterSubscriptionNamespace})
 
 	}
 	if m.Spec.EnableClusterProxyAddon {
@@ -367,7 +367,7 @@ func GetAppsubsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedName 
 		nn = append(nn, types.NamespacedName{Name: "search-prod-sub", Namespace: m.Namespace})
 	}
 	if m.Enabled(operatorsv1.ClusterBackup) {
-		nn = append(nn, types.NamespacedName{Name: "cluster-backup-chart-sub", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "cluster-backup-chart-sub", Namespace: ClusterSubscriptionNamespace})
 	}
 	if m.Enabled(operatorsv1.ClusterProxyAddon) {
 		nn = append(nn, types.NamespacedName{Name: "cluster-proxy-addon-sub", Namespace: m.Namespace})

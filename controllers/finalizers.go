@@ -233,7 +233,7 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 func (r *MultiClusterHubReconciler) cleanupNamespaces(reqLogger logr.Logger) error {
 	ctx := context.Background()
 	clusterBackupNamespace := &corev1.Namespace{}
-	err := r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management-backup"}, clusterBackupNamespace)
+	err := r.Client.Get(ctx, types.NamespacedName{Name: utils.ClusterSubscriptionNamespace}, clusterBackupNamespace)
 	if err == nil {
 		err = r.Client.Delete(ctx, clusterBackupNamespace)
 		if err != nil && !errors.IsNotFound(err) {
