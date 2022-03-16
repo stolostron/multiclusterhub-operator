@@ -51,21 +51,6 @@ spec:
                 description: 'Specifies deployment replication for improved availability.
                   Options are: Basic and High (default)'
                 type: string
-              components:
-                description: Provides optional configuration for components
-                items:
-                  description: ComponentConfig provides optional configuration items
-                    for individual components
-                  properties:
-                    enabled:
-                      type: boolean
-                    name:
-                      type: string
-                  required:
-                  - enabled
-                  - name
-                  type: object
-                type: array
               customCAConfigmap:
                 description: Provide the customized OpenShift default ingress CA certificate
                   to RHACM
@@ -226,6 +211,21 @@ spec:
               overrides:
                 description: Developer Overrides
                 properties:
+                  components:
+                    description: Provides optional configuration for components
+                    items:
+                      description: ComponentConfig provides optional configuration
+                        items for individual components
+                      properties:
+                        enabled:
+                          type: boolean
+                        name:
+                          type: string
+                      required:
+                      - enabled
+                      - name
+                      type: object
+                    type: array
                   imagePullPolicy:
                     description: Pull policy of the MultiCluster hub images
                     type: string

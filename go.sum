@@ -1550,6 +1550,8 @@ github.com/stolostron/backplane-operator v0.0.0-20220215185046-92f2afb9301a h1:U
 github.com/stolostron/backplane-operator v0.0.0-20220215185046-92f2afb9301a/go.mod h1:wCDUIXrnjIMZnYYQfYF3urxDKt6CovfIs33AhjoJxQY=
 github.com/stolostron/backplane-operator v0.0.0-20220316125040-c00a2425ba6a h1:/oYr2RwYWCT1BLv3j2ZOydNTLi5r4BZNiQ1lh/SsUJw=
 github.com/stolostron/backplane-operator v0.0.0-20220316125040-c00a2425ba6a/go.mod h1:Kl+FFPdzkt7PGil5xbsoQDHUhhfcldbwcdo9lOjWv+s=
+github.com/stolostron/backplane-operator v0.0.0-20220316185722-363b11020779 h1:7yAON2rbOOELwJR6GAg81kCzAY5tkpc9gxqjKAUy5hA=
+github.com/stolostron/backplane-operator v0.0.0-20220316185722-363b11020779/go.mod h1:Kl+FFPdzkt7PGil5xbsoQDHUhhfcldbwcdo9lOjWv+s=
 github.com/streadway/amqp v0.0.0-20190404075320-75d898a42a94/go.mod h1:AZpEONHx3DKn8O/DFsRAY58/XVQiIPMTMB1SddzLXVw=
 github.com/streadway/amqp v0.0.0-20190827072141-edfb9018d271/go.mod h1:AZpEONHx3DKn8O/DFsRAY58/XVQiIPMTMB1SddzLXVw=
 github.com/streadway/handy v0.0.0-20190108123426-d5acb3125c2a/go.mod h1:qNTQ5P5JnDBl6z3cMAg/SywNDC5ABu5ApDIw6lUbRmI=
