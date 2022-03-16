@@ -53,7 +53,7 @@ func MultiClusterEngine(m *operatorsv1.MultiClusterHub) *mcev1.MultiClusterEngin
 			Tolerations:     utils.GetTolerations(m),
 			NodeSelector:    m.Spec.NodeSelector,
 			Overrides: &mcev1.Overrides{
-				Components: getMCEComponents(m),
+				Components: utils.GetMCEComponents(m),
 			},
 		},
 	}
@@ -69,17 +69,6 @@ func GetSupportedAnnotations(m *operatorsv1.MultiClusterHub) map[string]string {
 		}
 	}
 	return mceAnnotations
-}
-
-// getMCEComponents returns mce components that are present in mch
-func getMCEComponents(mch *operatorsv1.MultiClusterHub) []mcev1.ComponentConfig {
-	config := []mcev1.ComponentConfig{}
-	for _, n := range operatorsv1.MCEComponents {
-		if mch.ComponentPresent(n) {
-			config = append(config, mcev1.ComponentConfig{Name: n, Enabled: mch.Enabled(n)})
-		}
-	}
-	return config
 }
 
 // Subscription for the helm repo serving charts
