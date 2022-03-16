@@ -90,17 +90,17 @@ type MultiClusterHubSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Cluster Backup",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	// +optional
 	EnableClusterBackup bool `json:"enableClusterBackup"`
-
-	// Provides optional configuration for components
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Component Configuration",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
-	// +optional
-	Components []ComponentConfig `json:"components,omitempty"`
 }
 
 // Overrides provides developer overrides for MCH installation
 type Overrides struct {
 	// Pull policy of the MultiCluster hub images
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
+
+	// Provides optional configuration for components
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Component Configuration",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	// +optional
+	Components []ComponentConfig `json:"components,omitempty"`
 }
 
 // ComponentConfig provides optional configuration items for individual components

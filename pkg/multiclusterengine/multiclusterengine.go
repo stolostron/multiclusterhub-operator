@@ -52,6 +52,9 @@ func MultiClusterEngine(m *operatorsv1.MultiClusterHub) *mcev1.MultiClusterEngin
 			ImagePullSecret: m.Spec.ImagePullSecret,
 			Tolerations:     utils.GetTolerations(m),
 			NodeSelector:    m.Spec.NodeSelector,
+			Overrides: &mcev1.Overrides{
+				Components: utils.GetMCEComponents(m),
+			},
 		},
 	}
 	return mce

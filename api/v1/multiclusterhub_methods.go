@@ -1,10 +1,5 @@
 package v1
 
-import (
-	"errors"
-	"fmt"
-)
-
 const (
 	Search             string = "search"
 	ManagementIngress  string = "management-ingress"
@@ -27,6 +22,7 @@ const (
 	MCEClusterLifecycle      string = "cluster-lifecycle-mce"
 	MCEClusterManager        string = "cluster-manager"
 	MCEServerFoundation      string = "server-foundation"
+	MCEHypershift            string = "hypershift-preview"
 )
 
 var allComponents = []string{
@@ -51,9 +47,10 @@ var allComponents = []string{
 	MCEServerFoundation,
 	MCEConsole,
 	MCEManagedServiceAccount,
+	MCEHypershift,
 }
 
-var mceComponents = []string{
+var MCEComponents = []string{
 	MCEAssistedService,
 	MCEClusterLifecycle,
 	MCEClusterManager,
@@ -62,16 +59,7 @@ var mceComponents = []string{
 	MCEServerFoundation,
 	MCEConsole,
 	MCEManagedServiceAccount,
-}
-
-var requiredComponents = []string{
-	Repo,
-	ManagementIngress,
-	Console,
-	Insights,
-	GRC,
-	ClusterLifecycle,
-	MultiClusterEngine,
+	MCEHypershift,
 }
 
 var DefaultEnabledComponents = []string{
@@ -92,7 +80,10 @@ var DefaultDisabledComponents = []string{
 }
 
 func (mch *MultiClusterHub) ComponentPresent(s string) bool {
-	for _, c := range mch.Spec.Components {
+	if mch.Spec.Overrides == nil {
+		return false
+	}
+	for _, c := range mch.Spec.Overrides.Components {
 		if c.Name == s {
 			return true
 		}
@@ -101,7 +92,10 @@ func (mch *MultiClusterHub) ComponentPresent(s string) bool {
 }
 
 func (mch *MultiClusterHub) Enabled(s string) bool {
-	for _, c := range mch.Spec.Components {
+	if mch.Spec.Overrides == nil {
+		return false
+	}
+	for _, c := range mch.Spec.Overrides.Components {
 		if c.Name == s {
 			return c.Enabled
 		}
@@ -111,26 +105,32 @@ func (mch *MultiClusterHub) Enabled(s string) bool {
 }
 
 func (mch *MultiClusterHub) Enable(s string) {
-	for i, c := range mch.Spec.Components {
+	if mch.Spec.Overrides == nil {
+		mch.Spec.Overrides = &Overrides{}
+	}
+	for i, c := range mch.Spec.Overrides.Components {
 		if c.Name == s {
-			mch.Spec.Components[i].Enabled = true
+			mch.Spec.Overrides.Components[i].Enabled = true
 			return
 		}
 	}
-	mch.Spec.Components = append(mch.Spec.Components, ComponentConfig{
+	mch.Spec.Overrides.Components = append(mch.Spec.Overrides.Components, ComponentConfig{
 		Name:    s,
 		Enabled: true,
 	})
 }
 
 func (mch *MultiClusterHub) Disable(s string) {
-	for i, c := range mch.Spec.Components {
+	if mch.Spec.Overrides == nil {
+		mch.Spec.Overrides = &Overrides{}
+	}
+	for i, c := range mch.Spec.Overrides.Components {
 		if c.Name == s {
-			mch.Spec.Components[i].Enabled = false
+			mch.Spec.Overrides.Components[i].Enabled = false
 			return
 		}
 	}
-	mch.Spec.Components = append(mch.Spec.Components, ComponentConfig{
+	mch.Spec.Overrides.Components = append(mch.Spec.Overrides.Components, ComponentConfig{
 		Name:    s,
 		Enabled: false,
 	})
@@ -144,23 +144,4 @@ func ValidComponent(c ComponentConfig) bool {
 		}
 	}
 	return false
-}
-
-func RequiredComponentsPresentCheck(mch *MultiClusterHub) error {
-	for _, req := range requiredComponents {
-		if mch.ComponentPresent(req) && !mch.Enabled(req) {
-			return errors.New(fmt.Sprintf("invalid component config: %s can not be disabled", req))
-		}
-	}
-	return nil
-}
-
-func (mch *MultiClusterHub) GetMCEComponents() []ComponentConfig {
-	config := []ComponentConfig{}
-	for _, n := range mceComponents {
-		if mch.ComponentPresent(n) {
-			config = append(config, ComponentConfig{Name: n, Enabled: mch.Enabled(n)})
-		}
-	}
-	return config
 }

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -450,4 +451,28 @@ func SetDefaultComponents(m *operatorsv1.MultiClusterHub) bool {
 		}
 	}
 	return updated
+}
+
+// getMCEComponents returns mce components that are present in mch
+func GetMCEComponents(mch *operatorsv1.MultiClusterHub) []mcev1.ComponentConfig {
+	config := []mcev1.ComponentConfig{}
+	for _, n := range operatorsv1.MCEComponents {
+		if mch.ComponentPresent(n) {
+			config = append(config, mcev1.ComponentConfig{Name: n, Enabled: mch.Enabled(n)})
+		}
+	}
+	return config
+}
+
+// UpdateMCEOverrides adds MCE componenets that are present in mch
+func UpdateMCEOverrides(mce *mcev1.MultiClusterEngine, mch *operatorsv1.MultiClusterHub) {
+	mceComponents := GetMCEComponents(mch)
+	for _, c := range mceComponents {
+		if c.Enabled {
+			mce.Enable(c.Name)
+		} else {
+			mce.Disable(c.Name)
+		}
+	}
+	return
 }

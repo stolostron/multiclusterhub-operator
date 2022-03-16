@@ -42,11 +42,6 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:select:High
         - urn:alm:descriptor:com.tectonic.ui:select:Basic
-      - description: Provides optional configuration for components
-        displayName: Component Configuration
-        path: components
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Provide the customized OpenShift default ingress CA certificate
           to RHACM
         displayName: Custom CA Configmap
@@ -98,6 +93,11 @@ spec:
       - description: Developer Overrides
         displayName: Developer Overrides
         path: overrides
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Provides optional configuration for components
+        displayName: Component Configuration
+        path: overrides.components
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: (Deprecated) Install cert-manager into its own namespace
