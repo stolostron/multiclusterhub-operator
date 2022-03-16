@@ -9,9 +9,10 @@ import (
 	"testing"
 	"time"
 
-	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis/apps/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
+	subhelmv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/helmrelease/v1"
+
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -60,26 +61,26 @@ func Test_allComponentsSuccessful(t *testing.T) {
 }
 
 func Test_latestHelmReleaseCondition(t *testing.T) {
-	first := subrelv1.HelmAppCondition{
-		Type:               subrelv1.ConditionInitialized,
+	first := subhelmv1.HelmAppCondition{
+		Type:               subhelmv1.ConditionInitialized,
 		LastTransitionTime: v1.NewTime(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
 	}
-	second := subrelv1.HelmAppCondition{
-		Type:               subrelv1.ConditionDeployed,
+	second := subhelmv1.HelmAppCondition{
+		Type:               subhelmv1.ConditionDeployed,
 		LastTransitionTime: v1.NewTime(time.Date(3000, 1, 1, 0, 0, 0, 0, time.UTC)),
 	}
 	type args struct {
-		conditions []subrelv1.HelmAppCondition
+		conditions []subhelmv1.HelmAppCondition
 	}
 	tests := []struct {
 		name string
 		args args
-		want subrelv1.HelmAppCondition
+		want subhelmv1.HelmAppCondition
 	}{
 		{
 			name: "Deployed after initialized",
 			args: args{
-				conditions: []subrelv1.HelmAppCondition{
+				conditions: []subhelmv1.HelmAppCondition{
 					first,
 					second,
 				},
@@ -302,13 +303,13 @@ func TestRemoveHubCondition(t *testing.T) {
 func Test_filterDuplicateHRs(t *testing.T) {
 	tests := []struct {
 		name     string
-		allHRs   []*subrelv1.HelmRelease
+		allHRs   []*subhelmv1.HelmRelease
 		count    int
 		excludes []string
 	}{
 		{
 			name: "All helmrelease owner references unique",
-			allHRs: []*subrelv1.HelmRelease{
+			allHRs: []*subhelmv1.HelmRelease{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:              "console-foo",
@@ -341,7 +342,7 @@ func Test_filterDuplicateHRs(t *testing.T) {
 		},
 		{
 			name: "Two helmreleases with same owning appsub",
-			allHRs: []*subrelv1.HelmRelease{
+			allHRs: []*subhelmv1.HelmRelease{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:              "console-foo",

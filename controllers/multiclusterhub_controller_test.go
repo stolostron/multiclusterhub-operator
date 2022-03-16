@@ -10,24 +10,21 @@ import (
 	"reflect"
 	"time"
 
-	consolev1 "github.com/openshift/api/operator/v1"
-
-	configv1 "github.com/openshift/api/config/v1"
-
+	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	mchov1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	v1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
+	appsub "open-cluster-management.io/multicloud-operators-subscription/pkg/apis"
+	appsubv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/v1"
 
-	subrel "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis"
-	appsub "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis"
-	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis/apps/v1"
-	mcev1 "github.com/stolostron/backplane-operator/api/v1"
-
+	configv1 "github.com/openshift/api/config/v1"
 	netv1 "github.com/openshift/api/config/v1"
+	consolev1 "github.com/openshift/api/operator/v1"
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -132,7 +129,6 @@ var _ = Describe("MultiClusterHub controller", func() {
 		Expect(apiregistrationv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(apixv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(netv1.AddToScheme(clientScheme)).Should(Succeed())
-		Expect(subrel.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(olmv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(subv1alpha1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(mcev1.AddToScheme(clientScheme)).Should(Succeed())
