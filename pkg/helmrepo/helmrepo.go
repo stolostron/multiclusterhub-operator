@@ -12,7 +12,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -76,37 +75,42 @@ func Deployment(m *operatorsv1.MultiClusterHub, overrides map[string]string) *ap
 							ContainerPort: int32(Port),
 							Name:          "helmrepo",
 						}},
-						Resources: v1.ResourceRequirements{
-							Requests: v1.ResourceList{
-								v1.ResourceCPU:    resource.MustParse("50m"),
-								v1.ResourceMemory: resource.MustParse("50Mi"),
+						Resources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("50m"),
+								corev1.ResourceMemory: resource.MustParse("50Mi"),
 							},
-							Limits: v1.ResourceList{
-								v1.ResourceMemory: resource.MustParse("100Mi"),
+							Limits: corev1.ResourceList{
+								corev1.ResourceMemory: resource.MustParse("100Mi"),
 							},
 						},
-						LivenessProbe: &v1.Probe{
-							Handler: v1.Handler{
-								HTTPGet: &v1.HTTPGetAction{
+						LivenessProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								HTTPGet: &corev1.HTTPGetAction{
 									Path:   "/liveness",
 									Port:   intstr.FromInt(Port),
-									Scheme: v1.URISchemeHTTP,
+									Scheme: corev1.URISchemeHTTP,
 								},
 							},
 						},
-						ReadinessProbe: &v1.Probe{
-							Handler: v1.Handler{
-								HTTPGet: &v1.HTTPGetAction{
+						ReadinessProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								HTTPGet: &corev1.HTTPGetAction{
 									Path:   "/readiness",
 									Port:   intstr.FromInt(Port),
-									Scheme: v1.URISchemeHTTP,
+									Scheme: corev1.URISchemeHTTP,
 								},
 							},
 						},
-						Env: []v1.EnvVar{
+						Env: []corev1.EnvVar{
 							{
-								Name:      "POD_NAMESPACE",
-								ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{APIVersion: "v1", FieldPath: "metadata.namespace"}},
+								Name: "POD_NAMESPACE",
+								ValueFrom: &corev1.EnvVarSource{
+									FieldRef: &corev1.ObjectFieldSelector{
+										APIVersion: "v1",
+										FieldPath:  "metadata.namespace",
+									},
+								},
 							},
 							{
 								Name:  "MCH_REPO_PORT",

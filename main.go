@@ -20,7 +20,10 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"io/ioutil"
 	"os"
+	"strings"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -29,10 +32,8 @@ import (
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis"
 	netv1 "github.com/openshift/api/config/v1"
 	consolev1 "github.com/openshift/api/operator/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
@@ -43,6 +44,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
+	appsubv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -98,7 +100,7 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
-	ns, err := k8sutil.GetOperatorNamespace()
+	ns, err := getOperatorNamespace()
 	if err != nil {
 		setupLog.Error(err, "failed to get operator namespace")
 		os.Exit(1)
@@ -154,4 +156,29 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+const (
+	ForceRunModeEnv = "OSDK_FORCE_RUN_MODE"
+	LocalRunMode    = "local"
+)
+
+func isRunModeLocal() bool {
+	return os.Getenv(ForceRunModeEnv) == LocalRunMode
+}
+
+func getOperatorNamespace() (string, error) {
+	if isRunModeLocal() {
+		return "", fmt.Errorf("operator run mode forced to local")
+	}
+
+	nsBytes, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", fmt.Errorf("namespace not found for current environment")
+		}
+		return "", err
+	}
+	ns := strings.TrimSpace(string(nsBytes))
+	return ns, nil
 }

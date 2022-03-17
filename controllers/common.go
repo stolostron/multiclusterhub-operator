@@ -19,10 +19,10 @@ import (
 
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 
-	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis/apps/v1"
 	"github.com/openshift/library-go/pkg/operator/resource/resourcemerge"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	subhelmv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/helmrelease/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -727,11 +727,11 @@ func (r *MultiClusterHubReconciler) listDeployments(namespaces []string) ([]*app
 }
 
 // listHelmReleases gets all helmreleases in the given namespaces
-func (r *MultiClusterHubReconciler) listHelmReleases(namespaces []string) ([]*subrelv1.HelmRelease, error) {
-	var ret []*subrelv1.HelmRelease
+func (r *MultiClusterHubReconciler) listHelmReleases(namespaces []string) ([]*subhelmv1.HelmRelease, error) {
+	var ret []*subhelmv1.HelmRelease
 
 	for _, n := range namespaces {
-		hrList := &subrelv1.HelmReleaseList{}
+		hrList := &subhelmv1.HelmReleaseList{}
 		err := r.Client.List(context.TODO(), hrList, client.InNamespace(n))
 		if err != nil && !errors.IsNotFound(err) {
 			return nil, err
@@ -821,13 +821,13 @@ func addInstallerLabelSecret(d *corev1.Secret, name string, ns string) bool {
 }
 
 // getAppSubOwnedHelmReleases gets a subset of helmreleases created by the appsubs
-func getAppSubOwnedHelmReleases(allHRs []*subrelv1.HelmRelease, appsubs []types.NamespacedName) []*subrelv1.HelmRelease {
+func getAppSubOwnedHelmReleases(allHRs []*subhelmv1.HelmRelease, appsubs []types.NamespacedName) []*subhelmv1.HelmRelease {
 	subMap := make(map[string]bool)
 	for _, s := range appsubs {
 		subMap[s.Name] = true
 	}
 
-	var ownedHRs []*subrelv1.HelmRelease
+	var ownedHRs []*subhelmv1.HelmRelease
 	for _, hr := range allHRs {
 		// check if this is one of our helmreleases
 		owner := hr.OwnerReferences[0].Name
@@ -840,7 +840,7 @@ func getAppSubOwnedHelmReleases(allHRs []*subrelv1.HelmRelease, appsubs []types.
 }
 
 // getHelmReleaseOwnedDeployments gets a subset of deployments created by the helmreleases
-func getHelmReleaseOwnedDeployments(allDeps []*appsv1.Deployment, hrList []*subrelv1.HelmRelease) []*appsv1.Deployment {
+func getHelmReleaseOwnedDeployments(allDeps []*appsv1.Deployment, hrList []*subhelmv1.HelmRelease) []*appsv1.Deployment {
 	var mchDeps []*appsv1.Deployment
 	for _, hr := range hrList {
 		hrDeployments := filterDeploymentsByRelease(allDeps, hr.Name)

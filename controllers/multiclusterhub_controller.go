@@ -21,11 +21,13 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path"
+	"path/filepath"
 	"regexp"
 	"time"
 
-	configv1 "github.com/openshift/api/config/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/channel"
 	"github.com/stolostron/multiclusterhub-operator/pkg/deploying"
@@ -33,17 +35,19 @@ import (
 	"github.com/stolostron/multiclusterhub-operator/pkg/imageoverrides"
 	"github.com/stolostron/multiclusterhub-operator/pkg/manifest"
 	"github.com/stolostron/multiclusterhub-operator/pkg/predicate"
-	"github.com/stolostron/multiclusterhub-operator/pkg/rendering"
 	"github.com/stolostron/multiclusterhub-operator/pkg/subscription"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
+	"sigs.k8s.io/yaml"
 
-	appsubv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis/apps/v1"
+	appsubv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/v1"
 
+	configv1 "github.com/openshift/api/config/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
@@ -59,7 +63,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/go-logr/logr"
-	netv1 "github.com/openshift/api/config/v1"
 )
 
 // MultiClusterHubReconciler reconciles a MultiClusterHub object
@@ -72,7 +75,12 @@ type MultiClusterHubReconciler struct {
 
 var resyncPeriod = time.Second * 20
 
-const hubFinalizer = "finalizer.operator.open-cluster-management.io"
+const (
+	crdPathEnvVar       = "CRDS_PATH"
+	templatesPathEnvVar = "TEMPLATES_PATH"
+	templatesKind       = "multiclusterhub"
+	hubFinalizer        = "finalizer.operator.open-cluster-management.io"
+)
 
 //+kubebuilder:rbac:groups="";"admissionregistration.k8s.io";"apiextensions.k8s.io";"apiregistration.k8s.io";"apps";"apps.open-cluster-management.io";"authorization.k8s.io";"hive.openshift.io";"mcm.ibm.com";"proxy.open-cluster-management.io";"rbac.authorization.k8s.io";"security.openshift.io";"clusterview.open-cluster-management.io";"discovery.open-cluster-management.io";"wgpolicyk8s.io",resources=apiservices;channels;clusterjoinrequests;clusterrolebindings;clusterstatuses/log;configmaps;customresourcedefinitions;deployments;discoveryconfigs;hiveconfigs;mutatingwebhookconfigurations;validatingwebhookconfigurations;namespaces;pods;policyreports;replicasets;rolebindings;secrets;serviceaccounts;services;subjectaccessreviews;subscriptions;helmreleases;managedclusters;managedclustersets,verbs=get
 //+kubebuilder:rbac:groups="";"admissionregistration.k8s.io";"apiextensions.k8s.io";"apiregistration.k8s.io";"apps";"apps.open-cluster-management.io";"authorization.k8s.io";"hive.openshift.io";"monitoring.coreos.com";"rbac.authorization.k8s.io";"mcm.ibm.com";"security.openshift.io",resources=apiservices;channels;clusterjoinrequests;clusterrolebindings;clusterroles;configmaps;customresourcedefinitions;deployments;hiveconfigs;mutatingwebhookconfigurations;validatingwebhookconfigurations;namespaces;rolebindings;secrets;serviceaccounts;services;servicemonitors;subjectaccessreviews;subscriptions;validatingwebhookconfigurations,verbs=create;update
@@ -293,9 +301,17 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 
-	// Render CRD templates
-	err = r.installCRDs(r.Log, multiClusterHub)
+	// Install CRDs
+	var reason string
+	reason, err = r.installCRDs(r.Log, multiClusterHub)
 	if err != nil {
+		condition := NewHubCondition(
+			operatorv1.Progressing,
+			metav1.ConditionFalse,
+			reason,
+			fmt.Sprintf("Error installing CRDs: %s", err),
+		)
+		SetHubCondition(&multiClusterHub.Status, *condition)
 		return ctrl.Result{}, err
 	}
 
@@ -344,29 +360,18 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
-	//Render the templates with a specified CR
-	renderer := rendering.NewRenderer(multiClusterHub)
-	toDeploy, err := renderer.Render(r.Client)
+
+	// Install CRDs
+	reason, err = r.deployResources(r.Log, multiClusterHub)
 	if err != nil {
-		r.Log.Error(err, "Failed to render MultiClusterHub templates")
-		return reconcile.Result{}, err
-	}
-	//Deploy the resources
-	for _, res := range toDeploy {
-		if res.GetNamespace() == multiClusterHub.Namespace {
-			if err := controllerutil.SetControllerReference(multiClusterHub, res, r.Scheme); err != nil {
-				r.Log.Error(err, "Failed to set controller reference")
-			}
-		}
-		err, ok := deploying.Deploy(r.Client, res)
-		if err != nil {
-			r.Log.Error(err, fmt.Sprintf("Failed to deploy %s %s/%s", res.GetKind(), multiClusterHub.Namespace, res.GetName()))
-			return reconcile.Result{}, err
-		}
-		if ok {
-			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
-			SetHubCondition(&multiClusterHub.Status, *condition)
-		}
+		condition := NewHubCondition(
+			operatorv1.Progressing,
+			metav1.ConditionFalse,
+			reason,
+			fmt.Sprintf("Error deploying resources: %s", err),
+		)
+		SetHubCondition(&multiClusterHub.Status, *condition)
+		return ctrl.Result{}, err
 	}
 
 	// Install the rest of the subscriptions in no particular order
@@ -528,7 +533,7 @@ func (r *MultiClusterHubReconciler) ingressDomain(m *operatorv1.MultiClusterHub)
 	if r.CacheSpec.IngressDomain != "" || utils.IsUnitTest() {
 		return ctrl.Result{}, nil
 	}
-	ingress := &netv1.Ingress{}
+	ingress := &configv1.Ingress{}
 	err := r.Client.Get(context.TODO(), types.NamespacedName{
 		Name: "cluster",
 	}, ingress)
@@ -599,36 +604,160 @@ func (r *MultiClusterHubReconciler) addFinalizer(reqLogger logr.Logger, m *opera
 	return nil
 }
 
-func (r *MultiClusterHubReconciler) installCRDs(reqLogger logr.Logger, m *operatorv1.MultiClusterHub) error {
-	crdRenderer, err := rendering.NewCRDRenderer(m)
-	if err != nil {
-		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, ResourceRenderReason, fmt.Sprintf("Error creating CRD renderer: %s", err.Error()))
-		SetHubCondition(&m.Status, *condition)
-		return fmt.Errorf("failed to setup CRD templates: %w", err)
-	}
-	crdResources, errs := crdRenderer.Render()
-	if len(errs) > 0 {
-		message := mergeErrors(errs)
-		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, ResourceRenderReason, fmt.Sprintf("Error rendering CRD templates: %s", message))
-		SetHubCondition(&m.Status, *condition)
-		return fmt.Errorf("failed to render CRD templates: %s", message)
+func (r *MultiClusterHubReconciler) installCRDs(reqLogger logr.Logger, m *operatorv1.MultiClusterHub) (string, error) {
+	crdDir, ok := os.LookupEnv(crdPathEnvVar)
+	if !ok {
+		err := fmt.Errorf("%s environment variable is required", crdPathEnvVar)
+		reqLogger.Error(err, err.Error())
+		return CRDRenderReason, err
 	}
 
-	for _, crd := range crdResources {
+	files, err := os.ReadDir(crdDir)
+	if err != nil {
+		err := fmt.Errorf("unable to read CRD files from %s : %s", crdDir, err)
+		reqLogger.Error(err, err.Error())
+		return CRDRenderReason, err
+	}
+
+	crds := make([]*unstructured.Unstructured, 0, len(files))
+	errs := make([]error, 0, len(files))
+	for _, file := range files {
+		fileName := file.Name()
+		if filepath.Ext(fileName) != ".yaml" {
+			continue
+		}
+
+		path := path.Join(crdDir, fileName)
+		src, err := ioutil.ReadFile(filepath.Clean(path)) // #nosec G304 (filepath cleaned)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("error reading file %s : %s", fileName, err))
+			continue
+		}
+
+		crd := &unstructured.Unstructured{}
+		if err = yaml.Unmarshal(src, crd); err != nil {
+			errs = append(errs, fmt.Errorf("error unmarshalling file %s to unstructured: %s", fileName, err))
+			continue
+		}
+
+		// Check that it is actually a CRD
+		crdKind, _, err := unstructured.NestedString(crd.Object, "spec", "names", "kind")
+		if err != nil {
+			errs = append(errs, fmt.Errorf("error getting Kind field from %s: %s", fileName, err))
+			continue
+		}
+		crdGroup, _, err := unstructured.NestedString(crd.Object, "spec", "group")
+		if err != nil {
+			errs = append(errs, fmt.Errorf("error getting Group field for %s : %s", fileName, err))
+			continue
+		}
+
+		if crd.GetKind() != "CustomResourceDefinition" || crdKind == "" || crdGroup == "" {
+			errs = append(errs, fmt.Errorf("error verifying file %s is a crd", fileName))
+			continue
+		}
+
+		utils.AddInstallerLabel(crd, m.GetName(), m.GetNamespace())
+		crds = append(crds, crd)
+	}
+
+	if len(errs) > 0 {
+		message := mergeErrors(errs)
+		err := fmt.Errorf("failed to render CRD templates: %s", message)
+		reqLogger.Error(err, err.Error())
+		return CRDRenderReason, err
+	}
+
+	for _, crd := range crds {
 		err, ok := deploying.Deploy(r.Client, crd)
 		if err != nil {
-			message := fmt.Sprintf("Failed to deploy %s %s", crd.GetKind(), crd.GetName())
-			reqLogger.Error(err, message)
-			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, DeployFailedReason, message)
-			SetHubCondition(&m.Status, *condition)
-			return err
+			err := fmt.Errorf("Failed to deploy %s %s", crd.GetKind(), crd.GetName())
+			reqLogger.Error(err, err.Error())
+			return DeployFailedReason, err
 		}
 		if ok {
-			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+			message := fmt.Sprintf("created new resource: %s %s", crd.GetKind(), crd.GetName())
+			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, message)
 			SetHubCondition(&m.Status, *condition)
 		}
 	}
-	return nil
+	return "", nil
+}
+
+func (r *MultiClusterHubReconciler) deployResources(reqLogger logr.Logger, m *operatorv1.MultiClusterHub) (string, error) {
+	resourceDir, ok := os.LookupEnv(templatesPathEnvVar)
+	if !ok {
+		err := fmt.Errorf("%s environment variable is required", templatesPathEnvVar)
+		reqLogger.Error(err, err.Error())
+		return ResourceRenderReason, err
+	}
+
+	resourceDir = path.Join(resourceDir, templatesKind, "base")
+	files, err := os.ReadDir(resourceDir)
+	if err != nil {
+		err := fmt.Errorf("unable to read resource files from %s : %s", resourceDir, err)
+		reqLogger.Error(err, err.Error())
+		return ResourceRenderReason, err
+	}
+
+	resources := make([]*unstructured.Unstructured, 0, len(files))
+	errs := make([]error, 0, len(files))
+	for _, file := range files {
+		fileName := file.Name()
+		if filepath.Ext(fileName) != ".yaml" {
+			continue
+		}
+
+		path := path.Join(resourceDir, fileName)
+		src, err := ioutil.ReadFile(filepath.Clean(path)) // #nosec G304 (filepath cleaned)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("error reading file %s : %s", fileName, err))
+			continue
+		}
+
+		resource := &unstructured.Unstructured{}
+		if err = yaml.Unmarshal(src, resource); err != nil {
+			errs = append(errs, fmt.Errorf("error unmarshalling file %s to unstructured: %s", fileName, err))
+			continue
+		}
+
+		resources = append(resources, resource)
+	}
+
+	if len(errs) > 0 {
+		message := mergeErrors(errs)
+		err := fmt.Errorf("failed to render resources: %s", message)
+		reqLogger.Error(err, err.Error())
+		return CRDRenderReason, err
+	}
+
+	for _, res := range resources {
+		if res.GetNamespace() == m.Namespace {
+			err := controllerutil.SetControllerReference(m, res, r.Scheme)
+			if err != nil {
+				r.Log.Error(
+					err,
+					fmt.Sprintf(
+						"Failed to set controller reference on %s %s/%s",
+						res.GetKind(), m.Namespace, res.GetName(),
+					),
+				)
+			}
+		}
+		err, ok := deploying.Deploy(r.Client, res)
+		if err != nil {
+			err := fmt.Errorf("Failed to deploy %s %s", res.GetKind(), res.GetName())
+			reqLogger.Error(err, err.Error())
+			return DeployFailedReason, err
+		}
+		if ok {
+			message := fmt.Sprintf("created new resource: %s %s", res.GetKind(), res.GetName())
+			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, message)
+			SetHubCondition(&m.Status, *condition)
+		}
+	}
+
+	return "", nil
 }
 
 func updatePausedCondition(m *operatorv1.MultiClusterHub) {

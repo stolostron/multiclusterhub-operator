@@ -14,9 +14,9 @@ import (
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	subrelv1 "github.com/open-cluster-management/multicloud-operators-subscription-release/pkg/apis/apps/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
+	subhelmv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/helmrelease/v1"
 
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 
@@ -67,6 +67,8 @@ const (
 	NamespaceTerminatingReason = "ManagedClusterNamespaceTerminating"
 	// ResourceRenderReason is added when an error occurs while rendering a deployable resource
 	ResourceRenderReason = "FailedRenderingResource"
+	// CRDRenderReason is added when an error occurs while rendering a CRD
+	CRDRenderReason = "FailedRenderingCRD"
 )
 
 func newComponentList(m *operatorsv1.MultiClusterHub) map[string]operatorsv1.StatusCondition {
@@ -125,7 +127,7 @@ func (r *MultiClusterHubReconciler) ComponentsAreRunning(m *operatorsv1.MultiClu
 }
 
 // syncHubStatus checks if the status is up-to-date and sync it if necessary
-func (r *MultiClusterHubReconciler) syncHubStatus(m *operatorsv1.MultiClusterHub, original *operatorsv1.MultiClusterHubStatus, allDeps []*appsv1.Deployment, allHRs []*subrelv1.HelmRelease, allCRs []*unstructured.Unstructured) (reconcile.Result, error) {
+func (r *MultiClusterHubReconciler) syncHubStatus(m *operatorsv1.MultiClusterHub, original *operatorsv1.MultiClusterHubStatus, allDeps []*appsv1.Deployment, allHRs []*subhelmv1.HelmRelease, allCRs []*unstructured.Unstructured) (reconcile.Result, error) {
 	localCluster, err := r.ensureManagedClusterIsRunning(m)
 	newStatus := calculateStatus(m, allDeps, allHRs, allCRs, localCluster)
 	if reflect.DeepEqual(m.Status, original) {
@@ -154,7 +156,7 @@ func (r *MultiClusterHubReconciler) syncHubStatus(m *operatorsv1.MultiClusterHub
 	}
 }
 
-func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deployment, allHRs []*subrelv1.HelmRelease, allCRs []*unstructured.Unstructured, importClusterStatus []interface{}) operatorsv1.MultiClusterHubStatus {
+func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deployment, allHRs []*subhelmv1.HelmRelease, allCRs []*unstructured.Unstructured, importClusterStatus []interface{}) operatorsv1.MultiClusterHubStatus {
 	components := getComponentStatuses(hub, allHRs, allDeps, allCRs, importClusterStatus)
 	status := operatorsv1.MultiClusterHubStatus{
 		CurrentVersion: hub.Status.CurrentVersion,
@@ -213,7 +215,7 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 }
 
 // // filterDuplicateHRs removes multiple helmreleases owned by the same appsub, keeping the newest
-func filterDuplicateHRs(allHRs []*subrelv1.HelmRelease) []*subrelv1.HelmRelease {
+func filterDuplicateHRs(allHRs []*subhelmv1.HelmRelease) []*subhelmv1.HelmRelease {
 	keys := make(map[string]int)
 
 	for i := range allHRs {
@@ -239,7 +241,7 @@ func filterDuplicateHRs(allHRs []*subrelv1.HelmRelease) []*subrelv1.HelmRelease 
 		}
 	}
 
-	list := []*subrelv1.HelmRelease{}
+	list := []*subhelmv1.HelmRelease{}
 	for _, index := range keys {
 		list = append(list, allHRs[index])
 	}
@@ -247,7 +249,7 @@ func filterDuplicateHRs(allHRs []*subrelv1.HelmRelease) []*subrelv1.HelmRelease 
 }
 
 // getComponentStatuses populates a complete list of the hub component statuses
-func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allHRs []*subrelv1.HelmRelease, allDeps []*appsv1.Deployment, allCRs []*unstructured.Unstructured, importClusterStatus []interface{}) map[string]operatorsv1.StatusCondition {
+func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allHRs []*subhelmv1.HelmRelease, allDeps []*appsv1.Deployment, allCRs []*unstructured.Unstructured, importClusterStatus []interface{}) map[string]operatorsv1.StatusCondition {
 	components := newComponentList(hub)
 
 	filteredHRs := filterDuplicateHRs(allHRs)
@@ -580,19 +582,19 @@ func mapCSV(csv *unstructured.Unstructured) operatorsv1.StatusCondition {
 	return componentCondition
 }
 
-func successfulHelmRelease(hr *subrelv1.HelmRelease) bool {
+func successfulHelmRelease(hr *subhelmv1.HelmRelease) bool {
 	latest := latestHelmReleaseCondition(hr.Status.Conditions)
 
 	// Sometimes helmrelease not properly labeled as deployed
-	if latest.Type == subrelv1.ConditionInitialized && hr.Status.DeployedRelease != nil {
+	if latest.Type == subhelmv1.ConditionInitialized && hr.Status.DeployedRelease != nil {
 		return true
 	}
-	return latest.Type == subrelv1.ConditionDeployed && latest.Status == subrelv1.StatusTrue
+	return latest.Type == subhelmv1.ConditionDeployed && latest.Status == subhelmv1.StatusTrue
 }
 
-func latestHelmReleaseCondition(conditions []subrelv1.HelmAppCondition) subrelv1.HelmAppCondition {
+func latestHelmReleaseCondition(conditions []subhelmv1.HelmAppCondition) subhelmv1.HelmAppCondition {
 	if len(conditions) < 1 {
-		return subrelv1.HelmAppCondition{}
+		return subhelmv1.HelmAppCondition{}
 	}
 	latest := conditions[0]
 	for i := range conditions {
@@ -603,7 +605,7 @@ func latestHelmReleaseCondition(conditions []subrelv1.HelmAppCondition) subrelv1
 	return latest
 }
 
-func mapHelmRelease(hr *subrelv1.HelmRelease) operatorsv1.StatusCondition {
+func mapHelmRelease(hr *subhelmv1.HelmRelease) operatorsv1.StatusCondition {
 	if len(hr.Status.Conditions) < 1 {
 		return unknownStatus
 	}
