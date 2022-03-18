@@ -317,11 +317,10 @@ func GetAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 		{Name: "search-prod-sub", Namespace: m.Namespace},
 		{Name: "volsync-addon-controller-sub", Namespace: m.Namespace},
 	}
-	if m.Spec.EnableClusterBackup {
+	if m.Enabled(operatorsv1.ClusterBackup) {
 		appsubs = append(appsubs, types.NamespacedName{Name: "cluster-backup-chart-sub", Namespace: ClusterSubscriptionNamespace})
-
 	}
-	if m.Spec.EnableClusterProxyAddon {
+	if m.Enabled(operatorsv1.ClusterProxyAddon) {
 		appsubs = append(appsubs, types.NamespacedName{Name: "cluster-proxy-addon-sub", Namespace: m.Namespace})
 	}
 	return appsubs
@@ -451,6 +450,52 @@ func SetDefaultComponents(m *operatorsv1.MultiClusterHub) bool {
 		}
 	}
 	return updated
+}
+
+// DeduplicateComponents removes duplicate componentconfigs by name, keeping the config of the last
+// componentconfig in the list. Returns true if changes are made.
+func DeduplicateComponents(m *operatorsv1.MultiClusterHub) bool {
+	config := m.Spec.Overrides.Components
+	newConfig := deduplicate(m.Spec.Overrides.Components)
+	if len(newConfig) != len(config) {
+		m.Spec.Overrides.Components = newConfig
+		return true
+	}
+	return false
+}
+
+// deduplicate removes duplicate componentconfigs by name, keeping the config of the last
+// componentconfig in the list
+func deduplicate(config []operatorsv1.ComponentConfig) []operatorsv1.ComponentConfig {
+	newConfig := []operatorsv1.ComponentConfig{}
+	for _, cc := range config {
+		duplicate := false
+		// if name in newConfig update newConfig at existing index
+		for i, ncc := range newConfig {
+			if cc.Name == ncc.Name {
+				duplicate = true
+				newConfig[i] = cc
+				break
+			}
+		}
+		if !duplicate {
+			newConfig = append(newConfig, cc)
+		}
+	}
+	return newConfig
+}
+
+// MigrateToggles returns true if the hub needs to be modified to handle the change of toggle logic
+// from 2.4 to 2.5.
+func MigrateToggles(m *operatorsv1.MultiClusterHub) bool {
+	// If cluster proxy was enabled with the deprecated flag it should continue to be enabled
+	// in the components field
+	if m.Spec.EnableClusterProxyAddon {
+		m.Enable(operatorsv1.ClusterProxyAddon)
+		m.Spec.EnableClusterProxyAddon = false
+		return true
+	}
+	return false
 }
 
 // getMCEComponents returns mce components that are present in mch

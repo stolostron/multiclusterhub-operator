@@ -789,6 +789,15 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub) (
 		updateNecessary = true
 	}
 
+	if utils.DeduplicateComponents(m) {
+		updateNecessary = true
+	}
+
+	if utils.MigrateToggles(m) {
+		updateNecessary = true
+
+	}
+
 	if utils.MchIsValid(m) && os.Getenv("ACM_HUB_OCP_VERSION") != "" && !updateNecessary {
 		return ctrl.Result{}, nil
 	}
