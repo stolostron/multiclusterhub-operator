@@ -464,6 +464,14 @@ spec:
           - patch
           - watch
         - apiGroups:
+          - agent-install.openshift.io
+          resources:
+          - agentserviceconfigs
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
           - console.openshift.io
           resources:
           - consoleplugins
