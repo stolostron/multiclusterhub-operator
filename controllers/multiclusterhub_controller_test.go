@@ -390,7 +390,8 @@ var _ = Describe("MultiClusterHub controller", func() {
 				err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
-			createdMCH.Disable(v1.Search)
+			// Appending to components rather than replacing with `Disable()`
+			createdMCH.Spec.Overrides.Components = append(createdMCH.Spec.Overrides.Components, v1.ComponentConfig{Name: v1.Search, Enabled: false})
 			Expect(k8sClient.Update(ctx, createdMCH)).Should(Succeed())
 
 			By("Ensuring search is not subscribed")
