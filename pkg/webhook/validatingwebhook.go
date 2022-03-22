@@ -74,6 +74,16 @@ var (
 			ExceptionTotal: 0,
 			Exceptions:     []string{},
 		},
+		{
+			Name: "AgentServiceConfig",
+			GVK: schema.GroupVersionKind{
+				Group:   "agent-install.openshift.io",
+				Version: "v1beta1",
+				Kind:    "AgentServiceConfigList",
+			},
+			ExceptionTotal: 0,
+			Exceptions:     []string{},
+		},
 	}
 )
 
