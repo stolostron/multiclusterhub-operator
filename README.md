@@ -80,3 +80,4 @@ spec: {}
 - [Installation Guide](/docs/installation.md)
 - [Configuration Guide](/docs/configuration.md)
 - [Deploy automation](https://github.com/stolostron/deploy)
+
