@@ -462,9 +462,41 @@ func (r *MultiClusterHubReconciler) ensureOperatorGroup(m *operatorv1.MultiClust
 func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(m *operatorv1.MultiClusterHub, mce *mcev1.MultiClusterEngine) (ctrl.Result, error) {
 	ctx := context.Background()
 
-	r.Log.Info(fmt.Sprintf("Ensuring Multicluster Engine custom resource: %s", mce.GetName()))
+	// If assisted installer is set up MCE needs to override the infrastructure
+	// operator namespace
+	mceList := &mcev1.MultiClusterEngineList{}
+	err := r.Client.List(ctx, mceList)
+	if err != nil {
+		r.Log.Info(fmt.Sprintf("error locating MCE: %s. Error: %s", multiclusterengine.MulticlusterengineName, err.Error()))
+		return ctrl.Result{Requeue: true}, err
+	}
+	// If no MCE then add InfrastructureCustomNamespace when assisted installer configured
+	if len(mceList.Items) == 0 {
+		configured, err := AssistedServiceConfigured(ctx, r.Client)
+		if err != nil {
+			return ctrl.Result{Requeue: true}, err
+		}
+		if configured {
+			r.Log.Info("Lets set up that namespace!")
+			ns, err := utils.FindNamespace()
+			if err != nil {
+				return ctrl.Result{Requeue: true}, err
+			}
+			mce.Spec.Overrides.InfrastructureCustomNamespace = ns
+		} else {
+			r.Log.Info("Looks like assisted is not configured!")
+		}
+	}
+	// If MCE then maintain InfrastructureCustomNamespace if present
+	if len(mceList.Items) == 1 {
+		r.Log.Info("Lets preserve that namespace!")
+		if mceList.Items[0].Spec.Overrides != nil && mceList.Items[0].Spec.Overrides.InfrastructureCustomNamespace != "" {
+			mce.Spec.Overrides.InfrastructureCustomNamespace = mceList.Items[0].Spec.Overrides.InfrastructureCustomNamespace
+		}
+	}
+
 	force := true
-	err := r.Client.Patch(ctx, mce, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
+	err = r.Client.Patch(ctx, mce, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
 	if err != nil {
 		// If a nodeSelector was set in MCE, and was removed, the patch Operation will fail.
 		// tldr you cant patch an `object` with null - https://datatracker.ietf.org/doc/html/rfc6902#section-4.3
@@ -1456,4 +1488,31 @@ func (r *MultiClusterHubReconciler) removePluginFromConsole(multiClusterHub *ope
 	}
 
 	return ctrl.Result{}, nil
+}
+
+// AssistedServiceConfigured returns true if assisted service has already been installed
+// and configured in the hub namespace
+func AssistedServiceConfigured(ctx context.Context, client client.Client) (bool, error) {
+	agentServiceCRD := &apixv1.CustomResourceDefinition{}
+	err := client.Get(ctx, types.NamespacedName{Name: "agentserviceconfigs.agent-install.openshift.io"}, agentServiceCRD)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	// CRD exists, check for instance
+	list := &unstructured.UnstructuredList{}
+	list.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "agent-install.openshift.io",
+		Version: "v1beta1",
+		Kind:    "AgentServiceConfigList",
+	})
+	if err := client.List(ctx, list); err != nil {
+		return false, fmt.Errorf("unable to list AgentServiceConfigs: %s", err)
+	}
+	if len(list.Items) > 0 {
+		return true, nil
+	}
+	return false, nil
 }

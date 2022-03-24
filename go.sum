@@ -1792,6 +1792,8 @@ github.com/stolostron/backplane-operator v0.0.0-20220215185046-92f2afb9301a h1:U
 github.com/stolostron/backplane-operator v0.0.0-20220215185046-92f2afb9301a/go.mod h1:wCDUIXrnjIMZnYYQfYF3urxDKt6CovfIs33AhjoJxQY=
 github.com/stolostron/backplane-operator v0.0.0-20220316185722-363b11020779 h1:7yAON2rbOOELwJR6GAg81kCzAY5tkpc9gxqjKAUy5hA=
 github.com/stolostron/backplane-operator v0.0.0-20220316185722-363b11020779/go.mod h1:Kl+FFPdzkt7PGil5xbsoQDHUhhfcldbwcdo9lOjWv+s=
+github.com/stolostron/backplane-operator v0.0.0-20220323190817-d8a4b60659af h1:4HmKzRXD0gE+bgYez1rOTf8GY9QlWCXx7VV36csZjHw=
+github.com/stolostron/backplane-operator v0.0.0-20220323190817-d8a4b60659af/go.mod h1:Kl+FFPdzkt7PGil5xbsoQDHUhhfcldbwcdo9lOjWv+s=
 github.com/stolostron/multicloud-operators-subscription v0.0.0-20220310201446-9989c4301546 h1:/bqhtsFxzVB7gr43HMObkaT4hTmw+cpQcPMwVWgcuyE=
 github.com/stolostron/multicloud-operators-subscription v0.0.0-20220310201446-9989c4301546/go.mod h1:kb5wASyZUizaKxXXf4m1Cdf/IRnYtXjnJyAHEO4YYRU=
 github.com/streadway/amqp v0.0.0-20190404075320-75d898a42a94/go.mod h1:AZpEONHx3DKn8O/DFsRAY58/XVQiIPMTMB1SddzLXVw=

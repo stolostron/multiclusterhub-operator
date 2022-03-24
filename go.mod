@@ -12,7 +12,7 @@ require (
 	github.com/openshift/api v0.0.0-20220124143425-d74727069f6f
 	github.com/openshift/library-go v0.0.0-20220203150523-45e0cded6a36
 	github.com/operator-framework/api v0.14.0
-	github.com/stolostron/backplane-operator v0.0.0-20220316185722-363b11020779
+	github.com/stolostron/backplane-operator v0.0.0-20220323190817-d8a4b60659af
 	k8s.io/api v0.23.4
 	k8s.io/apiextensions-apiserver v0.23.4
 	k8s.io/apimachinery v0.23.4
