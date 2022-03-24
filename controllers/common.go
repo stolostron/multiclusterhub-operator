@@ -1441,16 +1441,27 @@ func (r *MultiClusterHubReconciler) addPluginToConsole(multiClusterHub *operator
 		console.Spec.Plugins = []string{}
 	}
 
+	modifiedSpec := false
 	// Add acm to the plugins list if it is not already there
 	if !utils.Contains(console.Spec.Plugins, "acm") {
-		log.Info("Ready to add plugin")
+		log.Info("Ready to add acm plugin")
 		console.Spec.Plugins = append(console.Spec.Plugins, "acm")
+		modifiedSpec = true
+	}
+	// Add mce to the plugins list if it is not already there
+	if !utils.Contains(console.Spec.Plugins, "mce") {
+		log.Info("Ready to add mce plugin")
+		console.Spec.Plugins = append(console.Spec.Plugins, "mce")
+		modifiedSpec = true
+	}
+
+	if modifiedSpec {
 		err = r.Client.Update(ctx, console)
 		if err != nil {
-			log.Info("Failed to add acm consoleplugin to console")
+			log.Info("Failed to add consoleplugin to console")
 			return ctrl.Result{Requeue: true}, err
 		} else {
-			log.Info("Added acm consoleplugin to console")
+			log.Info("Added consoleplugin to console")
 		}
 	}
 
@@ -1475,15 +1486,25 @@ func (r *MultiClusterHubReconciler) removePluginFromConsole(multiClusterHub *ope
 		return ctrl.Result{}, nil
 	}
 
+	modifiedSpec := false
 	// Remove mce to the plugins list if it is not already there
 	if utils.Contains(console.Spec.Plugins, "acm") {
 		console.Spec.Plugins = utils.RemoveString(console.Spec.Plugins, "acm")
+		modifiedSpec = true
+	}
+	// Remove mce to the plugins list if it is not already there
+	if utils.Contains(console.Spec.Plugins, "mce") {
+		console.Spec.Plugins = utils.RemoveString(console.Spec.Plugins, "mce")
+		modifiedSpec = true
+	}
+
+	if modifiedSpec {
 		err = r.Client.Update(ctx, console)
 		if err != nil {
-			log.Info("Failed to remove acm consoleplugin to console")
+			log.Info("Failed to remove consoleplugin from console")
 			return ctrl.Result{Requeue: true}, err
 		} else {
-			log.Info("Removed acm consoleplugin to console")
+			log.Info("Removed consoleplugin from console")
 		}
 	}
 
