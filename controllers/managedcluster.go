@@ -55,9 +55,10 @@ func getManagedCluster() *unstructured.Unstructured {
 			"metadata": map[string]interface{}{
 				"name": ManagedClusterName,
 				"labels": map[string]interface{}{
-					"local-cluster": "true",
-					"cloud":         "auto-detect",
-					"vendor":        "auto-detect",
+					"local-cluster":                 "true",
+					"cloud":                         "auto-detect",
+					"vendor":                        "auto-detect",
+					"velero.io/exclude-from-backup": "true",
 				},
 			},
 			"spec": map[string]interface{}{
@@ -212,6 +213,7 @@ func (r *MultiClusterHubReconciler) ensureManagedCluster(m *operatorsv1.MultiClu
 	labels["local-cluster"] = "true"
 	labels["cloud"] = "auto-detect"
 	labels["vendor"] = "auto-detect"
+	labels["velero.io/exclude-from-backup"] = "true"
 
 	// Overwrite with existing labels
 	for k, v := range managedCluster.GetLabels() {
