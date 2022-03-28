@@ -475,6 +475,7 @@ func mapSubscription(sub *unstructured.Unstructured) operatorsv1.StatusCondition
 		LastTransitionTime: metav1.Now(),
 		Reason:             reason,
 		Message:            message,
+		Type:               "Available",
 		Available:          true,
 	}
 }
@@ -555,6 +556,7 @@ func mapCSV(csv *unstructured.Unstructured) operatorsv1.StatusCondition {
 		phase, _ := statusCondition["phase"].(string)
 		message, _ := statusCondition["message"].(string)
 		reason, _ := statusCondition["reason"].(string)
+		conditionType, _ := statusCondition["type"].(string)
 		status := "False"
 
 		if phase == "Succeeded" {
@@ -568,6 +570,7 @@ func mapCSV(csv *unstructured.Unstructured) operatorsv1.StatusCondition {
 			LastTransitionTime: metav1.Now(),
 			Reason:             reason,
 			Message:            message,
+			Type:               conditionType,
 			Available:          false,
 		}
 
