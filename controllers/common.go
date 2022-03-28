@@ -6,6 +6,7 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	e "errors"
 	"fmt"
 	"os"
 	"reflect"
@@ -19,6 +20,7 @@ import (
 
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 
+	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/library-go/pkg/operator/resource/resourcemerge"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -690,6 +692,41 @@ func (r *MultiClusterHubReconciler) OverrideImagesFromConfigmap(imageOverrides m
 			}
 
 		}
+	}
+
+	return imageOverrides, nil
+}
+
+// Select oauth proxy image to use. If OCP 4.8 use old version. If OCP 4.9+ use new version. Set with key oauth_proxy
+// before applying overrides.
+func (r *MultiClusterHubReconciler) overrideOauthImage(ctx context.Context, imageOverrides map[string]string) (map[string]string, error) {
+	ocpVersion, err := r.getClusterVersion(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	semverVersion, err := semver.NewVersion(ocpVersion)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert ocp version to semver compatible value: %w", err)
+	}
+
+	// -0 allows for prerelease builds to pass the validation.
+	// If -0 is removed, developer/rc builds will not pass this check
+	constraint, err := semver.NewConstraint(">= 4.9.0-0")
+	if err != nil {
+		return nil, fmt.Errorf("failed to set ocp version constraint: %w", err)
+	}
+
+	oauthKey := "oauth_proxy"
+	oauthKeyOld := "oauth_proxy_old"
+	oauthKeyNew := "oauth_proxy_new"
+
+	if constraint.Check(semverVersion) {
+		// use newer oauth image
+		imageOverrides[oauthKey] = imageOverrides[oauthKeyNew]
+	} else {
+		// use old oauth image
+		imageOverrides[oauthKey] = imageOverrides[oauthKeyOld]
 	}
 
 	return imageOverrides, nil
@@ -1515,4 +1552,24 @@ func AssistedServiceConfigured(ctx context.Context, client client.Client) (bool,
 		return true, nil
 	}
 	return false, nil
+}
+
+// return current OCP version from clusterversion resource
+// equivalent to `oc get clusterversion version -o=jsonpath='{.status.history[0].version}'`
+func (r *MultiClusterHubReconciler) getClusterVersion(ctx context.Context) (string, error) {
+	if utils.IsUnitTest() {
+		// If unit test pass along a version, Can't set status in unit test
+		return "4.9.0", nil
+	}
+
+	clusterVersion := &configv1.ClusterVersion{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: "version"}, clusterVersion)
+	if err != nil {
+		return "", err
+	}
+
+	if len(clusterVersion.Status.History) == 0 {
+		return "", e.New("Failed to detect status in clusterversion.status.history")
+	}
+	return clusterVersion.Status.History[0].Version, nil
 }

@@ -218,6 +218,13 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 	}
 
+	// Select oauth proxy image to use. If OCP 4.8 use old version. If OCP 4.9+ use new version. Set with key oauth_proxy
+	// before applying overrides.
+	imageOverrides, err = r.overrideOauthImage(ctx, imageOverrides)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	if imageRepo := utils.GetImageRepository(multiClusterHub); imageRepo != "" {
 		r.Log.Info(fmt.Sprintf("Overriding Image Repository from annotation 'mch-imageRepository': %s", imageRepo))
 		imageOverrides = utils.OverrideImageRepository(imageOverrides, imageRepo)
@@ -528,6 +535,20 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) error {
 					}},
 				}
 			}), builder.WithPredicates(predicate.InstallerLabelPredicate{})).
+		Watches(&source.Kind{Type: &configv1.ClusterVersion{}},
+			handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
+				multiClusterHubList := &operatorv1.MultiClusterHubList{}
+				if err := r.Client.List(context.TODO(), multiClusterHubList); err == nil && len(multiClusterHubList.Items) > 0 {
+					mch := multiClusterHubList.Items[0]
+					return []reconcile.Request{
+						{NamespacedName: types.NamespacedName{
+							Name:      mch.GetName(),
+							Namespace: mch.GetNamespace(),
+						}},
+					}
+				}
+				return []reconcile.Request{}
+			})).
 		Complete(r)
 }
 
