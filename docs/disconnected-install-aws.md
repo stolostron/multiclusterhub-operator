@@ -101,7 +101,7 @@ Click "Create hosted zone"
 
 - For domain name, enter `my-dc1.dev01.red-chesterfield.com`
 - Change the Type to "Private hosted zone"
-- In the "Region" box, select us-east region
+- In the "Region" box, select us-east-1 region
 - In the VPC ID box, select the vpc you created above
 
 Click "Create hosted zone"
@@ -132,7 +132,7 @@ Click "Launch instances"
     - For "Auto-assign Public IP", select "Enable"
     - Click "Next: Add Storage"
 - Step 4: Add Storage
-    - For the Root volume, change size to "40"
+    - For the Root volume, change size to "100"
     - Click "Next: Add Tags"
 - Step 5: Add Tags
     - Click "Add Tag"
@@ -317,7 +317,7 @@ pkcs11:id=%83%C4%E2%B6%EA%D2%C5%21%45%38%15%A9%3A%19%59%E8%0A%AD%04%93;type=cert
 
     ```
     export REGISTRY_AUTH_FILE=$HOME/auth.json
-    echo export REGISTRY_AUTH_FILE=$HOME/auth.json >> $HOME/.bash_profile
+    echo export REGISTRY_AUTH_FILE=$REGISTRY_AUTH_FILE >> $HOME/.bash_profile
     ```
 
 **Note:** Environment variables will also be stored in `$HOME/.bash_profile` so they'll be
@@ -348,9 +348,9 @@ export OCP_REPO=quay.io/openshift-release-dev/ocp-release
 export LOCAL_REPO=$HOSTNAME:8443/ocp4/openshift4
 
 cat <<EOF >>$HOME/.bash_profile
-export OCP_TAG=4.9.23-x86_64
-export OCP_REPO=quay.io/openshift-release-dev/ocp-release
-export LOCAL_REPO=$HOSTNAME:8443/ocp4/openshift4
+export OCP_TAG=$OCP_TAG
+export OCP_REPO=$OCP_REPO
+export LOCAL_REPO=$LOCAL_REPO
 EOF
 
 oc adm release mirror -a auth.json \
@@ -370,10 +370,10 @@ export LOCAL_INDEX_REPO=$HOSTNAME:8443/ocp4/$INDEX_IMAGE
 export LOCAL_OLM_REPO=$HOSTNAME:8443/ocp4/openshift4/olm-mirror
 
 cat <<EOF >>$HOME/.bash_profile
-export INDEX_IMAGE=redhat-operator-index:v4.9
-export INDEX_REPO=registry.redhat.io/redhat/$INDEX_IMAGE
-export LOCAL_INDEX_REPO=$HOSTNAME:8443/ocp4/$INDEX_IMAGE
-export LOCAL_OLM_REPO=$HOSTNAME:8443/ocp4/openshift4/olm-mirror
+export INDEX_IMAGE=$INDEX_IMAGE
+export INDEX_REPO=$INDEX_REPO
+export LOCAL_INDEX_REPO=$LOCAL_INDEX_REPO
+export LOCAL_OLM_REPO=$LOCAL_OLM_REPO
 EOF
 
 opm index prune --from-index $INDEX_REPO --tag $LOCAL_INDEX_REPO \
@@ -392,7 +392,7 @@ Save a reference to this directory for later use:
 
 ```
 export MANIFESTS=$HOME/manifests-redhat-operator-index-1646254114
-echo export MANIFESTS=$HOME/manifests-redhat-operator-index-1646254114 >> $HOME/.bash_profile
+echo export MANIFESTS=$MANIFESTS >> $HOME/.bash_profile
 ```
 
 ## Prepare to create OCP cluster
@@ -418,7 +418,7 @@ Note: You may want to have a second terminal open on the jumpbox to be able to c
 
 ```
 export INSTALL="$HOME/ocp-install"
-echo export INSTALL="$HOME/ocp-install" >> $HOME/.bash_profile
+echo export INSTALL="$INSTALL" >> $HOME/.bash_profile
 
 mkdir -p "$INSTALL"
 
@@ -856,7 +856,7 @@ Save the ACM version you plan on using:
 
 ```
 export ACM_CHANNEL=release-2.4
-echo export ACM_CHANNEL=release-2.4 >> $HOME/.bash_profile
+echo export ACM_CHANNEL=$ACM_CHANNEL >> $HOME/.bash_profile
 ```
 
 ### Create the ACM subscription
@@ -889,7 +889,7 @@ The default namespace is `open-cluster-management`. Run:
 
 ```
 export ACM_NAMESPACE=open-cluster-management
-echo export ACM_NAMESPACE=open-cluster-management >> $HOME/.bash_profile
+echo export ACM_NAMESPACE=$ACM_NAMESPACE >> $HOME/.bash_profile
 
 oc create namespace $ACM_NAMESPACE
 oc project $ACM_NAMESPACE
@@ -902,7 +902,7 @@ This pull secret needs to have credentials for the mirror registry. We'll use th
 
 ```
 export ACM_PULL_SECRET=open-cluster-management-pull-secret
-echo export ACM_PULL_SECRET=open-cluster-management-pull-secret >> $HOME/.bash_profile
+echo export ACM_PULL_SECRET=$ACM_PULL_SECRET >> $HOME/.bash_profile
 
 oc create secret generic -n $ACM_NAMESPACE $ACM_PULL_SECRET \
     --from-file=.dockerconfigjson=auth.json \
@@ -970,19 +970,3 @@ $ oc get -n $ACM_NAMESPACE routes
 NAME                 HOST/PORT                                                   PATH   SERVICES             PORT    TERMINATION          WILDCARD
 multicloud-console   multicloud-console.apps.my-dc1.dev01.red-chesterfield.com          management-ingress   https   reencrypt/Redirect   None
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
