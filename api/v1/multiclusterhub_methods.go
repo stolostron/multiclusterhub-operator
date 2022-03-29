@@ -72,11 +72,11 @@ var DefaultEnabledComponents = []string{
 	ClusterLifecycle,
 	Volsync,
 	MultiClusterEngine,
-	ClusterBackup,
 }
 
 var DefaultDisabledComponents = []string{
 	ClusterProxyAddon,
+	ClusterBackup,
 }
 
 func (mch *MultiClusterHub) ComponentPresent(s string) bool {
