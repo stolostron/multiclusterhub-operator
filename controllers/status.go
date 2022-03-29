@@ -475,6 +475,7 @@ func mapSubscription(sub *unstructured.Unstructured) operatorsv1.StatusCondition
 		LastTransitionTime: metav1.Now(),
 		Reason:             reason,
 		Message:            message,
+		Type:               "Available",
 		Available:          true,
 	}
 }
@@ -568,11 +569,13 @@ func mapCSV(csv *unstructured.Unstructured) operatorsv1.StatusCondition {
 			LastTransitionTime: metav1.Now(),
 			Reason:             reason,
 			Message:            message,
+			Type:               "Unavailable",
 			Available:          false,
 		}
 
 		// Return condition with Applied = true
 		if phase == "Succeeded" && reason == "InstallSucceeded" {
+			componentCondition.Type = "Available"
 			componentCondition.Available = true
 			return componentCondition
 		}
