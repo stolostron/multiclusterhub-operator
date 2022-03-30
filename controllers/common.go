@@ -1380,7 +1380,11 @@ func (r *MultiClusterHubReconciler) GetSubConfig() (*subv1alpha1.SubscriptionCon
 		} else if err != nil {
 			return nil, err
 		} else {
-			configEnvVars = utils.AppendProxyVariables(foundSubscription.Spec.Config.Env, proxyEnv)
+			if foundSubscription.Spec.Config != nil {
+				configEnvVars = utils.AppendProxyVariables(foundSubscription.Spec.Config.Env, proxyEnv)
+			} else {
+				configEnvVars = proxyEnv
+			}
 		}
 
 	}
