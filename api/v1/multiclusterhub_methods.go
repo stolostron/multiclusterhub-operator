@@ -14,7 +14,7 @@ const (
 	Volsync            string = "volsync"
 
 	// MCE
-	MCEManagedServiceAccount string = "managed-service-account"
+	MCEManagedServiceAccount string = "managedserviceaccount-preview"
 	MCEConsole               string = "console-mce"
 	MCEDiscovery             string = "discovery"
 	MCEHive                  string = "hive"
