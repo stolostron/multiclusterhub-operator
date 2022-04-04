@@ -700,6 +700,26 @@
     "image-key": "oauth_proxy"
   },
   {
+    "image-name": "origin-oauth-proxy_48",
+    "image-version": "4.8",
+    "image-tag": "4.8",
+    "git-sha256": "ffffffffffffffffffffffffffffffffffffffff",
+    "git-repository": "openshift/oauth-proxy",
+    "image-remote": "quay.io/stolostron",
+    "image-digest": "sha256:ae1b3ad6a9e76271de5c6d16abe5586abac043da032d686d1fc78f43ed7f3606",
+    "image-key": "oauth_proxy_48"
+  },
+  {
+    "image-name": "origin-oauth-proxy_49_and_up",
+    "image-version": "4.8",
+    "image-tag": "4.8",
+    "git-sha256": "ffffffffffffffffffffffffffffffffffffffff",
+    "git-repository": "openshift/oauth-proxy",
+    "image-remote": "quay.io/stolostron",
+    "image-digest": "sha256:ae1b3ad6a9e76271de5c6d16abe5586abac043da032d686d1fc78f43ed7f3606",
+    "image-key": "oauth_proxy_49_and_up"
+  },
+  {
     "image-name": "placement",
     "image-version": "0.3.0",
     "image-tag": "0.3.0-61e8e4d8b73f36b966c109c53286fdcce95a3112",
