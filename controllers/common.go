@@ -718,8 +718,8 @@ func (r *MultiClusterHubReconciler) overrideOauthImage(ctx context.Context, imag
 	}
 
 	oauthKey := "oauth_proxy"
-	oauthKeyOld := "oauth_proxy_old"
-	oauthKeyNew := "oauth_proxy_new"
+	oauthKeyOld := "oauth_proxy_48"
+	oauthKeyNew := "oauth_proxy_49_and_up"
 
 	if constraint.Check(semverVersion) {
 		// use newer oauth image
