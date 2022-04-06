@@ -48,6 +48,9 @@ Click "Create security group"
 - Under Inbound Rules, click "Add rule"
     - Type: All traffic
     - Source: 10.0.0.0/16
+- Under Outbound Rules
+    - Type: All traffic
+    - Destination: 0.0.0.0/0
 - Under Tags, click "Add new tag"
     - Key: Name
     - Value: my-dc1-sg
