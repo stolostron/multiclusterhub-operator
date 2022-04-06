@@ -14,7 +14,7 @@ import (
 func Test_readManifestFile(t *testing.T) {
 	t.Run("Get manifest", func(t *testing.T) {
 		os.Setenv(ManifestsPathEnvVar, "../../image-manifests")
-		version := "2.3.9"
+		version := "2.3.10"
 		_, err := readManifestFile(version)
 		if err != nil {
 			t.Errorf("readManifestFile() error = %v, wantErr %v", err, nil)
@@ -32,7 +32,7 @@ func Test_readManifestFile(t *testing.T) {
 
 	t.Run("Env var missing", func(t *testing.T) {
 		os.Unsetenv(ManifestsPathEnvVar)
-		version := "2.3.9"
+		version := "2.3.10"
 		_, err := readManifestFile(version)
 		if err == nil {
 			t.Errorf("readManifestFile() did not return error")
@@ -44,7 +44,7 @@ func Test_buildFullImageReference(t *testing.T) {
 	mi := ManifestImage{
 		ImageKey:     "test_app",
 		ImageName:    "test-app",
-		ImageVersion: "2.3.9",
+		ImageVersion: "2.3.10",
 		ImageRemote:  "quay.io/stolostron",
 		ImageDigest:  "sha256:abc123",
 	}
