@@ -5,7 +5,11 @@ package subscription
 
 import (
 	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
 
+	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/channel"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
@@ -13,6 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/yaml"
 )
@@ -104,5 +109,29 @@ func Validate(found *unstructured.Unstructured, want *unstructured.Unstructured)
 func setCustomCA(m *operatorsv1.MultiClusterHub, sub *Subscription) {
 	if m.Spec.CustomCAConfigmap != "" {
 		sub.Overrides["hubconfig"].(map[string]interface{})["customCAConfigmap"] = m.Spec.CustomCAConfigmap
+	}
+}
+
+// setCustomOADPConfig sets a CustomCAConfigmap to the hubconfig overrides if available
+func setCustomOADPConfig(m *operatorsv1.MultiClusterHub, appsub *Subscription) {
+	log := log.FromContext(context.Background())
+
+	if oadpSpec := utils.GetOADPAnnotationOverrides(m); oadpSpec != "" {
+		sub := &subv1alpha1.SubscriptionSpec{}
+		err := json.Unmarshal([]byte(oadpSpec), sub)
+		if err != nil {
+			log.Info(fmt.Sprintf("Failed to unmarshal OADP annotation: %s.", oadpSpec))
+			return
+		}
+
+		spec := map[string]interface{}{
+			"name":                sub.Package,
+			"channel":             sub.Channel,
+			"installPlanApproval": sub.InstallPlanApproval,
+			"source":              sub.CatalogSource,
+			"sourceNamespace":     sub.CatalogSourceNamespace,
+			"startingCSV":         sub.StartingCSV,
+		}
+		appsub.Overrides["oadpOperator"] = spec
 	}
 }

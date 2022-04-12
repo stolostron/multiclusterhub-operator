@@ -33,6 +33,7 @@ func ClusterBackup(m *operatorsv1.MultiClusterHub, overrides map[string]string) 
 		},
 	}
 	setCustomCA(m, sub)
+	setCustomOADPConfig(m, sub)
 
 	return newSubscription(m, sub)
 }
