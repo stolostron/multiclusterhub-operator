@@ -95,7 +95,7 @@ spec: {}
 Setting OADP annotation via CLI
 
 ```bash
-oc annotate mch multiclusterhub installer.open-cluster-management.io/oadp-subscription-spec=`{"channel":"stable-1.0","installPlanApproval":"Automatic","name":"redhat-oadp-operator","source":"redhat-operators","sourceNamespace":"openshift-marketplace","startingCSV": "oadp-operator.v1.0.2"}`
+oc annotate mch multiclusterhub installer.open-cluster-management.io/oadp-subscription-spec='{"channel":"stable-1.0","installPlanApproval":"Automatic","name":"redhat-oadp-operator","source":"redhat-operators","sourceNamespace":"openshift-marketplace","startingCSV": "oadp-operator.v1.0.2"}'
 ```
 
 ### Other Development Documents
