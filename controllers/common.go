@@ -1151,36 +1151,6 @@ func (r *MultiClusterHubReconciler) prepareForMultiClusterEngineInstall(multiClu
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterHubReconciler) removeCRDIfLabelsMatch(crdNameString string, m *operatorv1.MultiClusterHub) error {
-	// ctx := context.Background()
-	crdList := &apixv1.CustomResourceDefinitionList{}
-	u := &unstructured.Unstructured{}
-	err := r.Client.List(
-		context.TODO(),
-		crdList,
-		client.MatchingLabels{
-			"installer.name":      m.GetName(),
-			"installer.namespace": m.GetNamespace(),
-		},
-	)
-	if err != nil {
-		return err
-	}
-	// crd := apixv1.CustomResourceDefinition{}
-	for i := 0; i < len(crdList.Items); i++ {
-		if crdList.Items[i].ObjectMeta.Name == crdNameString {
-			u.SetGroupVersionKind(schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1"})
-			u.SetName(crdNameString)
-			_, err = r.uninstall(m, u)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-
-}
-
 // GetCSVFromSubscription retrieves CSV status information from the related subscription for status
 func (r *MultiClusterHubReconciler) GetCSVFromSubscription(sub *subv1alpha1.Subscription) (*unstructured.Unstructured, error) {
 	mceSubscription := &subv1alpha1.Subscription{}
