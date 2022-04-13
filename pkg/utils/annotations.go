@@ -21,6 +21,8 @@ var (
 	AnnotationConfiguration = "installer.open-cluster-management.io/last-applied-configuration"
 	// AnnotationMCESubscriptionSpec sits in multiclusterhub annotations to identify the subscription spec last used to create the multiclustengine
 	AnnotationMCESubscriptionSpec = "installer.open-cluster-management.io/mce-subscription-spec"
+	// AnnotationOADPSubscriptionSpec overrides the OADP subscription used in cluster-backup
+	AnnotationOADPSubscriptionSpec = "installer.open-cluster-management.io/oadp-subscription-spec"
 )
 
 // IsPaused returns true if the multiclusterhub instance is labeled as paused, and false otherwise
@@ -42,7 +44,8 @@ func AnnotationsMatch(old, new map[string]string) bool {
 	return old[AnnotationMCHPause] == new[AnnotationMCHPause] &&
 		old[AnnotationImageRepo] == new[AnnotationImageRepo] &&
 		old[AnnotationImageOverridesCM] == new[AnnotationImageOverridesCM] &&
-		old[AnnotationMCESubscriptionSpec] == new[AnnotationMCESubscriptionSpec]
+		old[AnnotationMCESubscriptionSpec] == new[AnnotationMCESubscriptionSpec] &&
+		old[AnnotationOADPSubscriptionSpec] == new[AnnotationOADPSubscriptionSpec]
 }
 
 // getAnnotation returns the annotation value for a given key, or an empty string if not set
@@ -74,4 +77,8 @@ func OverrideImageRepository(imageOverrides map[string]string, imageRepo string)
 
 func GetMCEAnnotationOverrides(instance *operatorsv1.MultiClusterHub) string {
 	return getAnnotation(instance, AnnotationMCESubscriptionSpec)
+}
+
+func GetOADPAnnotationOverrides(instance *operatorsv1.MultiClusterHub) string {
+	return getAnnotation(instance, AnnotationOADPSubscriptionSpec)
 }

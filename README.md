@@ -75,6 +75,29 @@ metadata:
   name: multiclusterhub
 spec: {}
 ```
+
+### Overriding OADP Operator Subscription
+
+The OADP operator is installed from redhat-operators by the cluster-backup chart. The spec of the subscription can be overriden by providing the following annotation to the MCH resource. One or many parameters can be provided from the ones listed in the `installer.open-cluster-management.io/oadp-subscription-spec` annotation below
+
+```yaml
+apiVersion: operator.open-cluster-management.io/v1
+kind: MultiClusterHub
+metadata:
+  annotations:
+    installer.open-cluster-management.io/oadp-subscription-spec: '{"channel": "stable-1.0","installPlanApproval": "Automatic","name":
+      	"redhat-oadp-operator","source": "redhat-operators","sourceNamespace": "openshift-marketplace","startingCSV":
+      	"oadp-operator.v1.0.2"}'
+  name: multiclusterhub
+spec: {}
+```
+
+Setting OADP annotation via CLI
+
+```bash
+oc annotate mch multiclusterhub installer.open-cluster-management.io/oadp-subscription-spec='{"channel":"stable-1.0","installPlanApproval":"Automatic","name":"redhat-oadp-operator","source":"redhat-operators","sourceNamespace":"openshift-marketplace","startingCSV": "oadp-operator.v1.0.2"}'
+```
+
 ### Other Development Documents
 
 - [Installation Guide](/docs/installation.md)
