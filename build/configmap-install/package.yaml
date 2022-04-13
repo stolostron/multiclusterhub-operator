@@ -1,5 +1,5 @@
 packageName: multiclusterhub-operator
 channels:
 - name: latest
-  currentCSV: multiclusterhub-operator.v2.2.12
+  currentCSV: multiclusterhub-operator.v2.2.13
 defaultChannel: latest
