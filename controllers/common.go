@@ -660,7 +660,8 @@ func (r *MultiClusterHubReconciler) ensurePullSecret(m *operatorv1.MultiClusterH
 //checks if imagepullsecret was created in mch namespace
 func (r *MultiClusterHubReconciler) ensurePullSecretCreated(m *operatorv1.MultiClusterHub, namespace string) (ctrl.Result, error) {
 	if m.Spec.ImagePullSecret == "" {
-		return ctrl.Result{Requeue: true}, fmt.Errorf("imagepullsecret does not exist")
+		//No imagepullsecret set, continuing
+		return ctrl.Result{}, nil
 	}
 
 	pullSecret := &corev1.Secret{}
@@ -671,7 +672,7 @@ func (r *MultiClusterHubReconciler) ensurePullSecretCreated(m *operatorv1.MultiC
 	}, pullSecret)
 
 	if err != nil {
-		return ctrl.Result{Requeue: true}, fmt.Errorf("imagepullsecret does not exist: %s", err)
+		return ctrl.Result{Requeue: true}, err
 	}
 	if pullSecret.Namespace == "" || pullSecret.Namespace != namespace {
 		return ctrl.Result{Requeue: true}, fmt.Errorf("pullsecret doest not exist in namespace: %s", namespace)
