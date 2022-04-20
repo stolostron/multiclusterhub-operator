@@ -389,7 +389,8 @@ func (r *MultiClusterHubReconciler) ensureUnstructuredResource(m *operatorv1.Mul
 
 func (r *MultiClusterHubReconciler) ensurePullSecretCreated(m *operatorv1.MultiClusterHub, namespace string) (ctrl.Result, error) {
 	if m.Spec.ImagePullSecret == "" {
-		return ctrl.Result{Requeue: true}, fmt.Errorf("imagepullsecret does not exist")
+		//No imagepullsecret set, continuing
+		return ctrl.Result{}, nil
 	}
 
 	pullSecret := &corev1.Secret{}
