@@ -659,6 +659,30 @@ func (r *MultiClusterHubReconciler) ensurePullSecret(m *operatorv1.MultiClusterH
 	return ctrl.Result{}, nil
 }
 
+//checks if imagepullsecret was created in mch namespace
+func (r *MultiClusterHubReconciler) ensurePullSecretCreated(m *operatorv1.MultiClusterHub, namespace string) (ctrl.Result, error) {
+	if m.Spec.ImagePullSecret == "" {
+		//No imagepullsecret set, continuing
+		return ctrl.Result{}, nil
+	}
+
+	pullSecret := &corev1.Secret{}
+
+	err := r.Client.Get(context.TODO(), types.NamespacedName{
+		Name:      m.Spec.ImagePullSecret,
+		Namespace: m.Namespace,
+	}, pullSecret)
+
+	if err != nil {
+		return ctrl.Result{Requeue: true}, err
+	}
+	if pullSecret.Namespace == "" || pullSecret.Namespace != namespace {
+		return ctrl.Result{Requeue: true}, fmt.Errorf("pullsecret doest not exist in namespace: %s", namespace)
+	}
+
+	return ctrl.Result{}, nil
+}
+
 // OverrideImagesFromConfigmap ...
 func (r *MultiClusterHubReconciler) OverrideImagesFromConfigmap(imageOverrides map[string]string, namespace, configmapName string) (map[string]string, error) {
 	r.Log.Info(fmt.Sprintf("Overriding images from configmap: %s/%s", namespace, configmapName))
