@@ -48,7 +48,7 @@ type MultiClusterHubSpec struct {
 	AvailabilityConfig AvailabilityType `json:"availabilityConfig,omitempty"`
 
 	// (Deprecated) Install cert-manager into its own namespace
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Separate Certificate Management",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Separate Certificate Management",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	// +optional
 	SeparateCertificateManagement bool `json:"separateCertificateManagement"`
 
@@ -59,7 +59,7 @@ type MultiClusterHubSpec struct {
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 
 	// (Deprecated) Overrides for the default HiveConfig spec
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Hive Config",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Hive Config",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Hive *HiveConfigSpec `json:"hive,omitempty"`
 
 	// Configuration options for ingress management
@@ -83,11 +83,11 @@ type MultiClusterHubSpec struct {
 	DisableUpdateClusterImageSets bool `json:"disableUpdateClusterImageSets,omitempty"`
 
 	// (Deprecated) Enable cluster proxy addon
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Cluster Proxy Addon",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Cluster Proxy Addon",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	EnableClusterProxyAddon bool `json:"enableClusterProxyAddon,omitempty"`
 
 	// (Deprecated) Enable cluster backup
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Cluster Backup",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Cluster Backup",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	// +optional
 	EnableClusterBackup bool `json:"enableClusterBackup"`
 }
