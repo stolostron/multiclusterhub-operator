@@ -52,19 +52,17 @@ spec:
         displayName: Enable Cluster Backup
         path: enableClusterBackup
         x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: (Deprecated) Enable cluster proxy addon
         displayName: Enable Cluster Proxy Addon
         path: enableClusterProxyAddon
         x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: (Deprecated) Overrides for the default HiveConfig spec
         displayName: Hive Config
         path: hive
         x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Override pull secret for accessing MultiClusterHub operand and
           endpoint images
         displayName: Image Pull Secret
@@ -91,8 +89,7 @@ spec:
         displayName: Separate Certificate Management
         path: separateCertificateManagement
         x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       version: v1
   description: 'The Open Cluster Management Hub operator installs and maintains an
     instance of the OCM hub, a central management console for managing OpenShift and
