@@ -860,7 +860,11 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub) (
 	}
 
 	// Set OCP version as env var, so that charts can render this value
-	os.Setenv("ACM_HUB_OCP_VERSION", currentClusterVersion)
+	err = os.Setenv("ACM_HUB_OCP_VERSION", currentClusterVersion)
+	if err != nil {
+		log.Error(err, "Failed to set ACM_HUB_OCP_VERSION environment variable")
+		return ctrl.Result{}, err
+	}
 
 	if updateNecessary {
 		// Apply defaults to server
