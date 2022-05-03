@@ -9,14 +9,14 @@ import (
 
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
+	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 )
 
 func Test_readManifestFile(t *testing.T) {
 
 	t.Run("Get manifest", func(t *testing.T) {
 		os.Setenv(ManifestsPathEnvVar, "../../bin/image-manifests")
-		version := "2.5.0"
-		_, err := readManifestFile(version)
+		_, err := readManifestFile(version.Version)
 		if err != nil {
 			t.Errorf("readManifestFile() error = %v, wantErr %v", err, nil)
 		}
@@ -33,8 +33,7 @@ func Test_readManifestFile(t *testing.T) {
 
 	t.Run("Env var missing", func(t *testing.T) {
 		os.Unsetenv(ManifestsPathEnvVar)
-		version := "2.5.0"
-		_, err := readManifestFile(version)
+		_, err := readManifestFile(version.Version)
 		if err == nil {
 			t.Errorf("readManifestFile() did not return error")
 		}
@@ -45,7 +44,7 @@ func Test_buildFullImageReference(t *testing.T) {
 	mi := ManifestImage{
 		ImageKey:     "test_app",
 		ImageName:    "test-app",
-		ImageVersion: "2.5.0",
+		ImageVersion: "9.9.9",
 		ImageRemote:  "quay.io/stolostron",
 		ImageDigest:  "sha256:abc123",
 	}

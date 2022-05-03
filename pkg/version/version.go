@@ -1,8 +1,15 @@
-// Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
 package version
 
-var (
-	Version = "2.5.0"
-)
+import "os"
+
+var Version string
+
+func init() {
+	if value, exists := os.LookupEnv("OPERATOR_VERSION"); exists {
+		Version = value
+	} else {
+		panic("OPERATOR_VERSION not defined")
+	}
+}

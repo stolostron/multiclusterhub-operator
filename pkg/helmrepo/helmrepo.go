@@ -9,6 +9,7 @@ import (
 
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
+	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -119,6 +120,10 @@ func Deployment(m *operatorsv1.MultiClusterHub, overrides map[string]string) *ap
 							{
 								Name:  "MCH_REPO_SERVICE",
 								Value: HelmRepoName,
+							},
+							{
+								Name:  "CHART_VERSION",
+								Value: version.Version,
 							},
 						},
 					}},
