@@ -62,3 +62,4 @@ kubectl delete pod multiclusterhub-operator-xxxxx-xxxxx
 [install_guide]: /docs/installation.md
 [config_guide]: /docs/configuration.md
 [deploy]: https://github.com/stolostron/deploy
+
