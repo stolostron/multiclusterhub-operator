@@ -5,7 +5,7 @@ kind: Kustomization
 images:
 - name: multiclusterhub-operator
   newName: quay.io/stolostron/multiclusterhub-operator
-  newTag: 2.3.10-index
+  newTag: 2.3.11-index
 resources:
 - catalogsource.yaml
 - service.yaml
