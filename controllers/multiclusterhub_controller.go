@@ -269,6 +269,18 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		r.Log.Info(fmt.Sprintf("Proxy configuration environment variables are set. HTTP_PROXY: %s, HTTPS_PROXY: %s, NO_PROXY: %s", os.Getenv("HTTP_PROXY"), os.Getenv("HTTPS_PROXY"), os.Getenv("NO_PROXY")))
 	}
 
+	result, err = r.ensurePullSecretCreated(multiClusterHub, multiClusterHub.GetNamespace())
+	if err != nil {
+		condition := NewHubCondition(
+			operatorv1.Progressing,
+			metav1.ConditionFalse,
+			err.Error(),
+			fmt.Sprintf("Error fetching Pull Secret: %s", err),
+		)
+		SetHubCondition(&multiClusterHub.Status, *condition)
+		return result, fmt.Errorf("failed to find pullsecret: %s", err)
+	}
+
 	result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub, r.CacheSpec.ImageOverrides))
 	if result != (ctrl.Result{}) {
 		return result, err
