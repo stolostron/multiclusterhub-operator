@@ -125,12 +125,30 @@ func Deployment(m *operatorsv1.MultiClusterHub, overrides map[string]string) *ap
 								Name:  "CHART_VERSION",
 								Value: version.Version,
 							},
+							{
+								Name:  "REPO_DIR",
+								Value: "/repo/charts",
+							},
+						},
+						VolumeMounts: []corev1.VolumeMount{
+							{
+								Name:      "repo-volume",
+								MountPath: "/repo/charts",
+							},
 						},
 					}},
 					ImagePullSecrets: []corev1.LocalObjectReference{{Name: m.Spec.ImagePullSecret}},
 					NodeSelector:     m.Spec.NodeSelector,
 					Tolerations:      utils.GetTolerations(m),
 					Affinity:         utils.DistributePods("ocm-antiaffinity-selector", HelmRepoName),
+					Volumes: []corev1.Volume{
+						{
+							Name: "repo-volume",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+					},
 					// ServiceAccountName: "default",
 				},
 			},
@@ -253,6 +271,13 @@ func ValidateDeployment(m *operatorsv1.MultiClusterHub, overrides map[string]str
 	if !reflect.DeepEqual(pod.Tolerations, utils.GetTolerations(m)) {
 		log.Info("Enforcing spec tolerations")
 		pod.Tolerations = utils.GetTolerations(m)
+		needsUpdate = true
+	}
+
+	if !reflect.DeepEqual(pod.Volumes, utils.GetContainerVolumes(expected)) {
+		log.Info("Enforcing container volumes")
+		vms := utils.GetContainerVolumes(expected)
+		pod.Volumes = vms
 		needsUpdate = true
 	}
 

@@ -239,6 +239,11 @@ func GetContainerVolumeMounts(dep *appsv1.Deployment) []corev1.VolumeMount {
 	return dep.Spec.Template.Spec.Containers[0].VolumeMounts
 }
 
+// GetDeploymentVolumes returns volumes in deployment
+func GetContainerVolumes(dep *appsv1.Deployment) []corev1.Volume {
+	return dep.Spec.Template.Spec.Volumes
+}
+
 //GetContainerRequestResources returns Request Requirements for first container in deployment
 func GetContainerRequestResources(dep *appsv1.Deployment) corev1.ResourceList {
 	return dep.Spec.Template.Spec.Containers[0].Resources.Requests
