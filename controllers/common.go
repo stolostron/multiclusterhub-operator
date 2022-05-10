@@ -643,6 +643,7 @@ func (r *MultiClusterHubReconciler) ensurePullSecret(m *operatorv1.MultiClusterH
 			Labels:    pullSecret.Labels,
 		},
 		Data: pullSecret.Data,
+		Type: corev1.SecretTypeDockerConfigJson,
 	}
 	mceSecret.SetName(m.Spec.ImagePullSecret)
 	mceSecret.SetNamespace(newNS)
