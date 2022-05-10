@@ -220,12 +220,16 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 
 	mceNamespace := &corev1.Namespace{}
 	err = r.Client.Get(ctx, types.NamespacedName{Name: multiclusterengine.Namespace().Name}, mceNamespace)
-	if err == nil {
-		err = r.Client.Delete(ctx, multiclusterengine.Namespace())
-		if err != nil && !errors.IsNotFound(err) {
-			return err
+	if m.Namespace != multiclusterengine.Namespace().Name {
+		if err == nil {
+			err = r.Client.Delete(ctx, multiclusterengine.Namespace())
+			if err != nil && !errors.IsNotFound(err) {
+				return err
+			}
+			return fmt.Errorf("namespace has not yet been terminated")
 		}
-		return fmt.Errorf("namespace has not yet been terminated")
+	} else {
+		r.Log.Info("MCE shares namespace with MCH; skipping namespace termination")
 	}
 
 	return nil
