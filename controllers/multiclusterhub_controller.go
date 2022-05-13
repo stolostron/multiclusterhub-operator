@@ -442,7 +442,12 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 	if multiClusterHub.Enabled(operatorv1.ClusterBackup) {
-		result, err = r.ensureNamespace(multiClusterHub, subscription.Namespace())
+		ns := subscription.BackupNamespace()
+		result, err = r.ensureNamespace(multiClusterHub, ns)
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+		result, err = r.ensurePullSecret(multiClusterHub, ns.Name)
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
@@ -455,7 +460,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
-		result, err = r.ensureNoNamespace(multiClusterHub, subscription.NamespaceUnstructured())
+		result, err = r.ensureNoNamespace(multiClusterHub, subscription.BackupNamespaceUnstructured())
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
