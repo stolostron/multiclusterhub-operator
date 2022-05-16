@@ -12,8 +12,10 @@ import (
 
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	mchov1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	v1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
+	"github.com/stolostron/multiclusterhub-operator/pkg/subscription"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
 	appsub "open-cluster-management.io/multicloud-operators-subscription/pkg/apis"
@@ -252,6 +254,25 @@ var _ = Describe("MultiClusterHub controller", func() {
 				}
 				return result
 			}, timeout, interval).Should(BeTrue())
+
+			By("Ensuring pull secret is created in backup")
+			Eventually(func() bool {
+				psn := createdMCH.Spec.ImagePullSecret
+
+				if createdMCH.Enabled(operatorv1.ClusterBackup) && psn != "" {
+					ns := subscription.BackupNamespace().Name
+					nn := types.NamespacedName{
+						Name:      psn,
+						Namespace: ns,
+					}
+					pullSecret := &corev1.Secret{}
+					err := k8sClient.Get(ctx, nn, pullSecret)
+					return err == nil
+
+				} else {
+					return true
+				}
+			})
 
 			By("Waiting for MCH to be in the running state")
 			Eventually(func() bool {

@@ -48,7 +48,7 @@ func OldClusterBackup(m *operatorsv1.MultiClusterHub) *unstructured.Unstructured
 	return newSubscription(m, sub)
 }
 
-func Namespace() *corev1.Namespace {
+func BackupNamespace() *corev1.Namespace {
 	return &corev1.Namespace{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
@@ -60,7 +60,7 @@ func Namespace() *corev1.Namespace {
 	}
 }
 
-func NamespaceUnstructured() *unstructured.Unstructured {
+func BackupNamespaceUnstructured() *unstructured.Unstructured {
 	u := &unstructured.Unstructured{}
 	u.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Kind: "Namespace", Version: "v1"})
 	u.SetName(utils.ClusterSubscriptionNamespace)
