@@ -171,3 +171,4 @@ update-version:
 
 update-crds:
 	bash common/scripts/gather-crds.sh
+
