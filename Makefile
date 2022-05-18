@@ -8,7 +8,7 @@ GITHUB_TOKEN ?=
 
 BUILD_DIR ?= build
 
-VERSION ?= 2.2.13
+VERSION ?= 2.2.14
 IMG ?= multiclusterhub-operator
 SECRET_REGISTRY ?= quay.io
 REGISTRY ?= quay.io/stolostron
@@ -24,7 +24,7 @@ export ACM_NAMESPACE :=$(NAMESPACE)
 # For OCP OLM
 export IMAGE ?= $(shell echo $(REGISTRY)/$(IMG):$(VERSION))
 export CSV_CHANNEL ?= alpha
-export CSV_VERSION ?= 2.2.13
+export CSV_VERSION ?= 2.2.14
 
 
 export PROJECT_DIR = $(shell 'pwd')
