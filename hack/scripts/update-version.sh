@@ -35,8 +35,6 @@ pkg/version/version.go"
 
 # SPECIAL CASE
 
-mv ./bin/image-manifests/$OLD_VERSION.json ./bin/image-manifests/$NEW_VERSION.json
-
 # BULK CASE
 
 OLD_VERSION_NO_Z_CLEANED=$(echo "${OLD_VERSION_NO_Z//\./\\.}")

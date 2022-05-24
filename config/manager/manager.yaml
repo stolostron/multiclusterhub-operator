@@ -49,8 +49,6 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 10
         env:
-          - name: MANIFESTS_PATH
-            value: "/image-manifests"
           - name: CRDS_PATH
             value: "/crds"
           - name: TEMPLATES_PATH

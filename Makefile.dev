@@ -6,9 +6,6 @@ deps:
 	curl -sL https://github.com/operator-framework/operator-sdk/releases/download/v1.9.0/operator-sdk_darwin_amd64 -o bin/operator-sdk
 	chmod +x bin/operator-sdk
 
-update-manifest:
-	bash hack/scripts/update-image-manifest.sh
-
 update-crds:
 	bash hack/scripts/gather-crds-dev.sh
 
@@ -30,7 +27,6 @@ update-version:
 prep-mock-install:
 	export PRODUCT_VERSION=$(shell cat COMPONENT_VERSION); \
 	make mock-build-image PRODUCT_VERSION=$(VERSION) MOCK_IMAGE_REGISTRY=$(REGISTRY) MOCK_IMAGE_SHA="sha256:test"
-	cp test/mock-component-image/results/* ./bin/image-manifests
 	echo "mock install prepped!"
 
 # different from `in-cluster-install` (call update-crds, no secrets, no observability-crd)
