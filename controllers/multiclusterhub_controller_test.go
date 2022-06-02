@@ -6,8 +6,10 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"time"
 
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
@@ -103,6 +105,13 @@ var _ = Describe("MultiClusterHub controller", func() {
 			},
 			ErrorIfCRDPathMissing: true,
 		}
+
+		for _, v := range utils.GetTestImages() {
+			key := fmt.Sprintf("OPERAND_IMAGE_%s", strings.ToUpper(v))
+			err := os.Setenv(key, "quay.io/test/test:test")
+			Expect(err).NotTo(HaveOccurred())
+		}
+
 		mchoDeployment = &appsv1.Deployment{
 			TypeMeta:   metav1.TypeMeta{Kind: "Deployment", APIVersion: "apps/v1"},
 			ObjectMeta: metav1.ObjectMeta{Name: mchName, Namespace: mchNamespace},
