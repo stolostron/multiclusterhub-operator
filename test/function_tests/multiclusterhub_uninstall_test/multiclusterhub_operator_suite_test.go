@@ -9,8 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/reporters"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	utils "github.com/stolostron/multiclusterhub-operator/test/function_tests/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -74,6 +73,5 @@ var _ = AfterSuite(func() {
 
 func TestMultiClusterHubOperatorUninstall(t *testing.T) {
 	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter(reportFile)
-	RunSpecsWithDefaultAndCustomReporters(t, "MultiClusterHubOperator Install Suite", []Reporter{junitReporter})
+	RunSpecs(t, "MultiClusterHubOperator Uninstall Suite")
 }

@@ -58,7 +58,7 @@ fi
 if ! command -v ginkgo &> /dev/null
 then
     echo "Installing ginkgo ..."
-    go install github.com/onsi/ginkgo/ginkgo
+    go install github.com/onsi/ginkgo/v2/ginkgo
 fi
 
 echo "Logging into collective cluster ..."

@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	utils "github.com/stolostron/multiclusterhub-operator/test/function_tests/utils"
@@ -39,7 +39,7 @@ var _ = Describe("Multiclusterhub", func() {
 		By("Beginning Full Install Test Suite ...")
 		FullInstallTestSuite()
 	} else {
-		By("Beginning Basic Install Test Suite ...")
+		GinkgoWriter.Println("Beginning Basic Install Test Suite ...")
 		It("Install Default MCH CR", func() {
 			By("Creating MultiClusterHub")
 			start := time.Now()

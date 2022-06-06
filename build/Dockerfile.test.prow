@@ -1,6 +1,6 @@
 FROM registry.ci.openshift.org/stolostron/builder:go1.17-linux AS builder
 
-RUN go get github.com/onsi/ginkgo/ginkgo
+RUN go get github.com/onsi/ginkgo/v2/ginkgo
 RUN go get github.com/onsi/gomega/...
 RUN GO111MODULE=on go get github.com/mikefarah/yq/v3
 

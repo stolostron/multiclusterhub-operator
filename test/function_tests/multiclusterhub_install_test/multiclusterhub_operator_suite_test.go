@@ -9,8 +9,7 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/reporters"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	utils "github.com/stolostron/multiclusterhub-operator/test/function_tests/utils"
 	appsv1 "k8s.io/api/apps/v1"
@@ -53,25 +52,25 @@ var _ = BeforeSuite(func() {
 		ocmSub := utils.NewOCMSubscription(utils.MCHNamespace)
 		utils.CreateNewUnstructured(utils.DynamicKubeClient, utils.GVRSub, ocmSub, utils.OCMSubscriptionName, utils.MCHNamespace)
 	}
-	Expect(subscription.Get(context.TODO(), utils.OCMSubscriptionName, metav1.GetOptions{})).NotTo(BeNil())
+	_, err = subscription.Get(context.TODO(), utils.OCMSubscriptionName, metav1.GetOptions{})
+	Expect(err).NotTo(BeNil())
 
 	By("Wait for MCH Operator to be available")
 	var deploy *appsv1.Deployment
-	When("Subscription is created, wait for Operator to run", func() {
-		Eventually(func() error {
-			var err error
-			klog.V(1).Info("Wait multiclusterhub-operator deployment...")
-			deploy, err = utils.KubeClient.AppsV1().Deployments(utils.MCHNamespace).Get(context.TODO(), utils.MCHOperatorName, metav1.GetOptions{})
-			if err != nil {
-				return err
-			}
-			if deploy.Status.AvailableReplicas == 0 {
-				return fmt.Errorf("MCH Operator not available")
-			}
+	By("Subscription is created, wait for Operator to run")
+	Eventually(func() error {
+		var err error
+		klog.V(1).Info("Wait multiclusterhub-operator deployment...")
+		deploy, err = utils.KubeClient.AppsV1().Deployments(utils.MCHNamespace).Get(context.TODO(), utils.MCHOperatorName, metav1.GetOptions{})
+		if err != nil {
 			return err
-		}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
-		klog.V(1).Info("MCH Operator deployment available")
-	})
+		}
+		if deploy.Status.AvailableReplicas == 0 {
+			return fmt.Errorf("MCH Operator not available")
+		}
+		return err
+	}, utils.GetWaitInMinutes()*60, 1).Should(BeNil())
+	klog.V(1).Info("MCH Operator deployment available")
 
 	By("Ensuring MCH CR is not yet installed")
 	mchLink := utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace)
@@ -82,6 +81,5 @@ var _ = BeforeSuite(func() {
 
 func TestMultiClusterHubOperatorInstall(t *testing.T) {
 	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter(reportFile)
-	RunSpecsWithDefaultAndCustomReporters(t, "MultiClusterHubOperator Install Suite", []Reporter{junitReporter})
+	RunSpecs(t, "MultiClusterHubOperator Install Suite")
 }

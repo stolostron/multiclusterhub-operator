@@ -35,7 +35,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -803,14 +803,13 @@ func ValidateMCHUnsuccessful() error {
 		return err
 	}
 
-	When("MCH Condition 'type' should be `Progressing` and 'status' should be 'true", func() {
-		Eventually(func() error {
-			mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
-			Expect(err).To(BeNil())
-			status := mch.Object["status"].(map[string]interface{})
-			return FindCondition(status, "Progressing", "True")
-		}, 1, 1).Should(BeNil())
-	})
+	By("MCH Condition 'type' should be `Progressing` and 'status' should be 'true")
+	Eventually(func() error {
+		mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+		Expect(err).To(BeNil())
+		status := mch.Object["status"].(map[string]interface{})
+		return FindCondition(status, "Progressing", "True")
+	}, 1, 1).Should(BeNil())
 
 	return nil
 }
@@ -820,18 +819,16 @@ func ValidateMCH() error {
 	By("Validating MultiClusterHub")
 
 	By(fmt.Sprintf("- Ensuring MCH is in 'running' phase within %d minutes", GetWaitInMinutes()))
-	When(fmt.Sprintf("Wait for MultiClusterHub to be in running phase (Will take up to %d minutes)", GetWaitInMinutes()), func() {
-		Eventually(func() error {
-			status, err := GetMCHStatus()
-			if err != nil {
-				return err
-			}
-			if err := findPhase(status, "Running"); err != nil {
-				return err
-			}
-			return nil
-		}, GetWaitInMinutes()*60, 1).Should(BeNil())
-	})
+	Eventually(func() error {
+		status, err := GetMCHStatus()
+		if err != nil {
+			return err
+		}
+		if err := findPhase(status, "Running"); err != nil {
+			return err
+		}
+		return nil
+	}, GetWaitInMinutes()*60, 1).Should(BeNil())
 
 	By("- Ensuring MCH Repo Is available")
 	var deploy *appsv1.Deployment
@@ -869,14 +866,12 @@ func ValidateMCH() error {
 	}
 
 	By("- Ensuring condition has status 'true' and type 'complete' when MCH is in 'running' phase")
-	When("Component statuses should be true", func() {
-		Eventually(func() error {
-			mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
-			Expect(err).To(BeNil())
-			status := mch.Object["status"].(map[string]interface{})
-			return FindCondition(status, "Complete", "True")
-		}, 1, 1).Should(BeNil())
-	})
+	Eventually(func() error {
+		mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+		Expect(err).To(BeNil())
+		status := mch.Object["status"].(map[string]interface{})
+		return FindCondition(status, "Complete", "True")
+	}, 1, 1).Should(BeNil())
 
 	By("- Checking Appsubs")
 	unstructuredAppSubs := listByGVR(DynamicKubeClient, GVRAppSub, MCHNamespace, 1, len(AppSubSlice))
