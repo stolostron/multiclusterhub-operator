@@ -9,8 +9,7 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/reporters"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	utils "github.com/stolostron/multiclusterhub-operator/test/function_tests/utils"
 	appsv1 "k8s.io/api/apps/v1"
@@ -108,6 +107,5 @@ var _ = BeforeSuite(func() {
 
 func TestMultiClusterHubOperatorInstall(t *testing.T) {
 	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter(reportFile)
-	RunSpecsWithDefaultAndCustomReporters(t, "MultiClusterHubOperator Install Suite", []Reporter{junitReporter})
+	RunSpecs(t, "MultiClusterHubOperator Upgrade Suite")
 }

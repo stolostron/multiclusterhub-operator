@@ -51,7 +51,7 @@ fi
 if ! command -v ginkgo &> /dev/null
 then
     echo "Installing ginkgo ..."
-    go install github.com/onsi/ginkgo/ginkgo
+    go install github.com/onsi/ginkgo/v2/ginkgo
 fi
 
 oc login ${COLLECTIVE_SERVER} --insecure-skip-tls-verify --token="${COLLECTIVE_TOKEN}"
