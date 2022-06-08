@@ -1,0 +1,96 @@
+# Copyright (c) 2021 Red Hat, Inc.
+# Copyright Contributors to the Open Cluster Management project
+
+org: open-cluster-management
+
+global:
+  pullPolicy: Always
+  pullSecret: null
+  namespace: open-cluster-management
+  arch:
+  - amd64
+  - ppc64le
+  - s390x
+  - arm64
+  certificateAuthority:
+    issuer: multicloud-ca-issuer
+    kind: Issuer
+  imageOverrides:
+    insights_client: ""
+    insights_metrics: ""
+    kube_rbac_proxy: ""
+ocpingress: ""
+    
+hubconfig:
+  nodeSelector: null
+  replicaCount: 1
+  tolerations:
+    - key: dedicated
+      operator: Exists
+      effect: NoSchedule
+    - effect: NoSchedule 
+      key: node-role.kubernetes.io/infra 
+      operator: Exists
+
+client:
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 70
+        podAffinityTerm:
+          topologyKey: topology.kubernetes.io/zone
+          labelSelector:
+            matchExpressions:
+            - key: ocm-antiaffinity-selector
+              operator: In
+              values:
+              - insightsclient 
+      - weight: 35
+        podAffinityTerm:
+          topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchExpressions:
+            - key: ocm-antiaffinity-selector
+              operator: In
+              values:
+              - insightsclient 
+
+metrics:
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 70
+        podAffinityTerm:
+          topologyKey: topology.kubernetes.io/zone
+          labelSelector:
+            matchExpressions:
+            - key: ocm-antiaffinity-selector
+              operator: In
+              values:
+              - insightsmetrics
+      - weight: 35
+        podAffinityTerm:
+          topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchExpressions:
+            - key: ocm-antiaffinity-selector
+              operator: In
+              values:
+              - insightsmetrics
+
+insights:
+  name: insights
+  client:
+    resources:
+      requests:
+        memory: "32Mi"
+        cpu: "25m"
+      limits:
+        memory: "512Mi"
+  metrics:
+    resources:
+      requests:
+        memory: "32Mi"
+        cpu: "25m"
+      limits:
+        memory: "512Mi"

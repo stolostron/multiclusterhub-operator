@@ -34,6 +34,7 @@ import (
 	"github.com/stolostron/multiclusterhub-operator/pkg/helmrepo"
 	"github.com/stolostron/multiclusterhub-operator/pkg/imageoverrides"
 	"github.com/stolostron/multiclusterhub-operator/pkg/predicate"
+	renderer "github.com/stolostron/multiclusterhub-operator/pkg/rendering"
 	"github.com/stolostron/multiclusterhub-operator/pkg/subscription"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
@@ -62,6 +63,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/go-logr/logr"
+	pkgerrors "github.com/pkg/errors"
 )
 
 // MultiClusterHubReconciler reconciles a MultiClusterHub object
@@ -396,9 +398,9 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 	if multiClusterHub.Enabled(operatorv1.Insights) {
-		result, err = r.ensureSubscription(multiClusterHub, subscription.Insights(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
+		result, err = r.ensureInsights(ctx, multiClusterHub)
 	} else {
-		result, err = r.ensureNoSubscription(multiClusterHub, subscription.Insights(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
+		result, err = r.ensureNoInsights(ctx, multiClusterHub)
 	}
 	if result != (ctrl.Result{}) {
 		return result, err
@@ -549,6 +551,99 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				return []reconcile.Request{}
 			})).
 		Complete(r)
+}
+
+func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operatorv1.MultiClusterHub, template *unstructured.Unstructured) (ctrl.Result, error) {
+	// Set owner reference.
+	err := ctrl.SetControllerReference(m, template, r.Scheme)
+	if err != nil {
+		return ctrl.Result{}, pkgerrors.Wrapf(err, "Error setting controller reference on resource %s", template.GetName())
+	}
+
+	if template.GetKind() == "APIService" {
+		result, err := r.ensureUnstructuredResource(m, template)
+		if err != nil {
+			return result, err
+		}
+	} else {
+		// Apply the object data.
+		force := true
+		err = r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
+		if err != nil {
+			return ctrl.Result{}, pkgerrors.Wrapf(err, "error applying object Name: %s Kind: %s", template.GetName(), template.GetKind())
+		}
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureInsights(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+
+	log := log.FromContext(ctx)
+
+	templates, errs := renderer.RenderChart("pkg/templates/charts/toggle/insights", m, r.CacheSpec.ImageOverrides)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// Applies all templates
+	for _, template := range templates {
+		result, err := r.applyTemplate(ctx, m, template)
+		if err != nil {
+			return result, err
+		}
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureNoInsights(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
+
+	// Renders all templates from charts
+	templates, errs := renderer.RenderChart("pkg/templates/charts/toggle/insights", m, r.CacheSpec.ImageOverrides)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// Deletes all templates
+	for _, template := range templates {
+		result, err := r.deleteTemplate(ctx, m, template)
+		if err != nil {
+			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+			return result, err
+		}
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) deleteTemplate(ctx context.Context, m *operatorv1.MultiClusterHub, template *unstructured.Unstructured) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
+	err := r.Client.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()}, template)
+
+	if err != nil && errors.IsNotFound(err) {
+		return ctrl.Result{}, nil
+	}
+
+	// set status progressing condition
+	if err != nil {
+		log.Error(err, "Odd error delete template")
+		return ctrl.Result{}, err
+	}
+
+	log.Info(fmt.Sprintf("finalizing template: %s\n", template.GetName()))
+	err = r.Client.Delete(ctx, template)
+	if err != nil {
+		log.Error(err, "Failed to delete template")
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, nil
 }
 
 // ingressDomain is discovered from Openshift cluster configuration resources
