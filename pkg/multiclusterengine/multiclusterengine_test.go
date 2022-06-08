@@ -65,7 +65,7 @@ func TestSubscription(t *testing.T) {
 			name: "Empty MCH (No MCE annotations)",
 			MCH:  emptyMCH,
 			want: &subv1alpha1.SubscriptionSpec{
-				Channel:                "stable-2.0",
+				Channel:                "stable-2.1",
 				InstallPlanApproval:    subv1alpha1.ApprovalAutomatic,
 				Package:                "multicluster-engine",
 				CatalogSource:          "redhat-operators",
@@ -102,7 +102,7 @@ func TestSubscription(t *testing.T) {
 			name: "MCE Annotations set (StartingCSV and InstallPlanApproval)",
 			MCH:  mch3,
 			want: &subv1alpha1.SubscriptionSpec{
-				Channel:                "stable-2.0",
+				Channel:                "stable-2.1",
 				InstallPlanApproval:    subv1alpha1.ApprovalManual,
 				Package:                "multicluster-engine",
 				CatalogSource:          "redhat-operators",
