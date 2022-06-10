@@ -33,7 +33,6 @@ import (
 	"github.com/stolostron/multiclusterhub-operator/pkg/deploying"
 	"github.com/stolostron/multiclusterhub-operator/pkg/helmrepo"
 	"github.com/stolostron/multiclusterhub-operator/pkg/imageoverrides"
-	"github.com/stolostron/multiclusterhub-operator/pkg/manifest"
 	"github.com/stolostron/multiclusterhub-operator/pkg/predicate"
 	"github.com/stolostron/multiclusterhub-operator/pkg/subscription"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
@@ -209,13 +208,8 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	// First, attempt to read image overrides from environmental variables
 	imageOverrides := imageoverrides.GetImageOverrides()
 	if len(imageOverrides) == 0 {
-		// If imageoverrides are not set from environmental variables, read from manifest
-		r.Log.Info("Image Overrides not set from environment variables. Checking for overrides in manifest")
-		imageOverrides, err = manifest.GetImageOverrides(multiClusterHub)
-		if err != nil {
-			r.Log.Error(err, "Could not get map of image overrides")
-			return ctrl.Result{}, err
-		}
+		r.Log.Error(err, "Could not get map of image overrides")
+		return ctrl.Result{}, nil
 	}
 
 	// Select oauth proxy image to use. If OCP 4.8 use old version. If OCP 4.9+ use new version. Set with key oauth_proxy

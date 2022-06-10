@@ -24,7 +24,6 @@ COPY pkg/ pkg/
 
 # Copy required files
 
-COPY bin/image-manifests/ image-manifests/
 COPY --from=cloner crds/ crds/
 COPY pkg/templates/ templates/
 
@@ -40,7 +39,6 @@ LABEL org.label-schema.vendor="Red Hat" \
 
 WORKDIR /
 COPY --from=builder /workspace/multiclusterhub-operator /usr/local/bin/multiclusterhub-operator
-COPY --from=builder /workspace/image-manifests/ /image-manifests
 COPY --from=builder /workspace/crds/ /crds
 COPY --from=builder /workspace/templates/ /usr/local/templates/
 

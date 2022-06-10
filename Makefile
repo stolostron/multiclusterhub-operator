@@ -101,7 +101,7 @@ build: generate fmt vet ## Build manager binary.
 	go build -o bin/multiclusterhub-operator main.go
 
 run: manifests generate fmt vet ## Run a controller from your host.
-	MANIFESTS_PATH="bin/image-manifests" CRDS_PATH="bin/crds" POD_NAMESPACE="open-cluster-management" go run ./main.go
+	CRDS_PATH="bin/crds" POD_NAMESPACE="open-cluster-management" go run ./main.go
 
 docker-build: ## test ## Build docker image with the manager.
 	docker build -t ${IMG} .
