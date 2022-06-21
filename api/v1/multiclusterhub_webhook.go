@@ -24,46 +24,37 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-	cl "sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
-// log is for logging in this package.
 var (
-	multiclusterhublog = logf.Log.WithName("multiclusterhub-resource")
-	Client             cl.Client
+	mchlog = log.Log.WithName("multiclusterhub-resource")
+	Client client.Client
 )
 
-// TODO: Get Webhook Working ...
 func (r *MultiClusterHub) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	Client = mgr.GetClient()
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).Complete()
+	return ctrl.NewWebhookManagedBy(mgr).For(r).Complete()
 }
-
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
 var _ webhook.Defaulter = &MultiClusterHub{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (r *MultiClusterHub) Default() {
-	multiclusterhublog.Info("default", "name", r.Name)
-
-	// TODO(user): fill in your defaulting logic.
+	mchlog.Info("default", "name", r.Name)
 }
 
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 //+kubebuilder:webhook:name=multiclusterhub-operator-validating-webhook,path=/validate-v1-multiclusterhub,mutating=false,failurePolicy=fail,sideEffects=None,groups=operator.open-cluster-management.io,resources=multiclusterhubs,verbs=create;update;delete,versions=v1,name=multiclusterhub.validating-webhook.open-cluster-management.io,admissionReviewVersions={v1,v1beta1}
 
 var _ webhook.Validator = &MultiClusterHub{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *MultiClusterHub) ValidateCreate() error {
-	multiclusterhublog.Info("validate create", "name", r.Name)
-	// TODO(user): fill in your validation logic upon object creation.
+	mchlog.Info("validate create", "name", r.Name)
 	multiClusterHubList := &MultiClusterHubList{}
-	if err := Client.List(context.TODO(), multiClusterHubList); err != nil {
+	if err := Client.List(context.Background(), multiClusterHubList); err != nil {
 		return fmt.Errorf("unable to list MultiClusterHubs: %s", err)
 	}
 	if len(multiClusterHubList.Items) == 0 {
@@ -74,15 +65,12 @@ func (r *MultiClusterHub) ValidateCreate() error {
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) error {
-	multiclusterhublog.Info("validate update", "name", r.Name)
-	// TODO(user): fill in your validation logic upon object update.
+	mchlog.Info("validate update", "name", r.Name)
 	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (r *MultiClusterHub) ValidateDelete() error {
-	multiclusterhublog.Info("validate delete", "name", r.Name)
-
-	// TODO(user): fill in your validation logic upon object deletion.
+	mchlog.Info("validate delete", "name", r.Name)
 	return nil
 }
