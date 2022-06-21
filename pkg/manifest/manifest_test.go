@@ -8,6 +8,10 @@ import (
 
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
+	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 func Test_buildFullImageReference(t *testing.T) {
@@ -53,3 +57,13 @@ func Test_buildFullImageReference(t *testing.T) {
 		})
 	}
 }
+
+var _ = Describe("Manifests", func() {
+	Context("get image overrides", func() {
+		It("gets image overrides from empty mch", func() {
+			mch := resources.EmptyMCH()
+			_, err := GetImageOverrides(&mch)
+			Expect(err).To(BeNil())
+		})
+	})
+})
