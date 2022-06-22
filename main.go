@@ -32,6 +32,7 @@ import (
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	netv1 "github.com/openshift/api/config/v1"
@@ -75,6 +76,8 @@ func init() {
 	utilruntime.Must(mcev1.AddToScheme(scheme))
 
 	utilruntime.Must(olmv1.AddToScheme(scheme))
+
+	utilruntime.Must(promv1.AddToScheme(scheme))
 
 	utilruntime.Must(configv1.AddToScheme(scheme))
 

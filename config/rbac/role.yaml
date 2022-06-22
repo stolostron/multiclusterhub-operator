@@ -331,6 +331,19 @@ rules:
   verbs:
   - delete
 - apiGroups:
+  - ""
+  - apps
+  - monitoring.coreos.com
+  resources:
+  - deployments
+  - serviceaccounts
+  - servicemonitors
+  - services
+  verbs:
+  - delete
+  - get
+  - patch
+- apiGroups:
   - admissionregistration.k8s.io
   - apiextensions.k8s.io
   - apiregistration.k8s.io

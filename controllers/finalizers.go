@@ -8,15 +8,15 @@ import (
 	"fmt"
 	"strings"
 
-	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
-
 	"github.com/go-logr/logr"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/channel"
 	"github.com/stolostron/multiclusterhub-operator/pkg/helmrepo"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
+	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -51,6 +51,29 @@ func (r *MultiClusterHubReconciler) cleanupAPIServices(reqLogger logr.Logger, m 
 	}
 
 	reqLogger.Info("API services finalized")
+	return nil
+}
+
+func (r *MultiClusterHubReconciler) cleanupServiceMonitors(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+	err := r.Client.DeleteAllOf(
+		context.TODO(),
+		&promv1.ServiceMonitor{},
+		client.MatchingLabels{
+			"installer.name":      m.GetName(),
+			"installer.namespace": m.GetNamespace(),
+		},
+	)
+
+	if err != nil {
+		if errors.IsNotFound(err) {
+			reqLogger.Info("No matching service monitors to finalize. Continuing.")
+			return nil
+		}
+		reqLogger.Error(err, "Error while deleting service monitors")
+		return err
+	}
+
+	reqLogger.Info("service monitors finalized")
 	return nil
 }
 

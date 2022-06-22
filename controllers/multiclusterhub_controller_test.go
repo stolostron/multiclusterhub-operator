@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	mchov1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
@@ -135,6 +136,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 		Expect(clientConfig).NotTo(BeNil())
 
 		Expect(scheme.AddToScheme(clientScheme)).Should(Succeed())
+		Expect(promv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(mchov1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(appsub.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(apiregistrationv1.AddToScheme(clientScheme)).Should(Succeed())
@@ -185,10 +187,15 @@ var _ = Describe("MultiClusterHub controller", func() {
 				ClusterID: "12345678910",
 			},
 		})).To(Succeed())
+
 	})
 
 	Context("When updating Multiclusterhub status", func() {
 		It("Should get to a running state", func() {
+			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates/charts/toggle/insights")
+			os.Setenv("CRD_OVERRIDE", "../pkg/templates/crds/insights")
+			defer os.Unsetenv("DIRECTORY_OVERRIDE")
+			defer os.Unsetenv("CRD_OVERRIDE")
 			By("Applying prereqs")
 			ctx := context.Background()
 			ApplyPrereqs(k8sClient)
@@ -295,6 +302,10 @@ var _ = Describe("MultiClusterHub controller", func() {
 		})
 
 		It("Should Manage Preexisting MCE", func() {
+			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates/charts/toggle/insights")
+			os.Setenv("CRD_OVERRIDE", "../pkg/templates/crds/insights")
+			defer os.Unsetenv("DIRECTORY_OVERRIDE")
+			defer os.Unsetenv("CRD_OVERRIDE")
 			By("Applying prereqs")
 			ctx := context.Background()
 			ApplyPrereqs(k8sClient)
@@ -358,6 +369,10 @@ var _ = Describe("MultiClusterHub controller", func() {
 		})
 
 		It("Should allow Search to be optional", func() {
+			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates/charts/toggle/insights")
+			os.Setenv("CRD_OVERRIDE", "../pkg/templates/crds/insights")
+			defer os.Unsetenv("DIRECTORY_OVERRIDE")
+			defer os.Unsetenv("CRD_OVERRIDE")
 			By("Applying prereqs")
 			ctx := context.Background()
 			ApplyPrereqs(k8sClient)

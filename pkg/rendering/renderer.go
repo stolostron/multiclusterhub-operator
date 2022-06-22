@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 
 	loader "helm.sh/helm/v3/pkg/chart/loader"
@@ -52,8 +51,8 @@ func RenderCRDs(crdDir string) ([]*unstructured.Unstructured, []error) {
 	var crds []*unstructured.Unstructured
 	errs := []error{}
 
-	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
-		crdDir = path.Join(val, crdDir)
+	if val, ok := os.LookupEnv("CRD_OVERRIDE"); ok {
+		crdDir = val
 	}
 
 	// Read CRD files
@@ -88,7 +87,7 @@ func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]st
 	var templates []*unstructured.Unstructured
 	errs := []error{}
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
-		chartDir = path.Join(val, chartDir)
+		chartDir = val
 	}
 	charts, err := ioutil.ReadDir(chartDir)
 	if err != nil {
@@ -112,7 +111,7 @@ func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]st
 	log := log.FromContext(context.Background())
 	errs := []error{}
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
-		chartPath = path.Join(val, chartPath)
+		chartPath = val
 	}
 	chartTemplates, errs := renderTemplates(chartPath, mch, images)
 	if len(errs) > 0 {

@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -95,7 +96,7 @@ const (
 //+kubebuilder:rbac:groups="multicluster.openshift.io",resources=multiclusterengines,verbs=create;get;list;patch;update;delete;watch
 //+kubebuilder:rbac:groups=console.openshift.io,resources=consoleplugins,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=operator.openshift.io,resources=consoles,verbs=get;list;watch;update;patch
-
+//+kubebuilder:rbac:groups="";"apps";monitoring.coreos.com,resources=servicemonitors;deployments;services;serviceaccounts,verbs=patch;delete;get
 // AgentServiceConfig webhook delete check
 //+kubebuilder:rbac:groups=agent-install.openshift.io,resources=agentserviceconfigs,verbs=get;list;watch
 
@@ -554,24 +555,35 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operatorv1.MultiClusterHub, template *unstructured.Unstructured) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
 	// Set owner reference.
-	err := ctrl.SetControllerReference(m, template, r.Scheme)
-	if err != nil {
-		return ctrl.Result{}, pkgerrors.Wrapf(err, "Error setting controller reference on resource %s", template.GetName())
+	if (template.GetKind() != "ClusterRole") && (template.GetKind() != "ClusterRoleBinding") && (template.GetKind() != "ServiceMonitor") && (template.GetKind() != "CustomResourceDefinition") {
+		err := ctrl.SetControllerReference(m, template, r.Scheme)
+		if err != nil {
+			return ctrl.Result{}, pkgerrors.Wrapf(err, "Error setting controller reference on resource %s", template.GetName())
+		}
+	} else {
+		utils.AddInstallerLabel(template, m.Name, m.Namespace)
 	}
 
 	if template.GetKind() == "APIService" {
 		result, err := r.ensureUnstructuredResource(m, template)
 		if err != nil {
+			log.Info(err.Error())
 			return result, err
 		}
 	} else {
 		// Apply the object data.
 		force := true
-		err = r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
+		err := r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
 		if err != nil {
+			log.Info(err.Error())
 			return ctrl.Result{}, pkgerrors.Wrapf(err, "error applying object Name: %s Kind: %s", template.GetName(), template.GetKind())
 		}
+		// result, err := r.ensureUnstructuredResource(m, template)
+		// if err != nil {
+		// 	return result, err
+		// }
 	}
 	return ctrl.Result{}, nil
 }
@@ -580,7 +592,27 @@ func (r *MultiClusterHubReconciler) ensureInsights(ctx context.Context, m *opera
 
 	log := log.FromContext(ctx)
 
-	templates, errs := renderer.RenderChart("pkg/templates/charts/toggle/insights", m, r.CacheSpec.ImageOverrides)
+	crds, errs := renderer.RenderCRDs("usr/local/templates/crds/insights")
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{}, nil
+	}
+
+	// Apply all CRDs
+	for _, crd := range crds {
+		result, err := r.applyTemplate(ctx, m, crd)
+		if err != nil {
+			log.Info(err.Error())
+			return result, err
+		}
+	}
+	cmd := exec.Command("ls")
+	stdout, _ := cmd.Output()
+	log.Info(string(stdout))
+
+	templates, errs := renderer.RenderChart("usr/local/templates/charts/toggle/insights", m, r.CacheSpec.ImageOverrides)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -590,6 +622,7 @@ func (r *MultiClusterHubReconciler) ensureInsights(ctx context.Context, m *opera
 
 	// Applies all templates
 	for _, template := range templates {
+		log.Info(template.GetName())
 		result, err := r.applyTemplate(ctx, m, template)
 		if err != nil {
 			return result, err
@@ -603,7 +636,7 @@ func (r *MultiClusterHubReconciler) ensureNoInsights(ctx context.Context, m *ope
 	log := log.FromContext(ctx)
 
 	// Renders all templates from charts
-	templates, errs := renderer.RenderChart("pkg/templates/charts/toggle/insights", m, r.CacheSpec.ImageOverrides)
+	templates, errs := renderer.RenderChart("usr/local/templates/charts/toggle/insights", m, r.CacheSpec.ImageOverrides)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -687,6 +720,9 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 		return err
 	}
 	if err := r.cleanupClusterRoleBindings(reqLogger, m); err != nil {
+		return err
+	}
+	if err := r.cleanupServiceMonitors(reqLogger, m); err != nil {
 		return err
 	}
 	if err := r.cleanupMultiClusterEngine(reqLogger, m); err != nil {

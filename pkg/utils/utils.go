@@ -327,15 +327,19 @@ func FindNamespace() (string, error) {
 }
 
 func GetDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
-	return []types.NamespacedName{
+	nn := []types.NamespacedName{
 		{Name: "multiclusterhub-repo", Namespace: m.Namespace},
 	}
+	if m.Enabled(operatorsv1.Insights) {
+		nn = append(nn, types.NamespacedName{Name: "insights-client", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "insights-metrics", Namespace: m.Namespace})
+	}
+	return nn
 }
 
 func GetAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	appsubs := []types.NamespacedName{
 		{Name: "console-chart-sub", Namespace: m.Namespace},
-		{Name: "policyreport-sub", Namespace: m.Namespace},
 		{Name: "grc-sub", Namespace: m.Namespace},
 		{Name: "management-ingress-sub", Namespace: m.Namespace},
 		{Name: "cluster-lifecycle-sub", Namespace: m.Namespace},
@@ -364,6 +368,10 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedN
 	if m.Enabled("multiclusterhub-repo") {
 		nn = append(nn, types.NamespacedName{Name: "multiclusterhub-repo", Namespace: m.Namespace})
 	}
+	if m.Enabled(operatorsv1.Insights) {
+		nn = append(nn, types.NamespacedName{Name: "insights-client", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "insights-metrics", Namespace: m.Namespace})
+	}
 	return nn
 }
 
@@ -371,9 +379,6 @@ func GetAppsubsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedName 
 	nn := []types.NamespacedName{}
 	if m.Enabled(operatorsv1.Console) {
 		nn = append(nn, types.NamespacedName{Name: "console-chart-sub", Namespace: m.Namespace})
-	}
-	if m.Enabled(operatorsv1.Insights) {
-		nn = append(nn, types.NamespacedName{Name: "policyreport-sub", Namespace: m.Namespace})
 	}
 	if m.Enabled(operatorsv1.GRC) {
 		nn = append(nn, types.NamespacedName{Name: "grc-sub", Namespace: m.Namespace})
@@ -563,5 +568,5 @@ func DefaultTolerations() []corev1.Toleration {
 }
 
 func GetTestImages() []string {
-	return []string{"insights-client"}
+	return []string{"kube_rbac_proxy", "insights_metrics", "insights_client"}
 }

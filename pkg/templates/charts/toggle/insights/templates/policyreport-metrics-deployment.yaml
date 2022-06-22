@@ -39,7 +39,10 @@ spec:
               - key: kubernetes.io/arch
                 operator: In
                 values:
-                {{- toYaml .Values.global.arch | nindent 18 }}
+                - amd64
+                - ppc64le
+                - s390x
+                - arm64                
         podAntiAffinity: 
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 70
@@ -60,10 +63,16 @@ spec:
                   operator: In
                   values:
                   - insightsclient 
-      {{- with .Values.hubconfig.tolerations }}
+{{- with .Values.hubconfig.tolerations }}
       tolerations:
-      {{- toYaml . | nindent 8 }}
-      {{- end }}
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+{{- end }}
       containers:
       - name: kube-rbac-proxy
         image: {{ .Values.global.imageOverrides.kube_rbac_proxy}}
