@@ -341,6 +341,7 @@ rules:
   - services
   verbs:
   - delete
+  - deletecollection
   - get
   - patch
 - apiGroups:

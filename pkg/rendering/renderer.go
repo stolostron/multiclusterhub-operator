@@ -36,7 +36,6 @@ type Global struct {
 	PullPolicy     string            `yaml:"pullPolicy" structs:"pullPolicy"`
 	PullSecret     string            `yaml:"pullSecret" structs:"pullSecret"`
 	Namespace      string            `yaml:"namespace" structs:"namespace"`
-	Arch           []string          `yaml:"arch" structs:"arch"`
 }
 
 type HubConfig struct {

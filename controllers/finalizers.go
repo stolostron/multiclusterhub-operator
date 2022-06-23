@@ -55,15 +55,23 @@ func (r *MultiClusterHubReconciler) cleanupAPIServices(reqLogger logr.Logger, m 
 }
 
 func (r *MultiClusterHubReconciler) cleanupServiceMonitors(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
-	err := r.Client.DeleteAllOf(
-		context.TODO(),
-		&promv1.ServiceMonitor{},
-		client.MatchingLabels{
-			"installer.name":      m.GetName(),
-			"installer.namespace": m.GetNamespace(),
-		},
-	)
+	// err := r.Client.DeleteAllOf(
+	// 	context.TODO(),
+	// 	&promv1.ServiceMonitor{},
+	// 	client.MatchingLabels{
+	// 		"installer.name":      m.GetName(),
+	// 		"installer.namespace": m.GetNamespace(),
+	// 	},
+	// )
 
+	sm := &promv1.ServiceMonitor{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "openshift-monitoring",
+			Name:      "acm-insights",
+		},
+	}
+
+	err := r.Client.Delete(context.TODO(), sm)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			reqLogger.Info("No matching service monitors to finalize. Continuing.")

@@ -96,7 +96,8 @@ const (
 //+kubebuilder:rbac:groups="multicluster.openshift.io",resources=multiclusterengines,verbs=create;get;list;patch;update;delete;watch
 //+kubebuilder:rbac:groups=console.openshift.io,resources=consoleplugins,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=operator.openshift.io,resources=consoles,verbs=get;list;watch;update;patch
-//+kubebuilder:rbac:groups="";"apps";monitoring.coreos.com,resources=servicemonitors;deployments;services;serviceaccounts,verbs=patch;delete;get
+//+kubebuilder:rbac:groups="";"apps";monitoring.coreos.com,resources=servicemonitors;deployments;services;serviceaccounts,verbs=patch;delete;get;deletecollection
+
 // AgentServiceConfig webhook delete check
 //+kubebuilder:rbac:groups=agent-install.openshift.io,resources=agentserviceconfigs,verbs=get;list;watch
 
