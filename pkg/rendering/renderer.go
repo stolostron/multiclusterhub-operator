@@ -21,10 +21,6 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-const (
-	AlwaysChartsDir = "pkg/templates/charts/always"
-)
-
 type Values struct {
 	Global    Global    `yaml:"global" structs:"global"`
 	HubConfig HubConfig `yaml:"hubconfig" structs:"hubconfig"`

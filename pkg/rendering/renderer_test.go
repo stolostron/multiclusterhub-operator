@@ -62,8 +62,8 @@ func TestRender(t *testing.T) {
 		testImages[v] = "quay.io/test/test:Test"
 	}
 	// multiple charts
-	chartsDir := chartsPath
-	templates, errs := RenderChart(chartsDir, testMCH, testImages)
+	chartsDir := chartsDir
+	templates, errs := RenderCharts(chartsDir, testMCH, testImages)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			t.Logf(err.Error())
@@ -240,4 +240,13 @@ func TestRenderCRDs(t *testing.T) {
 			}
 		})
 	}
+}
+
+func testFailures(t *testing.T) {
+	os.Setenv("CRD_OVERRIDE", "pkg/doesnotexist")
+	_, errs := RenderCRDs(crdsDir)
+	if errs == nil {
+		t.Fatalf("Should have received an error")
+	}
+	os.Unsetenv("CRD_OVERRIDE")
 }
