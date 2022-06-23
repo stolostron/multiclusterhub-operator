@@ -274,7 +274,7 @@ func GetTestImages() []string {
 		"PROMETHEUS_CONFIG_RELOADER", "PROMETHEUS_OPERATOR", "RBAC_QUERY_PROXY", "REDISGRAPH_TLS",
 		"SEARCH_AGGREGATOR", "SEARCH_API", "SEARCH_COLLECTOR", "SEARCH_E2E", "SEARCH_INDEXER", "SEARCH_OPERATOR",
 		"SEARCH_V2_API", "SUBMARINER_ADDON", "THANOS", "VOLSYNC", "VOLSYNC_ADDON_CONTROLLER", "VOLSYNC_MOVER_RCLONE",
-		"VOLSYNC_MOVER_RESTIC", "VOLSYNC_MOVER_RSYNC"}
+		"VOLSYNC_MOVER_RESTIC", "VOLSYNC_MOVER_RSYNC", "kube_rbac_proxy", "insights_metrics", "insights_client"}
 
 }
 
@@ -565,8 +565,4 @@ func DefaultTolerations() []corev1.Toleration {
 			Operator: "Exists",
 		},
 	}
-}
-
-func GetTestImages() []string {
-	return []string{"kube_rbac_proxy", "insights_metrics", "insights_client"}
 }
