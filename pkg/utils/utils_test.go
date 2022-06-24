@@ -186,6 +186,12 @@ var _ = Describe("utility functions", func() {
 			d := GetDeploymentsForStatus(&mch)
 			Expect(len(d)).To(Equal(1))
 		})
+		It("gets deployments for status with insights enabled", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable("insights")
+			d := GetDeploymentsForStatus(&mch)
+			Expect(len(d)).To(Equal(2))
+		})
 		It("gets appsubs for status", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(operatorsv1.ClusterBackup)

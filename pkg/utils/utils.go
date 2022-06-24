@@ -577,18 +577,3 @@ func UpdateMCEOverrides(mce *mcev1.MultiClusterEngine, mch *operatorsv1.MultiClu
 	}
 	return
 }
-
-func DefaultTolerations() []corev1.Toleration {
-	return []corev1.Toleration{
-		{
-			Effect:   "NoSchedule",
-			Key:      "node-role.kubernetes.io/infra",
-			Operator: "Exists",
-		},
-		{
-			Effect:   "NoSchedule",
-			Key:      "dedicated",
-			Operator: "Exists",
-		},
-	}
-}

@@ -35,6 +35,49 @@ func EmptyMCE() mcev1.MultiClusterEngine {
 	}
 }
 
+func SpecMCH() *operatorsv1.MultiClusterHub {
+	mchNodeSelector := map[string]string{"select": "test"}
+	mchImagePullSecret := "test"
+	mchTolerations := []corev1.Toleration{
+		{
+			Key:      "dedicated",
+			Operator: "Exists",
+			Effect:   "NoSchedule",
+		},
+	}
+	// testMCH := &v1.MultiClusterHub{
+	// 	ObjectMeta: metav1.ObjectMeta{
+	// 		Name:      "testmch",
+	// 		Namespace: mchNamespace,
+	// 	},
+	// 	Spec: v1.MultiClusterHubSpec{
+	// 		NodeSelector:    mchNodeSelector,
+	// 		ImagePullSecret: mchImagePullSecret,
+	// 		Tolerations:     mchTolerations,
+	// 	},
+	// }
+
+	return &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      MulticlusterhubName,
+			Namespace: MulticlusterhubNamespace,
+		},
+		Spec: operatorsv1.MultiClusterHubSpec{
+			NodeSelector:    mchNodeSelector,
+			ImagePullSecret: mchImagePullSecret,
+			Tolerations:     mchTolerations,
+			Overrides: &operatorsv1.Overrides{
+				Components: []operatorsv1.ComponentConfig{
+					{
+						Name:    operatorsv1.ClusterBackup,
+						Enabled: false,
+					},
+				},
+			},
+		},
+	}
+}
+
 func EmptyMCH() operatorsv1.MultiClusterHub {
 	return operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
