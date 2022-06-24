@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 
 	loader "helm.sh/helm/v3/pkg/chart/loader"
@@ -46,8 +47,12 @@ func RenderCRDs(crdDir string) ([]*unstructured.Unstructured, []error) {
 	var crds []*unstructured.Unstructured
 	errs := []error{}
 
-	if val, ok := os.LookupEnv("CRD_OVERRIDE"); ok {
-		crdDir = val
+	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
+		crdDir = path.Join(val, crdDir)
+	} else {
+		value, _ := os.LookupEnv("TEMPLATES_PATH")
+		crdDir = path.Join(value, crdDir)
+
 	}
 
 	// Read CRD files
@@ -82,7 +87,10 @@ func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]st
 	var templates []*unstructured.Unstructured
 	errs := []error{}
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
-		chartDir = val
+		chartDir = path.Join(val, chartDir)
+	} else {
+		value, _ := os.LookupEnv("TEMPLATES_PATH")
+		chartDir = path.Join(value, chartDir)
 	}
 	charts, err := ioutil.ReadDir(chartDir)
 	if err != nil {
@@ -106,7 +114,11 @@ func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]st
 	log := log.FromContext(context.Background())
 	errs := []error{}
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
-		chartPath = val
+		chartPath = path.Join(val, chartPath)
+	} else {
+		value, _ := os.LookupEnv("TEMPLATES_PATH")
+		chartPath = path.Join(value, chartPath)
+
 	}
 	chartTemplates, errs := renderTemplates(chartPath, mch, images)
 	if len(errs) > 0 {
@@ -171,11 +183,7 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 
 	values.HubConfig.NodeSelector = mch.Spec.NodeSelector
 
-	if len(mch.Spec.Tolerations) > 0 {
-		values.HubConfig.Tolerations = mch.Spec.Tolerations
-	} else {
-		values.HubConfig.Tolerations = utils.DefaultTolerations()
-	}
+	values.HubConfig.Tolerations = utils.GetTolerations(mch)
 
 	values.Org = "open-cluster-management"
 

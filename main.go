@@ -19,17 +19,20 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
+	"time"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	configv1 "github.com/openshift/api/config/v1"
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
+	renderer "github.com/stolostron/multiclusterhub-operator/pkg/rendering"
 
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -41,7 +44,10 @@ import (
 	"github.com/stolostron/multiclusterhub-operator/controllers"
 	"github.com/stolostron/multiclusterhub-operator/pkg/webhook"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
@@ -56,6 +62,10 @@ import (
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
+)
+
+const (
+	crdsDir = "/crds"
 )
 
 func init() {
@@ -132,6 +142,24 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Render CRD templates
+	crdsDir := crdsDir
+	crds, errs := renderer.RenderCRDs(crdsDir)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			setupLog.Info(err.Error())
+		}
+		os.Exit(1)
+	}
+
+	for _, crd := range crds {
+		err := ensureCRD(mgr, crd)
+		if err != nil {
+			setupLog.Info(err.Error())
+			os.Exit(1)
+		}
+	}
+
 	// TODO: Get Webhook Working. Some troubles w/ kubebuilder generation prevented me from
 	// creating the same webhook spec. May be able to get past this with Kustomize.
 	// if err = (&operatorv1.MultiClusterHub{}).SetupWebhookWithManager(mgr); err != nil {
@@ -184,4 +212,45 @@ func getOperatorNamespace() (string, error) {
 	}
 	ns := strings.TrimSpace(string(nsBytes))
 	return ns, nil
+}
+
+func ensureCRD(mgr ctrl.Manager, crd *unstructured.Unstructured) error {
+	ctx := context.Background()
+	maxAttempts := 5
+	go func() {
+		for i := 0; i < maxAttempts; i++ {
+			setupLog.Info(fmt.Sprintf("Ensuring '%s' CRD exists", crd.GetName()))
+			existingCRD := &unstructured.Unstructured{}
+			existingCRD.SetGroupVersionKind(crd.GroupVersionKind())
+			err := mgr.GetClient().Get(ctx, types.NamespacedName{Name: crd.GetName()}, existingCRD)
+			if err != nil && errors.IsNotFound(err) {
+				// CRD not found. Create and return
+				err = mgr.GetClient().Create(ctx, crd)
+				if err != nil {
+					setupLog.Error(err, fmt.Sprintf("Error creating '%s' CRD", crd.GetName()))
+					time.Sleep(5 * time.Second)
+					continue
+				}
+				return
+			} else if err != nil {
+				setupLog.Error(err, fmt.Sprintf("Error getting '%s' CRD", crd.GetName()))
+			} else if err == nil {
+				// CRD already exists. Update and return
+				setupLog.Info(fmt.Sprintf("'%s' CRD already exists. Updating.", crd.GetName()))
+				crd.SetResourceVersion(existingCRD.GetResourceVersion())
+				err = mgr.GetClient().Update(ctx, crd)
+				if err != nil {
+					setupLog.Error(err, fmt.Sprintf("Error updating '%s' CRD", crd.GetName()))
+					time.Sleep(5 * time.Second)
+					continue
+				}
+				return
+			}
+			time.Sleep(5 * time.Second)
+		}
+
+		setupLog.Info(fmt.Sprintf("Unable to ensure '%s' CRD exists in allotted time. Failing.", crd.GetName()))
+		os.Exit(1)
+	}()
+	return nil
 }

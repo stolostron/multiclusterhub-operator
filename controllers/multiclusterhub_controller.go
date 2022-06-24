@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -558,13 +557,9 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operatorv1.MultiClusterHub, template *unstructured.Unstructured) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	// Set owner reference.
-	if (template.GetKind() != "ClusterRole") && (template.GetKind() != "ClusterRoleBinding") && (template.GetKind() != "ServiceMonitor") && (template.GetKind() != "CustomResourceDefinition") {
-		err := ctrl.SetControllerReference(m, template, r.Scheme)
-		if err != nil {
-			return ctrl.Result{}, pkgerrors.Wrapf(err, "Error setting controller reference on resource %s", template.GetName())
-		}
-	} else {
+	if (template.GetKind() == "ClusterRole") || (template.GetKind() == "ClusterRoleBinding") || (template.GetKind() == "ServiceMonitor") || (template.GetKind() == "CustomResourceDefinition") {
 		utils.AddInstallerLabel(template, m.Name, m.Namespace)
+
 	}
 
 	if template.GetKind() == "APIService" {
@@ -593,27 +588,7 @@ func (r *MultiClusterHubReconciler) ensureInsights(ctx context.Context, m *opera
 
 	log := log.FromContext(ctx)
 
-	crds, errs := renderer.RenderCRDs("usr/local/templates/crds/insights")
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{}, nil
-	}
-
-	// Apply all CRDs
-	for _, crd := range crds {
-		result, err := r.applyTemplate(ctx, m, crd)
-		if err != nil {
-			log.Info(err.Error())
-			return result, err
-		}
-	}
-	cmd := exec.Command("ls")
-	stdout, _ := cmd.Output()
-	log.Info(string(stdout))
-
-	templates, errs := renderer.RenderChart("usr/local/templates/charts/toggle/insights", m, r.CacheSpec.ImageOverrides)
+	templates, errs := renderer.RenderChart("/charts/toggle/insights", m, r.CacheSpec.ImageOverrides)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -637,7 +612,7 @@ func (r *MultiClusterHubReconciler) ensureNoInsights(ctx context.Context, m *ope
 	log := log.FromContext(ctx)
 
 	// Renders all templates from charts
-	templates, errs := renderer.RenderChart("usr/local/templates/charts/toggle/insights", m, r.CacheSpec.ImageOverrides)
+	templates, errs := renderer.RenderChart("/charts/toggle/insights", m, r.CacheSpec.ImageOverrides)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())

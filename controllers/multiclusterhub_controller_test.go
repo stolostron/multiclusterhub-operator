@@ -192,10 +192,8 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 	Context("When updating Multiclusterhub status", func() {
 		It("Should get to a running state", func() {
-			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates/charts/toggle/insights")
-			os.Setenv("CRD_OVERRIDE", "../pkg/templates/crds/insights")
+			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates")
 			defer os.Unsetenv("DIRECTORY_OVERRIDE")
-			defer os.Unsetenv("CRD_OVERRIDE")
 			By("Applying prereqs")
 			ctx := context.Background()
 			ApplyPrereqs(k8sClient)
@@ -302,10 +300,8 @@ var _ = Describe("MultiClusterHub controller", func() {
 		})
 
 		It("Should Manage Preexisting MCE", func() {
-			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates/charts/toggle/insights")
-			os.Setenv("CRD_OVERRIDE", "../pkg/templates/crds/insights")
+			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates")
 			defer os.Unsetenv("DIRECTORY_OVERRIDE")
-			defer os.Unsetenv("CRD_OVERRIDE")
 			By("Applying prereqs")
 			ctx := context.Background()
 			ApplyPrereqs(k8sClient)
@@ -369,10 +365,8 @@ var _ = Describe("MultiClusterHub controller", func() {
 		})
 
 		It("Should allow Search to be optional", func() {
-			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates/charts/toggle/insights")
-			os.Setenv("CRD_OVERRIDE", "../pkg/templates/crds/insights")
+			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates")
 			defer os.Unsetenv("DIRECTORY_OVERRIDE")
-			defer os.Unsetenv("CRD_OVERRIDE")
 			By("Applying prereqs")
 			ctx := context.Background()
 			ApplyPrereqs(k8sClient)
@@ -456,6 +450,90 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 	})
 
+	It("Should allow Insights to be optional", func() {
+		os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates")
+		defer os.Unsetenv("DIRECTORY_OVERRIDE")
+		By("Applying prereqs")
+		ctx := context.Background()
+		ApplyPrereqs(k8sClient)
+
+		By("By creating a new Multiclusterhub with Insights disabled")
+		mch := resources.NoInsightsMCH()
+		Expect(k8sClient.Create(ctx, &mch)).Should(Succeed())
+		Expect(k8sClient.Create(ctx, mchoDeployment)).Should(Succeed())
+
+		By("Ensuring MCH is created")
+		createdMCH := &mchov1.MultiClusterHub{}
+		Eventually(func() bool {
+			err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
+			return err == nil
+		}, timeout, interval).Should(BeTrue())
+
+		By("Waiting for MCH to be in the running state")
+		Eventually(func() bool {
+			mch := &mchov1.MultiClusterHub{}
+			err := k8sClient.Get(ctx, resources.MCHLookupKey, mch)
+			if err == nil {
+				return mch.Status.Phase == mchov1.HubRunning
+			}
+			return false
+		}, timeout, interval).Should(BeTrue())
+
+		By("Ensuring Insights is not subscribed")
+		Eventually(func() bool {
+			InsightsClientDeployment := types.NamespacedName{
+				Name:      "insights-client",
+				Namespace: mchNamespace,
+			}
+			deployment := appsv1.Deployment{}
+			err := k8sClient.Get(ctx, InsightsClientDeployment, &deployment)
+			if err != nil && errors.IsNotFound(err) {
+				return true
+			}
+			return false
+		}, timeout, interval).Should(BeTrue())
+
+		By("Updating MCH to enable Insights")
+		Eventually(func() bool {
+			err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
+			return err == nil
+		}, timeout, interval).Should(BeTrue())
+		createdMCH.Enable(v1.Insights)
+		Expect(k8sClient.Update(ctx, createdMCH)).Should(Succeed())
+
+		By("Ensuring Insights is subscribed")
+		Eventually(func() error {
+			InsightsClientDeployment := types.NamespacedName{
+				Name:      "insights-client",
+				Namespace: mchNamespace,
+			}
+			deployment := appsv1.Deployment{}
+			return k8sClient.Get(ctx, InsightsClientDeployment, &deployment)
+		}, timeout, interval).Should(Succeed())
+
+		By("Updating MCH to disable Insights")
+		Eventually(func() bool {
+			err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
+			return err == nil
+		}, timeout, interval).Should(BeTrue())
+		// Appending to components rather than replacing with `Disable()`
+		createdMCH.Spec.Overrides.Components = append(createdMCH.Spec.Overrides.Components, v1.ComponentConfig{Name: v1.Insights, Enabled: false})
+		Expect(k8sClient.Update(ctx, createdMCH)).Should(Succeed())
+
+		By("Ensuring Insights is not subscribed")
+		Eventually(func() bool {
+			InsightsClientDeployment := types.NamespacedName{
+				Name:      "insights-client",
+				Namespace: mchNamespace,
+			}
+			deployment := appsv1.Deployment{}
+			err := k8sClient.Get(ctx, InsightsClientDeployment, &deployment)
+			if err != nil && errors.IsNotFound(err) {
+				return true
+			}
+			return false
+		}, timeout, interval).Should(BeTrue())
+	})
 	AfterEach(func() {
 		ctx := context.Background()
 		By("Ensuring the MCH CR is deleted")

@@ -77,6 +77,29 @@ func NoSearchMCH() operatorsv1.MultiClusterHub {
 	}
 }
 
+func NoInsightsMCH() operatorsv1.MultiClusterHub {
+	return operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      MulticlusterhubName,
+			Namespace: MulticlusterhubNamespace,
+		},
+		Spec: operatorsv1.MultiClusterHubSpec{
+			Overrides: &operatorsv1.Overrides{
+				Components: []operatorsv1.ComponentConfig{
+					{
+						Name:    operatorsv1.Insights,
+						Enabled: false,
+					},
+					{
+						Name:    operatorsv1.ClusterBackup,
+						Enabled: false,
+					},
+				},
+			},
+		},
+	}
+}
+
 func OCMNamespace() *corev1.Namespace {
 	return &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{

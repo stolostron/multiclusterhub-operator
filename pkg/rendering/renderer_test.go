@@ -20,9 +20,9 @@ import (
 )
 
 const (
-	chartsDir  = "../templates/charts/toggle"
-	chartsPath = "../templates/charts/toggle/insights"
-	crdsDir    = "../templates/crds"
+	chartsDir  = "/charts/toggle"
+	chartsPath = "/charts/toggle/insights"
+	crdsDir    = "/crds"
 )
 
 func TestRender(t *testing.T) {
@@ -56,6 +56,7 @@ func TestRender(t *testing.T) {
 	os.Setenv("HTTP_PROXY", "test1")
 	os.Setenv("HTTPS_PROXY", "test2")
 	os.Setenv("NO_PROXY", "test3")
+	os.Setenv("DIRECTORY_OVERRIDE", "../templates")
 
 	testImages := map[string]string{}
 	for _, v := range utils.GetTestImages() {
@@ -206,10 +207,12 @@ func TestRender(t *testing.T) {
 	os.Unsetenv("HTTPS_PROXY")
 	os.Unsetenv("NO_PROXY")
 	os.Unsetenv("POD_NAMESPACE")
+	os.Unsetenv("DIRECTORY_OVERRIDE")
 
 }
 
 func TestRenderCRDs(t *testing.T) {
+	os.Setenv("DIRECTORY_OVERRIDE", "../templates")
 	tests := []struct {
 		name   string
 		crdDir string
@@ -240,13 +243,21 @@ func TestRenderCRDs(t *testing.T) {
 			}
 		})
 	}
-}
 
-func testFailures(t *testing.T) {
 	os.Setenv("CRD_OVERRIDE", "pkg/doesnotexist")
 	_, errs := RenderCRDs(crdsDir)
 	if errs == nil {
 		t.Fatalf("Should have received an error")
 	}
 	os.Unsetenv("CRD_OVERRIDE")
+
 }
+
+// func testFailures(t *testing.T) {
+// os.Setenv("CRD_OVERRIDE", "pkg/doesnotexist")
+// _, errs := RenderCRDs(crdsDir)
+// if errs == nil {
+// 	t.Fatalf("Should have received an error")
+// }
+// os.Unsetenv("CRD_OVERRIDE")
+// }
