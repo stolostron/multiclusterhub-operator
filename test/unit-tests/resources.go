@@ -151,6 +151,14 @@ func OCMNamespace() *corev1.Namespace {
 	}
 }
 
+func MonitoringNamespace() *corev1.Namespace {
+	return &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "openshift-monitoring",
+		},
+	}
+}
+
 func SampleService(m *operatorsv1.MultiClusterHub) *corev1.Service {
 	const Port = 3030
 

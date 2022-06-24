@@ -62,6 +62,7 @@ func ApplyPrereqs(k8sClient client.Client) {
 	By("Applying Namespace")
 	ctx := context.Background()
 	Expect(k8sClient.Create(ctx, resources.OCMNamespace())).Should(Succeed())
+	Expect(k8sClient.Create(ctx, resources.MonitoringNamespace())).Should(Succeed())
 }
 
 var _ = Describe("MultiClusterHub controller", func() {
@@ -160,7 +161,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 		k8sClient = k8sManager.GetClient()
 		Expect(k8sClient).ToNot(BeNil())
 
-		reconciler := &MultiClusterHubReconciler{
+		reconciler = &MultiClusterHubReconciler{
 			Client: k8sClient,
 			Scheme: k8sManager.GetScheme(),
 			Log:    ctrl.Log.WithName("controllers").WithName("MultiClusterHub"),
@@ -193,23 +194,26 @@ var _ = Describe("MultiClusterHub controller", func() {
 		})).To(Succeed())
 
 	})
-	Context("when managing deployments", func() {
-		It("creates and removes a deployment", func() {
+	Context("When managing deployments", func() {
+		It("Creates and removes a deployment", func() {
 			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates")
 			defer os.Unsetenv("DIRECTORY_OVERRIDE")
 			By("Applying prereqs")
 			ApplyPrereqs(k8sClient)
-
 			ctx := context.Background()
+
+			By("Ensuring Insights")
 			mch := resources.SpecMCH()
 			testImages := map[string]string{}
 			for _, v := range utils.GetTestImages() {
 				testImages[v] = "quay.io/test/test:Test"
 			}
-			// _, err := renderer.RenderChart("/charts/toggle/insights", mch, reconciler.CacheSpec.ImageOverrides)
+
 			result, err := reconciler.ensureInsights(ctx, mch, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
+
+			By("Ensuring No Insights")
 
 			result, err = reconciler.ensureNoInsights(ctx, mch, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
