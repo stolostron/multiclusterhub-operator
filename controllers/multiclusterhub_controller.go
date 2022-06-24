@@ -399,9 +399,9 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 	if multiClusterHub.Enabled(operatorv1.Insights) {
-		result, err = r.ensureInsights(ctx, multiClusterHub)
+		result, err = r.ensureInsights(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
 	} else {
-		result, err = r.ensureNoInsights(ctx, multiClusterHub)
+		result, err = r.ensureNoInsights(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
 	}
 	if result != (ctrl.Result{}) {
 		return result, err
@@ -584,11 +584,11 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterHubReconciler) ensureInsights(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) ensureInsights(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
 
 	log := log.FromContext(ctx)
 
-	templates, errs := renderer.RenderChart("/charts/toggle/insights", m, r.CacheSpec.ImageOverrides)
+	templates, errs := renderer.RenderChart("/charts/toggle/insights", m, images)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -608,11 +608,11 @@ func (r *MultiClusterHubReconciler) ensureInsights(ctx context.Context, m *opera
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterHubReconciler) ensureNoInsights(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) ensureNoInsights(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
 	// Renders all templates from charts
-	templates, errs := renderer.RenderChart("/charts/toggle/insights", m, r.CacheSpec.ImageOverrides)
+	templates, errs := renderer.RenderChart("/charts/toggle/insights", m, images)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -696,6 +696,15 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 		return err
 	}
 	if err := r.cleanupClusterRoleBindings(reqLogger, m); err != nil {
+		return err
+	}
+	if err := r.cleanupDeployments(reqLogger, m); err != nil {
+		return err
+	}
+	if err := r.cleanupServices(reqLogger, m); err != nil {
+		return err
+	}
+	if err := r.cleanupServiceAccounts(reqLogger, m); err != nil {
 		return err
 	}
 	if err := r.cleanupServiceMonitors(reqLogger, m); err != nil {
