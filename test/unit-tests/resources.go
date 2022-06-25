@@ -45,17 +45,6 @@ func SpecMCH() *operatorsv1.MultiClusterHub {
 			Effect:   "NoSchedule",
 		},
 	}
-	// testMCH := &v1.MultiClusterHub{
-	// 	ObjectMeta: metav1.ObjectMeta{
-	// 		Name:      "testmch",
-	// 		Namespace: mchNamespace,
-	// 	},
-	// 	Spec: v1.MultiClusterHubSpec{
-	// 		NodeSelector:    mchNodeSelector,
-	// 		ImagePullSecret: mchImagePullSecret,
-	// 		Tolerations:     mchTolerations,
-	// 	},
-	// }
 
 	return &operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{

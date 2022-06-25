@@ -56,14 +56,6 @@ func (r *MultiClusterHubReconciler) cleanupAPIServices(reqLogger logr.Logger, m 
 }
 
 func (r *MultiClusterHubReconciler) cleanupServiceMonitors(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
-	// err := r.Client.DeleteAllOf(
-	// 	context.TODO(),
-	// 	&promv1.ServiceMonitor{},
-	// 	client.MatchingLabels{
-	// 		"installer.name":      m.GetName(),
-	// 		"installer.namespace": m.GetNamespace(),
-	// 	},
-	// )
 
 	sm := &promv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{

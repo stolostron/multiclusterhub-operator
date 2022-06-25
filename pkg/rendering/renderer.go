@@ -65,9 +65,8 @@ func RenderCRDs(crdDir string) ([]*unstructured.Unstructured, []error) {
 		if info == nil || info.IsDir() {
 			return nil
 		}
-		path = filepath.Clean(path)
 
-		bytesFile, e := ioutil.ReadFile(path)
+		bytesFile, e := ioutil.ReadFile(filepath.Clean(path))
 		if e != nil {
 			errs = append(errs, fmt.Errorf("%s - error reading file: %v", info.Name(), err.Error()))
 		}

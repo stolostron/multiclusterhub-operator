@@ -576,10 +576,6 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 			log.Info(err.Error())
 			return ctrl.Result{}, pkgerrors.Wrapf(err, "error applying object Name: %s Kind: %s", template.GetName(), template.GetKind())
 		}
-		// result, err := r.ensureUnstructuredResource(m, template)
-		// if err != nil {
-		// 	return result, err
-		// }
 	}
 	return ctrl.Result{}, nil
 }
@@ -598,7 +594,6 @@ func (r *MultiClusterHubReconciler) ensureInsights(ctx context.Context, m *opera
 
 	// Applies all templates
 	for _, template := range templates {
-		log.Info(template.GetName())
 		result, err := r.applyTemplate(ctx, m, template)
 		if err != nil {
 			return result, err
