@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-logr/logr"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/channel"
@@ -51,29 +50,6 @@ func (r *MultiClusterHubReconciler) cleanupAPIServices(reqLogger logr.Logger, m 
 	}
 
 	reqLogger.Info("API services finalized")
-	return nil
-}
-
-func (r *MultiClusterHubReconciler) cleanupServiceMonitors(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
-
-	sm := &promv1.ServiceMonitor{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "openshift-monitoring",
-			Name:      "acm-insights",
-		},
-	}
-
-	err := r.Client.Delete(context.TODO(), sm)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			reqLogger.Info("No matching service monitors to finalize. Continuing.")
-			return nil
-		}
-		reqLogger.Error(err, "Error while deleting service monitors")
-		return err
-	}
-
-	reqLogger.Info("service monitors finalized")
 	return nil
 }
 
