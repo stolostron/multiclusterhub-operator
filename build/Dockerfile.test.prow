@@ -1,8 +1,7 @@
 FROM registry.ci.openshift.org/stolostron/builder:go1.18-linux AS builder
 
-RUN go install github.com/onsi/ginkgo/v2/ginkgo
-RUN go install github.com/onsi/gomega/...
-RUN go install github.com/mikefarah/yq/v3
+RUN go install github.com/onsi/ginkgo/v2/ginkgo@latest
+RUN go install github.com/mikefarah/yq/v3@latest
 
 USER root
 
