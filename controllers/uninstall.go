@@ -34,10 +34,6 @@ var (
 				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
 			),
 			newUnstructured(
-				types.NamespacedName{Name: "policyreport-sub", Namespace: m.Namespace},
-				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
-			),
-			newUnstructured(
 				types.NamespacedName{Name: "rcm-sub", Namespace: m.Namespace},
 				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
 			),
@@ -89,6 +85,10 @@ var (
 		removals := []*unstructured.Unstructured{
 			newUnstructured(
 				types.NamespacedName{Name: "discovery-operator-sub", Namespace: m.Namespace},
+				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
+			),
+			newUnstructured(
+				types.NamespacedName{Name: "policyreport-sub", Namespace: m.Namespace},
 				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
 			),
 			newUnstructured(
@@ -171,7 +171,8 @@ func (r *MultiClusterHubReconciler) ensureRemovalsGone(m *operatorsv1.MultiClust
 }
 
 // ensureConflictingMCEComponentsGone validates that resources owned by the MCH, that would cause a conflcit with the install
-// of the MCE, are removed. This allows for the MCE to recreate the resources as expected
+// of the MCE, are removed. This allows for the MCE to recreate the resources as expected. This also includes resources that
+// are now being created via rendering as opposed app sub
 func (r *MultiClusterHubReconciler) ensureConflictingMCEComponentsGone(m *operatorsv1.MultiClusterHub) (ctrl.Result, error) {
 	removals := mceUninstallList(m)
 	allResourcesDeleted := true

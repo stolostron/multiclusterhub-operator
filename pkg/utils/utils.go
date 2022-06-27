@@ -337,32 +337,6 @@ func GetDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	return nn
 }
 
-func GetFinalizeDeployments(m *operatorsv1.MultiClusterHub) []string {
-	var nn = []string{}
-	if m.Enabled(operatorsv1.Insights) {
-		nn = append(nn, "insights-client")
-		nn = append(nn, "insights-metrics")
-	}
-	return nn
-}
-
-func GetFinalizeServices(m *operatorsv1.MultiClusterHub) []string {
-	var nn = []string{}
-	if m.Enabled(operatorsv1.Insights) {
-		nn = append(nn, "insights-client")
-		nn = append(nn, "insights-metrics")
-	}
-	return nn
-}
-
-func GetFinalizeServiceAccounts(m *operatorsv1.MultiClusterHub) []string {
-	var nn = []string{}
-	if m.Enabled(operatorsv1.Insights) {
-		nn = append(nn, "insights-client")
-	}
-	return nn
-}
-
 func GetAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	appsubs := []types.NamespacedName{
 		{Name: "console-chart-sub", Namespace: m.Namespace},

@@ -17,7 +17,6 @@ import (
 	"github.com/stolostron/multiclusterhub-operator/pkg/helmrepo"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -112,85 +111,6 @@ func (r *MultiClusterHubReconciler) cleanupClusterRoleBindings(reqLogger logr.Lo
 	}
 
 	reqLogger.Info("Clusterrolebindings finalized")
-	return nil
-}
-
-func (r *MultiClusterHubReconciler) cleanupDeployments(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
-
-	deploymentsRemoved := utils.GetFinalizeDeployments(m)
-
-	for _, deployment := range deploymentsRemoved {
-
-		dep := &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: m.Namespace,
-				Name:      deployment,
-			},
-		}
-
-		err := r.Client.Delete(context.TODO(), dep)
-		if err != nil {
-			if errors.IsNotFound(err) {
-				reqLogger.Info(fmt.Sprintf("No matching deployment %s to finalize. Continuing.", deployment))
-				return nil
-			}
-			reqLogger.Error(err, fmt.Sprintf("Error while deleting deployment %s", deployment))
-			return err
-		}
-	}
-	reqLogger.Info("deployment finalized")
-	return nil
-}
-
-func (r *MultiClusterHubReconciler) cleanupServices(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
-	servicesRemoved := utils.GetFinalizeServices(m)
-
-	for _, service := range servicesRemoved {
-
-		svc := &corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: m.Namespace,
-				Name:      service,
-			},
-		}
-
-		err := r.Client.Delete(context.TODO(), svc)
-		if err != nil {
-			if errors.IsNotFound(err) {
-				reqLogger.Info(fmt.Sprintf("No matching service %s to finalize. Continuing.", service))
-				return nil
-			}
-			reqLogger.Error(err, fmt.Sprintf("Error while deleting service %s", service))
-			return err
-		}
-	}
-	reqLogger.Info("service finalized")
-	return nil
-}
-
-func (r *MultiClusterHubReconciler) cleanupServiceAccounts(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
-	serviceAccountsRemoved := utils.GetFinalizeServiceAccounts(m)
-
-	for _, serviceAccount := range serviceAccountsRemoved {
-
-		dep := &corev1.ServiceAccount{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: m.Namespace,
-				Name:      serviceAccount,
-			},
-		}
-
-		err := r.Client.Delete(context.TODO(), dep)
-		if err != nil {
-			if errors.IsNotFound(err) {
-				reqLogger.Info(fmt.Sprintf("No matching ServiceAccount %s to finalize. Continuing.", serviceAccount))
-				return nil
-			}
-			reqLogger.Error(err, fmt.Sprintf("Error while deleting ServiceAccount %s", serviceAccount))
-			return err
-		}
-	}
-	reqLogger.Info("ServiceAccounts finalized")
 	return nil
 }
 

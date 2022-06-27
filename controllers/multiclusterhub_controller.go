@@ -687,24 +687,17 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 	if err := r.cleanupFoundation(reqLogger, m); err != nil {
 		return err
 	}
+	_, err := r.ensureNoInsights(context.TODO(), m, r.CacheSpec.ImageOverrides)
+	if err != nil {
+		return err
+	}
 	if err := r.cleanupClusterRoles(reqLogger, m); err != nil {
 		return err
 	}
 	if err := r.cleanupClusterRoleBindings(reqLogger, m); err != nil {
 		return err
 	}
-	if err := r.cleanupDeployments(reqLogger, m); err != nil {
-		return err
-	}
-	if err := r.cleanupServices(reqLogger, m); err != nil {
-		return err
-	}
-	if err := r.cleanupServiceAccounts(reqLogger, m); err != nil {
-		return err
-	}
-	if err := r.cleanupServiceMonitors(reqLogger, m); err != nil {
-		return err
-	}
+
 	if err := r.cleanupMultiClusterEngine(reqLogger, m); err != nil {
 		return err
 	}
