@@ -43,3 +43,5 @@ build/_output/*
 *.swp
 *.swo
 *~
+
+.vscode/*
