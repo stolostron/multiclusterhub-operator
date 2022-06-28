@@ -296,6 +296,11 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 
+	result, err = r.ensureRenderRemovalsGone(multiClusterHub)
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
 	// Install CRDs
 	var reason string
 	reason, err = r.installCRDs(r.Log, multiClusterHub)
