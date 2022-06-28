@@ -584,7 +584,7 @@ func (r *MultiClusterHubReconciler) ensureInsights(ctx context.Context, m *opera
 
 	log := log.FromContext(ctx)
 
-	templates, errs := renderer.RenderChart("/charts/toggle/insights", m, images)
+	templates, errs := renderer.RenderChart(utils.InsightsChartLocation, m, images)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -607,7 +607,7 @@ func (r *MultiClusterHubReconciler) ensureNoInsights(ctx context.Context, m *ope
 	log := log.FromContext(ctx)
 
 	// Renders all templates from charts
-	templates, errs := renderer.RenderChart("/charts/toggle/insights", m, images)
+	templates, errs := renderer.RenderChart(utils.InsightsChartLocation, m, images)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())

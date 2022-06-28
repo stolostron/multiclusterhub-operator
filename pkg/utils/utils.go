@@ -48,7 +48,8 @@ const (
 	MCESubscriptionNamespace     = "multicluster-engine"
 	ClusterSubscriptionNamespace = "open-cluster-management-backup"
 
-	MCEManagedByLabel = "multiclusterhubs.operator.open-cluster-management.io/managed-by"
+	MCEManagedByLabel     = "multiclusterhubs.operator.open-cluster-management.io/managed-by"
+	InsightsChartLocation = "/charts/toggle/insights"
 )
 
 var (
