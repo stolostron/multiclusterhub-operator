@@ -88,10 +88,6 @@ var (
 				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
 			),
 			newUnstructured(
-				types.NamespacedName{Name: "policyreport-sub", Namespace: m.Namespace},
-				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
-			),
-			newUnstructured(
 				types.NamespacedName{Name: "assisted-service-sub", Namespace: m.Namespace},
 				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
 			),
