@@ -1,0 +1,81 @@
+# Copyright (c) 2021 Red Hat, Inc.
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Values.org }}:{{ .Chart.Name }}:insights-client
+  labels:
+    app: insights
+    chart: {{.Chart.Name}}-{{.Chart.Version}}
+    component: insights-client
+    release: {{ .Chart.Name }}
+    heritage: release-service
+rules:
+- apiGroups:
+  - wgpolicyk8s.io
+  resources:
+  - policyreports
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch   
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+  - create
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - managedclusters
+  verbs:
+  - list
+  - get
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get 
+  - list
+  - watch
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - clusterversions
+  verbs:
+  - list
+  - get
+  - watch
+- apiGroups:
+  - policy.open-cluster-management.io
+  resources:
+  - policies
+  verbs:
+  - list
+  - get
+  - watch
+- apiGroups:
+  - authentication.k8s.io
+  verbs:
+  - create
+  resources:
+  - tokenreviews
+- apiGroups:
+  - authorization.k8s.io
+  verbs:
+  - create
+  resources:
+  - subjectaccessreviews

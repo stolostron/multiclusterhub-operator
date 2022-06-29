@@ -1,0 +1,147 @@
+# Copyright (c) 2021 Red Hat, Inc.
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: insights-metrics
+  labels:
+    app: {{ .Chart.Name }}
+    chart: '{{ .Chart.Name }}-{{ .Chart.Version }}'
+    component: "insights-metrics"
+    release: {{ .Chart.Name }}
+    heritage: release-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+      component: "insights-metrics"
+      release: {{ .Chart.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}
+        ocm-antiaffinity-selector: "insightsmetrics"
+        component: "insights-metrics"
+        release: {{ .Chart.Name }}
+        chart: '{{ .Chart.Name }}-{{ .Chart.Version }}'
+        heritage: release-service
+    spec:
+      serviceAccountName: insights-client
+      securityContext:
+          runAsNonRoot: true
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+                - ppc64le
+                - s390x
+                - arm64                
+        podAntiAffinity: 
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 70
+            podAffinityTerm:
+              topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - insightsclient 
+          - weight: 35
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - insightsclient 
+{{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+{{- end }}
+      containers:
+      - name: kube-rbac-proxy
+        image: {{ .Values.global.imageOverrides.kube_rbac_proxy}}
+        imagePullPolicy: "{{ .Values.global.pullPolicy }}"
+        args:
+        - --secure-listen-address=0.0.0.0:8443
+        - --upstream=http://127.0.0.1:8383/
+        - --logtostderr=true
+        - --v=6
+        - "--tls-cert-file=/var/run/insights-metrics-certs/tls.crt"
+        - "--tls-private-key-file=/var/run/insights-metrics-certs/tls.key"
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        volumeMounts:
+        - mountPath: "/var/run/insights-metrics-certs"
+          name: certs
+          readOnly: true
+      - name: metrics 
+        image: {{ .Values.global.imageOverrides.insights_metrics }}
+        imagePullPolicy: {{ .Values.global.pullPolicy }}
+        securityContext:
+          privileged: false
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        args:
+        - --port=8383
+        - --host=127.0.0.1
+        - --telemetry-port=8444
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "25m"
+          limits:
+            memory: "512Mi"
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8444
+            scheme: HTTP
+          initialDelaySeconds: 15
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8444
+            scheme: HTTP
+          initialDelaySeconds: 15
+          periodSeconds: 5
+        volumeMounts:
+          - mountPath: "/var/run/insights-metrics-certs"
+            name: certs
+            readOnly: true
+      volumes:
+      - name: certs
+        secret:
+          secretName: insights-metrics-certs 
+      {{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
+      {{- end }}
+      hostIPC: false
+      hostNetwork: false
+      hostPID: false
+      {{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}

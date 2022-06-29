@@ -34,6 +34,7 @@ import (
 	"github.com/stolostron/multiclusterhub-operator/pkg/helmrepo"
 	"github.com/stolostron/multiclusterhub-operator/pkg/imageoverrides"
 	"github.com/stolostron/multiclusterhub-operator/pkg/predicate"
+	renderer "github.com/stolostron/multiclusterhub-operator/pkg/rendering"
 	"github.com/stolostron/multiclusterhub-operator/pkg/subscription"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
@@ -62,6 +63,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/go-logr/logr"
+	pkgerrors "github.com/pkg/errors"
 )
 
 // MultiClusterHubReconciler reconciles a MultiClusterHub object
@@ -93,6 +95,7 @@ const (
 //+kubebuilder:rbac:groups="multicluster.openshift.io",resources=multiclusterengines,verbs=create;get;list;patch;update;delete;watch
 //+kubebuilder:rbac:groups=console.openshift.io,resources=consoleplugins,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=operator.openshift.io,resources=consoles,verbs=get;list;watch;update;patch
+//+kubebuilder:rbac:groups="";"apps";monitoring.coreos.com,resources=servicemonitors;deployments;services;serviceaccounts,verbs=patch;delete;get;deletecollection
 
 // AgentServiceConfig webhook delete check
 //+kubebuilder:rbac:groups=agent-install.openshift.io,resources=agentserviceconfigs,verbs=get;list;watch
@@ -293,6 +296,11 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 
+	result, err = r.ensureRenderRemovalsGone(multiClusterHub)
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
 	// Install CRDs
 	var reason string
 	reason, err = r.installCRDs(r.Log, multiClusterHub)
@@ -396,9 +404,9 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 	if multiClusterHub.Enabled(operatorv1.Insights) {
-		result, err = r.ensureSubscription(multiClusterHub, subscription.Insights(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
+		result, err = r.ensureInsights(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
 	} else {
-		result, err = r.ensureNoSubscription(multiClusterHub, subscription.Insights(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
+		result, err = r.ensureNoInsights(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
 	}
 	if result != (ctrl.Result{}) {
 		return result, err
@@ -551,6 +559,102 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operatorv1.MultiClusterHub, template *unstructured.Unstructured) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
+	// Set owner reference.
+	if (template.GetKind() == "ClusterRole") || (template.GetKind() == "ClusterRoleBinding") || (template.GetKind() == "ServiceMonitor") || (template.GetKind() == "CustomResourceDefinition") {
+		utils.AddInstallerLabel(template, m.Name, m.Namespace)
+
+	}
+
+	if template.GetKind() == "APIService" {
+		result, err := r.ensureUnstructuredResource(m, template)
+		if err != nil {
+			log.Info(err.Error())
+			return result, err
+		}
+	} else {
+		// Apply the object data.
+		force := true
+		err := r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
+		if err != nil {
+			log.Info(err.Error())
+			return ctrl.Result{}, pkgerrors.Wrapf(err, "error applying object Name: %s Kind: %s", template.GetName(), template.GetKind())
+		}
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureInsights(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
+
+	log := log.FromContext(ctx)
+
+	templates, errs := renderer.RenderChart(utils.InsightsChartLocation, m, images)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// Applies all templates
+	for _, template := range templates {
+		result, err := r.applyTemplate(ctx, m, template)
+		if err != nil {
+			return result, err
+		}
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureNoInsights(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
+
+	// Renders all templates from charts
+	templates, errs := renderer.RenderChart(utils.InsightsChartLocation, m, images)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// Deletes all templates
+	for _, template := range templates {
+		result, err := r.deleteTemplate(ctx, m, template)
+		if err != nil {
+			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+			return result, err
+		}
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) deleteTemplate(ctx context.Context, m *operatorv1.MultiClusterHub, template *unstructured.Unstructured) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
+	err := r.Client.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()}, template)
+
+	if err != nil && errors.IsNotFound(err) {
+		return ctrl.Result{}, nil
+	}
+
+	// set status progressing condition
+	if err != nil {
+		log.Error(err, "Odd error delete template")
+		return ctrl.Result{}, err
+	}
+
+	log.Info(fmt.Sprintf("finalizing template: %s\n", template.GetName()))
+	err = r.Client.Delete(ctx, template)
+	if err != nil {
+		log.Error(err, "Failed to delete template")
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, nil
+}
+
 // ingressDomain is discovered from Openshift cluster configuration resources
 func (r *MultiClusterHubReconciler) ingressDomain(m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	if r.CacheSpec.IngressDomain != "" || utils.IsUnitTest() {
@@ -588,12 +692,17 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 	if err := r.cleanupFoundation(reqLogger, m); err != nil {
 		return err
 	}
+	_, err := r.ensureNoInsights(context.TODO(), m, r.CacheSpec.ImageOverrides)
+	if err != nil {
+		return err
+	}
 	if err := r.cleanupClusterRoles(reqLogger, m); err != nil {
 		return err
 	}
 	if err := r.cleanupClusterRoleBindings(reqLogger, m); err != nil {
 		return err
 	}
+
 	if err := r.cleanupMultiClusterEngine(reqLogger, m); err != nil {
 		return err
 	}

@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	mchov1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
@@ -48,7 +49,7 @@ import (
 )
 
 const (
-	timeout  = time.Second * 10
+	timeout  = time.Second * 20
 	interval = time.Millisecond * 250
 
 	mchName      = "multiclusterhub-operator"
@@ -61,6 +62,7 @@ func ApplyPrereqs(k8sClient client.Client) {
 	By("Applying Namespace")
 	ctx := context.Background()
 	Expect(k8sClient.Create(ctx, resources.OCMNamespace())).Should(Succeed())
+	Expect(k8sClient.Create(ctx, resources.MonitoringNamespace())).Should(Succeed())
 }
 
 var _ = Describe("MultiClusterHub controller", func() {
@@ -75,6 +77,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 		envs             []corev1.EnvVar
 		containers       []corev1.Container
 		mchoDeployment   *appsv1.Deployment
+		reconciler       *MultiClusterHubReconciler
 	)
 
 	BeforeEach(func() {
@@ -135,6 +138,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 		Expect(clientConfig).NotTo(BeNil())
 
 		Expect(scheme.AddToScheme(clientScheme)).Should(Succeed())
+		Expect(promv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(mchov1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(appsub.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(apiregistrationv1.AddToScheme(clientScheme)).Should(Succeed())
@@ -157,10 +161,13 @@ var _ = Describe("MultiClusterHub controller", func() {
 		k8sClient = k8sManager.GetClient()
 		Expect(k8sClient).ToNot(BeNil())
 
-		reconciler := &MultiClusterHubReconciler{
+		reconciler = &MultiClusterHubReconciler{
 			Client: k8sClient,
 			Scheme: k8sManager.GetScheme(),
 			Log:    ctrl.Log.WithName("controllers").WithName("MultiClusterHub"),
+			// CacheSpec: CacheSpec{
+			// 	ImageOverrides: map[string]string{},
+			// },
 		}
 		Expect(reconciler.SetupWithManager(k8sManager)).Should(Succeed())
 
@@ -185,10 +192,39 @@ var _ = Describe("MultiClusterHub controller", func() {
 				ClusterID: "12345678910",
 			},
 		})).To(Succeed())
+
+	})
+	Context("When managing deployments", func() {
+		It("Creates and removes a deployment", func() {
+			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates")
+			defer os.Unsetenv("DIRECTORY_OVERRIDE")
+			By("Applying prereqs")
+			ApplyPrereqs(k8sClient)
+			ctx := context.Background()
+
+			By("Ensuring Insights")
+			mch := resources.SpecMCH()
+			testImages := map[string]string{}
+			for _, v := range utils.GetTestImages() {
+				testImages[v] = "quay.io/test/test:Test"
+			}
+
+			result, err := reconciler.ensureInsights(ctx, mch, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+
+			By("Ensuring No Insights")
+
+			result, err = reconciler.ensureNoInsights(ctx, mch, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+		})
 	})
 
 	Context("When updating Multiclusterhub status", func() {
 		It("Should get to a running state", func() {
+			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates")
+			defer os.Unsetenv("DIRECTORY_OVERRIDE")
 			By("Applying prereqs")
 			ctx := context.Background()
 			ApplyPrereqs(k8sClient)
@@ -295,6 +331,8 @@ var _ = Describe("MultiClusterHub controller", func() {
 		})
 
 		It("Should Manage Preexisting MCE", func() {
+			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates")
+			defer os.Unsetenv("DIRECTORY_OVERRIDE")
 			By("Applying prereqs")
 			ctx := context.Background()
 			ApplyPrereqs(k8sClient)
@@ -358,6 +396,8 @@ var _ = Describe("MultiClusterHub controller", func() {
 		})
 
 		It("Should allow Search to be optional", func() {
+			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates")
+			defer os.Unsetenv("DIRECTORY_OVERRIDE")
 			By("Applying prereqs")
 			ctx := context.Background()
 			ApplyPrereqs(k8sClient)

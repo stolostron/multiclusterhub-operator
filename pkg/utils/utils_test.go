@@ -168,7 +168,7 @@ var _ = Describe("utility functions", func() {
 			mch.Enable(operatorsv1.ClusterBackup)
 			mch.Enable(operatorsv1.ClusterProxyAddon)
 			appsubs := GetAppsubs(&mch)
-			Expect(len(appsubs)).To(Equal(9))
+			Expect(len(appsubs)).To(Equal(8))
 		})
 		It("gets custom resources", func() {
 			mch := resources.EmptyMCH()
@@ -186,6 +186,12 @@ var _ = Describe("utility functions", func() {
 			d := GetDeploymentsForStatus(&mch)
 			Expect(len(d)).To(Equal(1))
 		})
+		It("gets deployments for status with insights enabled", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable("insights")
+			d := GetDeploymentsForStatus(&mch)
+			Expect(len(d)).To(Equal(2))
+		})
 		It("gets appsubs for status", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(operatorsv1.ClusterBackup)
@@ -198,7 +204,7 @@ var _ = Describe("utility functions", func() {
 			mch.Enable(operatorsv1.Search)
 			mch.Enable(operatorsv1.Volsync)
 			appsubs := GetAppsubsForStatus(&mch)
-			Expect(len(appsubs)).To(Equal(9))
+			Expect(len(appsubs)).To(Equal(8))
 		})
 		It("gets custom resources for status with MCE disabled", func() {
 			mch := resources.EmptyMCH()

@@ -126,6 +126,17 @@ var (
 		}
 		return removals
 	}
+
+	uninstallRenderList = func(m *operatorsv1.MultiClusterHub) []*unstructured.Unstructured {
+		removals := []*unstructured.Unstructured{
+
+			newUnstructured(
+				types.NamespacedName{Name: "policyreport-sub", Namespace: m.Namespace},
+				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
+			),
+		}
+		return removals
+	}
 )
 
 func newUnstructured(nn types.NamespacedName, gvk schema.GroupVersionKind) *unstructured.Unstructured {
@@ -134,6 +145,36 @@ func newUnstructured(nn types.NamespacedName, gvk schema.GroupVersionKind) *unst
 	u.SetName(nn.Name)
 	u.SetNamespace((nn.Namespace))
 	return &u
+}
+
+// ensureRemovalsGone validates successful removal of everything in the uninstallList. Return on first error encounter.
+func (r *MultiClusterHubReconciler) ensureRenderRemovalsGone(m *operatorsv1.MultiClusterHub) (ctrl.Result, error) {
+	removals := uninstallRenderList(m)
+	allResourcesDeleted := true
+	for i := range removals {
+		gone, err := r.uninstall(m, removals[i])
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		if !gone {
+			allResourcesDeleted = false
+		}
+	}
+
+	if !allResourcesDeleted {
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// Emit hubcondition once pruning complete if other pruning condition present
+	progressingCondition := GetHubCondition(m.Status, operatorsv1.Progressing)
+	if progressingCondition != nil {
+		if progressingCondition.Reason == OldComponentRemovedReason || progressingCondition.Reason == OldComponentNotRemovedReason {
+			condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, AllOldComponentsRemovedReason, "All resources prunedfor new installation method")
+			SetHubCondition(&m.Status, *condition)
+		}
+	}
+
+	return ctrl.Result{}, nil
 }
 
 // ensureRemovalsGone validates successful removal of everything in the uninstallList. Return on first error encounter.
@@ -167,7 +208,8 @@ func (r *MultiClusterHubReconciler) ensureRemovalsGone(m *operatorsv1.MultiClust
 }
 
 // ensureConflictingMCEComponentsGone validates that resources owned by the MCH, that would cause a conflcit with the install
-// of the MCE, are removed. This allows for the MCE to recreate the resources as expected
+// of the MCE, are removed. This allows for the MCE to recreate the resources as expected. This also includes resources that
+// are now being created via rendering as opposed app sub
 func (r *MultiClusterHubReconciler) ensureConflictingMCEComponentsGone(m *operatorsv1.MultiClusterHub) (ctrl.Result, error) {
 	removals := mceUninstallList(m)
 	allResourcesDeleted := true

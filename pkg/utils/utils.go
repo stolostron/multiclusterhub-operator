@@ -48,7 +48,8 @@ const (
 	MCESubscriptionNamespace     = "multicluster-engine"
 	ClusterSubscriptionNamespace = "open-cluster-management-backup"
 
-	MCEManagedByLabel = "multiclusterhubs.operator.open-cluster-management.io/managed-by"
+	MCEManagedByLabel     = "multiclusterhubs.operator.open-cluster-management.io/managed-by"
+	InsightsChartLocation = "/charts/toggle/insights"
 )
 
 var (
@@ -274,7 +275,7 @@ func GetTestImages() []string {
 		"PROMETHEUS_CONFIG_RELOADER", "PROMETHEUS_OPERATOR", "RBAC_QUERY_PROXY", "REDISGRAPH_TLS",
 		"SEARCH_AGGREGATOR", "SEARCH_API", "SEARCH_COLLECTOR", "SEARCH_E2E", "SEARCH_INDEXER", "SEARCH_OPERATOR",
 		"SEARCH_V2_API", "SUBMARINER_ADDON", "THANOS", "VOLSYNC", "VOLSYNC_ADDON_CONTROLLER", "VOLSYNC_MOVER_RCLONE",
-		"VOLSYNC_MOVER_RESTIC", "VOLSYNC_MOVER_RSYNC"}
+		"VOLSYNC_MOVER_RESTIC", "VOLSYNC_MOVER_RSYNC", "kube_rbac_proxy", "insights_metrics", "insights_client"}
 
 }
 
@@ -327,15 +328,19 @@ func FindNamespace() (string, error) {
 }
 
 func GetDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
-	return []types.NamespacedName{
+	nn := []types.NamespacedName{
 		{Name: "multiclusterhub-repo", Namespace: m.Namespace},
 	}
+	if m.Enabled(operatorsv1.Insights) {
+		nn = append(nn, types.NamespacedName{Name: "insights-client", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "insights-metrics", Namespace: m.Namespace})
+	}
+	return nn
 }
 
 func GetAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	appsubs := []types.NamespacedName{
 		{Name: "console-chart-sub", Namespace: m.Namespace},
-		{Name: "policyreport-sub", Namespace: m.Namespace},
 		{Name: "grc-sub", Namespace: m.Namespace},
 		{Name: "management-ingress-sub", Namespace: m.Namespace},
 		{Name: "cluster-lifecycle-sub", Namespace: m.Namespace},
@@ -364,6 +369,10 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedN
 	if m.Enabled("multiclusterhub-repo") {
 		nn = append(nn, types.NamespacedName{Name: "multiclusterhub-repo", Namespace: m.Namespace})
 	}
+	if m.Enabled(operatorsv1.Insights) {
+		nn = append(nn, types.NamespacedName{Name: "insights-client", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "insights-metrics", Namespace: m.Namespace})
+	}
 	return nn
 }
 
@@ -371,9 +380,6 @@ func GetAppsubsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedName 
 	nn := []types.NamespacedName{}
 	if m.Enabled(operatorsv1.Console) {
 		nn = append(nn, types.NamespacedName{Name: "console-chart-sub", Namespace: m.Namespace})
-	}
-	if m.Enabled(operatorsv1.Insights) {
-		nn = append(nn, types.NamespacedName{Name: "policyreport-sub", Namespace: m.Namespace})
 	}
 	if m.Enabled(operatorsv1.GRC) {
 		nn = append(nn, types.NamespacedName{Name: "grc-sub", Namespace: m.Namespace})
