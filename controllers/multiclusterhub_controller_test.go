@@ -328,6 +328,17 @@ var _ = Describe("MultiClusterHub controller", func() {
 				}
 				return false
 			}, timeout, interval).Should(BeTrue())
+
+			By("ensuring the trusted-ca-bundle ConfigMap is created")
+			Eventually(func(g Gomega) {
+				ctx := context.Background()
+				namespacedName := types.NamespacedName{
+					Name:      defaultTrustBundleName,
+					Namespace: mchNamespace,
+				}
+				res := &corev1.ConfigMap{}
+				g.Expect(k8sClient.Get(ctx, namespacedName, res)).To(Succeed())
+			}, timeout, interval).Should(Succeed())
 		})
 
 		It("Should Manage Preexisting MCE", func() {
