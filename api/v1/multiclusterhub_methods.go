@@ -8,7 +8,6 @@ const (
 	GRC                string = "grc"
 	ClusterLifecycle   string = "cluster-lifecycle"
 	ClusterBackup      string = "cluster-backup"
-	ClusterProxyAddon  string = "cluster-proxy-addon"
 	Repo               string = "multiclusterhub-repo"
 	MultiClusterEngine string = "multicluster-engine"
 	Volsync            string = "volsync"
@@ -23,6 +22,7 @@ const (
 	MCEClusterManager        string = "cluster-manager"
 	MCEServerFoundation      string = "server-foundation"
 	MCEHypershift            string = "hypershift-preview"
+	MCEClusterProxyAddon     string = "cluster-proxy-addon"
 )
 
 var allComponents = []string{
@@ -35,7 +35,6 @@ var allComponents = []string{
 	GRC,
 	ClusterLifecycle,
 	ClusterBackup,
-	ClusterProxyAddon,
 	Volsync,
 	MultiClusterEngine,
 	// MCE
@@ -48,6 +47,7 @@ var allComponents = []string{
 	MCEConsole,
 	MCEManagedServiceAccount,
 	MCEHypershift,
+	MCEClusterProxyAddon,
 }
 
 var MCEComponents = []string{
@@ -75,7 +75,6 @@ var DefaultEnabledComponents = []string{
 }
 
 var DefaultDisabledComponents = []string{
-	ClusterProxyAddon,
 	ClusterBackup,
 }
 

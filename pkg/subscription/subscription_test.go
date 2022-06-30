@@ -131,7 +131,6 @@ func TestSubscriptions(t *testing.T) {
 		got  *unstructured.Unstructured
 	}{
 		{"Console subscription", Console(mch, ovr, "")},
-		{"Cluster Proxy Addon subscription", ClusterProxyAddon(mch, ovr, "")},
 		{"GRC subscription", GRC(mch, ovr)},
 		{"Insights subscription", Insights(mch, ovr, "")},
 		{"ManagementIngress subscription", ManagementIngress(mch, ovr, "")},

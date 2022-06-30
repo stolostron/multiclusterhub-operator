@@ -53,10 +53,6 @@ spec:
         path: enableClusterBackup
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: (Deprecated) Enable cluster proxy addon
-        displayName: Enable Cluster Proxy Addon
-        path: enableClusterProxyAddon
-        x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: (Deprecated) Overrides for the default HiveConfig spec
         displayName: Hive Config

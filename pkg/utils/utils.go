@@ -350,9 +350,6 @@ func GetAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	if m.Enabled(operatorsv1.ClusterBackup) {
 		appsubs = append(appsubs, types.NamespacedName{Name: "cluster-backup-chart-sub", Namespace: ClusterSubscriptionNamespace})
 	}
-	if m.Enabled(operatorsv1.ClusterProxyAddon) {
-		appsubs = append(appsubs, types.NamespacedName{Name: "cluster-proxy-addon-sub", Namespace: m.Namespace})
-	}
 	return appsubs
 }
 
@@ -395,9 +392,6 @@ func GetAppsubsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedName 
 	}
 	if m.Enabled(operatorsv1.ClusterBackup) {
 		nn = append(nn, types.NamespacedName{Name: "cluster-backup-chart-sub", Namespace: ClusterSubscriptionNamespace})
-	}
-	if m.Enabled(operatorsv1.ClusterProxyAddon) {
-		nn = append(nn, types.NamespacedName{Name: "cluster-proxy-addon-sub", Namespace: m.Namespace})
 	}
 	if m.Enabled(operatorsv1.Volsync) {
 		nn = append(nn, types.NamespacedName{Name: "volsync-addon-controller-sub", Namespace: m.Namespace})
@@ -514,19 +508,6 @@ func deduplicate(config []operatorsv1.ComponentConfig) []operatorsv1.ComponentCo
 		}
 	}
 	return newConfig
-}
-
-// MigrateToggles returns true if the hub needs to be modified to handle the change of toggle logic
-// from 2.4 to 2.5.
-func MigrateToggles(m *operatorsv1.MultiClusterHub) bool {
-	// If cluster proxy was enabled with the deprecated flag it should continue to be enabled
-	// in the components field
-	if m.Spec.EnableClusterProxyAddon {
-		m.Enable(operatorsv1.ClusterProxyAddon)
-		m.Spec.EnableClusterProxyAddon = false
-		return true
-	}
-	return false
 }
 
 // getMCEComponents returns mce components that are present in mch

@@ -467,11 +467,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			return result, err
 		}
 	}
-	if multiClusterHub.Enabled(operatorv1.ClusterProxyAddon) {
-		result, err = r.ensureSubscription(multiClusterHub, subscription.ClusterProxyAddon(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
-	} else {
-		result, err = r.ensureNoSubscription(multiClusterHub, subscription.ClusterProxyAddon(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
-	}
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
@@ -923,11 +918,6 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub) (
 
 	if utils.DeduplicateComponents(m) {
 		updateNecessary = true
-	}
-
-	if utils.MigrateToggles(m) {
-		updateNecessary = true
-
 	}
 
 	if utils.MchIsValid(m) && os.Getenv("ACM_HUB_OCP_VERSION") != "" && !updateNecessary {
