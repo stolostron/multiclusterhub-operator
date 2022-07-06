@@ -123,6 +123,10 @@ var (
 				types.NamespacedName{Name: "v1beta1.proxy.open-cluster-management.io"},
 				schema.GroupVersionKind{Group: "apiregistration.k8s.io", Kind: "APIService", Version: "v1"},
 			),
+			newUnstructured(
+				types.NamespacedName{Name: "cluster-proxy-addon-sub", Namespace: m.Namespace},
+				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
+			),
 		}
 		return removals
 	}
