@@ -408,6 +408,15 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	} else {
 		result, err = r.ensureNoInsights(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
 	}
+	if multiClusterHub.Enabled(operatorv1.SearchV2) {
+		if multiClusterHub.Enabled(operatorv1.Search) {
+			result, err = r.updateSearchEnablement(ctx, multiClusterHub)
+			return result, err
+		}
+		result, err = r.ensureSearchV2(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+	} else {
+		result, err = r.ensureNoSearchV2(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+	}
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
@@ -631,6 +640,62 @@ func (r *MultiClusterHubReconciler) ensureNoInsights(ctx context.Context, m *ope
 	return ctrl.Result{}, nil
 }
 
+func (r *MultiClusterHubReconciler) ensureSearchV2(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
+
+	log := log.FromContext(ctx)
+
+	templates, errs := renderer.RenderChart(utils.SearchV2ChartLocation, m, images)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// Applies all templates
+	for _, template := range templates {
+		result, err := r.applyTemplate(ctx, m, template)
+		if err != nil {
+			return result, err
+		}
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureNoSearchV2(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
+
+	// Renders all templates from charts
+	templates, errs := renderer.RenderChart(utils.SearchV2ChartLocation, m, images)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// Deletes all templates
+	for _, template := range templates {
+		result, err := r.deleteTemplate(ctx, m, template)
+		if err != nil {
+			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+			return result, err
+		}
+	}
+	return ctrl.Result{}, nil
+}
+func (r *MultiClusterHubReconciler) updateSearchEnablement(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+	m.Disable(operatorv1.Search)
+	err := r.Client.Update(ctx, m)
+	if err != nil {
+		r.Log.Error(err, "Failed to update MultiClusterHub", "MultiClusterHub.Namespace", m.Namespace, "MultiClusterHub.Name", m.Name)
+		return ctrl.Result{}, err
+	}
+	r.Log.Info("MultiClusterHub successfully updated")
+	return ctrl.Result{Requeue: true}, nil
+}
+
 func (r *MultiClusterHubReconciler) deleteTemplate(ctx context.Context, m *operatorv1.MultiClusterHub, template *unstructured.Unstructured) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	err := r.Client.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()}, template)
@@ -693,6 +758,10 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 		return err
 	}
 	_, err := r.ensureNoInsights(context.TODO(), m, r.CacheSpec.ImageOverrides)
+	if err != nil {
+		return err
+	}
+	_, err = r.ensureNoSearchV2(context.TODO(), m, r.CacheSpec.ImageOverrides)
 	if err != nil {
 		return err
 	}
