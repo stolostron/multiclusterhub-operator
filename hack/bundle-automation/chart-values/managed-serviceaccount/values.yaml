@@ -1,0 +1,7 @@
+# Image of the managed service-account instances
+image: org/repo/managed-serviceaccount
+tag: tag
+agentInstallAll: false
+featureGates:
+  ephemeralIdentity: true
+agentImagePullSecret: ""

@@ -1,0 +1,10 @@
+
+# Copyright (c) 2021 Red Hat, Inc.
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: v2
+name: test
+description: A Helm chart for Kubernetes
+type: application
+version: 2.3.0
+appVersion: "1.16.0"
