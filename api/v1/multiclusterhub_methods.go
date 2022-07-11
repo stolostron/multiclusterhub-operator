@@ -2,6 +2,7 @@ package v1
 
 const (
 	Search             string = "search"
+	SearchV2           string = "search-v2"
 	ManagementIngress  string = "management-ingress"
 	Console            string = "console"
 	Insights           string = "insights"
@@ -29,6 +30,7 @@ var allComponents = []string{
 	// MCH
 	Repo,
 	Search,
+	SearchV2,
 	ManagementIngress,
 	Console,
 	Insights,
@@ -77,6 +79,7 @@ var DefaultEnabledComponents = []string{
 var DefaultDisabledComponents = []string{
 	ClusterProxyAddon,
 	ClusterBackup,
+	SearchV2,
 }
 
 func (mch *MultiClusterHub) ComponentPresent(s string) bool {
