@@ -164,6 +164,7 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 		case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service", "ConfigMap":
 			unstructured.SetNamespace(mch.Namespace)
 		}
+		utils.AddInstallerLabel(unstructured, mch.Name, mch.Namespace)
 		templates = append(templates, unstructured)
 	}
 
