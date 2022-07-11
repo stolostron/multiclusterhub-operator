@@ -1,0 +1,16 @@
+global:
+  imageOverrides:
+    kube_rbac_proxy: ''
+    postgresql_13: ''
+    search_collector: ''
+    search_indexer: ''
+    search_v2_api: ''
+    search_v2_operator: ''
+  namespace: default
+  pullSecret: null
+hubconfig:
+  nodeSelector: null
+  proxyConfigs: {}
+  replicaCount: 1
+  tolerations: []
+org: open-cluster-management

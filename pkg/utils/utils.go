@@ -50,6 +50,7 @@ const (
 
 	MCEManagedByLabel     = "multiclusterhubs.operator.open-cluster-management.io/managed-by"
 	InsightsChartLocation = "/charts/toggle/insights"
+	SearchV2ChartLocation = "/charts/toggle/search-v2-operator"
 )
 
 var (
@@ -271,11 +272,12 @@ func GetTestImages() []string {
 		"MULTICLUSTER_OPERATORS_APPLICATION", "MULTICLUSTER_OPERATORS_CHANNEL", "MULTICLUSTER_OPERATORS_SUBSCRIPTION",
 		"MULTICLUSTERHUB_OPERATOR", "MULTICLUSTERHUB_OPERATOR_TESTS", "MULTICLUSTERHUB_REPO", "MUST_GATHER",
 		"NODE_EXPORTER", "OBSERVABILITY_E2E_TEST", "OBSERVATORIUM", "OBSERVATORIUM_OPERATOR", "OAUTH_PROXY",
-		"OAUTH_PROXY_48", "OAUTH_PROXY_49_AND_UP", "POSTGRESQL_12", "PROMETHEUS", "PROMETHEUS_ALERTMANAGER",
+		"OAUTH_PROXY_48", "OAUTH_PROXY_49_AND_UP", "POSTGRESQL_12", "POSTGRESQL_13", "PROMETHEUS", "PROMETHEUS_ALERTMANAGER",
 		"PROMETHEUS_CONFIG_RELOADER", "PROMETHEUS_OPERATOR", "RBAC_QUERY_PROXY", "REDISGRAPH_TLS",
 		"SEARCH_AGGREGATOR", "SEARCH_API", "SEARCH_COLLECTOR", "SEARCH_E2E", "SEARCH_INDEXER", "SEARCH_OPERATOR",
 		"SEARCH_V2_API", "SUBMARINER_ADDON", "THANOS", "VOLSYNC", "VOLSYNC_ADDON_CONTROLLER", "VOLSYNC_MOVER_RCLONE",
-		"VOLSYNC_MOVER_RESTIC", "VOLSYNC_MOVER_RSYNC", "kube_rbac_proxy", "insights_metrics", "insights_client"}
+		"VOLSYNC_MOVER_RESTIC", "VOLSYNC_MOVER_RSYNC", "kube_rbac_proxy", "insights_metrics", "insights_client",
+		"search_collector", "search_indexer", "search_v2_api", "postgresql_13", "search_v2_operator"}
 
 }
 
@@ -372,6 +374,9 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedN
 	if m.Enabled(operatorsv1.Insights) {
 		nn = append(nn, types.NamespacedName{Name: "insights-client", Namespace: m.Namespace})
 		nn = append(nn, types.NamespacedName{Name: "insights-metrics", Namespace: m.Namespace})
+	}
+	if m.Enabled(operatorsv1.SearchV2) {
+		nn = append(nn, types.NamespacedName{Name: "search-v2-operator-controller-manager", Namespace: m.Namespace})
 	}
 	return nn
 }
