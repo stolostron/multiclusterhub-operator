@@ -984,7 +984,12 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub) (
 
 	updateNecessary := false
 
-	if utils.SetDefaultComponents(m) {
+	defaultUpdate, err := utils.SetDefaultComponents(m)
+	if err != nil {
+		log.Error(err, "OPERATOR_CATALOG is an illegal value")
+		return ctrl.Result{}, err
+	}
+	if defaultUpdate {
 		updateNecessary = true
 	}
 
@@ -1009,7 +1014,7 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub) (
 
 	// If OCP 4.10+ then set then enable the MCE console. Else ensure it is disabled
 	clusterVersion := &configv1.ClusterVersion{}
-	err := r.Client.Get(ctx, types.NamespacedName{Name: "version"}, clusterVersion)
+	err = r.Client.Get(ctx, types.NamespacedName{Name: "version"}, clusterVersion)
 	if err != nil {
 		log.Error(err, "Failed to detect clusterversion")
 		return ctrl.Result{}, err

@@ -1,5 +1,10 @@
 package v1
 
+import (
+	"errors"
+	"os"
+)
+
 const (
 	Search             string = "search"
 	SearchV2           string = "search-v2"
@@ -64,21 +69,47 @@ var MCEComponents = []string{
 	MCEHypershift,
 }
 
-var DefaultEnabledComponents = []string{
-	Repo,
-	Search,
-	ManagementIngress,
-	Console,
-	Insights,
-	GRC,
-	ClusterLifecycle,
-	Volsync,
-	MultiClusterEngine,
+func GetDefaultEnabledComponents() ([]string, error) {
+	var defaultEnabledComponents = []string{
+		Repo,
+		ManagementIngress,
+		Console,
+		Insights,
+		GRC,
+		ClusterLifecycle,
+		Volsync,
+		MultiClusterEngine,
+	}
+	community, err := IsCommunity()
+
+	if err != nil {
+		return defaultEnabledComponents, err
+	}
+
+	if community {
+		defaultEnabledComponents = append(defaultEnabledComponents, SearchV2)
+	} else {
+		defaultEnabledComponents = append(defaultEnabledComponents, Search)
+	}
+	return defaultEnabledComponents, err
 }
 
-var DefaultDisabledComponents = []string{
-	ClusterBackup,
-	SearchV2,
+func GetDefaultDisabledComponents() ([]string, error) {
+	var defaultDisabledComponents = []string{
+		ClusterBackup,
+	}
+	community, err := IsCommunity()
+
+	if err != nil {
+		return defaultDisabledComponents, err
+	}
+
+	if community {
+		defaultDisabledComponents = append(defaultDisabledComponents, Search)
+	} else {
+		defaultDisabledComponents = append(defaultDisabledComponents, SearchV2)
+	}
+	return defaultDisabledComponents, err
 }
 
 func (mch *MultiClusterHub) ComponentPresent(s string) bool {
@@ -146,4 +177,17 @@ func ValidComponent(c ComponentConfig) bool {
 		}
 	}
 	return false
+}
+
+// IsCommunity checks to see if the operator is running in community mode
+func IsCommunity() (bool, error) {
+	packageName := os.Getenv("OPERATOR_PACKAGE")
+	if packageName == "advanced-cluster-management" {
+		return false, nil
+	} else if (packageName == "stolostron") || (packageName == "") {
+		return true, nil
+	} else {
+		err := errors.New("There is an illegal value set for OPERATOR_PACKAGE")
+		return true, err
+	}
 }

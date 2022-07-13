@@ -204,6 +204,12 @@ var _ = Describe("utility functions", func() {
 			appsubs := GetAppsubsForStatus(&mch)
 			Expect(len(appsubs)).To(Equal(7))
 		})
+		It("Sets Default Component values", func() {
+			mch := resources.EmptyMCH()
+			updated, err := SetDefaultComponents(&mch)
+			Expect(updated).To(Equal(true))
+			Expect(err).To(BeNil())
+		})
 		It("gets custom resources for status with MCE disabled", func() {
 			mch := resources.EmptyMCH()
 			cr := GetCustomResourcesForStatus(&mch)

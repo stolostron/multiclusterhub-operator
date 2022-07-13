@@ -465,21 +465,29 @@ func appendIfMissing(slice []corev1.EnvVar, s corev1.EnvVar) []corev1.EnvVar {
 }
 
 // SetDefaultComponents returns true if changes are made
-func SetDefaultComponents(m *operatorsv1.MultiClusterHub) bool {
+func SetDefaultComponents(m *operatorsv1.MultiClusterHub) (bool, error) {
 	updated := false
-	for _, c := range operatorsv1.DefaultEnabledComponents {
+	defaultEnabledComponents, err := operatorsv1.GetDefaultEnabledComponents()
+	if err != nil {
+		return updated, err
+	}
+	defaultDisabledComponents, err := operatorsv1.GetDefaultDisabledComponents()
+	if err != nil {
+		return true, err
+	}
+	for _, c := range defaultEnabledComponents {
 		if !m.ComponentPresent(c) {
 			m.Enable(c)
 			updated = true
 		}
 	}
-	for _, c := range operatorsv1.DefaultDisabledComponents {
+	for _, c := range defaultDisabledComponents {
 		if !m.ComponentPresent(c) {
 			m.Disable(c)
 			updated = true
 		}
 	}
-	return updated
+	return updated, nil
 }
 
 // DeduplicateComponents removes duplicate componentconfigs by name, keeping the config of the last
