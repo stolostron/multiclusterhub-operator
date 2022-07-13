@@ -237,6 +237,8 @@ var _ = Describe("MultiClusterHub controller", func() {
 		It("Should get to a running state", func() {
 			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates")
 			defer os.Unsetenv("DIRECTORY_OVERRIDE")
+			os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
+			defer os.Unsetenv("OPERATOR_PACKAGE")
 			By("Applying prereqs")
 			ctx := context.Background()
 			ApplyPrereqs(k8sClient)
@@ -421,6 +423,8 @@ var _ = Describe("MultiClusterHub controller", func() {
 		It("Should allow Search to be optional", func() {
 			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates")
 			defer os.Unsetenv("DIRECTORY_OVERRIDE")
+			os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
+			defer os.Unsetenv("OPERATOR_PACKAGE")
 			By("Applying prereqs")
 			ctx := context.Background()
 			ApplyPrereqs(k8sClient)
