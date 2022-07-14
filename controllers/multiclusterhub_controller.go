@@ -709,7 +709,7 @@ func (r *MultiClusterHubReconciler) createTrustBundleConfigmap(ctx context.Conte
 		Name:      trustBundleName,
 		Namespace: trustBundleNamespace,
 	}
-	log.Info("using trust bundle configmap %s/%s", trustBundleNamespace, trustBundleName)
+	log.Info("using trust bundle configmap %s / %s", trustBundleNamespace, trustBundleName)
 
 	// Check if configmap exists
 	cm := &corev1.ConfigMap{}
