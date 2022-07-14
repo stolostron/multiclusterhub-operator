@@ -49,7 +49,7 @@ import (
 )
 
 const (
-	timeout  = time.Second * 20
+	timeout  = time.Second * 30
 	interval = time.Millisecond * 250
 
 	mchName      = "multiclusterhub-operator"
@@ -198,6 +198,8 @@ var _ = Describe("MultiClusterHub controller", func() {
 		It("Creates and removes a deployment", func() {
 			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates")
 			defer os.Unsetenv("DIRECTORY_OVERRIDE")
+			os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
+			defer os.Unsetenv("OPERATOR_PACKAGE")
 			By("Applying prereqs")
 			ApplyPrereqs(k8sClient)
 			ctx := context.Background()
@@ -237,7 +239,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 		It("Should get to a running state", func() {
 			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates")
 			defer os.Unsetenv("DIRECTORY_OVERRIDE")
-			os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
+			os.Setenv("OPERATOR_PACKAGE", "stolostron")
 			defer os.Unsetenv("OPERATOR_PACKAGE")
 			By("Applying prereqs")
 			ctx := context.Background()
@@ -358,6 +360,8 @@ var _ = Describe("MultiClusterHub controller", func() {
 		It("Should Manage Preexisting MCE", func() {
 			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates")
 			defer os.Unsetenv("DIRECTORY_OVERRIDE")
+			os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
+			defer os.Unsetenv("OPERATOR_PACKAGE")
 			By("Applying prereqs")
 			ctx := context.Background()
 			ApplyPrereqs(k8sClient)

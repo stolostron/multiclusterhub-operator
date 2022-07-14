@@ -25,9 +25,12 @@ var (
 	catalogSourceName      = "redhat-operators"
 	catalogSourceNamespace = "openshift-marketplace" // https://olm.operatorframework.io/docs/tasks/troubleshooting/subscription/#a-subscription-in-namespace-x-cant-install-operators-from-a-catalogsource-in-namespace-y
 
-	MulticlusterengineName = "multiclusterengine"
-
-	operatorGroupName = "default"
+	//Custom-subscription annotation can be used to point to a development version of stolostron-engine
+	communityChannel           = "community-2.1"
+	communityPackageName       = "stolostron-engine"
+	communityCatalogSourceName = "community-operators"
+	MulticlusterengineName     = "multiclusterengine"
+	operatorGroupName          = "default"
 )
 
 func labels(m *operatorsv1.MultiClusterHub) map[string]string {
@@ -72,32 +75,57 @@ func GetSupportedAnnotations(m *operatorsv1.MultiClusterHub) map[string]string {
 }
 
 // Subscription for the helm repo serving charts
-func Subscription(m *operatorsv1.MultiClusterHub, c *subv1alpha1.SubscriptionConfig) *subv1alpha1.Subscription {
-	sub := &subv1alpha1.Subscription{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: subv1alpha1.SubscriptionCRDAPIVersion,
-			Kind:       subv1alpha1.SubscriptionKind,
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      utils.MCESubscriptionName,
-			Namespace: utils.MCESubscriptionNamespace,
-			Labels:    labels(m),
-		},
-		Spec: &subv1alpha1.SubscriptionSpec{
-			Channel:                channel,
-			InstallPlanApproval:    installPlanApproval,
-			Package:                packageName,
-			CatalogSource:          catalogSourceName,
-			CatalogSourceNamespace: catalogSourceNamespace,
-			Config:                 c,
-		},
+func Subscription(m *operatorsv1.MultiClusterHub, c *subv1alpha1.SubscriptionConfig, community bool) *subv1alpha1.Subscription {
+	sub := &subv1alpha1.Subscription{}
+	if community {
+		//Do Community Versioned Sub
+		sub = &subv1alpha1.Subscription{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: subv1alpha1.SubscriptionCRDAPIVersion,
+				Kind:       subv1alpha1.SubscriptionKind,
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      utils.CommunityMCESubscriptionName,
+				Namespace: utils.CommunityMCESubscriptionNamespace,
+				Labels:    labels(m),
+			},
+			Spec: &subv1alpha1.SubscriptionSpec{
+				Channel:                communityChannel,
+				InstallPlanApproval:    installPlanApproval,
+				Package:                communityPackageName,
+				CatalogSource:          communityCatalogSourceName,
+				CatalogSourceNamespace: catalogSourceNamespace,
+				Config:                 c,
+			},
+		}
+
+	} else {
+		sub = &subv1alpha1.Subscription{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: subv1alpha1.SubscriptionCRDAPIVersion,
+				Kind:       subv1alpha1.SubscriptionKind,
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      utils.MCESubscriptionName,
+				Namespace: utils.MCESubscriptionNamespace,
+				Labels:    labels(m),
+			},
+			Spec: &subv1alpha1.SubscriptionSpec{
+				Channel:                channel,
+				InstallPlanApproval:    installPlanApproval,
+				Package:                packageName,
+				CatalogSource:          catalogSourceName,
+				CatalogSourceNamespace: catalogSourceNamespace,
+				Config:                 c,
+			},
+		}
 	}
 
 	if mceAnnotationOverrides := utils.GetMCEAnnotationOverrides(m); mceAnnotationOverrides != "" {
 		sub = overrideSub(sub, mceAnnotationOverrides, c)
 	}
-
 	return sub
+
 }
 
 func overrideSub(sub *subv1alpha1.Subscription, mceAnnotationOverrides string, c *subv1alpha1.SubscriptionConfig) *subv1alpha1.Subscription {

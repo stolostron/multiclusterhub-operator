@@ -220,6 +220,7 @@ var testHiveConfig = func() func() {
 
 var testMCE = func() func() {
 	return func() {
+		//ERIN
 		It("Test MCE propagation", func() {
 			By("- When creating the MCH, ensure that fields are applied to the owned MCE")
 

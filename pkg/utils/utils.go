@@ -44,6 +44,9 @@ const (
 	// SubscriptionOperatorName is the name of the operator deployment managing application subscriptions
 	SubscriptionOperatorName = "multicluster-operators-standalone-subscription"
 
+	CommunityMCESubscriptionName      = "multicluster-engine" //TODO
+	CommunityMCESubscriptionNamespace = "multicluster-engine" //TODO
+
 	MCESubscriptionName          = "multicluster-engine"
 	MCESubscriptionNamespace     = "multicluster-engine"
 	ClusterSubscriptionNamespace = "open-cluster-management-backup"

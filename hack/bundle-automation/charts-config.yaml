@@ -1,0 +1,12 @@
+
+- repo_name: "managed-serviceaccount"
+  github_ref: "https://github.com/stolostron/managed-serviceaccount.git"
+  charts:
+    - name: "managed-serviceaccount"
+      chart-path: "charts/managed-serviceaccount"
+      always-or-toggle: "toggle"
+      branch: "backplane-2.1"
+      imageMappings:
+        managed-serviceaccount: managed_serviceaccount
+      inclusions:
+        - "pullSecretOverride"

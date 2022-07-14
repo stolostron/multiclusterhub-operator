@@ -186,7 +186,12 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 		return nil
 	}
 
-	csv, err := r.GetCSVFromSubscription(multiclusterengine.Subscription(m, subConfig))
+	community, err := operatorsv1.IsCommunity()
+	if err != nil {
+		return err
+	}
+
+	csv, err := r.GetCSVFromSubscription(multiclusterengine.Subscription(m, subConfig, community))
 	if err == nil { // CSV Exists
 		err = r.Client.Delete(ctx, csv)
 		if err != nil && !errors.IsNotFound(err) {
@@ -205,7 +210,7 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 		&subv1alpha1.Subscription{})
 	if err == nil {
 
-		err = r.Client.Delete(ctx, multiclusterengine.Subscription(m, subConfig))
+		err = r.Client.Delete(ctx, multiclusterengine.Subscription(m, subConfig, community))
 		if err != nil && !errors.IsNotFound(err) {
 			return err
 		}

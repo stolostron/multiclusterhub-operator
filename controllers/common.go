@@ -847,12 +847,17 @@ func (r *MultiClusterHubReconciler) listCustomResources(m *operatorv1.MultiClust
 	if err != nil {
 		return nil, err
 	}
-	mceSub, err := r.GetSubscription(multiclusterengine.Subscription(m, subConfig))
+	community, err := operatorv1.IsCommunity()
+	if err != nil {
+		return nil, err
+	}
+
+	mceSub, err := r.GetSubscription(multiclusterengine.Subscription(m, subConfig, community))
 	if err != nil {
 		mceSub = nil
 	}
 
-	mceCSV, err := r.GetCSVFromSubscription(multiclusterengine.Subscription(m, subConfig))
+	mceCSV, err := r.GetCSVFromSubscription(multiclusterengine.Subscription(m, subConfig, community))
 	if err != nil {
 		mceCSV = nil
 	}
@@ -1098,7 +1103,12 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(multiClusterHub *op
 		r.Log.Info(fmt.Sprintf("Overridding MultiClusterEngine Subscription: %s", mceAnnotationOverrides))
 	}
 
-	result, err = r.ensureOLMSubscription(multiClusterHub, multiclusterengine.Subscription(multiClusterHub, subConfig))
+	community, err := operatorv1.IsCommunity()
+	if err != nil {
+		return result, err
+	}
+
+	result, err = r.ensureOLMSubscription(multiClusterHub, multiclusterengine.Subscription(multiClusterHub, subConfig, community))
 	if result != (ctrl.Result{}) {
 		return result, err
 	}

@@ -25,7 +25,7 @@ func NewMultiClusterHub(name, namespace, imageOverridesConfigmapName string, dis
 		"name":      name,
 		"namespace": namespace,
 	}
-
+	//ERIN
 	annotations := map[string]interface{}{
 		"installer.open-cluster-management.io/mce-subscription-spec": `{"channel": "stable-2.1","installPlanApproval": "Automatic","name": "multicluster-engine","source": "multiclusterengine-catalog","sourceNamespace": "openshift-marketplace"}`,
 	}
@@ -73,7 +73,7 @@ func NewMCHTolerations(name, namespace, imageOverridesConfigmapName string, disa
 		"name":      name,
 		"namespace": namespace,
 	}
-
+	//TO DO
 	annotations := map[string]interface{}{
 		"installer.open-cluster-management.io/mce-subscription-spec": `{"channel": "stable-2.1","installPlanApproval": "Automatic","name": "multicluster-engine","source": "multiclusterengine-catalog","sourceNamespace": "openshift-marketplace"}`,
 	}
