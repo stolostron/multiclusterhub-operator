@@ -74,13 +74,16 @@ type MultiClusterHubReconciler struct {
 	Log       logr.Logger
 }
 
-var resyncPeriod = time.Second * 20
-
 const (
+	resyncPeriod = time.Second * 20
+
 	crdPathEnvVar       = "CRDS_PATH"
 	templatesPathEnvVar = "TEMPLATES_PATH"
 	templatesKind       = "multiclusterhub"
 	hubFinalizer        = "finalizer.operator.open-cluster-management.io"
+
+	trustBundleNameEnvVar  = "TRUSTED_CA_BUNDLE"
+	defaultTrustBundleName = "trusted-ca-bundle"
 )
 
 //+kubebuilder:rbac:groups="";"admissionregistration.k8s.io";"apiextensions.k8s.io";"apiregistration.k8s.io";"apps";"apps.open-cluster-management.io";"authorization.k8s.io";"hive.openshift.io";"mcm.ibm.com";"proxy.open-cluster-management.io";"rbac.authorization.k8s.io";"security.openshift.io";"clusterview.open-cluster-management.io";"discovery.open-cluster-management.io";"wgpolicyk8s.io",resources=apiservices;channels;clusterjoinrequests;clusterrolebindings;clusterstatuses/log;configmaps;customresourcedefinitions;deployments;discoveryconfigs;hiveconfigs;mutatingwebhookconfigurations;validatingwebhookconfigurations;namespaces;pods;policyreports;replicasets;rolebindings;secrets;serviceaccounts;services;subjectaccessreviews;subscriptions;helmreleases;managedclusters;managedclustersets,verbs=get
@@ -370,6 +373,11 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	result, err = r.ingressDomain(multiClusterHub)
 	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	result, err = r.createTrustBundleConfigmap(ctx, multiClusterHub)
+	if err != nil {
 		return result, err
 	}
 
@@ -714,7 +722,62 @@ func (r *MultiClusterHubReconciler) deleteTemplate(ctx context.Context, m *opera
 		log.Error(err, "Failed to delete template")
 		return ctrl.Result{}, err
 	}
+	return ctrl.Result{}, nil
+}
 
+// createCAconfigmap creates a configmap that will be injected with the
+// trusted CA bundle for use with the OCP cluster wide proxy
+func (r *MultiClusterHubReconciler) createTrustBundleConfigmap(ctx context.Context, mch *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
+
+	// Get Trusted Bundle configmap name
+	trustBundleName := defaultTrustBundleName
+	trustBundleNamespace := mch.Namespace
+	if name, ok := os.LookupEnv(trustBundleNameEnvVar); ok && name != "" {
+		trustBundleName = name
+	}
+	namespacedName := types.NamespacedName{
+		Name:      trustBundleName,
+		Namespace: trustBundleNamespace,
+	}
+	log.Info("using trust bundle configmap %s/%s", trustBundleNamespace, trustBundleName)
+
+	// Check if configmap exists
+	cm := &corev1.ConfigMap{}
+	err := r.Client.Get(ctx, namespacedName, cm)
+	if err != nil && !errors.IsNotFound(err) {
+		// Unknown error. Requeue
+		log.Info(fmt.Sprintf("error while getting trust bundle configmap %s: %s", trustBundleName, err))
+		return ctrl.Result{RequeueAfter: resyncPeriod}, err
+	} else if err == nil {
+		// configmap exists
+		return ctrl.Result{}, nil
+	}
+
+	// Create configmap
+	cm = &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      trustBundleName,
+			Namespace: trustBundleNamespace,
+			Labels: map[string]string{
+				"config.openshift.io/inject-trusted-cabundle": "true",
+			},
+		},
+	}
+	err = ctrl.SetControllerReference(mch, cm, r.Scheme)
+	if err != nil {
+		return ctrl.Result{}, pkgerrors.Wrapf(
+			err, "Error setting controller reference on trust bundle configmap %s",
+			trustBundleName,
+		)
+	}
+	err = r.Client.Create(ctx, cm)
+	if err != nil {
+		// Error creating configmap
+		log.Info(fmt.Sprintf("error creating trust bundle configmap %s: %s", trustBundleName, err))
+		return ctrl.Result{RequeueAfter: resyncPeriod}, err
+	}
+	// Configmap created successfully
 	return ctrl.Result{}, nil
 }
 
