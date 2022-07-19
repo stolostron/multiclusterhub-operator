@@ -134,6 +134,10 @@ var (
 				types.NamespacedName{Name: "policyreport-sub", Namespace: m.Namespace},
 				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
 			),
+			newUnstructured(
+				types.NamespacedName{Name: "cluster-proxy-addon-sub", Namespace: m.Namespace},
+				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
+			),
 		}
 		return removals
 	}
