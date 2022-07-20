@@ -25,7 +25,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"regexp"
 	"time"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
@@ -261,23 +260,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if utils.IsPaused(multiClusterHub) {
 		r.Log.Info("MultiClusterHub reconciliation is paused. Nothing more to do.")
 		return ctrl.Result{}, nil
-	}
-
-	// 2.4->2.5 upgrade logic for cluster-backup
-	matchCurrent, _ := regexp.MatchString("^2.4", multiClusterHub.Status.CurrentVersion)
-	matchDesired, _ := regexp.MatchString("^2.5", multiClusterHub.Status.DesiredVersion)
-	if (matchCurrent) && (matchDesired) {
-		if multiClusterHub.Spec.EnableClusterBackup == true {
-			blocking := NewHubCondition(operatorv1.Blocked, metav1.ConditionTrue, ResourceBlockReason, "When upgrading from version 2.4 to 2.5, cluster backup must be disabled")
-			SetHubCondition(&multiClusterHub.Status, *blocking)
-			return ctrl.Result{}, nil
-		} else {
-			res, err := r.ensureNoSubscription(multiClusterHub, subscription.OldClusterBackup(multiClusterHub))
-			if res != (ctrl.Result{}) {
-				return res, err
-			}
-			RemoveHubCondition(&multiClusterHub.Status, operatorv1.Blocked)
-		}
 	}
 
 	result, err = r.ensureSubscriptionOperatorIsRunning(multiClusterHub, allDeploys)
