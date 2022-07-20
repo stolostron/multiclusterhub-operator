@@ -10,12 +10,11 @@ require (
 	github.com/go-logr/logr v1.2.3
 	github.com/onsi/ginkgo/v2 v2.1.4
 	github.com/onsi/gomega v1.20.0
-	github.com/openshift/api v0.0.0-20220525145417-ee5b62754c68
+	github.com/openshift/api v0.0.0-20220531073726-6c4f186339a7
 	github.com/openshift/library-go v0.0.0-20220727134723-6802b30e83ba
 	github.com/operator-framework/api v0.15.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.58.0
-	github.com/stolostron/backplane-operator v0.0.0-20220323190817-d8a4b60659af
 	github.com/stolostron/search-v2-operator v0.0.0-20220721051905-143d28ab4f10
 	helm.sh/helm/v3 v3.9.2
 	k8s.io/api v0.24.3
@@ -72,6 +71,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/openshift/hive/apis v0.0.0-20220726195603-d294bfc10087 // indirect
 	github.com/prometheus/client_golang v1.12.2 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.37.0 // indirect
@@ -80,6 +80,7 @@ require (
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/stolostron/backplane-operator v0.0.0-20220727154840-1f60baf1fb98 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect

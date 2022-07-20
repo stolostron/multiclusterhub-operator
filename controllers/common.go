@@ -1023,6 +1023,50 @@ func (r *MultiClusterHubReconciler) GetSubscription(sub *subv1alpha1.Subscriptio
 	return &unstructured.Unstructured{Object: unstructuredSub}, nil
 }
 
+func (r *MultiClusterHubReconciler) GetMCECR(mch *operatorv1.MultiClusterHub) (*mcev1.MultiClusterEngine, error) {
+	ctx := context.Background()
+	mce := &mcev1.MultiClusterEngine{}
+	mceName := multiclusterengine.MultiClusterEngine(mch).GetName()
+	nsn := types.NamespacedName{
+		Name: mceName,
+	}
+	err := r.Client.Get(ctx, nsn, mce)
+	if err != nil {
+		return nil, err
+	}
+	return mce, nil
+}
+
+func (r *MultiClusterHubReconciler) GetMCESubNSN(mch *operatorv1.MultiClusterHub) (types.NamespacedName, error) {
+	mceCR, err := r.GetMCECR(mch)
+	if err != nil {
+		r.Log.Error(err, "Failed to get multicluster engine CR")
+		return types.NamespacedName{}, err
+	}
+
+	mceNS := mceCR.Spec.TargetNamespace
+	if mceNS == "" {
+		mceNS = "multicluster-engine"
+	}
+	nsn := types.NamespacedName{
+		Name:      "multicluster-engine",
+		Namespace: mceNS,
+	}
+
+	return nsn, nil
+}
+
+func (r *MultiClusterHubReconciler) GetMCESub(nsn types.NamespacedName) (*subv1alpha1.Subscription, error) {
+	ctx := context.Background()
+	mceSub := &subv1alpha1.Subscription{}
+	err := r.Client.Get(ctx, nsn, mceSub)
+	if err != nil {
+		r.Log.Error(err, "Failed to get multicluster engine subscription")
+		return nil, err
+	}
+	return mceSub, nil
+}
+
 func (r *MultiClusterHubReconciler) GetMultiClusterEngine(mce *mcev1.MultiClusterEngine) (*unstructured.Unstructured, error) {
 	multiClusterEngine, err := r.ManagedByMCEExists()
 	if err != nil {
