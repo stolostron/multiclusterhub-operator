@@ -23,43 +23,6 @@ var (
 	// from this list in future releases if they are sure to not exist prior to the current installer version
 	uninstallList = func(m *operatorsv1.MultiClusterHub) []*unstructured.Unstructured {
 		removals := []*unstructured.Unstructured{
-			// topology-sub removed in 2.3.0
-			newUnstructured(
-				types.NamespacedName{Name: "topology-sub", Namespace: m.Namespace},
-				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
-			),
-
-			newUnstructured(
-				types.NamespacedName{Name: "kui-web-terminal-sub", Namespace: m.Namespace},
-				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
-			),
-			newUnstructured(
-				types.NamespacedName{Name: "rcm-sub", Namespace: m.Namespace},
-				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
-			),
-			// searchservices CRD replaced in 2.2.0
-			newUnstructured(
-				types.NamespacedName{Name: "searchservices.search.acm.com"},
-				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1"},
-			),
-			// mirroredmanagedclusters CRD removed in 2.3.0
-			newUnstructured(
-				types.NamespacedName{Name: "mirroredmanagedclusters.cluster.open-cluster-management.io"},
-				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1"},
-			),
-			// cert-manager removed in 2.3.0
-			newUnstructured(
-				types.NamespacedName{Name: "cert-manager-sub", Namespace: utils.CertManagerNS(m)},
-				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
-			),
-			newUnstructured(
-				types.NamespacedName{Name: "cert-manager-webhook-sub", Namespace: utils.CertManagerNS(m)},
-				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
-			),
-			newUnstructured(
-				types.NamespacedName{Name: "configmap-watcher-sub", Namespace: utils.CertManagerNS(m)},
-				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
-			),
 			// AI is migrated to MCE in 2.5.0
 			newUnstructured(
 				types.NamespacedName{Name: "assisted-service-sub", Namespace: m.Namespace},
