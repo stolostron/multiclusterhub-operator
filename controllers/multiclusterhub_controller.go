@@ -249,20 +249,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	CustomUpgradeRequired, err := r.CustomSelfMgmtHubUpgradeRequired(multiClusterHub)
-	if err != nil {
-		r.Log.Error(err, "Error determining if upgrade specific logic is required")
-		return ctrl.Result{}, err
-	}
-
-	if CustomUpgradeRequired {
-		result, err = r.BeginEnsuringHubIsUpgradeable(multiClusterHub)
-		if err != nil {
-			r.Log.Info(fmt.Sprintf("Error starting to ensure local-cluster hub is upgradeable: %s", err.Error()))
-			return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-		}
-	}
-
 	// Add installer labels to Helm-owned deployments
 	myHelmReleases := getAppSubOwnedHelmReleases(allHRs, utils.GetAppsubs(multiClusterHub))
 	myHRDeployments := getHelmReleaseOwnedDeployments(allDeploys, myHelmReleases)

@@ -119,16 +119,6 @@ func (r *MultiClusterHubReconciler) ensureHubIsImported(m *operatorsv1.MultiClus
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
 
-	// resume klusterletaddonconfig ignore error
-	if err := ensureKlusterletAddonConfigPausedStatus(
-		r.Client,
-		KlusterletAddonConfigName,
-		ManagedClusterName,
-		false,
-	); err != nil && !errors.IsNotFound(err) {
-		r.Log.Error(err, "failed to resume klusterletaddonconfig")
-	}
-
 	result, err := r.ensureManagedCluster(m)
 	if result != (ctrl.Result{}) {
 		return result, err
