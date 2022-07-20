@@ -20,6 +20,8 @@ import (
 
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 
+	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
+
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/library-go/pkg/operator/resource/resourcemerge"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
@@ -1571,4 +1573,49 @@ func (r *MultiClusterHubReconciler) getClusterVersion(ctx context.Context) (stri
 		return "", e.New("Failed to detect status in clusterversion.status.history")
 	}
 	return clusterVersion.Status.History[0].Version, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureSearchCR(m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+	ctx := context.Background()
+
+	// If assisted installer is set up MCE needs to override the infrastructure
+	// operator namespace
+	searchList := &searchv2v1alpha1.SearchList{}
+	err := r.Client.List(ctx, searchList)
+	if err != nil {
+		r.Log.Info(fmt.Sprintf("error locating Search CR. Error: %s", err.Error()))
+		return ctrl.Result{Requeue: true}, err
+	}
+
+	if len(searchList.Items) == 0 {
+		searchCR := &searchv2v1alpha1.Search{}
+		force := true
+		err = r.Client.Patch(ctx, searchCR, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
+	}
+	return ctrl.Result{}, nil
+
+}
+
+func (r *MultiClusterHubReconciler) ensureNoSearchCR(m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+	ctx := context.Background()
+
+	// If assisted installer is set up MCE needs to override the infrastructure
+	// operator namespace
+	searchList := &searchv2v1alpha1.SearchList{}
+	err := r.Client.List(ctx, searchList)
+	if err != nil {
+		r.Log.Info(fmt.Sprintf("error locating Search CR. Error: %s", err.Error()))
+		return ctrl.Result{Requeue: true}, err
+	}
+
+	if len(searchList.Items) != 0 {
+		err = r.Client.Delete(context.TODO(), &searchList.Items[0])
+		if err != nil {
+			r.Log.Error(err, fmt.Sprintf("Error deleting Search CR"))
+			return ctrl.Result{Requeue: true}, err
+		}
+
+	}
+	return ctrl.Result{}, nil
+
 }

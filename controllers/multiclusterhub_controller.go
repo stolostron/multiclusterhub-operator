@@ -635,11 +635,17 @@ func (r *MultiClusterHubReconciler) ensureSearchV2(ctx context.Context, m *opera
 		}
 	}
 
-	return ctrl.Result{}, nil
+	result, err := r.ensureSearchCR(m)
+	return result, err
 }
 
 func (r *MultiClusterHubReconciler) ensureNoSearchV2(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
+
+	result, err := r.ensureSearchCR(m)
+	if err != nil {
+		return result, err
+	}
 
 	// Renders all templates from charts
 	templates, errs := renderer.RenderChart(utils.SearchV2ChartLocation, m, images)
@@ -652,7 +658,7 @@ func (r *MultiClusterHubReconciler) ensureNoSearchV2(ctx context.Context, m *ope
 
 	// Deletes all templates
 	for _, template := range templates {
-		result, err := r.deleteTemplate(ctx, m, template)
+		result, err = r.deleteTemplate(ctx, m, template)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
 			return result, err
