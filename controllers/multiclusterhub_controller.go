@@ -37,6 +37,7 @@ import (
 	"github.com/stolostron/multiclusterhub-operator/pkg/subscription"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
+	ctrlpredicate "sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/yaml"
 
 	appsubv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/v1"
@@ -498,7 +499,7 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
 			IsController: true,
 			OwnerType:    &operatorv1.MultiClusterHub{},
-		}).
+		}, builder.WithPredicates(ctrlpredicate.Or(ctrlpredicate.GenerationChangedPredicate{}, ctrlpredicate.LabelChangedPredicate{}, ctrlpredicate.AnnotationChangedPredicate{}))).
 		Watches(&source.Kind{Type: &appsubv1.Subscription{}}, &handler.EnqueueRequestForOwner{
 			IsController: true,
 			OwnerType:    &operatorv1.MultiClusterHub{},
@@ -524,7 +525,7 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) error {
 						Namespace: a.GetLabels()["installer.namespace"],
 					}},
 				}
-			}), builder.WithPredicates(predicate.InstallerLabelPredicate{})).
+			}), builder.WithPredicates(ctrlpredicate.And(predicate.InstallerLabelPredicate{}, ctrlpredicate.Or(ctrlpredicate.GenerationChangedPredicate{}, ctrlpredicate.LabelChangedPredicate{}, ctrlpredicate.AnnotationChangedPredicate{})))).
 		Watches(&source.Kind{Type: &configv1.ClusterVersion{}},
 			handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
 				multiClusterHubList := &operatorv1.MultiClusterHubList{}
