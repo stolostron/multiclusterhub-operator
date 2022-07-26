@@ -1581,16 +1581,29 @@ func (r *MultiClusterHubReconciler) ensureSearchCR(m *operatorv1.MultiClusterHub
 	// If assisted installer is set up MCE needs to override the infrastructure
 	// operator namespace
 	searchList := &searchv2v1alpha1.SearchList{}
-	err := r.Client.List(ctx, searchList)
+	err := r.Client.List(ctx, searchList, client.InNamespace(m.GetNamespace()))
 	if err != nil {
 		r.Log.Info(fmt.Sprintf("error locating Search CR. Error: %s", err.Error()))
 		return ctrl.Result{Requeue: true}, err
 	}
 
 	if len(searchList.Items) == 0 {
-		searchCR := &searchv2v1alpha1.Search{}
+		searchCR := &searchv2v1alpha1.Search{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: searchv2v1alpha1.GroupVersion.String(),
+				Kind:       "Search",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "search-v2-operator",
+				Namespace: m.Namespace,
+			},
+		}
 		force := true
 		err = r.Client.Patch(ctx, searchCR, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
+		if err != nil {
+			r.Log.Info(fmt.Sprintf("error creating Search CR. Error: %s", err.Error()))
+			return ctrl.Result{Requeue: true}, err
+		}
 	}
 	return ctrl.Result{}, nil
 
@@ -1602,7 +1615,7 @@ func (r *MultiClusterHubReconciler) ensureNoSearchCR(m *operatorv1.MultiClusterH
 	// If assisted installer is set up MCE needs to override the infrastructure
 	// operator namespace
 	searchList := &searchv2v1alpha1.SearchList{}
-	err := r.Client.List(ctx, searchList)
+	err := r.Client.List(ctx, searchList, client.InNamespace(m.GetNamespace()))
 	if err != nil {
 		r.Log.Info(fmt.Sprintf("error locating Search CR. Error: %s", err.Error()))
 		return ctrl.Result{Requeue: true}, err
