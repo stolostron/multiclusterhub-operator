@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	mchov1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
