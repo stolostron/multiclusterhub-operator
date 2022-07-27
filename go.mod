@@ -16,6 +16,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.54.1
 	github.com/stolostron/backplane-operator v0.0.0-20220323190817-d8a4b60659af
+	github.com/stolostron/search-v2-operator v0.0.0-20220719141457-d5ec29fc6ef7
 	helm.sh/helm/v3 v3.8.0
 	k8s.io/api v0.24.1
 	k8s.io/apiextensions-apiserver v0.24.1
@@ -62,7 +63,6 @@ require (
 	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
-	github.com/grosser/go-testcov v1.7.0 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
@@ -105,7 +105,7 @@ require (
 	k8s.io/klog/v2 v2.60.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220614142933-1062c7ade5f8 // indirect
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9 // indirect
-	open-cluster-management.io/api v0.6.1-0.20220208144021-3297cac74dc5 // indirect
+	open-cluster-management.io/api v0.7.0 // indirect
 	open-cluster-management.io/multicloud-operators-channel v0.6.1-0.20220211220806-5d96f748742d // indirect
 	sigs.k8s.io/json v0.0.0-20220525155127-227cbc7cc124 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
