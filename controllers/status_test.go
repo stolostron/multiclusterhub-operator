@@ -9,13 +9,17 @@ import (
 	"testing"
 	"time"
 
+	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
-	subhelmv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/helmrelease/v1"
-
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	subhelmv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/helmrelease/v1"
 )
 
 func Test_allComponentsSuccessful(t *testing.T) {
@@ -465,6 +469,385 @@ func Test_aggregatePhase(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := aggregatePhase(tt.status); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("aggregatePhase() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_mapCSV(t *testing.T) {
+	tests := []struct {
+		name string
+		csv  *olmv1alpha1.ClusterServiceVersion
+		want operatorsv1.StatusCondition
+	}{
+		{
+			name: "Successful install",
+			csv: &olmv1alpha1.ClusterServiceVersion{
+				Status: olmv1alpha1.ClusterServiceVersionStatus{
+					Conditions: []olmv1alpha1.ClusterServiceVersionCondition{
+						{
+							Phase:   olmv1alpha1.CSVPhaseSucceeded,
+							Message: "Success",
+							Reason:  olmv1alpha1.CSVReasonInstallSuccessful,
+						},
+					},
+				},
+			},
+			want: operatorsv1.StatusCondition{
+				Kind:      "ClusterServiceVersion",
+				Status:    metav1.ConditionTrue,
+				Reason:    "InstallSucceeded",
+				Message:   "Success",
+				Type:      "Available",
+				Available: true,
+			},
+		},
+		{
+			name: "No status reported",
+			csv: &olmv1alpha1.ClusterServiceVersion{
+				Status: olmv1alpha1.ClusterServiceVersionStatus{},
+			},
+			want: unknownStatus,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			csv, err := runtime.DefaultUnstructuredConverter.ToUnstructured(tt.csv)
+			if err != nil {
+				t.Errorf("error converting csv: %v", err)
+			}
+			u := &unstructured.Unstructured{Object: csv}
+			got := mapCSV(u)
+
+			if got.Kind != tt.want.Kind {
+				t.Errorf("mapCSV() = %v, want %v", got, tt.want)
+			}
+			if string(got.Status) != string(tt.want.Status) {
+				t.Errorf("mapCSV() = %v, want %v", got, tt.want)
+			}
+			if got.Reason != tt.want.Reason {
+				t.Errorf("mapCSV() = %v, want %v", got, tt.want)
+			}
+			if got.Message != tt.want.Message {
+				t.Errorf("mapCSV() = %v, want %v", got, tt.want)
+			}
+			if got.Available != tt.want.Available {
+				t.Errorf("mapCSV() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_mapMCE(t *testing.T) {
+	tests := []struct {
+		name string
+		mce  *mcev1.MultiClusterEngine
+		want operatorsv1.StatusCondition
+	}{
+		{
+			name: "Successful install",
+			mce: &mcev1.MultiClusterEngine{
+				Status: mcev1.MultiClusterEngineStatus{
+					Conditions: []mcev1.MultiClusterEngineCondition{
+						{
+							Type:    mcev1.MultiClusterEngineAvailable,
+							Status:  metav1.ConditionTrue,
+							Reason:  "Available",
+							Message: "",
+						},
+					},
+				},
+			},
+			want: operatorsv1.StatusCondition{
+				Kind:      "ClusterServiceVersion",
+				Status:    metav1.ConditionTrue,
+				Reason:    "Available",
+				Message:   "",
+				Type:      "Available",
+				Available: true,
+			},
+		},
+		{
+			name: "No status reported",
+			mce: &mcev1.MultiClusterEngine{
+				Status: mcev1.MultiClusterEngineStatus{
+					Conditions: []mcev1.MultiClusterEngineCondition{},
+				},
+			},
+			want: unknownStatus,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mce, err := runtime.DefaultUnstructuredConverter.ToUnstructured(tt.mce)
+			if err != nil {
+				t.Errorf("error converting mce: %v", err)
+			}
+			u := &unstructured.Unstructured{Object: mce}
+			got := mapMultiClusterEngine(u)
+
+			if got.Kind != tt.want.Kind {
+				t.Errorf("mapMultiClusterEngine() = %v, want %v", got, tt.want)
+			}
+			if string(got.Status) != string(tt.want.Status) {
+				t.Errorf("mapMultiClusterEngine() = %v, want %v", got, tt.want)
+			}
+			if got.Reason != tt.want.Reason {
+				t.Errorf("mapMultiClusterEngine() = %v, want %v", got, tt.want)
+			}
+			if got.Message != tt.want.Message {
+				t.Errorf("mapMultiClusterEngine() = %v, want %v", got, tt.want)
+			}
+			if got.Available != tt.want.Available {
+				t.Errorf("mapMultiClusterEngine() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_mapSubscription(t *testing.T) {
+	tests := []struct {
+		name string
+		sub  *olmv1alpha1.Subscription
+		want operatorsv1.StatusCondition
+	}{
+		{
+			name: "Has installPlanRef",
+			sub: &olmv1alpha1.Subscription{
+				Spec: &olmv1alpha1.SubscriptionSpec{
+					InstallPlanApproval: olmv1alpha1.ApprovalManual,
+				},
+				Status: olmv1alpha1.SubscriptionStatus{
+					InstallPlanRef: &corev1.ObjectReference{
+						Kind:      "InstallPlan",
+						Name:      "test",
+						Namespace: "test",
+					},
+					State: olmv1alpha1.SubscriptionState("AtLatestKnown"),
+				},
+			},
+			want: operatorsv1.StatusCondition{
+				Kind:      "Subscription",
+				Status:    metav1.ConditionTrue,
+				Reason:    "AtLatestKnown",
+				Message:   "installPlanApproval: Manual. installPlan: test/test",
+				Type:      "Available",
+				Available: true,
+			},
+		},
+		{
+			name: "No status reported",
+			sub: &olmv1alpha1.Subscription{
+				Status: olmv1alpha1.SubscriptionStatus{},
+			},
+			want: unknownStatus,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sub, err := runtime.DefaultUnstructuredConverter.ToUnstructured(tt.sub)
+			if err != nil {
+				t.Errorf("error converting subscription: %v", err)
+			}
+			u := &unstructured.Unstructured{Object: sub}
+			got := mapSubscription(u)
+
+			if got.Kind != tt.want.Kind {
+				t.Errorf("mapSubscription() = %v, want %v", got, tt.want)
+			}
+			if string(got.Status) != string(tt.want.Status) {
+				t.Errorf("mapSubscription() = %v, want %v", got, tt.want)
+			}
+			if got.Reason != tt.want.Reason {
+				t.Errorf("mapSubscription() = %v, want %v", got, tt.want)
+			}
+			if got.Message != tt.want.Message {
+				t.Errorf("mapSubscription() = %v, want %v", got, tt.want)
+			}
+			if got.Available != tt.want.Available {
+				t.Errorf("mapSubscription() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_mapHelmRelease(t *testing.T) {
+	tests := []struct {
+		name string
+		hr   *subhelmv1.HelmRelease
+		want operatorsv1.StatusCondition
+	}{
+		{
+			name: "Has installPlanRef",
+			hr: &subhelmv1.HelmRelease{
+				Repo: subhelmv1.HelmReleaseRepo{
+					Version: version.Version,
+				},
+				Status: subhelmv1.HelmAppStatus{
+					Conditions: []subhelmv1.HelmAppCondition{
+						{
+							Type:   subhelmv1.ConditionDeployed,
+							Status: subhelmv1.StatusTrue,
+							Reason: subhelmv1.ReasonInstallSuccessful,
+						},
+					},
+				},
+			},
+			want: operatorsv1.StatusCondition{
+				Kind:      "HelmRelease",
+				Status:    metav1.ConditionTrue,
+				Reason:    "InstallSuccessful",
+				Message:   "",
+				Type:      "Deployed",
+				Available: true,
+			},
+		},
+		{
+			name: "No status reported",
+			hr: &subhelmv1.HelmRelease{
+				Status: subhelmv1.HelmAppStatus{},
+			},
+			want: unknownStatus,
+		},
+		{
+			name: "Wrong version",
+			hr: &subhelmv1.HelmRelease{
+				Repo: subhelmv1.HelmReleaseRepo{
+					Version: "0.0.0",
+				},
+				Status: subhelmv1.HelmAppStatus{
+					Conditions: []subhelmv1.HelmAppCondition{
+						{
+							Type:   subhelmv1.ConditionDeployed,
+							Status: subhelmv1.StatusTrue,
+							Reason: subhelmv1.ReasonInstallSuccessful,
+						},
+					},
+				},
+			},
+			want: wrongVersionStatus,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := mapHelmRelease(tt.hr)
+
+			if got.Kind != tt.want.Kind {
+				t.Errorf("mapSubscription() = %v, want %v", got, tt.want)
+			}
+			if string(got.Status) != string(tt.want.Status) {
+				t.Errorf("mapSubscription() = %v, want %v", got, tt.want)
+			}
+			if got.Reason != tt.want.Reason {
+				t.Errorf("mapSubscription() = %v, want %v", got, tt.want)
+			}
+			if got.Available != tt.want.Available {
+				t.Errorf("mapSubscription() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getComponentStatuses(t *testing.T) {
+	mce := &mcev1.MultiClusterEngine{
+		Status: mcev1.MultiClusterEngineStatus{
+			Conditions: []mcev1.MultiClusterEngineCondition{
+				{
+					Type:    mcev1.MultiClusterEngineAvailable,
+					Status:  metav1.ConditionTrue,
+					Reason:  "Available",
+					Message: "",
+				},
+			},
+		},
+	}
+	mceU, err := runtime.DefaultUnstructuredConverter.ToUnstructured(mce)
+	if err != nil {
+		t.Errorf("error converting mce: %v", err)
+	}
+	mceUnstructured := &unstructured.Unstructured{Object: mceU}
+
+	type args struct {
+		hub                 *operatorsv1.MultiClusterHub
+		allHRs              []*subhelmv1.HelmRelease
+		allDeps             []*appsv1.Deployment
+		allCRs              []*unstructured.Unstructured
+		importClusterStatus []interface{}
+	}
+	tests := []struct {
+		name string
+		args args
+		want map[string]operatorsv1.StatusCondition
+	}{
+		{
+			name: "1",
+			args: args{
+				hub: &operatorsv1.MultiClusterHub{
+					Spec: operatorsv1.MultiClusterHubSpec{
+						Overrides: &operatorsv1.Overrides{
+							Components: []operatorsv1.ComponentConfig{
+								{
+									Name:    "console",
+									Enabled: true,
+								},
+							},
+						},
+					},
+				},
+				allHRs: []*subhelmv1.HelmRelease{
+					{
+						ObjectMeta: v1.ObjectMeta{
+							Name: "console-hr",
+							OwnerReferences: []v1.OwnerReference{
+								{
+									Name: "console-chart-sub",
+								},
+							},
+						},
+						Repo: subhelmv1.HelmReleaseRepo{
+							Version: version.Version,
+						},
+						Status: subhelmv1.HelmAppStatus{
+							Conditions: []subhelmv1.HelmAppCondition{
+								{
+									Type:   subhelmv1.ConditionDeployed,
+									Status: subhelmv1.StatusTrue,
+									Reason: subhelmv1.ReasonInstallSuccessful,
+								},
+							},
+						},
+					},
+				},
+				allDeps: []*appsv1.Deployment{
+					{
+						ObjectMeta: v1.ObjectMeta{
+							Annotations: map[string]string{
+								"meta.helm.sh/release-name": "console-hr",
+							},
+						},
+						Status: appsv1.DeploymentStatus{
+							Conditions: []appsv1.DeploymentCondition{
+								{
+									Type:   appsv1.DeploymentAvailable,
+									Status: corev1.ConditionFalse,
+									Reason: "Available",
+								},
+							},
+						},
+					},
+				},
+				allCRs:              []*unstructured.Unstructured{mceUnstructured},
+				importClusterStatus: nil,
+			},
+			want: map[string]operatorsv1.StatusCondition{
+				"local-cluster": unknownStatus,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getComponentStatuses(tt.args.hub, tt.args.allHRs, tt.args.allDeps, tt.args.allCRs, tt.args.importClusterStatus); len(got) == 0 {
+				t.Errorf("getComponentStatuses() = %v, want %v", got, tt.want)
 			}
 		})
 	}
