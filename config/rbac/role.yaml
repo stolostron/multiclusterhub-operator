@@ -375,8 +375,10 @@ rules:
   - watch
 - apiGroups:
   - console.openshift.io
+  - search.open-cluster-management.io
   resources:
   - consoleplugins
+  - searches
   verbs:
   - create
   - delete
