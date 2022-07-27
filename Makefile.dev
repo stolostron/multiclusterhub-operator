@@ -44,3 +44,11 @@ cr:
 full-catalog-install: manifests generate bundle bundle-build bundle-push catalog-build catalog-push prereqs subscriptions catalog
 
 full-dev-install: prereqs manifests generate update-manifest update-crds subscriptions docker-build docker-push deploy
+
+add-images: ## Retrieves latest manifest and injects image definitions directly into the deployment template
+	pip3 install -r ./hack/bundle-automation/requirements.txt
+	python3 ./hack/scripts/dev-update-image-references.py
+
+add-images-local:  ## Generates a local image manifest. Source this file to define necessary environment variables to run the operator locally
+	pip3 install -r ./hack/bundle-automation/requirements.txt
+	python3 ./hack/scripts/dev-update-image-references.py --local

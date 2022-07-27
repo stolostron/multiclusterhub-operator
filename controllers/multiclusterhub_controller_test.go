@@ -50,7 +50,7 @@ import (
 )
 
 const (
-	timeout  = time.Second * 20
+	timeout  = time.Second * 30
 	interval = time.Millisecond * 250
 
 	mchName      = "multiclusterhub-operator"
@@ -64,6 +64,185 @@ func ApplyPrereqs(k8sClient client.Client) {
 	ctx := context.Background()
 	Expect(k8sClient.Create(ctx, resources.OCMNamespace())).Should(Succeed())
 	Expect(k8sClient.Create(ctx, resources.MonitoringNamespace())).Should(Succeed())
+}
+
+func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler, mchoDeployment *appsv1.Deployment) {
+	By("Applying prereqs")
+	ctx := context.Background()
+	ApplyPrereqs(k8sClient)
+
+	By("By creating a new Multiclusterhub")
+	mch := resources.EmptyMCH()
+	Expect(k8sClient.Create(ctx, &mch)).Should(Succeed())
+	Expect(k8sClient.Create(ctx, mchoDeployment)).Should(Succeed())
+
+	By("Ensuring MCH is created")
+	createdMCH := &mchov1.MultiClusterHub{}
+	Eventually(func() bool {
+		err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
+		return err == nil
+	}, timeout, interval).Should(BeTrue())
+
+	annotations := map[string]string{
+		"mch-imageRepository": "quay.io/test",
+	}
+	createdMCH.SetAnnotations(annotations)
+	Expect(k8sClient.Update(ctx, createdMCH)).Should(Succeed())
+
+	By("Ensuring Defaults are set")
+	Eventually(func() bool {
+		err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
+		Expect(err).Should(BeNil())
+		return reflect.DeepEqual(createdMCH.Spec.Ingress.SSLCiphers, utils.DefaultSSLCiphers) && createdMCH.Spec.AvailabilityConfig == mchov1.HAHigh
+	}, timeout, interval).Should(BeTrue())
+
+	By("Ensuring Deployments")
+	Eventually(func() bool {
+		deploymentReferences := utils.GetDeployments(createdMCH)
+		result := true
+		for _, deploymentReference := range deploymentReferences {
+			deployment := &appsv1.Deployment{}
+			err := k8sClient.Get(ctx, deploymentReference, deployment)
+			if err != nil {
+				fmt.Println(err.Error())
+				result = false
+			}
+		}
+		return result
+	}, timeout, interval).Should(BeTrue())
+
+	By("Ensuring MultiClusterEngine is running")
+	Eventually(func() bool {
+		mce := &mcev1.MultiClusterEngine{}
+		result := true
+		err := k8sClient.Get(ctx, types.NamespacedName{Name: multiclusterengine.MulticlusterengineName}, mce)
+		if err != nil {
+			fmt.Println(err.Error())
+			result = false
+		}
+		mceAnnotations := mce.GetAnnotations()
+		if val, ok := mceAnnotations["imageRepository"]; !ok || val != "quay.io/test" {
+			result = false
+		}
+		return result
+	}, timeout, interval).Should(BeTrue())
+
+	By("Ensuring appsubs")
+	Eventually(func() bool {
+		subscriptionReferences := utils.GetAppsubs(createdMCH)
+		result := true
+		for _, subscriptionReference := range subscriptionReferences {
+			subscription := &appsubv1.Subscription{}
+			err := k8sClient.Get(ctx, subscriptionReference, subscription)
+			if err != nil {
+				fmt.Println(err.Error())
+				result = false
+			}
+		}
+		return result
+	}, timeout, interval).Should(BeTrue())
+
+	By("Ensuring pull secret is created in backup")
+	Eventually(func() bool {
+		psn := createdMCH.Spec.ImagePullSecret
+
+		if createdMCH.Enabled(operatorv1.ClusterBackup) && psn != "" {
+			ns := subscription.BackupNamespace().Name
+			nn := types.NamespacedName{
+				Name:      psn,
+				Namespace: ns,
+			}
+			pullSecret := &corev1.Secret{}
+			err := k8sClient.Get(ctx, nn, pullSecret)
+			return err == nil
+
+		} else {
+			return true
+		}
+	})
+
+	By("Waiting for MCH to be in the running state")
+	Eventually(func() bool {
+		mch := &mchov1.MultiClusterHub{}
+		err := k8sClient.Get(ctx, resources.MCHLookupKey, mch)
+		if err == nil {
+			return mch.Status.Phase == mchov1.HubRunning
+		}
+		return false
+	}, timeout, interval).Should(BeTrue())
+
+	By("ensuring the trusted-ca-bundle ConfigMap is created")
+	Eventually(func(g Gomega) {
+		ctx := context.Background()
+		namespacedName := types.NamespacedName{
+			Name:      defaultTrustBundleName,
+			Namespace: mchNamespace,
+		}
+		res := &corev1.ConfigMap{}
+		g.Expect(k8sClient.Get(ctx, namespacedName, res)).To(Succeed())
+	}, timeout, interval).Should(Succeed())
+}
+
+func PreexistingMCE(k8sClient client.Client, reconciler *MultiClusterHubReconciler, mchoDeployment *appsv1.Deployment) {
+	By("Applying prereqs")
+	ctx := context.Background()
+	ApplyPrereqs(k8sClient)
+
+	By("Creating MCE")
+	mce := resources.EmptyMCE()
+	Expect(k8sClient.Create(ctx, &mce)).Should(Succeed())
+
+	By("Creating MCH")
+	mch := resources.EmptyMCH()
+	Expect(k8sClient.Create(ctx, &mch)).Should(Succeed())
+	Expect(k8sClient.Create(ctx, mchoDeployment)).Should(Succeed())
+
+	By("Ensuring MCH is created")
+	createdMCH := &mchov1.MultiClusterHub{}
+	Eventually(func() bool {
+		err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
+		return err == nil
+	}, timeout, interval).Should(BeTrue())
+
+	By("Waiting for MCH to be in the running state")
+	Eventually(func() bool {
+		mch := &mchov1.MultiClusterHub{}
+		err := k8sClient.Get(ctx, resources.MCHLookupKey, mch)
+		if err == nil {
+			return mch.Status.Phase == mchov1.HubRunning
+		}
+		return false
+	}, timeout, interval).Should(BeTrue())
+
+	By("Validating the managedby label is added to MCE")
+	Eventually(func() bool {
+		existingMCE := &mcev1.MultiClusterEngine{}
+		Expect(k8sClient.Get(ctx, resources.MCELookupKey, existingMCE)).Should(Succeed())
+		labels := existingMCE.GetLabels()
+		if labels == nil {
+			return false
+		}
+		if val, ok := labels[utils.MCEManagedByLabel]; ok && val == "true" {
+			return true
+		}
+		return false
+	}, timeout, interval).Should(BeTrue())
+
+	By("Deleting MCH and waiting for it to terminate")
+	Eventually(func() bool {
+		mch := &mchov1.MultiClusterHub{}
+		err := k8sClient.Get(ctx, resources.MCHLookupKey, mch)
+		if err != nil && errors.IsNotFound(err) {
+			return true
+		} else {
+			mch := resources.EmptyMCH()
+			k8sClient.Delete(ctx, &mch)
+		}
+		return false
+	}, timeout, interval).Should(BeTrue())
+
+	By("Ensuring MCE remains")
+	Expect(k8sClient.Get(ctx, resources.MCELookupKey, &mcev1.MultiClusterEngine{})).Should(Succeed())
 }
 
 var _ = Describe("MultiClusterHub controller", func() {
@@ -203,187 +382,32 @@ var _ = Describe("MultiClusterHub controller", func() {
 			defer os.Unsetenv("DIRECTORY_OVERRIDE")
 			os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
 			defer os.Unsetenv("OPERATOR_PACKAGE")
-			By("Applying prereqs")
-			ctx := context.Background()
-			ApplyPrereqs(k8sClient)
-
-			By("By creating a new Multiclusterhub")
-			mch := resources.EmptyMCH()
-			Expect(k8sClient.Create(ctx, &mch)).Should(Succeed())
-			Expect(k8sClient.Create(ctx, mchoDeployment)).Should(Succeed())
-
-			By("Ensuring MCH is created")
-			createdMCH := &mchov1.MultiClusterHub{}
-			Eventually(func() bool {
-				err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
-				return err == nil
-			}, timeout, interval).Should(BeTrue())
-
-			annotations := map[string]string{
-				"mch-imageRepository": "quay.io/test",
-			}
-			createdMCH.SetAnnotations(annotations)
-			Expect(k8sClient.Update(ctx, createdMCH)).Should(Succeed())
-
-			By("Ensuring Defaults are set")
-			Eventually(func() bool {
-				err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
-				Expect(err).Should(BeNil())
-				return reflect.DeepEqual(createdMCH.Spec.Ingress.SSLCiphers, utils.DefaultSSLCiphers) && createdMCH.Spec.AvailabilityConfig == mchov1.HAHigh
-			}, timeout, interval).Should(BeTrue())
-
-			By("Ensuring Deployments")
-			Eventually(func() bool {
-				deploymentReferences := utils.GetDeployments(createdMCH)
-				result := true
-				for _, deploymentReference := range deploymentReferences {
-					deployment := &appsv1.Deployment{}
-					err := k8sClient.Get(ctx, deploymentReference, deployment)
-					if err != nil {
-						fmt.Println(err.Error())
-						result = false
-					}
-				}
-				return result
-			}, timeout, interval).Should(BeTrue())
-
-			By("Ensuring MultiClusterEngine is running")
-			Eventually(func() bool {
-				mce := &mcev1.MultiClusterEngine{}
-				result := true
-				err := k8sClient.Get(ctx, types.NamespacedName{Name: multiclusterengine.MulticlusterengineName}, mce)
-				if err != nil {
-					fmt.Println(err.Error())
-					result = false
-				}
-				mceAnnotations := mce.GetAnnotations()
-				if val, ok := mceAnnotations["imageRepository"]; !ok || val != "quay.io/test" {
-					result = false
-				}
-				return result
-			}, timeout, interval).Should(BeTrue())
-
-			By("Ensuring appsubs")
-			Eventually(func() bool {
-				subscriptionReferences := utils.GetAppsubs(createdMCH)
-				result := true
-				for _, subscriptionReference := range subscriptionReferences {
-					subscription := &appsubv1.Subscription{}
-					err := k8sClient.Get(ctx, subscriptionReference, subscription)
-					if err != nil {
-						fmt.Println(err.Error())
-						result = false
-					}
-				}
-				return result
-			}, timeout, interval).Should(BeTrue())
-
-			By("Ensuring pull secret is created in backup")
-			Eventually(func() bool {
-				psn := createdMCH.Spec.ImagePullSecret
-
-				if createdMCH.Enabled(operatorv1.ClusterBackup) && psn != "" {
-					ns := subscription.BackupNamespace().Name
-					nn := types.NamespacedName{
-						Name:      psn,
-						Namespace: ns,
-					}
-					pullSecret := &corev1.Secret{}
-					err := k8sClient.Get(ctx, nn, pullSecret)
-					return err == nil
-
-				} else {
-					return true
-				}
-			})
-
-			By("Waiting for MCH to be in the running state")
-			Eventually(func() bool {
-				mch := &mchov1.MultiClusterHub{}
-				err := k8sClient.Get(ctx, resources.MCHLookupKey, mch)
-				if err == nil {
-					return mch.Status.Phase == mchov1.HubRunning
-				}
-				return false
-			}, timeout, interval).Should(BeTrue())
-
-			By("ensuring the trusted-ca-bundle ConfigMap is created")
-			Eventually(func(g Gomega) {
-				ctx := context.Background()
-				namespacedName := types.NamespacedName{
-					Name:      defaultTrustBundleName,
-					Namespace: mchNamespace,
-				}
-				res := &corev1.ConfigMap{}
-				g.Expect(k8sClient.Get(ctx, namespacedName, res)).To(Succeed())
-			}, timeout, interval).Should(Succeed())
+			RunningState(k8sClient, reconciler, mchoDeployment)
 		})
 
 		It("Should Manage Preexisting MCE", func() {
 			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates")
 			defer os.Unsetenv("DIRECTORY_OVERRIDE")
-
 			os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
 			defer os.Unsetenv("OPERATOR_PACKAGE")
-			By("Applying prereqs")
-			ctx := context.Background()
-			ApplyPrereqs(k8sClient)
+			PreexistingMCE(k8sClient, reconciler, mchoDeployment)
 
-			By("Creating MCE")
-			mce := resources.EmptyMCE()
-			Expect(k8sClient.Create(ctx, &mce)).Should(Succeed())
+		})
 
-			By("Creating MCH")
-			mch := resources.EmptyMCH()
-			Expect(k8sClient.Create(ctx, &mch)).Should(Succeed())
-			Expect(k8sClient.Create(ctx, mchoDeployment)).Should(Succeed())
+		It("Should get to a running state in Community Mode", func() {
+			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates")
+			defer os.Unsetenv("DIRECTORY_OVERRIDE")
+			os.Setenv("OPERATOR_PACKAGE", "stolostron")
+			defer os.Unsetenv("OPERATOR_PACKAGE")
+			RunningState(k8sClient, reconciler, mchoDeployment)
+		})
 
-			By("Ensuring MCH is created")
-			createdMCH := &mchov1.MultiClusterHub{}
-			Eventually(func() bool {
-				err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
-				return err == nil
-			}, timeout, interval).Should(BeTrue())
-
-			By("Waiting for MCH to be in the running state")
-			Eventually(func() bool {
-				mch := &mchov1.MultiClusterHub{}
-				err := k8sClient.Get(ctx, resources.MCHLookupKey, mch)
-				if err == nil {
-					return mch.Status.Phase == mchov1.HubRunning
-				}
-				return false
-			}, timeout, interval).Should(BeTrue())
-
-			By("Validating the managedby label is added to MCE")
-			Eventually(func() bool {
-				existingMCE := &mcev1.MultiClusterEngine{}
-				Expect(k8sClient.Get(ctx, resources.MCELookupKey, existingMCE)).Should(Succeed())
-				labels := existingMCE.GetLabels()
-				if labels == nil {
-					return false
-				}
-				if val, ok := labels[utils.MCEManagedByLabel]; ok && val == "true" {
-					return true
-				}
-				return false
-			}, timeout, interval).Should(BeTrue())
-
-			By("Deleting MCH and waiting for it to terminate")
-			Eventually(func() bool {
-				mch := &mchov1.MultiClusterHub{}
-				err := k8sClient.Get(ctx, resources.MCHLookupKey, mch)
-				if err != nil && errors.IsNotFound(err) {
-					return true
-				} else {
-					mch := resources.EmptyMCH()
-					k8sClient.Delete(ctx, &mch)
-				}
-				return false
-			}, timeout, interval).Should(BeTrue())
-
-			By("Ensuring MCE remains")
-			Expect(k8sClient.Get(ctx, resources.MCELookupKey, &mcev1.MultiClusterEngine{})).Should(Succeed())
+		It("Should Manage Preexisting MCE in Community Mode", func() {
+			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates")
+			defer os.Unsetenv("DIRECTORY_OVERRIDE")
+			os.Setenv("OPERATOR_PACKAGE", "stolostron")
+			defer os.Unsetenv("OPERATOR_PACKAGE")
+			PreexistingMCE(k8sClient, reconciler, mchoDeployment)
 
 		})
 
