@@ -21,6 +21,7 @@ import (
 	"github.com/stolostron/multiclusterhub-operator/pkg/subscription"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
+	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
 	appsub "open-cluster-management.io/multicloud-operators-subscription/pkg/apis"
 	appsubv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/v1"
 
@@ -63,42 +64,6 @@ func ApplyPrereqs(k8sClient client.Client) {
 	ctx := context.Background()
 	Expect(k8sClient.Create(ctx, resources.OCMNamespace())).Should(Succeed())
 	Expect(k8sClient.Create(ctx, resources.MonitoringNamespace())).Should(Succeed())
-}
-
-func CreateAndRemoveDeployment(k8sClient client.Client, reconciler *MultiClusterHubReconciler) {
-	By("Applying prereqs")
-	ApplyPrereqs(k8sClient)
-	ctx := context.Background()
-
-	By("Ensuring Insights")
-	mch := resources.SpecMCH()
-	testImages := map[string]string{}
-	for _, v := range utils.GetTestImages() {
-		testImages[v] = "quay.io/test/test:Test"
-	}
-
-	result, err := reconciler.ensureInsights(ctx, mch, testImages)
-	Expect(result).To(Equal(ctrl.Result{}))
-	Expect(err).To(BeNil())
-
-	By("Ensuring No Insights")
-
-	result, err = reconciler.ensureNoInsights(ctx, mch, testImages)
-	Expect(result).To(Equal(ctrl.Result{}))
-	Expect(err).To(BeNil())
-
-	By("Ensuring Search-v2")
-
-	result, err = reconciler.ensureSearchV2(ctx, mch, testImages)
-	Expect(result).To(Equal(ctrl.Result{}))
-	Expect(err).To(BeNil())
-
-	By("Ensuring No Search-v2")
-
-	result, err = reconciler.ensureNoSearchV2(ctx, mch, testImages)
-	Expect(result).To(Equal(ctrl.Result{}))
-	Expect(err).To(BeNil())
-
 }
 
 func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler, mchoDeployment *appsv1.Deployment) {
@@ -353,6 +318,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 		Expect(clientConfig).NotTo(BeNil())
 
 		Expect(scheme.AddToScheme(clientScheme)).Should(Succeed())
+		Expect(searchv2v1alpha1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(promv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(mchov1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(appsub.AddToScheme(clientScheme)).Should(Succeed())
@@ -408,23 +374,6 @@ var _ = Describe("MultiClusterHub controller", func() {
 			},
 		})).To(Succeed())
 
-	})
-	Context("When managing deployments", func() {
-		It("Creates and removes a deployment", func() {
-			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates")
-			defer os.Unsetenv("DIRECTORY_OVERRIDE")
-			os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
-			defer os.Unsetenv("OPERATOR_PACKAGE")
-			CreateAndRemoveDeployment(k8sClient, reconciler)
-		})
-
-		It("Creates and removes a deployment in Community Mode", func() {
-			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates")
-			defer os.Unsetenv("DIRECTORY_OVERRIDE")
-			os.Setenv("OPERATOR_PACKAGE", "stolostron")
-			defer os.Unsetenv("OPERATOR_PACKAGE")
-			CreateAndRemoveDeployment(k8sClient, reconciler)
-		})
 	})
 
 	Context("When updating Multiclusterhub status", func() {
@@ -547,6 +496,45 @@ var _ = Describe("MultiClusterHub controller", func() {
 				}, timeout, interval).Should(BeTrue())
 			})
 		}
+	})
+
+	Context("When managing deployments", func() {
+		It("Creates and removes a deployment", func() {
+			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates")
+			defer os.Unsetenv("DIRECTORY_OVERRIDE")
+			By("Applying prereqs")
+			ApplyPrereqs(k8sClient)
+			ctx := context.Background()
+
+			By("Ensuring Insights")
+			mch := resources.SpecMCH()
+			testImages := map[string]string{}
+			for _, v := range utils.GetTestImages() {
+				testImages[v] = "quay.io/test/test:Test"
+			}
+
+			result, err := reconciler.ensureInsights(ctx, mch, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+
+			By("Ensuring No Insights")
+
+			result, err = reconciler.ensureNoInsights(ctx, mch, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+
+			By("Ensuring Search-v2")
+
+			result, err = reconciler.ensureSearchV2(ctx, mch, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+
+			By("Ensuring No Search-v2")
+
+			result, err = reconciler.ensureNoSearchV2(ctx, mch, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+		})
 	})
 
 	AfterEach(func() {
