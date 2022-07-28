@@ -524,17 +524,17 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
-			By("Ensuring Search-v2")
+			// By("Ensuring Search-v2")
 
-			result, err = reconciler.ensureSearchV2(ctx, mch, testImages)
-			Expect(result).To(Equal(ctrl.Result{}))
-			Expect(err).To(BeNil())
+			// result, err = reconciler.ensureSearchV2(ctx, mch, testImages)
+			// Expect(result).To(Equal(ctrl.Result{}))
+			// Expect(err).To(BeNil())
 
-			By("Ensuring No Search-v2")
+			// By("Ensuring No Search-v2")
 
-			result, err = reconciler.ensureNoSearchV2(ctx, mch, testImages)
-			Expect(result).To(Equal(ctrl.Result{}))
-			Expect(err).To(BeNil())
+			// result, err = reconciler.ensureNoSearchV2(ctx, mch, testImages)
+			// Expect(result).To(Equal(ctrl.Result{}))
+			// Expect(err).To(BeNil())
 		})
 	})
 
