@@ -296,11 +296,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			r.Log.Error(err, "error creating semantic version constraint >=2.1.0")
 			return ctrl.Result{}, err
 		}
-		version24x, err := semver.NewConstraint("2.4.x")
-		if err != nil {
-			r.Log.Error(err, fmt.Sprintf("error creating semantic version constraint 2.4.x"))
-			return ctrl.Result{}, err
-		}
 		version25x, err := semver.NewConstraint("2.5.x")
 		if err != nil {
 			r.Log.Error(err, fmt.Sprintf("error creating semantic version constraint 2.5.x"))
@@ -310,26 +305,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		if err != nil {
 			r.Log.Error(err, "error creating semantic version constraint 2.6.x")
 			return ctrl.Result{}, err
-		}
-		// 2.4->2.5 upgrade logic for cluster-backup
-		if version24x.Check(mchCV) && version25x.Check(mchDV) {
-			r.Log.Info("Checking 2.4 to 2.5 upgrade")
-			if multiClusterHub.Spec.EnableClusterBackup == true {
-				blocking := NewHubCondition(
-					operatorv1.Blocked,
-					metav1.ConditionTrue,
-					ResourceBlockReason,
-					"When upgrading from version 2.4 to 2.5, cluster backup must be disabled",
-				)
-				SetHubCondition(&multiClusterHub.Status, *blocking)
-				return ctrl.Result{}, nil
-			} else {
-				res, err := r.ensureNoSubscription(multiClusterHub, subscription.OldClusterBackup(multiClusterHub))
-				if res != (ctrl.Result{}) {
-					return res, err
-				}
-				RemoveHubCondition(&multiClusterHub.Status, operatorv1.Blocked)
-			}
 		}
 		// When upgrading from ACM 2.5 to ACM 2.6, ensure MCE is at version 2.1
 		if version25x.Check(mchCV) && version26x.Check(mchDV) {
