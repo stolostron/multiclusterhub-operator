@@ -525,15 +525,15 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
-	if multiClusterHub.Enabled(operatorv1.SearchV2) {
-		if multiClusterHub.Enabled(operatorv1.Search) {
-			result, err = r.updateSearchEnablement(ctx, multiClusterHub)
-			return result, err
-		}
-		result, err = r.ensureSearchV2(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
-	} else {
-		result, err = r.ensureNoSearchV2(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
-	}
+	// if multiClusterHub.Enabled(operatorv1.SearchV2) {
+	// 	if multiClusterHub.Enabled(operatorv1.Search) {
+	// 		result, err = r.updateSearchEnablement(ctx, multiClusterHub)
+	// 		return result, err
+	// 	}
+	// 	result, err = r.ensureSearchV2(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+	// } else {
+	// 	result, err = r.ensureNoSearchV2(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+	// }
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
@@ -934,10 +934,10 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 	if err != nil {
 		return err
 	}
-	_, err = r.ensureNoSearchV2(context.TODO(), m, r.CacheSpec.ImageOverrides)
-	if err != nil {
-		return err
-	}
+	// _, err = r.ensureNoSearchV2(context.TODO(), m, r.CacheSpec.ImageOverrides)
+	// if err != nil {
+	// 	return err
+	// }
 	if err := r.cleanupClusterRoles(reqLogger, m); err != nil {
 		return err
 	}

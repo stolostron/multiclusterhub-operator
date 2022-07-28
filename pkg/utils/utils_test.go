@@ -176,7 +176,7 @@ var _ = Describe("utility functions", func() {
 			os.Setenv("OPERATOR_PACKAGE", "stolostron")
 			mch := resources.EmptyMCH()
 			d := GetDeployments(&mch)
-			Expect(len(d)).To(Equal(2))
+			Expect(len(d)).To(Equal(1))
 			Expect(d[0].Name).To(Equal("multiclusterhub-repo"))
 			Expect(d[0].Namespace).To(Equal(resources.MulticlusterhubNamespace))
 		})
