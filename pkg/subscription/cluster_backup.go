@@ -43,7 +43,6 @@ func OldClusterBackup(m *operatorsv1.MultiClusterHub) *unstructured.Unstructured
 		Name:      "cluster-backup-chart",
 		Namespace: m.Namespace,
 	}
-	setCustomCA(m, sub)
 
 	return newSubscription(m, sub)
 }
