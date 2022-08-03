@@ -1,13 +1,13 @@
 package v1_test
 
 import (
-	"os"
+	// "os"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	api "github.com/stolostron/multiclusterhub-operator/api/v1"
-	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
+	// "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 )
 
 func config(name string, enabled bool) api.ComponentConfig {
@@ -41,31 +41,31 @@ var _ = Describe("V1 API Methods", func() {
 			mch = makeMCH()
 		})
 
-		It("checks component lists in productized mode", func() {
-			os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
-			disabled, err := api.GetDefaultDisabledComponents()
-			success := utils.Contains(disabled, api.SearchV2)
-			Expect(err).To(BeNil())
-			Expect(success).To(BeTrue())
-			enabled, err := api.GetDefaultEnabledComponents()
-			success = utils.Contains(enabled, api.Search)
-			Expect(err).To(BeNil())
-			Expect(success).To(BeTrue())
+		// It("checks component lists in productized mode", func() {
+		// 	os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
+		// 	disabled, err := api.GetDefaultDisabledComponents()
+		// 	success := utils.Contains(disabled, api.SearchV2)
+		// 	Expect(err).To(BeNil())
+		// 	Expect(success).To(BeTrue())
+		// 	enabled, err := api.GetDefaultEnabledComponents()
+		// 	success = utils.Contains(enabled, api.Search)
+		// 	Expect(err).To(BeNil())
+		// 	Expect(success).To(BeTrue())
 
-		})
+		// })
 
-		It("checks component lists in community mode", func() {
-			os.Setenv("OPERATOR_PACKAGE", "stolostron")
-			disabled, err := api.GetDefaultDisabledComponents()
-			success := utils.Contains(disabled, api.Search)
-			Expect(err).To(BeNil())
-			Expect(success).To(BeTrue())
-			enabled, err := api.GetDefaultEnabledComponents()
-			success = utils.Contains(enabled, api.SearchV2)
-			Expect(err).To(BeNil())
-			Expect(success).To(BeTrue())
+		// It("checks component lists in community mode", func() {
+		// 	os.Setenv("OPERATOR_PACKAGE", "stolostron")
+		// 	disabled, err := api.GetDefaultDisabledComponents()
+		// 	success := utils.Contains(disabled, api.Search)
+		// 	Expect(err).To(BeNil())
+		// 	Expect(success).To(BeTrue())
+		// 	enabled, err := api.GetDefaultEnabledComponents()
+		// 	success = utils.Contains(enabled, api.SearchV2)
+		// 	Expect(err).To(BeNil())
+		// 	Expect(success).To(BeTrue())
 
-		})
+		// })
 
 		It("correctly indicates if a component is present", func() {
 			Expect(mch.ComponentPresent(api.Search)).To(BeFalse())
