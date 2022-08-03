@@ -1,13 +1,13 @@
 package v1_test
 
 import (
-	"os"
+	// "os"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	api "github.com/stolostron/multiclusterhub-operator/api/v1"
-	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
+	// "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 )
 
 func config(name string, enabled bool) api.ComponentConfig {
