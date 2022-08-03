@@ -7,7 +7,7 @@ import (
 
 const (
 	Search             string = "search"
-	SearchV2           string = "search-v2"
+	// SearchV2           string = "search-v2"
 	ManagementIngress  string = "management-ingress"
 	Console            string = "console"
 	Insights           string = "insights"
@@ -35,7 +35,7 @@ var allComponents = []string{
 	// MCH
 	Repo,
 	Search,
-	SearchV2,
+	// SearchV2,
 	ManagementIngress,
 	Console,
 	Insights,
@@ -87,7 +87,7 @@ func GetDefaultEnabledComponents() ([]string, error) {
 	}
 
 	if community {
-		defaultEnabledComponents = append(defaultEnabledComponents, SearchV2)
+		// defaultEnabledComponents = append(defaultEnabledComponents, SearchV2)
 	} else {
 		defaultEnabledComponents = append(defaultEnabledComponents, Search)
 	}
@@ -107,7 +107,7 @@ func GetDefaultDisabledComponents() ([]string, error) {
 	if community {
 		defaultDisabledComponents = append(defaultDisabledComponents, Search)
 	} else {
-		defaultDisabledComponents = append(defaultDisabledComponents, SearchV2)
+		// defaultDisabledComponents = append(defaultDisabledComponents, SearchV2)
 	}
 	return defaultDisabledComponents, err
 }

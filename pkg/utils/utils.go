@@ -379,13 +379,13 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedN
 		nn = append(nn, types.NamespacedName{Name: "insights-client", Namespace: m.Namespace})
 		nn = append(nn, types.NamespacedName{Name: "insights-metrics", Namespace: m.Namespace})
 	}
-	if m.Enabled(operatorsv1.SearchV2) {
-		nn = append(nn, types.NamespacedName{Name: "search-v2-operator-controller-manager", Namespace: m.Namespace})
-		nn = append(nn, types.NamespacedName{Name: "search-api", Namespace: m.Namespace})
-		nn = append(nn, types.NamespacedName{Name: "search-collector", Namespace: m.Namespace})
-		nn = append(nn, types.NamespacedName{Name: "search-indexer", Namespace: m.Namespace})
-		nn = append(nn, types.NamespacedName{Name: "search-postgres", Namespace: m.Namespace})
-	}
+	// if m.Enabled(operatorsv1.SearchV2) {
+	// 	nn = append(nn, types.NamespacedName{Name: "search-v2-operator-controller-manager", Namespace: m.Namespace})
+	// 	nn = append(nn, types.NamespacedName{Name: "search-api", Namespace: m.Namespace})
+	// 	nn = append(nn, types.NamespacedName{Name: "search-collector", Namespace: m.Namespace})
+	// 	nn = append(nn, types.NamespacedName{Name: "search-indexer", Namespace: m.Namespace})
+	// 	nn = append(nn, types.NamespacedName{Name: "search-postgres", Namespace: m.Namespace})
+	// }
 	return nn
 }
 
