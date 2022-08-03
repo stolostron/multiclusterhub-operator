@@ -43,7 +43,7 @@ BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 REGISTRY ?= quay.io/stolostron
 IMG ?= $(REGISTRY)/multiclusterhub-operator:$(VERSION)
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
-CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
+CRD_OPTIONS ?= "crd:crdVersions=v1"
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.20
 
@@ -92,8 +92,12 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
+test-prep: update-crds manifests generate fmt vet envtest ## prepare to run tests.
+	echo "Ready to run unit tests"
+
 test: update-crds manifests generate fmt vet envtest ## Run tests.
-	OPERATOR_VERSION=9.9.9 KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test $(shell go list ./... | grep -E -v "test") -coverprofile cover.out
+	OPERATOR_VERSION=9.9.9 KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" \
+	  go test $(shell go list ./... | grep -E -v "test") -coverprofile cover.out
 
 ##@ Build
 
@@ -101,7 +105,7 @@ build: generate fmt vet ## Build manager binary.
 	go build -o bin/multiclusterhub-operator main.go
 
 run: manifests generate fmt vet ## Run a controller from your host.
-	MANIFESTS_PATH="bin/image-manifests" CRDS_PATH="bin/crds" POD_NAMESPACE="open-cluster-management" go run ./main.go
+	CRDS_PATH="bin/crds" POD_NAMESPACE="open-cluster-management" go run ./main.go
 
 docker-build: ## test ## Build docker image with the manager.
 	docker build -t ${IMG} .
@@ -145,8 +149,8 @@ set -e ;\
 TMP_DIR=$$(mktemp -d) ;\
 cd $$TMP_DIR ;\
 go mod init tmp ;\
-echo "Downloading $(2)" ;\
-GOBIN=$(PROJECT_DIR)/bin go get $(2) ;\
+echo "Installing $(2) to $(PROJECT_DIR)/bin" ;\
+GOBIN=$(PROJECT_DIR)/bin go install $(2) ;\
 rm -rf $$TMP_DIR ;\
 }
 endef
