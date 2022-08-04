@@ -272,17 +272,13 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	mchCurrent := multiClusterHub.Status.CurrentVersion
 	mchDesired := multiClusterHub.Status.DesiredVersion
-	if mchCurrent != "" && mchDesired != "" && mchCurrent != mchDesired {
+	isUpgrade := false
+	if mchCurrent != "" {
 		r.Log.Info("Checking upgrade logic")
 		// Create semantic versions
 		mchCV, err := semver.NewVersion(mchCurrent)
 		if err != nil {
 			r.Log.Error(err, fmt.Sprintf("error creating semantic version for mch current version '%s'", mchCurrent))
-			return ctrl.Result{}, err
-		}
-		mchDV, err := semver.NewVersion(mchDesired)
-		if err != nil {
-			r.Log.Error(err, fmt.Sprintf("error creating semantic version for mch desired version '%s'", mchDesired))
 			return ctrl.Result{}, err
 		}
 		// Create version constraints
@@ -298,7 +294,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 		version25x, err := semver.NewConstraint("2.5.x")
 		if err != nil {
-			r.Log.Error(err, fmt.Sprintf("error creating semantic version constraint 2.5.x"))
+			r.Log.Error(err, "error creating semantic version constraint 2.5.x")
 			return ctrl.Result{}, err
 		}
 		version26x, err := semver.NewConstraint("2.6.x")
@@ -306,9 +302,18 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			r.Log.Error(err, "error creating semantic version constraint 2.6.x")
 			return ctrl.Result{}, err
 		}
-		// When upgrading from ACM 2.5 to ACM 2.6, ensure MCE is at version 2.1
-		if version25x.Check(mchCV) && version26x.Check(mchDV) {
-			r.Log.Info("Checking 2.5 to 2.6 upgrade")
+		if mchDesired != "" {
+			mchDV, err := semver.NewVersion(mchDesired)
+			if err != nil {
+				r.Log.Error(err, fmt.Sprintf("error creating semantic version for mch desired version '%s'", mchDesired))
+				return ctrl.Result{}, err
+			}
+			if version25x.Check(mchCV) && version26x.Check(mchDV) {
+				isUpgrade = true
+			}
+		}
+		//Check if ACM is Version 2.6 or upgrading 2.5 -> 2.6
+		if version26x.Check(mchCV) || isUpgrade {
 			mce, err := r.GetMCECR(multiClusterHub)
 			if err != nil {
 				r.Log.Error(err, "error getting multiclusterengine cr")
@@ -321,7 +326,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 					r.Log.Error(err, fmt.Sprintf("error creating semantic version for mce current version '%s'", mceCurrent))
 					return ctrl.Result{}, err
 				}
-
+				//Check MCE version
 				switch {
 				case versionGTE210.Check(mceCV):
 					msg := fmt.Sprintf("MultiClusterEngine version '%s' does not need to be updated", mceCurrent)
@@ -364,26 +369,26 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 							r.Log.Info(msg)
 							return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 						}
-						// Upgrade needed
-						r.Log.Info(fmt.Sprintf("MultiClusterEngine version '%s' needs to be updated", mceCurrent))
-						nsn, err := r.GetMCESubNSN(multiClusterHub)
-						if err != nil {
-							r.Log.Error(err, "Failed to get MCE Sub NSN while starting MCE upgrade")
-							return ctrl.Result{}, err
-						}
-						mceSub, err := r.GetMCESub(nsn)
-						if err != nil {
-							r.Log.Error(err, "Failed to get MCE Sub while starting MCE upgrade")
-							return ctrl.Result{}, err
-						}
-						mceSub.Spec.Channel = "stable-2.1"
-						err = r.Client.Update(ctx, mceSub)
-						if err != nil {
-							r.Log.Error(err, "Failed to update MCE Sub while starting MCE upgrade")
-							return ctrl.Result{}, err
-						}
-						return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 					}
+					// Upgrade needed
+					r.Log.Info(fmt.Sprintf("MultiClusterEngine version '%s' needs to be updated", mceCurrent))
+					nsn, err := r.GetMCESubNSN(multiClusterHub)
+					if err != nil {
+						r.Log.Error(err, "Failed to get MCE Sub NSN while starting MCE upgrade")
+						return ctrl.Result{}, err
+					}
+					mceSub, err := r.GetMCESub(nsn)
+					if err != nil {
+						r.Log.Error(err, "Failed to get MCE Sub while starting MCE upgrade")
+						return ctrl.Result{}, err
+					}
+					mceSub.Spec.Channel = "stable-2.1"
+					err = r.Client.Update(ctx, mceSub)
+					if err != nil {
+						r.Log.Error(err, "Failed to update MCE Sub while starting MCE upgrade")
+						return ctrl.Result{}, err
+					}
+					return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 				default:
 					msg := fmt.Sprintf(
 						"When upgrading from version 2.5 to 2.6, MultiClusterEngine version '%s' must be >= 2.0.0",
@@ -395,6 +400,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 					SetHubCondition(&multiClusterHub.Status, *blocking)
 					mceUpgradeStartTime = time.Time{}
 					return ctrl.Result{}, err
+
 				}
 			}
 		}
