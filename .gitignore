@@ -26,6 +26,7 @@ test/mock-component-image/multiclusterhub
 bin/*
 !bin/image-manifests
 build/_output/*
+.vscode
 
 # Test binary, build with `go test -c`
 *.test

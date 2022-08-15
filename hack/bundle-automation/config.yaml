@@ -1,6 +1,6 @@
 - repo_name: search-v2-operator
   github_ref: "https://github.com/stolostron/search-v2-operator.git"
-  branch: "release-2.6"
+  branch: "release-2.7"
   operators:
     - name: search-v2-operator
       bundlePath: "bundle/manifests/"
