@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	Search             string = "search"
+	Search string = "search"
 	// SearchV2           string = "search-v2"
 	ManagementIngress  string = "management-ingress"
 	Console            string = "console"
