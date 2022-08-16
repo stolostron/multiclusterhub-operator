@@ -108,7 +108,7 @@ run: manifests generate fmt vet ## Run a controller from your host.
 	CRDS_PATH="bin/crds" POD_NAMESPACE="open-cluster-management" go run ./main.go
 
 docker-build: ## test ## Build docker image with the manager.
-	docker build -t ${IMG} .
+	docker build --no-cache -t ${IMG} .
 
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
