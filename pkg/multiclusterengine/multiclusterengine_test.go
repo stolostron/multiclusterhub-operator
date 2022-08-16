@@ -66,7 +66,7 @@ func TestSubscription(t *testing.T) {
 			name: "Empty MCH (No MCE annotations)",
 			MCH:  emptyMCH,
 			want: &subv1alpha1.SubscriptionSpec{
-				Channel:                "stable-2.1",
+				Channel:                "stable-2.2",
 				InstallPlanApproval:    subv1alpha1.ApprovalAutomatic,
 				Package:                "multicluster-engine",
 				CatalogSource:          "redhat-operators",
@@ -103,7 +103,7 @@ func TestSubscription(t *testing.T) {
 			name: "MCE Annotations set (StartingCSV and InstallPlanApproval)",
 			MCH:  mch3,
 			want: &subv1alpha1.SubscriptionSpec{
-				Channel:                "stable-2.1",
+				Channel:                "stable-2.2",
 				InstallPlanApproval:    subv1alpha1.ApprovalManual,
 				Package:                "multicluster-engine",
 				CatalogSource:          "redhat-operators",
@@ -183,7 +183,7 @@ func TestCommunitySubscription(t *testing.T) {
 			name: "Empty MCH (No MCE annotations)",
 			MCH:  emptyMCH,
 			want: &subv1alpha1.SubscriptionSpec{
-				Channel:                "community-2.1",
+				Channel:                "community-2.2",
 				InstallPlanApproval:    subv1alpha1.ApprovalAutomatic,
 				Package:                "stolostron-engine",
 				CatalogSource:          "community-operators",
@@ -220,7 +220,7 @@ func TestCommunitySubscription(t *testing.T) {
 			name: "MCE Annotations set (StartingCSV and InstallPlanApproval)",
 			MCH:  mch3,
 			want: &subv1alpha1.SubscriptionSpec{
-				Channel:                "community-2.1",
+				Channel:                "community-2.2",
 				InstallPlanApproval:    subv1alpha1.ApprovalManual,
 				Package:                "stolostron-engine",
 				CatalogSource:          "community-operators",

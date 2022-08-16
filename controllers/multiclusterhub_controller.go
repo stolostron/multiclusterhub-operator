@@ -353,31 +353,31 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	isUpgrade := false
 	isACM26x := false
 	// Create version constraints
-	version20x, err := semver.NewConstraint("2.0.x")
+	version20x, err := semver.NewConstraint("2.1.x")
 	if err != nil {
-		r.Log.Error(err, "error creating semantic version constraint 2.0.x")
+		r.Log.Error(err, "error creating semantic version constraint 2.1.x")
 		return ctrl.Result{}, err
 	}
-	versionGTE210, err := semver.NewConstraint(">= 2.1.0")
+	versionGTE210, err := semver.NewConstraint(">= 2.2.0")
 	if err != nil {
-		r.Log.Error(err, "error creating semantic version constraint >=2.1.0")
+		r.Log.Error(err, "error creating semantic version constraint >=2.2.0")
 		return ctrl.Result{}, err
 	}
-	version25x, err := semver.NewConstraint("2.5.x")
-	if err != nil {
-		r.Log.Error(err, "error creating semantic version constraint 2.5.x")
-		return ctrl.Result{}, err
-	}
-	version26x, err := semver.NewConstraint("2.6.x")
+	version25x, err := semver.NewConstraint("2.6.x")
 	if err != nil {
 		r.Log.Error(err, "error creating semantic version constraint 2.6.x")
+		return ctrl.Result{}, err
+	}
+	version26x, err := semver.NewConstraint("2.7.x")
+	if err != nil {
+		r.Log.Error(err, "error creating semantic version constraint 2.7.x")
 		return ctrl.Result{}, err
 	}
 	// Check current MCH version
 	if mchCurrent == "" {
 		isACM26x = true
 	} else {
-		r.Log.Info("Checking if current version is 2.6")
+		r.Log.Info("Checking if current version is 2.7")
 		// Create semantic versions
 		mchCV, err := semver.NewVersion(mchCurrent)
 		if err != nil {
@@ -386,7 +386,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 		isACM26x = version26x.Check(mchCV)
 		if mchDesired != "" {
-			r.Log.Info("Checking if desired version is 2.6")
+			r.Log.Info("Checking if desired version is 2.7")
 			mchDV, err := semver.NewVersion(mchDesired)
 			if err != nil {
 				r.Log.Error(err, fmt.Sprintf("error creating semantic version for mch desired version '%s'", mchDesired))
@@ -469,7 +469,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 					r.Log.Error(err, "Failed to get MCE Sub while starting MCE upgrade")
 					return ctrl.Result{}, err
 				}
-				mceSub.Spec.Channel = "stable-2.1"
+				mceSub.Spec.Channel = "stable-2.2"
 				err = r.Client.Update(ctx, mceSub)
 				if err != nil {
 					r.Log.Error(err, "Failed to update MCE Sub while starting MCE upgrade")

@@ -19,14 +19,14 @@ import (
 )
 
 var (
-	channel                = "stable-2.1"
+	channel                = "stable-2.2"
 	installPlanApproval    = subv1alpha1.ApprovalAutomatic
 	packageName            = "multicluster-engine"
 	catalogSourceName      = "redhat-operators"
 	catalogSourceNamespace = "openshift-marketplace" // https://olm.operatorframework.io/docs/tasks/troubleshooting/subscription/#a-subscription-in-namespace-x-cant-install-operators-from-a-catalogsource-in-namespace-y
 
 	//Community MCE variables
-	communityChannel           = "community-2.1"
+	communityChannel           = "community-2.2"
 	communityPackageName       = "stolostron-engine"
 	communityCatalogSourceName = "community-operators"
 	MulticlusterengineName     = "multiclusterengine"
