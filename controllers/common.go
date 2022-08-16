@@ -1030,16 +1030,20 @@ func (r *MultiClusterHubReconciler) GetSubscription(sub *subv1alpha1.Subscriptio
 
 func (r *MultiClusterHubReconciler) GetMCECR(mch *operatorv1.MultiClusterHub) (*mcev1.MultiClusterEngine, error) {
 	ctx := context.Background()
-	mce := &mcev1.MultiClusterEngine{}
-	mceName := multiclusterengine.MultiClusterEngine(mch).GetName()
-	nsn := types.NamespacedName{
-		Name: mceName,
-	}
-	err := r.Client.Get(ctx, nsn, mce)
+	mceList := &mcev1.MultiClusterEngineList{}
+	err := r.Client.List(ctx, mceList)
 	if err != nil {
+		r.Log.Error(err, "failed to list MultiCluster Engine CRs")
 		return nil, err
 	}
-	return mce, nil
+
+	if len(mceList.Items) == 1 {
+		return &mceList.Items[0], nil
+	}
+
+	err = fmt.Errorf("Expected 1 MCE CR, found %d", len(mceList.Items))
+	r.Log.Error(err, "failed to find multicluster engine CR")
+	return nil, err
 }
 
 func (r *MultiClusterHubReconciler) GetMCESubNSN(mch *operatorv1.MultiClusterHub) (types.NamespacedName, error) {
