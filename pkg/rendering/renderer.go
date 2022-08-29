@@ -3,16 +3,18 @@ package renderer
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
+	"strconv"
 
 	loader "helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
 
-	"github.com/fatih/structs"
 	v1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"helm.sh/helm/v3/pkg/engine"
@@ -23,24 +25,120 @@ import (
 )
 
 type Values struct {
-	Global    Global    `yaml:"global" structs:"global"`
-	HubConfig HubConfig `yaml:"hubconfig" structs:"hubconfig"`
-	Org       string    `yaml:"org" structs:"org"`
+	Global    Global    `json:"global" structs:"global"`
+	HubConfig HubConfig `json:"hubconfig" structs:"hubconfig"`
+	Org       string    `json:"org" structs:"org"`
 }
 
 type Global struct {
-	ImageOverrides map[string]string `yaml:"imageOverrides" structs:"imageOverrides"`
-	PullPolicy     string            `yaml:"pullPolicy" structs:"pullPolicy"`
-	PullSecret     string            `yaml:"pullSecret" structs:"pullSecret"`
-	Namespace      string            `yaml:"namespace" structs:"namespace"`
+	ImageOverrides map[string]string `json:"imageOverrides" structs:"imageOverrides"`
+	PullPolicy     string            `json:"pullPolicy" structs:"pullPolicy"`
+	PullSecret     string            `json:"pullSecret" structs:"pullSecret"`
+	Namespace      string            `json:"namespace" structs:"namespace"`
 }
 
 type HubConfig struct {
-	NodeSelector map[string]string   `yaml:"nodeSelector" structs:"nodeSelector"`
-	ProxyConfigs map[string]string   `yaml:"proxyConfigs" structs:"proxyConfigs"`
-	ReplicaCount int                 `yaml:"replicaCount" structs:"replicaCount"`
-	Tolerations  []corev1.Toleration `yaml:"tolerations" structs:"tolerations"`
-	OCPVersion   string              `yaml:"ocpVersion" structs:"ocpVersion"`
+	NodeSelector map[string]string `json:"nodeSelector" structs:"nodeSelector"`
+	ProxyConfigs map[string]string `json:"proxyConfigs" structs:"proxyConfigs"`
+	ReplicaCount int               `json:"replicaCount" structs:"replicaCount"`
+	Tolerations  []Toleration      `json:"tolerations" structs:"tolerations"`
+	OCPVersion   string            `json:"ocpVersion" structs:"ocpVersion"`
+}
+
+type Toleration struct {
+	Key               string                    `json:"Key" protobuf:"bytes,1,opt,name=key"`
+	Operator          corev1.TolerationOperator `json:"Operator" protobuf:"bytes,2,opt,name=operator,casttype=TolerationOperator"`
+	Value             string                    `json:"Value" protobuf:"bytes,3,opt,name=value"`
+	Effect            corev1.TaintEffect        `json:"Effect" protobuf:"bytes,4,opt,name=effect,casttype=TaintEffect"`
+	TolerationSeconds *int64                    `json:"TolerationSeconds" protobuf:"varint,5,opt,name=tolerationSeconds"`
+}
+
+func convertTolerations(tols []corev1.Toleration) []Toleration {
+	var tolerations []Toleration
+	for _, t := range tols {
+		tolerations = append(tolerations, Toleration{
+			Key:               t.Key,
+			Operator:          t.Operator,
+			Value:             t.Value,
+			Effect:            t.Effect,
+			TolerationSeconds: t.TolerationSeconds,
+		})
+	}
+	return tolerations
+}
+
+func (u *Toleration) MarshalJSON() ([]byte, error) {
+
+	v := reflect.ValueOf(u)
+	values := make([]string, reflect.Indirect(v).NumField())
+	var operator corev1.TolerationOperator = u.Operator
+	var effect corev1.TaintEffect = u.Effect
+
+	//Marshal all Toleration fields that are a number or true/false into a string
+	for i := 0; i < reflect.Indirect(v).NumField(); i++ {
+		switch reflect.Indirect(v).Field(i).Kind() {
+		case reflect.String:
+			if str, ok := reflect.Indirect(v).Field(i).Interface().(string); ok {
+				if _, err := strconv.Atoi(str); err == nil {
+					values[i] = fmt.Sprintf("'%s'", str)
+				} else if _, err := strconv.ParseFloat(str, 64); err == nil {
+					values[i] = fmt.Sprintf("'%s'", str)
+				} else if _, err := strconv.ParseBool(str); err == nil {
+					values[i] = fmt.Sprintf("'%s'", str)
+				} else {
+					values[i] = str
+				}
+			}
+			if tol, ok := reflect.Indirect(v).Field(i).Interface().(corev1.TolerationOperator); ok {
+				str := string(tol)
+				if _, err := strconv.Atoi(str); err == nil {
+					operator = corev1.TolerationOperator(fmt.Sprintf("'%s'", str))
+				} else if _, err := strconv.ParseFloat(str, 64); err == nil {
+					operator = corev1.TolerationOperator(fmt.Sprintf("'%s'", str))
+				} else if _, err := strconv.ParseBool(str); err == nil {
+					operator = corev1.TolerationOperator(fmt.Sprintf("'%s'", str))
+				}
+			}
+			if eff, ok := reflect.Indirect(v).Field(i).Interface().(corev1.TaintEffect); ok {
+				str := string(eff)
+				if _, err := strconv.Atoi(str); err == nil {
+					effect = corev1.TaintEffect(fmt.Sprintf("'%s'", str))
+				} else if _, err := strconv.ParseFloat(str, 64); err == nil {
+					effect = corev1.TaintEffect(fmt.Sprintf("'%s'", str))
+				} else if _, err := strconv.ParseBool(str); err == nil {
+					effect = corev1.TaintEffect(fmt.Sprintf("'%s'", str))
+				}
+			}
+		}
+
+	}
+
+	return json.Marshal(&struct {
+		Key               string                    `json:"Key" protobuf:"bytes,1,opt,name=key"`
+		Operator          corev1.TolerationOperator `json:"Operator" protobuf:"bytes,2,opt,name=operator,casttype=TolerationOperator"`
+		Value             string                    `json:"Value" protobuf:"bytes,3,opt,name=value"`
+		Effect            corev1.TaintEffect        `json:"Effect" protobuf:"bytes,4,opt,name=effect,casttype=TaintEffect"`
+		TolerationSeconds *int64                    `json:"TolerationSeconds" protobuf:"varint,5,opt,name=tolerationSeconds"`
+	}{
+		Key:               values[0],
+		Operator:          operator,
+		Value:             values[2],
+		Effect:            effect,
+		TolerationSeconds: u.TolerationSeconds,
+	})
+}
+
+func (val *Values) ToValues() (chartutil.Values, error) {
+	inrec, err := json.Marshal(val)
+	if err != nil {
+		return nil, err
+	}
+	vals, err := chartutil.ReadValues(inrec)
+	if err != nil {
+		return vals, err
+	}
+	return vals, nil
+
 }
 
 func RenderCRDs(crdDir string) ([]*unstructured.Unstructured, []error) {
@@ -147,9 +245,16 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 		Strict:   true,
 		LintMode: false,
 	}
-	rawTemplates, err := helmEngine.Render(chart, chartutil.Values{"Values": structs.Map(valuesYaml)})
+
+	vals, err := valuesYaml.ToValues()
 	if err != nil {
-		log.Info(fmt.Sprintf("error rendering chart: "))
+		log.Info(fmt.Sprintf("error rendering chart: %s", chart.Name()))
+		return nil, append(errs, err)
+	}
+
+	rawTemplates, err := helmEngine.Render(chart, chartutil.Values{"Values": vals.AsMap()})
+	if err != nil {
+		log.Info(fmt.Sprintf("error rendering chart: %s", chart.Name()))
 		return nil, append(errs, err)
 	}
 
@@ -185,7 +290,7 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 
 	values.HubConfig.NodeSelector = mch.Spec.NodeSelector
 
-	values.HubConfig.Tolerations = utils.GetTolerations(mch)
+	values.HubConfig.Tolerations = convertTolerations(utils.GetTolerations(mch))
 
 	values.Org = "open-cluster-management"
 
