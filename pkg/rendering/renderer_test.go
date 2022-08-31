@@ -36,6 +36,31 @@ func TestRender(t *testing.T) {
 			Key:      "dedicated",
 			Operator: "Exists",
 			Effect:   "NoSchedule",
+			Value:    "test",
+		},
+		{
+			Key:      "node.ocs.openshift.io/storage",
+			Operator: "Equal",
+			Value:    "true",
+			Effect:   "NoSchedule",
+		},
+		{
+			Key:      "false",
+			Operator: "false",
+			Value:    "true",
+			Effect:   "true",
+		},
+		{
+			Key:      "22",
+			Operator: "23",
+			Value:    "24",
+			Effect:   "25",
+		},
+		{
+			Key:      "22.0",
+			Operator: "23.1",
+			Value:    "24.2",
+			Effect:   "25.3",
 		},
 	}
 	testMCH := &v1.MultiClusterHub{
