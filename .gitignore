@@ -56,3 +56,4 @@ mock-component-image/multiclusterhub
 
 bin/
 hack/
+.vscode/
