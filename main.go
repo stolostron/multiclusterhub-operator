@@ -31,6 +31,7 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	configv1 "github.com/openshift/api/config/v1"
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
+	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	renderer "github.com/stolostron/multiclusterhub-operator/pkg/rendering"
 
@@ -55,6 +56,7 @@ import (
 	appsubv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis"
 
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	//+kubebuilder:scaffold:imports
@@ -96,6 +98,8 @@ func init() {
 
 	utilruntime.Must(consolev1.AddToScheme(scheme))
 
+	utilruntime.Must(olmapi.AddToScheme(scheme))
+
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -136,10 +140,19 @@ func main() {
 		os.Exit(1)
 	}
 
+	uncachedClient, err := client.New(ctrl.GetConfigOrDie(), client.Options{
+		Scheme: scheme,
+	})
+	if err != nil {
+		setupLog.Error(err, "unable to create uncached client")
+		os.Exit(1)
+	}
+
 	if err = (&controllers.MultiClusterHubReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		Log:    ctrl.Log.WithName("Controller").WithName("Multiclusterhub"),
+		Client:         mgr.GetClient(),
+		Scheme:         mgr.GetScheme(),
+		UncachedClient: uncachedClient,
+		Log:            ctrl.Log.WithName("Controller").WithName("Multiclusterhub"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "MultiClusterHub")
 		os.Exit(1)

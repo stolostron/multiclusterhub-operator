@@ -13,3 +13,5 @@ func init() {
 		panic("OPERATOR_VERSION not defined")
 	}
 }
+
+var RequiredMCEVersion = "2.2.0"

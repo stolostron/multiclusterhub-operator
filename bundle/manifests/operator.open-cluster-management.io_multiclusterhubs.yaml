@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.6.1
+    controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
   name: multiclusterhubs.operator.open-cluster-management.io
 spec:
@@ -85,6 +85,7 @@ spec:
                             TODO: Add other useful fields. apiVersion, kind, uid?'
                           type: string
                       type: object
+                      x-kubernetes-map-type: atomic
                     type: array
                   backup:
                     description: (Deprecated) Backup specifies configuration for backup
@@ -132,6 +133,7 @@ spec:
                                   uid?'
                                 type: string
                             type: object
+                            x-kubernetes-map-type: atomic
                         type: object
                       gcp:
                         description: (Deprecated) GCP contains GCP-specific settings
@@ -151,6 +153,7 @@ spec:
                                   uid?'
                                 type: string
                             type: object
+                            x-kubernetes-map-type: atomic
                         type: object
                     type: object
                   failedProvisionConfig:
@@ -177,6 +180,7 @@ spec:
                           TODO: Add other useful fields. apiVersion, kind, uid?'
                         type: string
                     type: object
+                    x-kubernetes-map-type: atomic
                   maintenanceMode:
                     description: (Deprecated) MaintenanceMode can be set to true to
                       disable the hive controllers in situations where we need to
@@ -353,5 +357,5 @@ status:
   acceptedNames:
     kind: ""
     plural: ""
-  conditions: []
-  storedVersions: []
+  conditions: null
+  storedVersions: null

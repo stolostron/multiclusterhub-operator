@@ -105,6 +105,18 @@ func AddInstallerLabel(u *unstructured.Unstructured, name string, ns string) {
 	u.SetLabels(labels)
 }
 
+// AddInstallerLabel adds Installer Labels ...
+func AddInstallerLabels(l map[string]string, name string, ns string) map[string]string {
+	labels := make(map[string]string)
+	for key, value := range l {
+		labels[key] = value
+	}
+	labels["installer.name"] = name
+	labels["installer.namespace"] = ns
+
+	return labels
+}
+
 // AddDeploymentLabels ...
 func AddDeploymentLabels(d *appsv1.Deployment, labels map[string]string) bool {
 	updated := false
@@ -556,4 +568,15 @@ func UpdateMCEOverrides(mce *mcev1.MultiClusterEngine, mch *operatorsv1.MultiClu
 		}
 	}
 	return
+}
+
+// IsCommunityMode returns true if operator is running in community mode
+func IsCommunityMode() bool {
+	packageName := os.Getenv("OPERATOR_PACKAGE")
+	if packageName == "advanced-cluster-management" {
+		return false
+	} else {
+		// other option is "stolostron"
+		return true
+	}
 }
