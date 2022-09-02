@@ -539,15 +539,11 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
-	// if multiClusterHub.Enabled(operatorv1.SearchV2) {
-	// 	if multiClusterHub.Enabled(operatorv1.Search) {
-	// 		result, err = r.updateSearchEnablement(ctx, multiClusterHub)
-	// 		return result, err
-	// 	}
-	// 	result, err = r.ensureSearchV2(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
-	// } else {
-	// 	result, err = r.ensureNoSearchV2(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
-	// }
+	if multiClusterHub.Enabled(operatorv1.Search) {
+		result, err = r.ensureSearchV2(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+	} else {
+		result, err = r.ensureNoSearchV2(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+	}
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
@@ -574,11 +570,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 	if result != (ctrl.Result{}) {
 		return result, err
-	}
-	if multiClusterHub.Enabled(operatorv1.Search) {
-		result, err = r.ensureSubscription(multiClusterHub, subscription.Search(multiClusterHub, r.CacheSpec.ImageOverrides))
-	} else {
-		result, err = r.ensureNoSubscription(multiClusterHub, subscription.Search(multiClusterHub, r.CacheSpec.ImageOverrides))
 	}
 	if result != (ctrl.Result{}) {
 		return result, err

@@ -6,8 +6,7 @@ import (
 )
 
 const (
-	Search string = "search"
-	// SearchV2           string = "search-v2"
+	Search             string = "search"
 	ManagementIngress  string = "management-ingress"
 	Console            string = "console"
 	Insights           string = "insights"
@@ -35,7 +34,6 @@ var allComponents = []string{
 	// MCH
 	Repo,
 	Search,
-	// SearchV2,
 	ManagementIngress,
 	Console,
 	Insights,
@@ -79,37 +77,17 @@ func GetDefaultEnabledComponents() ([]string, error) {
 		ClusterLifecycle,
 		Volsync,
 		MultiClusterEngine,
-	}
-	community, err := IsCommunity()
-
-	if err != nil {
-		return defaultEnabledComponents, err
+		Search,
 	}
 
-	if community {
-		// defaultEnabledComponents = append(defaultEnabledComponents, SearchV2)
-	} else {
-		defaultEnabledComponents = append(defaultEnabledComponents, Search)
-	}
-	return defaultEnabledComponents, err
+	return defaultEnabledComponents, nil
 }
 
 func GetDefaultDisabledComponents() ([]string, error) {
 	var defaultDisabledComponents = []string{
 		ClusterBackup,
 	}
-	community, err := IsCommunity()
-
-	if err != nil {
-		return defaultDisabledComponents, err
-	}
-
-	if community {
-		defaultDisabledComponents = append(defaultDisabledComponents, Search)
-	} else {
-		// defaultDisabledComponents = append(defaultDisabledComponents, SearchV2)
-	}
-	return defaultDisabledComponents, err
+	return defaultDisabledComponents, nil
 }
 
 func (mch *MultiClusterHub) ComponentPresent(s string) bool {

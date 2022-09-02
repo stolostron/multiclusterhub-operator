@@ -352,10 +352,6 @@ func GetAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 		{Name: "cluster-lifecycle-sub", Namespace: m.Namespace},
 		{Name: "volsync-addon-controller-sub", Namespace: m.Namespace},
 	}
-	community, _ := operatorsv1.IsCommunity()
-	if !community {
-		appsubs = append(appsubs, types.NamespacedName{Name: "search-prod-sub", Namespace: m.Namespace})
-	}
 	if m.Enabled(operatorsv1.ClusterBackup) {
 		appsubs = append(appsubs, types.NamespacedName{Name: "cluster-backup-chart-sub", Namespace: ClusterSubscriptionNamespace})
 	}
@@ -379,13 +375,13 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedN
 		nn = append(nn, types.NamespacedName{Name: "insights-client", Namespace: m.Namespace})
 		nn = append(nn, types.NamespacedName{Name: "insights-metrics", Namespace: m.Namespace})
 	}
-	// if m.Enabled(operatorsv1.SearchV2) {
-	// 	nn = append(nn, types.NamespacedName{Name: "search-v2-operator-controller-manager", Namespace: m.Namespace})
-	// 	nn = append(nn, types.NamespacedName{Name: "search-api", Namespace: m.Namespace})
-	// 	nn = append(nn, types.NamespacedName{Name: "search-collector", Namespace: m.Namespace})
-	// 	nn = append(nn, types.NamespacedName{Name: "search-indexer", Namespace: m.Namespace})
-	// 	nn = append(nn, types.NamespacedName{Name: "search-postgres", Namespace: m.Namespace})
-	// }
+	if m.Enabled(operatorsv1.Search) {
+		nn = append(nn, types.NamespacedName{Name: "search-v2-operator-controller-manager", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "search-api", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "search-collector", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "search-indexer", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "search-postgres", Namespace: m.Namespace})
+	}
 	return nn
 }
 
@@ -402,9 +398,6 @@ func GetAppsubsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedName 
 	}
 	if m.Enabled(operatorsv1.ClusterLifecycle) {
 		nn = append(nn, types.NamespacedName{Name: "cluster-lifecycle-sub", Namespace: m.Namespace})
-	}
-	if m.Enabled(operatorsv1.Search) {
-		nn = append(nn, types.NamespacedName{Name: "search-prod-sub", Namespace: m.Namespace})
 	}
 	if m.Enabled(operatorsv1.ClusterBackup) {
 		nn = append(nn, types.NamespacedName{Name: "cluster-backup-chart-sub", Namespace: ClusterSubscriptionNamespace})

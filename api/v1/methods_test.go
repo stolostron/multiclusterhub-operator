@@ -41,32 +41,6 @@ var _ = Describe("V1 API Methods", func() {
 			mch = makeMCH()
 		})
 
-		// It("checks component lists in productized mode", func() {
-		// 	os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
-		// 	disabled, err := api.GetDefaultDisabledComponents()
-		// 	success := utils.Contains(disabled, api.SearchV2)
-		// 	Expect(err).To(BeNil())
-		// 	Expect(success).To(BeTrue())
-		// 	enabled, err := api.GetDefaultEnabledComponents()
-		// 	success = utils.Contains(enabled, api.Search)
-		// 	Expect(err).To(BeNil())
-		// 	Expect(success).To(BeTrue())
-
-		// })
-
-		// It("checks component lists in community mode", func() {
-		// 	os.Setenv("OPERATOR_PACKAGE", "stolostron")
-		// 	disabled, err := api.GetDefaultDisabledComponents()
-		// 	success := utils.Contains(disabled, api.Search)
-		// 	Expect(err).To(BeNil())
-		// 	Expect(success).To(BeTrue())
-		// 	enabled, err := api.GetDefaultEnabledComponents()
-		// 	success = utils.Contains(enabled, api.SearchV2)
-		// 	Expect(err).To(BeNil())
-		// 	Expect(success).To(BeTrue())
-
-		// })
-
 		It("correctly indicates if a component is present", func() {
 			Expect(mch.ComponentPresent(api.Search)).To(BeFalse())
 			Expect(mch.ComponentPresent(api.GRC)).To(BeFalse())
