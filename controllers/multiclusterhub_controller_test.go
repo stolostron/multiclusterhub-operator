@@ -444,12 +444,12 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 			By("Ensuring search is not subscribed")
 			Eventually(func() bool {
-				searchSub := types.NamespacedName{
-					Name:      "search-prod-sub",
+				searchDep := types.NamespacedName{
+					Name:      "search-v2-operator-controller-manager",
 					Namespace: mchNamespace,
 				}
-				subscription := appsubv1.Subscription{}
-				err := k8sClient.Get(ctx, searchSub, &subscription)
+				deployment := appsv1.Deployment{}
+				err := k8sClient.Get(ctx, searchDep, &deployment)
 				if err != nil && errors.IsNotFound(err) {
 					return true
 				}
@@ -466,11 +466,11 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 			By("Ensuring search is subscribed")
 			Eventually(func() error {
-				searchSub := types.NamespacedName{
-					Name:      "search-prod-sub",
+				searchDep := types.NamespacedName{
+					Name:      "search-v2-operator-controller-manager",
 					Namespace: mchNamespace,
 				}
-				return k8sClient.Get(ctx, searchSub, &appsubv1.Subscription{})
+				return k8sClient.Get(ctx, searchDep, &appsv1.Deployment{})
 			}, timeout, interval).Should(Succeed())
 
 			By("Updating MCH to disable search")
@@ -524,17 +524,17 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
-			// By("Ensuring Search-v2")
+			By("Ensuring Search-v2")
 
-			// result, err = reconciler.ensureSearchV2(ctx, mch, testImages)
-			// Expect(result).To(Equal(ctrl.Result{}))
-			// Expect(err).To(BeNil())
+			result, err = reconciler.ensureSearchV2(ctx, mch, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
 
-			// By("Ensuring No Search-v2")
+			By("Ensuring No Search-v2")
 
-			// result, err = reconciler.ensureNoSearchV2(ctx, mch, testImages)
-			// Expect(result).To(Equal(ctrl.Result{}))
-			// Expect(err).To(BeNil())
+			result, err = reconciler.ensureNoSearchV2(ctx, mch, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
 		})
 	})
 
