@@ -1,0 +1,25 @@
+# Copyright Contributors to the Open Cluster Management project
+
+###############################################################################
+# Licensed Materials - Property of IBM
+# (C) Copyright IBM Corporation 2020 All Rights Reserved
+# US Government Users Restricted Rights - Use, duplication or disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+###############################################################################
+# Copyright (c) 2020 Red Hat, Inc
+
+apiVersion: v1
+description: A helm chart for deploying the cluster lifecycle
+name: cluster-lifecycle
+appVersion: "2.5"
+version: 2.5.0
+kubeVersion: ">=1.11.0-0"
+keywords:
+  - IcpClusterResource
+  - Commercial
+  - ICP
+  - IKS
+  - ICPRHOCP
+  - Operations
+  - amd64
+  - ppc64le
+  - s390x

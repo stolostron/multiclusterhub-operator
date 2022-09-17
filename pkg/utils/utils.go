@@ -51,6 +51,7 @@ const (
 	MCEManagedByLabel     = "multiclusterhubs.operator.open-cluster-management.io/managed-by"
 	InsightsChartLocation = "/charts/toggle/insights"
 	SearchV2ChartLocation = "/charts/toggle/search-v2-operator"
+	CLCChartLocation      = "/charts/toggle/cluster-lifecycle"
 )
 
 var (
@@ -277,7 +278,7 @@ func GetTestImages() []string {
 		"SEARCH_AGGREGATOR", "SEARCH_API", "SEARCH_COLLECTOR", "SEARCH_E2E", "SEARCH_INDEXER", "SEARCH_OPERATOR",
 		"SEARCH_V2_API", "SUBMARINER_ADDON", "THANOS", "VOLSYNC", "VOLSYNC_ADDON_CONTROLLER", "VOLSYNC_MOVER_RCLONE",
 		"VOLSYNC_MOVER_RESTIC", "VOLSYNC_MOVER_RSYNC", "kube_rbac_proxy", "insights_metrics", "insights_client",
-		"search_collector", "search_indexer", "search_v2_api", "postgresql_13", "search_v2_operator"}
+		"search_collector", "search_indexer", "search_v2_api", "postgresql_13", "search_v2_operator", "klusterlet_addon_controller"}
 
 }
 
@@ -349,7 +350,6 @@ func GetAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 		{Name: "console-chart-sub", Namespace: m.Namespace},
 		{Name: "grc-sub", Namespace: m.Namespace},
 		{Name: "management-ingress-sub", Namespace: m.Namespace},
-		{Name: "cluster-lifecycle-sub", Namespace: m.Namespace},
 		{Name: "volsync-addon-controller-sub", Namespace: m.Namespace},
 	}
 	if m.Enabled(operatorsv1.ClusterBackup) {
@@ -382,6 +382,9 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedN
 		nn = append(nn, types.NamespacedName{Name: "search-indexer", Namespace: m.Namespace})
 		nn = append(nn, types.NamespacedName{Name: "search-postgres", Namespace: m.Namespace})
 	}
+	if m.Enabled(operatorsv1.ClusterLifecycle) {
+		nn = append(nn, types.NamespacedName{Name: "klusterlet-addon-controller-v2", Namespace: m.Namespace})
+	}
 	return nn
 }
 
@@ -395,9 +398,6 @@ func GetAppsubsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedName 
 	}
 	if m.Enabled(operatorsv1.ManagementIngress) {
 		nn = append(nn, types.NamespacedName{Name: "management-ingress-sub", Namespace: m.Namespace})
-	}
-	if m.Enabled(operatorsv1.ClusterLifecycle) {
-		nn = append(nn, types.NamespacedName{Name: "cluster-lifecycle-sub", Namespace: m.Namespace})
 	}
 	if m.Enabled(operatorsv1.ClusterBackup) {
 		nn = append(nn, types.NamespacedName{Name: "cluster-backup-chart-sub", Namespace: ClusterSubscriptionNamespace})
