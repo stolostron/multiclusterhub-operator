@@ -41,6 +41,7 @@ require (
 	github.com/BurntSushi/toml v1.2.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.2 // indirect
+	github.com/avast/retry-go/v3 v3.1.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
@@ -57,6 +58,7 @@ require (
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.4.2 // indirect
+	github.com/golang/glog v1.0.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/gnostic v0.6.9 // indirect
@@ -85,6 +87,9 @@ require (
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/stolostron/backplane-operator v0.0.0-20220727154840-1f60baf1fb98 // indirect
+	github.com/stolostron/go-log-utils v0.1.0 // indirect
+	github.com/stolostron/go-template-utils/v2 v2.2.2 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
@@ -111,6 +116,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20220627174259-011e075b9cb8 // indirect
 	k8s.io/utils v0.0.0-20220725171434-9bab9ef40391 // indirect
 	open-cluster-management.io/api v0.8.0 // indirect
+	open-cluster-management.io/governance-policy-propagator v0.8.0 // indirect
 	open-cluster-management.io/multicloud-operators-channel v0.8.0 // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
@@ -118,5 +124,6 @@ require (
 
 replace (
 	k8s.io/client-go => k8s.io/client-go v0.24.1
+	open-cluster-management.io/governance-policy-propagatorm => github.com/stolostron/governance-policy-propagator v0.0.0-20220915184814-3c42e75b77fb
 	open-cluster-management.io/multicloud-operators-subscription => github.com/stolostron/multicloud-operators-subscription v0.0.0-20220310201446-9989c4301546
 )

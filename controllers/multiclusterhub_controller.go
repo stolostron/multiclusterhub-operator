@@ -446,12 +446,12 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
-		result, err = r.ensureSubscription(multiClusterHub, subscription.ClusterBackup(multiClusterHub, r.CacheSpec.ImageOverrides))
+		result, err = r.ensureClusterBackup(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
 	} else {
-		result, err = r.ensureNoSubscription(multiClusterHub, subscription.ClusterBackup(multiClusterHub, r.CacheSpec.ImageOverrides))
+		result, err = r.ensureNoClusterBackup(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
@@ -716,6 +716,59 @@ func (r *MultiClusterHubReconciler) ensureNoSearchV2(ctx context.Context, m *ope
 	}
 	return ctrl.Result{}, nil
 }
+
+func (r *MultiClusterHubReconciler) ensureClusterBackup(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
+
+	log := log.FromContext(ctx)
+
+	templates, errs := renderer.RenderChart(utils.ClusterBackupChartLocation, m, images)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// Applies all templates
+	for _, template := range templates {
+		result, err := r.applyTemplate(ctx, m, template)
+		if err != nil {
+			return result, err
+		}
+	}
+
+	result, err := r.ensureSearchCR(m)
+	return result, err
+}
+
+func (r *MultiClusterHubReconciler) ensureNoClusterBackup(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
+
+	result, err := r.ensureNoSearchCR(m)
+	if err != nil {
+		return result, err
+	}
+
+	// Renders all templates from charts
+	templates, errs := renderer.RenderChart(utils.ClusterBackupChartLocation, m, images)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// Deletes all templates
+	for _, template := range templates {
+		result, err = r.deleteTemplate(ctx, m, template)
+		if err != nil {
+			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+			return result, err
+		}
+	}
+	return ctrl.Result{}, nil
+}
+
 func (r *MultiClusterHubReconciler) updateSearchEnablement(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	m.Disable(operatorv1.Search)
 	err := r.Client.Update(ctx, m)
