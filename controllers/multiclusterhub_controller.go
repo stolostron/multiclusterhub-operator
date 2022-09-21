@@ -986,10 +986,14 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 	if err != nil {
 		return err
 	}
-	// _, err = r.ensureNoSearchV2(context.TODO(), m, r.CacheSpec.ImageOverrides)
-	// if err != nil {
-	// 	return err
-	// }
+	_, err = r.ensureNoCLC(context.TODO(), m, r.CacheSpec.ImageOverrides)
+	if err != nil {
+		return err
+	}
+	_, err = r.ensureNoSearchV2(context.TODO(), m, r.CacheSpec.ImageOverrides)
+	if err != nil {
+		return err
+	}
 	if err := r.cleanupClusterRoles(reqLogger, m); err != nil {
 		return err
 	}
