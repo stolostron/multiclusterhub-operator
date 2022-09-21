@@ -15,7 +15,10 @@ require (
 	github.com/operator-framework/api v0.15.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.58.0
+	github.com/rs/zerolog v1.28.0
+	github.com/stolostron/backplane-operator v0.0.0-20220727154840-1f60baf1fb98
 	github.com/stolostron/search-v2-operator v0.0.0-20220721051905-143d28ab4f10
+	golang.org/x/exp v0.0.0-20220915105810-2d61f44442a3
 	helm.sh/helm/v3 v3.9.2
 	k8s.io/api v0.24.3
 	k8s.io/apiextensions-apiserver v0.24.3
@@ -65,6 +68,8 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/mattn/go-colorable v0.1.12 // indirect
+	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect

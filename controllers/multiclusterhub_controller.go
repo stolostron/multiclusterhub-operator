@@ -171,6 +171,12 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 	}()
 
+	ocpConsole, err := r.CheckConsole(ctx)
+	if err != nil {
+		r.Log.Error(err, "error finding OCP Console")
+		return ctrl.Result{}, err
+	}
+
 	// Check if the multiClusterHub instance is marked to be deleted, which is
 	// indicated by the deletion timestamp being set.
 	isHubMarkedToBeDeleted := multiClusterHub.GetDeletionTimestamp() != nil
@@ -182,7 +188,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			// Run finalization logic. If the finalization
 			// logic fails, don't remove the finalizer so
 			// that we can retry during the next reconciliation.
-			if err := r.finalizeHub(r.Log, multiClusterHub); err != nil {
+			if err := r.finalizeHub(r.Log, multiClusterHub, ocpConsole); err != nil {
 				// Logging err and returning nil to ensure 45 second wait
 				r.Log.Info(fmt.Sprintf("Finalizing: %s", err.Error()))
 				return ctrl.Result{RequeueAfter: resyncPeriod}, nil
@@ -209,7 +215,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	var result ctrl.Result
-	result, err = r.setDefaults(multiClusterHub)
+	result, err = r.setDefaults(multiClusterHub, ocpConsole)
 	if result != (ctrl.Result{}) {
 		return ctrl.Result{}, err
 	}
@@ -523,9 +529,13 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
-	if multiClusterHub.Enabled(operatorv1.Console) {
+	if multiClusterHub.Enabled(operatorv1.Console) && ocpConsole {
 		result, err = r.ensureSubscription(multiClusterHub, subscription.Console(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
 	} else {
+		if multiClusterHub.Enabled(operatorv1.Console) && !ocpConsole {
+			r.Log.Info("Console will not be enabled since the OCP Console is diabled")
+			multiClusterHub.Disable(operatorv1.Console)
+		}
 		result, err = r.ensureNoSubscription(multiClusterHub, subscription.Console(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
 	}
 	if result != (ctrl.Result{}) {
@@ -618,7 +628,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	// Cleanup unused resources once components up-to-date
 	if r.ComponentsAreRunning(multiClusterHub) {
-		if r.pluginIsSupported(multiClusterHub) {
+		if r.pluginIsSupported(multiClusterHub) && ocpConsole {
 			result, err = r.addPluginToConsole(multiClusterHub)
 			if result != (ctrl.Result{}) {
 				return result, err
@@ -964,8 +974,8 @@ func (r *MultiClusterHubReconciler) ingressDomain(m *operatorv1.MultiClusterHub)
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operatorv1.MultiClusterHub) error {
-	if r.pluginIsSupported(m) {
+func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operatorv1.MultiClusterHub, ocpConsole bool) error {
+	if r.pluginIsSupported(m) && ocpConsole {
 		if _, err := r.removePluginFromConsole(m); err != nil {
 			return err
 		}
@@ -1209,13 +1219,13 @@ func updatePausedCondition(m *operatorv1.MultiClusterHub) {
 	}
 }
 
-func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, ocpConsole bool) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log
 
 	updateNecessary := false
 
-	defaultUpdate, err := utils.SetDefaultComponents(m)
+	defaultUpdate, err := utils.SetDefaultComponents(m, ocpConsole)
 	if err != nil {
 		log.Error(err, "OPERATOR_CATALOG is an illegal value")
 		return ctrl.Result{}, err

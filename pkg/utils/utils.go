@@ -347,13 +347,15 @@ func GetDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 
 func GetAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	appsubs := []types.NamespacedName{
-		{Name: "console-chart-sub", Namespace: m.Namespace},
 		{Name: "grc-sub", Namespace: m.Namespace},
 		{Name: "management-ingress-sub", Namespace: m.Namespace},
 		{Name: "volsync-addon-controller-sub", Namespace: m.Namespace},
 	}
 	if m.Enabled(operatorsv1.ClusterBackup) {
 		appsubs = append(appsubs, types.NamespacedName{Name: "cluster-backup-chart-sub", Namespace: ClusterSubscriptionNamespace})
+	}
+	if m.Enabled(operatorsv1.Console) {
+		appsubs = append(appsubs, types.NamespacedName{Name: "console-chart-sub", Namespace: m.Namespace})
 	}
 	return appsubs
 }
@@ -469,7 +471,7 @@ func appendIfMissing(slice []corev1.EnvVar, s corev1.EnvVar) []corev1.EnvVar {
 }
 
 // SetDefaultComponents returns true if changes are made
-func SetDefaultComponents(m *operatorsv1.MultiClusterHub) (bool, error) {
+func SetDefaultComponents(m *operatorsv1.MultiClusterHub, ocpConsole bool) (bool, error) {
 	updated := false
 	defaultEnabledComponents, err := operatorsv1.GetDefaultEnabledComponents()
 	if err != nil {
@@ -479,6 +481,13 @@ func SetDefaultComponents(m *operatorsv1.MultiClusterHub) (bool, error) {
 	if err != nil {
 		return true, err
 	}
+
+	if ocpConsole {
+		defaultEnabledComponents = append(defaultEnabledComponents, operatorsv1.Console)
+	} else {
+		defaultDisabledComponents = append(defaultEnabledComponents, operatorsv1.Console)
+	}
+
 	for _, c := range defaultEnabledComponents {
 		if !m.ComponentPresent(c) {
 			m.Enable(c)

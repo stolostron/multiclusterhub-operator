@@ -169,6 +169,7 @@ var _ = Describe("utility functions", func() {
 			os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
 			mch := resources.EmptyMCH()
 			mch.Enable(operatorsv1.ClusterBackup)
+			mch.Enable(operatorsv1.Console)
 			appsubs := GetAppsubs(&mch)
 			Expect(len(appsubs)).To(Equal(5))
 		})
@@ -231,13 +232,13 @@ var _ = Describe("utility functions", func() {
 		})
 		It("Sets Default Component values", func() {
 			mch := resources.EmptyMCH()
-			updated, err := SetDefaultComponents(&mch)
+			updated, err := SetDefaultComponents(&mch, true)
 			Expect(updated).To(Equal(true))
 			Expect(err).To(BeNil())
 		})
 		It("Sets Default Component values", func() {
 			mch := resources.EmptyMCH()
-			updated, err := SetDefaultComponents(&mch)
+			updated, err := SetDefaultComponents(&mch, true)
 			Expect(updated).To(Equal(true))
 			Expect(err).To(BeNil())
 		})

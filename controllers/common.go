@@ -20,11 +20,11 @@ import (
 
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 
-	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
-
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/library-go/pkg/operator/resource/resourcemerge"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
+	slice "golang.org/x/exp/slices"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	subhelmv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/helmrelease/v1"
 
@@ -1689,4 +1689,33 @@ func (r *MultiClusterHubReconciler) ensureNoSearchCR(m *operatorv1.MultiClusterH
 	}
 	return ctrl.Result{}, nil
 
+}
+
+func (r *MultiClusterHubReconciler) CheckConsole(ctx context.Context) (bool, error) {
+	versionStatus := &configv1.ClusterVersion{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: "version"}, versionStatus)
+	if err != nil {
+		return false, err
+	}
+	ocpVersion, err := r.getClusterVersion(ctx)
+	if err != nil {
+		return false, err
+	}
+	semverVersion, err := semver.NewVersion(ocpVersion)
+	if err != nil {
+		return false, fmt.Errorf("failed to convert ocp version to semver compatible value: %w", err)
+	}
+	// -0 allows for prerelease builds to pass the validation.
+	// If -0 is removed, developer/rc builds will not pass this check
+	constraint, err := semver.NewConstraint(">= 4.12.0-0")
+	if err != nil {
+		return false, fmt.Errorf("failed to set ocp version constraint: %w", err)
+	}
+	if !constraint.Check(semverVersion) {
+		return true, nil
+	}
+	if slice.Contains(versionStatus.Status.Capabilities.EnabledCapabilities, "Console") {
+		return true, nil
+	}
+	return false, nil
 }
