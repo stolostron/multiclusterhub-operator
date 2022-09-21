@@ -388,7 +388,7 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedN
 		nn = append(nn, types.NamespacedName{Name: "klusterlet-addon-controller-v2", Namespace: m.Namespace})
 	}
 	if m.Enabled(operatorsv1.ClusterBackup) {
-		nn = append(nn, types.NamespacedName{Name: "cluster-backup-chart-clusterbackup  ", Namespace: ClusterSubscriptionNamespace})
+		nn = append(nn, types.NamespacedName{Name: "cluster-backup-chart-clusterbackup", Namespace: ClusterSubscriptionNamespace})
 		nn = append(nn, types.NamespacedName{Name: "openshift-adp-controller-manager", Namespace: ClusterSubscriptionNamespace})
 	}
 	return nn

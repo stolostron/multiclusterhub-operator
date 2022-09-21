@@ -1029,13 +1029,17 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 	if err := r.cleanupAppSubscriptions(reqLogger, m); err != nil {
 		return err
 	}
+	_, err := r.ensureNoClusterBackup(context.TODO(), m, r.CacheSpec.ImageOverrides)
+	if err != nil {
+		return err
+	}
 	if err := r.cleanupNamespaces(reqLogger); err != nil {
 		return err
 	}
 	if err := r.cleanupFoundation(reqLogger, m); err != nil {
 		return err
 	}
-	_, err := r.ensureNoInsights(context.TODO(), m, r.CacheSpec.ImageOverrides)
+	_, err = r.ensureNoInsights(context.TODO(), m, r.CacheSpec.ImageOverrides)
 	if err != nil {
 		return err
 	}

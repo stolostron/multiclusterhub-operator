@@ -175,19 +175,11 @@ func (m *multiClusterHubValidator) validateUpdate(req admission.Request) error {
 		return errors.New("Invalid AvailabilityConfig given")
 	}
 
-	community, err := operatorsv1.IsCommunity()
-	if err != nil {
-		return err
-	}
-
 	// Validate components
 	if newMCH.Spec.Overrides != nil {
 		for _, c := range newMCH.Spec.Overrides.Components {
 			if !operatorsv1.ValidComponent(c) {
 				return errors.New(fmt.Sprintf("invalid component config: %s is not a known component", c.Name))
-			}
-			if community && c.Name == operatorsv1.Search && c.Enabled {
-				return errors.New("Search V1 cannot be enabled in the community operator")
 			}
 		}
 	}
