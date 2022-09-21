@@ -186,7 +186,7 @@ var _ = Describe("utility functions", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(operatorsv1.ClusterBackup)
 			appsubs := GetAppsubs(&mch)
-			Expect(len(appsubs)).To(Equal(5))
+			Expect(len(appsubs)).To(Equal(4))
 
 		})
 		It("gets custom resources", func() {
