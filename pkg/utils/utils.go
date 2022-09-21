@@ -51,7 +51,7 @@ const (
 	MCEManagedByLabel          = "multiclusterhubs.operator.open-cluster-management.io/managed-by"
 	InsightsChartLocation      = "/charts/toggle/insights"
 	SearchV2ChartLocation      = "/charts/toggle/search-v2-operator"
-	CLCChartLocation      = "/charts/toggle/cluster-lifecycle"
+	CLCChartLocation           = "/charts/toggle/cluster-lifecycle"
 	ClusterBackupChartLocation = "/charts/toggle/cluster-backup"
 )
 
