@@ -737,17 +737,11 @@ func (r *MultiClusterHubReconciler) ensureClusterBackup(ctx context.Context, m *
 		}
 	}
 
-	result, err := r.ensureSearchCR(m)
-	return result, err
+	return ctrl.Result{}, nil
 }
 
 func (r *MultiClusterHubReconciler) ensureNoClusterBackup(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
-
-	result, err := r.ensureNoSearchCR(m)
-	if err != nil {
-		return result, err
-	}
 
 	// Renders all templates from charts
 	templates, errs := renderer.RenderChart(utils.ClusterBackupChartLocation, m, images)
@@ -760,7 +754,7 @@ func (r *MultiClusterHubReconciler) ensureNoClusterBackup(ctx context.Context, m
 
 	// Deletes all templates
 	for _, template := range templates {
-		result, err = r.deleteTemplate(ctx, m, template)
+		result, err := r.deleteTemplate(ctx, m, template)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
 			return result, err
