@@ -28,7 +28,7 @@ spec:
         app: cluster-backup-chart
         ocm-antiaffinity-selector: "clusterbackup"
         component: "clusterbackup"
-        release: cluster-backup chart
+        release: cluster-backup-chart
         chart: cluster-backup-chart
         heritage: Helm
         app.kubernetes.io/instance: cluster-backup-chart

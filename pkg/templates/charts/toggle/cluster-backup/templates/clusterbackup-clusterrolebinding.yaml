@@ -9,10 +9,10 @@ metadata:
     chart: cluster-backup-chart
     release: cluster-backup-chart
     heritage: Helm
-    app.kubernetes.io/instance: cluster-backup chart
+    app.kubernetes.io/instance: cluster-backup-chart
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: cluster-backup-chart
-    helm.sh/chart: cluster-backup weapon chart
+    helm.sh/chart: cluster-backup-chart
     component: clusterrolebinding
 subjects:
 - kind: ServiceAccount

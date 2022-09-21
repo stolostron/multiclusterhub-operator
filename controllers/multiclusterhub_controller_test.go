@@ -15,7 +15,6 @@ import (
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
-	policy "github.com/stolostron/governance-policy-propagator/api/v1"
 	mchov1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	v1 "github.com/stolostron/multiclusterhub-operator/api/v1"
@@ -24,6 +23,7 @@ import (
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
+	policy "open-cluster-management.io/governance-policy-propagator/api/v1"
 	appsub "open-cluster-management.io/multicloud-operators-subscription/pkg/apis"
 	appsubv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/v1"
 
@@ -532,11 +532,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 			ns := subscription.BackupNamespace()
 			result, err = reconciler.ensureNamespace(mch, ns)
-			// Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
-			// result, err = reconciler.ensurePullSecret(mch, ns.Name)
-			// Expect(result).To(Equal(ctrl.Result{}))
-			// Expect(err).To(BeNil())
 
 			result, err = reconciler.ensureClusterBackup(ctx, mch, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))

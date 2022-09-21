@@ -124,6 +124,5 @@ require (
 
 replace (
 	k8s.io/client-go => k8s.io/client-go v0.24.1
-	open-cluster-management.io/governance-policy-propagatorm => github.com/stolostron/governance-policy-propagator v0.0.0-20220915184814-3c42e75b77fb
 	open-cluster-management.io/multicloud-operators-subscription => github.com/stolostron/multicloud-operators-subscription v0.0.0-20220310201446-9989c4301546
 )
