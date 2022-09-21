@@ -1701,6 +1701,9 @@ func (r *MultiClusterHubReconciler) CheckConsole(ctx context.Context) (bool, err
 	if err != nil {
 		return false, err
 	}
+	if hubOCPVersion, ok := os.LookupEnv("ACM_HUB_OCP_VERSION"); ok {
+		ocpVersion = hubOCPVersion
+	}
 	semverVersion, err := semver.NewVersion(ocpVersion)
 	if err != nil {
 		return false, fmt.Errorf("failed to convert ocp version to semver compatible value: %w", err)

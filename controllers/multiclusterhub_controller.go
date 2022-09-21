@@ -533,7 +533,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		result, err = r.ensureSubscription(multiClusterHub, subscription.Console(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
 	} else {
 		if multiClusterHub.Enabled(operatorv1.Console) && !ocpConsole {
-			r.Log.Info("Console will not be enabled since the OCP Console is diabled")
+			r.Log.Info("Console will not be enabled since the OCP Console is disabled")
 			multiClusterHub.Disable(operatorv1.Console)
 		}
 		result, err = r.ensureNoSubscription(multiClusterHub, subscription.Console(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))

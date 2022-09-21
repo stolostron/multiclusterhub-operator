@@ -238,7 +238,7 @@ var _ = Describe("utility functions", func() {
 		})
 		It("Sets Default Component values", func() {
 			mch := resources.EmptyMCH()
-			updated, err := SetDefaultComponents(&mch, true)
+			updated, err := SetDefaultComponents(&mch, false)
 			Expect(updated).To(Equal(true))
 			Expect(err).To(BeNil())
 		})
