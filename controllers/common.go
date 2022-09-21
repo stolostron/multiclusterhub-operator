@@ -1197,14 +1197,14 @@ func (r *MultiClusterHubReconciler) getMCESubscription() (*subv1alpha1.Subscript
 
 	// if label doesn't work find it via .spec.name (it's package)
 	r.Log.Info("Failed to find subscription via label")
-	for i, s := range subList.Items {
-		if s.Spec.Package == multiclusterengine.DesiredPackage() {
+	for i := range subList.Items {
+		if subList.Items[i].Spec.Package == multiclusterengine.DesiredPackage() {
 			// adding label so it can be found in the future
-			labels := s.GetLabels()
+			labels := subList.Items[i].GetLabels()
 			labels[utils.MCEManagedByLabel] = "true"
-			s.SetLabels(labels)
+			subList.Items[i].SetLabels(labels)
 			r.Log.Info("Adding label to subscription")
-			if err := r.Client.Update(ctx, &s); err != nil {
+			if err := r.Client.Update(ctx, &subList.Items[i]); err != nil {
 				r.Log.Error(err, "Failed to add managedBy preexisting MCE with MCH spec")
 				return &subList.Items[i], err
 			}
