@@ -1,0 +1,12 @@
+global:
+  imageOverrides:
+    klusterlet_addon_controller: ''
+  namespace: default
+  pullSecret: null
+  imageRepository: "" # utils.GetImageRepository(m)
+hubconfig:
+  nodeSelector: null
+  proxyConfigs: {}
+  replicaCount: 1
+  tolerations: []
+org: open-cluster-management

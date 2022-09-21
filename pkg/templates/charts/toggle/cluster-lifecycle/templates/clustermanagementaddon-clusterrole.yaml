@@ -1,0 +1,10 @@
+# Copyright Contributors to the Open Cluster Management project
+
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: open-cluster-management:clustermanagementaddons-readonly-v2
+rules:
+- apiGroups: ["addon.open-cluster-management.io"]
+  resources: ["clustermanagementaddons"]
+  verbs: ["get", "list", "watch"]

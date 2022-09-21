@@ -535,6 +535,18 @@ var _ = Describe("MultiClusterHub controller", func() {
 			result, err = reconciler.ensureNoSearchV2(ctx, mch, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
+
+			By("Ensuring CLC")
+
+			result, err = reconciler.ensureCLC(ctx, mch, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+
+			By("Ensuring No CLC")
+
+			result, err = reconciler.ensureNoCLC(ctx, mch, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
 		})
 	})
 

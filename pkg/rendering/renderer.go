@@ -31,10 +31,11 @@ type Values struct {
 }
 
 type Global struct {
-	ImageOverrides map[string]string `json:"imageOverrides" structs:"imageOverrides"`
-	PullPolicy     string            `json:"pullPolicy" structs:"pullPolicy"`
-	PullSecret     string            `json:"pullSecret" structs:"pullSecret"`
-	Namespace      string            `json:"namespace" structs:"namespace"`
+	ImageOverrides  map[string]string `json:"imageOverrides" structs:"imageOverrides"`
+	PullPolicy      string            `json:"pullPolicy" structs:"pullPolicy"`
+	PullSecret      string            `json:"pullSecret" structs:"pullSecret"`
+	Namespace       string            `json:"namespace" structs:"namespace"`
+	ImageRepository string            `json:"imageRepository" structs:"namespace"`
 }
 
 type HubConfig struct {
@@ -285,6 +286,8 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 	values.Global.Namespace = mch.Namespace
 
 	values.Global.PullSecret = mch.Spec.ImagePullSecret
+
+	values.Global.ImageRepository = utils.GetImageRepository(mch)
 
 	values.HubConfig.ReplicaCount = utils.DefaultReplicaCount(mch)
 

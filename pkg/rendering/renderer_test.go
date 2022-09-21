@@ -20,10 +20,15 @@ import (
 )
 
 const (
-	chartsDir  = "/charts/toggle"
-	chartsPath = "/charts/toggle/insights"
-	crdsDir    = "/crds"
+	chartsDir = "/charts/toggle"
+	crdsDir   = "/crds"
 )
+
+var chartPaths = []string{
+	utils.InsightsChartLocation,
+	utils.SearchV2ChartLocation,
+	utils.CLCChartLocation,
+}
 
 func TestRender(t *testing.T) {
 
@@ -161,71 +166,74 @@ func TestRender(t *testing.T) {
 	for _, v := range utils.GetTestImages() {
 		singleChartTestImages[v] = "quay.io/test/test:Test"
 	}
-	chartsPath := chartsPath
-	singleChartTemplates, errs := RenderChart(chartsPath, testMCH, singleChartTestImages)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			t.Logf(err.Error())
-		}
-		t.Fatalf("failed to retrieve templates")
-		if len(singleChartTemplates) == 0 {
-			t.Fatalf("Unable to render templates")
-		}
-	}
-	for _, template := range singleChartTemplates {
-		if template.GetKind() == "Deployment" {
-			deployment := &appsv1.Deployment{}
-			err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, deployment)
-			if err != nil {
-				t.Fatalf(err.Error())
-			}
 
-			selectorEquality := reflect.DeepEqual(deployment.Spec.Template.Spec.NodeSelector, mchNodeSelector)
-			if !selectorEquality {
-				t.Fatalf("Node Selector did not propagate to the deployments use")
+	for _, chartsPath := range chartPaths {
+		chartsPath := chartsPath
+		singleChartTemplates, errs := RenderChart(chartsPath, testMCH, singleChartTestImages)
+		if len(errs) > 0 {
+			for _, err := range errs {
+				t.Logf(err.Error())
 			}
-			secretEquality := reflect.DeepEqual(deployment.Spec.Template.Spec.ImagePullSecrets[0].Name, mchImagePullSecret)
-			if !secretEquality {
-				t.Fatalf("Image Pull Secret did not propagate to the deployments use")
+			t.Fatalf("failed to retrieve templates")
+			if len(singleChartTemplates) == 0 {
+				t.Fatalf("Unable to render templates")
 			}
-			tolerationEquality := reflect.DeepEqual(deployment.Spec.Template.Spec.Tolerations, mchTolerations)
-			if !tolerationEquality {
-				t.Fatalf("Toleration did not propagate to the deployments use")
-			}
-			if deployment.ObjectMeta.Namespace != mchNamespace {
-				t.Fatalf("Namespace did not propagate to the deployments use")
-			}
+		}
+		for _, template := range singleChartTemplates {
+			if template.GetKind() == "Deployment" {
+				deployment := &appsv1.Deployment{}
+				err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, deployment)
+				if err != nil {
+					t.Fatalf(err.Error())
+				}
 
-			if utils.Contains(proxyList, deployment.ObjectMeta.Name) {
-				for _, proxyVar := range deployment.Spec.Template.Spec.Containers[0].Env {
-					switch proxyVar.Name {
-					case "HTTP_PROXY":
-						containsHTTP = true
-						if proxyVar.Value != "test1" {
-							t.Fatalf("HTTP_PROXY not propagated")
-						}
-					case "HTTPS_PROXY":
-						containsHTTPS = true
-						if proxyVar.Value != "test2" {
-							t.Fatalf("HTTPS_PROXY not propagated")
-						}
-					case "NO_PROXY":
-						containsNO = true
-						if proxyVar.Value != "test3" {
-							t.Fatalf("NO_PROXY not propagated")
+				selectorEquality := reflect.DeepEqual(deployment.Spec.Template.Spec.NodeSelector, mchNodeSelector)
+				if !selectorEquality {
+					t.Fatalf("Node Selector did not propagate to the deployments use")
+				}
+				secretEquality := reflect.DeepEqual(deployment.Spec.Template.Spec.ImagePullSecrets[0].Name, mchImagePullSecret)
+				if !secretEquality {
+					t.Fatalf("Image Pull Secret did not propagate to the deployments use")
+				}
+				tolerationEquality := reflect.DeepEqual(deployment.Spec.Template.Spec.Tolerations, mchTolerations)
+				if !tolerationEquality {
+					t.Fatalf("Toleration did not propagate to the deployments use")
+				}
+				if deployment.ObjectMeta.Namespace != mchNamespace {
+					t.Fatalf("Namespace did not propagate to the deployments use")
+				}
+
+				if utils.Contains(proxyList, deployment.ObjectMeta.Name) {
+					for _, proxyVar := range deployment.Spec.Template.Spec.Containers[0].Env {
+						switch proxyVar.Name {
+						case "HTTP_PROXY":
+							containsHTTP = true
+							if proxyVar.Value != "test1" {
+								t.Fatalf("HTTP_PROXY not propagated")
+							}
+						case "HTTPS_PROXY":
+							containsHTTPS = true
+							if proxyVar.Value != "test2" {
+								t.Fatalf("HTTPS_PROXY not propagated")
+							}
+						case "NO_PROXY":
+							containsNO = true
+							if proxyVar.Value != "test3" {
+								t.Fatalf("NO_PROXY not propagated")
+							}
 						}
 					}
-				}
 
-				if !containsHTTP || !containsHTTPS || !containsNO {
-					t.Fatalf("proxy variables not set")
+					if !containsHTTP || !containsHTTPS || !containsNO {
+						t.Fatalf("proxy variables not set")
+					}
 				}
+				containsHTTP = false
+				containsHTTPS = false
+				containsNO = false
 			}
-			containsHTTP = false
-			containsHTTPS = false
-			containsNO = false
-		}
 
+		}
 	}
 
 	os.Unsetenv("HTTP_PROXY")

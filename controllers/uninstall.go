@@ -92,7 +92,6 @@ var (
 
 	uninstallRenderList = func(m *operatorsv1.MultiClusterHub) []*unstructured.Unstructured {
 		removals := []*unstructured.Unstructured{
-
 			newUnstructured(
 				types.NamespacedName{Name: "policyreport-sub", Namespace: m.Namespace},
 				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
@@ -103,6 +102,10 @@ var (
 			),
 			newUnstructured(
 				types.NamespacedName{Name: "search-prod-sub", Namespace: m.Namespace},
+				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
+			),
+			newUnstructured(
+				types.NamespacedName{Name: "cluster-lifecycle-sub", Namespace: m.Namespace},
 				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
 			),
 		}
