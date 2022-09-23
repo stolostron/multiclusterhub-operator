@@ -1,0 +1,29 @@
+# Copyright (c) 2020 Red Hat, Inc.
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: {{ template "console.fullname" . }}-console-certs
+  name: {{ template "console.fullname" . }}-console-v2
+  labels:
+    app: {{ template "console.name" . }}-v2
+    component: "console"
+    chart: {{ template "console.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ template "console.name" . }}
+    helm.sh/chart: {{ template "console.chart" . }}
+spec:
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ template "console.name" . }}-v2
+    component: "console"
+    release: {{ .Release.Name }}

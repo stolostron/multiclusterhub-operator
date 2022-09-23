@@ -1,0 +1,15 @@
+# Copyright Contributors to the Open Cluster Management project
+
+---
+apiVersion: apps.open-cluster-management.io/v1
+kind: Channel
+metadata:
+  name: acm-hive-openshift-releases-chn-0
+  annotations:
+    apps.open-cluster-management.io/reconcile-rate: low
+spec:
+  type: Git
+  pathname: {{ .Values.clusterImageSets.acmHiveOpenshiftReleaseUrl }}
+  # Disable when using a Public repository
+  #secretRef:
+  #  name: my-github-secret

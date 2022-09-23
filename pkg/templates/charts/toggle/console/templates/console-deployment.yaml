@@ -1,0 +1,154 @@
+# Copyright (c) 2020 Red Hat, Inc.
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "console.fullname" . }}-console-v2
+  labels:
+    app: {{ template "console.name" . }}-v2
+    chart: {{ template "console.chart" . }}
+    component: "console"
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ template "console.name" . }}
+    helm.sh/chart: {{ template "console.chart" . }}
+spec:
+  replicas: {{ .Values.hubconfig.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "console.name" . }}-v2
+      component: "console"
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "console.name" . }}-v2
+        ocm-antiaffinity-selector: "console"
+        component: "console"
+        release: {{ .Release.Name }}
+        chart: {{ template "console.chart" . }}
+        heritage: {{ .Release.Service }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/name: {{ template "console.name" . }}
+        helm.sh/chart: {{ template "console.chart" . }}
+    spec:
+      hostNetwork: false
+      hostPID: false
+      hostIPC: false
+      serviceAccountName: {{ template "console.fullname" . }}
+      securityContext:
+        runAsNonRoot: true
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                {{- range .Values.arch }}
+                - {{ . }}
+                {{- end }}
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 70
+            podAffinityTerm:
+              topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - console
+                - key: component
+                  operator: In
+                  values:
+                  - console
+          - weight: 35
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - console
+                - key: component
+                  operator: In
+                  values:
+                  - console
+      {{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+      - name: {{ template "console.fullname" . }}-console-certs
+        secret:
+          defaultMode: 420
+          secretName: {{ template "console.fullname" . }}-console-certs
+      - name: {{ template "console.fullname" . }}-console-config
+        configMap:
+          name: console-config
+      containers:
+      - name: console
+        volumeMounts:
+        - mountPath: /app/certs
+          name: {{ template "console.fullname" . }}-console-certs
+        - mountPath: /app/config
+          name: {{ template "console.fullname" . }}-console-config
+        image: {{ .Values.global.imageOverrides.console }}
+        imagePullPolicy: {{ .Values.global.pullPolicy }}
+        resources:
+        {{- toYaml .Values.console.resources | nindent 10 }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+        env:
+        - name: PORT
+          value: "3000"
+        - name: FRONTEND_URL
+          value: "https://multicloud-console.{{ .Values.ocpingress }}/multicloud"
+        - name: BACKEND_URL
+          value: "https://multicloud-console.{{ .Values.ocpingress }}/multicloud"
+        - name: CLUSTER_API_URL
+          value: https://kubernetes.default.svc:443
+        {{- if .Values.hubconfig.proxyConfigs }}
+        - name: HTTP_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+        - name: HTTPS_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+        - name: NO_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+        {{- end }}
+        ports:
+        - containerPort: 3000
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readinessProbe
+            port: 3000
+            scheme: HTTPS
+          failureThreshold: 1
+        livenessProbe:
+          httpGet:
+            path: /livenessProbe
+            port: 3000
+            scheme: HTTPS
+          failureThreshold: 1
+          initialDelaySeconds: 10
+      {{- if .Values.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.pullSecret }}
+      {{- end }}
+      {{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
