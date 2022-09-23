@@ -387,9 +387,11 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 	if multiClusterHub.Enabled(operatorv1.Console) {
-		result, err = r.ensureSubscription(multiClusterHub, subscription.Console(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
+		// result, err = r.ensureSubscription(multiClusterHub, subscription.Console(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
+		result, err = r.ensureConsole(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
 	} else {
-		result, err = r.ensureNoSubscription(multiClusterHub, subscription.Console(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
+		// result, err = r.ensureNoSubscription(multiClusterHub, subscription.Console(multiClusterHub, r.CacheSpec.ImageOverrides, r.CacheSpec.IngressDomain))
+		result, err = r.ensureNoConsole(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
 	}
 	if result != (ctrl.Result{}) {
 		return result, err
@@ -602,6 +604,52 @@ func (r *MultiClusterHubReconciler) ensureNoCLC(ctx context.Context, m *operator
 
 	// Renders all templates from charts
 	templates, errs := renderer.RenderChart(utils.CLCChartLocation, m, images)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// Deletes all templates
+	for _, template := range templates {
+		result, err := r.deleteTemplate(ctx, m, template)
+		if err != nil {
+			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+			return result, err
+		}
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureConsole(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
+
+	log := log.FromContext(ctx)
+
+	templates, errs := renderer.RenderChart(utils.ConsoleChartLocation, m, images)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// Applies all templates
+	for _, template := range templates {
+		result, err := r.applyTemplate(ctx, m, template)
+		if err != nil {
+			return result, err
+		}
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureNoConsole(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
+
+	// Renders all templates from charts
+	templates, errs := renderer.RenderChart(utils.ConsoleChartLocation, m, images)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
