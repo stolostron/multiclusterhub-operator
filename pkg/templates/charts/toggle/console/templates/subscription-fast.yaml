@@ -12,6 +12,6 @@ metadata:
     subscription-pause: {{ .Values.clusterImageSets.subscriptionPause | quote }}
   name: hive-clusterimagesets-subscription-fast-0
 spec:
-  channel: {{ .Values.hubconfig.namespace }}/acm-hive-openshift-releases-chn-0
+  channel: {{ .Values.global.namespace }}/acm-hive-openshift-releases-chn-0
   placement:
     local: true

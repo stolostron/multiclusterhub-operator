@@ -8,30 +8,27 @@ metadata:
     ingress.open-cluster-management.io/auth-type: access-token
     ingress.open-cluster-management.io/secure-backends: "true"
     kubernetes.io/ingress.class: ingress-open-cluster-management
-  name: {{ template "console.fullname" . }}-console-v2
+  name: {{ .Values.fullname }}-console-v2
   labels:
-    app: {{ template "console.name" . }}-v2
-    chart: {{ template "console.chart" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/name: {{ template "console.name" . }}
-    helm.sh/chart: {{ template "console.chart" . }}
+    app: console-chart-v2
+    chart: console-chart-{{ .Values.hubconfig.hubVersion }}
+    release: console
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/name: console-chart
 spec:
   rules:
   - http:
       paths:
       - backend:
           service:
-            name: {{ template "console.fullname" . }}-console-v2
+            name: {{ .Values.fullname }}-console-v2
             port:
               number: 3000
         path: /multicloud
         pathType: ImplementationSpecific
       - backend:
           service:
-            name: {{ template "console.fullname" . }}-console-v2
+            name: {{ .Values.fullname }}-console-v2
             port:
               number: 3000
         path: /

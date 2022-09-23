@@ -1,10 +1,9 @@
-# Copyright (c) 2020 Red Hat, Inc.
 # Copyright Contributors to the Open Cluster Management project
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ .Values.org }}:{{ .Release.Name }}:aggregate-clusterimagesets-readonly
+  name: open-cluster-management:console:aggregate-clusterimagesets-readonly
   labels:
     # Add these permissions to the "view" default role.
     rbac.authorization.k8s.io/aggregate-to-view: "true"

@@ -306,6 +306,8 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 
 	values.HubConfig.Tolerations = convertTolerations(utils.GetTolerations(mch))
 
+	values.HubConfig.HubVersion = version.Version
+
 	values.Org = "open-cluster-management"
 
 	values.HubConfig.OCPVersion = os.Getenv("ACM_HUB_OCP_VERSION")

@@ -8,9 +8,8 @@ metadata:
   labels:
     app: console
     component: "console"
-    chart: {{ template "console.chart" . }}
-    release: {{ template "console.fullname" . }}
-    heritage: {{ .Release.Service }}
+    chart: console-chart-{{ .Values.hubconfig.hubVersion }}
+    release: {{ .Values.fullname }}
 data:
   LOG_LEVEL: info
   ansibleIntegration: disabled

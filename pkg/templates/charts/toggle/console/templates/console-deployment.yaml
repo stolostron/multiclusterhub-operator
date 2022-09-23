@@ -4,42 +4,36 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "console.fullname" . }}-console-v2
+  name: {{ .Values.fullname }}-console-v2
   labels:
-    app: {{ template "console.name" . }}-v2
-    chart: {{ template "console.chart" . }}
+    app: console-chart-v2
+    chart: console-chart-{{ .Values.hubconfig.hubVersion }}
     component: "console"
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/name: {{ template "console.name" . }}
-    helm.sh/chart: {{ template "console.chart" . }}
+    release: console
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/name: console-chart
 spec:
   replicas: {{ .Values.hubconfig.replicaCount }}
   selector:
     matchLabels:
-      app: {{ template "console.name" . }}-v2
+      app: console-chart-v2
       component: "console"
-      release: {{ .Release.Name }}
+      release: console
   template:
     metadata:
       labels:
-        app: {{ template "console.name" . }}-v2
+        app: console-chart-v2
         ocm-antiaffinity-selector: "console"
         component: "console"
-        release: {{ .Release.Name }}
-        chart: {{ template "console.chart" . }}
-        heritage: {{ .Release.Service }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
-        app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: {{ template "console.name" . }}
-        helm.sh/chart: {{ template "console.chart" . }}
+        release: console
+        chart: console-chart-{{ .Values.hubconfig.hubVersion }}
+        app.kubernetes.io/instance: console
+        app.kubernetes.io/name: console-chart
     spec:
       hostNetwork: false
       hostPID: false
       hostIPC: false
-      serviceAccountName: {{ template "console.fullname" . }}
+      serviceAccountName: {{ .Values.fullname }}
       securityContext:
         runAsNonRoot: true
       affinity:
@@ -86,20 +80,20 @@ spec:
       {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:
-      - name: {{ template "console.fullname" . }}-console-certs
+      - name: {{ .Values.fullname }}-console-certs
         secret:
           defaultMode: 420
-          secretName: {{ template "console.fullname" . }}-console-certs
-      - name: {{ template "console.fullname" . }}-console-config
+          secretName: {{ .Values.fullname }}-console-certs
+      - name: {{ .Values.fullname }}-console-config
         configMap:
           name: console-config
       containers:
       - name: console
         volumeMounts:
         - mountPath: /app/certs
-          name: {{ template "console.fullname" . }}-console-certs
+          name: {{ .Values.fullname }}-console-certs
         - mountPath: /app/config
-          name: {{ template "console.fullname" . }}-console-config
+          name: {{ .Values.fullname }}-console-config
         image: {{ .Values.global.imageOverrides.console }}
         imagePullPolicy: {{ .Values.global.pullPolicy }}
         resources:
@@ -144,9 +138,9 @@ spec:
             scheme: HTTPS
           failureThreshold: 1
           initialDelaySeconds: 10
-      {{- if .Values.pullSecret }}
+      {{- if .Values.global.pullSecret }}
       imagePullSecrets:
-      - name: {{ .Values.pullSecret }}
+      - name: {{ .Values.global.pullSecret }}
       {{- end }}
       {{- with .Values.hubconfig.nodeSelector }}
       nodeSelector:

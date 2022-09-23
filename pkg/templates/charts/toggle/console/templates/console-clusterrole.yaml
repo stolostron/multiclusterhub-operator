@@ -1,19 +1,15 @@
-# Copyright (c) 2020 Red Hat, Inc.
 # Copyright Contributors to the Open Cluster Management project
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ .Values.org }}:{{ .Release.Name }}:clusterrole
+  name: open-cluster-management:console:clusterrole
   labels:
-    app: {{ template "console.name" . }}
-    chart: {{ template "console.chart" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/name: {{ template "console.name" . }}
-    helm.sh/chart: {{ template "console.chart" . }}
+    app: console-chart
+    chart: console-chart-{{ .Values.hubconfig.hubVersion }}
+    release: console
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/name: console-chart
     component: clusterrole
 
 rules:

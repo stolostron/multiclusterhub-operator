@@ -3,28 +3,21 @@
 # Declare variables to be passed into your templates.
 
 org: open-cluster-management
+fullname: console-chart
 
 global:
   imageOverrides:
     console: ""
   namespace: default
   pullSecret: null
-  imageRepository: "" # utils.GetImageRepository(m)
+  pullPolicy: Always
 hubconfig:
   nodeSelector: null
   proxyConfigs: {}
   replicaCount: 1
   tolerations: []
+  hubVersion: ""
 
-
-
-
-global:
-  imageOverrides:
-    console: ""
-    pullPolicy: Always
-
-pullSecret: null
 arch:
 - amd64
 - ppc64le
@@ -32,18 +25,6 @@ arch:
 - arm64
 
 ocpingress: ""
-
-hubconfig:
-  nodeSelector: null
-  replicaCount: 1
-  ocpVersion: "4.6.0"
-  tolerations:
-    - key: dedicated
-      operator: Exists
-      effect: NoSchedule
-    - effect: NoSchedule
-      key: node-role.kubernetes.io/infra
-      operator: Exists
 
 console:
   resources:
