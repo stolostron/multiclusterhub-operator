@@ -7,9 +7,12 @@ import (
 	"testing"
 
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestSubscription(t *testing.T) {
@@ -241,6 +244,65 @@ func TestCommunitySubscription(t *testing.T) {
 				fmt.Printf("%+v\n", sub.Spec)
 				fmt.Printf("%+v\n", tt.want)
 				t.Errorf("Subscription() got = %v, want %v", sub.Spec, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetCatalogSource(t *testing.T) {
+	os.Setenv("UNIT_TEST", "true")
+	os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
+	defer os.Unsetenv("UNIT_TEST")
+	defer os.Unsetenv("OPERATOR_PACKAGE")
+
+	mockPackageManifests = func() *olmapi.PackageManifestList {
+		return &olmapi.PackageManifestList{
+			Items: []olmapi.PackageManifest{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "multicluster-engine",
+					},
+					Status: olmapi.PackageManifestStatus{
+						CatalogSource:          "mce-catalog",
+						CatalogSourceNamespace: "catalog-ns",
+						Channels: []olmapi.PackageChannel{
+							{
+								Name: channel,
+							},
+						},
+					},
+				},
+			},
+		}
+	}
+
+	type args struct {
+		k8sClient client.Client
+	}
+	tests := []struct {
+		name      string
+		k8sClient client.Client
+		want      types.NamespacedName
+		wantErr   bool
+	}{
+		{
+			name:      "Get catalogsource",
+			k8sClient: nil,
+			want: types.NamespacedName{
+				Name:      "mce-catalog",
+				Namespace: "catalog-ns",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetCatalogSource(tt.k8sClient)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetCatalogSource() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetCatalogSource() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -37,6 +37,10 @@ var (
 	operatorGroupName          = "default"
 )
 
+var mockPackageManifests = func() *olmapi.PackageManifestList {
+	return &olmapi.PackageManifestList{}
+}
+
 func labels(m *operatorsv1.MultiClusterHub) map[string]string {
 	return map[string]string{
 		// "installer.name":        m.GetName(),
@@ -168,37 +172,6 @@ func applySubscriptionConfig(sub *subv1alpha1.Subscription, c *subv1alpha1.Subsc
 	sub.Spec.Config = c
 }
 
-// func overrideSub(sub *subv1alpha1.Subscription, mceAnnotationOverrides string, c *subv1alpha1.SubscriptionConfig) *subv1alpha1.Subscription {
-// 	log := log.FromContext(context.Background())
-// 	mceSub := &subv1alpha1.SubscriptionSpec{}
-// 	err := json.Unmarshal([]byte(mceAnnotationOverrides), mceSub)
-// 	if err != nil {
-// 		log.Info(fmt.Sprintf("Failed to unmarshal MultiClusterEngine annotation: %s.", mceAnnotationOverrides))
-// 		return sub
-// 	}
-
-// 	if mceSub.Channel != "" {
-// 		sub.Spec.Channel = mceSub.Channel
-// 	}
-// 	if mceSub.Package != "" {
-// 		sub.Spec.Package = mceSub.Package
-// 	}
-// 	if mceSub.CatalogSource != "" {
-// 		sub.Spec.CatalogSource = mceSub.CatalogSource
-// 	}
-// 	if mceSub.CatalogSourceNamespace != "" {
-// 		sub.Spec.CatalogSourceNamespace = mceSub.CatalogSourceNamespace
-// 	}
-// 	if mceSub.StartingCSV != "" {
-// 		sub.Spec.StartingCSV = mceSub.StartingCSV
-// 	}
-// 	if mceSub.InstallPlanApproval != "" {
-// 		sub.Spec.InstallPlanApproval = mceSub.InstallPlanApproval
-// 	}
-// 	sub.Spec.Config = c
-// 	return sub
-// }
-
 func Namespace() *corev1.Namespace {
 	return &corev1.Namespace{
 		TypeMeta: metav1.TypeMeta{
@@ -230,9 +203,9 @@ func OperatorGroup() *olmv1.OperatorGroup {
 // GetCatalogSource returns the name and namespace of an MCE catalogSource with the required channel.
 // Returns error if two or more catalogsources satsify criteria.
 func GetCatalogSource(k8sClient client.Client) (types.NamespacedName, error) {
-	if utils.IsUnitTest() {
-		return types.NamespacedName{Name: "multiclusterengine-catalog", Namespace: "openshift-marketplace"}, nil
-	}
+	// if utils.IsUnitTest() {
+	// 	return types.NamespacedName{Name: "multiclusterengine-catalog", Namespace: "openshift-marketplace"}, nil
+	// }
 
 	nn := types.NamespacedName{}
 
@@ -297,7 +270,12 @@ func GetMCEPackageManifests(k8sClient client.Client) ([]olmapi.PackageManifest, 
 	ctx := context.Background()
 	log := log.FromContext(ctx)
 	packageManifests := &olmapi.PackageManifestList{}
-	err := k8sClient.List(ctx, packageManifests)
+	var err error
+	if utils.IsUnitTest() {
+		packageManifests = mockPackageManifests()
+	} else {
+		err = k8sClient.List(ctx, packageManifests)
+	}
 	if err != nil {
 		log.Error(err, "failed to list package manifests")
 		return nil, err
