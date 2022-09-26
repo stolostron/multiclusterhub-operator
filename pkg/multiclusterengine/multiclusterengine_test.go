@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -255,27 +254,6 @@ func TestGetCatalogSource(t *testing.T) {
 	defer os.Unsetenv("UNIT_TEST")
 	defer os.Unsetenv("OPERATOR_PACKAGE")
 
-	mockPackageManifests = func() *olmapi.PackageManifestList {
-		return &olmapi.PackageManifestList{
-			Items: []olmapi.PackageManifest{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "multicluster-engine",
-					},
-					Status: olmapi.PackageManifestStatus{
-						CatalogSource:          "mce-catalog",
-						CatalogSourceNamespace: "catalog-ns",
-						Channels: []olmapi.PackageChannel{
-							{
-								Name: channel,
-							},
-						},
-					},
-				},
-			},
-		}
-	}
-
 	type args struct {
 		k8sClient client.Client
 	}
@@ -289,8 +267,8 @@ func TestGetCatalogSource(t *testing.T) {
 			name:      "Get catalogsource",
 			k8sClient: nil,
 			want: types.NamespacedName{
-				Name:      "mce-catalog",
-				Namespace: "catalog-ns",
+				Name:      "multiclusterengine-catalog",
+				Namespace: "openshift-marketplace",
 			},
 		},
 	}

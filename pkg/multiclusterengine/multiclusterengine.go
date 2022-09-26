@@ -37,8 +37,26 @@ var (
 	operatorGroupName          = "default"
 )
 
+// mocks returning a single manifest
 var mockPackageManifests = func() *olmapi.PackageManifestList {
-	return &olmapi.PackageManifestList{}
+	return &olmapi.PackageManifestList{
+		Items: []olmapi.PackageManifest{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multicluster-engine",
+				},
+				Status: olmapi.PackageManifestStatus{
+					CatalogSource:          "multiclusterengine-catalog",
+					CatalogSourceNamespace: "openshift-marketplace",
+					Channels: []olmapi.PackageChannel{
+						{
+							Name: desiredChannel(),
+						},
+					},
+				},
+			},
+		},
+	}
 }
 
 func labels(m *operatorsv1.MultiClusterHub) map[string]string {
