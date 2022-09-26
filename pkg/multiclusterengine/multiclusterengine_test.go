@@ -285,3 +285,14 @@ func TestGetCatalogSource(t *testing.T) {
 		})
 	}
 }
+
+func TestDesiredPackage(t *testing.T) {
+	os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
+	if got := DesiredPackage(); got != packageName {
+		t.Errorf("DesiredPackage() = %v, want %v", got, packageName)
+	}
+	os.Unsetenv("OPERATOR_PACKAGE")
+	if got := DesiredPackage(); got != communityPackageName {
+		t.Errorf("DesiredPackage() = %v, want %v", got, communityPackageName)
+	}
+}
