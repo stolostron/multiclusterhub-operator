@@ -26,11 +26,6 @@ arch:
 
 ocpingress: ""
 
-console:
-  resources:
-    requests:
-      memory: "40Mi"
-      cpu: "3m"
 
 clusterImageSets:
   subscriptionPause: "false"

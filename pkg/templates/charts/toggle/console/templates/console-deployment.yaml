@@ -97,7 +97,9 @@ spec:
         image: {{ .Values.global.imageOverrides.console }}
         imagePullPolicy: {{ .Values.global.pullPolicy }}
         resources:
-        {{- toYaml .Values.console.resources | nindent 10 }}
+        requests:
+          memory: "40Mi"
+          cpu: "3m"
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
