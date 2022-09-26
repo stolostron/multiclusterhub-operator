@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	mchov1 "github.com/stolostron/multiclusterhub-operator/api/v1"
@@ -330,6 +331,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 		Expect(mcev1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(configv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(consolev1.AddToScheme(clientScheme)).Should(Succeed())
+		Expect(olmapi.AddToScheme(clientScheme)).Should(Succeed())
 
 		k8sManager, err := ctrl.NewManager(clientConfig, ctrl.Options{
 			Scheme:                 clientScheme,

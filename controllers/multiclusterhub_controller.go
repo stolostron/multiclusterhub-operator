@@ -27,7 +27,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Masterminds/semver"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/channel"
 	"github.com/stolostron/multiclusterhub-operator/pkg/deploying"
@@ -69,10 +68,11 @@ import (
 
 // MultiClusterHubReconciler reconciles a MultiClusterHub object
 type MultiClusterHubReconciler struct {
-	Client    client.Client
-	CacheSpec CacheSpec
-	Scheme    *runtime.Scheme
-	Log       logr.Logger
+	Client         client.Client
+	UncachedClient client.Client
+	CacheSpec      CacheSpec
+	Scheme         *runtime.Scheme
+	Log            logr.Logger
 }
 
 const (
@@ -106,6 +106,7 @@ var (
 //+kubebuilder:rbac:groups=console.openshift.io;search.open-cluster-management.io,resources=consoleplugins;searches,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=operator.openshift.io,resources=consoles,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups="";"apps";monitoring.coreos.com,resources=servicemonitors;deployments;services;serviceaccounts,verbs=patch;delete;get;deletecollection
+//+kubebuilder:rbac:groups=packages.operators.coreos.com,resources=packagemanifests,verbs=get;list;watch;update;patch
 
 // AgentServiceConfig webhook delete check
 //+kubebuilder:rbac:groups=agent-install.openshift.io,resources=agentserviceconfigs,verbs=get;list;watch
@@ -347,150 +348,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 
-	mchCurrent := multiClusterHub.Status.CurrentVersion
-	mchDesired := multiClusterHub.Status.DesiredVersion
-	r.Log.Info(fmt.Sprintf("MCH Current Version: '%s', Desired Version: '%s'", mchCurrent, mchDesired))
-	isUpgrade := false
-	isACM26x := false
-	// Create version constraints
-	version20x, err := semver.NewConstraint("2.1.x")
-	if err != nil {
-		r.Log.Error(err, "error creating semantic version constraint 2.1.x")
-		return ctrl.Result{}, err
-	}
-	versionGTE210, err := semver.NewConstraint(">= 2.2.0")
-	if err != nil {
-		r.Log.Error(err, "error creating semantic version constraint >=2.2.0")
-		return ctrl.Result{}, err
-	}
-	version25x, err := semver.NewConstraint("2.6.x")
-	if err != nil {
-		r.Log.Error(err, "error creating semantic version constraint 2.6.x")
-		return ctrl.Result{}, err
-	}
-	version26x, err := semver.NewConstraint("2.7.x")
-	if err != nil {
-		r.Log.Error(err, "error creating semantic version constraint 2.7.x")
-		return ctrl.Result{}, err
-	}
-	// Check current MCH version
-	if mchCurrent == "" {
-		isACM26x = true
-	} else {
-		r.Log.Info("Checking if current version is 2.7")
-		// Create semantic versions
-		mchCV, err := semver.NewVersion(mchCurrent)
-		if err != nil {
-			r.Log.Error(err, fmt.Sprintf("error creating semantic version for mch current version '%s'", mchCurrent))
-			return ctrl.Result{}, err
-		}
-		isACM26x = version26x.Check(mchCV)
-		if mchDesired != "" {
-			r.Log.Info("Checking if desired version is 2.7")
-			mchDV, err := semver.NewVersion(mchDesired)
-			if err != nil {
-				r.Log.Error(err, fmt.Sprintf("error creating semantic version for mch desired version '%s'", mchDesired))
-				return ctrl.Result{}, err
-			}
-			isUpgrade = version25x.Check(mchCV) && version26x.Check(mchDV)
-		}
-	}
-
-	r.Log.Info(fmt.Sprintf("isACM26x=%t, isUpgrade=%t", isACM26x, isUpgrade))
-	//Check if ACM is Version 2.6 or upgrading 2.5 -> 2.6
-	if isACM26x || isUpgrade {
-		mce, err := r.GetMCECR(multiClusterHub)
-		if err != nil {
-			r.Log.Error(err, "error getting multiclusterengine cr")
-			return ctrl.Result{}, err
-		}
-		mceCurrent := mce.Status.CurrentVersion
-		if mceCurrent != "" {
-			r.Log.Info("Checking MCE current version")
-			mceCV, err := semver.NewVersion(mceCurrent)
-			if err != nil {
-				r.Log.Error(err, fmt.Sprintf("error creating semantic version for mce current version '%s'", mceCurrent))
-				return ctrl.Result{}, err
-			}
-			//Check MCE version
-			switch {
-			case versionGTE210.Check(mceCV):
-				msg := fmt.Sprintf("MultiClusterEngine version '%s' does not need to be updated", mceCurrent)
-				r.Log.Info(msg)
-				RemoveHubCondition(&multiClusterHub.Status, operatorv1.Blocked)
-				mceUpgradeStartTime = time.Time{}
-			case version20x.Check(mceCV):
-				// MCE needs to be upgraded
-				mceDesired := mce.Status.DesiredVersion
-				if mceDesired != "" {
-					r.Log.Info("Checking MCE desired version")
-					mceDV, err := semver.NewVersion(mceDesired)
-					if err != nil {
-						r.Log.Error(err, fmt.Sprintf("error creating semantic version for mce desired version '%s'", mceDesired))
-						return ctrl.Result{}, err
-					}
-					r.Log.Info("Checking if MCE upgrade is in progress")
-					if versionGTE210.Check(mceDV) {
-						r.Log.Info("MCE upgrade in progress, checking elapsed time")
-						now := time.Now()
-						if mceUpgradeStartTime.IsZero() {
-							mceUpgradeStartTime = now
-						} else {
-							endTime := mceUpgradeStartTime.Add(mceUpgradeDuration)
-							if now.After(endTime) {
-								msg := fmt.Sprintf(
-									"MultiClusterEngine upgrade from '%s' to '%s' not progressing after %s",
-									mceCurrent, mceDesired, mceUpgradeDuration.String(),
-								)
-								err := fmt.Errorf(msg)
-								blocking := NewHubCondition(
-									operatorv1.Blocked, metav1.ConditionTrue, ResourceBlockReason, msg,
-								)
-								r.Log.Error(err, msg)
-								SetHubCondition(&multiClusterHub.Status, *blocking)
-								return ctrl.Result{}, err
-							}
-						}
-						// Upgrade progessing, requeue request
-						msg := fmt.Sprintf("MultiClusterEngine updating from '%s' to '%s'", mceCurrent, mceDesired)
-						r.Log.Info(msg)
-						return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-					}
-				}
-				// Upgrade needed
-				r.Log.Info(fmt.Sprintf("MultiClusterEngine version '%s' needs to be updated", mceCurrent))
-				nsn, err := r.GetMCESubNSN(multiClusterHub)
-				if err != nil {
-					r.Log.Error(err, "Failed to get MCE Sub NSN while starting MCE upgrade")
-					return ctrl.Result{}, err
-				}
-				mceSub, err := r.GetMCESub(nsn)
-				if err != nil {
-					r.Log.Error(err, "Failed to get MCE Sub while starting MCE upgrade")
-					return ctrl.Result{}, err
-				}
-				mceSub.Spec.Channel = "stable-2.2"
-				err = r.Client.Update(ctx, mceSub)
-				if err != nil {
-					r.Log.Error(err, "Failed to update MCE Sub while starting MCE upgrade")
-					return ctrl.Result{}, err
-				}
-				return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-			default:
-				msg := fmt.Sprintf(
-					"When upgrading from version 2.5 to 2.6, MultiClusterEngine version '%s' must be >= 2.0.0",
-					mceCurrent,
-				)
-				err := fmt.Errorf(msg)
-				blocking := NewHubCondition(operatorv1.Blocked, metav1.ConditionTrue, ResourceBlockReason, msg)
-				r.Log.Error(err, msg)
-				SetHubCondition(&multiClusterHub.Status, *blocking)
-				mceUpgradeStartTime = time.Time{}
-				return ctrl.Result{}, err
-			}
-		}
-	}
-
 	result, err = r.ingressDomain(multiClusterHub)
 	if result != (ctrl.Result{}) {
 		return result, err
@@ -512,6 +369,11 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		)
 		SetHubCondition(&multiClusterHub.Status, *condition)
 		return ctrl.Result{}, err
+	}
+
+	result, err = r.waitForMCEReady(ctx, version.RequiredMCEVersion)
+	if result != (ctrl.Result{}) {
+		return result, err
 	}
 
 	// Install the rest of the subscriptions in no particular order

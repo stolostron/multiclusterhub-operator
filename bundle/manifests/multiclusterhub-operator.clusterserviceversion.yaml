@@ -18,7 +18,7 @@ metadata:
     categories: Integration & Delivery
     certified: "false"
     description: Open management of Openshift and Kubernetes clusters
-    operators.operatorframework.io/builder: operator-sdk-v1.16.0+git
+    operators.operatorframework.io/builder: operator-sdk-v1.22.2
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/open-cluster-management/multiclusterhub-operator
     support: The Open Cluster Management Project
@@ -532,9 +532,21 @@ spec:
           - patch
           - update
           - watch
+        - apiGroups:
+          - packages.operators.coreos.com
+          resources:
+          - packagemanifests
+          verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
         serviceAccountName: multiclusterhub-operator
       deployments:
-      - name: multiclusterhub-operator
+      - label:
+          control-plane: multiclusterhub-operator
+        name: multiclusterhub-operator
         spec:
           replicas: 1
           selector:

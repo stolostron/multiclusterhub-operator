@@ -493,7 +493,6 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(m *operatorv1.Mul
 	}
 	// If MCE then maintain InfrastructureCustomNamespace if present
 	if len(mceList.Items) == 1 {
-		r.Log.Info("Lets preserve that namespace!")
 		if mceList.Items[0].Spec.Overrides != nil && mceList.Items[0].Spec.Overrides.InfrastructureCustomNamespace != "" {
 			mce.Spec.Overrides.InfrastructureCustomNamespace = mceList.Items[0].Spec.Overrides.InfrastructureCustomNamespace
 		}
@@ -547,17 +546,12 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(m *operatorv1.Mul
 func (r *MultiClusterHubReconciler) ensureOLMSubscription(m *operatorv1.MultiClusterHub, sub *subv1alpha1.Subscription) (ctrl.Result, error) {
 	ctx := context.Background()
 
-	r.Log.Info(fmt.Sprintf("Ensuring OLM %s/%s subscription", sub.GetNamespace(), sub.GetName()))
 	force := true
-
 	err := r.Client.Patch(ctx, sub, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
 	if err != nil {
 		r.Log.Info(fmt.Sprintf("Error: %s", err.Error()))
 		return ctrl.Result{Requeue: true}, nil
 	}
-
-	condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
-	SetHubCondition(&m.Status, *condition)
 
 	existingSub := &subv1alpha1.Subscription{}
 	err = r.Client.Get(ctx, types.NamespacedName{
@@ -1077,7 +1071,7 @@ func (r *MultiClusterHubReconciler) GetMCESub(nsn types.NamespacedName) (*subv1a
 }
 
 func (r *MultiClusterHubReconciler) GetMultiClusterEngine(mce *mcev1.MultiClusterEngine) (*unstructured.Unstructured, error) {
-	multiClusterEngine, err := r.ManagedByMCEExists()
+	multiClusterEngine, err := r.PreexistingMCEExists()
 	if err != nil {
 		fmt.Println(err.Error())
 		return nil, err
@@ -1101,13 +1095,127 @@ func (r *MultiClusterHubReconciler) GetMultiClusterEngine(mce *mcev1.MultiCluste
 	return &unstructured.Unstructured{Object: unstructuredMCE}, nil
 }
 
-func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
-
-	ctx := context.Background()
+func (r *MultiClusterHubReconciler) ensureMCESubscription(multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+	// check for existing subscription
+	mceSub, err := r.getMCESubscription()
+	if err != nil {
+		return ctrl.Result{Requeue: true}, err
+	}
 	subConfig, err := r.GetSubConfig()
 	if err != nil {
 		return ctrl.Result{Requeue: true}, err
 	}
+
+	// if subscription not found then set it up
+	if mceSub == nil {
+		result, err := r.ensureNamespace(multiClusterHub, multiclusterengine.Namespace())
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+
+		result, err = r.ensurePullSecret(multiClusterHub, multiclusterengine.Namespace().Name)
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+
+		result, err = r.ensureOperatorGroup(multiClusterHub, multiclusterengine.OperatorGroup())
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+
+		// when creating the subscription check for a catalogSource to use
+		mceSub := multiclusterengine.Subscription(multiClusterHub, subConfig, utils.IsCommunityMode())
+		mceSub.Labels = utils.AddInstallerLabels(mceSub.Labels, multiClusterHub.Name, multiClusterHub.Namespace)
+
+		ctlSrc, err := multiclusterengine.GetCatalogSource(r.UncachedClient)
+		if err != nil {
+			r.Log.Info("Failed to find a suitable catalogsource.", "error", err)
+			return ctrl.Result{RequeueAfter: 5 * time.Second}, err
+		}
+		mceSub.Spec.CatalogSource = ctlSrc.Name
+		mceSub.Spec.CatalogSourceNamespace = ctlSrc.Namespace
+
+		multiclusterengine.ApplyAnnotationOverrides(mceSub, multiClusterHub)
+		result, err = r.ensureOLMSubscription(multiClusterHub, mceSub)
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+		return ctrl.Result{}, nil
+	}
+
+	s := multiclusterengine.Subscription(multiClusterHub, subConfig, utils.IsCommunityMode())
+	// preserve catalogSource info
+	s.Spec.CatalogSource = mceSub.Spec.CatalogSource
+	s.Spec.CatalogSourceNamespace = mceSub.Spec.CatalogSourceNamespace
+
+	// if updating channel must remove startingCSV
+	if s.Spec.Channel != mceSub.Spec.Channel {
+		s.Spec.StartingCSV = ""
+	}
+
+	// If created by user use same name/namespace
+	if !createdByMCH(mceSub, multiClusterHub) {
+		s.Name = mceSub.Name
+		s.Namespace = mceSub.Namespace
+	}
+
+	multiclusterengine.ApplyAnnotationOverrides(s, multiClusterHub)
+	result, err := r.ensureOLMSubscription(multiClusterHub, s)
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func createdByMCH(s *subv1alpha1.Subscription, m *operatorv1.MultiClusterHub) bool {
+	l := s.GetLabels()
+	if l == nil {
+		return false
+	}
+	return l["installer.name"] == m.GetName() && l["installer.namespace"] == m.GetNamespace()
+}
+
+// find MCE subscription. label it for future. return nil if no sub found.
+func (r *MultiClusterHubReconciler) getMCESubscription() (*subv1alpha1.Subscription, error) {
+	ctx := context.Background()
+
+	// first find subscription via managed-by label
+	subList := &subv1alpha1.SubscriptionList{}
+	err := r.Client.List(ctx, subList, &client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(map[string]string{
+			utils.MCEManagedByLabel: "true",
+		}),
+	})
+	if err != nil {
+		return nil, err
+	} else if err == nil && len(subList.Items) == 1 {
+		return &subList.Items[0], nil
+	} else if len(subList.Items) > 1 {
+		return nil, fmt.Errorf("multiple MCE subscriptions found managed by MCH. Only one MCE subscription is supported")
+	}
+
+	// if label doesn't work find it via .spec.name (it's package)
+	r.Log.Info("Failed to find subscription via label")
+	for i := range subList.Items {
+		if subList.Items[i].Spec.Package == multiclusterengine.DesiredPackage() {
+			// adding label so it can be found in the future
+			labels := subList.Items[i].GetLabels()
+			labels[utils.MCEManagedByLabel] = "true"
+			subList.Items[i].SetLabels(labels)
+			r.Log.Info("Adding label to subscription")
+			if err := r.Client.Update(ctx, &subList.Items[i]); err != nil {
+				r.Log.Error(err, "Failed to add managedBy preexisting MCE with MCH spec")
+				return &subList.Items[i], err
+			}
+			return &subList.Items[i], nil
+		}
+	}
+	return nil, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+	ctx := context.Background()
 
 	// Deletes conflicting components and adds managedby label to MCE if necessary
 	result, err := r.prepareForMultiClusterEngineInstall(multiClusterHub)
@@ -1115,14 +1223,19 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(multiClusterHub *op
 		return result, err
 	}
 
-	existingMCE, err := r.ManagedByMCEExists()
+	// confirm subscription and reqs exist and are configured correctly
+	result, err = r.ensureMCESubscription(multiClusterHub)
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	existingMCE, err := r.PreexistingMCEExists()
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
 	// Detect if preexisting MCE exists, if so update MCE spec. Otherwise, install all MCE resources
 	if existingMCE != nil {
-		r.Log.Info("Updating preexisting MCE")
 		existingMCE.Spec.AvailabilityConfig = mcev1.AvailabilityType(multiClusterHub.Spec.AvailabilityConfig)
 		existingMCE.Spec.NodeSelector = multiClusterHub.Spec.NodeSelector
 		utils.UpdateMCEOverrides(existingMCE, multiClusterHub)
@@ -1134,35 +1247,6 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(multiClusterHub *op
 		return ctrl.Result{}, nil
 	}
 
-	result, err = r.ensureNamespace(multiClusterHub, multiclusterengine.Namespace())
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	result, err = r.ensurePullSecret(multiClusterHub, multiclusterengine.Namespace().Name)
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	result, err = r.ensureOperatorGroup(multiClusterHub, multiclusterengine.OperatorGroup())
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	if mceAnnotationOverrides := utils.GetMCEAnnotationOverrides(multiClusterHub); mceAnnotationOverrides != "" {
-		r.Log.Info(fmt.Sprintf("Overridding MultiClusterEngine Subscription: %s", mceAnnotationOverrides))
-	}
-
-	community, err := operatorv1.IsCommunity()
-	if err != nil {
-		return result, err
-	}
-
-	result, err = r.ensureOLMSubscription(multiClusterHub, multiclusterengine.Subscription(multiClusterHub, subConfig, community))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
 	result, err = r.ensureMultiClusterEngineCR(multiClusterHub, multiclusterengine.MultiClusterEngine(multiClusterHub))
 	if result != (ctrl.Result{}) {
 		return result, err
@@ -1171,6 +1255,40 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(multiClusterHub *op
 	return ctrl.Result{}, nil
 }
 
+// waitForMCE checks that MCE is in a running state and at the expected version.
+func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context, mceVersion string) (ctrl.Result, error) {
+	mceList := &mcev1.MultiClusterEngineList{}
+	err := r.Client.List(ctx, mceList)
+	if err != nil {
+		r.Log.Info(fmt.Sprintf("error locating MCE: %s. Error: %s", multiclusterengine.MulticlusterengineName, err.Error()))
+		return ctrl.Result{Requeue: true}, err
+	}
+
+	if len(mceList.Items) != 1 {
+		return ctrl.Result{Requeue: true}, e.New("Did not find single MCE instance")
+	}
+	existingMCE := mceList.Items[0]
+
+	split := strings.Split(mceVersion, ".")
+	xyVersion := fmt.Sprintf("%s.%s.x", split[0], split[1])
+	minimum, err := semver.NewConstraint(xyVersion)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	cv := existingMCE.Status.CurrentVersion
+	mceSemVer, err := semver.NewVersion(cv)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if !minimum.Check(mceSemVer) {
+		return ctrl.Result{RequeueAfter: resyncPeriod}, e.New(fmt.Sprintf("%s did not meet version requirement %s", cv, xyVersion))
+	}
+
+	return ctrl.Result{}, nil
+}
+
+// prepareForMultiClusterEngineInstall deletes conflicting components and adds managedby label to MCE if necessary
 func (r *MultiClusterHubReconciler) prepareForMultiClusterEngineInstall(multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	ctx := context.Background()
 
@@ -1403,21 +1521,26 @@ func mergeErrors(errs []error) string {
 	return strings.Join(errStrings, " ; ")
 }
 
-func (r *MultiClusterHubReconciler) ManagedByMCEExists() (*mcev1.MultiClusterEngine, error) {
+func (r *MultiClusterHubReconciler) PreexistingMCEExists() (*mcev1.MultiClusterEngine, error) {
 	ctx := context.Background()
 	// First check if MCE is preexisting
 	mceList := &mcev1.MultiClusterEngineList{}
-	err := r.Client.List(ctx, mceList, &client.ListOptions{
-		LabelSelector: labels.SelectorFromSet(map[string]string{
-			utils.MCEManagedByLabel: "true",
-		}),
-	})
+	err := r.Client.List(ctx, mceList)
 	if err != nil && !errors.IsNotFound(err) {
 		if !strings.Contains(err.Error(), "no matches for kind \"MultiClusterEngine\"") {
 			r.Log.Info(fmt.Sprintf("error locating MCE: %s. Error: %s", multiclusterengine.MulticlusterengineName, err.Error()))
 			return nil, err
 		}
 	} else if err == nil && len(mceList.Items) == 1 {
+		labels := mceList.Items[0].Labels
+		if labels == nil {
+			return nil, nil
+		}
+		_, nameExists := labels["installer.name"]
+		_, namespaceExists := labels["installer.namespace"]
+		if nameExists && namespaceExists {
+			return nil, nil
+		}
 		// Preexisting MCE exists, no need to terminate resources
 		return &mceList.Items[0], nil
 	} else if len(mceList.Items) > 1 {

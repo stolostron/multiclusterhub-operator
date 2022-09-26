@@ -144,7 +144,7 @@ func (r *MultiClusterHubReconciler) cleanupCRDs(log logr.Logger, m *operatorsv1.
 func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	ctx := context.Background()
 
-	managedByMCE, err := r.ManagedByMCEExists()
+	managedByMCE, err := r.PreexistingMCEExists()
 	if err != nil {
 		return err
 	}
@@ -176,45 +176,42 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 		}
 
 	}
-	// subConfig = &subv1alpha1.SubscriptionConfig{}
-	subConfig, err := r.GetSubConfig()
-	if err != nil {
-		return err
-	}
 
 	if utils.IsUnitTest() {
 		return nil
 	}
 
-	community, err := operatorsv1.IsCommunity()
+	mceSub, err := r.getMCESubscription()
 	if err != nil {
 		return err
 	}
 
-	csv, err := r.GetCSVFromSubscription(multiclusterengine.Subscription(m, subConfig, community))
-	if err == nil { // CSV Exists
-		err = r.Client.Delete(ctx, csv)
-		if err != nil && !errors.IsNotFound(err) {
-			return err
+	if mceSub != nil {
+		csv, err := r.GetCSVFromSubscription(mceSub)
+		if err == nil { // CSV Exists
+			err = r.Client.Delete(ctx, csv)
+			if err != nil && !errors.IsNotFound(err) {
+				return err
+			}
+			err = r.Client.Get(ctx,
+				types.NamespacedName{Name: csv.GetName(), Namespace: utils.MCESubscriptionNamespace},
+				csv)
+			if err == nil {
+				return fmt.Errorf("CSV has not yet been terminated")
+			}
 		}
+
 		err = r.Client.Get(ctx,
-			types.NamespacedName{Name: csv.GetName(), Namespace: utils.MCESubscriptionNamespace},
-			csv)
+			types.NamespacedName{Name: mceSub.Name, Namespace: mceSub.Namespace},
+			&subv1alpha1.Subscription{})
 		if err == nil {
-			return fmt.Errorf("CSV has not yet been terminated")
-		}
-	}
 
-	err = r.Client.Get(ctx,
-		types.NamespacedName{Name: utils.MCESubscriptionName, Namespace: utils.MCESubscriptionNamespace},
-		&subv1alpha1.Subscription{})
-	if err == nil {
-
-		err = r.Client.Delete(ctx, multiclusterengine.Subscription(m, subConfig, community))
-		if err != nil && !errors.IsNotFound(err) {
-			return err
+			err = r.Client.Delete(ctx, mceSub)
+			if err != nil && !errors.IsNotFound(err) {
+				return err
+			}
+			return fmt.Errorf("subscription has not yet been terminated")
 		}
-		return fmt.Errorf("subscription has not yet been terminated")
 	}
 
 	err = r.Client.Delete(ctx, multiclusterengine.OperatorGroup())
@@ -373,7 +370,7 @@ func (r *MultiClusterHubReconciler) cleanupFoundation(reqLogger logr.Logger, m *
 func (r *MultiClusterHubReconciler) orphanOwnedMultiClusterEngine(m *operatorsv1.MultiClusterHub) error {
 	ctx := context.Background()
 
-	managedByMCE, err := r.ManagedByMCEExists()
+	managedByMCE, err := r.PreexistingMCEExists()
 	if err != nil {
 		return err
 	}
