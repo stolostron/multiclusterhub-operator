@@ -5,7 +5,6 @@ go 1.18
 require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/semver/v3 v3.1.1
-	github.com/fatih/structs v1.1.0
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-logr/logr v1.2.3
 	github.com/onsi/ginkgo/v2 v2.1.4
@@ -18,7 +17,7 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.58.0
 	github.com/stolostron/backplane-operator v0.0.0-20220727154840-1f60baf1fb98
 	github.com/stolostron/search-v2-operator v0.0.0-20220721051905-143d28ab4f10
-	helm.sh/helm/v3 v3.9.2
+	helm.sh/helm/v3 v3.9.4
 	k8s.io/api v0.24.3
 	k8s.io/apiextensions-apiserver v0.24.3
 	k8s.io/apimachinery v0.24.3
