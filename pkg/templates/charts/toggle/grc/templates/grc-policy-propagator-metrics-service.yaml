@@ -3,19 +3,16 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}-policy-propagator-metrics
+  name: grc-policy-propagator-metrics
   labels:
-    app: {{ template "grc.name" . }}
-    chart: {{ template "grc.chart" . }}
+    app: grc
+    chart: grc-chart-{{ .Values.hubconfig.hubVersion }}
     component: "ocm-policy-propagator"
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/name: {{ template "grc.name" . }}
-    helm.sh/chart: {{ template "grc.chart" . }}
+    release: grc
+    app.kubernetes.io/instance: grc
+    app.kubernetes.io/name: grc
   annotations:
-    service.beta.openshift.io/serving-cert-secret-name: {{ .Release.Name }}-grc-metrics-cert
+    service.beta.openshift.io/serving-cert-secret-name: grc-grc-metrics-cert
 spec:
   ports:
   - name: https
@@ -23,8 +20,8 @@ spec:
     protocol: TCP
     targetPort: 8443
   selector:
-    app: {{ template "grc.name" . }}
+    app: grc
     component: "ocm-policy-propagator"
-    release: {{ .Release.Name }}
+    release: grc
   sessionAffinity: None
   type: ClusterIP

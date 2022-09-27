@@ -3,18 +3,15 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: ocm-{{ .Release.Name }}-policy-propagator-metrics
+  name: ocm-grc-policy-propagator-metrics
   namespace: openshift-monitoring
   labels:
-    app: {{ template "grc.name" . }}
-    chart: {{ template "grc.chart" . }}
+    app: grc
+    chart: grc-chart-{{ .Values.hubconfig.hubVersion }}
     component: "ocm-policy-propagator"
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/name: {{ template "grc.name" . }}
-    helm.sh/chart: {{ template "grc.chart" . }}
+    release: grc
+    app.kubernetes.io/instance: grc
+    app.kubernetes.io/name: grc
 spec:
   endpoints:
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
@@ -28,9 +25,9 @@ spec:
   jobLabel: ocm-grc-policy-propagator
   namespaceSelector:
     matchNames:
-    - {{ .Release.Namespace }}
+    - {{ .Values.global.namespace }}
   selector:
     matchLabels:
-      app: {{ template "grc.name" . }}
+      app: grc
       component: "ocm-policy-propagator"
-      release: {{ .Release.Name }}
+      release: grc

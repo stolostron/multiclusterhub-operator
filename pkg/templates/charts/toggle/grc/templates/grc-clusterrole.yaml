@@ -2,18 +2,15 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ .Values.org }}:{{ .Release.Name }}:clusterrole
-  namespace: {{ .Release.Namespace }}
+  name: {{ .Values.org }}:grc:clusterrole
+  namespace: {{ .Values.global.namespace }}
   labels:
-    app: {{ template "grc.name" . }}
-    chart: {{ template "grc.chart" . }}
+    app: grc
+    chart: grc-chart-{{ .Values.hubconfig.hubVersion }}
     component: "ocm-grc-clusterrole"
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/name: {{ template "grc.name" . }}
-    helm.sh/chart: {{ template "grc.chart" . }}
+    release: grc
+    app.kubernetes.io/instance: grc
+    app.kubernetes.io/name: grc
 rules:
 - apiGroups:
   - tower.ansible.com
@@ -131,18 +128,15 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ .Values.org }}:{{ .Release.Name }}:clusterrole-aggregate
-  namespace: {{ .Release.Namespace }}
+  name: {{ .Values.org }}:grc:clusterrole-aggregate
+  namespace: {{ .Values.global.namespace }}
   labels:
-    app: {{ template "grc.name" . }}
-    chart: {{ template "grc.chart" . }}
+    app: grc
+    chart: grc-chart-{{ .Values.hubconfig.hubVersion }}
     component: "ocm-grc-clusterrole-aggregate"
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/name: {{ template "grc.name" . }}
-    helm.sh/chart: {{ template "grc.chart" . }}
+    release: grc
+    app.kubernetes.io/instance: grc
+    app.kubernetes.io/name: grc
     rbac.authorization.k8s.io/aggregate-to-ocm-cluster-manager-admin: "true"
 rules:
 - apiGroups: ["tower.ansible.com"]

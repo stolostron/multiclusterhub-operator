@@ -2,38 +2,32 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: {{ .Release.Name }}-policy-propagator
+  name: grc-policy-propagator
   labels:
-    app: {{ template "grc.name" . }}
-    chart: {{ template "grc.chart" . }}
+    app: grc
+    chart: grc-chart-{{ .Values.hubconfig.hubVersion }}
     component: "ocm-policy-propagator"
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/name: {{ template "grc.name" . }}
-    helm.sh/chart: {{ template "grc.chart" . }}
+    release: grc
+    app.kubernetes.io/instance: grc
+    app.kubernetes.io/name: grc
 spec:
   replicas: {{ .Values.hubconfig.replicaCount }}
   selector:
     matchLabels:
-      app: {{ template "grc.name" . }}
+      app: grc
       component: "ocm-policy-propagator"
-      release: {{ .Release.Name }}
+      release: grc
   template:
     metadata:
       labels:
-        app: {{ template "grc.name" . }}
+        app: grc
         ocm-antiaffinity-selector: "grcpolicypropagator"
         component: "ocm-policy-propagator"
         name: governance-policy-propagator
-        release: {{ .Release.Name }}
-        chart: {{ template "grc.chart" . }}
-        heritage: {{ .Release.Service }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
-        app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/name: {{ template "grc.name" . }}
-        helm.sh/chart: {{ template "grc.chart" . }}
+        release: grc
+        chart: grc-chart-{{ .Values.hubconfig.hubVersion }}
+        app.kubernetes.io/instance: grc
+        app.kubernetes.io/name: grc
     spec:
       serviceAccountName: grc-sa
       hostNetwork: false
@@ -49,7 +43,10 @@ spec:
               - key: kubernetes.io/arch
                 operator: In
                 values:
-                {{- toYaml .Values.arch | nindent 18}}
+                - amd64
+                - ppc64le
+                - s390x
+                - arm64
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 70
@@ -72,7 +69,13 @@ spec:
                   - grcpolicypropagator
       {{- with .Values.hubconfig.tolerations }}
       tolerations:
-      {{- toYaml . | nindent 8 }}
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
       {{- end }}
       containers:
       - name: kube-rbac-proxy
@@ -98,7 +101,9 @@ spec:
         image: {{ .Values.global.imageOverrides.governance_policy_propagator}}
         imagePullPolicy: "{{ .Values.global.pullPolicy }}"
         resources:
-        {{- toYaml .Values.governance.resources | nindent 10 }}
+          requests:
+            memory: "64Mi"
+            cpu: "25m"
         securityContext:
           privileged: false
           readOnlyRootFilesystem: true
@@ -137,10 +142,10 @@ spec:
         emptyDir: {}
       - name: metrics-cert
         secret:
-          secretName: {{ .Release.Name }}-grc-metrics-cert
-      {{- if .Values.pullSecret }}
+          secretName: grc-grc-metrics-cert
+      {{- if .Values.global.pullSecret  }}
       imagePullSecrets:
-      - name: {{ .Values.pullSecret }}
+      - name: {{ .Values.global.pullSecret  }}
       {{- end }}
       {{- with .Values.hubconfig.nodeSelector }}
       nodeSelector:

@@ -4,16 +4,13 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grc-ca-bundle
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ .Values.global.namespace }}
   labels:
-    app: {{ template "grc.name" . }}
-    chart: {{ template "grc.chart" . }}
+    app: grc
+    chart: grc-chart-{{ .Values.hubconfig.hubVersion }}
     component: "ocm-grc-sa"
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/name: {{ template "grc.name" . }}
-    helm.sh/chart: {{ template "grc.chart" . }}
+    release: grc
+    app.kubernetes.io/instance: grc
+    app.kubernetes.io/name: grc
   annotations:
     service.beta.openshift.io/inject-cabundle: "true"
