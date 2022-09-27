@@ -113,25 +113,49 @@ func setCustomCA(m *operatorsv1.MultiClusterHub, sub *Subscription) {
 }
 
 // setCustomOADPConfig sets a CustomCAConfigmap to the hubconfig overrides if available
-func setCustomOADPConfig(m *operatorsv1.MultiClusterHub, appsub *Subscription) {
+func GetOADPConfig(m *operatorsv1.MultiClusterHub) (string, string, subv1alpha1.Approval, string, string) {
 	log := log.FromContext(context.Background())
-
+	sub := &subv1alpha1.SubscriptionSpec{}
+	var name, channel, source, sourceNamespace string
+	var installPlan subv1alpha1.Approval
 	if oadpSpec := utils.GetOADPAnnotationOverrides(m); oadpSpec != "" {
-		sub := &subv1alpha1.SubscriptionSpec{}
+
 		err := json.Unmarshal([]byte(oadpSpec), sub)
 		if err != nil {
 			log.Info(fmt.Sprintf("Failed to unmarshal OADP annotation: %s.", oadpSpec))
-			return
+			return "", "", "", "", ""
 		}
-
-		spec := map[string]interface{}{
-			"name":                sub.Package,
-			"channel":             sub.Channel,
-			"installPlanApproval": sub.InstallPlanApproval,
-			"source":              sub.CatalogSource,
-			"sourceNamespace":     sub.CatalogSourceNamespace,
-			"startingCSV":         sub.StartingCSV,
-		}
-		appsub.Overrides["oadpOperator"] = spec
 	}
+
+	if sub.Package != "" {
+		name = sub.Package
+	} else {
+		name = "redhat-oadp-operator"
+	}
+
+	if sub.Channel != "" {
+		channel = sub.Channel
+	} else {
+		channel = "stable-1.1"
+	}
+
+	if sub.InstallPlanApproval != "" {
+		installPlan = sub.InstallPlanApproval
+	} else {
+		installPlan = "Automatic"
+	}
+
+	if sub.CatalogSource != "" {
+		source = sub.CatalogSource
+	} else {
+		source = "redhat-operators"
+	}
+
+	if sub.CatalogSourceNamespace != "" {
+		sourceNamespace = sub.CatalogSourceNamespace
+	} else {
+		sourceNamespace = "openshift-marketplace"
+	}
+	return name, channel, installPlan, source, sourceNamespace
+
 }
