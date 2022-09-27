@@ -332,11 +332,9 @@ rules:
 - apiGroups:
   - ""
   - apps
-  - monitoring.coreos.com
   resources:
   - deployments
   - serviceaccounts
-  - servicemonitors
   - services
   verbs:
   - delete
@@ -381,6 +379,17 @@ rules:
   verbs:
   - create
   - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - prometheusrules
+  - servicemonitors
+  verbs:
   - get
   - list
   - patch

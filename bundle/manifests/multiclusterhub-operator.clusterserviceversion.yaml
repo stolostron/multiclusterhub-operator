@@ -442,11 +442,9 @@ spec:
         - apiGroups:
           - ""
           - apps
-          - monitoring.coreos.com
           resources:
           - deployments
           - serviceaccounts
-          - servicemonitors
           - services
           verbs:
           - delete
@@ -491,6 +489,17 @@ spec:
           verbs:
           - create
           - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - prometheusrules
+          - servicemonitors
+          verbs:
           - get
           - list
           - patch
