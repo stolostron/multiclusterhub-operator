@@ -220,6 +220,10 @@ var _ = Describe("utility functions", func() {
 		It("gets deployments for status with cluster-backkup enabled", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(operatorsv1.ClusterBackup)
+		})
+		It("gets deployments for status with grc enabled", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable(operatorsv1.GRC)
 			d := GetDeploymentsForStatus(&mch)
 			Expect(len(d)).To(Equal(2))
 		})

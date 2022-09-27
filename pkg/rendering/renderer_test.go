@@ -28,6 +28,7 @@ var chartPaths = []string{
 	utils.InsightsChartLocation,
 	utils.SearchV2ChartLocation,
 	utils.CLCChartLocation,
+	utils.GRCChartLocation,
 }
 
 func TestRender(t *testing.T) {

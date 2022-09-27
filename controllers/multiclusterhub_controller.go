@@ -105,8 +105,9 @@ var (
 //+kubebuilder:rbac:groups="multicluster.openshift.io",resources=multiclusterengines,verbs=create;get;list;patch;update;delete;watch
 //+kubebuilder:rbac:groups=console.openshift.io;search.open-cluster-management.io,resources=consoleplugins;searches,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=operator.openshift.io,resources=consoles,verbs=get;list;watch;update;patch
-//+kubebuilder:rbac:groups="";"apps";monitoring.coreos.com,resources=servicemonitors;deployments;services;serviceaccounts,verbs=patch;delete;get;deletecollection
+//+kubebuilder:rbac:groups="";"apps",resources=deployments;services;serviceaccounts,verbs=patch;delete;get;deletecollection
 //+kubebuilder:rbac:groups=packages.operators.coreos.com,resources=packagemanifests,verbs=get;list;watch;update;patch
+//+kubebuilder:rbac:groups=monitoring.coreos.com,resources=prometheusrules;servicemonitors,verbs=get;list;watch;update;patch
 
 // AgentServiceConfig webhook delete check
 //+kubebuilder:rbac:groups=agent-install.openshift.io,resources=agentserviceconfigs,verbs=get;list;watch
@@ -410,9 +411,9 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 	if multiClusterHub.Enabled(operatorv1.GRC) {
-		result, err = r.ensureSubscription(multiClusterHub, subscription.GRC(multiClusterHub, r.CacheSpec.ImageOverrides))
+		result, err = r.ensureGRC(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
 	} else {
-		result, err = r.ensureNoSubscription(multiClusterHub, subscription.GRC(multiClusterHub, r.CacheSpec.ImageOverrides))
+		result, err = r.ensureNoGRC(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
 	}
 	if result != (ctrl.Result{}) {
 		return result, err
@@ -647,6 +648,52 @@ func (r *MultiClusterHubReconciler) ensureNoInsights(ctx context.Context, m *ope
 
 	// Renders all templates from charts
 	templates, errs := renderer.RenderChart(utils.InsightsChartLocation, m, images)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// Deletes all templates
+	for _, template := range templates {
+		result, err := r.deleteTemplate(ctx, m, template)
+		if err != nil {
+			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+			return result, err
+		}
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureGRC(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
+
+	log := log.FromContext(ctx)
+
+	templates, errs := renderer.RenderChart(utils.GRCChartLocation, m, images)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// Applies all templates
+	for _, template := range templates {
+		result, err := r.applyTemplate(ctx, m, template)
+		if err != nil {
+			return result, err
+		}
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureNoGRC(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
+
+	// Renders all templates from charts
+	templates, errs := renderer.RenderChart(utils.GRCChartLocation, m, images)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
