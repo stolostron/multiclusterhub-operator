@@ -9,7 +9,7 @@ metadata:
     app: console
     component: "console"
     chart: console-chart-{{ .Values.hubconfig.hubVersion }}
-    release: {{ .Values.fullname }}
+    release: console-chart
 data:
   LOG_LEVEL: info
   ansibleIntegration: disabled

@@ -4,7 +4,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.fullname }}-console-v2
+  name: console-chart-console-v2
   labels:
     app: console-chart-v2
     chart: console-chart-{{ .Values.hubconfig.hubVersion }}
@@ -33,7 +33,7 @@ spec:
       hostNetwork: false
       hostPID: false
       hostIPC: false
-      serviceAccountName: {{ .Values.fullname }}
+      serviceAccountName: console-chart
       securityContext:
         runAsNonRoot: true
       affinity:
@@ -44,9 +44,10 @@ spec:
               - key: kubernetes.io/arch
                 operator: In
                 values:
-                {{- range .Values.arch }}
-                - {{ . }}
-                {{- end }}
+                - amd64
+                - ppc64le
+                - s390x
+                - arm64
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 70
@@ -77,29 +78,35 @@ spec:
                   - console
       {{- with .Values.hubconfig.tolerations }}
       tolerations:
-      {{- toYaml . | nindent 8 }}
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
       {{- end }}
       volumes:
-      - name: {{ .Values.fullname }}-console-certs
+      - name: console-chart-console-certs
         secret:
           defaultMode: 420
-          secretName: {{ .Values.fullname }}-console-certs
-      - name: {{ .Values.fullname }}-console-config
+          secretName: console-chart-console-certs
+      - name: console-chart-console-config
         configMap:
           name: console-config
       containers:
       - name: console
         volumeMounts:
         - mountPath: /app/certs
-          name: {{ .Values.fullname }}-console-certs
+          name: console-chart-console-certs
         - mountPath: /app/config
-          name: {{ .Values.fullname }}-console-config
+          name: console-chart-console-config
         image: {{ .Values.global.imageOverrides.console }}
         imagePullPolicy: {{ .Values.global.pullPolicy }}
         resources:
-        requests:
-          memory: "40Mi"
-          cpu: "3m"
+          requests:
+            memory: "40Mi"
+            cpu: "3m"
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -111,9 +118,9 @@ spec:
         - name: PORT
           value: "3000"
         - name: FRONTEND_URL
-          value: "https://multicloud-console.{{ .Values.ocpingress }}/multicloud"
+          value: "https://multicloud-console.{{ .Values.hubconfig.ocpIngress }}/multicloud"
         - name: BACKEND_URL
-          value: "https://multicloud-console.{{ .Values.ocpingress }}/multicloud"
+          value: "https://multicloud-console.{{ .Values.hubconfig.ocpIngress }}/multicloud"
         - name: CLUSTER_API_URL
           value: https://kubernetes.default.svc:443
         {{- if .Values.hubconfig.proxyConfigs }}

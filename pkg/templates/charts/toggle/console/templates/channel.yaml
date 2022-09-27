@@ -9,7 +9,7 @@ metadata:
     apps.open-cluster-management.io/reconcile-rate: low
 spec:
   type: Git
-  pathname: {{ .Values.clusterImageSets.acmHiveOpenshiftReleaseUrl }}
+  pathname: https://github.com/stolostron/acm-hive-openshift-releases.git
   # Disable when using a Public repository
   #secretRef:
   #  name: my-github-secret

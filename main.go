@@ -54,6 +54,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	policy "open-cluster-management.io/governance-policy-propagator/api/v1"
+	channel "open-cluster-management.io/multicloud-operators-channel/pkg/apis"
 	appsubv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis"
 
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -86,6 +87,8 @@ func init() {
 	utilruntime.Must(policy.AddToScheme(scheme))
 
 	utilruntime.Must(appsubv1.AddToScheme(scheme))
+
+	utilruntime.Must(channel.AddToScheme(scheme))
 
 	utilruntime.Must(apiregistrationv1.AddToScheme(scheme))
 

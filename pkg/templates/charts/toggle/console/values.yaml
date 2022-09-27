@@ -3,7 +3,6 @@
 # Declare variables to be passed into your templates.
 
 org: open-cluster-management
-fullname: console-chart
 
 global:
   imageOverrides:
@@ -17,16 +16,9 @@ hubconfig:
   replicaCount: 1
   tolerations: []
   hubVersion: ""
-
-arch:
-- amd64
-- ppc64le
-- s390x
-- arm64
-
-ocpingress: ""
-
-
-clusterImageSets:
+  ocpIngress: ""
   subscriptionPause: "false"
-  acmHiveOpenshiftReleaseUrl: "https://github.com/stolostron/acm-hive-openshift-releases.git"
+
+# clusterImageSets:
+#   subscriptionPause: "false"
+#   acmHiveOpenshiftReleaseUrl: "https://github.com/stolostron/acm-hive-openshift-releases.git"

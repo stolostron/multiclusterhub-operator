@@ -1,5 +1,4 @@
 # Copyright Contributors to the Open Cluster Management project
-{{- if include "dynamicPlugins.supported" . }}
 apiVersion: console.openshift.io/v1alpha1
 kind: ConsolePlugin
 metadata:
@@ -12,13 +11,13 @@ spec:
     - type: Service
       alias: console
       service:
-        name: {{ .Values.fullname }}-console-v2
-        namespace: {{ .Release.Namespace }}
+        name: console-chart-console-v2
+        namespace: {{ .Values.global.namespace }}
         port: 3000
       authorize: true
   service:
     basePath: /plugin/
-    name: {{ .Values.fullname }}-console-v2
-    namespace: {{ .Release.Namespace }}
+    name: console-chart-console-v2
+    namespace: {{ .Values.global.namespace }}
     port: 3000
-{{ end }}
+  

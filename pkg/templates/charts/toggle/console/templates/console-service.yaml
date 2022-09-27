@@ -5,8 +5,8 @@ apiVersion: v1
 kind: Service
 metadata:
   annotations:
-    service.beta.openshift.io/serving-cert-secret-name: {{ .Values.fullname }}-console-certs
-  name: {{ .Values.fullname }}-console-v2
+    service.beta.openshift.io/serving-cert-secret-name: console-chart-console-certs
+  name: console-chart-console-v2
   labels:
     app: console-chart-v2
     component: "console"

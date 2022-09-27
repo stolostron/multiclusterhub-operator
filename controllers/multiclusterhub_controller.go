@@ -103,7 +103,7 @@ var (
 //+kubebuilder:rbac:groups="";"action.open-cluster-management.io";"addon.open-cluster-management.io";"agent.open-cluster-management.io";"argoproj.io";"cluster.open-cluster-management.io";"work.open-cluster-management.io";"app.k8s.io";"apps.open-cluster-management.io";"authorization.k8s.io";"certificates.k8s.io";"clusterregistry.k8s.io";"config.openshift.io";"compliance.mcm.ibm.com";"hive.openshift.io";"hiveinternal.openshift.io";"internal.open-cluster-management.io";"inventory.open-cluster-management.io";"mcm.ibm.com";"multicloud.ibm.com";"policy.open-cluster-management.io";"proxy.open-cluster-management.io";"rbac.authorization.k8s.io";"view.open-cluster-management.io";"operator.open-cluster-management.io";"register.open-cluster-management.io";"coordination.k8s.io";"search.open-cluster-management.io";"submarineraddon.open-cluster-management.io";"discovery.open-cluster-management.io";"imageregistry.open-cluster-management.io",resources=applications;applications/status;applicationrelationships;applicationrelationships/status;baremetalassets;baremetalassets/status;baremetalassets/finalizers;certificatesigningrequests;certificatesigningrequests/approval;channels;channels/status;clustermanagementaddons;managedclusteractions;managedclusteractions/status;clusterdeployments;clusterpools;clusterclaims;discoveryconfigs;discoveredclusters;managedclusteraddons;managedclusteraddons/status;managedclusterinfos;managedclusterinfos/status;managedclustersets;managedclustersets/bind;managedclustersets/join;managedclustersets/status;managedclustersetbindings;managedclusters;managedclusters/accept;managedclusters/status;managedclusterviews;managedclusterviews/status;manifestworks;manifestworks/status;clustercurators;clustermanagers;clusterroles;clusterrolebindings;clusterstatuses/aggregator;clusterversions;compliances;configmaps;deployables;deployables/status;deployableoverrides;deployableoverrides/status;endpoints;endpointconfigs;events;helmrepos;helmrepos/status;klusterletaddonconfigs;machinepools;namespaces;placements;placementrules/status;placementdecisions;placementdecisions/status;placementrules;placementrules/status;pods;pods/log;policies;policies/status;placementbindings;policyautomations;policysets;policysets/status;roles;rolebindings;secrets;signers;subscriptions;subscriptions/status;subjectaccessreviews;submarinerconfigs;submarinerconfigs/status;syncsets;clustersyncs;leases;searchcustomizations;managedclusterimageregistries;managedclusterimageregistries/status,verbs=create;get;list;watch;update;delete;deletecollection;patch;approve;escalate;bind
 //+kubebuilder:rbac:groups="operators.coreos.com",resources=subscriptions;clusterserviceversions;operatorgroups,verbs=create;get;list;patch;update;delete;watch
 //+kubebuilder:rbac:groups="multicluster.openshift.io",resources=multiclusterengines,verbs=create;get;list;patch;update;delete;watch
-//+kubebuilder:rbac:groups=console.openshift.io;search.open-cluster-management.io,resources=consoleplugins;searches,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=console.openshift.io;search.open-cluster-management.io,resources=consoleplugins;consolelinks;searches,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=operator.openshift.io,resources=consoles,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups="";"apps",resources=deployments;services;serviceaccounts,verbs=patch;delete;get;deletecollection
 //+kubebuilder:rbac:groups=packages.operators.coreos.com,resources=packagemanifests,verbs=get;list;watch;update;patch
@@ -952,7 +952,8 @@ func (r *MultiClusterHubReconciler) createTrustBundleConfigmap(ctx context.Conte
 // ingressDomain is discovered from Openshift cluster configuration resources
 func (r *MultiClusterHubReconciler) ingressDomain(m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	if r.CacheSpec.IngressDomain != "" || utils.IsUnitTest() {
-		return ctrl.Result{}, nil
+		err := os.Setenv("INGRESS_DOMAIN", "dev01.red-chesterfield.com")
+		return ctrl.Result{}, err
 	}
 	ingress := &configv1.Ingress{}
 	err := r.Client.Get(context.TODO(), types.NamespacedName{
@@ -965,6 +966,12 @@ func (r *MultiClusterHubReconciler) ingressDomain(m *operatorv1.MultiClusterHub)
 	}
 
 	r.CacheSpec.IngressDomain = ingress.Spec.Domain
+	// Set OCP version as env var, so that charts can render this value
+	err = os.Setenv("INGRESS_DOMAIN", ingress.Spec.Domain)
+	if err != nil {
+		r.Log.Error(err, "Failed to set INGRESS_DOMAIN environment variable")
+		return ctrl.Result{}, err
+	}
 	return ctrl.Result{}, nil
 }
 

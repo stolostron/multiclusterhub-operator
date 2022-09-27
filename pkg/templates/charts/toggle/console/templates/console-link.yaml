@@ -5,9 +5,9 @@ kind: ConsoleLink
 metadata:
   name: acm-console-link
 spec:
-  href: https://multicloud-console.{{ .Values.ocpingress }}
+  href: https://multicloud-console.{{ .Values.hubconfig.ocpIngress }}
   location: ApplicationMenu
   text: Red Hat Advanced Cluster Management for Kubernetes
   applicationMenu:
     section: Red Hat applications
-    imageURL: https://multicloud-console.{{ .Values.ocpingress }}/multicloud/favicon.svg
+    imageURL: https://multicloud-console.{{ .Values.hubconfig.ocpIngress }}/multicloud/favicon.svg

@@ -9,7 +9,7 @@ metadata:
     apps.open-cluster-management.io/git-path: clusterImageSets/fast
   labels:
     app: hive-clusterimagesets
-    # subscription-pause: {{ .Values.clusterImageSets.subscriptionPause | quote }}
+    subscription-pause: {{ .Values.hubconfig.subscriptionPause | quote }}
   name: hive-clusterimagesets-subscription-fast-0
 spec:
   channel: {{ .Values.global.namespace }}/acm-hive-openshift-releases-chn-0

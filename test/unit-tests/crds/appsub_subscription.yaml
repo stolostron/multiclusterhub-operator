@@ -14,12 +14,19 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - description: subscription status
+    - description: subscription state
       jsonPath: .status.phase
-      name: Status
+      name: SubscriptionState
       type: string
+    - description: subscription status reference
+      jsonPath: .status.appstatusReference
+      name: AppstatusReference
+      type: string      
     - jsonPath: .metadata.creationTimestamp
       name: Age
+      type: date
+    - jsonPath: .status.lastUpdateTime
+      name: Updated
       type: date
     - jsonPath: .spec.placement.local
       name: Local placement
@@ -48,6 +55,8 @@ spec:
             description: SubscriptionSpec defines the desired state of Subscription
             properties:
               channel:
+                type: string
+              secondaryChannel:
                 type: string
               hooksecretref:
                 description: 'ObjectReference contains enough information to let you
@@ -216,6 +225,41 @@ spec:
                   - packageName
                   type: object
                 type: array
+              allow:
+                description: To allow deployment of listed resources
+                items:
+                  description: Set of kubernetes group resources allowed to be deployed
+                  properties:
+                    apiVersion:
+                      type: string
+                    kinds:
+                      items:
+                        type: string
+                      type: array
+                  required:
+                  - apiVersion
+                  - kinds
+                  type: object
+                type: array
+              deny:
+                description: To deny deployment of listed resources
+                items:
+                  description: Set of kubernetes group resources not allowed to be deployed
+                  properties:
+                    apiVersion:
+                      type: string
+                    kinds:
+                      items:
+                        type: string
+                      type: array
+                  required:
+                  - apiVersion
+                  - kinds
+                  type: object
+                type: array
+              watchHelmNamespaceScopedResources:
+                description: WatchHelmNamespaceScopedResources is used to enable watching namespace scope Helm chart resources
+                type: boolean
               placement:
                 description: For hub use only, to specify which clusters to go to
                 properties:
@@ -402,6 +446,8 @@ spec:
                       type: string
                     type: array
                 type: object
+              appstatusReference:
+                type: string
               lastUpdateTime:
                 format: date-time
                 type: string

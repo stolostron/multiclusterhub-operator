@@ -902,8 +902,6 @@ github.com/spf13/viper v1.7.0/go.mod h1:8WkrPz2fc9jxqZNCJI/76HCieCp4Q8HaLFoCha5q
 github.com/stoewer/go-strcase v1.2.0/go.mod h1:IBiWB2sKIp3wVVQ3Y035++gc+knqhUQag1KpM8ahLw8=
 github.com/stolostron/backplane-operator v0.0.0-20220727154840-1f60baf1fb98 h1:fb77iXzaY4kud+wPqNPT6UgvPITK9q+O1D5FeUJ6qP0=
 github.com/stolostron/backplane-operator v0.0.0-20220727154840-1f60baf1fb98/go.mod h1:IGZxghtPz8rJylGtW8XUAQdlqRai2j7aL4ymOINsP/c=
-github.com/stolostron/multicloud-operators-subscription v0.0.0-20220310201446-9989c4301546 h1:/bqhtsFxzVB7gr43HMObkaT4hTmw+cpQcPMwVWgcuyE=
-github.com/stolostron/multicloud-operators-subscription v0.0.0-20220310201446-9989c4301546/go.mod h1:kb5wASyZUizaKxXXf4m1Cdf/IRnYtXjnJyAHEO4YYRU=
 github.com/stolostron/search-v2-operator v0.0.0-20220721051905-143d28ab4f10 h1:USGd9WwtGqAflJ0sY7k41hCO5L5BuYaPElmAsZm/q4M=
 github.com/stolostron/search-v2-operator v0.0.0-20220721051905-143d28ab4f10/go.mod h1:o73lDVENck8rRBnjt+PmbDer0MyMq2LQ7g8FsqQbQuw=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
@@ -1718,6 +1716,8 @@ open-cluster-management.io/governance-policy-propagator v0.8.0 h1:rWDHz4JglAq3/5
 open-cluster-management.io/governance-policy-propagator v0.8.0/go.mod h1:cHcn2tv8bUUFDIY0KcZmx5MskEFn2RoAm90oQAIPFMA=
 open-cluster-management.io/multicloud-operators-channel v0.8.0 h1:2Cr7AiIWc4maVnhBI2MagNc1YF3UU/VHHCrlSpG3Yr8=
 open-cluster-management.io/multicloud-operators-channel v0.8.0/go.mod h1:E2Y3/mDp+U6glXp+LMn27ViRJ4BsHwJ6QzDLeENEJmc=
+open-cluster-management.io/multicloud-operators-subscription v0.8.0 h1:0YRrUErVU6K6xwExGNaCMF//FOfJT6XyeHAvSbZNEiY=
+open-cluster-management.io/multicloud-operators-subscription v0.8.0/go.mod h1:R83lMSoaMfs3T1Z3ApRjfioA9AgPMzam+CS6XbO5FjU=
 rsc.io/binaryregexp v0.2.0/go.mod h1:qTv7/COck+e2FymRvadv62gMdZztPaShugOCi3I+8D8=
 rsc.io/letsencrypt v0.0.3 h1:H7xDfhkaFFSYEJlKeq38RwX2jYcnTeHuDQyT+mMNMwM=
 rsc.io/quote/v3 v3.1.0/go.mod h1:yEA65RcK8LyAZtP9Kv3t0HmxON59tX3rD+tICJqUlj0=

@@ -15,8 +15,8 @@ metadata:
     component: clusterrolebinding
 subjects:
 - kind: ServiceAccount
-  name: {{ .Values.fullname }}
-  namespace: {{ .Release.Namespace }}
+  name: console-chart
+  namespace: {{ .Values.global.namespace }}
 roleRef:
   kind: ClusterRole
   name: open-cluster-management:console:clusterrole
