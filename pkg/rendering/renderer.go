@@ -15,7 +15,9 @@ import (
 	loader "helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
 
+	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	v1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/subscription"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"helm.sh/helm/v3/pkg/engine"
 	corev1 "k8s.io/api/core/v1"
@@ -31,11 +33,16 @@ type Values struct {
 }
 
 type Global struct {
-	ImageOverrides  map[string]string `json:"imageOverrides" structs:"imageOverrides"`
-	PullPolicy      string            `json:"pullPolicy" structs:"pullPolicy"`
-	PullSecret      string            `json:"pullSecret" structs:"pullSecret"`
-	Namespace       string            `json:"namespace" structs:"namespace"`
-	ImageRepository string            `json:"imageRepository" structs:"namespace"`
+	ImageOverrides      map[string]string    `json:"imageOverrides" structs:"imageOverrides"`
+	PullPolicy          string               `json:"pullPolicy" structs:"pullPolicy"`
+	PullSecret          string               `json:"pullSecret" structs:"pullSecret"`
+	Namespace           string               `json:"namespace" structs:"namespace"`
+	ImageRepository     string               `json:"imageRepository" structs:"namespace"`
+	Name                string               `json:"name" structs:"name"`
+	Channel             string               `json:"channel" structs:"Channel"`
+	InstallPlanApproval subv1alpha1.Approval `json:"installPlanApproval" structs:"installPlanApproval"`
+	Source              string               `json:"source" structs:"source"`
+	SourceNamespace     string               `json:"sourceNamespace" structs:"sourceNamespace"`
 }
 
 type HubConfig struct {
@@ -308,6 +315,8 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 		proxyVar["NO_PROXY"] = os.Getenv("NO_PROXY")
 		values.HubConfig.ProxyConfigs = proxyVar
 	}
+
+	values.Global.Name, values.Global.Channel, values.Global.InstallPlanApproval, values.Global.Source, values.Global.SourceNamespace = subscription.GetOADPConfig(mch)
 
 	// TODO: Define all overrides
 }

@@ -4,9 +4,7 @@
 package subscription
 
 import (
-	"fmt"
 	"reflect"
-	"strings"
 	"testing"
 
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
@@ -147,57 +145,5 @@ func TestSubscriptions(t *testing.T) {
 				t.Error("Issue parsing subscription values")
 			}
 		})
-	}
-}
-
-func TestOADPAnnotation(t *testing.T) {
-	oadp := `{"channel": "stable-1.0", "installPlanApproval": "Automatic", "name": "redhat-oadp-operator", "source": "redhat-operators", "sourceNamespace": "openshift-marketplace", "startingCSV": "oadp-operator.v1.0.2"}`
-	mch := &operatorsv1.MultiClusterHub{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "test",
-			Annotations: map[string]string{
-				"installer.open-cluster-management.io/oadp-subscription-spec": oadp,
-			},
-		},
-	}
-	ovr := map[string]string{}
-	appsub := ClusterBackup(mch, ovr)
-	spec, err := yaml.Marshal(appsub.Object["spec"])
-	if err != nil {
-		t.Error("Issue parsing subscription values")
-	}
-
-	tests := []struct {
-		name string
-		want string
-	}{
-		{"Custom channel", "channel: stable-1.0"},
-		{"Custom installPlan", "installPlanApproval: Automatic"},
-		{"Custom name", "name: redhat-oadp-operator"},
-		{"Custom source", "source: redhat-operators"},
-		{"Custom sourceNamespace", "sourceNamespace: openshift-marketplace"},
-		{"Custom startingCSV", "startingCSV: oadp-operator.v1.0.2"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if !strings.Contains(string(spec), tt.want) {
-				t.Error(fmt.Sprintf("Cluster Backup missing OADP overrides. Got: %s, Want: %s", spec, tt.want))
-			}
-		})
-	}
-
-	mch = &operatorsv1.MultiClusterHub{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "test",
-		},
-	}
-	appsub = ClusterBackup(mch, ovr)
-	spec, err = yaml.Marshal(appsub.Object["spec"])
-	if err != nil {
-		t.Error("Issue parsing subscription values")
-	}
-	if strings.Contains(string(spec), "oadpOperator") {
-		t.Error(fmt.Sprintf("Cluster Backup should not have OADP overrides. Got: %s", spec))
 	}
 }

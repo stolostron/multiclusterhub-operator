@@ -11,9 +11,11 @@ global:
   pullSecret: null
   imageOverrides:
     cluster_backup_controller: ""
-  certificateAuthority:
-    issuer: multicloud-ca-issuer
-    kind: Issuer
+  name: redhat-oadp-operator
+  channel: stable-1.1
+  installPlanApproval: Automatic
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
 
 hubconfig:
   nodeSelector: null

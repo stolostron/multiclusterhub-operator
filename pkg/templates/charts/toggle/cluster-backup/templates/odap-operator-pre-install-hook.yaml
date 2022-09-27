@@ -11,7 +11,7 @@ metadata:
     "helm.sh/hook-weight": "-1"
     "helm.sh/resource-policy": delete
 spec:
-  channel: stable-1.1
+  channel: {{ .Values.global.channel }}
   config:
     resources: {}
 {{- with .Values.hubconfig.nodeSelector }}
@@ -37,7 +37,7 @@ spec:
     - name: NO_PROXY
       value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
     {{- end }}
-  installPlanApproval: Automatic
-  name: redhat-oadp-operator
-  source: redhat-operators
-  sourceNamespace: openshift-marketplace
+  installPlanApproval: {{ .Values.global.installPlanApproval}}
+  name: {{ .Values.global.name }}
+  source: {{ .Values.global.source }}
+  sourceNamespace: {{ .Values.global.sourceNamespace }}
