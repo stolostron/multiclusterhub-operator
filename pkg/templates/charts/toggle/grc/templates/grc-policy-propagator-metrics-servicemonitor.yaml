@@ -1,0 +1,36 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ocm-{{ .Release.Name }}-policy-propagator-metrics
+  namespace: openshift-monitoring
+  labels:
+    app: {{ template "grc.name" . }}
+    chart: {{ template "grc.chart" . }}
+    component: "ocm-policy-propagator"
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ template "grc.name" . }}
+    helm.sh/chart: {{ template "grc.chart" . }}
+spec:
+  endpoints:
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    path: /metrics
+    port: https
+    scheme: https
+    interval: 60s
+    scrapeTimeout: 10s
+    tlsConfig:
+      insecureSkipVerify: true
+  jobLabel: ocm-grc-policy-propagator
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      app: {{ template "grc.name" . }}
+      component: "ocm-policy-propagator"
+      release: {{ .Release.Name }}

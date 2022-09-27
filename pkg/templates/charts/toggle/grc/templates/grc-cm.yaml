@@ -1,0 +1,19 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grc-ca-bundle
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "grc.name" . }}
+    chart: {{ template "grc.chart" . }}
+    component: "ocm-grc-sa"
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ template "grc.name" . }}
+    helm.sh/chart: {{ template "grc.chart" . }}
+  annotations:
+    service.beta.openshift.io/inject-cabundle: "true"

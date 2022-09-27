@@ -1,0 +1,17 @@
+# Copyright (c) 2022 Red Hat, Inc.
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: grc-policy-addon-sa
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "grc.name" . }}
+    chart: {{ template "grc.chart" . }}
+    component: "ocm-policy-addon-ctrl"
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ template "grc.name" . }}
+    helm.sh/chart: {{ template "grc.chart" . }}

@@ -1,0 +1,41 @@
+# Copyright (c) 2020 Red Hat, Inc.
+
+org: open-cluster-management
+
+global:
+  imageOverrides:
+    governance_policy_propagator: ""
+    governance_policy_addon_controller: ""
+    cert_policy_controller: ""
+    iam_policy_controller: ""
+    config_policy_controller: ""
+    governance_policy_spec_sync: ""
+    governance_policy_status_sync: ""
+    governance_policy_template_sync: ""
+    kube_rbac_proxy: ""
+  pullPolicy: IfNotPresent
+
+arch:
+  - amd64
+  - ppc64le
+  - s390x
+  - arm64
+pullSecret: null
+
+governance:
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "25m"
+
+hubconfig:
+  nodeSelector: null
+  replicaCount: 1
+  proxyConfigs: {}
+  tolerations:
+    - key: dedicated
+      operator: Exists
+      effect: NoSchedule
+    - effect: NoSchedule 
+      key: node-role.kubernetes.io/infra 
+      operator: Exists

@@ -1,0 +1,152 @@
+# Copyright (c) 2020 Red Hat, Inc.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Values.org }}:{{ .Release.Name }}:clusterrole
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "grc.name" . }}
+    chart: {{ template "grc.chart" . }}
+    component: "ocm-grc-clusterrole"
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ template "grc.name" . }}
+    helm.sh/chart: {{ template "grc.chart" . }}
+rules:
+- apiGroups:
+  - tower.ansible.com
+  resources:
+  - ansiblejobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  - configmaps
+  - configmaps/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - view.open-cluster-management.io
+  resources:
+  - managedclusterviews
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - policy.open-cluster-management.io
+  resources:
+  - '*'
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps.open-cluster-management.io
+  resources:
+  - '*'
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - managedclusters
+  - placementdecisions
+  - placements
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - 'authentication.k8s.io'
+  resources:
+  - 'tokenreviews'
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+- apiGroups:
+  - '*'
+  resources:
+  - '*/finalizers'
+  verbs:
+  - update
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  resourceNames:
+  - policy-encryption-key
+  resources:
+  - secrets
+  verbs:
+  - delete
+  - patch
+  - update
+  - watch
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Values.org }}:{{ .Release.Name }}:clusterrole-aggregate
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "grc.name" . }}
+    chart: {{ template "grc.chart" . }}
+    component: "ocm-grc-clusterrole-aggregate"
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ template "grc.name" . }}
+    helm.sh/chart: {{ template "grc.chart" . }}
+    rbac.authorization.k8s.io/aggregate-to-ocm-cluster-manager-admin: "true"
+rules:
+- apiGroups: ["tower.ansible.com"]
+  resources: ["ansiblejobs"]
+  verbs: ["create","get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+
+---

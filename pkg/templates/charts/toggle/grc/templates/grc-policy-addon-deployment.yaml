@@ -1,0 +1,131 @@
+# Copyright (c) 2022 Red Hat, Inc.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-policy-addon-controller
+  labels:
+    app: {{ template "grc.name" . }}
+    chart: {{ template "grc.chart" . }}
+    component: "ocm-policy-addon-ctrl"
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ template "grc.name" . }}
+    helm.sh/chart: {{ template "grc.chart" . }}
+spec:
+  replicas: {{ .Values.hubconfig.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "grc.name" . }}
+      component: "ocm-policy-addon-ctrl"
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        app: {{ template "grc.name" . }}
+        ocm-antiaffinity-selector: "grcpolicyaddon"
+        component: "ocm-policy-addon-ctrl"
+        name: governance-policy-addon-controller
+        release: {{ .Release.Name }}
+        chart: {{ template "grc.chart" . }}
+        heritage: {{ .Release.Service }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/name: {{ template "grc.name" . }}
+        helm.sh/chart: {{ template "grc.chart" . }}
+    spec:
+      serviceAccountName: grc-policy-addon-sa
+      hostNetwork: false
+      hostPID: false
+      hostIPC: false
+      securityContext:
+        runAsNonRoot: true
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                {{- toYaml .Values.arch | nindent 18}}
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 70
+            podAffinityTerm:
+              topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - grcpolicyaddon
+          - weight: 35
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - grcpolicyaddon
+      {{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}      
+      containers:
+      - args:
+        - controller
+        command:
+        - governance-policy-addon-controller
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: CERT_POLICY_CONTROLLER_IMAGE
+          value: {{ .Values.global.imageOverrides.cert_policy_controller }}
+        - name: IAM_POLICY_CONTROLLER_IMAGE
+          value: {{ .Values.global.imageOverrides.iam_policy_controller }}
+        - name: CONFIG_POLICY_CONTROLLER_IMAGE
+          value: {{ .Values.global.imageOverrides.config_policy_controller }}
+        - name: KUBE_RBAC_PROXY_IMAGE
+          value: {{ .Values.global.imageOverrides.kube_rbac_proxy }}
+        - name: GOVERNANCE_POLICY_SPEC_SYNC_IMAGE
+          value: {{ .Values.global.imageOverrides.governance_policy_spec_sync }}
+        - name: GOVERNANCE_POLICY_STATUS_SYNC_IMAGE
+          value: {{ .Values.global.imageOverrides.governance_policy_status_sync }}
+        - name: GOVERNANCE_POLICY_TEMPLATE_SYNC_IMAGE
+          value: {{ .Values.global.imageOverrides.governance_policy_template_sync }}
+        image: {{ .Values.global.imageOverrides.governance_policy_addon_controller }}
+        imagePullPolicy: "{{ .Values.global.pullPolicy }}"
+        name: manager
+        resources:
+        {{- toYaml .Values.governance.resources | nindent 10 }}
+        securityContext:
+          privileged: false
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: "/tmp"
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      terminationGracePeriodSeconds: 10
+      {{- if .Values.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.pullSecret }}
+      {{- end }}
+      {{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}

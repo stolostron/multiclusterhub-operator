@@ -1,0 +1,148 @@
+# Copyright (c) 2020 Red Hat, Inc.
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ .Release.Name }}-policy-propagator
+  labels:
+    app: {{ template "grc.name" . }}
+    chart: {{ template "grc.chart" . }}
+    component: "ocm-policy-propagator"
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ template "grc.name" . }}
+    helm.sh/chart: {{ template "grc.chart" . }}
+spec:
+  replicas: {{ .Values.hubconfig.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "grc.name" . }}
+      component: "ocm-policy-propagator"
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "grc.name" . }}
+        ocm-antiaffinity-selector: "grcpolicypropagator"
+        component: "ocm-policy-propagator"
+        name: governance-policy-propagator
+        release: {{ .Release.Name }}
+        chart: {{ template "grc.chart" . }}
+        heritage: {{ .Release.Service }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/name: {{ template "grc.name" . }}
+        helm.sh/chart: {{ template "grc.chart" . }}
+    spec:
+      serviceAccountName: grc-sa
+      hostNetwork: false
+      hostPID: false
+      hostIPC: false
+      securityContext:
+        runAsNonRoot: true
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                {{- toYaml .Values.arch | nindent 18}}
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 70
+            podAffinityTerm:
+              topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - grcpolicypropagator
+          - weight: 35
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - grcpolicypropagator
+      {{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: kube-rbac-proxy
+        image: {{ .Values.global.imageOverrides.kube_rbac_proxy}}
+        imagePullPolicy: "{{ .Values.global.pullPolicy }}"
+        args:
+        - --secure-listen-address=0.0.0.0:8443
+        - --upstream=http://127.0.0.1:8383/
+        - --logtostderr=true
+        - --v=6
+        - "--tls-cert-file=/var/run/policy-metrics-cert/tls.crt"
+        - "--tls-private-key-file=/var/run/policy-metrics-cert/tls.key"
+        - "--tls-min-version=VersionTLS13"
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        volumeMounts:
+        - mountPath: "/var/run/policy-metrics-cert"
+          name: metrics-cert
+          readOnly: true
+      - name: governance-policy-propagator
+        image: {{ .Values.global.imageOverrides.governance_policy_propagator}}
+        imagePullPolicy: "{{ .Values.global.pullPolicy }}"
+        resources:
+        {{- toYaml .Values.governance.resources | nindent 10 }}
+        securityContext:
+          privileged: false
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          capabilities:
+            drop:
+            - ALL
+        command: ["governance-policy-propagator"]
+        env:
+          - name: WATCH_NAMESPACE
+            value: ""
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: OPERATOR_NAME
+            value: "governance-policy-propagator"
+        livenessProbe:
+          exec:
+            command:
+            - ls
+          initialDelaySeconds: 15
+          periodSeconds: 15
+        readinessProbe:
+          exec:
+            command:
+            - ls
+          initialDelaySeconds: 15
+          periodSeconds: 15
+        volumeMounts:
+        - name: tmp
+          mountPath: "/tmp"
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: metrics-cert
+        secret:
+          secretName: {{ .Release.Name }}-grc-metrics-cert
+      {{- if .Values.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.pullSecret }}
+      {{- end }}
+      {{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
