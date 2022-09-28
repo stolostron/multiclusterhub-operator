@@ -48,10 +48,11 @@ const (
 	MCESubscriptionNamespace     = "multicluster-engine"
 	ClusterSubscriptionNamespace = "open-cluster-management-backup"
 
-	MCEManagedByLabel     = "multiclusterhubs.operator.open-cluster-management.io/managed-by"
-	InsightsChartLocation = "/charts/toggle/insights"
-	SearchV2ChartLocation = "/charts/toggle/search-v2-operator"
-	CLCChartLocation      = "/charts/toggle/cluster-lifecycle"
+	MCEManagedByLabel          = "multiclusterhubs.operator.open-cluster-management.io/managed-by"
+	InsightsChartLocation      = "/charts/toggle/insights"
+	SearchV2ChartLocation      = "/charts/toggle/search-v2-operator"
+	CLCChartLocation           = "/charts/toggle/cluster-lifecycle"
+	ClusterBackupChartLocation = "/charts/toggle/cluster-backup"
 )
 
 var (
@@ -290,7 +291,7 @@ func GetTestImages() []string {
 		"SEARCH_AGGREGATOR", "SEARCH_API", "SEARCH_COLLECTOR", "SEARCH_E2E", "SEARCH_INDEXER", "SEARCH_OPERATOR",
 		"SEARCH_V2_API", "SUBMARINER_ADDON", "THANOS", "VOLSYNC", "VOLSYNC_ADDON_CONTROLLER", "VOLSYNC_MOVER_RCLONE",
 		"VOLSYNC_MOVER_RESTIC", "VOLSYNC_MOVER_RSYNC", "kube_rbac_proxy", "insights_metrics", "insights_client",
-		"search_collector", "search_indexer", "search_v2_api", "postgresql_13", "search_v2_operator", "klusterlet_addon_controller"}
+		"search_collector", "search_indexer", "search_v2_api", "postgresql_13", "search_v2_operator", "klusterlet_addon_controller", "cluster_backup_controller"}
 
 }
 
@@ -350,6 +351,10 @@ func GetDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 		nn = append(nn, types.NamespacedName{Name: "insights-client", Namespace: m.Namespace})
 		nn = append(nn, types.NamespacedName{Name: "insights-metrics", Namespace: m.Namespace})
 	}
+	if m.Enabled(operatorsv1.ClusterBackup) {
+		nn = append(nn, types.NamespacedName{Name: "cluster-backup-chart-clusterbackup", Namespace: ClusterSubscriptionNamespace})
+		nn = append(nn, types.NamespacedName{Name: "openshift-adp-controller-manager", Namespace: ClusterSubscriptionNamespace})
+	}
 	// community, _ := operatorsv1.IsCommunity()
 	// if community {
 	// 	nn = append(nn, types.NamespacedName{Name: "search-v2-operator-controller-manager", Namespace: m.Namespace})
@@ -363,9 +368,6 @@ func GetAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 		{Name: "grc-sub", Namespace: m.Namespace},
 		{Name: "management-ingress-sub", Namespace: m.Namespace},
 		{Name: "volsync-addon-controller-sub", Namespace: m.Namespace},
-	}
-	if m.Enabled(operatorsv1.ClusterBackup) {
-		appsubs = append(appsubs, types.NamespacedName{Name: "cluster-backup-chart-sub", Namespace: ClusterSubscriptionNamespace})
 	}
 	return appsubs
 }
@@ -397,6 +399,10 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedN
 	if m.Enabled(operatorsv1.ClusterLifecycle) {
 		nn = append(nn, types.NamespacedName{Name: "klusterlet-addon-controller-v2", Namespace: m.Namespace})
 	}
+	if m.Enabled(operatorsv1.ClusterBackup) {
+		nn = append(nn, types.NamespacedName{Name: "cluster-backup-chart-clusterbackup", Namespace: ClusterSubscriptionNamespace})
+		nn = append(nn, types.NamespacedName{Name: "openshift-adp-controller-manager", Namespace: ClusterSubscriptionNamespace})
+	}
 	return nn
 }
 
@@ -410,9 +416,6 @@ func GetAppsubsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedName 
 	}
 	if m.Enabled(operatorsv1.ManagementIngress) {
 		nn = append(nn, types.NamespacedName{Name: "management-ingress-sub", Namespace: m.Namespace})
-	}
-	if m.Enabled(operatorsv1.ClusterBackup) {
-		nn = append(nn, types.NamespacedName{Name: "cluster-backup-chart-sub", Namespace: ClusterSubscriptionNamespace})
 	}
 	if m.Enabled(operatorsv1.Volsync) {
 		nn = append(nn, types.NamespacedName{Name: "volsync-addon-controller-sub", Namespace: m.Namespace})

@@ -125,7 +125,7 @@ func TestRender(t *testing.T) {
 			if !tolerationEquality {
 				t.Fatalf("Toleration did not propagate to the deployments use")
 			}
-			if deployment.ObjectMeta.Namespace != mchNamespace {
+			if deployment.ObjectMeta.Namespace != mchNamespace && deployment.ObjectMeta.Name != "cluster-backup-chart-clusterbackup" {
 				t.Fatalf("Namespace did not propagate to the deployments use")
 			}
 			if utils.Contains(proxyList, deployment.ObjectMeta.Name) {
@@ -199,7 +199,7 @@ func TestRender(t *testing.T) {
 				if !tolerationEquality {
 					t.Fatalf("Toleration did not propagate to the deployments use")
 				}
-				if deployment.ObjectMeta.Namespace != mchNamespace {
+				if deployment.ObjectMeta.Namespace != mchNamespace && deployment.ObjectMeta.Name != "cluster-backup-chart-clusterbackup" {
 					t.Fatalf("Namespace did not propagate to the deployments use")
 				}
 

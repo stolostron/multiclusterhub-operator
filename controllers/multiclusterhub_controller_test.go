@@ -23,6 +23,7 @@ import (
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
+	policy "open-cluster-management.io/governance-policy-propagator/api/v1"
 	appsub "open-cluster-management.io/multicloud-operators-subscription/pkg/apis"
 	appsubv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/v1"
 
@@ -320,6 +321,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 		Expect(scheme.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(searchv2v1alpha1.AddToScheme(clientScheme)).Should(Succeed())
+		Expect(policy.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(promv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(mchov1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(appsub.AddToScheme(clientScheme)).Should(Succeed())
@@ -523,6 +525,22 @@ var _ = Describe("MultiClusterHub controller", func() {
 			By("Ensuring No Insights")
 
 			result, err = reconciler.ensureNoInsights(ctx, mch, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+
+			By("Ensuring Cluster Backup")
+
+			ns := subscription.BackupNamespace()
+			result, err = reconciler.ensureNamespace(mch, ns)
+			Expect(err).To(BeNil())
+
+			result, err = reconciler.ensureClusterBackup(ctx, mch, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+
+			By("Ensuring No Insights")
+
+			result, err = reconciler.ensureNoClusterBackup(ctx, mch, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 

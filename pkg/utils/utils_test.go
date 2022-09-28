@@ -160,8 +160,9 @@ var _ = Describe("utility functions", func() {
 		It("gets deployments", func() {
 			os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
 			mch := resources.EmptyMCH()
+			mch.Enable(operatorsv1.ClusterBackup)
 			d := GetDeployments(&mch)
-			Expect(len(d)).To(Equal(1))
+			Expect(len(d)).To(Equal(3))
 			Expect(d[0].Name).To(Equal("multiclusterhub-repo"))
 			Expect(d[0].Namespace).To(Equal(resources.MulticlusterhubNamespace))
 		})
@@ -170,7 +171,7 @@ var _ = Describe("utility functions", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(operatorsv1.ClusterBackup)
 			appsubs := GetAppsubs(&mch)
-			Expect(len(appsubs)).To(Equal(5))
+			Expect(len(appsubs)).To(Equal(4))
 		})
 		It("gets deployments in Community Mode", func() {
 			os.Setenv("OPERATOR_PACKAGE", "stolostron")
@@ -185,7 +186,7 @@ var _ = Describe("utility functions", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(operatorsv1.ClusterBackup)
 			appsubs := GetAppsubs(&mch)
-			Expect(len(appsubs)).To(Equal(5))
+			Expect(len(appsubs)).To(Equal(4))
 
 		})
 		It("gets custom resources", func() {
@@ -216,6 +217,12 @@ var _ = Describe("utility functions", func() {
 			d := GetDeploymentsForStatus(&mch)
 			Expect(len(d)).To(Equal(1))
 		})
+		It("gets deployments for status with cluster-backkup enabled", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable(operatorsv1.ClusterBackup)
+			d := GetDeploymentsForStatus(&mch)
+			Expect(len(d)).To(Equal(2))
+		})
 		It("gets appsubs for status", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(operatorsv1.ClusterBackup)
@@ -227,7 +234,7 @@ var _ = Describe("utility functions", func() {
 			mch.Enable(operatorsv1.Search)
 			mch.Enable(operatorsv1.Volsync)
 			appsubs := GetAppsubsForStatus(&mch)
-			Expect(len(appsubs)).To(Equal(5))
+			Expect(len(appsubs)).To(Equal(4))
 		})
 		It("Sets Default Component values", func() {
 			mch := resources.EmptyMCH()

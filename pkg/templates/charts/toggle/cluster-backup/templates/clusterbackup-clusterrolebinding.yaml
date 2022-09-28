@@ -1,0 +1,24 @@
+# Copyright Contributors to the Open Cluster Management project
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .Values.org }}:cluster-backup-chart:clusterrolebinding
+  labels:
+    app: cluster-backup-chart
+    chart: cluster-backup-chart
+    release: cluster-backup-chart
+    heritage: Helm
+    app.kubernetes.io/instance: cluster-backup-chart
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: cluster-backup-chart
+    helm.sh/chart: cluster-backup-chart
+    component: clusterrolebinding
+subjects:
+- kind: ServiceAccount
+  name: cluster-backup-chart
+  namespace: open-cluster-management-backup
+roleRef:
+  kind: ClusterRole
+  name: {{ .Values.org }}:cluster-backup-chart:clusterrole
+  apiGroup: rbac.authorization.k8s.io
