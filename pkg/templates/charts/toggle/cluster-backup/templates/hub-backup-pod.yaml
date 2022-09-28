@@ -8,7 +8,7 @@ metadata:
     heritage: Helm
     app.kubernetes.io/instance: cluster-backup-chart
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: clusster-backup-chart
+    app.kubernetes.io/name: cluster-backup-chart
     helm.sh/chart: cluster-backup-chart
     velero.io/exclude-from-backup: "true"
     component: policy

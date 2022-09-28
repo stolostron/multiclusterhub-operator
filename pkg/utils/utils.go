@@ -352,7 +352,7 @@ func GetDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 		nn = append(nn, types.NamespacedName{Name: "insights-metrics", Namespace: m.Namespace})
 	}
 	if m.Enabled(operatorsv1.ClusterBackup) {
-		nn = append(nn, types.NamespacedName{Name: "cluster-backup-chart-clusterbackup  ", Namespace: ClusterSubscriptionNamespace})
+		nn = append(nn, types.NamespacedName{Name: "cluster-backup-chart-clusterbackup", Namespace: ClusterSubscriptionNamespace})
 		nn = append(nn, types.NamespacedName{Name: "openshift-adp-controller-manager", Namespace: ClusterSubscriptionNamespace})
 	}
 	// community, _ := operatorsv1.IsCommunity()
