@@ -161,9 +161,15 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
+	ocpConsole, err := r.CheckConsole(ctx)
+	if err != nil {
+		r.Log.Error(err, "error finding OCP Console")
+		return ctrl.Result{}, err
+	}
+
 	originalStatus := multiClusterHub.Status.DeepCopy()
 	defer func() {
-		statusQueue, statusError := r.syncHubStatus(multiClusterHub, originalStatus, allDeploys, allHRs, allCRs)
+		statusQueue, statusError := r.syncHubStatus(multiClusterHub, originalStatus, allDeploys, allHRs, allCRs, ocpConsole)
 		if statusError != nil {
 			r.Log.Error(retError, "Error updating status")
 		}
@@ -213,7 +219,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	var result ctrl.Result
-	result, err = r.setDefaults(multiClusterHub)
+	result, err = r.setDefaults(multiClusterHub, ocpConsole)
 	if result != (ctrl.Result{}) {
 		return ctrl.Result{}, err
 	}
@@ -388,7 +394,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
-	if multiClusterHub.Enabled(operatorv1.Console) {
+	if multiClusterHub.Enabled(operatorv1.Console) && ocpConsole {
 		result, err = r.ensureConsole(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
 	} else {
 		result, err = r.ensureNoConsole(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
@@ -469,7 +475,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	if !utils.IsUnitTest() {
 		if !multiClusterHub.Spec.DisableHubSelfManagement {
-			result, err = r.ensureHubIsImported(multiClusterHub)
+			result, err = r.ensureHubIsImported(multiClusterHub, ocpConsole)
 			if result != (ctrl.Result{}) {
 				return result, err
 			}
@@ -482,8 +488,8 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	// Cleanup unused resources once components up-to-date
-	if r.ComponentsAreRunning(multiClusterHub) {
-		if r.pluginIsSupported(multiClusterHub) {
+	if r.ComponentsAreRunning(multiClusterHub, ocpConsole) {
+		if r.pluginIsSupported(multiClusterHub) && ocpConsole {
 			result, err = r.addPluginToConsole(multiClusterHub)
 			if result != (ctrl.Result{}) {
 				return result, err
@@ -1232,7 +1238,7 @@ func updatePausedCondition(m *operatorv1.MultiClusterHub) {
 	}
 }
 
-func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, ocpConsole bool) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log
 
