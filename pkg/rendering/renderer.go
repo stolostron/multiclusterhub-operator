@@ -19,6 +19,7 @@ import (
 	v1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/subscription"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
+	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 	"helm.sh/helm/v3/pkg/engine"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -51,6 +52,7 @@ type HubConfig struct {
 	ReplicaCount int               `json:"replicaCount" structs:"replicaCount"`
 	Tolerations  []Toleration      `json:"tolerations" structs:"tolerations"`
 	OCPVersion   string            `json:"ocpVersion" structs:"ocpVersion"`
+	HubVersion   string            `json:"hubVersion" structs:"hubVersion"`
 }
 
 type Toleration struct {
@@ -307,6 +309,8 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 	values.Org = "open-cluster-management"
 
 	values.HubConfig.OCPVersion = os.Getenv("ACM_HUB_OCP_VERSION")
+
+	values.HubConfig.HubVersion = version.Version
 
 	if utils.ProxyEnvVarsAreSet() {
 		proxyVar := map[string]string{}

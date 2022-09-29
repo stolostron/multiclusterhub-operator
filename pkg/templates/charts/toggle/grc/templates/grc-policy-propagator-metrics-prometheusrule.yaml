@@ -1,0 +1,26 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: ocm-grc-policy-propagator-metrics
+  namespace: openshift-monitoring
+  labels:
+    app: grc
+    chart: grc-chart-{{ .Values.hubconfig.hubVersion }}
+    component: "ocm-policy-propagator"
+    release: grc
+    app.kubernetes.io/instance: grc
+    app.kubernetes.io/name: grc
+spec:
+  groups:
+  - name: policy_governance_info.rules
+    rules:
+    - record: cluster:policy_governance_info:propagated_count
+      expr: count by (cluster_namespace) (policy_governance_info{type="propagated"})
+    - record: cluster:policy_governance_info:propagated_noncompliant_count
+      expr: count by (cluster_namespace) (policy_governance_info{type="propagated"}==1)
+    - record: policy:policy_governance_info:propagated_count
+      expr: count by (policy) (policy_governance_info{type="propagated"})
+    - record: policy:policy_governance_info:propagated_noncompliant_count
+      expr: count by (policy) (policy_governance_info{type="propagated"}==1)

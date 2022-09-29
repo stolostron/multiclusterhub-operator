@@ -4,13 +4,14 @@ package version
 
 import "os"
 
+// Version is the semver version the operator is reconciling towards
 var Version string
 
 func init() {
 	if value, exists := os.LookupEnv("OPERATOR_VERSION"); exists {
 		Version = value
 	} else {
-		panic("OPERATOR_VERSION not defined")
+		Version = "9.9.9"
 	}
 }
 

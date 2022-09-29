@@ -53,6 +53,7 @@ const (
 	SearchV2ChartLocation      = "/charts/toggle/search-v2-operator"
 	CLCChartLocation           = "/charts/toggle/cluster-lifecycle"
 	ClusterBackupChartLocation = "/charts/toggle/cluster-backup"
+	GRCChartLocation           = "/charts/toggle/grc"
 )
 
 var (
@@ -276,9 +277,7 @@ func IsUnitTest() bool {
 
 func GetTestImages() []string {
 	return []string{"LIFECYCLE_BACKEND_E2E", "BAILER", "CERT_POLICY_CONTROLLER", "CLUSTER_BACKUP_CONTROLLER",
-		"CLUSTER_LIFECYCLE_E2E", "CLUSTER_PROXY", "CLUSTER_PROXY_ADDON", "CONFIG_POLICY_CONTROLLER", "CONSOLE",
-		"ENDPOINT_MONITORING_OPERATOR", "GOVERNANCE_POLICY_ADDON_CONTROLLER", "GOVERNANCE_POLICY_PROPAGATOR",
-		"GOVERNANCE_POLICY_SPEC_SYNC", "GOVERNANCE_POLICY_STATUS_SYNC", "GOVERNANCE_POLICY_TEMPLATE_SYNC",
+		"CLUSTER_LIFECYCLE_E2E", "CLUSTER_PROXY", "CLUSTER_PROXY_ADDON", "CONSOLE", "ENDPOINT_MONITORING_OPERATOR",
 		"GRAFANA", "GRAFANA_DASHBOARD_LOADER", "GRC_POLICY_FRAMEWORK_TESTS", "HELLOPROW_GO", "HELLOWORLD",
 		"HYPERSHIFT_DEPLOYMENT_CONTROLLER", "IAM_POLICY_CONTROLLER", "INSIGHTS_CLIENT", "INSIGHTS_METRICS",
 		"KLUSTERLET_ADDON_CONTROLLER", "KLUSTERLET_ADDON_OPERATOR", "KUBE_RBAC_PROXY", "KUBE_STATE_METRICS",
@@ -291,7 +290,10 @@ func GetTestImages() []string {
 		"SEARCH_AGGREGATOR", "SEARCH_API", "SEARCH_COLLECTOR", "SEARCH_E2E", "SEARCH_INDEXER", "SEARCH_OPERATOR",
 		"SEARCH_V2_API", "SUBMARINER_ADDON", "THANOS", "VOLSYNC", "VOLSYNC_ADDON_CONTROLLER", "VOLSYNC_MOVER_RCLONE",
 		"VOLSYNC_MOVER_RESTIC", "VOLSYNC_MOVER_RSYNC", "kube_rbac_proxy", "insights_metrics", "insights_client",
-		"search_collector", "search_indexer", "search_v2_api", "postgresql_13", "search_v2_operator", "klusterlet_addon_controller", "cluster_backup_controller"}
+		"search_collector", "search_indexer", "search_v2_api", "postgresql_13", "search_v2_operator", "klusterlet_addon_controller",
+		"governance_policy_propagator", "governance_policy_addon_controller", "cert_policy_controller", "iam_policy_controller",
+		"config_policy_controller", "governance_policy_spec_sync", "governance_policy_status_sync", "governance_policy_template_sync",
+		"cluster_backup_controller"}
 
 }
 
@@ -365,7 +367,6 @@ func GetDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 func GetAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	appsubs := []types.NamespacedName{
 		{Name: "console-chart-sub", Namespace: m.Namespace},
-		{Name: "grc-sub", Namespace: m.Namespace},
 		{Name: "management-ingress-sub", Namespace: m.Namespace},
 		{Name: "volsync-addon-controller-sub", Namespace: m.Namespace},
 	}
@@ -403,6 +404,10 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedN
 		nn = append(nn, types.NamespacedName{Name: "cluster-backup-chart-clusterbackup", Namespace: ClusterSubscriptionNamespace})
 		nn = append(nn, types.NamespacedName{Name: "openshift-adp-controller-manager", Namespace: ClusterSubscriptionNamespace})
 	}
+	if m.Enabled(operatorsv1.GRC) {
+		nn = append(nn, types.NamespacedName{Name: "grc-policy-addon-controller", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "grc-policy-propagator", Namespace: m.Namespace})
+	}
 	return nn
 }
 
@@ -410,9 +415,6 @@ func GetAppsubsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedName 
 	nn := []types.NamespacedName{}
 	if m.Enabled(operatorsv1.Console) {
 		nn = append(nn, types.NamespacedName{Name: "console-chart-sub", Namespace: m.Namespace})
-	}
-	if m.Enabled(operatorsv1.GRC) {
-		nn = append(nn, types.NamespacedName{Name: "grc-sub", Namespace: m.Namespace})
 	}
 	if m.Enabled(operatorsv1.ManagementIngress) {
 		nn = append(nn, types.NamespacedName{Name: "management-ingress-sub", Namespace: m.Namespace})

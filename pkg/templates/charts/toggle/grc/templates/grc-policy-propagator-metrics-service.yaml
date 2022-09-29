@@ -1,0 +1,27 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: grc-policy-propagator-metrics
+  labels:
+    app: grc
+    chart: grc-chart-{{ .Values.hubconfig.hubVersion }}
+    component: "ocm-policy-propagator"
+    release: grc
+    app.kubernetes.io/instance: grc
+    app.kubernetes.io/name: grc
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: grc-grc-metrics-cert
+spec:
+  ports:
+  - name: https
+    port: 8443
+    protocol: TCP
+    targetPort: 8443
+  selector:
+    app: grc
+    component: "ocm-policy-propagator"
+    release: grc
+  sessionAffinity: None
+  type: ClusterIP

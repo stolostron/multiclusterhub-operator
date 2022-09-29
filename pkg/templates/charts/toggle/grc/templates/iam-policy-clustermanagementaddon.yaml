@@ -1,0 +1,8 @@
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: ClusterManagementAddOn
+metadata:
+  name: iam-policy-controller
+spec:
+  addOnMeta:
+    description: Monitors identity controls based on distributed policies.
+    displayName: IAM Policy Addon

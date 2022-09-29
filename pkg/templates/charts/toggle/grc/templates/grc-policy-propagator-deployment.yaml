@@ -1,0 +1,153 @@
+# Copyright (c) 2020 Red Hat, Inc.
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: grc-policy-propagator
+  labels:
+    app: grc
+    chart: grc-chart-{{ .Values.hubconfig.hubVersion }}
+    component: "ocm-policy-propagator"
+    release: grc
+    app.kubernetes.io/instance: grc
+    app.kubernetes.io/name: grc
+spec:
+  replicas: {{ .Values.hubconfig.replicaCount }}
+  selector:
+    matchLabels:
+      app: grc
+      component: "ocm-policy-propagator"
+      release: grc
+  template:
+    metadata:
+      labels:
+        app: grc
+        ocm-antiaffinity-selector: "grcpolicypropagator"
+        component: "ocm-policy-propagator"
+        name: governance-policy-propagator
+        release: grc
+        chart: grc-chart-{{ .Values.hubconfig.hubVersion }}
+        app.kubernetes.io/instance: grc
+        app.kubernetes.io/name: grc
+    spec:
+      serviceAccountName: grc-sa
+      hostNetwork: false
+      hostPID: false
+      hostIPC: false
+      securityContext:
+        runAsNonRoot: true
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+                - ppc64le
+                - s390x
+                - arm64
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 70
+            podAffinityTerm:
+              topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - grcpolicypropagator
+          - weight: 35
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - grcpolicypropagator
+      {{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+      {{- end }}
+      containers:
+      - name: kube-rbac-proxy
+        image: {{ .Values.global.imageOverrides.kube_rbac_proxy}}
+        imagePullPolicy: "{{ .Values.global.pullPolicy }}"
+        args:
+        - --secure-listen-address=0.0.0.0:8443
+        - --upstream=http://127.0.0.1:8383/
+        - --logtostderr=true
+        - --v=6
+        - "--tls-cert-file=/var/run/policy-metrics-cert/tls.crt"
+        - "--tls-private-key-file=/var/run/policy-metrics-cert/tls.key"
+        - "--tls-min-version=VersionTLS13"
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        volumeMounts:
+        - mountPath: "/var/run/policy-metrics-cert"
+          name: metrics-cert
+          readOnly: true
+      - name: governance-policy-propagator
+        image: {{ .Values.global.imageOverrides.governance_policy_propagator}}
+        imagePullPolicy: "{{ .Values.global.pullPolicy }}"
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "25m"
+        securityContext:
+          privileged: false
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          capabilities:
+            drop:
+            - ALL
+        command: ["governance-policy-propagator"]
+        env:
+          - name: WATCH_NAMESPACE
+            value: ""
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: OPERATOR_NAME
+            value: "governance-policy-propagator"
+        livenessProbe:
+          exec:
+            command:
+            - ls
+          initialDelaySeconds: 15
+          periodSeconds: 15
+        readinessProbe:
+          exec:
+            command:
+            - ls
+          initialDelaySeconds: 15
+          periodSeconds: 15
+        volumeMounts:
+        - name: tmp
+          mountPath: "/tmp"
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: metrics-cert
+        secret:
+          secretName: grc-grc-metrics-cert
+      {{- if .Values.global.pullSecret  }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret  }}
+      {{- end }}
+      {{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
