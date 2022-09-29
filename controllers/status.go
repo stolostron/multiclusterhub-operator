@@ -95,6 +95,16 @@ var unmanagedStatus = operatorsv1.StatusCondition{
 	Available:          true,
 }
 
+var consoleUnavailableStatus = operatorsv1.StatusCondition{
+	Type:               "Unavailable",
+	Status:             metav1.ConditionTrue,
+	LastUpdateTime:     metav1.Now(),
+	LastTransitionTime: metav1.Now(),
+	Reason:             "OCP Console missing",
+	Message:            "The OCP Console must be enabled before using ACM Console",
+	Available:          false,
+}
+
 var unknownStatus = operatorsv1.StatusCondition{
 	Type:               "Unknown",
 	Status:             metav1.ConditionUnknown,
@@ -115,21 +125,21 @@ var wrongVersionStatus = operatorsv1.StatusCondition{
 }
 
 // ComponentsAreRunning ...
-func (r *MultiClusterHubReconciler) ComponentsAreRunning(m *operatorsv1.MultiClusterHub) bool {
+func (r *MultiClusterHubReconciler) ComponentsAreRunning(m *operatorsv1.MultiClusterHub, ocpConsole bool) bool {
 	trackedNamespaces := utils.TrackedNamespaces(m)
 
 	deployList, _ := r.listDeployments(trackedNamespaces)
 	hrList, _ := r.listHelmReleases(trackedNamespaces)
 	crList, _ := r.listCustomResources(m)
-	componentStatuses := getComponentStatuses(m, hrList, deployList, crList, nil)
+	componentStatuses := getComponentStatuses(m, hrList, deployList, crList, nil, ocpConsole)
 	delete(componentStatuses, ManagedClusterName)
 	return allComponentsSuccessful(componentStatuses)
 }
 
 // syncHubStatus checks if the status is up-to-date and sync it if necessary
-func (r *MultiClusterHubReconciler) syncHubStatus(m *operatorsv1.MultiClusterHub, original *operatorsv1.MultiClusterHubStatus, allDeps []*appsv1.Deployment, allHRs []*subhelmv1.HelmRelease, allCRs []*unstructured.Unstructured) (reconcile.Result, error) {
-	localCluster, err := r.ensureManagedClusterIsRunning(m)
-	newStatus := calculateStatus(m, allDeps, allHRs, allCRs, localCluster)
+func (r *MultiClusterHubReconciler) syncHubStatus(m *operatorsv1.MultiClusterHub, original *operatorsv1.MultiClusterHubStatus, allDeps []*appsv1.Deployment, allHRs []*subhelmv1.HelmRelease, allCRs []*unstructured.Unstructured, ocpConsole bool) (reconcile.Result, error) {
+	localCluster, err := r.ensureManagedClusterIsRunning(m, ocpConsole)
+	newStatus := calculateStatus(m, allDeps, allHRs, allCRs, localCluster, ocpConsole)
 	if reflect.DeepEqual(m.Status, original) {
 		r.Log.Info("Status hasn't changed")
 		return reconcile.Result{}, nil
@@ -156,8 +166,8 @@ func (r *MultiClusterHubReconciler) syncHubStatus(m *operatorsv1.MultiClusterHub
 	}
 }
 
-func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deployment, allHRs []*subhelmv1.HelmRelease, allCRs []*unstructured.Unstructured, importClusterStatus []interface{}) operatorsv1.MultiClusterHubStatus {
-	components := getComponentStatuses(hub, allHRs, allDeps, allCRs, importClusterStatus)
+func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deployment, allHRs []*subhelmv1.HelmRelease, allCRs []*unstructured.Unstructured, importClusterStatus []interface{}, ocpConsole bool) operatorsv1.MultiClusterHubStatus {
+	components := getComponentStatuses(hub, allHRs, allDeps, allCRs, importClusterStatus, ocpConsole)
 	status := operatorsv1.MultiClusterHubStatus{
 		CurrentVersion: hub.Status.CurrentVersion,
 		DesiredVersion: version.Version,
@@ -249,7 +259,7 @@ func filterDuplicateHRs(allHRs []*subhelmv1.HelmRelease) []*subhelmv1.HelmReleas
 }
 
 // getComponentStatuses populates a complete list of the hub component statuses
-func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allHRs []*subhelmv1.HelmRelease, allDeps []*appsv1.Deployment, allCRs []*unstructured.Unstructured, importClusterStatus []interface{}) map[string]operatorsv1.StatusCondition {
+func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allHRs []*subhelmv1.HelmRelease, allDeps []*appsv1.Deployment, allCRs []*unstructured.Unstructured, importClusterStatus []interface{}, ocpConsole bool) map[string]operatorsv1.StatusCondition {
 	components := newComponentList(hub)
 
 	filteredHRs := filterDuplicateHRs(allHRs)
@@ -306,6 +316,10 @@ func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allHRs []*subhelmv1.
 	if preexistingMCE {
 		components["multicluster-engine-csv"] = unmanagedStatus
 		components["multicluster-engine-sub"] = unmanagedStatus
+	}
+
+	if ocpConsole {
+		components["console-chart-sub"] = consoleUnavailableStatus
 	}
 
 	if !hub.Spec.DisableHubSelfManagement {
