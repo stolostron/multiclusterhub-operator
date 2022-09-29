@@ -318,7 +318,7 @@ func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allHRs []*subhelmv1.
 		components["multicluster-engine-sub"] = unmanagedStatus
 	}
 
-	if ocpConsole {
+	if !ocpConsole {
 		components["console-chart-sub"] = consoleUnavailableStatus
 	}
 
