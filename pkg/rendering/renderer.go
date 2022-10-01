@@ -278,7 +278,7 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 
 		// Add namespace to namespaced resources
 		switch unstructured.GetKind() {
-		case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service", "ConfigMap":
+		case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service", "ConfigMap", "Ingress", "Channel", "Subscription":
 			if unstructured.GetNamespace() == "" {
 				unstructured.SetNamespace(mch.Namespace)
 			}

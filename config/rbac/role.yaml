@@ -374,6 +374,7 @@ rules:
   - console.openshift.io
   - search.open-cluster-management.io
   resources:
+  - consolelinks
   - consoleplugins
   - searches
   verbs:

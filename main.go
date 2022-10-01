@@ -45,6 +45,7 @@ import (
 	"github.com/stolostron/multiclusterhub-operator/controllers"
 	"github.com/stolostron/multiclusterhub-operator/pkg/webhook"
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
+	networking "k8s.io/api/networking/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -109,6 +110,8 @@ func init() {
 	utilruntime.Must(consolev1.AddToScheme(scheme))
 
 	utilruntime.Must(olmapi.AddToScheme(scheme))
+
+	utilruntime.Must(networking.AddToScheme(scheme))
 
 	//+kubebuilder:scaffold:scheme
 }

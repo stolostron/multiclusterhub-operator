@@ -37,6 +37,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networking "k8s.io/api/networking/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -338,6 +339,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 		Expect(consolev1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(olmapi.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(ocmapi.AddToScheme(clientScheme)).Should(Succeed())
+		Expect(networking.AddToScheme(clientScheme)).Should(Succeed())
 
 		k8sManager, err := ctrl.NewManager(clientConfig, ctrl.Options{
 			Scheme:                 clientScheme,

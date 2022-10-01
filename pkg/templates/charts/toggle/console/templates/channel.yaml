@@ -1,6 +1,5 @@
 # Copyright Contributors to the Open Cluster Management project
 
----
 apiVersion: apps.open-cluster-management.io/v1
 kind: Channel
 metadata:
@@ -11,5 +10,5 @@ spec:
   type: Git
   pathname: https://github.com/stolostron/acm-hive-openshift-releases.git
   # Disable when using a Public repository
-  #secretRef:
+  # secretRef:
   #  name: my-github-secret

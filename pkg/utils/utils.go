@@ -416,12 +416,6 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedN
 
 func GetAppsubsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	nn := []types.NamespacedName{}
-	if m.Enabled(operatorsv1.Console) {
-		nn = append(nn, types.NamespacedName{Name: "console-chart-sub", Namespace: m.Namespace})
-	}
-	if m.Enabled(operatorsv1.GRC) {
-		nn = append(nn, types.NamespacedName{Name: "grc-sub", Namespace: m.Namespace})
-	}
 	if m.Enabled(operatorsv1.ManagementIngress) {
 		nn = append(nn, types.NamespacedName{Name: "management-ingress-sub", Namespace: m.Namespace})
 	}
