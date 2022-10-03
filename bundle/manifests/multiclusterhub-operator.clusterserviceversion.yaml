@@ -484,6 +484,7 @@ spec:
           - console.openshift.io
           - search.open-cluster-management.io
           resources:
+          - consolelinks
           - consoleplugins
           - searches
           verbs:
@@ -511,6 +512,18 @@ spec:
           - multicluster.openshift.io
           resources:
           - multiclusterengines
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - networking.k8s.io
+          resources:
+          - ingresses
           verbs:
           - create
           - delete
