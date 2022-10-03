@@ -318,8 +318,6 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 
 	values.Org = "open-cluster-management"
 
-	values.HubConfig.HubVersion = version.Version
-
 	if utils.ProxyEnvVarsAreSet() {
 		proxyVar := map[string]string{}
 		proxyVar["HTTP_PROXY"] = os.Getenv("HTTP_PROXY")
