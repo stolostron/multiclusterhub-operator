@@ -71,12 +71,12 @@ const (
 	CRDRenderReason = "FailedRenderingCRD"
 )
 
-func newComponentList(m *operatorsv1.MultiClusterHub) map[string]operatorsv1.StatusCondition {
+func newComponentList(m *operatorsv1.MultiClusterHub, ocpConsole bool) map[string]operatorsv1.StatusCondition {
 	components := make(map[string]operatorsv1.StatusCondition)
 	for _, d := range utils.GetDeploymentsForStatus(m) {
 		components[d.Name] = unknownStatus
 	}
-	for _, s := range utils.GetAppsubsForStatus(m) {
+	for _, s := range utils.GetAppsubsForStatus(m, ocpConsole) {
 		components[s.Name] = unknownStatus
 	}
 	for _, cr := range utils.GetCustomResourcesForStatus(m) {
@@ -260,7 +260,7 @@ func filterDuplicateHRs(allHRs []*subhelmv1.HelmRelease) []*subhelmv1.HelmReleas
 
 // getComponentStatuses populates a complete list of the hub component statuses
 func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allHRs []*subhelmv1.HelmRelease, allDeps []*appsv1.Deployment, allCRs []*unstructured.Unstructured, importClusterStatus []interface{}, ocpConsole bool) map[string]operatorsv1.StatusCondition {
-	components := newComponentList(hub)
+	components := newComponentList(hub, ocpConsole)
 
 	filteredHRs := filterDuplicateHRs(allHRs)
 

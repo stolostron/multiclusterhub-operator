@@ -237,7 +237,7 @@ var _ = Describe("utility functions", func() {
 			mch.Enable(operatorsv1.ManagementIngress)
 			mch.Enable(operatorsv1.Search)
 			mch.Enable(operatorsv1.Volsync)
-			appsubs := GetAppsubsForStatus(&mch)
+			appsubs := GetAppsubsForStatus(&mch, true)
 			Expect(len(appsubs)).To(Equal(3))
 		})
 		It("Sets Default Component values", func() {
