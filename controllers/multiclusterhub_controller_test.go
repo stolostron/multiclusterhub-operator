@@ -409,6 +409,8 @@ var _ = Describe("MultiClusterHub controller", func() {
 			defer os.Unsetenv("DIRECTORY_OVERRIDE")
 			os.Setenv("OPERATOR_PACKAGE", "stolostron")
 			defer os.Unsetenv("OPERATOR_PACKAGE")
+			os.Setenv("ACM_HUB_OCP_VERSION", "4.12.0")
+			defer os.Unsetenv("ACM_HUB_OCP_VERSION")
 			RunningState(k8sClient, reconciler, mchoDeployment)
 		})
 
