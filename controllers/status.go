@@ -319,7 +319,7 @@ func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allHRs []*subhelmv1.
 	}
 
 	if !ocpConsole {
-		components["console-chart-console-v2"] = consoleUnavailableStatus
+		components["console-chart-sub"] = consoleUnavailableStatus
 	}
 
 	if !hub.Spec.DisableHubSelfManagement {
