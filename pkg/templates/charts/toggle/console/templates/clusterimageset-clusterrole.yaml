@@ -1,0 +1,14 @@
+# Copyright Contributors to the Open Cluster Management project
+
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: open-cluster-management:console:aggregate-clusterimagesets-readonly
+  labels:
+    # Add these permissions to the "view" default role.
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+rules:
+- apiGroups: ["hive.openshift.io"]
+  resources: ["clusterimagesets"]
+  verbs: ["get", "list", "watch"]

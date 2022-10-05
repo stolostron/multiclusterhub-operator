@@ -1,0 +1,13 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: console.openshift.io/v1
+kind: ConsoleLink
+metadata:
+  name: acm-console-link
+spec:
+  href: https://multicloud-console.{{ .Values.hubconfig.ocpIngress }}
+  location: ApplicationMenu
+  text: Red Hat Advanced Cluster Management for Kubernetes
+  applicationMenu:
+    section: Red Hat applications
+    imageURL: https://multicloud-console.{{ .Values.hubconfig.ocpIngress }}/multicloud/favicon.svg

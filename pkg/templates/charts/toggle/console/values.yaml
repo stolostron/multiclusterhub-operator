@@ -1,0 +1,24 @@
+# Default values for console-chart
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+org: open-cluster-management
+
+global:
+  imageOverrides:
+    console: ""
+  namespace: default
+  pullSecret: null
+  pullPolicy: Always
+hubconfig:
+  nodeSelector: null
+  proxyConfigs: {}
+  replicaCount: 1
+  tolerations: []
+  hubVersion: ""
+  ocpIngress: ""
+  subscriptionPause: "false"
+
+# clusterImageSets:
+#   subscriptionPause: "false"
+#   acmHiveOpenshiftReleaseUrl: "https://github.com/stolostron/acm-hive-openshift-releases.git"

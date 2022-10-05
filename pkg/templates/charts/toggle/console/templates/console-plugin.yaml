@@ -1,0 +1,24 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: console.openshift.io/v1alpha1
+kind: ConsolePlugin
+metadata:
+  name: acm
+  annotations:
+    console.openshift.io/use-i18n: "true"
+spec:
+  displayName: Red Hat Advanced Cluster Management
+  proxy:
+    - type: Service
+      alias: console
+      service:
+        name: console-chart-console-v2
+        namespace: {{ .Values.global.namespace }}
+        port: 3000
+      authorize: true
+  service:
+    basePath: /plugin/
+    name: console-chart-console-v2
+    namespace: {{ .Values.global.namespace }}
+    port: 3000
+  

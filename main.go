@@ -45,6 +45,7 @@ import (
 	"github.com/stolostron/multiclusterhub-operator/controllers"
 	"github.com/stolostron/multiclusterhub-operator/pkg/webhook"
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
+	networking "k8s.io/api/networking/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -54,6 +55,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	policy "open-cluster-management.io/governance-policy-propagator/api/v1"
+	channel "open-cluster-management.io/multicloud-operators-channel/pkg/apis"
 	appsubv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis"
 
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -87,6 +89,8 @@ func init() {
 
 	utilruntime.Must(appsubv1.AddToScheme(scheme))
 
+	utilruntime.Must(channel.AddToScheme(scheme))
+
 	utilruntime.Must(apiregistrationv1.AddToScheme(scheme))
 
 	utilruntime.Must(apixv1.AddToScheme(scheme))
@@ -106,6 +110,8 @@ func init() {
 	utilruntime.Must(consolev1.AddToScheme(scheme))
 
 	utilruntime.Must(olmapi.AddToScheme(scheme))
+
+	utilruntime.Must(networking.AddToScheme(scheme))
 
 	//+kubebuilder:scaffold:scheme
 }

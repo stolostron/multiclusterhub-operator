@@ -25,6 +25,7 @@ import (
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
 	ocmapi "open-cluster-management.io/api/addon/v1alpha1"
 	policy "open-cluster-management.io/governance-policy-propagator/api/v1"
+	channel "open-cluster-management.io/multicloud-operators-channel/pkg/apis"
 	appsub "open-cluster-management.io/multicloud-operators-subscription/pkg/apis"
 	appsubv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/v1"
 
@@ -36,6 +37,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networking "k8s.io/api/networking/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -326,6 +328,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 		Expect(promv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(mchov1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(appsub.AddToScheme(clientScheme)).Should(Succeed())
+		Expect(channel.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(apiregistrationv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(apixv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(netv1.AddToScheme(clientScheme)).Should(Succeed())
@@ -336,6 +339,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 		Expect(consolev1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(olmapi.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(ocmapi.AddToScheme(clientScheme)).Should(Succeed())
+		Expect(networking.AddToScheme(clientScheme)).Should(Succeed())
 
 		k8sManager, err := ctrl.NewManager(clientConfig, ctrl.Options{
 			Scheme:                 clientScheme,
@@ -579,6 +583,18 @@ var _ = Describe("MultiClusterHub controller", func() {
 			By("Ensuring No GRC")
 
 			result, err = reconciler.ensureNoGRC(ctx, mch, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+
+			By("Ensuring Console")
+
+			result, err = reconciler.ensureConsole(ctx, mch, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+
+			By("Ensuring No Console")
+
+			result, err = reconciler.ensureNoConsole(ctx, mch, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 		})

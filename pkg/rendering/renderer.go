@@ -47,12 +47,14 @@ type Global struct {
 }
 
 type HubConfig struct {
-	NodeSelector map[string]string `json:"nodeSelector" structs:"nodeSelector"`
-	ProxyConfigs map[string]string `json:"proxyConfigs" structs:"proxyConfigs"`
-	ReplicaCount int               `json:"replicaCount" structs:"replicaCount"`
-	Tolerations  []Toleration      `json:"tolerations" structs:"tolerations"`
-	OCPVersion   string            `json:"ocpVersion" structs:"ocpVersion"`
-	HubVersion   string            `json:"hubVersion" structs:"hubVersion"`
+	NodeSelector      map[string]string `json:"nodeSelector" structs:"nodeSelector"`
+	ProxyConfigs      map[string]string `json:"proxyConfigs" structs:"proxyConfigs"`
+	ReplicaCount      int               `json:"replicaCount" structs:"replicaCount"`
+	Tolerations       []Toleration      `json:"tolerations" structs:"tolerations"`
+	OCPVersion        string            `json:"ocpVersion" structs:"ocpVersion"`
+	HubVersion        string            `json:"hubVersion" structs:"hubVersion"`
+	OCPIngress        string            `json:"ocpIngress" structs:"ocpIngress"`
+	SubscriptionPause string            `json:"subscriptionPause" structs:"subscriptionPause"`
 }
 
 type Toleration struct {
@@ -276,7 +278,7 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 
 		// Add namespace to namespaced resources
 		switch unstructured.GetKind() {
-		case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service", "ConfigMap":
+		case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service", "ConfigMap", "Ingress", "Channel", "Subscription":
 			if unstructured.GetNamespace() == "" {
 				unstructured.SetNamespace(mch.Namespace)
 			}
@@ -306,11 +308,15 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 
 	values.HubConfig.Tolerations = convertTolerations(utils.GetTolerations(mch))
 
-	values.Org = "open-cluster-management"
-
 	values.HubConfig.OCPVersion = os.Getenv("ACM_HUB_OCP_VERSION")
 
 	values.HubConfig.HubVersion = version.Version
+
+	values.HubConfig.OCPIngress = os.Getenv("INGRESS_DOMAIN")
+
+	values.HubConfig.SubscriptionPause = utils.GetDisableClusterImageSets(mch)
+
+	values.Org = "open-cluster-management"
 
 	if utils.ProxyEnvVarsAreSet() {
 		proxyVar := map[string]string{}

@@ -54,6 +54,7 @@ const (
 	CLCChartLocation           = "/charts/toggle/cluster-lifecycle"
 	ClusterBackupChartLocation = "/charts/toggle/cluster-backup"
 	GRCChartLocation           = "/charts/toggle/grc"
+	ConsoleChartLocation       = "/charts/toggle/console"
 )
 
 var (
@@ -293,7 +294,7 @@ func GetTestImages() []string {
 		"search_collector", "search_indexer", "search_v2_api", "postgresql_13", "search_v2_operator", "klusterlet_addon_controller",
 		"governance_policy_propagator", "governance_policy_addon_controller", "cert_policy_controller", "iam_policy_controller",
 		"config_policy_controller", "governance_policy_spec_sync", "governance_policy_status_sync", "governance_policy_template_sync",
-		"cluster_backup_controller"}
+		"cluster_backup_controller", "console"}
 
 }
 
@@ -366,7 +367,6 @@ func GetDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 
 func GetAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	appsubs := []types.NamespacedName{
-		{Name: "console-chart-sub", Namespace: m.Namespace},
 		{Name: "management-ingress-sub", Namespace: m.Namespace},
 		{Name: "volsync-addon-controller-sub", Namespace: m.Namespace},
 	}
@@ -408,14 +408,14 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedN
 		nn = append(nn, types.NamespacedName{Name: "grc-policy-addon-controller", Namespace: m.Namespace})
 		nn = append(nn, types.NamespacedName{Name: "grc-policy-propagator", Namespace: m.Namespace})
 	}
+	if m.Enabled(operatorsv1.Console) {
+		nn = append(nn, types.NamespacedName{Name: "console-chart-console-v2", Namespace: m.Namespace})
+	}
 	return nn
 }
 
 func GetAppsubsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	nn := []types.NamespacedName{}
-	if m.Enabled(operatorsv1.Console) {
-		nn = append(nn, types.NamespacedName{Name: "console-chart-sub", Namespace: m.Namespace})
-	}
 	if m.Enabled(operatorsv1.ManagementIngress) {
 		nn = append(nn, types.NamespacedName{Name: "management-ingress-sub", Namespace: m.Namespace})
 	}
