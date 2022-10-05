@@ -475,6 +475,8 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(m *operatorv1.Mul
 	}
 	// If no MCE then add InfrastructureCustomNamespace when assisted installer configured
 	if len(mceList.Items) == 0 {
+		// add installer labels on create
+		mce.Labels = utils.AddInstallerLabels(mce.Labels, m.Name, m.Namespace)
 		configured, err := AssistedServiceConfigured(ctx, r.Client)
 		if err != nil {
 			return ctrl.Result{Requeue: true}, err
@@ -492,6 +494,8 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(m *operatorv1.Mul
 	}
 	// If MCE then maintain InfrastructureCustomNamespace if present
 	if len(mceList.Items) == 1 {
+		// preserve labels
+		mce.SetLabels(mceList.Items[0].Labels)
 		if mceList.Items[0].Spec.Overrides != nil && mceList.Items[0].Spec.Overrides.InfrastructureCustomNamespace != "" {
 			mce.Spec.Overrides.InfrastructureCustomNamespace = mceList.Items[0].Spec.Overrides.InfrastructureCustomNamespace
 		}
@@ -1146,6 +1150,7 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(multiClusterHub *opera
 	// preserve catalogSource info
 	s.Spec.CatalogSource = mceSub.Spec.CatalogSource
 	s.Spec.CatalogSourceNamespace = mceSub.Spec.CatalogSourceNamespace
+	s.SetLabels(mceSub.Labels)
 
 	// if updating channel must remove startingCSV
 	if s.Spec.Channel != mceSub.Spec.Channel {
@@ -1196,18 +1201,24 @@ func (r *MultiClusterHubReconciler) getMCESubscription() (*subv1alpha1.Subscript
 
 	// if label doesn't work find it via .spec.name (it's package)
 	r.Log.Info("Failed to find subscription via label")
-	for i := range subList.Items {
-		if subList.Items[i].Spec.Package == multiclusterengine.DesiredPackage() {
+	wholeList := &subv1alpha1.SubscriptionList{}
+	err = r.Client.List(ctx, wholeList)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range wholeList.Items {
+		if wholeList.Items[i].Spec.Package == multiclusterengine.DesiredPackage() {
 			// adding label so it can be found in the future
-			labels := subList.Items[i].GetLabels()
+			labels := wholeList.Items[i].GetLabels()
 			labels[utils.MCEManagedByLabel] = "true"
-			subList.Items[i].SetLabels(labels)
+			wholeList.Items[i].SetLabels(labels)
 			r.Log.Info("Adding label to subscription")
-			if err := r.Client.Update(ctx, &subList.Items[i]); err != nil {
+			if err := r.Client.Update(ctx, &wholeList.Items[i]); err != nil {
 				r.Log.Error(err, "Failed to add managedBy preexisting MCE with MCH spec")
-				return &subList.Items[i], err
+				return &wholeList.Items[i], err
 			}
-			return &subList.Items[i], nil
+			return &wholeList.Items[i], nil
 		}
 	}
 	return nil, nil
