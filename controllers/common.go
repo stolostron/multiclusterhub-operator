@@ -1690,3 +1690,40 @@ func (r *MultiClusterHubReconciler) ensureNoSearchCR(m *operatorv1.MultiClusterH
 	return ctrl.Result{}, nil
 
 }
+
+//Checks if OCP Console is enabled and return true if so. If <OCP v4.12, always return true
+//Otherwise check in the EnabledCapabilities spec for OCP console
+func (r *MultiClusterHubReconciler) CheckConsole(ctx context.Context) (bool, error) {
+	versionStatus := &configv1.ClusterVersion{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: "version"}, versionStatus)
+	if err != nil {
+		return false, err
+	}
+	ocpVersion, err := r.getClusterVersion(ctx)
+	if err != nil {
+		return false, err
+	}
+	if hubOCPVersion, ok := os.LookupEnv("ACM_HUB_OCP_VERSION"); ok {
+		ocpVersion = hubOCPVersion
+	}
+	semverVersion, err := semver.NewVersion(ocpVersion)
+	if err != nil {
+		return false, fmt.Errorf("failed to convert ocp version to semver compatible value: %w", err)
+	}
+	// -0 allows for prerelease builds to pass the validation.
+	// If -0 is removed, developer/rc builds will not pass this check
+	//OCP Console can only be disabled in OCP 4.12+
+	constraint, err := semver.NewConstraint(">= 4.12.0-0")
+	if err != nil {
+		return false, fmt.Errorf("failed to set ocp version constraint: %w", err)
+	}
+	if !constraint.Check(semverVersion) {
+		return true, nil
+	}
+	for _, v := range versionStatus.Status.Capabilities.EnabledCapabilities {
+		if v == "Console" {
+			return true, nil
+		}
+	}
+	return false, nil
+}

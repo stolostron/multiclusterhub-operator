@@ -113,8 +113,8 @@ func getKlusterletAddonConfig() *unstructured.Unstructured {
 	return klusterletaddonconfig
 }
 
-func (r *MultiClusterHubReconciler) ensureHubIsImported(m *operatorsv1.MultiClusterHub) (ctrl.Result, error) {
-	if !r.ComponentsAreRunning(m) {
+func (r *MultiClusterHubReconciler) ensureHubIsImported(m *operatorsv1.MultiClusterHub, ocpConsole bool) (ctrl.Result, error) {
+	if !r.ComponentsAreRunning(m, ocpConsole) {
 		r.Log.Info("Waiting for mch phase to be 'running' before importing hub cluster")
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
@@ -285,11 +285,11 @@ func (r *MultiClusterHubReconciler) ensureKlusterletAddonConfig(m *operatorsv1.M
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterHubReconciler) ensureManagedClusterIsRunning(m *operatorsv1.MultiClusterHub) ([]interface{}, error) {
+func (r *MultiClusterHubReconciler) ensureManagedClusterIsRunning(m *operatorsv1.MultiClusterHub, ocpConsole bool) ([]interface{}, error) {
 	if m.Spec.DisableHubSelfManagement {
 		return nil, nil
 	}
-	if !r.ComponentsAreRunning(m) {
+	if !r.ComponentsAreRunning(m, ocpConsole) {
 		r.Log.Info("Waiting for mch phase to be 'running' before ensuring hub is running")
 		return nil, fmt.Errorf("Waiting for mch phase to be 'running' before ensuring hub is running")
 	}
