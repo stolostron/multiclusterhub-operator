@@ -1,0 +1,142 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: volsync-addon-controller
+  labels:
+    app: volsync-addon-controller
+    app.kubernetes.io/instance: volsync
+    app.kubernetes.io/name: volsync-addon-controller
+    chart: volsync-addon-controller-{{ .Values.hubconfig.hubVersion }}
+    component: volsync-addon-controller
+    release: volsync
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: volsync-addon-controller
+      release: volsync
+      component: volsync-addon-controller
+  template:
+    metadata:
+      labels:
+        app: volsync-addon-controller
+        app.kubernetes.io/instance: volsync
+        app.kubernetes.io/name: volsync-addon-controller
+        chart: volsync-addon-controller-{{ .Values.hubconfig.hubVersion }}
+        component: volsync-addon-controller
+        ocm-antiaffinity-selector: volsync-addon-controller
+        release: volsync
+    spec:
+      serviceAccountName: volsync-addon-controller
+      hostNetwork: false
+      hostPID: false
+      hostIPC: false
+      securityContext:
+        runAsNonRoot: true
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+                - arm64
+                - ppc64le
+                - s390x
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 70
+            podAffinityTerm:
+              topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - volsync-addon-controller
+                - key: component
+                  operator: In
+                  values:
+                  - volsync-addon-controller
+          - weight: 35
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - volsync-addon-controller
+                - key: component
+                  operator: In
+                  values:
+                  - volsync-addon-controller
+      {{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+      {{- end }}
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}
+      containers:
+      - name: volsync-addon-controller
+        image: {{ .Values.global.imageOverrides.volsync_addon_controller }}
+        imagePullPolicy: {{ .Values.global.pullPolicy }}
+        args:
+          - "controller"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            scheme: HTTPS
+            port: 8443
+          initialDelaySeconds: 2
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            scheme: HTTPS
+            port: 8443
+          initialDelaySeconds: 2
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        volumeMounts:
+          - mountPath: /tmp
+            name: tmp-volume
+        env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          {{- if .Values.hubconfig.proxyConfigs }}
+          - name: HTTP_PROXY
+            value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+          - name: HTTPS_PROXY
+            value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+          - name: NO_PROXY
+            value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+          {{- end }}
+      {{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
+      {{- end }}
+      {{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+      {{ toYaml . | indent 8 }}
+      {{- end }}

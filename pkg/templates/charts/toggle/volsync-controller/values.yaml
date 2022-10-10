@@ -1,0 +1,14 @@
+org: stolostron
+
+global:
+  pullPolicy: Always
+  imageOverrides:
+    volsync_addon_controller: ""
+
+pullSecret: null
+
+hubconfig:
+  nodeSelector: null
+  replicaCount: 1
+  proxyConfigs: {}
+  tolerations: []

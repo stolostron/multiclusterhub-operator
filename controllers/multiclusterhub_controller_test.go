@@ -599,6 +599,18 @@ var _ = Describe("MultiClusterHub controller", func() {
 			result, err = reconciler.ensureNoConsole(ctx, mch, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
+
+			By("Ensuring Volsync")
+
+			result, err = reconciler.ensureVolsync(ctx, mch, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+
+			By("Ensuring No Volsync")
+
+			result, err = reconciler.ensureNoVolsync(ctx, mch, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
 		})
 	})
 
