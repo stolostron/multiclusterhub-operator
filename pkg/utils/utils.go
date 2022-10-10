@@ -55,6 +55,7 @@ const (
 	ClusterBackupChartLocation = "/charts/toggle/cluster-backup"
 	GRCChartLocation           = "/charts/toggle/grc"
 	ConsoleChartLocation       = "/charts/toggle/console"
+	VolsyncChartLocation       = "/charts/toggle/volsync-controller"
 )
 
 var (
@@ -294,7 +295,7 @@ func GetTestImages() []string {
 		"search_collector", "search_indexer", "search_v2_api", "postgresql_13", "search_v2_operator", "klusterlet_addon_controller",
 		"governance_policy_propagator", "governance_policy_addon_controller", "cert_policy_controller", "iam_policy_controller",
 		"config_policy_controller", "governance_policy_spec_sync", "governance_policy_status_sync", "governance_policy_template_sync",
-		"cluster_backup_controller", "console"}
+		"cluster_backup_controller", "console", "volsync_addon_controller"}
 
 }
 
@@ -349,6 +350,7 @@ func FindNamespace() (string, error) {
 func GetDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	nn := []types.NamespacedName{
 		{Name: "multiclusterhub-repo", Namespace: m.Namespace},
+		{Name: "volsync-addon-controller", Namespace: m.Namespace},
 	}
 	if m.Enabled(operatorsv1.Insights) {
 		nn = append(nn, types.NamespacedName{Name: "insights-client", Namespace: m.Namespace})
@@ -368,7 +370,6 @@ func GetDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 func GetAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	appsubs := []types.NamespacedName{
 		{Name: "management-ingress-sub", Namespace: m.Namespace},
-		{Name: "volsync-addon-controller-sub", Namespace: m.Namespace},
 	}
 	return appsubs
 }
@@ -411,6 +412,9 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole bool) []
 	if m.Enabled(operatorsv1.Console) && ocpConsole {
 		nn = append(nn, types.NamespacedName{Name: "console-chart-console-v2", Namespace: m.Namespace})
 	}
+	if m.Enabled(operatorsv1.Volsync) {
+		nn = append(nn, types.NamespacedName{Name: "volsync-addon-controller", Namespace: m.Namespace})
+	}
 	return nn
 }
 
@@ -418,9 +422,6 @@ func GetAppsubsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedName 
 	nn := []types.NamespacedName{}
 	if m.Enabled(operatorsv1.ManagementIngress) {
 		nn = append(nn, types.NamespacedName{Name: "management-ingress-sub", Namespace: m.Namespace})
-	}
-	if m.Enabled(operatorsv1.Volsync) {
-		nn = append(nn, types.NamespacedName{Name: "volsync-addon-controller-sub", Namespace: m.Namespace})
 	}
 	return nn
 }
