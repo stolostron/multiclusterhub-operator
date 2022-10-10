@@ -232,6 +232,12 @@ var _ = Describe("utility functions", func() {
 			d := GetDeploymentsForStatus(&mch, true)
 			Expect(len(d)).To(Equal(1))
 		})
+		It("gets deployments for status with volsync enabled", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable(operatorsv1.Volsync)
+			d := GetDeploymentsForStatus(&mch, true)
+			Expect(len(d)).To(Equal(1))
+		})
 		It("gets appsubs for status", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(operatorsv1.ClusterBackup)
