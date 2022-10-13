@@ -1820,6 +1820,15 @@ func (r *MultiClusterHubReconciler) ensureNoSearchCR(m *operatorv1.MultiClusterH
 		}
 
 	}
+	err = r.Client.List(ctx, searchList, client.InNamespace(m.GetNamespace()))
+	if err != nil {
+		r.Log.Info(fmt.Sprintf("error locating Search CR. Error: %s", err.Error()))
+		return ctrl.Result{Requeue: true}, err
+	}
+	if len(searchList.Items) != 0 {
+		r.Log.Info(fmt.Sprintf("Waiting for Search CR to be deleted"))
+		return ctrl.Result{Requeue: true}, errors.NewBadRequest("Search CR has not been deleted")
+	}
 	return ctrl.Result{}, nil
 
 }
