@@ -4,17 +4,22 @@ metadata:
   name: '{{ .Values.org }}:{{ .Chart.Name }}:search-v2-operator'
 rules:
 - apiGroups:
+  - apps
+  resources:
+  - deployments
+  - replicasets
+  verbs:
+  - '*'
+- apiGroups:
   - ''
   resources:
   - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  - persistentvolumeclaims
   verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
+  - '*'
 - apiGroups:
   - coordination.k8s.io
   resources:
