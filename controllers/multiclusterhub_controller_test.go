@@ -560,9 +560,10 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 			By("Ensuring No Search-v2")
 
-			result, err = reconciler.ensureNoSearchV2(ctx, mch, testImages)
-			Expect(result).To(Equal(ctrl.Result{}))
-			Expect(err).To(BeNil())
+			Eventually(func() bool {
+				result, err := reconciler.ensureNoSearchV2(ctx, mch, testImages)
+				return (err == nil && result == ctrl.Result{})
+			}, timeout, interval).Should(BeTrue())
 
 			By("Ensuring CLC")
 
