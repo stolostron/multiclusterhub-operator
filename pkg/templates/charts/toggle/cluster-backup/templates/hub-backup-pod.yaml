@@ -249,4 +249,4 @@ spec:
                   phase: Error                                                       
           remediationAction: inform
           severity: high                                                                        
-  remediationAction: inform
+    remediationAction: inform
