@@ -1,10 +1,11 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.6.1
+  creationTimestamp: null
   name: policies.policy.open-cluster-management.io
 spec:
-  conversion:
-    strategy: None
   group: policy.open-cluster-management.io
   names:
     kind: Policy
@@ -31,23 +32,108 @@ spec:
         description: Policy is the Schema for the policies API
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
           spec:
             description: PolicySpec defines the desired state of Policy
             properties:
+              dependencies:
+                description: PolicyDependencies that apply to each template in this
+                  Policy
+                items:
+                  description: Each PolicyDepenency defines an object reference which
+                    must be in a certain compliance state before the policy should
+                    be created.
+                  properties:
+                    apiVersion:
+                      description: 'APIVersion defines the versioned schema of this
+                        representation of an object. Servers should convert recognized
+                        schemas to the latest internal value, and may reject unrecognized
+                        values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                      type: string
+                    compliance:
+                      description: The ComplianceState (at path .status.compliant)
+                        required before the policy should be created
+                      type: string
+                    kind:
+                      description: 'Kind is a string value representing the REST resource
+                        this object represents. Servers may infer this from the endpoint
+                        the client submits requests to. Cannot be updated. In CamelCase.
+                        More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                      type: string
+                    name:
+                      description: The name of the object to be checked
+                      type: string
+                    namespace:
+                      description: The namespace of the object to be checked (optional)
+                      type: string
+                  required:
+                  - compliance
+                  - name
+                  type: object
+                type: array
               disabled:
+                description: This provides the ability to enable and disable your
+                  policies.
                 type: boolean
               policy-templates:
+                description: Used to create one or more policies to apply to a managed
+                  cluster
                 items:
                   description: PolicyTemplate template for custom security policy
                   properties:
+                    extraDependencies:
+                      description: Additional PolicyDependencies that only apply to
+                        this template
+                      items:
+                        description: Each PolicyDepenency defines an object reference
+                          which must be in a certain compliance state before the policy
+                          should be created.
+                        properties:
+                          apiVersion:
+                            description: 'APIVersion defines the versioned schema
+                              of this representation of an object. Servers should
+                              convert recognized schemas to the latest internal value,
+                              and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                            type: string
+                          compliance:
+                            description: The ComplianceState (at path .status.compliant)
+                              required before the policy should be created
+                            type: string
+                          kind:
+                            description: 'Kind is a string value representing the
+                              REST resource this object represents. Servers may infer
+                              this from the endpoint the client submits requests to.
+                              Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                            type: string
+                          name:
+                            description: The name of the object to be checked
+                            type: string
+                          namespace:
+                            description: The namespace of the object to be checked
+                              (optional)
+                            type: string
+                        required:
+                        - compliance
+                        - name
+                        type: object
+                      type: array
+                    ignorePending:
+                      description: Ignore this template's Pending status when calculating
+                        the overall Policy status
+                      type: boolean
                     objectDefinition:
+                      description: A Kubernetes object defining the policy to apply
+                        to a managed cluster
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
                   required:
@@ -55,7 +141,8 @@ spec:
                   type: object
                 type: array
               remediationAction:
-                description: RemediationAction describes weather to enforce or inform
+                description: This value (Enforce or Inform) will override the remediationAction
+                  on each template
                 enum:
                 - Inform
                 - inform
@@ -84,7 +171,8 @@ spec:
                       type: string
                     history:
                       items:
-                        description: ComplianceHistory defines compliance details history
+                        description: ComplianceHistory defines compliance details
+                          history
                         properties:
                           eventName:
                             type: string
@@ -106,7 +194,8 @@ spec:
                   properties:
                     decisions:
                       items:
-                        description: PlacementDecision defines the decision made by controller
+                        description: PlacementDecision defines the decision made by
+                          controller
                         properties:
                           clusterName:
                             type: string
@@ -126,7 +215,8 @@ spec:
                 type: array
               status:
                 items:
-                  description: CompliancePerClusterStatus defines compliance per cluster status
+                  description: CompliancePerClusterStatus defines compliance per cluster
+                    status
                   properties:
                     clustername:
                       type: string
