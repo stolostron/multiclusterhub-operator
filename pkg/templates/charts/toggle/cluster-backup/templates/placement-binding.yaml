@@ -1,0 +1,16 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  annotations:
+    "helm.sh/hook": pre-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation
+  name: backup-restore-enabled
+  namespace: open-cluster-management-backup
+placementRef:
+  apiGroup: apps.open-cluster-management.io
+  kind: PlacementRule
+  name: backup-restore-enabled
+subjects:
+  - apiGroup: policy.open-cluster-management.io
+    kind: Policy
+    name: backup-restore-enabled
