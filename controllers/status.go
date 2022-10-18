@@ -73,7 +73,7 @@ const (
 
 func newComponentList(m *operatorsv1.MultiClusterHub, ocpConsole bool) map[string]operatorsv1.StatusCondition {
 	components := make(map[string]operatorsv1.StatusCondition)
-	for _, d := range utils.GetDeploymentsForStatus(m, ocpConsole) {
+	for _, d := range utils.GetDeploymentsForStatus(m) {
 		components[d.Name] = unknownStatus
 	}
 	for _, s := range utils.GetAppsubsForStatus(m) {
@@ -96,8 +96,8 @@ var unmanagedStatus = operatorsv1.StatusCondition{
 }
 
 var consoleUnavailableStatus = operatorsv1.StatusCondition{
-	Type:               "Unavailable",
-	Status:             metav1.ConditionTrue,
+	Type:               "Available",
+	Status:             metav1.ConditionFalse,
 	LastUpdateTime:     metav1.Now(),
 	LastTransitionTime: metav1.Now(),
 	Reason:             "OCP Console missing",

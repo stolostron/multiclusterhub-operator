@@ -195,25 +195,25 @@ var _ = Describe("utility functions", func() {
 		})
 		It("gets deployments for status with mcho-repo disabled", func() {
 			mch := resources.EmptyMCH()
-			d := GetDeploymentsForStatus(&mch, true)
+			d := GetDeploymentsForStatus(&mch)
 			Expect(len(d)).To(Equal(0))
 		})
 		It("gets deployments for status with mcho-repo enabled", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable("multiclusterhub-repo")
-			d := GetDeploymentsForStatus(&mch, true)
+			d := GetDeploymentsForStatus(&mch)
 			Expect(len(d)).To(Equal(1))
 		})
 		It("gets deployments for status with insights enabled", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable("insights")
-			d := GetDeploymentsForStatus(&mch, true)
+			d := GetDeploymentsForStatus(&mch)
 			Expect(len(d)).To(Equal(2))
 		})
 		It("gets deployments for status with cluster-lifecycle enabled", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(operatorsv1.ClusterLifecycle)
-			d := GetDeploymentsForStatus(&mch, true)
+			d := GetDeploymentsForStatus(&mch)
 			Expect(len(d)).To(Equal(1))
 		})
 		It("gets deployments for status with cluster-backkup enabled", func() {
@@ -223,19 +223,19 @@ var _ = Describe("utility functions", func() {
 		It("gets deployments for status with grc enabled", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(operatorsv1.GRC)
-			d := GetDeploymentsForStatus(&mch, true)
+			d := GetDeploymentsForStatus(&mch)
 			Expect(len(d)).To(Equal(2))
 		})
 		It("gets deployments for status with console enabled", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(operatorsv1.Console)
-			d := GetDeploymentsForStatus(&mch, true)
+			d := GetDeploymentsForStatus(&mch)
 			Expect(len(d)).To(Equal(1))
 		})
 		It("gets deployments for status with volsync enabled", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(operatorsv1.Volsync)
-			d := GetDeploymentsForStatus(&mch, true)
+			d := GetDeploymentsForStatus(&mch)
 			Expect(len(d)).To(Equal(1))
 		})
 		It("gets appsubs for status", func() {
