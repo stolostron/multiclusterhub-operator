@@ -381,7 +381,7 @@ func GetCustomResources(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	}
 }
 
-func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole bool) []types.NamespacedName {
+func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	nn := []types.NamespacedName{}
 	if m.Enabled("multiclusterhub-repo") {
 		nn = append(nn, types.NamespacedName{Name: "multiclusterhub-repo", Namespace: m.Namespace})
@@ -408,7 +408,7 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole bool) []
 		nn = append(nn, types.NamespacedName{Name: "grc-policy-addon-controller", Namespace: m.Namespace})
 		nn = append(nn, types.NamespacedName{Name: "grc-policy-propagator", Namespace: m.Namespace})
 	}
-	if m.Enabled(operatorsv1.Console) && ocpConsole {
+	if m.Enabled(operatorsv1.Console) {
 		nn = append(nn, types.NamespacedName{Name: "console-chart-console-v2", Namespace: m.Namespace})
 	}
 	return nn
