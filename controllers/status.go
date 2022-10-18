@@ -73,7 +73,7 @@ const (
 
 func newComponentList(m *operatorsv1.MultiClusterHub, ocpConsole bool) map[string]operatorsv1.StatusCondition {
 	components := make(map[string]operatorsv1.StatusCondition)
-	for _, d := range utils.GetDeploymentsForStatus(m) {
+	for _, d := range utils.GetDeploymentsForStatus(m, ocpConsole) {
 		components[d.Name] = unknownStatus
 	}
 	for _, s := range utils.GetAppsubsForStatus(m) {
@@ -102,7 +102,7 @@ var consoleUnavailableStatus = operatorsv1.StatusCondition{
 	LastTransitionTime: metav1.Now(),
 	Reason:             "OCP Console missing",
 	Message:            "The OCP Console must be enabled before using ACM Console",
-	Available:          false,
+	Available:          true,
 }
 
 var unknownStatus = operatorsv1.StatusCondition{
@@ -319,7 +319,7 @@ func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allHRs []*subhelmv1.
 	}
 
 	if !ocpConsole {
-		components["console-chart-sub"] = consoleUnavailableStatus
+		components["console-chart-console-v2"] = consoleUnavailableStatus
 	}
 
 	if !hub.Spec.DisableHubSelfManagement {
