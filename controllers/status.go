@@ -96,13 +96,13 @@ var unmanagedStatus = operatorsv1.StatusCondition{
 }
 
 var consoleUnavailableStatus = operatorsv1.StatusCondition{
-	Type:               "Unavailable",
-	Status:             metav1.ConditionTrue,
+	Type:               "Available",
+	Status:             metav1.ConditionFalse,
 	LastUpdateTime:     metav1.Now(),
 	LastTransitionTime: metav1.Now(),
 	Reason:             "OCP Console missing",
 	Message:            "The OCP Console must be enabled before using ACM Console",
-	Available:          false,
+	Available:          true,
 }
 
 var unknownStatus = operatorsv1.StatusCondition{
@@ -319,7 +319,7 @@ func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allHRs []*subhelmv1.
 	}
 
 	if !ocpConsole {
-		components["console-chart-sub"] = consoleUnavailableStatus
+		components["console-chart-console-v2"] = consoleUnavailableStatus
 	}
 
 	if !hub.Spec.DisableHubSelfManagement {
