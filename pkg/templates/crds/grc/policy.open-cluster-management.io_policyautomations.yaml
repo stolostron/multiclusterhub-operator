@@ -55,6 +55,11 @@ spec:
                       job
                     minLength: 1
                     type: string
+                  policyViolationContextLimit:
+                    description: The maximum number of violation contexts will be
+                      provided to the Ansible Tower as extra variable.
+                    minimum: 0
+                    type: integer
                   secret:
                     minLength: 1
                     type: string
