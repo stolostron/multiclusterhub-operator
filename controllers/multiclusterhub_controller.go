@@ -473,20 +473,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 
-	if !utils.IsUnitTest() {
-		if !multiClusterHub.Spec.DisableHubSelfManagement {
-			result, err = r.ensureHubIsImported(multiClusterHub, ocpConsole)
-			if result != (ctrl.Result{}) {
-				return result, err
-			}
-		} else {
-			result, err = r.ensureHubIsExported(multiClusterHub)
-			if result != (ctrl.Result{}) {
-				return result, err
-			}
-		}
-	}
-
 	// Cleanup unused resources once components up-to-date
 	if r.ComponentsAreRunning(multiClusterHub, ocpConsole) {
 		if r.pluginIsSupported(multiClusterHub) && ocpConsole {
@@ -1032,9 +1018,6 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 		if _, err := r.removePluginFromConsole(m); err != nil {
 			return err
 		}
-	}
-	if _, err := r.ensureHubIsExported(m); err != nil {
-		return err
 	}
 	if err := r.cleanupAppSubscriptions(reqLogger, m); err != nil {
 		return err

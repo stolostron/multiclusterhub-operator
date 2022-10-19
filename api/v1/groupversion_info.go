@@ -17,8 +17,8 @@ limitations under the License.
 */
 
 // Package v1 contains API Schema definitions for the operator v1 API group
-//+kubebuilder:object:generate=true
-//+groupName=operator.open-cluster-management.io
+// +kubebuilder:object:generate=true
+// +groupName=operator.open-cluster-management.io
 package v1
 
 import (
