@@ -46,12 +46,8 @@ spec:
               cleanupBeforeRestore:
                 description: 1. Use CleanupRestored if you want to delete all resources
                   created by a previous restore operation, before restoring the new
-                  data 2. Use CleanupAll if you want to delete all resources of the
-                  type contained by the acm backup criteria, before restoring the
-                  new data. Use this option with caution as this will also cleanup
-                  resources on the hub created by the user, so not only resources
-                  previously restored. 3. Use None if you don't want to clean up any
-                  resources before restoring the new data.
+                  data 2. Use None if you don't want to clean up any resources before
+                  restoring the new data.
                 type: string
               restoreSyncInterval:
                 description: Used in combination with the SyncRestoreWithNewBackups
@@ -99,6 +95,13 @@ spec:
               lastMessage:
                 description: Message on the last operation
                 type: string
+              messages:
+                description: Messages contains any messages that were encountered
+                  during the restore process.
+                items:
+                  type: string
+                nullable: true
+                type: array
               phase:
                 description: Phase is the current phase of the restore
                 type: string
