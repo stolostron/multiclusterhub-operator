@@ -162,6 +162,7 @@ spec:
                 description: ComplianceState shows the state of enforcement
                 enum:
                 - Compliant
+                - Pending
                 - NonCompliant
                 type: string
               details:
