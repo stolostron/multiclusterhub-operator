@@ -29,7 +29,7 @@ var _ = BeforeSuite(func() {
 	signalHandlerContext = ctrl.SetupSignalHandler()
 
 	os.Setenv("POD_NAMESPACE", "open-cluster-management")
-	os.Setenv("CRDS_PATH", "../../bin/crds")
+	os.Setenv("CRDS_PATH", "../../pkg/templates/crds")
 	os.Setenv("TEMPLATES_PATH", "../../pkg/templates")
 	os.Setenv("UNIT_TEST", "true")
 })

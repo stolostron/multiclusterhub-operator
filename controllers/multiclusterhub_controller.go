@@ -1117,55 +1117,7 @@ func (r *MultiClusterHubReconciler) installCRDs(reqLogger logr.Logger, m *operat
 		return CRDRenderReason, err
 	}
 
-	files, err := os.ReadDir(crdDir)
-	if err != nil {
-		err := fmt.Errorf("unable to read CRD files from %s : %s", crdDir, err)
-		reqLogger.Error(err, err.Error())
-		return CRDRenderReason, err
-	}
-
-	crds := make([]*unstructured.Unstructured, 0, len(files))
-	errs := make([]error, 0, len(files))
-	for _, file := range files {
-		fileName := file.Name()
-		if filepath.Ext(fileName) != ".yaml" {
-			continue
-		}
-
-		path := path.Join(crdDir, fileName)
-		src, err := ioutil.ReadFile(filepath.Clean(path)) // #nosec G304 (filepath cleaned)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("error reading file %s : %s", fileName, err))
-			continue
-		}
-
-		crd := &unstructured.Unstructured{}
-		if err = yaml.Unmarshal(src, crd); err != nil {
-			errs = append(errs, fmt.Errorf("error unmarshalling file %s to unstructured: %s", fileName, err))
-			continue
-		}
-
-		// Check that it is actually a CRD
-		crdKind, _, err := unstructured.NestedString(crd.Object, "spec", "names", "kind")
-		if err != nil {
-			errs = append(errs, fmt.Errorf("error getting Kind field from %s: %s", fileName, err))
-			continue
-		}
-		crdGroup, _, err := unstructured.NestedString(crd.Object, "spec", "group")
-		if err != nil {
-			errs = append(errs, fmt.Errorf("error getting Group field for %s : %s", fileName, err))
-			continue
-		}
-
-		if crd.GetKind() != "CustomResourceDefinition" || crdKind == "" || crdGroup == "" {
-			errs = append(errs, fmt.Errorf("error verifying file %s is a crd", fileName))
-			continue
-		}
-
-		utils.AddInstallerLabel(crd, m.GetName(), m.GetNamespace())
-		crds = append(crds, crd)
-	}
-
+	crds, errs := renderer.RenderCRDs(crdDir)
 	if len(errs) > 0 {
 		message := mergeErrors(errs)
 		err := fmt.Errorf("failed to render CRD templates: %s", message)
@@ -1174,6 +1126,7 @@ func (r *MultiClusterHubReconciler) installCRDs(reqLogger logr.Logger, m *operat
 	}
 
 	for _, crd := range crds {
+		utils.AddInstallerLabel(crd, m.GetName(), m.GetNamespace())
 		err, ok := deploying.Deploy(r.Client, crd)
 		if err != nil {
 			err := fmt.Errorf("Failed to deploy %s %s", crd.GetKind(), crd.GetName())

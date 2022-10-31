@@ -589,7 +589,7 @@ spec:
                 - multiclusterhub-operator
                 env:
                 - name: CRDS_PATH
-                  value: /crds
+                  value: /usr/local/templates/crds
                 - name: TEMPLATES_PATH
                   value: /usr/local/templates
                 - name: POD_NAMESPACE

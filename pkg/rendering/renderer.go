@@ -157,14 +157,6 @@ func RenderCRDs(crdDir string) ([]*unstructured.Unstructured, []error) {
 	var crds []*unstructured.Unstructured
 	errs := []error{}
 
-	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
-		crdDir = path.Join(val, crdDir)
-	} else {
-		value, _ := os.LookupEnv("TEMPLATES_PATH")
-		crdDir = path.Join(value, crdDir)
-
-	}
-
 	// Read CRD files
 	err := filepath.Walk(crdDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -172,7 +164,7 @@ func RenderCRDs(crdDir string) ([]*unstructured.Unstructured, []error) {
 			return err
 		}
 		crd := &unstructured.Unstructured{}
-		if info == nil || info.IsDir() {
+		if info == nil || info.IsDir() || filepath.Ext(path) != ".yaml" {
 			return nil
 		}
 
