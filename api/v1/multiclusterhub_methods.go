@@ -6,6 +6,7 @@ import (
 )
 
 const (
+	Appsub             string = "app-lifecycle"
 	Search             string = "search"
 	ManagementIngress  string = "management-ingress"
 	Console            string = "console"
@@ -34,6 +35,7 @@ var allComponents = []string{
 	// MCH
 	Repo,
 	Search,
+	Appsub,
 	ManagementIngress,
 	Console,
 	Insights,
@@ -78,6 +80,7 @@ func GetDefaultEnabledComponents() ([]string, error) {
 		Volsync,
 		MultiClusterEngine,
 		Search,
+		Appsub,
 	}
 
 	return defaultEnabledComponents, nil

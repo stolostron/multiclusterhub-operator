@@ -11,3 +11,14 @@
         search-indexer: search_indexer
         search-collector: search_collector
         search-v2-api: search_v2_api
+- repo_name: multicloud-operators-subscription 
+  github_ref: "https://github.com/stolostron/multicloud-operators-subscription.git"
+  branch: "release-2.7"
+  operators:
+    - name: multicloud-operators-subscription 
+      bundlePath: "deploy/olm-catalog/multicluster-operators-subscription/manifests/"
+      imageMappings:
+        multicluster-operators-subscription: multicluster_operators_subscription
+        multicloud-integrations: multicloud_integrations
+        multicluster-operators-application: multicluster_operators_application
+        multicluster-operators-channel: multicluster_operators_channel
