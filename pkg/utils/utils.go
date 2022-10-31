@@ -50,6 +50,7 @@ const (
 
 	MCEManagedByLabel          = "multiclusterhubs.operator.open-cluster-management.io/managed-by"
 	InsightsChartLocation      = "/charts/toggle/insights"
+	AppsubChartLocation        = "/charts/toggle/multicloud-operators-subscription"
 	SearchV2ChartLocation      = "/charts/toggle/search-v2-operator"
 	CLCChartLocation           = "/charts/toggle/cluster-lifecycle"
 	ClusterBackupChartLocation = "/charts/toggle/cluster-backup"
@@ -295,7 +296,8 @@ func GetTestImages() []string {
 		"search_collector", "search_indexer", "search_v2_api", "postgresql_13", "search_v2_operator", "klusterlet_addon_controller",
 		"governance_policy_propagator", "governance_policy_addon_controller", "cert_policy_controller", "iam_policy_controller",
 		"config_policy_controller", "governance_policy_framework_addon",
-		"cluster_backup_controller", "console", "volsync_addon_controller"}
+		"cluster_backup_controller", "console", "volsync_addon_controller", "multicluster_operators_application",
+		"multicloud_integrations", "multicluster_operators_channel", "multicluster_operators_subscription"}
 
 }
 

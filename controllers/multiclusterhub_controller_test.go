@@ -589,6 +589,18 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
+			By("Ensuring App-Lifecycle")
+
+			result, err = reconciler.ensureAppsub(ctx, mch, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+
+			By("Ensuring No App-Lifecycle")
+
+			result, err = reconciler.ensureNoAppsub(ctx, mch, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+
 			By("Ensuring GRC")
 
 			result, err = reconciler.ensureGRC(ctx, mch, testImages)

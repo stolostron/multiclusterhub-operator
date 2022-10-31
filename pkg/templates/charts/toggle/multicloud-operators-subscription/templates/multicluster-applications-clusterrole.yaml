@@ -1,0 +1,150 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: '{{ .Values.org }}:{{ .Chart.Name }}:multicluster-applications'
+rules:
+- apiGroups:
+  - addon.open-cluster-management.io
+  - agent.open-cluster-management.io
+  - apps.open-cluster-management.io
+  - cluster.open-cluster-management.io
+  - operator.open-cluster-management.io
+  - work.open-cluster-management.io
+  - view.open-cluster-management.io
+  resources:
+  - channels
+  - channels/status
+  - channels/finalizers
+  - deployables
+  - deployables/status
+  - gitopsclusters
+  - gitopsclusters/status
+  - helmreleases
+  - helmreleases/status
+  - klusterletaddonconfigs
+  - manifestworks
+  - manifestworks/status
+  - managedclusters
+  - managedclusterviews
+  - managedclusterviews/status
+  - managedclusteraddons
+  - multiclusterhubs
+  - placements
+  - placements/status
+  - placement/finalizers
+  - placementbindings
+  - placementbindings/finalizers
+  - placementdecisions
+  - placementdecisions/status
+  - placementdecisions/finalizers
+  - placementrules
+  - placementrules/status
+  - placementrules/finalizers
+  - subscriptions
+  - subscriptions/finalizers
+  - subscriptions/status
+  - subscriptionstatuses
+  - subscriptionreports
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - patch
+  - create
+  - delete
+  - deletecollection
+- apiGroups:
+  - app.k8s.io
+  - argoproj.io
+  resources:
+  - applications
+  - applications/status
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ''
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - secrets
+  - serviceaccounts
+  - services
+  - services/proxy
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+  - deletecollection
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  - roles
+  - clusterrolebindings
+  - clusterroles
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - admissionregistration.k8s.io
+  - certificates.k8s.io
+  - coordination.k8s.io
+  - apiextensions.k8s.io
+  resources:
+  - certificatesigningrequests
+  - customresourcedefinitions
+  - leases
+  - mutatingwebhookconfigurations
+  - validatingwebhookconfigurations
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - hive.openshift.io
+  - multicluster.openshift.io
+  resources:
+  - clusterimagesets
+  - multiclusterengines
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - deployments/finalizers
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete

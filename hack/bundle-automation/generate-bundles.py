@@ -110,7 +110,11 @@ def addDeployment(helmChart, deployment):
         deploy = yaml.safe_load(f)
         
     deploy['spec'] = deployment['spec']
-    del deploy['spec']['template']['spec']['imagePullPolicy']
+    if 'spec' in deploy:
+        if 'template' in deploy['spec']:
+            if 'spec' in deploy['spec']['template']:
+                if 'imagePullPolicy' in deploy['spec']['template']['spec']:
+                    del deploy['spec']['template']['spec']['imagePullPolicy']
     deploy['metadata']['name'] = name
     with open(deployYaml, 'w') as f:
         yaml.dump(deploy, f)
@@ -652,6 +656,7 @@ def main():
                 exclusions = operator["exclusions"] if "exclusions" in operator else []
                 injectRequirements(helmChart, operator["imageMappings"], exclusions)
                 logging.info("Overrides added. \n")
+    shutil.rmtree((os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp")), ignore_errors=True)       
 
 if __name__ == "__main__":
    main()
