@@ -172,7 +172,7 @@ func RenderCRDs(crdDir string) ([]*unstructured.Unstructured, []error) {
 			return err
 		}
 		crd := &unstructured.Unstructured{}
-		if info == nil || info.IsDir() {
+		if info == nil || info.IsDir() || info.Name() == "OWNERS" {
 			return nil
 		}
 
