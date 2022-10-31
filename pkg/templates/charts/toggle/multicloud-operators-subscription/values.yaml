@@ -1,0 +1,14 @@
+global:
+  imageOverrides:
+    multicloud_integrations: ''
+    multicluster_operators_application: ''
+    multicluster_operators_channel: ''
+    multicluster_operators_subscription: ''
+  namespace: default
+  pullSecret: null
+hubconfig:
+  nodeSelector: null
+  proxyConfigs: {}
+  replicaCount: 1
+  tolerations: []
+org: open-cluster-management
