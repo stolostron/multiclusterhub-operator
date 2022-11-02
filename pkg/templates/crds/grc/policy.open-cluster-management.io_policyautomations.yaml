@@ -56,8 +56,10 @@ spec:
                     minLength: 1
                     type: string
                   policyViolationContextLimit:
-                    description: The maximum number of violation contexts will be
-                      provided to the Ansible Tower as extra variable.
+                    description: The maximum number of violating cluster contexts
+                      that will be provided to the Ansible job as extra variables.
+                      When policyViolationContextLimit is set to 0, it means no limit.
+                      The default value is 1000.
                     minimum: 0
                     type: integer
                   secret:
