@@ -33,7 +33,6 @@ import (
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
-	renderer "github.com/stolostron/multiclusterhub-operator/pkg/rendering"
 
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -68,10 +67,6 @@ import (
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
-)
-
-const (
-	crdsDir = "/crds"
 )
 
 func init() {
@@ -169,24 +164,6 @@ func main() {
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "MultiClusterHub")
 		os.Exit(1)
-	}
-
-	// Render CRD templates
-	crdsDir := crdsDir
-	crds, errs := renderer.RenderCRDs(crdsDir)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			setupLog.Info(err.Error())
-		}
-		os.Exit(1)
-	}
-
-	for _, crd := range crds {
-		err := ensureCRD(mgr, crd)
-		if err != nil {
-			setupLog.Info(err.Error())
-			os.Exit(1)
-		}
 	}
 
 	// TODO: Get Webhook Working. Some troubles w/ kubebuilder generation prevented me from
