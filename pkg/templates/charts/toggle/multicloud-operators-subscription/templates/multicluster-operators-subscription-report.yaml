@@ -89,7 +89,6 @@ spec:
             drop:
             - ALL
           privileged: false
-          readOnlyRootFilesystem: true
         volumeMounts:
         - mountPath: /tmp
           name: tmp

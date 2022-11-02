@@ -92,7 +92,6 @@ spec:
             drop:
             - ALL
           privileged: false
-          readOnlyRootFilesystem: true
         volumeMounts:
         - mountPath: /tmp
           name: tmp
@@ -126,12 +125,5 @@ spec:
       volumes:
       - emptyDir: {}
         name: tmp
-      - defaultMode: 420
-        items:
-        - key: tls.crt
-          path: tls.crt
-        - key: tls.key
-          path: tls.key
+      - emptyDir: {}
         name: multicluster-operators-subscription-tls
-        secret: null
-        secretName: multicluster-operators-subscription

@@ -22,3 +22,5 @@
         multicloud-integrations: multicloud_integrations
         multicluster-operators-application: multicluster_operators_application
         multicluster-operators-channel: multicluster_operators_channel
+      exclusions:
+        - readOnlyRootFilesystem
