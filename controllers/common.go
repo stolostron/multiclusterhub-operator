@@ -1254,6 +1254,10 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(multiClusterHub *op
 		} else {
 			existingMCE.Enable(operatorv1.MCELocalCluster)
 		}
+		labels := existingMCE.GetLabels()
+		labels["multiclusterhub.name"] = multiClusterHub.GetName()
+		labels["multiclusterhub.namespace"] = multiClusterHub.GetNamespace()
+		existingMCE.SetLabels(labels)
 		if err := r.Client.Update(ctx, existingMCE); err != nil {
 			r.Log.Error(err, "Failed to update preexisting MCE with MCH spec")
 			return ctrl.Result{}, err

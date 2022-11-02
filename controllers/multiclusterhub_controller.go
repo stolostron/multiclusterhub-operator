@@ -40,6 +40,8 @@ import (
 	ctrlpredicate "sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/yaml"
 
+	mcev1 "github.com/stolostron/backplane-operator/api/v1"
+
 	appsubv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/v1"
 
 	configv1 "github.com/openshift/api/config/v1"
@@ -494,51 +496,128 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 // SetupWithManager sets up the controller with the Manager.
 func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&operatorv1.MultiClusterHub{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
-		Watches(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
-			IsController: true,
-			OwnerType:    &operatorv1.MultiClusterHub{},
-		}, builder.WithPredicates(ctrlpredicate.Or(ctrlpredicate.GenerationChangedPredicate{}, ctrlpredicate.LabelChangedPredicate{}, ctrlpredicate.AnnotationChangedPredicate{}))).
-		Watches(&source.Kind{Type: &appsubv1.Subscription{}}, &handler.EnqueueRequestForOwner{
-			IsController: true,
-			OwnerType:    &operatorv1.MultiClusterHub{},
-		}).
-		Watches(&source.Kind{Type: &corev1.ConfigMap{}}, &handler.EnqueueRequestForOwner{
-			IsController: true,
-			OwnerType:    &operatorv1.MultiClusterHub{},
-		}).
-		Watches(&source.Kind{Type: &apiregistrationv1.APIService{}}, handler.Funcs{
-			DeleteFunc: func(e event.DeleteEvent, q workqueue.RateLimitingInterface) {
-				labels := e.Object.GetLabels()
-				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
-					Name:      labels["installer.name"],
-					Namespace: labels["installer.namespace"],
-				}})
+		For(
+			&operatorv1.MultiClusterHub{},
+			builder.WithPredicates(predicate.GenerationChangedPredicate{}),
+		).
+		Watches(
+			&source.Kind{Type: &appsv1.Deployment{}},
+			&handler.EnqueueRequestForOwner{
+				IsController: true,
+				OwnerType:    &operatorv1.MultiClusterHub{},
 			},
-		}, builder.WithPredicates(predicate.DeletePredicate{})).
-		Watches(&source.Kind{Type: &appsv1.Deployment{}},
-			handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
-				return []reconcile.Request{
-					{NamespacedName: types.NamespacedName{
-						Name:      a.GetLabels()["installer.name"],
-						Namespace: a.GetLabels()["installer.namespace"],
-					}},
-				}
-			}), builder.WithPredicates(ctrlpredicate.And(predicate.InstallerLabelPredicate{}, ctrlpredicate.Or(ctrlpredicate.GenerationChangedPredicate{}, ctrlpredicate.LabelChangedPredicate{}, ctrlpredicate.AnnotationChangedPredicate{})))).
-		Watches(&source.Kind{Type: &configv1.ClusterVersion{}},
-			handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
-				multiClusterHubList := &operatorv1.MultiClusterHubList{}
-				if err := r.Client.List(context.TODO(), multiClusterHubList); err == nil && len(multiClusterHubList.Items) > 0 {
-					mch := multiClusterHubList.Items[0]
-					return []reconcile.Request{
-						{NamespacedName: types.NamespacedName{
-							Name:      mch.GetName(),
-							Namespace: mch.GetNamespace(),
-						}},
+			builder.WithPredicates(
+				ctrlpredicate.Or(
+					ctrlpredicate.GenerationChangedPredicate{},
+					ctrlpredicate.LabelChangedPredicate{},
+					ctrlpredicate.AnnotationChangedPredicate{},
+				),
+			),
+		).
+		Watches(
+			&source.Kind{Type: &appsubv1.Subscription{}},
+			&handler.EnqueueRequestForOwner{
+				IsController: true,
+				OwnerType:    &operatorv1.MultiClusterHub{},
+			},
+		).
+		Watches(
+			&source.Kind{Type: &corev1.ConfigMap{}},
+			&handler.EnqueueRequestForOwner{
+				IsController: true,
+				OwnerType:    &operatorv1.MultiClusterHub{},
+			},
+		).
+		Watches(
+			&source.Kind{Type: &apiregistrationv1.APIService{}},
+			handler.Funcs{
+				DeleteFunc: func(e event.DeleteEvent, q workqueue.RateLimitingInterface) {
+					labels := e.Object.GetLabels()
+					q.Add(
+						reconcile.Request{
+							NamespacedName: types.NamespacedName{
+								Name:      labels["installer.name"],
+								Namespace: labels["installer.namespace"],
+							},
+						},
+					)
+				},
+			},
+			builder.WithPredicates(predicate.DeletePredicate{}),
+		).
+		Watches(
+			&source.Kind{Type: &mcev1.MultiClusterEngine{}},
+			handler.Funcs{
+				UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
+					labels := e.ObjectNew.GetLabels()
+					name := labels["installer.name"]
+					if name == "" {
+						name = labels["multiclusterhub.name"]
 					}
-				}
-				return []reconcile.Request{}
-			})).
+					namespace := labels["installer.namespace"]
+					if namespace == "" {
+						namespace = labels["multiclusterhub.namespace"]
+					}
+					if name == "" || namespace == "" {
+						l := log.FromContext(context.Background())
+						l.Info("MCE updated, but did not find required labels", labels)
+						return
+					}
+					q.Add(
+						reconcile.Request{
+							NamespacedName: types.NamespacedName{
+								Name:      name,
+								Namespace: namespace,
+							},
+						},
+					)
+				},
+			},
+		).
+		Watches(&source.Kind{Type: &appsv1.Deployment{}},
+			handler.EnqueueRequestsFromMapFunc(
+				func(a client.Object) []reconcile.Request {
+					return []reconcile.Request{
+						{
+							NamespacedName: types.NamespacedName{
+								Name:      a.GetLabels()["installer.name"],
+								Namespace: a.GetLabels()["installer.namespace"],
+							},
+						},
+					}
+				},
+			),
+			builder.WithPredicates(
+				ctrlpredicate.And(
+					predicate.InstallerLabelPredicate{},
+					ctrlpredicate.Or(
+						ctrlpredicate.GenerationChangedPredicate{},
+						ctrlpredicate.LabelChangedPredicate{},
+						ctrlpredicate.AnnotationChangedPredicate{},
+					),
+				),
+			),
+		).
+		Watches(
+			&source.Kind{Type: &configv1.ClusterVersion{}},
+			handler.EnqueueRequestsFromMapFunc(
+				func(a client.Object) []reconcile.Request {
+					multiClusterHubList := &operatorv1.MultiClusterHubList{}
+					if err := r.Client.List(context.TODO(), multiClusterHubList); err == nil && len(multiClusterHubList.Items) > 0 {
+						mch := multiClusterHubList.Items[0]
+						return []reconcile.Request{
+							{
+								NamespacedName: types.NamespacedName{
+									Name:      mch.GetName(),
+									Namespace: mch.GetNamespace(),
+								},
+							},
+						}
+					}
+					return []reconcile.Request{}
+				},
+			),
+		).
 		Complete(r)
 }
 
