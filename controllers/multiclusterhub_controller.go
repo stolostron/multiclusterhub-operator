@@ -475,6 +475,13 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 
+	if !multiClusterHub.Spec.DisableHubSelfManagement {
+		result, err = r.ensureKlusterletAddonConfig(multiClusterHub)
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+	}
+
 	// Cleanup unused resources once components up-to-date
 	if r.ComponentsAreRunning(multiClusterHub, ocpConsole) {
 		if r.pluginIsSupported(multiClusterHub) && ocpConsole {
@@ -560,7 +567,7 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) error {
 					}
 					if name == "" || namespace == "" {
 						l := log.FromContext(context.Background())
-						l.Info("MCE updated, but did not find required labels", labels)
+						l.Info(fmt.Sprintf("MCE updated, but did not find required labels: %v", labels))
 						return
 					}
 					q.Add(
