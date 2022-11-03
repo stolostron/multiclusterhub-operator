@@ -78,8 +78,9 @@ func Setup(mgr manager.Manager) error {
 // registerWebhook adds the webhook server to the manager
 func registerWebhook(mgr manager.Manager, ns string) {
 	hookServer := &webhook.Server{
-		Port:    8443,
-		CertDir: certDir,
+		Port:          8443,
+		CertDir:       certDir,
+		TLSMinVersion: "1.2",
 	}
 
 	log.Info("Add the webhook server.")
