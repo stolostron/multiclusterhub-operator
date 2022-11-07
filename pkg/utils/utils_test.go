@@ -603,3 +603,27 @@ func Test_deduplicate(t *testing.T) {
 		})
 	}
 }
+
+func TestAddInstallerLabels(t *testing.T) {
+	labels := map[string]string{
+		"testlabel": "testvalue",
+	}
+	name := "testname"
+	ns := "testnamespace"
+
+	labels = AddInstallerLabels(labels, name, ns)
+
+	tests := map[string]string{
+		"testlabel":           "testvalue",
+		"installer.name":      name,
+		"installer.namespace": ns,
+	}
+
+	for key, value := range tests {
+		if v, ok := labels[key]; !ok {
+			t.Errorf("AddInstallerLabels() missing label %q", key)
+		} else if v != value {
+			t.Errorf("AddInstallerLabels() label %q not %q, found %q", key, value, v)
+		}
+	}
+}
