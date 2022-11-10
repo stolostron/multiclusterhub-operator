@@ -5,9 +5,7 @@ package multiclusterengine
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
 
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
@@ -23,18 +21,22 @@ import (
 )
 
 var (
+	// prod MCE variables
 	channel                = "stable-2.2"
 	installPlanApproval    = subv1alpha1.ApprovalAutomatic
 	packageName            = "multicluster-engine"
 	catalogSourceName      = "redhat-operators"
 	catalogSourceNamespace = "openshift-marketplace" // https://olm.operatorframework.io/docs/tasks/troubleshooting/subscription/#a-subscription-in-namespace-x-cant-install-operators-from-a-catalogsource-in-namespace-y
 
-	//Community MCE variables
+	// community MCE variables
 	communityChannel           = "community-2.2"
 	communityPackageName       = "stolostron-engine"
 	communityCatalogSourceName = "community-operators"
-	MulticlusterengineName     = "multiclusterengine"
-	operatorGroupName          = "default"
+
+	// default names
+	MulticlusterengineName      = "multiclusterengine"
+	MulticlusterengineNamespace = "multicluster-engine"
+	operatorGroupName           = "default"
 )
 
 // mocks returning a single manifest
@@ -90,7 +92,41 @@ func MultiClusterEngine(m *operatorsv1.MultiClusterHub) *mcev1.MultiClusterEngin
 	return mce
 }
 
-// GetSupportedAnnotations ...
+// NewMultiClusterEngine returns an MCE configured from a Multiclusterhub
+func NewMultiClusterEngine(m *operatorsv1.MultiClusterHub) *mcev1.MultiClusterEngine {
+	labels := map[string]string{
+		"installer.name":        m.GetName(),
+		"installer.namespace":   m.GetNamespace(),
+		utils.MCEManagedByLabel: "true",
+	}
+	annotations := GetSupportedAnnotations(m)
+	availConfig := mcev1.HAHigh
+	if m.Spec.AvailabilityConfig == operatorsv1.HABasic {
+		availConfig = mcev1.HABasic
+	}
+
+	mce := &mcev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        MulticlusterengineName,
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Spec: mcev1.MultiClusterEngineSpec{
+			ImagePullSecret:    m.Spec.ImagePullSecret,
+			Tolerations:        utils.GetTolerations(m),
+			NodeSelector:       m.Spec.NodeSelector,
+			AvailabilityConfig: availConfig,
+			TargetNamespace:    MulticlusterengineNamespace,
+			Overrides: &mcev1.Overrides{
+				Components: utils.GetMCEComponents(m),
+			},
+		},
+	}
+	return mce
+}
+
+// GetSupportedAnnotations copies annotations relevant to MCE from MCH. Currently this only
+// applies to the imageRepository override
 func GetSupportedAnnotations(m *operatorsv1.MultiClusterHub) map[string]string {
 	mceAnnotations := make(map[string]string)
 	if m.GetAnnotations() != nil {
@@ -99,95 +135,6 @@ func GetSupportedAnnotations(m *operatorsv1.MultiClusterHub) map[string]string {
 		}
 	}
 	return mceAnnotations
-}
-
-// Subscription for the helm repo serving charts
-func Subscription(m *operatorsv1.MultiClusterHub, c *subv1alpha1.SubscriptionConfig, community bool) *subv1alpha1.Subscription {
-	sub := &subv1alpha1.Subscription{}
-	if community {
-		sub = &subv1alpha1.Subscription{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: subv1alpha1.SubscriptionCRDAPIVersion,
-				Kind:       subv1alpha1.SubscriptionKind,
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      utils.MCESubscriptionName,
-				Namespace: utils.MCESubscriptionNamespace,
-				Labels:    labels(m),
-			},
-			Spec: &subv1alpha1.SubscriptionSpec{
-				Channel:                communityChannel,
-				InstallPlanApproval:    installPlanApproval,
-				Package:                communityPackageName,
-				CatalogSource:          communityCatalogSourceName,
-				CatalogSourceNamespace: catalogSourceNamespace,
-				Config:                 c,
-			},
-		}
-
-	} else {
-		sub = &subv1alpha1.Subscription{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: subv1alpha1.SubscriptionCRDAPIVersion,
-				Kind:       subv1alpha1.SubscriptionKind,
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      utils.MCESubscriptionName,
-				Namespace: utils.MCESubscriptionNamespace,
-				Labels:    labels(m),
-			},
-			Spec: &subv1alpha1.SubscriptionSpec{
-				Channel:                channel,
-				InstallPlanApproval:    installPlanApproval,
-				Package:                packageName,
-				CatalogSource:          catalogSourceName,
-				CatalogSourceNamespace: catalogSourceNamespace,
-				Config:                 c,
-			},
-		}
-	}
-
-	applySubscriptionConfig(sub, c)
-	// Apply annotations last because they always take priority
-	ApplyAnnotationOverrides(sub, m)
-	return sub
-}
-
-// Updates subscription with override annotation values if present
-func ApplyAnnotationOverrides(sub *subv1alpha1.Subscription, m *operatorsv1.MultiClusterHub) {
-	if mceAnnotationOverrides := utils.GetMCEAnnotationOverrides(m); mceAnnotationOverrides != "" {
-		log := log.FromContext(context.Background())
-
-		mceSub := &subv1alpha1.SubscriptionSpec{}
-		err := json.Unmarshal([]byte(mceAnnotationOverrides), mceSub)
-		if err != nil {
-			log.Info(fmt.Sprintf("Failed to unmarshal MultiClusterEngine annotation: %s.", mceAnnotationOverrides))
-			return
-		}
-
-		if mceSub.Channel != "" {
-			sub.Spec.Channel = mceSub.Channel
-		}
-		if mceSub.Package != "" {
-			sub.Spec.Package = mceSub.Package
-		}
-		if mceSub.CatalogSource != "" {
-			sub.Spec.CatalogSource = mceSub.CatalogSource
-		}
-		if mceSub.CatalogSourceNamespace != "" {
-			sub.Spec.CatalogSourceNamespace = mceSub.CatalogSourceNamespace
-		}
-		if mceSub.StartingCSV != "" {
-			sub.Spec.StartingCSV = mceSub.StartingCSV
-		}
-		if mceSub.InstallPlanApproval != "" {
-			sub.Spec.InstallPlanApproval = mceSub.InstallPlanApproval
-		}
-	}
-}
-
-func applySubscriptionConfig(sub *subv1alpha1.Subscription, c *subv1alpha1.SubscriptionConfig) {
-	sub.Spec.Config = c
 }
 
 func Namespace() *corev1.Namespace {
@@ -221,10 +168,6 @@ func OperatorGroup() *olmv1.OperatorGroup {
 // GetCatalogSource returns the name and namespace of an MCE catalogSource with the required channel.
 // Returns error if two or more catalogsources satsify criteria.
 func GetCatalogSource(k8sClient client.Client) (types.NamespacedName, error) {
-	// if utils.IsUnitTest() {
-	// 	return types.NamespacedName{Name: "multiclusterengine-catalog", Namespace: "openshift-marketplace"}, nil
-	// }
-
 	nn := types.NamespacedName{}
 
 	pkgs, err := GetMCEPackageManifests(k8sClient)
@@ -232,7 +175,7 @@ func GetCatalogSource(k8sClient client.Client) (types.NamespacedName, error) {
 		return nn, err
 	}
 	if len(pkgs) == 0 {
-		return nn, errors.New("No MCE packageManifests found in packageManifest")
+		return nn, errors.New("No MCE packageManifests found")
 	}
 
 	filtered := []olmapi.PackageManifest{}
@@ -252,7 +195,7 @@ func GetCatalogSource(k8sClient client.Client) (types.NamespacedName, error) {
 		return nn, errors.New("Found more than one catalogSource with expected channel")
 	}
 
-	return nn, errors.New("No MCE packageManifests found in packageManifest")
+	return nn, errors.New("No MCE packageManifests found with desired channel")
 }
 
 // hasDesiredChannel returns true if the packagemanifest contains the desired channel
