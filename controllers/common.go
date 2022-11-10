@@ -659,7 +659,7 @@ func (r *MultiClusterHubReconciler) ensurePullSecret(m *operatorv1.MultiClusterH
 	return ctrl.Result{}, nil
 }
 
-//checks if imagepullsecret was created in mch namespace
+// checks if imagepullsecret was created in mch namespace
 func (r *MultiClusterHubReconciler) ensurePullSecretCreated(m *operatorv1.MultiClusterHub, namespace string) (ctrl.Result, error) {
 	if m.Spec.ImagePullSecret == "" {
 		//No imagepullsecret set, continuing
@@ -1249,6 +1249,15 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(multiClusterHub *op
 		existingMCE.Spec.AvailabilityConfig = mcev1.AvailabilityType(multiClusterHub.Spec.AvailabilityConfig)
 		existingMCE.Spec.NodeSelector = multiClusterHub.Spec.NodeSelector
 		utils.UpdateMCEOverrides(existingMCE, multiClusterHub)
+		if multiClusterHub.Spec.DisableHubSelfManagement {
+			existingMCE.Disable(operatorv1.MCELocalCluster)
+		} else {
+			existingMCE.Enable(operatorv1.MCELocalCluster)
+		}
+		labels := existingMCE.GetLabels()
+		labels["multiclusterhub.name"] = multiClusterHub.GetName()
+		labels["multiclusterhub.namespace"] = multiClusterHub.GetNamespace()
+		existingMCE.SetLabels(labels)
 		if err := r.Client.Update(ctx, existingMCE); err != nil {
 			r.Log.Error(err, "Failed to update preexisting MCE with MCH spec")
 			return ctrl.Result{}, err
@@ -1833,8 +1842,8 @@ func (r *MultiClusterHubReconciler) ensureNoSearchCR(m *operatorv1.MultiClusterH
 
 }
 
-//Checks if OCP Console is enabled and return true if so. If <OCP v4.12, always return true
-//Otherwise check in the EnabledCapabilities spec for OCP console
+// Checks if OCP Console is enabled and return true if so. If <OCP v4.12, always return true
+// Otherwise check in the EnabledCapabilities spec for OCP console
 func (r *MultiClusterHubReconciler) CheckConsole(ctx context.Context) (bool, error) {
 	versionStatus := &configv1.ClusterVersion{}
 	err := r.Client.Get(ctx, types.NamespacedName{Name: "version"}, versionStatus)

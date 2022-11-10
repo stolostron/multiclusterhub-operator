@@ -61,8 +61,26 @@ spec:
               overrides:
                 description: Developer Overrides
                 properties:
+                  components:
+                    description: Provides optional configuration for components
+                    items:
+                      description: ComponentConfig provides optional configuration
+                        items for individual components
+                      properties:
+                        enabled:
+                          type: boolean
+                        name:
+                          type: string
+                      required:
+                      - enabled
+                      - name
+                      type: object
+                    type: array
                   imagePullPolicy:
                     description: Pull policy for the MCE images
+                    type: string
+                  infrastructureCustomNamespace:
+                    description: Namespace to install Assisted Installer operator
                     type: string
                 type: object
               targetNamespace:

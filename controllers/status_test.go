@@ -768,11 +768,10 @@ func Test_getComponentStatuses(t *testing.T) {
 	mceUnstructured := &unstructured.Unstructured{Object: mceU}
 
 	type args struct {
-		hub                 *operatorsv1.MultiClusterHub
-		allHRs              []*subhelmv1.HelmRelease
-		allDeps             []*appsv1.Deployment
-		allCRs              []*unstructured.Unstructured
-		importClusterStatus []interface{}
+		hub     *operatorsv1.MultiClusterHub
+		allHRs  []*subhelmv1.HelmRelease
+		allDeps []*appsv1.Deployment
+		allCRs  []*unstructured.Unstructured
 	}
 	tests := []struct {
 		name string
@@ -836,8 +835,7 @@ func Test_getComponentStatuses(t *testing.T) {
 						},
 					},
 				},
-				allCRs:              []*unstructured.Unstructured{mceUnstructured},
-				importClusterStatus: nil,
+				allCRs: []*unstructured.Unstructured{mceUnstructured},
 			},
 			want: map[string]operatorsv1.StatusCondition{
 				"local-cluster": unknownStatus,
@@ -846,7 +844,7 @@ func Test_getComponentStatuses(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getComponentStatuses(tt.args.hub, tt.args.allHRs, tt.args.allDeps, tt.args.allCRs, tt.args.importClusterStatus, true); len(got) == 0 {
+			if got := getComponentStatuses(tt.args.hub, tt.args.allHRs, tt.args.allDeps, tt.args.allCRs, true); len(got) == 0 {
 				t.Errorf("getComponentStatuses() = %v, want %v", got, tt.want)
 			}
 		})

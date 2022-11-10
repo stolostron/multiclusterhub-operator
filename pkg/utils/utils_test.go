@@ -8,8 +8,10 @@ import (
 	"reflect"
 	"testing"
 
-	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	mchv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
+
+	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -143,11 +145,11 @@ var _ = Describe("utility functions", func() {
 
 	Context("AvailabilityConfigIsValid function", func() {
 		It("returns true for a valid config", func() {
-			c := operatorsv1.HAHigh
+			c := mchv1.HAHigh
 			Expect(AvailabilityConfigIsValid(c)).To(BeTrue())
 		})
 		It("returns false for an invalid config", func() {
-			c := operatorsv1.AvailabilityType("invalid")
+			c := mchv1.AvailabilityType("invalid")
 			Expect(AvailabilityConfigIsValid(c)).To(BeFalse())
 		})
 	})
@@ -160,7 +162,7 @@ var _ = Describe("utility functions", func() {
 		It("gets deployments", func() {
 			os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
 			mch := resources.EmptyMCH()
-			mch.Enable(operatorsv1.ClusterBackup)
+			mch.Enable(mchv1.ClusterBackup)
 			d := GetDeployments(&mch)
 			Expect(len(d)).To(Equal(4))
 			Expect(d[0].Name).To(Equal("multiclusterhub-repo"))
@@ -169,7 +171,7 @@ var _ = Describe("utility functions", func() {
 		It("gets appsubs", func() {
 			os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
 			mch := resources.EmptyMCH()
-			mch.Enable(operatorsv1.ClusterBackup)
+			mch.Enable(mchv1.ClusterBackup)
 			appsubs := GetAppsubs(&mch)
 			Expect(len(appsubs)).To(Equal(1))
 		})
@@ -184,7 +186,7 @@ var _ = Describe("utility functions", func() {
 		It("gets appsubs in Community Mode", func() {
 			os.Setenv("OPERATOR_PACKAGE", "stolostron")
 			mch := resources.EmptyMCH()
-			mch.Enable(operatorsv1.ClusterBackup)
+			mch.Enable(mchv1.ClusterBackup)
 			appsubs := GetAppsubs(&mch)
 			Expect(len(appsubs)).To(Equal(1))
 		})
@@ -212,42 +214,42 @@ var _ = Describe("utility functions", func() {
 		})
 		It("gets deployments for status with cluster-lifecycle enabled", func() {
 			mch := resources.EmptyMCH()
-			mch.Enable(operatorsv1.ClusterLifecycle)
+			mch.Enable(mchv1.ClusterLifecycle)
 			d := GetDeploymentsForStatus(&mch, true)
 			Expect(len(d)).To(Equal(1))
 		})
 		It("gets deployments for status with cluster-backkup enabled", func() {
 			mch := resources.EmptyMCH()
-			mch.Enable(operatorsv1.ClusterBackup)
+			mch.Enable(mchv1.ClusterBackup)
 		})
 		It("gets deployments for status with grc enabled", func() {
 			mch := resources.EmptyMCH()
-			mch.Enable(operatorsv1.GRC)
+			mch.Enable(mchv1.GRC)
 			d := GetDeploymentsForStatus(&mch, true)
 			Expect(len(d)).To(Equal(2))
 		})
 		It("gets deployments for status with console enabled", func() {
 			mch := resources.EmptyMCH()
-			mch.Enable(operatorsv1.Console)
+			mch.Enable(mchv1.Console)
 			d := GetDeploymentsForStatus(&mch, true)
 			Expect(len(d)).To(Equal(1))
 		})
 		It("gets deployments for status with volsync enabled", func() {
 			mch := resources.EmptyMCH()
-			mch.Enable(operatorsv1.Volsync)
+			mch.Enable(mchv1.Volsync)
 			d := GetDeploymentsForStatus(&mch, true)
 			Expect(len(d)).To(Equal(1))
 		})
 		It("gets appsubs for status", func() {
 			mch := resources.EmptyMCH()
-			mch.Enable(operatorsv1.ClusterBackup)
-			mch.Enable(operatorsv1.ClusterLifecycle)
-			mch.Enable(operatorsv1.Console)
-			mch.Enable(operatorsv1.GRC)
-			mch.Enable(operatorsv1.Insights)
-			mch.Enable(operatorsv1.ManagementIngress)
-			mch.Enable(operatorsv1.Search)
-			mch.Enable(operatorsv1.Volsync)
+			mch.Enable(mchv1.ClusterBackup)
+			mch.Enable(mchv1.ClusterLifecycle)
+			mch.Enable(mchv1.Console)
+			mch.Enable(mchv1.GRC)
+			mch.Enable(mchv1.Insights)
+			mch.Enable(mchv1.ManagementIngress)
+			mch.Enable(mchv1.Search)
+			mch.Enable(mchv1.Volsync)
 			appsubs := GetAppsubsForStatus(&mch)
 			Expect(len(appsubs)).To(Equal(1))
 		})
@@ -270,7 +272,7 @@ var _ = Describe("utility functions", func() {
 		})
 		It("gets custom resources for status with MCE enabled", func() {
 			mch := resources.EmptyMCH()
-			mch.Enable(operatorsv1.MultiClusterEngine)
+			mch.Enable(mchv1.MultiClusterEngine)
 			cr := GetCustomResourcesForStatus(&mch)
 			Expect(len(cr)).To(Equal(3))
 		})
@@ -409,20 +411,20 @@ func TestContainsMap(t *testing.T) {
 }
 
 func TestMchIsValid(t *testing.T) {
-	validMCH := &operatorsv1.MultiClusterHub{
+	validMCH := &mchv1.MultiClusterHub{
 		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: operatorsv1.MultiClusterHubSpec{
+		Spec: mchv1.MultiClusterHubSpec{
 			ImagePullSecret: "test",
-			Ingress: operatorsv1.IngressSpec{
+			Ingress: mchv1.IngressSpec{
 				SSLCiphers: []string{"foo", "bar", "baz"},
 			},
-			AvailabilityConfig: operatorsv1.HAHigh,
+			AvailabilityConfig: mchv1.HAHigh,
 		},
 	}
 
 	type args struct {
-		m *operatorsv1.MultiClusterHub
+		m *mchv1.MultiClusterHub
 	}
 	tests := []struct {
 		name string
@@ -436,7 +438,7 @@ func TestMchIsValid(t *testing.T) {
 		},
 		{
 			"Empty object",
-			args{&operatorsv1.MultiClusterHub{}},
+			args{&mchv1.MultiClusterHub{}},
 			false,
 		},
 	}
@@ -458,10 +460,10 @@ func TestDistributePods(t *testing.T) {
 }
 
 func TestGetImagePullPolicy(t *testing.T) {
-	noPullPolicyMCH := &operatorsv1.MultiClusterHub{}
-	pullPolicyMCH := &operatorsv1.MultiClusterHub{
-		Spec: operatorsv1.MultiClusterHubSpec{
-			Overrides: &operatorsv1.Overrides{ImagePullPolicy: v1.PullIfNotPresent},
+	noPullPolicyMCH := &mchv1.MultiClusterHub{}
+	pullPolicyMCH := &mchv1.MultiClusterHub{
+		Spec: mchv1.MultiClusterHubSpec{
+			Overrides: &mchv1.Overrides{ImagePullPolicy: v1.PullIfNotPresent},
 		},
 	}
 
@@ -480,15 +482,15 @@ func TestGetImagePullPolicy(t *testing.T) {
 }
 
 func TestDefaultReplicaCount(t *testing.T) {
-	mchDefault := &operatorsv1.MultiClusterHub{}
-	mchNonHA := &operatorsv1.MultiClusterHub{
-		Spec: operatorsv1.MultiClusterHubSpec{
-			AvailabilityConfig: operatorsv1.HABasic,
+	mchDefault := &mchv1.MultiClusterHub{}
+	mchNonHA := &mchv1.MultiClusterHub{
+		Spec: mchv1.MultiClusterHubSpec{
+			AvailabilityConfig: mchv1.HABasic,
 		},
 	}
-	mchHA := &operatorsv1.MultiClusterHub{
-		Spec: operatorsv1.MultiClusterHubSpec{
-			AvailabilityConfig: operatorsv1.HAHigh,
+	mchHA := &mchv1.MultiClusterHub{
+		Spec: mchv1.MultiClusterHubSpec{
+			AvailabilityConfig: mchv1.HAHigh,
 		},
 	}
 
@@ -537,19 +539,19 @@ func TestFormatSSLCiphers(t *testing.T) {
 func TestTrackedNamespaces(t *testing.T) {
 	tests := []struct {
 		name string
-		mch  *operatorsv1.MultiClusterHub
+		mch  *mchv1.MultiClusterHub
 		want []string
 	}{
 		{
 			name: "Watching only in same namespace",
-			mch:  &operatorsv1.MultiClusterHub{ObjectMeta: metav1.ObjectMeta{Namespace: "test"}},
+			mch:  &mchv1.MultiClusterHub{ObjectMeta: metav1.ObjectMeta{Namespace: "test"}},
 			want: []string{"test"},
 		},
 		{
 			name: "Watching current and cert-manager namespace",
-			mch: &operatorsv1.MultiClusterHub{
+			mch: &mchv1.MultiClusterHub{
 				ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-				Spec: operatorsv1.MultiClusterHubSpec{
+				Spec: mchv1.MultiClusterHubSpec{
 					SeparateCertificateManagement: true,
 				},
 			},
@@ -568,28 +570,28 @@ func TestTrackedNamespaces(t *testing.T) {
 func Test_deduplicate(t *testing.T) {
 	tests := []struct {
 		name string
-		have []operatorsv1.ComponentConfig
-		want []operatorsv1.ComponentConfig
+		have []mchv1.ComponentConfig
+		want []mchv1.ComponentConfig
 	}{
 		{
 			name: "unique components",
-			have: []operatorsv1.ComponentConfig{
+			have: []mchv1.ComponentConfig{
 				{Name: "component1", Enabled: true},
 				{Name: "component2", Enabled: true},
 			},
-			want: []operatorsv1.ComponentConfig{
+			want: []mchv1.ComponentConfig{
 				{Name: "component1", Enabled: true},
 				{Name: "component2", Enabled: true},
 			},
 		},
 		{
 			name: "duplicate components",
-			have: []operatorsv1.ComponentConfig{
+			have: []mchv1.ComponentConfig{
 				{Name: "component1", Enabled: false},
 				{Name: "component2", Enabled: true},
 				{Name: "component1", Enabled: true},
 			},
-			want: []operatorsv1.ComponentConfig{
+			want: []mchv1.ComponentConfig{
 				{Name: "component1", Enabled: true},
 				{Name: "component2", Enabled: true},
 			},
@@ -602,4 +604,105 @@ func Test_deduplicate(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAddInstallerLabels(t *testing.T) {
+	labels := map[string]string{
+		"testlabel": "testvalue",
+	}
+	name := "testname"
+	ns := "testnamespace"
+
+	labels = AddInstallerLabels(labels, name, ns)
+
+	tests := map[string]string{
+		"testlabel":           "testvalue",
+		"installer.name":      name,
+		"installer.namespace": ns,
+	}
+
+	for key, value := range tests {
+		if v, ok := labels[key]; !ok {
+			t.Errorf("AddInstallerLabels() missing label %q", key)
+		} else if v != value {
+			t.Errorf("AddInstallerLabels() label %q not %q, found %q", key, value, v)
+		}
+	}
+}
+
+func TestGetMCEComponents(t *testing.T) {
+	mch := &mchv1.MultiClusterHub{}
+	mch.Spec.DisableHubSelfManagement = false
+	config := GetMCEComponents(mch)
+
+	found := false
+	for _, c := range config {
+		if c.Name != mchv1.MCELocalCluster {
+			continue
+		}
+		found = true
+		if !c.Enabled {
+			t.Errorf("GetMCEComponents() with DisableHubSelfManagement=false, expected 'local-cluster' to be enabled")
+		}
+	}
+	if !found {
+		t.Errorf("GetMCEComponents() with DisableHubSelfManagement=false, expected 'local-cluster' to be present")
+	}
+
+	mch.Spec.DisableHubSelfManagement = true
+	config = GetMCEComponents(mch)
+
+	found = false
+	for _, c := range config {
+		if c.Name != mchv1.MCELocalCluster {
+			continue
+		}
+		found = true
+		if c.Enabled {
+			t.Errorf("GetMCEComponents() with DisableHubSelfManagement=true, expected 'local-cluster' to be disabled")
+		}
+	}
+	if !found {
+		t.Errorf("GetMCEComponents() with DisableHubSelfManagement=true, expected 'local-cluster' to be present")
+	}
+}
+
+func TestUpdateMCEOverrides(t *testing.T) {
+	mch := &mchv1.MultiClusterHub{}
+	mch.Spec.DisableHubSelfManagement = false
+	mce := &mcev1.MultiClusterEngine{}
+
+	UpdateMCEOverrides(mce, mch)
+
+	found := false
+	for _, c := range mce.Spec.Overrides.Components {
+		if c.Name != mchv1.MCELocalCluster {
+			continue
+		}
+		found = true
+		if !c.Enabled {
+			t.Errorf("UpdateMCEOverrides() with DisableHubSelfManagement=false, expected 'local-cluster' to be enabled")
+		}
+	}
+	if !found {
+		t.Errorf("UpdateMCEOverrides() with DisableHubSelfManagement=false, expected 'local-cluster' to be present")
+	}
+
+	mch = &mchv1.MultiClusterHub{}
+	mch.Spec.DisableHubSelfManagement = true
+	mce = &mcev1.MultiClusterEngine{}
+
+	if mce.Spec.Overrides == nil {
+		// Overrides.Components is empty, so local-cluster is disabled
+		return
+	}
+	for _, c := range mce.Spec.Overrides.Components {
+		if c.Name != mchv1.MCELocalCluster {
+			continue
+		}
+		if c.Enabled {
+			t.Errorf("UpdateMCEOverrides() with DisableHubSelfManagement=true, expected 'local-cluster' to be disabled")
+		}
+	}
+	// Ok if local-cluster not found
 }
