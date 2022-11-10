@@ -10,7 +10,7 @@ import (
 )
 
 // Insights overrides the insights chart
-func Insights(m *operatorsv1.MultiClusterHub, overrides map[string]string, ingress string) *unstructured.Unstructured {
+func Insights(m *operatorsv1.MultiClusterHub, overrides map[string]string) *unstructured.Unstructured {
 	sub := &Subscription{
 		Name:      "policyreport",
 		Namespace: m.Namespace,

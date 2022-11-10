@@ -222,7 +222,6 @@ var (
 		"cluster-lifecycle-sub",
 		"console-chart-sub",
 		"grc-sub",
-		"management-ingress-sub",
 		"policyreport-sub",
 	}
 

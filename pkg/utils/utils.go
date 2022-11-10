@@ -283,7 +283,7 @@ func GetTestImages() []string {
 		"GRAFANA", "GRAFANA_DASHBOARD_LOADER", "GRC_POLICY_FRAMEWORK_TESTS", "HELLOPROW_GO", "HELLOWORLD",
 		"HYPERSHIFT_DEPLOYMENT_CONTROLLER", "IAM_POLICY_CONTROLLER", "INSIGHTS_CLIENT", "INSIGHTS_METRICS",
 		"KLUSTERLET_ADDON_CONTROLLER", "KLUSTERLET_ADDON_OPERATOR", "KUBE_RBAC_PROXY", "KUBE_STATE_METRICS",
-		"MANAGEMENT_INGRESS", "METRICS_COLLECTOR", "MULTICLOUD_INTEGRATIONS", "MULTICLUSTER_OBSERVABILITY_OPERATOR",
+		"METRICS_COLLECTOR", "MULTICLOUD_INTEGRATIONS", "MULTICLUSTER_OBSERVABILITY_OPERATOR",
 		"MULTICLUSTER_OPERATORS_APPLICATION", "MULTICLUSTER_OPERATORS_CHANNEL", "MULTICLUSTER_OPERATORS_SUBSCRIPTION",
 		"MULTICLUSTERHUB_OPERATOR", "MULTICLUSTERHUB_OPERATOR_TESTS", "MULTICLUSTERHUB_REPO", "MUST_GATHER",
 		"NODE_EXPORTER", "OBSERVABILITY_E2E_TEST", "OBSERVATORIUM", "OBSERVATORIUM_OPERATOR", "OAUTH_PROXY",
@@ -368,10 +368,7 @@ func GetDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 }
 
 func GetAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
-	appsubs := []types.NamespacedName{
-		{Name: "management-ingress-sub", Namespace: m.Namespace},
-	}
-	return appsubs
+	return []types.NamespacedName{}
 }
 
 func GetCustomResources(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
@@ -420,9 +417,6 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole bool) []
 
 func GetAppsubsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	nn := []types.NamespacedName{}
-	if m.Enabled(operatorsv1.ManagementIngress) {
-		nn = append(nn, types.NamespacedName{Name: "management-ingress-sub", Namespace: m.Namespace})
-	}
 	return nn
 }
 

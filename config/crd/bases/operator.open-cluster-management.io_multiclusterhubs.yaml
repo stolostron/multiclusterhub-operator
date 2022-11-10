@@ -197,7 +197,7 @@ spec:
                   and endpoint images
                 type: string
               ingress:
-                description: Configuration options for ingress management
+                description: (Deprecated) Configuration options for ingress management
                 properties:
                   sslCiphers:
                     description: List of SSL ciphers enabled for management ingress.
