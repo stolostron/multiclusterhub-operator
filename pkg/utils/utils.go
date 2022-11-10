@@ -184,7 +184,7 @@ func DefaultReplicaCount(mch *operatorsv1.MultiClusterHub) int {
 	return 2
 }
 
-//AvailabilityConfigIsValid ...
+// AvailabilityConfigIsValid ...
 func AvailabilityConfigIsValid(config operatorsv1.AvailabilityType) bool {
 	switch config {
 	case operatorsv1.HAHigh, operatorsv1.HABasic:
@@ -235,7 +235,7 @@ func DistributePods(key string, value string) *corev1.Affinity {
 	}
 }
 
-//GetImagePullPolicy returns either pull policy from CR overrides or default of Always
+// GetImagePullPolicy returns either pull policy from CR overrides or default of Always
 func GetImagePullPolicy(m *operatorsv1.MultiClusterHub) v1.PullPolicy {
 	if m.Spec.Overrides == nil || m.Spec.Overrides.ImagePullPolicy == "" {
 		return corev1.PullIfNotPresent
@@ -263,7 +263,7 @@ func GetContainerVolumes(dep *appsv1.Deployment) []corev1.Volume {
 	return dep.Spec.Template.Spec.Volumes
 }
 
-//GetContainerRequestResources returns Request Requirements for first container in deployment
+// GetContainerRequestResources returns Request Requirements for first container in deployment
 func GetContainerRequestResources(dep *appsv1.Deployment) corev1.ResourceList {
 	return dep.Spec.Template.Spec.Containers[0].Resources.Requests
 }
@@ -547,6 +547,11 @@ func GetMCEComponents(mch *operatorsv1.MultiClusterHub) []mcev1.ComponentConfig 
 			config = append(config, mcev1.ComponentConfig{Name: n, Enabled: mch.Enabled(n)})
 		}
 	}
+	if mch.Spec.DisableHubSelfManagement {
+		config = append(config, mcev1.ComponentConfig{Name: operatorsv1.MCELocalCluster, Enabled: false})
+	} else {
+		config = append(config, mcev1.ComponentConfig{Name: operatorsv1.MCELocalCluster, Enabled: true})
+	}
 	return config
 }
 
@@ -559,6 +564,11 @@ func UpdateMCEOverrides(mce *mcev1.MultiClusterEngine, mch *operatorsv1.MultiClu
 		} else {
 			mce.Disable(c.Name)
 		}
+	}
+	if mch.Spec.DisableHubSelfManagement {
+		mce.Disable(operatorsv1.MCELocalCluster)
+	} else {
+		mce.Enable(operatorsv1.MCELocalCluster)
 	}
 	return
 }

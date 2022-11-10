@@ -27,6 +27,7 @@ const (
 	MCEServerFoundation      string = "server-foundation"
 	MCEHypershift            string = "hypershift-preview"
 	MCEClusterProxyAddon     string = "cluster-proxy-addon"
+	MCELocalCluster          string = "local-cluster"
 )
 
 var allComponents = []string{

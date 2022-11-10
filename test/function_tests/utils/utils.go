@@ -1021,7 +1021,7 @@ func ValidateHubStatusExist() error {
 	return nil
 }
 
-//ValidateConditionDuringUninstall check if condition is terminating during uninstall of MCH
+// ValidateConditionDuringUninstall check if condition is terminating during uninstall of MCH
 func ValidateConditionDuringUninstall() error {
 	By("- Checking HubCondition type")
 	Eventually(func() error {
@@ -1062,7 +1062,7 @@ func ValidateStatusesExist() error {
 	return nil
 }
 
-//ValidateImportHubResourcesExist confirms the existence of 3 resources that are created when importing hub as managed cluster
+// ValidateImportHubResourcesExist confirms the existence of 3 resources that are created when importing hub as managed cluster
 func ValidateImportHubResourcesExist(expected bool) error {
 	//check created namespace exists
 	_, nsErr := KubeClient.CoreV1().Namespaces().Get(context.TODO(), "local-cluster", metav1.GetOptions{})

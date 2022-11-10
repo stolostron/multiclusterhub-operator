@@ -323,9 +323,9 @@ type HubCondition struct {
 //+kubebuilder:resource:path=multiclusterhubs,scope=Namespaced,shortName=mch
 
 // MultiClusterHub defines the configuration for an instance of the MultiCluster Hub
-//+kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase",description="The overall status of the multiclusterhub"
-//+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
-//+operator-sdk:csv:customresourcedefinitions:displayName="MultiClusterHub"
+// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase",description="The overall status of the multiclusterhub"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+// +operator-sdk:csv:customresourcedefinitions:displayName="MultiClusterHub"
 type MultiClusterHub struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
