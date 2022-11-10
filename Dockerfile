@@ -1,7 +1,7 @@
 # Copyright Contributors to the Open Cluster Management project
 
 # Build the multiclusterhub-operator binary
-FROM golang:1.18 as builder
+FROM golang:1.19 as builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
