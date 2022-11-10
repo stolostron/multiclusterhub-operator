@@ -40,8 +40,6 @@ import (
 	ctrlpredicate "sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/yaml"
 
-	mcev1 "github.com/stolostron/backplane-operator/api/v1"
-
 	appsubv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/v1"
 
 	configv1 "github.com/openshift/api/config/v1"
@@ -551,35 +549,6 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				},
 			},
 			builder.WithPredicates(predicate.DeletePredicate{}),
-		).
-		Watches(
-			&source.Kind{Type: &mcev1.MultiClusterEngine{}},
-			handler.Funcs{
-				UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
-					labels := e.ObjectNew.GetLabels()
-					name := labels["installer.name"]
-					if name == "" {
-						name = labels["multiclusterhub.name"]
-					}
-					namespace := labels["installer.namespace"]
-					if namespace == "" {
-						namespace = labels["multiclusterhub.namespace"]
-					}
-					if name == "" || namespace == "" {
-						l := log.FromContext(context.Background())
-						l.Info(fmt.Sprintf("MCE updated, but did not find required labels: %v", labels))
-						return
-					}
-					q.Add(
-						reconcile.Request{
-							NamespacedName: types.NamespacedName{
-								Name:      name,
-								Namespace: namespace,
-							},
-						},
-					)
-				},
-			},
 		).
 		Watches(&source.Kind{Type: &appsv1.Deployment{}},
 			handler.EnqueueRequestsFromMapFunc(
