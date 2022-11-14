@@ -39,18 +39,6 @@ rules:
   - update
   - watch
 - apiGroups:
-  - view.open-cluster-management.io
-  resources:
-  - managedclusterviews
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - policy.open-cluster-management.io
   resources:
   - '*'
@@ -65,7 +53,7 @@ rules:
 - apiGroups:
   - apps.open-cluster-management.io
   resources:
-  - '*'
+  - placementrules
   verbs:
   - get
   - list
@@ -80,24 +68,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - 'authentication.k8s.io'
-  resources:
-  - 'tokenreviews'
-  verbs:
-  - create
-- apiGroups:
-  - authorization.k8s.io
-  resources:
-  - subjectaccessreviews
-  verbs:
-  - create
-- apiGroups:
-  - '*'
-  resources:
-  - '*/finalizers'
-  verbs:
-  - update
 - apiGroups:
   - '*'
   resources:
