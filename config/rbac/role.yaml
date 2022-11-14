@@ -42,9 +42,6 @@ rules:
   - applicationrelationships/status
   - applications
   - applications/status
-  - baremetalassets
-  - baremetalassets/finalizers
-  - baremetalassets/status
   - certificatesigningrequests
   - certificatesigningrequests/approval
   - channels
@@ -232,7 +229,6 @@ rules:
   - wgpolicyk8s.io
   resources:
   - apiservices
-  - baremetalassets
   - clusterjoinrequests
   - configmaps
   - deployments

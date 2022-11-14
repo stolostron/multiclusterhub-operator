@@ -152,9 +152,6 @@ spec:
           - applicationrelationships/status
           - applications
           - applications/status
-          - baremetalassets
-          - baremetalassets/finalizers
-          - baremetalassets/status
           - certificatesigningrequests
           - certificatesigningrequests/approval
           - channels
@@ -342,7 +339,6 @@ spec:
           - wgpolicyk8s.io
           resources:
           - apiservices
-          - baremetalassets
           - clusterjoinrequests
           - configmaps
           - deployments

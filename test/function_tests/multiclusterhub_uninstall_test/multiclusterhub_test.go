@@ -56,20 +56,6 @@ var _ = Describe("Multiclusterhub", func() {
 
 			utils.DeleteObservabilityCR()
 			utils.DeleteObservabilityCRD()
-
-			By("Validating BareMetalAssets blocks deletion")
-
-			utils.CreateBareMetalAssetsCR()
-
-			err = utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Delete(context.TODO(), utils.MCHName, metav1.DeleteOptions{})
-			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).Should(BeEquivalentTo("admission webhook \"multiclusterhub.validating-webhook.open-cluster-management.io\" denied the request: Cannot delete MultiClusterHub resource because BareMetalAsset resource(s) exist"))
-
-			utils.DeleteBareMetalAssetsCR()
-
-			utils.DeleteIfExists(utils.DynamicKubeClient, utils.GVRMultiClusterHub, utils.MCHName, utils.MCHNamespace, true)
-			Expect(utils.ValidateDelete(utils.DynamicKubeClient)).Should(BeNil())
-
 		})
 		It("SAD CASE: Fail to remove a helmrelease (Left behind finalizer)", func() {
 			By("Creating MultiClusterHub")

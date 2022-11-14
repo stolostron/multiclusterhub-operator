@@ -45,16 +45,6 @@ var (
 			Exceptions:     []string{"local-cluster"},
 		},
 		{
-			Name: "BareMetalAsset",
-			GVK: schema.GroupVersionKind{
-				Group:   "inventory.open-cluster-management.io",
-				Version: "v1alpha1",
-				Kind:    "BareMetalAssetList",
-			},
-			ExceptionTotal: 0,
-			Exceptions:     []string{},
-		},
-		{
 			Name: "MultiClusterObservability",
 			GVK: schema.GroupVersionKind{
 				Group:   "observability.open-cluster-management.io",
