@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
         with:
-          go-version: '^1.17.1' # The Go version to download (if necessary) and use.
+          go-version: '^1.19.3' # The Go version to download (if necessary) and use.
       - name: Run FULL Function Tests
         run: |
           echo "${{ secrets.QUAY_TOKEN }}" | docker login quay.io/stolostron -u "${{ secrets.QUAY_USER }}" --password-stdin
