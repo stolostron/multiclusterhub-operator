@@ -92,10 +92,10 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
-test-prep: update-crds manifests generate fmt vet envtest ## prepare to run tests.
+test-prep: manifests generate fmt vet envtest ## prepare to run tests.
 	echo "Ready to run unit tests"
 
-test: update-crds manifests generate fmt vet envtest ## Run tests.
+test: manifests generate fmt vet envtest ## Run tests.
 	OPERATOR_VERSION=9.9.9 KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" \
 	  go test $(shell go list ./... | grep -E -v "test") -coverprofile cover.out
 

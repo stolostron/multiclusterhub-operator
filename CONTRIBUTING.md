@@ -87,7 +87,7 @@ This approach _only_ tests MultiClusterHub Operator functionality (not the funct
     make prep-mock-install
     ```
 
-    ... builds and pushes the mock image, copies required Hub CRDs into the `multiclusterhub-operator` codebase from the [Hub CRDs GitHub Repo](https://github.com/stolostron/hub-crds) (for the next step), and preps the image manifest to use the freshly-built mock image
+    ... builds and pushes the mock image and preps the image manifest to use the freshly-built mock image
 
     ```bash
     make mock-install

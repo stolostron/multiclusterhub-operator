@@ -4,7 +4,6 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:latest as cloner
 
 RUN microdnf install git findutils
 COPY hack/scripts hack/scripts
-RUN ./hack/scripts/gather-crds-prow.sh https://github.com/stolostron/hub-crds.git $(cat hack/scripts/currentCRDs.txt) ./crds
 
 FROM registry.ci.openshift.org/stolostron/builder:go1.19-linux AS builder
 
@@ -24,7 +23,6 @@ COPY pkg/ pkg/
 
 # Copy required files
 
-COPY --from=cloner crds/ crds/
 COPY pkg/templates/ templates/
 
 # Build
@@ -39,7 +37,6 @@ LABEL org.label-schema.vendor="Red Hat" \
 
 WORKDIR /
 COPY --from=builder /workspace/multiclusterhub-operator /usr/local/bin/multiclusterhub-operator
-COPY --from=builder /workspace/crds/ /crds
 COPY --from=builder /workspace/templates/ /usr/local/templates/
 
 USER 65532:65532
