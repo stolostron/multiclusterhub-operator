@@ -840,11 +840,11 @@ func (r *MultiClusterHubReconciler) listHelmReleases(namespaces []string) ([]*su
 
 // listCustomResources gets custom resources the installer observes
 func (r *MultiClusterHubReconciler) listCustomResources(m *operatorv1.MultiClusterHub) (map[string]*unstructured.Unstructured, error) {
-	var ret map[string]*unstructured.Unstructured
+	ret := make(map[string]*unstructured.Unstructured)
 
 	var mceSub *unstructured.Unstructured
 	gotSub, err := multiclusterengine.GetManagedMCESubscription(context.Background(), r.Client)
-	if err != nil {
+	if err != nil || gotSub == nil {
 		mceSub = nil
 	} else {
 		unstructuredSub, err := runtime.DefaultUnstructuredConverter.ToUnstructured(gotSub)
@@ -854,9 +854,14 @@ func (r *MultiClusterHubReconciler) listCustomResources(m *operatorv1.MultiClust
 		mceSub = &unstructured.Unstructured{Object: unstructuredSub}
 	}
 
-	mceCSV, err := r.GetCSVFromSubscription(gotSub)
-	if err != nil {
+	var mceCSV *unstructured.Unstructured
+	if gotSub == nil {
 		mceCSV = nil
+	} else {
+		mceCSV, err = r.GetCSVFromSubscription(gotSub)
+		if err != nil {
+			mceCSV = nil
+		}
 	}
 
 	mce, err := r.GetMultiClusterEngine(multiclusterengine.MultiClusterEngine(m))
@@ -1116,7 +1121,7 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 	}
 	ctlSrc := types.NamespacedName{}
 	// Search for catalogsource if not defined in overrides
-	if overrides.CatalogSource == "" {
+	if overrides != nil && overrides.CatalogSource == "" {
 		ctlSrc, err = multiclusterengine.GetCatalogSource(r.UncachedClient)
 		if err != nil {
 			r.Log.Info("Failed to find a suitable catalogsource.", "error", err)
@@ -1432,6 +1437,9 @@ func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context, mceVers
 
 // GetCSVFromSubscription retrieves CSV status information from the related subscription for status
 func (r *MultiClusterHubReconciler) GetCSVFromSubscription(sub *subv1alpha1.Subscription) (*unstructured.Unstructured, error) {
+	if sub == nil {
+		return nil, fmt.Errorf("Cannot find CSV from nil Subscription")
+	}
 	mceSubscription := &subv1alpha1.Subscription{}
 	err := r.Client.Get(context.Background(), types.NamespacedName{
 		Name:      sub.GetName(),

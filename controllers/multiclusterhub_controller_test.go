@@ -67,6 +67,7 @@ var ()
 func ApplyPrereqs(k8sClient client.Client) {
 	By("Applying Namespace")
 	ctx := context.Background()
+	Expect(k8sClient.Create(ctx, resources.MCENamespace())).Should(Succeed())
 	Expect(k8sClient.Create(ctx, resources.OCMNamespace())).Should(Succeed())
 	Expect(k8sClient.Create(ctx, resources.MonitoringNamespace())).Should(Succeed())
 }
@@ -194,6 +195,16 @@ func PreexistingMCE(k8sClient client.Client, reconciler *MultiClusterHubReconcil
 	ApplyPrereqs(k8sClient)
 
 	By("Creating MCE")
+	mcesub := &subv1alpha1.Subscription{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "multicluster-engine",
+			Namespace: "multicluster-engine",
+		},
+		Spec: &subv1alpha1.SubscriptionSpec{
+			Package: multiclusterengine.DesiredPackage(),
+		},
+	}
+	Expect(k8sClient.Create(ctx, mcesub)).Should(Succeed())
 	mce := resources.EmptyMCE()
 	Expect(k8sClient.Create(ctx, &mce)).Should(Succeed())
 
