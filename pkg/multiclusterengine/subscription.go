@@ -128,7 +128,7 @@ func ApplyAnnotationOverrides(sub *subv1alpha1.Subscription, subspec *subv1alpha
 	}
 }
 
-// find MCE subscription by managed label
+// Finds MCE subscription by managed label. Returns nil if none found.
 func GetManagedMCESubscription(ctx context.Context, k8sClient client.Client) (*subv1alpha1.Subscription, error) {
 	subList := &subv1alpha1.SubscriptionList{}
 	err := k8sClient.List(ctx, subList, &client.MatchingLabels{
@@ -153,7 +153,7 @@ func FindAndManageMCESubscription(ctx context.Context, k8sClient client.Client) 
 	if err != nil {
 		return nil, err
 	}
-	if sub == nil {
+	if sub != nil {
 		return sub, nil
 	}
 
@@ -166,9 +166,15 @@ func FindAndManageMCESubscription(ctx context.Context, k8sClient client.Client) 
 		return nil, err
 	}
 	for i := range wholeList.Items {
+		if wholeList.Items[i].Spec == nil {
+			continue
+		}
 		if wholeList.Items[i].Spec.Package == DesiredPackage() {
 			// adding label so it can be found in the future
 			labels := wholeList.Items[i].GetLabels()
+			if labels == nil {
+				labels = map[string]string{}
+			}
 			labels[utils.MCEManagedByLabel] = "true"
 			wholeList.Items[i].SetLabels(labels)
 			log.FromContext(ctx).Info("Adding label to subscription")

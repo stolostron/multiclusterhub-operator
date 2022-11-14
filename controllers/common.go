@@ -554,41 +554,42 @@ func (r *MultiClusterHubReconciler) ensureOLMSubscription(m *operatorv1.MultiClu
 		r.Log.Info(fmt.Sprintf("Error: %s", err.Error()))
 		return ctrl.Result{Requeue: true}, nil
 	}
+	return ctrl.Result{}, nil
 
-	existingSub := &subv1alpha1.Subscription{}
-	err = r.Client.Get(ctx, types.NamespacedName{
-		Name:      sub.GetName(),
-		Namespace: sub.GetNamespace(),
-	}, existingSub)
-	if err != nil {
-		r.Log.Info(fmt.Sprintf("error locating subscription: %s/%s. Error: %s", sub.GetNamespace(), sub.GetName(), err.Error()))
-		return ctrl.Result{Requeue: true}, nil
-	}
+	// existingSub := &subv1alpha1.Subscription{}
+	// err = r.Client.Get(ctx, types.NamespacedName{
+	// 	Name:      sub.GetName(),
+	// 	Namespace: sub.GetNamespace(),
+	// }, existingSub)
+	// if err != nil {
+	// 	r.Log.Info(fmt.Sprintf("error locating subscription: %s/%s. Error: %s", sub.GetNamespace(), sub.GetName(), err.Error()))
+	// 	return ctrl.Result{Requeue: true}, nil
+	// }
 
-	if utils.IsUnitTest() {
-		r.Log.Info("Skipping CSV check in unit test mode")
-		return ctrl.Result{}, nil
-	}
+	// if utils.IsUnitTest() {
+	// 	r.Log.Info("Skipping CSV check in unit test mode")
+	// 	return ctrl.Result{}, nil
+	// }
 
-	currentCSV := existingSub.Status.CurrentCSV
-	if currentCSV == "" {
-		return ctrl.Result{RequeueAfter: resyncPeriod}, fmt.Errorf("CSV not located for subscription: %s/%s", sub.GetNamespace(), sub.GetName())
-	}
+	// currentCSV := existingSub.Status.CurrentCSV
+	// if currentCSV == "" {
+	// 	return ctrl.Result{RequeueAfter: resyncPeriod}, fmt.Errorf("CSV not located for subscription: %s/%s", sub.GetNamespace(), sub.GetName())
+	// }
 
-	existingCSV := &subv1alpha1.ClusterServiceVersion{}
-	err = r.Client.Get(ctx, types.NamespacedName{
-		Name:      currentCSV,
-		Namespace: sub.GetNamespace()}, existingCSV)
-	if err != nil {
-		r.Log.Info(fmt.Sprintf("CSV not located for subscription: %s/%s", sub.GetNamespace(), sub.GetName()))
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-	if existingCSV.Status.Phase == "Succeeded" {
-		return ctrl.Result{}, nil
-	}
+	// existingCSV := &subv1alpha1.ClusterServiceVersion{}
+	// err = r.Client.Get(ctx, types.NamespacedName{
+	// 	Name:      currentCSV,
+	// 	Namespace: sub.GetNamespace()}, existingCSV)
+	// if err != nil {
+	// 	r.Log.Info(fmt.Sprintf("CSV not located for subscription: %s/%s", sub.GetNamespace(), sub.GetName()))
+	// 	return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	// }
+	// if existingCSV.Status.Phase == "Succeeded" {
+	// 	return ctrl.Result{}, nil
+	// }
 
-	r.Log.Info(fmt.Sprintf("%s/%s CSV is not yet in a successful state", sub.GetNamespace(), sub.GetName()))
-	return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	// r.Log.Info(fmt.Sprintf("%s/%s CSV is not yet in a successful state", sub.GetNamespace(), sub.GetName()))
+	// return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 
 }
 
@@ -838,24 +839,22 @@ func (r *MultiClusterHubReconciler) listHelmReleases(namespaces []string) ([]*su
 }
 
 // listCustomResources gets custom resources the installer observes
-func (r *MultiClusterHubReconciler) listCustomResources(m *operatorv1.MultiClusterHub) ([]*unstructured.Unstructured, error) {
-	var ret []*unstructured.Unstructured
-	subConfig := &subv1alpha1.SubscriptionConfig{}
-	subConfig, err := r.GetSubConfig()
-	if err != nil {
-		return nil, err
-	}
-	community, err := operatorv1.IsCommunity()
-	if err != nil {
-		return nil, err
-	}
+func (r *MultiClusterHubReconciler) listCustomResources(m *operatorv1.MultiClusterHub) (map[string]*unstructured.Unstructured, error) {
+	var ret map[string]*unstructured.Unstructured
 
-	mceSub, err := r.GetSubscription(multiclusterengine.Subscription(m, subConfig, community))
+	var mceSub *unstructured.Unstructured
+	gotSub, err := multiclusterengine.GetManagedMCESubscription(context.Background(), r.Client)
 	if err != nil {
 		mceSub = nil
+	} else {
+		unstructuredSub, err := runtime.DefaultUnstructuredConverter.ToUnstructured(gotSub)
+		if err != nil {
+			r.Log.Error(err, "Failed to unmarshal subscription")
+		}
+		mceSub = &unstructured.Unstructured{Object: unstructuredSub}
 	}
 
-	mceCSV, err := r.GetCSVFromSubscription(multiclusterengine.Subscription(m, subConfig, community))
+	mceCSV, err := r.GetCSVFromSubscription(gotSub)
 	if err != nil {
 		mceCSV = nil
 	}
@@ -865,7 +864,9 @@ func (r *MultiClusterHubReconciler) listCustomResources(m *operatorv1.MultiClust
 		mce = nil
 	}
 
-	ret = append(ret, mceSub, mceCSV, mce)
+	ret["mce-sub"] = mceSub
+	ret["mce-csv"] = mceCSV
+	ret["mce"] = mce
 	return ret, nil
 }
 
@@ -1137,7 +1138,7 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 			return result, err
 		}
 		// Sub is nil so create a new one
-		mceSub = multiclusterengine.NewSubscription(multiClusterHub, subConfig, utils.IsCommunityMode())
+		mceSub = multiclusterengine.NewSubscription(multiClusterHub, subConfig, overrides, utils.IsCommunityMode())
 	} else if multiclusterengine.CreatedByMCH(mceSub, multiClusterHub) {
 		result, err := r.ensurePullSecret(multiClusterHub, multiclusterengine.Namespace().Name)
 		if result != (ctrl.Result{}) {
@@ -1151,96 +1152,97 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 
 	// Apply MCE sub
 	calcSub := multiclusterengine.RenderSubscription(mceSub, subConfig, overrides, ctlSrc, utils.IsCommunityMode())
-	result, err = r.ensureOLMSubscription(multiClusterHub, calcSub)
-	if result != (ctrl.Result{}) {
-		return result, err
+
+	force := true
+	err = r.Client.Patch(ctx, calcSub, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
+	if err != nil {
+		r.Log.Info(fmt.Sprintf("Error: %s", err.Error()))
+		return ctrl.Result{Requeue: true}, nil
 	}
 	return ctrl.Result{}, nil
 
-	subConfig, err := r.GetSubConfig()
-	if err != nil {
-		return ctrl.Result{Requeue: true}, err
-	}
+	// result, err = r.ensureOLMSubscription(multiClusterHub, calcSub)
+	// if result != (ctrl.Result{}) {
+	// 	return result, err
+	// }
+	// return ctrl.Result{}, nil
 
-	// check for existing subscription
-	mceSub, err := r.getMCESubscription()
-	if err != nil {
-		return ctrl.Result{Requeue: true}, err
-	}
-	subConfig, err := r.GetSubConfig()
-	if err != nil {
-		return ctrl.Result{Requeue: true}, err
-	}
+	// subConfig, err := r.GetSubConfig()
+	// if err != nil {
+	// 	return ctrl.Result{Requeue: true}, err
+	// }
 
-	// if subscription not found then set it up
-	if mceSub == nil {
-		result, err := r.ensureNamespace(multiClusterHub, multiclusterengine.Namespace())
-		if result != (ctrl.Result{}) {
-			return result, err
-		}
+	// // check for existing subscription
+	// mceSub, err := r.getMCESubscription()
+	// if err != nil {
+	// 	return ctrl.Result{Requeue: true}, err
+	// }
+	// subConfig, err := r.GetSubConfig()
+	// if err != nil {
+	// 	return ctrl.Result{Requeue: true}, err
+	// }
 
-		result, err = r.ensurePullSecret(multiClusterHub, multiclusterengine.Namespace().Name)
-		if result != (ctrl.Result{}) {
-			return result, err
-		}
+	// // if subscription not found then set it up
+	// if mceSub == nil {
+	// 	result, err := r.ensureNamespace(multiClusterHub, multiclusterengine.Namespace())
+	// 	if result != (ctrl.Result{}) {
+	// 		return result, err
+	// 	}
 
-		result, err = r.ensureOperatorGroup(multiClusterHub, multiclusterengine.OperatorGroup())
-		if result != (ctrl.Result{}) {
-			return result, err
-		}
+	// 	result, err = r.ensurePullSecret(multiClusterHub, multiclusterengine.Namespace().Name)
+	// 	if result != (ctrl.Result{}) {
+	// 		return result, err
+	// 	}
 
-		// when creating the subscription check for a catalogSource to use
-		mceSub := multiclusterengine.Subscription(multiClusterHub, subConfig, utils.IsCommunityMode())
-		mceSub.Labels = utils.AddInstallerLabels(mceSub.Labels, multiClusterHub.Name, multiClusterHub.Namespace)
+	// 	result, err = r.ensureOperatorGroup(multiClusterHub, multiclusterengine.OperatorGroup())
+	// 	if result != (ctrl.Result{}) {
+	// 		return result, err
+	// 	}
 
-		ctlSrc, err := multiclusterengine.GetCatalogSource(r.UncachedClient)
-		if err != nil {
-			r.Log.Info("Failed to find a suitable catalogsource.", "error", err)
-			return ctrl.Result{RequeueAfter: 5 * time.Second}, err
-		}
-		mceSub.Spec.CatalogSource = ctlSrc.Name
-		mceSub.Spec.CatalogSourceNamespace = ctlSrc.Namespace
+	// 	// when creating the subscription check for a catalogSource to use
+	// 	mceSub := multiclusterengine.Subscription(multiClusterHub, subConfig, utils.IsCommunityMode())
+	// 	mceSub.Labels = utils.AddInstallerLabels(mceSub.Labels, multiClusterHub.Name, multiClusterHub.Namespace)
 
-		multiclusterengine.ApplyAnnotationOverrides(mceSub, multiClusterHub)
-		result, err = r.ensureOLMSubscription(multiClusterHub, mceSub)
-		if result != (ctrl.Result{}) {
-			return result, err
-		}
-		return ctrl.Result{}, nil
-	}
+	// 	ctlSrc, err := multiclusterengine.GetCatalogSource(r.UncachedClient)
+	// 	if err != nil {
+	// 		r.Log.Info("Failed to find a suitable catalogsource.", "error", err)
+	// 		return ctrl.Result{RequeueAfter: 5 * time.Second}, err
+	// 	}
+	// 	mceSub.Spec.CatalogSource = ctlSrc.Name
+	// 	mceSub.Spec.CatalogSourceNamespace = ctlSrc.Namespace
 
-	s := multiclusterengine.Subscription(multiClusterHub, subConfig, utils.IsCommunityMode())
-	// preserve catalogSource info
-	s.Spec.CatalogSource = mceSub.Spec.CatalogSource
-	s.Spec.CatalogSourceNamespace = mceSub.Spec.CatalogSourceNamespace
-	s.SetLabels(mceSub.Labels)
+	// 	multiclusterengine.ApplyAnnotationOverrides(mceSub, multiClusterHub)
+	// 	result, err = r.ensureOLMSubscription(multiClusterHub, mceSub)
+	// 	if result != (ctrl.Result{}) {
+	// 		return result, err
+	// 	}
+	// 	return ctrl.Result{}, nil
+	// }
 
-	// if updating channel must remove startingCSV
-	if s.Spec.Channel != mceSub.Spec.Channel {
-		s.Spec.StartingCSV = ""
-	}
+	// s := multiclusterengine.Subscription(multiClusterHub, subConfig, utils.IsCommunityMode())
+	// // preserve catalogSource info
+	// s.Spec.CatalogSource = mceSub.Spec.CatalogSource
+	// s.Spec.CatalogSourceNamespace = mceSub.Spec.CatalogSourceNamespace
+	// s.SetLabels(mceSub.Labels)
 
-	// If created by user use same name/namespace
-	if !createdByMCH(mceSub, multiClusterHub) {
-		s.Name = mceSub.Name
-		s.Namespace = mceSub.Namespace
-	}
+	// // if updating channel must remove startingCSV
+	// if s.Spec.Channel != mceSub.Spec.Channel {
+	// 	s.Spec.StartingCSV = ""
+	// }
 
-	multiclusterengine.ApplyAnnotationOverrides(s, multiClusterHub)
-	result, err := r.ensureOLMSubscription(multiClusterHub, s)
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
+	// // If created by user use same name/namespace
+	// if !createdByMCH(mceSub, multiClusterHub) {
+	// 	s.Name = mceSub.Name
+	// 	s.Namespace = mceSub.Namespace
+	// }
 
-	return ctrl.Result{}, nil
-}
+	// multiclusterengine.ApplyAnnotationOverrides(s, multiClusterHub)
+	// result, err := r.ensureOLMSubscription(multiClusterHub, s)
+	// if result != (ctrl.Result{}) {
+	// 	return result, err
+	// }
 
-func createdByMCH(s *subv1alpha1.Subscription, m *operatorv1.MultiClusterHub) bool {
-	l := s.GetLabels()
-	if l == nil {
-		return false
-	}
-	return l["installer.name"] == m.GetName() && l["installer.namespace"] == m.GetNamespace()
+	// return ctrl.Result{}, nil
 }
 
 // find MCE subscription. label it for future. return nil if no sub found.
@@ -1287,11 +1289,9 @@ func (r *MultiClusterHubReconciler) getMCESubscription() (*subv1alpha1.Subscript
 	return nil, nil
 }
 
-func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
-	ctx := context.Background()
-
+func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(ctx context.Context, multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	// confirm subscription and reqs exist and are configured correctly
-	result, err := r.ensureMCESubscription(multiClusterHub)
+	result, err := r.ensureMCESubscription(ctx, multiClusterHub)
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
@@ -1595,6 +1595,35 @@ func mergeErrors(errs []error) string {
 		errStrings = append(errStrings, e.Error())
 	}
 	return strings.Join(errStrings, " ; ")
+}
+
+func (r *MultiClusterHubReconciler) PreexistingMCEExists() (*mcev1.MultiClusterEngine, error) {
+	ctx := context.Background()
+	// First check if MCE is preexisting
+	mceList := &mcev1.MultiClusterEngineList{}
+	err := r.Client.List(ctx, mceList)
+	if err != nil && !errors.IsNotFound(err) {
+		if !strings.Contains(err.Error(), "no matches for kind \"MultiClusterEngine\"") {
+			r.Log.Info(fmt.Sprintf("error locating MCE: %s. Error: %s", multiclusterengine.MulticlusterengineName, err.Error()))
+			return nil, err
+		}
+	} else if err == nil && len(mceList.Items) == 1 {
+		labels := mceList.Items[0].Labels
+		if labels == nil {
+			return nil, nil
+		}
+		_, nameExists := labels["installer.name"]
+		_, namespaceExists := labels["installer.namespace"]
+		if nameExists && namespaceExists {
+			return nil, nil
+		}
+		// Preexisting MCE exists, no need to terminate resources
+		return &mceList.Items[0], nil
+	} else if len(mceList.Items) > 1 {
+		return nil, fmt.Errorf("multiple MCEs found. Only one MCE is allowed per cluster")
+	}
+	// No MCE exists, return
+	return nil, nil
 }
 
 // GetSubConfig returns a SubscriptionConfig based on proxy variables and the mch operator configuration
