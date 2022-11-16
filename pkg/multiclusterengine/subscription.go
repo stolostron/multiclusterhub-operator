@@ -33,6 +33,10 @@ func NewSubscription(m *operatorsv1.MultiClusterHub, c *subv1alpha1.Subscription
 	}
 
 	sub := &subv1alpha1.Subscription{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: subv1alpha1.SubscriptionCRDAPIVersion,
+			Kind:       subv1alpha1.SubscriptionKind,
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      utils.MCESubscriptionName,
 			Namespace: utils.MCESubscriptionNamespace,
@@ -56,6 +60,12 @@ func NewSubscription(m *operatorsv1.MultiClusterHub, c *subv1alpha1.Subscription
 // RenderSubscription returns a subscription by modifying the spec of an existing subscription based on overrides
 func RenderSubscription(existingSubscription *subv1alpha1.Subscription, config *subv1alpha1.SubscriptionConfig, overrides *subv1alpha1.SubscriptionSpec, ctlSrc types.NamespacedName, community bool) *subv1alpha1.Subscription {
 	copy := existingSubscription.DeepCopy()
+	copy.ManagedFields = nil
+	copy.TypeMeta = metav1.TypeMeta{
+		APIVersion: subv1alpha1.SubscriptionCRDAPIVersion,
+		Kind:       subv1alpha1.SubscriptionKind,
+	}
+
 	chName, pkgName, catSourceName := channel, packageName, catalogSourceName
 	if community {
 		chName = communityChannel

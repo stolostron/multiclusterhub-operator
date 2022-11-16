@@ -6,12 +6,14 @@ package multiclusterengine
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,7 +31,7 @@ var (
 	catalogSourceNamespace = "openshift-marketplace" // https://olm.operatorframework.io/docs/tasks/troubleshooting/subscription/#a-subscription-in-namespace-x-cant-install-operators-from-a-catalogsource-in-namespace-y
 
 	// community MCE variables
-	communityChannel           = "community-2.2"
+	communityChannel           = "community-0.1"
 	communityPackageName       = "stolostron-engine"
 	communityCatalogSourceName = "community-operators"
 
@@ -93,7 +95,7 @@ func MultiClusterEngine(m *operatorsv1.MultiClusterHub) *mcev1.MultiClusterEngin
 }
 
 // NewMultiClusterEngine returns an MCE configured from a Multiclusterhub
-func NewMultiClusterEngine(m *operatorsv1.MultiClusterHub) *mcev1.MultiClusterEngine {
+func NewMultiClusterEngine(m *operatorsv1.MultiClusterHub, infrastructureCustomNamespace string) *mcev1.MultiClusterEngine {
 	labels := map[string]string{
 		"installer.name":        m.GetName(),
 		"installer.namespace":   m.GetNamespace(),
@@ -122,7 +124,57 @@ func NewMultiClusterEngine(m *operatorsv1.MultiClusterHub) *mcev1.MultiClusterEn
 			},
 		},
 	}
+
+	if m.Spec.Overrides != nil && m.Spec.Overrides.ImagePullPolicy != "" {
+		mce.Spec.Overrides.ImagePullPolicy = m.Spec.Overrides.ImagePullPolicy
+	}
+
+	if infrastructureCustomNamespace != "" {
+		mce.Spec.Overrides.InfrastructureCustomNamespace = infrastructureCustomNamespace
+	}
+
 	return mce
+}
+
+func RenderMultiClusterEngine(existingMCE *mcev1.MultiClusterEngine, m *operatorsv1.MultiClusterHub) *mcev1.MultiClusterEngine {
+	copy := existingMCE.DeepCopy()
+
+	// add annotations
+	annotations := GetSupportedAnnotations(m)
+	if len(annotations) > 0 {
+		newAnnotations := copy.GetAnnotations()
+		if newAnnotations == nil {
+			newAnnotations = make(map[string]string)
+		}
+		for key, val := range annotations {
+			newAnnotations[key] = val
+		}
+		copy.SetAnnotations(newAnnotations)
+	}
+
+	if m.Spec.AvailabilityConfig == operatorsv1.HABasic {
+		copy.Spec.AvailabilityConfig = mcev1.HABasic
+	} else {
+		copy.Spec.AvailabilityConfig = mcev1.HAHigh
+	}
+
+	copy.Spec.ImagePullSecret = m.Spec.ImagePullSecret
+	copy.Spec.Tolerations = utils.GetTolerations(m)
+	copy.Spec.NodeSelector = m.Spec.NodeSelector
+
+	for _, component := range utils.GetMCEComponents(m) {
+		if component.Enabled {
+			copy.Enable(component.Name)
+		} else {
+			copy.Disable(component.Name)
+		}
+	}
+
+	if m.Spec.Overrides != nil && m.Spec.Overrides.ImagePullPolicy != "" {
+		copy.Spec.Overrides.ImagePullPolicy = m.Spec.Overrides.ImagePullPolicy
+	}
+
+	return copy
 }
 
 // GetSupportedAnnotations copies annotations relevant to MCE from MCH. Currently this only
@@ -250,4 +302,70 @@ func GetMCEPackageManifests(k8sClient client.Client) ([]olmapi.PackageManifest, 
 		}
 	}
 	return pkgList, nil
+}
+
+// Finds MCE by managed label. Returns nil if none found.
+func GetManagedMCE(ctx context.Context, k8sClient client.Client) (*mcev1.MultiClusterEngine, error) {
+	mceList := &mcev1.MultiClusterEngineList{}
+	err := k8sClient.List(ctx, mceList, &client.MatchingLabels{
+		utils.MCEManagedByLabel: "true",
+	})
+	if err != nil {
+		return nil, err
+	} else if err == nil && len(mceList.Items) == 1 {
+		return &mceList.Items[0], nil
+	} else if len(mceList.Items) > 1 {
+		// will require manual resolution
+		return nil, fmt.Errorf("multiple MCEs found managed by MCH. Only one MCE is supported")
+	}
+
+	return nil, nil
+}
+
+// find MCE. label it for future. return nil if no mce found.
+func FindAndManageMCE(ctx context.Context, k8sClient client.Client) (*mcev1.MultiClusterEngine, error) {
+	// first find subscription via managed-by label
+	mce, err := GetManagedMCE(ctx, k8sClient)
+	if err != nil {
+		return nil, err
+	}
+	if mce != nil {
+		return mce, nil
+	}
+
+	// if label doesn't work find it via list
+	log.FromContext(ctx).Info("Failed to find subscription via label")
+	wholeList := &mcev1.MultiClusterEngineList{}
+	err = k8sClient.List(ctx, wholeList)
+	if err != nil {
+		return nil, err
+	}
+	if len(wholeList.Items) == 0 {
+		return nil, nil
+	}
+	if len(wholeList.Items) > 1 {
+		return nil, fmt.Errorf("multiple MCEs found managed by MCH. Only one MCE is supported")
+	}
+	labels := wholeList.Items[0].GetLabels()
+	if labels == nil {
+		labels = map[string]string{}
+	}
+	labels[utils.MCEManagedByLabel] = "true"
+	wholeList.Items[0].SetLabels(labels)
+	log.FromContext(ctx).Info("Adding label to MCE")
+	if err := k8sClient.Update(ctx, &wholeList.Items[0]); err != nil {
+		log.FromContext(ctx).Error(err, "Failed to add managedBy label to preexisting MCE")
+		return &wholeList.Items[0], err
+	}
+	return &wholeList.Items[0], nil
+}
+
+// MCECreatedByMCH returns true if the provided MCE was created by the multiclusterhub-operator (as indicated by installer labels).
+// A nil MCE will always return false
+func MCECreatedByMCH(mce *mcev1.MultiClusterEngine, m *operatorv1.MultiClusterHub) bool {
+	l := mce.GetLabels()
+	if l == nil {
+		return false
+	}
+	return l["installer.name"] == m.GetName() && l["installer.namespace"] == m.GetNamespace()
 }
