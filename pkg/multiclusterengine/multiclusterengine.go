@@ -63,37 +63,6 @@ var mockPackageManifests = func() *olmapi.PackageManifestList {
 	}
 }
 
-func labels(m *operatorsv1.MultiClusterHub) map[string]string {
-	return map[string]string{
-		// "installer.name":        m.GetName(),
-		// "installer.namespace":   m.GetNamespace(),
-		utils.MCEManagedByLabel: "true",
-	}
-}
-
-func MultiClusterEngine(m *operatorsv1.MultiClusterHub) *mcev1.MultiClusterEngine {
-	mce := &mcev1.MultiClusterEngine{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: mcev1.GroupVersion.String(),
-			Kind:       "MultiClusterEngine",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        MulticlusterengineName,
-			Labels:      labels(m),
-			Annotations: GetSupportedAnnotations(m),
-		},
-		Spec: mcev1.MultiClusterEngineSpec{
-			ImagePullSecret: m.Spec.ImagePullSecret,
-			Tolerations:     utils.GetTolerations(m),
-			NodeSelector:    m.Spec.NodeSelector,
-			Overrides: &mcev1.Overrides{
-				Components: utils.GetMCEComponents(m),
-			},
-		},
-	}
-	return mce
-}
-
 // NewMultiClusterEngine returns an MCE configured from a Multiclusterhub
 func NewMultiClusterEngine(m *operatorsv1.MultiClusterHub, infrastructureCustomNamespace string) *mcev1.MultiClusterEngine {
 	labels := map[string]string{

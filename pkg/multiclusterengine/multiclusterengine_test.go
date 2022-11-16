@@ -6,10 +6,12 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/onsi/gomega"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -203,4 +205,204 @@ func TestMCECreatedByMCH(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestNewMultiClusterEngine(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	type args struct {
+		m                             *operatorsv1.MultiClusterHub
+		infrastructureCustomNamespace string
+	}
+	tests := []struct {
+		name string
+		args args
+		want *mcev1.MultiClusterEngine
+	}{
+		{
+			name: "Basic",
+			args: args{
+				m: &operatorv1.MultiClusterHub{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "mch",
+						Namespace: "mch-ns",
+					},
+				},
+				infrastructureCustomNamespace: "",
+			},
+			want: &mcev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: MulticlusterengineName,
+					Labels: map[string]string{
+						"installer.name":        "mch",
+						"installer.namespace":   "mch-ns",
+						utils.MCEManagedByLabel: "true",
+					},
+				},
+				Spec: mcev1.MultiClusterEngineSpec{
+					ImagePullSecret: "",
+					Tolerations: []corev1.Toleration{
+						{
+							Effect:   "NoSchedule",
+							Key:      "node-role.kubernetes.io/infra",
+							Operator: "Exists",
+						},
+					},
+					NodeSelector:       nil,
+					AvailabilityConfig: mcev1.HAHigh,
+					TargetNamespace:    MulticlusterengineNamespace,
+					Overrides: &mcev1.Overrides{
+						Components: []mcev1.ComponentConfig{
+							{Name: operatorsv1.MCELocalCluster, Enabled: true},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Several configurations",
+			args: args{
+				m: &operatorv1.MultiClusterHub{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "mch",
+						Namespace: "mch-ns",
+					},
+					Spec: operatorv1.MultiClusterHubSpec{
+						AvailabilityConfig: operatorsv1.HABasic,
+						NodeSelector: map[string]string{
+							"select": "this",
+						},
+						Tolerations: []corev1.Toleration{
+							{
+								Key:    "tolerate",
+								Value:  "this",
+								Effect: "now",
+							},
+						},
+						DisableHubSelfManagement: true,
+						Overrides: &operatorv1.Overrides{
+							ImagePullPolicy: corev1.PullNever,
+							Components: []operatorv1.ComponentConfig{
+								{Name: operatorsv1.MCEDiscovery, Enabled: false},
+							},
+						},
+					},
+				},
+				infrastructureCustomNamespace: "open-cluster-management",
+			},
+			want: &mcev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: MulticlusterengineName,
+					Labels: map[string]string{
+						"installer.name":        "mch",
+						"installer.namespace":   "mch-ns",
+						utils.MCEManagedByLabel: "true",
+					},
+				},
+				Spec: mcev1.MultiClusterEngineSpec{
+					ImagePullSecret: "",
+					Tolerations: []corev1.Toleration{
+						{
+							Key:    "tolerate",
+							Value:  "this",
+							Effect: "now",
+						},
+					},
+					NodeSelector: map[string]string{
+						"select": "this",
+					},
+					AvailabilityConfig: mcev1.HABasic,
+					TargetNamespace:    MulticlusterengineNamespace,
+					Overrides: &mcev1.Overrides{
+						ImagePullPolicy: corev1.PullNever,
+						Components: []mcev1.ComponentConfig{
+							{Name: operatorsv1.MCEDiscovery, Enabled: false},
+							{Name: operatorsv1.MCELocalCluster, Enabled: false},
+						},
+						InfrastructureCustomNamespace: "open-cluster-management",
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := NewMultiClusterEngine(tt.args.m, tt.args.infrastructureCustomNamespace)
+			g.Expect(got.Labels).To(gomega.Equal(tt.want.Labels))
+			g.Expect(got.Spec.ImagePullSecret).To(gomega.Equal(tt.want.Spec.ImagePullSecret))
+			g.Expect(got.Spec.Tolerations).To(gomega.Equal(tt.want.Spec.Tolerations))
+			g.Expect(got.Spec.NodeSelector).To(gomega.Equal(tt.want.Spec.NodeSelector))
+			g.Expect(got.Spec.AvailabilityConfig).To(gomega.Equal(tt.want.Spec.AvailabilityConfig))
+			g.Expect(got.Spec.TargetNamespace).To(gomega.Equal(tt.want.Spec.TargetNamespace))
+			g.Expect(got.Spec.Overrides.Components).To(gomega.Equal(tt.want.Spec.Overrides.Components))
+			g.Expect(got.Spec.Overrides.ImagePullPolicy).To(gomega.Equal(tt.want.Spec.Overrides.ImagePullPolicy))
+			g.Expect(got.Spec.Overrides.InfrastructureCustomNamespace).To(gomega.Equal(tt.want.Spec.Overrides.InfrastructureCustomNamespace))
+
+		})
+	}
+}
+
+func TestRenderMultiClusterEngine(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	existingMCE := &mcev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "randomName",
+			Labels: map[string]string{
+				"random":                "label",
+				utils.MCEManagedByLabel: "true",
+			},
+			Annotations: map[string]string{
+				"random": "annotation",
+			},
+		},
+		Spec: mcev1.MultiClusterEngineSpec{
+			ImagePullSecret: "",
+			Tolerations: []corev1.Toleration{
+				{
+					Key:    "tolerate",
+					Value:  "this",
+					Effect: "now",
+				},
+			},
+			NodeSelector: map[string]string{
+				"select": "this",
+			},
+			AvailabilityConfig: mcev1.HABasic,
+			TargetNamespace:    "random",
+			Overrides: &mcev1.Overrides{
+				ImagePullPolicy: corev1.PullNever,
+				Components: []mcev1.ComponentConfig{
+					{Name: operatorsv1.MCEDiscovery, Enabled: false},
+					{Name: operatorsv1.MCELocalCluster, Enabled: false},
+				},
+				InfrastructureCustomNamespace: "open-cluster-management",
+			},
+		},
+	}
+
+	mch := &operatorv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "mch",
+			Namespace: "mch-ns",
+			Annotations: map[string]string{
+				"mch-imageRepository": "quay.io",
+			},
+		},
+	}
+
+	got := RenderMultiClusterEngine(existingMCE, mch)
+
+	t.Run("Preserve some fields", func(t *testing.T) {
+		g.Expect(got.Name).To(gomega.Equal(existingMCE.Name), "Name should be kept")
+		g.Expect(got.Labels["random"]).To(gomega.Equal(existingMCE.Labels["random"]), "Labels should not be erased")
+		g.Expect(got.Annotations["random"]).To(gomega.Equal(existingMCE.Annotations["random"]), "Annotations should not be erased")
+		g.Expect(got.Spec.Overrides.InfrastructureCustomNamespace).To(gomega.Equal(existingMCE.Spec.Overrides.InfrastructureCustomNamespace), "Infra namespace should not change")
+		g.Expect(got.Spec.TargetNamespace).To(gomega.Equal(existingMCE.Spec.TargetNamespace), "Target namespace should not change")
+	})
+
+	t.Run("Overwrite some fields", func(t *testing.T) {
+		g.Expect(got.Annotations["imageRepository"]).To(gomega.Equal(mch.Annotations["mch-imageRepository"]), "Override annotations should be updated")
+	})
+
 }
