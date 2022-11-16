@@ -28,8 +28,6 @@ rules:
   - ""
   resources:
   - events
-  - configmaps
-  - configmaps/finalizers
   verbs:
   - create
   - delete
