@@ -482,7 +482,7 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 		mce = multiclusterengine.NewMultiClusterEngine(m, infraNS)
 		err = r.Client.Create(ctx, mce)
 		if err != nil {
-			return ctrl.Result{}, fmt.Errorf("Error creating new MCE: %w", err)
+			return ctrl.Result{Requeue: true}, fmt.Errorf("Error creating new MCE: %w", err)
 		}
 		return ctrl.Result{}, nil
 	}
@@ -490,7 +490,7 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 	calcMCE := multiclusterengine.RenderMultiClusterEngine(mce, m)
 	err = r.Client.Update(ctx, calcMCE)
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("Error updating MCE %s: %w", mce.Name, err)
+		return ctrl.Result{Requeue: true}, fmt.Errorf("Error updating MCE %s: %w", mce.Name, err)
 	}
 	return ctrl.Result{}, nil
 }
@@ -998,7 +998,7 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 	err = r.Client.Patch(ctx, calcSub, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
 	if err != nil {
 		r.Log.Info(fmt.Sprintf("Error applying subscription: %s", err.Error()))
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{Requeue: true}, err
 	}
 	return ctrl.Result{}, nil
 }
@@ -1023,7 +1023,7 @@ func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context, mceVers
 	// Wait for MCE to be ready
 	existingMCE, err := multiclusterengine.GetManagedMCE(ctx, r.Client)
 	if err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{Requeue: true}, err
 	}
 	if utils.IsUnitTest() {
 		return ctrl.Result{}, nil
@@ -1038,13 +1038,13 @@ func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context, mceVers
 	xyVersion := fmt.Sprintf("%s.%s.x", split[0], split[1])
 	minimum, err := semver.NewConstraint(xyVersion)
 	if err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{Requeue: true}, err
 	}
 
 	cv := existingMCE.Status.CurrentVersion
 	mceSemVer, err := semver.NewVersion(cv)
 	if err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{Requeue: true}, err
 	}
 	if !minimum.Check(mceSemVer) {
 		return ctrl.Result{RequeueAfter: resyncPeriod}, e.New(fmt.Sprintf("%s did not meet version requirement %s", cv, xyVersion))
