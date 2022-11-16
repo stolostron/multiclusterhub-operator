@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -142,7 +141,7 @@ func (r *MultiClusterHubReconciler) syncHubStatus(
 	original *operatorsv1.MultiClusterHubStatus,
 	allDeps []*appsv1.Deployment,
 	allHRs []*subhelmv1.HelmRelease,
-	allCRs []*unstructured.Unstructured,
+	allCRs map[string]*unstructured.Unstructured,
 	ocpConsole bool,
 ) (reconcile.Result, error) {
 	// localCluster, err := r.ensureManagedClusterIsRunning(m, ocpConsole)
@@ -177,7 +176,7 @@ func calculateStatus(
 	hub *operatorsv1.MultiClusterHub,
 	allDeps []*appsv1.Deployment,
 	allHRs []*subhelmv1.HelmRelease,
-	allCRs []*unstructured.Unstructured,
+	allCRs map[string]*unstructured.Unstructured,
 	//	importClusterStatus []interface{},
 	ocpConsole bool,
 ) operatorsv1.MultiClusterHubStatus {
@@ -277,7 +276,7 @@ func getComponentStatuses(
 	hub *operatorsv1.MultiClusterHub,
 	allHRs []*subhelmv1.HelmRelease,
 	allDeps []*appsv1.Deployment,
-	allCRs []*unstructured.Unstructured,
+	allCRs map[string]*unstructured.Unstructured,
 	ocpConsole bool,
 ) map[string]operatorsv1.StatusCondition {
 	components := newComponentList(hub, ocpConsole)
@@ -315,27 +314,18 @@ func getComponentStatuses(
 		}
 	}
 
-	preexistingMCE := false
-	for _, cr := range allCRs {
+	for key, cr := range allCRs {
 		if cr == nil {
 			continue
 		}
-		if cr.GetName() == utils.MCESubscriptionName && cr.GetKind() == "Subscription" {
+		switch key {
+		case "mce-sub":
 			components["multicluster-engine-sub"] = mapSubscription(cr)
-		} else if strings.Contains(cr.GetName(), utils.MCESubscriptionName) && cr.GetKind() == "ClusterServiceVersion" {
+		case "mce-csv":
 			components["multicluster-engine-csv"] = mapCSV(cr)
-		} else if cr.GetKind() == "MultiClusterEngine" {
+		case "mce":
 			components["multicluster-engine"] = mapMultiClusterEngine(cr)
-			labels := cr.GetLabels()
-			if val, ok := labels[utils.MCEManagedByLabel]; labels != nil && ok && val == "true" {
-				preexistingMCE = true
-			}
 		}
-	}
-
-	if preexistingMCE {
-		components["multicluster-engine-csv"] = unmanagedStatus
-		components["multicluster-engine-sub"] = unmanagedStatus
 	}
 
 	if !ocpConsole {

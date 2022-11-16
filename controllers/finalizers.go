@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-logr/logr"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/channel"
 	"github.com/stolostron/multiclusterhub-operator/pkg/helmrepo"
@@ -144,46 +143,35 @@ func (r *MultiClusterHubReconciler) cleanupCRDs(log logr.Logger, m *operatorsv1.
 func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	ctx := context.Background()
 
-	managedByMCE, err := r.PreexistingMCEExists()
+	mce, err := multiclusterengine.GetManagedMCE(ctx, r.Client)
 	if err != nil {
 		return err
 	}
-
-	if err == nil && managedByMCE != nil {
-		// Preexisting MCE exists, no need to terminate resources
+	if mce != nil && !multiclusterengine.MCECreatedByMCH(mce, m) {
 		r.Log.Info("Preexisting MCE exists, skipping MCE finalization")
 		return nil
 	}
 
-	// If no preexisting MCE exists, proceed with finalization of installed MCE and its resources
-	existingMCE := &mcev1.MultiClusterEngine{}
-	err = r.Client.Get(ctx, types.NamespacedName{Name: multiclusterengine.MulticlusterengineName}, existingMCE)
-	if err == nil {
-		labels := existingMCE.Labels
-		if name, ok := labels["installer.name"]; ok && name == m.GetName() {
-			if namespace, ok := labels["installer.namespace"]; ok && namespace == m.GetNamespace() {
-				// MCE is installed by the MCH, no need to manage. Return
-				r.Log.Info("Deleting MultiClusterEngine resources")
-				err := r.Client.Delete(ctx, multiclusterengine.MultiClusterEngine(m))
-				if err != nil && (!errors.IsNotFound(err) || !errors.IsGone(err)) {
-					return err
-				}
-				return fmt.Errorf("MCE has not yet been terminated")
-			}
-		} else {
-			r.Log.Info("MCE is not managed by this MCH, skipping MCE finalization")
-			return nil
+	if mce != nil {
+		r.Log.Info("Deleting MultiClusterEngine resource")
+		err = r.Client.Delete(ctx, mce)
+		if err != nil && (!errors.IsNotFound(err) || !errors.IsGone(err)) {
+			return err
 		}
-
+		return fmt.Errorf("MCE has not yet been terminated")
 	}
 
 	if utils.IsUnitTest() {
 		return nil
 	}
 
-	mceSub, err := r.getMCESubscription()
+	mceSub, err := multiclusterengine.GetManagedMCESubscription(ctx, r.Client)
 	if err != nil {
 		return err
+	}
+	if mceSub != nil && !multiclusterengine.CreatedByMCH(mceSub, m) {
+		r.Log.Info("Preexisting MCE subscription exists, skipping MCE subscription finalization")
+		return nil
 	}
 
 	if mceSub != nil {
@@ -370,20 +358,21 @@ func (r *MultiClusterHubReconciler) cleanupFoundation(reqLogger logr.Logger, m *
 func (r *MultiClusterHubReconciler) orphanOwnedMultiClusterEngine(m *operatorsv1.MultiClusterHub) error {
 	ctx := context.Background()
 
-	managedByMCE, err := r.PreexistingMCEExists()
+	mce, err := multiclusterengine.GetManagedMCE(ctx, r.Client)
 	if err != nil {
 		return err
 	}
-	if managedByMCE == nil {
+	if mce == nil {
 		// MCE does not exist
 		return nil
 	}
+
 	r.Log.Info("Preexisting MCE exists, orphaning resource")
-	controllerutil.RemoveFinalizer(managedByMCE, hubFinalizer)
-	labels := managedByMCE.GetLabels()
+	controllerutil.RemoveFinalizer(mce, hubFinalizer)
+	labels := mce.GetLabels()
 	delete(labels, utils.MCEManagedByLabel)
-	managedByMCE.SetLabels(labels)
-	if err = r.Client.Update(ctx, managedByMCE); err != nil {
+	mce.SetLabels(labels)
+	if err = r.Client.Update(ctx, mce); err != nil {
 		return err
 	}
 	r.Log.Info("MCE orphaned")

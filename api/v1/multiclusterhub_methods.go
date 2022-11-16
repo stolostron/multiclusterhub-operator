@@ -18,17 +18,18 @@ const (
 	Volsync            string = "volsync"
 
 	// MCE
-	MCEManagedServiceAccount string = "managedserviceaccount-preview"
-	MCEConsole               string = "console-mce"
-	MCEDiscovery             string = "discovery"
-	MCEHive                  string = "hive"
-	MCEAssistedService       string = "assisted-service"
-	MCEClusterLifecycle      string = "cluster-lifecycle-mce"
-	MCEClusterManager        string = "cluster-manager"
-	MCEServerFoundation      string = "server-foundation"
-	MCEHypershift            string = "hypershift-preview"
-	MCEClusterProxyAddon     string = "cluster-proxy-addon"
-	MCELocalCluster          string = "local-cluster"
+	MCEManagedServiceAccount  string = "managedserviceaccount-preview"
+	MCEConsole                string = "console-mce"
+	MCEDiscovery              string = "discovery"
+	MCEHive                   string = "hive"
+	MCEAssistedService        string = "assisted-service"
+	MCEClusterLifecycle       string = "cluster-lifecycle-mce"
+	MCEClusterManager         string = "cluster-manager"
+	MCEServerFoundation       string = "server-foundation"
+	MCEHypershift             string = "hypershift-preview"
+	MCEHypershiftLocalHosting string = "hypershift-local-hosting"
+	MCEClusterProxyAddon      string = "cluster-proxy-addon"
+	MCELocalCluster           string = "local-cluster"
 )
 
 var allComponents = []string{
@@ -53,6 +54,7 @@ var allComponents = []string{
 	MCEConsole,
 	MCEManagedServiceAccount,
 	MCEHypershift,
+	MCEHypershiftLocalHosting,
 	MCEClusterProxyAddon,
 }
 
@@ -66,6 +68,7 @@ var MCEComponents = []string{
 	MCEConsole,
 	MCEManagedServiceAccount,
 	MCEHypershift,
+	MCEHypershiftLocalHosting,
 }
 
 func GetDefaultEnabledComponents() ([]string, error) {

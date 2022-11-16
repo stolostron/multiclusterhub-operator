@@ -771,7 +771,7 @@ func Test_getComponentStatuses(t *testing.T) {
 		hub     *operatorsv1.MultiClusterHub
 		allHRs  []*subhelmv1.HelmRelease
 		allDeps []*appsv1.Deployment
-		allCRs  []*unstructured.Unstructured
+		allCRs  map[string]*unstructured.Unstructured
 	}
 	tests := []struct {
 		name string
@@ -835,7 +835,9 @@ func Test_getComponentStatuses(t *testing.T) {
 						},
 					},
 				},
-				allCRs: []*unstructured.Unstructured{mceUnstructured},
+				allCRs: map[string]*unstructured.Unstructured{
+					"mce": mceUnstructured,
+				},
 			},
 			want: map[string]operatorsv1.StatusCondition{
 				"local-cluster": unknownStatus,

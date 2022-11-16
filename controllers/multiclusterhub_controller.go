@@ -352,7 +352,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 	}
 
-	result, err = r.ensureMultiClusterEngine(multiClusterHub)
+	result, err = r.ensureMultiClusterEngine(ctx, multiClusterHub)
 	if result != (ctrl.Result{}) {
 		return result, err
 	}

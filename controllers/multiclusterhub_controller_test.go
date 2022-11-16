@@ -194,6 +194,18 @@ func PreexistingMCE(k8sClient client.Client, reconciler *MultiClusterHubReconcil
 	ApplyPrereqs(k8sClient)
 
 	By("Creating MCE")
+	Expect(k8sClient.Create(ctx, resources.MCENamespace())).Should(Succeed())
+	mcesub := &subv1alpha1.Subscription{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "multicluster-engine",
+			Namespace: "multicluster-engine",
+			Labels:    map[string]string{utils.MCEManagedByLabel: "true"},
+		},
+		Spec: &subv1alpha1.SubscriptionSpec{
+			Package: multiclusterengine.DesiredPackage(),
+		},
+	}
+	Expect(k8sClient.Create(ctx, mcesub)).Should(Succeed())
 	mce := resources.EmptyMCE()
 	Expect(k8sClient.Create(ctx, &mce)).Should(Succeed())
 
