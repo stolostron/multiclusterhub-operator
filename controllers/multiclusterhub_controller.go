@@ -695,6 +695,16 @@ func (r *MultiClusterHubReconciler) ensureConsole(ctx context.Context, m *operat
 func (r *MultiClusterHubReconciler) ensureNoConsole(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
+	ocpConsole, err := r.CheckConsole(ctx)
+	if err != nil {
+		r.Log.Error(err, "error finding OCP Console")
+		return ctrl.Result{}, err
+	}
+	if !ocpConsole {
+		// If Openshift console is disabled then no cleanup to be done, because MCH console cannot be installed
+		return ctrl.Result{}, nil
+	}
+
 	// Renders all templates from charts
 	templates, errs := renderer.RenderChart(utils.ConsoleChartLocation, m, images)
 	if len(errs) > 0 {
