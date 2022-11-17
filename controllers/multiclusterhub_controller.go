@@ -192,7 +192,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			// Run finalization logic. If the finalization
 			// logic fails, don't remove the finalizer so
 			// that we can retry during the next reconciliation.
-			if err := r.finalizeHub(r.Log, multiClusterHub); err != nil {
+			if err := r.finalizeHub(r.Log, multiClusterHub, ocpConsole); err != nil {
 				// Logging err and returning nil to ensure 45 second wait
 				r.Log.Info(fmt.Sprintf("Finalizing: %s", err.Error()))
 				return ctrl.Result{RequeueAfter: resyncPeriod}, nil
@@ -482,7 +482,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	// Cleanup unused resources once components up-to-date
 	if r.ComponentsAreRunning(multiClusterHub, ocpConsole) {
-		if r.pluginIsSupported(multiClusterHub) && ocpConsole {
+		if ocpConsole && r.pluginIsSupported(multiClusterHub) {
 			result, err = r.addPluginToConsole(multiClusterHub)
 			if result != (ctrl.Result{}) {
 				return result, err
@@ -1078,8 +1078,8 @@ func (r *MultiClusterHubReconciler) ingressDomain(m *operatorv1.MultiClusterHub)
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operatorv1.MultiClusterHub) error {
-	if r.pluginIsSupported(m) {
+func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operatorv1.MultiClusterHub, ocpConsole bool) error {
+	if ocpConsole && r.pluginIsSupported(m) {
 		if _, err := r.removePluginFromConsole(m); err != nil {
 			return err
 		}
