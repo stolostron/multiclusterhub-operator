@@ -39,6 +39,9 @@ spec:
       - command:
         - /usr/local/bin/multicluster-operators-subscription
         - --sync-interval=60
+        - --leader-election-lease-duration=137
+        - --renew-deadline=107
+        - --retry-period=26
         env:
 {{- if .Values.hubconfig.proxyConfigs }}
         - name: HTTP_PROXY
