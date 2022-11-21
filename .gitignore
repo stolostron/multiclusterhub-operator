@@ -22,6 +22,7 @@ test/mock-component-image/bin
 test/mock-component-image/results
 test/mock-component-image/scripts/__pycache__
 test/mock-component-image/multiclusterhub
+hack/bundle-automation/__pycache__
 
 bin/*
 !bin/image-manifests
