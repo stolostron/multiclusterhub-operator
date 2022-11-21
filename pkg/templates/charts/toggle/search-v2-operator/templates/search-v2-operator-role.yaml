@@ -18,6 +18,7 @@ rules:
   - serviceaccounts
   - services
   - persistentvolumeclaims
+  - pods
   verbs:
   - '*'
 - apiGroups:
