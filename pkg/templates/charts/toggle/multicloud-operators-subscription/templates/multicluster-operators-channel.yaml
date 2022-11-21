@@ -39,6 +39,9 @@ spec:
       - command:
         - /usr/local/bin/multicluster-operators-channel
         - --alsologtostderr
+        - --leader-election-lease-duration=137
+        - --renew-deadline=107
+        - --retry-period=26
         env:
 {{- if .Values.hubconfig.proxyConfigs }}
         - name: HTTP_PROXY
