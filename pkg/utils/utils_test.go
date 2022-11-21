@@ -230,7 +230,7 @@ var _ = Describe("utility functions", func() {
 		})
 		It("gets deployments for status with app-lifecycle enabled", func() {
 			mch := resources.EmptyMCH()
-			mch.Enable(operatorsv1.Appsub)
+			mch.Enable(mchv1.Appsub)
 			d := GetDeploymentsForStatus(&mch, true)
 			Expect(len(d)).To(Equal(5))
 		})
