@@ -97,6 +97,23 @@ Setting OADP annotation via CLI
 oc annotate mch multiclusterhub installer.open-cluster-management.io/oadp-subscription-spec='{"channel":"stable-1.0","installPlanApproval":"Automatic","name":"redhat-oadp-operator","source":"redhat-operators","sourceNamespace":"openshift-marketplace","startingCSV": "oadp-operator.v1.0.2"}'
 ```
 
+### Ignore OCP Version Requirement
+
+The operator defines a minimum version of OCP it can run in to avoid unexpected behavior. If the OCP environment is below this threshold then the MCH instance will report failure early on. This requirement can be ignored in the following two ways
+
+1. Set `DISABLE_OCP_MIN_VERSION` as an environment variable. The presence of this variable in the container the operator runs will skip the check.
+
+2. Set `ignoreOCPVersion` annotation in the MCH instance.
+```bash
+kubectl annotate mch <mch-name> ignoreOCPVersion=true
+```
+
+### Ignore MCE Version Requirement
+
+After deploying MCE the operator waits for MCE install to complete and verifies it is running at a minimum version. To ignore this version check:
+
+1. Set `DISABLE_MCE_MIN_VERSION` as an environment variable. With this set the operator will only check that MCE has set its currentVersion status.
+
 ### Other Development Documents
 
 - [Installation Guide](/docs/installation.md)

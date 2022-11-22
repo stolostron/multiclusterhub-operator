@@ -280,6 +280,23 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, nil
 	}
 
+	if !utils.ShouldIgnoreOCPVersion(multiClusterHub) {
+		currentOCPVersion, err := r.getClusterVersion(ctx)
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to detect clusterversion: %w", err)
+		}
+		if err := version.ValidOCPVersion(currentOCPVersion); err != nil {
+			condition := NewHubCondition(
+				operatorv1.Progressing,
+				metav1.ConditionFalse,
+				RequirementsNotMetReason,
+				fmt.Sprintf("OCP version requirement not met: %s", err.Error()),
+			)
+			SetHubCondition(&multiClusterHub.Status, *condition)
+			return ctrl.Result{}, err
+		}
+	}
+
 	result, err = r.ensureSubscriptionOperatorIsRunning(multiClusterHub, allDeploys)
 	if result != (ctrl.Result{}) {
 		return result, err
@@ -380,7 +397,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	result, err = r.waitForMCEReady(ctx, version.RequiredMCEVersion)
+	result, err = r.waitForMCEReady(ctx)
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
@@ -1328,7 +1345,7 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 
 	if utils.IsUnitTest() {
 		// If unit test pass along a version, Can't set status in unit test
-		currentClusterVersion = "4.9.0"
+		currentClusterVersion = "4.99.99"
 	} else {
 		currentClusterVersion = clusterVersion.Status.History[0].Version
 	}
