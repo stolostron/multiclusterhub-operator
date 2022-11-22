@@ -70,7 +70,7 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: Configuration options for ingress management
+      - description: (Deprecated) Configuration options for ingress management
         displayName: Ingress Management
         path: ingress
         x-descriptors:

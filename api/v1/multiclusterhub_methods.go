@@ -74,7 +74,6 @@ var MCEComponents = []string{
 func GetDefaultEnabledComponents() ([]string, error) {
 	var defaultEnabledComponents = []string{
 		Repo,
-		ManagementIngress,
 		Console,
 		Insights,
 		GRC,

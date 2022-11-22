@@ -193,8 +193,7 @@ func TestSubscriptions(t *testing.T) {
 	}{
 		{"Console subscription", Console(mch, ovr, "")},
 		{"GRC subscription", GRC(mch, ovr)},
-		{"Insights subscription", Insights(mch, ovr, "")},
-		{"ManagementIngress subscription", ManagementIngress(mch, ovr, "")},
+		{"Insights subscription", Insights(mch, ovr)},
 		{"cluster-lifecycle subscription", ClusterLifecycle(mch, ovr)},
 	}
 

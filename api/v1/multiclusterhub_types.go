@@ -62,7 +62,7 @@ type MultiClusterHubSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Hive Config",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Hive *HiveConfigSpec `json:"hive,omitempty"`
 
-	// Configuration options for ingress management
+	// (Deprecated) Configuration options for ingress management
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Ingress Management",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Ingress IngressSpec `json:"ingress,omitempty"`
 

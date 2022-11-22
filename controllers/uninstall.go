@@ -78,6 +78,10 @@ var (
 				types.NamespacedName{Name: "volsync-addon-controller-sub", Namespace: m.Namespace},
 				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
 			),
+			newUnstructured(
+				types.NamespacedName{Name: "management-ingress-sub", Namespace: m.Namespace},
+				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
+			),
 		}
 		return removals
 	}
