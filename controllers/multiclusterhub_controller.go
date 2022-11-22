@@ -286,12 +286,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			return ctrl.Result{}, fmt.Errorf("failed to detect clusterversion: %w", err)
 		}
 		if err := version.ValidOCPVersion(currentOCPVersion); err != nil {
-			condition := NewHubCondition(
-				operatorv1.Progressing,
-				metav1.ConditionFalse,
-				RequirementsNotMetReason,
-				fmt.Sprintf("OCP version requirement not met: %s", err.Error()),
-			)
+			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason, fmt.Sprintf("OCP version requirement not met: %s", err.Error()))
 			SetHubCondition(&multiClusterHub.Status, *condition)
 			return ctrl.Result{}, err
 		}
