@@ -7,6 +7,7 @@ import (
 
 const (
 	Search             string = "search"
+	ManagementIngress  string = "management-ingress"
 	Console            string = "console"
 	Insights           string = "insights"
 	GRC                string = "grc"
@@ -34,6 +35,7 @@ var allComponents = []string{
 	// MCH
 	Repo,
 	Search,
+	ManagementIngress,
 	Console,
 	Insights,
 	GRC,
