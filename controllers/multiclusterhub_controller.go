@@ -469,12 +469,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	// Cleanup unused resources once components up-to-date
 	if r.ComponentsAreRunning(multiClusterHub, ocpConsole) {
-		if ocpConsole && r.pluginIsSupported(multiClusterHub) {
-			result, err = r.addPluginToConsole(multiClusterHub)
-			if result != (ctrl.Result{}) {
-				return result, err
-			}
-		}
 		result, err = r.ensureRemovalsGone(multiClusterHub)
 		if result != (ctrl.Result{}) {
 			return result, err
@@ -669,7 +663,7 @@ func (r *MultiClusterHubReconciler) ensureConsole(ctx context.Context, m *operat
 		}
 	}
 
-	return ctrl.Result{}, nil
+	return r.addPluginToConsole(m)
 }
 
 func (r *MultiClusterHubReconciler) ensureNoConsole(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
@@ -683,6 +677,11 @@ func (r *MultiClusterHubReconciler) ensureNoConsole(ctx context.Context, m *oper
 	if !ocpConsole {
 		// If Openshift console is disabled then no cleanup to be done, because MCH console cannot be installed
 		return ctrl.Result{}, nil
+	}
+
+	result, err := r.removePluginFromConsole(m)
+	if result != (ctrl.Result{}) {
+		return result, err
 	}
 
 	// Renders all templates from charts
@@ -1105,11 +1104,6 @@ func (r *MultiClusterHubReconciler) ingressDomain(m *operatorv1.MultiClusterHub)
 }
 
 func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operatorv1.MultiClusterHub, ocpConsole bool) error {
-	if ocpConsole && r.pluginIsSupported(m) {
-		if _, err := r.removePluginFromConsole(m); err != nil {
-			return err
-		}
-	}
 	if err := r.cleanupAppSubscriptions(reqLogger, m); err != nil {
 		return err
 	}
