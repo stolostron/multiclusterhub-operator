@@ -40,7 +40,6 @@ import (
 	ctrlpredicate "sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/yaml"
 
-	appsubv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/v1"
 
 	configv1 "github.com/openshift/api/config/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -151,11 +150,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	allHRs, err := r.listHelmReleases(trackedNamespaces)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
 	allCRs, err := r.listCustomResources(multiClusterHub)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -169,7 +163,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	originalStatus := multiClusterHub.Status.DeepCopy()
 	defer func() {
-		statusQueue, statusError := r.syncHubStatus(multiClusterHub, originalStatus, allDeploys, allHRs, allCRs, ocpConsole)
+		statusQueue, statusError := r.syncHubStatus(multiClusterHub, originalStatus, allDeploys, allCRs, ocpConsole)
 		if statusError != nil {
 			r.Log.Error(retError, "Error updating status")
 		}
@@ -266,12 +260,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	// Add installer labels to Helm-owned deployments
-	myHelmReleases := getAppSubOwnedHelmReleases(allHRs, utils.GetAppsubs(multiClusterHub))
-	myHRDeployments := getHelmReleaseOwnedDeployments(allDeploys, myHelmReleases)
-	if err := r.labelDeployments(multiClusterHub, myHRDeployments); err != nil {
-		return ctrl.Result{}, nil
-	}
 
 	// Do not reconcile objects if this instance of mch is labeled "paused"
 	updatePausedCondition(multiClusterHub)
@@ -518,13 +506,6 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) error {
 					ctrlpredicate.AnnotationChangedPredicate{},
 				),
 			),
-		).
-		Watches(
-			&source.Kind{Type: &appsubv1.Subscription{}},
-			&handler.EnqueueRequestForOwner{
-				IsController: true,
-				OwnerType:    &operatorv1.MultiClusterHub{},
-			},
 		).
 		Watches(
 			&source.Kind{Type: &corev1.ConfigMap{}},
