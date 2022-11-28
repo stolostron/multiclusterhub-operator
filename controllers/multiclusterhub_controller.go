@@ -40,8 +40,6 @@ import (
 	ctrlpredicate "sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/yaml"
 
-	appsubv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/v1"
-
 	configv1 "github.com/openshift/api/config/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -151,11 +149,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	allHRs, err := r.listHelmReleases(trackedNamespaces)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
 	allCRs, err := r.listCustomResources(multiClusterHub)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -169,7 +162,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	originalStatus := multiClusterHub.Status.DeepCopy()
 	defer func() {
-		statusQueue, statusError := r.syncHubStatus(multiClusterHub, originalStatus, allDeploys, allHRs, allCRs, ocpConsole)
+		statusQueue, statusError := r.syncHubStatus(multiClusterHub, originalStatus, allDeploys, allCRs, ocpConsole)
 		if statusError != nil {
 			r.Log.Error(retError, "Error updating status")
 		}
@@ -264,13 +257,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if err != nil {
 		r.Log.Error(err, "Error storing image manifests in configmap")
 		return ctrl.Result{}, err
-	}
-
-	// Add installer labels to Helm-owned deployments
-	myHelmReleases := getAppSubOwnedHelmReleases(allHRs, utils.GetAppsubs(multiClusterHub))
-	myHRDeployments := getHelmReleaseOwnedDeployments(allDeploys, myHelmReleases)
-	if err := r.labelDeployments(multiClusterHub, myHRDeployments); err != nil {
-		return ctrl.Result{}, nil
 	}
 
 	// Do not reconcile objects if this instance of mch is labeled "paused"
@@ -386,6 +372,14 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	// Install the rest of the subscriptions in no particular order
+	if multiClusterHub.Enabled(operatorv1.Appsub) {
+		result, err = r.ensureAppsub(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+	} else {
+		result, err = r.ensureNoAppsub(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+	}
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
 	if multiClusterHub.Enabled(operatorv1.Console) && ocpConsole {
 		result, err = r.ensureConsole(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
 	} else {
@@ -510,13 +504,6 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) error {
 					ctrlpredicate.AnnotationChangedPredicate{},
 				),
 			),
-		).
-		Watches(
-			&source.Kind{Type: &appsubv1.Subscription{}},
-			&handler.EnqueueRequestForOwner{
-				IsController: true,
-				OwnerType:    &operatorv1.MultiClusterHub{},
-			},
 		).
 		Watches(
 			&source.Kind{Type: &corev1.ConfigMap{}},
@@ -745,6 +732,52 @@ func (r *MultiClusterHubReconciler) ensureNoInsights(ctx context.Context, m *ope
 
 	// Renders all templates from charts
 	templates, errs := renderer.RenderChart(utils.InsightsChartLocation, m, images)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// Deletes all templates
+	for _, template := range templates {
+		result, err := r.deleteTemplate(ctx, m, template)
+		if err != nil {
+			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+			return result, err
+		}
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureAppsub(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
+
+	log := log.FromContext(ctx)
+
+	templates, errs := renderer.RenderChart(utils.AppsubChartLocation, m, images)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// Applies all templates
+	for _, template := range templates {
+		result, err := r.applyTemplate(ctx, m, template)
+		if err != nil {
+			return result, err
+		}
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureNoAppsub(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
+
+	// Renders all templates from charts
+	templates, errs := renderer.RenderChart(utils.AppsubChartLocation, m, images)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -1087,6 +1120,10 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 		return err
 	}
 	if err := r.cleanupFoundation(reqLogger, m); err != nil {
+		return err
+	}
+	_, err = r.ensureNoAppsub(context.TODO(), m, r.CacheSpec.ImageOverrides)
+	if err != nil {
 		return err
 	}
 	_, err = r.ensureNoInsights(context.TODO(), m, r.CacheSpec.ImageOverrides)

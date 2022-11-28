@@ -446,6 +446,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 			By("By creating a new Multiclusterhub with search disabled")
 			mch := resources.NoSearchMCH()
+			mch.Disable(operatorv1.Appsub)
 			Expect(k8sClient.Create(ctx, &mch)).Should(Succeed())
 			Expect(k8sClient.Create(ctx, mchoDeployment)).Should(Succeed())
 
@@ -589,6 +590,18 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
+			By("Ensuring App-Lifecycle")
+
+			result, err = reconciler.ensureAppsub(ctx, mch, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+
+			By("Ensuring No App-Lifecycle")
+
+			result, err = reconciler.ensureNoAppsub(ctx, mch, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+
 			By("Ensuring GRC")
 
 			result, err = reconciler.ensureGRC(ctx, mch, testImages)
@@ -623,6 +636,30 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 			result, err = reconciler.ensureNoVolsync(ctx, mch, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+		})
+	})
+
+	Context("When managing deployments", func() {
+		It("Creates and removes a deployment", func() {
+			os.Setenv("DIRECTORY_OVERRIDE", "../../pkg/templates")
+			defer os.Unsetenv("DIRECTORY_OVERRIDE")
+			By("Applying prereqs")
+			ApplyPrereqs(k8sClient)
+			ctx := context.Background()
+
+			By("Ensuring Insights")
+			mch := resources.SpecMCH()
+			testImages := map[string]string{}
+			for _, v := range utils.GetTestImages() {
+				testImages[v] = "quay.io/test/test:Test"
+			}
+
+			result, err := reconciler.ensureAppsub(ctx, mch, testImages)
+			Expect(result).To(Equal(ctrl.Result{RequeueAfter: 20000000000}))
+			Expect(err).To(BeNil())
+			result, err = reconciler.ensureNoAppsub(ctx, mch, testImages)
+			Expect(result).To(Equal(ctrl.Result{RequeueAfter: 20000000000}))
 			Expect(err).To(BeNil())
 		})
 	})

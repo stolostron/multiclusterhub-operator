@@ -228,6 +228,12 @@ var _ = Describe("utility functions", func() {
 			d := GetDeploymentsForStatus(&mch, true)
 			Expect(len(d)).To(Equal(2))
 		})
+		It("gets deployments for status with app-lifecycle enabled", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable(mchv1.Appsub)
+			d := GetDeploymentsForStatus(&mch, true)
+			Expect(len(d)).To(Equal(5))
+		})
 		It("gets deployments for status with console enabled", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(mchv1.Console)
