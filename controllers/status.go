@@ -277,8 +277,6 @@ func getComponentStatuses(
 ) map[string]operatorsv1.StatusCondition {
 	components := newComponentList(hub, ocpConsole)
 
-	
-
 	for _, d := range allDeps {
 		if _, ok := components[d.Name]; ok {
 			components[d.Name] = mapDeployment(d)

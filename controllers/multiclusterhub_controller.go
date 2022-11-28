@@ -40,7 +40,6 @@ import (
 	ctrlpredicate "sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/yaml"
 
-
 	configv1 "github.com/openshift/api/config/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -259,7 +258,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		r.Log.Error(err, "Error storing image manifests in configmap")
 		return ctrl.Result{}, err
 	}
-
 
 	// Do not reconcile objects if this instance of mch is labeled "paused"
 	updatePausedCondition(multiClusterHub)
