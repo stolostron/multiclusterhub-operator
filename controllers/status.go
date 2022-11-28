@@ -128,9 +128,8 @@ func (r *MultiClusterHubReconciler) ComponentsAreRunning(m *operatorsv1.MultiClu
 	trackedNamespaces := utils.TrackedNamespaces(m)
 
 	deployList, _ := r.listDeployments(trackedNamespaces)
-	hrList, _ := r.listHelmReleases(trackedNamespaces)
 	crList, _ := r.listCustomResources(m)
-	componentStatuses := getComponentStatuses(m, hrList, deployList, crList, ocpConsole)
+	componentStatuses := getComponentStatuses(m, deployList, crList, ocpConsole)
 	delete(componentStatuses, ManagedClusterName)
 	return allComponentsSuccessful(componentStatuses)
 }
@@ -140,12 +139,11 @@ func (r *MultiClusterHubReconciler) syncHubStatus(
 	m *operatorsv1.MultiClusterHub,
 	original *operatorsv1.MultiClusterHubStatus,
 	allDeps []*appsv1.Deployment,
-	allHRs []*subhelmv1.HelmRelease,
 	allCRs map[string]*unstructured.Unstructured,
 	ocpConsole bool,
 ) (reconcile.Result, error) {
 	// localCluster, err := r.ensureManagedClusterIsRunning(m, ocpConsole)
-	newStatus := calculateStatus(m, allDeps, allHRs, allCRs, ocpConsole)
+	newStatus := calculateStatus(m, allDeps, allCRs, ocpConsole)
 	if reflect.DeepEqual(m.Status, original) {
 		r.Log.Info("Status hasn't changed")
 		return reconcile.Result{}, nil
@@ -175,12 +173,11 @@ func (r *MultiClusterHubReconciler) syncHubStatus(
 func calculateStatus(
 	hub *operatorsv1.MultiClusterHub,
 	allDeps []*appsv1.Deployment,
-	allHRs []*subhelmv1.HelmRelease,
 	allCRs map[string]*unstructured.Unstructured,
 	//	importClusterStatus []interface{},
 	ocpConsole bool,
 ) operatorsv1.MultiClusterHubStatus {
-	components := getComponentStatuses(hub, allHRs, allDeps, allCRs, ocpConsole)
+	components := getComponentStatuses(hub, allDeps, allCRs, ocpConsole)
 	status := operatorsv1.MultiClusterHubStatus{
 		CurrentVersion: hub.Status.CurrentVersion,
 		DesiredVersion: version.Version,
@@ -274,39 +271,13 @@ func filterDuplicateHRs(allHRs []*subhelmv1.HelmRelease) []*subhelmv1.HelmReleas
 // getComponentStatuses populates a complete list of the hub component statuses
 func getComponentStatuses(
 	hub *operatorsv1.MultiClusterHub,
-	allHRs []*subhelmv1.HelmRelease,
 	allDeps []*appsv1.Deployment,
 	allCRs map[string]*unstructured.Unstructured,
 	ocpConsole bool,
 ) map[string]operatorsv1.StatusCondition {
 	components := newComponentList(hub, ocpConsole)
 
-	filteredHRs := filterDuplicateHRs(allHRs)
-
-	for _, hr := range filteredHRs {
-		owners := hr.GetOwnerReferences()
-		if len(owners) == 0 {
-			// log.Info("Helmrelease has no owner reference!", "Name", hr.GetName())
-			continue
-		}
-		appsub := owners[0].Name
-
-		if _, ok := components[appsub]; ok {
-			components[appsub] = mapHelmRelease(hr)
-
-			// If helmrelease is labeled successful, check its deployments for readiness
-			if successfulHelmRelease(hr) {
-				hrDeployments := filterDeploymentsByRelease(allDeps, hr.Name)
-				for _, d := range hrDeployments {
-					// Set status reported to first unready deployment
-					if !successfulDeploy(d) {
-						components[appsub] = mapDeployment(d)
-						break
-					}
-				}
-			}
-		}
-	}
+	
 
 	for _, d := range allDeps {
 		if _, ok := components[d.Name]; ok {
