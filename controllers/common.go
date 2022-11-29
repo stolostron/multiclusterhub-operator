@@ -1430,6 +1430,10 @@ func (r *MultiClusterHubReconciler) ensureSearchCR(m *operatorv1.MultiClusterHub
 				Name:      "search-v2-operator",
 				Namespace: m.Namespace,
 			},
+			Spec: searchv2v1alpha1.SearchSpec{
+				NodeSelector: m.Spec.NodeSelector,
+				Tolerations:  utils.GetTolerations(m),
+			},
 		}
 		force := true
 		err = r.Client.Patch(ctx, searchCR, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
