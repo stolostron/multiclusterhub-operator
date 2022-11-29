@@ -47,7 +47,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
@@ -265,11 +264,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if utils.IsPaused(multiClusterHub) {
 		r.Log.Info("MultiClusterHub reconciliation is paused. Nothing more to do.")
 		return ctrl.Result{}, nil
-	}
-
-	result, err = r.cleanupConsole(ctx, multiClusterHub)
-	if err != nil || result != (ctrl.Result{}) {
-		return result, err
 	}
 
 	result, err = r.ensureSubscriptionOperatorIsRunning(multiClusterHub, allDeploys)
@@ -707,41 +701,6 @@ func (r *MultiClusterHubReconciler) ensureNoConsole(ctx context.Context, m *oper
 			return result, err
 		}
 	}
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) cleanupConsole(ctx context.Context, mch *operatorv1.MultiClusterHub) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-	log.Info("Cleaning up old console resources")
-
-	nsn := types.NamespacedName{
-		Name:      "hive-clusterimagesets-subscription-fast-0",
-		Namespace: mch.Namespace,
-	}
-	appsub := &unstructured.Unstructured{}
-	appsub.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "apps.open-cluster-management.io",
-		Kind:    "Subscription",
-		Version: "v1",
-	})
-
-	err := r.Client.Get(ctx, nsn, appsub)
-	if err != nil && errors.IsNotFound(err) {
-		log.Info("Old console appsub resource already deleted")
-		return ctrl.Result{}, nil
-	} else if err != nil {
-		log.Error(err, "Error looking for old console appsub resource")
-		return ctrl.Result{RequeueAfter: resyncPeriod}, err
-	}
-
-	log.Info("Deleting old console appsub resource")
-	err = r.Client.Delete(ctx, appsub)
-	if err != nil {
-		log.Error(err, "Error deleting old console appsub resource")
-		return ctrl.Result{RequeueAfter: resyncPeriod}, err
-	}
-
-	log.Info("Old console appsub resource deleted")
 	return ctrl.Result{}, nil
 }
 

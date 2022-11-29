@@ -82,6 +82,14 @@ var (
 				types.NamespacedName{Name: "management-ingress-sub", Namespace: m.Namespace},
 				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
 			),
+			newUnstructured(
+				types.NamespacedName{Name: "hive-clusterimagesets-subscription-fast-0", Namespace: m.Namespace},
+				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
+			),
+			newUnstructured(
+				types.NamespacedName{Name: "acm-hive-openshift-releases-chn-0", Namespace: m.Namespace},
+				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Channel", Version: "v1"},
+			),
 		}
 		return removals
 	}
