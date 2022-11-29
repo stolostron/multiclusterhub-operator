@@ -623,41 +623,6 @@ func (r *MultiClusterHubReconciler) OverrideImagesFromConfigmap(imageOverrides m
 	return imageOverrides, nil
 }
 
-// Select oauth proxy image to use. If OCP 4.8 use old version. If OCP 4.9+ use new version. Set with key oauth_proxy
-// before applying overrides.
-func (r *MultiClusterHubReconciler) overrideOauthImage(ctx context.Context, imageOverrides map[string]string) (map[string]string, error) {
-	ocpVersion, err := r.getClusterVersion(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	semverVersion, err := semver.NewVersion(ocpVersion)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert ocp version to semver compatible value: %w", err)
-	}
-
-	// -0 allows for prerelease builds to pass the validation.
-	// If -0 is removed, developer/rc builds will not pass this check
-	constraint, err := semver.NewConstraint(">= 4.9.0-0")
-	if err != nil {
-		return nil, fmt.Errorf("failed to set ocp version constraint: %w", err)
-	}
-
-	oauthKey := "oauth_proxy"
-	oauthKeyOld := "oauth_proxy_48"
-	oauthKeyNew := "oauth_proxy_49_and_up"
-
-	if constraint.Check(semverVersion) {
-		// use newer oauth image
-		imageOverrides[oauthKey] = imageOverrides[oauthKeyNew]
-	} else {
-		// use old oauth image
-		imageOverrides[oauthKey] = imageOverrides[oauthKeyOld]
-	}
-
-	return imageOverrides, nil
-}
-
 func (r *MultiClusterHubReconciler) maintainImageManifestConfigmap(mch *operatorv1.MultiClusterHub) error {
 	// Define configmap
 	configmap := &corev1.ConfigMap{

@@ -228,13 +228,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, nil
 	}
 
-	// Select oauth proxy image to use. If OCP 4.8 use old version. If OCP 4.9+ use new version. Set with key oauth_proxy
-	// before applying overrides.
-	imageOverrides, err = r.overrideOauthImage(ctx, imageOverrides)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
 	if imageRepo := utils.GetImageRepository(multiClusterHub); imageRepo != "" {
 		r.Log.Info(fmt.Sprintf("Overriding Image Repository from annotation 'mch-imageRepository': %s", imageRepo))
 		imageOverrides = utils.OverrideImageRepository(imageOverrides, imageRepo)
