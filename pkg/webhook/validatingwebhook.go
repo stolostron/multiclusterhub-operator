@@ -165,6 +165,8 @@ func (m *multiClusterHubValidator) validateUpdate(req admission.Request) error {
 		return errors.New("Invalid AvailabilityConfig given")
 	}
 
+	newMCH.Spec.Overrides.Components = removeManagementIngress(newMCH)
+
 	// Validate components
 	if newMCH.Spec.Overrides != nil {
 		for _, c := range newMCH.Spec.Overrides.Components {
@@ -175,6 +177,20 @@ func (m *multiClusterHubValidator) validateUpdate(req admission.Request) error {
 	}
 
 	return nil
+}
+
+func removeManagementIngress(newMCH *operatorsv1.MultiClusterHub) []operatorsv1.ComponentConfig {
+	components := newMCH.Spec.Overrides.Components
+	for i, c := range components {
+		if c.Name != operatorsv1.ManagementIngress {
+			components = remove(components, i)
+		}
+	}
+	return components
+}
+
+func remove(slice []operatorsv1.ComponentConfig, s int) []operatorsv1.ComponentConfig {
+	return append(slice[:s], slice[s+1:]...)
 }
 
 func (m *multiClusterHubValidator) validateDelete(req admission.Request) error {

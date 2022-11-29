@@ -8,6 +8,7 @@ import (
 const (
 	Appsub             string = "app-lifecycle"
 	Search             string = "search"
+	ManagementIngress  string = "management-ingress"
 	Console            string = "console"
 	Insights           string = "insights"
 	GRC                string = "grc"
