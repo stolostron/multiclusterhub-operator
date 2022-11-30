@@ -23,7 +23,6 @@ import (
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	subhelmv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/helmrelease/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -35,7 +34,6 @@ import (
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/channel"
-	"github.com/stolostron/multiclusterhub-operator/pkg/helmrepo"
 	"github.com/stolostron/multiclusterhub-operator/pkg/manifest"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/subscription"
@@ -93,27 +91,6 @@ func (r *MultiClusterHubReconciler) ensureDeployment(m *operatorv1.MultiClusterH
 		return ctrl.Result{}, err
 	}
 
-	// Validate object based on name
-	var desired *appsv1.Deployment
-	var needsUpdate bool
-
-	switch found.Name {
-	case helmrepo.HelmRepoName:
-		desired, needsUpdate = helmrepo.ValidateDeployment(m, r.CacheSpec.ImageOverrides, dep, found)
-	default:
-		r.Log.Info("Could not validate deployment; unknown name")
-		return ctrl.Result{}, nil
-	}
-
-	if needsUpdate {
-		err = r.Client.Update(context.TODO(), desired)
-		if err != nil {
-			r.Log.Error(err, "Failed to update Deployment.")
-			return ctrl.Result{}, err
-		}
-		// Spec updated - return
-		return ctrl.Result{}, nil
-	}
 	return ctrl.Result{}, nil
 }
 
@@ -686,25 +663,6 @@ func (r *MultiClusterHubReconciler) listDeployments(namespaces []string) ([]*app
 	return ret, nil
 }
 
-// listHelmReleases gets all helmreleases in the given namespaces
-func (r *MultiClusterHubReconciler) listHelmReleases(namespaces []string) ([]*subhelmv1.HelmRelease, error) {
-	var ret []*subhelmv1.HelmRelease
-
-	for _, n := range namespaces {
-		hrList := &subhelmv1.HelmReleaseList{}
-		err := r.Client.List(context.TODO(), hrList, client.InNamespace(n))
-		if err != nil && !errors.IsNotFound(err) {
-			return nil, err
-		}
-
-		for i := 0; i < len(hrList.Items); i++ {
-			ret = append(ret, &hrList.Items[i])
-		}
-	}
-
-	return ret, nil
-}
-
 // listCustomResources gets custom resources the installer observes
 func (r *MultiClusterHubReconciler) listCustomResources(m *operatorv1.MultiClusterHub) (map[string]*unstructured.Unstructured, error) {
 	ret := make(map[string]*unstructured.Unstructured)
@@ -749,18 +707,6 @@ func (r *MultiClusterHubReconciler) listCustomResources(m *operatorv1.MultiClust
 	return ret, nil
 }
 
-// filterDeploymentsByRelease returns a subset of deployments with the release label value
-func filterDeploymentsByRelease(deploys []*appsv1.Deployment, releaseLabel string) []*appsv1.Deployment {
-	var labeledDeps []*appsv1.Deployment
-	for i := range deploys {
-		anno := deploys[i].GetAnnotations()
-		if anno["meta.helm.sh/release-name"] == releaseLabel {
-			labeledDeps = append(labeledDeps, deploys[i])
-		}
-	}
-	return labeledDeps
-}
-
 // addInstallerLabel adds the installer name and namespace to a deployment's labels
 // so it can be watched. Returns false if the labels are already present.
 func addInstallerLabel(d *appsv1.Deployment, name string, ns string) bool {
@@ -797,35 +743,6 @@ func addInstallerLabelSecret(d *corev1.Secret, name string, ns string) bool {
 	return updated
 }
 
-// getAppSubOwnedHelmReleases gets a subset of helmreleases created by the appsubs
-func getAppSubOwnedHelmReleases(allHRs []*subhelmv1.HelmRelease, appsubs []types.NamespacedName) []*subhelmv1.HelmRelease {
-	subMap := make(map[string]bool)
-	for _, s := range appsubs {
-		subMap[s.Name] = true
-	}
-
-	var ownedHRs []*subhelmv1.HelmRelease
-	for _, hr := range allHRs {
-		// check if this is one of our helmreleases
-		owner := hr.OwnerReferences[0].Name
-		if subMap[owner] {
-			ownedHRs = append(ownedHRs, hr)
-
-		}
-	}
-	return ownedHRs
-}
-
-// getHelmReleaseOwnedDeployments gets a subset of deployments created by the helmreleases
-func getHelmReleaseOwnedDeployments(allDeps []*appsv1.Deployment, hrList []*subhelmv1.HelmRelease) []*appsv1.Deployment {
-	var mchDeps []*appsv1.Deployment
-	for _, hr := range hrList {
-		hrDeployments := filterDeploymentsByRelease(allDeps, hr.Name)
-		mchDeps = append(mchDeps, hrDeployments...)
-	}
-	return mchDeps
-}
-
 // labelDeployments updates deployments with installer labels if not already present
 func (r *MultiClusterHubReconciler) labelDeployments(hub *operatorv1.MultiClusterHub, dList []*appsv1.Deployment) error {
 	for _, d := range dList {
@@ -840,50 +757,6 @@ func (r *MultiClusterHubReconciler) labelDeployments(hub *operatorv1.MultiCluste
 		}
 	}
 	return nil
-}
-
-// ensureSubscriptionOperatorIsRunning verifies that the subscription operator that manages helm subscriptions exists and
-// is running. This validation is only intended to run during upgrade and when run as an OLM managed deployment
-func (r *MultiClusterHubReconciler) ensureSubscriptionOperatorIsRunning(mch *operatorv1.MultiClusterHub, allDeps []*appsv1.Deployment) (ctrl.Result, error) {
-	// skip check if not upgrading
-	if mch.Status.CurrentVersion == version.Version {
-		return ctrl.Result{}, nil
-	}
-
-	selfDeployment, exists := getDeploymentByName(allDeps, utils.MCHOperatorName)
-	if !exists {
-		// Deployment doesn't exist so this is either being run locally or with unit tests
-		return ctrl.Result{}, nil
-	}
-
-	// skip check if not deployed by OLM
-	if !isACMManaged(selfDeployment) {
-		return ctrl.Result{}, nil
-	}
-
-	subscriptionDeploy, exists := getDeploymentByName(allDeps, utils.SubscriptionOperatorName)
-	if !exists {
-		err := fmt.Errorf("Standalone subscription deployment not found")
-		return ctrl.Result{}, err
-	}
-
-	// Check that the owning CSV version of the deployments match
-	if selfDeployment.GetLabels() == nil || subscriptionDeploy.GetLabels() == nil {
-		r.Log.Info("Missing labels on either MCH operator or subscription operator deployment")
-		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
-	}
-	if selfDeployment.Labels["olm.owner"] != subscriptionDeploy.Labels["olm.owner"] {
-		r.Log.Info("OLM owner labels do not match. Requeuing.", "MCH operator label", selfDeployment.Labels["olm.owner"], "Subscription operator label", subscriptionDeploy.Labels["olm.owner"])
-		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
-	}
-
-	// Check that the standalone subscription deployment is available
-	if successfulDeploy(subscriptionDeploy) {
-		return ctrl.Result{}, nil
-	} else {
-		r.Log.Info("Standalone subscription deployment is not running. Requeuing.")
-		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
-	}
 }
 
 // GetSubscriptionIPInformation retrieves the current subscriptions installplan information for status

@@ -15,7 +15,6 @@ import (
 
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
-	subhelmv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/helmrelease/v1"
 
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 
@@ -77,9 +76,6 @@ func newComponentList(m *operatorsv1.MultiClusterHub, ocpConsole bool) map[strin
 	components := make(map[string]operatorsv1.StatusCondition)
 	for _, d := range utils.GetDeploymentsForStatus(m, ocpConsole) {
 		components[d.Name] = unknownStatus
-	}
-	for _, s := range utils.GetAppsubsForStatus(m) {
-		components[s.Name] = unknownStatus
 	}
 	for _, cr := range utils.GetCustomResourcesForStatus(m) {
 		components[cr.Name] = unknownStatus
@@ -235,40 +231,6 @@ func calculateStatus(
 	}
 
 	return status
-}
-
-// // filterDuplicateHRs removes multiple helmreleases owned by the same appsub, keeping the newest
-func filterDuplicateHRs(allHRs []*subhelmv1.HelmRelease) []*subhelmv1.HelmRelease {
-	keys := make(map[string]int)
-
-	for i := range allHRs {
-		entry := allHRs[i].DeepCopy()
-
-		ownerApps := entry.GetOwnerReferences()
-		if len(ownerApps) == 0 {
-			// log.Info("Helmrelease has no owner reference!", "Name", entry.GetName())
-			continue
-		}
-		ownerApp := ownerApps[0].Name
-
-		index, ok := keys[ownerApp]
-		if !ok {
-			keys[ownerApp] = i
-		} else {
-			// log.Info("Competing helmreleases found for same appsub", "New", entry.GetName(), "Old", allHRs[index].GetName())
-			existingTime := allHRs[index].GetCreationTimestamp().Time
-			thisTime := entry.GetCreationTimestamp().Time
-			if thisTime.After(existingTime) {
-				keys[ownerApp] = i
-			}
-		}
-	}
-
-	list := []*subhelmv1.HelmRelease{}
-	for _, index := range keys {
-		list = append(list, allHRs[index])
-	}
-	return list
 }
 
 // getComponentStatuses populates a complete list of the hub component statuses
@@ -576,63 +538,6 @@ func mapCSV(csv *unstructured.Unstructured) operatorsv1.StatusCondition {
 
 	// If no condition with applied true, then return last condition in list
 	return componentCondition
-}
-
-func successfulHelmRelease(hr *subhelmv1.HelmRelease) bool {
-	latest := latestHelmReleaseCondition(hr.Status.Conditions)
-
-	// Sometimes helmrelease not properly labeled as deployed
-	if latest.Type == subhelmv1.ConditionInitialized && hr.Status.DeployedRelease != nil {
-		return true
-	}
-	return latest.Type == subhelmv1.ConditionDeployed && latest.Status == subhelmv1.StatusTrue
-}
-
-func latestHelmReleaseCondition(conditions []subhelmv1.HelmAppCondition) subhelmv1.HelmAppCondition {
-	if len(conditions) < 1 {
-		return subhelmv1.HelmAppCondition{}
-	}
-	latest := conditions[0]
-	for i := range conditions {
-		if conditions[i].LastTransitionTime.Time.After(latest.LastTransitionTime.Time) {
-			latest = conditions[i]
-		}
-	}
-	return latest
-}
-
-func mapHelmRelease(hr *subhelmv1.HelmRelease) operatorsv1.StatusCondition {
-	if len(hr.Status.Conditions) < 1 {
-		return unknownStatus
-	}
-
-	condition := latestHelmReleaseCondition(hr.Status.Conditions)
-	ret := operatorsv1.StatusCondition{
-		Kind:               "HelmRelease",
-		Type:               string(condition.Type),
-		Status:             metav1.ConditionStatus(condition.Status),
-		LastUpdateTime:     metav1.Now(),
-		LastTransitionTime: condition.LastTransitionTime,
-		Reason:             string(condition.Reason),
-		Message:            condition.Message,
-	}
-
-	if condition.Type == "Initialized" && hr.Status.DeployedRelease != nil {
-		ret.Type = "DeployedRelease"
-	}
-
-	if successfulHelmRelease(hr) {
-		ret.Available = true
-		ret.Message = ""
-
-		// Check if using desired chart version
-		if v := hr.Repo.Version; v != version.Version {
-			ret = wrongVersionStatus
-			ret.Message = fmt.Sprintf("expected version `%s`, current version is `%s`", version.Version, v)
-		}
-	}
-
-	return ret
 }
 
 func successfulComponent(sc operatorsv1.StatusCondition) bool { return sc.Available }

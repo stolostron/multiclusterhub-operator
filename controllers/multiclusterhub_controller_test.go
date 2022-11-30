@@ -132,21 +132,6 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 		return result
 	}, timeout, interval).Should(BeTrue())
 
-	By("Ensuring appsubs")
-	Eventually(func() bool {
-		subscriptionReferences := utils.GetAppsubs(createdMCH)
-		result := true
-		for _, subscriptionReference := range subscriptionReferences {
-			subscription := &appsubv1.Subscription{}
-			err := k8sClient.Get(ctx, subscriptionReference, subscription)
-			if err != nil {
-				fmt.Println(err.Error())
-				result = false
-			}
-		}
-		return result
-	}, timeout, interval).Should(BeTrue())
-
 	By("Ensuring pull secret is created in backup")
 	Eventually(func() bool {
 		psn := createdMCH.Spec.ImagePullSecret

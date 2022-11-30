@@ -271,7 +271,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 	}
 
-
 	result, err = r.ensureRenderRemovalsGone(multiClusterHub)
 	if result != (ctrl.Result{}) {
 		return result, err
