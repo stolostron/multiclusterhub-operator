@@ -28,13 +28,10 @@ import (
 	"time"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
-	"github.com/stolostron/multiclusterhub-operator/pkg/channel"
 	"github.com/stolostron/multiclusterhub-operator/pkg/deploying"
-	"github.com/stolostron/multiclusterhub-operator/pkg/helmrepo"
 	"github.com/stolostron/multiclusterhub-operator/pkg/imageoverrides"
 	"github.com/stolostron/multiclusterhub-operator/pkg/predicate"
 	renderer "github.com/stolostron/multiclusterhub-operator/pkg/rendering"
-	"github.com/stolostron/multiclusterhub-operator/pkg/subscription"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 	ctrlpredicate "sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -306,38 +303,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, fmt.Errorf("failed to find pullsecret: %s", err)
 	}
 
-	if multiClusterHub.Enabled(operatorv1.Repo) {
-		result, err = r.ensureDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub, r.CacheSpec.ImageOverrides))
-		if result != (ctrl.Result{}) {
-			return result, err
-		}
-
-		result, err = r.ensureService(multiClusterHub, helmrepo.Service(multiClusterHub))
-		if result != (ctrl.Result{}) {
-			return result, err
-		}
-
-		result, err = r.ensureChannel(multiClusterHub, channel.Channel(multiClusterHub))
-		if result != (ctrl.Result{}) {
-			return result, err
-		}
-	} else {
-		result, err = r.ensureNoDeployment(multiClusterHub, helmrepo.Deployment(multiClusterHub, r.CacheSpec.ImageOverrides))
-		if result != (ctrl.Result{}) {
-			return result, err
-		}
-
-		result, err = r.ensureNoService(multiClusterHub, helmrepo.Service(multiClusterHub))
-		if result != (ctrl.Result{}) {
-			return result, err
-		}
-
-		result, err = r.ensureNoUnstructured(multiClusterHub, channel.Channel(multiClusterHub))
-		if result != (ctrl.Result{}) {
-			return result, err
-		}
-	}
-
 	result, err = r.ensureMultiClusterEngine(ctx, multiClusterHub)
 	if result != (ctrl.Result{}) {
 		return result, err
@@ -432,7 +397,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 	if multiClusterHub.Enabled(operatorv1.ClusterBackup) {
-		ns := subscription.BackupNamespace()
+		ns := BackupNamespace()
 		result, err = r.ensureNamespace(multiClusterHub, ns)
 		if result != (ctrl.Result{}) {
 			return result, err
@@ -450,7 +415,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
-		result, err = r.ensureNoNamespace(multiClusterHub, subscription.BackupNamespaceUnstructured())
+		result, err = r.ensureNoNamespace(multiClusterHub, BackupNamespaceUnstructured())
 		if result != (ctrl.Result{}) {
 			return result, err
 		}

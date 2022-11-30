@@ -19,7 +19,6 @@ import (
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	v1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
-	"github.com/stolostron/multiclusterhub-operator/pkg/subscription"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
@@ -137,7 +136,7 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 		psn := createdMCH.Spec.ImagePullSecret
 
 		if createdMCH.Enabled(operatorv1.ClusterBackup) && psn != "" {
-			ns := subscription.BackupNamespace().Name
+			ns := BackupNamespace().Name
 			nn := types.NamespacedName{
 				Name:      psn,
 				Namespace: ns,
@@ -552,7 +551,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 			By("Ensuring Cluster Backup")
 
-			ns := subscription.BackupNamespace()
+			ns := BackupNamespace()
 			result, err = reconciler.ensureNamespace(mch, ns)
 			Expect(err).To(BeNil())
 

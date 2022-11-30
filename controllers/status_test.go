@@ -588,30 +588,6 @@ func Test_getComponentStatuses(t *testing.T) {
 						},
 					},
 				},
-				allHRs: []*subhelmv1.HelmRelease{
-					{
-						ObjectMeta: v1.ObjectMeta{
-							Name: "console-hr",
-							OwnerReferences: []v1.OwnerReference{
-								{
-									Name: "console-chart-sub",
-								},
-							},
-						},
-						Repo: subhelmv1.HelmReleaseRepo{
-							Version: version.Version,
-						},
-						Status: subhelmv1.HelmAppStatus{
-							Conditions: []subhelmv1.HelmAppCondition{
-								{
-									Type:   subhelmv1.ConditionDeployed,
-									Status: subhelmv1.StatusTrue,
-									Reason: subhelmv1.ReasonInstallSuccessful,
-								},
-							},
-						},
-					},
-				},
 				allDeps: []*appsv1.Deployment{
 					{
 						ObjectMeta: v1.ObjectMeta{

@@ -17,7 +17,6 @@ import (
 
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	v1 "github.com/stolostron/multiclusterhub-operator/api/v1"
-	"github.com/stolostron/multiclusterhub-operator/pkg/subscription"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 	"helm.sh/helm/v3/pkg/engine"
@@ -318,7 +317,54 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 		values.HubConfig.ProxyConfigs = proxyVar
 	}
 
-	values.Global.Name, values.Global.Channel, values.Global.InstallPlanApproval, values.Global.Source, values.Global.SourceNamespace = subscription.GetOADPConfig(mch)
+	values.Global.Name, values.Global.Channel, values.Global.InstallPlanApproval, values.Global.Source, values.Global.SourceNamespace = GetOADPConfig(mch)
 
 	// TODO: Define all overrides
+}
+
+func GetOADPConfig(m *v1.MultiClusterHub) (string, string, subv1alpha1.Approval, string, string) {
+	log := log.FromContext(context.Background())
+	sub := &subv1alpha1.SubscriptionSpec{}
+	var name, channel, source, sourceNamespace string
+	var installPlan subv1alpha1.Approval
+	if oadpSpec := utils.GetOADPAnnotationOverrides(m); oadpSpec != "" {
+
+		err := json.Unmarshal([]byte(oadpSpec), sub)
+		if err != nil {
+			log.Info(fmt.Sprintf("Failed to unmarshal OADP annotation: %s.", oadpSpec))
+			return "", "", "", "", ""
+		}
+	}
+
+	if sub.Package != "" {
+		name = sub.Package
+	} else {
+		name = "redhat-oadp-operator"
+	}
+
+	if sub.Channel != "" {
+		channel = sub.Channel
+	} else {
+		channel = "stable-1.1"
+	}
+
+	if sub.InstallPlanApproval != "" {
+		installPlan = sub.InstallPlanApproval
+	} else {
+		installPlan = "Automatic"
+	}
+
+	if sub.CatalogSource != "" {
+		source = sub.CatalogSource
+	} else {
+		source = "redhat-operators"
+	}
+
+	if sub.CatalogSourceNamespace != "" {
+		sourceNamespace = sub.CatalogSourceNamespace
+	} else {
+		sourceNamespace = "openshift-marketplace"
+	}
+	return name, channel, installPlan, source, sourceNamespace
+
 }

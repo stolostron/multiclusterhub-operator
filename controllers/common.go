@@ -33,10 +33,8 @@ import (
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
-	"github.com/stolostron/multiclusterhub-operator/pkg/channel"
 	"github.com/stolostron/multiclusterhub-operator/pkg/manifest"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
-	"github.com/stolostron/multiclusterhub-operator/pkg/subscription"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -148,113 +146,6 @@ func (r *MultiClusterHubReconciler) ensureService(m *operatorv1.MultiClusterHub,
 		svlog.Error(err, "Failed to update Service")
 		return ctrl.Result{}, err
 	}
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureChannel(m *operatorv1.MultiClusterHub, u *unstructured.Unstructured) (ctrl.Result, error) {
-	selog := r.Log.WithValues("Channel.Namespace", u.GetNamespace(), "Channel.Name", u.GetName())
-
-	found := &unstructured.Unstructured{}
-	found.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "apps.open-cluster-management.io",
-		Kind:    "Channel",
-		Version: "v1",
-	})
-	err := r.Client.Get(context.TODO(), types.NamespacedName{
-		Name:      u.GetName(),
-		Namespace: m.Namespace,
-	}, found)
-	if err != nil && errors.IsNotFound(err) {
-		// Create the Channel
-		err = r.Client.Create(context.TODO(), u)
-		if err != nil {
-			// Creation failed
-			selog.Error(err, "Failed to create new Channel")
-			return ctrl.Result{}, err
-		}
-
-		// Creation was successful
-		selog.Info("Created a new Channel")
-		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
-		SetHubCondition(&m.Status, *condition)
-		return ctrl.Result{}, nil
-
-	} else if err != nil {
-		// Error that isn't due to the Channel not existing
-		selog.Error(err, "Failed to get Channel")
-		return ctrl.Result{}, err
-	}
-
-	updated, needsUpdate := channel.Validate(m, found)
-	if needsUpdate {
-		selog.Info("Updating channel")
-		err = r.Client.Update(context.TODO(), updated)
-		if err != nil {
-			// Update failed
-			selog.Error(err, "Failed to update channel")
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{}, nil
-	}
-
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureSubscription(m *operatorv1.MultiClusterHub, u *unstructured.Unstructured) (ctrl.Result, error) {
-	obLog := r.Log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName(), "Kind", u.GetKind())
-
-	if utils.ProxyEnvVarsAreSet() {
-		u = addProxyEnvVarsToSub(u)
-	}
-
-	found := &unstructured.Unstructured{}
-	found.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "apps.open-cluster-management.io",
-		Kind:    "Subscription",
-		Version: "v1",
-	})
-	// Try to get API group instance
-	err := r.Client.Get(context.TODO(), types.NamespacedName{
-		Name:      u.GetName(),
-		Namespace: u.GetNamespace(),
-	}, found)
-	if err != nil && errors.IsNotFound(err) {
-
-		err := r.Client.Create(context.TODO(), u)
-		if err != nil {
-			// Creation failed
-			obLog.Error(err, "Failed to create new instance")
-			return ctrl.Result{}, err
-		}
-
-		// Creation was successful
-		obLog.Info("Created new object")
-		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
-		SetHubCondition(&m.Status, *condition)
-		return ctrl.Result{}, nil
-
-	} else if err != nil {
-		// Error that isn't due to the resource not existing
-		obLog.Error(err, "Failed to get subscription")
-		return ctrl.Result{}, err
-	}
-
-	// Validate object based on type
-	updated, needsUpdate := subscription.Validate(found, u)
-	if needsUpdate {
-		obLog.Info("Updating subscription")
-		// Update the resource. Skip on unit test
-		err = r.Client.Update(context.TODO(), updated)
-		if err != nil {
-			// Update failed
-			obLog.Error(err, "Failed to update object")
-			return ctrl.Result{}, err
-		}
-
-		// Spec updated - return
-		return ctrl.Result{}, nil
-	}
-
 	return ctrl.Result{}, nil
 }
 

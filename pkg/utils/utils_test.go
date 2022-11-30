@@ -164,17 +164,13 @@ var _ = Describe("utility functions", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(mchv1.ClusterBackup)
 			d := GetDeployments(&mch)
-			Expect(len(d)).To(Equal(4))
-			Expect(d[0].Name).To(Equal("multiclusterhub-repo"))
-			Expect(d[0].Namespace).To(Equal(resources.MulticlusterhubNamespace))
+			Expect(len(d)).To(Equal(2))
 		})
 		It("gets deployments in Community Mode", func() {
 			os.Setenv("OPERATOR_PACKAGE", "stolostron")
 			mch := resources.EmptyMCH()
 			d := GetDeployments(&mch)
-			Expect(len(d)).To(Equal(2))
-			Expect(d[0].Name).To(Equal("multiclusterhub-repo"))
-			Expect(d[0].Namespace).To(Equal(resources.MulticlusterhubNamespace))
+			Expect(len(d)).To(Equal(0))
 		})
 		It("gets custom resources", func() {
 			mch := resources.EmptyMCH()
@@ -185,12 +181,6 @@ var _ = Describe("utility functions", func() {
 			mch := resources.EmptyMCH()
 			d := GetDeploymentsForStatus(&mch, true)
 			Expect(len(d)).To(Equal(0))
-		})
-		It("gets deployments for status with mcho-repo enabled", func() {
-			mch := resources.EmptyMCH()
-			mch.Enable("multiclusterhub-repo")
-			d := GetDeploymentsForStatus(&mch, true)
-			Expect(len(d)).To(Equal(1))
 		})
 		It("gets deployments for status with insights enabled", func() {
 			mch := resources.EmptyMCH()

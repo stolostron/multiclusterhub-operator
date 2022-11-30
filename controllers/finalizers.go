@@ -5,14 +5,13 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/go-logr/logr"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
-	"github.com/stolostron/multiclusterhub-operator/pkg/channel"
-	"github.com/stolostron/multiclusterhub-operator/pkg/helmrepo"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -27,6 +26,7 @@ import (
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func (r *MultiClusterHubReconciler) cleanupAPIServices(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
@@ -327,29 +327,6 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 
 func (r *MultiClusterHubReconciler) cleanupFoundation(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 
-	var emptyOverrides map[string]string
-
-	reqLogger.Info("Deleting MultiClusterHub repo deployment")
-	err := r.Client.Delete(context.TODO(), helmrepo.Deployment(m, emptyOverrides))
-	if err != nil && !errors.IsNotFound(err) {
-		reqLogger.Error(err, "Error deleting MultiClusterHub repo deployment")
-		return err
-	}
-
-	reqLogger.Info("Deleting MultiClusterHub repo service")
-	err = r.Client.Delete(context.TODO(), helmrepo.Service(m))
-	if err != nil && !errors.IsNotFound(err) {
-		reqLogger.Error(err, "Error deleting MultiClusterHub repo service")
-		return err
-	}
-
-	reqLogger.Info("Deleting MultiClusterHub channel")
-	err = r.Client.Delete(context.TODO(), channel.Channel(m))
-	if err != nil && !errors.IsNotFound(err) {
-		reqLogger.Error(err, "Error deleting MultiClusterHub channel")
-		return err
-	}
-
 	reqLogger.Info("All foundation artefacts have been terminated")
 
 	return nil
@@ -377,4 +354,70 @@ func (r *MultiClusterHubReconciler) orphanOwnedMultiClusterEngine(m *operatorsv1
 	}
 	r.Log.Info("MCE orphaned")
 	return nil
+}
+
+func BackupNamespace() *corev1.Namespace {
+	return &corev1.Namespace{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Namespace",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: utils.ClusterSubscriptionNamespace,
+		},
+	}
+}
+
+func BackupNamespaceUnstructured() *unstructured.Unstructured {
+	u := &unstructured.Unstructured{}
+	u.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Kind: "Namespace", Version: "v1"})
+	u.SetName(utils.ClusterSubscriptionNamespace)
+	return u
+}
+
+func GetOADPConfig(m *operatorsv1.MultiClusterHub) (string, string, subv1alpha1.Approval, string, string) {
+	log := log.FromContext(context.Background())
+	sub := &subv1alpha1.SubscriptionSpec{}
+	var name, channel, source, sourceNamespace string
+	var installPlan subv1alpha1.Approval
+	if oadpSpec := utils.GetOADPAnnotationOverrides(m); oadpSpec != "" {
+
+		err := json.Unmarshal([]byte(oadpSpec), sub)
+		if err != nil {
+			log.Info(fmt.Sprintf("Failed to unmarshal OADP annotation: %s.", oadpSpec))
+			return "", "", "", "", ""
+		}
+	}
+
+	if sub.Package != "" {
+		name = sub.Package
+	} else {
+		name = "redhat-oadp-operator"
+	}
+
+	if sub.Channel != "" {
+		channel = sub.Channel
+	} else {
+		channel = "stable-1.1"
+	}
+
+	if sub.InstallPlanApproval != "" {
+		installPlan = sub.InstallPlanApproval
+	} else {
+		installPlan = "Automatic"
+	}
+
+	if sub.CatalogSource != "" {
+		source = sub.CatalogSource
+	} else {
+		source = "redhat-operators"
+	}
+
+	if sub.CatalogSourceNamespace != "" {
+		sourceNamespace = sub.CatalogSourceNamespace
+	} else {
+		sourceNamespace = "openshift-marketplace"
+	}
+	return name, channel, installPlan, source, sourceNamespace
+
 }
