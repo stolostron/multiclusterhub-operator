@@ -23,6 +23,8 @@ var (
 	AnnotationMCESubscriptionSpec = "installer.open-cluster-management.io/mce-subscription-spec"
 	// AnnotationOADPSubscriptionSpec overrides the OADP subscription used in cluster-backup
 	AnnotationOADPSubscriptionSpec = "installer.open-cluster-management.io/oadp-subscription-spec"
+	// AnnotationIgnoreOCPVersion indicates the operator should not check the OCP version before proceeding when set
+	AnnotationIgnoreOCPVersion = "ignoreOCPVersion"
 )
 
 // IsPaused returns true if the multiclusterhub instance is labeled as paused, and false otherwise
@@ -81,4 +83,18 @@ func GetMCEAnnotationOverrides(instance *operatorsv1.MultiClusterHub) string {
 
 func GetOADPAnnotationOverrides(instance *operatorsv1.MultiClusterHub) string {
 	return getAnnotation(instance, AnnotationOADPSubscriptionSpec)
+}
+
+// ShouldIgnoreOCPVersion returns true if the instance is annotated to skip
+// the minimum OCP version requirement
+func ShouldIgnoreOCPVersion(instance *operatorsv1.MultiClusterHub) bool {
+	a := instance.GetAnnotations()
+	if a == nil {
+		return false
+	}
+
+	if _, ok := a[AnnotationIgnoreOCPVersion]; ok {
+		return true
+	}
+	return false
 }

@@ -1019,7 +1019,7 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(ctx context.Context
 }
 
 // waitForMCE checks that MCE is in a running state and at the expected version.
-func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context, mceVersion string) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context) (ctrl.Result, error) {
 	// Wait for MCE to be ready
 	existingMCE, err := multiclusterengine.GetManagedMCE(ctx, r.Client)
 	if err != nil {
@@ -1034,22 +1034,10 @@ func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context, mceVers
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
 
-	split := strings.Split(mceVersion, ".")
-	xyVersion := fmt.Sprintf("%s.%s.x", split[0], split[1])
-	minimum, err := semver.NewConstraint(xyVersion)
+	err = version.ValidMCEVersion(existingMCE.Status.CurrentVersion)
 	if err != nil {
-		return ctrl.Result{Requeue: true}, err
+		return ctrl.Result{RequeueAfter: resyncPeriod}, fmt.Errorf("MCE version requirement not met: %w", err)
 	}
-
-	cv := existingMCE.Status.CurrentVersion
-	mceSemVer, err := semver.NewVersion(cv)
-	if err != nil {
-		return ctrl.Result{Requeue: true}, err
-	}
-	if !minimum.Check(mceSemVer) {
-		return ctrl.Result{RequeueAfter: resyncPeriod}, e.New(fmt.Sprintf("%s did not meet version requirement %s", cv, xyVersion))
-	}
-
 	return ctrl.Result{}, nil
 }
 
@@ -1393,7 +1381,7 @@ func AssistedServiceConfigured(ctx context.Context, client client.Client) (bool,
 func (r *MultiClusterHubReconciler) getClusterVersion(ctx context.Context) (string, error) {
 	if utils.IsUnitTest() {
 		// If unit test pass along a version, Can't set status in unit test
-		return "4.9.0", nil
+		return "4.99.99", nil
 	}
 
 	clusterVersion := &configv1.ClusterVersion{}

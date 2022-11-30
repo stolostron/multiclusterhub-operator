@@ -68,6 +68,9 @@ const (
 	ResourceRenderReason = "FailedRenderingResource"
 	// CRDRenderReason is added when an error occurs while rendering a CRD
 	CRDRenderReason = "FailedRenderingCRD"
+	// RequirementsNotMetReason is when there is something missing or misconfigured
+	// that is preventing progress
+	RequirementsNotMetReason = "RequirementsNotMet"
 )
 
 func newComponentList(m *operatorsv1.MultiClusterHub, ocpConsole bool) map[string]operatorsv1.StatusCondition {

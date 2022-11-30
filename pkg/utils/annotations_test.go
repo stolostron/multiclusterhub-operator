@@ -123,3 +123,38 @@ func TestOverrideImageRepository(t *testing.T) {
 		}
 	}
 }
+
+func TestShouldIgnoreOCPVersion(t *testing.T) {
+	tests := []struct {
+		name     string
+		instance *operatorsv1.MultiClusterHub
+		want     bool
+	}{
+		{
+			name: "Annotation set to ignore",
+			instance: &operatorsv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{AnnotationIgnoreOCPVersion: ""}},
+			},
+			want: true,
+		},
+		{
+			name:     "No annotations",
+			instance: &operatorsv1.MultiClusterHub{},
+			want:     false,
+		},
+		{
+			name: "Different annotations",
+			instance: &operatorsv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{AnnotationMCHPause: "true"}},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ShouldIgnoreOCPVersion(tt.instance); got != tt.want {
+				t.Errorf("ShouldIgnoreOCPVersion() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
