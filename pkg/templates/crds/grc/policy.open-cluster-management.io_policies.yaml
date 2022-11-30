@@ -55,6 +55,19 @@ spec:
                   description: Each PolicyDepenency defines an object reference which
                     must be in a certain compliance state before the policy should
                     be created.
+                  oneOf:
+                  - properties:
+                      kind:
+                        enum:
+                        - CertificatePolicy
+                        - ConfigurationPolicy
+                        - IamPolicy
+                      namespace:
+                        maxLength: 0
+                  - not:
+                      properties:
+                        kind:
+                          pattern: ^(?:(?:Certificate|Configuration|Iam)Policy)$
                   properties:
                     apiVersion:
                       description: 'APIVersion defines the versioned schema of this
@@ -100,6 +113,19 @@ spec:
                         description: Each PolicyDepenency defines an object reference
                           which must be in a certain compliance state before the policy
                           should be created.
+                        oneOf:
+                        - properties:
+                            kind:
+                              enum:
+                              - CertificatePolicy
+                              - ConfigurationPolicy
+                              - IamPolicy
+                            namespace:
+                              maxLength: 0
+                        - not:
+                            properties:
+                              kind:
+                                pattern: ^(?:(?:Certificate|Configuration|Iam)Policy)$
                         properties:
                           apiVersion:
                             description: 'APIVersion defines the versioned schema
