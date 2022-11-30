@@ -266,11 +266,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, nil
 	}
 
-	result, err = r.ensureSubscriptionOperatorIsRunning(multiClusterHub, allDeploys)
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
 	result, err = r.ensureRenderRemovalsGone(multiClusterHub)
 	if result != (ctrl.Result{}) {
 		return result, err
