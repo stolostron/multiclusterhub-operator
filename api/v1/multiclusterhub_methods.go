@@ -153,6 +153,28 @@ func (mch *MultiClusterHub) Disable(s string) {
 	})
 }
 
+// Prune removes the component from the component list. Returns true if changes are made
+func (mch *MultiClusterHub) Prune(s string) bool {
+	if mch.Spec.Overrides == nil {
+		return false
+	}
+	pruned := false
+	prunedList := []ComponentConfig{}
+	for _, c := range mch.Spec.Overrides.Components {
+		if c.Name == s {
+			pruned = true
+		} else {
+			prunedList = append(prunedList, c)
+		}
+	}
+
+	if pruned {
+		mch.Spec.Overrides.Components = prunedList
+		return true
+	}
+	return false
+}
+
 // a component is valid if its name matches a known component
 func ValidComponent(c ComponentConfig) bool {
 	for _, name := range allComponents {
