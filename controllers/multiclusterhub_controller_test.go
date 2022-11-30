@@ -444,7 +444,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 			ctx := context.Background()
 			ApplyPrereqs(k8sClient)
 
-			By("By creating a new Multiclusterhub with search disabled")
+			By("Creating a new Multiclusterhub with search disabled")
 			mch := resources.NoSearchMCH()
 			mch.Disable(operatorv1.Appsub)
 			Expect(k8sClient.Create(ctx, &mch)).Should(Succeed())
@@ -521,7 +521,6 @@ var _ = Describe("MultiClusterHub controller", func() {
 				return false
 			}, timeout, interval).Should(BeTrue())
 		})
-
 	})
 
 	Context("When managing deployments", func() {
