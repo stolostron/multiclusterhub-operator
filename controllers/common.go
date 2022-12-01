@@ -1216,39 +1216,6 @@ func (r *MultiClusterHubReconciler) GetSubConfig() (*subv1alpha1.SubscriptionCon
 	}, nil
 }
 
-func (r *MultiClusterHubReconciler) pluginIsSupported(multiClusterHub *operatorv1.MultiClusterHub) bool {
-	// -0 allows for prerelease builds to pass the validation.
-	// If -0 is removed, developer/rc builds will not pass this check
-	log := r.Log
-	constraint, err := semver.NewConstraint(">= 4.10.0-0")
-	if err != nil {
-		log.Error(err, "Failed to set constraint of minimum supported version for plugins")
-		return false
-	}
-
-	currentOCPVersion := ""
-	if hubOCPVersion, ok := os.LookupEnv("ACM_HUB_OCP_VERSION"); !ok {
-		log.Info("ACM_HUB_OCP_VERSION environment variable not set")
-		return false
-	} else {
-		currentOCPVersion = hubOCPVersion
-	}
-
-	currentVersion, err := semver.NewVersion(currentOCPVersion)
-	if err != nil {
-		log.Error(err, "Failed to convert hubOCPVersion of cluster to semver compatible value for comparison")
-		return false
-	}
-
-	if constraint.Check(currentVersion) {
-		log.Info("Dynamic plugins are supported. Adding ACM plugin to console")
-		return true
-	} else {
-		log.Info("Dynamic plugins not supported.")
-		return false
-	}
-}
-
 func (r *MultiClusterHubReconciler) addPluginToConsole(multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log
@@ -1459,6 +1426,9 @@ func (r *MultiClusterHubReconciler) CheckConsole(ctx context.Context) (bool, err
 		return false, fmt.Errorf("failed to set ocp version constraint: %w", err)
 	}
 	if !constraint.Check(semverVersion) {
+		return true, nil
+	}
+	if utils.IsUnitTest() {
 		return true, nil
 	}
 	for _, v := range versionStatus.Status.Capabilities.EnabledCapabilities {

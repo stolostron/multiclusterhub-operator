@@ -186,6 +186,11 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 		res := &corev1.ConfigMap{}
 		g.Expect(k8sClient.Get(ctx, namespacedName, res)).To(Succeed())
 	}, timeout, interval).Should(Succeed())
+
+	By("ensuring the acm consoleplugin is enabled on the cluster")
+	clusterConsole := &consolev1.Console{}
+	Expect(k8sClient.Get(ctx, types.NamespacedName{Name: "cluster"}, clusterConsole)).To(Succeed())
+	Expect(clusterConsole.Spec.Plugins).To(ContainElement("acm"))
 }
 
 func PreexistingMCE(k8sClient client.Client, reconciler *MultiClusterHubReconciler, mchoDeployment *appsv1.Deployment) {
@@ -393,6 +398,18 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Spec: configv1.ClusterVersionSpec{
 				Channel:   "stable-4.9",
 				ClusterID: "12345678910",
+			},
+		})).To(Succeed())
+
+		// Create a console (for configuring consoleplugin)
+		Expect(k8sClient.Create(context.Background(), &consolev1.Console{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "cluster",
+			},
+			Spec: consolev1.ConsoleSpec{
+				OperatorSpec: consolev1.OperatorSpec{
+					ManagementState: consolev1.Managed,
+				},
 			},
 		})).To(Succeed())
 
