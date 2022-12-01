@@ -19,7 +19,6 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	subhelmv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/helmrelease/v1"
 )
 
 func Test_allComponentsSuccessful(t *testing.T) {
@@ -564,7 +563,6 @@ func Test_getComponentStatuses(t *testing.T) {
 
 	type args struct {
 		hub     *operatorsv1.MultiClusterHub
-		allHRs  []*subhelmv1.HelmRelease
 		allDeps []*appsv1.Deployment
 		allCRs  map[string]*unstructured.Unstructured
 	}

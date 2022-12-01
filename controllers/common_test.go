@@ -12,7 +12,6 @@ import (
 	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
 
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
-	appsub "open-cluster-management.io/multicloud-operators-subscription/pkg/apis"
 
 	configv1 "github.com/openshift/api/config/v1"
 	netv1 "github.com/openshift/api/config/v1"
@@ -113,7 +112,6 @@ var _ = Describe("controller common functions", func() {
 
 		Expect(scheme.AddToScheme(clientScheme)).To(Succeed())
 		Expect(mchov1.AddToScheme(clientScheme)).To(Succeed())
-		Expect(appsub.AddToScheme(clientScheme)).To(Succeed())
 		Expect(apiregistrationv1.AddToScheme(clientScheme)).To(Succeed())
 		Expect(apixv1.AddToScheme(clientScheme)).To(Succeed())
 		Expect(netv1.AddToScheme(clientScheme)).To(Succeed())
