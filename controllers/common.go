@@ -1428,6 +1428,9 @@ func (r *MultiClusterHubReconciler) CheckConsole(ctx context.Context) (bool, err
 	if !constraint.Check(semverVersion) {
 		return true, nil
 	}
+	if utils.IsUnitTest() {
+		return true, nil
+	}
 	for _, v := range versionStatus.Status.Capabilities.EnabledCapabilities {
 		if v == "Console" {
 			return true, nil
