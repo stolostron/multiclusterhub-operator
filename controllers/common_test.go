@@ -184,25 +184,6 @@ var _ = Describe("controller common functions", func() {
 		})
 	})
 
-	Context("when managing services", func() {
-		It("creates and removes a deployment", func() {
-			By("Applying prereqs")
-			ApplyPrereqs(k8sClient)
-
-			By("creating a service")
-			mch := resources.EmptyMCH()
-			service := resources.SampleService(&mch)
-			result, err := reconciler.ensureService(&mch, service)
-			Expect(result).To(Equal(ctrl.Result{}))
-			Expect(err).To(BeNil())
-
-			By("removing the service")
-			result, err = reconciler.ensureNoService(&mch, service)
-			Expect(result).To(Equal(ctrl.Result{}))
-			Expect(err).To(BeNil())
-		})
-	})
-
 	AfterEach(func() {
 		ctx := context.Background()
 		By("Ensuring the MCH CR is deleted")

@@ -5,7 +5,6 @@ package controllers
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -26,7 +25,6 @@ import (
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func (r *MultiClusterHubReconciler) cleanupAPIServices(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
@@ -373,51 +371,4 @@ func BackupNamespaceUnstructured() *unstructured.Unstructured {
 	u.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Kind: "Namespace", Version: "v1"})
 	u.SetName(utils.ClusterSubscriptionNamespace)
 	return u
-}
-
-func GetOADPConfig(m *operatorsv1.MultiClusterHub) (string, string, subv1alpha1.Approval, string, string) {
-	log := log.FromContext(context.Background())
-	sub := &subv1alpha1.SubscriptionSpec{}
-	var name, channel, source, sourceNamespace string
-	var installPlan subv1alpha1.Approval
-	if oadpSpec := utils.GetOADPAnnotationOverrides(m); oadpSpec != "" {
-
-		err := json.Unmarshal([]byte(oadpSpec), sub)
-		if err != nil {
-			log.Info(fmt.Sprintf("Failed to unmarshal OADP annotation: %s.", oadpSpec))
-			return "", "", "", "", ""
-		}
-	}
-
-	if sub.Package != "" {
-		name = sub.Package
-	} else {
-		name = "redhat-oadp-operator"
-	}
-
-	if sub.Channel != "" {
-		channel = sub.Channel
-	} else {
-		channel = "stable-1.1"
-	}
-
-	if sub.InstallPlanApproval != "" {
-		installPlan = sub.InstallPlanApproval
-	} else {
-		installPlan = "Automatic"
-	}
-
-	if sub.CatalogSource != "" {
-		source = sub.CatalogSource
-	} else {
-		source = "redhat-operators"
-	}
-
-	if sub.CatalogSourceNamespace != "" {
-		sourceNamespace = sub.CatalogSourceNamespace
-	} else {
-		sourceNamespace = "openshift-marketplace"
-	}
-	return name, channel, installPlan, source, sourceNamespace
-
 }

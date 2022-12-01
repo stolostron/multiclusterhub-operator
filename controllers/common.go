@@ -19,7 +19,6 @@ import (
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 
 	configv1 "github.com/openshift/api/config/v1"
-	"github.com/openshift/library-go/pkg/operator/resource/resourcemerge"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -37,7 +36,6 @@ import (
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 
-	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
@@ -92,73 +90,6 @@ func (r *MultiClusterHubReconciler) ensureDeployment(m *operatorv1.MultiClusterH
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterHubReconciler) ensureService(m *operatorv1.MultiClusterHub, s *corev1.Service) (ctrl.Result, error) {
-	svlog := r.Log.WithValues("Service.Namespace", s.Namespace, "Service.Name", s.Name)
-
-	found := &corev1.Service{}
-	err := r.Client.Get(context.TODO(), types.NamespacedName{
-		Name:      s.Name,
-		Namespace: m.Namespace,
-	}, found)
-	if err != nil && errors.IsNotFound(err) {
-
-		// Create the service
-		err = r.Client.Create(context.TODO(), s)
-
-		if err != nil {
-			// Creation failed
-			svlog.Error(err, "Failed to create new Service")
-			return ctrl.Result{}, err
-		}
-
-		// Creation was successful
-		svlog.Info("Created a new Service")
-		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
-		SetHubCondition(&m.Status, *condition)
-		return ctrl.Result{}, nil
-
-	} else if err != nil {
-		// Error that isn't due to the service not existing
-		svlog.Error(err, "Failed to get Service")
-		return ctrl.Result{}, err
-	}
-
-	modified := resourcemerge.BoolPtr(false)
-	existingCopy := found.DeepCopy()
-	resourcemerge.EnsureObjectMeta(modified, &existingCopy.ObjectMeta, s.ObjectMeta)
-	selectorSame := equality.Semantic.DeepEqual(existingCopy.Spec.Selector, s.Spec.Selector)
-
-	typeSame := false
-	requiredIsEmpty := len(s.Spec.Type) == 0
-	existingCopyIsCluster := existingCopy.Spec.Type == corev1.ServiceTypeClusterIP
-	if (requiredIsEmpty && existingCopyIsCluster) || equality.Semantic.DeepEqual(existingCopy.Spec.Type, s.Spec.Type) {
-		typeSame = true
-	}
-
-	if selectorSame && typeSame && !*modified {
-		return ctrl.Result{}, nil
-	}
-
-	existingCopy.Spec.Selector = s.Spec.Selector
-	existingCopy.Spec.Type = s.Spec.Type
-	err = r.Client.Update(context.TODO(), existingCopy)
-	if err != nil {
-		svlog.Error(err, "Failed to update Service")
-		return ctrl.Result{}, err
-	}
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureNoSubscription(m *operatorv1.MultiClusterHub, u *unstructured.Unstructured) (ctrl.Result, error) {
-	subLog := r.Log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName(), "Kind", u.GetKind())
-	_, err := r.uninstall(m, u)
-	if err != nil {
-		subLog.Error(err, "Failed to uninstall subscription")
-		return ctrl.Result{}, err
-	}
-	return ctrl.Result{}, nil
-}
-
 func (r *MultiClusterHubReconciler) ensureNoDeployment(m *operatorv1.MultiClusterHub, dep *appsv1.Deployment) (ctrl.Result, error) {
 	dplog := r.Log.WithValues("Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
 
@@ -173,25 +104,6 @@ func (r *MultiClusterHubReconciler) ensureNoDeployment(m *operatorv1.MultiCluste
 	_, err = r.uninstall(m, u)
 	if err != nil {
 		dplog.Error(err, "Failed to uninstall subscription")
-		return ctrl.Result{}, err
-	}
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureNoService(m *operatorv1.MultiClusterHub, s *corev1.Service) (ctrl.Result, error) {
-	svlog := r.Log.WithValues("Service.Namespace", s.Namespace, "Service.Name", s.Name)
-
-	unstructuredMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(s)
-	if err != nil {
-		r.Log.Error(err, "Failed to unmarshal deployment")
-		return ctrl.Result{}, err
-	}
-	u := &unstructured.Unstructured{Object: unstructuredMap}
-	u.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Kind: "Service", Version: "v1"})
-
-	_, err = r.uninstall(m, u)
-	if err != nil {
-		svlog.Error(err, "Failed to uninstall subscription")
 		return ctrl.Result{}, err
 	}
 	return ctrl.Result{}, nil

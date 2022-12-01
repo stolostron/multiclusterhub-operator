@@ -1297,6 +1297,11 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 		updateNecessary = true
 	}
 
+	// helm-repo component removed in 2.7.0
+	if m.Prune(operatorv1.Repo) {
+		updateNecessary = true
+	}
+
 	if utils.MchIsValid(m) && os.Getenv("ACM_HUB_OCP_VERSION") != "" && !updateNecessary {
 		return ctrl.Result{}, nil
 	}
