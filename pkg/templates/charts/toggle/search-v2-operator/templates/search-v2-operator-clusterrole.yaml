@@ -97,6 +97,7 @@ rules:
   - addon.open-cluster-management.io
   resources:
   - managedclusteraddons
+  - addondeploymentconfigs
   - clustermanagementaddons
   - managedclusteraddons/finalizers
   - clustermanagementaddons/finalizers
