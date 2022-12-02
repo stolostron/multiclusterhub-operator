@@ -7,6 +7,8 @@ import (
 	"reflect"
 	"testing"
 
+	mchov1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -132,4 +134,29 @@ func Test_newUnstructured(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_uninstallList(t *testing.T) {
+	t.Run("Include imagepullsecret in cleanup", func(t *testing.T) {
+		mch := &mchov1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "mch",
+				Namespace: "mch-ns",
+			},
+			Spec: mchov1.MultiClusterHubSpec{
+				SeparateCertificateManagement: true,
+				ImagePullSecret:               "test",
+			},
+		}
+		got := uninstallList(mch)
+		foundCertSecret := false
+		for _, x := range got {
+			if x.GetName() == mch.Spec.ImagePullSecret {
+				foundCertSecret = true
+			}
+		}
+		if !foundCertSecret {
+			t.Errorf("Uninstall list did not include cert secret")
+		}
+	})
 }
