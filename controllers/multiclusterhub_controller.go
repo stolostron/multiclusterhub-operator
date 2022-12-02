@@ -1101,6 +1101,10 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 	if err != nil {
 		return err
 	}
+	_, err = r.ensureNoVolsync(context.TODO(), m, r.CacheSpec.ImageOverrides)
+	if err != nil {
+		return err
+	}
 	_, err = r.ensureNoSearchV2(context.TODO(), m, r.CacheSpec.ImageOverrides)
 	if err != nil {
 		return err

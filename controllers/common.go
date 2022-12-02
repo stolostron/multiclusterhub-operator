@@ -666,6 +666,10 @@ func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context) (ctrl.R
 	if err != nil {
 		return ctrl.Result{Requeue: true}, err
 	}
+	if existingMCE == nil {
+		r.Log.Info(fmt.Sprintf("Multiclusterengine: %s is not yet present", existingMCE.GetName()))
+		return ctrl.Result{Requeue: true}, nil
+	}
 	if utils.IsUnitTest() {
 		return ctrl.Result{}, nil
 	}
