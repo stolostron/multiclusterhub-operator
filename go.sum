@@ -795,8 +795,6 @@ github.com/opencontainers/runtime-spec v0.1.2-0.20190507144316-5b71a03e2700/go.m
 github.com/openshift/api v0.0.0-20220531073726-6c4f186339a7 h1:bkBOsI/Yd+cBT+/aXkbbNo+imvq4VKRusoCluIGOBBg=
 github.com/openshift/api v0.0.0-20220531073726-6c4f186339a7/go.mod h1:LEnw1IVscIxyDnltE3Wi7bQb/QzIM8BfPNKoGA1Qlxw=
 github.com/openshift/build-machinery-go v0.0.0-20211213093930-7e33a7eb4ce3/go.mod h1:b1BuldmJlbA/xYtdZvKi+7j5YGB44qJUJDZ9zwiNCfE=
-github.com/openshift/library-go v0.0.0-20220727134723-6802b30e83ba h1:+xG2MTeBZc1P8Fl+LdNgtfe4yZftRyEYV24PJgClj2Q=
-github.com/openshift/library-go v0.0.0-20220727134723-6802b30e83ba/go.mod h1:AMZwYwSdbvALDl3QobEzcJ2IeDO7DYLsr42izKzh524=
 github.com/opentracing/opentracing-go v1.1.0/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFStlNbqXla1AfSYxPUl2o=
 github.com/openzipkin/zipkin-go v0.1.6/go.mod h1:QgAqvLzwWbR/WpD4A3cGpPtJrZXNIiJc5AZX7/PBEpw=
 github.com/operator-framework/api v0.7.1/go.mod h1:L7IvLd/ckxJEJg/t4oTTlnHKAJIP/p51AvEslW3wYdY=

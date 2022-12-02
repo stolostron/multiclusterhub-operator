@@ -10,7 +10,6 @@ require (
 	github.com/onsi/ginkgo/v2 v2.1.4
 	github.com/onsi/gomega v1.20.0
 	github.com/openshift/api v0.0.0-20220531073726-6c4f186339a7
-	github.com/openshift/library-go v0.0.0-20220727134723-6802b30e83ba
 	github.com/operator-framework/api v0.16.0
 	github.com/operator-framework/operator-lifecycle-manager v0.22.0
 	github.com/pkg/errors v0.9.1
