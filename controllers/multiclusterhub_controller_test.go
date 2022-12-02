@@ -19,15 +19,10 @@ import (
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	v1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
-	"github.com/stolostron/multiclusterhub-operator/pkg/subscription"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
 	ocmapi "open-cluster-management.io/api/addon/v1alpha1"
-	policy "open-cluster-management.io/governance-policy-propagator/api/v1"
-	channel "open-cluster-management.io/multicloud-operators-channel/pkg/apis"
-	appsub "open-cluster-management.io/multicloud-operators-subscription/pkg/apis"
-	appsubv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/v1"
 
 	configv1 "github.com/openshift/api/config/v1"
 	netv1 "github.com/openshift/api/config/v1"
@@ -132,27 +127,12 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 		return result
 	}, timeout, interval).Should(BeTrue())
 
-	By("Ensuring appsubs")
-	Eventually(func() bool {
-		subscriptionReferences := utils.GetAppsubs(createdMCH)
-		result := true
-		for _, subscriptionReference := range subscriptionReferences {
-			subscription := &appsubv1.Subscription{}
-			err := k8sClient.Get(ctx, subscriptionReference, subscription)
-			if err != nil {
-				fmt.Println(err.Error())
-				result = false
-			}
-		}
-		return result
-	}, timeout, interval).Should(BeTrue())
-
 	By("Ensuring pull secret is created in backup")
 	Eventually(func() bool {
 		psn := createdMCH.Spec.ImagePullSecret
 
 		if createdMCH.Enabled(operatorv1.ClusterBackup) && psn != "" {
-			ns := subscription.BackupNamespace().Name
+			ns := BackupNamespace().Name
 			nn := types.NamespacedName{
 				Name:      psn,
 				Namespace: ns,
@@ -341,11 +321,8 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 		Expect(scheme.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(searchv2v1alpha1.AddToScheme(clientScheme)).Should(Succeed())
-		Expect(policy.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(promv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(mchov1.AddToScheme(clientScheme)).Should(Succeed())
-		Expect(appsub.AddToScheme(clientScheme)).Should(Succeed())
-		Expect(channel.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(apiregistrationv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(apixv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(netv1.AddToScheme(clientScheme)).Should(Succeed())
@@ -523,20 +500,6 @@ var _ = Describe("MultiClusterHub controller", func() {
 			// Appending to components rather than replacing with `Disable()`
 			createdMCH.Spec.Overrides.Components = append(createdMCH.Spec.Overrides.Components, v1.ComponentConfig{Name: v1.Search, Enabled: false})
 			Expect(k8sClient.Update(ctx, createdMCH)).Should(Succeed())
-
-			By("Ensuring search is not subscribed")
-			Eventually(func() bool {
-				searchSub := types.NamespacedName{
-					Name:      "search-prod-sub",
-					Namespace: mchNamespace,
-				}
-				subscription := appsubv1.Subscription{}
-				err := k8sClient.Get(ctx, searchSub, &subscription)
-				if err != nil && errors.IsNotFound(err) {
-					return true
-				}
-				return false
-			}, timeout, interval).Should(BeTrue())
 		})
 	})
 
@@ -567,7 +530,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 			By("Ensuring Cluster Backup")
 
-			ns := subscription.BackupNamespace()
+			ns := BackupNamespace()
 			result, err = reconciler.ensureNamespace(mch, ns)
 			Expect(err).To(BeNil())
 

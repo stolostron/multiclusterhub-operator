@@ -19,7 +19,6 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	subhelmv1 "open-cluster-management.io/multicloud-operators-subscription/pkg/apis/apps/helmrelease/v1"
 )
 
 func Test_allComponentsSuccessful(t *testing.T) {
@@ -59,43 +58,6 @@ func Test_allComponentsSuccessful(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := allComponentsSuccessful(tt.args.components); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("allComponentsSuccessful() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_latestHelmReleaseCondition(t *testing.T) {
-	first := subhelmv1.HelmAppCondition{
-		Type:               subhelmv1.ConditionInitialized,
-		LastTransitionTime: v1.NewTime(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
-	}
-	second := subhelmv1.HelmAppCondition{
-		Type:               subhelmv1.ConditionDeployed,
-		LastTransitionTime: v1.NewTime(time.Date(3000, 1, 1, 0, 0, 0, 0, time.UTC)),
-	}
-	type args struct {
-		conditions []subhelmv1.HelmAppCondition
-	}
-	tests := []struct {
-		name string
-		args args
-		want subhelmv1.HelmAppCondition
-	}{
-		{
-			name: "Deployed after initialized",
-			args: args{
-				conditions: []subhelmv1.HelmAppCondition{
-					first,
-					second,
-				},
-			},
-			want: second,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := latestHelmReleaseCondition(tt.args.conditions); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("latestHelmReleaseCondition() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -299,97 +261,6 @@ func TestRemoveHubCondition(t *testing.T) {
 			RemoveHubCondition(tt.status, tt.condType)
 			if !reflect.DeepEqual(tt.status, tt.want) {
 				t.Errorf("latestHelmReleaseCondition() = %v, want %v", tt.status, tt.want)
-			}
-		})
-	}
-}
-
-func Test_filterDuplicateHRs(t *testing.T) {
-	tests := []struct {
-		name     string
-		allHRs   []*subhelmv1.HelmRelease
-		count    int
-		excludes []string
-	}{
-		{
-			name: "All helmrelease owner references unique",
-			allHRs: []*subhelmv1.HelmRelease{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:              "console-foo",
-						CreationTimestamp: v1.NewTime(time.Date(2020, 5, 29, 0, 0, 0, 0, time.UTC)),
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "apps.open-cluster-management.io/v1",
-								Kind:       "Subscription",
-								Name:       "console-sub",
-							},
-						},
-					},
-				},
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:              "cluster-lifecycle-foo",
-						CreationTimestamp: v1.NewTime(time.Date(2020, 5, 29, 0, 1, 0, 0, time.UTC)),
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "apps.open-cluster-management.io/v1",
-								Kind:       "Subscription",
-								Name:       "cluster-lifecycle-sub",
-							},
-						},
-					},
-				},
-			},
-			count:    2,
-			excludes: []string{},
-		},
-		{
-			name: "Two helmreleases with same owning appsub",
-			allHRs: []*subhelmv1.HelmRelease{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:              "console-foo",
-						CreationTimestamp: v1.NewTime(time.Date(2020, 5, 29, 0, 0, 0, 0, time.UTC)),
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "apps.open-cluster-management.io/v1",
-								Kind:       "Subscription",
-								Name:       "console-sub",
-							},
-						},
-					},
-				},
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:              "console-bar",
-						CreationTimestamp: v1.NewTime(time.Date(2020, 5, 29, 0, 1, 0, 0, time.UTC)),
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "apps.open-cluster-management.io/v1",
-								Kind:       "Subscription",
-								Name:       "console-sub",
-							},
-						},
-					},
-				},
-			},
-			count:    1,
-			excludes: []string{"console-foo"},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := filterDuplicateHRs(tt.allHRs)
-			if len(got) != tt.count {
-				t.Errorf("filterDuplicateHRs() returned %d helmreleases, want %d", len(got), tt.count)
-			}
-			for i := range got {
-				for _, name := range tt.excludes {
-					if got[i].Name == name {
-						t.Errorf("filterDuplicateHRs() should have filtered helmrelease %s", name)
-					}
-				}
 			}
 		})
 	}
@@ -671,83 +542,6 @@ func Test_mapSubscription(t *testing.T) {
 	}
 }
 
-func Test_mapHelmRelease(t *testing.T) {
-	tests := []struct {
-		name string
-		hr   *subhelmv1.HelmRelease
-		want operatorsv1.StatusCondition
-	}{
-		{
-			name: "Has installPlanRef",
-			hr: &subhelmv1.HelmRelease{
-				Repo: subhelmv1.HelmReleaseRepo{
-					Version: version.Version,
-				},
-				Status: subhelmv1.HelmAppStatus{
-					Conditions: []subhelmv1.HelmAppCondition{
-						{
-							Type:   subhelmv1.ConditionDeployed,
-							Status: subhelmv1.StatusTrue,
-							Reason: subhelmv1.ReasonInstallSuccessful,
-						},
-					},
-				},
-			},
-			want: operatorsv1.StatusCondition{
-				Kind:      "HelmRelease",
-				Status:    metav1.ConditionTrue,
-				Reason:    "InstallSuccessful",
-				Message:   "",
-				Type:      "Deployed",
-				Available: true,
-			},
-		},
-		{
-			name: "No status reported",
-			hr: &subhelmv1.HelmRelease{
-				Status: subhelmv1.HelmAppStatus{},
-			},
-			want: unknownStatus,
-		},
-		{
-			name: "Wrong version",
-			hr: &subhelmv1.HelmRelease{
-				Repo: subhelmv1.HelmReleaseRepo{
-					Version: "0.0.0",
-				},
-				Status: subhelmv1.HelmAppStatus{
-					Conditions: []subhelmv1.HelmAppCondition{
-						{
-							Type:   subhelmv1.ConditionDeployed,
-							Status: subhelmv1.StatusTrue,
-							Reason: subhelmv1.ReasonInstallSuccessful,
-						},
-					},
-				},
-			},
-			want: wrongVersionStatus,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := mapHelmRelease(tt.hr)
-
-			if got.Kind != tt.want.Kind {
-				t.Errorf("mapSubscription() = %v, want %v", got, tt.want)
-			}
-			if string(got.Status) != string(tt.want.Status) {
-				t.Errorf("mapSubscription() = %v, want %v", got, tt.want)
-			}
-			if got.Reason != tt.want.Reason {
-				t.Errorf("mapSubscription() = %v, want %v", got, tt.want)
-			}
-			if got.Available != tt.want.Available {
-				t.Errorf("mapSubscription() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func Test_getComponentStatuses(t *testing.T) {
 	mce := &mcev1.MultiClusterEngine{
 		Status: mcev1.MultiClusterEngineStatus{
@@ -769,7 +563,6 @@ func Test_getComponentStatuses(t *testing.T) {
 
 	type args struct {
 		hub     *operatorsv1.MultiClusterHub
-		allHRs  []*subhelmv1.HelmRelease
 		allDeps []*appsv1.Deployment
 		allCRs  map[string]*unstructured.Unstructured
 	}
@@ -788,30 +581,6 @@ func Test_getComponentStatuses(t *testing.T) {
 								{
 									Name:    "console",
 									Enabled: true,
-								},
-							},
-						},
-					},
-				},
-				allHRs: []*subhelmv1.HelmRelease{
-					{
-						ObjectMeta: v1.ObjectMeta{
-							Name: "console-hr",
-							OwnerReferences: []v1.OwnerReference{
-								{
-									Name: "console-chart-sub",
-								},
-							},
-						},
-						Repo: subhelmv1.HelmReleaseRepo{
-							Version: version.Version,
-						},
-						Status: subhelmv1.HelmAppStatus{
-							Conditions: []subhelmv1.HelmAppCondition{
-								{
-									Type:   subhelmv1.ConditionDeployed,
-									Status: subhelmv1.StatusTrue,
-									Reason: subhelmv1.ReasonInstallSuccessful,
 								},
 							},
 						},

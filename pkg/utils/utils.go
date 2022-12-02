@@ -350,9 +350,9 @@ func FindNamespace() (string, error) {
 }
 
 func GetDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
-	nn := []types.NamespacedName{
-		{Name: "multiclusterhub-repo", Namespace: m.Namespace},
-		{Name: "volsync-addon-controller", Namespace: m.Namespace},
+	nn := []types.NamespacedName{}
+	if m.Enabled(operatorsv1.Volsync) {
+		nn = append(nn, types.NamespacedName{Name: "volsync-addon-controller", Namespace: m.Namespace})
 	}
 	if m.Enabled(operatorsv1.Insights) {
 		nn = append(nn, types.NamespacedName{Name: "insights-client", Namespace: m.Namespace})
@@ -369,10 +369,6 @@ func GetDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	return nn
 }
 
-func GetAppsubs(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
-	return []types.NamespacedName{}
-}
-
 func GetCustomResources(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	return []types.NamespacedName{
 		{Name: "multicluster-engine-sub", Namespace: MCESubscriptionNamespace},
@@ -383,9 +379,6 @@ func GetCustomResources(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 
 func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole bool) []types.NamespacedName {
 	nn := []types.NamespacedName{}
-	if m.Enabled("multiclusterhub-repo") {
-		nn = append(nn, types.NamespacedName{Name: "multiclusterhub-repo", Namespace: m.Namespace})
-	}
 	if m.Enabled(operatorsv1.Insights) {
 		nn = append(nn, types.NamespacedName{Name: "insights-client", Namespace: m.Namespace})
 		nn = append(nn, types.NamespacedName{Name: "insights-metrics", Namespace: m.Namespace})
@@ -421,11 +414,6 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole bool) []
 	if m.Enabled(operatorsv1.Volsync) {
 		nn = append(nn, types.NamespacedName{Name: "volsync-addon-controller", Namespace: m.Namespace})
 	}
-	return nn
-}
-
-func GetAppsubsForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
-	nn := []types.NamespacedName{}
 	return nn
 }
 

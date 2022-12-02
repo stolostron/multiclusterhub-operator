@@ -75,7 +75,7 @@ var MCEComponents = []string{
 
 func GetDefaultEnabledComponents() ([]string, error) {
 	var defaultEnabledComponents = []string{
-		Repo,
+		//Repo,
 		Console,
 		Insights,
 		GRC,

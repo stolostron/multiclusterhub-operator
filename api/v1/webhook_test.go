@@ -12,7 +12,6 @@ import (
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
-	appsub "open-cluster-management.io/multicloud-operators-subscription/pkg/apis"
 
 	configv1 "github.com/openshift/api/config/v1"
 	netv1 "github.com/openshift/api/config/v1"
@@ -109,7 +108,6 @@ var _ = Describe("V1 API Webhook", func() {
 			Expect(appsv1.AddToScheme(clientScheme)).Should(Succeed())
 			Expect(corev1.AddToScheme(clientScheme)).Should(Succeed())
 			Expect(mchov1.AddToScheme(clientScheme)).Should(Succeed())
-			Expect(appsub.AddToScheme(clientScheme)).Should(Succeed())
 			Expect(apiregistrationv1.AddToScheme(clientScheme)).Should(Succeed())
 			Expect(apixv1.AddToScheme(clientScheme)).Should(Succeed())
 			Expect(netv1.AddToScheme(clientScheme)).Should(Succeed())

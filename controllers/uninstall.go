@@ -33,6 +33,25 @@ var (
 				types.NamespacedName{Name: "application-chart-sub", Namespace: m.Namespace},
 				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
 			),
+			// management-ingress-sub is removed starting in 2.7.0
+			newUnstructured(
+				types.NamespacedName{Name: "management-ingress-sub", Namespace: m.Namespace},
+				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
+			),
+			// charts channel is removed starting in 2.7.0
+			newUnstructured(
+				types.NamespacedName{Name: "charts-v1", Namespace: m.Namespace},
+				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Channel", Version: "v1"},
+			),
+			// multiclusterhub-repo is removed starting in 2.7.0
+			newUnstructured(
+				types.NamespacedName{Name: "multiclusterhub-repo", Namespace: m.Namespace},
+				schema.GroupVersionKind{Group: "apps", Kind: "Deployment", Version: "v1"},
+			),
+			newUnstructured(
+				types.NamespacedName{Name: "multiclusterhub-repo", Namespace: m.Namespace},
+				schema.GroupVersionKind{Group: "", Kind: "Service", Version: "v1"},
+			),
 		}
 
 		if m.Spec.SeparateCertificateManagement && m.Spec.ImagePullSecret != "" {
@@ -76,10 +95,6 @@ var (
 			),
 			newUnstructured(
 				types.NamespacedName{Name: "volsync-addon-controller-sub", Namespace: m.Namespace},
-				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
-			),
-			newUnstructured(
-				types.NamespacedName{Name: "management-ingress-sub", Namespace: m.Namespace},
 				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
 			),
 		}

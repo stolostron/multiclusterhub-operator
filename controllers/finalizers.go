@@ -11,8 +11,6 @@ import (
 	"github.com/go-logr/logr"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
-	"github.com/stolostron/multiclusterhub-operator/pkg/channel"
-	"github.com/stolostron/multiclusterhub-operator/pkg/helmrepo"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -327,29 +325,6 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 
 func (r *MultiClusterHubReconciler) cleanupFoundation(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 
-	var emptyOverrides map[string]string
-
-	reqLogger.Info("Deleting MultiClusterHub repo deployment")
-	err := r.Client.Delete(context.TODO(), helmrepo.Deployment(m, emptyOverrides))
-	if err != nil && !errors.IsNotFound(err) {
-		reqLogger.Error(err, "Error deleting MultiClusterHub repo deployment")
-		return err
-	}
-
-	reqLogger.Info("Deleting MultiClusterHub repo service")
-	err = r.Client.Delete(context.TODO(), helmrepo.Service(m))
-	if err != nil && !errors.IsNotFound(err) {
-		reqLogger.Error(err, "Error deleting MultiClusterHub repo service")
-		return err
-	}
-
-	reqLogger.Info("Deleting MultiClusterHub channel")
-	err = r.Client.Delete(context.TODO(), channel.Channel(m))
-	if err != nil && !errors.IsNotFound(err) {
-		reqLogger.Error(err, "Error deleting MultiClusterHub channel")
-		return err
-	}
-
 	reqLogger.Info("All foundation artefacts have been terminated")
 
 	return nil
@@ -377,4 +352,23 @@ func (r *MultiClusterHubReconciler) orphanOwnedMultiClusterEngine(m *operatorsv1
 	}
 	r.Log.Info("MCE orphaned")
 	return nil
+}
+
+func BackupNamespace() *corev1.Namespace {
+	return &corev1.Namespace{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Namespace",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: utils.ClusterSubscriptionNamespace,
+		},
+	}
+}
+
+func BackupNamespaceUnstructured() *unstructured.Unstructured {
+	u := &unstructured.Unstructured{}
+	u.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Kind: "Namespace", Version: "v1"})
+	u.SetName(utils.ClusterSubscriptionNamespace)
+	return u
 }

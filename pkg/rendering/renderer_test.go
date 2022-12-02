@@ -6,6 +6,7 @@ package renderer
 import (
 
 	// "reflect"
+	"fmt"
 	"os"
 	"reflect"
 	"testing"
@@ -287,6 +288,68 @@ func TestRenderCRDs(t *testing.T) {
 	}
 	os.Unsetenv("CRD_OVERRIDE")
 
+}
+
+func TestOADPAnnotation(t *testing.T) {
+	oadp := `{"channel": "stable-1.0", "installPlanApproval": "Manual", "name": "redhat-oadp-operator2", "source": "redhat-operators2", "sourceNamespace": "openshift-marketplace2"}`
+	mch := &v1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "test",
+			Annotations: map[string]string{
+				"installer.open-cluster-management.io/oadp-subscription-spec": oadp,
+			},
+		},
+	}
+
+	test1, test2, test3, test4, test5 := GetOADPConfig(mch)
+
+	if test1 != "redhat-oadp-operator2" {
+		t.Error(fmt.Sprintf("Cluster Backup missing OADP overrides for name"))
+	}
+
+	if test2 != "stable-1.0" {
+		t.Error(fmt.Sprintf("Cluster Backup missing OADP overrides for channel"))
+	}
+
+	if test3 != "Manual" {
+		t.Error(fmt.Sprintf("Cluster Backup missing OADP overrides for install plan"))
+	}
+
+	if test4 != "redhat-operators2" {
+		t.Error(fmt.Sprintf("Cluster Backup missing OADP overrides for source"))
+	}
+
+	if test5 != "openshift-marketplace2" {
+		t.Error(fmt.Sprintf("Cluster Backup missing OADP overrides for source namespace"))
+	}
+
+	mch = &v1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "test",
+		},
+	}
+
+	test1, test2, test3, test4, test5 = GetOADPConfig(mch)
+
+	if test1 != "redhat-oadp-operator" {
+		t.Error(fmt.Sprintf("Cluster Backup missing OADP overrides for name"))
+	}
+
+	if test2 != "stable-1.1" {
+		t.Error(fmt.Sprintf("Cluster Backup missing OADP overrides for channel"))
+	}
+
+	if test3 != "Automatic" {
+		t.Error(fmt.Sprintf("Cluster Backup missing OADP overrides for install plan"))
+	}
+
+	if test4 != "redhat-operators" {
+		t.Error(fmt.Sprintf("Cluster Backup missing OADP overrides for source"))
+	}
+
+	if test5 != "openshift-marketplace" {
+		t.Error(fmt.Sprintf("Cluster Backup missing OADP overrides for source namespace"))
+	}
 }
 
 // func testFailures(t *testing.T) {
