@@ -630,6 +630,11 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
+	} else {
+		result, err := r.ensurePullSecret(multiClusterHub, multiclusterengine.Namespace().Name)
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
 	}
 
 	// Apply MCE sub

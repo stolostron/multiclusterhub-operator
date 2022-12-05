@@ -195,7 +195,17 @@ func PreexistingMCE(k8sClient client.Client, reconciler *MultiClusterHubReconcil
 	Expect(k8sClient.Create(ctx, &mce)).Should(Succeed())
 
 	By("Creating MCH")
+	testsecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "testsecret",
+			Namespace: "open-cluster-management",
+		},
+		Data: map[string][]byte{".dockerconfigjson": []byte("{\"auth\": \"test\"}")},
+		Type: corev1.SecretTypeDockerConfigJson,
+	}
+	Expect(k8sClient.Create(context.TODO(), testsecret)).Should(Succeed())
 	mch := resources.EmptyMCH()
+	mch.Spec.ImagePullSecret = "testsecret"
 	Expect(k8sClient.Create(ctx, &mch)).Should(Succeed())
 	Expect(k8sClient.Create(ctx, mchoDeployment)).Should(Succeed())
 
@@ -229,6 +239,14 @@ func PreexistingMCE(k8sClient client.Client, reconciler *MultiClusterHubReconcil
 		}
 		return false
 	}, timeout, interval).Should(BeTrue())
+
+	By("Ensuring pull secret is created in MCE namespace")
+	nn := types.NamespacedName{
+		Name:      "testsecret",
+		Namespace: "multicluster-engine",
+	}
+	pullSecret := &corev1.Secret{}
+	Expect(k8sClient.Get(ctx, nn, pullSecret)).Should(Succeed(), "Didn't find imagePullSecret copied to MCE's namespace")
 
 	By("Deleting MCH and waiting for it to terminate")
 	Eventually(func() bool {
