@@ -267,6 +267,15 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 		return ctrl.Result{}, nil
 	}
 
+	// secret should be delivered to targetNamespace
+	if mce.Spec.TargetNamespace == "" {
+		return ctrl.Result{Requeue: true}, fmt.Errorf("MCE %s does not have a target namespace to apply pullsecret", mce.Name)
+	}
+	result, err := r.ensurePullSecret(m, mce.Spec.TargetNamespace)
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
 	calcMCE := multiclusterengine.RenderMultiClusterEngine(mce, m)
 	err = r.Client.Update(ctx, calcMCE)
 	if err != nil {
@@ -335,7 +344,7 @@ func (r *MultiClusterHubReconciler) ensurePullSecret(m *operatorv1.MultiClusterH
 	err = r.Client.Patch(context.TODO(), mceSecret, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
 	if err != nil {
 		r.Log.Info(fmt.Sprintf("Error applying pullSecret to mce namespace: %s", err.Error()))
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{Requeue: true}, err
 	}
 
 	return ctrl.Result{}, nil
@@ -627,11 +636,6 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 			return result, err
 		}
 		result, err = r.ensureOperatorGroup(multiClusterHub, multiclusterengine.OperatorGroup())
-		if result != (ctrl.Result{}) {
-			return result, err
-		}
-	} else {
-		result, err := r.ensurePullSecret(multiClusterHub, multiclusterengine.Namespace().Name)
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
