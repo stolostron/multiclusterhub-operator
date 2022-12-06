@@ -324,8 +324,8 @@ func (r *MultiClusterHubReconciler) ensurePullSecret(m *operatorv1.MultiClusterH
 
 	mceSecret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: pullSecret.APIVersion,
-			Kind:       pullSecret.Kind,
+			APIVersion: "v1",
+			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pullSecret.Name,
