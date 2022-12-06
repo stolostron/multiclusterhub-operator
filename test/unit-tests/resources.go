@@ -31,7 +31,9 @@ func EmptyMCE() mcev1.MultiClusterEngine {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: MultiClusterEngineName,
 		},
-		Spec: mcev1.MultiClusterEngineSpec{},
+		Spec: mcev1.MultiClusterEngineSpec{
+			TargetNamespace: "multicluster-engine",
+		},
 	}
 }
 
