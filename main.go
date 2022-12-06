@@ -145,6 +145,7 @@ func main() {
 
 	cacheSecrets := os.Getenv(NoSecretCacheEnv)
 	if len(cacheSecrets) > 0 {
+		setupLog.Info("skipping secret cache")
 		secret := &corev1.Secret{}
 		mgrOptions.ClientDisableCacheFor = []client.Object{secret}
 	}
