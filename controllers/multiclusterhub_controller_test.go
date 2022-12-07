@@ -149,7 +149,7 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 	By("Ensuring Klusterlet Addon is created")
 	Eventually(func() bool {
 		ns := LocalClusterNamespace()
-		_, err = reconciler.ensureNamespace(createdMCH, ns)
+		_, err := reconciler.ensureNamespace(createdMCH, ns)
 		return err == nil
 
 	}, timeout, interval).Should(BeTrue())
