@@ -178,7 +178,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		terminating := NewHubCondition(operatorv1.Terminating, metav1.ConditionTrue, DeleteTimestampReason, "Multiclusterhub is being cleaned up.")
 		SetHubCondition(&multiClusterHub.Status, *terminating)
 
-		if contains(multiClusterHub.GetFinalizers(), hubFinalizer) {
+		if controllerutil.ContainsFinalizer(multiClusterHub, hubFinalizer) {
 			// Run finalization logic. If the finalization
 			// logic fails, don't remove the finalizer so
 			// that we can retry during the next reconciliation.
@@ -190,7 +190,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 			// Remove hubFinalizer. Once all finalizers have been
 			// removed, the object will be deleted.
-			multiClusterHub.SetFinalizers(remove(multiClusterHub.GetFinalizers(), hubFinalizer))
+			controllerutil.RemoveFinalizer(multiClusterHub, hubFinalizer)
 
 			err := r.Client.Update(context.TODO(), multiClusterHub)
 			if err != nil {
@@ -199,13 +199,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 
 		return ctrl.Result{}, nil
-	}
-
-	// Add finalizer for this CR
-	if !contains(multiClusterHub.GetFinalizers(), hubFinalizer) {
-		if err := r.addFinalizer(r.Log, multiClusterHub); err != nil {
-			return ctrl.Result{}, err
-		}
 	}
 
 	var result ctrl.Result
@@ -1136,19 +1129,6 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 	return nil
 }
 
-func (r *MultiClusterHubReconciler) addFinalizer(reqLogger logr.Logger, m *operatorv1.MultiClusterHub) error {
-	reqLogger.Info("Adding Finalizer for the multiClusterHub")
-	m.SetFinalizers(append(m.GetFinalizers(), hubFinalizer))
-
-	// Update CR
-	err := r.Client.Update(context.TODO(), m)
-	if err != nil {
-		reqLogger.Error(err, "Failed to update MultiClusterHub with finalizer")
-		return err
-	}
-	return nil
-}
-
 func (r *MultiClusterHubReconciler) installCRDs(reqLogger logr.Logger, m *operatorv1.MultiClusterHub) (string, error) {
 	crdDir, ok := os.LookupEnv(crdPathEnvVar)
 	if !ok {
@@ -1289,6 +1269,11 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 		return ctrl.Result{}, err
 	}
 	if defaultUpdate {
+		updateNecessary = true
+	}
+
+	// Add finalizer for this CR
+	if controllerutil.AddFinalizer(m, hubFinalizer) {
 		updateNecessary = true
 	}
 
