@@ -43,6 +43,7 @@ import (
 	consolev1 "github.com/openshift/api/operator/v1"
 
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
+	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 
 	corev1 "k8s.io/api/core/v1"
@@ -146,8 +147,10 @@ func main() {
 	cacheSecrets := os.Getenv(NoSecretCacheEnv)
 	if len(cacheSecrets) > 0 {
 		setupLog.Info("skipping secret cache")
-		secret := &corev1.Secret{}
-		mgrOptions.ClientDisableCacheFor = []client.Object{secret}
+		mgrOptions.ClientDisableCacheFor = []client.Object{
+			&corev1.Secret{},
+			&olmv1alpha1.ClusterServiceVersion{},
+		}
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOptions)
