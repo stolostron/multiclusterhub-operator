@@ -54,6 +54,7 @@ rules:
   - projects
   - featuregates
   - ansiblejobs
+  - clusterversions
 
 - verbs:
   - list
@@ -168,6 +169,15 @@ rules:
   - agents
   - infraenvs
   - nmstateconfigs
+  - agentserviceconfigs
+
+- verbs:
+  - list
+  - watch
+  apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclass
 
 - verbs:
   - list
