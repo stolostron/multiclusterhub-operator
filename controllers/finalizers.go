@@ -16,11 +16,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/types"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -87,62 +88,11 @@ func (r *MultiClusterHubReconciler) cleanupClusterRoleBindings(reqLogger logr.Lo
 	return nil
 }
 
-func (r *MultiClusterHubReconciler) cleanupPullSecret(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
-	// TODO: Handle scenario where ImagePullSecret is changed after install
-	if m.Spec.ImagePullSecret == "" {
-		reqLogger.Info("No ImagePullSecret to cleanup. Continuing.")
-		return nil
-	}
-
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: utils.CertManagerNamespace,
-			Name:      m.Spec.ImagePullSecret,
-		},
-	}
-
-	err := r.Client.Delete(context.TODO(), secret)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			reqLogger.Info("No matching secret to finalize. Continuing.")
-			return nil
-		}
-		reqLogger.Error(err, "Error while deleting secret")
-		return err
-	}
-
-	reqLogger.Info(fmt.Sprintf("%s secret finalized", utils.CertManagerNS(m)))
-	return nil
-}
-
-func (r *MultiClusterHubReconciler) cleanupCRDs(log logr.Logger, m *operatorsv1.MultiClusterHub) error {
-	err := r.Client.DeleteAllOf(
-		context.TODO(),
-		&apixv1.CustomResourceDefinition{},
-		client.MatchingLabels{
-			"installer.name":      m.GetName(),
-			"installer.namespace": m.GetNamespace(),
-		},
-	)
-
-	if err != nil {
-		if errors.IsNotFound(err) {
-			log.Info("No matching CRDs to finalize. Continuing.")
-			return nil
-		}
-		log.Error(err, "Error while deleting CRDs")
-		return err
-	}
-
-	log.Info("CRDs finalized")
-	return nil
-}
-
 func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	ctx := context.Background()
 
 	mce, err := multiclusterengine.GetManagedMCE(ctx, r.Client)
-	if err != nil {
+	if err != nil && !apimeta.IsNoMatchError(err) {
 		return err
 	}
 	if mce != nil && !multiclusterengine.MCECreatedByMCH(mce, m) {
@@ -323,23 +273,20 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 	return nil
 }
 
-func (r *MultiClusterHubReconciler) cleanupFoundation(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
-
-	reqLogger.Info("All foundation artefacts have been terminated")
-
-	return nil
-}
-
 func (r *MultiClusterHubReconciler) orphanOwnedMultiClusterEngine(m *operatorsv1.MultiClusterHub) error {
 	ctx := context.Background()
 
 	mce, err := multiclusterengine.GetManagedMCE(ctx, r.Client)
-	if err != nil {
-		return err
-	}
 	if mce == nil {
 		// MCE does not exist
 		return nil
+	}
+	if err != nil {
+		if apimeta.IsNoMatchError(err) {
+			// MCE does not exist
+			return nil
+		}
+		return err
 	}
 
 	r.Log.Info("Preexisting MCE exists, orphaning resource")

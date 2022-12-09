@@ -41,6 +41,9 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -127,7 +130,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	multiClusterHub := &operatorv1.MultiClusterHub{}
 	err := r.Client.Get(context.TODO(), req.NamespacedName, multiClusterHub)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
@@ -171,6 +174,32 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 	}()
 
+	// Read image overrides
+	// First, attempt to read image overrides from environmental variables
+	imageOverrides := imageoverrides.GetImageOverrides()
+	if len(imageOverrides) == 0 {
+		r.Log.Error(err, "Could not get map of image overrides")
+		return ctrl.Result{}, nil
+	}
+
+	if imageRepo := utils.GetImageRepository(multiClusterHub); imageRepo != "" {
+		r.Log.Info(fmt.Sprintf("Overriding Image Repository from annotation 'mch-imageRepository': %s", imageRepo))
+		imageOverrides = utils.OverrideImageRepository(imageOverrides, imageRepo)
+	}
+
+	// Check for developer overrides
+	if imageOverridesConfigmap := utils.GetImageOverridesConfigmap(multiClusterHub); imageOverridesConfigmap != "" {
+		imageOverrides, err = r.OverrideImagesFromConfigmap(imageOverrides, multiClusterHub.GetNamespace(), imageOverridesConfigmap)
+		if err != nil {
+			r.Log.Error(err, fmt.Sprintf("Could not find image override configmap: %s/%s", multiClusterHub.GetNamespace(), imageOverridesConfigmap))
+			return ctrl.Result{}, err
+		}
+	}
+	r.CacheSpec.ImageOverrides = imageOverrides
+	r.CacheSpec.ManifestVersion = version.Version
+	r.CacheSpec.ImageRepository = utils.GetImageRepository(multiClusterHub)
+	r.CacheSpec.ImageOverridesCM = utils.GetImageOverridesConfigmap(multiClusterHub)
+
 	// Check if the multiClusterHub instance is marked to be deleted, which is
 	// indicated by the deletion timestamp being set.
 	isHubMarkedToBeDeleted := multiClusterHub.GetDeletionTimestamp() != nil
@@ -209,32 +238,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if err != nil {
 		return ctrl.Result{Requeue: true}, err
 	}
-
-	// Read image overrides
-	// First, attempt to read image overrides from environmental variables
-	imageOverrides := imageoverrides.GetImageOverrides()
-	if len(imageOverrides) == 0 {
-		r.Log.Error(err, "Could not get map of image overrides")
-		return ctrl.Result{}, nil
-	}
-
-	if imageRepo := utils.GetImageRepository(multiClusterHub); imageRepo != "" {
-		r.Log.Info(fmt.Sprintf("Overriding Image Repository from annotation 'mch-imageRepository': %s", imageRepo))
-		imageOverrides = utils.OverrideImageRepository(imageOverrides, imageRepo)
-	}
-
-	// Check for developer overrides
-	if imageOverridesConfigmap := utils.GetImageOverridesConfigmap(multiClusterHub); imageOverridesConfigmap != "" {
-		imageOverrides, err = r.OverrideImagesFromConfigmap(imageOverrides, multiClusterHub.GetNamespace(), imageOverridesConfigmap)
-		if err != nil {
-			r.Log.Error(err, fmt.Sprintf("Could not find image override configmap: %s/%s", multiClusterHub.GetNamespace(), imageOverridesConfigmap))
-			return ctrl.Result{}, err
-		}
-	}
-	r.CacheSpec.ImageOverrides = imageOverrides
-	r.CacheSpec.ManifestVersion = version.Version
-	r.CacheSpec.ImageRepository = utils.GetImageRepository(multiClusterHub)
-	r.CacheSpec.ImageOverridesCM = utils.GetImageOverridesConfigmap(multiClusterHub)
 
 	err = r.maintainImageManifestConfigmap(multiClusterHub)
 	if err != nil {
@@ -958,7 +961,7 @@ func (r *MultiClusterHubReconciler) deleteTemplate(ctx context.Context, m *opera
 	log := log.FromContext(ctx)
 	err := r.Client.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()}, template)
 
-	if err != nil && errors.IsNotFound(err) {
+	if err != nil && (apierrors.IsNotFound(err) || apimeta.IsNoMatchError(err)) {
 		return ctrl.Result{}, nil
 	}
 
@@ -1071,9 +1074,6 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 	if err := r.cleanupNamespaces(reqLogger); err != nil {
 		return err
 	}
-	if err := r.cleanupFoundation(reqLogger, m); err != nil {
-		return err
-	}
 	_, err = r.ensureNoAppsub(context.TODO(), m, r.CacheSpec.ImageOverrides)
 	if err != nil {
 		return err
@@ -1111,14 +1111,6 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 
 	if err := r.cleanupMultiClusterEngine(reqLogger, m); err != nil {
 		return err
-	}
-	if err := r.cleanupCRDs(reqLogger, m); err != nil {
-		return err
-	}
-	if m.Spec.SeparateCertificateManagement {
-		if err := r.cleanupPullSecret(reqLogger, m); err != nil {
-			return err
-		}
 	}
 
 	if err := r.orphanOwnedMultiClusterEngine(m); err != nil {
