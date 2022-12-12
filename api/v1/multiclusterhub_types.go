@@ -70,7 +70,7 @@ type MultiClusterHubSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Developer Overrides",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Overrides *Overrides `json:"overrides,omitempty"`
 
-	// Provide the customized OpenShift default ingress CA certificate to RHACM
+	// (Deprecated) Provide the customized OpenShift default ingress CA certificate to RHACM
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom CA Configmap",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:ConfigMap"}
 	CustomCAConfigmap string `json:"customCAConfigmap,omitempty"`
 

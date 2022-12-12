@@ -50,7 +50,7 @@ spec:
                   Options are: Basic and High (default)'
                 type: string
               customCAConfigmap:
-                description: Provide the customized OpenShift default ingress CA certificate
+                description: (Deprecated) Provide the customized OpenShift default ingress CA certificate
                   to RHACM
                 type: string
               disableHubSelfManagement:

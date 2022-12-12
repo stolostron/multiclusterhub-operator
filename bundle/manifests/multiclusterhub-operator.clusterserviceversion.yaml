@@ -42,7 +42,7 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:select:High
         - urn:alm:descriptor:com.tectonic.ui:select:Basic
-      - description: Provide the customized OpenShift default ingress CA certificate
+      - description: (Deprecated) Provide the customized OpenShift default ingress CA certificate
           to RHACM
         displayName: Custom CA Configmap
         path: customCAConfigmap
