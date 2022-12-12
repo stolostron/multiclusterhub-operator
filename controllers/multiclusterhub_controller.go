@@ -422,7 +422,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	if !multiClusterHub.Spec.DisableHubSelfManagement {
 		result, err = r.ensureKlusterletAddonConfig(multiClusterHub)
-		if result != (ctrl.Result{}) {
+		if result != (ctrl.Result{}) || err != nil {
 			return result, err
 		}
 	}

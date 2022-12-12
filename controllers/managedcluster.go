@@ -38,12 +38,11 @@ func getInstallerLabels(m *operatorsv1.MultiClusterHub) map[string]string {
 }
 
 func getHubNamespace() *corev1.Namespace {
-	ns := &corev1.Namespace{
+	return &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: ManagedClusterName,
 		},
 	}
-	return ns
 }
 
 func getManagedCluster() *unstructured.Unstructured {
@@ -113,15 +112,31 @@ func getKlusterletAddonConfig() *unstructured.Unstructured {
 }
 
 func (r *MultiClusterHubReconciler) ensureKlusterletAddonConfig(m *operatorsv1.MultiClusterHub) (ctrl.Result, error) {
-	klusterletaddonconfig := getKlusterletAddonConfig()
+	ctx := context.Background()
 
-	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: KlusterletAddonConfigName, Namespace: ManagedClusterName}, klusterletaddonconfig)
+	r.Log.Info("Checking for local-cluster namespace")
+	ns := &corev1.Namespace{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: ManagedClusterName}, ns)
+	if err != nil && errors.IsNotFound(err) {
+		r.Log.Info("Waiting for local-cluster namespace to be created")
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	} else if err != nil {
+		r.Log.Error(err, "Failed to check for local-cluster namespace")
+		return ctrl.Result{}, err
+	}
+
+	klusterletaddonconfig := getKlusterletAddonConfig()
+	nsn := types.NamespacedName{
+		Name:      KlusterletAddonConfigName,
+		Namespace: ManagedClusterName,
+	}
+	err = r.Client.Get(ctx, nsn, klusterletaddonconfig)
 	if err != nil && errors.IsNotFound(err) {
 		// Creating new klusterletAddonConfig
 		newKlusterletaddonconfig := getKlusterletAddonConfig()
 		utils.AddInstallerLabel(newKlusterletaddonconfig, m.GetName(), m.GetNamespace())
 
-		err = r.Client.Create(context.TODO(), newKlusterletaddonconfig)
+		err = r.Client.Create(ctx, newKlusterletaddonconfig)
 		if err != nil {
 			r.Log.Error(err, "Failed to create klusterletaddonconfig resource")
 			return ctrl.Result{}, err
@@ -133,7 +148,7 @@ func (r *MultiClusterHubReconciler) ensureKlusterletAddonConfig(m *operatorsv1.M
 
 	utils.AddInstallerLabel(klusterletaddonconfig, m.GetName(), m.GetNamespace())
 
-	err = r.Client.Update(context.TODO(), klusterletaddonconfig)
+	err = r.Client.Update(ctx, klusterletaddonconfig)
 	if err != nil {
 		r.Log.Error(err, "Failed to update klusterletaddonconfig resource")
 		return ctrl.Result{}, err
