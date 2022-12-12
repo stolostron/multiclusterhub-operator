@@ -73,11 +73,9 @@ This approach _only_ tests MultiClusterHub Operator functionality (not the funct
     export HUB_IMAGE_REGISTRY=<some-public-image-repository>
     ```
 
-    These environment variables correlate with the two image you'll need to build and push to public image repositories:
+    This environment variable correlate with the image you'll need to build and push to public image repositories:
 
     - `HUB_IMAGE_REGISTRY` correlates to the `multiclusterhub-operator` image, which is built from the `multiclusterhub-operator` codebase. The resulting image will be pushed to `$HUB_IMAGE_REGISTRY/multiclusterhub-operator`
-
-    - `MOCK_IMAGE_REGISTRY` correlates to the `hub-mock-component-image`, which is built from the `mock-component-image` subdirectory within the `multiclusterhub-operator` GitHub repository. This mock image acts as a multi-purpose place-holder for all other images required by the `multiclusterhub-operator`. The resulting image will be pushed to `$MOCK_IMAGE_REGISTRY/mock-component-image`. **The `hub-mock-component-image` should be built without any changes to the `mock-component-image` subdirectory**
 
     These images are assumed to be public to eliminate any requirement for pull secrets.
 

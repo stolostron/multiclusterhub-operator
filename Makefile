@@ -219,4 +219,3 @@ catalog-push: ## Push a catalog image.
 
 -include Makefile.dev
 -include test/function_tests/Makefile
--include test/mock-component-image/Makefile
