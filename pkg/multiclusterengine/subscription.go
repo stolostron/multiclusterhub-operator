@@ -150,7 +150,7 @@ func GetManagedMCESubscription(ctx context.Context, k8sClient client.Client) (*s
 		return &subList.Items[0], nil
 	} else if len(subList.Items) > 1 {
 		// will require manual resolution
-		return nil, fmt.Errorf("multiple MCE subscriptions found managed by MCH. Only one MCE subscription is supported")
+		return nil, fmt.Errorf("multiple engine subscriptions found managed by MCH. Only one MCE subscription is supported")
 	}
 
 	return nil, nil
