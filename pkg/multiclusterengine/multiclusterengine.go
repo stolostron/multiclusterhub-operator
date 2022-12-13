@@ -46,7 +46,7 @@ var mockPackageManifests = func() *olmapi.PackageManifestList {
 		Items: []olmapi.PackageManifest{
 			{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "multicluster-engine",
+					Name: DesiredPackage(),
 				},
 				Status: olmapi.PackageManifestStatus{
 					CatalogSource:          "multiclusterengine-catalog",
