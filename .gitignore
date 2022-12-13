@@ -18,10 +18,6 @@ bundle/manifests/multiclusterhub-operator_v1_serviceaccount.yaml
 hack/prereqs/pull-secret.yaml
 
 test/function_tests/results
-test/mock-component-image/bin
-test/mock-component-image/results
-test/mock-component-image/scripts/__pycache__
-test/mock-component-image/multiclusterhub
 hack/bundle-automation/__pycache__
 
 bin/*
