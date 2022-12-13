@@ -20,6 +20,7 @@ var MinimumOCPVersion string = "4.10.0"
 // The reconciler will wait until MCE has installed to at least this version
 // before proceeding with installing ACM.
 var RequiredMCEVersion = "2.2.0"
+var RequiredCommunityMCEVersion = "0.1.0"
 
 func init() {
 	if value, exists := os.LookupEnv("OPERATOR_VERSION"); exists {
@@ -35,6 +36,15 @@ func ValidMCEVersion(mceVersion string) error {
 		return nil
 	}
 	return validVersion(mceVersion, RequiredMCEVersion)
+}
+
+// ValidCommunityMCEVersion returns an error if MCE does not satisfy the minimum version requirement
+// when running in community mode
+func ValidCommunityMCEVersion(mceVersion string) error {
+	if _, exists := os.LookupEnv("DISABLE_MCE_MIN_VERSION"); exists {
+		return nil
+	}
+	return validVersion(mceVersion, RequiredCommunityMCEVersion)
 }
 
 // ValidOCPVersion returns an error if ocpVersion does not satisfy the minimum OCP version requirement
