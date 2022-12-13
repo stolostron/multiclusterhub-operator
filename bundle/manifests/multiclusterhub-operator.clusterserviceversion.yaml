@@ -17,8 +17,9 @@ metadata:
     capabilities: Basic Install
     categories: Integration & Delivery
     certified: "false"
+    createdAt: "2022-12-13T21:37:40Z"
     description: Open management of Openshift and Kubernetes clusters
-    operators.operatorframework.io/builder: operator-sdk-v1.22.2
+    operators.operatorframework.io/builder: operator-sdk-v1.26.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/open-cluster-management/multiclusterhub-operator
     support: The Open Cluster Management Project
@@ -42,8 +43,8 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:select:High
         - urn:alm:descriptor:com.tectonic.ui:select:Basic
-      - description: (Deprecated) Provide the customized OpenShift default ingress CA certificate
-          to RHACM
+      - description: (Deprecated) Provide the customized OpenShift default ingress
+          CA certificate to RHACM
         displayName: Custom CA Configmap
         path: customCAConfigmap
         x-descriptors:
@@ -83,7 +84,7 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: (Deprectaed) Configuration options for ingress management
+      - description: (Deprecated) Configuration options for ingress management
         displayName: Ingress Management
         path: ingress
         x-descriptors:
