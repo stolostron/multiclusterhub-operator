@@ -215,7 +215,7 @@ func GetCatalogSource(k8sClient client.Client) (types.NamespacedName, error) {
 		return nn, fmt.Errorf("Found more than one %s catalogSource with expected channel %s", DesiredPackage(), desiredChannel())
 	}
 
-	return nn, fmt.Errorf("No %s packageManifests found with desired channel", DesiredPackage())
+	return nn, fmt.Errorf("No %s packageManifests found with desired channel %s", DesiredPackage(), desiredChannel())
 }
 
 // hasDesiredChannel returns true if the packagemanifest contains the desired channel
