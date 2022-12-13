@@ -5,7 +5,6 @@ package multiclusterengine
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
@@ -196,7 +195,7 @@ func GetCatalogSource(k8sClient client.Client) (types.NamespacedName, error) {
 		return nn, err
 	}
 	if len(pkgs) == 0 {
-		return nn, errors.New("No MCE packageManifests found")
+		return nn, fmt.Errorf("No %s packageManifests found", DesiredPackage())
 	}
 
 	filtered := []olmapi.PackageManifest{}
@@ -213,10 +212,10 @@ func GetCatalogSource(k8sClient client.Client) (types.NamespacedName, error) {
 		return nn, nil
 	}
 	if len(filtered) > 1 {
-		return nn, errors.New("Found more than one catalogSource with expected channel")
+		return nn, fmt.Errorf("Found more than one %s catalogSource with expected channel %s", DesiredPackage(), desiredChannel())
 	}
 
-	return nn, errors.New("No MCE packageManifests found with desired channel")
+	return nn, fmt.Errorf("No %s packageManifests found with desired channel", DesiredPackage())
 }
 
 // hasDesiredChannel returns true if the packagemanifest contains the desired channel
@@ -264,7 +263,7 @@ func GetMCEPackageManifests(k8sClient client.Client) ([]olmapi.PackageManifest, 
 	}
 
 	pkgList := []olmapi.PackageManifest{}
-	packageName := "multicluster-engine"
+	packageName := DesiredPackage()
 	for _, p := range packageManifests.Items {
 		if p.Name == packageName {
 			pkgList = append(pkgList, p)
