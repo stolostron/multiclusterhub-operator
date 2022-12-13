@@ -51,6 +51,20 @@ spec:
                   data 2. Use None if you don't want to clean up any resources before
                   restoring the new data.
                 type: string
+              excludedNamespaces:
+                description: ExcludedNamespaces contains a list of namespaces that
+                  are not included in the restore.
+                items:
+                  type: string
+                nullable: true
+                type: array
+              excludedResources:
+                description: ExcludedResources is a slice of resource names that are
+                  not included in the restore.
+                items:
+                  type: string
+                nullable: true
+                type: array
               hooks:
                 description: velero option -  Hooks represent custom behaviors that
                   should be executed during or post restore.
