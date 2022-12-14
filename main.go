@@ -68,7 +68,7 @@ import (
 
 const (
 	OperatorVersionEnv = "OPERATOR_VERSION"
-	NoSecretCacheEnv   = "NO_SECRET_CACHE"
+	NoCacheEnv         = "DISABLE_CLIENT_CACHE"
 )
 
 var (
@@ -144,9 +144,9 @@ func main() {
 		LeaderElectionNamespace: ns,
 	}
 
-	cacheSecrets := os.Getenv(NoSecretCacheEnv)
+	cacheSecrets := os.Getenv(NoCacheEnv)
 	if len(cacheSecrets) > 0 {
-		setupLog.Info("skipping secret cache")
+		setupLog.Info("Operator Client Cache Disabled")
 		mgrOptions.ClientDisableCacheFor = []client.Object{
 			&corev1.Secret{},
 			&olmv1alpha1.ClusterServiceVersion{},
