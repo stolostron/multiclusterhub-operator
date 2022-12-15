@@ -28,15 +28,16 @@ var (
 	packageName            = "multicluster-engine"
 	catalogSourceName      = "redhat-operators"
 	catalogSourceNamespace = "openshift-marketplace" // https://olm.operatorframework.io/docs/tasks/troubleshooting/subscription/#a-subscription-in-namespace-x-cant-install-operators-from-a-catalogsource-in-namespace-y
+	operandNameSpace       = "multicluster-engine"
 
 	// community MCE variables
 	communityChannel           = "community-0.1"
 	communityPackageName       = "stolostron-engine"
 	communityCatalogSourceName = "community-operators"
+	communityOperandNamepace   = "stolostron-engine"
 
 	// default names
 	MulticlusterengineName      = "multiclusterengine"
-	MulticlusterengineNamespace = "multicluster-engine"
 	operatorGroupName           = "default"
 )
 
@@ -86,7 +87,7 @@ func NewMultiClusterEngine(m *operatorsv1.MultiClusterHub, infrastructureCustomN
 			Tolerations:        utils.GetTolerations(m),
 			NodeSelector:       m.Spec.NodeSelector,
 			AvailabilityConfig: availConfig,
-			TargetNamespace:    MulticlusterengineNamespace,
+			TargetNamespace:    OperandNameSpace(),
 			Overrides: &mcev1.Overrides{
 				Components: utils.GetMCEComponents(m),
 			},
@@ -243,6 +244,15 @@ func DesiredPackage() string {
 		return communityPackageName
 	} else {
 		return packageName
+	}
+}
+
+// OperandNameSpace is determined by whether operator is running in community mode or production mode
+func OperandNameSpace() string {
+	if utils.IsCommunityMode() {
+		return communityOperandNamepace
+	} else {
+		return operandNameSpace
 	}
 }
 
