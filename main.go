@@ -29,21 +29,24 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
-	configv1 "github.com/openshift/api/config/v1"
-	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
-	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
-	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	netv1 "github.com/openshift/api/config/v1"
-	consolev1 "github.com/openshift/api/operator/v1"
+	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/controllers"
 	"github.com/stolostron/multiclusterhub-operator/pkg/webhook"
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
+
+	configv1 "github.com/openshift/api/config/v1"
+	consolev1 "github.com/openshift/api/operator/v1"
+
+	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
+	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
+
+	corev1 "k8s.io/api/core/v1"
 	networking "k8s.io/api/networking/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -52,6 +55,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -62,14 +66,19 @@ import (
 	//+kubebuilder:scaffold:imports
 )
 
+const (
+	OperatorVersionEnv = "OPERATOR_VERSION"
+	NoCacheEnv         = "DISABLE_CLIENT_CACHE"
+)
+
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
 )
 
 func init() {
-	if _, exists := os.LookupEnv("OPERATOR_VERSION"); !exists {
-		panic("OPERATOR_VERSION not defined")
+	if _, exists := os.LookupEnv(OperatorVersionEnv); !exists {
+		panic(fmt.Sprintf("%s not defined", OperatorVersionEnv))
 	}
 
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
@@ -81,8 +90,6 @@ func init() {
 	utilruntime.Must(apiregistrationv1.AddToScheme(scheme))
 
 	utilruntime.Must(apixv1.AddToScheme(scheme))
-
-	utilruntime.Must(netv1.AddToScheme(scheme))
 
 	utilruntime.Must(subv1alpha1.AddToScheme(scheme))
 
@@ -126,7 +133,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	mgrOptions := ctrl.Options{
 		Scheme:                  scheme,
 		MetricsBindAddress:      metricsAddr,
 		Port:                    8443,
@@ -134,8 +141,19 @@ func main() {
 		LeaderElection:          enableLeaderElection,
 		LeaderElectionID:        "multicloudhub-operator-lock",
 		WebhookServer:           &ctrlwebhook.Server{TLSMinVersion: "1.2"},
-		LeaderElectionNamespace: ns, // Uncomment this line to run operator locally. https://sdk.operatorframework.io/docs/building-operators/golang/advanced-topics/#leader-with-lease
-	})
+		LeaderElectionNamespace: ns,
+	}
+
+	cacheSecrets := os.Getenv(NoCacheEnv)
+	if len(cacheSecrets) > 0 {
+		setupLog.Info("Operator Client Cache Disabled")
+		mgrOptions.ClientDisableCacheFor = []client.Object{
+			&corev1.Secret{},
+			&olmv1alpha1.ClusterServiceVersion{},
+		}
+	}
+
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOptions)
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
