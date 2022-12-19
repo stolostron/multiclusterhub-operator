@@ -117,12 +117,10 @@ spec:
         env:
         - name: PORT
           value: "3000"
-        - name: FRONTEND_URL
-          value: "https://multicloud-console.{{ .Values.hubconfig.ocpIngress }}/multicloud"
-        - name: BACKEND_URL
-          value: "https://multicloud-console.{{ .Values.hubconfig.ocpIngress }}/multicloud"
         - name: CLUSTER_API_URL
           value: https://kubernetes.default.svc:443
+        - name: DISABLE_EVENTS
+          value: "true"
         {{- if .Values.hubconfig.proxyConfigs }}
         - name: HTTP_PROXY
           value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
