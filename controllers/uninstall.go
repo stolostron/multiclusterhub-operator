@@ -6,6 +6,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
@@ -16,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -31,11 +33,6 @@ var (
 			// application-ui is migrated to console starting in 2.5.0
 			newUnstructured(
 				types.NamespacedName{Name: "application-chart-sub", Namespace: m.Namespace},
-				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
-			),
-			// management-ingress-sub is removed starting in 2.7.0
-			newUnstructured(
-				types.NamespacedName{Name: "management-ingress-sub", Namespace: m.Namespace},
 				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
 			),
 			// charts channel is removed starting in 2.7.0
@@ -63,7 +60,7 @@ var (
 		return removals
 	}
 
-	uninstallRenderList = func(m *operatorsv1.MultiClusterHub) []*unstructured.Unstructured {
+	appsubCleanupList = func(m *operatorsv1.MultiClusterHub) []*unstructured.Unstructured {
 		removals := []*unstructured.Unstructured{
 			newUnstructured(
 				types.NamespacedName{Name: "policyreport-sub", Namespace: m.Namespace},
@@ -82,7 +79,7 @@ var (
 				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
 			),
 			newUnstructured(
-				types.NamespacedName{Name: "cluster-backup-chart-sub", Namespace: m.Namespace},
+				types.NamespacedName{Name: "cluster-backup-chart-sub", Namespace: utils.ClusterSubscriptionNamespace},
 				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
 			),
 			newUnstructured(
@@ -95,6 +92,10 @@ var (
 			),
 			newUnstructured(
 				types.NamespacedName{Name: "volsync-addon-controller-sub", Namespace: m.Namespace},
+				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
+			),
+			newUnstructured(
+				types.NamespacedName{Name: "management-ingress-sub", Namespace: m.Namespace},
 				schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
 			),
 		}
@@ -110,9 +111,9 @@ func newUnstructured(nn types.NamespacedName, gvk schema.GroupVersionKind) *unst
 	return &u
 }
 
-// ensureRemovalsGone validates successful removal of everything in the uninstallList. Return on first error encounter.
-func (r *MultiClusterHubReconciler) ensureRenderRemovalsGone(m *operatorsv1.MultiClusterHub) (ctrl.Result, error) {
-	removals := uninstallRenderList(m)
+// ensureAppsubsGone validates successful removal of everything in the uninstallList. Return on first error encounter.
+func (r *MultiClusterHubReconciler) ensureAppsubsGone(m *operatorsv1.MultiClusterHub) (ctrl.Result, error) {
+	removals := appsubCleanupList(m)
 	allResourcesDeleted := true
 	for i := range removals {
 		gone, err := r.uninstall(m, removals[i])
@@ -125,6 +126,56 @@ func (r *MultiClusterHubReconciler) ensureRenderRemovalsGone(m *operatorsv1.Mult
 	}
 
 	if !allResourcesDeleted {
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// Check if oadp-operator CSV exists in open-cluster-management-backup from the stable-1.0 channel
+	// If so delete it because it isn't removed with the subscription
+	csvList := &unstructured.UnstructuredList{}
+	csvList.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "operators.coreos.com",
+		Kind:    "ClusterServiceVersionList",
+		Version: "v1alpha1",
+	})
+	err := r.Client.List(context.Background(), csvList, client.InNamespace(utils.ClusterSubscriptionNamespace))
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	for _, csv := range csvList.Items {
+		csv := csv
+		if strings.HasPrefix(csv.GetName(), "oadp-operator.v1.0") {
+			r.Log.Info(fmt.Sprintf("Deleting OADP v1.0 CSV found in namespace %s", utils.ClusterSubscriptionNamespace))
+			_, err := r.uninstall(m, &csv)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	}
+
+	// Verify all helmreleases have been cleaned up
+	hrList := &unstructured.UnstructuredList{}
+	hrList.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "apps.open-cluster-management.io",
+		Kind:    "HelmReleaseList",
+		Version: "v1",
+	})
+	err = r.Client.List(context.Background(), hrList, client.MatchingLabels{
+		"installer.name":      m.GetName(),
+		"installer.namespace": m.GetNamespace(),
+	})
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if len(hrList.Items) > 0 {
+		names := []string{}
+		for i := range hrList.Items {
+			names = append(names, hrList.Items[i].GetName())
+		}
+		message := fmt.Sprintf("Waiting for helmreleases to be removed: %s", strings.Join(names, ","))
+		r.Log.Info(message)
+		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, OldComponentRemovedReason, message)
+		SetHubCondition(&m.Status, *condition)
+
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
 
