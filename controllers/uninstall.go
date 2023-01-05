@@ -11,7 +11,9 @@ import (
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -262,4 +264,91 @@ func (r *MultiClusterHubReconciler) uninstall(m *operatorsv1.MultiClusterHub, u 
 	SetHubCondition(&m.Status, *condition)
 	obLog.Info("Deleted instance")
 	return false, nil
+}
+
+// ensureRemovalsGone validates successful removal of everything in the uninstallList. Return on first error encounter.
+func (r *MultiClusterHubReconciler) cleanupGRCAppsub(m *operatorsv1.MultiClusterHub) error {
+	grcAppsub := newUnstructured(
+		types.NamespacedName{Name: "grc-sub", Namespace: m.Namespace},
+		schema.GroupVersionKind{Group: "apps.open-cluster-management.io", Kind: "Subscription", Version: "v1"},
+	)
+
+	// Get GRC appsub
+	err := r.Client.Get(context.TODO(), types.NamespacedName{
+		Name:      grcAppsub.GetName(),
+		Namespace: grcAppsub.GetNamespace(),
+	}, grcAppsub)
+	if errors.IsNotFound(err) || apimeta.IsNoMatchError(err) {
+		return nil
+	}
+	r.Log.Info("GRC appsub exists. Running upgrade cleanup step.")
+
+	// Find GRC helmrelease
+	hrList := &unstructured.UnstructuredList{}
+	hrList.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "apps.open-cluster-management.io",
+		Kind:    "HelmReleaseList",
+		Version: "v1",
+	})
+	_ = r.Client.List(context.Background(), hrList, client.InNamespace(m.Namespace))
+	if err != nil {
+		return err
+	}
+
+	var grcHelmrelease unstructured.Unstructured
+	for _, hr := range hrList.Items {
+		oRefs := hr.GetOwnerReferences()
+		if len(oRefs) > 0 && oRefs[0].Name == "grc-sub" {
+			r.Log.Info(fmt.Sprintf("Found GRC helmrelease %s", hr.GetName()))
+			grcHelmrelease = hr
+			break
+		}
+	}
+	if grcHelmrelease.GetName() == "" {
+		r.Log.Info("GRC helmrelease has no name")
+		return nil
+	}
+
+	// Remove finalizer on helmrelease
+	grcHelmrelease.SetFinalizers([]string{})
+	r.Log.Info(fmt.Sprintf("Removing finalizers from GRC helmrelease %s", grcHelmrelease.GetName()))
+	err = r.Client.Update(context.Background(), &grcHelmrelease)
+	if err != nil {
+		return err
+	}
+
+	// Manually delete GRC cluster-scope and cross-namespace resources
+	r.Log.Info(fmt.Sprintf("Deleting GRC clusterroles"))
+	err = r.Client.DeleteAllOf(context.TODO(), &rbacv1.ClusterRole{}, client.MatchingLabels{"app": "grc"})
+	if err != nil {
+		r.Log.Error(err, "Error while deleting clusterroles")
+		return err
+	}
+	r.Log.Info(fmt.Sprintf("Deleting GRC clusterrolebindings"))
+	err = r.Client.DeleteAllOf(context.TODO(), &rbacv1.ClusterRoleBinding{}, client.MatchingLabels{"app": "grc"})
+	if err != nil {
+		r.Log.Error(err, "Error while deleting clusterroles")
+		return err
+	}
+	r.Log.Info(fmt.Sprintf("Deleting GRC PrometheusRule"))
+	u := &unstructured.Unstructured{}
+	u.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "monitoring.coreos.com",
+		Kind:    "PrometheusRule",
+		Version: "v1",
+	})
+	err = r.Client.DeleteAllOf(context.TODO(), u, client.InNamespace("openshift-monitoring"), client.MatchingLabels{"app": "grc"})
+	if err != nil {
+		r.Log.Error(err, "Error while deleting PrometheusRule")
+		return err
+	}
+
+	// Delete appsub
+	r.Log.Info(fmt.Sprintf("Deleting GRC appsub"))
+	err = r.Client.Delete(context.Background(), grcAppsub)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
