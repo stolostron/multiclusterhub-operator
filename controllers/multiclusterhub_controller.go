@@ -105,7 +105,7 @@ var (
 //+kubebuilder:rbac:groups=operator.openshift.io,resources=consoles,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups="";"apps",resources=deployments;services;serviceaccounts,verbs=patch;delete;get;deletecollection
 //+kubebuilder:rbac:groups=packages.operators.coreos.com,resources=packagemanifests,verbs=get;list;watch;update;patch
-//+kubebuilder:rbac:groups=monitoring.coreos.com,resources=prometheusrules;servicemonitors,verbs=create;delete;get;list;watch;update;patch
+//+kubebuilder:rbac:groups=monitoring.coreos.com,resources=prometheusrules;servicemonitors,verbs=create;delete;get;list;watch;update;patch;deletecollection
 
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=create;delete;get;list;watch;update;patch
 
@@ -262,6 +262,15 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			SetHubCondition(&multiClusterHub.Status, *condition)
 			return ctrl.Result{}, err
 		}
+	}
+
+	// 2.6 -> 2.7 upgrade logic
+	// There are ClusterManagementAddOns in the GRC appsub that need to be preserved when deleting the helmrelease
+	// To stop helm from removing them we will remove the finalizer on the GRC helmrelease, delete the appsub,
+	// and clean things up ourselves
+	err = r.cleanupGRCAppsub(multiClusterHub)
+	if err != nil {
+		return ctrl.Result{Requeue: true}, err
 	}
 
 	// Deploy appsub operator component
