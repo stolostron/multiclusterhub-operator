@@ -78,6 +78,10 @@ spec:
                     compliance:
                       description: The ComplianceState (at path .status.compliant)
                         required before the policy should be created
+                      enum:
+                      - Compliant
+                      - Pending
+                      - NonCompliant
                       type: string
                     kind:
                       description: 'Kind is a string value representing the REST resource
@@ -136,6 +140,10 @@ spec:
                           compliance:
                             description: The ComplianceState (at path .status.compliant)
                               required before the policy should be created
+                            enum:
+                            - Compliant
+                            - Pending
+                            - NonCompliant
                             type: string
                           kind:
                             description: 'Kind is a string value representing the
