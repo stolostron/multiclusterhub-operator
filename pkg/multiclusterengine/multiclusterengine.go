@@ -37,8 +37,8 @@ var (
 	communityOperandNamepace   = "stolostron-engine"
 
 	// default names
-	MulticlusterengineName      = "multiclusterengine"
-	operatorGroupName           = "default"
+	MulticlusterengineName = "multiclusterengine"
+	operatorGroupName      = "default"
 )
 
 // mocks returning a single manifest
@@ -159,18 +159,20 @@ func GetSupportedAnnotations(m *operatorsv1.MultiClusterHub) map[string]string {
 }
 
 func Namespace() *corev1.Namespace {
+	namespace := OperandNameSpace()
 	return &corev1.Namespace{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
 			Kind:       "Namespace",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: utils.MCESubscriptionNamespace,
+			Name: namespace,
 		},
 	}
 }
 
 func OperatorGroup() *olmv1.OperatorGroup {
+	namespace := OperandNameSpace()
 	return &olmv1.OperatorGroup{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: olmv1.GroupVersion.String(),
@@ -178,10 +180,10 @@ func OperatorGroup() *olmv1.OperatorGroup {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      operatorGroupName,
-			Namespace: utils.MCESubscriptionNamespace,
+			Namespace: namespace,
 		},
 		Spec: olmv1.OperatorGroupSpec{
-			TargetNamespaces: []string{utils.MCESubscriptionNamespace},
+			TargetNamespaces: []string{namespace},
 		},
 	}
 }
