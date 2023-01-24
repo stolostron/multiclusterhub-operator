@@ -1,6 +1,6 @@
 - repo_name: search-v2-operator
   github_ref: "https://github.com/stolostron/search-v2-operator.git"
-  branch: "release-2.7"
+  branch: "release-2.8"
   operators:
     - name: search-v2-operator
       bundlePath: "bundle/manifests/"
@@ -13,7 +13,7 @@
         search-v2-api: search_v2_api
 - repo_name: multicloud-operators-subscription 
   github_ref: "https://github.com/stolostron/multicloud-operators-subscription.git"
-  branch: "release-2.7"
+  branch: "release-2.8"
   operators:
     - name: multicloud-operators-subscription 
       bundlePath: "deploy/olm-catalog/multicluster-operators-subscription/manifests/"
