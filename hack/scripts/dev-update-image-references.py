@@ -13,7 +13,7 @@ def getLatestManifest():
     if os.path.exists(pipelineDir):
         shutil.rmtree(pipelineDir)
     repo = Repo.clone_from("https://github.com/stolostron/pipeline.git", pipelineDir)
-    repo.git.checkout("2.7-integration")
+    repo.git.checkout("2.8-integration")
     manifests = glob.glob('bin/pipeline/snapshots/manifest-*.json')
     manifests.sort()
     return manifests[-1]
