@@ -30,7 +30,7 @@ var (
 	catalogSourceNamespace = "openshift-marketplace" // https://olm.operatorframework.io/docs/tasks/troubleshooting/subscription/#a-subscription-in-namespace-x-cant-install-operators-from-a-catalogsource-in-namespace-y
 
 	// community MCE variables
-	communityChannel           = "community-0.2"
+	communityChannel           = "community-0.1"
 	communityPackageName       = "stolostron-engine"
 	communityCatalogSourceName = "community-operators"
 
