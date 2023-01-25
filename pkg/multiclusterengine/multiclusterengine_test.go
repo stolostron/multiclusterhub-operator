@@ -79,6 +79,33 @@ func TestOperandNameSpace(t *testing.T) {
 	}
 }
 
+func TestNameSpace(t *testing.T) {
+	os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
+	if got := Namespace().Name; got != operandNameSpace {
+		t.Errorf("OperandNameSpace() = %v, want %v", got, operandNameSpace)
+	}
+	os.Unsetenv("OPERATOR_PACKAGE")
+	if got := Namespace().Name; got != communityOperandNamepace {
+		t.Errorf("OperandNameSpace() = %v, want %v", got, communityOperandNamepace)
+	}
+}
+
+func TestOperatorGroup(t *testing.T) {
+	os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
+	if got := OperatorGroup().Namespace; got != operandNameSpace {
+		t.Errorf("OperandNameSpace() = %v, want %v", got, operandNameSpace)
+	}
+	if got := OperatorGroup().Spec.TargetNamespaces[0]; got != operandNameSpace {
+		t.Errorf("OperandNameSpace() = %v, want %v", got, operandNameSpace)
+	}
+	os.Unsetenv("OPERATOR_PACKAGE")
+	if got := OperatorGroup().Namespace; got != communityOperandNamepace {
+		t.Errorf("OperandNameSpace() = %v, want %v", got, communityOperandNamepace)
+	}
+	if got := OperatorGroup().Spec.TargetNamespaces[0]; got != communityOperandNamepace {
+		t.Errorf("OperandNameSpace() = %v, want %v", got, communityOperandNamepace)
+	}
+}
 func TestFindAndManageMCE(t *testing.T) {
 
 	managedmce1 := &mcev1.MultiClusterEngine{
