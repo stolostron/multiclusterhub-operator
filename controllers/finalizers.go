@@ -124,13 +124,14 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 
 	if mceSub != nil {
 		csv, err := r.GetCSVFromSubscription(mceSub)
+		namespace := multiclusterengine.OperandNameSpace()
 		if err == nil { // CSV Exists
 			err = r.Client.Delete(ctx, csv)
 			if err != nil && !errors.IsNotFound(err) {
 				return err
 			}
 			err = r.Client.Get(ctx,
-				types.NamespacedName{Name: csv.GetName(), Namespace: utils.MCESubscriptionNamespace},
+				types.NamespacedName{Name: csv.GetName(), Namespace: namespace},
 				csv)
 			if err == nil {
 				return fmt.Errorf("CSV has not yet been terminated")
@@ -138,7 +139,7 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 		}
 
 		err = r.Client.Get(ctx,
-			types.NamespacedName{Name: mceSub.Name, Namespace: mceSub.Namespace},
+			types.NamespacedName{Name: mceSub.Name, Namespace: namespace},
 			&subv1alpha1.Subscription{})
 		if err == nil {
 
