@@ -68,6 +68,44 @@ func TestDesiredPackage(t *testing.T) {
 	}
 }
 
+func TestOperandNameSpace(t *testing.T) {
+	os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
+	if got := OperandNameSpace(); got != operandNameSpace {
+		t.Errorf("OperandNameSpace() = %v, want %v", got, operandNameSpace)
+	}
+	os.Unsetenv("OPERATOR_PACKAGE")
+	if got := OperandNameSpace(); got != communityOperandNamepace {
+		t.Errorf("OperandNameSpace() = %v, want %v", got, communityOperandNamepace)
+	}
+}
+
+func TestNameSpace(t *testing.T) {
+	os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
+	if got := Namespace().Name; got != operandNameSpace {
+		t.Errorf("OperandNameSpace() = %v, want %v", got, operandNameSpace)
+	}
+	os.Unsetenv("OPERATOR_PACKAGE")
+	if got := Namespace().Name; got != communityOperandNamepace {
+		t.Errorf("OperandNameSpace() = %v, want %v", got, communityOperandNamepace)
+	}
+}
+
+func TestOperatorGroup(t *testing.T) {
+	os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
+	if got := OperatorGroup().Namespace; got != operandNameSpace {
+		t.Errorf("OperandNameSpace() = %v, want %v", got, operandNameSpace)
+	}
+	if got := OperatorGroup().Spec.TargetNamespaces[0]; got != operandNameSpace {
+		t.Errorf("OperandNameSpace() = %v, want %v", got, operandNameSpace)
+	}
+	os.Unsetenv("OPERATOR_PACKAGE")
+	if got := OperatorGroup().Namespace; got != communityOperandNamepace {
+		t.Errorf("OperandNameSpace() = %v, want %v", got, communityOperandNamepace)
+	}
+	if got := OperatorGroup().Spec.TargetNamespaces[0]; got != communityOperandNamepace {
+		t.Errorf("OperandNameSpace() = %v, want %v", got, communityOperandNamepace)
+	}
+}
 func TestFindAndManageMCE(t *testing.T) {
 
 	managedmce1 := &mcev1.MultiClusterEngine{
@@ -250,7 +288,7 @@ func TestNewMultiClusterEngine(t *testing.T) {
 					},
 					NodeSelector:       nil,
 					AvailabilityConfig: mcev1.HAHigh,
-					TargetNamespace:    MulticlusterengineNamespace,
+					TargetNamespace:    OperandNameSpace(),
 					Overrides: &mcev1.Overrides{
 						Components: []mcev1.ComponentConfig{
 							{Name: operatorsv1.MCELocalCluster, Enabled: true},
@@ -312,7 +350,7 @@ func TestNewMultiClusterEngine(t *testing.T) {
 						"select": "this",
 					},
 					AvailabilityConfig: mcev1.HABasic,
-					TargetNamespace:    MulticlusterengineNamespace,
+					TargetNamespace:    OperandNameSpace(),
 					Overrides: &mcev1.Overrides{
 						ImagePullPolicy: corev1.PullNever,
 						Components: []mcev1.ComponentConfig{
