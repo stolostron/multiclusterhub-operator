@@ -1,0 +1,34 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+  name: "open-cluster-management:multicloud-operators-subscription:rbac-aggregate-edit"
+rules:
+- apiGroups:
+  - app.k8s.io
+  resources:
+  - applications
+  verbs:
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - apps.open-cluster-management.io
+  resources:
+  - channels
+  - deployables
+  - gitopsclusters
+  - helmreleases
+  - placementrules
+  - subscriptionreports
+  - subscriptions
+  - subscriptionstatuses
+  verbs:
+  - create
+  - update
+  - patch
+  - delete
