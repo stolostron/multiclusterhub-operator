@@ -48,6 +48,12 @@ spec:
           spec:
             description: PolicySpec defines the desired state of Policy
             properties:
+              copyPolicyMetadata:
+                description: If set to true (default), all the policy's labels and
+                  annotations will be copied to the replicated policy. If set to false,
+                  only the policy framework specific policy labels and annotations
+                  will be copied to the replicated policy.
+                type: boolean
               dependencies:
                 description: PolicyDependencies that apply to each template in this
                   Policy
