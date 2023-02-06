@@ -3,6 +3,7 @@ kind: ClusterRole
 metadata:
   labels:
     rbac.authorization.k8s.io/aggregate-to-admin: "true"
+    rbac.authorization.k8s.io/aggregate-to-ocm-cluster-manager-admin: "true"
   name: "open-cluster-management:multicloud-operators-subscription:rbac-aggregate-admin"
 rules:
 - apiGroups:
