@@ -19,3 +19,6 @@ rules:
 - apiGroups: ["submarineraddon.open-cluster-management.io"]
   resources: ["submarinerconfigs", "submarinerconfigs/status"]
   verbs: ["create","get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+- apiGroups: ["tower.ansible.com"]
+  resources: ["ansiblejobs"]
+  verbs: ["create","get", "list", "watch", "update", "delete", "deletecollection", "patch"]
