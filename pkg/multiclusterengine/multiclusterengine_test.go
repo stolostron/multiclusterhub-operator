@@ -6,7 +6,10 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/blang/semver/v4"
 	"github.com/onsi/gomega"
+	olmversion "github.com/operator-framework/api/pkg/lib/version"
+	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
@@ -443,4 +446,234 @@ func TestRenderMultiClusterEngine(t *testing.T) {
 		g.Expect(got.Annotations["imageRepository"]).To(gomega.Equal(mch.Annotations["mch-imageRepository"]), "Override annotations should be updated")
 	})
 
+}
+
+func Test_filterPackageManifests(t *testing.T) {
+	type args struct {
+		pkgManifests []olmapi.PackageManifest
+		channel      string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []olmapi.PackageManifest
+	}{
+		{
+			name: "No packagemanifests with desired channel",
+			args: args{
+				pkgManifests: []olmapi.PackageManifest{
+					{
+						Status: olmapi.PackageManifestStatus{
+							CatalogSource: "redhat-operators",
+							Channels: []olmapi.PackageChannel{
+								{
+									Name:       "fast",
+									CurrentCSV: "multicluster-engine.v2.0.6",
+									CurrentCSVDesc: olmapi.CSVDescription{
+										Version: olmversion.OperatorVersion{
+											Version: semver.MustParse("2.0.6"),
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				channel: "stable",
+			},
+			want: []olmapi.PackageManifest{},
+		},
+		{
+			name: "Return packagemanifest with more recent version",
+			args: args{
+				pkgManifests: []olmapi.PackageManifest{
+					{
+						Status: olmapi.PackageManifestStatus{
+							CatalogSource: "redhat-operators",
+							Channels: []olmapi.PackageChannel{
+								{
+									Name:       "stable",
+									CurrentCSV: "multicluster-engine.v2.0.6-2",
+									CurrentCSVDesc: olmapi.CSVDescription{
+										Version: olmversion.OperatorVersion{
+											Version: semver.MustParse("2.0.6-2")},
+									},
+								},
+							},
+						},
+					},
+					{
+						Status: olmapi.PackageManifestStatus{
+							CatalogSource: "custom-operators",
+							Channels: []olmapi.PackageChannel{
+								{
+									Name:       "stable",
+									CurrentCSV: "multicluster-engine.v2.0.6-5",
+									CurrentCSVDesc: olmapi.CSVDescription{
+										Version: olmversion.OperatorVersion{
+											Version: semver.MustParse("2.0.6-5"),
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				channel: "stable",
+			},
+			want: []olmapi.PackageManifest{{
+				Status: olmapi.PackageManifestStatus{
+					CatalogSource: "custom-operators",
+					Channels: []olmapi.PackageChannel{
+						{
+							Name:       "stable",
+							CurrentCSV: "multicluster-engine.v2.0.6-5",
+							CurrentCSVDesc: olmapi.CSVDescription{
+								Version: olmversion.OperatorVersion{
+									Version: semver.MustParse("2.0.6-5"),
+								},
+							},
+						},
+					},
+				},
+			}},
+		},
+		{
+			name: "Return both packagemanifests because they have the same versions",
+			args: args{
+				pkgManifests: []olmapi.PackageManifest{
+					{
+						Status: olmapi.PackageManifestStatus{
+							CatalogSource: "redhat-operators",
+							Channels: []olmapi.PackageChannel{
+								{
+									Name:       "stable",
+									CurrentCSV: "multicluster-engine.v2.0.6",
+									CurrentCSVDesc: olmapi.CSVDescription{
+										Version: olmversion.OperatorVersion{
+											Version: semver.MustParse("2.0.6"),
+										},
+									},
+								},
+							},
+						},
+					},
+					{
+						Status: olmapi.PackageManifestStatus{
+							CatalogSource: "custom-operators",
+							Channels: []olmapi.PackageChannel{
+								{
+									Name:       "stable",
+									CurrentCSV: "multicluster-engine.v2.0.6",
+									CurrentCSVDesc: olmapi.CSVDescription{
+										Version: olmversion.OperatorVersion{
+											Version: semver.MustParse("2.0.6"),
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				channel: "stable",
+			},
+			want: []olmapi.PackageManifest{
+				{
+					Status: olmapi.PackageManifestStatus{
+						CatalogSource: "redhat-operators",
+						Channels: []olmapi.PackageChannel{
+							{
+								Name:       "stable",
+								CurrentCSV: "multicluster-engine.v2.0.6",
+								CurrentCSVDesc: olmapi.CSVDescription{
+									Version: olmversion.OperatorVersion{
+										Version: semver.MustParse("2.0.6"),
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					Status: olmapi.PackageManifestStatus{
+						CatalogSource: "custom-operators",
+						Channels: []olmapi.PackageChannel{
+							{
+								Name:       "stable",
+								CurrentCSV: "multicluster-engine.v2.0.6",
+								CurrentCSVDesc: olmapi.CSVDescription{
+									Version: olmversion.OperatorVersion{
+										Version: semver.MustParse("2.0.6"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Return the non-prerelease version",
+			args: args{
+				pkgManifests: []olmapi.PackageManifest{
+					{
+						Status: olmapi.PackageManifestStatus{
+							CatalogSource: "redhat-operators",
+							Channels: []olmapi.PackageChannel{
+								{
+									Name:       "stable",
+									CurrentCSV: "multicluster-engine.v2.0.6",
+									CurrentCSVDesc: olmapi.CSVDescription{
+										Version: olmversion.OperatorVersion{
+											Version: semver.MustParse("2.0.6"),
+										},
+									},
+								},
+							},
+						},
+					},
+					{
+						Status: olmapi.PackageManifestStatus{
+							CatalogSource: "custom-operators",
+							Channels: []olmapi.PackageChannel{
+								{
+									Name:       "stable",
+									CurrentCSV: "multicluster-engine.v2.0.6-5",
+									CurrentCSVDesc: olmapi.CSVDescription{
+										Version: olmversion.OperatorVersion{
+											Version: semver.MustParse("2.0.6-5"),
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				channel: "stable",
+			},
+			want: []olmapi.PackageManifest{{
+				Status: olmapi.PackageManifestStatus{
+					CatalogSource: "redhat-operators",
+					Channels: []olmapi.PackageChannel{
+						{
+							Name:       "stable",
+							CurrentCSV: "multicluster-engine.v2.0.6",
+							CurrentCSVDesc: olmapi.CSVDescription{
+								Version: olmversion.OperatorVersion{
+									Version: semver.MustParse("2.0.6"),
+								},
+							},
+						},
+					},
+				},
+			}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := filterPackageManifests(tt.args.pkgManifests, tt.args.channel); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("filterPackageManifests() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
