@@ -15,7 +15,7 @@ import (
 
 	consolev1 "github.com/openshift/api/operator/v1"
 
-	"github.com/Masterminds/semver"
+	"github.com/Masterminds/semver/v3"
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 
 	configv1 "github.com/openshift/api/config/v1"
