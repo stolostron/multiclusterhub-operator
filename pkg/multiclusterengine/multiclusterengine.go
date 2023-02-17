@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Masterminds/semver/v3"
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
@@ -201,12 +202,7 @@ func GetCatalogSource(k8sClient client.Client) (types.NamespacedName, error) {
 		return nn, fmt.Errorf("No %s packageManifests found", DesiredPackage())
 	}
 
-	filtered := []olmapi.PackageManifest{}
-	for _, p := range pkgs {
-		if hasDesiredChannel(p) {
-			filtered = append(filtered, p)
-		}
-	}
+	filtered := filterPackageManifests(pkgs, desiredChannel())
 
 	// fail if more than one package satisfies requirements
 	if len(filtered) == 1 {
@@ -221,14 +217,35 @@ func GetCatalogSource(k8sClient client.Client) (types.NamespacedName, error) {
 	return nn, fmt.Errorf("No %s packageManifests found with desired channel %s", DesiredPackage(), desiredChannel())
 }
 
-// hasDesiredChannel returns true if the packagemanifest contains the desired channel
-func hasDesiredChannel(pm olmapi.PackageManifest) bool {
-	for _, c := range pm.Status.Channels {
-		if c.Name == desiredChannel() {
-			return true
+// filterPackageManifests returns a list of packagemanifests containing the desired channel
+// at the latest available version. Returns an empty list if no packagemanifests include the channel. If more
+// than one packagemanifest have the same latest version available it will return them both.
+func filterPackageManifests(pkgManifests []olmapi.PackageManifest, desiredChannel string) []olmapi.PackageManifest {
+	filtered := []olmapi.PackageManifest{}
+	latestVersion := &semver.Version{}
+	for _, p := range pkgManifests {
+		for _, c := range p.Status.Channels {
+			if c.Name == desiredChannel {
+				versionString := c.CurrentCSVDesc.Version.String()
+				v, err := semver.NewVersion(versionString)
+				if err != nil {
+					log.FromContext(context.Background()).Info("failed to parse version from packagemanifest", "catalogsource", p.Status.CatalogSource)
+					continue
+				}
+				if len(filtered) == 0 {
+					filtered = append(filtered, p)
+					latestVersion = v
+					continue
+				}
+				if v.Equal(latestVersion) {
+					filtered = append(filtered, p)
+				} else if v.GreaterThan(latestVersion) {
+					filtered = []olmapi.PackageManifest{p}
+				}
+			}
 		}
 	}
-	return false
+	return filtered
 }
 
 // desiredChannel is determined by whether operator is running in community mode or production mode
