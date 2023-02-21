@@ -1,0 +1,143 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: multicluster-integrations
+  labels:
+    name: multicluster-integrations
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: multicluster-integrations
+  template:
+    metadata:
+      labels:
+        name: multicluster-integrations
+    spec:
+      containers:
+      - name: multicluster-integrations-syncresource
+        image: '{{ .Values.global.imageOverrides.multicloud_integrations }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+        command:
+        - /usr/local/bin/gitopssyncresc
+        - --appset-resource-dir=/etc/gitops-resources
+        env:
+{{- if .Values.hubconfig.proxyConfigs }}
+        - name: HTTP_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+        - name: HTTPS_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+        - name: NO_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+{{- end }}
+        - name: WATCH_NAMESPACE
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: DEPLOYMENT_LABEL
+          value: multicluster-integrations-syncresource
+        - name: OPERATOR_NAME
+          value: multicluster-integrations
+        livenessProbe:
+          exec:
+            command:
+            - ls
+          initialDelaySeconds: 15
+          periodSeconds: 15
+        readinessProbe:
+          exec:
+            command:
+            - ls
+          initialDelaySeconds: 15
+          periodSeconds: 15
+        resources:
+          limits:
+            cpu: 100m
+            memory: 512Mi
+          requests:
+            cpu: 25m
+            memory: 64Mi
+        volumeMounts:
+        - mountPath: /etc/gitops-resources
+          name: multicluster-integrations-syncresource
+          readOnly: false
+      - name: multicluster-integrations-aggregation
+        image: '{{ .Values.global.imageOverrides.multicloud_integrations }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+        command:
+        - /usr/local/bin/multiclusterstatusaggregation
+        - --appset-resource-dir=/etc/gitops-resources
+        env:
+{{- if .Values.hubconfig.proxyConfigs }}
+        - name: HTTP_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+        - name: HTTPS_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+        - name: NO_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+{{- end }}
+        - name: WATCH_NAMESPACE
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: DEPLOYMENT_LABEL
+          value: multicluster-integrations-aggregation
+        - name: OPERATOR_NAME
+          value: multicluster-integrations
+        livenessProbe:
+          exec:
+            command:
+            - ls
+          initialDelaySeconds: 15
+          periodSeconds: 15
+        readinessProbe:
+          exec:
+            command:
+            - ls
+          initialDelaySeconds: 15
+          periodSeconds: 15
+        resources:
+          limits:
+            cpu: 100m
+            memory: 512Mi
+          requests:
+            cpu: 25m
+            memory: 64Mi
+        volumeMounts:
+        - mountPath: /etc/gitops-resources
+          name: multicluster-integrations-syncresource
+          readOnly: false
+{{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
+{{- end }}
+{{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: multicluster-applications
+{{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+{{- end }}
+      volumes:
+      - name: multicluster-integrations-syncresource 
+        emptyDir: {}
