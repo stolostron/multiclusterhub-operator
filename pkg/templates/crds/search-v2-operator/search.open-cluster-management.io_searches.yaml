@@ -35,8 +35,9 @@ spec:
             description: SearchSpec defines the desired state of Search
             properties:
               availabilityConfig:
-                description: 'Specifies deployment replication for improved availability.
-                  Options are: Basic and High (default)'
+                description: '[PLACEHOLDER, NOT IMPLEMENTED] Specifies deployment
+                  replication for improved availability. Options are: Basic and High
+                  (default)'
                 type: string
               dbConfig:
                 description: Configmap name contains parameters to override default
@@ -237,9 +238,10 @@ spec:
                     type: object
                 type: object
               externalDBInstance:
-                description: Kubernetes secret name containing user provided db secret
-                  Secret should contain connection parameters [db_host, db_port, db_user,
-                  db_password, db_name, ca_cert] Not supported for development preview.
+                description: '[PLACEHOLDER, NOT IMPLEMENTED] Kubernetes secret name
+                  containing user provided db secret Secret should contain connection
+                  parameters [db_host, db_port, db_user, db_password, db_name, ca_cert]
+                  Not supported for development preview.'
                 type: string
               imagePullPolicy:
                 description: ImagePullPolicy
@@ -302,13 +304,14 @@ spec:
                   description: "Condition contains details for one aspect of the current
                     state of this API Resource. --- This struct is intended for direct
                     use as an array at the field path .status.conditions.  For example,
-                    type FooStatus struct{     // Represents the observations of a
-                    foo's current state.     // Known .status.conditions.type are:
-                    \"Available\", \"Progressing\", and \"Degraded\"     // +patchMergeKey=type
-                    \    // +patchStrategy=merge     // +listType=map     // +listMapKey=type
-                    \    Conditions []metav1.Condition `json:\"conditions,omitempty\"
-                    patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`
-                    \n     // other fields }"
+                    \n \ttype FooStatus struct{ \t    // Represents the observations
+                    of a foo's current state. \t    // Known .status.conditions.type
+                    are: \"Available\", \"Progressing\", and \"Degraded\" \t    //
+                    +patchMergeKey=type \t    // +patchStrategy=merge \t    // +listType=map
+                    \t    // +listMapKey=type \t    Conditions []metav1.Condition
+                    `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
+                    protobuf:\"bytes,1,rep,name=conditions\"` \n \t    // other fields
+                    \t}"
                   properties:
                     lastTransitionTime:
                       description: lastTransitionTime is the last time the condition

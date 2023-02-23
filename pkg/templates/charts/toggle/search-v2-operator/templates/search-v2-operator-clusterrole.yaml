@@ -4,6 +4,18 @@ metadata:
   name: '{{ .Values.org }}:{{ .Chart.Name }}:search-v2-operator'
 rules:
 - apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - search.open-cluster-management.io
   resources:
   - searches
