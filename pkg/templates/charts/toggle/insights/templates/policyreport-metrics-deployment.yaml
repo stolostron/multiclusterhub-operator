@@ -84,6 +84,7 @@ spec:
         - --v=6
         - "--tls-cert-file=/var/run/insights-metrics-certs/tls.crt"
         - "--tls-private-key-file=/var/run/insights-metrics-certs/tls.key"
+        - "--tls-min-version=VersionTLS13"
         ports:
         - containerPort: 8443
           name: https
