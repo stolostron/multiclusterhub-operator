@@ -66,11 +66,12 @@ import (
 
 // MultiClusterHubReconciler reconciles a MultiClusterHub object
 type MultiClusterHubReconciler struct {
-	Client         client.Client
-	UncachedClient client.Client
-	CacheSpec      CacheSpec
-	Scheme         *runtime.Scheme
-	Log            logr.Logger
+	Client          client.Client
+	UncachedClient  client.Client
+	CacheSpec       CacheSpec
+	Scheme          *runtime.Scheme
+	Log             logr.Logger
+	UpgradeableCond utils.Condition
 }
 
 const (
@@ -99,7 +100,7 @@ var (
 //+kubebuilder:rbac:groups="admissionregistration.k8s.io";"apiextensions.k8s.io";"apiregistration.k8s.io";"hive.openshift.io";"mcm.ibm.com";"rbac.authorization.k8s.io";,resources=apiservices;clusterroles;clusterrolebindings;customresourcedefinitions;hiveconfigs;mutatingwebhookconfigurations;validatingwebhookconfigurations,verbs=delete;deletecollection;list;watch;patch
 //+kubebuilder:rbac:groups="";"apps";"apiregistration.k8s.io";"apps.open-cluster-management.io";"apiextensions.k8s.io";,resources=deployments;services;channels;customresourcedefinitions;apiservices,verbs=delete
 //+kubebuilder:rbac:groups="";"action.open-cluster-management.io";"addon.open-cluster-management.io";"agent.open-cluster-management.io";"argoproj.io";"cluster.open-cluster-management.io";"work.open-cluster-management.io";"app.k8s.io";"apps.open-cluster-management.io";"authorization.k8s.io";"certificates.k8s.io";"clusterregistry.k8s.io";"config.openshift.io";"compliance.mcm.ibm.com";"hive.openshift.io";"hiveinternal.openshift.io";"internal.open-cluster-management.io";"inventory.open-cluster-management.io";"mcm.ibm.com";"multicloud.ibm.com";"policy.open-cluster-management.io";"proxy.open-cluster-management.io";"rbac.authorization.k8s.io";"view.open-cluster-management.io";"operator.open-cluster-management.io";"register.open-cluster-management.io";"coordination.k8s.io";"search.open-cluster-management.io";"submarineraddon.open-cluster-management.io";"discovery.open-cluster-management.io";"imageregistry.open-cluster-management.io",resources=applications;applications/status;applicationrelationships;applicationrelationships/status;certificatesigningrequests;certificatesigningrequests/approval;channels;channels/status;clustermanagementaddons;managedclusteractions;managedclusteractions/status;clusterdeployments;clusterpools;clusterclaims;discoveryconfigs;discoveredclusters;managedclusteraddons;managedclusteraddons/status;managedclusterinfos;managedclusterinfos/status;managedclustersets;managedclustersets/bind;managedclustersets/join;managedclustersets/status;managedclustersetbindings;managedclusters;managedclusters/accept;managedclusters/status;managedclusterviews;managedclusterviews/status;manifestworks;manifestworks/status;clustercurators;clustermanagers;clusterroles;clusterrolebindings;clusterstatuses/aggregator;clusterversions;compliances;configmaps;deployables;deployables/status;deployableoverrides;deployableoverrides/status;endpoints;endpointconfigs;events;helmrepos;helmrepos/status;klusterletaddonconfigs;machinepools;namespaces;placements;placementrules/status;placementdecisions;placementdecisions/status;placementrules;placementrules/status;pods;pods/log;policies;policies/status;placementbindings;policyautomations;policysets;policysets/status;roles;rolebindings;secrets;signers;subscriptions;subscriptions/status;subjectaccessreviews;submarinerconfigs;submarinerconfigs/status;syncsets;clustersyncs;leases;searchcustomizations;managedclusterimageregistries;managedclusterimageregistries/status,verbs=create;get;list;watch;update;delete;deletecollection;patch;approve;escalate;bind
-//+kubebuilder:rbac:groups="operators.coreos.com",resources=subscriptions;clusterserviceversions;operatorgroups,verbs=create;get;list;patch;update;delete;watch
+//+kubebuilder:rbac:groups="operators.coreos.com",resources=subscriptions;clusterserviceversions;operatorgroups;operatorconditions,verbs=create;get;list;patch;update;delete;watch
 //+kubebuilder:rbac:groups="multicluster.openshift.io",resources=multiclusterengines,verbs=create;get;list;patch;update;delete;watch
 //+kubebuilder:rbac:groups=console.openshift.io;search.open-cluster-management.io,resources=consoleplugins;consolelinks;searches,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=operator.openshift.io,resources=consoles,verbs=get;list;watch;update;patch
@@ -142,6 +143,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
+	_ = r.setOperatorUpgradeableStatus(ctx, multiClusterHub)
 	trackedNamespaces := utils.TrackedNamespaces(multiClusterHub)
 
 	allDeploys, err := r.listDeployments(trackedNamespaces)
@@ -450,6 +452,47 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	return retQueue, retError
 	// return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) setOperatorUpgradeableStatus(ctx context.Context, m *operatorv1.MultiClusterHub) error {
+
+	var upgradeable bool
+
+	if m.Status.CurrentVersion != m.Status.DesiredVersion {
+		upgradeable = false
+	} else {
+		upgradeable = true
+	}
+
+	msg := utils.UpgradeableAllowMessage
+	status := metav1.ConditionTrue
+	reason := utils.UpgradeableAllowReason
+
+	if !upgradeable {
+		status = metav1.ConditionFalse
+
+		// 	if r.upgradeMode {
+		// 		msg = utils.UpgradeableUpgradingMessage
+		// 		reason = utils.UpgradeableUpgradingReason
+		// 	} else {
+		// 		condition, found := request.Conditions.GetCondition(hcov1beta1.ConditionUpgradeable)
+		// 		if found && condition.Status == metav1.ConditionFalse {
+		// 			reason = condition.Reason
+		// 			msg = condition.Message
+		// 		}
+		// 	}
+	} else {
+
+		msg = utils.UpgradeableAllowMessage
+		status = metav1.ConditionTrue
+		reason = utils.UpgradeableAllowReason
+
+	}
+	if err := r.UpgradeableCond.Set(ctx, status, reason, msg); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
