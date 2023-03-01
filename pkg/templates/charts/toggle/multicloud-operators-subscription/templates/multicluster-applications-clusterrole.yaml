@@ -45,6 +45,8 @@ rules:
   - subscriptions/status
   - subscriptionstatuses
   - subscriptionreports
+  - multiclusterapplicationsetreports
+  - multiclusterapplicationsetreports/status
   verbs:
   - get
   - list
