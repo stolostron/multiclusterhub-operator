@@ -470,17 +470,10 @@ func (r *MultiClusterHubReconciler) setOperatorUpgradeableStatus(ctx context.Con
 
 	if !upgradeable {
 		status = metav1.ConditionFalse
+		reason = utils.UpgradeableUpgradingReason
+		msg = utils.UpgradeableUpgradingMessage
 
-		// 	if r.upgradeMode {
-		// 		msg = utils.UpgradeableUpgradingMessage
-		// 		reason = utils.UpgradeableUpgradingReason
-		// 	} else {
-		// 		condition, found := request.Conditions.GetCondition(hcov1beta1.ConditionUpgradeable)
-		// 		if found && condition.Status == metav1.ConditionFalse {
-		// 			reason = condition.Reason
-		// 			msg = condition.Message
-		// 		}
-		// 	}
+		
 	} else {
 
 		msg = utils.UpgradeableAllowMessage
