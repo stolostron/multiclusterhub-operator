@@ -142,7 +142,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		r.Log.Error(err, "Failed to get MultiClusterHub CR")
 		return ctrl.Result{}, err
 	}
-
+	// Check to see if upgradeable
 	_ = r.setOperatorUpgradeableStatus(ctx, multiClusterHub)
 	trackedNamespaces := utils.TrackedNamespaces(multiClusterHub)
 
