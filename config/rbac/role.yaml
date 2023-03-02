@@ -433,6 +433,7 @@ rules:
   - operators.coreos.com
   resources:
   - clusterserviceversions
+  - operatorconditions
   - operatorgroups
   - subscriptions
   verbs:
@@ -453,3 +454,29 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - search.open-cluster-management.io
+  resources:
+  - searches
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - search.open-cluster-management.io
+  resources:
+  - searches/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - search.open-cluster-management.io
+  resources:
+  - searches/status
+  verbs:
+  - get
+  - patch
+  - update
