@@ -456,6 +456,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 func (r *MultiClusterHubReconciler) setOperatorUpgradeableStatus(ctx context.Context, m *operatorv1.MultiClusterHub) error {
 
+	// Temporary variable
 	var upgradeable bool
 
 	// Checking to see if the current version of the MCH matches the desired to determine if we are in an upgrade scenario
