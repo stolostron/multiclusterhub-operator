@@ -26,10 +26,10 @@ type OperatorCondition struct {
 
 const (
 	UpgradeableInitReason  = "Initializing"
-	UpgradeableInitMessage = "The hyperConverged cluster operator is starting up"
+	UpgradeableInitMessage = "The mch operator is starting up"
 
 	UpgradeableUpgradingReason  = "AlreadyPerformingUpgrade"
-	UpgradeableUpgradingMessage = "upgrading the hyperConverged cluster operator to version "
+	UpgradeableUpgradingMessage = "upgrading the mch operator to version "
 
 	UpgradeableAllowReason  = "Upgradeable"
 	UpgradeableAllowMessage = ""
