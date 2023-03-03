@@ -475,7 +475,6 @@ func (r *MultiClusterHubReconciler) setOperatorUpgradeableStatus(ctx context.Con
 	} else {
 		upgradeable = true
 	}
-	log.Info("made it into a credible")
 	// 	These messages are drawn from operator condition
 	// Right now, they just indicate between upgrading and not
 	msg := utils.UpgradeableAllowMessage
