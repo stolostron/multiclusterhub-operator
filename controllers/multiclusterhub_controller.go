@@ -463,7 +463,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 }
 
 func (r *MultiClusterHubReconciler) setOperatorUpgradeableStatus(ctx context.Context, m *operatorv1.MultiClusterHub) (bool, error) {
-	log := log.FromContext(ctx)
 	// Temporary variable
 	var upgradeable bool
 
