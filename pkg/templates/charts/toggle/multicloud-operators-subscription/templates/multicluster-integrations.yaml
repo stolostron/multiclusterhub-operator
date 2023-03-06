@@ -53,26 +53,18 @@ spec:
         image: '{{ .Values.global.imageOverrides.multicloud_integrations }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         livenessProbe:
-          failureThreshold: 3
-          httpGet:
-            path: /healthz
-            port: 8081
-            scheme: HTTP
+          exec:
+            command:
+            - ls
           initialDelaySeconds: 15
-          periodSeconds: 20
-          successThreshold: 1
-          timeoutSeconds: 1
+          periodSeconds: 15
         name: argocd-pull-integration-controller-manager
         readinessProbe:
-          failureThreshold: 3
-          httpGet:
-            path: /readyz
-            port: 8081
-            scheme: HTTP
-          initialDelaySeconds: 5
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 1
+          exec:
+            command:
+            - ls
+          initialDelaySeconds: 15
+          periodSeconds: 15
         resources:
           limits:
             cpu: 500m
