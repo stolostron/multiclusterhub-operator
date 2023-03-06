@@ -143,7 +143,12 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 	// Check to see if upgradeable
-	_ = r.setOperatorUpgradeableStatus(ctx, multiClusterHub)
+	upgrade, err := r.setOperatorUpgradeableStatus(ctx, multiClusterHub)
+	if err != nil {
+		r.Log.Error(err, "Unable to set operator condition")
+		return ctrl.Result{}, err
+	}
+
 	trackedNamespaces := utils.TrackedNamespaces(multiClusterHub)
 
 	allDeploys, err := r.listDeployments(trackedNamespaces)
@@ -449,13 +454,15 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			return result, err
 		}
 	}
+	if upgrade {
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
 
 	return retQueue, retError
 	// return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterHubReconciler) setOperatorUpgradeableStatus(ctx context.Context, m *operatorv1.MultiClusterHub) error {
-
+func (r *MultiClusterHubReconciler) setOperatorUpgradeableStatus(ctx context.Context, m *operatorv1.MultiClusterHub) (bool, error) {
 	// Temporary variable
 	var upgradeable bool
 
@@ -467,7 +474,6 @@ func (r *MultiClusterHubReconciler) setOperatorUpgradeableStatus(ctx context.Con
 	} else {
 		upgradeable = true
 	}
-
 	// 	These messages are drawn from operator condition
 	// Right now, they just indicate between upgrading and not
 	msg := utils.UpgradeableAllowMessage
@@ -481,7 +487,6 @@ func (r *MultiClusterHubReconciler) setOperatorUpgradeableStatus(ctx context.Con
 		reason = utils.UpgradeableUpgradingReason
 		msg = utils.UpgradeableUpgradingMessage
 
-		
 	} else {
 
 		msg = utils.UpgradeableAllowMessage
@@ -491,10 +496,14 @@ func (r *MultiClusterHubReconciler) setOperatorUpgradeableStatus(ctx context.Con
 	}
 	// This error should only occur if the operator condition does not exist for some reason
 	if err := r.UpgradeableCond.Set(ctx, status, reason, msg); err != nil {
-		return err
+		return true, err
 	}
 
-	return nil
+	if !upgradeable {
+		return true, nil
+	} else {
+		return false, nil
+	}
 }
 
 // SetupWithManager sets up the controller with the Manager.
