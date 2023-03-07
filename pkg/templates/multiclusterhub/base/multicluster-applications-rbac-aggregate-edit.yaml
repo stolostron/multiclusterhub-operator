@@ -23,6 +23,7 @@ rules:
   - deployables
   - gitopsclusters
   - helmreleases
+  - multiclusterapplicationsetreports
   - placementrules
   - subscriptionreports
   - subscriptions
