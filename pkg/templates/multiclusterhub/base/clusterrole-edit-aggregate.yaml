@@ -8,7 +8,7 @@ metadata:
   name: open-cluster-management:edit-aggregate
 rules:
 - apiGroups: ["apps.open-cluster-management.io"]
-  resources: [ "deployables", "deployables/status", "placementrules", "placementrules/status", "channels", "channels/status", "subscriptions", "subscriptions/status",  "subscriptionstatuses", "subscriptionreports"]
+  resources: [ "deployables", "deployables/status", "placementrules", "placementrules/status", "channels", "channels/status", "subscriptions", "subscriptions/status",  "subscriptionstatuses", "subscriptionreports", "multiclusterapplicationsetreports", "multiclusterapplicationsetreports/status"]
   verbs: ["get", "list", "watch", "update", "patch"]
 - apiGroups: ["app.k8s.io"]
   resources: [ "applications", "applications/status"]
