@@ -35,12 +35,11 @@ spec:
               topologyKey: kubernetes.io/hostname
             weight: 35
       containers:
-      - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=127.0.0.1:8080
-        - --leader-elect
-        command:
+      - command:
         - /usr/local/bin/propagation
+        - --leader-election-lease-duration=137
+        - --renew-deadline=107
+        - --retry-period=26
         env:
 {{- if .Values.hubconfig.proxyConfigs }}
         - name: HTTP_PROXY
@@ -83,6 +82,10 @@ spec:
       - command:
         - /usr/local/bin/gitopssyncresc
         - --appset-resource-dir=/etc/gitops-resources
+        - --sync-interval=10
+        - --leader-election-lease-duration=137
+        - --renew-deadline=107
+        - --retry-period=26
         env:
 {{- if .Values.hubconfig.proxyConfigs }}
         - name: HTTP_PROXY
@@ -140,6 +143,10 @@ spec:
       - command:
         - /usr/local/bin/multiclusterstatusaggregation
         - --appset-resource-dir=/etc/gitops-resources
+        - --sync-interval=10
+        - --leader-election-lease-duration=137
+        - --renew-deadline=107
+        - --retry-period=26
         env:
 {{- if .Values.hubconfig.proxyConfigs }}
         - name: HTTP_PROXY
