@@ -671,6 +671,52 @@ var _ = Describe("MultiClusterHub controller", func() {
 		})
 	})
 
+	Context("When deploymentMode is Hosted", func() {
+		It("should not deploy resources in regular fashion", func() {
+			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates")
+			defer os.Unsetenv("DIRECTORY_OVERRIDE")
+			os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
+			defer os.Unsetenv("OPERATOR_PACKAGE")
+			By("Applying prereqs")
+			ctx := context.Background()
+			ApplyPrereqs(k8sClient)
+
+			By("Creating a new hosted Multiclusterhub")
+			mch := resources.HostedMCH()
+			Expect(k8sClient.Create(ctx, &mch)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, mchoDeployment)).Should(Succeed())
+
+			By("Ensuring MCH is created")
+			createdMCH := &mchov1.MultiClusterHub{}
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
+				return err == nil
+			}, timeout, interval).Should(BeTrue())
+
+			/* By("Waiting for MCH to be in the running state")
+			Eventually(func() bool {
+				mch := &mchov1.MultiClusterHub{}
+				err := k8sClient.Get(ctx, resources.MCHLookupKey, mch)
+				if err == nil {
+					return mch.Status.Phase == mchov1.HubRunning
+				}
+				return false
+			}, timeout, interval).Should(BeTrue()) */
+
+			By("ensuring MCE reports phase as Unimplemented")
+			Eventually(func(g Gomega) {
+				//multiClusterHub := types.NamespacedName{
+				//	Name: resources.MulticlusterhubName,
+				//}
+				existingMCH := &v1.MultiClusterHub{}
+				g.Expect(k8sClient.Get(ctx, resources.MCHLookupKey, existingMCH)).To(Succeed(), "Failed to get MCH")
+
+				g.Expect(existingMCH.Status.Phase).To(Equal(v1.HubUnimplemented), "MCE should fail getting a kubeconfig secret")
+			}, timeout, interval).Should(Succeed())
+
+		})
+	})
+
 	AfterEach(func() {
 		ctx := context.Background()
 		By("Ensuring the MCH CR is deleted")

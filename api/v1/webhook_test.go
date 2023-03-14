@@ -53,11 +53,25 @@ var _ = Describe("V1 API Webhook", func() {
 		})
 
 		It("does nothing during ValidateUpdate method", func() {
-			Expect(mch.ValidateUpdate(nil)).To(Succeed())
+			Expect(mch.ValidateUpdate(mch)).To(Succeed())
 		})
 
 		It("does nothing during ValidateDelete method", func() {
 			Expect(mch.ValidateDelete()).To(Succeed())
+		})
+
+	})
+
+	Context("Creating a Multiclusterhub", func() {
+		It("Should fail to update multiclusterhub", func() {
+			mch := makeMCH()
+
+			By("because of DeploymentMode", func() {
+				oldmch := mch.DeepCopyObject()
+				mch.SetAnnotations(map[string]string{"deploymentmode": "Hosted"})
+				Expect(mch.ValidateUpdate(oldmch)).NotTo(BeNil(), "DeploymentMode should not change")
+			})
+
 		})
 
 	})
@@ -153,8 +167,15 @@ var _ = Describe("V1 API Webhook", func() {
 			By("setting up the webhook")
 			Expect(mch.SetupWebhookWithManager(k8sManager)).To(Succeed())
 
-			// By("validating the new mch")
-			// Expect(mch.ValidateCreate()).To(Succeed())
+			//By("validating the new mch")
+			//Expect(mch.ValidateCreate()).To(Succeed())
+		})
+
+		It("Should successfully create multiclusterhub", func() {
+			By("by creating a new hosted Multiclusterhub resource", func() {
+				mch.SetAnnotations(map[string]string{"deploymentmode": "Hosted"})
+				Expect(mch.SetupWebhookWithManager(k8sManager)).To(Succeed())
+			})
 		})
 
 		AfterEach(func() {

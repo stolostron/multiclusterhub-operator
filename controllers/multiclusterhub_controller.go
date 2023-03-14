@@ -149,6 +149,14 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
+	// Hosted-Mode Reconcile
+	if operatorv1.IsInHostedMode(multiClusterHub) {
+		multiClusterHub.Status = operatorv1.MultiClusterHubStatus{
+			Phase: operatorv1.HubUnimplemented,
+		}
+		return r.HostedReconcile(ctx, multiClusterHub)
+	}
+
 	trackedNamespaces := utils.TrackedNamespaces(multiClusterHub)
 
 	allDeploys, err := r.listDeployments(trackedNamespaces)

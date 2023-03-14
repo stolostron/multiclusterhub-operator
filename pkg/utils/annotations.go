@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 var (
@@ -25,6 +26,8 @@ var (
 	AnnotationOADPSubscriptionSpec = "installer.open-cluster-management.io/oadp-subscription-spec"
 	// AnnotationIgnoreOCPVersion indicates the operator should not check the OCP version before proceeding when set
 	AnnotationIgnoreOCPVersion = "ignoreOCPVersion"
+	// AnnotationKubeconfig is the secret name residing in targetcontaining the kubeconfig to access the remote cluster
+	AnnotationKubeconfig = "mch-kubeconfig"
 )
 
 // IsPaused returns true if the multiclusterhub instance is labeled as paused, and false otherwise
@@ -97,4 +100,18 @@ func ShouldIgnoreOCPVersion(instance *operatorsv1.MultiClusterHub) bool {
 		return true
 	}
 	return false
+}
+
+func GetHostedCredentialsSecret(mch *operatorsv1.MultiClusterHub) (types.NamespacedName, error) {
+	nn := types.NamespacedName{}
+	if mch.Annotations == nil || mch.Annotations[AnnotationKubeconfig] == "" {
+		return nn, fmt.Errorf("no kubeconfig secret annotation defined in %s", mch.Name)
+	}
+	nn.Name = mch.Annotations[AnnotationKubeconfig]
+
+	nn.Namespace = mch.GetNamespace()
+	if mch.GetNamespace() == "" {
+		nn.Namespace = "open-cluster-management"
+	}
+	return nn, nil
 }

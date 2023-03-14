@@ -156,6 +156,10 @@ func GetSupportedAnnotations(m *operatorsv1.MultiClusterHub) map[string]string {
 			mceAnnotations["imageRepository"] = val
 		}
 	}
+
+	if operatorsv1.IsInHostedMode(m) {
+		mceAnnotations["deploymentmode"] = "hosted"
+	}
 	return mceAnnotations
 }
 

@@ -43,6 +43,7 @@ type Global struct {
 	InstallPlanApproval subv1alpha1.Approval `json:"installPlanApproval" structs:"installPlanApproval"`
 	Source              string               `json:"source" structs:"source"`
 	SourceNamespace     string               `json:"sourceNamespace" structs:"sourceNamespace"`
+	ConfigSecret        string               `json:"configSecret" structs:"configSecret"`
 }
 
 type HubConfig struct {
@@ -308,6 +309,13 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 	values.HubConfig.SubscriptionPause = utils.GetDisableClusterImageSets(mch)
 
 	values.Org = "open-cluster-management"
+
+	if v1.IsInHostedMode(mch) {
+		secretNN, err := utils.GetHostedCredentialsSecret(mch)
+		if err == nil {
+			values.Global.ConfigSecret = secretNN.Name
+		}
+	}
 
 	if utils.ProxyEnvVarsAreSet() {
 		proxyVar := map[string]string{}

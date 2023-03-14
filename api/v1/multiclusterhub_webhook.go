@@ -20,6 +20,7 @@ package v1
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,6 +33,9 @@ import (
 var (
 	mchlog = log.Log.WithName("multiclusterhub-resource")
 	Client client.Client
+
+	ErrInvalidNamespace  = errors.New("invalid TargetNamespace")
+	ErrInvalidDeployMode = errors.New("invalid DeploymentMode")
 )
 
 func (r *MultiClusterHub) SetupWebhookWithManager(mgr ctrl.Manager) error {
@@ -57,15 +61,34 @@ func (r *MultiClusterHub) ValidateCreate() error {
 	if err := Client.List(context.Background(), multiClusterHubList); err != nil {
 		return fmt.Errorf("unable to list MultiClusterHubs: %s", err)
 	}
-	if len(multiClusterHubList.Items) == 0 {
-		return nil
+
+	targetNS := r.Namespace
+	if targetNS == "" {
+		targetNS = "open-cluster-management"
 	}
-	return fmt.Errorf("the MultiClusterHub CR already exists")
+
+	for _, mch := range multiClusterHubList.Items {
+		mch := mch
+		if mch.Namespace == targetNS || (targetNS == "open-cluster-management" && mch.Namespace == "") {
+			return fmt.Errorf("%w: MultiClusterHub with targetNamespace already exists: '%s'", ErrInvalidNamespace, mch.Name)
+		}
+		if !IsInHostedMode(r) && !IsInHostedMode(&mch) {
+			return fmt.Errorf("%w: MultiClusterEngine in Standalone mode already exists: `%s`. Only one resource may exist in Standalone mode", ErrInvalidDeployMode, mch.Name)
+		}
+	}
+	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) error {
 	mchlog.Info("validate update", "name", r.Name)
+
+	oldMCH := old.(*MultiClusterHub)
+	mchlog.Info(oldMCH.Namespace)
+	if IsInHostedMode(r) != IsInHostedMode(oldMCH) {
+		return fmt.Errorf("%w: changes cannot be made to DeploymentMode", ErrInvalidDeployMode)
+	}
+
 	return nil
 }
 

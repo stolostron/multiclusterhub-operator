@@ -88,6 +88,16 @@ func EmptyMCH() operatorsv1.MultiClusterHub {
 	}
 }
 
+func HostedMCH() operatorsv1.MultiClusterHub {
+	return operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        MulticlusterhubName,
+			Namespace:   MulticlusterhubNamespace,
+			Annotations: map[string]string{"deploymentmode": "Hosted"},
+		},
+	}
+}
+
 func NoSearchMCH() operatorsv1.MultiClusterHub {
 	return operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
