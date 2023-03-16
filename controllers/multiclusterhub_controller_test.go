@@ -382,7 +382,9 @@ var _ = Describe("MultiClusterHub controller", func() {
 			// 	ImageOverrides: map[string]string{},
 			// },
 		}
-		Expect(reconciler.SetupWithManager(k8sManager)).Should(Succeed())
+		//Expect(reconciler.SetupWithManager(k8sManager)).Should(Succeed())
+		success, _ := reconciler.SetupWithManager(k8sManager)
+		Expect(success).To(BeTrue())
 
 		go func() {
 			// For explanation of GinkgoRecover in a go routine, see
