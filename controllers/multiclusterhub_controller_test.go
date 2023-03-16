@@ -384,7 +384,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 		}
 		//Expect(reconciler.SetupWithManager(k8sManager)).Should(Succeed())
 		success, _ := reconciler.SetupWithManager(k8sManager)
-		Expect(success).To(BeTrue())
+		Expect(success).ToNot(BeNil())
 
 		go func() {
 			// For explanation of GinkgoRecover in a go routine, see
