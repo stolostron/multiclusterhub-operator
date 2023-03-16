@@ -39,6 +39,7 @@ import (
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/controllers"
+	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/webhook"
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
@@ -244,7 +245,7 @@ func main() {
 	}
 
 	// go routine to check if mce exist, if it does add watch
-	go addMultiClusterEngineWatch()
+	go addMultiClusterEngineWatch(ctx, uncachedClient)
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
@@ -258,39 +259,43 @@ const (
 	LocalRunMode    = "local"
 )
 
-func addMultiClusterEngineWatch() {
-	err := mchController.Watch(&source.Kind{Type: &mcev1.MultiClusterEngine{}},
-		handler.Funcs{
-			UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
-				labels := e.ObjectNew.GetLabels()
-				name := labels["installer.name"]
-				if name == "" {
-					name = labels["multiclusterhub.name"]
-				}
-				namespace := labels["installer.namespace"]
-				if namespace == "" {
-					namespace = labels["multiclusterhub.namespace"]
-				}
-				if name == "" || namespace == "" {
-					l := log.FromContext(context.Background())
-					l.Info(fmt.Sprintf("MCE updated, but did not find required labels: %v", labels))
-					return
-				}
-				q.Add(
-					reconcile.Request{
-						NamespacedName: types.NamespacedName{
-							Name:      name,
-							Namespace: namespace,
-						},
+func addMultiClusterEngineWatch(ctx context.Context, uncachedClient client.Client) {
+	// try to see if mce cr exist, for loop
+	// uncached client to get mce crd
+	for {
+		_, err := multiclusterengine.GetManagedMCE(ctx, uncachedClient)
+		if err != nil {
+			mchController.Watch(&source.Kind{Type: &mcev1.MultiClusterEngine{}},
+				handler.Funcs{
+					UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
+						labels := e.ObjectNew.GetLabels()
+						name := labels["installer.name"]
+						if name == "" {
+							name = labels["multiclusterhub.name"]
+						}
+						namespace := labels["installer.namespace"]
+						if namespace == "" {
+							namespace = labels["multiclusterhub.namespace"]
+						}
+						if name == "" || namespace == "" {
+							l := log.FromContext(context.Background())
+							l.Info(fmt.Sprintf("MCE updated, but did not find required labels: %v", labels))
+							return
+						}
+						q.Add(
+							reconcile.Request{
+								NamespacedName: types.NamespacedName{
+									Name:      name,
+									Namespace: namespace,
+								},
+							},
+						)
 					},
-				)
-			},
-		})
-	if err != nil {
-		setupLog.Error(err, "unable to watch mce")
-		os.Exit(1)
-	} else {
-		time.Sleep(30 * time.Second)
+				})
+			return
+		} else {
+			time.Sleep(30 * time.Second)
+		}
 	}
 }
 
