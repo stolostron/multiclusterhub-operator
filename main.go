@@ -265,7 +265,7 @@ func addMultiClusterEngineWatch(ctx context.Context, uncachedClient client.Clien
 		crdKey := client.ObjectKey{Name: multiclusterengine.Namespace().GetObjectMeta().GetName()}
 		err := uncachedClient.Get(ctx, crdKey, &mcev1.MultiClusterEngine{})
 		if err != nil {
-			mchController.Watch(&source.Kind{Type: &mcev1.MultiClusterEngine{}},
+			err := mchController.Watch(&source.Kind{Type: &mcev1.MultiClusterEngine{}},
 				handler.Funcs{
 					UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
 						labels := e.ObjectNew.GetLabels()
@@ -292,8 +292,10 @@ func addMultiClusterEngineWatch(ctx context.Context, uncachedClient client.Clien
 						)
 					},
 				})
-			setupLog.Info("mce watch added")
-			return
+			if err != nil {
+				setupLog.Info("mce watch added")
+				return
+			}
 		} else {
 			setupLog.Info("mce cr wasnt created yet, retrying in 30 seconds")
 			time.Sleep(30 * time.Second)
