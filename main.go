@@ -260,10 +260,10 @@ const (
 )
 
 func addMultiClusterEngineWatch(ctx context.Context, uncachedClient client.Client) {
-	// try to see if mce cr exist, for loop
-	// uncached client to get mce crd
 	for {
-		_, err := multiclusterengine.GetManagedMCE(ctx, uncachedClient)
+		//_, err := multiclusterengine.GetManagedMCE(ctx, uncachedClient)
+		crdKey := client.ObjectKey{Name: multiclusterengine.Namespace().GetObjectMeta().GetName()}
+		err := uncachedClient.Get(ctx, crdKey, &mcev1.MultiClusterEngine{})
 		if err != nil {
 			mchController.Watch(&source.Kind{Type: &mcev1.MultiClusterEngine{}},
 				handler.Funcs{
