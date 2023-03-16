@@ -292,8 +292,10 @@ func addMultiClusterEngineWatch(ctx context.Context, uncachedClient client.Clien
 						)
 					},
 				})
+			setupLog.Info("mce watch added")
 			return
 		} else {
+			setupLog.Info("mce cr wasnt created yet, retrying in 30 seconds")
 			time.Sleep(30 * time.Second)
 		}
 	}
