@@ -53,6 +53,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -507,7 +508,7 @@ func (r *MultiClusterHubReconciler) setOperatorUpgradeableStatus(ctx context.Con
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) (controller.Controller, error) {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(
 			&operatorv1.MultiClusterHub{},
@@ -595,7 +596,7 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				},
 			),
 		).
-		Complete(r)
+		Build(r)
 }
 
 func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operatorv1.MultiClusterHub, template *unstructured.Unstructured) (ctrl.Result, error) {
