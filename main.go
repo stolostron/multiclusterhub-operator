@@ -39,7 +39,6 @@ import (
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/controllers"
-	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/webhook"
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
@@ -261,10 +260,12 @@ const (
 
 func addMultiClusterEngineWatch(ctx context.Context, uncachedClient client.Client) {
 	for {
-		//_, err := multiclusterengine.GetManagedMCE(ctx, uncachedClient)
-		crdKey := client.ObjectKey{Name: multiclusterengine.Namespace().GetObjectMeta().GetName()}
-		err := uncachedClient.Get(ctx, crdKey, &mcev1.MultiClusterEngine{})
-		if err != nil {
+		crd := &apixv1.CustomResourceDefinition{}
+		mceName := "multiclusterengines.multicluster.openshift.io"
+		err := uncachedClient.Get(ctx, types.NamespacedName{Name: mceName}, crd)
+		//crdKey := client.ObjectKey{Name: multiclusterengine.Namespace().GetObjectMeta().GetName()}
+		//err := uncachedClient.Get(ctx, crdKey, &mcev1.MultiClusterEngine{})
+		if err == nil {
 			err := mchController.Watch(&source.Kind{Type: &mcev1.MultiClusterEngine{}},
 				handler.Funcs{
 					UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
@@ -292,14 +293,12 @@ func addMultiClusterEngineWatch(ctx context.Context, uncachedClient client.Clien
 						)
 					},
 				})
-			if err != nil {
+			if err == nil {
 				setupLog.Info("mce watch added")
 				return
 			}
-		} else {
-			setupLog.Info("mce cr wasnt created yet, retrying in 30 seconds")
-			time.Sleep(30 * time.Second)
 		}
+		time.Sleep(30 * time.Second)
 	}
 }
 
