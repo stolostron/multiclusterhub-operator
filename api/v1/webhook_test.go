@@ -137,7 +137,10 @@ var _ = Describe("V1 API Webhook", func() {
 				Scheme: k8sManager.GetScheme(),
 				Log:    ctrl.Log.WithName("controllers").WithName("MultiClusterHub"),
 			}
-			Expect(reconciler.SetupWithManager(k8sManager)).Should(Succeed())
+			//Expect(reconciler.SetupWithManager(k8sManager)).Should(Succeed())
+			success, err := reconciler.SetupWithManager(k8sManager)
+			Expect(success).ToNot(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 
 			// By("starting the k8s manager")
 			// go func() {

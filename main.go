@@ -58,12 +58,19 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/client-go/util/workqueue"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 	ctrlwebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
 	//+kubebuilder:scaffold:imports
 )
@@ -74,8 +81,9 @@ const (
 )
 
 var (
-	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
+	scheme        = runtime.NewScheme()
+	setupLog      = ctrl.Log.WithName("setup")
+	mchController controller.Controller
 )
 
 func init() {
@@ -199,14 +207,16 @@ func main() {
 		setupLog.Error(err, "unable to create uncached client")
 		os.Exit(1)
 	}
-
-	if err = (&controllers.MultiClusterHubReconciler{
+	mchReconciler := &controllers.MultiClusterHubReconciler{
 		Client:          mgr.GetClient(),
 		Scheme:          mgr.GetScheme(),
 		UncachedClient:  uncachedClient,
 		Log:             ctrl.Log.WithName("Controller").WithName("Multiclusterhub"),
 		UpgradeableCond: upgradeableCondition,
-	}).SetupWithManager(mgr); err != nil {
+	}
+
+	mchController, err = mchReconciler.SetupWithManager(mgr)
+	if err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "MultiClusterHub")
 		os.Exit(1)
 	}
@@ -233,6 +243,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	// go routine to check if mce exist, if it does add watch
+	go addMultiClusterEngineWatch(ctx, uncachedClient)
+
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
@@ -244,6 +257,50 @@ const (
 	ForceRunModeEnv = "OSDK_FORCE_RUN_MODE"
 	LocalRunMode    = "local"
 )
+
+func addMultiClusterEngineWatch(ctx context.Context, uncachedClient client.Client) {
+	for {
+		crd := &apixv1.CustomResourceDefinition{}
+		mceName := "multiclusterengines.multicluster.openshift.io"
+		err := uncachedClient.Get(ctx, types.NamespacedName{Name: mceName}, crd)
+		//crdKey := client.ObjectKey{Name: multiclusterengine.Namespace().GetObjectMeta().GetName()}
+		//err := uncachedClient.Get(ctx, crdKey, &mcev1.MultiClusterEngine{})
+		if err == nil {
+			err := mchController.Watch(&source.Kind{Type: &mcev1.MultiClusterEngine{}},
+				handler.Funcs{
+					UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
+						labels := e.ObjectNew.GetLabels()
+						name := labels["installer.name"]
+						if name == "" {
+							name = labels["multiclusterhub.name"]
+						}
+						namespace := labels["installer.namespace"]
+						if namespace == "" {
+							namespace = labels["multiclusterhub.namespace"]
+						}
+						if name == "" || namespace == "" {
+							l := log.FromContext(context.Background())
+							l.Info(fmt.Sprintf("MCE updated, but did not find required labels: %v", labels))
+							return
+						}
+						q.Add(
+							reconcile.Request{
+								NamespacedName: types.NamespacedName{
+									Name:      name,
+									Namespace: namespace,
+								},
+							},
+						)
+					},
+				})
+			if err == nil {
+				setupLog.Info("mce watch added")
+				return
+			}
+		}
+		time.Sleep(30 * time.Second)
+	}
+}
 
 func isRunModeLocal() bool {
 	return os.Getenv(ForceRunModeEnv) == LocalRunMode
