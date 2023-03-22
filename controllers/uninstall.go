@@ -53,11 +53,11 @@ var (
 			),
 			newUnstructured(
 				types.NamespacedName{Name: "searchcustomizations.search.open-cluster-management.io"},
-				schema.GroupVersionKind{Group: "search.open-cluster-management.io", Kind: "CustomResourceDefinition", Version: "v1alpha1"},
+				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1"},
 			),
 			newUnstructured(
 				types.NamespacedName{Name: "searchoperators.search.open-cluster-management.io"},
-				schema.GroupVersionKind{Group: "search.open-cluster-management.io", Kind: "CustomResourceDefinition", Version: "v1alpha1"},
+				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1"},
 			),
 		}
 
