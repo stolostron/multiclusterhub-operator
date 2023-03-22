@@ -51,6 +51,14 @@ var (
 				types.NamespacedName{Name: "multiclusterhub-repo", Namespace: m.Namespace},
 				schema.GroupVersionKind{Group: "", Kind: "Service", Version: "v1"},
 			),
+			newUnstructured(
+				types.NamespacedName{Name: "searchcustomizations.search.open-cluster-management.io"},
+				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1"},
+			),
+			newUnstructured(
+				types.NamespacedName{Name: "searchoperators.search.open-cluster-management.io"},
+				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1"},
+			),
 		}
 
 		if m.Spec.SeparateCertificateManagement && m.Spec.ImagePullSecret != "" {
