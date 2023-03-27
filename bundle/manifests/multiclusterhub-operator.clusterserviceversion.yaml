@@ -17,9 +17,9 @@ metadata:
     capabilities: Basic Install
     categories: Integration & Delivery
     certified: "false"
-    createdAt: "2023-03-06T18:42:57Z"
+    createdAt: "2023-03-23T21:05:49Z"
     description: Open management of Openshift and Kubernetes clusters
-    operators.operatorframework.io/builder: operator-sdk-v1.27.0
+    operators.operatorframework.io/builder: operator-sdk-v1.28.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/open-cluster-management/multiclusterhub-operator
     support: The Open Cluster Management Project
