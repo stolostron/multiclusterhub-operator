@@ -16,10 +16,10 @@ import (
 	consolev1 "github.com/openshift/api/operator/v1"
 
 	"github.com/Masterminds/semver/v3"
-	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
-
 	configv1 "github.com/openshift/api/config/v1"
+	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
@@ -172,9 +172,15 @@ func (r *MultiClusterHubReconciler) ensureOperatorGroup(m *operatorv1.MultiClust
 }
 
 func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
-	mce, err := multiclusterengine.FindAndManageMCE(ctx, r.Client)
-	if err != nil {
-		return ctrl.Result{}, err
+
+	var mce *mcev1.MultiClusterEngine
+	var err error
+
+	if !operatorv1.IsInHostedMode(m) {
+		mce, err = multiclusterengine.FindAndManageMCE(ctx, r.Client)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	if mce == nil {
@@ -514,12 +520,17 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 		}
 	}
 
+	mceNamespace := multiclusterengine.Namespace()
+	if operatorv1.IsInHostedMode(multiClusterHub) {
+		mceNamespace = multiclusterengine.HostedMCENamespace(multiClusterHub)
+	}
+
 	if mceSub == nil {
-		result, err := r.ensureNamespace(multiClusterHub, multiclusterengine.Namespace())
+		result, err := r.ensureNamespace(multiClusterHub, mceNamespace)
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
-		result, err = r.ensurePullSecret(multiClusterHub, multiclusterengine.Namespace().Name)
+		result, err = r.ensurePullSecret(multiClusterHub, mceNamespace.Name)
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
@@ -530,7 +541,7 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 		// Sub is nil so create a new one
 		mceSub = multiclusterengine.NewSubscription(multiClusterHub, subConfig, overrides, utils.IsCommunityMode())
 	} else if multiclusterengine.CreatedByMCH(mceSub, multiClusterHub) {
-		result, err := r.ensurePullSecret(multiClusterHub, multiclusterengine.Namespace().Name)
+		result, err := r.ensurePullSecret(multiClusterHub, mceNamespace.Name)
 		if result != (ctrl.Result{}) {
 			return result, err
 		}

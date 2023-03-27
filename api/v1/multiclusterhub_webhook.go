@@ -63,9 +63,6 @@ func (r *MultiClusterHub) ValidateCreate() error {
 	}
 
 	targetNS := r.Namespace
-	if targetNS == "" {
-		targetNS = "open-cluster-management"
-	}
 
 	for _, mch := range multiClusterHubList.Items {
 		mch := mch
@@ -73,7 +70,7 @@ func (r *MultiClusterHub) ValidateCreate() error {
 			return fmt.Errorf("%w: MultiClusterHub with targetNamespace already exists: '%s'", ErrInvalidNamespace, mch.Name)
 		}
 		if !IsInHostedMode(r) && !IsInHostedMode(&mch) {
-			return fmt.Errorf("%w: MultiClusterEngine in Standalone mode already exists: `%s`. Only one resource may exist in Standalone mode", ErrInvalidDeployMode, mch.Name)
+			return fmt.Errorf("%w: MultiClusterHub already exists: `%s`. Only one non-hosted MCH can exixst", ErrInvalidDeployMode, mch.Name)
 		}
 	}
 	return nil

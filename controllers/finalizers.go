@@ -125,6 +125,9 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 	if mceSub != nil {
 		csv, err := r.GetCSVFromSubscription(mceSub)
 		namespace := multiclusterengine.OperandNameSpace()
+		if operatorsv1.IsInHostedMode(m) {
+			namespace = multiclusterengine.HostedMCENamespace(m).Name
+		}
 		if err == nil { // CSV Exists
 			err = r.Client.Delete(ctx, csv)
 			if err != nil && !errors.IsNotFound(err) {
@@ -157,10 +160,14 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 	}
 
 	mceNamespace := &corev1.Namespace{}
-	err = r.Client.Get(ctx, types.NamespacedName{Name: multiclusterengine.Namespace().Name}, mceNamespace)
-	if m.Namespace != multiclusterengine.Namespace().Name {
+	namespace := multiclusterengine.Namespace()
+	if operatorsv1.IsInHostedMode(m) {
+		namespace = multiclusterengine.HostedMCENamespace(m)
+	}
+	err = r.Client.Get(ctx, types.NamespacedName{Name: namespace.Name}, mceNamespace)
+	if m.Namespace != namespace.Name {
 		if err == nil {
-			err = r.Client.Delete(ctx, multiclusterengine.Namespace())
+			err = r.Client.Delete(ctx, namespace)
 			if err != nil && !errors.IsNotFound(err) {
 				return err
 			}

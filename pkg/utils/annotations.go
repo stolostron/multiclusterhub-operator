@@ -109,9 +109,6 @@ func GetHostedCredentialsSecret(mch *operatorsv1.MultiClusterHub) (types.Namespa
 	}
 	nn.Name = mch.Annotations[AnnotationKubeconfig]
 
-	nn.Namespace = mch.GetNamespace()
-	if mch.GetNamespace() == "" {
-		nn.Namespace = "open-cluster-management"
-	}
+	nn.Namespace = mch.Namespace
 	return nn, nil
 }

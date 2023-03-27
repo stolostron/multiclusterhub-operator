@@ -77,22 +77,43 @@ func NewMultiClusterEngine(m *operatorsv1.MultiClusterHub, infrastructureCustomN
 		availConfig = mcev1.HABasic
 	}
 
-	mce := &mcev1.MultiClusterEngine{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        MulticlusterengineName,
-			Labels:      labels,
-			Annotations: annotations,
-		},
-		Spec: mcev1.MultiClusterEngineSpec{
-			ImagePullSecret:    m.Spec.ImagePullSecret,
-			Tolerations:        utils.GetTolerations(m),
-			NodeSelector:       m.Spec.NodeSelector,
-			AvailabilityConfig: availConfig,
-			TargetNamespace:    OperandNameSpace(),
-			Overrides: &mcev1.Overrides{
-				Components: utils.GetMCEComponents(m),
+	var mce *mcev1.MultiClusterEngine
+	if operatorsv1.IsInHostedMode(m) {
+		mce = &mcev1.MultiClusterEngine{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        HostedMCEName(m),
+				Labels:      labels,
+				Annotations: annotations,
 			},
-		},
+			Spec: mcev1.MultiClusterEngineSpec{
+				ImagePullSecret:    m.Spec.ImagePullSecret,
+				Tolerations:        utils.GetTolerations(m),
+				NodeSelector:       m.Spec.NodeSelector,
+				AvailabilityConfig: availConfig,
+				TargetNamespace:    HostedMCENamespace(m).Name,
+				Overrides: &mcev1.Overrides{
+					Components: utils.GetMCEComponents(m),
+				},
+			},
+		}
+	} else {
+		mce = &mcev1.MultiClusterEngine{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        MulticlusterengineName,
+				Labels:      labels,
+				Annotations: annotations,
+			},
+			Spec: mcev1.MultiClusterEngineSpec{
+				ImagePullSecret:    m.Spec.ImagePullSecret,
+				Tolerations:        utils.GetTolerations(m),
+				NodeSelector:       m.Spec.NodeSelector,
+				AvailabilityConfig: availConfig,
+				TargetNamespace:    OperandNameSpace(),
+				Overrides: &mcev1.Overrides{
+					Components: utils.GetMCEComponents(m),
+				},
+			},
+		}
 	}
 
 	if m.Spec.Overrides != nil && m.Spec.Overrides.ImagePullPolicy != "" {
@@ -158,6 +179,7 @@ func GetSupportedAnnotations(m *operatorsv1.MultiClusterHub) map[string]string {
 	}
 
 	if operatorsv1.IsInHostedMode(m) {
+		mceAnnotations["mce-kubeconfig"] = m.Annotations[utils.AnnotationKubeconfig]
 		mceAnnotations["deploymentmode"] = "hosted"
 	}
 	return mceAnnotations
@@ -369,4 +391,21 @@ func MCECreatedByMCH(mce *mcev1.MultiClusterEngine, m *operatorv1.MultiClusterHu
 		return false
 	}
 	return l["installer.name"] == m.GetName() && l["installer.namespace"] == m.GetNamespace()
+}
+
+func HostedMCENamespace(m *operatorv1.MultiClusterHub) *corev1.Namespace {
+	namespace := m.Namespace + "-engine"
+	return &corev1.Namespace{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Namespace",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: namespace,
+		},
+	}
+}
+
+func HostedMCEName(m *operatorv1.MultiClusterHub) string {
+	return m.Name + "-engine"
 }

@@ -84,9 +84,14 @@ func (m *multiClusterHubValidator) Handle(ctx context.Context, req admission.Req
 	if err := m.client.List(context.TODO(), multiClusterHubs); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
+	mch := &operatorsv1.MultiClusterHub{}
+	err := m.decoder.DecodeRaw(req.Object, mch)
+	if err != nil {
+		return admission.Errored(http.StatusBadRequest, err)
+	}
 
 	if req.Operation == "CREATE" {
-		if len(multiClusterHubs.Items) == 0 {
+		if (operatorsv1.IsInHostedMode(mch) && len(multiClusterHubs.Items) > 0) || len(multiClusterHubs.Items) == 0 {
 			err := m.validateCreate(req)
 			if err != nil {
 				log.Info("Create denied")
@@ -94,6 +99,9 @@ func (m *multiClusterHubValidator) Handle(ctx context.Context, req admission.Req
 			}
 			log.Info("Create successful")
 			return admission.Allowed("")
+		}
+		if operatorsv1.IsInHostedMode(mch) {
+			return admission.Denied("A Hosted Mode MCH can only be created once a normal MCH is available")
 		}
 		return admission.Denied("The MultiClusterHub CR already exists")
 	}
