@@ -180,7 +180,7 @@ func GetSupportedAnnotations(m *operatorsv1.MultiClusterHub) map[string]string {
 
 	if operatorsv1.IsInHostedMode(m) {
 		mceAnnotations["mce-kubeconfig"] = m.Annotations[utils.AnnotationKubeconfig]
-		mceAnnotations["deploymentmode"] = "hosted"
+		mceAnnotations["deploymentmode"] = "Hosted"
 	}
 	return mceAnnotations
 }
@@ -328,7 +328,7 @@ func GetMCEPackageManifests(k8sClient client.Client) ([]olmapi.PackageManifest, 
 }
 
 // Finds MCE by managed label. Returns nil if none found.
-func GetManagedMCE(ctx context.Context, k8sClient client.Client) (*mcev1.MultiClusterEngine, error) {
+func GetManagedMCE(ctx context.Context, k8sClient client.Client, m *operatorsv1.MultiClusterHub) (*mcev1.MultiClusterEngine, error) {
 	mceList := &mcev1.MultiClusterEngineList{}
 	err := k8sClient.List(ctx, mceList, &client.MatchingLabels{
 		utils.MCEManagedByLabel: "true",
@@ -336,24 +336,45 @@ func GetManagedMCE(ctx context.Context, k8sClient client.Client) (*mcev1.MultiCl
 	if err != nil {
 		return nil, err
 	} else if err == nil && len(mceList.Items) == 1 {
+		//always create new hosted mode MCE
+		if operatorsv1.IsInHostedMode(m) {
+			return nil, nil
+		}
 		return &mceList.Items[0], nil
 	} else if len(mceList.Items) > 1 {
-		// will require manual resolution
-		return nil, fmt.Errorf("multiple MCEs found managed by MCH. Only one MCE is supported")
+		found := false
+		var foundMCE *mcev1.MultiClusterEngine
+		for _, mce := range mceList.Items {
+			//Only pick up the MCE with the correct MCE installer
+			if mce.Labels["installer.name"] == m.Name {
+				if found {
+					return nil, fmt.Errorf("multiple MCEs found managed by MCH. Only one MCE is supported")
+				}
+				found = true
+				foundMCE = &mce
+			}
+		}
+		if found {
+			return foundMCE, nil
+		}
 	}
 
 	return nil, nil
 }
 
 // find MCE. label it for future. return nil if no mce found.
-func FindAndManageMCE(ctx context.Context, k8sClient client.Client) (*mcev1.MultiClusterEngine, error) {
+func FindAndManageMCE(ctx context.Context, k8sClient client.Client, m *operatorsv1.MultiClusterHub) (*mcev1.MultiClusterEngine, error) {
 	// first find subscription via managed-by label
-	mce, err := GetManagedMCE(ctx, k8sClient)
+	mce, err := GetManagedMCE(ctx, k8sClient, m)
 	if err != nil {
 		return nil, err
 	}
 	if mce != nil {
 		return mce, nil
+	}
+
+	if operatorsv1.IsInHostedMode(m) {
+		return nil, nil
 	}
 
 	// if label doesn't work find it via list

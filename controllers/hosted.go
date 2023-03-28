@@ -6,55 +6,82 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
-
-	"k8s.io/client-go/tools/clientcmd"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
-
-	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/go-logr/logr"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 var ErrBadFormat = errors.New("bad format")
 
 func (r *MultiClusterHubReconciler) HostedReconcile(ctx context.Context, mch *operatorv1.MultiClusterHub) (retRes ctrl.Result, retErr error) {
-	log := log.FromContext(ctx)
 
+	trackedNamespaces := utils.TrackedNamespaces(mch)
+
+	allDeploys, err := r.listDeployments(trackedNamespaces)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	allCRs, err := r.listCustomResources(mch)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	ocpConsole, err := r.CheckConsole(ctx)
+	if err != nil {
+		r.Log.Error(err, "error finding OCP Console")
+		return ctrl.Result{}, err
+	}
+
+	originalStatus := mch.Status.DeepCopy()
 	defer func() {
-		err := r.Client.Status().Update(ctx, mch)
-		if mch.Status.Phase != operatorv1.HubRunning && !utils.IsPaused(mch) {
-			retRes = ctrl.Result{RequeueAfter: resyncPeriod}
+		statusQueue, statusError := r.syncHubStatus(mch, originalStatus, allDeploys, allCRs, ocpConsole)
+		if statusError != nil {
+			r.Log.Error(retErr, "Error updating status")
 		}
-		if err != nil {
-			retErr = err
+		if empty := (reconcile.Result{}); retRes == empty {
+			retRes = statusQueue
+		}
+		if retErr == nil {
+			retErr = statusError
 		}
 	}()
 
-	// If deletion detected, finalize mch config
-	if mch.GetDeletionTimestamp() != nil {
+	isHubMarkedToBeDeleted := mch.GetDeletionTimestamp() != nil
+	if isHubMarkedToBeDeleted {
+		terminating := NewHubCondition(operatorv1.Terminating, metav1.ConditionTrue, DeleteTimestampReason, "Multiclusterhub is being cleaned up.")
+		SetHubCondition(&mch.Status, *terminating)
+
 		if controllerutil.ContainsFinalizer(mch, hubFinalizer) {
-			err := r.finalizeHostedMCH(ctx, mch) // returns all errors
-			if err != nil {
-				log.Info(err.Error())
-				return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
+			// Run finalization logic. If the finalization
+			// logic fails, don't remove the finalizer so
+			// that we can retry during the next reconciliation.
+			if err := r.finalizeHostedMCH(r.Log, mch); err != nil {
+				// Logging err and returning nil to ensure 45 second wait
+				r.Log.Info(fmt.Sprintf("Finalizing: %s", err.Error()))
+				return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 			}
 
-			log.Info("all subcomponents have been finalized successfully - removing finalizer")
+			// Remove hubFinalizer. Once all finalizers have been
+			// removed, the object will be deleted.
 			controllerutil.RemoveFinalizer(mch, hubFinalizer)
-			if err := r.Client.Update(ctx, mch); err != nil {
+
+			err := r.Client.Update(context.TODO(), mch)
+			if err != nil {
 				return ctrl.Result{}, err
 			}
 		}
 
-		return ctrl.Result{}, nil // Object finalized successfully
+		return ctrl.Result{}, nil
 	}
 
 	// Add finalizer for this CR
@@ -66,7 +93,6 @@ func (r *MultiClusterHubReconciler) HostedReconcile(ctx context.Context, mch *op
 	}
 
 	var result ctrl.Result
-	var err error
 
 	result, err = r.setHostedDefaults(ctx, mch)
 	if result != (ctrl.Result{}) {
@@ -77,21 +103,22 @@ func (r *MultiClusterHubReconciler) HostedReconcile(ctx context.Context, mch *op
 	}
 
 	// Do not reconcile objects if this instance of mch is labeled "paused"
+	updatePausedCondition(mch)
 	if utils.IsPaused(mch) {
-		log.Info("MultiClusterHub reconciliation is paused. Nothing more to do.")
+		r.Log.Info("MultiClusterHub reconciliation is paused. Nothing more to do.")
 		return ctrl.Result{}, nil
 	}
 
-	hostedClient, err := r.GetHostedClient(ctx, mch)
-	if err != nil {
-		return ctrl.Result{RequeueAfter: resyncPeriod}, err
-	}
-
-	err = hostedClient.Create(ctx, &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{Name: mch.Namespace},
-	})
-	if err != nil && !apierrors.IsAlreadyExists(err) {
-		return ctrl.Result{RequeueAfter: resyncPeriod}, err
+	if !utils.ShouldIgnoreOCPVersion(mch) {
+		currentOCPVersion, err := r.getClusterVersion(ctx)
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to detect clusterversion: %w", err)
+		}
+		if err := version.ValidOCPVersion(currentOCPVersion); err != nil {
+			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason, fmt.Sprintf("OCP version requirement not met: %s", err.Error()))
+			SetHubCondition(&mch.Status, *condition)
+			return ctrl.Result{}, err
+		}
 	}
 
 	result, err = r.ensureMultiClusterEngine(ctx, mch)
@@ -99,7 +126,7 @@ func (r *MultiClusterHubReconciler) HostedReconcile(ctx context.Context, mch *op
 		return result, err
 	}
 
-	result, err = r.waitForMCEReady(ctx)
+	result, err = r.waitForMCEReady(ctx, mch)
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
@@ -112,50 +139,6 @@ func (r *MultiClusterHubReconciler) HostedReconcile(ctx context.Context, mch *op
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterHubReconciler) GetHostedClient(ctx context.Context, mch *operatorv1.MultiClusterHub) (client.Client, error) {
-	secretNN, err := utils.GetHostedCredentialsSecret(mch)
-	if err != nil {
-		return nil, err
-	}
-
-	// Parse Kube credentials from secret
-	kubeConfigSecret := &corev1.Secret{}
-	if err := r.Client.Get(context.TODO(), secretNN, kubeConfigSecret); err != nil {
-		if apierrors.IsNotFound(err) {
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-	kubeconfig, err := parseKubeCreds(kubeConfigSecret)
-	if err != nil {
-		return nil, err
-	}
-
-	restconfig, err := clientcmd.RESTConfigFromKubeConfig(kubeconfig)
-	if err != nil {
-		return nil, err
-	}
-
-	uncachedClient, err := client.New(restconfig, client.Options{
-		Scheme: r.Client.Scheme(),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return uncachedClient, nil
-}
-
-// parseKubeCreds takes a secret cotaining credentials and returns the stored Kubeconfig.
-func parseKubeCreds(secret *corev1.Secret) ([]byte, error) {
-	kubeconfig, ok := secret.Data["kubeconfig"]
-	if !ok {
-		return []byte{}, fmt.Errorf("%s: %w", secret.Name, ErrBadFormat)
-	}
-	return kubeconfig, nil
-}
-
 // setHostedDefaults configures the MCH with default values and updates
 func (r *MultiClusterHubReconciler) setHostedDefaults(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
@@ -163,6 +146,14 @@ func (r *MultiClusterHubReconciler) setHostedDefaults(ctx context.Context, m *op
 	updateNecessary := false
 	if !utils.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {
 		m.Spec.AvailabilityConfig = operatorv1.HAHigh
+		updateNecessary = true
+	}
+
+	if utils.SetHostedDefaultComponents(m) {
+		updateNecessary = true
+	}
+
+	if utils.DeduplicateComponents(m) {
 		updateNecessary = true
 	}
 
@@ -181,10 +172,31 @@ func (r *MultiClusterHubReconciler) setHostedDefaults(ctx context.Context, m *op
 	}
 }
 
-func (r *MultiClusterHubReconciler) finalizeHostedMCH(ctx context.Context, mch *operatorv1.MultiClusterHub) error {
+func (r *MultiClusterHubReconciler) finalizeHostedMCH(reqLogger logr.Logger, m *operatorv1.MultiClusterHub) error {
 
 	if utils.IsUnitTest() {
 		return nil
 	}
+
+	if err := r.cleanupNamespaces(reqLogger); err != nil {
+		return err
+	}
+
+	if err := r.cleanupClusterRoles(reqLogger, m); err != nil {
+		return err
+	}
+	if err := r.cleanupClusterRoleBindings(reqLogger, m); err != nil {
+		return err
+	}
+
+	if err := r.cleanupMultiClusterEngine(reqLogger, m); err != nil {
+		return err
+	}
+
+	if err := r.orphanOwnedMultiClusterEngine(m); err != nil {
+		return err
+	}
+
+	reqLogger.Info("Successfully finalized multiClusterHub")
 	return nil
 }

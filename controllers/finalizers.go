@@ -91,7 +91,7 @@ func (r *MultiClusterHubReconciler) cleanupClusterRoleBindings(reqLogger logr.Lo
 func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	ctx := context.Background()
 
-	mce, err := multiclusterengine.GetManagedMCE(ctx, r.Client)
+	mce, err := multiclusterengine.GetManagedMCE(ctx, r.Client, m)
 	if err != nil && !apimeta.IsNoMatchError(err) {
 		return err
 	}
@@ -284,7 +284,7 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 func (r *MultiClusterHubReconciler) orphanOwnedMultiClusterEngine(m *operatorsv1.MultiClusterHub) error {
 	ctx := context.Background()
 
-	mce, err := multiclusterengine.GetManagedMCE(ctx, r.Client)
+	mce, err := multiclusterengine.GetManagedMCE(ctx, r.Client, m)
 	if mce == nil {
 		// MCE does not exist
 		return nil

@@ -176,11 +176,9 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 	var mce *mcev1.MultiClusterEngine
 	var err error
 
-	if !operatorv1.IsInHostedMode(m) {
-		mce, err = multiclusterengine.FindAndManageMCE(ctx, r.Client)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
+	mce, err = multiclusterengine.FindAndManageMCE(ctx, r.Client, m)
+	if err != nil {
+		return ctrl.Result{}, err
 	}
 
 	if mce == nil {
@@ -241,6 +239,9 @@ func (r *MultiClusterHubReconciler) ensurePullSecret(m *operatorv1.MultiClusterH
 			return ctrl.Result{Requeue: true}, err
 		}
 		for i, secret := range secretList.Items {
+			if operatorv1.IsInHostedMode(m) && secret.Name == m.Annotations[utils.AnnotationKubeconfig] {
+				continue
+			}
 			r.Log.Info("Deleting imagePullSecret", "Name", secret.Name, "Namespace", secret.Namespace)
 			err = r.Client.Delete(context.TODO(), &secretList.Items[i])
 			if err != nil {
@@ -248,13 +249,19 @@ func (r *MultiClusterHubReconciler) ensurePullSecret(m *operatorv1.MultiClusterH
 				return ctrl.Result{Requeue: true}, err
 			}
 		}
+		if !operatorv1.IsInHostedMode(m) {
+			return ctrl.Result{}, nil
+		}
 
-		return ctrl.Result{}, nil
 	}
 
 	pullSecret := &corev1.Secret{}
+	pullSecretName := m.Spec.ImagePullSecret
+	if operatorv1.IsInHostedMode(m) {
+		pullSecretName = m.Annotations[utils.AnnotationKubeconfig]
+	}
 	err := r.Client.Get(context.TODO(), types.NamespacedName{
-		Name:      m.Spec.ImagePullSecret,
+		Name:      pullSecretName,
 		Namespace: m.Namespace,
 	}, pullSecret)
 	if err != nil {
@@ -272,9 +279,12 @@ func (r *MultiClusterHubReconciler) ensurePullSecret(m *operatorv1.MultiClusterH
 			Labels:    pullSecret.Labels,
 		},
 		Data: pullSecret.Data,
-		Type: corev1.SecretTypeDockerConfigJson,
 	}
-	mceSecret.SetName(m.Spec.ImagePullSecret)
+	if !operatorv1.IsInHostedMode(m) {
+		mceSecret.Type = corev1.SecretTypeDockerConfigJson
+	}
+
+	mceSecret.SetName(pullSecretName)
 	mceSecret.SetNamespace(newNS)
 	mceSecret.SetLabels(pullSecret.Labels)
 	addInstallerLabelSecret(mceSecret, m.Name, m.Namespace)
@@ -441,7 +451,7 @@ func (r *MultiClusterHubReconciler) listCustomResources(m *operatorv1.MultiClust
 	}
 
 	var mce *unstructured.Unstructured
-	gotMCE, err := multiclusterengine.GetManagedMCE(context.Background(), r.Client)
+	gotMCE, err := multiclusterengine.GetManagedMCE(context.Background(), r.Client, m)
 	if err != nil || gotMCE == nil {
 		mce = nil
 	} else {
@@ -579,9 +589,9 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(ctx context.Context
 }
 
 // waitForMCE checks that MCE is in a running state and at the expected version.
-func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	// Wait for MCE to be ready
-	existingMCE, err := multiclusterengine.GetManagedMCE(ctx, r.Client)
+	existingMCE, err := multiclusterengine.GetManagedMCE(ctx, r.Client, m)
 	if err != nil {
 		return ctrl.Result{Requeue: true}, err
 	}

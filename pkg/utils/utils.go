@@ -580,3 +580,15 @@ func IsCommunityMode() bool {
 		return true
 	}
 }
+
+func SetHostedDefaultComponents(m *operatorsv1.MultiClusterHub) bool {
+	updated := false
+	components := operatorsv1.GetDefaultHostedComponents()
+	for _, c := range components {
+		if !m.ComponentPresent(c) {
+			m.Enable(c)
+			updated = true
+		}
+	}
+	return updated
+}
