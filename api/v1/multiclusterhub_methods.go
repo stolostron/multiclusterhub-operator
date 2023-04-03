@@ -197,3 +197,15 @@ func IsCommunity() (bool, error) {
 		return true, err
 	}
 }
+
+// IsInHostedMode returns true if mch is configured for hosted mode
+func (mch *MultiClusterHub) IsInHostedMode() bool {
+	a := mch.GetAnnotations()
+	if a == nil {
+		return false
+	}
+	if a["deploymentmode"] == string(ModeHosted) {
+		return true
+	}
+	return false
+}
