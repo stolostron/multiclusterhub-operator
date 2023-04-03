@@ -145,7 +145,7 @@ func TestFindAndManageMCE(t *testing.T) {
 		WithLists(&mcev1.MultiClusterEngineList{Items: []mcev1.MultiClusterEngine{*managedmce1}}).
 		Build()
 
-	got, err := FindAndManageMCE(context.Background(), cl, &operatorv1.MultiClusterHub{})
+	got, err := FindAndManageMCE(context.Background(), cl)
 	if err != nil {
 		t.Errorf("FindAndManageMCE() should have found mce by label. Got %v", err)
 	}
@@ -159,7 +159,7 @@ func TestFindAndManageMCE(t *testing.T) {
 		WithLists(&mcev1.MultiClusterEngineList{Items: []mcev1.MultiClusterEngine{*managedmce1, *managedmce2}}).
 		Build()
 
-	_, err = FindAndManageMCE(context.Background(), cl, &operatorv1.MultiClusterHub{})
+	_, err = FindAndManageMCE(context.Background(), cl)
 	if err == nil {
 		t.Errorf("FindAndManageMCE() should have errored due to multiple mces")
 	}
@@ -170,7 +170,7 @@ func TestFindAndManageMCE(t *testing.T) {
 		WithLists(&mcev1.MultiClusterEngineList{Items: []mcev1.MultiClusterEngine{*unmanagedmce1}}).
 		Build()
 
-	got, err = FindAndManageMCE(context.Background(), cl, &operatorv1.MultiClusterHub{})
+	got, err = FindAndManageMCE(context.Background(), cl)
 	if err != nil {
 		t.Errorf("FindAndManageMCE() should have found mce and labeled it. Got error %v", err)
 	}

@@ -91,7 +91,7 @@ func (r *MultiClusterHubReconciler) cleanupClusterRoleBindings(reqLogger logr.Lo
 func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	ctx := context.Background()
 
-	mce, err := multiclusterengine.GetManagedMCE(ctx, r.Client, m)
+	mce, err := multiclusterengine.GetManagedMCE(ctx, r.Client)
 	if err != nil && !apimeta.IsNoMatchError(err) {
 		return err
 	}
@@ -125,9 +125,6 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 	if mceSub != nil {
 		csv, err := r.GetCSVFromSubscription(mceSub)
 		namespace := multiclusterengine.OperandNameSpace()
-		if operatorsv1.IsInHostedMode(m) {
-			namespace = multiclusterengine.HostedMCENamespace(m).Name
-		}
 		if err == nil { // CSV Exists
 			err = r.Client.Delete(ctx, csv)
 			if err != nil && !errors.IsNotFound(err) {
@@ -161,9 +158,6 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 
 	mceNamespace := &corev1.Namespace{}
 	namespace := multiclusterengine.Namespace()
-	if operatorsv1.IsInHostedMode(m) {
-		namespace = multiclusterengine.HostedMCENamespace(m)
-	}
 	err = r.Client.Get(ctx, types.NamespacedName{Name: namespace.Name}, mceNamespace)
 	if m.Namespace != namespace.Name {
 		if err == nil {
@@ -179,6 +173,93 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 
 	return nil
 }
+
+func (r *MultiClusterHubReconciler) cleanupHostedMultiClusterEngine(log logr.Logger, m *operatorsv1.MultiClusterHub) error {
+	ctx := context.Background()
+
+	mce, err := multiclusterengine.GetHostedManagedMCE(ctx, r.Client, m)
+	if err != nil && !apimeta.IsNoMatchError(err) {
+		return err
+	}
+	if mce != nil && !multiclusterengine.MCECreatedByMCH(mce, m) {
+		r.Log.Info("Preexisting MCE exists, skipping MCE finalization")
+		return nil
+	}
+
+	if mce != nil {
+		r.Log.Info("Deleting MultiClusterEngine resource")
+		err = r.Client.Delete(ctx, mce)
+		if err != nil && (!errors.IsNotFound(err) || !errors.IsGone(err)) {
+			return err
+		}
+		return fmt.Errorf("MCE has not yet been terminated")
+	}
+
+	if utils.IsUnitTest() {
+		return nil
+	}
+
+	mceSub, err := multiclusterengine.GetManagedMCESubscription(ctx, r.Client)
+	if err != nil {
+		return err
+	}
+	if mceSub != nil && !multiclusterengine.CreatedByMCH(mceSub, m) {
+		r.Log.Info("Preexisting MCE subscription exists, skipping MCE subscription finalization")
+		return nil
+	}
+
+	if mceSub != nil {
+		csv, err := r.GetCSVFromSubscription(mceSub)
+		namespace := multiclusterengine.HostedMCENamespace(m).Name
+		if err == nil { // CSV Exists
+			err = r.Client.Delete(ctx, csv)
+			if err != nil && !errors.IsNotFound(err) {
+				return err
+			}
+			err = r.Client.Get(ctx,
+				types.NamespacedName{Name: csv.GetName(), Namespace: namespace},
+				csv)
+			if err == nil {
+				return fmt.Errorf("CSV has not yet been terminated")
+			}
+		}
+
+		err = r.Client.Get(ctx,
+			types.NamespacedName{Name: mceSub.Name, Namespace: namespace},
+			&subv1alpha1.Subscription{})
+		if err == nil {
+
+			err = r.Client.Delete(ctx, mceSub)
+			if err != nil && !errors.IsNotFound(err) {
+				return err
+			}
+			return fmt.Errorf("subscription has not yet been terminated")
+		}
+	}
+
+	err = r.Client.Delete(ctx, multiclusterengine.OperatorGroup())
+	if err != nil && !errors.IsNotFound(err) {
+		return err
+	}
+
+	mceNamespace := &corev1.Namespace{}
+	namespace := multiclusterengine.HostedMCENamespace(m)
+	err = r.Client.Get(ctx, types.NamespacedName{Name: namespace.Name}, mceNamespace)
+	if m.Namespace != namespace.Name {
+		if err == nil {
+			err = r.Client.Delete(ctx, namespace)
+			if err != nil && !errors.IsNotFound(err) {
+				return err
+			}
+			return fmt.Errorf("namespace has not yet been terminated")
+		}
+	} else {
+		r.Log.Info("MCE shares namespace with MCH; skipping namespace termination")
+	}
+
+	return nil
+}
+
 func (r *MultiClusterHubReconciler) cleanupNamespaces(reqLogger logr.Logger) error {
 	ctx := context.Background()
 	clusterBackupNamespace := &corev1.Namespace{}
@@ -284,7 +365,35 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 func (r *MultiClusterHubReconciler) orphanOwnedMultiClusterEngine(m *operatorsv1.MultiClusterHub) error {
 	ctx := context.Background()
 
-	mce, err := multiclusterengine.GetManagedMCE(ctx, r.Client, m)
+	mce, err := multiclusterengine.GetManagedMCE(ctx, r.Client)
+	if mce == nil {
+		// MCE does not exist
+		return nil
+	}
+	if err != nil {
+		if apimeta.IsNoMatchError(err) {
+			// MCE does not exist
+			return nil
+		}
+		return err
+	}
+
+	r.Log.Info("Preexisting MCE exists, orphaning resource")
+	controllerutil.RemoveFinalizer(mce, hubFinalizer)
+	labels := mce.GetLabels()
+	delete(labels, utils.MCEManagedByLabel)
+	mce.SetLabels(labels)
+	if err = r.Client.Update(ctx, mce); err != nil {
+		return err
+	}
+	r.Log.Info("MCE orphaned")
+	return nil
+}
+
+func (r *MultiClusterHubReconciler) orphanOwnedHostedMultiClusterEngine(m *operatorsv1.MultiClusterHub) error {
+	ctx := context.Background()
+
+	mce, err := multiclusterengine.GetHostedManagedMCE(ctx, r.Client, m)
 	if mce == nil {
 		// MCE does not exist
 		return nil

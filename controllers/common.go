@@ -176,7 +176,7 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 	var mce *mcev1.MultiClusterEngine
 	var err error
 
-	mce, err = multiclusterengine.FindAndManageMCE(ctx, r.Client, m)
+	mce, err = multiclusterengine.FindAndManageMCE(ctx, r.Client)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -197,6 +197,56 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 		}
 
 		mce = multiclusterengine.NewMultiClusterEngine(m, infraNS)
+		err = r.Client.Create(ctx, mce)
+		if err != nil {
+			return ctrl.Result{Requeue: true}, fmt.Errorf("Error creating new MCE: %w", err)
+		}
+		return ctrl.Result{}, nil
+	}
+
+	// secret should be delivered to targetNamespace
+	if mce.Spec.TargetNamespace == "" {
+		return ctrl.Result{Requeue: true}, fmt.Errorf("MCE %s does not have a target namespace to apply pullsecret", mce.Name)
+	}
+	result, err := r.ensurePullSecret(m, mce.Spec.TargetNamespace)
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	calcMCE := multiclusterengine.RenderMultiClusterEngine(mce, m)
+	err = r.Client.Update(ctx, calcMCE)
+	if err != nil {
+		return ctrl.Result{Requeue: true}, fmt.Errorf("Error updating MCE %s: %w", mce.Name, err)
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureHostedMultiClusterEngineCR(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+
+	var mce *mcev1.MultiClusterEngine
+	var err error
+
+	mce, err = multiclusterengine.FindAndManageHostedMCE(ctx, r.Client, m)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if mce == nil {
+		// figure out if assisted service is already configured
+		infraNS := ""
+		configured, err := AssistedServiceConfigured(ctx, r.Client)
+		if err != nil {
+			return ctrl.Result{Requeue: true}, err
+		}
+		if configured {
+			ns, err := utils.FindNamespace()
+			if err != nil {
+				return ctrl.Result{Requeue: true}, err
+			}
+			infraNS = ns
+		}
+
+		mce = multiclusterengine.NewHostedMultiClusterEngine(m, infraNS)
 		err = r.Client.Create(ctx, mce)
 		if err != nil {
 			return ctrl.Result{Requeue: true}, fmt.Errorf("Error creating new MCE: %w", err)
@@ -451,7 +501,7 @@ func (r *MultiClusterHubReconciler) listCustomResources(m *operatorv1.MultiClust
 	}
 
 	var mce *unstructured.Unstructured
-	gotMCE, err := multiclusterengine.GetManagedMCE(context.Background(), r.Client, m)
+	gotMCE, err := multiclusterengine.GetManagedMCE(context.Background(), r.Client)
 	if err != nil || gotMCE == nil {
 		mce = nil
 	} else {
@@ -464,6 +514,26 @@ func (r *MultiClusterHubReconciler) listCustomResources(m *operatorv1.MultiClust
 
 	ret["mce-sub"] = mceSub
 	ret["mce-csv"] = mceCSV
+	ret["mce"] = mce
+	return ret, nil
+}
+
+// listCustomResources gets custom resources the installer observes
+func (r *MultiClusterHubReconciler) listHostedCustomResources(m *operatorv1.MultiClusterHub) (map[string]*unstructured.Unstructured, error) {
+	ret := make(map[string]*unstructured.Unstructured)
+
+	var mce *unstructured.Unstructured
+	gotMCE, err := multiclusterengine.GetHostedManagedMCE(context.Background(), r.Client, m)
+	if err != nil || gotMCE == nil {
+		mce = nil
+	} else {
+		unstructuredMCE, err := runtime.DefaultUnstructuredConverter.ToUnstructured(gotMCE)
+		if err != nil {
+			r.Log.Error(err, "Failed to unmarshal MCE")
+		}
+		mce = &unstructured.Unstructured{Object: unstructuredMCE}
+	}
+
 	ret["mce"] = mce
 	return ret, nil
 }
@@ -573,6 +643,71 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 	return ctrl.Result{}, nil
 }
 
+func (r *MultiClusterHubReconciler) ensureHostedMCESubscription(ctx context.Context, multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+	mceSub, err := multiclusterengine.FindAndManageMCESubscription(ctx, r.Client)
+	if err != nil {
+		return ctrl.Result{Requeue: true}, err
+	}
+
+	// Get sub config, catalogsource, and annotation overrides
+	subConfig, err := r.GetSubConfig()
+	if err != nil {
+		return ctrl.Result{Requeue: true}, err
+	}
+	overrides, err := multiclusterengine.GetAnnotationOverrides(multiClusterHub)
+	if err != nil {
+		return ctrl.Result{Requeue: true}, err
+	}
+	ctlSrc := types.NamespacedName{}
+	// Search for catalogsource if not defined in overrides
+	if overrides == nil || overrides.CatalogSource == "" {
+		ctlSrc, err = multiclusterengine.GetCatalogSource(r.UncachedClient)
+		if err != nil {
+			r.Log.Info("Failed to find a suitable catalogsource.", "error", err)
+			return ctrl.Result{RequeueAfter: 5 * time.Second}, err
+		}
+	}
+
+	mceNamespace := multiclusterengine.HostedMCENamespace(multiClusterHub)
+
+	if mceSub == nil {
+		result, err := r.ensureNamespace(multiClusterHub, mceNamespace)
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+		result, err = r.ensurePullSecret(multiClusterHub, mceNamespace.Name)
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+		result, err = r.ensureOperatorGroup(multiClusterHub, multiclusterengine.OperatorGroup())
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+		// Sub is nil so create a new one
+		mceSub = multiclusterengine.NewSubscription(multiClusterHub, subConfig, overrides, utils.IsCommunityMode())
+	} else if multiclusterengine.CreatedByMCH(mceSub, multiClusterHub) {
+		result, err := r.ensurePullSecret(multiClusterHub, mceNamespace.Name)
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+		result, err = r.ensureOperatorGroup(multiClusterHub, multiclusterengine.OperatorGroup())
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+	}
+
+	// Apply MCE sub
+	calcSub := multiclusterengine.RenderSubscription(mceSub, subConfig, overrides, ctlSrc, utils.IsCommunityMode())
+
+	force := true
+	err = r.Client.Patch(ctx, calcSub, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
+	if err != nil {
+		r.Log.Info(fmt.Sprintf("Error applying subscription: %s", err.Error()))
+		return ctrl.Result{Requeue: true}, err
+	}
+	return ctrl.Result{}, nil
+}
+
 func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(ctx context.Context, multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	// confirm subscription and reqs exist and are configured correctly
 	result, err := r.ensureMCESubscription(ctx, multiClusterHub)
@@ -588,10 +723,56 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(ctx context.Context
 	return ctrl.Result{}, nil
 }
 
+func (r *MultiClusterHubReconciler) ensureHostedMultiClusterEngine(ctx context.Context, multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+	// confirm subscription and reqs exist and are configured correctly
+	result, err := r.ensureHostedMCESubscription(ctx, multiClusterHub)
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	result, err = r.ensureHostedMultiClusterEngineCR(ctx, multiClusterHub)
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	return ctrl.Result{}, nil
+}
+
 // waitForMCE checks that MCE is in a running state and at the expected version.
-func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context) (ctrl.Result, error) {
 	// Wait for MCE to be ready
-	existingMCE, err := multiclusterengine.GetManagedMCE(ctx, r.Client, m)
+	existingMCE, err := multiclusterengine.GetManagedMCE(ctx, r.Client)
+	if err != nil {
+		return ctrl.Result{Requeue: true}, err
+	}
+	if existingMCE == nil {
+		r.Log.Info(fmt.Sprintf("Multiclusterengine: %s is not yet present", existingMCE.GetName()))
+		return ctrl.Result{Requeue: true}, nil
+	}
+	if utils.IsUnitTest() {
+		return ctrl.Result{}, nil
+	}
+
+	if existingMCE.Status.CurrentVersion == "" {
+		r.Log.Info(fmt.Sprintf("Multiclusterengine: %s is not yet available", existingMCE.GetName()))
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// MCE version depends on mode
+	if utils.IsCommunityMode() {
+		err = version.ValidCommunityMCEVersion(existingMCE.Status.CurrentVersion)
+	} else {
+		err = version.ValidMCEVersion(existingMCE.Status.CurrentVersion)
+	}
+	if err != nil {
+		return ctrl.Result{RequeueAfter: resyncPeriod}, fmt.Errorf("MCE version requirement not met: %w", err)
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) waitForHostedMCEReady(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+	// Wait for MCE to be ready
+	existingMCE, err := multiclusterengine.GetHostedManagedMCE(ctx, r.Client, m)
 	if err != nil {
 		return ctrl.Result{Requeue: true}, err
 	}

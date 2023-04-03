@@ -428,6 +428,15 @@ func GetCustomResourcesForStatus(m *operatorsv1.MultiClusterHub) []types.Namespa
 	return []types.NamespacedName{}
 }
 
+func GetHostedCustomResourcesForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
+	if m.Enabled(operatorsv1.MultiClusterEngine) {
+		return []types.NamespacedName{
+			{Name: "multicluster-engine"}, //EXTRA CHECK HERE??
+		}
+	}
+	return []types.NamespacedName{}
+}
+
 func GetTolerations(m *operatorsv1.MultiClusterHub) []corev1.Toleration {
 	if len(m.Spec.Tolerations) == 0 {
 		return []corev1.Toleration{

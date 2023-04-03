@@ -31,7 +31,7 @@ func (r *MultiClusterHubReconciler) HostedReconcile(ctx context.Context, mch *op
 		return ctrl.Result{}, err
 	}
 
-	allCRs, err := r.listCustomResources(mch)
+	allCRs, err := r.listHostedCustomResources(mch)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -44,7 +44,7 @@ func (r *MultiClusterHubReconciler) HostedReconcile(ctx context.Context, mch *op
 
 	originalStatus := mch.Status.DeepCopy()
 	defer func() {
-		statusQueue, statusError := r.syncHubStatus(mch, originalStatus, allDeploys, allCRs, ocpConsole)
+		statusQueue, statusError := r.syncHostedHubStatus(mch, originalStatus, allDeploys, allCRs, ocpConsole) //1
 		if statusError != nil {
 			r.Log.Error(retErr, "Error updating status")
 		}
@@ -121,12 +121,12 @@ func (r *MultiClusterHubReconciler) HostedReconcile(ctx context.Context, mch *op
 		}
 	}
 
-	result, err = r.ensureMultiClusterEngine(ctx, mch)
+	result, err = r.ensureHostedMultiClusterEngine(ctx, mch)
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
 
-	result, err = r.waitForMCEReady(ctx, mch)
+	result, err = r.waitForHostedMCEReady(ctx, mch)
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
@@ -178,10 +178,6 @@ func (r *MultiClusterHubReconciler) finalizeHostedMCH(reqLogger logr.Logger, m *
 		return nil
 	}
 
-	if err := r.cleanupNamespaces(reqLogger); err != nil {
-		return err
-	}
-
 	if err := r.cleanupClusterRoles(reqLogger, m); err != nil {
 		return err
 	}
@@ -189,7 +185,7 @@ func (r *MultiClusterHubReconciler) finalizeHostedMCH(reqLogger logr.Logger, m *
 		return err
 	}
 
-	if err := r.cleanupMultiClusterEngine(reqLogger, m); err != nil {
+	if err := r.cleanupHostedMultiClusterEngine(reqLogger, m); err != nil {
 		return err
 	}
 

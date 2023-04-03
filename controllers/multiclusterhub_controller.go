@@ -362,7 +362,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	result, err = r.waitForMCEReady(ctx, multiClusterHub)
+	result, err = r.waitForMCEReady(ctx)
 	if result != (ctrl.Result{}) {
 		return result, err
 	}

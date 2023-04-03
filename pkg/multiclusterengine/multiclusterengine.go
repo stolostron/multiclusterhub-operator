@@ -77,43 +77,64 @@ func NewMultiClusterEngine(m *operatorsv1.MultiClusterHub, infrastructureCustomN
 		availConfig = mcev1.HABasic
 	}
 
-	var mce *mcev1.MultiClusterEngine
-	if operatorsv1.IsInHostedMode(m) {
-		mce = &mcev1.MultiClusterEngine{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        HostedMCEName(m),
-				Labels:      labels,
-				Annotations: annotations,
+	mce := &mcev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        MulticlusterengineName,
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Spec: mcev1.MultiClusterEngineSpec{
+			ImagePullSecret:    m.Spec.ImagePullSecret,
+			Tolerations:        utils.GetTolerations(m),
+			NodeSelector:       m.Spec.NodeSelector,
+			AvailabilityConfig: availConfig,
+			TargetNamespace:    OperandNameSpace(),
+			Overrides: &mcev1.Overrides{
+				Components: utils.GetMCEComponents(m),
 			},
-			Spec: mcev1.MultiClusterEngineSpec{
-				ImagePullSecret:    m.Spec.ImagePullSecret,
-				Tolerations:        utils.GetTolerations(m),
-				NodeSelector:       m.Spec.NodeSelector,
-				AvailabilityConfig: availConfig,
-				TargetNamespace:    HostedMCENamespace(m).Name,
-				Overrides: &mcev1.Overrides{
-					Components: utils.GetMCEComponents(m),
-				},
+		},
+	}
+
+	if m.Spec.Overrides != nil && m.Spec.Overrides.ImagePullPolicy != "" {
+		mce.Spec.Overrides.ImagePullPolicy = m.Spec.Overrides.ImagePullPolicy
+	}
+
+	if infrastructureCustomNamespace != "" {
+		mce.Spec.Overrides.InfrastructureCustomNamespace = infrastructureCustomNamespace
+	}
+
+	return mce
+}
+
+// NewHostedMultiClusterEngine returns an MCE configured from a Multiclusterhub
+func NewHostedMultiClusterEngine(m *operatorsv1.MultiClusterHub, infrastructureCustomNamespace string) *mcev1.MultiClusterEngine {
+	labels := map[string]string{
+		"installer.name":        m.GetName(),
+		"installer.namespace":   m.GetNamespace(),
+		utils.MCEManagedByLabel: "true",
+	}
+	annotations := GetSupportedAnnotations(m)
+	availConfig := mcev1.HAHigh
+	if m.Spec.AvailabilityConfig == operatorsv1.HABasic {
+		availConfig = mcev1.HABasic
+	}
+
+	mce := &mcev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        HostedMCEName(m),
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Spec: mcev1.MultiClusterEngineSpec{
+			ImagePullSecret:    m.Spec.ImagePullSecret,
+			Tolerations:        utils.GetTolerations(m),
+			NodeSelector:       m.Spec.NodeSelector,
+			AvailabilityConfig: availConfig,
+			TargetNamespace:    HostedMCENamespace(m).Name,
+			Overrides: &mcev1.Overrides{
+				Components: utils.GetMCEComponents(m),
 			},
-		}
-	} else {
-		mce = &mcev1.MultiClusterEngine{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        MulticlusterengineName,
-				Labels:      labels,
-				Annotations: annotations,
-			},
-			Spec: mcev1.MultiClusterEngineSpec{
-				ImagePullSecret:    m.Spec.ImagePullSecret,
-				Tolerations:        utils.GetTolerations(m),
-				NodeSelector:       m.Spec.NodeSelector,
-				AvailabilityConfig: availConfig,
-				TargetNamespace:    OperandNameSpace(),
-				Overrides: &mcev1.Overrides{
-					Components: utils.GetMCEComponents(m),
-				},
-			},
-		}
+		},
 	}
 
 	if m.Spec.Overrides != nil && m.Spec.Overrides.ImagePullPolicy != "" {
@@ -327,8 +348,38 @@ func GetMCEPackageManifests(k8sClient client.Client) ([]olmapi.PackageManifest, 
 	return pkgList, nil
 }
 
-// Finds MCE by managed label. Returns nil if none found.
-func GetManagedMCE(ctx context.Context, k8sClient client.Client, m *operatorsv1.MultiClusterHub) (*mcev1.MultiClusterEngine, error) {
+// Finds MCE by managed label. Returns nil if none found. ERIN FIX
+func GetManagedMCE(ctx context.Context, k8sClient client.Client) (*mcev1.MultiClusterEngine, error) {
+	mceList := &mcev1.MultiClusterEngineList{}
+	err := k8sClient.List(ctx, mceList, &client.MatchingLabels{
+		utils.MCEManagedByLabel: "true",
+	})
+	if err != nil {
+		return nil, err
+	} else if err == nil && len(mceList.Items) == 1 {
+		return &mceList.Items[0], nil
+	} else if len(mceList.Items) > 1 {
+		retmce := &mcev1.MultiClusterEngine{}
+		count := 0
+		for _, mce := range mceList.Items {
+			if mce.Annotations["deploymentmode"] == "Hosted" {
+				continue
+			} else {
+				count++
+				retmce = &mce
+			}
+		}
+		if count > 1 {
+			return nil, fmt.Errorf("multiple MCEs found managed by MCH. Only one MCE is supported")
+		}
+		return retmce, nil
+
+	}
+
+	return nil, nil
+}
+
+func GetHostedManagedMCE(ctx context.Context, k8sClient client.Client, m *operatorsv1.MultiClusterHub) (*mcev1.MultiClusterEngine, error) {
 	mceList := &mcev1.MultiClusterEngineList{}
 	err := k8sClient.List(ctx, mceList, &client.MatchingLabels{
 		utils.MCEManagedByLabel: "true",
@@ -337,10 +388,7 @@ func GetManagedMCE(ctx context.Context, k8sClient client.Client, m *operatorsv1.
 		return nil, err
 	} else if err == nil && len(mceList.Items) == 1 {
 		//always create new hosted mode MCE
-		if operatorsv1.IsInHostedMode(m) {
-			return nil, nil
-		}
-		return &mceList.Items[0], nil
+		return nil, nil
 	} else if len(mceList.Items) > 1 {
 		found := false
 		var foundMCE *mcev1.MultiClusterEngine
@@ -348,7 +396,7 @@ func GetManagedMCE(ctx context.Context, k8sClient client.Client, m *operatorsv1.
 			//Only pick up the MCE with the correct MCE installer
 			if mce.Labels["installer.name"] == m.Name {
 				if found {
-					return nil, fmt.Errorf("multiple MCEs found managed by MCH. Only one MCE is supported")
+					return nil, fmt.Errorf("multiple MCEs found managed by same MCH. Only one MCE is supported")
 				}
 				found = true
 				foundMCE = &mce
@@ -363,18 +411,14 @@ func GetManagedMCE(ctx context.Context, k8sClient client.Client, m *operatorsv1.
 }
 
 // find MCE. label it for future. return nil if no mce found.
-func FindAndManageMCE(ctx context.Context, k8sClient client.Client, m *operatorsv1.MultiClusterHub) (*mcev1.MultiClusterEngine, error) {
+func FindAndManageMCE(ctx context.Context, k8sClient client.Client) (*mcev1.MultiClusterEngine, error) {
 	// first find subscription via managed-by label
-	mce, err := GetManagedMCE(ctx, k8sClient, m)
+	mce, err := GetManagedMCE(ctx, k8sClient)
 	if err != nil {
 		return nil, err
 	}
 	if mce != nil {
 		return mce, nil
-	}
-
-	if operatorsv1.IsInHostedMode(m) {
-		return nil, nil
 	}
 
 	// if label doesn't work find it via list
@@ -387,21 +431,48 @@ func FindAndManageMCE(ctx context.Context, k8sClient client.Client, m *operators
 	if len(wholeList.Items) == 0 {
 		return nil, nil
 	}
+	retmce := &mcev1.MultiClusterEngine{}
+	count := 0
 	if len(wholeList.Items) > 1 {
-		return nil, fmt.Errorf("multiple MCEs found managed by MCH. Only one MCE is supported")
+		for _, mce := range wholeList.Items {
+			if mce.Annotations["deploymentmode"] == "Hosted" {
+				continue
+			} else {
+				count++
+				retmce = &mce
+			}
+		}
+		if count > 1 {
+			return nil, fmt.Errorf("multiple MCEs found managed by MCH. Only one MCE is supported")
+		}
+	} else {
+		retmce = &wholeList.Items[0]
 	}
-	labels := wholeList.Items[0].GetLabels()
+	labels := retmce.GetLabels()
 	if labels == nil {
 		labels = map[string]string{}
 	}
 	labels[utils.MCEManagedByLabel] = "true"
-	wholeList.Items[0].SetLabels(labels)
+	retmce.SetLabels(labels)
 	log.FromContext(ctx).Info("Adding label to MCE")
-	if err := k8sClient.Update(ctx, &wholeList.Items[0]); err != nil {
+	if err := k8sClient.Update(ctx, retmce); err != nil {
 		log.FromContext(ctx).Error(err, "Failed to add managedBy label to preexisting MCE")
-		return &wholeList.Items[0], err
+		return retmce, err
 	}
-	return &wholeList.Items[0], nil
+	return retmce, nil
+}
+
+func FindAndManageHostedMCE(ctx context.Context, k8sClient client.Client, m *operatorsv1.MultiClusterHub) (*mcev1.MultiClusterEngine, error) {
+	// first find subscription via managed-by label
+	mce, err := GetHostedManagedMCE(ctx, k8sClient, m)
+	if err != nil {
+		return nil, err
+	}
+	if mce != nil {
+		return mce, nil
+	}
+
+	return nil, nil
 }
 
 // MCECreatedByMCH returns true if the provided MCE was created by the multiclusterhub-operator (as indicated by installer labels).

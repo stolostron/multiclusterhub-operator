@@ -662,3 +662,137 @@ func HubConditionPresent(status operatorsv1.MultiClusterHubStatus, conditionType
 	}
 	return false
 }
+
+func (r *MultiClusterHubReconciler) syncHostedHubStatus(
+	m *operatorsv1.MultiClusterHub,
+	original *operatorsv1.MultiClusterHubStatus,
+	allDeps []*appsv1.Deployment,
+	allCRs map[string]*unstructured.Unstructured,
+	ocpConsole bool,
+) (reconcile.Result, error) {
+	// localCluster, err := r.ensureManagedClusterIsRunning(m, ocpConsole)
+	newStatus := calculateHostedStatus(m, allDeps, allCRs, ocpConsole)
+	if reflect.DeepEqual(m.Status, original) {
+		r.Log.Info("Status hasn't changed")
+		return reconcile.Result{}, nil
+	}
+
+	newHub := m
+	newHub.Status = newStatus
+	err := r.Client.Status().Update(context.TODO(), newHub)
+	if err != nil {
+		if errors.IsConflict(err) {
+			// Error from object being modified is normal behavior and should not be treated like an error
+			r.Log.Info("Failed to update status", "Reason", "Object has been modified")
+			return reconcile.Result{RequeueAfter: resyncPeriod}, nil
+		}
+
+		r.Log.Error(err, fmt.Sprintf("Failed to update %s/%s status ", m.Namespace, m.Name))
+		return reconcile.Result{}, err
+	}
+
+	if m.Status.Phase != operatorsv1.HubRunning {
+		return reconcile.Result{RequeueAfter: resyncPeriod}, nil
+	} else {
+		return reconcile.Result{}, nil
+	}
+}
+
+func calculateHostedStatus(
+	hub *operatorsv1.MultiClusterHub,
+	allDeps []*appsv1.Deployment,
+	allCRs map[string]*unstructured.Unstructured,
+	//	importClusterStatus []interface{},
+	ocpConsole bool,
+) operatorsv1.MultiClusterHubStatus {
+	components := getHostedComponentStatuses(hub, allDeps, allCRs, ocpConsole)
+	status := operatorsv1.MultiClusterHubStatus{
+		CurrentVersion: hub.Status.CurrentVersion,
+		DesiredVersion: version.Version,
+		Components:     components,
+	}
+
+	// Set current version
+	successful := allComponentsSuccessful(components)
+	if successful {
+		status.CurrentVersion = version.Version
+	}
+
+	// Copy conditions one by one to not affect original object
+	conditions := hub.Status.HubConditions
+	for i := range conditions {
+		status.HubConditions = append(status.HubConditions, conditions[i])
+	}
+
+	// Update hub conditions
+	if successful {
+		// don't label as complete until component pruning succeeds
+		if !hubPruning(status) {
+			available := NewHubCondition(operatorsv1.Complete, v1.ConditionTrue, ComponentsAvailableReason, "All hub components ready.")
+			SetHubCondition(&status, *available)
+		} else {
+			// only add unavailable status if complete status already present
+			if HubConditionPresent(status, operatorsv1.Complete) {
+				unavailable := NewHubCondition(operatorsv1.Complete, v1.ConditionFalse, OldComponentNotRemovedReason, "Not all components successfully pruned.")
+				SetHubCondition(&status, *unavailable)
+			}
+		}
+	} else {
+		// hub is progressing unless otherwise specified
+		if !HubConditionPresent(status, operatorsv1.Progressing) {
+			progressing := NewHubCondition(operatorsv1.Progressing, v1.ConditionTrue, ReconcileReason, "Hub is reconciling.")
+			SetHubCondition(&status, *progressing)
+		}
+		// only add unavailable status if complete status already present
+		if HubConditionPresent(status, operatorsv1.Complete) {
+			unavailable := NewHubCondition(operatorsv1.Complete, v1.ConditionFalse, ComponentsUnavailableReason, "Not all hub components ready.")
+			SetHubCondition(&status, *unavailable)
+		}
+	}
+
+	// Set overall phase
+	isHubMarkedToBeDeleted := hub.GetDeletionTimestamp() != nil
+	if isHubMarkedToBeDeleted {
+		// Hub cleaning up
+		status.Phase = operatorsv1.HubUninstalling
+	} else {
+		status.Phase = aggregatePhase(status)
+	}
+
+	return status
+}
+
+func getHostedComponentStatuses(
+	hub *operatorsv1.MultiClusterHub,
+	allDeps []*appsv1.Deployment,
+	allCRs map[string]*unstructured.Unstructured,
+	ocpConsole bool,
+) map[string]operatorsv1.StatusCondition {
+	components := newHostedComponentList(hub)
+
+	for _, d := range allDeps {
+		if _, ok := components[d.Name]; ok {
+			components[d.Name] = mapDeployment(d)
+		}
+	}
+
+	for key, cr := range allCRs {
+		if cr == nil {
+			continue
+		}
+		switch key {
+		case "mce":
+			components["multicluster-engine"] = mapMultiClusterEngine(cr) //MAKE SURE MY MCE is CR value
+		}
+	}
+
+	return components
+}
+
+func newHostedComponentList(m *operatorsv1.MultiClusterHub) map[string]operatorsv1.StatusCondition {
+	components := make(map[string]operatorsv1.StatusCondition)
+	for _, cr := range utils.GetHostedCustomResourcesForStatus(m) {
+		components[cr.Name] = unknownStatus
+	}
+	return components
+}
