@@ -309,9 +309,18 @@ func GetManagedMCE(ctx context.Context, k8sClient client.Client) (*mcev1.MultiCl
 	})
 	if err != nil {
 		return nil, err
-	} else if err == nil && len(mceList.Items) == 1 {
-		return &mceList.Items[0], nil
-	} else if len(mceList.Items) > 1 {
+	}
+	// filter out hosted MCEs
+	filteredMCEs := []mcev1.MultiClusterEngine{}
+	for _, mce := range mceList.Items {
+		if mce.Annotations == nil || mce.Annotations["deploymentmode"] != "Hosted" {
+			filteredMCEs = append(filteredMCEs, mce)
+		}
+	}
+
+	if err == nil && len(filteredMCEs) == 1 {
+		return &filteredMCEs[0], nil
+	} else if len(filteredMCEs) > 1 {
 		// will require manual resolution
 		return nil, fmt.Errorf("multiple MCEs found managed by MCH. Only one MCE is supported")
 	}
@@ -340,21 +349,30 @@ func FindAndManageMCE(ctx context.Context, k8sClient client.Client) (*mcev1.Mult
 	if len(wholeList.Items) == 0 {
 		return nil, nil
 	}
-	if len(wholeList.Items) > 1 {
+
+	// filter hosted MCEs
+	filteredMCEs := []mcev1.MultiClusterEngine{}
+	for _, mce := range wholeList.Items {
+		if mce.Annotations == nil || mce.Annotations["deploymentmode"] != "Hosted" {
+			filteredMCEs = append(filteredMCEs, mce)
+		}
+	}
+
+	if len(filteredMCEs) > 1 {
 		return nil, fmt.Errorf("multiple MCEs found managed by MCH. Only one MCE is supported")
 	}
-	labels := wholeList.Items[0].GetLabels()
+	labels := filteredMCEs[0].GetLabels()
 	if labels == nil {
 		labels = map[string]string{}
 	}
 	labels[utils.MCEManagedByLabel] = "true"
-	wholeList.Items[0].SetLabels(labels)
+	filteredMCEs[0].SetLabels(labels)
 	log.FromContext(ctx).Info("Adding label to MCE")
-	if err := k8sClient.Update(ctx, &wholeList.Items[0]); err != nil {
+	if err := k8sClient.Update(ctx, &filteredMCEs[0]); err != nil {
 		log.FromContext(ctx).Error(err, "Failed to add managedBy label to preexisting MCE")
-		return &wholeList.Items[0], err
+		return &filteredMCEs[0], err
 	}
-	return &wholeList.Items[0], nil
+	return &filteredMCEs[0], nil
 }
 
 // MCECreatedByMCH returns true if the provided MCE was created by the multiclusterhub-operator (as indicated by installer labels).

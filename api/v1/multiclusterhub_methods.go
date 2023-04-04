@@ -96,6 +96,15 @@ func GetDefaultDisabledComponents() ([]string, error) {
 	return defaultDisabledComponents, nil
 }
 
+func GetDefaultHostedComponents() []string {
+	var defaultHostedComponents = []string{
+		MultiClusterEngine,
+		//Add other components here when added to hostedmode
+	}
+
+	return defaultHostedComponents
+}
+
 func (mch *MultiClusterHub) ComponentPresent(s string) bool {
 	if mch.Spec.Overrides == nil {
 		return false

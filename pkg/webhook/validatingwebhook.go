@@ -86,16 +86,13 @@ func (m *multiClusterHubValidator) Handle(ctx context.Context, req admission.Req
 	}
 
 	if req.Operation == "CREATE" {
-		if len(multiClusterHubs.Items) == 0 {
-			err := m.validateCreate(req)
-			if err != nil {
-				log.Info("Create denied")
-				return admission.Denied(err.Error())
-			}
-			log.Info("Create successful")
-			return admission.Allowed("")
+		err := m.validateCreate(req)
+		if err != nil {
+			log.Info("Create denied")
+			return admission.Denied(err.Error())
 		}
-		return admission.Denied("The MultiClusterHub CR already exists")
+		log.Info("Create successful")
+		return admission.Allowed("")
 	}
 	//If not create update
 	if req.Operation == "UPDATE" {
@@ -173,6 +170,10 @@ func (m *multiClusterHubValidator) validateUpdate(req admission.Request) error {
 	}
 	if existingMCH.Spec.SeparateCertificateManagement != newMCH.Spec.SeparateCertificateManagement {
 		return errors.New("Updating SeparateCertificateManagement is forbidden")
+	}
+
+	if existingMCH.IsInHostedMode() != newMCH.IsInHostedMode() {
+		return fmt.Errorf("Changes cannot be made to DeploymentMode")
 	}
 
 	if !reflect.DeepEqual(existingMCH.Spec.Hive, newMCH.Spec.Hive) {
