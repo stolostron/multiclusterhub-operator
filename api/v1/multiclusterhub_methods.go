@@ -96,6 +96,15 @@ func GetDefaultDisabledComponents() ([]string, error) {
 	return defaultDisabledComponents, nil
 }
 
+func GetDefaultHostedComponents() []string {
+	var defaultHostedComponents = []string{
+		MultiClusterEngine,
+		//Add other components here when added to hostedmode
+	}
+
+	return defaultHostedComponents
+}
+
 func (mch *MultiClusterHub) ComponentPresent(s string) bool {
 	if mch.Spec.Overrides == nil {
 		return false
@@ -196,4 +205,16 @@ func IsCommunity() (bool, error) {
 		err := errors.New("There is an illegal value set for OPERATOR_PACKAGE")
 		return true, err
 	}
+}
+
+// IsInHostedMode returns true if mch is configured for hosted mode
+func (mch *MultiClusterHub) IsInHostedMode() bool {
+	a := mch.GetAnnotations()
+	if a == nil {
+		return false
+	}
+	if a["deploymentmode"] == string(ModeHosted) {
+		return true
+	}
+	return false
 }

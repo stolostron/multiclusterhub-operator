@@ -103,8 +103,6 @@ func (r *MultiClusterHubReconciler) ensureUnstructuredResource(m *operatorv1.Mul
 func (r *MultiClusterHubReconciler) ensureNamespace(m *operatorv1.MultiClusterHub, ns *corev1.Namespace) (ctrl.Result, error) {
 	ctx := context.Background()
 
-	r.Log.Info(fmt.Sprintf("Ensuring namespace: %s", ns.GetName()))
-
 	existingNS := &corev1.Namespace{}
 	err := r.Client.Get(ctx, types.NamespacedName{
 		Name: ns.GetName(),
@@ -575,7 +573,7 @@ func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context) (ctrl.R
 		return ctrl.Result{Requeue: true}, err
 	}
 	if existingMCE == nil {
-		r.Log.Info(fmt.Sprintf("Multiclusterengine: %s is not yet present", existingMCE.GetName()))
+		r.Log.Info(fmt.Sprintf("Multiclusterengine is not yet present"))
 		return ctrl.Result{Requeue: true}, nil
 	}
 	if utils.IsUnitTest() {
