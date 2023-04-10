@@ -503,6 +503,19 @@ func SetDefaultComponents(m *operatorsv1.MultiClusterHub) (bool, error) {
 	return updated, nil
 }
 
+// SetHostedDefaultComponents returns true if changes are made
+func SetHostedDefaultComponents(m *operatorsv1.MultiClusterHub) bool {
+	updated := false
+	components := operatorsv1.GetDefaultHostedComponents()
+	for _, c := range components {
+		if !m.ComponentPresent(c) {
+			m.Enable(c)
+			updated = true
+		}
+	}
+	return updated
+}
+
 // DeduplicateComponents removes duplicate componentconfigs by name, keeping the config of the last
 // componentconfig in the list. Returns true if changes are made.
 func DeduplicateComponents(m *operatorsv1.MultiClusterHub) bool {

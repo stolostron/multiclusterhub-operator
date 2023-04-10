@@ -86,16 +86,13 @@ func (m *multiClusterHubValidator) Handle(ctx context.Context, req admission.Req
 	}
 
 	if req.Operation == "CREATE" {
-		if len(multiClusterHubs.Items) == 0 {
-			err := m.validateCreate(req)
-			if err != nil {
-				log.Info("Create denied")
-				return admission.Denied(err.Error())
-			}
-			log.Info("Create successful")
-			return admission.Allowed("")
+		err := m.validateCreate(req)
+		if err != nil {
+			log.Info("Create denied")
+			return admission.Denied(err.Error())
 		}
-		return admission.Denied("The MultiClusterHub CR already exists")
+		log.Info("Create successful")
+		return admission.Allowed("")
 	}
 	//If not create update
 	if req.Operation == "UPDATE" {
@@ -128,6 +125,24 @@ func (m *multiClusterHubValidator) validateCreate(req admission.Request) error {
 		return err
 	}
 
+	multiClusterHubs := &operatorsv1.MultiClusterHubList{}
+	if err := m.client.List(context.TODO(), multiClusterHubs); err != nil {
+		return fmt.Errorf("unable to list MultiClusterHubs: %s", err)
+	}
+
+	// Standalone MCH must exist before a hosted MCH can be created
+	if (len(multiClusterHubs.Items) == 0) && mch.IsInHostedMode() {
+		return fmt.Errorf("A Hosted Mode MCH can only be created once a non-hosted MCH is present")
+	}
+
+	// Prevent two standalone MCH's
+	for _, existing := range multiClusterHubs.Items {
+		existingMCH := existing
+		if !mch.IsInHostedMode() && !existingMCH.IsInHostedMode() {
+			return fmt.Errorf("MultiClusterHub in Standalone mode already exists: `%s`. Only one resource may exist in Standalone mode.", existingMCH.Name)
+		}
+	}
+
 	// Validate components
 	if mch.Spec.Overrides != nil {
 		for _, c := range mch.Spec.Overrides.Components {
@@ -155,6 +170,10 @@ func (m *multiClusterHubValidator) validateUpdate(req admission.Request) error {
 	}
 	if existingMCH.Spec.SeparateCertificateManagement != newMCH.Spec.SeparateCertificateManagement {
 		return errors.New("Updating SeparateCertificateManagement is forbidden")
+	}
+
+	if existingMCH.IsInHostedMode() != newMCH.IsInHostedMode() {
+		return fmt.Errorf("Changes cannot be made to DeploymentMode")
 	}
 
 	if !reflect.DeepEqual(existingMCH.Spec.Hive, newMCH.Spec.Hive) {
@@ -185,6 +204,11 @@ func (m *multiClusterHubValidator) validateDelete(req admission.Request) error {
 	err := m.decoder.DecodeRaw(req.OldObject, mch)
 	if err != nil {
 		return err
+	}
+
+	// Do not block delete of hosted mode, which does not spawn the resources
+	if mch.IsInHostedMode() {
+		return nil
 	}
 
 	cfg, err := config.GetConfig()

@@ -143,6 +143,11 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		r.Log.Error(err, "Failed to get MultiClusterHub CR")
 		return ctrl.Result{}, err
 	}
+
+	if multiClusterHub.IsInHostedMode() {
+		return r.HostedReconcile(ctx, multiClusterHub)
+	}
+
 	// Check to see if upgradeable
 	upgrade, err := r.setOperatorUpgradeableStatus(ctx, multiClusterHub)
 	if err != nil {
