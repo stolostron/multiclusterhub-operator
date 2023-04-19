@@ -6,3 +6,6 @@ spec:
   addOnMeta:
     description: Monitors identity controls based on distributed policies.
     displayName: IAM Policy Addon
+  supportedConfigs:
+    - group: addon.open-cluster-management.io
+      resource: addondeploymentconfigs
