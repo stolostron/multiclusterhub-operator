@@ -37,9 +37,9 @@ spec:
       containers:
       - command:
         - /usr/local/bin/propagation
-        - --leader-election-lease-duration=137
-        - --renew-deadline=107
-        - --retry-period=26
+        - --leader-election-lease-duration=137s
+        - --leader-election-renew-deadline=107s
+        - --leader-election-retry-period=26s
         env:
 {{- if .Values.hubconfig.proxyConfigs }}
         - name: HTTP_PROXY
@@ -83,9 +83,9 @@ spec:
         - /usr/local/bin/gitopssyncresc
         - --appset-resource-dir=/etc/gitops-resources
         - --sync-interval=10
-        - --leader-election-lease-duration=137
-        - --renew-deadline=107
-        - --retry-period=26
+        - --leader-election-lease-duration=137s
+        - --leader-election-renew-deadline=107s
+        - --leader-election-retry-period=26s
         env:
 {{- if .Values.hubconfig.proxyConfigs }}
         - name: HTTP_PROXY
@@ -144,9 +144,9 @@ spec:
         - /usr/local/bin/multiclusterstatusaggregation
         - --appset-resource-dir=/etc/gitops-resources
         - --sync-interval=10
-        - --leader-election-lease-duration=137
-        - --renew-deadline=107
-        - --retry-period=26
+        - --leader-election-lease-duration=137s
+        - --leader-election-renew-deadline=107s
+        - --leader-election-retry-period=26s
         env:
 {{- if .Values.hubconfig.proxyConfigs }}
         - name: HTTP_PROXY
