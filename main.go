@@ -42,14 +42,14 @@ import (
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/webhook"
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
-	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 
-	corev1 "k8s.io/api/core/v1"
 	networking "k8s.io/api/networking/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -134,19 +134,19 @@ func main() {
 	flag.BoolVar(&enableLeaderElection, "leader-elect", true,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-			flag.DurationVar(&leaseDuration, "leader-election-lease-duration", 137*time.Second, ""+
-			"The duration that non-leader candidates will wait after observing a leadership "+
-			"renewal until attempting to acquire leadership of a led but unrenewed leader "+
-			"slot. This is effectively the maximum duration that a leader can be stopped "+
-			"before it is replaced by another candidate. This is only applicable if leader "+
-			"election is enabled.")
-		flag.DurationVar(&renewDeadline, "leader-election-renew-deadline", 107*time.Second, ""+
-			"The interval between attempts by the acting master to renew a leadership slot "+
-			"before it stops leading. This must be less than or equal to the lease duration. "+
-			"This is only applicable if leader election is enabled.")
-		flag.DurationVar(&retryPeriod, "leader-election-retry-period", 26*time.Second, ""+
-			"The duration the clients should wait between attempting acquisition and renewal "+
-			"of a leadership. This is only applicable if leader election is enabled.")
+	flag.DurationVar(&leaseDuration, "leader-election-lease-duration", 137*time.Second, ""+
+		"The duration that non-leader candidates will wait after observing a leadership "+
+		"renewal until attempting to acquire leadership of a led but unrenewed leader "+
+		"slot. This is effectively the maximum duration that a leader can be stopped "+
+		"before it is replaced by another candidate. This is only applicable if leader "+
+		"election is enabled.")
+	flag.DurationVar(&renewDeadline, "leader-election-renew-deadline", 107*time.Second, ""+
+		"The interval between attempts by the acting master to renew a leadership slot "+
+		"before it stops leading. This must be less than or equal to the lease duration. "+
+		"This is only applicable if leader election is enabled.")
+	flag.DurationVar(&retryPeriod, "leader-election-retry-period", 26*time.Second, ""+
+		"The duration the clients should wait between attempting acquisition and renewal "+
+		"of a leadership. This is only applicable if leader election is enabled.")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -170,18 +170,18 @@ func main() {
 		LeaderElectionID:        "multicloudhub-operator-lock",
 		WebhookServer:           &ctrlwebhook.Server{TLSMinVersion: "1.2"},
 		LeaderElectionNamespace: ns,
-		LeaseDuration:          &leaseDuration,
-		RenewDeadline:          &renewDeadline,
-		RetryPeriod:            &retryPeriod,
+		LeaseDuration:           &leaseDuration,
+		RenewDeadline:           &renewDeadline,
+		RetryPeriod:             &retryPeriod,
 	}
 
-	cacheSecrets := os.Getenv(NoCacheEnv)
-	if len(cacheSecrets) > 0 {
-		setupLog.Info("Operator Client Cache Disabled")
-		mgrOptions.ClientDisableCacheFor = []client.Object{
-			&corev1.Secret{},
-			&olmv1alpha1.ClusterServiceVersion{},
-		}
+	mgrOptions.ClientDisableCacheFor = []client.Object{
+		&corev1.Secret{},
+		&rbacv1.ClusterRole{},
+		&rbacv1.ClusterRoleBinding{},
+		&rbacv1.RoleBinding{},
+		&corev1.ConfigMap{},
+		&corev1.ServiceAccount{},
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOptions)
