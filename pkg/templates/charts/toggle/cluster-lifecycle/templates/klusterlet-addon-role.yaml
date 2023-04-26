@@ -122,3 +122,10 @@ rules:
     - get
     - list
     - watch
+- apiGroups:
+    - operator.open-cluster-management.io
+  resources:
+    - multiclusterhubs
+  verbs:
+    - get
+    - list
