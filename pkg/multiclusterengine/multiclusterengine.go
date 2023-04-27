@@ -119,6 +119,8 @@ func RenderMultiClusterEngine(existingMCE *mcev1.MultiClusterEngine, m *operator
 			newAnnotations[key] = val
 		}
 		copy.SetAnnotations(newAnnotations)
+	} else {
+		RemoveSupportedAnnotations(copy)
 	}
 
 	if m.Spec.AvailabilityConfig == operatorsv1.HABasic {
@@ -153,6 +155,18 @@ func GetSupportedAnnotations(m *operatorsv1.MultiClusterHub) map[string]string {
 	if m.GetAnnotations() != nil {
 		if val, ok := m.GetAnnotations()[utils.AnnotationImageRepo]; ok && val != "" {
 			mceAnnotations["imageRepository"] = val
+		}
+	}
+	return mceAnnotations
+}
+
+// RemoveSupportedAnnotations removes annotations relevant to MCE from MCE. If the annotation is
+// already present then sets value to empty rather than removing the key
+func RemoveSupportedAnnotations(mce *mcev1.MultiClusterEngine) map[string]string {
+	mceAnnotations := mce.GetAnnotations()
+	if mceAnnotations != nil {
+		if _, ok := mceAnnotations["imageRepository"]; ok {
+			mceAnnotations["imageRepository"] = ""
 		}
 	}
 	return mceAnnotations
