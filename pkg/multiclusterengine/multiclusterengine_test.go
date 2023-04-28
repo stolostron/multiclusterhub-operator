@@ -446,6 +446,15 @@ func TestRenderMultiClusterEngine(t *testing.T) {
 		g.Expect(got.Annotations["imageRepository"]).To(gomega.Equal(mch.Annotations["mch-imageRepository"]), "Override annotations should be updated")
 	})
 
+	// Annotation on MCE but not MCH
+	existingMCE.Annotations["imageRepository"] = "quay.io"
+	mch.SetAnnotations(map[string]string{})
+	got = RenderMultiClusterEngine(existingMCE, mch)
+	t.Run("Remove override annotation", func(t *testing.T) {
+		g.Expect(got.Annotations["random"]).To(gomega.Equal(existingMCE.Annotations["random"]), "Unrelated annotations should not be erased")
+		g.Expect(got.Annotations["imageRepository"]).To(gomega.Equal(""), "Override annotation should be be emptied")
+	})
+
 }
 
 func Test_filterPackageManifests(t *testing.T) {
