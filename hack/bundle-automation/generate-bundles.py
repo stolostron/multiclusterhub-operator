@@ -483,6 +483,43 @@ def split_at(the_str, the_delim, favor_right=True):
 
    return (left_part, right_part)
 
+def addCMAs(repo, operator, outputDir):
+    if 'bundlePath' in operator:
+        bundlePath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp", repo, operator["bundlePath"])
+        if not os.path.exists(bundlePath):
+            logging.critical("Could not validate bundlePath at given path: " + operator["bundlePath"])
+            exit(1)
+    else:
+        packageYmlPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp", repo, operator["package-yml"])
+        if not os.path.exists(packageYmlPath):
+            logging.critical("Could not find package.yaml at given path: " + operator["package-yml"])
+            exit(1)
+
+        with open(packageYmlPath, 'r') as f:
+            packageYml = yaml.safe_load(f)
+
+        bundlePath = ""
+        for channel in packageYml["channels"]:
+            if channel["name"] == operator["channel"]:
+                version = channel["currentCSV"].split(".", 1)[1][1:]
+                bundlePath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp", repo, os.path.dirname(operator["package-yml"]), version)
+                break
+
+        if bundlePath == "":
+            print("Unable to find given channel: " +  operator["channel"] + " in package.yaml: " + operator["package-yml"])
+            exit(1)
+
+    for filename in os.listdir(bundlePath):
+        if not filename.endswith(".yaml"): 
+            continue
+        filepath = os.path.join(bundlePath, filename)
+        with open(filepath, 'r') as f:
+            resourceFile = yaml.safe_load(f)
+
+        if resourceFile["kind"] == "ClusterManagementAddOn":
+            logging.info("CMA")
+            shutil.copyfile(filepath, os.path.join(outputDir, "charts", "toggle", operator['name'], "templates", filename))
+
 def addCRDs(repo, operator, outputDir):
     if 'bundlePath' in operator:
         bundlePath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp", repo, operator["bundlePath"])
@@ -650,6 +687,9 @@ def main():
             logging.info("Adding Resources from CSV...")
             addResources(helmChart, csvPath)
             logging.info("Resources have been added from CSV. \n")
+
+            # Copy over all ClusterManagementAddons to the destination directory
+            addCMAs(repo["repo_name"], operator, destination)
 
             if not skipOverrides:
                 logging.info("Adding Overrides (set --skipOverrides=true to skip) ...")
