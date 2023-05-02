@@ -114,6 +114,8 @@ spec:
 {{- end }}
       securityContext:
         runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: multicluster-operators
 {{- with .Values.hubconfig.tolerations }}
       tolerations:
