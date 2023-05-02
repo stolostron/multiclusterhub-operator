@@ -15,7 +15,7 @@ rules:
   resources: [ "applications", "applications/status"]
   verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
 - apiGroups: ["argoproj.io"]
-  resources: [ "applications", "applications/status"]
+  resources: [ "applications", "applications/status", "argocds"]
   verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
 - apiGroups: ["policy.open-cluster-management.io"]
   resources: ["policies","policies/status","placementbindings","policyautomations", "policysets"]
