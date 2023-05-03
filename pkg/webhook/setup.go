@@ -80,7 +80,7 @@ func registerWebhook(mgr manager.Manager, ns string) {
 	hookServer := &webhook.Server{
 		Port:          8443,
 		CertDir:       certDir,
-		TLSMinVersion: "1.2",
+		TLSMinVersion: "1.3",
 	}
 
 	log.Info("Add the webhook server.")
