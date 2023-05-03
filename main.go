@@ -168,7 +168,7 @@ func main() {
 		HealthProbeBindAddress:  probeAddr,
 		LeaderElection:          enableLeaderElection,
 		LeaderElectionID:        "multicloudhub-operator-lock",
-		WebhookServer:           &ctrlwebhook.Server{TLSMinVersion: "1.2"},
+		WebhookServer:           &ctrlwebhook.Server{TLSMinVersion: "1.3"},
 		LeaderElectionNamespace: ns,
 		LeaseDuration:           &leaseDuration,
 		RenewDeadline:           &renewDeadline,
