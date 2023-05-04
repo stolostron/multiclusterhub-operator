@@ -145,7 +145,19 @@ func (r *MultiClusterHubReconciler) ensureKlusterletAddonConfig(m *operatorsv1.M
 		r.Log.Info("Created a new KlusterletAddonConfig")
 		return ctrl.Result{}, nil
 	}
+	if err != nil {
+		return ctrl.Result{Requeue: true}, fmt.Errorf("get klusterletaddonconfig: %v", err)
+	}
 
+	res, _, err := unstructured.NestedString(klusterletaddonconfig.Object, "spec", "version")
+	if err != nil {
+		return ctrl.Result{Requeue: true}, fmt.Errorf("modify klusterletaddonconfig: %v", err)
+	} else if res != version.Version {
+		err = unstructured.SetNestedField(klusterletaddonconfig.Object, version.Version, "spec", "version")
+		if err != nil {
+			return ctrl.Result{Requeue: true}, fmt.Errorf("modify klusterletaddonconfig: %v", err)
+		}
+	}
 	utils.AddInstallerLabel(klusterletaddonconfig, m.GetName(), m.GetNamespace())
 
 	err = r.Client.Update(ctx, klusterletaddonconfig)
