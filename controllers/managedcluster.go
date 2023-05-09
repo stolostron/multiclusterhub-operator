@@ -9,7 +9,6 @@ import (
 
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
-	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -77,14 +76,8 @@ func getKlusterletAddonConfig() *unstructured.Unstructured {
 				"namespace": ManagedClusterName,
 			},
 			"spec": map[string]interface{}{
-				"clusterName":      KlusterletAddonConfigName,
-				"clusterNamespace": ManagedClusterName,
 				"applicationManager": map[string]interface{}{
 					"enabled": true,
-				},
-				"clusterLabels": map[string]interface{}{
-					"cloud":  "auto-detect",
-					"vendor": "auto-detect",
 				},
 				"connectionManager": map[string]interface{}{
 					"enabledGlobalView": false,
@@ -104,7 +97,6 @@ func getKlusterletAddonConfig() *unstructured.Unstructured {
 				"iamPolicyController": map[string]interface{}{
 					"enabled": true,
 				},
-				"version": version.Version,
 			},
 		},
 	}
