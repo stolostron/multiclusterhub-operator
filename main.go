@@ -198,26 +198,42 @@ func main() {
 		os.Exit(1)
 	}
 
+	ctx := context.Background()
+
 	// Force OperatorCondition Upgradeable to False
 	//
 	// We have to at least default the condition to False or
 	// OLM will use the Readiness condition via our readiness probe instead:
 	// https://olm.operatorframework.io/docs/advanced-tasks/communicating-operator-conditions-to-olm/#setting-defaults
-	//
-	// We want to force it to False to ensure that the final decision about whether
-	// the operator can be upgraded stays within the hyperconverged controller.
 	setupLog.Info("Setting OperatorCondition.")
 	upgradeableCondition, err := utils.NewOperatorCondition(uncachedClient, operatorsapiv2.Upgradeable)
-	ctx := context.Background()
-
 	if err != nil {
 		setupLog.Error(err, "Cannot create the Upgradeable Operator Condition")
 		os.Exit(1)
 	}
-	err = upgradeableCondition.Set(ctx, metav1.ConditionFalse, utils.UpgradeableInitReason, utils.UpgradeableInitMessage)
+
+	mchList := &operatorv1.MultiClusterHubList{}
+	err = uncachedClient.List(context.TODO(), mchList)
 	if err != nil {
-		setupLog.Error(err, "unable to create uncached client")
+		setupLog.Error(err, "Could not set List multiclusterhubs")
 		os.Exit(1)
+	}
+
+	if len(mchList.Items) == 0 {
+		// If there is no MCH then no upgrade logic is needed.
+		err = upgradeableCondition.Set(ctx, metav1.ConditionTrue, utils.UpgradeableAllowReason, utils.UpgradeableAllowMessage)
+		if err != nil {
+			setupLog.Error(err, "Could not set Operator Condition")
+			os.Exit(1)
+		}
+	} else {
+		// We want to force it to False to ensure that the final decision about whether
+		// the operator can be upgraded stays within the controller.
+		err = upgradeableCondition.Set(ctx, metav1.ConditionFalse, utils.UpgradeableInitReason, utils.UpgradeableInitMessage)
+		if err != nil {
+			setupLog.Error(err, "unable to create uncached client")
+			os.Exit(1)
+		}
 	}
 
 	// re-create the condition, this time with the final client
