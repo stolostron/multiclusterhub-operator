@@ -33,6 +33,7 @@ import (
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	operatorsapiv2 "github.com/operator-framework/api/pkg/operators/v2"
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	"go.uber.org/zap/zapcore"
 
 	configv1 "github.com/openshift/api/config/v1"
 	consolev1 "github.com/openshift/api/operator/v1"
@@ -149,6 +150,7 @@ func main() {
 		"of a leadership. This is only applicable if leader election is enabled.")
 	opts := zap.Options{
 		Development: true,
+		TimeEncoder: zapcore.ISO8601TimeEncoder,
 	}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
