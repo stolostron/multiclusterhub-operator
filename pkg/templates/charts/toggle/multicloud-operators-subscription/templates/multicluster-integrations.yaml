@@ -77,6 +77,8 @@ spec:
             drop:
             - ALL
           privileged: false
+          seccompProfile:
+            type: RuntimeDefault
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
       - command:
@@ -214,6 +216,8 @@ spec:
 {{- end }}
       securityContext:
         runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: multicluster-applications
 {{- with .Values.hubconfig.tolerations }}
       tolerations:
