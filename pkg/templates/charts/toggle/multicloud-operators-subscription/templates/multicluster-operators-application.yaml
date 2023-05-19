@@ -232,8 +232,6 @@ spec:
 {{- end }}
       securityContext:
         runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
       serviceAccountName: multicluster-applications
 {{- with .Values.hubconfig.tolerations }}
       tolerations:
