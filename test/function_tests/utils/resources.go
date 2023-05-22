@@ -27,7 +27,7 @@ func NewMultiClusterHub(name, namespace, imageOverridesConfigmapName string, dis
 	}
 
 	annotations := map[string]interface{}{
-		"installer.open-cluster-management.io/mce-subscription-spec": `{"channel": "stable-2.3","installPlanApproval": "Automatic","name": "multicluster-engine","source": "multiclusterengine-catalog","sourceNamespace": "openshift-marketplace"}`,
+		"installer.open-cluster-management.io/mce-subscription-spec": `{"channel": "stable-2.4","installPlanApproval": "Automatic","name": "multicluster-engine","source": "multiclusterengine-catalog","sourceNamespace": "openshift-marketplace"}`,
 	}
 
 	if imageOverridesConfigmapName != "" {
@@ -75,7 +75,7 @@ func NewMCHTolerations(name, namespace, imageOverridesConfigmapName string, disa
 	}
 
 	annotations := map[string]interface{}{
-		"installer.open-cluster-management.io/mce-subscription-spec": `{"channel": "stable-2.3","installPlanApproval": "Automatic","name": "multicluster-engine","source": "multiclusterengine-catalog","sourceNamespace": "openshift-marketplace"}`,
+		"installer.open-cluster-management.io/mce-subscription-spec": `{"channel": "stable-2.4","installPlanApproval": "Automatic","name": "multicluster-engine","source": "multiclusterengine-catalog","sourceNamespace": "openshift-marketplace"}`,
 	}
 
 	if imageOverridesConfigmapName != "" {
