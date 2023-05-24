@@ -512,6 +512,7 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 		}
 	}
 
+	createSub := false
 	if mceSub == nil {
 		result, err := r.ensureNamespace(multiClusterHub, multiclusterengine.Namespace())
 		if result != (ctrl.Result{}) {
@@ -527,6 +528,7 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 		}
 		// Sub is nil so create a new one
 		mceSub = multiclusterengine.NewSubscription(multiClusterHub, subConfig, overrides, utils.IsCommunityMode())
+		createSub = true
 	} else if multiclusterengine.CreatedByMCH(mceSub, multiClusterHub) {
 		result, err := r.ensurePullSecret(multiClusterHub, multiclusterengine.Namespace().Name)
 		if result != (ctrl.Result{}) {
@@ -540,8 +542,11 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 
 	// Apply MCE sub
 	calcSub := multiclusterengine.RenderSubscription(mceSub, subConfig, overrides, ctlSrc, utils.IsCommunityMode())
-
-	err = r.Client.Update(ctx, calcSub)
+	if createSub {
+		err = r.Client.Create(ctx, calcSub)
+	} else {
+		err = r.Client.Update(ctx, calcSub)
+	}
 	if err != nil {
 		return ctrl.Result{Requeue: true}, fmt.Errorf("Error updating subscription %s: %w", calcSub.Name, err)
 	}
