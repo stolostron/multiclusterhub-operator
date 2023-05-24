@@ -541,12 +541,11 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 	// Apply MCE sub
 	calcSub := multiclusterengine.RenderSubscription(mceSub, subConfig, overrides, ctlSrc, utils.IsCommunityMode())
 
-	force := true
-	err = r.Client.Patch(ctx, calcSub, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
+	err = r.Client.Update(ctx, calcSub)
 	if err != nil {
-		r.Log.Info(fmt.Sprintf("Error applying subscription: %s", err.Error()))
-		return ctrl.Result{Requeue: true}, err
+		return ctrl.Result{Requeue: true}, fmt.Errorf("Error updating subscription %s: %w", calcSub.Name, err)
 	}
+
 	return ctrl.Result{}, nil
 }
 
