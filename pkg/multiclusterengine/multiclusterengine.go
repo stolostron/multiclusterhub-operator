@@ -24,7 +24,7 @@ import (
 
 var (
 	// prod MCE variables
-	channel                = "stable-2.3"
+	channel                = "stable-2.4"
 	installPlanApproval    = subv1alpha1.ApprovalAutomatic
 	packageName            = "multicluster-engine"
 	catalogSourceName      = "redhat-operators"
