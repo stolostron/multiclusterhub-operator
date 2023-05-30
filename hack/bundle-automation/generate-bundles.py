@@ -14,48 +14,65 @@ from git import Repo, exc
 
 from validate_csv import *
 
+# Split a string at a specified delimiter.  If delimiter doesn't exist, consider the
+# string to be all "left-part" (before delimiter) or "right-part" as requested.
+def split_at(the_str, the_delim, favor_right=True):
+    split_pos = the_str.find(the_delim)
+    if split_pos > 0:
+        left_part  = the_str[0:split_pos]
+        right_part = the_str[split_pos+1:]
+    else:
+        if favor_right:
+            left_part  = None
+            right_part = the_str
+        else:
+            left_part  = the_str
+            right_part = None
+
+    return (left_part, right_part)
+
 # Parse an image reference, return dict containing image reference information
 def parse_image_ref(image_ref):
-   # Image ref:  [registry-and-ns/]repository-name[:tag][@digest]
-   parsed_ref = dict()
+    # Image ref:  [registry-and-ns/]repository-name[:tag][@digest]
+    parsed_ref = dict()
 
-   remaining_ref = image_ref
-   at_pos = remaining_ref.rfind("@")
-   if at_pos > 0:
-      parsed_ref["digest"] = remaining_ref[at_pos+1:]
-      remaining_ref = remaining_ref[0:at_pos]
-   else:
-      parsed_ref["digest"] = None
-   colon_pos = remaining_ref.rfind(":")
-   if colon_pos > 0:
-      parsed_ref["tag"] = remaining_ref[colon_pos+1:]
-      remaining_ref = remaining_ref[0:colon_pos]
-   else:
-      parsed_ref["tag"] = None
-   slash_pos = remaining_ref.rfind("/")
-   if slash_pos > 0:
-      parsed_ref["repository"] = remaining_ref[slash_pos+1:]
-      rgy_and_ns = remaining_ref[0:slash_pos]
-   else:
-      parsed_ref["repository"] = remaining_ref
-      rgy_and_ns = "localhost"
-   parsed_ref["registry_and_namespace"] = rgy_and_ns
+    remaining_ref = image_ref
+    at_pos = remaining_ref.rfind("@")
+    if at_pos > 0:
+        parsed_ref["digest"] = remaining_ref[at_pos+1:]
+        remaining_ref = remaining_ref[0:at_pos]
+    else:
+        parsed_ref["digest"] = None
+    colon_pos = remaining_ref.rfind(":")
+    if colon_pos > 0:
+        parsed_ref["tag"] = remaining_ref[colon_pos+1:]
+        remaining_ref = remaining_ref[0:colon_pos]
+    else:
+        parsed_ref["tag"] = None
+    slash_pos = remaining_ref.rfind("/")
+    if slash_pos > 0:
+        parsed_ref["repository"] = remaining_ref[slash_pos+1:]
+        rgy_and_ns = remaining_ref[0:slash_pos]
+    else:
+        parsed_ref["repository"] = remaining_ref
+        rgy_and_ns = "localhost"
+    parsed_ref["registry_and_namespace"] = rgy_and_ns
 
-   rgy, ns = split_at(rgy_and_ns, "/", favor_right=False)
-   if not ns:
-      ns = ""
+    rgy, ns = split_at(rgy_and_ns, "/", favor_right=False)
+    if not ns:
+        ns = ""
 
-   parsed_ref["registry"] = rgy
-   parsed_ref["namespace"] = ns
+    parsed_ref["registry"] = rgy
+    parsed_ref["namespace"] = ns
 
-   slash_pos = image_ref.rfind("/")
-   if slash_pos > 0:
-      repo_and_suffix = image_ref[slash_pos+1:]
-   else:
-      repo_and_suffix = image_ref
-   parsed_ref["repository_and_suffix"]  = repo_and_suffix
+    slash_pos = image_ref.rfind("/")
+    if slash_pos > 0:
+        repo_and_suffix = image_ref[slash_pos+1:]
+    else:
+        repo_and_suffix = image_ref
+    parsed_ref["repository_and_suffix"]  = repo_and_suffix
 
-   return parsed_ref
+    return parsed_ref
 
 # Copy chart-templates to a new helmchart directory
 def templateHelmChart(outputDir, helmChart):
@@ -365,9 +382,15 @@ def fixImageReferences(helmChart, imageKeyMapping):
         yaml.dump(values, f)
     logging.info("Image references and pull policy in deployments and values.yaml updated successfully.\n")
 
+# insers Heml flow control if/end block around a first and last line without changing
+# the indexes of the lines list (so as to not mess up iteration across the lines).
+def insertFlowControlIfAround(lines_list, first_line_index, last_line_index, if_condition):
+   lines_list[first_line_index] = "{{- if %s }}\n%s" % (if_condition, lines_list[first_line_index])
+   lines_list[last_line_index] = "%s{{- end }}\n" % lines_list[last_line_index]
+
 # injectHelmFlowControl injects advanced helm flow control which would typically make a .yaml file more difficult to parse. This should be called last.
 def injectHelmFlowControl(deployment):
-    logging.info("Adding Helm flow control for NodeSelector and Proxy Overrides ...")
+    logging.info("Adding Helm flow control for NodeSelector, Proxy Overrides and SecCompProfile...")
     deploy = open(deployment, "r")
     lines = deploy.readlines()
     for i, line in enumerate(lines):
@@ -396,7 +419,6 @@ def injectHelmFlowControl(deployment):
 {{- end }}
 """
 
-
         if line.strip() == "env:" or line.strip() == "env: {}":
             lines[i] = """        env:
 {{- if .Values.hubconfig.proxyConfigs }}
@@ -408,10 +430,15 @@ def injectHelmFlowControl(deployment):
           value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
 {{- end }}
 """
-        a_file = open(deployment, "w")
-        a_file.writelines(lines)
-        a_file.close()
-    logging.info("Added Helm flow control for NodeSelector and Proxy Overrides.\n")
+        if line.strip() == "seccompProfile:":
+            next_line = lines[i+1]  # Ignore possible reach beyond end-of-list, not really possible
+            if next_line.strip() == "type: RuntimeDefault":
+                insertFlowControlIfAround(lines, i, i+1, "semverCompare \">=4.11.0\" .Values.hubconfig.ocpVersion")
+    #
+    a_file = open(deployment, "w")
+    a_file.writelines(lines)
+    a_file.close()
+    logging.info("Added Helm flow control for NodeSelector, Proxy Overrides and SecCompProfile.\n")
 
 # updateDeployments adds standard configuration to the deployments (antiaffinity, security policies, and tolerations)
 def updateDeployments(helmChart, exclusions):
@@ -427,30 +454,53 @@ def updateDeployments(helmChart, exclusions):
         affinityList = deploySpec['affinity']['podAntiAffinity']['preferredDuringSchedulingIgnoredDuringExecution']
         for antiaffinity in affinityList:
             antiaffinity['podAffinityTerm']['labelSelector']['matchExpressions'][0]['values'][0] = deploy['metadata']['name']
-        deploy['spec']['template']['spec']['affinity'] = deploySpec['affinity']
-        deploy['spec']['template']['spec']['tolerations'] = ''
-        deploy['spec']['template']['spec']['hostNetwork'] = False
-        deploy['spec']['template']['spec']['hostPID'] = False
-        deploy['spec']['template']['spec']['hostIPC'] = False
-        if 'securityContext' not in deploy['spec']['template']['spec']:
-            deploy['spec']['template']['spec']['securityContext'] = {}
-        deploy['spec']['template']['spec']['securityContext']['runAsNonRoot'] = True
-        deploy['spec']['template']['metadata']['labels']['ocm-antiaffinity-selector'] = deploy['metadata']['name']
-        deploy['spec']['template']['spec']['nodeSelector'] = ""
-        deploy['spec']['template']['spec']['imagePullSecrets'] = ''
 
-        containers = deploy['spec']['template']['spec']['containers']
+        pod_template = deploy['spec']['template']
+        pod_template['metadata']['labels']['ocm-antiaffinity-selector'] = deploy['metadata']['name']
+
+        pod_template_spec = pod_template['spec']
+        pod_template_spec['affinity'] = deploySpec['affinity']
+        pod_template_spec['tolerations'] = ''
+        pod_template_spec['hostNetwork'] = False
+        pod_template_spec['hostPID'] = False
+        pod_template_spec['hostIPC'] = False
+
+        if 'securityContext' not in pod_template_spec:
+            pod_template_spec['securityContext'] = {}
+        pod_security_context = pod_template_spec['securityContext']
+        pod_security_context['runAsNonRoot'] = True
+        if 'seccompProfile' not in pod_security_context:
+            pod_security_context['seccompProfile'] = {'type': 'RuntimeDefault'}
+            # This will be made conditional on OCP version >= 4.11 by injectHelmFlowControl()
+        else:
+            if pod_security_context['seccompProfile']['type'] != 'RuntimeDefault':
+                logging.warning("Leaving non-standard pod-level seccompprofile setting.")
+
+        pod_template_spec['nodeSelector'] = ""
+        pod_template_spec['imagePullSecrets'] = ''
+
+        containers = pod_template_spec['containers']
         for container in containers:
+            if 'env' not in container:
+                container['env'] = {}
+
             if 'securityContext' not in container: 
                 container['securityContext'] = {}
-            if 'env' not in container: 
-                container['env'] = {}
-            container['securityContext']['allowPrivilegeEscalation'] = False
-            container['securityContext']['capabilities'] = {}
-            container['securityContext']['capabilities']['drop'] = ['ALL']
-            container['securityContext']['privileged'] = False
+            container_security_context = container['securityContext']
+            container_security_context['allowPrivilegeEscalation'] = False
+            container_security_context['capabilities'] = {'drop': ['ALL']}
+            container_security_context['privileged'] = False
             if 'readOnlyRootFilesystem' not in exclusions:
-                container['securityContext']['readOnlyRootFilesystem'] = True
+                container_security_context['readOnlyRootFilesystem'] = True
+
+            if 'seccompProfile' in container_security_context:
+                if container_security_context['seccompProfile']['type'] == 'RuntimeDefault':
+                    # Remove, to allow pod-level setting to have effect.
+                    del container_security_context['seccompProfile']
+                else:
+                    container_name = container['name']
+                    logging.warning("Leaving non-standard seccompprofile setting for container %s" % container_name)
+
         
         with open(deployment, 'w') as f:
             yaml.dump(deploy, f)
@@ -484,22 +534,6 @@ def injectRequirements(helmChart, imageKeyMapping, exclusions):
     updateRBAC(helmChart)
     updateDeployments(helmChart, exclusions)
     logging.info("Updated Chart '%s' successfully\n", helmChart)
-
-def split_at(the_str, the_delim, favor_right=True):
-
-   split_pos = the_str.find(the_delim)
-   if split_pos > 0:
-      left_part  = the_str[0:split_pos]
-      right_part = the_str[split_pos+1:]
-   else:
-      if favor_right:
-         left_part  = None
-         right_part = the_str
-      else:
-         left_part  = the_str
-         right_part = None
-
-   return (left_part, right_part)
 
 def addCMAs(repo, operator, outputDir):
     if 'bundlePath' in operator:
@@ -643,14 +677,67 @@ def main():
     # Loop through each repo in the config.yaml
     for repo in config:
         csvPath = ""
-        logging.info("Cloning: %s", repo["repo_name"])
-        repo_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp/" + repo["repo_name"]) # Path to clone repo to
-        if os.path.exists(repo_path): # If path exists, remove and re-clone
-            shutil.rmtree(repo_path)
-        repository = Repo.clone_from(repo["github_ref"], repo_path) # Clone repo to above path
-        if 'branch' in repo:
-            repository.git.checkout(repo['branch']) # If a branch is specified, checkout that branch
-        
+        # We support two ways of getting bundle input:
+
+        # - Pikcing up already generated input from a Github repo
+        #
+        #   Entries for this approach include a "github_ref" property specifying the
+        #   Git repo we clone.  Such a repo can supply input for multiple operators
+        #   (eg: community-poerators) so the per-operator properties are configured
+        #   via the "operators" list.
+        #
+        # - Generating the input using a budnle-gen tool.
+        #
+        #   Entries for this approach include a "gen_command" property specifying
+        #   the command to run.  Since we expect that bundle-gen tool is going to gen
+        #   the input for only a single operator, the per-operator properties are
+        #   structured as singletons rather than being in a list.
+        #
+        #   We assume the bundle-gen tool knows which repos and such it needs to use
+        #   to do its job, but needs to be told a branch-name or Git SHA to use
+        #   to obtain bundle input info.
+
+        if "github_ref" in repo:
+            logging.info("Cloning: %s", repo["repo_name"])
+            repo_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp/" + repo["repo_name"]) # Path to clone repo to
+            if os.path.exists(repo_path): # If path exists, remove and re-clone
+                shutil.rmtree(repo_path)
+            repository = Repo.clone_from(repo["github_ref"], repo_path) # Clone repo to above path
+            if 'branch' in repo:
+                repository.git.checkout(repo['branch']) # If a branch is specified, checkout that branch
+
+        elif "gen_command" in repo:
+            try:
+                # repo.brnach specifies the branch or SHA the tool should use for input.
+                # repo.bundlePath specifies the directory into which the bundle manifest
+
+                # should be generated, and where they are fetched from for chartifying.
+
+                branch = repo["branch"]
+                sha = repo["sha"]
+                bundlePath = repo["bundlePath"]
+            except KeyError:
+                logging.critical("branch and bundlePath are required for tool-generated bundles")
+                exit(1)
+            cmd = "%s %s %s %s" % (repo["gen_command"], branch, sha, bundlePath)
+            logging.info("Running bundle-gen tool: %s", cmd)
+            rc = os.system(cmd)
+            if rc != 0:
+                logging.critical("Bundle-generation script exited with errors.")
+                exit(1)
+
+            # Convert the repo entry  to the format used for Github-sourced bundles
+            # so we can use a common path for both below.
+            op = {
+               "name": repo["name"],
+               "imageMappings": repo["imageMappings"],
+               "bundlePath": bundlePath
+            }
+            repo["operators"] = [op]
+
+        else:
+            logging.critical("Config entry doesn't specify either a Git repo or a generation command")
+            exit(1)
 
         # Loop through each operator in the repo identified by the config
         for operator in repo["operators"]:
