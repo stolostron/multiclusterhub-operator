@@ -91,6 +91,7 @@ func TestRender(t *testing.T) {
 	os.Setenv("HTTPS_PROXY", "test2")
 	os.Setenv("NO_PROXY", "test3")
 	os.Setenv("DIRECTORY_OVERRIDE", "../templates")
+	os.Setenv("ACM_HUB_OCP_VERSION", "4.10.0")
 
 	testImages := map[string]string{}
 	for _, v := range utils.GetTestImages() {
@@ -245,6 +246,7 @@ func TestRender(t *testing.T) {
 	os.Unsetenv("NO_PROXY")
 	os.Unsetenv("POD_NAMESPACE")
 	os.Unsetenv("DIRECTORY_OVERRIDE")
+	os.Unsetenv("ACM_HUB_OCP_VERSION")
 
 }
 
