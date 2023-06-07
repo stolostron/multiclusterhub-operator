@@ -11,6 +11,7 @@ rules:
   - operator.open-cluster-management.io
   - work.open-cluster-management.io
   - view.open-cluster-management.io
+  - authentication.open-cluster-management.io
   resources:
   - channels
   - channels/status
@@ -28,6 +29,7 @@ rules:
   - managedclusterviews
   - managedclusterviews/status
   - managedclusteraddons
+  - managedserviceaccounts
   - multiclusterhubs
   - placements
   - placements/status
