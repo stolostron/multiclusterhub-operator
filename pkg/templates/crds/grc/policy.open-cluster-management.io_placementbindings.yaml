@@ -28,6 +28,17 @@ spec:
               of an object. Servers should convert recognized schemas to the latest
               internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
+          bindingOverrides:
+            description: BindingOverrides defines the overrides to the Subjects
+            properties:
+              remediationAction:
+                description: This field overrides the policy remediationAction on
+                  target clusters
+                enum:
+                - Enforce
+                - enforce
+                type: string
+            type: object
           kind:
             description: 'Kind is a string value representing the REST resource this
               object represents. Servers may infer this from the endpoint the client
@@ -62,6 +73,12 @@ spec:
           status:
             description: PlacementBindingStatus defines the observed state of PlacementBinding
             type: object
+          subFilter:
+            description: This field provides the ability to select a subset of bound
+              clusters
+            enum:
+            - restricted
+            type: string
           subjects:
             items:
               description: Subject defines the resource that can be used as PlacementBinding
