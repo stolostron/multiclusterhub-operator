@@ -90,7 +90,7 @@ spec:
         - --v=6
         - "--tls-cert-file=/var/run/policy-metrics-cert/tls.crt"
         - "--tls-private-key-file=/var/run/policy-metrics-cert/tls.key"
-        - "--tls-min-version=VersionTLS13"
+        - "--tls-min-version=VersionTLS12"
         ports:
         - containerPort: 8443
           name: https
