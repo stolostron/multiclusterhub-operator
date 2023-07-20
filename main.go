@@ -41,7 +41,6 @@ import (
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/controllers"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
-	"github.com/stolostron/multiclusterhub-operator/pkg/webhook"
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -260,16 +259,10 @@ func main() {
 
 	// TODO: Get Webhook Working. Some troubles w/ kubebuilder generation prevented me from
 	// creating the same webhook spec. May be able to get past this with Kustomize.
-	// if err = (&operatorv1.MultiClusterHub{}).SetupWebhookWithManager(mgr); err != nil {
-	// 	setupLog.Error(err, "unable to create webhook", "webhook", "MultiClusterHub")
-	// 	os.Exit(1)
-	// }
-
-	err = webhook.Setup(mgr)
-	if err != nil {
-		setupLog.Error(err, "Failed to setup webhooks")
+	if err = (&operatorv1.MultiClusterHub{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "MultiClusterHub")
+		os.Exit(1)
 	}
-	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
