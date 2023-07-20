@@ -43,8 +43,6 @@ def copyHelmChart(destinationChartPath, repo, chart):
     shutil.copyfile(chartYamlPath, os.path.join(destinationChartPath, "Chart.yaml"))
 
     shutil.copyfile(os.path.join(chartPath, "values.yaml"), os.path.join(destinationChartPath, "values.yaml"))
-    # Copying template values.yaml instead of values.yaml from chart
-    shutil.copyfile(os.path.join(os.path.dirname(os.path.realpath(__file__)), "chart-templates", "values.yaml"), os.path.join(destinationChartPath, "values.yaml"))
 
     logging.info("Chart copied.\n")
 
@@ -95,7 +93,7 @@ def main():
     logging.basicConfig(level=logging.DEBUG)
 
     # Config.yaml holds the configurations for Operator bundle locations to be used
-    configYaml = os.path.join(os.path.dirname(os.path.realpath(__file__)),"charts-config.yaml")
+    configYaml = os.path.join(os.path.dirname(os.path.realpath(__file__)),"copy-config.yaml")
     with open(configYaml, 'r') as f:
         config = yaml.safe_load(f)
 
