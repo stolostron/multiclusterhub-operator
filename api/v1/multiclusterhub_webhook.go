@@ -23,11 +23,65 @@ import (
 	"fmt"
 	"reflect"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/discovery"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+)
+
+var (
+	blockDeletionResources = []struct {
+		Name           string
+		GVK            schema.GroupVersionKind
+		ExceptionTotal int
+		Exceptions     []string
+	}{
+		{
+			Name: "ManagedCluster",
+			GVK: schema.GroupVersionKind{
+				Group:   "cluster.open-cluster-management.io",
+				Version: "v1",
+				Kind:    "ManagedClusterList",
+			},
+			ExceptionTotal: 1,
+			Exceptions:     []string{"local-cluster"},
+		},
+		{
+			Name: "MultiClusterObservability",
+			GVK: schema.GroupVersionKind{
+				Group:   "observability.open-cluster-management.io",
+				Version: "v1beta2",
+				Kind:    "MultiClusterObservabilityList",
+			},
+			ExceptionTotal: 0,
+			Exceptions:     []string{},
+		},
+		{
+			Name: "DiscoveryConfig",
+			GVK: schema.GroupVersionKind{
+				Group:   "discovery.open-cluster-management.io",
+				Version: "v1",
+				Kind:    "DiscoveryConfigList",
+			},
+			ExceptionTotal: 0,
+			Exceptions:     []string{},
+		},
+		{
+			Name: "AgentServiceConfig",
+			GVK: schema.GroupVersionKind{
+				Group:   "agent-install.openshift.io",
+				Version: "v1beta1",
+				Kind:    "AgentServiceConfigList",
+			},
+			ExceptionTotal: 0,
+			Exceptions:     []string{},
+		},
+	}
 )
 
 var (
@@ -107,11 +161,61 @@ func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) error {
 	if AvailabilityConfigIsValid(r.Spec.AvailabilityConfig) && r.Spec.AvailabilityConfig != "" {
 		return fmt.Errorf("invalid AvailabilityConfig given")
 	}
+
+	// Validate components
+	if r.Spec.Overrides != nil {
+		for _, c := range r.Spec.Overrides.Components {
+			if !ValidComponent(c) {
+				return fmt.Errorf("invalid componentconfig: %s is not a known component", c.Name)
+			}
+		}
+	}
 	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (r *MultiClusterHub) ValidateDelete() error {
 	mchlog.Info("validate delete", "name", r.Name)
+
+	ctx := context.Background()
+
+	// Do not block delete of hosted mode, which does not spawn the resources
+	if r.IsInHostedMode() {
+		return nil
+	}
+
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return err
+	}
+
+	c, err := discovery.NewDiscoveryClientForConfig(cfg)
+	if err != nil {
+		return err
+	}
+
+	for _, resource := range blockDeletionResources {
+		list := &unstructured.UnstructuredList{}
+		list.SetGroupVersionKind(resource.GVK)
+		err := discovery.ServerSupportsVersion(c, list.GroupVersionKind().GroupVersion())
+		if err == nil {
+			// List all resources
+			if err := Client.List(ctx, list); err != nil {
+				return fmt.Errorf("unable to list %s: %s", resource.Name, err)
+			}
+			// If there are any unexpected resources, deny deletion
+			if len(list.Items) > resource.ExceptionTotal {
+				return fmt.Errorf("cannot delete MultiClusterHub resource because %s resource(s) exist", resource.Name)
+			}
+			// if exception resources are present, check if they are the same as the exception resources
+			if resource.ExceptionTotal > 0 {
+				for _, item := range list.Items {
+					if !contains(resource.Exceptions, item.GetName()) {
+						return fmt.Errorf("cannot delete MultiClusterHub resource because %s resource(s) exist", resource.Name)
+					}
+				}
+			}
+		}
+	}
 	return nil
 }
