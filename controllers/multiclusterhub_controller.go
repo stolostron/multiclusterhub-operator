@@ -1366,7 +1366,7 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 		updateNecessary = true
 	}
 
-	if !utils.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {
+	if !operatorv1.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {
 		m.Spec.AvailabilityConfig = operatorv1.HAHigh
 		updateNecessary = true
 	}

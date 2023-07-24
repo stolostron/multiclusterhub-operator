@@ -21,6 +21,7 @@ package v1
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -57,15 +58,55 @@ func (r *MultiClusterHub) ValidateCreate() error {
 	if err := Client.List(context.Background(), multiClusterHubList); err != nil {
 		return fmt.Errorf("unable to list MultiClusterHubs: %s", err)
 	}
-	if len(multiClusterHubList.Items) == 0 {
-		return nil
+
+	// Standalone MCH must exist before a hosted MCH can be created
+	if len(multiClusterHubList.Items) == 0 && r.IsInHostedMode() {
+		return fmt.Errorf("a hosted Mode MCH can only be created once a non-hosted MCH is present")
+
 	}
+
+	// Prevent two standaline MCH's
+	for _, existing := range multiClusterHubList.Items {
+		existingMCH := existing
+		if !r.IsInHostedMode() && !existingMCH.IsInHostedMode() {
+			return fmt.Errorf("MultiClusterHub in Standalone mode already exists: `%s`. Only one resource may exist in Standalone mode", existingMCH.Name)
+		}
+	}
+
+	// Validate components
+	if r.Spec.Overrides != nil {
+		for _, c := range r.Spec.Overrides.Components {
+			if ValidComponent(c) {
+				return fmt.Errorf("invalid component config: %s is not a known component", c.Name)
+			}
+		}
+	}
+
 	return fmt.Errorf("the MultiClusterHub CR already exists")
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) error {
 	mchlog.Info("validate update", "name", r.Name)
+
+	oldMCH := old.(*MultiClusterHub)
+	// current is 'r'
+
+	if oldMCH.Spec.SeparateCertificateManagement != r.Spec.SeparateCertificateManagement {
+		return fmt.Errorf("updating SeparateCertificateManagement is forbidden")
+	}
+
+	if oldMCH.IsInHostedMode() != r.IsInHostedMode() {
+		return fmt.Errorf("changes cannot be made to DeploymentMode")
+	}
+
+	if !reflect.DeepEqual(oldMCH.Spec.Hive, r.Spec.Hive) {
+		return fmt.Errorf("hive updates are forbidden")
+	}
+
+	if AvailabilityConfigIsValid(r.Spec.AvailabilityConfig) && r.Spec.AvailabilityConfig != "" {
+		return fmt.Errorf("invalid AvailabilityConfig given")
+	}
 	return nil
 }
 

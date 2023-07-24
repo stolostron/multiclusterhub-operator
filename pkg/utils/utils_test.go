@@ -146,11 +146,11 @@ var _ = Describe("utility functions", func() {
 	Context("AvailabilityConfigIsValid function", func() {
 		It("returns true for a valid config", func() {
 			c := mchv1.HAHigh
-			Expect(AvailabilityConfigIsValid(c)).To(BeTrue())
+			Expect(mchv1.AvailabilityConfigIsValid(c)).To(BeTrue())
 		})
 		It("returns false for an invalid config", func() {
 			c := mchv1.AvailabilityType("invalid")
-			Expect(AvailabilityConfigIsValid(c)).To(BeFalse())
+			Expect(mchv1.AvailabilityConfigIsValid(c)).To(BeFalse())
 		})
 	})
 

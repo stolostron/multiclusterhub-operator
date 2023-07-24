@@ -264,6 +264,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	// err = webhook.Setup(mgr)
+	// if err != nil {
+	// 	setupLog.Error(err, "Failed to setup webhooks")
+	// }
+	//+kubebuilder:scaffold:builder
+
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
 		os.Exit(1)
