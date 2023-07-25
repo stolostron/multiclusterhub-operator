@@ -151,6 +151,10 @@ func (r *MultiClusterHub) ValidateCreate() error {
 func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) error {
 	mchlog.Info("validate update", "name", r.Name)
 
+	if old == nil {
+		return nil
+	}
+
 	oldMCH := old.(*MultiClusterHub)
 	// current is 'r'
 
