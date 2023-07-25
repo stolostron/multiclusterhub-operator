@@ -44,10 +44,12 @@ import (
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 
+	admissionregistration "k8s.io/api/admissionregistration/v1"
 	networking "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -76,14 +78,16 @@ import (
 )
 
 const (
+	crdName            = "multiclusterengines.multicluster.openshift.io"
 	OperatorVersionEnv = "OPERATOR_VERSION"
 	NoCacheEnv         = "DISABLE_CLIENT_CACHE"
 )
 
 var (
-	scheme        = runtime.NewScheme()
-	setupLog      = ctrl.Log.WithName("setup")
-	mchController controller.Controller
+	scheme         = runtime.NewScheme()
+	setupLog       = ctrl.Log.WithName("setup")
+	mchController  controller.Controller
+	validatingPath = "/validate-v1-multiclusterhub"
 )
 
 func init() {
@@ -259,9 +263,17 @@ func main() {
 
 	// TODO: Get Webhook Working. Some troubles w/ kubebuilder generation prevented me from
 	// creating the same webhook spec. May be able to get past this with Kustomize.
-	if err = (&operatorv1.MultiClusterHub{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "MultiClusterHub")
-		os.Exit(1)
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+
+		if err = ensureWebhooks(uncachedClient, validatingPath); err != nil {
+			setupLog.Error(err, "unable to ensure webhook", "webhook", "MultiClusterHub")
+			os.Exit(1)
+		}
+
+		if err = (&operatorv1.MultiClusterHub{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "MultiClusterHub")
+			os.Exit(1)
+		}
 	}
 
 	// err = webhook.Setup(mgr)
@@ -397,4 +409,73 @@ func ensureCRD(mgr ctrl.Manager, crd *unstructured.Unstructured) error {
 		os.Exit(1)
 	}()
 	return nil
+}
+
+func ensureWebhooks(k8sClient client.Client, path string) error {
+	ctx := context.Background()
+
+	deploymentNamespace, ok := os.LookupEnv("POD_NAMESPACE")
+	if !ok {
+		setupLog.Info("Failing due to being unable to locate webhook service namespace")
+		os.Exit(1)
+	}
+
+	validatingWebhook := operatorv1.ValidatingWebhook(deploymentNamespace, path)
+
+	maxAttempts := 10
+	for i := 0; i < maxAttempts; i++ {
+		setupLog.Info("Applying ValidatingWebhookConfiguration")
+
+		// Get reference to MCE CRD to set as owner of the webhook
+		// This way if the CRD is deleted the webhook will be removed with it
+		crdKey := types.NamespacedName{Name: crdName}
+		owner := &apixv1.CustomResourceDefinition{}
+		if err := k8sClient.Get(context.TODO(), crdKey, owner); err != nil {
+			setupLog.Error(err, "Failed to get MCE CRD")
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		validatingWebhook.SetOwnerReferences([]metav1.OwnerReference{
+			{
+				APIVersion: "apiextensions.k8s.io/v1",
+				Kind:       "CustomResourceDefinition",
+				Name:       owner.Name,
+				UID:        owner.UID,
+			},
+		})
+
+		existingWebhook := &admissionregistration.ValidatingWebhookConfiguration{}
+		existingWebhook.SetGroupVersionKind(schema.GroupVersionKind{
+			Group:   "admissionregistration.k8s.io",
+			Version: "v1",
+			Kind:    "ValidatingWebhookConfiguration",
+		})
+		err := k8sClient.Get(ctx, types.NamespacedName{Name: validatingWebhook.GetName()}, existingWebhook)
+		if err != nil && errors.IsNotFound(err) {
+			// Webhook not found. Create and return
+			err = k8sClient.Create(ctx, validatingWebhook)
+			if err != nil {
+				setupLog.Error(err, "Error creating validatingwebhookconfiguration")
+				time.Sleep(5 * time.Second)
+				continue
+			}
+			return nil
+		} else if err != nil {
+			setupLog.Error(err, "Error getting validatingwebhookconfiguration")
+			time.Sleep(5 * time.Second)
+			continue
+		} else if err == nil {
+			// Webhook already exists. Update and return
+			setupLog.Info("Updating existing validatingwebhookconfiguration")
+			existingWebhook.Webhooks = validatingWebhook.Webhooks
+			err = k8sClient.Update(ctx, existingWebhook)
+			if err != nil {
+				setupLog.Error(err, "Error updating validatingwebhookconfiguration")
+				time.Sleep(5 * time.Second)
+				continue
+			}
+			return nil
+		}
+	}
+	return fmt.Errorf("unable to ensure validatingwebhook exists in allotted time")
 }

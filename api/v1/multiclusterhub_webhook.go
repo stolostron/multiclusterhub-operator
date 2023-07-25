@@ -23,6 +23,8 @@ import (
 	"fmt"
 	"reflect"
 
+	admissionregistration "k8s.io/api/admissionregistration/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -32,6 +34,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+)
+
+const (
+	validatingCfgName     = "multiclusterhub-operator-validating-webhook"
+	validatingWebhookName = "multiclusterhub.validating-webhook.open-cluster-management.io"
+	resourceName          = "multiclusterhubs"
 )
 
 var (
@@ -218,4 +226,46 @@ func (r *MultiClusterHub) ValidateDelete() error {
 		}
 	}
 	return nil
+}
+
+func ValidatingWebhook(namespace, path string) *admissionregistration.ValidatingWebhookConfiguration {
+	sideEffect := admissionregistration.SideEffectClassNone
+
+	return &admissionregistration.ValidatingWebhookConfiguration{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "admissionregistration.k8s.io/v1",
+			Kind:       "ValidatingWebhookConfiguration",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        validatingCfgName,
+			Annotations: map[string]string{"service.beta.openshift.io/inject-cabundle": "true"},
+		},
+		Webhooks: []admissionregistration.ValidatingWebhook{{
+			AdmissionReviewVersions: []string{
+				"v1",
+				"v1beta1",
+			},
+			ClientConfig: admissionregistration.WebhookClientConfig{
+				Service: &admissionregistration.ServiceReference{
+					Name:      WebhookServiceName,
+					Namespace: namespace,
+					Path:      &path,
+				},
+			},
+			Name: validatingWebhookName,
+			Rules: []admissionregistration.RuleWithOperations{{
+				Rule: admissionregistration.Rule{
+					APIGroups:   []string{GroupVersion.Group},
+					APIVersions: []string{GroupVersion.Version},
+					Resources:   []string{resourceName},
+				},
+				Operations: []admissionregistration.OperationType{
+					admissionregistration.Create,
+					admissionregistration.Update,
+					admissionregistration.Delete,
+				},
+			}},
+			SideEffects: &sideEffect,
+		}},
+	}
 }

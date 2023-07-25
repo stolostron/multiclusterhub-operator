@@ -1,5 +1,9 @@
 package v1
 
+const (
+	WebhookServiceName = "multiclusterhub-operator-webhook"
+)
+
 // AvailabilityConfigIsValid ...
 func AvailabilityConfigIsValid(config AvailabilityType) bool {
 	switch config {
