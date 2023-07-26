@@ -59,16 +59,6 @@ const (
 	VolsyncChartLocation       = "/charts/toggle/volsync-controller"
 )
 
-var (
-	// DefaultSSLCiphers defines the default cipher configuration used by management ingress
-	DefaultSSLCiphers = []string{
-		"ECDHE-ECDSA-AES256-GCM-SHA384",
-		"ECDHE-RSA-AES256-GCM-SHA384",
-		"ECDHE-ECDSA-AES128-GCM-SHA256",
-		"ECDHE-RSA-AES128-GCM-SHA256",
-	}
-)
-
 // CertManagerNS returns the namespace to deploy cert manager objects
 func CertManagerNS(m *operatorsv1.MultiClusterHub) string {
 	if m.Spec.SeparateCertificateManagement {

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"time"
 
@@ -94,7 +93,7 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 	Eventually(func() bool {
 		err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
 		Expect(err).Should(BeNil())
-		return reflect.DeepEqual(createdMCH.Spec.Ingress.SSLCiphers, utils.DefaultSSLCiphers) && createdMCH.Spec.AvailabilityConfig == mchov1.HAHigh
+		return createdMCH.Spec.AvailabilityConfig == mchov1.HAHigh
 	}, timeout, interval).Should(BeTrue())
 
 	By("Ensuring Deployments")
