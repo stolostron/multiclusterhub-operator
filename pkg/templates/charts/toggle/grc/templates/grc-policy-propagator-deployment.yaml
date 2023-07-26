@@ -10,6 +10,7 @@ metadata:
     release: grc
     app.kubernetes.io/instance: grc
     app.kubernetes.io/name: grc
+    webhook-origin: governance-policy-propagator
 spec:
   replicas: {{ .Values.hubconfig.replicaCount }}
   selector:
@@ -17,6 +18,7 @@ spec:
       app: grc
       component: "ocm-policy-propagator"
       release: grc
+      webhook-origin: governance-policy-propagator
   template:
     metadata:
       annotations:
@@ -30,6 +32,7 @@ spec:
         chart: grc-chart-{{ .Values.hubconfig.hubVersion }}
         app.kubernetes.io/instance: grc
         app.kubernetes.io/name: grc
+        webhook-origin: governance-policy-propagator
     spec:
       serviceAccountName: grc-sa
       hostNetwork: false
@@ -106,6 +109,10 @@ spec:
           requests:
             memory: "64Mi"
             cpu: "25m"
+        ports:
+        - containerPort: 9443
+          name: webhook-http
+          protocol: TCP
         securityContext:
           privileged: false
           readOnlyRootFilesystem: true
@@ -139,12 +146,19 @@ spec:
         volumeMounts:
         - name: tmp
           mountPath: "/tmp"
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
       volumes:
       - name: tmp
         emptyDir: {}
       - name: metrics-cert
         secret:
           secretName: grc-grc-metrics-cert
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: propagator-webhook-server-cert
       {{- if .Values.global.pullSecret  }}
       imagePullSecrets:
       - name: {{ .Values.global.pullSecret  }}
