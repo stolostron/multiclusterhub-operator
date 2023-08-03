@@ -37,7 +37,10 @@ var chartPaths = []string{
 func TestRender(t *testing.T) {
 
 	proxyList := []string{"insights-client"}
-	mchNodeSelector := map[string]string{"select": "test"}
+	mchNodeSelector := map[string]string{
+		"select":  "test",
+		"select2": "test2",
+	}
 	mchImagePullSecret := "test"
 	mchNamespace := "default"
 	mchTolerations := []corev1.Toleration{
