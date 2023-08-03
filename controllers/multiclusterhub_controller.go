@@ -1361,11 +1361,6 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 	}
 	log.Info("MultiClusterHub is Invalid. Updating with proper defaults")
 
-	if len(m.Spec.Ingress.SSLCiphers) == 0 {
-		m.Spec.Ingress.SSLCiphers = utils.DefaultSSLCiphers
-		updateNecessary = true
-	}
-
 	if !utils.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {
 		m.Spec.AvailabilityConfig = operatorv1.HAHigh
 		updateNecessary = true
