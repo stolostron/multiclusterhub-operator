@@ -407,6 +407,14 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
+	if multiClusterHub.Enabled(operatorv1.MultiClusterObservability) {
+		result, err = r.ensureObservability(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+	} else {
+		result, err = r.ensureNoObservability(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+	}
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
 	if multiClusterHub.Enabled(operatorv1.Volsync) {
 		result, err = r.ensureVolsync(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
 	} else {
@@ -631,7 +639,6 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 }
 
 func (r *MultiClusterHubReconciler) ensureCLC(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-
 	log := log.FromContext(ctx)
 
 	templates, errs := renderer.RenderChart(utils.CLCChartLocation, m, images)
@@ -677,7 +684,6 @@ func (r *MultiClusterHubReconciler) ensureNoCLC(ctx context.Context, m *operator
 }
 
 func (r *MultiClusterHubReconciler) ensureConsole(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-
 	log := log.FromContext(ctx)
 
 	templates, errs := renderer.RenderChart(utils.ConsoleChartLocation, m, images)
@@ -738,7 +744,6 @@ func (r *MultiClusterHubReconciler) ensureNoConsole(ctx context.Context, m *oper
 }
 
 func (r *MultiClusterHubReconciler) ensureInsights(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-
 	log := log.FromContext(ctx)
 
 	templates, errs := renderer.RenderChart(utils.InsightsChartLocation, m, images)
@@ -784,7 +789,6 @@ func (r *MultiClusterHubReconciler) ensureNoInsights(ctx context.Context, m *ope
 }
 
 func (r *MultiClusterHubReconciler) ensureAppsub(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-
 	log := log.FromContext(ctx)
 
 	templates, errs := renderer.RenderChart(utils.AppsubChartLocation, m, images)
@@ -830,7 +834,6 @@ func (r *MultiClusterHubReconciler) ensureNoAppsub(ctx context.Context, m *opera
 }
 
 func (r *MultiClusterHubReconciler) ensureGRC(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-
 	log := log.FromContext(ctx)
 
 	templates, errs := renderer.RenderChart(utils.GRCChartLocation, m, images)
@@ -876,7 +879,6 @@ func (r *MultiClusterHubReconciler) ensureNoGRC(ctx context.Context, m *operator
 }
 
 func (r *MultiClusterHubReconciler) ensureSearchV2(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-
 	log := log.FromContext(ctx)
 
 	templates, errs := renderer.RenderChart(utils.SearchV2ChartLocation, m, images)
@@ -924,6 +926,51 @@ func (r *MultiClusterHubReconciler) ensureNoSearchV2(ctx context.Context, m *ope
 			return result, err
 		}
 	}
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureObservability(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
+
+	templates, errs := renderer.RenderChart(utils.MCOChartLocation, m, images)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// Applies all templates
+	for _, template := range templates {
+		result, err := r.applyTemplate(ctx, m, template)
+		if err != nil {
+			return result, err
+		}
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureNoObservability(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
+
+	templates, errs := renderer.RenderChart(utils.MCOChartLocation, m, images)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// Delete all templates
+	for _, template := range templates {
+		result, err := r.deleteTemplate(ctx, m, template)
+		if err != nil {
+			log.Error(err, fmt.Sprintf("Failed to delete template %s", template.GetName()))
+			return result, err
+		}
+	}
+
 	return ctrl.Result{}, nil
 }
 

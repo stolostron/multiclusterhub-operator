@@ -6,17 +6,19 @@ import (
 )
 
 const (
-	Appsub             string = "app-lifecycle"
-	Search             string = "search"
-	ManagementIngress  string = "management-ingress"
-	Console            string = "console"
-	Insights           string = "insights"
-	GRC                string = "grc"
-	ClusterLifecycle   string = "cluster-lifecycle"
-	ClusterBackup      string = "cluster-backup"
-	Repo               string = "multiclusterhub-repo"
-	MultiClusterEngine string = "multicluster-engine"
-	Volsync            string = "volsync"
+	// MCH
+	Appsub                    string = "app-lifecycle"
+	Search                    string = "search"
+	ManagementIngress         string = "management-ingress"
+	Console                   string = "console"
+	Insights                  string = "insights"
+	GRC                       string = "grc"
+	ClusterLifecycle          string = "cluster-lifecycle"
+	ClusterBackup             string = "cluster-backup"
+	Repo                      string = "multiclusterhub-repo"
+	MultiClusterEngine        string = "multicluster-engine"
+	Volsync                   string = "volsync"
+	MultiClusterObservability string = "observability"
 
 	// MCE
 	MCEManagedServiceAccount  string = "managedserviceaccount-preview"
@@ -46,6 +48,8 @@ var allComponents = []string{
 	ClusterBackup,
 	Volsync,
 	MultiClusterEngine,
+	MultiClusterObservability,
+
 	// MCE
 	MCEAssistedService,
 	MCEClusterLifecycle,
@@ -84,6 +88,7 @@ func GetDefaultEnabledComponents() ([]string, error) {
 		MultiClusterEngine,
 		Search,
 		Appsub,
+		MultiClusterObservability,
 	}
 
 	return defaultEnabledComponents, nil

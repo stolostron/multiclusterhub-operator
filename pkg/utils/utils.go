@@ -57,6 +57,7 @@ const (
 	GRCChartLocation           = "/charts/toggle/grc"
 	ConsoleChartLocation       = "/charts/toggle/console"
 	VolsyncChartLocation       = "/charts/toggle/volsync-controller"
+	MCOChartLocation           = "/charts/toggle/observability"
 )
 
 // CertManagerNS returns the namespace to deploy cert manager objects
@@ -403,6 +404,9 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole bool) []
 	}
 	if m.Enabled(operatorsv1.Volsync) {
 		nn = append(nn, types.NamespacedName{Name: "volsync-addon-controller", Namespace: m.Namespace})
+	}
+	if m.Enabled(operatorsv1.MultiClusterObservability) {
+		nn = append(nn, types.NamespacedName{Name: "multicluster-observability-operator", Namespace: m.Namespace})
 	}
 	return nn
 }
