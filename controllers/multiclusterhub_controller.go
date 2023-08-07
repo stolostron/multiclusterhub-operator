@@ -534,13 +534,6 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) (controll
 			),
 		).
 		Watches(
-			&source.Kind{Type: &corev1.ConfigMap{}},
-			&handler.EnqueueRequestForOwner{
-				IsController: true,
-				OwnerType:    &operatorv1.MultiClusterHub{},
-			},
-		).
-		Watches(
 			&source.Kind{Type: &apiregistrationv1.APIService{}},
 			handler.Funcs{
 				DeleteFunc: func(e event.DeleteEvent, q workqueue.RateLimitingInterface) {
