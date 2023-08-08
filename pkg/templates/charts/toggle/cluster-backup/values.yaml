@@ -12,7 +12,7 @@ global:
   imageOverrides:
     cluster_backup_controller: ""
   name: redhat-oadp-operator
-  channel: stable-1.1
+  channel: stable-1.2
   installPlanApproval: Automatic
   source: redhat-operators
   sourceNamespace: openshift-marketplace
@@ -71,7 +71,7 @@ ClusterCollisionPhase: BackupCollision
 
 oadpOperator:
   name: redhat-oadp-operator
-  channel: stable-1.1
+  channel: stable-1.2
   installPlanApproval: Automatic
   source: redhat-operators
   sourceNamespace: openshift-marketplace
