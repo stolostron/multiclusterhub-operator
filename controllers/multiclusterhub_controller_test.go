@@ -607,20 +607,20 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 			By("Ensuring console is subscribed")
 			Eventually(func() error {
-				searchDep := types.NamespacedName{
+				consoleDep := types.NamespacedName{
 					Name:      "console-chart-console-v2",
 					Namespace: mchNamespace,
 				}
-				return k8sClient.Get(ctx, searchDep, &appsv1.Deployment{})
+				return k8sClient.Get(ctx, consoleDep, &appsv1.Deployment{})
 			}, timeout, interval).Should(Succeed())
 
 			By("Ensuring insights is subscribed")
 			Eventually(func() error {
-				searchDep := types.NamespacedName{
+				insightsDep := types.NamespacedName{
 					Name:      "insights-client",
 					Namespace: mchNamespace,
 				}
-				return k8sClient.Get(ctx, searchDep, &appsv1.Deployment{})
+				return k8sClient.Get(ctx, insightsDep, &appsv1.Deployment{})
 			}, timeout, interval).Should(Succeed())
 
 			By("Ensuring search is subscribed")
@@ -634,38 +634,38 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 			By("Ensuring grc is subscribed")
 			Eventually(func() error {
-				searchDep := types.NamespacedName{
+				grcDep := types.NamespacedName{
 					Name:      "grc-policy-addon-controller",
 					Namespace: mchNamespace,
 				}
-				return k8sClient.Get(ctx, searchDep, &appsv1.Deployment{})
+				return k8sClient.Get(ctx, grcDep, &appsv1.Deployment{})
 			}, timeout, interval).Should(Succeed())
 
 			By("Ensuring clusterlifecycle is subscribed")
 			Eventually(func() error {
-				searchDep := types.NamespacedName{
+				clcDep := types.NamespacedName{
 					Name:      "klusterlet-addon-controller-v2",
 					Namespace: mchNamespace,
 				}
-				return k8sClient.Get(ctx, searchDep, &appsv1.Deployment{})
+				return k8sClient.Get(ctx, clcDep, &appsv1.Deployment{})
 			}, timeout, interval).Should(Succeed())
 
 			By("Ensuring observability is subscribed")
 			Eventually(func() error {
-				searchDep := types.NamespacedName{
+				obsDep := types.NamespacedName{
 					Name:      "multicluster-observability-operator",
 					Namespace: mchNamespace,
 				}
-				return k8sClient.Get(ctx, searchDep, &appsv1.Deployment{})
+				return k8sClient.Get(ctx, obsDep, &appsv1.Deployment{})
 			}, timeout, interval).Should(Succeed())
 
 			By("Ensuring volsync is subscribed")
 			Eventually(func() error {
-				searchDep := types.NamespacedName{
+				volDep := types.NamespacedName{
 					Name:      "volsync-addon-controller",
 					Namespace: mchNamespace,
 				}
-				return k8sClient.Get(ctx, searchDep, &appsv1.Deployment{})
+				return k8sClient.Get(ctx, volDep, &appsv1.Deployment{})
 			}, timeout, interval).Should(Succeed())
 
 			By("Updating MCH to disable search")
@@ -673,8 +673,19 @@ var _ = Describe("MultiClusterHub controller", func() {
 				err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
+
 			// Appending to components rather than replacing with `Disable()`
-			createdMCH.Spec.Overrides.Components = append(createdMCH.Spec.Overrides.Components, v1.ComponentConfig{Name: v1.Search, Enabled: false})
+			createdMCH.Spec.Overrides.Components = append(
+				createdMCH.Spec.Overrides.Components,
+				v1.ComponentConfig{Name: v1.Console, Enabled: false},
+				v1.ComponentConfig{Name: v1.GRC, Enabled: false},
+				v1.ComponentConfig{Name: v1.Insights, Enabled: false},
+				v1.ComponentConfig{Name: v1.Search, Enabled: false},
+				v1.ComponentConfig{Name: v1.ClusterLifecycle, Enabled: false},
+				v1.ComponentConfig{Name: v1.MultiClusterObservability, Enabled: false},
+				v1.ComponentConfig{Name: v1.Volsync, Enabled: false},
+			)
+
 			Expect(k8sClient.Update(ctx, createdMCH)).Should(Succeed())
 		})
 	})
