@@ -27,7 +27,8 @@ const (
 	MCEClusterLifecycle       string = "cluster-lifecycle-mce"
 	MCEClusterManager         string = "cluster-manager"
 	MCEServerFoundation       string = "server-foundation"
-	MCEHypershift             string = "hypershift-preview"
+	MCEHypershift             string = "hypershift"
+	MCEHypershiftPreview      string = "hypershift-preview"
 	MCEHypershiftLocalHosting string = "hypershift-local-hosting"
 	MCEClusterProxyAddon      string = "cluster-proxy-addon"
 	MCELocalCluster           string = "local-cluster"
@@ -56,6 +57,7 @@ var allComponents = []string{
 	MCEConsole,
 	MCEManagedServiceAccount,
 	MCEHypershift,
+	MCEHypershiftPreview,
 	MCEHypershiftLocalHosting,
 	MCEClusterProxyAddon,
 }
@@ -70,6 +72,7 @@ var MCEComponents = []string{
 	MCEConsole,
 	MCEManagedServiceAccount,
 	MCEHypershift,
+	MCEHypershiftPreview,
 	MCEHypershiftLocalHosting,
 }
 
