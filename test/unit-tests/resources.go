@@ -88,7 +88,7 @@ func EmptyMCH() operatorsv1.MultiClusterHub {
 	}
 }
 
-func NoSearchMCH() operatorsv1.MultiClusterHub {
+func NoComponentMCH() operatorsv1.MultiClusterHub {
 	return operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      MulticlusterhubName,
@@ -98,11 +98,35 @@ func NoSearchMCH() operatorsv1.MultiClusterHub {
 			Overrides: &operatorsv1.Overrides{
 				Components: []operatorsv1.ComponentConfig{
 					{
+						Name:    operatorsv1.Console,
+						Enabled: false,
+					},
+					{
+						Name:    operatorsv1.Insights,
+						Enabled: false,
+					},
+					{
 						Name:    operatorsv1.Search,
 						Enabled: false,
 					},
 					{
 						Name:    operatorsv1.ClusterBackup,
+						Enabled: false,
+					},
+					{
+						Name:    operatorsv1.GRC,
+						Enabled: false,
+					},
+					{
+						Name:    operatorsv1.ClusterLifecycle,
+						Enabled: false,
+					},
+					{
+						Name:    operatorsv1.MultiClusterObservability,
+						Enabled: false,
+					},
+					{
+						Name:    operatorsv1.Volsync,
 						Enabled: false,
 					},
 				},

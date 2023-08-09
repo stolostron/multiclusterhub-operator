@@ -459,7 +459,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 		})
 
-		It("Should allow Search to be optional", func() {
+		It("Should allow MCH components to be optional", func() {
 			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates")
 			defer os.Unsetenv("DIRECTORY_OVERRIDE")
 			os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
@@ -468,8 +468,8 @@ var _ = Describe("MultiClusterHub controller", func() {
 			ctx := context.Background()
 			ApplyPrereqs(k8sClient)
 
-			By("Creating a new Multiclusterhub with search disabled")
-			mch := resources.NoSearchMCH()
+			By("Creating a new Multiclusterhub with components disabled")
+			mch := resources.NoComponentMCH()
 			mch.Disable(operatorv1.Appsub)
 			Expect(k8sClient.Create(ctx, &mch)).Should(Succeed())
 			Expect(k8sClient.Create(ctx, mchoDeployment)).Should(Succeed())
@@ -491,6 +491,34 @@ var _ = Describe("MultiClusterHub controller", func() {
 				return false
 			}, timeout, interval).Should(BeTrue())
 
+			By("Ensuring console is not subscribed")
+			Eventually(func() bool {
+				consoleDep := types.NamespacedName{
+					Name:      "console-chart-console-v2",
+					Namespace: mchNamespace,
+				}
+				deployment := appsv1.Deployment{}
+				err := k8sClient.Get(ctx, consoleDep, &deployment)
+				if err != nil && errors.IsNotFound(err) {
+					return true
+				}
+				return false
+			}, timeout, interval).Should(BeTrue())
+
+			By("Ensuring insights is not subscribed")
+			Eventually(func() bool {
+				insightsDep := types.NamespacedName{
+					Name:      "insights-client",
+					Namespace: mchNamespace,
+				}
+				deployment := appsv1.Deployment{}
+				err := k8sClient.Get(ctx, insightsDep, &deployment)
+				if err != nil && errors.IsNotFound(err) {
+					return true
+				}
+				return false
+			}, timeout, interval).Should(BeTrue())
+
 			By("Ensuring search is not subscribed")
 			Eventually(func() bool {
 				searchDep := types.NamespacedName{
@@ -505,18 +533,136 @@ var _ = Describe("MultiClusterHub controller", func() {
 				return false
 			}, timeout, interval).Should(BeTrue())
 
-			By("Updating MCH to enable search")
+			By("Ensuring grc is not subscribed")
+			Eventually(func() bool {
+				grcDep := types.NamespacedName{
+					Name:      "grc-policy-addon-controller",
+					Namespace: mchNamespace,
+				}
+				deployment := appsv1.Deployment{}
+				err := k8sClient.Get(ctx, grcDep, &deployment)
+				if err != nil && errors.IsNotFound(err) {
+					return true
+				}
+				return false
+			}, timeout, interval).Should(BeTrue())
+
+			By("Ensuring clusterlifecycle is not subscribed")
+			Eventually(func() bool {
+				clcDep := types.NamespacedName{
+					Name:      "klusterlet-addon-controller-v2",
+					Namespace: mchNamespace,
+				}
+				deployment := appsv1.Deployment{}
+				err := k8sClient.Get(ctx, clcDep, &deployment)
+				if err != nil && errors.IsNotFound(err) {
+					return true
+				}
+				return false
+			}, timeout, interval).Should(BeTrue())
+
+			By("Ensuring observability is not subscribed")
+			Eventually(func() bool {
+				obsDep := types.NamespacedName{
+					Name:      "multicluster-observability-operator",
+					Namespace: mchNamespace,
+				}
+				deployment := appsv1.Deployment{}
+				err := k8sClient.Get(ctx, obsDep, &deployment)
+				if err != nil && errors.IsNotFound(err) {
+					return true
+				}
+				return false
+			}, timeout, interval).Should(BeTrue())
+
+			By("Ensuring volsync is not subscribed")
+			Eventually(func() bool {
+				volDep := types.NamespacedName{
+					Name:      "volsync-addon-controller",
+					Namespace: mchNamespace,
+				}
+				deployment := appsv1.Deployment{}
+				err := k8sClient.Get(ctx, volDep, &deployment)
+				if err != nil && errors.IsNotFound(err) {
+					return true
+				}
+				return false
+			}, timeout, interval).Should(BeTrue())
+
+			By("Updating MCH to enable components")
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
+
+			createdMCH.Enable(v1.Console)
+			createdMCH.Enable(v1.Insights)
 			createdMCH.Enable(v1.Search)
+			createdMCH.Enable(v1.GRC)
+			createdMCH.Enable(v1.ClusterLifecycle)
+			createdMCH.Enable(v1.MultiClusterObservability)
+			createdMCH.Enable(v1.Volsync)
+
 			Expect(k8sClient.Update(ctx, createdMCH)).Should(Succeed())
+
+			By("Ensuring console is subscribed")
+			Eventually(func() error {
+				searchDep := types.NamespacedName{
+					Name:      "console-chart-console-v2",
+					Namespace: mchNamespace,
+				}
+				return k8sClient.Get(ctx, searchDep, &appsv1.Deployment{})
+			}, timeout, interval).Should(Succeed())
+
+			By("Ensuring insights is subscribed")
+			Eventually(func() error {
+				searchDep := types.NamespacedName{
+					Name:      "insights-client",
+					Namespace: mchNamespace,
+				}
+				return k8sClient.Get(ctx, searchDep, &appsv1.Deployment{})
+			}, timeout, interval).Should(Succeed())
 
 			By("Ensuring search is subscribed")
 			Eventually(func() error {
 				searchDep := types.NamespacedName{
 					Name:      "search-v2-operator-controller-manager",
+					Namespace: mchNamespace,
+				}
+				return k8sClient.Get(ctx, searchDep, &appsv1.Deployment{})
+			}, timeout, interval).Should(Succeed())
+
+			By("Ensuring grc is subscribed")
+			Eventually(func() error {
+				searchDep := types.NamespacedName{
+					Name:      "grc-policy-addon-controller",
+					Namespace: mchNamespace,
+				}
+				return k8sClient.Get(ctx, searchDep, &appsv1.Deployment{})
+			}, timeout, interval).Should(Succeed())
+
+			By("Ensuring clusterlifecycle is subscribed")
+			Eventually(func() error {
+				searchDep := types.NamespacedName{
+					Name:      "klusterlet-addon-controller-v2",
+					Namespace: mchNamespace,
+				}
+				return k8sClient.Get(ctx, searchDep, &appsv1.Deployment{})
+			}, timeout, interval).Should(Succeed())
+
+			By("Ensuring observability is subscribed")
+			Eventually(func() error {
+				searchDep := types.NamespacedName{
+					Name:      "multicluster-observability-operator",
+					Namespace: mchNamespace,
+				}
+				return k8sClient.Get(ctx, searchDep, &appsv1.Deployment{})
+			}, timeout, interval).Should(Succeed())
+
+			By("Ensuring volsync is subscribed")
+			Eventually(func() error {
+				searchDep := types.NamespacedName{
+					Name:      "volsync-addon-controller",
 					Namespace: mchNamespace,
 				}
 				return k8sClient.Get(ctx, searchDep, &appsv1.Deployment{})
