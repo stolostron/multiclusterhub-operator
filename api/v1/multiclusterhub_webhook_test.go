@@ -97,6 +97,15 @@ var _ = Describe("Multiclusterhub webhook", func() {
 			})
 		})
 
+		It("Should delete multiclusterhub", func() {
+			mch := &MultiClusterHub{}
+
+			By("deleting", func() {
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)).To(Succeed())
+				Expect(k8sClient.Delete(ctx, mch)).To(BeNil(), "MCH delete was blocked unexpectedly")
+			})
+		})
+
 	})
 
 })
