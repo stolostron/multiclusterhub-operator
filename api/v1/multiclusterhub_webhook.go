@@ -118,7 +118,6 @@ func (r *MultiClusterHub) ValidateCreate() error {
 	// Standalone MCH must exist before a hosted MCH can be created
 	if len(multiClusterHubList.Items) == 0 && r.IsInHostedMode() {
 		return fmt.Errorf("a hosted Mode MCH can only be created once a non-hosted MCH is present")
-
 	}
 
 	// Prevent two standaline MCH's
@@ -127,6 +126,10 @@ func (r *MultiClusterHub) ValidateCreate() error {
 		if !r.IsInHostedMode() && !existingMCH.IsInHostedMode() {
 			return fmt.Errorf("MultiClusterHub in Standalone mode already exists: `%s`. Only one resource may exist in Standalone mode", existingMCH.Name)
 		}
+	}
+
+	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
+		return fmt.Errorf("invalid AvailabilityConfig given")
 	}
 
 	// Validate components
