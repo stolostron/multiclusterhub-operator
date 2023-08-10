@@ -104,7 +104,7 @@ func (r *MultiClusterHubReconciler) setHostedDefaults(ctx context.Context, m *op
 	log := log.FromContext(ctx)
 
 	updateNecessary := false
-	if !utils.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {
+	if !operatorv1.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {
 		m.Spec.AvailabilityConfig = operatorv1.HAHigh
 		updateNecessary = true
 	}

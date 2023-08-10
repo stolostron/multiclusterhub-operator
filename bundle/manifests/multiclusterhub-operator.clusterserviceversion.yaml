@@ -17,7 +17,7 @@ metadata:
     capabilities: Basic Install
     categories: Integration & Delivery
     certified: "false"
-    createdAt: "2023-03-23T21:05:49Z"
+    createdAt: "2023-08-10T13:45:46Z"
     description: Open management of Openshift and Kubernetes clusters
     operators.operatorframework.io/builder: operator-sdk-v1.28.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -619,10 +619,19 @@ spec:
                     memory: 256Mi
                 securityContext:
                   allowPrivilegeEscalation: false
+                volumeMounts:
+                - mountPath: /tmp/k8s-webhook-server/serving-certs
+                  name: cert
+                  readOnly: true
               securityContext:
                 runAsNonRoot: true
               serviceAccountName: multiclusterhub-operator
               terminationGracePeriodSeconds: 10
+              volumes:
+              - name: cert
+                secret:
+                  defaultMode: 420
+                  secretName: multiclusterhub-operator-webhook
       permissions:
       - rules:
         - apiGroups:

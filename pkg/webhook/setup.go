@@ -130,6 +130,15 @@ func createOrUpdateWebhookService(c client.Client, namespace string) {
 	}
 }
 
+// the multiclusterengine_webhook.go in backplane-operator doesn't seem to implement the actual "create" logic like we do here.
+// That must be because the standard methods that come along with `SetupWebhookWithManager` do most of that behind the scenes,
+// so all we really need to implement is the validation part?
+
+// So, since 'c' isn't passed as a reference, the client object itself isn't mutable, right? It seems that this assumption
+// is wrong, so can you explain how client is actually working and why you can make changes to it?
+// "Client provides a Read + Write client for reading and writing Kubernetes objects.", so under the hood, it's effectively
+// running 'kubectl apply', isn't it, meaning that while the client itself isn't technically mutable, it *is* modifying other
+// things behind the scenes
 func createOrUpdateValidatingWebhook(c client.Client, namespace, path string, certDir string) {
 	ctx := context.Background()
 	cfg := newValidatingWebhookCfg(namespace, path)
@@ -152,6 +161,7 @@ func createOrUpdateValidatingWebhook(c client.Client, namespace, path string, ce
 	}
 }
 
+// how does this change anything? https://stackoverflow.com/questions/44872739/what-is-the-difference-between-passing-a-struct-and-pointer-of-the-struct-are-t
 func setOwnerReferences(c client.Client, namespace string, obj metav1.Object) {
 	key := types.NamespacedName{Name: crdName}
 	owner := &apixv1.CustomResourceDefinition{}

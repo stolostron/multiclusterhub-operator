@@ -19,7 +19,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
-	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 )
 
 type multiClusterHubValidator struct {
@@ -180,7 +179,7 @@ func (m *multiClusterHubValidator) validateUpdate(req admission.Request) error {
 		return errors.New("Hive updates are forbidden")
 	}
 
-	if !utils.AvailabilityConfigIsValid(newMCH.Spec.AvailabilityConfig) && newMCH.Spec.AvailabilityConfig != "" {
+	if !operatorsv1.AvailabilityConfigIsValid(newMCH.Spec.AvailabilityConfig) && newMCH.Spec.AvailabilityConfig != "" {
 		return errors.New("Invalid AvailabilityConfig given")
 	}
 
