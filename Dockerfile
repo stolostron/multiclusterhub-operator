@@ -18,7 +18,6 @@ COPY controllers/ controllers/
 COPY pkg/ pkg/
 
 # Copy required files
-COPY bin/crds crds/
 COPY pkg/templates/ templates/
 
 # Build
@@ -28,7 +27,6 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o multiclusterhub-operato
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 WORKDIR /
 COPY --from=builder /workspace/multiclusterhub-operator /usr/local/bin/multiclusterhub-operator
-COPY --from=builder /workspace/crds/ /crds
 COPY --from=builder /workspace/templates/ /usr/local/templates/
 
 USER 65532:65532
