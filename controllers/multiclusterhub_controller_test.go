@@ -820,6 +820,17 @@ var _ = Describe("MultiClusterHub controller", func() {
 			result, err = reconciler.ensureNoComponent(ctx, mch, "unknown", testImages)
 			Expect(result).To(Equal(ctrl.Result{RequeueAfter: resyncPeriod}))
 			Expect(err).To(BeNil())
+			By("Ensuring ClusterPermission")
+
+			result, err = reconciler.ensureClusterPermission(ctx, mch, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+
+			By("Ensuring No ClusterPermission")
+
+			result, err = reconciler.ensureNoClusterPermission(ctx, mch, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
 		})
 	})
 

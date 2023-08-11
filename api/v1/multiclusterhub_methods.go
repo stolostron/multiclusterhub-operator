@@ -9,6 +9,7 @@ const (
 	// MCH
 	Appsub                    string = "app-lifecycle"
 	Search                    string = "search"
+	ClusterPermission         string = "cluster-permission"
 	ManagementIngress         string = "management-ingress"
 	Console                   string = "console"
 	Insights                  string = "insights"
@@ -40,6 +41,7 @@ var allComponents = []string{
 	// MCH
 	Repo,
 	Search,
+	ClusterPermission,
 	Appsub,
 	ManagementIngress,
 	Console,
@@ -92,6 +94,7 @@ func GetDefaultEnabledComponents() ([]string, error) {
 		Search,
 		Appsub,
 		MultiClusterObservability,
+		ClusterPermission,
 	}
 
 	return defaultEnabledComponents, nil

@@ -423,6 +423,12 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
+	// Create Cluster Permissions if enabled
+	if multiClusterHub.Enabled(operatorv1.ClusterPermission) {
+		result, err = r.ensureClusterPermission(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+	} else {
+		result, err = r.ensureNoClusterPermission(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+	}
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
@@ -746,6 +752,57 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 	// Deletes all templates
 	for _, template := range templates {
 		result, err := r.deleteTemplate(ctx, m, template)
+		if err != nil {
+			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+			return result, err
+		}
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureClusterPermission(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
+
+	log := log.FromContext(ctx)
+
+	// Render temmplates from file location
+	templates, errs := renderer.RenderChart(utils.ClusterPermissionChartLocation, m, images)
+	// Will capture errors if the templates are not formatted correctly
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// Applies all templates
+	for _, template := range templates {
+		result, err := r.applyTemplate(ctx, m, template)
+		// Will capture k8s errors
+		if err != nil {
+			return result, err
+		}
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureNoClusterPermission(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
+
+	// Renders all templates from charts
+	templates, errs := renderer.RenderChart(utils.ClusterPermissionChartLocation, m, images)
+	// Will capture errors if the templates are not formatted correctly
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// Deletes all templates
+	for _, template := range templates {
+		result, err := r.deleteTemplate(ctx, m, template)
+		// Will capture k8s errors
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
 			return result, err
