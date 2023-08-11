@@ -141,7 +141,7 @@ var _ = Describe("V1 API Methods", func() {
 	It("gets the correct number of  default enabled components", func() {
 		components, err := api.GetDefaultEnabledComponents()
 
-		Expect(len(components)).To(Equal(8))
+		Expect(len(components)).To(Equal(9))
 		Expect(err).To(BeNil())
 	})
 })

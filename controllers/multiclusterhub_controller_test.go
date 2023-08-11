@@ -459,7 +459,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 		})
 
-		It("Should allow Search to be optional", func() {
+		It("Should allow MCH components to be optional", func() {
 			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates")
 			defer os.Unsetenv("DIRECTORY_OVERRIDE")
 			os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
@@ -468,8 +468,8 @@ var _ = Describe("MultiClusterHub controller", func() {
 			ctx := context.Background()
 			ApplyPrereqs(k8sClient)
 
-			By("Creating a new Multiclusterhub with search disabled")
-			mch := resources.NoSearchMCH()
+			By("Creating a new Multiclusterhub with components disabled")
+			mch := resources.NoComponentMCH()
 			mch.Disable(operatorv1.Appsub)
 			Expect(k8sClient.Create(ctx, &mch)).Should(Succeed())
 			Expect(k8sClient.Create(ctx, mchoDeployment)).Should(Succeed())
@@ -491,6 +491,34 @@ var _ = Describe("MultiClusterHub controller", func() {
 				return false
 			}, timeout, interval).Should(BeTrue())
 
+			By("Ensuring console is not subscribed")
+			Eventually(func() bool {
+				consoleDep := types.NamespacedName{
+					Name:      "console-chart-console-v2",
+					Namespace: mchNamespace,
+				}
+				deployment := appsv1.Deployment{}
+				err := k8sClient.Get(ctx, consoleDep, &deployment)
+				if err != nil && errors.IsNotFound(err) {
+					return true
+				}
+				return false
+			}, timeout, interval).Should(BeTrue())
+
+			By("Ensuring insights is not subscribed")
+			Eventually(func() bool {
+				insightsDep := types.NamespacedName{
+					Name:      "insights-client",
+					Namespace: mchNamespace,
+				}
+				deployment := appsv1.Deployment{}
+				err := k8sClient.Get(ctx, insightsDep, &deployment)
+				if err != nil && errors.IsNotFound(err) {
+					return true
+				}
+				return false
+			}, timeout, interval).Should(BeTrue())
+
 			By("Ensuring search is not subscribed")
 			Eventually(func() bool {
 				searchDep := types.NamespacedName{
@@ -505,13 +533,95 @@ var _ = Describe("MultiClusterHub controller", func() {
 				return false
 			}, timeout, interval).Should(BeTrue())
 
-			By("Updating MCH to enable search")
+			By("Ensuring grc is not subscribed")
+			Eventually(func() bool {
+				grcDep := types.NamespacedName{
+					Name:      "grc-policy-addon-controller",
+					Namespace: mchNamespace,
+				}
+				deployment := appsv1.Deployment{}
+				err := k8sClient.Get(ctx, grcDep, &deployment)
+				if err != nil && errors.IsNotFound(err) {
+					return true
+				}
+				return false
+			}, timeout, interval).Should(BeTrue())
+
+			By("Ensuring clusterlifecycle is not subscribed")
+			Eventually(func() bool {
+				clcDep := types.NamespacedName{
+					Name:      "klusterlet-addon-controller-v2",
+					Namespace: mchNamespace,
+				}
+				deployment := appsv1.Deployment{}
+				err := k8sClient.Get(ctx, clcDep, &deployment)
+				if err != nil && errors.IsNotFound(err) {
+					return true
+				}
+				return false
+			}, timeout, interval).Should(BeTrue())
+
+			By("Ensuring observability is not subscribed")
+			Eventually(func() bool {
+				obsDep := types.NamespacedName{
+					Name:      "multicluster-observability-operator",
+					Namespace: mchNamespace,
+				}
+				deployment := appsv1.Deployment{}
+				err := k8sClient.Get(ctx, obsDep, &deployment)
+				if err != nil && errors.IsNotFound(err) {
+					return true
+				}
+				return false
+			}, timeout, interval).Should(BeTrue())
+
+			By("Ensuring volsync is not subscribed")
+			Eventually(func() bool {
+				volDep := types.NamespacedName{
+					Name:      "volsync-addon-controller",
+					Namespace: mchNamespace,
+				}
+				deployment := appsv1.Deployment{}
+				err := k8sClient.Get(ctx, volDep, &deployment)
+				if err != nil && errors.IsNotFound(err) {
+					return true
+				}
+				return false
+			}, timeout, interval).Should(BeTrue())
+
+			By("Updating MCH to enable components")
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
+
+			createdMCH.Enable(v1.Console)
+			createdMCH.Enable(v1.Insights)
 			createdMCH.Enable(v1.Search)
+			createdMCH.Enable(v1.GRC)
+			createdMCH.Enable(v1.ClusterLifecycle)
+			createdMCH.Enable(v1.MultiClusterObservability)
+			createdMCH.Enable(v1.Volsync)
+
 			Expect(k8sClient.Update(ctx, createdMCH)).Should(Succeed())
+
+			By("Ensuring console is subscribed")
+			Eventually(func() error {
+				consoleDep := types.NamespacedName{
+					Name:      "console-chart-console-v2",
+					Namespace: mchNamespace,
+				}
+				return k8sClient.Get(ctx, consoleDep, &appsv1.Deployment{})
+			}, timeout, interval).Should(Succeed())
+
+			By("Ensuring insights is subscribed")
+			Eventually(func() error {
+				insightsDep := types.NamespacedName{
+					Name:      "insights-client",
+					Namespace: mchNamespace,
+				}
+				return k8sClient.Get(ctx, insightsDep, &appsv1.Deployment{})
+			}, timeout, interval).Should(Succeed())
 
 			By("Ensuring search is subscribed")
 			Eventually(func() error {
@@ -522,13 +632,60 @@ var _ = Describe("MultiClusterHub controller", func() {
 				return k8sClient.Get(ctx, searchDep, &appsv1.Deployment{})
 			}, timeout, interval).Should(Succeed())
 
+			By("Ensuring grc is subscribed")
+			Eventually(func() error {
+				grcDep := types.NamespacedName{
+					Name:      "grc-policy-addon-controller",
+					Namespace: mchNamespace,
+				}
+				return k8sClient.Get(ctx, grcDep, &appsv1.Deployment{})
+			}, timeout, interval).Should(Succeed())
+
+			By("Ensuring clusterlifecycle is subscribed")
+			Eventually(func() error {
+				clcDep := types.NamespacedName{
+					Name:      "klusterlet-addon-controller-v2",
+					Namespace: mchNamespace,
+				}
+				return k8sClient.Get(ctx, clcDep, &appsv1.Deployment{})
+			}, timeout, interval).Should(Succeed())
+
+			By("Ensuring observability is subscribed")
+			Eventually(func() error {
+				obsDep := types.NamespacedName{
+					Name:      "multicluster-observability-operator",
+					Namespace: mchNamespace,
+				}
+				return k8sClient.Get(ctx, obsDep, &appsv1.Deployment{})
+			}, timeout, interval).Should(Succeed())
+
+			By("Ensuring volsync is subscribed")
+			Eventually(func() error {
+				volDep := types.NamespacedName{
+					Name:      "volsync-addon-controller",
+					Namespace: mchNamespace,
+				}
+				return k8sClient.Get(ctx, volDep, &appsv1.Deployment{})
+			}, timeout, interval).Should(Succeed())
+
 			By("Updating MCH to disable search")
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
+
 			// Appending to components rather than replacing with `Disable()`
-			createdMCH.Spec.Overrides.Components = append(createdMCH.Spec.Overrides.Components, v1.ComponentConfig{Name: v1.Search, Enabled: false})
+			createdMCH.Spec.Overrides.Components = append(
+				createdMCH.Spec.Overrides.Components,
+				v1.ComponentConfig{Name: v1.Console, Enabled: false},
+				v1.ComponentConfig{Name: v1.GRC, Enabled: false},
+				v1.ComponentConfig{Name: v1.Insights, Enabled: false},
+				v1.ComponentConfig{Name: v1.Search, Enabled: false},
+				v1.ComponentConfig{Name: v1.ClusterLifecycle, Enabled: false},
+				v1.ComponentConfig{Name: v1.MultiClusterObservability, Enabled: false},
+				v1.ComponentConfig{Name: v1.Volsync, Enabled: false},
+			)
+
 			Expect(k8sClient.Update(ctx, createdMCH)).Should(Succeed())
 		})
 	})
@@ -548,13 +705,13 @@ var _ = Describe("MultiClusterHub controller", func() {
 				testImages[v] = "quay.io/test/test:Test"
 			}
 
-			result, err := reconciler.ensureInsights(ctx, mch, testImages)
+			result, err := reconciler.ensureComponent(ctx, mch, operatorv1.Insights, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring No Insights")
 
-			result, err = reconciler.ensureNoInsights(ctx, mch, testImages)
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.Insights, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
@@ -564,87 +721,104 @@ var _ = Describe("MultiClusterHub controller", func() {
 			result, err = reconciler.ensureNamespace(mch, ns)
 			Expect(err).To(BeNil())
 
-			result, err = reconciler.ensureClusterBackup(ctx, mch, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.ClusterBackup, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
-			By("Ensuring No Insights")
+			By("Ensuring No Cluster Backup")
 
-			result, err = reconciler.ensureNoClusterBackup(ctx, mch, testImages)
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.ClusterBackup, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring Search-v2")
 
-			result, err = reconciler.ensureSearchV2(ctx, mch, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.Search, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring No Search-v2")
 
 			Eventually(func() bool {
-				result, err := reconciler.ensureNoSearchV2(ctx, mch, testImages)
+				result, err := reconciler.ensureNoComponent(ctx, mch, operatorv1.Search, testImages)
 				return (err == nil && result == ctrl.Result{})
 			}, timeout, interval).Should(BeTrue())
 
 			By("Ensuring CLC")
 
-			result, err = reconciler.ensureCLC(ctx, mch, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.ClusterLifecycle, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring No CLC")
 
-			result, err = reconciler.ensureNoCLC(ctx, mch, testImages)
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.ClusterLifecycle, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring App-Lifecycle")
 
-			result, err = reconciler.ensureAppsub(ctx, mch, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.Appsub, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring No App-Lifecycle")
 
-			result, err = reconciler.ensureNoAppsub(ctx, mch, testImages)
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.Appsub, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring GRC")
 
-			result, err = reconciler.ensureGRC(ctx, mch, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.GRC, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring No GRC")
 
-			result, err = reconciler.ensureNoGRC(ctx, mch, testImages)
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.GRC, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring Console")
 
-			result, err = reconciler.ensureConsole(ctx, mch, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.Console, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring No Console")
 
-			result, err = reconciler.ensureNoConsole(ctx, mch, testImages)
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.Console, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring Volsync")
 
-			result, err = reconciler.ensureVolsync(ctx, mch, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.Volsync, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring No Volsync")
 
-			result, err = reconciler.ensureNoVolsync(ctx, mch, testImages)
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.Volsync, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+
+			By("Ensuring MultiClusterObservability")
+
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.MultiClusterObservability, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+
+			By("Ensuring No MultiClusterObservability")
+
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.MultiClusterObservability, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+
+			By("Ensuring No Unregistered Component")
+			result, err = reconciler.ensureNoComponent(ctx, mch, "unknown", testImages)
+			Expect(result).To(Equal(ctrl.Result{RequeueAfter: resyncPeriod}))
 			Expect(err).To(BeNil())
 		})
 	})
@@ -664,10 +838,11 @@ var _ = Describe("MultiClusterHub controller", func() {
 				testImages[v] = "quay.io/test/test:Test"
 			}
 
-			result, err := reconciler.ensureAppsub(ctx, mch, testImages)
+			result, err := reconciler.ensureComponent(ctx, mch, operatorv1.Appsub, testImages)
 			Expect(result).To(Equal(ctrl.Result{RequeueAfter: 20000000000}))
 			Expect(err).To(BeNil())
-			result, err = reconciler.ensureNoAppsub(ctx, mch, testImages)
+
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.Appsub, testImages)
 			Expect(result).To(Equal(ctrl.Result{RequeueAfter: 20000000000}))
 			Expect(err).To(BeNil())
 		})

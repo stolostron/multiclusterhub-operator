@@ -216,6 +216,12 @@ var _ = Describe("utility functions", func() {
 			d := GetDeploymentsForStatus(&mch, true)
 			Expect(len(d)).To(Equal(1))
 		})
+		It("gets deployments for status with observability enabled", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable(mchv1.MultiClusterObservability)
+			d := GetDeploymentsForStatus(&mch, true)
+			Expect(len(d)).To(Equal(1))
+		})
 		It("gets deployments for status with volsync enabled", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(mchv1.Volsync)
