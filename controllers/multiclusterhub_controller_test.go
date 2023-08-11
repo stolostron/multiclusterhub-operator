@@ -818,7 +818,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 			By("Ensuring No Unregistered Component")
 			result, err = reconciler.ensureNoComponent(ctx, mch, "unknown", testImages)
-			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(result).To(Equal(ctrl.Result{RequeueAfter: resyncPeriod}))
 			Expect(err).To(BeNil())
 		})
 	})
