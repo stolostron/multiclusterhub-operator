@@ -670,8 +670,8 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(ctx context.Context, comp
 		return utils.VolsyncChartLocation
 
 	default:
-		log.Info("Unregistered component detected: %v", component)
-		return "unknown"
+		log.Info(fmt.Sprintf("Unregistered component detected: %v", component))
+		return fmt.Sprintf("/chart/toggle/%v", component)
 	}
 }
 
