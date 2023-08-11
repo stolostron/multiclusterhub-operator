@@ -423,6 +423,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
+	// Create Cluster Permissions if enabled
 	if multiClusterHub.Enabled(operatorv1.ClusterPermission) {
 		result, err = r.ensureClusterPermission(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
 	} else {
@@ -763,7 +764,9 @@ func (r *MultiClusterHubReconciler) ensureClusterPermission(ctx context.Context,
 
 	log := log.FromContext(ctx)
 
+	// Render temmplates from file location
 	templates, errs := renderer.RenderChart(utils.ClusterPermissionChartLocation, m, images)
+	// Will capture errors if the templates are not formatted correctly
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -774,6 +777,7 @@ func (r *MultiClusterHubReconciler) ensureClusterPermission(ctx context.Context,
 	// Applies all templates
 	for _, template := range templates {
 		result, err := r.applyTemplate(ctx, m, template)
+		// Will capture k8s errors
 		if err != nil {
 			return result, err
 		}
@@ -787,6 +791,7 @@ func (r *MultiClusterHubReconciler) ensureNoClusterPermission(ctx context.Contex
 
 	// Renders all templates from charts
 	templates, errs := renderer.RenderChart(utils.ClusterPermissionChartLocation, m, images)
+	// Will capture errors if the templates are not formatted correctly
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -797,6 +802,7 @@ func (r *MultiClusterHubReconciler) ensureNoClusterPermission(ctx context.Contex
 	// Deletes all templates
 	for _, template := range templates {
 		result, err := r.deleteTemplate(ctx, m, template)
+		// Will capture k8s errors
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
 			return result, err

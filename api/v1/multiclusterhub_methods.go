@@ -9,7 +9,7 @@ const (
 	// MCH
 	Appsub                    string = "app-lifecycle"
 	Search                    string = "search"
-	ClusterPermission         him himstring = "cluster-permission"
+	ClusterPermission         string = "cluster-permission"
 	ManagementIngress         string = "management-ingress"
 	Console                   string = "console"
 	Insights                  string = "insights"

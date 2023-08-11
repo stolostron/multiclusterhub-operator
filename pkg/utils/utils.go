@@ -58,7 +58,7 @@ const (
 	ConsoleChartLocation           = "/charts/toggle/console"
 	VolsyncChartLocation           = "/charts/toggle/volsync-controller"
 	ClusterPermissionChartLocation = "/charts/toggle/cluster-permission"
-	MCOChartLocation           = "/charts/toggle/multicluster-observability-operator"
+	MCOChartLocation               = "/charts/toggle/multicluster-observability-operator"
 )
 
 var (
@@ -418,6 +418,7 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole bool) []
 	}
 	if m.Enabled(operatorsv1.MultiClusterObservability) {
 		nn = append(nn, types.NamespacedName{Name: "multicluster-observability-operator", Namespace: m.Namespace})
+	}
 	if m.Enabled(operatorsv1.ClusterPermission) {
 		nn = append(nn, types.NamespacedName{Name: "cluster-permission", Namespace: m.Namespace})
 	}
