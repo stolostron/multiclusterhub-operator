@@ -705,13 +705,13 @@ var _ = Describe("MultiClusterHub controller", func() {
 				testImages[v] = "quay.io/test/test:Test"
 			}
 
-			result, err := reconciler.ensureInsights(ctx, mch, testImages)
+			result, err := reconciler.ensureComponent(ctx, mch, operatorv1.Insights, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring No Insights")
 
-			result, err = reconciler.ensureNoInsights(ctx, mch, testImages)
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.Insights, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
@@ -721,98 +721,103 @@ var _ = Describe("MultiClusterHub controller", func() {
 			result, err = reconciler.ensureNamespace(mch, ns)
 			Expect(err).To(BeNil())
 
-			result, err = reconciler.ensureClusterBackup(ctx, mch, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.ClusterBackup, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
-			By("Ensuring No Insights")
+			By("Ensuring No Cluster Backup")
 
-			result, err = reconciler.ensureNoClusterBackup(ctx, mch, testImages)
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.ClusterBackup, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring Search-v2")
 
-			result, err = reconciler.ensureSearchV2(ctx, mch, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.Search, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring No Search-v2")
 
 			Eventually(func() bool {
-				result, err := reconciler.ensureNoSearchV2(ctx, mch, testImages)
+				result, err := reconciler.ensureNoComponent(ctx, mch, operatorv1.Search, testImages)
 				return (err == nil && result == ctrl.Result{})
 			}, timeout, interval).Should(BeTrue())
 
 			By("Ensuring CLC")
 
-			result, err = reconciler.ensureCLC(ctx, mch, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.ClusterLifecycle, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring No CLC")
 
-			result, err = reconciler.ensureNoCLC(ctx, mch, testImages)
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.ClusterLifecycle, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring App-Lifecycle")
 
-			result, err = reconciler.ensureAppsub(ctx, mch, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.Appsub, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring No App-Lifecycle")
 
-			result, err = reconciler.ensureNoAppsub(ctx, mch, testImages)
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.Appsub, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring GRC")
 
-			result, err = reconciler.ensureGRC(ctx, mch, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.GRC, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring No GRC")
 
-			result, err = reconciler.ensureNoGRC(ctx, mch, testImages)
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.GRC, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring Console")
 
-			result, err = reconciler.ensureConsole(ctx, mch, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.Console, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring No Console")
 
-			result, err = reconciler.ensureNoConsole(ctx, mch, testImages)
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.Console, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring Volsync")
 
-			result, err = reconciler.ensureVolsync(ctx, mch, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.Volsync, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring No Volsync")
 
-			result, err = reconciler.ensureNoVolsync(ctx, mch, testImages)
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.Volsync, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring MultiClusterObservability")
 
-			result, err = reconciler.ensureObservability(ctx, mch, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.MultiClusterObservability, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring No MultiClusterObservability")
 
-			result, err = reconciler.ensureNoObservability(ctx, mch, testImages)
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.MultiClusterObservability, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+
+			By("Ensuring No Unknown Component")
+			result, err = reconciler.ensureNoComponent(ctx, mch, "unknown", testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 		})
@@ -833,10 +838,11 @@ var _ = Describe("MultiClusterHub controller", func() {
 				testImages[v] = "quay.io/test/test:Test"
 			}
 
-			result, err := reconciler.ensureAppsub(ctx, mch, testImages)
+			result, err := reconciler.ensureComponent(ctx, mch, operatorv1.Appsub, testImages)
 			Expect(result).To(Equal(ctrl.Result{RequeueAfter: 20000000000}))
 			Expect(err).To(BeNil())
-			result, err = reconciler.ensureNoAppsub(ctx, mch, testImages)
+
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.Appsub, testImages)
 			Expect(result).To(Equal(ctrl.Result{RequeueAfter: 20000000000}))
 			Expect(err).To(BeNil())
 		})

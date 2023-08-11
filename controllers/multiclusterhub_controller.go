@@ -288,9 +288,9 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	// Deploy appsub operator component
 	if multiClusterHub.Enabled(operatorv1.Appsub) {
-		result, err = r.ensureAppsub(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+		result, err = r.ensureComponent(ctx, multiClusterHub, operatorv1.Appsub, r.CacheSpec.ImageOverrides)
 	} else {
-		result, err = r.ensureNoAppsub(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+		result, err = r.ensureNoComponent(ctx, multiClusterHub, operatorv1.Appsub, r.CacheSpec.ImageOverrides)
 	}
 	if result != (ctrl.Result{}) {
 		return result, err
@@ -368,57 +368,57 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	// Install the rest of the subscriptions in no particular order
 
 	if multiClusterHub.Enabled(operatorv1.Console) && ocpConsole {
-		result, err = r.ensureConsole(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+		result, err = r.ensureComponent(ctx, multiClusterHub, operatorv1.Console, r.CacheSpec.ImageOverrides)
 	} else {
-		result, err = r.ensureNoConsole(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+		result, err = r.ensureNoComponent(ctx, multiClusterHub, operatorv1.Console, r.CacheSpec.ImageOverrides)
 	}
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
 	if multiClusterHub.Enabled(operatorv1.Insights) {
-		result, err = r.ensureInsights(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+		result, err = r.ensureComponent(ctx, multiClusterHub, operatorv1.Insights, r.CacheSpec.ImageOverrides)
 	} else {
-		result, err = r.ensureNoInsights(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+		result, err = r.ensureNoComponent(ctx, multiClusterHub, operatorv1.Insights, r.CacheSpec.ImageOverrides)
 	}
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
 	if multiClusterHub.Enabled(operatorv1.Search) {
-		result, err = r.ensureSearchV2(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+		result, err = r.ensureComponent(ctx, multiClusterHub, operatorv1.Search, r.CacheSpec.ImageOverrides)
 	} else {
-		result, err = r.ensureNoSearchV2(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+		result, err = r.ensureNoComponent(ctx, multiClusterHub, operatorv1.Search, r.CacheSpec.ImageOverrides)
 	}
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
 	if multiClusterHub.Enabled(operatorv1.GRC) {
-		result, err = r.ensureGRC(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+		result, err = r.ensureComponent(ctx, multiClusterHub, operatorv1.GRC, r.CacheSpec.ImageOverrides)
 	} else {
-		result, err = r.ensureNoGRC(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+		result, err = r.ensureNoComponent(ctx, multiClusterHub, operatorv1.GRC, r.CacheSpec.ImageOverrides)
 	}
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
 	if multiClusterHub.Enabled(operatorv1.ClusterLifecycle) {
-		result, err = r.ensureCLC(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+		result, err = r.ensureComponent(ctx, multiClusterHub, operatorv1.ClusterLifecycle, r.CacheSpec.ImageOverrides)
 	} else {
-		result, err = r.ensureNoCLC(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+		result, err = r.ensureNoComponent(ctx, multiClusterHub, operatorv1.ClusterLifecycle, r.CacheSpec.ImageOverrides)
 	}
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
 	if multiClusterHub.Enabled(operatorv1.MultiClusterObservability) {
-		result, err = r.ensureObservability(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+		result, err = r.ensureComponent(ctx, multiClusterHub, operatorv1.MultiClusterObservability, r.CacheSpec.ImageOverrides)
 	} else {
-		result, err = r.ensureNoObservability(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+		result, err = r.ensureNoComponent(ctx, multiClusterHub, operatorv1.MultiClusterObservability, r.CacheSpec.ImageOverrides)
 	}
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
 	if multiClusterHub.Enabled(operatorv1.Volsync) {
-		result, err = r.ensureVolsync(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+		result, err = r.ensureComponent(ctx, multiClusterHub, operatorv1.Volsync, r.CacheSpec.ImageOverrides)
 	} else {
-		result, err = r.ensureNoVolsync(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+		result, err = r.ensureNoComponent(ctx, multiClusterHub, operatorv1.Volsync, r.CacheSpec.ImageOverrides)
 	}
 	if result != (ctrl.Result{}) {
 		return result, err
@@ -436,12 +436,12 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
-		result, err = r.ensureClusterBackup(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+		result, err = r.ensureComponent(ctx, multiClusterHub, operatorv1.ClusterBackup, r.CacheSpec.ImageOverrides)
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
 	} else {
-		result, err = r.ensureNoClusterBackup(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
+		result, err = r.ensureNoComponent(ctx, multiClusterHub, operatorv1.ClusterBackup, r.CacheSpec.ImageOverrides)
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
@@ -638,55 +638,51 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterHubReconciler) ensureCLC(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) fetchChartLocation(ctx context.Context, component string) string {
 	log := log.FromContext(ctx)
 
-	templates, errs := renderer.RenderChart(utils.CLCChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
+	switch component {
+	case operatorv1.Appsub:
+		return utils.AppsubChartLocation
 
-	// Applies all templates
-	for _, template := range templates {
-		result, err := r.applyTemplate(ctx, m, template)
-		if err != nil {
-			return result, err
-		}
-	}
+	case operatorv1.ClusterBackup:
+		return utils.ClusterBackupChartLocation
 
-	return ctrl.Result{}, nil
+	case operatorv1.ClusterLifecycle:
+		return utils.CLCChartLocation
+
+	case operatorv1.Console:
+		return utils.ConsoleChartLocation
+
+	case operatorv1.GRC:
+		return utils.GRCChartLocation
+
+	case operatorv1.Insights:
+		return utils.InsightsChartLocation
+
+	case operatorv1.MultiClusterObservability:
+		return utils.MCOChartLocation
+
+	case operatorv1.Search:
+		return utils.SearchV2ChartLocation
+
+	case operatorv1.Volsync:
+		return utils.VolsyncChartLocation
+
+	default:
+		log.Info("Unregistered component detected: %v", component)
+		return "unknown"
+	}
 }
 
-func (r *MultiClusterHubReconciler) ensureNoCLC(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *operatorv1.MultiClusterHub, component string,
+	images map[string]string) (ctrl.Result, error) {
+
 	log := log.FromContext(ctx)
+	chartLocation := r.fetchChartLocation(ctx, component)
 
 	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(utils.CLCChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Deletes all templates
-	for _, template := range templates {
-		result, err := r.deleteTemplate(ctx, m, template)
-		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
-			return result, err
-		}
-	}
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureConsole(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-
-	templates, errs := renderer.RenderChart(utils.ConsoleChartLocation, m, images)
+	templates, errs := renderer.RenderChart(chartLocation, m, images)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -702,352 +698,51 @@ func (r *MultiClusterHubReconciler) ensureConsole(ctx context.Context, m *operat
 		}
 	}
 
-	return r.addPluginToConsole(m)
-}
+	switch component {
+	case operatorv1.Console:
+		return r.addPluginToConsole(m)
 
-func (r *MultiClusterHubReconciler) ensureNoConsole(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
+	case operatorv1.Search:
+		return r.ensureSearchCR(m)
 
-	ocpConsole, err := r.CheckConsole(ctx)
-	if err != nil {
-		r.Log.Error(err, "error finding OCP Console")
-		return ctrl.Result{}, err
-	}
-	if !ocpConsole {
-		// If Openshift console is disabled then no cleanup to be done, because MCH console cannot be installed
+	default:
 		return ctrl.Result{}, nil
 	}
+}
 
-	result, err := r.removePluginFromConsole(m)
-	if result != (ctrl.Result{}) {
-		return result, err
+func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *operatorv1.MultiClusterHub,
+	component string, images map[string]string) (result ctrl.Result, err error) {
+
+	log := log.FromContext(ctx)
+	chartLocation := r.fetchChartLocation(ctx, component)
+
+	switch component {
+	case operatorv1.Console:
+		ocpConsole, err := r.CheckConsole(ctx)
+		if err != nil {
+			r.Log.Error(err, "error finding OCP Console")
+			return ctrl.Result{}, err
+		}
+		if !ocpConsole {
+			// If Openshift console is disabled then no cleanup to be done, because MCH console cannot be installed
+			return ctrl.Result{}, nil
+		}
+
+		result, err := r.removePluginFromConsole(m)
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+
+	// SearchV2
+	case operatorv1.Search:
+		result, err := r.ensureNoSearchCR(m)
+		if err != nil {
+			return result, err
+		}
 	}
 
 	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(utils.ConsoleChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Deletes all templates
-	for _, template := range templates {
-		result, err := r.deleteTemplate(ctx, m, template)
-		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
-			return result, err
-		}
-	}
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureInsights(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-
-	templates, errs := renderer.RenderChart(utils.InsightsChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Applies all templates
-	for _, template := range templates {
-		result, err := r.applyTemplate(ctx, m, template)
-		if err != nil {
-			return result, err
-		}
-	}
-
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureNoInsights(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-
-	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(utils.InsightsChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Deletes all templates
-	for _, template := range templates {
-		result, err := r.deleteTemplate(ctx, m, template)
-		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
-			return result, err
-		}
-	}
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureAppsub(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-
-	templates, errs := renderer.RenderChart(utils.AppsubChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Applies all templates
-	for _, template := range templates {
-		result, err := r.applyTemplate(ctx, m, template)
-		if err != nil {
-			return result, err
-		}
-	}
-
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureNoAppsub(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-
-	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(utils.AppsubChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Deletes all templates
-	for _, template := range templates {
-		result, err := r.deleteTemplate(ctx, m, template)
-		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
-			return result, err
-		}
-	}
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureGRC(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-
-	templates, errs := renderer.RenderChart(utils.GRCChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Applies all templates
-	for _, template := range templates {
-		result, err := r.applyTemplate(ctx, m, template)
-		if err != nil {
-			return result, err
-		}
-	}
-
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureNoGRC(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-
-	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(utils.GRCChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Deletes all templates
-	for _, template := range templates {
-		result, err := r.deleteTemplate(ctx, m, template)
-		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
-			return result, err
-		}
-	}
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureSearchV2(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-
-	templates, errs := renderer.RenderChart(utils.SearchV2ChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Applies all templates
-	for _, template := range templates {
-		result, err := r.applyTemplate(ctx, m, template)
-		if err != nil {
-			return result, err
-		}
-	}
-
-	result, err := r.ensureSearchCR(m)
-	return result, err
-}
-
-func (r *MultiClusterHubReconciler) ensureNoSearchV2(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-
-	result, err := r.ensureNoSearchCR(m)
-	if err != nil {
-		return result, err
-	}
-
-	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(utils.SearchV2ChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Deletes all templates
-	for _, template := range templates {
-		result, err = r.deleteTemplate(ctx, m, template)
-		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
-			return result, err
-		}
-	}
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureObservability(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-
-	templates, errs := renderer.RenderChart(utils.MCOChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Applies all templates
-	for _, template := range templates {
-		result, err := r.applyTemplate(ctx, m, template)
-		if err != nil {
-			return result, err
-		}
-	}
-
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureNoObservability(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-
-	templates, errs := renderer.RenderChart(utils.MCOChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Delete all templates
-	for _, template := range templates {
-		result, err := r.deleteTemplate(ctx, m, template)
-		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete template %s", template.GetName()))
-			return result, err
-		}
-	}
-
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureClusterBackup(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-
-	log := log.FromContext(ctx)
-
-	templates, errs := renderer.RenderChart(utils.ClusterBackupChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Applies all templates
-	for _, template := range templates {
-		result, err := r.applyTemplate(ctx, m, template)
-		if err != nil {
-			return result, err
-		}
-	}
-
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureNoClusterBackup(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-
-	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(utils.ClusterBackupChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Deletes all templates
-	for _, template := range templates {
-		result, err := r.deleteTemplate(ctx, m, template)
-		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
-			return result, err
-		}
-	}
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureVolsync(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-
-	log := log.FromContext(ctx)
-
-	templates, errs := renderer.RenderChart(utils.VolsyncChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Applies all templates
-	for _, template := range templates {
-		result, err := r.applyTemplate(ctx, m, template)
-		if err != nil {
-			return result, err
-		}
-	}
-
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureNoVolsync(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-
-	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(utils.VolsyncChartLocation, m, images)
+	templates, errs := renderer.RenderChart(chartLocation, m, images)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -1187,38 +882,38 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 	if err := r.cleanupAppSubscriptions(reqLogger, m); err != nil {
 		return err
 	}
-	_, err := r.ensureNoClusterBackup(context.TODO(), m, r.CacheSpec.ImageOverrides)
+	_, err := r.ensureNoComponent(context.TODO(), m, operatorv1.ClusterBackup, r.CacheSpec.ImageOverrides)
 	if err != nil {
 		return err
 	}
 	if err := r.cleanupNamespaces(reqLogger); err != nil {
 		return err
 	}
-	_, err = r.ensureNoAppsub(context.TODO(), m, r.CacheSpec.ImageOverrides)
+	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.Appsub, r.CacheSpec.ImageOverrides)
 	if err != nil {
 		return err
 	}
-	_, err = r.ensureNoInsights(context.TODO(), m, r.CacheSpec.ImageOverrides)
+	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.Insights, r.CacheSpec.ImageOverrides)
 	if err != nil {
 		return err
 	}
-	_, err = r.ensureNoCLC(context.TODO(), m, r.CacheSpec.ImageOverrides)
+	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.ClusterLifecycle, r.CacheSpec.ImageOverrides)
 	if err != nil {
 		return err
 	}
-	_, err = r.ensureNoGRC(context.TODO(), m, r.CacheSpec.ImageOverrides)
+	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.GRC, r.CacheSpec.ImageOverrides)
 	if err != nil {
 		return err
 	}
-	_, err = r.ensureNoConsole(context.TODO(), m, r.CacheSpec.ImageOverrides)
+	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.Console, r.CacheSpec.ImageOverrides)
 	if err != nil {
 		return err
 	}
-	_, err = r.ensureNoVolsync(context.TODO(), m, r.CacheSpec.ImageOverrides)
+	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.Volsync, r.CacheSpec.ImageOverrides)
 	if err != nil {
 		return err
 	}
-	_, err = r.ensureNoSearchV2(context.TODO(), m, r.CacheSpec.ImageOverrides)
+	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.Search, r.CacheSpec.ImageOverrides)
 	if err != nil {
 		return err
 	}
