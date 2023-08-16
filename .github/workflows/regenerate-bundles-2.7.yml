@@ -48,4 +48,4 @@ jobs:
           committer: GitHub <noreply@github.com>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
           labels: do-not-merge/hold
-          assignees: cameronmwall,JakobGray,eemurphy
+          assignees: cameronmwall,dislbenn,ngraham20
