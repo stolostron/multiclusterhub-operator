@@ -174,7 +174,7 @@ func CoreToUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) 
 
 // MchIsValid Checks if the optional default parameters need to be set
 func MchIsValid(m *operatorsv1.MultiClusterHub) bool {
-	invalid := len(m.Spec.Ingress.SSLCiphers) == 0 || !AvailabilityConfigIsValid(m.Spec.AvailabilityConfig)
+	invalid := len(m.Spec.Ingress.SSLCiphers) == 0 || !operatorsv1.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig)
 	return !invalid
 }
 
@@ -185,16 +185,6 @@ func DefaultReplicaCount(mch *operatorsv1.MultiClusterHub) int {
 		return 1
 	}
 	return 2
-}
-
-// AvailabilityConfigIsValid ...
-func AvailabilityConfigIsValid(config operatorsv1.AvailabilityType) bool {
-	switch config {
-	case operatorsv1.HAHigh, operatorsv1.HABasic:
-		return true
-	default:
-		return false
-	}
 }
 
 // DistributePods returns a anti-affinity rule that specifies a preference for pod replicas with

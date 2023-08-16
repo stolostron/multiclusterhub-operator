@@ -12,7 +12,7 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-v1-multiclusterhub
+      path: /validate-operator-open-cluster-management-io-v1-multiclusterhub
   failurePolicy: Fail
   name: multiclusterhub.validating-webhook.open-cluster-management.io
   rules:
