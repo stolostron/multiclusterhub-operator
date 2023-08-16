@@ -229,3 +229,13 @@ func (mch *MultiClusterHub) IsInHostedMode() bool {
 	}
 	return false
 }
+
+// AvailabilityConfigIsValid returns true is the availability type is a recognized value
+func AvailabilityConfigIsValid(config AvailabilityType) bool {
+	switch config {
+	case HAHigh, HABasic:
+		return true
+	default:
+		return false
+	}
+}
