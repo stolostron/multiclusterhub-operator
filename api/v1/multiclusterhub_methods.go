@@ -8,93 +8,109 @@ import (
 const (
 	// MCH
 	Appsub                    string = "app-lifecycle"
-	Search                    string = "search"
+	ClusterBackup             string = "cluster-backup"
+	ClusterLifecycle          string = "cluster-lifecycle"
 	ClusterPermission         string = "cluster-permission"
-	ManagementIngress         string = "management-ingress"
 	Console                   string = "console"
 	Insights                  string = "insights"
 	GRC                       string = "grc"
-	ClusterLifecycle          string = "cluster-lifecycle"
-	ClusterBackup             string = "cluster-backup"
-	Repo                      string = "multiclusterhub-repo"
+	ManagementIngress         string = "management-ingress"
 	MultiClusterEngine        string = "multicluster-engine"
+	MultiClusterObservability string = "multicluster-observability"
+	Repo                      string = "multiclusterhub-repo"
+	Search                    string = "search"
+	SubmarinerAddon           string = "submariner-addon"
 	Volsync                   string = "volsync"
-	MultiClusterObservability string = "observability"
 
 	// MCE
-	MCEManagedServiceAccount  string = "managedserviceaccount-preview"
-	MCEConsole                string = "console-mce"
-	MCEDiscovery              string = "discovery"
-	MCEHive                   string = "hive"
 	MCEAssistedService        string = "assisted-service"
 	MCEClusterLifecycle       string = "cluster-lifecycle-mce"
 	MCEClusterManager         string = "cluster-manager"
-	MCEServerFoundation       string = "server-foundation"
-	MCEHypershift             string = "hypershift"
-	MCEHypershiftPreview      string = "hypershift-preview"
-	MCEHypershiftLocalHosting string = "hypershift-local-hosting"
 	MCEClusterProxyAddon      string = "cluster-proxy-addon"
+	MCEConsole                string = "console-mce"
+	MCEDiscovery              string = "discovery"
+	MCEHive                   string = "hive"
+	MCEHypershift             string = "hypershift"
+	MCEHypershiftLocalHosting string = "hypershift-local-hosting"
+	MCEHypershiftPreview      string = "hypershift-preview"
 	MCELocalCluster           string = "local-cluster"
+	MCEManagedServiceAccount  string = "managedserviceaccount-preview"
+	MCEServerFoundation       string = "server-foundation"
 )
 
 var allComponents = []string{
 	// MCH
-	Repo,
-	Search,
-	ClusterPermission,
 	Appsub,
-	ManagementIngress,
-	Console,
-	Insights,
-	GRC,
-	ClusterLifecycle,
 	ClusterBackup,
-	Volsync,
+	ClusterLifecycle,
+	ClusterPermission,
+	Console,
+	GRC,
+	Insights,
+	ManagementIngress,
 	MultiClusterEngine,
 	MultiClusterObservability,
+	Repo,
+	Search,
+	SubmarinerAddon,
+	Volsync,
 
 	// MCE
 	MCEAssistedService,
 	MCEClusterLifecycle,
 	MCEClusterManager,
+	MCEClusterProxyAddon,
+	MCEConsole,
 	MCEDiscovery,
 	MCEHive,
-	MCEServerFoundation,
-	MCEConsole,
-	MCEManagedServiceAccount,
 	MCEHypershift,
-	MCEHypershiftPreview,
 	MCEHypershiftLocalHosting,
-	MCEClusterProxyAddon,
+	MCEHypershiftPreview,
+	MCEManagedServiceAccount,
+	MCEServerFoundation,
+}
+
+var MCHComponents = []string{
+	Appsub,
+	ClusterBackup,
+	ClusterLifecycle,
+	ClusterPermission,
+	Console,
+	GRC,
+	Insights,
+	MultiClusterObservability,
+	Search,
+	SubmarinerAddon,
+	Volsync,
 }
 
 var MCEComponents = []string{
 	MCEAssistedService,
 	MCEClusterLifecycle,
 	MCEClusterManager,
+	MCEConsole,
 	MCEDiscovery,
 	MCEHive,
-	MCEServerFoundation,
-	MCEConsole,
-	MCEManagedServiceAccount,
 	MCEHypershift,
-	MCEHypershiftPreview,
 	MCEHypershiftLocalHosting,
+	MCEHypershiftPreview,
+	MCEManagedServiceAccount,
+	MCEServerFoundation,
 }
 
 func GetDefaultEnabledComponents() ([]string, error) {
 	var defaultEnabledComponents = []string{
-		//Repo,
-		Console,
-		Insights,
-		GRC,
-		ClusterLifecycle,
-		Volsync,
-		MultiClusterEngine,
-		Search,
 		Appsub,
-		MultiClusterObservability,
+		ClusterLifecycle,
 		ClusterPermission,
+		Console,
+		GRC,
+		Insights,
+		MultiClusterEngine,
+		MultiClusterObservability,
+		Search,
+		SubmarinerAddon,
+		Volsync,
 	}
 
 	return defaultEnabledComponents, nil

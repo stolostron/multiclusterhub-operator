@@ -48,17 +48,19 @@ const (
 	MCESubscriptionNamespace     = "multicluster-engine"
 	ClusterSubscriptionNamespace = "open-cluster-management-backup"
 
-	MCEManagedByLabel              = "multiclusterhubs.operator.open-cluster-management.io/managed-by"
+	MCEManagedByLabel = "multiclusterhubs.operator.open-cluster-management.io/managed-by"
+
+	ClusterBackupChartLocation     = "/charts/toggle/cluster-backup"
+	CLCChartLocation               = "/charts/toggle/cluster-lifecycle"
+	ClusterPermissionChartLocation = "/charts/toggle/cluster-permission"
+	ConsoleChartLocation           = "/charts/toggle/console"
+	GRCChartLocation               = "/charts/toggle/grc"
 	InsightsChartLocation          = "/charts/toggle/insights"
 	AppsubChartLocation            = "/charts/toggle/multicloud-operators-subscription"
-	SearchV2ChartLocation          = "/charts/toggle/search-v2-operator"
-	CLCChartLocation               = "/charts/toggle/cluster-lifecycle"
-	ClusterBackupChartLocation     = "/charts/toggle/cluster-backup"
-	GRCChartLocation               = "/charts/toggle/grc"
-	ConsoleChartLocation           = "/charts/toggle/console"
-	VolsyncChartLocation           = "/charts/toggle/volsync-controller"
-	ClusterPermissionChartLocation = "/charts/toggle/cluster-permission"
 	MCOChartLocation               = "/charts/toggle/multicluster-observability-operator"
+	SearchV2ChartLocation          = "/charts/toggle/search-v2-operator"
+	SubmarinerAddonChartLocation   = "/charts/toggle/submariner-addon"
+	VolsyncChartLocation           = "/charts/toggle/volsync-controller"
 )
 
 var (
@@ -289,7 +291,8 @@ func GetTestImages() []string {
 		"governance_policy_propagator", "governance_policy_addon_controller", "cert_policy_controller", "iam_policy_controller",
 		"config_policy_controller", "governance_policy_framework_addon",
 		"cluster_backup_controller", "console", "volsync_addon_controller", "multicluster_operators_application",
-		"multicloud_integrations", "multicluster_operators_channel", "multicluster_operators_subscription", "multicluster_observability_operator", "cluster_permission"}
+		"multicloud_integrations", "multicluster_operators_channel", "multicluster_operators_subscription",
+		"multicluster_observability_operator", "cluster_permission", "submariner_addon"}
 
 }
 
@@ -371,9 +374,36 @@ func GetCustomResources(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 
 func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole bool) []types.NamespacedName {
 	nn := []types.NamespacedName{}
+	if m.Enabled(operatorsv1.Appsub) {
+		nn = append(nn, types.NamespacedName{Name: "multicluster-operators-application", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "multicluster-operators-channel", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "multicluster-operators-hub-subscription", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "multicluster-operators-standalone-subscription", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "multicluster-operators-subscription-report", Namespace: m.Namespace})
+	}
+	if m.Enabled(operatorsv1.ClusterBackup) {
+		nn = append(nn, types.NamespacedName{Name: "cluster-backup-chart-clusterbackup", Namespace: ClusterSubscriptionNamespace})
+		nn = append(nn, types.NamespacedName{Name: "openshift-adp-controller-manager", Namespace: ClusterSubscriptionNamespace})
+	}
+	if m.Enabled(operatorsv1.ClusterLifecycle) {
+		nn = append(nn, types.NamespacedName{Name: "klusterlet-addon-controller-v2", Namespace: m.Namespace})
+	}
+	if m.Enabled(operatorsv1.ClusterPermission) {
+		nn = append(nn, types.NamespacedName{Name: "cluster-permission", Namespace: m.Namespace})
+	}
+	if m.Enabled(operatorsv1.Console) && ocpConsole {
+		nn = append(nn, types.NamespacedName{Name: "console-chart-console-v2", Namespace: m.Namespace})
+	}
+	if m.Enabled(operatorsv1.GRC) {
+		nn = append(nn, types.NamespacedName{Name: "grc-policy-addon-controller", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "grc-policy-propagator", Namespace: m.Namespace})
+	}
 	if m.Enabled(operatorsv1.Insights) {
 		nn = append(nn, types.NamespacedName{Name: "insights-client", Namespace: m.Namespace})
 		nn = append(nn, types.NamespacedName{Name: "insights-metrics", Namespace: m.Namespace})
+	}
+	if m.Enabled(operatorsv1.MultiClusterObservability) {
+		nn = append(nn, types.NamespacedName{Name: "multicluster-observability-operator", Namespace: m.Namespace})
 	}
 	if m.Enabled(operatorsv1.Search) {
 		nn = append(nn, types.NamespacedName{Name: "search-v2-operator-controller-manager", Namespace: m.Namespace})
@@ -382,35 +412,11 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole bool) []
 		nn = append(nn, types.NamespacedName{Name: "search-indexer", Namespace: m.Namespace})
 		nn = append(nn, types.NamespacedName{Name: "search-postgres", Namespace: m.Namespace})
 	}
-	if m.Enabled(operatorsv1.Appsub) {
-		nn = append(nn, types.NamespacedName{Name: "multicluster-operators-application", Namespace: m.Namespace})
-		nn = append(nn, types.NamespacedName{Name: "multicluster-operators-channel", Namespace: m.Namespace})
-		nn = append(nn, types.NamespacedName{Name: "multicluster-operators-hub-subscription", Namespace: m.Namespace})
-		nn = append(nn, types.NamespacedName{Name: "multicluster-operators-standalone-subscription", Namespace: m.Namespace})
-		nn = append(nn, types.NamespacedName{Name: "multicluster-operators-subscription-report", Namespace: m.Namespace})
-	}
-	if m.Enabled(operatorsv1.ClusterLifecycle) {
-		nn = append(nn, types.NamespacedName{Name: "klusterlet-addon-controller-v2", Namespace: m.Namespace})
-	}
-	if m.Enabled(operatorsv1.ClusterBackup) {
-		nn = append(nn, types.NamespacedName{Name: "cluster-backup-chart-clusterbackup", Namespace: ClusterSubscriptionNamespace})
-		nn = append(nn, types.NamespacedName{Name: "openshift-adp-controller-manager", Namespace: ClusterSubscriptionNamespace})
-	}
-	if m.Enabled(operatorsv1.GRC) {
-		nn = append(nn, types.NamespacedName{Name: "grc-policy-addon-controller", Namespace: m.Namespace})
-		nn = append(nn, types.NamespacedName{Name: "grc-policy-propagator", Namespace: m.Namespace})
-	}
-	if m.Enabled(operatorsv1.Console) && ocpConsole {
-		nn = append(nn, types.NamespacedName{Name: "console-chart-console-v2", Namespace: m.Namespace})
+	if m.Enabled(operatorsv1.SubmarinerAddon) {
+		nn = append(nn, types.NamespacedName{Name: "submariner-addon", Namespace: m.Namespace})
 	}
 	if m.Enabled(operatorsv1.Volsync) {
 		nn = append(nn, types.NamespacedName{Name: "volsync-addon-controller", Namespace: m.Namespace})
-	}
-	if m.Enabled(operatorsv1.MultiClusterObservability) {
-		nn = append(nn, types.NamespacedName{Name: "multicluster-observability-operator", Namespace: m.Namespace})
-	}
-	if m.Enabled(operatorsv1.ClusterPermission) {
-		nn = append(nn, types.NamespacedName{Name: "cluster-permission", Namespace: m.Namespace})
 	}
 	return nn
 }

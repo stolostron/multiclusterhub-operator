@@ -90,6 +90,7 @@ const (
 )
 
 var (
+	ocpConsole          = false
 	mceUpgradeStartTime = time.Time{}
 )
 
@@ -366,98 +367,11 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	// Install the rest of the subscriptions in no particular order
-
-	if multiClusterHub.Enabled(operatorv1.Console) && ocpConsole {
-		result, err = r.ensureComponent(ctx, multiClusterHub, operatorv1.Console, r.CacheSpec.ImageOverrides)
-	} else {
-		result, err = r.ensureNoComponent(ctx, multiClusterHub, operatorv1.Console, r.CacheSpec.ImageOverrides)
-	}
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-	if multiClusterHub.Enabled(operatorv1.Insights) {
-		result, err = r.ensureComponent(ctx, multiClusterHub, operatorv1.Insights, r.CacheSpec.ImageOverrides)
-	} else {
-		result, err = r.ensureNoComponent(ctx, multiClusterHub, operatorv1.Insights, r.CacheSpec.ImageOverrides)
-	}
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-	if multiClusterHub.Enabled(operatorv1.Search) {
-		result, err = r.ensureComponent(ctx, multiClusterHub, operatorv1.Search, r.CacheSpec.ImageOverrides)
-	} else {
-		result, err = r.ensureNoComponent(ctx, multiClusterHub, operatorv1.Search, r.CacheSpec.ImageOverrides)
-	}
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-	if multiClusterHub.Enabled(operatorv1.GRC) {
-		result, err = r.ensureComponent(ctx, multiClusterHub, operatorv1.GRC, r.CacheSpec.ImageOverrides)
-	} else {
-		result, err = r.ensureNoComponent(ctx, multiClusterHub, operatorv1.GRC, r.CacheSpec.ImageOverrides)
-	}
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-	if multiClusterHub.Enabled(operatorv1.ClusterLifecycle) {
-		result, err = r.ensureComponent(ctx, multiClusterHub, operatorv1.ClusterLifecycle, r.CacheSpec.ImageOverrides)
-	} else {
-		result, err = r.ensureNoComponent(ctx, multiClusterHub, operatorv1.ClusterLifecycle, r.CacheSpec.ImageOverrides)
-	}
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-	if multiClusterHub.Enabled(operatorv1.MultiClusterObservability) {
-		result, err = r.ensureComponent(ctx, multiClusterHub, operatorv1.MultiClusterObservability, r.CacheSpec.ImageOverrides)
-	} else {
-		result, err = r.ensureNoComponent(ctx, multiClusterHub, operatorv1.MultiClusterObservability, r.CacheSpec.ImageOverrides)
-	}
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-	if multiClusterHub.Enabled(operatorv1.Volsync) {
-		result, err = r.ensureComponent(ctx, multiClusterHub, operatorv1.Volsync, r.CacheSpec.ImageOverrides)
-	} else {
-		result, err = r.ensureNoComponent(ctx, multiClusterHub, operatorv1.Volsync, r.CacheSpec.ImageOverrides)
-	}
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-	// Create Cluster Permissions if enabled
-	if multiClusterHub.Enabled(operatorv1.ClusterPermission) {
-		result, err = r.ensureClusterPermission(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
-	} else {
-		result, err = r.ensureNoClusterPermission(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
-	}
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-	if multiClusterHub.Enabled(operatorv1.ClusterBackup) {
-		ns := BackupNamespace()
-		result, err = r.ensureNamespace(multiClusterHub, ns)
+	for _, c := range operatorv1.MCHComponents {
+		result, err = r.ensureComponentOrNoComponent(ctx, multiClusterHub, c, r.CacheSpec.ImageOverrides)
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
-		result, err = r.ensurePullSecret(multiClusterHub, ns.Name)
-		if result != (ctrl.Result{}) {
-			return result, err
-		}
-		result, err = r.ensureComponent(ctx, multiClusterHub, operatorv1.ClusterBackup, r.CacheSpec.ImageOverrides)
-		if result != (ctrl.Result{}) {
-			return result, err
-		}
-	} else {
-		result, err = r.ensureNoComponent(ctx, multiClusterHub, operatorv1.ClusterBackup, r.CacheSpec.ImageOverrides)
-		if result != (ctrl.Result{}) {
-			return result, err
-		}
-		result, err = r.ensureNoNamespace(multiClusterHub, BackupNamespaceUnstructured())
-		if result != (ctrl.Result{}) {
-			return result, err
-		}
-	}
-	if result != (ctrl.Result{}) {
-		return result, err
 	}
 
 	if !multiClusterHub.Spec.DisableHubSelfManagement {
@@ -650,6 +564,9 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(ctx context.Context, comp
 	case operatorv1.ClusterLifecycle:
 		return utils.CLCChartLocation
 
+	case operatorv1.ClusterPermission:
+		return utils.ClusterPermissionChartLocation
+
 	case operatorv1.Console:
 		return utils.ConsoleChartLocation
 
@@ -665,6 +582,9 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(ctx context.Context, comp
 	case operatorv1.Search:
 		return utils.SearchV2ChartLocation
 
+	case operatorv1.SubmarinerAddon:
+		return utils.SubmarinerAddonChartLocation
+
 	case operatorv1.Volsync:
 		return utils.VolsyncChartLocation
 
@@ -672,6 +592,50 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(ctx context.Context, comp
 		log.Info(fmt.Sprintf("Unregistered component detected: %v", component))
 		return fmt.Sprintf("/chart/toggle/%v", component)
 	}
+}
+
+func (r *MultiClusterHubReconciler) ensureComponentOrNoComponent(ctx context.Context, m *operatorv1.MultiClusterHub,
+	component string, imageOverrides map[string]string) (ctrl.Result, error) {
+	var result ctrl.Result
+	var err error
+
+	if !m.Enabled(component) || (component == operatorv1.Console && m.Enabled(component) && !ocpConsole) {
+		if component == operatorv1.ClusterBackup {
+			result, err = r.ensureNoComponent(ctx, m, component, imageOverrides)
+			if result != (ctrl.Result{}) || err != nil {
+				return result, err
+			}
+			return r.ensureNoNamespace(m, BackupNamespaceUnstructured())
+		}
+		return r.ensureNoComponent(ctx, m, component, imageOverrides)
+
+	} else {
+		if component == operatorv1.ClusterBackup {
+			result, err = r.ensureNamespaceAndPullSecret(m, BackupNamespace())
+			if result != (ctrl.Result{}) || err != nil {
+				return result, err
+			}
+		}
+		return r.ensureComponent(ctx, m, component, imageOverrides)
+	}
+}
+
+func (r *MultiClusterHubReconciler) ensureNamespaceAndPullSecret(m *operatorv1.MultiClusterHub, ns *corev1.Namespace) (
+	ctrl.Result, error) {
+	var result ctrl.Result
+	var err error
+
+	result, err = r.ensureNamespace(m, ns)
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	result, err = r.ensurePullSecret(m, ns.Name)
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	return result, err
 }
 
 func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *operatorv1.MultiClusterHub, component string,
@@ -752,57 +716,6 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 	// Deletes all templates
 	for _, template := range templates {
 		result, err := r.deleteTemplate(ctx, m, template)
-		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
-			return result, err
-		}
-	}
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureClusterPermission(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-
-	log := log.FromContext(ctx)
-
-	// Render temmplates from file location
-	templates, errs := renderer.RenderChart(utils.ClusterPermissionChartLocation, m, images)
-	// Will capture errors if the templates are not formatted correctly
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Applies all templates
-	for _, template := range templates {
-		result, err := r.applyTemplate(ctx, m, template)
-		// Will capture k8s errors
-		if err != nil {
-			return result, err
-		}
-	}
-
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureNoClusterPermission(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-
-	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(utils.ClusterPermissionChartLocation, m, images)
-	// Will capture errors if the templates are not formatted correctly
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Deletes all templates
-	for _, template := range templates {
-		result, err := r.deleteTemplate(ctx, m, template)
-		// Will capture k8s errors
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
 			return result, err
@@ -943,15 +856,11 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 	if err != nil {
 		return err
 	}
-	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.Insights, r.CacheSpec.ImageOverrides)
-	if err != nil {
-		return err
-	}
 	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.ClusterLifecycle, r.CacheSpec.ImageOverrides)
 	if err != nil {
 		return err
 	}
-	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.GRC, r.CacheSpec.ImageOverrides)
+	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.ClusterPermission, r.CacheSpec.ImageOverrides)
 	if err != nil {
 		return err
 	}
@@ -959,11 +868,27 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 	if err != nil {
 		return err
 	}
-	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.Volsync, r.CacheSpec.ImageOverrides)
+	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.GRC, r.CacheSpec.ImageOverrides)
+	if err != nil {
+		return err
+	}
+	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.Insights, r.CacheSpec.ImageOverrides)
+	if err != nil {
+		return err
+	}
+	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.MultiClusterObservability, r.CacheSpec.ImageOverrides)
 	if err != nil {
 		return err
 	}
 	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.Search, r.CacheSpec.ImageOverrides)
+	if err != nil {
+		return err
+	}
+	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.SubmarinerAddon, r.CacheSpec.ImageOverrides)
+	if err != nil {
+		return err
+	}
+	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.Volsync, r.CacheSpec.ImageOverrides)
 	if err != nil {
 		return err
 	}
