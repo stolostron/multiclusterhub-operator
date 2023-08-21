@@ -1,16 +1,3 @@
-- repo_name: search-v2-operator
-  github_ref: "https://github.com/stolostron/search-v2-operator.git"
-  branch: "release-2.9"
-  operators:
-    - name: search-v2-operator
-      bundlePath: "bundle/manifests/"
-      imageMappings:
-        search-v2-operator: search_v2_operator
-        kube-rbac-proxy: kube_rbac_proxy
-        postgresql-13: postgresql_13
-        search-indexer: search_indexer
-        search-collector: search_collector
-        search-v2-api: search_v2_api
 - repo_name: multicloud-operators-subscription
   github_ref: "https://github.com/stolostron/multicloud-operators-subscription.git"
   branch: "release-2.9"
@@ -24,6 +11,7 @@
         multicluster-operators-channel: multicluster_operators_channel
       exclusions:
         - readOnlyRootFilesystem
+
 - repo_name: multicluster-observability-operator
   github_ref: "https://github.com/stolostron/multicluster-observability-operator.git"
   branch: "release-2.9"
@@ -32,3 +20,29 @@
       bundlePath: "operators/multiclusterobservability/bundle/manifests/"
       imageMappings:
         multicluster-observability-operator: multicluster_observability_operator
+
+- repo_name: search-v2-operator
+  github_ref: "https://github.com/stolostron/search-v2-operator.git"
+  branch: "release-2.9"
+  operators:
+    - name: search-v2-operator
+      bundlePath: "bundle/manifests/"
+      imageMappings:
+        search-v2-operator: search_v2_operator
+        kube-rbac-proxy: kube_rbac_proxy
+        postgresql-13: postgresql_13
+        search-indexer: search_indexer
+        search-collector: search_collector
+        search-v2-api: search_v2_api
+
+- repo_name: submariner-addon
+  github_ref: "https://github.com/stolostron/submariner-addon.git"
+  branch: "release-2.9"
+  operators:
+    - name: submariner-addon
+      bundlePath: "deploy/config/manifests/bases/"
+      crdPath: "deploy/config/crds/"
+      operatorPath: "deploy/config/operator/"
+      rbacPath: "deploy/config/rbac/"
+      imageMappings:
+        submariner-addon: submariner_addon

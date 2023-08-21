@@ -97,7 +97,7 @@ def fillChartYaml(helmChart, name, csvPath):
         chart = yaml.safe_load(f)
 
     # logging.info("%s", csvPath)
-    # Read CSV    
+    # Read CSV
     with open(csvPath, 'r') as f:
         csv = yaml.safe_load(f)
 
@@ -119,7 +119,7 @@ def fillChartYaml(helmChart, name, csvPath):
 
 # Copy chart-templates/deployment, update it with CSV deployment information, and add to chart
 def addDeployment(helmChart, deployment):
-    name = deployment["name"]
+    name = deployment["name"] if 'name' in deployment else deployment["metadata"]["name"]
     logging.info("Templating deployment '%s.yaml' ...", name)
 
     deployYaml = os.path.join(helmChart, "templates",  name + ".yaml")
@@ -141,9 +141,9 @@ def addDeployment(helmChart, deployment):
 
 # Copy chart-templates/clusterrole,clusterrolebinding,serviceaccount.yaml update it with CSV information, and add to chart
 def addClusterScopedRBAC(helmChart, rbacMap):
-    name = rbacMap["serviceAccountName"]
+    name = rbacMap["serviceAccountName"] if 'serviceAccountName' in rbacMap else rbacMap["metadata"]["name"]
+
     # name = "not-default"
-    
     logging.info("Setting cluster scoped RBAC ...")
     logging.info("Templating clusterrole '%s-clusterrole.yaml' ...", name)
     
@@ -189,18 +189,22 @@ def addClusterScopedRBAC(helmChart, rbacMap):
 
 # Copy over role, rolebinding, and serviceaccount templates from chart-templates/templates, update with CSV information, and add to chart
 def addNamespaceScopedRBAC(helmChart, rbacMap):
-    name = rbacMap["serviceAccountName"]
+    name = rbacMap["serviceAccountName"] if 'serviceAccountName' in rbacMap else rbacMap["metadata"]["name"]
+
     # name = "not-default"
     logging.info("Setting namespaced scoped RBAC ...")
     logging.info("Templating role '%s-role.yaml' ...", name)
+
     # Create role
     roleYaml = os.path.join(helmChart, "templates",  name + "-role.yaml")
     shutil.copyfile(os.path.join(os.path.dirname(os.path.realpath(__file__)), "chart-templates/templates/role.yaml"), roleYaml)
     with open(roleYaml, 'r') as f:
         role = yaml.safe_load(f)
+
     # Edit role
     role["rules"] = rbacMap["rules"]
     role["metadata"]["name"] = name
+
     # Save role
     with open(roleYaml, 'w') as f:
         yaml.dump(role, f)
@@ -213,14 +217,17 @@ def addNamespaceScopedRBAC(helmChart, rbacMap):
         shutil.copyfile(os.path.join(os.path.dirname(os.path.realpath(__file__)), "chart-templates/templates/serviceaccount.yaml"), serviceAccountYaml)
         with open(serviceAccountYaml, 'r') as f:
             serviceAccount = yaml.safe_load(f)
+
         # Edit Serviceaccount
         serviceAccount["metadata"]["name"] = name
+
         # Save Serviceaccount
         with open(serviceAccountYaml, 'w') as f:
             yaml.dump(serviceAccount, f)
         logging.info("Serviceaccount '%s-serviceaccount.yaml' updated successfully.", name)
 
     logging.info("Templating rolebinding '%s-rolebinding.yaml' ...", name)
+
     # Create rolebinding
     rolebindingYaml = os.path.join(helmChart, "templates",  name + "-rolebinding.yaml")
     shutil.copyfile(os.path.join(os.path.dirname(os.path.realpath(__file__)), "chart-templates/templates/rolebinding.yaml"), rolebindingYaml)
@@ -229,48 +236,78 @@ def addNamespaceScopedRBAC(helmChart, rbacMap):
     rolebinding['metadata']['name'] = name
     rolebinding['roleRef']['name'] = role["metadata"]["name"] = name
     rolebinding['subjects'][0]['name'] = name
+
     with open(rolebindingYaml, 'w') as f:
         yaml.dump(rolebinding, f)
     logging.info("Rolebinding '%s-rolebinding.yaml' updated successfully.", name)
     logging.info("Namespace scoped RBAC created.\n")
 
 # Adds resources identified in the CSV to the helmchart
-def addResources(helmChart, csvPath):
+def addResources(helmChart, csvPath, operatorPath = None, rbacPath = None):
     logging.info("Reading CSV '%s'\n", csvPath)
 
-    # Read CSV    
+    # Read CSV
     with open(csvPath, 'r') as f:
         csv = yaml.safe_load(f)
     
     logging.info("Checking for deployments, clusterpermissions, and permissions.\n")
-    # Check for deployments
-    for deployment in csv['spec']['install']['spec']['deployments']:
-        addDeployment(helmChart, deployment)
+    if operatorPath is None:
+        # Check for deployments
+        if 'deployments' in csv['spec']['install']['spec']:
+            for deployment in csv['spec']['install']['spec']['deployments']:
+                addDeployment(helmChart, deployment)
+
+    elif csv['spec']['install']['spec'] is None or 'deployments' not in csv['spec']['install']['spec']:
+            logging.warning("No deployments specified in the CSV file. Checking for operatorPaths.\n")
+            with open(operatorPath, 'r') as f:
+                deployment = yaml.safe_load(f)
+                addDeployment(helmChart, deployment)
+
     # Check for clusterroles, clusterrolebindings, and serviceaccounts
-    if 'clusterPermissions' in csv['spec']['install']['spec']:
-        clusterPermissions = csv['spec']['install']['spec']['clusterPermissions']
-        for clusterRole in clusterPermissions:
-            addClusterScopedRBAC(helmChart, clusterRole)
+    if rbacPath is None:
+        if 'clusterPermissions' in csv['spec']['install']['spec']:
+            clusterPermissions = csv['spec']['install']['spec']['clusterPermissions']
+            for clusterRole in clusterPermissions:
+                addClusterScopedRBAC(helmChart, clusterRole)
+
+    elif csv['spec']['install']['spec'] is None or 'clusterPermissions' not in csv['spec']['install']['spec']:
+            logging.warning("No clusterPermissions specified in the CSV file. Checking for rbacPaths.\n")
+            with open(rbacPath, 'r') as f:
+                clusterRole = yaml.safe_load(f)
+                addClusterScopedRBAC(helmChart, clusterRole)
+
     # Check for roles, rolebindings, and serviceaccounts
-    if 'permissions' in csv['spec']['install']['spec']:
-        permissions = csv['spec']['install']['spec']['permissions']
-        for role in permissions:
-            addNamespaceScopedRBAC(helmChart, role)
-    logging.info("Resources have been successfully added to chart '%s' from CSV '%s'.\n", helmChart, csvPath)
+    if rbacPath is None:
+        if 'permissions' in csv['spec']['install']['spec']:
+            permissions = csv['spec']['install']['spec']['permissions']
+            for role in permissions:
+                addNamespaceScopedRBAC(helmChart, role)
+
+    elif csv['spec']['install']['spec'] is None or 'permissions' not in csv['spec']['install']['spec']:
+            logging.warning("No permissions specified in the CSV file. Checking for rbacPaths.\n")
+            with open(rbacPath, 'r') as f:
+                role = yaml.safe_load(f)
+                addNamespaceScopedRBAC(helmChart, role)
     
+    logging.info("Resources have been successfully added to chart '%s' from CSV '%s'.\n", helmChart, csvPath)
+
     logging.info("Check to see if there are resources in the csv that aren't getting picked up")
     handleAllFiles = False
+
     # Current list of resources we handle
     listOfResourcesAdded = ["deployments", "clusterPermissions", "permissions", "CustomResourceDefinition"]
-    for resource in csv['spec']['install']['spec']:
-        if resource not in listOfResourcesAdded:
-            logging.error("Found a resource in the csv not being handled called '%s' in '%s'", resource, csvPath)
-            handleAllFiles = True
+
+    if csv['spec']['install']['spec'] is not None:
+        for resource in csv['spec']['install']['spec']:
+            if resource not in listOfResourcesAdded:
+                logging.error("Found a resource in the csv not being handled called '%s' in '%s'", resource, csvPath)
+                handleAllFiles = True
 
     logging.info("Copying over other resources in the bundle if they exist ...")
     dirPath = os.path.dirname(csvPath)
     logging.info("From directory '%s'", dirPath)
     otherBundleResourceTypes = ["ClusterRole", "ClusterRoleBinding", "Role", "RoleBinding", "Service", "ConfigMap"]
+
     # list of files we handle currently
     listOfFilesAdded = ["ClusterRole", "ClusterRoleBinding", "Role", 
     "RoleBinding", "Service", "ClusterManagementAddOn", "CustomResourceDefinition", "ClusterServiceVersion", "ConfigMap"]
@@ -562,7 +599,7 @@ def addCMAs(repo, operator, outputDir):
             exit(1)
 
     for filename in os.listdir(bundlePath):
-        if not filename.endswith(".yaml"): 
+        if not filename.endswith(".yaml"):
             continue
         filepath = os.path.join(bundlePath, filename)
         with open(filepath, 'r') as f:
@@ -573,6 +610,14 @@ def addCMAs(repo, operator, outputDir):
             shutil.copyfile(filepath, os.path.join(outputDir, "charts", "toggle", operator['name'], "templates", filename))
 
 def addCRDs(repo, operator, outputDir):
+    crdPath = None
+
+    if 'crdPath' in operator:
+        crdPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp", repo, operator["crdPath"])
+        if not os.path.exists(crdPath):
+            logging.critical("Could not validate crdPath at given path: " + operator["crdPath"])
+            exit(1)
+
     if 'bundlePath' in operator:
         bundlePath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp", repo, operator["bundlePath"])
         if not os.path.exists(bundlePath):
@@ -603,8 +648,19 @@ def addCRDs(repo, operator, outputDir):
         shutil.rmtree(directoryPath)
     os.makedirs(directoryPath)
 
+    if crdPath is not None:
+        for filename in os.listdir(crdPath):
+            if not filename.endswith(".yaml"):
+                continue
+            filepath = os.path.join(crdPath, filename)
+            with open(filepath, 'r') as f:
+                resourceFile = yaml.safe_load(f)
+
+            if 'kind' in resourceFile and resourceFile['kind'] == "CustomResourceDefinition":
+                shutil.copyfile(filepath, os.path.join(outputDir, "crds", operator['name'], filename))
+
     for filename in os.listdir(bundlePath):
-        if not filename.endswith(".yaml"): 
+        if not filename.endswith(".yaml"):
             continue
         filepath = os.path.join(bundlePath, filename)
         with open(filepath, 'r') as f:
@@ -649,6 +705,48 @@ def getCSVPath(repo, operator):
         if resourceFile["kind"] == "ClusterServiceVersion":
             return filepath
 
+def getOperatorPath(repo, operator):
+    if 'operatorPath' in operator:
+        operatorPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp", repo, operator["operatorPath"])
+        if not os.path.exists(operatorPath):
+            logging.critical("Could not validate operatorPath at given path: " + operator["operatorPath"])
+            exit(1)
+
+        for filename in os.listdir(operatorPath):
+            if not filename.endswith(".yaml"):
+                continue
+            filepath = os.path.join(operatorPath, filename)
+            with open(filepath, 'r') as f:
+                resourceFile = yaml.safe_load(f)
+
+            if 'kind' not in resourceFile.keys():
+                continue
+
+            elif resourceFile["kind"] == "Deployment":
+                logging.info("Located Deployment resource file: %s" % filename)
+                return filepath
+
+def getRBACPath(repo, operator):
+    if 'rbacPath' in operator:
+        rbacPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp", repo, operator["rbacPath"])
+        if not os.path.exists(rbacPath):
+            logging.critical("Could not validate rbacPath at given path: " + operator["rbacPath"])
+            exit(1)
+
+        for filename in os.listdir(rbacPath):
+            if not filename.endswith(".yaml"):
+                continue
+            filepath = os.path.join(rbacPath, filename)
+            with open(filepath, 'r') as f:
+                resourceFile = yaml.safe_load(f)
+
+            if 'kind' not in resourceFile.keys():
+                continue
+
+            elif resourceFile["kind"] == "ClusterRole" or resourceFile["kind"] == "Role":
+                logging.info("Located Deployment resource file: %s" % filename)
+                return filepath
+
 def main():
     ## Initialize ArgParser
     parser = argparse.ArgumentParser()
@@ -677,6 +775,9 @@ def main():
     # Loop through each repo in the config.yaml
     for repo in config:
         csvPath = ""
+        operatorPath = ""
+        rbacPath = ""
+
         # We support two ways of getting bundle input:
 
         # - Pikcing up already generated input from a Github repo
@@ -749,6 +850,18 @@ def main():
                 print("Unable to find given channel: " +  operator["channel"] + " in package.yaml: " + operator["package-yml"])
                 exit(1)
 
+            operatorPath = getOperatorPath(repo["repo_name"], operator)
+            if operatorPath == "":
+                # Validate the operatorPath or package-yml path exists in config.yaml
+                print("Unable to find given channel: " +  operator["channel"] + " in package.yaml: " + operator["package-yml"])
+                # exit(1)
+
+            rbacPath = getRBACPath(repo["repo_name"], operator)
+            if rbacPath == "":
+                # Validate the operatorPath or package-yml path exists in config.yaml
+                print("Unable to find given channel: " +  operator["channel"] + " in package.yaml: " + operator["package-yml"])
+                # exit(1)
+
             logging.basicConfig(level=logging.DEBUG)
 
             # Validate CSV exists
@@ -768,7 +881,6 @@ def main():
                 logging.info("CSV validated successfully!\n")
                 continue
 
-
             # Copy over all CRDs to the destination directory from the manifest folder
             addCRDs(repo["repo_name"], operator, destination)
 
@@ -783,7 +895,7 @@ def main():
             logging.info("Templating helm chart '%s' ...", operator["name"])
             # Creates a helm chart template
             templateHelmChart(destination, operator["name"])
-            
+
             # Generate the Chart.yaml file based off of the CSV
             helmChart = os.path.join(destination, "charts", "toggle", operator["name"])
             logging.info("Filling Chart.yaml ...")
@@ -791,7 +903,7 @@ def main():
 
             # Add all basic resources to the helm chart from the CSV
             logging.info("Adding Resources from CSV...")
-            addResources(helmChart, csvPath)
+            addResources(helmChart, csvPath, operatorPath, rbacPath)
             logging.info("Resources have been added from CSV. \n")
 
             # Copy over all ClusterManagementAddons to the destination directory
@@ -802,7 +914,7 @@ def main():
                 exclusions = operator["exclusions"] if "exclusions" in operator else []
                 injectRequirements(helmChart, operator["imageMappings"], exclusions)
                 logging.info("Overrides added. \n")
-    shutil.rmtree((os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp")), ignore_errors=True)       
+    shutil.rmtree((os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp")), ignore_errors=True)
 
 if __name__ == "__main__":
    main()
