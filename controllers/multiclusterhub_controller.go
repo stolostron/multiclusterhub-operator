@@ -650,6 +650,9 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(ctx context.Context, comp
 	case operatorv1.ClusterLifecycle:
 		return utils.CLCChartLocation
 
+	case operatorv1.ClusterPermission:
+		return utils.CLCChartLocation
+
 	case operatorv1.Console:
 		return utils.ConsoleChartLocation
 
@@ -943,15 +946,11 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 	if err != nil {
 		return err
 	}
-	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.Insights, r.CacheSpec.ImageOverrides)
-	if err != nil {
-		return err
-	}
 	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.ClusterLifecycle, r.CacheSpec.ImageOverrides)
 	if err != nil {
 		return err
 	}
-	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.GRC, r.CacheSpec.ImageOverrides)
+	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.ClusterPermission, r.CacheSpec.ImageOverrides)
 	if err != nil {
 		return err
 	}
@@ -959,11 +958,23 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 	if err != nil {
 		return err
 	}
-	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.Volsync, r.CacheSpec.ImageOverrides)
+	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.GRC, r.CacheSpec.ImageOverrides)
+	if err != nil {
+		return err
+	}
+	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.Insights, r.CacheSpec.ImageOverrides)
+	if err != nil {
+		return err
+	}
+	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.MultiClusterObservability, r.CacheSpec.ImageOverrides)
 	if err != nil {
 		return err
 	}
 	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.Search, r.CacheSpec.ImageOverrides)
+	if err != nil {
+		return err
+	}
+	_, err = r.ensureNoComponent(context.TODO(), m, operatorv1.Volsync, r.CacheSpec.ImageOverrides)
 	if err != nil {
 		return err
 	}
