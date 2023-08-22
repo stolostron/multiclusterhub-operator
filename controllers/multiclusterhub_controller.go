@@ -651,7 +651,7 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(ctx context.Context, comp
 		return utils.CLCChartLocation
 
 	case operatorv1.ClusterPermission:
-		return utils.CLCChartLocation
+		return utils.ClusterPermissionChartLocation
 
 	case operatorv1.Console:
 		return utils.ConsoleChartLocation
