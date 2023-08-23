@@ -91,7 +91,7 @@ const (
 
 var (
 	mceUpgradeStartTime = time.Time{}
-	ocpConsole          = false
+	ocpConsole          bool
 )
 
 //+kubebuilder:rbac:groups="";"admissionregistration.k8s.io";"apiextensions.k8s.io";"apiregistration.k8s.io";"apps";"apps.open-cluster-management.io";"authorization.k8s.io";"hive.openshift.io";"mcm.ibm.com";"proxy.open-cluster-management.io";"rbac.authorization.k8s.io";"security.openshift.io";"clusterview.open-cluster-management.io";"discovery.open-cluster-management.io";"wgpolicyk8s.io",resources=apiservices;channels;clusterjoinrequests;clusterrolebindings;clusterstatuses/log;configmaps;customresourcedefinitions;deployments;discoveryconfigs;hiveconfigs;mutatingwebhookconfigurations;validatingwebhookconfigurations;namespaces;pods;policyreports;replicasets;rolebindings;secrets;serviceaccounts;services;subjectaccessreviews;subscriptions;helmreleases;managedclusters;managedclustersets,verbs=get
@@ -598,7 +598,9 @@ func (r *MultiClusterHubReconciler) ensureComponentOrNoComponent(ctx context.Con
 	var result ctrl.Result
 	var err error
 
-	if !m.Enabled(component) || (component == operatorv1.Console && m.Enabled(component) && !ocpConsole) {
+	log := log.FromContext(ctx)
+
+	if !m.Enabled(component) {
 		if component == operatorv1.ClusterBackup {
 			result, err = r.ensureNoComponent(ctx, m, component, imageOverrides)
 			if result != (ctrl.Result{}) || err != nil {
@@ -615,6 +617,12 @@ func (r *MultiClusterHubReconciler) ensureComponentOrNoComponent(ctx context.Con
 				return result, err
 			}
 		}
+
+		if component == operatorv1.Console && !ocpConsole {
+			log.Info("OCP console is not enabled")
+			return r.ensureNoComponent(ctx, m, component, imageOverrides)
+		}
+
 		return r.ensureComponent(ctx, m, component, imageOverrides)
 	}
 }
