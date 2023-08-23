@@ -770,8 +770,6 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(err).To(BeNil())
 
 			By("Ensuring Console")
-			ocpConsole = true
-
 			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.Console, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
