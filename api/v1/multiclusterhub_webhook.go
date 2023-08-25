@@ -34,57 +34,56 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-var (
-	blockDeletionResources = []struct {
-		Name           string
-		GVK            schema.GroupVersionKind
-		ExceptionTotal int
-		Exceptions     []string
-	}{
-		{
-			Name: "ManagedCluster",
-			GVK: schema.GroupVersionKind{
-				Group:   "cluster.open-cluster-management.io",
-				Version: "v1",
-				Kind:    "ManagedClusterList",
-			},
-			ExceptionTotal: 1,
-			Exceptions:     []string{"local-cluster"},
+var blockDeletionResources = []struct {
+	Name           string
+	GVK            schema.GroupVersionKind
+	ExceptionTotal int
+	Exceptions     []string
+}{
+	{
+		Name: "ManagedCluster",
+		GVK: schema.GroupVersionKind{
+			Group:   "cluster.open-cluster-management.io",
+			Version: "v1",
+			Kind:    "ManagedClusterList",
 		},
-		{
-			Name: "MultiClusterObservability",
-			GVK: schema.GroupVersionKind{
-				Group:   "observability.open-cluster-management.io",
-				Version: "v1beta2",
-				Kind:    "MultiClusterObservabilityList",
-			},
-			ExceptionTotal: 0,
-			Exceptions:     []string{},
+		ExceptionTotal: 1,
+		Exceptions:     []string{"local-cluster"},
+	},
+	{
+		Name: "MultiClusterObservability",
+		GVK: schema.GroupVersionKind{
+			Group:   "observability.open-cluster-management.io",
+			Version: "v1beta2",
+			Kind:    "MultiClusterObservabilityList",
 		},
-		{
-			Name: "DiscoveryConfig",
-			GVK: schema.GroupVersionKind{
-				Group:   "discovery.open-cluster-management.io",
-				Version: "v1",
-				Kind:    "DiscoveryConfigList",
-			},
-			ExceptionTotal: 0,
-			Exceptions:     []string{},
+		ExceptionTotal: 0,
+		Exceptions:     []string{},
+	},
+	{
+		Name: "DiscoveryConfig",
+		GVK: schema.GroupVersionKind{
+			Group:   "discovery.open-cluster-management.io",
+			Version: "v1",
+			Kind:    "DiscoveryConfigList",
 		},
-		{
-			Name: "AgentServiceConfig",
-			GVK: schema.GroupVersionKind{
-				Group:   "agent-install.openshift.io",
-				Version: "v1beta1",
-				Kind:    "AgentServiceConfigList",
-			},
-			ExceptionTotal: 0,
-			Exceptions:     []string{},
+		ExceptionTotal: 0,
+		Exceptions:     []string{},
+	},
+	{
+		Name: "AgentServiceConfig",
+		GVK: schema.GroupVersionKind{
+			Group:   "agent-install.openshift.io",
+			Version: "v1beta1",
+			Kind:    "AgentServiceConfigList",
 		},
-	}
-)
+		ExceptionTotal: 0,
+		Exceptions:     []string{},
+	},
+}
 
 var (
 	mchlog = log.Log.WithName("multiclusterhub-resource")
@@ -108,94 +107,94 @@ func (r *MultiClusterHub) Default() {
 var _ webhook.Validator = &MultiClusterHub{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *MultiClusterHub) ValidateCreate() error {
+func (r *MultiClusterHub) ValidateCreate() (admission.Warnings, error) {
 	mchlog.Info("validate create", "name", r.Name)
 	multiClusterHubList := &MultiClusterHubList{}
 	if err := Client.List(context.Background(), multiClusterHubList); err != nil {
-		return fmt.Errorf("unable to list MultiClusterHubs: %s", err)
+		return nil, fmt.Errorf("unable to list MultiClusterHubs: %s", err)
 	}
 
 	// Standalone MCH must exist before a hosted MCH can be created
 	if len(multiClusterHubList.Items) == 0 && r.IsInHostedMode() {
-		return fmt.Errorf("a hosted Mode MCH can only be created once a non-hosted MCH is present")
+		return nil, fmt.Errorf("a hosted Mode MCH can only be created once a non-hosted MCH is present")
 	}
 
 	// Prevent two standaline MCH's
 	for _, existing := range multiClusterHubList.Items {
 		existingMCH := existing
 		if !r.IsInHostedMode() && !existingMCH.IsInHostedMode() {
-			return fmt.Errorf("MultiClusterHub in Standalone mode already exists: `%s`. Only one resource may exist in Standalone mode", existingMCH.Name)
+			return nil, fmt.Errorf("MultiClusterHub in Standalone mode already exists: `%s`. Only one resource may exist in Standalone mode", existingMCH.Name)
 		}
 	}
 
 	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
-		return fmt.Errorf("invalid AvailabilityConfig given")
+		return nil, fmt.Errorf("invalid AvailabilityConfig given")
 	}
 
 	// Validate components
 	if r.Spec.Overrides != nil {
 		for _, c := range r.Spec.Overrides.Components {
 			if !ValidComponent(c) {
-				return fmt.Errorf("invalid component config: %s is not a known component", c.Name)
+				return nil, fmt.Errorf("invalid component config: %s is not a known component", c.Name)
 			}
 		}
 	}
 
-	return nil
+	return nil, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) error {
+func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 	mchlog.Info("validate update", "name", r.Name)
 
 	oldMCH := old.(*MultiClusterHub)
 
 	if oldMCH.Spec.SeparateCertificateManagement != r.Spec.SeparateCertificateManagement {
-		return fmt.Errorf("updating SeparateCertificateManagement is forbidden")
+		return nil, fmt.Errorf("updating SeparateCertificateManagement is forbidden")
 	}
 
 	if oldMCH.IsInHostedMode() != r.IsInHostedMode() {
-		return fmt.Errorf("changes cannot be made to DeploymentMode")
+		return nil, fmt.Errorf("changes cannot be made to DeploymentMode")
 	}
 
 	if !reflect.DeepEqual(oldMCH.Spec.Hive, r.Spec.Hive) {
-		return fmt.Errorf("hive updates are forbidden")
+		return nil, fmt.Errorf("hive updates are forbidden")
 	}
 
 	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
-		return fmt.Errorf("invalid AvailabilityConfig given")
+		return nil, fmt.Errorf("invalid AvailabilityConfig given")
 	}
 
 	// Validate components
 	if r.Spec.Overrides != nil {
 		for _, c := range r.Spec.Overrides.Components {
 			if !ValidComponent(c) {
-				return fmt.Errorf("invalid componentconfig: %s is not a known component", c.Name)
+				return nil, fmt.Errorf("invalid componentconfig: %s is not a known component", c.Name)
 			}
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *MultiClusterHub) ValidateDelete() error {
+func (r *MultiClusterHub) ValidateDelete() (admission.Warnings, error) {
 	mchlog.Info("validate delete", "name", r.Name)
 
 	ctx := context.Background()
 
 	// Do not block delete of hosted mode, which does not spawn the resources
 	if r.IsInHostedMode() {
-		return nil
+		return nil, nil
 	}
 
 	cfg, err := config.GetConfig()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	c, err := discovery.NewDiscoveryClientForConfig(cfg)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	for _, resource := range blockDeletionResources {
@@ -205,23 +204,23 @@ func (r *MultiClusterHub) ValidateDelete() error {
 		if err == nil {
 			// List all resources
 			if err := Client.List(ctx, list); err != nil {
-				return fmt.Errorf("unable to list %s: %s", resource.Name, err)
+				return nil, fmt.Errorf("unable to list %s: %s", resource.Name, err)
 			}
 			// If there are any unexpected resources, deny deletion
 			if len(list.Items) > resource.ExceptionTotal {
-				return fmt.Errorf("cannot delete MultiClusterHub resource because %s resource(s) exist", resource.Name)
+				return nil, fmt.Errorf("cannot delete MultiClusterHub resource because %s resource(s) exist", resource.Name)
 			}
 			// if exception resources are present, check if they are the same as the exception resources
 			if resource.ExceptionTotal > 0 {
 				for _, item := range list.Items {
 					if !contains(resource.Exceptions, item.GetName()) {
-						return fmt.Errorf("cannot delete MultiClusterHub resource because %s resource(s) exist", resource.Name)
+						return nil, fmt.Errorf("cannot delete MultiClusterHub resource because %s resource(s) exist", resource.Name)
 					}
 				}
 			}
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 // ValidatingWebhook returns the ValidatingWebhookConfiguration used for the multiclusterhub
