@@ -345,7 +345,7 @@ func GetOADPConfig(m *v1.MultiClusterHub) (string, string, subv1alpha1.Approval,
 	if sub.Channel != "" {
 		channel = sub.Channel
 	} else {
-		channel = "stable-1.2"
+		channel = "stable-1.1"
 	}
 
 	if sub.InstallPlanApproval != "" {
