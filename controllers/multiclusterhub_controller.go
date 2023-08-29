@@ -59,7 +59,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/go-logr/logr"
 	pkgerrors "github.com/pkg/errors"
@@ -89,9 +88,7 @@ const (
 	mceUpgradeDuration = 10 * time.Minute
 )
 
-var (
-	mceUpgradeStartTime = time.Time{}
-)
+var mceUpgradeStartTime = time.Time{}
 
 //+kubebuilder:rbac:groups="";"admissionregistration.k8s.io";"apiextensions.k8s.io";"apiregistration.k8s.io";"apps";"apps.open-cluster-management.io";"authorization.k8s.io";"hive.openshift.io";"mcm.ibm.com";"proxy.open-cluster-management.io";"rbac.authorization.k8s.io";"security.openshift.io";"clusterview.open-cluster-management.io";"discovery.open-cluster-management.io";"wgpolicyk8s.io",resources=apiservices;channels;clusterjoinrequests;clusterrolebindings;clusterstatuses/log;configmaps;customresourcedefinitions;deployments;discoveryconfigs;hiveconfigs;mutatingwebhookconfigurations;validatingwebhookconfigurations;namespaces;pods;policyreports;replicasets;rolebindings;secrets;serviceaccounts;services;subjectaccessreviews;subscriptions;helmreleases;managedclusters;managedclustersets,verbs=get
 //+kubebuilder:rbac:groups="";"admissionregistration.k8s.io";"apiextensions.k8s.io";"apiregistration.k8s.io";"apps";"apps.open-cluster-management.io";"authorization.k8s.io";"hive.openshift.io";"monitoring.coreos.com";"rbac.authorization.k8s.io";"mcm.ibm.com";"security.openshift.io",resources=apiservices;channels;clusterjoinrequests;clusterrolebindings;clusterroles;configmaps;customresourcedefinitions;deployments;hiveconfigs;mutatingwebhookconfigurations;validatingwebhookconfigurations;namespaces;rolebindings;secrets;serviceaccounts;services;servicemonitors;subjectaccessreviews;subscriptions;validatingwebhookconfigurations,verbs=create;update
@@ -534,11 +531,8 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) (controll
 			builder.WithPredicates(predicate.GenerationChangedPredicate{}),
 		).
 		Watches(
-			&source.Kind{Type: &appsv1.Deployment{}},
-			&handler.EnqueueRequestForOwner{
-				IsController: true,
-				OwnerType:    &operatorv1.MultiClusterHub{},
-			},
+			&appsv1.Deployment{},
+			handler.EnqueueRequestForOwner(mgr.GetScheme(), mgr.GetRESTMapper(), &operatorv1.MultiClusterHub{}),
 			builder.WithPredicates(
 				ctrlpredicate.Or(
 					ctrlpredicate.GenerationChangedPredicate{},
@@ -548,9 +542,9 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) (controll
 			),
 		).
 		Watches(
-			&source.Kind{Type: &apiregistrationv1.APIService{}},
+			&apiregistrationv1.APIService{},
 			handler.Funcs{
-				DeleteFunc: func(e event.DeleteEvent, q workqueue.RateLimitingInterface) {
+				DeleteFunc: func(ctx context.Context, e event.DeleteEvent, q workqueue.RateLimitingInterface) {
 					labels := e.Object.GetLabels()
 					q.Add(
 						reconcile.Request{
@@ -564,9 +558,9 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) (controll
 			},
 			builder.WithPredicates(predicate.DeletePredicate{}),
 		).
-		Watches(&source.Kind{Type: &appsv1.Deployment{}},
+		Watches(&appsv1.Deployment{},
 			handler.EnqueueRequestsFromMapFunc(
-				func(a client.Object) []reconcile.Request {
+				func(ctx context.Context, a client.Object) []reconcile.Request {
 					return []reconcile.Request{
 						{
 							NamespacedName: types.NamespacedName{
@@ -589,9 +583,9 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) (controll
 			),
 		).
 		Watches(
-			&source.Kind{Type: &configv1.ClusterVersion{}},
+			&configv1.ClusterVersion{},
 			handler.EnqueueRequestsFromMapFunc(
-				func(a client.Object) []reconcile.Request {
+				func(ctx context.Context, a client.Object) []reconcile.Request {
 					multiClusterHubList := &operatorv1.MultiClusterHubList{}
 					if err := r.Client.List(context.TODO(), multiClusterHubList); err == nil && len(multiClusterHubList.Items) > 0 {
 						mch := multiClusterHubList.Items[0]
@@ -616,7 +610,6 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 	// Set owner reference.
 	if (template.GetKind() == "ClusterRole") || (template.GetKind() == "ClusterRoleBinding") || (template.GetKind() == "ServiceMonitor") || (template.GetKind() == "CustomResourceDefinition") {
 		utils.AddInstallerLabel(template, m.Name, m.Namespace)
-
 	}
 
 	if template.GetKind() == "APIService" {
@@ -678,8 +671,8 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(ctx context.Context, comp
 }
 
 func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *operatorv1.MultiClusterHub, component string,
-	images map[string]string) (ctrl.Result, error) {
-
+	images map[string]string,
+) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	chartLocation := r.fetchChartLocation(ctx, component)
 
@@ -713,8 +706,8 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 }
 
 func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *operatorv1.MultiClusterHub,
-	component string, images map[string]string) (result ctrl.Result, err error) {
-
+	component string, images map[string]string,
+) (result ctrl.Result, err error) {
 	log := log.FromContext(ctx)
 	chartLocation := r.fetchChartLocation(ctx, component)
 
@@ -764,7 +757,6 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 }
 
 func (r *MultiClusterHubReconciler) ensureClusterPermission(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-
 	log := log.FromContext(ctx)
 
 	// Render temmplates from file location
@@ -1121,7 +1113,6 @@ func updatePausedCondition(m *operatorv1.MultiClusterHub) {
 			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, ResumedReason, "Multiclusterhub is resumed")
 			SetHubCondition(&m.Status, *condition)
 		}
-
 	}
 }
 
@@ -1211,5 +1202,4 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 	}
 	log.Info("No updates to defaults detected")
 	return ctrl.Result{}, nil
-
 }
