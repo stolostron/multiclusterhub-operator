@@ -123,7 +123,8 @@ func (r *MultiClusterHub) ValidateCreate() (admission.Warnings, error) {
 	for _, existing := range multiClusterHubList.Items {
 		existingMCH := existing
 		if !r.IsInHostedMode() && !existingMCH.IsInHostedMode() {
-			return nil, fmt.Errorf("MultiClusterHub in Standalone mode already exists: `%s`. Only one resource may exist in Standalone mode", existingMCH.Name)
+			return nil, fmt.Errorf("MultiClusterHub in Standalone mode already exists: `%s`. "+
+				"Only one resource may exist in Standalone mode", existingMCH.Name)
 		}
 	}
 
