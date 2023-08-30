@@ -71,7 +71,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	ctrlwebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -174,7 +173,7 @@ func main() {
 		HealthProbeBindAddress:  probeAddr,
 		LeaderElection:          enableLeaderElection,
 		LeaderElectionID:        "multicloudhub-operator-lock",
-		WebhookServer:           ctrlwebhook.NewServer(ctrlwebhook.Options{TLSMinVersion: "1.2"}),
+		WebhookServer:           &ctrlwebhook.Server{TLSMinVersion: "1.2"},
 		LeaderElectionNamespace: ns,
 		LeaseDuration:           &leaseDuration,
 		RenewDeadline:           &renewDeadline,
@@ -286,7 +285,7 @@ func main() {
 	}
 
 	// go routine to check if mce exist, if it does add watch
-	go addMultiClusterEngineWatch(ctx, mgr, uncachedClient)
+	go addMultiClusterEngineWatch(ctx, uncachedClient)
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
@@ -300,17 +299,17 @@ const (
 	LocalRunMode    = "local"
 )
 
-func addMultiClusterEngineWatch(ctx context.Context, mgr manager.Manager, uncachedClient client.Client) {
+func addMultiClusterEngineWatch(ctx context.Context, uncachedClient client.Client) {
 	for {
 		crd := &apixv1.CustomResourceDefinition{}
 		mceName := "multiclusterengines.multicluster.openshift.io"
 		err := uncachedClient.Get(ctx, types.NamespacedName{Name: mceName}, crd)
-		// crdKey := client.ObjectKey{Name: multiclusterengine.Namespace().GetObjectMeta().GetName()}
-		// err := uncachedClient.Get(ctx, crdKey, &mcev1.MultiClusterEngine{})
+		//crdKey := client.ObjectKey{Name: multiclusterengine.Namespace().GetObjectMeta().GetName()}
+		//err := uncachedClient.Get(ctx, crdKey, &mcev1.MultiClusterEngine{})
 		if err == nil {
-			err := mchController.Watch(source.Kind(mgr.GetCache(), &mcev1.MultiClusterEngine{}),
+			err := mchController.Watch(&source.Kind{Type: &mcev1.MultiClusterEngine{}},
 				handler.Funcs{
-					UpdateFunc: func(ctx context.Context, e event.UpdateEvent, q workqueue.RateLimitingInterface) {
+					UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
 						labels := e.ObjectNew.GetLabels()
 						name := labels["installer.name"]
 						if name == "" {
@@ -321,7 +320,7 @@ func addMultiClusterEngineWatch(ctx context.Context, mgr manager.Manager, uncach
 							namespace = labels["multiclusterhub.namespace"]
 						}
 						if name == "" || namespace == "" {
-							l := log.FromContext(ctx)
+							l := log.FromContext(context.Background())
 							l.Info(fmt.Sprintf("MCE updated, but did not find required labels: %v", labels))
 							return
 						}
