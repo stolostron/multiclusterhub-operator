@@ -1,0 +1,11 @@
+global:
+  imageOverrides:
+    submariner_addon: ''
+  namespace: default
+  pullSecret: null
+hubconfig:
+  nodeSelector: null
+  proxyConfigs: {}
+  replicaCount: 1
+  tolerations: []
+org: open-cluster-management

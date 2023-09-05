@@ -172,7 +172,7 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 
 	return nil
 }
-func (r *MultiClusterHubReconciler) cleanupNamespaces(reqLogger logr.Logger) error {
+func (r *MultiClusterHubReconciler) cleanupNamespaces(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	ctx := context.Background()
 	clusterBackupNamespace := &corev1.Namespace{}
 	err := r.Client.Get(ctx, types.NamespacedName{Name: utils.ClusterSubscriptionNamespace}, clusterBackupNamespace)
@@ -274,7 +274,7 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 	return nil
 }
 
-func (r *MultiClusterHubReconciler) orphanOwnedMultiClusterEngine(m *operatorsv1.MultiClusterHub) error {
+func (r *MultiClusterHubReconciler) orphanOwnedMultiClusterEngine(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	ctx := context.Background()
 
 	mce, err := multiclusterengine.GetManagedMCE(ctx, r.Client)
