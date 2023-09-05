@@ -48,17 +48,19 @@ const (
 	MCESubscriptionNamespace     = "multicluster-engine"
 	ClusterSubscriptionNamespace = "open-cluster-management-backup"
 
-	MCEManagedByLabel              = "multiclusterhubs.operator.open-cluster-management.io/managed-by"
-	InsightsChartLocation          = "/charts/toggle/insights"
+	MCEManagedByLabel = "multiclusterhubs.operator.open-cluster-management.io/managed-by"
+
 	AppsubChartLocation            = "/charts/toggle/multicloud-operators-subscription"
-	SearchV2ChartLocation          = "/charts/toggle/search-v2-operator"
 	CLCChartLocation               = "/charts/toggle/cluster-lifecycle"
 	ClusterBackupChartLocation     = "/charts/toggle/cluster-backup"
-	GRCChartLocation               = "/charts/toggle/grc"
-	ConsoleChartLocation           = "/charts/toggle/console"
-	VolsyncChartLocation           = "/charts/toggle/volsync-controller"
 	ClusterPermissionChartLocation = "/charts/toggle/cluster-permission"
+	ConsoleChartLocation           = "/charts/toggle/console"
+	GRCChartLocation               = "/charts/toggle/grc"
+	InsightsChartLocation          = "/charts/toggle/insights"
 	MCOChartLocation               = "/charts/toggle/multicluster-observability-operator"
+	SearchV2ChartLocation          = "/charts/toggle/search-v2-operator"
+	SubmarinerAddonChartLocation   = "/charts/toggle/submariner-addon"
+	VolsyncChartLocation           = "/charts/toggle/volsync-controller"
 )
 
 var (
@@ -271,7 +273,8 @@ func IsUnitTest() bool {
 }
 
 func GetTestImages() []string {
-	return []string{"LIFECYCLE_BACKEND_E2E", "BAILER", "CERT_POLICY_CONTROLLER", "CLUSTER_BACKUP_CONTROLLER",
+	return []string{
+		"LIFECYCLE_BACKEND_E2E", "BAILER", "CERT_POLICY_CONTROLLER", "CLUSTER_BACKUP_CONTROLLER",
 		"CLUSTER_LIFECYCLE_E2E", "CLUSTER_PROXY", "CLUSTER_PROXY_ADDON", "CONSOLE", "ENDPOINT_MONITORING_OPERATOR",
 		"GRAFANA", "GRAFANA_DASHBOARD_LOADER", "GRC_POLICY_FRAMEWORK_TESTS", "HELLOPROW_GO", "HELLOWORLD",
 		"HYPERSHIFT_DEPLOYMENT_CONTROLLER", "IAM_POLICY_CONTROLLER", "INSIGHTS_CLIENT", "INSIGHTS_METRICS",
@@ -289,8 +292,9 @@ func GetTestImages() []string {
 		"governance_policy_propagator", "governance_policy_addon_controller", "cert_policy_controller", "iam_policy_controller",
 		"config_policy_controller", "governance_policy_framework_addon",
 		"cluster_backup_controller", "console", "volsync_addon_controller", "multicluster_operators_application",
-		"multicloud_integrations", "multicluster_operators_channel", "multicluster_operators_subscription", "multicluster_observability_operator", "cluster_permission"}
-
+		"multicloud_integrations", "multicluster_operators_channel", "multicluster_operators_subscription",
+		"multicluster_observability_operator", "cluster_permission", "submariner_addon",
+	}
 }
 
 // FormatSSLCiphers converts an array of ciphers into a string consumed by the management
