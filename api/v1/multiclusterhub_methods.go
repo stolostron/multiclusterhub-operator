@@ -23,19 +23,20 @@ const (
 	Volsync                   string = "volsync"
 
 	// MCE
-	MCEAssistedService        string = "assisted-service"
-	MCEClusterLifecycle       string = "cluster-lifecycle-mce"
-	MCEClusterManager         string = "cluster-manager"
-	MCEClusterProxyAddon      string = "cluster-proxy-addon"
-	MCEConsole                string = "console-mce"
-	MCEDiscovery              string = "discovery"
-	MCEHive                   string = "hive"
-	MCEHypershiftLocalHosting string = "hypershift-local-hosting"
-	MCEHypershiftPreview      string = "hypershift-preview"
-	MCEHypershift             string = "hypershift"
-	MCELocalCluster           string = "local-cluster"
-	MCEManagedServiceAccount  string = "managedserviceaccount-preview"
-	MCEServerFoundation       string = "server-foundation"
+	MCEAssistedService              string = "assisted-service"
+	MCEClusterLifecycle             string = "cluster-lifecycle-mce"
+	MCEClusterManager               string = "cluster-manager"
+	MCEClusterProxyAddon            string = "cluster-proxy-addon"
+	MCEConsole                      string = "console-mce"
+	MCEDiscovery                    string = "discovery"
+	MCEHive                         string = "hive"
+	MCEHypershiftLocalHosting       string = "hypershift-local-hosting"
+	MCEHypershiftPreview            string = "hypershift-preview"
+	MCEHypershift                   string = "hypershift"
+	MCELocalCluster                 string = "local-cluster"
+	MCEManagedServiceAccount        string = "managedserviceaccount"
+	MCEManagedServiceAccountPreview string = "managedserviceaccount-preview"
+	MCEServerFoundation             string = "server-foundation"
 )
 
 var allComponents = []string{
@@ -63,6 +64,10 @@ var allComponents = []string{
 	MCEConsole,
 	MCEDiscovery,
 	MCEHive,
+	MCEServerFoundation,
+	MCEConsole,
+	MCEManagedServiceAccount,
+	MCEManagedServiceAccountPreview,
 	MCEHypershift,
 	MCEHypershiftLocalHosting,
 	MCEHypershiftPreview,
@@ -93,6 +98,10 @@ var MCEComponents = []string{
 	MCEConsole,
 	MCEDiscovery,
 	MCEHive,
+	MCEServerFoundation,
+	MCEConsole,
+	MCEManagedServiceAccount,
+	MCEManagedServiceAccountPreview,
 	MCEHypershift,
 	MCEHypershiftLocalHosting,
 	MCEHypershiftPreview,
