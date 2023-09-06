@@ -1,0 +1,24 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: console-monitor
+  namespace: openshift-monitoring
+spec:
+  endpoints:
+    - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      interval: 60s
+      port: http
+      scheme: https
+      scrapeTimeout: 10s
+      tlsConfig:
+        ca: {}
+        cert: {}
+        insecureSkipVerify: true
+  jobLabel: console-chart-console-v2
+  namespaceSelector:
+    matchNames:
+      - open-cluster-management
+      - multicluster-engine
+  selector:
+    matchLabels:
+      app: console-chart-v2
