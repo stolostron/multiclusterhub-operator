@@ -797,6 +797,8 @@ github.com/operator-framework/operator-lifecycle-manager v0.22.0 h1:7DEWOq24HQ0l
 github.com/operator-framework/operator-lifecycle-manager v0.22.0/go.mod h1:4zssIIl23ohxS1nXRU9xTkBmwt+qleuHMO02BaWOHLA=
 github.com/operator-framework/operator-registry v1.17.5 h1:LR8m1rFz5Gcyje8WK6iYt+gIhtzqo52zMRALdmTYHT0=
 github.com/operator-framework/operator-registry v1.17.5/go.mod h1:sRQIgDMZZdUcmHltzyCnM6RUoDF+WS8Arj1BQIARDS8=
+github.com/operator-framework/operator-lib v0.11.0 h1:eYzqpiOfq9WBI4Trddisiq/X9BwCisZd3rIzmHRC9Z8=
+github.com/operator-framework/operator-lib v0.11.0/go.mod h1:RpyKhFAoG6DmKTDIwMuO6pI3LRc8IE9rxEYWy476o6g=
 github.com/otiai10/copy v1.2.0/go.mod h1:rrF5dJ5F0t/EWSYODDu4j9/vEeYHMkc8jt0zJChqQWw=
 github.com/otiai10/curr v0.0.0-20150429015615-9b4961190c95/go.mod h1:9qAhocn7zKJG+0mI8eUu6xqkFDYS2kb2saOteoSB3cE=
 github.com/otiai10/curr v1.0.0/go.mod h1:LskTG5wDwr8Rs+nNQ+1LlxRjAtTZZjtJW4rMXl6j4vs=
