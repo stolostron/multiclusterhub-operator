@@ -66,11 +66,12 @@ import (
 
 // MultiClusterHubReconciler reconciles a MultiClusterHub object
 type MultiClusterHubReconciler struct {
-	Client         client.Client
-	UncachedClient client.Client
-	CacheSpec      CacheSpec
-	Scheme         *runtime.Scheme
-	Log            logr.Logger
+	Client          client.Client
+	UncachedClient  client.Client
+	CacheSpec       CacheSpec
+	Scheme          *runtime.Scheme
+	Log             logr.Logger
+	UpgradeableCond utils.Condition
 }
 
 const (
@@ -139,6 +140,13 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 		// Error reading the object - requeue the request.
 		r.Log.Error(err, "Failed to get MultiClusterHub CR")
+		return ctrl.Result{}, err
+	}
+
+	// Check to see if upgradeable
+	upgrade, err := r.setOperatorUpgradeableStatus(ctx, multiClusterHub)
+	if err != nil {
+		r.Log.Error(err, "Unable to set operator condition")
 		return ctrl.Result{}, err
 	}
 
@@ -448,8 +456,56 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 	}
 
+	if upgrade {
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
 	return retQueue, retError
 	// return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) setOperatorUpgradeableStatus(ctx context.Context, m *operatorv1.MultiClusterHub) (bool, error) {
+	// Temporary variable
+	var upgradeable bool
+
+	// Checking to see if the current version of the MCH matches the desired to determine if we are in an upgrade scenario
+	// If the current version doesn't exist, we are currently in a install which will also not allow it to upgrade
+
+	if m.Status.CurrentVersion != m.Status.DesiredVersion {
+		upgradeable = false
+	} else {
+		upgradeable = true
+	}
+	// 	These messages are drawn from operator condition
+	// Right now, they just indicate between upgrading and not
+	msg := utils.UpgradeableAllowMessage
+	status := metav1.ConditionTrue
+	reason := utils.UpgradeableAllowReason
+
+	// 	The condition is the only field that affects whether or not we can upgrade
+	// The rest are just status info
+	if !upgradeable {
+		status = metav1.ConditionFalse
+		reason = utils.UpgradeableUpgradingReason
+		msg = utils.UpgradeableUpgradingMessage
+
+	} else {
+
+		msg = utils.UpgradeableAllowMessage
+		status = metav1.ConditionTrue
+		reason = utils.UpgradeableAllowReason
+
+	}
+	// This error should only occur if the operator condition does not exist for some reason
+	if err := r.UpgradeableCond.Set(ctx, status, reason, msg); err != nil {
+		return true, err
+	}
+
+	if !upgradeable {
+		return true, nil
+	} else {
+		return false, nil
+	}
 }
 
 // SetupWithManager sets up the controller with the Manager.

@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	operatorsapiv2 "github.com/operator-framework/api/pkg/operators/v2"
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
@@ -360,6 +361,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 		Expect(olmapi.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(ocmapi.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(networking.AddToScheme(clientScheme)).Should(Succeed())
+		Expect(operatorsapiv2.AddToScheme(clientScheme)).Should(Succeed())
 
 		k8sManager, err := ctrl.NewManager(clientConfig, ctrl.Options{
 			Scheme:                 clientScheme,
@@ -371,11 +373,13 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 		k8sClient = k8sManager.GetClient()
 		Expect(k8sClient).ToNot(BeNil())
+		upgradeableCondition, _ := utils.NewOperatorCondition(k8sClient, operatorsapiv2.Upgradeable)
 
 		reconciler = &MultiClusterHubReconciler{
-			Client: k8sClient,
-			Scheme: k8sManager.GetScheme(),
-			Log:    ctrl.Log.WithName("controllers").WithName("MultiClusterHub"),
+			Client:          k8sClient,
+			Scheme:          k8sManager.GetScheme(),
+			Log:             ctrl.Log.WithName("controllers").WithName("MultiClusterHub"),
+			UpgradeableCond: upgradeableCondition,
 			// CacheSpec: CacheSpec{
 			// 	ImageOverrides: map[string]string{},
 			// },

@@ -31,11 +31,13 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	operatorsapiv2 "github.com/operator-framework/api/pkg/operators/v2"
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/controllers"
+	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/webhook"
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
 
@@ -90,6 +92,8 @@ func init() {
 	utilruntime.Must(apiregistrationv1.AddToScheme(scheme))
 
 	utilruntime.Must(apixv1.AddToScheme(scheme))
+
+	utilruntime.Must(operatorsapiv2.AddToScheme(scheme))
 
 	utilruntime.Must(subv1alpha1.AddToScheme(scheme))
 
@@ -167,11 +171,24 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Force OperatorCondition Upgradeable to False
+	//
+	// We have to at least default the condition to False or
+	// OLM will use the Readiness condition via our readiness probe instead:
+	// https://olm.operatorframework.io/docs/advanced-tasks/communicating-operator-conditions-to-olm/#setting-defaults
+	setupLog.Info("Setting OperatorCondition.")
+	upgradeableCondition, err := utils.NewOperatorCondition(uncachedClient, operatorsapiv2.Upgradeable)
+	if err != nil {
+		setupLog.Error(err, "Cannot create the Upgradeable Operator Condition")
+		os.Exit(1)
+	}
+
 	if err = (&controllers.MultiClusterHubReconciler{
-		Client:         mgr.GetClient(),
-		Scheme:         mgr.GetScheme(),
-		UncachedClient: uncachedClient,
-		Log:            ctrl.Log.WithName("Controller").WithName("Multiclusterhub"),
+		Client:          mgr.GetClient(),
+		Scheme:          mgr.GetScheme(),
+		UncachedClient:  uncachedClient,
+		Log:             ctrl.Log.WithName("Controller").WithName("Multiclusterhub"),
+		UpgradeableCond: upgradeableCondition,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "MultiClusterHub")
 		os.Exit(1)
