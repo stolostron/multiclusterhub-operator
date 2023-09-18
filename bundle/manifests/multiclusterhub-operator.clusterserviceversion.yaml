@@ -17,7 +17,6 @@ metadata:
     capabilities: Basic Install
     categories: Integration & Delivery
     certified: "false"
-    createdAt: "2023-03-24T13:23:26Z"
     description: Open management of Openshift and Kubernetes clusters
     operators.operatorframework.io/builder: operator-sdk-v1.28.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -544,6 +543,7 @@ spec:
           - operators.coreos.com
           resources:
           - clusterserviceversions
+          - operatorconditions
           - operatorgroups
           - subscriptions
           verbs:
