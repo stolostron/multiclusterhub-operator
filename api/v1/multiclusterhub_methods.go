@@ -119,7 +119,10 @@ var clusterManagementAddOns = map[string]string{
 	// Add other components here when clusterManagementAddOns is required.
 }
 
-// GetDefaultEnabledComponents returns a slice of default enabled component names. It is expected to be used to get a list of components that are enabled by default.
+/*
+GetDefaultEnabledComponents returns a slice of default enabled component names.
+It is expected to be used to get a list of components that are enabled by default.
+*/
 func GetDefaultEnabledComponents() ([]string, error) {
 	var defaultEnabledComponents = []string{
 		//Repo,
@@ -139,7 +142,10 @@ func GetDefaultEnabledComponents() ([]string, error) {
 	return defaultEnabledComponents, nil
 }
 
-// GetDefaultDisabledComponents returns a slice of default disabled component names. It is expected to be used to get a list of components that are disabled by default.
+/*
+GetDefaultDisabledComponents returns a slice of default disabled component names.
+It is expected to be used to get a list of components that are disabled by default.
+*/
 func GetDefaultDisabledComponents() ([]string, error) {
 	var defaultDisabledComponents = []string{
 		ClusterBackup,
@@ -147,7 +153,10 @@ func GetDefaultDisabledComponents() ([]string, error) {
 	return defaultDisabledComponents, nil
 }
 
-// GetDefaultHostedComponents returns a slice of default hosted components. These are components that are hosted within the system.
+/*
+GetDefaultHostedComponents returns a slice of default hosted components.
+These are components that are hosted within the system.
+*/
 func GetDefaultHostedComponents() []string {
 	var defaultHostedComponents = []string{
 		MultiClusterEngine,
@@ -166,7 +175,10 @@ func GetClusterManagementAddon(component string) (string, error) {
 	}
 }
 
-// ComponentPresent checks if a specific component is present based on the provided component name in the MultiClusterHub struct.
+/*
+ComponentPresent checks if a specific component is present based on the provided component name in the
+MultiClusterHub struct.
+*/
 func (mch *MultiClusterHub) ComponentPresent(s string) bool {
 	if mch.Spec.Overrides == nil {
 		return false
@@ -227,7 +239,10 @@ func (mch *MultiClusterHub) Disable(s string) {
 	})
 }
 
-// Prune removes a specific component from the component list in the MultiClusterHub struct. It returns true if changes were made.
+/*
+Prune removes a specific component from the component list in the MultiClusterHub struct.
+It returns true if changes were made.
+*/
 func (mch *MultiClusterHub) Prune(s string) bool {
 	if mch.Spec.Overrides == nil {
 		return false
