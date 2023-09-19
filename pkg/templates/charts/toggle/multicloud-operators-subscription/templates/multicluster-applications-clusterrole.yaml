@@ -12,6 +12,7 @@ rules:
   - work.open-cluster-management.io
   - view.open-cluster-management.io
   - authentication.open-cluster-management.io
+  - policy.open-cluster-management.io
   resources:
   - channels
   - channels/status
@@ -49,6 +50,7 @@ rules:
   - subscriptionreports
   - multiclusterapplicationsetreports
   - multiclusterapplicationsetreports/status
+  - policies
   verbs:
   - get
   - list
