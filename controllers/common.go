@@ -23,6 +23,8 @@ import (
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
+	ocmapi "open-cluster-management.io/api/addon/v1alpha1"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -820,6 +822,54 @@ func (r *MultiClusterHubReconciler) ensureSearchCR(m *operatorv1.MultiClusterHub
 		return ctrl.Result{Requeue: true}, err
 	}
 
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureNoClusterManagementAddOn(m *operatorv1.MultiClusterHub, component string) (
+	ctrl.Result, error) {
+	ctx := context.Background()
+
+	clusterMgmtAddonList := &ocmapi.ClusterManagementAddOnList{}
+	err := r.Client.List(ctx, clusterMgmtAddonList)
+	if err != nil {
+		r.Log.Info(fmt.Sprintf("Error locating ClusterManagementAddOn CR. Error: %s", err.Error()))
+		return ctrl.Result{Requeue: true}, err
+	}
+
+	addonName, err := operatorv1.GetClusterManagementAddon(component)
+	if err != nil {
+		r.Log.Info(fmt.Sprintf("Unregistered ClusterManagementAddon component: %s", err.Error()))
+		return ctrl.Result{Requeue: true}, err
+	}
+
+	if len(clusterMgmtAddonList.Items) != 0 {
+		for i, addon := range clusterMgmtAddonList.Items {
+			if addon.Name == addonName {
+				err = r.Client.Delete(context.TODO(), &clusterMgmtAddonList.Items[i])
+
+				if err != nil {
+					r.Log.Error(err, fmt.Sprintf("Error deleting ClusterManagementAddOn CR"))
+					return ctrl.Result{Requeue: true}, err
+				}
+				r.Log.Info(fmt.Sprintf("Deleted ClusterManagementAddOn CR: %s", addon.Name))
+			}
+		}
+	}
+
+	err = r.Client.List(ctx, clusterMgmtAddonList)
+	if err != nil {
+		r.Log.Info(fmt.Sprintf("Error locating ClusterManagementAddOn CR. Error: %s", err.Error()))
+		return ctrl.Result{Requeue: true}, err
+	}
+
+	if len(clusterMgmtAddonList.Items) != 0 {
+		for _, addon := range clusterMgmtAddonList.Items {
+			if addon.Name == addonName {
+				r.Log.Info(fmt.Sprintf("Waiting for ClusterManagementAddOn CR: %s to be deleted", addonName))
+				return ctrl.Result{Requeue: true}, errors.NewBadRequest("ClusterManagementAddOn CR has not been deleted")
+			}
+		}
+	}
 	return ctrl.Result{}, nil
 }
 

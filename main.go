@@ -46,6 +46,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
+	ocmapi "open-cluster-management.io/api/addon/v1alpha1"
+
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 
@@ -122,6 +124,8 @@ func init() {
 	utilruntime.Must(olmapi.AddToScheme(scheme))
 
 	utilruntime.Must(networking.AddToScheme(scheme))
+
+	utilruntime.Must(ocmapi.AddToScheme(scheme))
 
 	//+kubebuilder:scaffold:scheme
 }

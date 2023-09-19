@@ -2,11 +2,12 @@ package v1
 
 import (
 	"errors"
+	"fmt"
 	"os"
 )
 
+// Component related to MultiClusterHub (MCH)
 const (
-	// MCH
 	Appsub                    string = "app-lifecycle"
 	ClusterBackup             string = "cluster-backup"
 	ClusterLifecycle          string = "cluster-lifecycle"
@@ -21,8 +22,10 @@ const (
 	Search                    string = "search"
 	SubmarinerAddon           string = "submariner-addon"
 	Volsync                   string = "volsync"
+)
 
-	// MCE
+// Component related to MultiCluster Engine (MCE)
+const (
 	MCEAssistedService              string = "assisted-service"
 	MCEClusterLifecycle             string = "cluster-lifecycle-mce"
 	MCEClusterManager               string = "cluster-manager"
@@ -39,8 +42,8 @@ const (
 	MCEServerFoundation             string = "server-foundation"
 )
 
+// allComponents is a slice containing all the component names from both "MCH" and "MCE" categories.
 var allComponents = []string{
-	// MCH
 	Appsub,
 	ClusterBackup,
 	ClusterLifecycle,
@@ -56,7 +59,6 @@ var allComponents = []string{
 	SubmarinerAddon,
 	Volsync,
 
-	// MCE
 	MCEAssistedService,
 	MCEClusterLifecycle,
 	MCEClusterManager,
@@ -75,6 +77,7 @@ var allComponents = []string{
 	MCEServerFoundation,
 }
 
+// MCHComponents is a slice containing component names specific to the "MCH" category.
 var MCHComponents = []string{
 	Appsub,
 	ClusterBackup,
@@ -91,6 +94,7 @@ var MCHComponents = []string{
 	Volsync,
 }
 
+// MCEComponents is a slice containing component names specific to the "MCE" category.
 var MCEComponents = []string{
 	MCEAssistedService,
 	MCEClusterLifecycle,
@@ -109,6 +113,13 @@ var MCEComponents = []string{
 	MCEServerFoundation,
 }
 
+// clusterManagementAddOns is a map that associates certain component names with their corresponding add-ons.
+var clusterManagementAddOns = map[string]string{
+	SubmarinerAddon: "submariner",
+	// Add other components here when clusterManagementAddOns is required.
+}
+
+// GetDefaultEnabledComponents returns a slice of default enabled component names. It is expected to be used to get a list of components that are enabled by default.
 func GetDefaultEnabledComponents() ([]string, error) {
 	var defaultEnabledComponents = []string{
 		//Repo,
@@ -128,6 +139,7 @@ func GetDefaultEnabledComponents() ([]string, error) {
 	return defaultEnabledComponents, nil
 }
 
+// GetDefaultDisabledComponents returns a slice of default disabled component names. It is expected to be used to get a list of components that are disabled by default.
 func GetDefaultDisabledComponents() ([]string, error) {
 	var defaultDisabledComponents = []string{
 		ClusterBackup,
@@ -135,15 +147,26 @@ func GetDefaultDisabledComponents() ([]string, error) {
 	return defaultDisabledComponents, nil
 }
 
+// GetDefaultHostedComponents returns a slice of default hosted components. These are components that are hosted within the system.
 func GetDefaultHostedComponents() []string {
 	var defaultHostedComponents = []string{
 		MultiClusterEngine,
-		//Add other components here when added to hostedmode
+		// Add other components here when added to hostedmode
 	}
 
 	return defaultHostedComponents
 }
 
+// GetClusterManagementAddon returns the name of the ClusterManagementAddOn based on the provided component name.
+func GetClusterManagementAddon(component string) (string, error) {
+	if val, ok := clusterManagementAddOns[component]; !ok {
+		return val, fmt.Errorf("failed to find ClusterManagementAddOn name for: %s component", component)
+	} else {
+		return val, nil
+	}
+}
+
+// ComponentPresent checks if a specific component is present based on the provided component name in the MultiClusterHub struct.
 func (mch *MultiClusterHub) ComponentPresent(s string) bool {
 	if mch.Spec.Overrides == nil {
 		return false
@@ -156,6 +179,7 @@ func (mch *MultiClusterHub) ComponentPresent(s string) bool {
 	return false
 }
 
+// Enabled checks if a specific component is enabled based on the provided component name in the MultiClusterHub struct.
 func (mch *MultiClusterHub) Enabled(s string) bool {
 	if mch.Spec.Overrides == nil {
 		return false
@@ -169,6 +193,7 @@ func (mch *MultiClusterHub) Enabled(s string) bool {
 	return false
 }
 
+// Enable enables a specific component based on the provided component name in the MultiClusterHub struct.
 func (mch *MultiClusterHub) Enable(s string) {
 	if mch.Spec.Overrides == nil {
 		mch.Spec.Overrides = &Overrides{}
@@ -185,6 +210,7 @@ func (mch *MultiClusterHub) Enable(s string) {
 	})
 }
 
+// Disable disables a specific component based on the provided component name in the MultiClusterHub struct.
 func (mch *MultiClusterHub) Disable(s string) {
 	if mch.Spec.Overrides == nil {
 		mch.Spec.Overrides = &Overrides{}
@@ -201,7 +227,7 @@ func (mch *MultiClusterHub) Disable(s string) {
 	})
 }
 
-// Prune removes the component from the component list. Returns true if changes are made
+// Prune removes a specific component from the component list in the MultiClusterHub struct. It returns true if changes were made.
 func (mch *MultiClusterHub) Prune(s string) bool {
 	if mch.Spec.Overrides == nil {
 		return false
@@ -223,7 +249,7 @@ func (mch *MultiClusterHub) Prune(s string) bool {
 	return false
 }
 
-// a component is valid if its name matches a known component
+// ValidComponent checks if a given component configuration is valid by comparing its name to the known component names.
 func ValidComponent(c ComponentConfig) bool {
 	for _, name := range allComponents {
 		if c.Name == name {
