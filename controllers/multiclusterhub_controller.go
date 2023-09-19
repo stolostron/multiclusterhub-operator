@@ -709,9 +709,12 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 			return result, err
 		}
 
-	// In ACM 2.9 we need to ensure that the submariner ClusterManagementAddOn is removed before removing the submariner-addon component.
+	/*
+		In ACM 2.9 we need to ensure that the submariner ClusterManagementAddOn is removed before
+		removing the submariner-addon component.
+	*/
 	case operatorv1.SubmarinerAddon:
-		_, err := r.ensureNoClusterManagementAddOn(m, component)
+		result, err := r.ensureNoClusterManagementAddOn(m, component)
 		if err != nil {
 			return result, err
 		}
