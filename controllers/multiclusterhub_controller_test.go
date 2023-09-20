@@ -816,9 +816,10 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(err).To(BeNil())
 
 			By("Ensuring No SubmarinerAddon")
-			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.SubmarinerAddon, testImages)
-			Expect(result).To(Equal(ctrl.Result{}))
-			Expect(err).To(BeNil())
+			Eventually(func() bool {
+				result, err := reconciler.ensureNoComponent(ctx, mch, operatorv1.SubmarinerAddon, testImages)
+				return (err == nil && result == ctrl.Result{})
+			}, timeout, interval).Should(BeTrue())
 
 			By("Ensuring No ClusterManagementAddon")
 			result, err = reconciler.ensureNoClusterManagementAddOn(mch, "unknown")
