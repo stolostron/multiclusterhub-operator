@@ -64,6 +64,7 @@ func ApplyPrereqs(k8sClient client.Client) {
 	ctx := context.Background()
 	Expect(k8sClient.Create(ctx, resources.OCMNamespace())).Should(Succeed())
 	Expect(k8sClient.Create(ctx, resources.MonitoringNamespace())).Should(Succeed())
+	Expect(k8sClient.Create(ctx, resources.SampleClusterManagementAddOn(operatorv1.SubmarinerAddon)))
 }
 
 func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler, mchoDeployment *appsv1.Deployment) {
