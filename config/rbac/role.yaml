@@ -433,6 +433,7 @@ rules:
   - operators.coreos.com
   resources:
   - clusterserviceversions
+  - operatorconditions
   - operatorgroups
   - subscriptions
   verbs:
