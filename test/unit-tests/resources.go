@@ -74,6 +74,7 @@ func EmptyMCH() operatorsv1.MultiClusterHub {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      MulticlusterhubName,
 			Namespace: MulticlusterhubNamespace,
+			Labels:    map[string]string{},
 		},
 		Spec: operatorsv1.MultiClusterHubSpec{
 			Overrides: &operatorsv1.Overrides{
@@ -93,6 +94,7 @@ func NoComponentMCH() operatorsv1.MultiClusterHub {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      MulticlusterhubName,
 			Namespace: MulticlusterhubNamespace,
+			Labels:    map[string]string{},
 		},
 		Spec: operatorsv1.MultiClusterHubSpec{
 			Overrides: &operatorsv1.Overrides{
