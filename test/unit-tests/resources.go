@@ -74,7 +74,6 @@ func EmptyMCH() operatorsv1.MultiClusterHub {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      MulticlusterhubName,
 			Namespace: MulticlusterhubNamespace,
-			Labels:    map[string]string{},
 		},
 		Spec: operatorsv1.MultiClusterHubSpec{
 			Overrides: &operatorsv1.Overrides{
@@ -94,7 +93,6 @@ func NoComponentMCH() operatorsv1.MultiClusterHub {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      MulticlusterhubName,
 			Namespace: MulticlusterhubNamespace,
-			Labels:    map[string]string{},
 		},
 		Spec: operatorsv1.MultiClusterHubSpec{
 			Overrides: &operatorsv1.Overrides{
@@ -163,7 +161,8 @@ func InsightsMCH() operatorsv1.MultiClusterHub {
 func OCMNamespace() *corev1.Namespace {
 	return &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: MulticlusterhubNamespace,
+			Name:   MulticlusterhubNamespace,
+			Labels: map[string]string{},
 		},
 	}
 }
@@ -171,7 +170,8 @@ func OCMNamespace() *corev1.Namespace {
 func MCENamespace() *corev1.Namespace {
 	return &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "multicluster-engine",
+			Name:   "multicluster-engine",
+			Labels: map[string]string{},
 		},
 	}
 }
