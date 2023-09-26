@@ -22,45 +22,80 @@ import (
 )
 
 const (
-	// WebhookServiceName ...
+	// WebhookServiceName is the name of the webhook service.
 	WebhookServiceName = "multiclusterhub-operator-webhook"
 
-	// CertManagerNamespace ...
+	// CertManagerNamespace is the namespace where CertManager is deployed.
 	CertManagerNamespace = "cert-manager"
 
+	// podNamespaceEnvVar is the environment variable name for the pod's namespace.
 	podNamespaceEnvVar = "POD_NAMESPACE"
-	rsaKeySize         = 2048
-	duration365d       = time.Hour * 24 * 365
 
-	// DefaultRepository ...
+	// rsaKeySize is the size of the RSA key in bits.
+	rsaKeySize = 2048
+
+	// duration365d is the duration of 365 days in hours.
+	duration365d = time.Hour * 24 * 365
+
+	// DefaultRepository is the default repository for images.
 	DefaultRepository = "quay.io/stolostron"
 
-	// UnitTestEnvVar ...
+	// UnitTestEnvVar is the environment variable for unit testing.
 	UnitTestEnvVar = "UNIT_TEST"
 
-	// MCHOperatorName is the name of this operator deployment
+	// MCHOperatorName is the name of the Multicluster Hub operator deployment.
 	MCHOperatorName = "multiclusterhub-operator"
 
-	// SubscriptionOperatorName is the name of the operator deployment managing application subscriptions
+	// SubscriptionOperatorName is the name of the operator deployment managing application subscriptions.
 	SubscriptionOperatorName = "multicluster-operators-standalone-subscription"
 
-	MCESubscriptionName          = "multicluster-engine"
-	MCESubscriptionNamespace     = "multicluster-engine"
+	// MCESubscriptionName is the name of the Multicluster Engine subscription.
+	MCESubscriptionName = "multicluster-engine"
+
+	// MCESubscriptionNamespace is the namespace for the Multicluster Engine subscription.
+	MCESubscriptionNamespace = "multicluster-engine"
+
+	// ClusterSubscriptionNamespace is the namespace for the open-cluster-management-backup subscription.
 	ClusterSubscriptionNamespace = "open-cluster-management-backup"
 
+	// MCEManagedByLabel is the label used to mark resources managed by Multicluster Hub.
 	MCEManagedByLabel = "multiclusterhubs.operator.open-cluster-management.io/managed-by"
 
-	AppsubChartLocation            = "/charts/toggle/multicloud-operators-subscription"
-	CLCChartLocation               = "/charts/toggle/cluster-lifecycle"
-	ClusterBackupChartLocation     = "/charts/toggle/cluster-backup"
+	// OpenShiftClusterMonitoringLabel is the label for OpenShift cluster monitoring.
+	OpenShiftClusterMonitoringLabel = "openshift.io/cluster-monitoring"
+
+	// AppsubChartLocation is the location of the App Subscription chart.
+	AppsubChartLocation = "/charts/toggle/multicloud-operators-subscription"
+
+	// CLCChartLocation is the location of the Cluster Lifecycle chart.
+	CLCChartLocation = "/charts/toggle/cluster-lifecycle"
+
+	// ClusterBackupChartLocation is the location of the Cluster Backup chart.
+	ClusterBackupChartLocation = "/charts/toggle/cluster-backup"
+
+	// ClusterPermissionChartLocation is the location of the Cluster Permission chart.
 	ClusterPermissionChartLocation = "/charts/toggle/cluster-permission"
-	ConsoleChartLocation           = "/charts/toggle/console"
-	GRCChartLocation               = "/charts/toggle/grc"
-	InsightsChartLocation          = "/charts/toggle/insights"
-	MCOChartLocation               = "/charts/toggle/multicluster-observability-operator"
-	SearchV2ChartLocation          = "/charts/toggle/search-v2-operator"
-	SubmarinerAddonChartLocation   = "/charts/toggle/submariner-addon"
-	VolsyncChartLocation           = "/charts/toggle/volsync-controller"
+
+	// ConsoleChartLocation is the location of the Console chart.
+	ConsoleChartLocation = "/charts/toggle/console"
+
+	// GRCChartLocation is the location of the GRC chart.
+	GRCChartLocation = "/charts/toggle/grc"
+
+	// InsightsChartLocation is the location of the Insights chart.
+	InsightsChartLocation = "/charts/toggle/insights"
+
+	// MCOChartLocation is the location of the Multicluster Observability Operator chart.
+	MCOChartLocation = "/charts/toggle/multicluster-observability-operator"
+
+	// SearchV2ChartLocation is the location of the Search V2 Operator chart.
+	SearchV2ChartLocation = "/charts/toggle/search-v2-operator"
+
+	// SubmarinerAddonChartLocation is the location of the Submariner Addon chart.
+	SubmarinerAddonChartLocation = "/charts/toggle/submariner-addon"
+
+	// VolsyncChartLocation is the location of the Volsync Controller chart.
+	VolsyncChartLocation = "/charts/toggle/volsync-controller"
 )
 
 var (
@@ -336,8 +371,8 @@ func ProxyEnvVarsAreSet() bool {
 	return false
 }
 
-// FindNamespace
-func FindNamespace() (string, error) {
+// OperatorNamespace returns the namespace where the MultiClusterHub operator is registered or deployed.
+func OperatorNamespace() (string, error) {
 	ns, found := os.LookupEnv(podNamespaceEnvVar)
 	if !found {
 		return "", fmt.Errorf("%s envvar is not set", podNamespaceEnvVar)

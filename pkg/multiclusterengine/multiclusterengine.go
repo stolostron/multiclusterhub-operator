@@ -182,6 +182,9 @@ func Namespace() *corev1.Namespace {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: namespace,
+			Labels: map[string]string{
+				utils.OpenShiftClusterMonitoringLabel: "true",
+			},
 		},
 	}
 }
