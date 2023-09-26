@@ -754,6 +754,10 @@ func (r *MultiClusterHubReconciler) ensureOpenShiftNamespaceLabel(ctx context.Co
 		return ctrl.Result{Requeue: true}, err
 	}
 
+	if existingNs.Labels == nil || len(existingNs.Labels) == 0 {
+		existingNs.Labels = make(map[string]string)
+	}
+
 	if _, ok := existingNs.Labels[utils.OpenShiftClusterMonitoringLabel]; !ok {
 		r.Log.Info(fmt.Sprintf("Adding label: %s to namespace: %s", utils.OpenShiftClusterMonitoringLabel,
 			m.GetNamespace()))

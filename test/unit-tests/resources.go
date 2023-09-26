@@ -161,8 +161,7 @@ func InsightsMCH() operatorsv1.MultiClusterHub {
 func OCMNamespace() *corev1.Namespace {
 	return &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   MulticlusterhubNamespace,
-			Labels: make(map[string]string),
+			Name: MulticlusterhubNamespace,
 		},
 	}
 }
