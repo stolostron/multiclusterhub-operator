@@ -162,7 +162,7 @@ func OCMNamespace() *corev1.Namespace {
 	return &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   MulticlusterhubNamespace,
-			Labels: map[string]string{},
+			Labels: make(map[string]string),
 		},
 	}
 }
