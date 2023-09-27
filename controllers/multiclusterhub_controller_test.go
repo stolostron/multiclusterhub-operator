@@ -64,6 +64,7 @@ func ApplyPrereqs(k8sClient client.Client) {
 	ctx := context.Background()
 	Expect(k8sClient.Create(ctx, resources.OCMNamespace())).Should(Succeed())
 	Expect(k8sClient.Create(ctx, resources.MonitoringNamespace())).Should(Succeed())
+	Expect(k8sClient.Create(ctx, resources.SampleClusterManagementAddOn(operatorv1.SubmarinerAddon)))
 }
 
 func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler, mchoDeployment *appsv1.Deployment) {
@@ -815,9 +816,15 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(err).To(BeNil())
 
 			By("Ensuring No SubmarinerAddon")
-			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.SubmarinerAddon, testImages)
-			Expect(result).To(Equal(ctrl.Result{}))
-			Expect(err).To(BeNil())
+			Eventually(func() bool {
+				result, err := reconciler.ensureNoComponent(ctx, mch, operatorv1.SubmarinerAddon, testImages)
+				return (err == nil && result == ctrl.Result{})
+			}, timeout, interval).Should(BeTrue())
+
+			By("Ensuring No ClusterManagementAddon")
+			result, err = reconciler.ensureNoClusterManagementAddOn(mch, "unknown")
+			Expect(result).To(Equal(ctrl.Result{Requeue: true}))
+			Expect(err).To(Not(BeNil()))
 
 			By("Ensuring No Unregistered Component")
 			result, err = reconciler.ensureNoComponent(ctx, mch, "unknown", testImages)

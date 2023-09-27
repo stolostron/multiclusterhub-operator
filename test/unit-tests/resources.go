@@ -10,6 +10,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ocmapi "open-cluster-management.io/api/addon/v1alpha1"
+
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -201,4 +203,25 @@ func SampleService(m *operatorsv1.MultiClusterHub) *corev1.Service {
 	}
 
 	return s
+}
+
+func SampleClusterManagementAddOn(component string) *ocmapi.ClusterManagementAddOn {
+	addonName, err := operatorsv1.GetClusterManagementAddonName(component)
+	if err != nil {
+		addonName = "unknown"
+	}
+
+	addon := &ocmapi.ClusterManagementAddOn{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: addonName,
+		},
+		Spec: ocmapi.ClusterManagementAddOnSpec{
+			AddOnMeta: ocmapi.AddOnMeta{
+				Description: "Sample addon description",
+				DisplayName: component,
+			},
+		},
+	}
+
+	return addon
 }

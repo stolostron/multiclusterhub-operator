@@ -23,6 +23,8 @@ import (
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
+	ocmapi "open-cluster-management.io/api/addon/v1alpha1"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -820,6 +822,37 @@ func (r *MultiClusterHubReconciler) ensureSearchCR(m *operatorv1.MultiClusterHub
 		return ctrl.Result{Requeue: true}, err
 	}
 
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureNoClusterManagementAddOn(m *operatorv1.MultiClusterHub, component string) (
+	ctrl.Result, error) {
+	ctx := context.Background()
+
+	addonName, err := operatorv1.GetClusterManagementAddonName(component)
+	if err != nil {
+		r.Log.Info(fmt.Sprintf("Detected unregistered ClusterManagementAddon component: %s", err.Error()))
+		return ctrl.Result{Requeue: true}, err
+	}
+
+	clusterMgmtAddon := &ocmapi.ClusterManagementAddOn{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: addonName,
+		},
+	}
+
+	err = r.Client.Delete(context.TODO(), clusterMgmtAddon)
+	if err != nil && !errors.IsNotFound(err) {
+		r.Log.Error(err, fmt.Sprintf("Error deleting ClusterManagementAddOn CR"))
+		return ctrl.Result{Requeue: true}, err
+	}
+
+	err = r.Client.Get(ctx, types.NamespacedName{Name: clusterMgmtAddon.GetName()}, clusterMgmtAddon)
+	if err == nil {
+		return ctrl.Result{Requeue: true}, errors.NewBadRequest("ClusterManagementAddOn CR has not been deleted")
+	}
+
+	r.Log.Info(fmt.Sprintf("Successfully deleted ClusterManagementAddOn CR: %s", clusterMgmtAddon.GetName()))
 	return ctrl.Result{}, nil
 }
 
