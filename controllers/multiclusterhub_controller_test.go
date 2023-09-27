@@ -830,7 +830,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 			}
 
 			result, err = reconciler.ensureOpenShiftNamespaceLabel(ctx, mch2)
-			Expect(result).To(Equal(ctrl.Result{RequeueAfter: resyncPeriod}))
+			Expect(result).To(Equal(ctrl.Result{Requeue: true}))
 		})
 	})
 
