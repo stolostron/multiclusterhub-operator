@@ -842,16 +842,17 @@ func (r *MultiClusterHubReconciler) ensureNoClusterManagementAddOn(m *operatorv1
 	}
 
 	err = r.Client.Delete(context.TODO(), clusterMgmtAddon)
-	if err != nil && (!errors.IsNotFound(err) || !errors.IsGone(err)) {
+	if err != nil && !errors.IsNotFound(err) {
 		r.Log.Error(err, fmt.Sprintf("Error deleting ClusterManagementAddOn CR"))
 		return ctrl.Result{Requeue: true}, err
 	}
 
-	err = r.Client.Get(ctx, types.NamespacedName{Name: addonName}, clusterMgmtAddon)
+	err = r.Client.Get(ctx, types.NamespacedName{Name: clusterMgmtAddon.GetName()}, clusterMgmtAddon)
 	if err == nil {
 		return ctrl.Result{Requeue: true}, errors.NewBadRequest("ClusterManagementAddOn CR has not been deleted")
 	}
 
+	r.Log.Info(fmt.Sprintf("Successfully deleted ClusterManagementAddOn CR: %s", clusterMgmtAddon.GetName()))
 	return ctrl.Result{}, nil
 }
 
