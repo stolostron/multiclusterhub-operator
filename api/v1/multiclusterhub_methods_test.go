@@ -156,7 +156,7 @@ func TestGetDefaultHostedComponents(t *testing.T) {
 	}
 }
 
-func TestGetClusterManagementAddon(t *testing.T) {
+func TestGetClusterManagementAddonName(t *testing.T) {
 	tests := []struct {
 		name      string
 		component string
@@ -176,13 +176,13 @@ func TestGetClusterManagementAddon(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetClusterManagementAddon(tt.component)
+			got, err := GetClusterManagementAddonName(tt.component)
 			if err != nil && tt.component != "unknown" {
-				t.Errorf("GetClusterManagementAddon(%v) = %v, want: %v", tt.component, err.Error(), tt.want)
+				t.Errorf("GetClusterManagementAddonName(%v) = %v, want: %v", tt.component, err.Error(), tt.want)
 			}
 
 			if got != tt.want {
-				t.Errorf("GetClusterManagementAddon(%v) = %v, want: %v", tt.component, got, tt.want)
+				t.Errorf("GetClusterManagementAddonName(%v) = %v, want: %v", tt.component, got, tt.want)
 			}
 		})
 	}

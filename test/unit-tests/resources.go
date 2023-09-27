@@ -206,7 +206,7 @@ func SampleService(m *operatorsv1.MultiClusterHub) *corev1.Service {
 }
 
 func SampleClusterManagementAddOn(component string) *ocmapi.ClusterManagementAddOn {
-	addonName, err := operatorsv1.GetClusterManagementAddon(component)
+	addonName, err := operatorsv1.GetClusterManagementAddonName(component)
 	if err != nil {
 		addonName = "unknown"
 	}

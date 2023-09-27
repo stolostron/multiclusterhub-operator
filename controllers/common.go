@@ -831,17 +831,16 @@ func (r *MultiClusterHubReconciler) ensureNoClusterManagementAddOn(m *operatorv1
 	ctx := context.Background()
 
 	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		addonName, err := operatorv1.GetClusterManagementAddon(component)
+		addonName, err := operatorv1.GetClusterManagementAddonName(component)
 		if err != nil {
 			r.Log.Info(fmt.Sprintf("Detected unregistered ClusterManagementAddon component: %s", err.Error()))
 			return err
 		}
 
-		clusterMgmtAddon := &ocmapi.ClusterManagementAddOn{}
-		err = r.Client.Get(ctx, types.NamespacedName{Name: addonName}, clusterMgmtAddon)
-		if err != nil && (!errors.IsNotFound(err) || !errors.IsGone(err)) {
-			r.Log.Info(fmt.Sprintf("Error fetching ClusterManagementAddOn CR: %s", err.Error()))
-			return err
+		clusterMgmtAddon := &ocmapi.ClusterManagementAddOn{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: addonName,
+			},
 		}
 
 		err = r.Client.Delete(context.TODO(), clusterMgmtAddon)

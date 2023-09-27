@@ -166,8 +166,8 @@ func GetDefaultHostedComponents() []string {
 	return defaultHostedComponents
 }
 
-// GetClusterManagementAddon returns the name of the ClusterManagementAddOn based on the provided component name.
-func GetClusterManagementAddon(component string) (string, error) {
+// GetClusterManagementAddonName returns the name of the ClusterManagementAddOn based on the provided component name.
+func GetClusterManagementAddonName(component string) (string, error) {
 	if val, ok := clusterManagementAddOns[component]; !ok {
 		return val, fmt.Errorf("failed to find ClusterManagementAddOn name for: %s component", component)
 	} else {
