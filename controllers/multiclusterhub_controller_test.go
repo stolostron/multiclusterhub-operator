@@ -164,7 +164,7 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 		return false
 	}, timeout, interval).Should(BeTrue())
 
-	By("ensuring the trusted-ca-bundle ConfigMap is created")
+	By("Ensuring the trusted-ca-bundle ConfigMap is created")
 	Eventually(func(g Gomega) {
 		ctx := context.Background()
 		namespacedName := types.NamespacedName{
@@ -823,6 +823,14 @@ var _ = Describe("MultiClusterHub controller", func() {
 			result, err = reconciler.ensureNoComponent(ctx, mch, "unknown", testImages)
 			Expect(result).To(Equal(ctrl.Result{RequeueAfter: resyncPeriod}))
 			Expect(err).To(BeNil())
+
+			By("Ensuring No OpenShift Cluster Monitoring Labels")
+			mch2 := &mchov1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{Name: "mch", Namespace: "test-ns-1"},
+			}
+
+			result, err = reconciler.ensureOpenShiftNamespaceLabel(ctx, mch2)
+			Expect(result).To(Equal(ctrl.Result{RequeueAfter: resyncPeriod}))
 		})
 	})
 
