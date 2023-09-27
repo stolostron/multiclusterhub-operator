@@ -22,6 +22,7 @@ import (
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/client-go/util/retry"
 
 	ocmapi "open-cluster-management.io/api/addon/v1alpha1"
 
@@ -829,48 +830,40 @@ func (r *MultiClusterHubReconciler) ensureNoClusterManagementAddOn(m *operatorv1
 	ctrl.Result, error) {
 	ctx := context.Background()
 
-	clusterMgmtAddonList := &ocmapi.ClusterManagementAddOnList{}
-	err := r.Client.List(ctx, clusterMgmtAddonList)
-	if err != nil {
-		r.Log.Info(fmt.Sprintf("Error locating ClusterManagementAddOn CR. Error: %s", err.Error()))
-		return ctrl.Result{Requeue: true}, err
-	}
-
-	addonName, err := operatorv1.GetClusterManagementAddon(component)
-	if err != nil {
-		r.Log.Info(fmt.Sprintf("Unregistered ClusterManagementAddon component: %s", err.Error()))
-		return ctrl.Result{Requeue: true}, err
-	}
-
-	if len(clusterMgmtAddonList.Items) != 0 {
-		for i, addon := range clusterMgmtAddonList.Items {
-			if addon.Name == addonName {
-				err = r.Client.Delete(context.TODO(), &clusterMgmtAddonList.Items[i])
-
-				if err != nil {
-					r.Log.Error(err, fmt.Sprintf("Error deleting ClusterManagementAddOn CR"))
-					return ctrl.Result{Requeue: true}, err
-				}
-				r.Log.Info(fmt.Sprintf("Deleted ClusterManagementAddOn CR: %s", addon.Name))
-			}
+	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		addonName, err := operatorv1.GetClusterManagementAddon(component)
+		if err != nil {
+			r.Log.Info(fmt.Sprintf("Detected unregistered ClusterManagementAddon component: %s", err.Error()))
+			return err
 		}
-	}
 
-	err = r.Client.List(ctx, clusterMgmtAddonList)
-	if err != nil {
-		r.Log.Info(fmt.Sprintf("Error locating ClusterManagementAddOn CR. Error: %s", err.Error()))
-		return ctrl.Result{Requeue: true}, err
-	}
-
-	if len(clusterMgmtAddonList.Items) != 0 {
-		for _, addon := range clusterMgmtAddonList.Items {
-			if addon.Name == addonName {
-				r.Log.Info(fmt.Sprintf("Waiting for ClusterManagementAddOn CR: %s to be deleted", addonName))
-				return ctrl.Result{Requeue: true}, errors.NewBadRequest("ClusterManagementAddOn CR has not been deleted")
-			}
+		clusterMgmtAddon := &ocmapi.ClusterManagementAddOn{}
+		err = r.Client.Get(ctx, types.NamespacedName{Name: addonName}, clusterMgmtAddon)
+		if err != nil {
+			r.Log.Info(fmt.Sprintf("Error locating ClusterManagementAddOn CR: %s", err.Error()))
+			return err
 		}
+
+		err = r.Client.Delete(context.TODO(), clusterMgmtAddon)
+		if err != nil {
+			r.Log.Error(err, fmt.Sprintf("Error deleting ClusterManagementAddOn CR"))
+			return err
+		}
+
+		err = r.Client.Get(ctx, types.NamespacedName{Name: addonName}, clusterMgmtAddon)
+		if err == nil {
+			return errors.NewBadRequest("ClusterManagementAddOn CR has not been deleted")
+		}
+
+		return nil
+	})
+
+	if retryErr != nil {
+		r.Log.Error(retryErr, fmt.Sprintf("Failed to delete ClusterManagementAddOn for: %s", component))
+		return ctrl.Result{Requeue: true}, retryErr
 	}
-	return ctrl.Result{}, nil
+
+	return ctrl.Result{}, retryErr
 }
 
 func (r *MultiClusterHubReconciler) ensureNoSearchCR(m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
