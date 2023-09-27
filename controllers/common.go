@@ -839,13 +839,13 @@ func (r *MultiClusterHubReconciler) ensureNoClusterManagementAddOn(m *operatorv1
 
 		clusterMgmtAddon := &ocmapi.ClusterManagementAddOn{}
 		err = r.Client.Get(ctx, types.NamespacedName{Name: addonName}, clusterMgmtAddon)
-		if err != nil {
-			r.Log.Info(fmt.Sprintf("Error locating ClusterManagementAddOn CR: %s", err.Error()))
+		if err != nil && (!errors.IsNotFound(err) || !errors.IsGone(err)) {
+			r.Log.Info(fmt.Sprintf("Error fetching ClusterManagementAddOn CR: %s", err.Error()))
 			return err
 		}
 
 		err = r.Client.Delete(context.TODO(), clusterMgmtAddon)
-		if err != nil {
+		if err != nil && (!errors.IsNotFound(err) || !errors.IsGone(err)) {
 			r.Log.Error(err, fmt.Sprintf("Error deleting ClusterManagementAddOn CR"))
 			return err
 		}
