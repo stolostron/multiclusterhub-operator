@@ -171,7 +171,8 @@ func OCMNamespace() *corev1.Namespace {
 func MCENamespace() *corev1.Namespace {
 	return &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "multicluster-engine",
+			Name:   "multicluster-engine",
+			Labels: map[string]string{},
 		},
 	}
 }

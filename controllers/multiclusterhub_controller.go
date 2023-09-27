@@ -251,6 +251,18 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{Requeue: true}, err
 	}
 
+	/*
+		In ACM 2.9, we need to ensure that the openshift.io/cluster-monitoring is added to the same namespace as the
+		MultiClusterHub to avoid conflicts with the openshift-* namespace when deploying PrometheusRules and
+		ServiceMonitors in ACM.
+	*/
+	result, err = r.ensureOpenShiftNamespaceLabel(ctx, multiClusterHub)
+	if err != nil {
+		r.Log.Error(err, "Failed to add to %s label to namespace: %s", utils.OpenShiftClusterMonitoringLabel,
+			multiClusterHub.GetNamespace())
+		return ctrl.Result{}, err
+	}
+
 	err = r.maintainImageManifestConfigmap(multiClusterHub)
 	if err != nil {
 		r.Log.Error(err, "Error storing image manifests in configmap")
@@ -737,6 +749,38 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 			return result, err
 		}
 	}
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureOpenShiftNamespaceLabel(ctx context.Context,
+	m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+
+	log := log.FromContext(ctx)
+	existingNs := &corev1.Namespace{}
+
+	err := r.Client.Get(ctx, types.NamespacedName{Name: m.GetNamespace()}, existingNs)
+	if err != nil || errors.IsNotFound(err) {
+		log.Error(err, fmt.Sprintf("Failed to find namespace for MultiClusterHub: %s", m.GetNamespace()))
+		return ctrl.Result{Requeue: true}, err
+	}
+
+	if existingNs.Labels == nil || len(existingNs.Labels) == 0 {
+		existingNs.Labels = make(map[string]string)
+	}
+
+	if _, ok := existingNs.Labels[utils.OpenShiftClusterMonitoringLabel]; !ok {
+		r.Log.Info(fmt.Sprintf("Adding label: %s to namespace: %s", utils.OpenShiftClusterMonitoringLabel,
+			m.GetNamespace()))
+		existingNs.Labels[utils.OpenShiftClusterMonitoringLabel] = "true"
+
+		err = r.Client.Update(ctx, existingNs)
+		if err != nil {
+			log.Error(err, fmt.Sprintf("Failed to update namespace for MultiClusterHub: %s with the label: %s",
+				m.GetNamespace(), utils.OpenShiftClusterMonitoringLabel))
+			return ctrl.Result{Requeue: true}, err
+		}
+	}
+
 	return ctrl.Result{}, nil
 }
 

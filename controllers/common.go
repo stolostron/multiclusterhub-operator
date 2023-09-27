@@ -185,7 +185,7 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 			return ctrl.Result{Requeue: true}, err
 		}
 		if configured {
-			ns, err := utils.FindNamespace()
+			ns, err := utils.OperatorNamespace()
 			if err != nil {
 				return ctrl.Result{Requeue: true}, err
 			}
@@ -649,7 +649,7 @@ func mergeErrors(errs []error) string {
 // GetSubConfig returns a SubscriptionConfig based on proxy variables and the mch operator configuration
 func (r *MultiClusterHubReconciler) GetSubConfig() (*subv1alpha1.SubscriptionConfig, error) {
 	found := &appsv1.Deployment{}
-	mchOperatorNS, err := utils.FindNamespace()
+	mchOperatorNS, err := utils.OperatorNamespace()
 	if err != nil {
 		return nil, err
 	}
