@@ -313,6 +313,11 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 
+	err = r.removeLegacyGRCPrometheusConfig(ctx)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	// Install CRDs
 	var reason string
 	reason, err = r.installCRDs(r.Log, multiClusterHub)
