@@ -274,6 +274,39 @@ func (r *MultiClusterHubReconciler) uninstall(m *operatorsv1.MultiClusterHub, u 
 	return false, nil
 }
 
+// removeLegacyGRCPrometheusConfig will remove the GRC PrometheusRule and ServiceMonitor in the openshift-monitoring
+// namespace. This configuration should be in the controller namespace instead.
+func (r *MultiClusterHubReconciler) removeLegacyGRCPrometheusConfig(ctx context.Context) error {
+	for _, kind := range []string{"PrometheusRule", "ServiceMonitor"} {
+		obj := &unstructured.Unstructured{}
+		obj.SetGroupVersionKind(schema.GroupVersionKind{
+			Group:   "monitoring.coreos.com",
+			Kind:    kind,
+			Version: "v1",
+		})
+		obj.SetName("ocm-grc-policy-propagator-metrics")
+		obj.SetNamespace("openshift-monitoring")
+
+		err := r.Client.Delete(ctx, obj)
+		if err != nil {
+			if !errors.IsNotFound(err) && !apimeta.IsNoMatchError(err) {
+				r.Log.Error(
+					err,
+					"Error while deleting the legacy GRC Prometheus configuration",
+					"kind", kind,
+					"name", obj.GetName(),
+				)
+
+				return err
+			}
+		} else {
+			r.Log.Info("Deleted the legacy GRC Prometheus configuration", "kind", kind, "name", obj.GetName())
+		}
+	}
+
+	return nil
+}
+
 // ensureRemovalsGone validates successful removal of everything in the uninstallList. Return on first error encounter.
 func (r *MultiClusterHubReconciler) cleanupGRCAppsub(m *operatorsv1.MultiClusterHub) error {
 	grcAppsub := newUnstructured(
