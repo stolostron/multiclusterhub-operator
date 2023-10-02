@@ -5,7 +5,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
   name: acm-console-prometheus-rules
-  namespace: openshift-monitoring
+  namespace: {{ .Values.global.namespace }}
 spec:
   groups:
     - name: acm-console.rules
