@@ -34,8 +34,34 @@ jobs:
     
       # Runs a set of commands using the runners shell
       - name: Regenerate Operator Bundles
+        id: generate_bundle
         run: |
           make regenerate-operator-bundles
+
+      - name: Check Job Status
+        id: job_status
+        run: |
+          if [[ ${{ steps.generate_bundle.outcome }} == 'failure' ]]; then
+            echo "::set-output name=status::failure"
+          else
+            echo "::set-output name=status::success"
+          fi
+
+      - name: Send Slack Message on Failure
+        if: steps.job_status.outputs.status == 'failure'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          # Compose the Slack message
+          SLACK_MESSAGE=":exclamation: *GitHub Actions Job Failed* :exclamation:\n\n"
+          SLACK_MESSAGE+="Job Name: $GITHUB_WORKFLOW/$GITHUB_JOB\n"
+          SLACK_MESSAGE+="Job URL: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID\n"
+          SLACK_MESSAGE+="Error Details: Your job failed. Please check the job logs for more information."
+
+          # Send the message to Slack
+          curl -X POST -H "Content-type: application/json" --data "{
+            \"text\": \"$SLACK_MESSAGE\"
+          }" $SLACK_WEBHOOK_URL
       
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v3
