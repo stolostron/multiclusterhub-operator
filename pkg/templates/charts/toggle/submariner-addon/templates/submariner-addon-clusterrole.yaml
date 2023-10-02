@@ -182,6 +182,12 @@ rules:
 - apiGroups:
   - addon.open-cluster-management.io
   resources:
+  - clustermanagementaddons/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - addon.open-cluster-management.io
+  resources:
   - clustermanagementaddons/status
   verbs:
   - patch
@@ -197,6 +203,12 @@ rules:
   - patch
   - update
   - delete
+- apiGroups:
+  - addon.open-cluster-management.io
+  resources:
+  - managedclusteraddons/finalizers
+  verbs:
+  - update
 - apiGroups:
   - addon.open-cluster-management.io
   resources:
