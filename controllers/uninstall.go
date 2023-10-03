@@ -274,36 +274,63 @@ func (r *MultiClusterHubReconciler) uninstall(m *operatorsv1.MultiClusterHub, u 
 	return false, nil
 }
 
-// removeLegacyGRCPrometheusConfig will remove the GRC PrometheusRule and ServiceMonitor in the openshift-monitoring
-// namespace. This configuration should be in the controller namespace instead.
-func (r *MultiClusterHubReconciler) removeLegacyGRCPrometheusConfig(ctx context.Context) error {
-	for _, kind := range []string{"PrometheusRule", "ServiceMonitor"} {
-		obj := &unstructured.Unstructured{}
-		obj.SetGroupVersionKind(schema.GroupVersionKind{
-			Group:   "monitoring.coreos.com",
-			Kind:    kind,
-			Version: "v1",
-		})
-		obj.SetName("ocm-grc-policy-propagator-metrics")
-		obj.SetNamespace("openshift-monitoring")
+/*
+removeLegacyPrometheusConfigurations will remove the specified kind of configuration
+(PrometheusRule or ServiceMonitor) in the target namespace. This configuration should be in the controller namespace
+instead.
+*/
+func (r *MultiClusterHubReconciler) removeLegacyPrometheusConfigurations(ctx context.Context,
+	targetNamespace string, kind string) error {
+	obj := &unstructured.Unstructured{}
+	obj.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "monitoring.coreos.com",
+		Kind:    kind,
+		Version: "v1",
+	})
 
-		err := r.Client.Delete(ctx, obj)
+	var configType string
+	switch kind {
+	case "PrometheusRule":
+		configType = "PrometheusRule"
+
+	case "ServiceMonitor":
+		configType = "ServiceMonitor"
+
+	default:
+		return fmt.Errorf("Unsupported kind detected when trying to remove legacy configuration: %s", kind)
+	}
+
+	for _, c := range operatorsv1.MCHComponents {
+		res, err := func() (string, error) {
+			if configType == "PrometheusRule" {
+				return operatorsv1.GetPrometheusRulesName(c)
+			}
+
+			return operatorsv1.GetServiceMonitorName(c)
+		}()
+
+		if err != nil {
+			continue
+		}
+
+		obj.SetName(res)
+		obj.SetNamespace(targetNamespace)
+
+		err = r.Client.Delete(ctx, obj)
 		if err != nil {
 			if !errors.IsNotFound(err) && !apimeta.IsNoMatchError(err) {
 				r.Log.Error(
 					err,
-					"Error while deleting the legacy GRC Prometheus configuration",
+					fmt.Sprintf("Error while deleting the legacy %s configuration", configType),
 					"kind", kind,
 					"name", obj.GetName(),
 				)
-
 				return err
 			}
 		} else {
-			r.Log.Info("Deleted the legacy GRC Prometheus configuration", "kind", kind, "name", obj.GetName())
+			r.Log.Info(fmt.Sprintf("Deleted the legacy %s configuration: %s", configType, obj.GetName()))
 		}
 	}
-
 	return nil
 }
 
