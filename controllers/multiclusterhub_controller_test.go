@@ -928,9 +928,14 @@ var _ = Describe("MultiClusterHub controller", func() {
 			err = k8sClient.Create(context.TODO(), sm)
 			Expect(err).To(BeNil())
 
+			legacyResourceKind := operatorv1.GetLegacyPrometheusKind()
+			ns := "openshift-monitoring"
+
 			By("Running the cleanup of the legacy Prometheus configuration")
-			err = reconciler.removeLegacyGRCPrometheusConfig(context.TODO())
-			Expect(err).To(BeNil())
+			for _, kind := range legacyResourceKind {
+				err = reconciler.removeLegacyPrometheusConfigurations(context.TODO(), ns, kind)
+				Expect(err).To(BeNil())
+			}
 
 			By("Verifying that the legacy GRC PrometheusRule is deleted")
 			err = k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(pr), pr)
@@ -941,8 +946,10 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(errors.IsNotFound(err)).To(BeTrue())
 
 			By("Running the cleanup of the legacy Prometheus configuration again should do nothing")
-			err = reconciler.removeLegacyGRCPrometheusConfig(context.TODO())
-			Expect(err).To(BeNil())
+			for _, kind := range legacyResourceKind {
+				err = reconciler.removeLegacyPrometheusConfigurations(context.TODO(), ns, kind)
+				Expect(err).To(BeNil())
+			}
 		})
 	})
 

@@ -313,9 +313,8 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 
-	err = r.removeLegacyGRCPrometheusConfig(ctx)
-	if err != nil {
-		return ctrl.Result{}, err
+	for _, kind := range operatorv1.GetLegacyPrometheusKind() {
+		err = r.removeLegacyPrometheusConfigurations(ctx, "openshift-monitoring", kind)
 	}
 
 	// Install CRDs

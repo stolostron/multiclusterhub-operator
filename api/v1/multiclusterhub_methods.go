@@ -113,10 +113,27 @@ var MCEComponents = []string{
 	MCEServerFoundation,
 }
 
-// clusterManagementAddOns is a map that associates certain component names with their corresponding add-ons.
-var clusterManagementAddOns = map[string]string{
+var LegacyPrometheusKind = []string{"PrometheusRule", "ServiceMonitor"}
+
+// MCHPrometheusRules is a map that associates certain component names with their corresponding prometheus rules.
+var MCHPrometheusRules = map[string]string{
+	Console: "acm-console-prometheus-rules",
+	GRC:     "ocm-grc-policy-propagator-metrics",
+	// Add other components here when PrometheusRules is required.
+}
+
+// MCHServiceMonitors is a map that associates certain component names with their corresponding service monitors.
+var MCHServiceMonitors = map[string]string{
+	Console:  "console-monitor",
+	GRC:      "ocm-grc-policy-propagator-metrics",
+	Insights: "acm-insights",
+	// Add other components here when ServiceMonitors is required.
+}
+
+// ClusterManagementAddOns is a map that associates certain component names with their corresponding add-ons.
+var ClusterManagementAddOns = map[string]string{
 	SubmarinerAddon: "submariner",
-	// Add other components here when clusterManagementAddOns is required.
+	// Add other components here when ClusterManagementAddOns is required.
 }
 
 /*
@@ -168,8 +185,34 @@ func GetDefaultHostedComponents() []string {
 
 // GetClusterManagementAddonName returns the name of the ClusterManagementAddOn based on the provided component name.
 func GetClusterManagementAddonName(component string) (string, error) {
-	if val, ok := clusterManagementAddOns[component]; !ok {
+	if val, ok := ClusterManagementAddOns[component]; !ok {
 		return val, fmt.Errorf("failed to find ClusterManagementAddOn name for: %s component", component)
+	} else {
+		return val, nil
+	}
+}
+
+/*
+GetLegacyPrometheusKind returns a list of legacy kind resources that are required to be removed before updating to
+ACM 2.9 and later.
+*/
+func GetLegacyPrometheusKind() []string {
+	return LegacyPrometheusKind
+}
+
+// GetPrometheusRulesName returns the name of the PrometheusRules based on the provided component name.
+func GetPrometheusRulesName(component string) (string, error) {
+	if val, ok := MCHPrometheusRules[component]; !ok {
+		return val, fmt.Errorf("failed to find PrometheusRules name for: %s component", component)
+	} else {
+		return val, nil
+	}
+}
+
+// GetServiceMonitorName returns the name of the ServiceMonitors based on the provided component name.
+func GetServiceMonitorName(component string) (string, error) {
+	if val, ok := MCHServiceMonitors[component]; !ok {
+		return val, fmt.Errorf("failed to find ServiceMonitors name for: %s component", component)
 	} else {
 		return val, nil
 	}
