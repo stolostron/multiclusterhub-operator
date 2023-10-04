@@ -3,6 +3,8 @@ package v1
 import (
 	"reflect"
 	"testing"
+
+	"k8s.io/utils/strings/slices"
 )
 
 func TestMultiClusterHub_Prune(t *testing.T) {
@@ -183,6 +185,105 @@ func TestGetClusterManagementAddonName(t *testing.T) {
 
 			if got != tt.want {
 				t.Errorf("GetClusterManagementAddonName(%v) = %v, want: %v", tt.component, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetLegacyPrometheusKind(t *testing.T) {
+	tests := []struct {
+		name  string
+		kind  string
+		want  int
+		want2 []string
+	}{
+		{
+			name:  "legacy Prometheus Configuration Kind",
+			kind:  "PrometheusRule",
+			want:  2,
+			want2: LegacyPrometheusKind,
+		},
+		{
+			name:  "legacy Prometheus Configuration Kind",
+			kind:  "ServiceMonitor",
+			want:  2,
+			want2: LegacyPrometheusKind,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := GetLegacyPrometheusKind()
+			if len(got) == 0 {
+				t.Errorf("GetLegacyPrometheusKind() = %v, want: %v", len(got), tt.want)
+			}
+
+			if ok := slices.Contains(got, tt.kind); !ok {
+				t.Errorf("GetLegacyPrometheusKind() = %v, want: %v", got, tt.want2)
+			}
+		})
+	}
+}
+
+func TestGetPrometheusRulesName(t *testing.T) {
+	tests := []struct {
+		name      string
+		component string
+		want      string
+	}{
+		{
+			name:      "console PrometheusRule",
+			component: Console,
+			want:      MCHPrometheusRules[Console],
+		},
+		{
+			name:      "unknown PrometheusRule",
+			component: "unknown",
+			want:      MCHPrometheusRules["unknown"],
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetPrometheusRulesName(tt.component)
+			if err != nil && tt.component != "unknown" {
+				t.Errorf("GetPrometheusRulesName(%v) = %v, want: %v", tt.component, err.Error(), tt.want)
+			}
+
+			if got != tt.want {
+				t.Errorf("GetPrometheusRulesName(%v) = %v, want: %v", tt.component, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetServiceMonitorName(t *testing.T) {
+	tests := []struct {
+		name      string
+		component string
+		want      string
+	}{
+		{
+			name:      "console ServiceMonitor",
+			component: Console,
+			want:      MCHServiceMonitors[Console],
+		},
+		{
+			name:      "unknown ServiceMonitor",
+			component: "unknown",
+			want:      MCHServiceMonitors["unknown"],
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetServiceMonitorName(tt.component)
+			if err != nil && tt.component != "unknown" {
+				t.Errorf("GetServiceMonitorName(%v) = %v, want: %v", tt.component, err.Error(), tt.want)
+			}
+
+			if got != tt.want {
+				t.Errorf("GetServiceMonitorName(%v) = %v, want: %v", tt.component, got, tt.want)
 			}
 		})
 	}
