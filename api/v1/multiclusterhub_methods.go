@@ -90,6 +90,7 @@ var MCHComponents = []string{
 	GRC,
 	Insights,
 	// MultiClusterEngine,
+	MCH, // Adding MCH name to ensure legacy resources are cleaned up properly.
 	MultiClusterObservability,
 	//Repo,
 	Search,
@@ -118,16 +119,11 @@ var MCEComponents = []string{
 
 var (
 	/*
-		LegacyOperatorSDKKind is a slice of strings that represents the legacy resource kinds
-		supported by the Operator SDK. These kinds include "Service" and "ServiceMonitor".
+		LegacyConfigKind is a slice of strings that represents the legacy resource kinds
+		supported by the Operator SDK and Prometheus. These kinds include "PrometheusRule", "Service",
+		and "ServiceMonitor".
 	*/
-	LegacyOperatorSDKKind = []string{"Service", "ServiceMonitor"}
-
-	/*
-		LegacyPrometheusKind is a slice of strings that represents the legacy resource kinds
-		commonly used with Prometheus. These kinds include "PrometheusRule" and "ServiceMonitor".
-	*/
-	LegacyPrometheusKind = []string{"PrometheusRule", "ServiceMonitor"}
+	LegacyConfigKind = []string{"PrometheusRule", "Service", "ServiceMonitor"}
 )
 
 // MCHPrometheusRules is a map that associates certain component names with their corresponding prometheus rules.
@@ -215,19 +211,11 @@ func GetClusterManagementAddonName(component string) (string, error) {
 }
 
 /*
-GetLegacyPrometheusKind returns a list of legacy kind resources that are required to be removed before updating to
+GetLegacyConfigKind returns a list of legacy kind resources that are required to be removed before updating to
 ACM 2.9 and later.
 */
-func GetLegacyPrometheusKind() []string {
-	return LegacyPrometheusKind
-}
-
-/*
-GetLegacyOperatorSDKKind returns a list of legacy kind resources that are required to be removed before updating to a
-later release.
-*/
-func GetLegacyOperatorSDKKind() []string {
-	return LegacyOperatorSDKKind
+func GetLegacyConfigKind() []string {
+	return LegacyConfigKind
 }
 
 // GetPrometheusRulesName returns the name of the PrometheusRules based on the provided component name.

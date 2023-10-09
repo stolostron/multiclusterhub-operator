@@ -929,20 +929,12 @@ var _ = Describe("MultiClusterHub controller", func() {
 			err = k8sClient.Create(context.TODO(), sm)
 			Expect(err).To(BeNil())
 
-			legacyPrometheusResourceKind := operatorv1.GetLegacyPrometheusKind()
+			legacyResourceKind := operatorv1.GetLegacyConfigKind()
 			ns := "openshift-monitoring"
 
-			By("Running the cleanup of the legacy Prometheus configuration")
-			for _, kind := range legacyPrometheusResourceKind {
-				err = reconciler.removeLegacyPrometheusConfigurations(context.TODO(), ns, kind)
-				Expect(err).To(BeNil())
-			}
-
-			legacyOperatorSDKResourceKind := operatorv1.GetLegacyOperatorSDKKind()
-
-			By("Running the cleanup of the legacy OperatorSDK configuration")
-			for _, kind := range legacyOperatorSDKResourceKind {
-				err = reconciler.removeLegacyOperatorSDKConfigurations(context.TODO(), mchNamespace, kind)
+			By("Running the cleanup of the legacy configuration kinds")
+			for _, kind := range legacyResourceKind {
+				err = reconciler.removeLegacyConfigurations(context.TODO(), ns, kind)
 				Expect(err).To(BeNil())
 			}
 
@@ -954,15 +946,9 @@ var _ = Describe("MultiClusterHub controller", func() {
 			err = k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(sm), sm)
 			Expect(errors.IsNotFound(err)).To(BeTrue())
 
-			By("Running the cleanup of the legacy Prometheus configuration again should do nothing")
-			for _, kind := range legacyPrometheusResourceKind {
-				err = reconciler.removeLegacyPrometheusConfigurations(context.TODO(), ns, kind)
-				Expect(err).To(BeNil())
-			}
-
-			By("Running the cleanup of the legacy OperatorSDK configuration again should do nothing")
-			for _, kind := range legacyOperatorSDKResourceKind {
-				err = reconciler.removeLegacyOperatorSDKConfigurations(context.TODO(), mchNamespace, kind)
+			By("Running the cleanup of the legacy configuration again should do nothing")
+			for _, kind := range legacyResourceKind {
+				err = reconciler.removeLegacyConfigurations(context.TODO(), ns, kind)
 				Expect(err).To(BeNil())
 			}
 		})

@@ -200,26 +200,26 @@ func TestGetLegacyPrometheusKind(t *testing.T) {
 		{
 			name:  "legacy Prometheus Configuration Kind",
 			kind:  "PrometheusRule",
-			want:  2,
-			want2: LegacyPrometheusKind,
+			want:  3,
+			want2: LegacyConfigKind,
 		},
 		{
 			name:  "legacy Prometheus Configuration Kind",
 			kind:  "ServiceMonitor",
-			want:  2,
-			want2: LegacyPrometheusKind,
+			want:  3,
+			want2: LegacyConfigKind,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := GetLegacyPrometheusKind()
+			got := GetLegacyConfigKind()
 			if len(got) == 0 {
-				t.Errorf("GetLegacyPrometheusKind() = %v, want: %v", len(got), tt.want)
+				t.Errorf("GetLegacyConfigKind() = %v, want: %v", len(got), tt.want)
 			}
 
 			if ok := slices.Contains(got, tt.kind); !ok {
-				t.Errorf("GetLegacyPrometheusKind() = %v, want: %v", got, tt.want2)
+				t.Errorf("GetLegacyConfigKind() = %v, want: %v", got, tt.want2)
 			}
 		})
 	}
@@ -316,41 +316,6 @@ func TestGetServiceName(t *testing.T) {
 
 			if got != tt.want {
 				t.Errorf("GetServiceName(%v) = %v, want: %v", tt.component, got, tt.want)
-			}
-		})
-	}
-}
-
-func TestGetLegacyOperatorSDKKind(t *testing.T) {
-	tests := []struct {
-		name  string
-		kind  string
-		want  int
-		want2 []string
-	}{
-		{
-			name:  "legacy OperatorSDK Configuration Kind",
-			kind:  "Service",
-			want:  2,
-			want2: LegacyOperatorSDKKind,
-		},
-		{
-			name:  "legacy OperatorSDK Configuration Kind",
-			kind:  "ServiceMonitor",
-			want:  2,
-			want2: LegacyOperatorSDKKind,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := GetLegacyOperatorSDKKind()
-			if len(got) == 0 {
-				t.Errorf("GetLegacyOperatorSDKKind() = %v, want: %v", len(got), tt.want)
-			}
-
-			if ok := slices.Contains(got, tt.kind); !ok {
-				t.Errorf("GetLegacyOperatorSDKKind() = %v, want: %v", got, tt.want2)
 			}
 		})
 	}
