@@ -286,8 +286,14 @@ namespace instead.
 func (r *MultiClusterHubReconciler) removeLegacyConfigurations(ctx context.Context, targetNamespace string,
 	kind string) error {
 	obj := &unstructured.Unstructured{}
+	apiGroup := ""
+
+	if kind == "PrometheusRule" || kind == "ServiceMonitor" {
+		apiGroup = MonitoringAPIGroup
+	}
+
 	obj.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   MonitoringAPIGroup,
+		Group:   apiGroup,
 		Kind:    kind,
 		Version: "v1",
 	})
