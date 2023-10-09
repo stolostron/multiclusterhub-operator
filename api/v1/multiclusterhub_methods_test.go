@@ -320,3 +320,38 @@ func TestGetServiceName(t *testing.T) {
 		})
 	}
 }
+
+func TestGetLegacyOperatorSDKKind(t *testing.T) {
+	tests := []struct {
+		name  string
+		kind  string
+		want  int
+		want2 []string
+	}{
+		{
+			name:  "legacy OperatorSDK Configuration Kind",
+			kind:  "Service",
+			want:  2,
+			want2: LegacyOperatorSDKKind,
+		},
+		{
+			name:  "legacy OperatorSDK Configuration Kind",
+			kind:  "ServiceMonitor",
+			want:  2,
+			want2: LegacyOperatorSDKKind,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := GetLegacyOperatorSDKKind()
+			if len(got) == 0 {
+				t.Errorf("GetLegacyOperatorSDKKind() = %v, want: %v", len(got), tt.want)
+			}
+
+			if ok := slices.Contains(got, tt.kind); !ok {
+				t.Errorf("GetLegacyOperatorSDKKind() = %v, want: %v", got, tt.want2)
+			}
+		})
+	}
+}
