@@ -67,6 +67,7 @@ func ApplyPrereqs(k8sClient client.Client) {
 	Expect(k8sClient.Create(ctx, resources.OCMNamespace())).Should(Succeed())
 	Expect(k8sClient.Create(ctx, resources.MonitoringNamespace())).Should(Succeed())
 	Expect(k8sClient.Create(ctx, resources.SampleClusterManagementAddOn(operatorv1.SubmarinerAddon)))
+	Expect(k8sClient.Create(ctx, resources.SampleServiceMonitor(operatorv1.MCH, mchNamespace)))
 }
 
 func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler, mchoDeployment *appsv1.Deployment) {
@@ -928,12 +929,20 @@ var _ = Describe("MultiClusterHub controller", func() {
 			err = k8sClient.Create(context.TODO(), sm)
 			Expect(err).To(BeNil())
 
-			legacyResourceKind := operatorv1.GetLegacyPrometheusKind()
+			legacyPrometheusResourceKind := operatorv1.GetLegacyPrometheusKind()
 			ns := "openshift-monitoring"
 
 			By("Running the cleanup of the legacy Prometheus configuration")
-			for _, kind := range legacyResourceKind {
+			for _, kind := range legacyPrometheusResourceKind {
 				err = reconciler.removeLegacyPrometheusConfigurations(context.TODO(), ns, kind)
+				Expect(err).To(BeNil())
+			}
+
+			legacyOperatorSDKResourceKind := operatorv1.GetLegacyOperatorSDKKind()
+
+			By("Running the cleanup of the legacy OperatorSDK configuration")
+			for _, kind := range legacyOperatorSDKResourceKind {
+				err = reconciler.removeLegacyOperatorSDKConfigurations(context.TODO(), mchNamespace, kind)
 				Expect(err).To(BeNil())
 			}
 
@@ -946,8 +955,14 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(errors.IsNotFound(err)).To(BeTrue())
 
 			By("Running the cleanup of the legacy Prometheus configuration again should do nothing")
-			for _, kind := range legacyResourceKind {
+			for _, kind := range legacyPrometheusResourceKind {
 				err = reconciler.removeLegacyPrometheusConfigurations(context.TODO(), ns, kind)
+				Expect(err).To(BeNil())
+			}
+
+			By("Running the cleanup of the legacy OperatorSDK configuration again should do nothing")
+			for _, kind := range legacyOperatorSDKResourceKind {
+				err = reconciler.removeLegacyOperatorSDKConfigurations(context.TODO(), mchNamespace, kind)
 				Expect(err).To(BeNil())
 			}
 		})

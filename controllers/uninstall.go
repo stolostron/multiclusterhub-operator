@@ -23,6 +23,10 @@ import (
 )
 
 var (
+	MonitoringAPIGroup = "monitoring.coreos.com"
+)
+
+var (
 	// The uninstallList is the list of all resources from previous installs to remove. Items can be removed
 	// from this list in future releases if they are sure to not exist prior to the current installer version
 	uninstallList = func(m *operatorsv1.MultiClusterHub) []*unstructured.Unstructured {
@@ -283,7 +287,7 @@ func (r *MultiClusterHubReconciler) removeLegacyPrometheusConfigurations(ctx con
 	targetNamespace string, kind string) error {
 	obj := &unstructured.Unstructured{}
 	obj.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "monitoring.coreos.com",
+		Group:   MonitoringAPIGroup,
 		Kind:    kind,
 		Version: "v1",
 	})
@@ -343,7 +347,7 @@ func (r *MultiClusterHubReconciler) removeLegacyOperatorSDKConfigurations(ctx co
 	targetNamespace string, kind string) error {
 	obj := &unstructured.Unstructured{}
 	obj.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "monitoring.coreos.com",
+		Group:   MonitoringAPIGroup,
 		Kind:    kind,
 		Version: "v1",
 	})
@@ -460,7 +464,7 @@ func (r *MultiClusterHubReconciler) cleanupGRCAppsub(m *operatorsv1.MultiCluster
 	r.Log.Info(fmt.Sprintf("Deleting GRC PrometheusRule"))
 	u := &unstructured.Unstructured{}
 	u.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "monitoring.coreos.com",
+		Group:   MonitoringAPIGroup,
 		Kind:    "PrometheusRule",
 		Version: "v1",
 	})
