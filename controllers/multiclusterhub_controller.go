@@ -317,6 +317,15 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		err = r.removeLegacyPrometheusConfigurations(ctx, "openshift-monitoring", kind)
 	}
 
+	/*
+		Remove existing service and servicemonitor configurations, if present from upgrade. In ACM 2.2, operator-sdk
+		generated configurations for the MCH operator to be collecting metrics. In later releases, these resources are
+		no longer available; therefore, we need to explicitly remove them from the upgrade configuration.
+	*/
+	for _, kind := range operatorv1.GetLegacyOperatorSDKKind() {
+		err = r.removeLegacyOperatorSDKConfigurations(ctx, multiClusterHub.GetNamespace(), kind)
+	}
+
 	// Install CRDs
 	var reason string
 	reason, err = r.installCRDs(r.Log, multiClusterHub)

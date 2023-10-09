@@ -288,3 +288,35 @@ func TestGetServiceMonitorName(t *testing.T) {
 		})
 	}
 }
+
+func TestGetServiceName(t *testing.T) {
+	tests := []struct {
+		name      string
+		component string
+		want      string
+	}{
+		{
+			name:      "multiclusterhub Service",
+			component: MCH,
+			want:      MCHServices[MCH],
+		},
+		{
+			name:      "unknown Service",
+			component: "unknown",
+			want:      MCHServices["unknown"],
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetServiceName(tt.component)
+			if err != nil && tt.component != "unknown" {
+				t.Errorf("GetServiceName(%v) = %v, want: %v", tt.component, err.Error(), tt.want)
+			}
+
+			if got != tt.want {
+				t.Errorf("GetServiceName(%v) = %v, want: %v", tt.component, got, tt.want)
+			}
+		})
+	}
+}

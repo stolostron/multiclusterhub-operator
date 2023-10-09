@@ -334,6 +334,65 @@ func (r *MultiClusterHubReconciler) removeLegacyPrometheusConfigurations(ctx con
 	return nil
 }
 
+/*
+removeLegacyOperatorSDKConfigurations will remove the specified kind of configuration
+(PrometheusRule or ServiceMonitor) in the target namespace. This configuration should be in the controller namespace
+instead.
+*/
+func (r *MultiClusterHubReconciler) removeLegacyOperatorSDKConfigurations(ctx context.Context,
+	targetNamespace string, kind string) error {
+	obj := &unstructured.Unstructured{}
+	obj.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "monitoring.coreos.com",
+		Kind:    kind,
+		Version: "v1",
+	})
+
+	var configType string
+	switch kind {
+	case "Service":
+		configType = "Service"
+
+	case "ServiceMonitor":
+		configType = "ServiceMonitor"
+
+	default:
+		return fmt.Errorf("Unsupported kind detected when trying to remove legacy configuration: %s", kind)
+	}
+
+	res, err := func() (string, error) {
+		if configType == "Service" {
+			return operatorsv1.GetServiceName(operatorsv1.MCH)
+		}
+
+		return operatorsv1.GetServiceMonitorName(operatorsv1.MCH)
+	}()
+
+	if err != nil {
+		return err
+	}
+
+	obj.SetName(res)
+	obj.SetNamespace(targetNamespace)
+
+	err = r.Client.Delete(ctx, obj)
+	if err != nil {
+		if !errors.IsNotFound(err) && !apimeta.IsNoMatchError(err) {
+			r.Log.Error(
+				err,
+				fmt.Sprintf("Error while deleting the legacy %s configuration", configType),
+				"kind", kind,
+				"name", obj.GetName(),
+			)
+			return err
+		}
+	} else {
+		r.Log.Info(fmt.Sprintf("Deleted the legacy %s configuration: %s", configType, obj.GetName()))
+	}
+
+	return nil
+}
+
 // ensureRemovalsGone validates successful removal of everything in the uninstallList. Return on first error encounter.
 func (r *MultiClusterHubReconciler) cleanupGRCAppsub(m *operatorsv1.MultiClusterHub) error {
 	grcAppsub := newUnstructured(
