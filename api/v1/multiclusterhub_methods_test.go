@@ -200,26 +200,26 @@ func TestGetLegacyPrometheusKind(t *testing.T) {
 		{
 			name:  "legacy Prometheus Configuration Kind",
 			kind:  "PrometheusRule",
-			want:  2,
-			want2: LegacyPrometheusKind,
+			want:  3,
+			want2: LegacyConfigKind,
 		},
 		{
 			name:  "legacy Prometheus Configuration Kind",
 			kind:  "ServiceMonitor",
-			want:  2,
-			want2: LegacyPrometheusKind,
+			want:  3,
+			want2: LegacyConfigKind,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := GetLegacyPrometheusKind()
+			got := GetLegacyConfigKind()
 			if len(got) == 0 {
-				t.Errorf("GetLegacyPrometheusKind() = %v, want: %v", len(got), tt.want)
+				t.Errorf("GetLegacyConfigKind() = %v, want: %v", len(got), tt.want)
 			}
 
 			if ok := slices.Contains(got, tt.kind); !ok {
-				t.Errorf("GetLegacyPrometheusKind() = %v, want: %v", got, tt.want2)
+				t.Errorf("GetLegacyConfigKind() = %v, want: %v", got, tt.want2)
 			}
 		})
 	}
@@ -284,6 +284,38 @@ func TestGetServiceMonitorName(t *testing.T) {
 
 			if got != tt.want {
 				t.Errorf("GetServiceMonitorName(%v) = %v, want: %v", tt.component, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetServiceName(t *testing.T) {
+	tests := []struct {
+		name      string
+		component string
+		want      string
+	}{
+		{
+			name:      "multiclusterhub Service",
+			component: MCH,
+			want:      MCHServices[MCH],
+		},
+		{
+			name:      "unknown Service",
+			component: "unknown",
+			want:      MCHServices["unknown"],
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetServiceName(tt.component)
+			if err != nil && tt.component != "unknown" {
+				t.Errorf("GetServiceName(%v) = %v, want: %v", tt.component, err.Error(), tt.want)
+			}
+
+			if got != tt.want {
+				t.Errorf("GetServiceName(%v) = %v, want: %v", tt.component, got, tt.want)
 			}
 		})
 	}

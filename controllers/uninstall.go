@@ -23,6 +23,10 @@ import (
 )
 
 var (
+	MonitoringAPIGroup = "monitoring.coreos.com"
+)
+
+var (
 	// The uninstallList is the list of all resources from previous installs to remove. Items can be removed
 	// from this list in future releases if they are sure to not exist prior to the current installer version
 	uninstallList = func(m *operatorsv1.MultiClusterHub) []*unstructured.Unstructured {
@@ -275,46 +279,67 @@ func (r *MultiClusterHubReconciler) uninstall(m *operatorsv1.MultiClusterHub, u 
 }
 
 /*
-removeLegacyPrometheusConfigurations will remove the specified kind of configuration
-(PrometheusRule or ServiceMonitor) in the target namespace. This configuration should be in the controller namespace
-instead.
+removeLegacyConfigurations will remove the specified kind of configuration
+(PrometheusRule, ServiceMonitor, or Service) in the target namespace. This configuration should be in the controller
+namespace instead.
 */
-func (r *MultiClusterHubReconciler) removeLegacyPrometheusConfigurations(ctx context.Context,
-	targetNamespace string, kind string) error {
+func (r *MultiClusterHubReconciler) removeLegacyConfigurations(ctx context.Context, targetNamespace string,
+	kind string) error {
 	obj := &unstructured.Unstructured{}
+	apiGroup := ""
+
+	if kind == "PrometheusRule" || kind == "ServiceMonitor" {
+		apiGroup = MonitoringAPIGroup
+	}
+
 	obj.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "monitoring.coreos.com",
+		Group:   apiGroup,
 		Kind:    kind,
 		Version: "v1",
 	})
 
 	var configType string
-	switch kind {
-	case "PrometheusRule":
-		configType = "PrometheusRule"
-
-	case "ServiceMonitor":
-		configType = "ServiceMonitor"
-
-	default:
-		return fmt.Errorf("Unsupported kind detected when trying to remove legacy configuration: %s", kind)
-	}
+	var getObjectName func() (string, error)
 
 	for _, c := range operatorsv1.MCHComponents {
-		res, err := func() (string, error) {
-			if configType == "PrometheusRule" {
+		switch kind {
+		case "PrometheusRule":
+			configType = "PrometheusRule"
+			getObjectName = func() (string, error) {
 				return operatorsv1.GetPrometheusRulesName(c)
 			}
 
-			return operatorsv1.GetServiceMonitorName(c)
-		}()
+		case "ServiceMonitor":
+			configType = "ServiceMonitor"
+			getObjectName = func() (string, error) {
+				return operatorsv1.GetServiceMonitorName(c)
+			}
 
+		case "Service":
+			configType = "Service"
+			getObjectName = func() (string, error) {
+				return operatorsv1.GetServiceName(c)
+			}
+
+		default:
+			return fmt.Errorf("Unsupported kind detected when trying to remove legacy configuration: %s", kind)
+		}
+
+		res, err := getObjectName()
 		if err != nil {
 			continue
 		}
 
 		obj.SetName(res)
-		obj.SetNamespace(targetNamespace)
+
+		switch c {
+		case operatorsv1.MCH:
+			mchNamespace, _ := utils.OperatorNamespace()
+			obj.SetNamespace(mchNamespace)
+
+		default:
+			obj.SetNamespace(targetNamespace)
+		}
 
 		err = r.Client.Delete(ctx, obj)
 		if err != nil {
@@ -401,7 +426,7 @@ func (r *MultiClusterHubReconciler) cleanupGRCAppsub(m *operatorsv1.MultiCluster
 	r.Log.Info(fmt.Sprintf("Deleting GRC PrometheusRule"))
 	u := &unstructured.Unstructured{}
 	u.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "monitoring.coreos.com",
+		Group:   MonitoringAPIGroup,
 		Kind:    "PrometheusRule",
 		Version: "v1",
 	})

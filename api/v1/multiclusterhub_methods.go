@@ -6,6 +6,9 @@ import (
 	"os"
 )
 
+// Name of the MultiClusterHub (MCH) operator.
+const MCH = "multiclusterhub-operator"
+
 // Component related to MultiClusterHub (MCH)
 const (
 	Appsub                    string = "app-lifecycle"
@@ -87,6 +90,7 @@ var MCHComponents = []string{
 	GRC,
 	Insights,
 	// MultiClusterEngine,
+	MCH, // Adding MCH name to ensure legacy resources are cleaned up properly.
 	MultiClusterObservability,
 	//Repo,
 	Search,
@@ -113,7 +117,14 @@ var MCEComponents = []string{
 	MCEServerFoundation,
 }
 
-var LegacyPrometheusKind = []string{"PrometheusRule", "ServiceMonitor"}
+var (
+	/*
+		LegacyConfigKind is a slice of strings that represents the legacy resource kinds
+		supported by the Operator SDK and Prometheus. These kinds include "PrometheusRule", "Service",
+		and "ServiceMonitor".
+	*/
+	LegacyConfigKind = []string{"PrometheusRule", "Service", "ServiceMonitor"}
+)
 
 // MCHPrometheusRules is a map that associates certain component names with their corresponding prometheus rules.
 var MCHPrometheusRules = map[string]string{
@@ -127,7 +138,14 @@ var MCHServiceMonitors = map[string]string{
 	Console:  "console-monitor",
 	GRC:      "ocm-grc-policy-propagator-metrics",
 	Insights: "acm-insights",
+	MCH:      "multiclusterhub-operator-metrics",
 	// Add other components here when ServiceMonitors is required.
+}
+
+// MCHServices is a map that associates certain component names with their corresponding services.
+var MCHServices = map[string]string{
+	MCH: "multiclusterhub-operator-metrics",
+	// Add other components here when Services is required.
 }
 
 // ClusterManagementAddOns is a map that associates certain component names with their corresponding add-ons.
@@ -193,11 +211,11 @@ func GetClusterManagementAddonName(component string) (string, error) {
 }
 
 /*
-GetLegacyPrometheusKind returns a list of legacy kind resources that are required to be removed before updating to
+GetLegacyConfigKind returns a list of legacy kind resources that are required to be removed before updating to
 ACM 2.9 and later.
 */
-func GetLegacyPrometheusKind() []string {
-	return LegacyPrometheusKind
+func GetLegacyConfigKind() []string {
+	return LegacyConfigKind
 }
 
 // GetPrometheusRulesName returns the name of the PrometheusRules based on the provided component name.
@@ -213,6 +231,15 @@ func GetPrometheusRulesName(component string) (string, error) {
 func GetServiceMonitorName(component string) (string, error) {
 	if val, ok := MCHServiceMonitors[component]; !ok {
 		return val, fmt.Errorf("failed to find ServiceMonitors name for: %s component", component)
+	} else {
+		return val, nil
+	}
+}
+
+// GetServiceName returns the name of the Services based on the provided component name.
+func GetServiceName(component string) (string, error) {
+	if val, ok := MCHServices[component]; !ok {
+		return val, fmt.Errorf("failed to find Services name for: %s component", component)
 	} else {
 		return val, nil
 	}

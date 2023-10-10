@@ -313,8 +313,13 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 
-	for _, kind := range operatorv1.GetLegacyPrometheusKind() {
-		err = r.removeLegacyPrometheusConfigurations(ctx, "openshift-monitoring", kind)
+	/*
+		Remove existing service and servicemonitor configurations, if present from upgrade. In ACM 2.2, operator-sdk
+		generated configurations for the MCH operator to be collecting metrics. In later releases, these resources are
+		no longer available; therefore, we need to explicitly remove them from the upgrade configuration.
+	*/
+	for _, kind := range operatorv1.GetLegacyConfigKind() {
+		err = r.removeLegacyConfigurations(ctx, "openshift-monitoring", kind)
 	}
 
 	// Install CRDs
@@ -590,6 +595,9 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(ctx context.Context, comp
 	case operatorv1.Insights:
 		return utils.InsightsChartLocation
 
+	case operatorv1.MCH:
+		return ""
+
 	case operatorv1.MultiClusterObservability:
 		return utils.MCOChartLocation
 
@@ -663,6 +671,14 @@ func (r *MultiClusterHubReconciler) ensureNamespaceAndPullSecret(m *operatorv1.M
 func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *operatorv1.MultiClusterHub, component string,
 	images map[string]string) (ctrl.Result, error) {
 
+	/*
+		If the component is detected to be MCH, we can simply return successfully. MCH is only listed in the components
+		list for cleanup purposes.
+	*/
+	if component == operatorv1.MCH {
+		return ctrl.Result{}, nil
+	}
+
 	log := log.FromContext(ctx)
 	chartLocation := r.fetchChartLocation(ctx, component)
 
@@ -697,6 +713,14 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 
 func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *operatorv1.MultiClusterHub,
 	component string, images map[string]string) (result ctrl.Result, err error) {
+
+	/*
+		If the component is detected to be MCH, we can simply return successfully. MCH is only listed in the components
+		list for cleanup purposes.
+	*/
+	if component == operatorv1.MCH {
+		return ctrl.Result{}, nil
+	}
 
 	log := log.FromContext(ctx)
 	chartLocation := r.fetchChartLocation(ctx, component)
