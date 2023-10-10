@@ -67,6 +67,7 @@ func ApplyPrereqs(k8sClient client.Client) {
 	Expect(k8sClient.Create(ctx, resources.OCMNamespace())).Should(Succeed())
 	Expect(k8sClient.Create(ctx, resources.MonitoringNamespace())).Should(Succeed())
 	Expect(k8sClient.Create(ctx, resources.SampleClusterManagementAddOn(operatorv1.SubmarinerAddon)))
+	Expect(k8sClient.Create(ctx, resources.SampleServiceMonitor(operatorv1.MCH, mchNamespace)))
 }
 
 func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler, mchoDeployment *appsv1.Deployment) {
@@ -928,12 +929,12 @@ var _ = Describe("MultiClusterHub controller", func() {
 			err = k8sClient.Create(context.TODO(), sm)
 			Expect(err).To(BeNil())
 
-			legacyResourceKind := operatorv1.GetLegacyPrometheusKind()
+			legacyResourceKind := operatorv1.GetLegacyConfigKind()
 			ns := "openshift-monitoring"
 
-			By("Running the cleanup of the legacy Prometheus configuration")
+			By("Running the cleanup of the legacy configuration kinds")
 			for _, kind := range legacyResourceKind {
-				err = reconciler.removeLegacyPrometheusConfigurations(context.TODO(), ns, kind)
+				err = reconciler.removeLegacyConfigurations(context.TODO(), ns, kind)
 				Expect(err).To(BeNil())
 			}
 
@@ -945,9 +946,9 @@ var _ = Describe("MultiClusterHub controller", func() {
 			err = k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(sm), sm)
 			Expect(errors.IsNotFound(err)).To(BeTrue())
 
-			By("Running the cleanup of the legacy Prometheus configuration again should do nothing")
+			By("Running the cleanup of the legacy configuration again should do nothing")
 			for _, kind := range legacyResourceKind {
-				err = reconciler.removeLegacyPrometheusConfigurations(context.TODO(), ns, kind)
+				err = reconciler.removeLegacyConfigurations(context.TODO(), ns, kind)
 				Expect(err).To(BeNil())
 			}
 		})
