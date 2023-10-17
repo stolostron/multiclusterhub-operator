@@ -13,10 +13,13 @@ import (
 
 var log = logf.Log.WithName("predicate")
 
-// GenerationChangedPredicate will skip update events that have no change in the object's metadata.generation field.
-// The metadata.generation field of an object is incremented by the API server when writes are made to the spec field of an object.
-// This allows a controller to ignore update events where the spec is unchanged, and only the metadata and/or status fields are changed.
-// This predicate is customized to not ignore certain annotations significant to the multiclusterhub reconciler.
+/*
+GenerationChangedPredicate will skip update events that have no change in the object's metadata.generation field.
+The metadata.generation field of an object is incremented by the API server when writes are made to the spec field of
+an object. This allows a controller to ignore update events where the spec is unchanged, and only the metadata and/or
+status fields are changed. This predicate is customized to not ignore certain annotations significant to the
+multiclusterhub reconciler.
+*/
 type GenerationChangedPredicate struct {
 	predicate.Funcs
 }

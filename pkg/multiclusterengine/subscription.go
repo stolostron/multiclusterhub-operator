@@ -18,8 +18,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// NewSubscription returns an MCE subscription with desired default values
-func NewSubscription(m *operatorsv1.MultiClusterHub, c *subv1alpha1.SubscriptionConfig, subOverrides *subv1alpha1.SubscriptionSpec, community bool) *subv1alpha1.Subscription {
+/*
+NewSubscription returns an MCE (MultiClusterEngine) subscription with desired default values. It creates a new MCE
+subscription based on provided input parameters and sets various fields according to the specified default values.
+The function returns the newly created MCE subscription.
+*/
+func NewSubscription(m *operatorsv1.MultiClusterHub, c *subv1alpha1.SubscriptionConfig,
+	subOverrides *subv1alpha1.SubscriptionSpec, community bool) *subv1alpha1.Subscription {
 	chName, pkgName, catSourceName := channel, packageName, catalogSourceName
 	if community {
 		chName = communityChannel
@@ -57,8 +62,14 @@ func NewSubscription(m *operatorsv1.MultiClusterHub, c *subv1alpha1.Subscription
 	return sub
 }
 
-// RenderSubscription returns a subscription by modifying the spec of an existing subscription based on overrides
-func RenderSubscription(existingSubscription *subv1alpha1.Subscription, config *subv1alpha1.SubscriptionConfig, overrides *subv1alpha1.SubscriptionSpec, ctlSrc types.NamespacedName, community bool) *subv1alpha1.Subscription {
+/*
+RenderSubscription returns a subscription by modifying the spec of an existing subscription based on overrides.
+It takes an existing subscription, configuration, spec overrides, control source, and a flag indicating a community
+subscription. The function deep-copies the existing subscription, updates its spec based on the provided values and
+overrides, and returns the modified subscription.
+*/
+func RenderSubscription(existingSubscription *subv1alpha1.Subscription, config *subv1alpha1.SubscriptionConfig,
+	overrides *subv1alpha1.SubscriptionSpec, ctlSrc types.NamespacedName, community bool) *subv1alpha1.Subscription {
 	copy := existingSubscription.DeepCopy()
 	copy.ManagedFields = nil
 	copy.TypeMeta = metav1.TypeMeta{
@@ -99,7 +110,11 @@ func RenderSubscription(existingSubscription *subv1alpha1.Subscription, config *
 	return copy
 }
 
-// GetAnnotationOverrides returns an OLM SubscriptionSpec based on an annotation set in the Multiclusterhub
+/*
+GetAnnotationOverrides returns an OLM (Operator Lifecycle Manager) SubscriptionSpec based on an annotation set
+in the MultiClusterHub. It retrieves annotation-based overrides for the OLM SubscriptionSpec from the MultiClusterHub
+instance and returns them.
+*/
 func GetAnnotationOverrides(m *operatorsv1.MultiClusterHub) (*subv1alpha1.SubscriptionSpec, error) {
 	mceAnnotationOverrides := utils.GetMCEAnnotationOverrides(m)
 	if mceAnnotationOverrides == "" {
@@ -108,12 +123,17 @@ func GetAnnotationOverrides(m *operatorsv1.MultiClusterHub) (*subv1alpha1.Subscr
 	mceSub := &subv1alpha1.SubscriptionSpec{}
 	err := json.Unmarshal([]byte(mceAnnotationOverrides), mceSub)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to unmarshal MultiClusterEngine annotation '%s': %w", mceAnnotationOverrides, err)
+		return nil, fmt.Errorf(
+			"Failed to unmarshal MultiClusterEngine annotation '%s': %w", mceAnnotationOverrides, err,
+		)
 	}
 	return mceSub, nil
 }
 
-// ApplyAnnotationOverrides updates an OLM subscription with override values
+/*
+ApplyAnnotationOverrides updates an OLM subscription with override values. It takes an OLM subscription and a
+SubscriptionSpec as input. The function applies the values from the SubscriptionSpec as overrides to the subscription.
+*/
 func ApplyAnnotationOverrides(sub *subv1alpha1.Subscription, subspec *subv1alpha1.SubscriptionSpec) {
 	if subspec == nil {
 		return
@@ -138,7 +158,11 @@ func ApplyAnnotationOverrides(sub *subv1alpha1.Subscription, subspec *subv1alpha
 	}
 }
 
-// Finds MCE subscription by managed label. Returns nil if none found.
+/*
+GetManagedMCESubscription finds the MCE (MultiClusterEngine) subscription by managed label.
+Returns nil if none is found. It searches for an MCE subscription with the managed-by label set to "true"
+and returns it if found.
+*/
 func GetManagedMCESubscription(ctx context.Context, k8sClient client.Client) (*subv1alpha1.Subscription, error) {
 	subList := &subv1alpha1.SubscriptionList{}
 	err := k8sClient.List(ctx, subList, &client.MatchingLabels{
@@ -150,13 +174,19 @@ func GetManagedMCESubscription(ctx context.Context, k8sClient client.Client) (*s
 		return &subList.Items[0], nil
 	} else if len(subList.Items) > 1 {
 		// will require manual resolution
-		return nil, fmt.Errorf("multiple engine subscriptions found managed by MCH. Only one MCE subscription is supported")
+		return nil, fmt.Errorf(
+			"multiple engine subscriptions found managed by MCH. Only one MCE subscription is supported",
+		)
 	}
 
 	return nil, nil
 }
 
-// find MCE subscription. label it for future. return nil if no sub found.
+/*
+FindAndManageMCESubscription finds and manages the MCE (MultiClusterEngine) subscription. If it cannot find the
+subscription by label, it attempts to find it based on the package name. If found, it adds a managed-by label
+for future reference and returns the subscription.
+*/
 func FindAndManageMCESubscription(ctx context.Context, k8sClient client.Client) (*subv1alpha1.Subscription, error) {
 	// first find subscription via managed-by label
 	sub, err := GetManagedMCESubscription(ctx, k8sClient)
@@ -199,7 +229,11 @@ func FindAndManageMCESubscription(ctx context.Context, k8sClient client.Client) 
 
 }
 
-// CreatedByMCH returns true if the provided sub was created by the multiclusterhub-operator (as indicated by installer labels)
+/*
+CreatedByMCH returns true if the provided subscription was created by the multiclusterhub-operator
+(as indicated by installer labels). It checks whether the provided subscription has installer labels that match the
+provided MultiClusterHub instance's name and namespace.
+*/
 func CreatedByMCH(sub *subv1alpha1.Subscription, m *operatorv1.MultiClusterHub) bool {
 	l := sub.GetLabels()
 	if l == nil {
