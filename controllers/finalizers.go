@@ -23,34 +23,14 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"k8s.io/apimachinery/pkg/types"
-	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func (r *MultiClusterHubReconciler) cleanupAPIServices(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
-	err := r.Client.DeleteAllOf(
-		context.TODO(),
-		&apiregistrationv1.APIService{},
-		client.MatchingLabels{
-			"installer.name":      m.GetName(),
-			"installer.namespace": m.GetNamespace(),
-		},
-	)
-
-	if err != nil {
-		if errors.IsNotFound(err) {
-			reqLogger.Info("No matching API services to finalize. Continuing.")
-			return nil
-		}
-		reqLogger.Error(err, "Error while deleting API services")
-		return err
-	}
-
-	reqLogger.Info("API services finalized")
-	return nil
-}
-
+/*
+cleanupClusterRoles deletes cluster roles with matching installer labels to finalize the cleanup process.
+If cluster roles are not found, it logs and continues. In case of errors, it logs the error.
+*/
 func (r *MultiClusterHubReconciler) cleanupClusterRoles(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	err := r.Client.DeleteAllOf(context.TODO(), &rbacv1.ClusterRole{}, client.MatchingLabels{
 		"installer.name":      m.GetName(),
@@ -70,7 +50,12 @@ func (r *MultiClusterHubReconciler) cleanupClusterRoles(reqLogger logr.Logger, m
 	return nil
 }
 
-func (r *MultiClusterHubReconciler) cleanupClusterRoleBindings(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+/*
+cleanupClusterRoleBindings deletes cluster role bindings with matching installer labels to finalize the cleanup process.
+If cluster role bindings are not found, it logs and continues. In case of errors, it logs the error.
+*/
+func (r *MultiClusterHubReconciler) cleanupClusterRoleBindings(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub,
+) error {
 	err := r.Client.DeleteAllOf(context.TODO(), &rbacv1.ClusterRoleBinding{}, client.MatchingLabels{
 		"installer.name":      m.GetName(),
 		"installer.namespace": m.GetNamespace(),
@@ -88,6 +73,11 @@ func (r *MultiClusterHubReconciler) cleanupClusterRoleBindings(reqLogger logr.Lo
 	return nil
 }
 
+/*
+cleanupMultiClusterEngine handles the finalization of MultiClusterEngine resources. It checks for the existence of
+MultiClusterEngine and its Subscription. If found, it attempts to delete them. It also removes associated OperatorGroups
+and the Namespace if applicable. This function handles cleanup and termination.
+*/
 func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	ctx := context.Background()
 
@@ -172,6 +162,11 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 
 	return nil
 }
+
+/*
+cleanupNamespaces deletes a specific namespace used for backup purposes. If not found, it logs and continues.
+In case of errors, it logs the error.
+*/
 func (r *MultiClusterHubReconciler) cleanupNamespaces(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	ctx := context.Background()
 	clusterBackupNamespace := &corev1.Namespace{}
@@ -186,7 +181,13 @@ func (r *MultiClusterHubReconciler) cleanupNamespaces(reqLogger logr.Logger, m *
 
 	return nil
 }
-func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+
+/*
+cleanupAppSubscriptions cleans up Application Subscriptions and Helm Releases related to the installer.
+It updates Helm Releases if needed and deletes Application Subscriptions. It waits for termination if necessary.
+*/
+func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub,
+) error {
 	installerLabels := client.MatchingLabels{
 		"installer.name":      m.GetName(),
 		"installer.namespace": m.GetNamespace(),
@@ -221,7 +222,9 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 	// If there are more appsubs with our installer label than helmreleases, update helmreleases
 	if len(appSubList.Items) > len(helmReleaseList.Items) {
 		for _, appsub := range appSubList.Items {
-			helmReleaseName := fmt.Sprintf("%s-%s", strings.Replace(appsub.GetName(), "-sub", "", 1), appsub.GetUID()[0:5])
+			helmReleaseName := fmt.Sprintf(
+				"%s-%s", strings.Replace(appsub.GetName(), "-sub", "", 1), appsub.GetUID()[0:5],
+			)
 
 			helmRelease := &unstructured.Unstructured{}
 			helmRelease.SetGroupVersionKind(schema.GroupVersionKind{
@@ -265,7 +268,9 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 
 	if len(appSubList.Items) != 0 || len(helmReleaseList.Items) != 0 {
 		reqLogger.Info("Waiting for helmreleases to be terminated")
-		waiting := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, HelmReleaseTerminatingReason, "Waiting for helmreleases to terminate.")
+		waiting := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, HelmReleaseTerminatingReason,
+			"Waiting for helmreleases to terminate.")
+
 		SetHubCondition(&m.Status, *waiting)
 		return fmt.Errorf("Waiting for helmreleases to be terminated")
 	}
@@ -274,7 +279,13 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 	return nil
 }
 
-func (r *MultiClusterHubReconciler) orphanOwnedMultiClusterEngine(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+/*
+orphanOwnedMultiClusterEngine orphans a preexisting MultiClusterEngine resource if it exists. It checks for the
+existence of a MultiClusterEngine and, if found, removes the installer's ownership. This allows the MultiClusterEngine
+to continue its lifecycle independently.
+*/
+func (r *MultiClusterHubReconciler) orphanOwnedMultiClusterEngine(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub,
+) error {
 	ctx := context.Background()
 
 	mce, err := multiclusterengine.GetManagedMCE(ctx, r.Client)
@@ -302,6 +313,9 @@ func (r *MultiClusterHubReconciler) orphanOwnedMultiClusterEngine(reqLogger logr
 	return nil
 }
 
+/*
+BackupNamespace returns a reference to a specific namespace used for backup purposes.
+*/
 func BackupNamespace() *corev1.Namespace {
 	return &corev1.Namespace{
 		TypeMeta: metav1.TypeMeta{
@@ -314,6 +328,9 @@ func BackupNamespace() *corev1.Namespace {
 	}
 }
 
+/*
+BackupNamespaceUnstructured returns an unstructured representation of a specific namespace used for backup purposes.
+*/
 func BackupNamespaceUnstructured() *unstructured.Unstructured {
 	u := &unstructured.Unstructured{}
 	u.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Kind: "Namespace", Version: "v1"})
