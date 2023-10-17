@@ -392,7 +392,8 @@ func TrackedNamespaces(m *operatorsv1.MultiClusterHub) []string {
 
 /*
 GetDisableClusterImageSets determines whether auto-updates for cluster image sets should be disabled.
-It checks the MultiClusterHub's configuration and returns "true" if the auto-update is disabled, or "false" if it is not.
+It checks the MultiClusterHub's configuration and returns "true" if the auto-update is disabled, or "false"
+if it is not.
 */
 func GetDisableClusterImageSets(m *operatorsv1.MultiClusterHub) string {
 	if m.Spec.DisableUpdateClusterImageSets {
