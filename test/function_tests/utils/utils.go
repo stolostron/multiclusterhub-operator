@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -220,11 +219,11 @@ var (
 
 	// AppMap ...
 	AppMap = map[string]struct{}{
-		"console-chart-v2": struct{}{},
-		"grc":              struct{}{},
-		"policyreport":     struct{}{},
-		"search":           struct{}{},
-		"search-prod":      struct{}{},
+		"console-chart-v2": {},
+		"grc":              {},
+		"policyreport":     {},
+		"search":           {},
+		"search-prod":      {},
 	}
 
 	// CSVName ...
@@ -1086,7 +1085,7 @@ func ValidateManagedCluster(importResourcesShouldExist bool) error {
 	By("- Confirming Necessary Resources")
 	// mc, _ := DynamicKubeClient.Resource(GVRManagedCluster).Get(context.TODO(), "local-cluster", metav1.GetOptions{})
 	if err := ValidateImportHubResourcesExist(importResourcesShouldExist); err != nil {
-		return fmt.Errorf("Resources are as they shouldn't")
+		return fmt.Errorf("resources are as they shouldn't")
 	}
 	if importResourcesShouldExist {
 		if val := validateManagedClusterConditions(); val != nil {
@@ -1122,7 +1121,7 @@ func ValidateDeploymentPolicies() error {
 		deploymentName := deployment.GetName()
 		if deploymentName != "multicluster-operators-application" && deploymentName != "hive-operator" && deploymentName != "multicluster-operators-channel" && deploymentName != "multicluster-operators-hub-subscription" && deploymentName != "multicluster-operators-standalone-subscription" {
 			policy := deployment.Object["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"].(map[string]interface{})["containers"].([]interface{})[0].(map[string]interface{})["imagePullPolicy"]
-			fmt.Println(fmt.Sprintf(deploymentName))
+			fmt.Println(deploymentName)
 			Expect(policy).To(BeEquivalentTo("IfNotPresent"))
 		}
 	}
@@ -1171,7 +1170,7 @@ func ValidateMCHTolerations() error {
 		var d appsv1.Deployment
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(deployment.Object, &d)
 		if err != nil {
-			return fmt.Errorf("Could not convert from unstructured to deployment for %s: %s", deployment.GetName(), err)
+			return fmt.Errorf("could not convert from unstructured to deployment for %s: %s", deployment.GetName(), err)
 		}
 		if _, ok := AppMap[d.Labels["app"]]; !ok {
 			continue
@@ -1186,7 +1185,7 @@ func ValidateMCHTolerations() error {
 				}
 			}
 			if !found {
-				return fmt.Errorf("Test toleration not found on deployment %s: %#v", d.Name, testToleration)
+				return fmt.Errorf("test toleration not found on deployment %s: %#v", d.Name, testToleration)
 			}
 		}
 	}
@@ -1217,7 +1216,7 @@ func ToggleDisableUpdateClusterImageSets(disableUpdateCIS bool) error {
 	Expect(err).To(BeNil())
 	mch, err = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
 	if disableUpdateClusterImageSets := mch.Object["spec"].(map[string]interface{})[disableUpdateClusterImageSetsString].(bool); disableUpdateClusterImageSets != disableUpdateCIS {
-		return fmt.Errorf("Spec was not updated")
+		return fmt.Errorf("spec was not updated")
 	}
 	return nil
 }
@@ -1376,7 +1375,7 @@ func CreateDiscoveryConfig() {
 		return
 	}
 
-	discoveryConfigByte, err := ioutil.ReadFile("../resources/discoveryconfig.yaml")
+	discoveryConfigByte, err := os.ReadFile("../resources/discoveryconfig.yaml")
 	Expect(err).To(BeNil())
 
 	discoveryConfig := &unstructured.Unstructured{Object: map[string]interface{}{}}
@@ -1391,7 +1390,7 @@ func CreateDiscoveryConfig() {
 func DeleteDiscoveryConfig() {
 	By("- Deleting DiscoveryConfig CR if it exists")
 
-	discoveryConfigByte, err := ioutil.ReadFile("../resources/discoveryconfig.yaml")
+	discoveryConfigByte, err := os.ReadFile("../resources/discoveryconfig.yaml")
 	Expect(err).To(BeNil())
 
 	discoveryConfig := &unstructured.Unstructured{Object: map[string]interface{}{}}
@@ -1410,7 +1409,7 @@ func CreateObservabilityCRD() {
 		return
 	}
 
-	crd, err := ioutil.ReadFile("../resources/observability-crd.yaml")
+	crd, err := os.ReadFile("../resources/observability-crd.yaml")
 	Expect(err).To(BeNil())
 
 	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
@@ -1429,7 +1428,7 @@ func CreateMultiClusterEngineCRD() {
 		return
 	}
 
-	crd, err := ioutil.ReadFile("../resources/multiclusterengine-crd.yaml")
+	crd, err := os.ReadFile("../resources/multiclusterengine-crd.yaml")
 	Expect(err).To(BeNil())
 
 	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
@@ -1449,7 +1448,7 @@ func CreateMultiClusterEngineCR() {
 		return
 	}
 
-	crd, err := ioutil.ReadFile("../resources/multiclusterengine-cr.yaml")
+	crd, err := os.ReadFile("../resources/multiclusterengine-cr.yaml")
 	Expect(err).To(BeNil())
 
 	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
@@ -1464,7 +1463,7 @@ func CreateMultiClusterEngineCR() {
 func DeleteMultiClusterEngineCR() {
 	By("- Deleting MultiClusterEngine CR if it exists")
 
-	crd, err := ioutil.ReadFile("../resources/multiclusterengine-cr.yaml")
+	crd, err := os.ReadFile("../resources/multiclusterengine-cr.yaml")
 	Expect(err).To(BeNil())
 
 	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
@@ -1479,7 +1478,7 @@ func DeleteMultiClusterEngineCR() {
 func DeleteMultiClusterEngineCRD() {
 	By("- Deleting MultiClusterEngine CRD if it exists")
 
-	crd, err := ioutil.ReadFile("../resources/multiclusterengine-crd.yaml")
+	crd, err := os.ReadFile("../resources/multiclusterengine-crd.yaml")
 	Expect(err).To(BeNil())
 
 	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
@@ -1499,7 +1498,7 @@ func CreateObservabilityCR() {
 		return
 	}
 
-	crd, err := ioutil.ReadFile("../resources/observability-cr.yaml")
+	crd, err := os.ReadFile("../resources/observability-cr.yaml")
 	Expect(err).To(BeNil())
 
 	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
@@ -1514,7 +1513,7 @@ func CreateObservabilityCR() {
 func DeleteObservabilityCR() {
 	By("- Deleting Observability CR if it exists")
 
-	crd, err := ioutil.ReadFile("../resources/observability-cr.yaml")
+	crd, err := os.ReadFile("../resources/observability-cr.yaml")
 	Expect(err).To(BeNil())
 
 	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
@@ -1529,7 +1528,7 @@ func DeleteObservabilityCR() {
 func DeleteObservabilityCRD() {
 	By("- Deleting Observability CRD if it exists")
 
-	crd, err := ioutil.ReadFile("../resources/observability-crd.yaml")
+	crd, err := os.ReadFile("../resources/observability-crd.yaml")
 	Expect(err).To(BeNil())
 
 	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
@@ -1552,14 +1551,14 @@ func getCRDs() ([]string, error) {
 	}
 
 	var crds []string
-	files, err := ioutil.ReadDir(crdDir)
+	files, err := os.ReadDir(crdDir)
 	Expect(err).To(BeNil())
 	for _, file := range files {
 		if filepath.Ext(file.Name()) != ".yaml" {
 			continue
 		}
 		filePath := path.Join(crdDir, file.Name())
-		src, err := ioutil.ReadFile(filepath.Clean(filePath)) // #nosec G304 (filepath cleaned)
+		src, err := os.ReadFile(filepath.Clean(filePath)) // #nosec G304 (filepath cleaned)
 		if err != nil {
 			return nil, err
 		}

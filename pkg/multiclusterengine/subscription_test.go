@@ -10,7 +10,6 @@ import (
 
 	"github.com/onsi/gomega"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,7 +21,7 @@ import (
 func TestNewSubscription(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	mch := &operatorsv1.MultiClusterHub{
+	mch := &operatorv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "mch",
 			Namespace: "mch-ns",
@@ -59,7 +58,7 @@ func TestNewSubscription(t *testing.T) {
 func TestRenderSubscription(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	mch := &operatorsv1.MultiClusterHub{
+	mch := &operatorv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "mch",
 			Namespace: "mch-ns",
@@ -100,9 +99,9 @@ func TestRenderSubscription(t *testing.T) {
 }
 
 func TestGetAnnotationOverrides(t *testing.T) {
-	mch := &operatorsv1.MultiClusterHub{
+	mch := &operatorv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec:       operatorsv1.MultiClusterHubSpec{},
+		Spec:       operatorv1.MultiClusterHubSpec{},
 	}
 
 	tests := []struct {
@@ -250,7 +249,7 @@ func TestFindAndManageMCESubscription(t *testing.T) {
 }
 
 func TestCreatedByMCH(t *testing.T) {
-	mch := &operatorsv1.MultiClusterHub{
+	mch := &operatorv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "mch",
 			Namespace: "mch-ns",
