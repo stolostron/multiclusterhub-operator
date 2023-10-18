@@ -580,7 +580,29 @@ spec:
             metadata:
               labels:
                 name: multiclusterhub-operator
+                ocm-antiaffinity-selector: multiclusterhub-operator
             spec:
+              affinity:
+                podAntiAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                  - podAffinityTerm:
+                      labelSelector:
+                        matchExpressions:
+                        - key: ocm-antiaffinity-selector
+                          operator: In
+                          values:
+                          - multiclusterhub-operator
+                      topologyKey: topology.kubernetes.io/zone
+                    weight: 70
+                  - podAffinityTerm:
+                      labelSelector:
+                        matchExpressions:
+                        - key: ocm-antiaffinity-selector
+                          operator: In
+                          values:
+                          - multiclusterhub-operator
+                      topologyKey: kubernetes.io/hostname
+                    weight: 35
               containers:
               - args:
                 - --leader-elect
@@ -619,12 +641,19 @@ spec:
                     memory: 256Mi
                 securityContext:
                   allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                    - ALL
+                  privileged: false
+                  readOnlyRootFilesystem: true
                 volumeMounts:
                 - mountPath: /tmp/k8s-webhook-server/serving-certs
                   name: cert
                   readOnly: true
               securityContext:
                 runAsNonRoot: true
+                seccompProfile:
+                  type: RuntimeDefault
               serviceAccountName: multiclusterhub-operator
               terminationGracePeriodSeconds: 10
               volumes:
