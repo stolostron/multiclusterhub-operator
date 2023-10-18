@@ -730,7 +730,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 			By("Ensuring MCE is created")
 			Eventually(func() bool {
 				mce := &mcev1.MultiClusterEngine{}
-				err := k8sClient.Get(ctx, resources.MCELookupKey, mce)
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: mch.GetName() + "-engine"}, mce)
 				return err == nil
 			}, time.Second*120, interval).Should(BeTrue())
 
