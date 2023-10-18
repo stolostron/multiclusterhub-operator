@@ -23,7 +23,6 @@ import (
 	ocmapi "open-cluster-management.io/api/addon/v1alpha1"
 
 	configv1 "github.com/openshift/api/config/v1"
-	netv1 "github.com/openshift/api/config/v1"
 	consolev1 "github.com/openshift/api/operator/v1"
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
@@ -353,7 +352,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 		Expect(operatorv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(apiregistrationv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(apixv1.AddToScheme(clientScheme)).Should(Succeed())
-		Expect(netv1.AddToScheme(clientScheme)).Should(Succeed())
+		Expect(configv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(olmv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(subv1alpha1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(mcev1.AddToScheme(clientScheme)).Should(Succeed())
@@ -733,7 +732,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 				mce := &mcev1.MultiClusterEngine{}
 				err := k8sClient.Get(ctx, resources.MCELookupKey, mce)
 				return err == nil
-			}, timeout, interval).Should(BeTrue())
+			}, time.Second*120, interval).Should(BeTrue())
 
 		})
 	})
