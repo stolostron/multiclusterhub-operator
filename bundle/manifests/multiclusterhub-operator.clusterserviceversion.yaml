@@ -619,6 +619,8 @@ spec:
                     memory: 256Mi
                 securityContext:
                   allowPrivilegeEscalation: false
+                  privileged: false
+                  readOnlyRootFilesystem: true
                 volumeMounts:
                 - mountPath: /tmp/k8s-webhook-server/serving-certs
                   name: cert

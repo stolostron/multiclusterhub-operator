@@ -36,6 +36,8 @@ spec:
         name: multiclusterhub-operator
         securityContext:
           allowPrivilegeEscalation: false
+          privileged: false
+          readOnlyRootFilesystem: true
         livenessProbe:
           httpGet:
             path: /healthz
