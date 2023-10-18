@@ -724,7 +724,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 				return false
 			}, timeout, interval).Should(BeTrue())
 
-			a := mch.GetAnnotations()
+			a := make(map[string]string)
 			a["deploymentMode"] = string(operatorv1.ModeHosted)
 			mch.SetAnnotations(a)
 
