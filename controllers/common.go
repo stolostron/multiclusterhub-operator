@@ -452,24 +452,6 @@ func (r *MultiClusterHubReconciler) listCustomResources(m *operatorv1.MultiClust
 	return ret, nil
 }
 
-// addInstallerLabel adds the installer name and namespace to a deployment's labels
-// so it can be watched. Returns false if the labels are already present.
-func addInstallerLabel(d *appsv1.Deployment, name string, ns string) bool {
-	updated := false
-	if d.Labels == nil {
-		d.Labels = map[string]string{}
-	}
-	if d.Labels["installer.name"] != name {
-		d.Labels["installer.name"] = name
-		updated = true
-	}
-	if d.Labels["installer.namespace"] != ns {
-		d.Labels["installer.namespace"] = ns
-		updated = true
-	}
-	return updated
-}
-
 // addInstallerLabelSecret adds the installer name and namespace to a secret's labels
 // so it can be watched. Returns false if the labels are already present.
 func addInstallerLabelSecret(d *corev1.Secret, name string, ns string) bool {
@@ -489,7 +471,8 @@ func addInstallerLabelSecret(d *corev1.Secret, name string, ns string) bool {
 }
 
 // ensureMCESubscription verifies resources needed for MCE are created
-func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context,
+	multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	mceSub, err := multiclusterengine.FindAndManageMCESubscription(ctx, r.Client)
 	if err != nil {
 		return ctrl.Result{Requeue: true}, err
@@ -556,7 +539,8 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(ctx context.Context, multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(ctx context.Context,
+	multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	// confirm subscription and reqs exist and are configured correctly
 	result, err := r.ensureMCESubscription(ctx, multiClusterHub)
 	if result != (ctrl.Result{}) {
@@ -887,8 +871,10 @@ func (r *MultiClusterHubReconciler) ensureNoSearchCR(m *operatorv1.MultiClusterH
 
 }
 
-// Checks if OCP Console is enabled and return true if so. If <OCP v4.12, always return true
-// Otherwise check in the EnabledCapabilities spec for OCP console
+/*
+CheckConsole Checks if OCP Console is enabled and return true if so. If <OCP v4.12, always return true
+Otherwise check in the EnabledCapabilities spec for OCP console
+*/
 func (r *MultiClusterHubReconciler) CheckConsole(ctx context.Context) (bool, error) {
 	versionStatus := &configv1.ClusterVersion{}
 	err := r.Client.Get(ctx, types.NamespacedName{Name: "version"}, versionStatus)
@@ -906,9 +892,11 @@ func (r *MultiClusterHubReconciler) CheckConsole(ctx context.Context) (bool, err
 	if err != nil {
 		return false, fmt.Errorf("failed to convert ocp version to semver compatible value: %w", err)
 	}
-	// -0 allows for prerelease builds to pass the validation.
-	// If -0 is removed, developer/rc builds will not pass this check
-	//OCP Console can only be disabled in OCP 4.12+
+	/*
+		-0 allows for prerelease builds to pass the validation.
+		If -0 is removed, developer/rc builds will not pass this check
+		OCP Console can only be disabled in OCP 4.12+
+	*/
 	constraint, err := semver.NewConstraint(">= 4.12.0-0")
 	if err != nil {
 		return false, fmt.Errorf("failed to set ocp version constraint: %w", err)

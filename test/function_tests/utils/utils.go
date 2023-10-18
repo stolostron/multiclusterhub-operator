@@ -575,7 +575,7 @@ func waitForUnavailable(dName string, timeout time.Duration) error {
 		}
 		time.Sleep(2 * time.Second)
 	}
-	return fmt.Errorf("Deploy failed to become unready after %s", timeout)
+	return fmt.Errorf("deploy failed to become unready after %s", timeout)
 }
 
 // waitForAvailable waits for the deployment to be available, with timeout
@@ -591,7 +591,7 @@ func waitForAvailable(dName string, timeout time.Duration) error {
 		}
 		time.Sleep(2 * time.Second)
 	}
-	return fmt.Errorf("Repo failed to become unready after %s", timeout)
+	return fmt.Errorf("repo failed to become unready after %s", timeout)
 }
 
 // GetMCHStatus gets the mch object and parses its status
@@ -709,7 +709,7 @@ func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 		configmaps, err := KubeClient.CoreV1().ConfigMaps(MCHNamespace).List(context.TODO(), listOptions)
 		Expect(err).Should(BeNil())
 		if len(configmaps.Items) != 0 {
-			return fmt.Errorf("Expecting configmaps to terminate")
+			return fmt.Errorf("expecting configmaps to terminate")
 		}
 		return nil
 	}, GetWaitInMinutes()*60, 1).Should(BeNil())
@@ -754,7 +754,7 @@ func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Println(fmt.Sprintf("Resources cleaned up by clean-up script:\n %s\n", bytes.NewBuffer(out).String()))
+		log.Printf("Resources cleaned up by clean-up script:\n %s\n", bytes.NewBuffer(out).String())
 
 	}
 	return nil
@@ -852,7 +852,7 @@ func ValidateMCH() error {
 		for k, v := range components.(map[string]interface{}) {
 			compStatus := v.(map[string]interface{})["status"].(string)
 			if compStatus != "True" {
-				return fmt.Errorf("Component: %s does not have status of 'true'", k)
+				return fmt.Errorf("component: %s does not have status of 'true'", k)
 			}
 		}
 	}
@@ -869,11 +869,11 @@ func ValidateMCH() error {
 	unstructuredAppSubs := listByGVR(DynamicKubeClient, GVRAppSub, MCHNamespace, 1, len(AppSubSlice))
 	for _, appsub := range unstructuredAppSubs.Items {
 		if _, ok := appsub.Object["status"]; !ok {
-			return fmt.Errorf("Appsub: %s has no 'status' field", appsub.GetName())
+			return fmt.Errorf("appsub: %s has no 'status' field", appsub.GetName())
 		}
 		status, ok := appsub.Object["status"].(map[string]interface{})
 		if !ok || status == nil {
-			return fmt.Errorf("Appsub: %s has no 'status' map", appsub.GetName())
+			return fmt.Errorf("appsub: %s has no 'status' map", appsub.GetName())
 		}
 		klog.V(5).Infof("Checking Appsub - %s", appsub.GetName())
 		Expect(status["message"]).To(Equal("Active"))
@@ -991,7 +991,7 @@ func ValidateComponentStatusExist() error {
 		} else {
 			for k, v := range components.(map[string]interface{}) {
 				if _, ok := v.(map[string]interface{})["status"].(string); !ok {
-					return fmt.Errorf("Component: %s status does not exist", k)
+					return fmt.Errorf("component: %s status does not exist", k)
 				}
 			}
 		}
@@ -1226,8 +1226,9 @@ func ToggleDisableUpdateClusterImageSets(disableUpdateCIS bool) error {
 func UpdateAnnotations(annotations map[string]string) {
 	mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
 	Expect(err).To(BeNil())
+
 	mch.SetAnnotations(annotations)
-	mch, err = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
+	_, err = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
 	Expect(err).To(BeNil())
 }
 
@@ -1321,15 +1322,15 @@ func GetSubscriptionSpec() map[string]interface{} {
 // GetInstallPlanNameFromSub ...
 func GetInstallPlanNameFromSub(sub *unstructured.Unstructured) (string, error) {
 	if _, ok := sub.Object["status"]; !ok {
-		return "", fmt.Errorf("Sub: %s has no 'status' field", sub.GetName())
+		return "", fmt.Errorf("sub: %s has no 'status' field", sub.GetName())
 	}
 	status, ok := sub.Object["status"].(map[string]interface{})
 	if !ok || status == nil {
-		return "", fmt.Errorf("Sub: %s has no 'status' map", sub.GetName())
+		return "", fmt.Errorf("sub: %s has no 'status' map", sub.GetName())
 	}
 	installplan, ok := status["installplan"].(map[string]interface{})
 	if !ok || status == nil {
-		return "", fmt.Errorf("Sub: %s has no 'installplan' map", sub.GetName())
+		return "", fmt.Errorf("sub: %s has no 'installplan' map", sub.GetName())
 	}
 
 	return installplan["name"].(string), nil
@@ -1339,7 +1340,7 @@ func GetInstallPlanNameFromSub(sub *unstructured.Unstructured) (string, error) {
 func MarkInstallPlanAsApproved(ip *unstructured.Unstructured) (*unstructured.Unstructured, error) {
 	spec, ok := ip.Object["spec"].(map[string]interface{})
 	if !ok || spec == nil {
-		return nil, fmt.Errorf("Installplan: %s has no 'spec' map", ip.GetName())
+		return nil, fmt.Errorf("installplan: %s has no 'spec' map", ip.GetName())
 	}
 	spec["approved"] = true
 	return ip, nil
@@ -1348,10 +1349,7 @@ func MarkInstallPlanAsApproved(ip *unstructured.Unstructured) (*unstructured.Uns
 // ShouldSkipSubscription skips subscription operations if set as true
 func ShouldSkipSubscription() bool {
 	skipSubscription := os.Getenv("skipSubscription")
-	if skipSubscription == "true" {
-		return true
-	}
-	return false
+	return skipSubscription == "true"
 }
 
 // GetCurrentVersionFromMCH ...
@@ -1584,12 +1582,12 @@ func getCRDs() ([]string, error) {
 
 // CoffeeBreak ...
 func CoffeeBreak(minutes int) {
-	log.Println(fmt.Sprintf("Starting coffee break for %d minutes...\n", minutes))
+	log.Printf("Starting coffee break for %d minutes...\n", minutes)
 	slept_minutes := 0
 	for slept_minutes < minutes {
 		time.Sleep(time.Duration(1) * time.Minute)
 		slept_minutes += 1
-		log.Println(fmt.Sprintf("... slept %d minutes...\n", slept_minutes))
+		log.Printf("... slept %d minutes...\n", slept_minutes)
 	}
-	log.Println(fmt.Sprintf("... ending coffee break after %d minutes!\n", slept_minutes))
+	log.Printf("... ending coffee break after %d minutes!\n", slept_minutes)
 }

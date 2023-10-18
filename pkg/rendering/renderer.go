@@ -184,7 +184,8 @@ func RenderCRDs(crdDir string) ([]*unstructured.Unstructured, []error) {
 	return crds, errs
 }
 
-func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]string) ([]*unstructured.Unstructured, []error) {
+func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]string) (
+	[]*unstructured.Unstructured, []error) {
 	log := log.FromContext(context.Background())
 	var templates []*unstructured.Unstructured
 	errs := []error{}
@@ -212,7 +213,8 @@ func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]st
 	return templates, nil
 }
 
-func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]string) ([]*unstructured.Unstructured, []error) {
+func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]string) (
+	[]*unstructured.Unstructured, []error) {
 	log := log.FromContext(context.Background())
 	errs := []error{}
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
@@ -233,7 +235,8 @@ func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]st
 
 }
 
-func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[string]string) ([]*unstructured.Unstructured, []error) {
+func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[string]string) (
+	[]*unstructured.Unstructured, []error) {
 	log := log.FromContext(context.Background())
 	var templates []*unstructured.Unstructured
 	errs := []error{}
@@ -282,7 +285,6 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 }
 
 func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[string]string) {
-
 	values.Global.ImageOverrides = images
 
 	values.Global.PullPolicy = string(utils.GetImagePullPolicy(mch))

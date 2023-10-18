@@ -6,7 +6,7 @@ package renderer
 import (
 
 	// "reflect"
-	"fmt"
+
 	"os"
 	"reflect"
 	"testing"
@@ -268,7 +268,7 @@ func TestRenderCRDs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, errs := RenderCRDs(tt.crdDir)
-			if errs != nil && len(errs) > 1 {
+			if len(errs) > 1 {
 				t.Errorf("RenderCRDs() got = %v, want %v", errs, nil)
 			}
 
@@ -309,23 +309,23 @@ func TestOADPAnnotation(t *testing.T) {
 	test1, test2, test3, test4, test5 := GetOADPConfig(mch)
 
 	if test1 != "redhat-oadp-operator2" {
-		t.Error(fmt.Sprintf("Cluster Backup missing OADP overrides for name"))
+		t.Errorf("Cluster Backup missing OADP overrides for name")
 	}
 
 	if test2 != "stable-1.0" {
-		t.Error(fmt.Sprintf("Cluster Backup missing OADP overrides for channel"))
+		t.Errorf("Cluster Backup missing OADP overrides for channel")
 	}
 
 	if test3 != "Manual" {
-		t.Error(fmt.Sprintf("Cluster Backup missing OADP overrides for install plan"))
+		t.Errorf("Cluster Backup missing OADP overrides for install plan")
 	}
 
 	if test4 != "redhat-operators2" {
-		t.Error(fmt.Sprintf("Cluster Backup missing OADP overrides for source"))
+		t.Errorf("Cluster Backup missing OADP overrides for source")
 	}
 
 	if test5 != "openshift-marketplace2" {
-		t.Error(fmt.Sprintf("Cluster Backup missing OADP overrides for source namespace"))
+		t.Errorf("Cluster Backup missing OADP overrides for source namespace")
 	}
 
 	mch = &v1.MultiClusterHub{
@@ -337,31 +337,22 @@ func TestOADPAnnotation(t *testing.T) {
 	test1, test2, test3, test4, test5 = GetOADPConfig(mch)
 
 	if test1 != "redhat-oadp-operator" {
-		t.Error(fmt.Sprintf("Cluster Backup missing OADP overrides for name"))
+		t.Errorf("Cluster Backup missing OADP overrides for name")
 	}
 
 	if test2 != "stable-1.2" {
-		t.Error(fmt.Sprintf("Cluster Backup missing OADP overrides for channel"))
+		t.Errorf("Cluster Backup missing OADP overrides for channel")
 	}
 
 	if test3 != "Automatic" {
-		t.Error(fmt.Sprintf("Cluster Backup missing OADP overrides for install plan"))
+		t.Errorf("Cluster Backup missing OADP overrides for install plan")
 	}
 
 	if test4 != "redhat-operators" {
-		t.Error(fmt.Sprintf("Cluster Backup missing OADP overrides for source"))
+		t.Errorf("Cluster Backup missing OADP overrides for source")
 	}
 
 	if test5 != "openshift-marketplace" {
-		t.Error(fmt.Sprintf("Cluster Backup missing OADP overrides for source namespace"))
+		t.Errorf("Cluster Backup missing OADP overrides for source namespace")
 	}
 }
-
-// func testFailures(t *testing.T) {
-// os.Setenv("CRD_OVERRIDE", "pkg/doesnotexist")
-// _, errs := RenderCRDs(crdsDir)
-// if errs == nil {
-// 	t.Fatalf("Should have received an error")
-// }
-// os.Unsetenv("CRD_OVERRIDE")
-// }
