@@ -15,7 +15,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// NewHostedMultiClusterEngine returns a hosted MCE configured from a Multiclusterhub
+/*
+NewHostedMultiClusterEngine creates a hosted MultiClusterEngine (MCE) configured based on the provided MultiClusterHub
+(MCH). It constructs the MCE object with labels, annotations, and various configuration options derived from the MCH.
+*/
 func NewHostedMultiClusterEngine(m *operatorv1.MultiClusterHub) *mcev1.MultiClusterEngine {
 	labels := map[string]string{
 		"installer.name":        m.GetName(),
@@ -53,7 +56,13 @@ func NewHostedMultiClusterEngine(m *operatorv1.MultiClusterHub) *mcev1.MultiClus
 	return mce
 }
 
-func RenderHostedMultiClusterEngine(existingMCE *mcev1.MultiClusterEngine, m *operatorv1.MultiClusterHub) *mcev1.MultiClusterEngine {
+/*
+RenderHostedMultiClusterEngine takes an existing hosted MultiClusterEngine (MCE) and a MultiClusterHub (MCH) as input.
+It updates and returns a modified MCE by applying changes from the MCH. This includes updating annotations,
+image pull secret, tolerations, node selector, availability configuration, and component overrides.
+*/
+func RenderHostedMultiClusterEngine(existingMCE *mcev1.MultiClusterEngine,
+	m *operatorv1.MultiClusterHub) *mcev1.MultiClusterEngine {
 	copy := existingMCE.DeepCopy()
 
 	// add annotations
@@ -94,12 +103,18 @@ func RenderHostedMultiClusterEngine(existingMCE *mcev1.MultiClusterEngine, m *op
 	return copy
 }
 
-// Currently "<mch-name>-engine"
+/*
+HostedMCEName generates a name for the hosted MultiClusterEngine (MCE) based on the name of the provided
+MultiClusterHub (MCH). The generated name follows the pattern "<mch-name>-engine."
+*/
 func HostedMCEName(m *operatorv1.MultiClusterHub) string {
 	return m.Name + "-engine"
 }
 
-// Currently "<mch-namespace>-engine"
+/*
+HostedMCENamespace creates a Kubernetes namespace object for the hosted MultiClusterEngine (MCE) based on the
+namespace of the provided MultiClusterHub (MCH). The namespace name follows the pattern "<mch-namespace>-engine."
+*/
 func HostedMCENamespace(m *operatorv1.MultiClusterHub) *corev1.Namespace {
 	namespace := m.Namespace + "-engine"
 	return &corev1.Namespace{
@@ -113,7 +128,11 @@ func HostedMCENamespace(m *operatorv1.MultiClusterHub) *corev1.Namespace {
 	}
 }
 
-// GetHostedAnnotations copies annotations relevant to MCE from MCH.
+/*
+GetHostedAnnotations extracts and copies relevant annotations from the MultiClusterHub (MCH) to be associated
+with the hosted MultiClusterEngine (MCE). It includes annotations related to image repositories, kubeconfig, and
+deployment mode. The generated annotations are returned as a map.
+*/
 func GetHostedAnnotations(m *operatorv1.MultiClusterHub) map[string]string {
 	mceAnnotations := make(map[string]string)
 	if m.GetAnnotations() != nil {
@@ -129,8 +148,13 @@ func GetHostedAnnotations(m *operatorv1.MultiClusterHub) map[string]string {
 	return mceAnnotations
 }
 
-// GetHostedMCE returns the associated MCE if it exists
-func GetHostedMCE(ctx context.Context, k8sClient client.Client, m *operatorv1.MultiClusterHub) (*mcev1.MultiClusterEngine, error) {
+/*
+GetHostedMCE retrieves the associated hosted MultiClusterEngine (MCE) based on the provided MultiClusterHub (MCH)
+using the name derived from the MCH. It interacts with a Kubernetes client to fetch the MCE.
+If the MCE doesn't exist, it returns nil.
+*/
+func GetHostedMCE(ctx context.Context, k8sClient client.Client, m *operatorv1.MultiClusterHub) (
+	*mcev1.MultiClusterEngine, error) {
 	mce := &mcev1.MultiClusterEngine{}
 	// We can derive the name of the MCE from MCH name
 	key := types.NamespacedName{Name: HostedMCEName(m)}

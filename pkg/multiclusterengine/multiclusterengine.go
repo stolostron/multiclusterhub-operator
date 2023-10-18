@@ -23,26 +23,99 @@ import (
 )
 
 var (
-	// prod MCE variables
-	channel                = "stable-2.4"
-	installPlanApproval    = subv1alpha1.ApprovalAutomatic
-	packageName            = "multicluster-engine"
-	catalogSourceName      = "redhat-operators"
-	catalogSourceNamespace = "openshift-marketplace" // https://olm.operatorframework.io/docs/tasks/troubleshooting/subscription/#a-subscription-in-namespace-x-cant-install-operators-from-a-catalogsource-in-namespace-y
-	operandNameSpace       = "multicluster-engine"
+	/*
+		channel represents the channel used for the MultiClusterEngine (MCE) subscription.
+		In the production environment, it is set to "stable-2.4" by default.
+		The channel specifies the update channel from which updates and new versions of the MCE are obtained.
+	*/
+	channel = "stable-2.4"
 
-	// community MCE variables
-	communityChannel           = "community-0.1"
-	communityPackageName       = "stolostron-engine"
+	/*
+		installPlanApproval sets the approval strategy for the installation plan of the MCE subscription.
+		In the production environment, it is set to `subv1alpha1.ApprovalAutomatic`, indicating that
+		installation approvals are automatic. InstallPlanApproval defines how installation approval is handled
+		within Operator Lifecycle Manager (OLM).
+	*/
+	installPlanApproval = subv1alpha1.ApprovalAutomatic
+
+	/*
+		packageName specifies the name of the package corresponding to the MultiClusterEngine.
+		In the production environment, it is set to "multicluster-engine." The package name is used to identify
+		the MCE package within the OLM.
+	*/
+	packageName = "multicluster-engine"
+
+	/*
+		catalogSourceName stores the name of the catalog source for the MCE. In the production environment,
+		it is set to "redhat-operators," which is the source where the MCE operator is cataloged.
+		Catalog sources provide a repository of operators for OLM.
+	*/
+	catalogSourceName = "redhat-operators"
+
+	/*
+		catalogSourceNamespace the namespace in which the catalog source is located. In the production environment,
+		it is set to "openshift-marketplace." This namespace contains the catalog source that provides
+		access to operators, including the MultiClusterEngine.
+
+		https://olm.operatorframework.io/docs/troubleshooting/subscription
+	*/
+	catalogSourceNamespace = "openshift-marketplace"
+
+	/*
+		operandNameSpace the namespace where the MultiClusterEngine (MCE) operates. In the production environment,
+		it is set to "multicluster-engine." The operand namespace is where the MCE resources and components are
+		deployed.
+	*/
+	operandNameSpace = "multicluster-engine"
+
+	/*
+		communityChannel represents the channel used for the Community version of the MultiClusterEngine (MCE).
+		In the community environment, it is set to "community-0.1." The community channel is used for the community
+		edition of the MCE.
+	*/
+	communityChannel = "community-0.1"
+
+	/*
+		communityPackageName specifies the name of the package for the Community MultiClusterEngine.
+		In the community environment, it is set to "stolostron-engine." This package name is used to identify
+		the Community MCE package within the OLM.
+	*/
+	communityPackageName = "stolostron-engine"
+
+	/*
+		communityCatalogSourceName stores the name of the catalog source for the Community MultiClusterEngine.
+		In the community environment, it is set to "community-operators." The catalog source provides access to
+		operators in the community edition.
+	*/
 	communityCatalogSourceName = "community-operators"
-	communityOperandNamepace   = "stolostron-engine"
 
-	// default names
+	/*
+		communityOperandNamepace specifies the namespace in which the Community MultiClusterEngine operates.
+		In the community environment, it is set to "stolostron-engine." The community operand namespace is
+		where the resources for the Community MCE are deployed.
+	*/
+	communityOperandNamepace = "stolostron-engine"
+
+	/*
+		MulticlusterengineName defines the default name for the MultiClusterEngine instance. In this case, it is
+		set to "multiclusterengine," which is the default name for an instance of the MultiClusterEngine.
+		This name is used to identify and manage the MCE instance.
+	*/
 	MulticlusterengineName = "multiclusterengine"
-	operatorGroupName      = "default"
+
+	/*
+		operatorGroupName specifies the name of the operator group associated with the MultiClusterEngine.
+		In the default configuration, it is set to "default." Operator groups are used to control the deployment
+		and management of operators in a cluster, including the MultiClusterEngine operator.
+	*/
+	operatorGroupName = "default"
 )
 
-// mocks returning a single manifest
+/*
+mockPackageManifests returns a mock PackageManifestList, which is used for testing or simulating the presence of package
+manifests. The mock PackageManifestList contains a single PackageManifest item with specific metadata and status,
+including catalog source information and channels.
+*/
 var mockPackageManifests = func() *olmapi.PackageManifestList {
 	return &olmapi.PackageManifestList{
 		Items: []olmapi.PackageManifest{
@@ -64,8 +137,14 @@ var mockPackageManifests = func() *olmapi.PackageManifestList {
 	}
 }
 
-// NewMultiClusterEngine returns an MCE configured from a Multiclusterhub
-func NewMultiClusterEngine(m *operatorsv1.MultiClusterHub, infrastructureCustomNamespace string) *mcev1.MultiClusterEngine {
+/*
+NewMultiClusterEngine creates and configures a MultiClusterEngine (MCE) based on the provided MultiClusterHub (MCH)
+and an infrastructure custom namespace. It sets various properties and attributes for the MCE, such as labels,
+annotations, image pull secrets, tolerations, node selectors, availability configuration, target namespace,
+and component overrides.
+*/
+func NewMultiClusterEngine(m *operatorsv1.MultiClusterHub, infrastructureCustomNamespace string,
+) *mcev1.MultiClusterEngine {
 	labels := map[string]string{
 		"installer.name":        m.GetName(),
 		"installer.namespace":   m.GetNamespace(),
@@ -106,7 +185,13 @@ func NewMultiClusterEngine(m *operatorsv1.MultiClusterHub, infrastructureCustomN
 	return mce
 }
 
-func RenderMultiClusterEngine(existingMCE *mcev1.MultiClusterEngine, m *operatorsv1.MultiClusterHub) *mcev1.MultiClusterEngine {
+/*
+RenderMultiClusterEngine takes an existing MultiClusterEngine (MCE) and a MultiClusterHub (MCH) as input and produces a
+modified MCE by applying changes from the MCH. The modifications include updating annotations, image pull secret,
+tolerations, node selector, availability configuration, and component states.
+*/
+func RenderMultiClusterEngine(existingMCE *mcev1.MultiClusterEngine, m *operatorsv1.MultiClusterHub,
+) *mcev1.MultiClusterEngine {
 	copy := existingMCE.DeepCopy()
 
 	// add annotations
@@ -149,8 +234,10 @@ func RenderMultiClusterEngine(existingMCE *mcev1.MultiClusterEngine, m *operator
 	return copy
 }
 
-// GetSupportedAnnotations copies annotations relevant to MCE from MCH. Currently this only
-// applies to the imageRepository override
+/*
+GetSupportedAnnotations retrieves annotations from the provided MultiClusterHub (MCH) that are relevant to the
+MultiClusterEngine (MCE). It specifically focuses on the "imageRepository" annotation.
+*/
 func GetSupportedAnnotations(m *operatorsv1.MultiClusterHub) map[string]string {
 	mceAnnotations := make(map[string]string)
 	if m.GetAnnotations() != nil {
@@ -161,8 +248,11 @@ func GetSupportedAnnotations(m *operatorsv1.MultiClusterHub) map[string]string {
 	return mceAnnotations
 }
 
-// RemoveSupportedAnnotations removes annotations relevant to MCE from MCE. If the annotation is
-// already present then sets value to empty rather than removing the key
+/*
+RemoveSupportedAnnotations removes or empties annotations from a MultiClusterEngine (MCE) object that are relevant
+to the MCE. If the annotation is already present, it sets its value to an empty string, effectively
+removing its significance.
+*/
 func RemoveSupportedAnnotations(mce *mcev1.MultiClusterEngine) map[string]string {
 	mceAnnotations := mce.GetAnnotations()
 	if mceAnnotations != nil {
@@ -173,6 +263,10 @@ func RemoveSupportedAnnotations(mce *mcev1.MultiClusterEngine) map[string]string
 	return mceAnnotations
 }
 
+/*
+Namespace generates and returns a Kubernetes namespace object with specific metadata and labels.
+The namespace's name is determined based on the OperandNameSpace function.
+*/
 func Namespace() *corev1.Namespace {
 	namespace := OperandNameSpace()
 	return &corev1.Namespace{
@@ -189,6 +283,10 @@ func Namespace() *corev1.Namespace {
 	}
 }
 
+/*
+OperatorGroup generates and returns an OperatorGroup object for use in the Kubernetes cluster.
+The OperatorGroup specifies the target namespaces where operators should be deployed.
+*/
 func OperatorGroup() *olmv1.OperatorGroup {
 	namespace := OperandNameSpace()
 	return &olmv1.OperatorGroup{
@@ -206,8 +304,10 @@ func OperatorGroup() *olmv1.OperatorGroup {
 	}
 }
 
-// GetCatalogSource returns the name and namespace of an MCE catalogSource with the required channel.
-// Returns error if two or more catalogsources satsify criteria.
+/*
+GetCatalogSource retrieves the name and namespace of an MCE catalogSource with a specific required channel.
+It returns an error if multiple catalog sources meet the criteria.
+*/
 func GetCatalogSource(k8sClient client.Client) (types.NamespacedName, error) {
 	nn := types.NamespacedName{}
 
@@ -228,15 +328,17 @@ func GetCatalogSource(k8sClient client.Client) (types.NamespacedName, error) {
 		return nn, nil
 	}
 	if len(filtered) > 1 {
-		return nn, fmt.Errorf("Found more than one %s catalogSource with expected channel %s", DesiredPackage(), desiredChannel())
+		return nn, fmt.Errorf("Found more than one %s catalogSource with expected channel %s", DesiredPackage(),
+			desiredChannel())
 	}
 
 	return nn, fmt.Errorf("No %s packageManifests found with desired channel %s", DesiredPackage(), desiredChannel())
 }
 
-// filterPackageManifests returns a list of packagemanifests containing the desired channel
-// at the latest available version. Returns an empty list if no packagemanifests include the channel. If more
-// than one packagemanifest have the same latest version available it will return them both.
+/*
+filterPackageManifests filters a list of PackageManifests, returning those that include the desired channel at the
+latest available version. It may return multiple package manifests if they share the same latest version.
+*/
 func filterPackageManifests(pkgManifests []olmapi.PackageManifest, desiredChannel string) []olmapi.PackageManifest {
 	filtered := []olmapi.PackageManifest{}
 	latestVersion := &semver.Version{}
@@ -246,7 +348,8 @@ func filterPackageManifests(pkgManifests []olmapi.PackageManifest, desiredChanne
 				versionString := c.CurrentCSVDesc.Version.String()
 				v, err := semver.NewVersion(versionString)
 				if err != nil {
-					log.FromContext(context.Background()).Info("failed to parse version from packagemanifest", "catalogsource", p.Status.CatalogSource)
+					log.FromContext(context.Background()).Info("failed to parse version from packagemanifest",
+						"catalogsource", p.Status.CatalogSource)
 					continue
 				}
 				if len(filtered) == 0 {
@@ -265,7 +368,10 @@ func filterPackageManifests(pkgManifests []olmapi.PackageManifest, desiredChanne
 	return filtered
 }
 
-// desiredChannel is determined by whether operator is running in community mode or production mode
+/*
+desiredChannel determines the desired channel based on whether the operator is running in community mode or
+production mode. It returns the appropriate channel name.
+*/
 func desiredChannel() string {
 	if utils.IsCommunityMode() {
 		return communityChannel
@@ -274,7 +380,10 @@ func desiredChannel() string {
 	}
 }
 
-// DesiredPackage is determined by whether operator is running in community mode or production mode
+/*
+DesiredPackage determines the desired package name based on whether the operator is running in community mode or
+production mode. It returns the appropriate package name.
+*/
 func DesiredPackage() string {
 	if utils.IsCommunityMode() {
 		return communityPackageName
@@ -283,7 +392,10 @@ func DesiredPackage() string {
 	}
 }
 
-// OperandNameSpace is determined by whether operator is running in community mode or production mode
+/*
+OperandNameSpace determines the operand namespace based on whether the operator is running in community mode or
+production mode. It returns the appropriate namespace name.
+*/
 func OperandNameSpace() string {
 	if utils.IsCommunityMode() {
 		return communityOperandNamepace
@@ -292,7 +404,10 @@ func OperandNameSpace() string {
 	}
 }
 
-// returns packagemanifests with the name multicluster-engine
+/*
+GetMCEPackageManifests retrieves PackageManifests with the name "multicluster-engine" from the Kubernetes cluster.
+It may return an error if the retrieval process fails.
+*/
 func GetMCEPackageManifests(k8sClient client.Client) ([]olmapi.PackageManifest, error) {
 	ctx := context.Background()
 	log := log.FromContext(ctx)
@@ -318,7 +433,10 @@ func GetMCEPackageManifests(k8sClient client.Client) ([]olmapi.PackageManifest, 
 	return pkgList, nil
 }
 
-// Finds MCE by managed label. Returns nil if none found.
+/*
+GetManagedMCE finds and returns the MultiClusterEngine (MCE) managed by the MultiClusterHub (MCH). It queries the
+Kubernetes cluster to identify MCE instances with specific labels and returns the appropriate MCE.
+*/
 func GetManagedMCE(ctx context.Context, k8sClient client.Client) (*mcev1.MultiClusterEngine, error) {
 	mceList := &mcev1.MultiClusterEngineList{}
 	err := k8sClient.List(ctx, mceList, &client.MatchingLabels{
@@ -345,7 +463,11 @@ func GetManagedMCE(ctx context.Context, k8sClient client.Client) (*mcev1.MultiCl
 	return nil, nil
 }
 
-// find MCE. label it for future. return nil if no mce found.
+/*
+FindAndManageMCE responsible for finding and managing the MultiClusterEngine (MCE). It first attempts to locate the MCE
+through labels and, if unsuccessful, uses a list-based approach. If found, it adds a label to the MCE indicating
+management by the MultiClusterHub.
+*/
 func FindAndManageMCE(ctx context.Context, k8sClient client.Client) (*mcev1.MultiClusterEngine, error) {
 	// first find subscription via managed-by label
 	mce, err := GetManagedMCE(ctx, k8sClient)
@@ -392,8 +514,11 @@ func FindAndManageMCE(ctx context.Context, k8sClient client.Client) (*mcev1.Mult
 	return &filteredMCEs[0], nil
 }
 
-// MCECreatedByMCH returns true if the provided MCE was created by the multiclusterhub-operator (as indicated by installer labels).
-// A nil MCE will always return false
+/*
+MCECreatedByMCH determines whether the provided MultiClusterEngine (MCE) was created by the multiclusterhub-operator
+based on the presence of installer-related labels. It returns a boolean indicating whether the MCE was created
+by the MultiClusterHub.
+*/
 func MCECreatedByMCH(mce *mcev1.MultiClusterEngine, m *operatorv1.MultiClusterHub) bool {
 	l := mce.GetLabels()
 	if l == nil {
