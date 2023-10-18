@@ -23,6 +23,7 @@ spec:
     metadata:
       labels:
         name: multiclusterhub-operator
+        ocm-antiaffinity-selector: multiclusterhub-operator
     spec:
       affinity:
         podAntiAffinity:
