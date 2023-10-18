@@ -703,6 +703,10 @@ var _ = Describe("MultiClusterHub controller", func() {
 			mch := resources.NoComponentMCH()
 			mch.Disable(operatorv1.Appsub)
 
+			a := make(map[string]string)
+			a["deploymentmode"] = string(operatorv1.ModeHosted)
+			mch.SetAnnotations(a)
+
 			Expect(k8sClient.Create(ctx, &mch)).Should(Succeed())
 			Expect(k8sClient.Create(ctx, mchoDeployment)).Should(Succeed())
 
@@ -722,10 +726,6 @@ var _ = Describe("MultiClusterHub controller", func() {
 				}
 				return false
 			}, timeout, interval).Should(BeTrue())
-
-			a := make(map[string]string)
-			a["deploymentMode"] = string(operatorv1.ModeHosted)
-			mch.SetAnnotations(a)
 
 			By("Ensuring MCE is created")
 			Eventually(func() bool {
