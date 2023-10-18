@@ -9,10 +9,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -30,7 +28,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func (r *MultiClusterHubReconciler) HostedReconcile(ctx context.Context, mch *operatorv1.MultiClusterHub) (retRes ctrl.Result, retErr error) {
+func (r *MultiClusterHubReconciler) HostedReconcile(ctx context.Context, mch *operatorv1.MultiClusterHub) (
+	retRes ctrl.Result, retErr error) {
 	log := log.FromContext(ctx)
 
 	defer func() {
@@ -100,7 +99,8 @@ func (r *MultiClusterHubReconciler) HostedReconcile(ctx context.Context, mch *op
 }
 
 // setHostedDefaults configures the MCH with default values and updates
-func (r *MultiClusterHubReconciler) setHostedDefaults(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) setHostedDefaults(ctx context.Context, m *operatorv1.MultiClusterHub) (
+	ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
 	updateNecessary := false
@@ -139,7 +139,8 @@ func (r *MultiClusterHubReconciler) finalizeHostedMCH(ctx context.Context, m *op
 	return nil
 }
 
-func (r *MultiClusterHubReconciler) ensureHostedMultiClusterEngine(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) ensureHostedMultiClusterEngine(ctx context.Context, m *operatorv1.MultiClusterHub) (
+	ctrl.Result, error) {
 
 	mceTargetNamespace := multiclusterengine.HostedMCENamespace(m)
 	// ensure targetnamespace
@@ -168,7 +169,8 @@ func (r *MultiClusterHubReconciler) ensureHostedMultiClusterEngine(ctx context.C
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterHubReconciler) ensureHostedMultiClusterEngineCR(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) ensureHostedMultiClusterEngineCR(ctx context.Context,
+	m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	mce, err := multiclusterengine.GetHostedMCE(ctx, r.Client, m)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -178,7 +180,7 @@ func (r *MultiClusterHubReconciler) ensureHostedMultiClusterEngineCR(ctx context
 		mce = multiclusterengine.NewHostedMultiClusterEngine(m)
 		err = r.Client.Create(ctx, mce)
 		if err != nil {
-			return ctrl.Result{Requeue: true}, fmt.Errorf("Error creating new MCE: %w", err)
+			return ctrl.Result{Requeue: true}, fmt.Errorf("error creating new MCE: %w", err)
 		}
 		return ctrl.Result{}, nil
 	}
@@ -191,7 +193,7 @@ func (r *MultiClusterHubReconciler) ensureHostedMultiClusterEngineCR(ctx context
 	calcMCE := multiclusterengine.RenderHostedMultiClusterEngine(mce, m)
 	err = r.Client.Update(ctx, calcMCE)
 	if err != nil {
-		return ctrl.Result{Requeue: true}, fmt.Errorf("Error updating MCE %s: %w", mce.Name, err)
+		return ctrl.Result{Requeue: true}, fmt.Errorf("error updating MCE %s: %w", mce.Name, err)
 	}
 	return ctrl.Result{}, nil
 }
@@ -216,7 +218,7 @@ func (r *MultiClusterHubReconciler) ensureNoHostedMultiClusterEngineCR(ctx conte
 	mceNamespace := &corev1.Namespace{}
 	nsName := multiclusterengine.HostedMCENamespace(m).Name
 	err = r.Client.Get(ctx, types.NamespacedName{Name: nsName}, mceNamespace)
-	if err != nil && !apierrors.IsNotFound(err) {
+	if err != nil && !errors.IsNotFound(err) {
 		return err
 	}
 	if err == nil {
@@ -232,7 +234,7 @@ func (r *MultiClusterHubReconciler) ensureNoHostedMultiClusterEngineCR(ctx conte
 // copies the hosted kubeconfig secret from mch to the newNS namespace
 func (r *MultiClusterHubReconciler) ensureHostedKubeconfigSecret(m *operatorv1.MultiClusterHub, newNS string) (ctrl.Result, error) {
 	if m.Annotations == nil || m.Annotations[utils.AnnotationKubeconfig] == "" {
-		return ctrl.Result{}, fmt.Errorf("Kubeconfig annotation missing from hosted MCH")
+		return ctrl.Result{}, fmt.Errorf("kubeconfig annotation missing from hosted MCH")
 	}
 	secretName := m.Annotations[utils.AnnotationKubeconfig]
 
@@ -326,32 +328,34 @@ func (r *MultiClusterHubReconciler) calculateHostedStatus(m *operatorv1.MultiClu
 
 	// Copy conditions one by one to not affect original object
 	conditions := m.Status.HubConditions
-	for i := range conditions {
-		status.HubConditions = append(status.HubConditions, conditions[i])
-	}
+	status.HubConditions = append(status.HubConditions, conditions...)
 
 	// Update hub conditions
 	if successful {
 		// don't label as complete until component pruning succeeds
 		if !hubPruning(status) {
-			available := NewHubCondition(operatorv1.Complete, v1.ConditionTrue, ComponentsAvailableReason, "All hub components ready.")
+			available := NewHubCondition(operatorv1.Complete, metav1.ConditionTrue, ComponentsAvailableReason,
+				"All hub components ready.")
 			SetHubCondition(&status, *available)
 		} else {
 			// only add unavailable status if complete status already present
 			if HubConditionPresent(status, operatorv1.Complete) {
-				unavailable := NewHubCondition(operatorv1.Complete, v1.ConditionFalse, OldComponentNotRemovedReason, "Not all components successfully pruned.")
+				unavailable := NewHubCondition(operatorv1.Complete, metav1.ConditionFalse, OldComponentNotRemovedReason,
+					"Not all components successfully pruned.")
 				SetHubCondition(&status, *unavailable)
 			}
 		}
 	} else {
 		// hub is progressing unless otherwise specified
 		if !HubConditionPresent(status, operatorv1.Progressing) {
-			progressing := NewHubCondition(operatorv1.Progressing, v1.ConditionTrue, ReconcileReason, "Hub is reconciling.")
+			progressing := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, ReconcileReason,
+				"Hub is reconciling.")
 			SetHubCondition(&status, *progressing)
 		}
 		// only add unavailable status if complete status already present
 		if HubConditionPresent(status, operatorv1.Complete) {
-			unavailable := NewHubCondition(operatorv1.Complete, v1.ConditionFalse, ComponentsUnavailableReason, "Not all hub components ready.")
+			unavailable := NewHubCondition(operatorv1.Complete, metav1.ConditionFalse, ComponentsUnavailableReason,
+				"Not all hub components ready.")
 			SetHubCondition(&status, *unavailable)
 		}
 	}

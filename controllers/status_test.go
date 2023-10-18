@@ -16,15 +16,14 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func Test_allComponentsSuccessful(t *testing.T) {
-	available := operatorsv1.StatusCondition{Type: "Available", Status: v1.ConditionTrue, Available: true}
-	deployed := operatorsv1.StatusCondition{Type: "Available", Status: v1.ConditionTrue, Available: true}
-	unavailable := operatorsv1.StatusCondition{Type: "Available", Status: v1.ConditionFalse}
+	available := operatorsv1.StatusCondition{Type: "Available", Status: metav1.ConditionTrue, Available: true}
+	deployed := operatorsv1.StatusCondition{Type: "Available", Status: metav1.ConditionTrue, Available: true}
+	unavailable := operatorsv1.StatusCondition{Type: "Available", Status: metav1.ConditionFalse}
 	type args struct {
 		components map[string]operatorsv1.StatusCondition
 	}
@@ -90,11 +89,11 @@ func Test_latestDeployCondition(t *testing.T) {
 
 	first := appsv1.DeploymentCondition{
 		Type:               appsv1.DeploymentProgressing,
-		LastTransitionTime: v1.NewTime(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
+		LastTransitionTime: metav1.NewTime(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
 	}
 	second := appsv1.DeploymentCondition{
 		Type:               appsv1.DeploymentAvailable,
-		LastTransitionTime: v1.NewTime(time.Date(3000, 1, 1, 0, 0, 0, 0, time.UTC)),
+		LastTransitionTime: metav1.NewTime(time.Date(3000, 1, 1, 0, 0, 0, 0, time.UTC)),
 	}
 	type args struct {
 		conditions []appsv1.DeploymentCondition
@@ -135,26 +134,26 @@ var (
 	old = operatorsv1.HubCondition{
 		Type:               operatorsv1.Progressing,
 		Reason:             "Working",
-		Status:             v1.ConditionTrue,
-		LastTransitionTime: v1.NewTime(time.Date(2020, 5, 29, 0, 0, 0, 0, time.UTC)),
+		Status:             metav1.ConditionTrue,
+		LastTransitionTime: metav1.NewTime(time.Date(2020, 5, 29, 0, 0, 0, 0, time.UTC)),
 	}
 	old2 = operatorsv1.HubCondition{
 		Type:               operatorsv1.Complete,
 		Reason:             "EverythingRunning",
-		Status:             v1.ConditionTrue,
-		LastTransitionTime: v1.NewTime(time.Date(2020, 5, 29, 0, 0, 0, 0, time.UTC)),
+		Status:             metav1.ConditionTrue,
+		LastTransitionTime: metav1.NewTime(time.Date(2020, 5, 29, 0, 0, 0, 0, time.UTC)),
 	}
 	new = operatorsv1.HubCondition{
 		Type:               operatorsv1.Progressing,
 		Reason:             "NotWorking",
-		Status:             v1.ConditionFalse,
-		LastTransitionTime: v1.NewTime(time.Date(2020, 5, 29, 0, 1, 0, 0, time.UTC)),
+		Status:             metav1.ConditionFalse,
+		LastTransitionTime: metav1.NewTime(time.Date(2020, 5, 29, 0, 1, 0, 0, time.UTC)),
 	}
 	new2 = operatorsv1.HubCondition{
 		Type:               operatorsv1.Complete,
 		Reason:             "EverythingRunning",
-		Status:             v1.ConditionTrue,
-		LastTransitionTime: v1.NewTime(time.Date(2020, 5, 29, 0, 1, 0, 0, time.UTC)),
+		Status:             metav1.ConditionTrue,
+		LastTransitionTime: metav1.NewTime(time.Date(2020, 5, 29, 0, 1, 0, 0, time.UTC)),
 	}
 )
 
@@ -267,8 +266,8 @@ func TestRemoveHubCondition(t *testing.T) {
 }
 
 func Test_aggregatePhase(t *testing.T) {
-	available := operatorsv1.StatusCondition{Type: "Available", Status: v1.ConditionTrue, Available: true}
-	unavailable := operatorsv1.StatusCondition{Type: "Available", Status: v1.ConditionFalse}
+	available := operatorsv1.StatusCondition{Type: "Available", Status: metav1.ConditionTrue, Available: true}
+	unavailable := operatorsv1.StatusCondition{Type: "Available", Status: metav1.ConditionFalse}
 
 	tests := []struct {
 		name   string
@@ -588,7 +587,7 @@ func Test_getComponentStatuses(t *testing.T) {
 				},
 				allDeps: []*appsv1.Deployment{
 					{
-						ObjectMeta: v1.ObjectMeta{
+						ObjectMeta: metav1.ObjectMeta{
 							Annotations: map[string]string{
 								"meta.helm.sh/release-name": "console-hr",
 							},

@@ -236,8 +236,10 @@ func main() {
 			os.Exit(1)
 		}
 	} else {
-		// We want to force it to False to ensure that the final decision about whether
-		// the operator can be upgraded stays within the controller.
+		/*
+			We want to force it to False to ensure that the final decision about whether the operator can be
+			upgraded stays within the controller.
+		*/
 		err = upgradeableCondition.Set(ctx, metav1.ConditionFalse, utils.UpgradeableInitReason, utils.UpgradeableInitMessage)
 		if err != nil {
 			setupLog.Error(err, "unable to create uncached client")
@@ -266,7 +268,10 @@ func main() {
 	}
 
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		// https://book.kubebuilder.io/cronjob-tutorial/running.html#running-webhooks-locally, https://book.kubebuilder.io/multiversion-tutorial/webhooks.html#and-maingo
+		/*
+			https://book.kubebuilder.io/cronjob-tutorial/running.html#running-webhooks-locally,
+			https://book.kubebuilder.io/multiversion-tutorial/webhooks.html#and-maingo
+		*/
 		if err = ensureWebhooks(uncachedClient); err != nil {
 			setupLog.Error(err, "unable to ensure webhook", "webhook", "MultiClusterHub")
 			os.Exit(1)
