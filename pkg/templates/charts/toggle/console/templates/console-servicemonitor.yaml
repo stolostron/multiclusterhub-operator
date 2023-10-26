@@ -17,8 +17,7 @@ spec:
   jobLabel: console-chart-console-v2
   namespaceSelector:
     matchNames:
-      - open-cluster-management
-      - multicluster-engine
+      - {{ .Values.global.namespace }}
   selector:
     matchLabels:
       app: console-chart-v2
