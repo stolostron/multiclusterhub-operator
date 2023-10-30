@@ -14,6 +14,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
+	log "k8s.io/klog/v2"
+
 
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -106,14 +108,14 @@ func getKlusterletAddonConfig() *unstructured.Unstructured {
 func (r *MultiClusterHubReconciler) ensureKlusterletAddonConfig(m *operatorsv1.MultiClusterHub) (ctrl.Result, error) {
 	ctx := context.Background()
 
-	r.Log.Info("Checking for local-cluster namespace")
+	log.Info("Checking for local-cluster namespace")
 	ns := &corev1.Namespace{}
 	err := r.Client.Get(ctx, types.NamespacedName{Name: ManagedClusterName}, ns)
 	if err != nil && errors.IsNotFound(err) {
-		r.Log.Info("Waiting for local-cluster namespace to be created")
+		log.Info("Waiting for local-cluster namespace to be created")
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	} else if err != nil {
-		r.Log.Error(err, "Failed to check for local-cluster namespace")
+		log.Error(err, "Failed to check for local-cluster namespace")
 		return ctrl.Result{}, err
 	}
 
@@ -130,11 +132,11 @@ func (r *MultiClusterHubReconciler) ensureKlusterletAddonConfig(m *operatorsv1.M
 
 		err = r.Client.Create(ctx, newKlusterletaddonconfig)
 		if err != nil {
-			r.Log.Error(err, "Failed to create klusterletaddonconfig resource")
+			log.Error(err, "Failed to create klusterletaddonconfig resource")
 			return ctrl.Result{}, err
 		}
 		// KlusterletAddonConfig was successful
-		r.Log.Info("Created a new KlusterletAddonConfig")
+		log.Info("Created a new KlusterletAddonConfig")
 		return ctrl.Result{}, nil
 	}
 
@@ -142,7 +144,7 @@ func (r *MultiClusterHubReconciler) ensureKlusterletAddonConfig(m *operatorsv1.M
 
 	err = r.Client.Update(ctx, klusterletaddonconfig)
 	if err != nil {
-		r.Log.Error(err, "Failed to update klusterletaddonconfig resource")
+		log.Error(err, "Failed to update klusterletaddonconfig resource")
 		return ctrl.Result{}, err
 	}
 
@@ -154,25 +156,25 @@ func (r *MultiClusterHubReconciler) ensureManagedClusterIsRunning(m *operatorsv1
 		return nil, nil
 	}
 	if !r.ComponentsAreRunning(m, ocpConsole) {
-		r.Log.Info("Waiting for mch phase to be 'running' before ensuring hub is running")
+		log.Info("Waiting for mch phase to be 'running' before ensuring hub is running")
 		return nil, fmt.Errorf("Waiting for mch phase to be 'running' before ensuring hub is running")
 	}
 
 	managedCluster := getManagedCluster()
 	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: ManagedClusterName}, managedCluster)
 	if err != nil {
-		r.Log.Info("Failed to find managedcluster resource")
+		log.Info("Failed to find managedcluster resource")
 		return nil, err
 	}
 
 	status, ok := managedCluster.Object["status"].(map[string]interface{})
 	if !ok {
-		r.Log.Info("Managedcluster status is not present")
+		log.Info("Managedcluster status is not present")
 		return nil, fmt.Errorf("Managedcluster status is not present")
 	}
 	conditions, ok := status["conditions"].([]interface{})
 	if !ok {
-		r.Log.Info("Managedcluster status conditions are not present")
+		log.Info("Managedcluster status conditions are not present")
 		return nil, fmt.Errorf("Managedcluster status conditions are not present")
 	}
 

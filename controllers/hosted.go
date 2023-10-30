@@ -26,17 +26,17 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	log "k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 func (r *MultiClusterHubReconciler) HostedReconcile(ctx context.Context, mch *operatorv1.MultiClusterHub) (retRes ctrl.Result, retErr error) {
-	log := log.FromContext(ctx)
+	
 
 	defer func() {
 		statusQueue, statusError := r.updateHostedHubStatus(mch) //1
 		if statusError != nil {
-			r.Log.Error(retErr, "Error updating status")
+			log.Error(retErr, "Error updating status")
 		}
 		if empty := (reconcile.Result{}); retRes == empty {
 			retRes = statusQueue
@@ -87,7 +87,7 @@ func (r *MultiClusterHubReconciler) HostedReconcile(ctx context.Context, mch *op
 	// Do not reconcile objects if this instance of mch is labeled "paused"
 	updatePausedCondition(mch)
 	if utils.IsPaused(mch) {
-		r.Log.Info("MultiClusterHub reconciliation is paused. Nothing more to do.")
+		log.Info("MultiClusterHub reconciliation is paused. Nothing more to do.")
 		return ctrl.Result{}, nil
 	}
 
@@ -101,7 +101,7 @@ func (r *MultiClusterHubReconciler) HostedReconcile(ctx context.Context, mch *op
 
 // setHostedDefaults configures the MCH with default values and updates
 func (r *MultiClusterHubReconciler) setHostedDefaults(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
+	
 
 	updateNecessary := false
 	if !operatorv1.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {
@@ -203,7 +203,7 @@ func (r *MultiClusterHubReconciler) ensureNoHostedMultiClusterEngineCR(ctx conte
 		return err
 	}
 	if hostedMCE != nil {
-		r.Log.Info("Deleting MultiClusterEngine resource")
+		log.Info("Deleting MultiClusterEngine resource")
 		err = r.Client.Delete(ctx, hostedMCE)
 		if err != nil && (!errors.IsNotFound(err) || !errors.IsGone(err)) {
 			return err
@@ -265,7 +265,7 @@ func (r *MultiClusterHubReconciler) ensureHostedKubeconfigSecret(m *operatorv1.M
 	force := true
 	err = r.Client.Patch(context.TODO(), mceSecret, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
 	if err != nil {
-		r.Log.Info(fmt.Sprintf("Error applying hosted kubeconfig secret to mce namespace: %s", err.Error()))
+		log.Info(fmt.Sprintf("Error applying hosted kubeconfig secret to mce namespace: %s", err.Error()))
 		return ctrl.Result{Requeue: true}, err
 	}
 
@@ -284,7 +284,7 @@ func (r *MultiClusterHubReconciler) updateHostedHubStatus(m *operatorv1.MultiClu
 			return reconcile.Result{RequeueAfter: resyncPeriod}, nil
 		}
 
-		r.Log.Error(err, fmt.Sprintf("Failed to update %s/%s status ", m.Namespace, m.Name))
+		log.Error(err, fmt.Sprintf("Failed to update %s/%s status ", m.Namespace, m.Name))
 		return reconcile.Result{}, err
 	}
 
@@ -303,7 +303,7 @@ func (r *MultiClusterHubReconciler) calculateHostedStatus(m *operatorv1.MultiClu
 	} else {
 		unstructuredMCE, err := runtime.DefaultUnstructuredConverter.ToUnstructured(gotMCE)
 		if err != nil {
-			r.Log.Error(err, "Failed to unmarshal MCE")
+			log.Error(err, "Failed to unmarshal MCE")
 		}
 		mce = &unstructured.Unstructured{Object: unstructuredMCE}
 	}

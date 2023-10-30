@@ -2,7 +2,6 @@
 package renderer
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -22,7 +21,7 @@ import (
 	"helm.sh/helm/v3/pkg/engine"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	log "k8s.io/klog/v2"
 	"sigs.k8s.io/yaml"
 )
 
@@ -185,7 +184,6 @@ func RenderCRDs(crdDir string) ([]*unstructured.Unstructured, []error) {
 }
 
 func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]string) ([]*unstructured.Unstructured, []error) {
-	log := log.FromContext(context.Background())
 	var templates []*unstructured.Unstructured
 	errs := []error{}
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
@@ -213,7 +211,6 @@ func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]st
 }
 
 func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]string) ([]*unstructured.Unstructured, []error) {
-	log := log.FromContext(context.Background())
 	errs := []error{}
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
 		chartPath = path.Join(val, chartPath)
@@ -234,7 +231,6 @@ func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]st
 }
 
 func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[string]string) ([]*unstructured.Unstructured, []error) {
-	log := log.FromContext(context.Background())
 	var templates []*unstructured.Unstructured
 	errs := []error{}
 	chart, err := loader.Load(chartPath)
@@ -323,7 +319,6 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 }
 
 func GetOADPConfig(m *v1.MultiClusterHub) (string, string, subv1alpha1.Approval, string, string) {
-	log := log.FromContext(context.Background())
 	sub := &subv1alpha1.SubscriptionSpec{}
 	var name, channel, source, sourceNamespace string
 	var installPlan subv1alpha1.Approval

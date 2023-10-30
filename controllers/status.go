@@ -23,6 +23,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	log "k8s.io/klog/v2"
 )
 
 const (
@@ -144,7 +145,7 @@ func (r *MultiClusterHubReconciler) syncHubStatus(
 	// localCluster, err := r.ensureManagedClusterIsRunning(m, ocpConsole)
 	newStatus := calculateStatus(m, allDeps, allCRs, ocpConsole)
 	if reflect.DeepEqual(m.Status, original) {
-		r.Log.Info("Status hasn't changed")
+		log.Info("Status hasn't changed")
 		return reconcile.Result{}, nil
 	}
 
@@ -154,11 +155,11 @@ func (r *MultiClusterHubReconciler) syncHubStatus(
 	if err != nil {
 		if errors.IsConflict(err) {
 			// Error from object being modified is normal behavior and should not be treated like an error
-			r.Log.Info("Failed to update status", "Reason", "Object has been modified")
+			log.Info("Failed to update status", "Reason", "Object has been modified")
 			return reconcile.Result{RequeueAfter: resyncPeriod}, nil
 		}
 
-		r.Log.Error(err, fmt.Sprintf("Failed to update %s/%s status ", m.Namespace, m.Name))
+		log.Error(err, fmt.Sprintf("Failed to update %s/%s status ", m.Namespace, m.Name))
 		return reconcile.Result{}, err
 	}
 

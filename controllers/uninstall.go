@@ -20,6 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	log "k8s.io/klog/v2"
 )
 
 var (
@@ -158,7 +159,7 @@ func (r *MultiClusterHubReconciler) ensureAppsubsGone(m *operatorsv1.MultiCluste
 	for _, csv := range csvList.Items {
 		csv := csv
 		if strings.HasPrefix(csv.GetName(), "oadp-operator.v1.0") {
-			r.Log.Info(fmt.Sprintf("Deleting OADP v1.0 CSV found in namespace %s", utils.ClusterSubscriptionNamespace))
+			log.Info(fmt.Sprintf("Deleting OADP v1.0 CSV found in namespace %s", utils.ClusterSubscriptionNamespace))
 			_, err := r.uninstall(m, &csv)
 			if err != nil {
 				return ctrl.Result{}, err
@@ -186,7 +187,7 @@ func (r *MultiClusterHubReconciler) ensureAppsubsGone(m *operatorsv1.MultiCluste
 			names = append(names, hrList.Items[i].GetName())
 		}
 		message := fmt.Sprintf("Waiting for helmreleases to be removed: %s", strings.Join(names, ","))
-		r.Log.Info(message)
+		log.Info(message)
 		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, OldComponentRemovedReason, message)
 		SetHubCondition(&m.Status, *condition)
 
@@ -238,7 +239,6 @@ func (r *MultiClusterHubReconciler) ensureRemovalsGone(m *operatorsv1.MultiClust
 // uninstall return true if resource does not exist and returns an error if a GET or DELETE errors unexpectedly. A false response without error
 // means the resource is in the process of deleting.
 func (r *MultiClusterHubReconciler) uninstall(m *operatorsv1.MultiClusterHub, u *unstructured.Unstructured) (bool, error) {
-	obLog := r.Log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName(), "Kind", u.GetKind())
 
 	err := r.Client.Get(context.TODO(), types.NamespacedName{
 		Name:      u.GetName(),
@@ -252,7 +252,7 @@ func (r *MultiClusterHubReconciler) uninstall(m *operatorsv1.MultiClusterHub, u 
 	// Get resource. Successful if it doesn't exist.
 	if err != nil {
 		// Error that isn't due to the resource not existing
-		obLog.Error(err, "Error getting resource")
+		log.Error(err, "Error getting resource")
 		return false, err
 	}
 
@@ -260,7 +260,7 @@ func (r *MultiClusterHubReconciler) uninstall(m *operatorsv1.MultiClusterHub, u 
 	if u.GetDeletionTimestamp() != nil {
 		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionFalse, OldComponentNotRemovedReason, fmt.Sprintf("Resource %s/%s finalizing", u.GetKind(), u.GetName()))
 		SetHubCondition(&m.Status, *condition)
-		obLog.Info("Waiting for resource to finalize")
+		log.Info("Waiting for resource to finalize")
 		return false, nil
 	}
 
@@ -269,12 +269,12 @@ func (r *MultiClusterHubReconciler) uninstall(m *operatorsv1.MultiClusterHub, u 
 	if err != nil {
 		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionFalse, OldComponentNotRemovedReason, fmt.Sprintf("Failed to remove resource %s/%s", u.GetKind(), u.GetName()))
 		SetHubCondition(&m.Status, *condition)
-		obLog.Error(err, "Failed to delete resource")
+		log.Error(err, "Failed to delete resource")
 		return false, err
 	}
 	condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, OldComponentRemovedReason, "Removed old resource")
 	SetHubCondition(&m.Status, *condition)
-	obLog.Info("Deleted instance")
+	log.Info("Deleted instance")
 	return false, nil
 }
 
@@ -344,7 +344,7 @@ func (r *MultiClusterHubReconciler) removeLegacyConfigurations(ctx context.Conte
 		err = r.Client.Delete(ctx, obj)
 		if err != nil {
 			if !errors.IsNotFound(err) && !apimeta.IsNoMatchError(err) {
-				r.Log.Error(
+				log.Error(
 					err,
 					fmt.Sprintf("Error while deleting the legacy %s configuration", configType),
 					"kind", kind,
@@ -353,7 +353,7 @@ func (r *MultiClusterHubReconciler) removeLegacyConfigurations(ctx context.Conte
 				return err
 			}
 		} else {
-			r.Log.Info(fmt.Sprintf("Deleted the legacy %s configuration: %s", configType, obj.GetName()))
+			log.Info(fmt.Sprintf("Deleted the legacy %s configuration: %s", configType, obj.GetName()))
 		}
 	}
 	return nil
@@ -374,7 +374,7 @@ func (r *MultiClusterHubReconciler) cleanupGRCAppsub(m *operatorsv1.MultiCluster
 	if errors.IsNotFound(err) || apimeta.IsNoMatchError(err) {
 		return nil
 	}
-	r.Log.Info("GRC appsub exists. Running upgrade cleanup step.")
+	log.Info("GRC appsub exists. Running upgrade cleanup step.")
 
 	// Find GRC helmrelease
 	hrList := &unstructured.UnstructuredList{}
@@ -392,38 +392,38 @@ func (r *MultiClusterHubReconciler) cleanupGRCAppsub(m *operatorsv1.MultiCluster
 	for _, hr := range hrList.Items {
 		oRefs := hr.GetOwnerReferences()
 		if len(oRefs) > 0 && oRefs[0].Name == "grc-sub" {
-			r.Log.Info(fmt.Sprintf("Found GRC helmrelease %s", hr.GetName()))
+			log.Info(fmt.Sprintf("Found GRC helmrelease %s", hr.GetName()))
 			grcHelmrelease = hr
 			break
 		}
 	}
 	if grcHelmrelease.GetName() == "" {
-		r.Log.Info("GRC helmrelease has no name")
+		log.Info("GRC helmrelease has no name")
 		return nil
 	}
 
 	// Remove finalizer on helmrelease
 	grcHelmrelease.SetFinalizers([]string{})
-	r.Log.Info(fmt.Sprintf("Removing finalizers from GRC helmrelease %s", grcHelmrelease.GetName()))
+	log.Info(fmt.Sprintf("Removing finalizers from GRC helmrelease %s", grcHelmrelease.GetName()))
 	err = r.Client.Update(context.Background(), &grcHelmrelease)
 	if err != nil {
 		return err
 	}
 
 	// Manually delete GRC cluster-scope and cross-namespace resources
-	r.Log.Info(fmt.Sprintf("Deleting GRC clusterroles"))
+	log.Info(fmt.Sprintf("Deleting GRC clusterroles"))
 	err = r.Client.DeleteAllOf(context.TODO(), &rbacv1.ClusterRole{}, client.MatchingLabels{"app": "grc"})
 	if err != nil {
-		r.Log.Error(err, "Error while deleting clusterroles")
+		log.Error(err, "Error while deleting clusterroles")
 		return err
 	}
-	r.Log.Info(fmt.Sprintf("Deleting GRC clusterrolebindings"))
+	log.Info(fmt.Sprintf("Deleting GRC clusterrolebindings"))
 	err = r.Client.DeleteAllOf(context.TODO(), &rbacv1.ClusterRoleBinding{}, client.MatchingLabels{"app": "grc"})
 	if err != nil {
-		r.Log.Error(err, "Error while deleting clusterroles")
+		log.Error(err, "Error while deleting clusterroles")
 		return err
 	}
-	r.Log.Info(fmt.Sprintf("Deleting GRC PrometheusRule"))
+	log.Info(fmt.Sprintf("Deleting GRC PrometheusRule"))
 	u := &unstructured.Unstructured{}
 	u.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   MonitoringAPIGroup,
@@ -432,12 +432,12 @@ func (r *MultiClusterHubReconciler) cleanupGRCAppsub(m *operatorsv1.MultiCluster
 	})
 	err = r.Client.DeleteAllOf(context.TODO(), u, client.InNamespace("openshift-monitoring"), client.MatchingLabels{"app": "grc"})
 	if err != nil {
-		r.Log.Error(err, "Error while deleting PrometheusRule")
+		log.Error(err, "Error while deleting PrometheusRule")
 		return err
 	}
 
 	// Delete appsub
-	r.Log.Info(fmt.Sprintf("Deleting GRC appsub"))
+	log.Info(fmt.Sprintf("Deleting GRC appsub"))
 	err = r.Client.Delete(context.Background(), grcAppsub)
 	if err != nil {
 		return err
