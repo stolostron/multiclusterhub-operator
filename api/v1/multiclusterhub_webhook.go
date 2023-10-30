@@ -32,7 +32,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	log "k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
@@ -87,7 +87,6 @@ var (
 )
 
 var (
-	mchlog = log.Log.WithName("multiclusterhub-resource")
 	Client client.Client
 )
 
@@ -100,7 +99,7 @@ var _ webhook.Defaulter = &MultiClusterHub{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (r *MultiClusterHub) Default() {
-	mchlog.Info("default", "name", r.Name)
+	log.Info("default", "name", r.Name)
 }
 
 //+kubebuilder:webhook:name=multiclusterhub-operator-validating-webhook,path=/validate-operator-open-cluster-management-io-v1-multiclusterhub,mutating=false,failurePolicy=fail,sideEffects=None,groups=operator.open-cluster-management.io,resources=multiclusterhubs,verbs=create;update;delete,versions=v1,name=multiclusterhub.validating-webhook.open-cluster-management.io,admissionReviewVersions={v1,v1beta1}
@@ -109,7 +108,7 @@ var _ webhook.Validator = &MultiClusterHub{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *MultiClusterHub) ValidateCreate() error {
-	mchlog.Info("validate create", "name", r.Name)
+	log.Info("validate create", "name", r.Name)
 	multiClusterHubList := &MultiClusterHubList{}
 	if err := Client.List(context.Background(), multiClusterHubList); err != nil {
 		return fmt.Errorf("unable to list MultiClusterHubs: %s", err)
@@ -146,7 +145,7 @@ func (r *MultiClusterHub) ValidateCreate() error {
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) error {
-	mchlog.Info("validate update", "name", r.Name)
+	log.Info("validate update", "name", r.Name)
 
 	oldMCH := old.(*MultiClusterHub)
 
@@ -179,7 +178,7 @@ func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) error {
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (r *MultiClusterHub) ValidateDelete() error {
-	mchlog.Info("validate delete", "name", r.Name)
+	log.Info("validate delete", "name", r.Name)
 
 	ctx := context.Background()
 

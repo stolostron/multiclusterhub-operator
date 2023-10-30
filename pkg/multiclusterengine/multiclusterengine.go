@@ -19,7 +19,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	log "k8s.io/klog/v2"
 )
 
 var (
@@ -295,7 +295,7 @@ func OperandNameSpace() string {
 // returns packagemanifests with the name multicluster-engine
 func GetMCEPackageManifests(k8sClient client.Client) ([]olmapi.PackageManifest, error) {
 	ctx := context.Background()
-	log := log.FromContext(ctx)
+	
 	packageManifests := &olmapi.PackageManifestList{}
 	var err error
 	if utils.IsUnitTest() {

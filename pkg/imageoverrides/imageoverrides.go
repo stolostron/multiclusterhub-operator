@@ -7,10 +7,9 @@ import (
 	"os"
 	"strings"
 
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	log "k8s.io/klog/v2"
 )
 
-var logf = log.Log.WithName("controller_multiclusterhub")
 
 const (
 	// OSBSImagePrefix ...
@@ -35,7 +34,7 @@ func GetImageOverrides() map[string]string {
 
 	// If entries exist containing operand image prefix, return
 	if len(imageOverrides) > 0 {
-		logf.Info("Found image overrides from environment variables set by operand image prefix")
+		log.Info("Found image overrides from environment variables set by operand image prefix")
 		return imageOverrides
 	}
 
@@ -50,7 +49,7 @@ func GetImageOverrides() map[string]string {
 
 	// If entries exist containing related image prefix, return
 	if len(imageOverrides) > 0 {
-		logf.Info("Found image overrides from environment variables set by related image prefix")
+		log.Info("Found image overrides from environment variables set by related image prefix")
 	}
 
 	return imageOverrides

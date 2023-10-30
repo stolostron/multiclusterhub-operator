@@ -33,7 +33,6 @@ import (
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	operatorsapiv2 "github.com/operator-framework/api/pkg/operators/v2"
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	"go.uber.org/zap/zapcore"
 
 	configv1 "github.com/openshift/api/config/v1"
 	consolev1 "github.com/openshift/api/operator/v1"
@@ -71,8 +70,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	log "k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	ctrlwebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -155,14 +153,12 @@ func main() {
 	flag.DurationVar(&retryPeriod, "leader-election-retry-period", 26*time.Second, ""+
 		"The duration the clients should wait between attempting acquisition and renewal "+
 		"of a leadership. This is only applicable if leader election is enabled.")
-	opts := zap.Options{
-		Development: true,
-		TimeEncoder: zapcore.ISO8601TimeEncoder,
-	}
-	opts.BindFlags(flag.CommandLine)
+	
+	// Initialize the logger.
+	log.InitFlags(nil)
 	flag.Parse()
-
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+	defer log.Flush()
+	
 
 	ns, err := getOperatorNamespace()
 	if err != nil {
@@ -324,8 +320,7 @@ func addMultiClusterEngineWatch(ctx context.Context, uncachedClient client.Clien
 							namespace = labels["multiclusterhub.namespace"]
 						}
 						if name == "" || namespace == "" {
-							l := log.FromContext(context.Background())
-							l.Info(fmt.Sprintf("MCE updated, but did not find required labels: %v", labels))
+							log.Info(fmt.Sprintf("MCE updated, but did not find required labels: %v", labels))
 							return
 						}
 						q.Add(
