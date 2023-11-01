@@ -21,12 +21,12 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"time"
 
+	"github.com/go-co-op/gocron"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/deploying"
 	"github.com/stolostron/multiclusterhub-operator/pkg/imageoverrides"
@@ -41,7 +41,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -85,12 +84,12 @@ const (
 
 	trustBundleNameEnvVar  = "TRUSTED_CA_BUNDLE"
 	defaultTrustBundleName = "trusted-ca-bundle"
-
-	mceUpgradeDuration = 10 * time.Minute
 )
 
 var (
-	mceUpgradeStartTime = time.Time{}
+	scheduler              *gocron.Scheduler
+	cronResyncTag          = "multiclusterhub-operator-resync"
+	reconciliationInterval = 10 // minutes
 )
 
 //+kubebuilder:rbac:groups="";"admissionregistration.k8s.io";"apiextensions.k8s.io";"apiregistration.k8s.io";"apps";"apps.open-cluster-management.io";"authorization.k8s.io";"hive.openshift.io";"mcm.ibm.com";"proxy.open-cluster-management.io";"rbac.authorization.k8s.io";"security.openshift.io";"clusterview.open-cluster-management.io";"discovery.open-cluster-management.io";"wgpolicyk8s.io",resources=apiservices;channels;clusterjoinrequests;clusterrolebindings;clusterstatuses/log;configmaps;customresourcedefinitions;deployments;discoveryconfigs;hiveconfigs;mutatingwebhookconfigurations;validatingwebhookconfigurations;namespaces;pods;policyreports;replicasets;rolebindings;secrets;serviceaccounts;services;subjectaccessreviews;subscriptions;helmreleases;managedclusters;managedclustersets,verbs=get
@@ -127,11 +126,17 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	r.Log = log.FromContext(ctx)
 	r.Log.Info("Reconciling MultiClusterHub")
 
+	// Initalize sceduler instance for operator resync cronjob.
+	if scheduler == nil {
+		r.Log.Info("Setting up scheduler for operator resync")
+		r.InitScheduler()
+	}
+
 	// Fetch the MultiClusterHub instance
 	multiClusterHub := &operatorv1.MultiClusterHub{}
 	err := r.Client.Get(context.TODO(), req.NamespacedName, multiClusterHub)
 	if err != nil {
-		if apierrors.IsNotFound(err) {
+		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
@@ -256,7 +261,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		MultiClusterHub to avoid conflicts with the openshift-* namespace when deploying PrometheusRules and
 		ServiceMonitors in ACM.
 	*/
-	result, err = r.ensureOpenShiftNamespaceLabel(ctx, multiClusterHub)
+	_, err = r.ensureOpenShiftNamespaceLabel(ctx, multiClusterHub)
 	if err != nil {
 		r.Log.Error(err, "Failed to add to %s label to namespace: %s", utils.OpenShiftClusterMonitoringLabel,
 			multiClusterHub.GetNamespace())
@@ -273,7 +278,13 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	updatePausedCondition(multiClusterHub)
 	if utils.IsPaused(multiClusterHub) {
 		r.Log.Info("MultiClusterHub reconciliation is paused. Nothing more to do.")
+		if ok := scheduler.IsRunning(); ok {
+			r.Log.Info("Pausing MultiClusterHub operator controller resync job.")
+			go r.StopScheduleOperatorControllerResync()
+		}
 		return ctrl.Result{}, nil
+	} else if ok := scheduler.IsRunning(); !ok {
+		defer r.ScheduleOperatorControllerResync(ctx, req)
 	}
 
 	if !utils.ShouldIgnoreOCPVersion(multiClusterHub) {
@@ -812,22 +823,11 @@ func (r *MultiClusterHubReconciler) ensureOpenShiftNamespaceLabel(ctx context.Co
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterHubReconciler) updateSearchEnablement(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
-	m.Disable(operatorv1.Search)
-	err := r.Client.Update(ctx, m)
-	if err != nil {
-		r.Log.Error(err, "Failed to update MultiClusterHub", "MultiClusterHub.Namespace", m.Namespace, "MultiClusterHub.Name", m.Name)
-		return ctrl.Result{}, err
-	}
-	r.Log.Info("MultiClusterHub successfully updated")
-	return ctrl.Result{Requeue: true}, nil
-}
-
 func (r *MultiClusterHubReconciler) deleteTemplate(ctx context.Context, m *operatorv1.MultiClusterHub, template *unstructured.Unstructured) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	err := r.Client.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()}, template)
 
-	if err != nil && (apierrors.IsNotFound(err) || apimeta.IsNoMatchError(err)) {
+	if err != nil && (errors.IsNotFound(err) || apimeta.IsNoMatchError(err)) {
 		return ctrl.Result{}, nil
 	}
 
@@ -977,7 +977,7 @@ func (r *MultiClusterHubReconciler) installCRDs(reqLogger logr.Logger, m *operat
 		utils.AddInstallerLabel(crd, m.GetName(), m.GetNamespace())
 		err, ok := deploying.Deploy(r.Client, crd)
 		if err != nil {
-			err := fmt.Errorf("Failed to deploy %s %s", crd.GetKind(), crd.GetName())
+			err := fmt.Errorf("failed to deploy %s %s", crd.GetKind(), crd.GetName())
 			reqLogger.Error(err, err.Error())
 			return DeployFailedReason, err
 		}
@@ -1015,7 +1015,7 @@ func (r *MultiClusterHubReconciler) deployResources(reqLogger logr.Logger, m *op
 		}
 
 		path := path.Join(resourceDir, fileName)
-		src, err := ioutil.ReadFile(filepath.Clean(path)) // #nosec G304 (filepath cleaned)
+		src, err := os.ReadFile(filepath.Clean(path)) // #nosec G304 (filepath cleaned)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("error reading file %s : %s", fileName, err))
 			continue
@@ -1052,7 +1052,7 @@ func (r *MultiClusterHubReconciler) deployResources(reqLogger logr.Logger, m *op
 		}
 		err, ok := deploying.Deploy(r.Client, res)
 		if err != nil {
-			err := fmt.Errorf("Failed to deploy %s %s", res.GetKind(), res.GetName())
+			err := fmt.Errorf("failed to deploy %s %s", res.GetKind(), res.GetName())
 			reqLogger.Error(err, err.Error())
 			return DeployFailedReason, err
 		}
@@ -1172,4 +1172,31 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 	log.Info("No updates to defaults detected")
 	return ctrl.Result{}, nil
 
+}
+
+func (r *MultiClusterHubReconciler) InitScheduler() {
+	scheduler = gocron.NewScheduler(time.UTC)
+}
+
+func (r *MultiClusterHubReconciler) ScheduleOperatorControllerResync(ctx context.Context, req ctrl.Request) {
+	if ok := scheduler.IsRunning(); !ok {
+		_, err := scheduler.Tag(cronResyncTag).Every(reconciliationInterval).Minutes().Do(r.Reconcile, ctx, req)
+
+		if err != nil {
+			r.Log.Error(err, "failed to schedule scheduler job for operator controller resync")
+		} else {
+			r.Log.Info(fmt.Sprintf("Starting scheduler job for operator controller. Reconciling every %v minutes",
+				reconciliationInterval))
+			scheduler.StartAsync()
+		}
+	}
+}
+
+// StopScheduleOperatorControllerResync ...
+func (r *MultiClusterHubReconciler) StopScheduleOperatorControllerResync() {
+	scheduler.Stop()
+
+	if ok := scheduler.IsRunning(); !ok {
+		r.InitScheduler()
+	}
 }
