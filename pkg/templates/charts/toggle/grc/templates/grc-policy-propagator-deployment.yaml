@@ -84,6 +84,14 @@ spec:
       {{- end }}
       containers:
       - name: kube-rbac-proxy
+        securityContext:
+          privileged: false
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          capabilities:
+            drop:
+            - ALL
         image: {{ .Values.global.imageOverrides.kube_rbac_proxy}}
         imagePullPolicy: "{{ .Values.global.pullPolicy }}"
         args:
