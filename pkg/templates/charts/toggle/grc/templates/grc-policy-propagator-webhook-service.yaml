@@ -11,4 +11,4 @@ spec:
     protocol: TCP
     targetPort: 9443
   selector:
-    webhook-origin: governance-policy-propagator
+    name: governance-policy-propagator

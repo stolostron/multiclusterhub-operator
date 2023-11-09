@@ -10,7 +10,6 @@ metadata:
     release: grc
     app.kubernetes.io/instance: grc
     app.kubernetes.io/name: grc
-    webhook-origin: governance-policy-propagator
 spec:
   replicas: {{ .Values.hubconfig.replicaCount }}
   selector:
@@ -18,7 +17,6 @@ spec:
       app: grc
       component: "ocm-policy-propagator"
       release: grc
-      webhook-origin: governance-policy-propagator
   template:
     metadata:
       annotations:
@@ -32,7 +30,6 @@ spec:
         chart: grc-chart-{{ .Values.hubconfig.hubVersion }}
         app.kubernetes.io/instance: grc
         app.kubernetes.io/name: grc
-        webhook-origin: governance-policy-propagator
     spec:
       serviceAccountName: grc-sa
       hostNetwork: false
