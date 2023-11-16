@@ -21,12 +21,12 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"time"
 
+	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/deploying"
 	"github.com/stolostron/multiclusterhub-operator/pkg/imageoverrides"
@@ -41,8 +41,8 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -85,12 +85,6 @@ const (
 
 	trustBundleNameEnvVar  = "TRUSTED_CA_BUNDLE"
 	defaultTrustBundleName = "trusted-ca-bundle"
-
-	mceUpgradeDuration = 10 * time.Minute
-)
-
-var (
-	mceUpgradeStartTime = time.Time{}
 )
 
 //+kubebuilder:rbac:groups="";"admissionregistration.k8s.io";"apiextensions.k8s.io";"apiregistration.k8s.io";"apps";"apps.open-cluster-management.io";"authorization.k8s.io";"hive.openshift.io";"mcm.ibm.com";"proxy.open-cluster-management.io";"rbac.authorization.k8s.io";"security.openshift.io";"clusterview.open-cluster-management.io";"discovery.open-cluster-management.io";"wgpolicyk8s.io",resources=apiservices;channels;clusterjoinrequests;clusterrolebindings;clusterstatuses/log;configmaps;customresourcedefinitions;deployments;discoveryconfigs;hiveconfigs;mutatingwebhookconfigurations;validatingwebhookconfigurations;namespaces;pods;policyreports;replicasets;rolebindings;secrets;serviceaccounts;services;subjectaccessreviews;subscriptions;helmreleases;managedclusters;managedclustersets,verbs=get
@@ -131,7 +125,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	multiClusterHub := &operatorv1.MultiClusterHub{}
 	err := r.Client.Get(context.TODO(), req.NamespacedName, multiClusterHub)
 	if err != nil {
-		if apierrors.IsNotFound(err) {
+		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
@@ -256,7 +250,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		MultiClusterHub to avoid conflicts with the openshift-* namespace when deploying PrometheusRules and
 		ServiceMonitors in ACM.
 	*/
-	result, err = r.ensureOpenShiftNamespaceLabel(ctx, multiClusterHub)
+	_, err = r.ensureOpenShiftNamespaceLabel(ctx, multiClusterHub)
 	if err != nil {
 		r.Log.Error(err, "Failed to add to %s label to namespace: %s", utils.OpenShiftClusterMonitoringLabel,
 			multiClusterHub.GetNamespace())
@@ -319,7 +313,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		no longer available; therefore, we need to explicitly remove them from the upgrade configuration.
 	*/
 	for _, kind := range operatorv1.GetLegacyConfigKind() {
-		err = r.removeLegacyConfigurations(ctx, "openshift-monitoring", kind)
+		_ = r.removeLegacyConfigurations(ctx, "openshift-monitoring", kind)
 	}
 
 	// Install CRDs
@@ -363,6 +357,16 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	result, err = r.createTrustBundleConfigmap(ctx, multiClusterHub)
+	if err != nil {
+		return result, err
+	}
+
+	result, err = r.createMetricsService(ctx, multiClusterHub)
+	if err != nil {
+		return result, err
+	}
+
+	result, err = r.createMetricsServiceMonitor(ctx, multiClusterHub)
 	if err != nil {
 		return result, err
 	}
@@ -812,22 +816,11 @@ func (r *MultiClusterHubReconciler) ensureOpenShiftNamespaceLabel(ctx context.Co
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterHubReconciler) updateSearchEnablement(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
-	m.Disable(operatorv1.Search)
-	err := r.Client.Update(ctx, m)
-	if err != nil {
-		r.Log.Error(err, "Failed to update MultiClusterHub", "MultiClusterHub.Namespace", m.Namespace, "MultiClusterHub.Name", m.Name)
-		return ctrl.Result{}, err
-	}
-	r.Log.Info("MultiClusterHub successfully updated")
-	return ctrl.Result{Requeue: true}, nil
-}
-
 func (r *MultiClusterHubReconciler) deleteTemplate(ctx context.Context, m *operatorv1.MultiClusterHub, template *unstructured.Unstructured) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	err := r.Client.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()}, template)
 
-	if err != nil && (apierrors.IsNotFound(err) || apimeta.IsNoMatchError(err)) {
+	if err != nil && (errors.IsNotFound(err) || apimeta.IsNoMatchError(err)) {
 		return ctrl.Result{}, nil
 	}
 
@@ -900,6 +893,139 @@ func (r *MultiClusterHubReconciler) createTrustBundleConfigmap(ctx context.Conte
 		return ctrl.Result{RequeueAfter: resyncPeriod}, err
 	}
 	// Configmap created successfully
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) createMetricsService(ctx context.Context, m *operatorv1.MultiClusterHub) (
+	ctrl.Result, error) {
+	log := log.FromContext(ctx)
+
+	const Port = 8383
+
+	sName := utils.MCHOperatorMetricsServiceName
+	sNamespace := m.GetNamespace()
+
+	namespacedName := types.NamespacedName{
+		Name:      sName,
+		Namespace: sNamespace,
+	}
+
+	// Check if service exists
+	if err := r.Client.Get(ctx, namespacedName, &corev1.Service{}); err != nil {
+		if !errors.IsNotFound(err) {
+			// Unknown error. Requeue
+			log.Error(err, fmt.Sprintf("error while getting multiclusterhub metrics service: %s/%s", sNamespace, sName))
+			return ctrl.Result{RequeueAfter: resyncPeriod}, err
+		}
+
+		// Create metrics service
+		s := &corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      sName,
+				Namespace: sNamespace,
+				Labels: map[string]string{
+					"name": operatorv1.MCH,
+				},
+			},
+			Spec: corev1.ServiceSpec{
+				Ports: []corev1.ServicePort{
+					{
+						Name:       "metrics",
+						Port:       int32(Port),
+						Protocol:   "TCP",
+						TargetPort: intstr.FromInt(Port),
+					},
+				},
+				Selector: map[string]string{
+					"name": operatorv1.MCH,
+				},
+			},
+		}
+
+		if err = ctrl.SetControllerReference(m, s, r.Scheme); err != nil {
+			return ctrl.Result{}, pkgerrors.Wrapf(
+				err, "error setting controller reference on metrics service: %s", sName,
+			)
+		}
+
+		if err = r.Client.Create(ctx, s); err != nil {
+			// Error creating metrics service
+			log.Error(err, fmt.Sprintf("error creating multiclusterhub metrics service: %s", sName))
+			return ctrl.Result{RequeueAfter: resyncPeriod}, err
+		}
+
+		log.Info(fmt.Sprintf("Created multiclusterhub metrics service: %s", sName))
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) createMetricsServiceMonitor(ctx context.Context, m *operatorv1.MultiClusterHub) (
+	ctrl.Result, error) {
+	log := log.FromContext(ctx)
+
+	smName := utils.MCHOperatorMetricsServiceMonitorName
+	smNamespace := m.GetNamespace()
+
+	namespacedName := types.NamespacedName{
+		Name:      smName,
+		Namespace: smNamespace,
+	}
+
+	// Check if service exists
+	if err := r.Client.Get(ctx, namespacedName, &promv1.ServiceMonitor{}); err != nil {
+		if !errors.IsNotFound(err) {
+			// Unknown error. Requeue
+			log.Error(err, fmt.Sprintf("error while getting multiclusterhub metrics service: %s/%s", smNamespace, smName))
+			return ctrl.Result{RequeueAfter: resyncPeriod}, err
+		}
+
+		// Create metrics service
+		sm := &promv1.ServiceMonitor{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      smName,
+				Namespace: smNamespace,
+				Labels: map[string]string{
+					"name": operatorv1.MCH,
+				},
+			},
+			Spec: promv1.ServiceMonitorSpec{
+				Endpoints: []promv1.Endpoint{
+					{
+						BearerTokenFile: "/var/run/secrets/kubernetes.io/serviceaccount/token",
+						BearerTokenSecret: corev1.SecretKeySelector{
+							Key: "",
+						},
+						Port: "metrics",
+					},
+				},
+				NamespaceSelector: promv1.NamespaceSelector{
+					MatchNames: []string{
+						m.GetNamespace(),
+					},
+				},
+				Selector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"name": operatorv1.MCH,
+					},
+				},
+			},
+		}
+
+		if err = ctrl.SetControllerReference(m, sm, r.Scheme); err != nil {
+			return ctrl.Result{}, pkgerrors.Wrapf(
+				err, "error setting controller reference on multiclusterhub metrics servicemonitor: %s", smName)
+		}
+
+		if err = r.Client.Create(ctx, sm); err != nil {
+			// Error creating metrics servicemonitor
+			log.Error(err, fmt.Sprintf("error creating metrics servicemonitor: %s", smName))
+			return ctrl.Result{RequeueAfter: resyncPeriod}, err
+		}
+
+		log.Info(fmt.Sprintf("Created multiclusterhub metrics servicemonitor: %s", smName))
+	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -977,7 +1103,7 @@ func (r *MultiClusterHubReconciler) installCRDs(reqLogger logr.Logger, m *operat
 		utils.AddInstallerLabel(crd, m.GetName(), m.GetNamespace())
 		err, ok := deploying.Deploy(r.Client, crd)
 		if err != nil {
-			err := fmt.Errorf("Failed to deploy %s %s", crd.GetKind(), crd.GetName())
+			err := fmt.Errorf("failed to deploy %s %s", crd.GetKind(), crd.GetName())
 			reqLogger.Error(err, err.Error())
 			return DeployFailedReason, err
 		}
@@ -1015,7 +1141,7 @@ func (r *MultiClusterHubReconciler) deployResources(reqLogger logr.Logger, m *op
 		}
 
 		path := path.Join(resourceDir, fileName)
-		src, err := ioutil.ReadFile(filepath.Clean(path)) // #nosec G304 (filepath cleaned)
+		src, err := os.ReadFile(filepath.Clean(path)) // #nosec G304 (filepath cleaned)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("error reading file %s : %s", fileName, err))
 			continue
@@ -1052,7 +1178,7 @@ func (r *MultiClusterHubReconciler) deployResources(reqLogger logr.Logger, m *op
 		}
 		err, ok := deploying.Deploy(r.Client, res)
 		if err != nil {
-			err := fmt.Errorf("Failed to deploy %s %s", res.GetKind(), res.GetName())
+			err := fmt.Errorf("failed to deploy %s %s", res.GetKind(), res.GetName())
 			reqLogger.Error(err, err.Error())
 			return DeployFailedReason, err
 		}

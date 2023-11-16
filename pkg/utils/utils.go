@@ -8,13 +8,11 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -30,12 +28,6 @@ const (
 
 	// podNamespaceEnvVar is the environment variable name for the pod's namespace.
 	podNamespaceEnvVar = "POD_NAMESPACE"
-
-	// rsaKeySize is the size of the RSA key in bits.
-	rsaKeySize = 2048
-
-	// duration365d is the duration of 365 days in hours.
-	duration365d = time.Hour * 24 * 365
 
 	// DefaultRepository is the default repository for images.
 	DefaultRepository = "quay.io/stolostron"
@@ -96,6 +88,20 @@ const (
 
 	// VolsyncChartLocation is the location of the Volsync Controller chart.
 	VolsyncChartLocation = "/charts/toggle/volsync-controller"
+)
+
+const (
+	/*
+	   MCHOperatorMetricsServiceName is the name of the service used to expose the metrics
+	   endpoint for the multiclusterhub-operator.
+	*/
+	MCHOperatorMetricsServiceName = "multiclusterhub-operator-metrics"
+
+	/*
+	   MCHOperatorMetricsServiceMonitorName is the name of the service monitor used to expose
+	   the metrics for the multiclusterhub-operator.
+	*/
+	MCHOperatorMetricsServiceMonitorName = "multiclusterhub-operator-metrics"
 )
 
 var (
@@ -266,7 +272,7 @@ func DistributePods(key string, value string) *corev1.Affinity {
 }
 
 // GetImagePullPolicy returns either pull policy from CR overrides or default of Always
-func GetImagePullPolicy(m *operatorsv1.MultiClusterHub) v1.PullPolicy {
+func GetImagePullPolicy(m *operatorsv1.MultiClusterHub) corev1.PullPolicy {
 	if m.Spec.Overrides == nil || m.Spec.Overrides.ImagePullPolicy == "" {
 		return corev1.PullIfNotPresent
 	}
@@ -279,7 +285,7 @@ func GetContainerArgs(dep *appsv1.Deployment) []string {
 }
 
 // GetContainerEnvVars returns environment variables for first container in deployment
-func GetContainerEnvVars(dep *appsv1.Deployment) []v1.EnvVar {
+func GetContainerEnvVars(dep *appsv1.Deployment) []corev1.EnvVar {
 	return dep.Spec.Template.Spec.Containers[0].Env
 }
 
@@ -395,7 +401,7 @@ func GetDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	}
 	// community, _ := operatorsv1.IsCommunity()
 	// if community {
-	// 	nn = append(nn, types.NamespacedName{Name: "search-v2-operator-controller-manager", Namespace: m.Namespace})
+	//  nn = append(nn, types.NamespacedName{Name: "search-v2-operator-controller-manager", Namespace: m.Namespace})
 	// }
 	return nn
 }
