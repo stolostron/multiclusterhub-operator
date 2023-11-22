@@ -695,6 +695,9 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 	for _, template := range templates {
 		if template.GetKind() == "Deployment" {
 			annotations := template.GetAnnotations()
+			if annotations == nil {
+				annotations = make(map[string]string)
+			}
 			annotations[utils.AnnotationReleaseVersion] = version.Version
 			template.SetAnnotations(annotations)
 		}
