@@ -26,6 +26,8 @@ var (
 	AnnotationOADPSubscriptionSpec = "installer.open-cluster-management.io/oadp-subscription-spec"
 	// AnnotationIgnoreOCPVersion indicates the operator should not check the OCP version before proceeding when set
 	AnnotationIgnoreOCPVersion = "ignoreOCPVersion"
+	// AnnotationReleaseVersion indicates the release version that should be applied to all resources managed by MCH operator
+	AnnotationReleaseVersion = "installer.open-cluster-management.io/release-version"
 
 	// AnnotationKubeconfig is the secret name residing in targetcontaining the kubeconfig to access the remote cluster
 	AnnotationKubeconfig = "mch-kubeconfig"
