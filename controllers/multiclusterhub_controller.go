@@ -693,7 +693,7 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 
 	// Applies all templates
 	for _, template := range templates {
-		if template.GetKind() == "Deployment" {
+		if template.GetKind() != "CustomResourceDefinition" {
 			annotations := template.GetAnnotations()
 			if annotations == nil {
 				annotations = make(map[string]string)
