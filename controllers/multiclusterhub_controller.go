@@ -697,6 +697,12 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 
 	// Applies all templates
 	for _, template := range templates {
+		annotations := template.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
+		annotations[utils.AnnotationReleaseVersion] = version.Version
+		template.SetAnnotations(annotations)
 		result, err := r.applyTemplate(ctx, m, template)
 		if err != nil {
 			return result, err
