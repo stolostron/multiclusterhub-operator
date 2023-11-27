@@ -229,7 +229,7 @@ func SampleClusterManagementAddOn(component string) *ocmapi.ClusterManagementAdd
 }
 
 func SampleServiceMonitor(component string, namespace string) *promv1.ServiceMonitor {
-	smName, err := operatorsv1.GetServiceMonitorName(component)
+	smName, err := operatorsv1.GetLegacyServiceMonitorName(component)
 	if err != nil {
 		smName = "unknown"
 	}

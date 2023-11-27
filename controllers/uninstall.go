@@ -306,23 +306,23 @@ func (r *MultiClusterHubReconciler) removeLegacyConfigurations(ctx context.Conte
 		case "PrometheusRule":
 			configType = "PrometheusRule"
 			getObjectName = func() (string, error) {
-				return operatorsv1.GetPrometheusRulesName(c)
+				return operatorsv1.GetLegacyPrometheusRulesName(c)
 			}
 
 		case "ServiceMonitor":
 			configType = "ServiceMonitor"
 			getObjectName = func() (string, error) {
-				return operatorsv1.GetServiceMonitorName(c)
+				return operatorsv1.GetLegacyServiceMonitorName(c)
 			}
 
 		case "Service":
 			configType = "Service"
 			getObjectName = func() (string, error) {
-				return operatorsv1.GetServiceName(c)
+				return operatorsv1.GetLegacyServiceName(c)
 			}
 
 		default:
-			return fmt.Errorf("Unsupported kind detected when trying to remove legacy configuration: %s", kind)
+			return fmt.Errorf("unsupported kind detected when trying to remove legacy configuration: %s", kind)
 		}
 
 		res, err := getObjectName()
@@ -331,15 +331,7 @@ func (r *MultiClusterHubReconciler) removeLegacyConfigurations(ctx context.Conte
 		}
 
 		obj.SetName(res)
-
-		switch c {
-		case operatorsv1.MCH:
-			mchNamespace, _ := utils.OperatorNamespace()
-			obj.SetNamespace(mchNamespace)
-
-		default:
-			obj.SetNamespace(targetNamespace)
-		}
+		obj.SetNamespace(targetNamespace)
 
 		err = r.Client.Delete(ctx, obj)
 		if err != nil {
@@ -411,19 +403,19 @@ func (r *MultiClusterHubReconciler) cleanupGRCAppsub(m *operatorsv1.MultiCluster
 	}
 
 	// Manually delete GRC cluster-scope and cross-namespace resources
-	r.Log.Info(fmt.Sprintf("Deleting GRC clusterroles"))
+	r.Log.Info("Deleting GRC clusterroles")
 	err = r.Client.DeleteAllOf(context.TODO(), &rbacv1.ClusterRole{}, client.MatchingLabels{"app": "grc"})
 	if err != nil {
 		r.Log.Error(err, "Error while deleting clusterroles")
 		return err
 	}
-	r.Log.Info(fmt.Sprintf("Deleting GRC clusterrolebindings"))
+	r.Log.Info("Deleting GRC clusterrolebindings")
 	err = r.Client.DeleteAllOf(context.TODO(), &rbacv1.ClusterRoleBinding{}, client.MatchingLabels{"app": "grc"})
 	if err != nil {
 		r.Log.Error(err, "Error while deleting clusterroles")
 		return err
 	}
-	r.Log.Info(fmt.Sprintf("Deleting GRC PrometheusRule"))
+	r.Log.Info("Deleting GRC PrometheusRule")
 	u := &unstructured.Unstructured{}
 	u.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   MonitoringAPIGroup,
@@ -437,7 +429,7 @@ func (r *MultiClusterHubReconciler) cleanupGRCAppsub(m *operatorsv1.MultiCluster
 	}
 
 	// Delete appsub
-	r.Log.Info(fmt.Sprintf("Deleting GRC appsub"))
+	r.Log.Info("Deleting GRC appsub")
 	err = r.Client.Delete(context.Background(), grcAppsub)
 	if err != nil {
 		return err
