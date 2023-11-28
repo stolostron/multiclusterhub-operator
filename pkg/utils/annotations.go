@@ -75,6 +75,8 @@ var (
 		address specific operational needs.
 	*/
 	AnnotationIgnoreOCPVersion = "ignoreOCPVersion"
+	// AnnotationReleaseVersion indicates the release version that should be applied to all resources managed by MCH operator
+	AnnotationReleaseVersion = "installer.open-cluster-management.io/release-version"
 
 	/*
 		AnnotationKubeconfig is used to specify the secret name within a target resource.

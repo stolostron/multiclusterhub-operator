@@ -306,23 +306,23 @@ func (r *MultiClusterHubReconciler) removeLegacyConfigurations(ctx context.Conte
 		case "PrometheusRule":
 			configType = "PrometheusRule"
 			getObjectName = func() (string, error) {
-				return operatorsv1.GetPrometheusRulesName(c)
+				return operatorsv1.GetLegacyPrometheusRulesName(c)
 			}
 
 		case "ServiceMonitor":
 			configType = "ServiceMonitor"
 			getObjectName = func() (string, error) {
-				return operatorsv1.GetServiceMonitorName(c)
+				return operatorsv1.GetLegacyServiceMonitorName(c)
 			}
 
 		case "Service":
 			configType = "Service"
 			getObjectName = func() (string, error) {
-				return operatorsv1.GetServiceName(c)
+				return operatorsv1.GetLegacyServiceName(c)
 			}
 
 		default:
-			return fmt.Errorf("Unsupported kind detected when trying to remove legacy configuration: %s", kind)
+			return fmt.Errorf("unsupported kind detected when trying to remove legacy configuration: %s", kind)
 		}
 
 		res, err := getObjectName()
@@ -331,15 +331,7 @@ func (r *MultiClusterHubReconciler) removeLegacyConfigurations(ctx context.Conte
 		}
 
 		obj.SetName(res)
-
-		switch c {
-		case operatorsv1.MCH:
-			mchNamespace, _ := utils.OperatorNamespace()
-			obj.SetNamespace(mchNamespace)
-
-		default:
-			obj.SetNamespace(targetNamespace)
-		}
+		obj.SetNamespace(targetNamespace)
 
 		err = r.Client.Delete(ctx, obj)
 		if err != nil {

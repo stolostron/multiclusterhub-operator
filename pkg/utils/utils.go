@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
@@ -29,12 +28,6 @@ const (
 
 	// podNamespaceEnvVar is the environment variable name for the pod's namespace.
 	podNamespaceEnvVar = "POD_NAMESPACE"
-
-	// rsaKeySize is the size of the RSA key in bits.
-	rsaKeySize = 2048
-
-	// duration365d is the duration of 365 days in hours.
-	duration365d = time.Hour * 24 * 365
 
 	// DefaultRepository is the default repository for images.
 	DefaultRepository = "quay.io/stolostron"
@@ -95,6 +88,20 @@ const (
 
 	// VolsyncChartLocation is the location of the Volsync Controller chart.
 	VolsyncChartLocation = "/charts/toggle/volsync-controller"
+)
+
+const (
+	/*
+	   MCHOperatorMetricsServiceName is the name of the service used to expose the metrics
+	   endpoint for the multiclusterhub-operator.
+	*/
+	MCHOperatorMetricsServiceName = "multiclusterhub-operator-metrics"
+
+	/*
+	   MCHOperatorMetricsServiceMonitorName is the name of the service monitor used to expose
+	   the metrics for the multiclusterhub-operator.
+	*/
+	MCHOperatorMetricsServiceMonitorName = "multiclusterhub-operator-metrics"
 )
 
 var (
@@ -729,7 +736,6 @@ func UpdateMCEOverrides(mce *mcev1.MultiClusterEngine, mch *operatorsv1.MultiClu
 	} else {
 		mce.Enable(operatorsv1.MCELocalCluster)
 	}
-	return
 }
 
 /*

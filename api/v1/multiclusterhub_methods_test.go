@@ -225,7 +225,7 @@ func TestGetLegacyPrometheusKind(t *testing.T) {
 	}
 }
 
-func TestGetPrometheusRulesName(t *testing.T) {
+func TestGetLegacyPrometheusRulesName(t *testing.T) {
 	tests := []struct {
 		name      string
 		component string
@@ -234,30 +234,30 @@ func TestGetPrometheusRulesName(t *testing.T) {
 		{
 			name:      "console PrometheusRule",
 			component: Console,
-			want:      MCHPrometheusRules[Console],
+			want:      MCHLegacyPrometheusRules[Console],
 		},
 		{
 			name:      "unknown PrometheusRule",
 			component: "unknown",
-			want:      MCHPrometheusRules["unknown"],
+			want:      MCHLegacyPrometheusRules["unknown"],
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetPrometheusRulesName(tt.component)
+			got, err := GetLegacyPrometheusRulesName(tt.component)
 			if err != nil && tt.component != "unknown" {
-				t.Errorf("GetPrometheusRulesName(%v) = %v, want: %v", tt.component, err.Error(), tt.want)
+				t.Errorf("GetLegacyPrometheusRulesName(%v) = %v, want: %v", tt.component, err.Error(), tt.want)
 			}
 
 			if got != tt.want {
-				t.Errorf("GetPrometheusRulesName(%v) = %v, want: %v", tt.component, got, tt.want)
+				t.Errorf("GetLegacyPrometheusRulesName(%v) = %v, want: %v", tt.component, got, tt.want)
 			}
 		})
 	}
 }
 
-func TestGetServiceMonitorName(t *testing.T) {
+func TestGetLegacyServiceMonitorName(t *testing.T) {
 	tests := []struct {
 		name      string
 		component string
@@ -266,56 +266,51 @@ func TestGetServiceMonitorName(t *testing.T) {
 		{
 			name:      "console ServiceMonitor",
 			component: Console,
-			want:      MCHServiceMonitors[Console],
+			want:      MCHLegacyServiceMonitors[Console],
 		},
 		{
 			name:      "unknown ServiceMonitor",
 			component: "unknown",
-			want:      MCHServiceMonitors["unknown"],
+			want:      MCHLegacyServiceMonitors["unknown"],
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetServiceMonitorName(tt.component)
+			got, err := GetLegacyServiceMonitorName(tt.component)
 			if err != nil && tt.component != "unknown" {
-				t.Errorf("GetServiceMonitorName(%v) = %v, want: %v", tt.component, err.Error(), tt.want)
+				t.Errorf("GetLegacyServiceMonitorName(%v) = %v, want: %v", tt.component, err.Error(), tt.want)
 			}
 
 			if got != tt.want {
-				t.Errorf("GetServiceMonitorName(%v) = %v, want: %v", tt.component, got, tt.want)
+				t.Errorf("GetLegacyServiceMonitorName(%v) = %v, want: %v", tt.component, got, tt.want)
 			}
 		})
 	}
 }
 
-func TestGetServiceName(t *testing.T) {
+func TestGetLegacyServiceName(t *testing.T) {
 	tests := []struct {
 		name      string
 		component string
 		want      string
 	}{
 		{
-			name:      "multiclusterhub Service",
-			component: MCH,
-			want:      MCHServices[MCH],
-		},
-		{
 			name:      "unknown Service",
 			component: "unknown",
-			want:      MCHServices["unknown"],
+			want:      MCHLegacyServices["unknown"],
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetServiceName(tt.component)
+			got, err := GetLegacyServiceName(tt.component)
 			if err != nil && tt.component != "unknown" {
-				t.Errorf("GetServiceName(%v) = %v, want: %v", tt.component, err.Error(), tt.want)
+				t.Errorf("GetLegacyServiceName(%v) = %v, want: %v", tt.component, err.Error(), tt.want)
 			}
 
 			if got != tt.want {
-				t.Errorf("GetServiceName(%v) = %v, want: %v", tt.component, got, tt.want)
+				t.Errorf("GetLegacyServiceName(%v) = %v, want: %v", tt.component, got, tt.want)
 			}
 		})
 	}
