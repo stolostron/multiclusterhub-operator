@@ -61,7 +61,7 @@ func (r *MultiClusterHubReconciler) ensureNoNamespace(m *operatorv1.MultiCluster
 		subLog.Error(err, "Failed to uninstall namespace")
 		return ctrl.Result{}, err
 	}
-	if gone == true {
+	if gone {
 		return ctrl.Result{}, nil
 	} else {
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
@@ -195,7 +195,7 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 		mce = multiclusterengine.NewMultiClusterEngine(m, infraNS)
 		err = r.Client.Create(ctx, mce)
 		if err != nil {
-			return ctrl.Result{Requeue: true}, fmt.Errorf("Error creating new MCE: %w", err)
+			return ctrl.Result{Requeue: true}, fmt.Errorf("error creating new MCE: %w", err)
 		}
 		return ctrl.Result{}, nil
 	}
@@ -212,7 +212,7 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 	calcMCE := multiclusterengine.RenderMultiClusterEngine(mce, m)
 	err = r.Client.Update(ctx, calcMCE)
 	if err != nil {
-		return ctrl.Result{Requeue: true}, fmt.Errorf("Error updating MCE %s: %w", mce.Name, err)
+		return ctrl.Result{Requeue: true}, fmt.Errorf("error updating MCE %s: %w", mce.Name, err)
 	}
 	return ctrl.Result{}, nil
 }
@@ -533,7 +533,7 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context,
 		err = r.Client.Update(ctx, calcSub)
 	}
 	if err != nil {
-		return ctrl.Result{Requeue: true}, fmt.Errorf("Error updating subscription %s: %w", calcSub.Name, err)
+		return ctrl.Result{Requeue: true}, fmt.Errorf("error updating subscription %s: %w", calcSub.Name, err)
 	}
 
 	return ctrl.Result{}, nil
@@ -563,7 +563,7 @@ func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context) (ctrl.R
 		return ctrl.Result{Requeue: true}, err
 	}
 	if existingMCE == nil {
-		r.Log.Info(fmt.Sprintf("Multiclusterengine is not yet present"))
+		r.Log.Info("Multiclusterengine is not yet present")
 		return ctrl.Result{Requeue: true}, nil
 	}
 	if utils.IsUnitTest() {
@@ -590,7 +590,7 @@ func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context) (ctrl.R
 // GetCSVFromSubscription retrieves CSV status information from the related subscription for status
 func (r *MultiClusterHubReconciler) GetCSVFromSubscription(sub *subv1alpha1.Subscription) (*unstructured.Unstructured, error) {
 	if sub == nil {
-		return nil, fmt.Errorf("Cannot find CSV from nil Subscription")
+		return nil, fmt.Errorf("cannot find CSV from nil Subscription")
 	}
 	mceSubscription := &subv1alpha1.Subscription{}
 	err := r.Client.Get(context.Background(), types.NamespacedName{
@@ -777,7 +777,7 @@ func (r *MultiClusterHubReconciler) getClusterVersion(ctx context.Context) (stri
 	}
 
 	if len(clusterVersion.Status.History) == 0 {
-		return "", e.New("Failed to detect status in clusterversion.status.history")
+		return "", e.New("failed to detect status in clusterversion.status.history")
 	}
 	return clusterVersion.Status.History[0].Version, nil
 }
@@ -827,7 +827,7 @@ func (r *MultiClusterHubReconciler) ensureNoClusterManagementAddOn(m *operatorv1
 
 	err = r.Client.Delete(context.TODO(), clusterMgmtAddon)
 	if err != nil && !errors.IsNotFound(err) {
-		r.Log.Error(err, fmt.Sprintf("Error deleting ClusterManagementAddOn CR"))
+		r.Log.Error(err, "Error deleting ClusterManagementAddOn CR")
 		return ctrl.Result{Requeue: true}, err
 	}
 
@@ -853,7 +853,7 @@ func (r *MultiClusterHubReconciler) ensureNoSearchCR(m *operatorv1.MultiClusterH
 	if len(searchList.Items) != 0 {
 		err = r.Client.Delete(context.TODO(), &searchList.Items[0])
 		if err != nil {
-			r.Log.Error(err, fmt.Sprintf("Error deleting Search CR"))
+			r.Log.Error(err, "Error deleting Search CR")
 			return ctrl.Result{Requeue: true}, err
 		}
 
@@ -864,7 +864,7 @@ func (r *MultiClusterHubReconciler) ensureNoSearchCR(m *operatorv1.MultiClusterH
 		return ctrl.Result{Requeue: true}, err
 	}
 	if len(searchList.Items) != 0 {
-		r.Log.Info(fmt.Sprintf("Waiting for Search CR to be deleted"))
+		r.Log.Info("Waiting for Search CR to be deleted")
 		return ctrl.Result{Requeue: true}, errors.NewBadRequest("Search CR has not been deleted")
 	}
 	return ctrl.Result{}, nil

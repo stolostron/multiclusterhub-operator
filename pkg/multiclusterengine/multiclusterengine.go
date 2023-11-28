@@ -12,7 +12,6 @@ import (
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
-	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -143,7 +142,7 @@ and an infrastructure custom namespace. It sets various properties and attribute
 annotations, image pull secrets, tolerations, node selectors, availability configuration, target namespace,
 and component overrides.
 */
-func NewMultiClusterEngine(m *operatorsv1.MultiClusterHub, infrastructureCustomNamespace string,
+func NewMultiClusterEngine(m *operatorv1.MultiClusterHub, infrastructureCustomNamespace string,
 ) *mcev1.MultiClusterEngine {
 	labels := map[string]string{
 		"installer.name":        m.GetName(),
@@ -152,7 +151,7 @@ func NewMultiClusterEngine(m *operatorsv1.MultiClusterHub, infrastructureCustomN
 	}
 	annotations := GetSupportedAnnotations(m)
 	availConfig := mcev1.HAHigh
-	if m.Spec.AvailabilityConfig == operatorsv1.HABasic {
+	if m.Spec.AvailabilityConfig == operatorv1.HABasic {
 		availConfig = mcev1.HABasic
 	}
 
@@ -190,7 +189,7 @@ RenderMultiClusterEngine takes an existing MultiClusterEngine (MCE) and a MultiC
 modified MCE by applying changes from the MCH. The modifications include updating annotations, image pull secret,
 tolerations, node selector, availability configuration, and component states.
 */
-func RenderMultiClusterEngine(existingMCE *mcev1.MultiClusterEngine, m *operatorsv1.MultiClusterHub,
+func RenderMultiClusterEngine(existingMCE *mcev1.MultiClusterEngine, m *operatorv1.MultiClusterHub,
 ) *mcev1.MultiClusterEngine {
 	copy := existingMCE.DeepCopy()
 
@@ -209,7 +208,7 @@ func RenderMultiClusterEngine(existingMCE *mcev1.MultiClusterEngine, m *operator
 		RemoveSupportedAnnotations(copy)
 	}
 
-	if m.Spec.AvailabilityConfig == operatorsv1.HABasic {
+	if m.Spec.AvailabilityConfig == operatorv1.HABasic {
 		copy.Spec.AvailabilityConfig = mcev1.HABasic
 	} else {
 		copy.Spec.AvailabilityConfig = mcev1.HAHigh
@@ -238,7 +237,7 @@ func RenderMultiClusterEngine(existingMCE *mcev1.MultiClusterEngine, m *operator
 GetSupportedAnnotations retrieves annotations from the provided MultiClusterHub (MCH) that are relevant to the
 MultiClusterEngine (MCE). It specifically focuses on the "imageRepository" annotation.
 */
-func GetSupportedAnnotations(m *operatorsv1.MultiClusterHub) map[string]string {
+func GetSupportedAnnotations(m *operatorv1.MultiClusterHub) map[string]string {
 	mceAnnotations := make(map[string]string)
 	if m.GetAnnotations() != nil {
 		if val, ok := m.GetAnnotations()[utils.AnnotationImageRepo]; ok && val != "" {
@@ -316,7 +315,7 @@ func GetCatalogSource(k8sClient client.Client) (types.NamespacedName, error) {
 		return nn, err
 	}
 	if len(pkgs) == 0 {
-		return nn, fmt.Errorf("No %s packageManifests found", DesiredPackage())
+		return nn, fmt.Errorf("no %s packageManifests found", DesiredPackage())
 	}
 
 	filtered := filterPackageManifests(pkgs, desiredChannel())
@@ -328,11 +327,11 @@ func GetCatalogSource(k8sClient client.Client) (types.NamespacedName, error) {
 		return nn, nil
 	}
 	if len(filtered) > 1 {
-		return nn, fmt.Errorf("Found more than one %s catalogSource with expected channel %s", DesiredPackage(),
+		return nn, fmt.Errorf("found more than one %s catalogSource with expected channel %s", DesiredPackage(),
 			desiredChannel())
 	}
 
-	return nn, fmt.Errorf("No %s packageManifests found with desired channel %s", DesiredPackage(), desiredChannel())
+	return nn, fmt.Errorf("no %s packageManifests found with desired channel %s", DesiredPackage(), desiredChannel())
 }
 
 /*

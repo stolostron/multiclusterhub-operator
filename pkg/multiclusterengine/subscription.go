@@ -9,7 +9,6 @@ import (
 	"fmt"
 
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,7 +22,7 @@ NewSubscription returns an MCE (MultiClusterEngine) subscription with desired de
 subscription based on provided input parameters and sets various fields according to the specified default values.
 The function returns the newly created MCE subscription.
 */
-func NewSubscription(m *operatorsv1.MultiClusterHub, c *subv1alpha1.SubscriptionConfig,
+func NewSubscription(m *operatorv1.MultiClusterHub, c *subv1alpha1.SubscriptionConfig,
 	subOverrides *subv1alpha1.SubscriptionSpec, community bool) *subv1alpha1.Subscription {
 	chName, pkgName, catSourceName := channel, packageName, catalogSourceName
 	if community {
@@ -115,7 +114,7 @@ GetAnnotationOverrides returns an OLM (Operator Lifecycle Manager) SubscriptionS
 in the MultiClusterHub. It retrieves annotation-based overrides for the OLM SubscriptionSpec from the MultiClusterHub
 instance and returns them.
 */
-func GetAnnotationOverrides(m *operatorsv1.MultiClusterHub) (*subv1alpha1.SubscriptionSpec, error) {
+func GetAnnotationOverrides(m *operatorv1.MultiClusterHub) (*subv1alpha1.SubscriptionSpec, error) {
 	mceAnnotationOverrides := utils.GetMCEAnnotationOverrides(m)
 	if mceAnnotationOverrides == "" {
 		return nil, nil
@@ -124,7 +123,7 @@ func GetAnnotationOverrides(m *operatorsv1.MultiClusterHub) (*subv1alpha1.Subscr
 	err := json.Unmarshal([]byte(mceAnnotationOverrides), mceSub)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"Failed to unmarshal MultiClusterEngine annotation '%s': %w", mceAnnotationOverrides, err,
+			"failed to unmarshal MultiClusterEngine annotation '%s': %w", mceAnnotationOverrides, err,
 		)
 	}
 	return mceSub, nil

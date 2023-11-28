@@ -20,7 +20,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -83,16 +82,6 @@ func newComponentList(m *operatorsv1.MultiClusterHub, ocpConsole bool) map[strin
 	return components
 }
 
-var unmanagedStatus = operatorsv1.StatusCondition{
-	Type:               "Available",
-	Status:             metav1.ConditionTrue,
-	LastUpdateTime:     metav1.Now(),
-	LastTransitionTime: metav1.Now(),
-	Reason:             "ComponentUnmanaged",
-	Message:            "Component is installed separately and not managed by the multiclusterhub",
-	Available:          true,
-}
-
 var consoleUnavailableStatus = operatorsv1.StatusCondition{
 	Type:               "Available",
 	Status:             metav1.ConditionFalse,
@@ -110,15 +99,6 @@ var unknownStatus = operatorsv1.StatusCondition{
 	LastTransitionTime: metav1.Now(),
 	Reason:             "No conditions available",
 	Message:            "No conditions available",
-	Available:          false,
-}
-
-var wrongVersionStatus = operatorsv1.StatusCondition{
-	Type:               "Available",
-	Status:             metav1.ConditionFalse,
-	LastUpdateTime:     metav1.Now(),
-	LastTransitionTime: metav1.Now(),
-	Reason:             "WrongVersion",
 	Available:          false,
 }
 
@@ -191,32 +171,30 @@ func calculateStatus(
 
 	// Copy conditions one by one to not affect original object
 	conditions := hub.Status.HubConditions
-	for i := range conditions {
-		status.HubConditions = append(status.HubConditions, conditions[i])
-	}
+	status.HubConditions = append(status.HubConditions, conditions...)
 
 	// Update hub conditions
 	if successful {
 		// don't label as complete until component pruning succeeds
 		if !hubPruning(status) {
-			available := NewHubCondition(operatorsv1.Complete, v1.ConditionTrue, ComponentsAvailableReason, "All hub components ready.")
+			available := NewHubCondition(operatorsv1.Complete, metav1.ConditionTrue, ComponentsAvailableReason, "All hub components ready.")
 			SetHubCondition(&status, *available)
 		} else {
 			// only add unavailable status if complete status already present
 			if HubConditionPresent(status, operatorsv1.Complete) {
-				unavailable := NewHubCondition(operatorsv1.Complete, v1.ConditionFalse, OldComponentNotRemovedReason, "Not all components successfully pruned.")
+				unavailable := NewHubCondition(operatorsv1.Complete, metav1.ConditionFalse, OldComponentNotRemovedReason, "Not all components successfully pruned.")
 				SetHubCondition(&status, *unavailable)
 			}
 		}
 	} else {
 		// hub is progressing unless otherwise specified
 		if !HubConditionPresent(status, operatorsv1.Progressing) {
-			progressing := NewHubCondition(operatorsv1.Progressing, v1.ConditionTrue, ReconcileReason, "Hub is reconciling.")
+			progressing := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, ReconcileReason, "Hub is reconciling.")
 			SetHubCondition(&status, *progressing)
 		}
 		// only add unavailable status if complete status already present
 		if HubConditionPresent(status, operatorsv1.Complete) {
-			unavailable := NewHubCondition(operatorsv1.Complete, v1.ConditionFalse, ComponentsUnavailableReason, "Not all hub components ready.")
+			unavailable := NewHubCondition(operatorsv1.Complete, metav1.ConditionFalse, ComponentsUnavailableReason, "Not all hub components ready.")
 			SetHubCondition(&status, *unavailable)
 		}
 	}
@@ -276,12 +254,7 @@ func successfulDeploy(d *appsv1.Deployment) bool {
 		}
 	}
 
-	if d.Status.UnavailableReplicas > 0 {
-		return false
-	}
-
-	return true
-	// latest := latestDeployCondition(d.Status.Conditions)
+	return d.Status.UnavailableReplicas <= 0
 }
 
 func latestDeployCondition(conditions []appsv1.DeploymentCondition) appsv1.DeploymentCondition {
@@ -329,7 +302,7 @@ func mapDeployment(ds *appsv1.Deployment) operatorsv1.StatusCondition {
 
 	// Because our definition of success is different than the deployment's it is possible we indicate failure
 	// despite an available deployment present. To avoid confusion we should show a different status.
-	if dcs.Type == appsv1.DeploymentAvailable && dcs.Status == corev1.ConditionTrue && ret.Available == false {
+	if dcs.Type == appsv1.DeploymentAvailable && dcs.Status == corev1.ConditionTrue && !ret.Available {
 		sub := progressingDeployCondition(ds.Status.Conditions)
 		ret = operatorsv1.StatusCondition{
 			Kind:               "Deployment",
@@ -344,51 +317,6 @@ func mapDeployment(ds *appsv1.Deployment) operatorsv1.StatusCondition {
 	}
 
 	return ret
-}
-
-func mapManagedClusterConditions(conditions []interface{}) operatorsv1.StatusCondition {
-	if len(conditions) < 1 {
-		return unknownStatus
-	}
-	accepted, joined, available := false, false, false
-	latestCondition := make(map[string]interface{})
-	for _, condition := range conditions {
-		statusCondition := condition.(map[string]interface{})
-		latestCondition = statusCondition
-		switch statusCondition["type"] {
-		case "HubAcceptedManagedCluster":
-			accepted = true
-		case "ManagedClusterJoined":
-			joined = true
-		case "ManagedClusterConditionAvailable":
-			available = true
-		}
-	}
-
-	if !accepted || !joined || !available {
-		// log.Info("Waiting for managedcluster to be available")
-		return operatorsv1.StatusCondition{
-			Kind:               "ManagedCluster",
-			Type:               latestCondition["type"].(string),
-			Status:             metav1.ConditionStatus(latestCondition["status"].(string)),
-			LastUpdateTime:     metav1.Now(),
-			LastTransitionTime: metav1.Now(),
-			Reason:             latestCondition["reason"].(string),
-			Message:            latestCondition["message"].(string),
-			Available:          false,
-		}
-	}
-
-	return operatorsv1.StatusCondition{
-		Kind:               "ManagedCluster",
-		Type:               "ManagedClusterImportSuccess",
-		Status:             metav1.ConditionTrue,
-		LastUpdateTime:     metav1.Now(),
-		LastTransitionTime: metav1.Now(),
-		Reason:             "ManagedClusterImported",
-		Message:            "ManagedCluster is accepted, joined, and available",
-		Available:          true,
-	}
 }
 
 func mapSubscription(sub *unstructured.Unstructured) operatorsv1.StatusCondition {
@@ -589,7 +517,7 @@ func aggregatePhase(status operatorsv1.MultiClusterHubStatus) operatorsv1.HubPha
 }
 
 // NewHubCondition creates a new hub condition.
-func NewHubCondition(condType operatorsv1.HubConditionType, status v1.ConditionStatus, reason, message string) *operatorsv1.HubCondition {
+func NewHubCondition(condType operatorsv1.HubConditionType, status metav1.ConditionStatus, reason, message string) *operatorsv1.HubCondition {
 	return &operatorsv1.HubCondition{
 		Type:               condType,
 		Status:             status,

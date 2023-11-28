@@ -18,8 +18,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
+/*
+TestNewDeployment tests the creation and deployment of a new Kubernetes Deployment.
+It uses a fake client for testing purposes and verifies that the deployment is successfully created and deployed.
+This test checks the entire process from creation to deployment and retrieval.
+*/
 func TestNewDeployment(t *testing.T) {
-	fakeclient := fake.NewFakeClient()
+	fakeclient := fake.NewClientBuilder().Build()
 	dep, err := toUnstructuredObj(newDeployment("dep", "ns", 1))
 	if err != nil {
 		t.Fatalf("failed to generate deployment %v", err)
@@ -36,8 +41,13 @@ func TestNewDeployment(t *testing.T) {
 	}
 }
 
+/*
+TestListDeployments tests the listing of Deployments in a specific namespace.
+It uses a fake client for testing purposes and creates multiple Deployments with different names and namespaces.
+The test ensures that the ListDeployments function returns the expected number of Deployments in the specified namespace.
+*/
 func TestListDeployments(t *testing.T) {
-	fakeclient := fake.NewFakeClient()
+	fakeclient := fake.NewClientBuilder().Build()
 	fakeclient.Create(context.TODO(), newDeployment("multiclusterhub-operator", "ns", 1))
 	fakeclient.Create(context.TODO(), newDeployment("dep1", "ns", 1))
 	fakeclient.Create(context.TODO(), newDeployment("dep2", "ns", 1))
@@ -53,18 +63,26 @@ func TestListDeployments(t *testing.T) {
 	}
 }
 
+/*
+newSA creates and returns a new Kubernetes ServiceAccount as an unstructured object.
+The ServiceAccount is named "test" and belongs to the namespace "test".
+*/
 func newSA() *unstructured.Unstructured {
 	u := &unstructured.Unstructured{}
 	u.SetAPIVersion("v1")
 	u.SetKind("ServiceAccount")
 	u.SetName("test")
 	u.SetNamespace("test")
-	// u.SetAnnotations()
 	return u
 }
 
+/*
+TestRepeatedDeploy tests the repeated deployment of a Kubernetes resource.
+It uses a fake client for testing purposes and deploys a ServiceAccount multiple times, checking for expected behavior.
+The test also verifies that annotations are properly added and updated during the repeated deployments.
+*/
 func TestRepeatedDeploy(t *testing.T) {
-	fakeclient := fake.NewFakeClient()
+	fakeclient := fake.NewClientBuilder().Build()
 
 	err, new := Deploy(fakeclient, newSA())
 	if err != nil {
@@ -100,7 +118,7 @@ func TestRepeatedDeploy(t *testing.T) {
 	// Change resource and deploy again
 	annotatedSA := newSA()
 	annotatedSA.SetAnnotations(map[string]string{"foo": "bar"})
-	err, new = Deploy(fakeclient, annotatedSA)
+	err, _ = Deploy(fakeclient, annotatedSA)
 	if err != nil {
 		t.Fatalf("failed to deploy service account: %v", err)
 	}
@@ -126,6 +144,10 @@ func TestRepeatedDeploy(t *testing.T) {
 
 }
 
+/*
+newDeployment creates and returns a new Kubernetes Deployment with the specified name, namespace, and replicas.
+The API version is set to "extensions/v1beta1".
+*/
 func newDeployment(name, namespace string, replicas int32) *appsv1.Deployment {
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
@@ -142,6 +164,12 @@ func newDeployment(name, namespace string, replicas int32) *appsv1.Deployment {
 	}
 }
 
+/*
+toUnstructuredObj converts a Kubernetes runtime.Object to an unstructured.Unstructured object.
+It uses JSON marshaling and unmarshaling to perform the conversion.
+Returns the unstructured object and any error encountered during the process.
+*/
+
 func toUnstructuredObj(obj runtime.Object) (*unstructured.Unstructured, error) {
 	content, err := json.Marshal(obj)
 	if err != nil {
@@ -152,8 +180,17 @@ func toUnstructuredObj(obj runtime.Object) (*unstructured.Unstructured, error) {
 	return u, err
 }
 
+/*
+Test_shasMatch tests the shasMatch function, which compares the SHA annotations of two unstructured objects.
+It creates test cases with unstructured objects having matching and non-matching SHA annotations.
+The test ensures that shasMatch produces the expected results for different scenarios.
+*/
 func Test_shasMatch(t *testing.T) {
-	pod := &unstructured.Unstructured{Object: map[string]interface{}{"kind": "Pod", "apiVersion": "v1", "metadata": map[string]interface{}{"name": "test"}}}
+	pod := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"kind": "Pod", "apiVersion": "v1", "metadata": map[string]interface{}{"name": "test"},
+		},
+	}
 	podSha, _ := hash(pod)
 
 	rightSha := pod.DeepCopy()
@@ -190,8 +227,17 @@ func Test_shasMatch(t *testing.T) {
 	}
 }
 
+/*
+Test_annotate tests the annotate function, which adds default annotations to a Kubernetes resource.
+It checks that existing annotations are preserved, and new annotations are added.
+The test ensures that the annotate function behaves as expected.
+*/
 func Test_annotate(t *testing.T) {
-	pod := &unstructured.Unstructured{Object: map[string]interface{}{"kind": "Pod", "apiVersion": "v1", "metadata": map[string]interface{}{"name": "test"}}}
+	pod := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"kind": "Pod", "apiVersion": "v1", "metadata": map[string]interface{}{"name": "test"},
+		},
+	}
 	pod.SetAnnotations(map[string]string{"foo": "bar"})
 
 	t.Run("Keep existing annotations", func(t *testing.T) {

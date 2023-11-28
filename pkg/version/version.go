@@ -66,7 +66,7 @@ func validVersion(have, required string) error {
 		return err
 	}
 	if !aboveMinVersion.Check(currentVersion) {
-		return fmt.Errorf("Version %s did not meet minimum version requirement of %s", have, required)
+		return fmt.Errorf("version %s did not meet minimum version requirement of %s", have, required)
 	}
 	return nil
 }

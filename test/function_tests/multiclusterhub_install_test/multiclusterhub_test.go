@@ -46,12 +46,12 @@ var _ = Describe("Multiclusterhub", func() {
 
 			utils.CreateMCHNotManaged()
 			if err := utils.ValidateStatusesExist(); err != nil {
-				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				fmt.Printf("Error: %s\n", err.Error())
 				return
 			}
 			err := utils.ValidateMCH()
 			if err != nil {
-				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				fmt.Printf("Error: %s\n", err.Error())
 				return
 			}
 			fmt.Printf("Installation Time: %s\n", time.Since(start))
@@ -77,7 +77,7 @@ func FullInstallTestSuite() {
 		mch, err := utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Get(context.TODO(), utils.MCHName, metav1.GetOptions{})
 		Expect(err).To(BeNil())
 		mch.Object["spec"].(map[string]interface{})["enableClusterBackup"] = true
-		mch, err = utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
+		_, err = utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
 		Expect(err).To(BeNil())
 
 		Eventually(func() error {

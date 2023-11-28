@@ -23,7 +23,6 @@ var (
 	baseDomain          string
 	kubeadminUser       string
 	kubeadminCredential string
-	kubeconfig          string
 	reportFile          string
 )
 
@@ -77,7 +76,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).To(BeNil())
 	approvedInstallPlan, err := utils.MarkInstallPlanAsApproved(installPlan)
 	Expect(err).To(BeNil())
-	installPlan, err = installPlanLink.Update(context.TODO(), approvedInstallPlan, metav1.UpdateOptions{})
+	_, err = installPlanLink.Update(context.TODO(), approvedInstallPlan, metav1.UpdateOptions{})
 	Expect(err).To(BeNil())
 
 	// 	By("Wait for MCH Operator to be available")

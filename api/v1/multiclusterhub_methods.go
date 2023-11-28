@@ -350,7 +350,7 @@ func IsCommunity() (bool, error) {
 	} else if (packageName == "stolostron") || (packageName == "") {
 		return true, nil
 	} else {
-		err := errors.New("There is an illegal value set for OPERATOR_PACKAGE")
+		err := errors.New("there is an illegal value set for OPERATOR_PACKAGE")
 		return true, err
 	}
 }

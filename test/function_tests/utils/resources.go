@@ -117,12 +117,12 @@ func NewMCHTolerations(name, namespace, imageOverridesConfigmapName string, disa
 
 func TestTolerations() []corev1.Toleration {
 	return []corev1.Toleration{
-		corev1.Toleration{
+		{
 			Key:      "node-role.kubernetes.io/infra",
 			Operator: corev1.TolerationOpExists,
 			Effect:   corev1.TaintEffectNoSchedule,
 		},
-		corev1.Toleration{
+		{
 			Key:      "tolerations.test.key",
 			Operator: corev1.TolerationOpExists,
 			Effect:   corev1.TaintEffectNoSchedule,
@@ -136,7 +136,7 @@ func UnstructuredTestTolerations() []interface{} {
 	for _, toleration := range tolerations {
 		t, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&toleration)
 		if err != nil {
-			panic(fmt.Errorf("FATAL: Could not convert toleration to unstructured: %s\n\n%#v\n\n", err, toleration))
+			panic(fmt.Errorf("FATAL: Could not convert toleration to unstructured: %s\n\n%#v", err, toleration))
 		}
 		response = append(response, t)
 	}

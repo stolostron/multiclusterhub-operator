@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -167,7 +166,7 @@ func RenderCRDs(crdDir string) ([]*unstructured.Unstructured, []error) {
 			return nil
 		}
 
-		bytesFile, e := ioutil.ReadFile(filepath.Clean(path))
+		bytesFile, e := os.ReadFile(filepath.Clean(path))
 		if e != nil {
 			errs = append(errs, fmt.Errorf("%s - error reading file: %v", info.Name(), err.Error()))
 		}
@@ -195,7 +194,7 @@ func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]st
 		value, _ := os.LookupEnv("TEMPLATES_PATH")
 		chartDir = path.Join(value, chartDir)
 	}
-	charts, err := ioutil.ReadDir(chartDir)
+	charts, err := os.ReadDir(chartDir)
 	if err != nil {
 		errs = append(errs, err)
 	}
@@ -216,14 +215,14 @@ func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]st
 func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]string) (
 	[]*unstructured.Unstructured, []error) {
 	log := log.FromContext(context.Background())
-	errs := []error{}
+
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
 		chartPath = path.Join(val, chartPath)
 	} else {
 		value, _ := os.LookupEnv("TEMPLATES_PATH")
 		chartPath = path.Join(value, chartPath)
-
 	}
+
 	chartTemplates, errs := renderTemplates(chartPath, mch, images)
 	if len(errs) > 0 {
 		for _, err := range errs {
@@ -242,7 +241,7 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 	errs := []error{}
 	chart, err := loader.Load(chartPath)
 	if err != nil {
-		log.Info(fmt.Sprintf("error loading chart:"))
+		log.Info("error loading chart")
 		return nil, append(errs, err)
 	}
 	valuesYaml := &Values{}

@@ -272,7 +272,7 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 			"Waiting for helmreleases to terminate.")
 
 		SetHubCondition(&m.Status, *waiting)
-		return fmt.Errorf("Waiting for helmreleases to be terminated")
+		return fmt.Errorf("waiting for helmreleases to be terminated")
 	}
 
 	reqLogger.Info("All helmreleases have been terminated")

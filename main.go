@@ -22,7 +22,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -56,7 +55,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -361,7 +359,7 @@ func getOperatorNamespace() (string, error) {
 		return "", fmt.Errorf("operator run mode forced to local")
 	}
 
-	nsBytes, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+	nsBytes, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
 	if err != nil {
 		if os.IsNotExist(err) {
 			return "", fmt.Errorf("namespace not found for current environment")
@@ -370,47 +368,6 @@ func getOperatorNamespace() (string, error) {
 	}
 	ns := strings.TrimSpace(string(nsBytes))
 	return ns, nil
-}
-
-func ensureCRD(mgr ctrl.Manager, crd *unstructured.Unstructured) error {
-	ctx := context.Background()
-	maxAttempts := 5
-	go func() {
-		for i := 0; i < maxAttempts; i++ {
-			setupLog.Info(fmt.Sprintf("Ensuring '%s' CRD exists", crd.GetName()))
-			existingCRD := &unstructured.Unstructured{}
-			existingCRD.SetGroupVersionKind(crd.GroupVersionKind())
-			err := mgr.GetClient().Get(ctx, types.NamespacedName{Name: crd.GetName()}, existingCRD)
-			if err != nil && errors.IsNotFound(err) {
-				// CRD not found. Create and return
-				err = mgr.GetClient().Create(ctx, crd)
-				if err != nil {
-					setupLog.Error(err, fmt.Sprintf("Error creating '%s' CRD", crd.GetName()))
-					time.Sleep(5 * time.Second)
-					continue
-				}
-				return
-			} else if err != nil {
-				setupLog.Error(err, fmt.Sprintf("Error getting '%s' CRD", crd.GetName()))
-			} else if err == nil {
-				// CRD already exists. Update and return
-				setupLog.Info(fmt.Sprintf("'%s' CRD already exists. Updating.", crd.GetName()))
-				crd.SetResourceVersion(existingCRD.GetResourceVersion())
-				err = mgr.GetClient().Update(ctx, crd)
-				if err != nil {
-					setupLog.Error(err, fmt.Sprintf("Error updating '%s' CRD", crd.GetName()))
-					time.Sleep(5 * time.Second)
-					continue
-				}
-				return
-			}
-			time.Sleep(5 * time.Second)
-		}
-
-		setupLog.Info(fmt.Sprintf("Unable to ensure '%s' CRD exists in allotted time. Failing.", crd.GetName()))
-		os.Exit(1)
-	}()
-	return nil
 }
 
 func ensureWebhooks(k8sClient client.Client) error {

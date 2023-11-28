@@ -52,7 +52,7 @@ var _ = Describe("Multiclusterhub", func() {
 		Expect(err).To(BeNil())
 		approvedInstallPlan, err := utils.MarkInstallPlanAsApproved(installPlan)
 		Expect(err).To(BeNil())
-		installPlan, err = installPlanLink.Update(context.TODO(), approvedInstallPlan, metav1.UpdateOptions{})
+		_, err = installPlanLink.Update(context.TODO(), approvedInstallPlan, metav1.UpdateOptions{})
 		Expect(err).To(BeNil())
 
 		var phaseError error

@@ -21,7 +21,6 @@ var (
 	baseDomain          string
 	kubeadminUser       string
 	kubeadminCredential string
-	kubeconfig          string
 	reportFile          string
 )
 
@@ -43,7 +42,6 @@ var _ = AfterSuite(func() {
 		return
 	}
 	By("Deleting OCM Subscriptions")
-	// Delete Subscription
 	subLink := utils.DynamicKubeClient.Resource(utils.GVRSub).Namespace(utils.MCHNamespace)
 
 	subList, err := subLink.List(context.TODO(), metav1.ListOptions{})
@@ -59,7 +57,6 @@ var _ = AfterSuite(func() {
 	Expect(err).Should(BeNil())
 
 	By("Deleting CSVs")
-	// Delete CSVs
 	csvLink := utils.DynamicKubeClient.Resource(utils.GVRCSV).Namespace(utils.MCHNamespace)
 	csvList, err := csvLink.List(context.TODO(), metav1.ListOptions{})
 	Expect(err).Should(BeNil())

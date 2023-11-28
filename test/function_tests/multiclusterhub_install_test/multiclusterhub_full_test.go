@@ -159,7 +159,7 @@ var testHiveConfig = func() func() {
 			Expect(ok).To(BeTrue())
 			spec["targetNamespace"] = "test-hive"
 			spec["logLevel"] = "info"
-			hiveConfig, err = utils.DynamicKubeClient.Resource(utils.GVRHiveConfig).Update(context.TODO(), hiveConfig, metav1.UpdateOptions{})
+			_, err = utils.DynamicKubeClient.Resource(utils.GVRHiveConfig).Update(context.TODO(), hiveConfig, metav1.UpdateOptions{})
 			Expect(err).To(BeNil()) // If HiveConfig does not exist, err
 
 			By("- Confirming edit was successful")
@@ -213,7 +213,6 @@ var testHiveConfig = func() func() {
 			}
 			_, err = utils.DynamicKubeClient.Resource(utils.GVRMultiClusterHub).Namespace(utils.MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
 			Expect(err.Error()).To(BeEquivalentTo("admission webhook \"multiclusterhub.validating-webhook.open-cluster-management.io\" denied the request: Hive updates are forbidden"))
-			return
 		})
 	}
 }
@@ -303,7 +302,7 @@ var testSanityChecks = func() func() {
 
 			By("Creating MultiClusterHub with image overrides annotation")
 			utils.CreateMCHImageOverridesAnnotation(utils.ImageOverridesCMBadImageName)
-			err = utils.ValidateMCHUnsuccessful()
+			_ = utils.ValidateMCHUnsuccessful()
 		})
 		It("Installing MCH with old components on cluster", func() {
 			By("Installing old component")

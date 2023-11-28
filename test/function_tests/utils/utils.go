@@ -20,6 +20,8 @@ import (
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"sigs.k8s.io/yaml"
 
+	g "github.com/onsi/ginkgo/v2"
+	o "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -33,9 +35,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 )
 
 var (
@@ -262,8 +261,8 @@ func CreateNewUnstructured(
 	name, namespace string,
 ) {
 	ns := clientHubDynamic.Resource(gvr).Namespace(namespace)
-	Expect(ns.Create(context.TODO(), obj, metav1.CreateOptions{})).NotTo(BeNil())
-	Expect(ns.Get(context.TODO(), name, metav1.GetOptions{})).NotTo(BeNil())
+	o.Expect(ns.Create(context.TODO(), obj, metav1.CreateOptions{})).NotTo(o.BeNil())
+	o.Expect(ns.Get(context.TODO(), name, metav1.GetOptions{})).NotTo(o.BeNil())
 }
 
 // CreateNewConfigMap ...
@@ -286,20 +285,20 @@ func DeleteConfigMapIfExists(cmName, namespace string) error {
 func DeleteIfExists(clientHubDynamic dynamic.Interface, gvr schema.GroupVersionResource, name, namespace string, wait bool) {
 	ns := clientHubDynamic.Resource(gvr).Namespace(namespace)
 	if _, err := ns.Get(context.TODO(), name, metav1.GetOptions{}); err != nil {
-		Expect(errors.IsNotFound(err)).To(Equal(true))
+		o.Expect(errors.IsNotFound(err)).To(o.Equal(true))
 		return
 	}
-	Expect(func() error {
+	o.Expect(func() error {
 		// possibly already got deleted
 		err := ns.Delete(context.TODO(), name, metav1.DeleteOptions{})
 		if err != nil && !errors.IsNotFound(err) {
 			return err
 		}
 		return nil
-	}()).To(BeNil())
+	}()).To(o.BeNil())
 
-	By("Wait for deletion")
-	Eventually(func() error {
+	g.By("Wait for deletion")
+	o.Eventually(func() error {
 		var err error
 		_, err = ns.Get(context.TODO(), name, metav1.GetOptions{})
 		if err != nil && !errors.IsNotFound(err) {
@@ -312,7 +311,7 @@ func DeleteIfExists(clientHubDynamic dynamic.Interface, gvr schema.GroupVersionR
 			return nil
 		}
 		return nil
-	}, GetWaitInMinutes()*60, 1).Should(BeNil())
+	}, GetWaitInMinutes()*60, 1).Should(o.BeNil())
 }
 
 // NewKubeClient returns a kube client
@@ -461,7 +460,7 @@ func GetDeploymentLabels(d string) (map[string]string, error) {
 
 // BrickMCHRepo modifies the multiclusterhub-repo deployment so it becomes unhealthy
 func BrickMCHRepo() error {
-	By("- Breaking mch repo")
+	g.By("- Breaking mch repo")
 	deploy, err := KubeClient.AppsV1().Deployments(MCHNamespace).Get(context.TODO(), MCHRepoName, metav1.GetOptions{})
 	if err != nil {
 		return err
@@ -483,7 +482,7 @@ func BrickMCHRepo() error {
 
 // FixMCHRepo deletes the multiclusterhub-repo deployment so it can be recreated by the installer
 func FixMCHRepo() error {
-	By("- Repairing mch-repo")
+	g.By("- Repairing mch-repo")
 	return KubeClient.AppsV1().Deployments(MCHNamespace).Delete(context.TODO(), MCHRepoName, metav1.DeleteOptions{})
 }
 
@@ -526,7 +525,7 @@ func UnpauseMCH() error {
 
 // BrickCLC modifies the multiclusterhub-repo deployment so it becomes unhealthy
 func BrickCLC() (string, error) {
-	By("- Breaking cluster-lifecycle")
+	g.By("- Breaking cluster-lifecycle")
 	oldImage, err := UpdateDeploymentImage("cluster-lifecycle", "bad-image")
 	if err != nil {
 		return "", err
@@ -538,7 +537,7 @@ func BrickCLC() (string, error) {
 
 // FiCLC deletes the multiclusterhub-repo deployment so it can be recreated by the installer
 func FixCLC(image string) error {
-	By("- Repairing cluster-lifecycle")
+	g.By("- Repairing cluster-lifecycle")
 	_, err := UpdateDeploymentImage("cluster-lifecycle", image)
 	if err != nil {
 		return err
@@ -659,7 +658,7 @@ func ValidateMCHDegraded() error {
 
 // ValidateDelete ...
 func ValidateDelete(clientHubDynamic dynamic.Interface) error {
-	By("Validating MCH has been successfully uninstalled.")
+	g.By("Validating MCH has been successfully uninstalled.")
 
 	labelSelector := fmt.Sprintf("installer.name=%s, installer.namespace=%s", MCHName, MCHNamespace)
 	listOptions := metav1.ListOptions{
@@ -679,41 +678,41 @@ func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 		return err
 	}
 
-	By("- Ensuring Application Subscriptions have terminated")
+	g.By("- Ensuring Application Subscriptions have terminated")
 	if len(appSubs.Items) != 0 {
 		return fmt.Errorf("%d appsubs left to be uninstalled", len(appSubs.Items))
 	}
 
-	By("- Ensuring HelmReleases have terminated")
+	g.By("- Ensuring HelmReleases have terminated")
 	if len(helmReleases.Items) != 0 {
-		By(fmt.Sprintf("%d helmreleases left to be uninstalled", len(helmReleases.Items)))
+		g.By(fmt.Sprintf("%d helmreleases left to be uninstalled", len(helmReleases.Items)))
 		return fmt.Errorf("%d helmreleases left to be uninstalled", len(helmReleases.Items))
 	}
 
-	By("- Ensuring MCH Repo deployment has been terminated")
+	g.By("- Ensuring MCH Repo deployment has been terminated")
 	deploymentLink := clientHubDynamic.Resource(GVRDeployment).Namespace(MCHNamespace)
 	_, err = deploymentLink.Get(context.TODO(), "multiclusterhub-repo", metav1.GetOptions{})
 	if err != nil && !errors.IsNotFound(err) {
 		return err
 	}
 
-	By("- Ensuring MCH image manifest configmap is terminated")
+	g.By("- Ensuring MCH image manifest configmap is terminated")
 	labelSelector = fmt.Sprintf("ocm-configmap-type=%s", "image-manifest")
 	listOptions = metav1.ListOptions{
 		LabelSelector: labelSelector,
 		Limit:         100,
 	}
 
-	Eventually(func() error {
+	o.Eventually(func() error {
 		configmaps, err := KubeClient.CoreV1().ConfigMaps(MCHNamespace).List(context.TODO(), listOptions)
-		Expect(err).Should(BeNil())
+		o.Expect(err).Should(o.BeNil())
 		if len(configmaps.Items) != 0 {
 			return fmt.Errorf("expecting configmaps to terminate")
 		}
 		return nil
-	}, GetWaitInMinutes()*60, 1).Should(BeNil())
+	}, GetWaitInMinutes()*60, 1).Should(o.BeNil())
 
-	By("- Validating CRDs were deleted")
+	g.By("- Validating CRDs were deleted")
 	crds, err := getCRDs()
 	if err != nil {
 		return err
@@ -721,21 +720,21 @@ func ValidateDelete(clientHubDynamic dynamic.Interface) error {
 
 	for _, crd := range crds {
 		_, err = DynamicKubeClient.Resource(GVRCustomResourceDefinition).Get(context.TODO(), crd, metav1.GetOptions{})
-		Expect(err).ToNot(BeNil())
+		o.Expect(err).ToNot(o.BeNil())
 	}
 
-	By("- Validating ClusterManager was deleted")
+	g.By("- Validating ClusterManager was deleted")
 	clusterManagerLink := clientHubDynamic.Resource(GVRClusterManager)
 	_, err = clusterManagerLink.Get(context.TODO(), "cluster-manager", metav1.GetOptions{})
-	Expect(err).ShouldNot(BeNil())
+	o.Expect(err).ShouldNot(o.BeNil())
 
-	By("- Validating HiveConfig was deleted")
+	g.By("- Validating HiveConfig was deleted")
 	hiveConfigLink := clientHubDynamic.Resource(GVRHiveConfig)
 	_, err = hiveConfigLink.Get(context.TODO(), HiveConfigName, metav1.GetOptions{})
-	Expect(err).ShouldNot(BeNil())
+	o.Expect(err).ShouldNot(o.BeNil())
 
 	if runCleanUpScript() {
-		By("- Running documented clean up script")
+		g.By("- Running documented clean up script")
 		workingDir, err := os.Getwd()
 		if err != nil {
 			log.Fatalf("failed to get working dir %v", err)
@@ -780,12 +779,12 @@ func FindCondition(status map[string]interface{}, t string, s string) error {
 
 // ValidateMCHUnsuccessful ...
 func ValidateMCHUnsuccessful() error {
-	By("Validating MultiClusterHub Unsuccessful")
-	By(fmt.Sprintf("- Waiting %d minutes", GetWaitInMinutes()), func() {
+	g.By("Validating MultiClusterHub Unsuccessful")
+	g.By(fmt.Sprintf("- Waiting %d minutes", GetWaitInMinutes()), func() {
 		time.Sleep(time.Duration(GetWaitInMinutes()) * time.Minute)
 	})
 
-	By("- Ensuring MCH is in 'Installing' phase")
+	g.By("- Ensuring MCH is in 'Installing' phase")
 	status, err := GetMCHStatus()
 	if err != nil {
 		return err
@@ -794,23 +793,23 @@ func ValidateMCHUnsuccessful() error {
 		return err
 	}
 
-	By("MCH Condition 'type' should be `Progressing` and 'status' should be 'true")
-	Eventually(func() error {
+	g.By("MCH Condition 'type' should be `Progressing` and 'status' should be 'true")
+	o.Eventually(func() error {
 		mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
-		Expect(err).To(BeNil())
+		o.Expect(err).To(o.BeNil())
 		status := mch.Object["status"].(map[string]interface{})
 		return FindCondition(status, "Progressing", "True")
-	}, 1, 1).Should(BeNil())
+	}, 1, 1).Should(o.BeNil())
 
 	return nil
 }
 
 // ValidateMCH validates MCH CR is running successfully
 func ValidateMCH() error {
-	By("Validating MultiClusterHub")
+	g.By("Validating MultiClusterHub")
 
-	By(fmt.Sprintf("- Ensuring MCH is in 'running' phase within %d minutes", GetWaitInMinutes()))
-	Eventually(func() error {
+	g.By(fmt.Sprintf("- Ensuring MCH is in 'running' phase within %d minutes", GetWaitInMinutes()))
+	o.Eventually(func() error {
 		status, err := GetMCHStatus()
 		if err != nil {
 			return err
@@ -819,29 +818,29 @@ func ValidateMCH() error {
 			return err
 		}
 		return nil
-	}, GetWaitInMinutes()*60, 1).Should(BeNil())
+	}, GetWaitInMinutes()*60, 1).Should(o.BeNil())
 
-	By("- Ensuring MCH Repo Is available")
+	g.By("- Ensuring MCH Repo Is available")
 	var deploy *appsv1.Deployment
 	deploy, err := KubeClient.AppsV1().Deployments(MCHNamespace).Get(context.TODO(), MCHRepoName, metav1.GetOptions{})
-	Expect(err).Should(BeNil())
+	o.Expect(err).Should(o.BeNil())
 	mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
-	Expect(err).To(BeNil())
-	Expect(deploy.Status.AvailableReplicas).ShouldNot(Equal(0))
-	Expect(IsOwner(mch, &deploy.ObjectMeta)).To(Equal(true))
+	o.Expect(err).To(o.BeNil())
+	o.Expect(deploy.Status.AvailableReplicas).ShouldNot(o.Equal(0))
+	o.Expect(IsOwner(mch, &deploy.ObjectMeta)).To(o.Equal(true))
 
-	By("- Validating CRDs were created successfully")
+	g.By("- Validating CRDs were created successfully")
 	crds, err := getCRDs()
-	Expect(err).Should(BeNil())
+	o.Expect(err).Should(o.BeNil())
 
 	for _, crd := range crds {
 		_, err = DynamicKubeClient.Resource(GVRCustomResourceDefinition).Get(context.TODO(), crd, metav1.GetOptions{})
-		Expect(err).To(BeNil())
+		o.Expect(err).To(o.BeNil())
 	}
 
-	By("- Ensuring components have status 'true' when MCH is in 'running' phase")
+	g.By("- Ensuring components have status 'true' when MCH is in 'running' phase")
 	mch, err = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 	status := mch.Object["status"].(map[string]interface{})
 	if findPhase(status, "Running") == nil {
 		components, ok := mch.Object["status"].(map[string]interface{})["components"]
@@ -856,15 +855,15 @@ func ValidateMCH() error {
 		}
 	}
 
-	By("- Ensuring condition has status 'true' and type 'complete' when MCH is in 'running' phase")
-	Eventually(func() error {
+	g.By("- Ensuring condition has status 'true' and type 'complete' when MCH is in 'running' phase")
+	o.Eventually(func() error {
 		mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
-		Expect(err).To(BeNil())
+		o.Expect(err).To(o.BeNil())
 		status := mch.Object["status"].(map[string]interface{})
 		return FindCondition(status, "Complete", "True")
-	}, 1, 1).Should(BeNil())
+	}, 1, 1).Should(o.BeNil())
 
-	By("- Checking Appsubs")
+	g.By("- Checking Appsubs")
 	unstructuredAppSubs := listByGVR(DynamicKubeClient, GVRAppSub, MCHNamespace, 1, len(AppSubSlice))
 	for _, appsub := range unstructuredAppSubs.Items {
 		if _, ok := appsub.Object["status"]; !ok {
@@ -875,11 +874,11 @@ func ValidateMCH() error {
 			return fmt.Errorf("appsub: %s has no 'status' map", appsub.GetName())
 		}
 		klog.V(5).Infof("Checking Appsub - %s", appsub.GetName())
-		Expect(status["message"]).To(Equal("Active"))
-		Expect(status["phase"]).To(Equal("Subscribed"))
+		o.Expect(status["message"]).To(o.Equal("Active"))
+		o.Expect(status["phase"]).To(o.Equal("Subscribed"))
 	}
 
-	By("- Checking HelmReleases")
+	g.By("- Checking HelmReleases")
 	unstructuredHelmReleases := listByGVR(DynamicKubeClient, GVRHelmRelease, MCHNamespace, 1, len(AppSubSlice))
 	for _, helmRelease := range unstructuredHelmReleases.Items {
 		klog.V(5).Infof("Checking HelmRelease - %s", helmRelease.GetName())
@@ -895,27 +894,27 @@ func ValidateMCH() error {
 		}
 	}
 
-	By("- Checking Imported Hub Cluster")
+	g.By("- Checking Imported Hub Cluster")
 	if os.Getenv("MOCK") != "true" {
 		selfManaged, err := IsMCHSelfManaged()
-		Expect(err).Should(BeNil())
+		o.Expect(err).Should(o.BeNil())
 		err = ValidateManagedCluster(selfManaged)
-		Expect(err).Should(BeNil())
+		o.Expect(err).Should(o.BeNil())
 	}
 
 	currentVersion, err := GetCurrentVersionFromMCH()
-	Expect(err).Should(BeNil())
+	o.Expect(err).Should(o.BeNil())
 	v, err := semver.NewVersion(currentVersion)
-	Expect(err).Should(BeNil())
+	o.Expect(err).Should(o.BeNil())
 	c, err := semver.NewConstraint(">= 2.5.0")
-	Expect(err).Should(BeNil())
+	o.Expect(err).Should(o.BeNil())
 	if c.Check(v) {
-		By("- Ensuring image manifest configmap is created")
+		g.By("- Ensuring image manifest configmap is created")
 		_, err = KubeClient.CoreV1().ConfigMaps(MCHNamespace).Get(context.TODO(), fmt.Sprintf("mch-image-manifest-%s", currentVersion), metav1.GetOptions{})
-		Expect(err).Should(BeNil())
+		o.Expect(err).Should(o.BeNil())
 	}
 
-	By("- Checking for Installer Labels on Deployments")
+	g.By("- Checking for Installer Labels on Deployments")
 	l, err := GetDeploymentLabels("search-operator")
 	if err != nil {
 		return err
@@ -926,37 +925,37 @@ func ValidateMCH() error {
 
 	clusterVersionKey := types.NamespacedName{Name: "version"}
 	clusterVersion, err := DynamicKubeClient.Resource(GVRClusterVersion).Get(context.TODO(), clusterVersionKey.Name, metav1.GetOptions{})
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 	status, ok := clusterVersion.Object["status"].(map[string]interface{})
-	Expect(ok).To(BeTrue())
+	o.Expect(ok).To(o.BeTrue())
 	history, ok := status["history"].([]interface{})
-	Expect(ok).To(BeTrue())
-	Expect(len(history)).To(BeNumerically(">", 0))
+	o.Expect(ok).To(o.BeTrue())
+	o.Expect(len(history)).To(o.BeNumerically(">", 0))
 	latestHistory := history[0].(map[string]interface{})
 	version := latestHistory["version"].(string)
 
 	consoleConstraint, err := semver.NewConstraint(">= 4.10.0-0")
-	Expect(err).To(BeNil(), "Error creating semver constraint")
+	o.Expect(err).To(o.BeNil(), "Error creating semver constraint")
 	semverVersion, err := semver.NewVersion(version)
-	Expect(err).To(BeNil(), "Error creating semver constraint")
+	o.Expect(err).To(o.BeNil(), "Error creating semver constraint")
 
 	if consoleConstraint.Check(semverVersion) {
-		By("OCP 4.10+ cluster detected. Checking MCE Console is installed")
+		g.By("OCP 4.10+ cluster detected. Checking MCE Console is installed")
 		consoleKey := types.NamespacedName{Name: "cluster"}
 		console, err := DynamicKubeClient.Resource(GVRConsole).Get(context.TODO(), consoleKey.Name, metav1.GetOptions{})
-		Expect(err).To(BeNil())
-		By("Ensuring mce plugin is enabled in openshift console")
+		o.Expect(err).To(o.BeNil())
+		g.By("Ensuring mce plugin is enabled in openshift console")
 		spec, ok := console.Object["spec"].(map[string]interface{})
-		Expect(ok).To(BeTrue())
+		o.Expect(ok).To(o.BeTrue())
 		plugins, ok := spec["plugins"].([]interface{})
-		Expect(ok).To(BeTrue())
+		o.Expect(ok).To(o.BeTrue())
 		pluginsSlice := make([]string, len(plugins))
 		for i, v := range plugins {
 			pluginsSlice[i] = fmt.Sprint(v)
 		}
-		Expect(utils.Contains(pluginsSlice, "acm")).To(BeTrue(), "Expected ACM plugin to be enabled in console resource")
+		o.Expect(utils.Contains(pluginsSlice, "acm")).To(o.BeTrue(), "Expected ACM plugin to be enabled in console resource")
 	} else {
-		By("OCP cluster below 4.10 detected. Skipping plugin check")
+		g.By("OCP cluster below 4.10 detected. Skipping plugin check")
 	}
 
 	return nil
@@ -964,23 +963,23 @@ func ValidateMCH() error {
 
 // ValidateMCHStatusExist check if mch status exists
 func ValidateMCHStatusExist() error {
-	Eventually(func() error {
+	o.Eventually(func() error {
 		mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
-		Expect(err).To(BeNil())
+		o.Expect(err).To(o.BeNil())
 		status, ok := mch.Object["status"].(map[string]interface{})
 		if !ok || status == nil {
 			return fmt.Errorf("MultiClusterHub: %s has no 'status' map", mch.GetName())
 		}
 		return nil
-	}, GetWaitInMinutes()*60, 1).Should(BeNil())
+	}, GetWaitInMinutes()*60, 1).Should(o.BeNil())
 	return nil
 }
 
 // ValidateComponentStatusExist check if Component statuses exist immediately when MCH is created
 func ValidateComponentStatusExist() error {
-	Eventually(func() error {
+	o.Eventually(func() error {
 		mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
-		Expect(err).To(BeNil())
+		o.Expect(err).To(o.BeNil())
 		status, ok := mch.Object["status"].(map[string]interface{})
 		if !ok || status == nil {
 			return fmt.Errorf("MultiClusterHub: %s has no 'status' map", mch.GetName())
@@ -995,39 +994,39 @@ func ValidateComponentStatusExist() error {
 			}
 		}
 		return nil
-	}, GetWaitInMinutes()*60, 1).Should(BeNil())
+	}, GetWaitInMinutes()*60, 1).Should(o.BeNil())
 	return nil
 }
 
 // ValidateHubStatusExist checks if hub statuses exist immediately when MCH is created
 func ValidateHubStatusExist() error {
-	Eventually(func() error {
+	o.Eventually(func() error {
 		mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
-		Expect(err).To(BeNil())
+		o.Expect(err).To(o.BeNil())
 		status, ok := mch.Object["status"].(map[string]interface{})
 		if !ok || status == nil {
 			return fmt.Errorf("MultiClusterHub: %s has no 'status' map", mch.GetName())
 		}
 		return FindCondition(status, "Progressing", "True")
-	}, GetWaitInMinutes()*60, 1).Should(BeNil())
+	}, GetWaitInMinutes()*60, 1).Should(o.BeNil())
 	return nil
 }
 
 // ValidateConditionDuringUninstall check if condition is terminating during uninstall of MCH
 func ValidateConditionDuringUninstall() error {
-	By("- Checking HubCondition type")
-	Eventually(func() error {
+	g.By("- Checking HubCondition type")
+	o.Eventually(func() error {
 		mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
-		Expect(err).To(BeNil())
+		o.Expect(err).To(o.BeNil())
 		status := mch.Object["status"].(map[string]interface{})
 		return FindCondition(status, "Terminating", "True")
-	}, GetWaitInMinutes()*60, 1).Should(BeNil())
+	}, GetWaitInMinutes()*60, 1).Should(o.BeNil())
 	return nil
 }
 
 // ValidatePhase returns error if MCH phase does not match the provided phase
 func ValidatePhase(phase string) error {
-	By("- Checking HubCondition type")
+	g.By("- Checking HubCondition type")
 	status, err := GetMCHStatus()
 	if err != nil {
 		return err
@@ -1037,17 +1036,17 @@ func ValidatePhase(phase string) error {
 
 // ValidateStatusesExist Confirms existence of both overall MCH and Component statuses immediately after MCH creation
 func ValidateStatusesExist() error {
-	By("Validating Statuses exist")
+	g.By("Validating Statuses exist")
 
-	By("- Ensuring MCH Status exists")
+	g.By("- Ensuring MCH Status exists")
 	if err := ValidateMCHStatusExist(); err != nil {
 		return err
 	}
-	By("- Ensuring Component Status exist")
+	g.By("- Ensuring Component Status exist")
 	if err := ValidateComponentStatusExist(); err != nil {
 		return err
 	}
-	By("- Ensuring Hub Status exist")
+	g.By("- Ensuring Hub Status exist")
 	if err := ValidateHubStatusExist(); err != nil {
 		return err
 	}
@@ -1081,8 +1080,8 @@ func ValidateImportHubResourcesExist(expected bool) error {
 
 // ValidateManagedCluster ...
 func ValidateManagedCluster(importResourcesShouldExist bool) error {
-	By("- Checking imported hub resources exist or not")
-	By("- Confirming Necessary Resources")
+	g.By("- Checking imported hub resources exist or not")
+	g.By("- Confirming Necessary Resources")
 	// mc, _ := DynamicKubeClient.Resource(GVRManagedCluster).Get(context.TODO(), "local-cluster", metav1.GetOptions{})
 	if err := ValidateImportHubResourcesExist(importResourcesShouldExist); err != nil {
 		return fmt.Errorf("resources are as they shouldn't")
@@ -1098,7 +1097,7 @@ func ValidateManagedCluster(importResourcesShouldExist bool) error {
 
 // validateManagedClusterConditions
 func validateManagedClusterConditions() error {
-	By("- Checking ManagedClusterConditions type true")
+	g.By("- Checking ManagedClusterConditions type true")
 	mc, _ := DynamicKubeClient.Resource(GVRManagedCluster).Get(context.TODO(), "local-cluster", metav1.GetOptions{})
 	status, ok := mc.Object["status"].(map[string]interface{})
 	if ok {
@@ -1122,7 +1121,7 @@ func ValidateDeploymentPolicies() error {
 		if deploymentName != "multicluster-operators-application" && deploymentName != "hive-operator" && deploymentName != "multicluster-operators-channel" && deploymentName != "multicluster-operators-hub-subscription" && deploymentName != "multicluster-operators-standalone-subscription" {
 			policy := deployment.Object["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"].(map[string]interface{})["containers"].([]interface{})[0].(map[string]interface{})["imagePullPolicy"]
 			fmt.Println(deploymentName)
-			Expect(policy).To(BeEquivalentTo("IfNotPresent"))
+			o.Expect(policy).To(o.BeEquivalentTo("IfNotPresent"))
 		}
 	}
 	return nil
@@ -1137,18 +1136,18 @@ func ValidateMCESub() error {
 	expectedEnv[0] = map[string]interface{}{"name": "HTTP_PROXY", "value": "test"}
 	expectedEnv[1] = map[string]interface{}{"name": "HTTPS_PROXY"}
 	expectedEnv[2] = map[string]interface{}{"name": "NO_PROXY"}
-	Eventually(func() error {
+	o.Eventually(func() error {
 		sub, err := DynamicKubeClient.Resource(GVRSub).Namespace("multicluster-engine").Get(context.TODO(), "multicluster-engine", metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
 
 		config := sub.Object["spec"].(map[string]interface{})["config"].(map[string]interface{})
-		Expect(config["nodeSelector"].(map[string]interface{})).To(BeEquivalentTo(expectedNodeSelector))
-		Expect(config["tolerations"].([]interface{})).To(BeEquivalentTo(expectedTolerations))
-		Expect(config["env"].([]interface{})).To(BeEquivalentTo(expectedEnv))
+		o.Expect(config["nodeSelector"].(map[string]interface{})).To(o.BeEquivalentTo(expectedNodeSelector))
+		o.Expect(config["tolerations"].([]interface{})).To(o.BeEquivalentTo(expectedTolerations))
+		o.Expect(config["env"].([]interface{})).To(o.BeEquivalentTo(expectedEnv))
 		return err
-	}, 3, 1).Should(BeNil())
+	}, 3, 1).Should(o.BeNil())
 
 	return nil
 
@@ -1195,13 +1194,13 @@ func ValidateMCHTolerations() error {
 // ToggleDisableHubSelfManagement toggles the value of spec.disableHubSelfManagement from true to false or false to true
 func ToggleDisableHubSelfManagement(disableHubSelfImport bool) error {
 	mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 	mch.Object["spec"].(map[string]interface{})[DisableHubSelfManagementString] = disableHubSelfImport
-	mch, err = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
-	Expect(err).To(BeNil())
-	mch, err = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+	_, err = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
+	o.Expect(err).To(o.BeNil())
+	mch, _ = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
 	if disableHubSelfManagement := mch.Object["spec"].(map[string]interface{})[DisableHubSelfManagementString].(bool); disableHubSelfManagement != disableHubSelfImport {
-		return fmt.Errorf("Spec was not updated")
+		return fmt.Errorf("spec was not updated")
 	}
 	return nil
 }
@@ -1209,12 +1208,12 @@ func ToggleDisableHubSelfManagement(disableHubSelfImport bool) error {
 // ToggleDisableUpdateClusterImageSets toggles the value of spec.disableUpdateClusterImageSets from true to false or false to true
 func ToggleDisableUpdateClusterImageSets(disableUpdateCIS bool) error {
 	mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 	disableUpdateClusterImageSetsString := "disableUpdateClusterImageSets"
 	mch.Object["spec"].(map[string]interface{})[disableUpdateClusterImageSetsString] = disableUpdateCIS
-	mch, err = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
-	Expect(err).To(BeNil())
-	mch, err = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
+	_, err = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
+	o.Expect(err).To(o.BeNil())
+	mch, _ = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
 	if disableUpdateClusterImageSets := mch.Object["spec"].(map[string]interface{})[disableUpdateClusterImageSetsString].(bool); disableUpdateClusterImageSets != disableUpdateCIS {
 		return fmt.Errorf("spec was not updated")
 	}
@@ -1224,17 +1223,17 @@ func ToggleDisableUpdateClusterImageSets(disableUpdateCIS bool) error {
 // UpdateAnnotations
 func UpdateAnnotations(annotations map[string]string) {
 	mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 
 	mch.SetAnnotations(annotations)
 	_, err = DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Update(context.TODO(), mch, metav1.UpdateOptions{})
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 }
 
 // ValidateClusterImageSetsSubscriptionPause validates that the console-chart-sub created ClusterImageSets subscription is either subscription-pause true or false
 func ValidateClusterImageSetsSubscriptionPause(expected string) error {
 	appsub, err := DynamicKubeClient.Resource(GVRAppSub).Namespace(MCHNamespace).Get(context.TODO(), AppSubName, metav1.GetOptions{})
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 	spec, ok := appsub.Object["spec"].(map[string]interface{})
 	if !ok || spec == nil {
 		return fmt.Errorf("MultiClusterHub: %s has no 'spec' map", appsub.GetName())
@@ -1274,7 +1273,7 @@ func listByGVR(clientHubDynamic dynamic.Interface, gvr schema.GroupVersionResour
 	}
 	var obj *unstructured.UnstructuredList
 
-	Eventually(func() error {
+	o.Eventually(func() error {
 		var err error
 		namespace := clientHubDynamic.Resource(gvr).Namespace(namespace)
 
@@ -1292,7 +1291,7 @@ func listByGVR(clientHubDynamic dynamic.Interface, gvr schema.GroupVersionResour
 			return fmt.Errorf("not all resources created in time. %d/%d appsubs found", len(obj.Items), expectedTotal)
 		}
 		return nil
-	}, timeout, 1).Should(BeNil())
+	}, timeout, 1).Should(o.BeNil())
 	return obj
 }
 
@@ -1314,7 +1313,8 @@ func GetSubscriptionSpec() map[string]interface{} {
 		"channel":             os.Getenv("channel"),
 		"installPlanApproval": "Automatic",
 		"name":                os.Getenv("name"),
-		"config":              map[string]interface{}{"nodeSelector": map[string]string{"beta.kubernetes.io/os": "linux"}, "tolerations": []map[string]interface{}{map[string]interface{}{"operator": "Exists"}}, "env": []map[string]interface{}{map[string]interface{}{"name": "HTTPS_PROXY", "value": "test"}}},
+		"config": map[string]interface{}{
+			"nodeSelector": map[string]string{"beta.kubernetes.io/os": "linux"}, "tolerations": []map[string]interface{}{{"operator": "Exists"}}, "env": []map[string]interface{}{{"name": "HTTPS_PROXY", "value": "test"}}},
 	}
 }
 
@@ -1354,7 +1354,7 @@ func ShouldSkipSubscription() bool {
 // GetCurrentVersionFromMCH ...
 func GetCurrentVersionFromMCH() (string, error) {
 	mch, err := DynamicKubeClient.Resource(GVRMultiClusterHub).Namespace(MCHNamespace).Get(context.TODO(), MCHName, metav1.GetOptions{})
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 	status, ok := mch.Object["status"].(map[string]interface{})
 	if !ok || status == nil {
 		return "", fmt.Errorf("MultiClusterHub: %s has no 'status' map", mch.GetName())
@@ -1368,7 +1368,7 @@ func GetCurrentVersionFromMCH() (string, error) {
 
 // CreateDiscoveryConfig ...
 func CreateDiscoveryConfig() {
-	By("- Creating DiscoveryConfig CR if it does not exist")
+	g.By("- Creating DiscoveryConfig CR if it does not exist")
 
 	_, err := DynamicKubeClient.Resource(GVRDiscoveryConfig).Namespace(MCHNamespace).Get(context.TODO(), "discoveryconfig", metav1.GetOptions{})
 	if err == nil {
@@ -1376,72 +1376,72 @@ func CreateDiscoveryConfig() {
 	}
 
 	discoveryConfigByte, err := os.ReadFile("../resources/discoveryconfig.yaml")
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 
 	discoveryConfig := &unstructured.Unstructured{Object: map[string]interface{}{}}
 	err = yaml.Unmarshal(discoveryConfigByte, &discoveryConfig.Object)
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 
 	_, err = DynamicKubeClient.Resource(GVRDiscoveryConfig).Namespace(MCHNamespace).Create(context.TODO(), discoveryConfig, metav1.CreateOptions{})
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 }
 
 // DeleteDiscoveryConfig ...
 func DeleteDiscoveryConfig() {
-	By("- Deleting DiscoveryConfig CR if it exists")
+	g.By("- Deleting DiscoveryConfig CR if it exists")
 
 	discoveryConfigByte, err := os.ReadFile("../resources/discoveryconfig.yaml")
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 
 	discoveryConfig := &unstructured.Unstructured{Object: map[string]interface{}{}}
 	err = yaml.Unmarshal(discoveryConfigByte, &discoveryConfig.Object)
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 
 	err = DynamicKubeClient.Resource(GVRDiscoveryConfig).Namespace(MCHNamespace).Delete(context.TODO(), discoveryConfig.GetName(), metav1.DeleteOptions{})
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 }
 
 // CreateObservabilityCRD ...
 func CreateObservabilityCRD() {
-	By("- Creating Observability CRD if it does not exist")
+	g.By("- Creating Observability CRD if it does not exist")
 	_, err := DynamicKubeClient.Resource(GVRCustomResourceDefinition).Get(context.TODO(), "multiclusterobservabilities.observability.open-cluster-management.io", metav1.GetOptions{})
 	if err == nil {
 		return
 	}
 
 	crd, err := os.ReadFile("../resources/observability-crd.yaml")
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 
 	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
 	err = yaml.Unmarshal(crd, &unstructuredCRD.Object)
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 
 	_, err = DynamicKubeClient.Resource(GVRCustomResourceDefinition).Create(context.TODO(), unstructuredCRD, metav1.CreateOptions{})
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 }
 
 // CreateMultiClusterEngineCRD ...
 func CreateMultiClusterEngineCRD() {
-	By("- Creating MultiClusterEngine CRD if it does not exist")
+	g.By("- Creating MultiClusterEngine CRD if it does not exist")
 	_, err := DynamicKubeClient.Resource(GVRCustomResourceDefinition).Get(context.TODO(), "multiclusterengines.multicluster.openshift.io", metav1.GetOptions{})
 	if err == nil {
 		return
 	}
 
 	crd, err := os.ReadFile("../resources/multiclusterengine-crd.yaml")
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 
 	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
 	err = yaml.Unmarshal(crd, &unstructuredCRD.Object)
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 
 	_, err = DynamicKubeClient.Resource(GVRCustomResourceDefinition).Create(context.TODO(), unstructuredCRD, metav1.CreateOptions{})
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 }
 
 // CreateMultiClusterEngineCR ...
 func CreateMultiClusterEngineCR() {
-	By("- Creating MultiClusterEngine CR if it does not exist")
+	g.By("- Creating MultiClusterEngine CR if it does not exist")
 
 	_, err := DynamicKubeClient.Resource(GVRMultiClusterEngine).Get(context.TODO(), "multiclusterengine-sample", metav1.GetOptions{})
 	if err == nil {
@@ -1449,49 +1449,49 @@ func CreateMultiClusterEngineCR() {
 	}
 
 	crd, err := os.ReadFile("../resources/multiclusterengine-cr.yaml")
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 
 	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
 	err = yaml.Unmarshal(crd, &unstructuredCRD.Object)
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 
 	_, err = DynamicKubeClient.Resource(GVRMultiClusterEngine).Create(context.TODO(), unstructuredCRD, metav1.CreateOptions{})
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 }
 
 // DeleteMultiClusterEngineCR ...
 func DeleteMultiClusterEngineCR() {
-	By("- Deleting MultiClusterEngine CR if it exists")
+	g.By("- Deleting MultiClusterEngine CR if it exists")
 
 	crd, err := os.ReadFile("../resources/multiclusterengine-cr.yaml")
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 
 	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
 	err = yaml.Unmarshal(crd, &unstructuredCRD.Object)
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 
 	err = DynamicKubeClient.Resource(GVRMultiClusterEngine).Delete(context.TODO(), "multiclusterengine-sample", metav1.DeleteOptions{})
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 }
 
 // DeleteMultiClusterEngineCRD ...
 func DeleteMultiClusterEngineCRD() {
-	By("- Deleting MultiClusterEngine CRD if it exists")
+	g.By("- Deleting MultiClusterEngine CRD if it exists")
 
 	crd, err := os.ReadFile("../resources/multiclusterengine-crd.yaml")
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 
 	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
 	err = yaml.Unmarshal(crd, &unstructuredCRD.Object)
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 
 	err = DynamicKubeClient.Resource(GVRCustomResourceDefinition).Delete(context.TODO(), "multiclusterengines.multicluster.openshift.io", metav1.DeleteOptions{})
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 }
 
 // CreateObservabilityCR ...
 func CreateObservabilityCR() {
-	By("- Creating Observability CR if it does not exist")
+	g.By("- Creating Observability CR if it does not exist")
 
 	_, err := DynamicKubeClient.Resource(GVRObservability).Get(context.TODO(), "observability", metav1.GetOptions{})
 	if err == nil {
@@ -1499,44 +1499,44 @@ func CreateObservabilityCR() {
 	}
 
 	crd, err := os.ReadFile("../resources/observability-cr.yaml")
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 
 	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
 	err = yaml.Unmarshal(crd, &unstructuredCRD.Object)
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 
 	_, err = DynamicKubeClient.Resource(GVRObservability).Create(context.TODO(), unstructuredCRD, metav1.CreateOptions{})
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 }
 
 // DeleteObservabilityCR ...
 func DeleteObservabilityCR() {
-	By("- Deleting Observability CR if it exists")
+	g.By("- Deleting Observability CR if it exists")
 
 	crd, err := os.ReadFile("../resources/observability-cr.yaml")
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 
 	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
 	err = yaml.Unmarshal(crd, &unstructuredCRD.Object)
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 
 	err = DynamicKubeClient.Resource(GVRObservability).Delete(context.TODO(), "observability", metav1.DeleteOptions{})
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 }
 
 // DeleteObservabilityCRD ...
 func DeleteObservabilityCRD() {
-	By("- Deleting Observability CRD if it exists")
+	g.By("- Deleting Observability CRD if it exists")
 
 	crd, err := os.ReadFile("../resources/observability-crd.yaml")
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 
 	unstructuredCRD := &unstructured.Unstructured{Object: map[string]interface{}{}}
 	err = yaml.Unmarshal(crd, &unstructuredCRD.Object)
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 
 	err = DynamicKubeClient.Resource(GVRCustomResourceDefinition).Delete(context.TODO(), "multiclusterobservabilities.observability.open-cluster-management.io", metav1.DeleteOptions{})
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 }
 
 func getCRDs() ([]string, error) {
@@ -1552,7 +1552,7 @@ func getCRDs() ([]string, error) {
 
 	var crds []string
 	files, err := os.ReadDir(crdDir)
-	Expect(err).To(BeNil())
+	o.Expect(err).To(o.BeNil())
 	for _, file := range files {
 		if filepath.Ext(file.Name()) != ".yaml" {
 			continue

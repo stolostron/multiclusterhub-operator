@@ -763,7 +763,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 			By("Ensuring Cluster Backup")
 			ns := BackupNamespace()
-			result, err = reconciler.ensureNamespace(mch, ns)
+			_, err = reconciler.ensureNamespace(mch, ns)
 			Expect(err).To(BeNil())
 
 			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.ClusterBackup, testImages)
@@ -882,7 +882,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 				ObjectMeta: metav1.ObjectMeta{Name: "mch", Namespace: "test-ns-1"},
 			}
 
-			result, err = reconciler.ensureOpenShiftNamespaceLabel(ctx, mch2)
+			result, _ = reconciler.ensureOpenShiftNamespaceLabel(ctx, mch2)
 			Expect(result).To(Equal(ctrl.Result{Requeue: true}))
 		})
 	})
