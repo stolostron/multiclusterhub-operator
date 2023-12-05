@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/go-co-op/gocron"
+	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/deploying"
 	"github.com/stolostron/multiclusterhub-operator/pkg/imageoverrides"
@@ -42,6 +43,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -330,7 +332,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		no longer available; therefore, we need to explicitly remove them from the upgrade configuration.
 	*/
 	for _, kind := range operatorv1.GetLegacyConfigKind() {
-		err = r.removeLegacyConfigurations(ctx, "openshift-monitoring", kind)
+		_ = r.removeLegacyConfigurations(ctx, "openshift-monitoring", kind)
 	}
 
 	// Install CRDs
@@ -374,6 +376,16 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	result, err = r.createTrustBundleConfigmap(ctx, multiClusterHub)
+	if err != nil {
+		return result, err
+	}
+
+	result, err = r.createMetricsService(ctx, multiClusterHub)
+	if err != nil {
+		return result, err
+	}
+
+	result, err = r.createMetricsServiceMonitor(ctx, multiClusterHub)
 	if err != nil {
 		return result, err
 	}
@@ -704,6 +716,12 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 
 	// Applies all templates
 	for _, template := range templates {
+		annotations := template.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
+		annotations[utils.AnnotationReleaseVersion] = version.Version
+		template.SetAnnotations(annotations)
 		result, err := r.applyTemplate(ctx, m, template)
 		if err != nil {
 			return result, err
@@ -900,6 +918,139 @@ func (r *MultiClusterHubReconciler) createTrustBundleConfigmap(ctx context.Conte
 		return ctrl.Result{RequeueAfter: resyncPeriod}, err
 	}
 	// Configmap created successfully
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) createMetricsService(ctx context.Context, m *operatorv1.MultiClusterHub) (
+	ctrl.Result, error) {
+	log := log.FromContext(ctx)
+
+	const Port = 8383
+
+	sName := utils.MCHOperatorMetricsServiceName
+	sNamespace := m.GetNamespace()
+
+	namespacedName := types.NamespacedName{
+		Name:      sName,
+		Namespace: sNamespace,
+	}
+
+	// Check if service exists
+	if err := r.Client.Get(ctx, namespacedName, &corev1.Service{}); err != nil {
+		if !errors.IsNotFound(err) {
+			// Unknown error. Requeue
+			log.Error(err, fmt.Sprintf("error while getting multiclusterhub metrics service: %s/%s", sNamespace, sName))
+			return ctrl.Result{RequeueAfter: resyncPeriod}, err
+		}
+
+		// Create metrics service
+		s := &corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      sName,
+				Namespace: sNamespace,
+				Labels: map[string]string{
+					"name": operatorv1.MCH,
+				},
+			},
+			Spec: corev1.ServiceSpec{
+				Ports: []corev1.ServicePort{
+					{
+						Name:       "metrics",
+						Port:       int32(Port),
+						Protocol:   "TCP",
+						TargetPort: intstr.FromInt(Port),
+					},
+				},
+				Selector: map[string]string{
+					"name": operatorv1.MCH,
+				},
+			},
+		}
+
+		if err = ctrl.SetControllerReference(m, s, r.Scheme); err != nil {
+			return ctrl.Result{}, pkgerrors.Wrapf(
+				err, "error setting controller reference on metrics service: %s", sName,
+			)
+		}
+
+		if err = r.Client.Create(ctx, s); err != nil {
+			// Error creating metrics service
+			log.Error(err, fmt.Sprintf("error creating multiclusterhub metrics service: %s", sName))
+			return ctrl.Result{RequeueAfter: resyncPeriod}, err
+		}
+
+		log.Info(fmt.Sprintf("Created multiclusterhub metrics service: %s", sName))
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) createMetricsServiceMonitor(ctx context.Context, m *operatorv1.MultiClusterHub) (
+	ctrl.Result, error) {
+	log := log.FromContext(ctx)
+
+	smName := utils.MCHOperatorMetricsServiceMonitorName
+	smNamespace := m.GetNamespace()
+
+	namespacedName := types.NamespacedName{
+		Name:      smName,
+		Namespace: smNamespace,
+	}
+
+	// Check if service exists
+	if err := r.Client.Get(ctx, namespacedName, &promv1.ServiceMonitor{}); err != nil {
+		if !errors.IsNotFound(err) {
+			// Unknown error. Requeue
+			log.Error(err, fmt.Sprintf("error while getting multiclusterhub metrics service: %s/%s", smNamespace, smName))
+			return ctrl.Result{RequeueAfter: resyncPeriod}, err
+		}
+
+		// Create metrics service
+		sm := &promv1.ServiceMonitor{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      smName,
+				Namespace: smNamespace,
+				Labels: map[string]string{
+					"name": operatorv1.MCH,
+				},
+			},
+			Spec: promv1.ServiceMonitorSpec{
+				Endpoints: []promv1.Endpoint{
+					{
+						BearerTokenFile: "/var/run/secrets/kubernetes.io/serviceaccount/token",
+						BearerTokenSecret: corev1.SecretKeySelector{
+							Key: "",
+						},
+						Port: "metrics",
+					},
+				},
+				NamespaceSelector: promv1.NamespaceSelector{
+					MatchNames: []string{
+						m.GetNamespace(),
+					},
+				},
+				Selector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"name": operatorv1.MCH,
+					},
+				},
+			},
+		}
+
+		if err = ctrl.SetControllerReference(m, sm, r.Scheme); err != nil {
+			return ctrl.Result{}, pkgerrors.Wrapf(
+				err, "error setting controller reference on multiclusterhub metrics servicemonitor: %s", smName)
+		}
+
+		if err = r.Client.Create(ctx, sm); err != nil {
+			// Error creating metrics servicemonitor
+			log.Error(err, fmt.Sprintf("error creating metrics servicemonitor: %s", smName))
+			return ctrl.Result{RequeueAfter: resyncPeriod}, err
+		}
+
+		log.Info(fmt.Sprintf("Created multiclusterhub metrics servicemonitor: %s", smName))
+	}
+
 	return ctrl.Result{}, nil
 }
 

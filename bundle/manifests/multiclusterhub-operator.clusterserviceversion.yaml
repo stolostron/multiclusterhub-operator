@@ -571,7 +571,7 @@ spec:
           control-plane: multiclusterhub-operator
         name: multiclusterhub-operator
         spec:
-          replicas: 1
+          replicas: 2
           selector:
             matchLabels:
               name: multiclusterhub-operator
