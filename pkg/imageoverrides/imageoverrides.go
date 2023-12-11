@@ -10,7 +10,6 @@ import (
 	log "k8s.io/klog/v2"
 )
 
-
 const (
 	// OSBSImagePrefix ...
 	OSBSImagePrefix = "RELATED_IMAGE_"

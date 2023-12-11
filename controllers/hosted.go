@@ -23,15 +23,14 @@ import (
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 
+	log "k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	log "k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 func (r *MultiClusterHubReconciler) HostedReconcile(ctx context.Context, mch *operatorv1.MultiClusterHub) (retRes ctrl.Result, retErr error) {
-	
 
 	defer func() {
 		statusQueue, statusError := r.updateHostedHubStatus(mch) //1
@@ -101,7 +100,6 @@ func (r *MultiClusterHubReconciler) HostedReconcile(ctx context.Context, mch *op
 
 // setHostedDefaults configures the MCH with default values and updates
 func (r *MultiClusterHubReconciler) setHostedDefaults(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
-	
 
 	updateNecessary := false
 	if !operatorv1.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {

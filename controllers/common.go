@@ -8,11 +8,11 @@ import (
 	"encoding/json"
 	e "errors"
 	"fmt"
+	log "k8s.io/klog/v2"
 	"os"
 	"reflect"
 	"strings"
 	"time"
-	log "k8s.io/klog/v2"
 
 	consolev1 "github.com/openshift/api/operator/v1"
 

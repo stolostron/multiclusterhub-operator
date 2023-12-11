@@ -16,7 +16,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	log "k8s.io/klog/v2"
 
-
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
