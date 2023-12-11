@@ -19,7 +19,7 @@ var MinimumOCPVersion string = "4.10.0"
 // RequiredMCEVersion is the minimum version of MCE this operator expects.
 // The reconciler will wait until MCE has installed to at least this version
 // before proceeding with installing ACM.
-var RequiredMCEVersion = "2.4.0"
+var RequiredMCEVersion = "2.5.0"
 var RequiredCommunityMCEVersion = "0.1.0"
 
 func init() {
