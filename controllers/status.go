@@ -20,7 +20,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -187,7 +186,9 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 
 	// Copy conditions one by one to not affect original object
 	conditions := hub.Status.HubConditions
-	status.HubConditions = append(status.HubConditions, conditions...)
+	for i := range conditions {
+		status.HubConditions = append(status.HubConditions, conditions[i])
+	}
 
 	// Update hub conditions
 	if successful {
@@ -583,7 +584,7 @@ func aggregatePhase(status operatorsv1.MultiClusterHubStatus) operatorsv1.HubPha
 }
 
 // NewHubCondition creates a new hub condition.
-func NewHubCondition(condType operatorsv1.HubConditionType, status v1.ConditionStatus, reason, message string) *operatorsv1.HubCondition {
+func NewHubCondition(condType operatorsv1.HubConditionType, status metav1.ConditionStatus, reason, message string) *operatorsv1.HubCondition {
 	return &operatorsv1.HubCondition{
 		Type:               condType,
 		Status:             status,
