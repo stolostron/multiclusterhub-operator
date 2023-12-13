@@ -134,14 +134,10 @@ func (r *MultiClusterHubReconciler) ComponentsAreRunning(m *operatorsv1.MultiClu
 }
 
 // syncHubStatus checks if the status is up-to-date and sync it if necessary
-func (r *MultiClusterHubReconciler) syncHubStatus(
-	m *operatorsv1.MultiClusterHub,
-	original *operatorsv1.MultiClusterHubStatus,
-	allDeps []*appsv1.Deployment,
-	allCRs map[string]*unstructured.Unstructured,
-	ocpConsole bool,
-) (reconcile.Result, error) {
-	// localCluster, err := r.ensureManagedClusterIsRunning(m, ocpConsole)
+func (r *MultiClusterHubReconciler) syncHubStatus(m *operatorsv1.MultiClusterHub,
+	original *operatorsv1.MultiClusterHubStatus, allDeps []*appsv1.Deployment,
+	allCRs map[string]*unstructured.Unstructured, ocpConsole bool) (reconcile.Result, error) {
+
 	newStatus := calculateStatus(m, allDeps, allCRs, ocpConsole)
 	if reflect.DeepEqual(m.Status, original) {
 		r.Log.Info("Status hasn't changed")
@@ -169,14 +165,14 @@ func (r *MultiClusterHubReconciler) syncHubStatus(
 	}
 }
 
-func calculateStatus(
-	hub *operatorsv1.MultiClusterHub,
-	allDeps []*appsv1.Deployment,
-	allCRs map[string]*unstructured.Unstructured,
-	//	importClusterStatus []interface{},
-	ocpConsole bool,
-) operatorsv1.MultiClusterHubStatus {
-	components := getComponentStatuses(hub, allDeps, allCRs, ocpConsole)
+func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deployment,
+	allCRs map[string]*unstructured.Unstructured, ocpConsole bool) operatorsv1.MultiClusterHubStatus {
+
+	components := map[string]operatorsv1.StatusCondition{}
+	if paused := utils.IsPaused(hub); !paused {
+		components = getComponentStatuses(hub, allDeps, allCRs, ocpConsole)
+	}
+
 	status := operatorsv1.MultiClusterHubStatus{
 		CurrentVersion: hub.Status.CurrentVersion,
 		DesiredVersion: version.Version,
@@ -191,32 +187,34 @@ func calculateStatus(
 
 	// Copy conditions one by one to not affect original object
 	conditions := hub.Status.HubConditions
-	for i := range conditions {
-		status.HubConditions = append(status.HubConditions, conditions[i])
-	}
+	status.HubConditions = append(status.HubConditions, conditions...)
 
 	// Update hub conditions
 	if successful {
 		// don't label as complete until component pruning succeeds
-		if !hubPruning(status) {
-			available := NewHubCondition(operatorsv1.Complete, v1.ConditionTrue, ComponentsAvailableReason, "All hub components ready.")
+		if !hubPruning(status) && !utils.IsPaused(hub) {
+			available := NewHubCondition(operatorsv1.Complete, metav1.ConditionTrue,
+				ComponentsAvailableReason, "All hub components ready.")
 			SetHubCondition(&status, *available)
 		} else {
 			// only add unavailable status if complete status already present
 			if HubConditionPresent(status, operatorsv1.Complete) {
-				unavailable := NewHubCondition(operatorsv1.Complete, v1.ConditionFalse, OldComponentNotRemovedReason, "Not all components successfully pruned.")
+				unavailable := NewHubCondition(operatorsv1.Complete, metav1.ConditionFalse,
+					OldComponentNotRemovedReason, "Not all components successfully pruned.")
 				SetHubCondition(&status, *unavailable)
 			}
 		}
 	} else {
 		// hub is progressing unless otherwise specified
 		if !HubConditionPresent(status, operatorsv1.Progressing) {
-			progressing := NewHubCondition(operatorsv1.Progressing, v1.ConditionTrue, ReconcileReason, "Hub is reconciling.")
+			progressing := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue,
+				ReconcileReason, "Hub is reconciling.")
 			SetHubCondition(&status, *progressing)
 		}
 		// only add unavailable status if complete status already present
 		if HubConditionPresent(status, operatorsv1.Complete) {
-			unavailable := NewHubCondition(operatorsv1.Complete, v1.ConditionFalse, ComponentsUnavailableReason, "Not all hub components ready.")
+			unavailable := NewHubCondition(operatorsv1.Complete, metav1.ConditionFalse,
+				ComponentsUnavailableReason, "Not all hub components ready.")
 			SetHubCondition(&status, *unavailable)
 		}
 	}
@@ -234,12 +232,8 @@ func calculateStatus(
 }
 
 // getComponentStatuses populates a complete list of the hub component statuses
-func getComponentStatuses(
-	hub *operatorsv1.MultiClusterHub,
-	allDeps []*appsv1.Deployment,
-	allCRs map[string]*unstructured.Unstructured,
-	ocpConsole bool,
-) map[string]operatorsv1.StatusCondition {
+func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deployment,
+	allCRs map[string]*unstructured.Unstructured, ocpConsole bool) map[string]operatorsv1.StatusCondition {
 	components := newComponentList(hub, ocpConsole)
 
 	for _, d := range allDeps {
@@ -276,12 +270,7 @@ func successfulDeploy(d *appsv1.Deployment) bool {
 		}
 	}
 
-	if d.Status.UnavailableReplicas > 0 {
-		return false
-	}
-
-	return true
-	// latest := latestDeployCondition(d.Status.Conditions)
+	return d.Status.UnavailableReplicas <= 0
 }
 
 func latestDeployCondition(conditions []appsv1.DeploymentCondition) appsv1.DeploymentCondition {
@@ -555,11 +544,17 @@ func allComponentsSuccessful(components map[string]operatorsv1.StatusCondition) 
 // aggregatePhase calculates overall HubPhaseType based on hub status. This does NOT account for
 // a hub in the process of deletion.
 func aggregatePhase(status operatorsv1.MultiClusterHubStatus) operatorsv1.HubPhaseType {
-	successful := allComponentsSuccessful(status.Components)
 	if utils.IsUnitTest() {
 		return operatorsv1.HubRunning
 	}
-	if successful {
+
+	for _, condition := range status.HubConditions {
+		if condition.Reason == PausedReason {
+			return operatorsv1.HubPaused
+		}
+	}
+
+	if successful := allComponentsSuccessful(status.Components); successful {
 		if hubPruning(status) {
 			// hub is in pruning phase
 			return operatorsv1.HubPending
@@ -585,7 +580,6 @@ func aggregatePhase(status operatorsv1.MultiClusterHubStatus) operatorsv1.HubPha
 		// Hub has reached desired version, but degraded
 		return operatorsv1.HubPending
 	}
-
 }
 
 // NewHubCondition creates a new hub condition.
