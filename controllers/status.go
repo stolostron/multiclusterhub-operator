@@ -193,28 +193,24 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 	if successful {
 		// don't label as complete until component pruning succeeds
 		if !hubPruning(status) && !utils.IsPaused(hub) {
-			available := NewHubCondition(operatorsv1.Complete, metav1.ConditionTrue,
-				ComponentsAvailableReason, "All hub components ready.")
+			available := NewHubCondition(operatorsv1.Complete, metav1.ConditionTrue, ComponentsAvailableReason, "All hub components ready.")
 			SetHubCondition(&status, *available)
 		} else {
 			// only add unavailable status if complete status already present
 			if HubConditionPresent(status, operatorsv1.Complete) {
-				unavailable := NewHubCondition(operatorsv1.Complete, metav1.ConditionFalse,
-					OldComponentNotRemovedReason, "Not all components successfully pruned.")
+				unavailable := NewHubCondition(operatorsv1.Complete, metav1.ConditionFalse, OldComponentNotRemovedReason, "Not all components successfully pruned.")
 				SetHubCondition(&status, *unavailable)
 			}
 		}
 	} else {
 		// hub is progressing unless otherwise specified
 		if !HubConditionPresent(status, operatorsv1.Progressing) {
-			progressing := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue,
-				ReconcileReason, "Hub is reconciling.")
+			progressing := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, ReconcileReason, "Hub is reconciling.")
 			SetHubCondition(&status, *progressing)
 		}
 		// only add unavailable status if complete status already present
 		if HubConditionPresent(status, operatorsv1.Complete) {
-			unavailable := NewHubCondition(operatorsv1.Complete, metav1.ConditionFalse,
-				ComponentsUnavailableReason, "Not all hub components ready.")
+			unavailable := NewHubCondition(operatorsv1.Complete, metav1.ConditionFalse, ComponentsUnavailableReason, "Not all hub components ready.")
 			SetHubCondition(&status, *unavailable)
 		}
 	}
@@ -270,7 +266,11 @@ func successfulDeploy(d *appsv1.Deployment) bool {
 		}
 	}
 
-	return d.Status.UnavailableReplicas <= 0
+	if d.Status.UnavailableReplicas > 0 {
+		return false
+	}
+
+	return true
 }
 
 func latestDeployCondition(conditions []appsv1.DeploymentCondition) appsv1.DeploymentCondition {
