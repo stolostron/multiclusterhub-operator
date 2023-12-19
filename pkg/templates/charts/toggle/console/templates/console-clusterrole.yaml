@@ -189,25 +189,44 @@ rules:
   - provisionings
 
 - apiGroups:
-  - policy.open-cluster-management.io
   - app.k8s.io
-  - apps.open-cluster-management.io
-  - argoproj.io
   resources:
   - applications
-  - applicationsets
-  - appprojects
-  - argocds
+  verbs:
+  - list
+  - watch
+
+- apiGroups:
+  - apps.open-cluster-management.io
+  resources:
   - channels
   - gitopsclusters
   - helmreleases
   - placementrules
+  - subscriptions
+  - subscriptionreports
+  - multiclusterapplicationsetreports
+  verbs:
+  - list
+  - watch
+
+- apiGroups:
+  - argoproj.io
+  resources:
+  - applications
+  - applicationsets
+  - argocds
+  verbs:
+  - list
+  - watch
+
+- apiGroups:
+  - policy.open-cluster-management.io
+  resources:
   - placementbindings
   - policies
   - policyautomations
   - policysets
-  - subscriptions
-  - subscriptionreports
   verbs:
   - list
   - watch
