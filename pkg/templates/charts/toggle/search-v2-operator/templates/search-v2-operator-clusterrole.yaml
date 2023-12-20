@@ -114,6 +114,7 @@ rules:
   - managedclusteraddons/finalizers
   - clustermanagementaddons/finalizers
   - managedclusteraddons/status
+  - clustermanagementaddons/status
   verbs:
   - get
   - list
