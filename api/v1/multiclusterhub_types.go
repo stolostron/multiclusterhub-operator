@@ -224,6 +224,7 @@ type HubPhaseType string
 
 const (
 	HubPending         HubPhaseType = "Pending"
+	HubPaused          HubPhaseType = "Paused"
 	HubRunning         HubPhaseType = "Running"
 	HubInstalling      HubPhaseType = "Installing"
 	HubUpdating        HubPhaseType = "Updating"
