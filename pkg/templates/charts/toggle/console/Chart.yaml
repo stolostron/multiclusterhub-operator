@@ -2,12 +2,13 @@
 # (C) Copyright IBM Corporation 2016, 2019 All Rights Reserved
 # US Government Users Restricted Rights - Use, duplication or disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
 # Copyright Contributors to the Open Cluster Management project
+
 apiVersion: v1
-appVersion: "2.0.0"
-description: Helm chart for Open Cluster Management Console
-name: console-chart
-version: 2.4.0
+appVersion: 2.10.0
 category: "Development"
-kubeVersion: ">=1.10.0-0"
+description: Helm chart for Open Cluster Management Console
 keywords:
   - ui
+kubeVersion: ">=1.10.0-0"
+name: console-chart
+version: 2.10.0

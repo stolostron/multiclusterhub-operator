@@ -4,6 +4,6 @@
     - name: "cluster-permission"
       chart-path: "chart/"
       always-or-toggle: "toggle"
-      branch: "release-2.9"
+      branch: "release-2.10"
       imageMappings:
         cluster-permission: cluster_permission

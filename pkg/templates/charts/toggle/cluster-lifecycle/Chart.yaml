@@ -1,8 +1,9 @@
+# Copyright (c) 2024 Red Hat, Inc.
 # Copyright Contributors to the Open Cluster Management project
 
 apiVersion: v1
-description: A helm chart for deploying the cluster lifecycle
-name: cluster-lifecycle
-appVersion: "2.5"
-version: 2.5.0
+appVersion: 2.10.0
+description: Helm chart for deploying the cluster lifecycle
 kubeVersion: ">=1.11.0-0"
+name: cluster-lifecycle
+version: 2.10.0
