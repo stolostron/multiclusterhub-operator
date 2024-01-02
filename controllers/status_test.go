@@ -335,6 +335,24 @@ func Test_aggregatePhase(t *testing.T) {
 			},
 			want: operatorsv1.HubRunning,
 		},
+		{
+			name: "Running hub with paused",
+			status: operatorsv1.MultiClusterHubStatus{
+				CurrentVersion: "",
+				Components: map[string]operatorsv1.StatusCondition{
+					"foo": available,
+				},
+				HubConditions: []operatorsv1.HubCondition{
+					{
+						Message: "Multiclusterhub is paused",
+						Reason:  PausedReason,
+						Status:  metav1.ConditionUnknown,
+						Type:    operatorsv1.Progressing,
+					},
+				},
+			},
+			want: operatorsv1.HubPaused,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
