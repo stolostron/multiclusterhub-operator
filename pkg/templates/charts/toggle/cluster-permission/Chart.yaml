@@ -1,6 +1,9 @@
+# Copyright (c) 2024 Red Hat, Inc.
+# Copyright Contributors to the Open Cluster Management project
+
 apiVersion: v2
-appVersion: 1.16.0
+appVersion: 2.10.0
 description: A controller for managing RBAC resources to the managed clusters.
 name: cluster-permission
 type: application
-version: 2.3.0
+version: 2.10.0

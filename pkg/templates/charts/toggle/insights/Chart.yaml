@@ -1,12 +1,10 @@
-# Copyright (c) 2021 Red Hat, Inc.
+# Copyright (c) 2024 Red Hat, Inc.
 # Copyright Contributors to the Open Cluster Management project
+
 apiVersion: v1
-name: policyreport 
+appVersion: 2.10.0
 description: Helm chart to install the Open Cluster Management Insights
-version: 2.3.0
 icon: https://raw.githubusercontent.com/kubernetes/kubernetes/master/logo/logo.png
-tillerVersion: ">=2.9.0"
-appVersion: 2.3.0
 keywords:
 - RHACM
 - RHOCP
@@ -16,3 +14,6 @@ keywords:
 - insights 
 - amd64
 - runtime
+name: policyreport
+tillerVersion: ">=2.10.0"
+version: 2.10.0
