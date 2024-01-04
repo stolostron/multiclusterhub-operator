@@ -235,8 +235,9 @@ func GetCatalogSource(k8sClient client.Client) (types.NamespacedName, error) {
 }
 
 // filterPackageManifests returns a list of packagemanifests containing the desired channel
-// at the latest available version. Returns an empty list if no packagemanifests include the channel. If more
-// than one packagemanifest have the same latest version available it will return them both.
+// at the latest available version. Returns an empty list if no packagemanifests include the
+// channel. If more than one packagemanifest have the same latest version available it will
+// return them all.
 func filterPackageManifests(pkgManifests []olmapi.PackageManifest, desiredChannel string) []olmapi.PackageManifest {
 	filtered := []olmapi.PackageManifest{}
 	latestVersion := &semver.Version{}
@@ -258,6 +259,7 @@ func filterPackageManifests(pkgManifests []olmapi.PackageManifest, desiredChanne
 					filtered = append(filtered, p)
 				} else if v.GreaterThan(latestVersion) {
 					filtered = []olmapi.PackageManifest{p}
+					latestVersion = v
 				}
 			}
 		}

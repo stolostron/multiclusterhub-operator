@@ -513,7 +513,7 @@ func Test_filterPackageManifests(t *testing.T) {
 					},
 					{
 						Status: olmapi.PackageManifestStatus{
-							CatalogSource: "custom-operators",
+							CatalogSource: "custom-operators-1",
 							Channels: []olmapi.PackageChannel{
 								{
 									Name:       "stable",
@@ -527,12 +527,28 @@ func Test_filterPackageManifests(t *testing.T) {
 							},
 						},
 					},
+					{
+						Status: olmapi.PackageManifestStatus{
+							CatalogSource: "custom-operators-2",
+							Channels: []olmapi.PackageChannel{
+								{
+									Name:       "stable",
+									CurrentCSV: "multicluster-engine.v2.0.6-4",
+									CurrentCSVDesc: olmapi.CSVDescription{
+										Version: olmversion.OperatorVersion{
+											Version: semver.MustParse("2.0.6-4"),
+										},
+									},
+								},
+							},
+						},
+					},
 				},
 				channel: "stable",
 			},
 			want: []olmapi.PackageManifest{{
 				Status: olmapi.PackageManifestStatus{
-					CatalogSource: "custom-operators",
+					CatalogSource: "custom-operators-1",
 					Channels: []olmapi.PackageChannel{
 						{
 							Name:       "stable",
@@ -548,7 +564,7 @@ func Test_filterPackageManifests(t *testing.T) {
 			}},
 		},
 		{
-			name: "Return both packagemanifests because they have the same versions",
+			name: "Return both packagemanifests if two have the same versions",
 			args: args{
 				pkgManifests: []olmapi.PackageManifest{
 					{
@@ -621,6 +637,129 @@ func Test_filterPackageManifests(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Return multiple packagemanifests if they have the same versions",
+			args: args{
+				pkgManifests: []olmapi.PackageManifest{
+					{
+						Status: olmapi.PackageManifestStatus{
+							CatalogSource: "redhat-operators",
+							Channels: []olmapi.PackageChannel{
+								{
+									Name:       "stable",
+									CurrentCSV: "multicluster-engine.v2.0.6",
+									CurrentCSVDesc: olmapi.CSVDescription{
+										Version: olmversion.OperatorVersion{
+											Version: semver.MustParse("2.0.6"),
+										},
+									},
+								},
+							},
+						},
+					},
+					{
+						Status: olmapi.PackageManifestStatus{
+							CatalogSource: "custom-operators-1",
+							Channels: []olmapi.PackageChannel{
+								{
+									Name:       "stable",
+									CurrentCSV: "multicluster-engine.v2.0.7",
+									CurrentCSVDesc: olmapi.CSVDescription{
+										Version: olmversion.OperatorVersion{
+											Version: semver.MustParse("2.0.7"),
+										},
+									},
+								},
+							},
+						},
+					},
+					{
+						Status: olmapi.PackageManifestStatus{
+							CatalogSource: "custom-operators-2",
+							Channels: []olmapi.PackageChannel{
+								{
+									Name:       "stable",
+									CurrentCSV: "multicluster-engine.v2.0.7",
+									CurrentCSVDesc: olmapi.CSVDescription{
+										Version: olmversion.OperatorVersion{
+											Version: semver.MustParse("2.0.7"),
+										},
+									},
+								},
+							},
+						},
+					},
+					{
+						Status: olmapi.PackageManifestStatus{
+							CatalogSource: "custom-operators-3",
+							Channels: []olmapi.PackageChannel{
+								{
+									Name:       "stable",
+									CurrentCSV: "multicluster-engine.v2.0.7",
+									CurrentCSVDesc: olmapi.CSVDescription{
+										Version: olmversion.OperatorVersion{
+											Version: semver.MustParse("2.0.7"),
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				channel: "stable",
+			},
+			want: []olmapi.PackageManifest{
+				{
+					Status: olmapi.PackageManifestStatus{
+						CatalogSource: "custom-operators-1",
+						Channels: []olmapi.PackageChannel{
+							{
+								Name:       "stable",
+								CurrentCSV: "multicluster-engine.v2.0.7",
+								CurrentCSVDesc: olmapi.CSVDescription{
+									Version: olmversion.OperatorVersion{
+										Version: semver.MustParse("2.0.7"),
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					Status: olmapi.PackageManifestStatus{
+						CatalogSource: "custom-operators-2",
+						Channels: []olmapi.PackageChannel{
+							{
+								Name:       "stable",
+								CurrentCSV: "multicluster-engine.v2.0.7",
+								CurrentCSVDesc: olmapi.CSVDescription{
+									Version: olmversion.OperatorVersion{
+										Version: semver.MustParse("2.0.7"),
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					Status: olmapi.PackageManifestStatus{
+						CatalogSource: "custom-operators-3",
+						Channels: []olmapi.PackageChannel{
+							{
+								Name:       "stable",
+								CurrentCSV: "multicluster-engine.v2.0.7",
+								CurrentCSVDesc: olmapi.CSVDescription{
+									Version: olmversion.OperatorVersion{
+										Version: semver.MustParse("2.0.7"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+
 		{
 			name: "Return the non-prerelease version",
 			args: args{
