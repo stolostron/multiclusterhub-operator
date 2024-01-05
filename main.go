@@ -324,7 +324,7 @@ func addMultiClusterEngineWatch(ctx context.Context, uncachedClient client.Clien
 							namespace = labels["multiclusterhub.namespace"]
 						}
 						if name == "" || namespace == "" {
-							l := log.FromContext(context.Background())
+							l := log.Log.WithName("mce")
 							l.Info(fmt.Sprintf("MCE updated, but did not find required labels: %v", labels))
 							return
 						}

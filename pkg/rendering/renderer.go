@@ -2,7 +2,6 @@
 package renderer
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -185,7 +184,7 @@ func RenderCRDs(crdDir string) ([]*unstructured.Unstructured, []error) {
 }
 
 func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]string) ([]*unstructured.Unstructured, []error) {
-	log := log.FromContext(context.Background())
+	log := log.Log.WithName("reconcile")
 	var templates []*unstructured.Unstructured
 	errs := []error{}
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
@@ -213,7 +212,7 @@ func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]st
 }
 
 func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]string) ([]*unstructured.Unstructured, []error) {
-	log := log.FromContext(context.Background())
+	log := log.Log.WithName("reconcile")
 	errs := []error{}
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
 		chartPath = path.Join(val, chartPath)
@@ -234,7 +233,7 @@ func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]st
 }
 
 func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[string]string) ([]*unstructured.Unstructured, []error) {
-	log := log.FromContext(context.Background())
+	log := log.Log.WithName("reconcile")
 	var templates []*unstructured.Unstructured
 	errs := []error{}
 	chart, err := loader.Load(chartPath)
@@ -323,7 +322,7 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 }
 
 func GetOADPConfig(m *v1.MultiClusterHub) (string, string, subv1alpha1.Approval, string, string) {
-	log := log.FromContext(context.Background())
+	log := log.Log.WithName("reconcile")
 	sub := &subv1alpha1.SubscriptionSpec{}
 	var name, channel, source, sourceNamespace string
 	var installPlan subv1alpha1.Approval

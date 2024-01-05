@@ -169,7 +169,7 @@ func FindAndManageMCESubscription(ctx context.Context, k8sClient client.Client) 
 
 	// if label doesn't work find it via .spec.name (it's package)
 	// we can't assume it's name or namespace
-	log.FromContext(ctx).Info("Failed to find subscription via label")
+	log.Log.WithName("reconcile").Info("Failed to find subscription via label")
 	wholeList := &subv1alpha1.SubscriptionList{}
 	err = k8sClient.List(ctx, wholeList)
 	if err != nil {
@@ -187,9 +187,9 @@ func FindAndManageMCESubscription(ctx context.Context, k8sClient client.Client) 
 			}
 			labels[utils.MCEManagedByLabel] = "true"
 			wholeList.Items[i].SetLabels(labels)
-			log.FromContext(ctx).Info("Adding label to subscription")
+			log.Log.WithName("reconcile").Info("Adding label to subscription")
 			if err := k8sClient.Update(ctx, &wholeList.Items[i]); err != nil {
-				log.FromContext(ctx).Error(err, "Failed to add managedBy label to preexisting MCE with MCH spec")
+				log.Log.WithName("reconcile").Error(err, "Failed to add managedBy label to preexisting MCE with MCH spec")
 				return &wholeList.Items[i], err
 			}
 			return &wholeList.Items[i], nil
