@@ -15,9 +15,7 @@ import (
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
-	mchov1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
-	v1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
@@ -25,7 +23,6 @@ import (
 	ocmapi "open-cluster-management.io/api/addon/v1alpha1"
 
 	configv1 "github.com/openshift/api/config/v1"
-	netv1 "github.com/openshift/api/config/v1"
 	consolev1 "github.com/openshift/api/operator/v1"
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
@@ -81,7 +78,7 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 	Expect(k8sClient.Create(ctx, mchoDeployment)).Should(Succeed())
 
 	By("Ensuring MCH is created")
-	createdMCH := &mchov1.MultiClusterHub{}
+	createdMCH := &operatorv1.MultiClusterHub{}
 	Eventually(func() bool {
 		err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
 		return err == nil
@@ -97,7 +94,7 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 	Eventually(func() bool {
 		err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
 		Expect(err).Should(BeNil())
-		return createdMCH.Spec.AvailabilityConfig == mchov1.HAHigh
+		return createdMCH.Spec.AvailabilityConfig == operatorv1.HAHigh
 	}, timeout, interval).Should(BeTrue())
 
 	By("Ensuring Deployments")
@@ -160,10 +157,10 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 
 	By("Waiting for MCH to be in the running state")
 	Eventually(func() bool {
-		mch := &mchov1.MultiClusterHub{}
+		mch := &operatorv1.MultiClusterHub{}
 		err := k8sClient.Get(ctx, resources.MCHLookupKey, mch)
 		if err == nil {
-			return mch.Status.Phase == mchov1.HubRunning
+			return mch.Status.Phase == operatorv1.HubRunning
 		}
 		return false
 	}, timeout, interval).Should(BeTrue())
@@ -222,7 +219,7 @@ func PreexistingMCE(k8sClient client.Client, reconciler *MultiClusterHubReconcil
 	Expect(k8sClient.Create(ctx, mchoDeployment)).Should(Succeed())
 
 	By("Ensuring MCH is created")
-	createdMCH := &mchov1.MultiClusterHub{}
+	createdMCH := &operatorv1.MultiClusterHub{}
 	Eventually(func() bool {
 		err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
 		return err == nil
@@ -230,10 +227,10 @@ func PreexistingMCE(k8sClient client.Client, reconciler *MultiClusterHubReconcil
 
 	By("Waiting for MCH to be in the running state")
 	Eventually(func() bool {
-		mch := &mchov1.MultiClusterHub{}
+		mch := &operatorv1.MultiClusterHub{}
 		err := k8sClient.Get(ctx, resources.MCHLookupKey, mch)
 		if err == nil {
-			return mch.Status.Phase == mchov1.HubRunning
+			return mch.Status.Phase == operatorv1.HubRunning
 		}
 		return false
 	}, timeout, interval).Should(BeTrue())
@@ -262,7 +259,7 @@ func PreexistingMCE(k8sClient client.Client, reconciler *MultiClusterHubReconcil
 
 	By("Deleting MCH and waiting for it to terminate")
 	Eventually(func() bool {
-		mch := &mchov1.MultiClusterHub{}
+		mch := &operatorv1.MultiClusterHub{}
 		err := k8sClient.Get(ctx, resources.MCHLookupKey, mch)
 		if err != nil && errors.IsNotFound(err) {
 			return true
@@ -352,10 +349,9 @@ var _ = Describe("MultiClusterHub controller", func() {
 		Expect(scheme.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(searchv2v1alpha1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(promv1.AddToScheme(clientScheme)).Should(Succeed())
-		Expect(mchov1.AddToScheme(clientScheme)).Should(Succeed())
+		Expect(operatorv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(apiregistrationv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(apixv1.AddToScheme(clientScheme)).Should(Succeed())
-		Expect(netv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(olmv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(subv1alpha1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(mcev1.AddToScheme(clientScheme)).Should(Succeed())
@@ -479,7 +475,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(k8sClient.Create(ctx, mchoDeployment)).Should(Succeed())
 
 			By("Ensuring MCH is created")
-			createdMCH := &mchov1.MultiClusterHub{}
+			createdMCH := &operatorv1.MultiClusterHub{}
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
 				return err == nil
@@ -487,10 +483,10 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 			By("Waiting for MCH to be in the running state")
 			Eventually(func() bool {
-				mch := &mchov1.MultiClusterHub{}
+				mch := &operatorv1.MultiClusterHub{}
 				err := k8sClient.Get(ctx, resources.MCHLookupKey, mch)
 				if err == nil {
-					return mch.Status.Phase == mchov1.HubRunning
+					return mch.Status.Phase == operatorv1.HubRunning
 				}
 				return false
 			}, timeout, interval).Should(BeTrue())
@@ -599,13 +595,13 @@ var _ = Describe("MultiClusterHub controller", func() {
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
 
-			createdMCH.Enable(v1.Console)
-			createdMCH.Enable(v1.Insights)
-			createdMCH.Enable(v1.Search)
-			createdMCH.Enable(v1.GRC)
-			createdMCH.Enable(v1.ClusterLifecycle)
-			createdMCH.Enable(v1.MultiClusterObservability)
-			createdMCH.Enable(v1.Volsync)
+			createdMCH.Enable(operatorv1.Console)
+			createdMCH.Enable(operatorv1.Insights)
+			createdMCH.Enable(operatorv1.Search)
+			createdMCH.Enable(operatorv1.GRC)
+			createdMCH.Enable(operatorv1.ClusterLifecycle)
+			createdMCH.Enable(operatorv1.MultiClusterObservability)
+			createdMCH.Enable(operatorv1.Volsync)
 
 			Expect(k8sClient.Update(ctx, createdMCH)).Should(Succeed())
 
@@ -681,13 +677,13 @@ var _ = Describe("MultiClusterHub controller", func() {
 			// Appending to components rather than replacing with `Disable()`
 			createdMCH.Spec.Overrides.Components = append(
 				createdMCH.Spec.Overrides.Components,
-				v1.ComponentConfig{Name: v1.Console, Enabled: false},
-				v1.ComponentConfig{Name: v1.GRC, Enabled: false},
-				v1.ComponentConfig{Name: v1.Insights, Enabled: false},
-				v1.ComponentConfig{Name: v1.Search, Enabled: false},
-				v1.ComponentConfig{Name: v1.ClusterLifecycle, Enabled: false},
-				v1.ComponentConfig{Name: v1.MultiClusterObservability, Enabled: false},
-				v1.ComponentConfig{Name: v1.Volsync, Enabled: false},
+				operatorv1.ComponentConfig{Name: operatorv1.Console, Enabled: false},
+				operatorv1.ComponentConfig{Name: operatorv1.GRC, Enabled: false},
+				operatorv1.ComponentConfig{Name: operatorv1.Insights, Enabled: false},
+				operatorv1.ComponentConfig{Name: operatorv1.Search, Enabled: false},
+				operatorv1.ComponentConfig{Name: operatorv1.ClusterLifecycle, Enabled: false},
+				operatorv1.ComponentConfig{Name: operatorv1.MultiClusterObservability, Enabled: false},
+				operatorv1.ComponentConfig{Name: operatorv1.Volsync, Enabled: false},
 			)
 
 			Expect(k8sClient.Update(ctx, createdMCH)).Should(Succeed())
@@ -720,7 +716,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 			By("Ensuring Cluster Backup")
 			ns := BackupNamespace()
-			result, err = reconciler.ensureNamespace(mch, ns)
+			_, err = reconciler.ensureNamespace(mch, ns)
 			Expect(err).To(BeNil())
 
 			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.ClusterBackup, testImages)
@@ -835,11 +831,11 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(err).To(BeNil())
 
 			By("Ensuring No OpenShift Cluster Monitoring Labels")
-			mch2 := &mchov1.MultiClusterHub{
+			mch2 := &operatorv1.MultiClusterHub{
 				ObjectMeta: metav1.ObjectMeta{Name: "mch", Namespace: "test-ns-1"},
 			}
 
-			result, err = reconciler.ensureOpenShiftNamespaceLabel(ctx, mch2)
+			result, _ = reconciler.ensureOpenShiftNamespaceLabel(ctx, mch2)
 			Expect(result).To(Equal(ctrl.Result{Requeue: true}))
 		})
 	})
@@ -958,7 +954,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 		ctx := context.Background()
 		By("Ensuring the MCH CR is deleted")
 		Eventually(func() bool {
-			mch := &mchov1.MultiClusterHub{}
+			mch := &operatorv1.MultiClusterHub{}
 			err := k8sClient.Get(ctx, resources.MCHLookupKey, mch)
 			if err != nil && errors.IsNotFound(err) {
 				return true
