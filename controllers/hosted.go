@@ -31,7 +31,7 @@ import (
 )
 
 func (r *MultiClusterHubReconciler) HostedReconcile(ctx context.Context, mch *operatorv1.MultiClusterHub) (retRes ctrl.Result, retErr error) {
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 
 	defer func() {
 		statusQueue, statusError := r.updateHostedHubStatus(mch) //1
@@ -101,7 +101,7 @@ func (r *MultiClusterHubReconciler) HostedReconcile(ctx context.Context, mch *op
 
 // setHostedDefaults configures the MCH with default values and updates
 func (r *MultiClusterHubReconciler) setHostedDefaults(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 
 	updateNecessary := false
 	if !operatorv1.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {

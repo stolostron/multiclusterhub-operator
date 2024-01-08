@@ -247,7 +247,7 @@ func filterPackageManifests(pkgManifests []olmapi.PackageManifest, desiredChanne
 				versionString := c.CurrentCSVDesc.Version.String()
 				v, err := semver.NewVersion(versionString)
 				if err != nil {
-					log.FromContext(context.Background()).Info("failed to parse version from packagemanifest", "catalogsource", p.Status.CatalogSource)
+					log.Log.WithName("reconcile").Info("failed to parse version from packagemanifest", "catalogsource", p.Status.CatalogSource)
 					continue
 				}
 				if len(filtered) == 0 {
@@ -297,7 +297,7 @@ func OperandNameSpace() string {
 // returns packagemanifests with the name multicluster-engine
 func GetMCEPackageManifests(k8sClient client.Client) ([]olmapi.PackageManifest, error) {
 	ctx := context.Background()
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 	packageManifests := &olmapi.PackageManifestList{}
 	var err error
 	if utils.IsUnitTest() {
@@ -359,7 +359,7 @@ func FindAndManageMCE(ctx context.Context, k8sClient client.Client) (*mcev1.Mult
 	}
 
 	// if label doesn't work find it via list
-	log.FromContext(ctx).Info("Failed to find subscription via label")
+	log.Log.WithName("reconcile").Info("Failed to find subscription via label")
 	wholeList := &mcev1.MultiClusterEngineList{}
 	err = k8sClient.List(ctx, wholeList)
 	if err != nil {
@@ -386,9 +386,9 @@ func FindAndManageMCE(ctx context.Context, k8sClient client.Client) (*mcev1.Mult
 	}
 	labels[utils.MCEManagedByLabel] = "true"
 	filteredMCEs[0].SetLabels(labels)
-	log.FromContext(ctx).Info("Adding label to MCE")
+	log.Log.WithName("reconcile").Info("Adding label to MCE")
 	if err := k8sClient.Update(ctx, &filteredMCEs[0]); err != nil {
-		log.FromContext(ctx).Error(err, "Failed to add managedBy label to preexisting MCE")
+		log.Log.WithName("reconcile").Error(err, "Failed to add managedBy label to preexisting MCE")
 		return &filteredMCEs[0], err
 	}
 	return &filteredMCEs[0], nil
