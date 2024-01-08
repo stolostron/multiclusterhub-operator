@@ -118,7 +118,7 @@ const (
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Request) (retQueue ctrl.Result, retError error) {
-	r.Log = log.FromContext(ctx)
+	r.Log = log.Log.WithName("reconcile")
 	r.Log.Info("Reconciling MultiClusterHub")
 
 	// Fetch the MultiClusterHub instance
@@ -549,7 +549,7 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) (controll
 }
 
 func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operatorv1.MultiClusterHub, template *unstructured.Unstructured) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 	// Set owner reference.
 	if (template.GetKind() == "ClusterRole") || (template.GetKind() == "ClusterRoleBinding") || (template.GetKind() == "ServiceMonitor") || (template.GetKind() == "CustomResourceDefinition") {
 		utils.AddInstallerLabel(template, m.Name, m.Namespace)
@@ -575,7 +575,7 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 }
 
 func (r *MultiClusterHubReconciler) fetchChartLocation(ctx context.Context, component string) string {
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 
 	switch component {
 	case operatorv1.Appsub:
@@ -625,7 +625,7 @@ func (r *MultiClusterHubReconciler) ensureComponentOrNoComponent(ctx context.Con
 	var result ctrl.Result
 	var err error
 
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 
 	if !m.Enabled(component) {
 		if component == operatorv1.ClusterBackup {
@@ -683,7 +683,7 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 		return ctrl.Result{}, nil
 	}
 
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 	chartLocation := r.fetchChartLocation(ctx, component)
 
 	// Renders all templates from charts
@@ -732,7 +732,7 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 		return ctrl.Result{}, nil
 	}
 
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 	chartLocation := r.fetchChartLocation(ctx, component)
 
 	switch component {
@@ -793,7 +793,7 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 func (r *MultiClusterHubReconciler) ensureOpenShiftNamespaceLabel(ctx context.Context,
 	m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 	existingNs := &corev1.Namespace{}
 
 	err := r.Client.Get(ctx, types.NamespacedName{Name: m.GetNamespace()}, existingNs)
@@ -823,7 +823,7 @@ func (r *MultiClusterHubReconciler) ensureOpenShiftNamespaceLabel(ctx context.Co
 }
 
 func (r *MultiClusterHubReconciler) deleteTemplate(ctx context.Context, m *operatorv1.MultiClusterHub, template *unstructured.Unstructured) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 	err := r.Client.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()}, template)
 
 	if err != nil && (errors.IsNotFound(err) || apimeta.IsNoMatchError(err)) {
@@ -848,7 +848,7 @@ func (r *MultiClusterHubReconciler) deleteTemplate(ctx context.Context, m *opera
 // createCAconfigmap creates a configmap that will be injected with the
 // trusted CA bundle for use with the OCP cluster wide proxy
 func (r *MultiClusterHubReconciler) createTrustBundleConfigmap(ctx context.Context, mch *operatorv1.MultiClusterHub) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 
 	// Get Trusted Bundle configmap name
 	trustBundleName := defaultTrustBundleName
@@ -904,7 +904,7 @@ func (r *MultiClusterHubReconciler) createTrustBundleConfigmap(ctx context.Conte
 
 func (r *MultiClusterHubReconciler) createMetricsService(ctx context.Context, m *operatorv1.MultiClusterHub) (
 	ctrl.Result, error) {
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 
 	const Port = 8383
 
@@ -968,7 +968,7 @@ func (r *MultiClusterHubReconciler) createMetricsService(ctx context.Context, m 
 
 func (r *MultiClusterHubReconciler) createMetricsServiceMonitor(ctx context.Context, m *operatorv1.MultiClusterHub) (
 	ctrl.Result, error) {
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 
 	smName := utils.MCHOperatorMetricsServiceMonitorName
 	smNamespace := m.GetNamespace()
