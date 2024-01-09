@@ -176,7 +176,7 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 		g.Expect(k8sClient.Get(ctx, namespacedName, res)).To(Succeed())
 	}, timeout, interval).Should(Succeed())
 
-	By("ensuring the acm consoleplugin is enabled on the cluster")
+	By("Ensuring the acm consoleplugin is enabled on the cluster")
 	clusterConsole := &consolev1.Console{}
 	Expect(k8sClient.Get(ctx, types.NamespacedName{Name: "cluster"}, clusterConsole)).To(Succeed())
 	Expect(clusterConsole.Spec.Plugins).To(ContainElement("acm"))
@@ -687,6 +687,14 @@ var _ = Describe("MultiClusterHub controller", func() {
 			)
 
 			Expect(k8sClient.Update(ctx, createdMCH)).Should(Succeed())
+
+			By("Pausing MCH to pause reconciliation")
+			Eventually(func() bool {
+				createdMCH.Annotations[utils.AnnotationMCHPause] = "true"
+				_ = k8sClient.Update(ctx, createdMCH)
+
+				return utils.IsPaused(createdMCH)
+			}, timeout, interval).Should(BeTrue())
 		})
 	})
 
