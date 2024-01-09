@@ -690,7 +690,13 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 			By("Pausing MCH to pause reconciliation")
 			Eventually(func() bool {
-				createdMCH.Annotations[utils.AnnotationMCHPause] = "true"
+				annotations := createdMCH.GetAnnotations()
+				if annotations == nil {
+					annotations = make(map[string]string)
+				}
+
+				annotations[utils.AnnotationMCHPause] = "true"
+				createdMCH.Annotations = annotations
 				_ = k8sClient.Update(ctx, createdMCH)
 
 				return utils.IsPaused(createdMCH)
