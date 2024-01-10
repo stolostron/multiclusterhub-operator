@@ -28,7 +28,7 @@ prep-mock-install:
 
 regenerate-operator-bundles: ## Regenerates the operator bundles
 	pip install -r hack/bundle-automation/requirements.txt
-	python3 ./hack/bundle-automation/generate-bundles.py --destination pkg/templates/
+	python3 ./hack/bundle-automation/generate-shell.py
 
 regenerate-charts: ## Regenerates the charts 
 	pip install -r hack/bundle-automation/chart-requirements.txt
