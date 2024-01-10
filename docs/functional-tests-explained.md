@@ -30,6 +30,7 @@ make ft-uninstall
 ### Run the update functional tests directly
 
 When running this test suite, ensure that an index containing the proper bundles is provided. For help generating a test development bundle, see - `make test-update-image`.
+
 ```bash
 make ft-update
 ```
@@ -38,12 +39,11 @@ make ft-update
 
 Running the installer composite functional tests requires a CatalogSource to be stood up on this cluster to which the MultiClusterHub subscription can be subscribed too. This must be the composite bundle of ACM.
 
-
 ### Run the installer composite functional tests
 
 Running the install composite functional test will first attempt to install a subscription of ACM. After the subscription has been validated, the MCH will be installed.
 
-```
+```bash
 make ft-downstream-install
 ```
 
@@ -58,11 +58,11 @@ export full_test_suite=true
 make ft-downstream-uninstall
 ```
 
-### Run the uninstall composite functional tests
+### Run the update composite functional tests
 
 Running the update composite functional test will first attempt to install a subscription of ACM. This subscription will need manual approval which is taken care of by the functional tests. Once the MCH has been validated at the first provided version, it will begin updating and validating the MCH at the ugprade version.
 
-```
+```bash
 make ft-downstream-update
 ```
 
@@ -70,9 +70,9 @@ make ft-downstream-update
 
 ### Building a test image
 
-To build the MCH functional test image, run the following command below. This can be used to test the composite functional tests. 
+To build the MCH functional test image, run the following command below. This can be used to test the composite functional tests.
 
-```
+```bash
 make test-image
 ```
 
@@ -80,7 +80,7 @@ make test-image
 
 It can be difficult to test updates if a proper bundle isn't available or provided. If you would like to create a development index image, run the command below. See instructions above Make command for configuration options. -
 
-```
+```bash
 make test-update-image
 ```
 
@@ -88,6 +88,6 @@ make test-update-image
 
 This will create the namespace, secrets, operatorgroup, create the test development update image. After this has been created, a CatalogSource along with its related resources will be created on the targeted cluster, from which the composite functional tests can be ran.
 
-```
+```bash
 make acm-index-install
 ```

@@ -4,6 +4,8 @@
 
 This directory contains examples that cover various configurations for multiclusterhub.
 
+## Configurations
+
 ### Custom pull secret
 
 ```yaml
@@ -46,7 +48,7 @@ spec:
   separateCertificateManagement: true
 ```
 
-### Specific image pull policy:
+### Specific image pull policy
 
 ```yaml
 spec:
