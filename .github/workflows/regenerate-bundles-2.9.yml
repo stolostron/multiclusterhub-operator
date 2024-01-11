@@ -69,9 +69,9 @@ jobs:
         uses: peter-evans/create-pull-request@v3
         with:
           signoff: true
-          branch: "regenerate-operator-bundles-2.8"
+          branch: "regenerate-operator-bundles-2.9"
           delete-branch: true
-          title: "Operator Bundle Update [2.8]"
+          title: "Operator Bundle Update [2.9]"
           committer: GitHub <noreply@github.com>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
           labels: do-not-merge/hold
