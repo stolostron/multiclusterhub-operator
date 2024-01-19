@@ -63,8 +63,21 @@ func ApplyPrereqs(k8sClient client.Client) {
 	ctx := context.Background()
 	Expect(k8sClient.Create(ctx, resources.OCMNamespace())).Should(Succeed())
 	Expect(k8sClient.Create(ctx, resources.MonitoringNamespace())).Should(Succeed())
-	Expect(k8sClient.Create(ctx, resources.SampleClusterManagementAddOn(operatorv1.SubmarinerAddon)))
-	Expect(k8sClient.Create(ctx, resources.SampleServiceMonitor(operatorv1.MCH, mchNamespace)))
+}
+
+func removeSubmarinerFinalizer(k8sClient client.Client, reconciler *MultiClusterHubReconciler) {
+	ctx := context.Background()
+
+	addonName, _ := operatorv1.GetClusterManagementAddonName(operatorv1.SubmarinerAddon)
+	clusterMgmtAddon := &ocmapi.ClusterManagementAddOn{}
+
+	if err := k8sClient.Get(ctx, types.NamespacedName{Name: addonName}, clusterMgmtAddon); err == nil {
+		// If the ClusterManagementAddon resource is found, remove the finalizer and update it.
+		clusterMgmtAddon.SetFinalizers([]string{})
+		if err := k8sClient.Update(ctx, clusterMgmtAddon); err != nil {
+			reconciler.Log.Error(err, "failed to update ClusterManagementAddon")
+		}
+	}
 }
 
 func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler, mchoDeployment *appsv1.Deployment) {
@@ -267,6 +280,8 @@ func PreexistingMCE(k8sClient client.Client, reconciler *MultiClusterHubReconcil
 			mch := resources.EmptyMCH()
 			k8sClient.Delete(ctx, &mch)
 		}
+
+		removeSubmarinerFinalizer(k8sClient, reconciler)
 		return false
 	}, timeout, interval).Should(BeTrue())
 
@@ -832,6 +847,8 @@ var _ = Describe("MultiClusterHub controller", func() {
 			By("Ensuring No SubmarinerAddon")
 			Eventually(func() bool {
 				result, err := reconciler.ensureNoComponent(ctx, mch, operatorv1.SubmarinerAddon, testImages)
+				removeSubmarinerFinalizer(k8sClient, reconciler)
+
 				return (err == nil && result == ctrl.Result{})
 			}, timeout, interval).Should(BeTrue())
 
@@ -977,6 +994,8 @@ var _ = Describe("MultiClusterHub controller", func() {
 				mch := resources.EmptyMCH()
 				k8sClient.Delete(ctx, &mch)
 			}
+
+			removeSubmarinerFinalizer(k8sClient, reconciler)
 			return false
 		}, timeout, interval).Should(BeTrue())
 
