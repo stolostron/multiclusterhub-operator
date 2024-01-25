@@ -107,7 +107,6 @@ var MCEComponents = []string{
 	MCEDiscovery,
 	MCEHive,
 	MCEServerFoundation,
-	MCEConsole,
 	MCEManagedServiceAccount,
 	MCEManagedServiceAccountPreview,
 	MCEHypershift,
