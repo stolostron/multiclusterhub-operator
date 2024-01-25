@@ -1119,6 +1119,13 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 		updateNecessary = true
 	}
 
+	for _, c := range operatorv1.MCEComponents {
+		if m.Prune(c) {
+			log.Info(fmt.Sprintf("Removing MultiClusterEngine component: %v from existing MultiClusterHub", c))
+			updateNecessary = true
+		}
+	}
+
 	if utils.MchIsValid(m) && os.Getenv("ACM_HUB_OCP_VERSION") != "" && !updateNecessary {
 		return ctrl.Result{}, nil
 	}
