@@ -698,7 +698,7 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 		If the component is detected to be MCH, we can simply return successfully. MCH is only listed in the components
 		list for cleanup purposes.
 	*/
-	if component == operatorv1.MCH {
+	if component == operatorv1.MCH || component == operatorv1.MultiClusterEngine {
 		return ctrl.Result{}, nil
 	}
 
@@ -745,9 +745,10 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 
 	/*
 		If the component is detected to be MCH, we can simply return successfully. MCH is only listed in the components
-		list for cleanup purposes.
+		list for cleanup purposes. If the component is detected to be MCE, we can simply return successfully.
+		MCE is only listed in the components list for webhook validation purposes.
 	*/
-	if component == operatorv1.MCH {
+	if component == operatorv1.MCH || component == operatorv1.MultiClusterEngine {
 		return ctrl.Result{}, nil
 	}
 

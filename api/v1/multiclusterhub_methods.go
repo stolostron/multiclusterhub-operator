@@ -89,8 +89,8 @@ var MCHComponents = []string{
 	Console,
 	GRC,
 	Insights,
-	// MultiClusterEngine,
-	MCH, // Adding MCH name to ensure legacy resources are cleaned up properly.
+	MultiClusterEngine, // Adding MCE component to ensure that the component is validated by the webhook.
+	MCH,                // Adding MCH component to ensure legacy resources are cleaned up properly.
 	MultiClusterObservability,
 	//Repo,
 	Search,
