@@ -333,8 +333,8 @@ func (mch *MultiClusterHub) Prune(s string) bool {
 }
 
 // ValidComponent checks if a given component configuration is valid by comparing its name to the known component names.
-func ValidComponent(c ComponentConfig) bool {
-	for _, name := range allComponents {
+func ValidComponent(c ComponentConfig, validComponents []string) bool {
+	for _, name := range validComponents {
 		if c.Name == name {
 			return true
 		}

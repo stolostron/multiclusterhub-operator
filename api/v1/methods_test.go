@@ -134,8 +134,8 @@ var _ = Describe("V1 API Methods", func() {
 	})
 
 	It("correctly validates a component name", func() {
-		Expect(api.ValidComponent(config(api.Search, true))).To(BeTrue())
-		Expect(api.ValidComponent(config("invalid", true))).To(BeFalse())
+		Expect(api.ValidComponent(config(api.Search, true), api.MCHComponents)).To(BeTrue())
+		Expect(api.ValidComponent(config("invalid", true), api.MCHComponents)).To(BeFalse())
 	})
 
 	It("gets the correct number of default enabled components", func() {
