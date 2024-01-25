@@ -135,7 +135,7 @@ func (r *MultiClusterHub) ValidateCreate() error {
 	// Validate components
 	if r.Spec.Overrides != nil {
 		for _, c := range r.Spec.Overrides.Components {
-			if !ValidComponent(c) {
+			if !ValidComponent(c, MCHComponents) {
 				return fmt.Errorf("invalid component config: %s is not a known component", c.Name)
 			}
 		}
@@ -169,7 +169,7 @@ func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) error {
 	// Validate components
 	if r.Spec.Overrides != nil {
 		for _, c := range r.Spec.Overrides.Components {
-			if !ValidComponent(c) {
+			if !ValidComponent(c, MCHComponents) {
 				return fmt.Errorf("invalid componentconfig: %s is not a known component", c.Name)
 			}
 		}
