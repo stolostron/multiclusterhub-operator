@@ -368,7 +368,7 @@ func TestNewMultiClusterEngine(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := NewMultiClusterEngine(tt.args.m, tt.args.infrastructureCustomNamespace)
+			got := NewMultiClusterEngine(tt.args.m)
 			g.Expect(got.Labels).To(gomega.Equal(tt.want.Labels))
 			g.Expect(got.Spec.ImagePullSecret).To(gomega.Equal(tt.want.Spec.ImagePullSecret))
 			g.Expect(got.Spec.Tolerations).To(gomega.Equal(tt.want.Spec.Tolerations))
