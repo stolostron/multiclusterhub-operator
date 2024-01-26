@@ -65,7 +65,7 @@ var mockPackageManifests = func() *olmapi.PackageManifestList {
 }
 
 // NewMultiClusterEngine returns an MCE configured from a Multiclusterhub
-func NewMultiClusterEngine(m *operatorsv1.MultiClusterHub, infrastructureCustomNamespace string) *mcev1.MultiClusterEngine {
+func NewMultiClusterEngine(m *operatorsv1.MultiClusterHub) *mcev1.MultiClusterEngine {
 	labels := map[string]string{
 		"installer.name":        m.GetName(),
 		"installer.namespace":   m.GetNamespace(),
@@ -97,10 +97,6 @@ func NewMultiClusterEngine(m *operatorsv1.MultiClusterHub, infrastructureCustomN
 
 	if m.Spec.Overrides != nil && m.Spec.Overrides.ImagePullPolicy != "" {
 		mce.Spec.Overrides.ImagePullPolicy = m.Spec.Overrides.ImagePullPolicy
-	}
-
-	if infrastructureCustomNamespace != "" {
-		mce.Spec.Overrides.InfrastructureCustomNamespace = infrastructureCustomNamespace
 	}
 
 	return mce
