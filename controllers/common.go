@@ -178,10 +178,7 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 	}
 
 	if mce == nil {
-		// figure out if assisted service is already configured
-		infraNS := ""
-
-		mce = multiclusterengine.NewMultiClusterEngine(m, infraNS)
+		mce = multiclusterengine.NewMultiClusterEngine(m)
 		err = r.Client.Create(ctx, mce)
 		if err != nil {
 			return ctrl.Result{Requeue: true}, fmt.Errorf("Error creating new MCE: %w", err)
