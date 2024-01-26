@@ -329,7 +329,6 @@ func TestNewMultiClusterEngine(t *testing.T) {
 						},
 					},
 				},
-				infrastructureCustomNamespace: "open-cluster-management",
 			},
 			want: &mcev1.MultiClusterEngine{
 				ObjectMeta: metav1.ObjectMeta{
@@ -360,7 +359,6 @@ func TestNewMultiClusterEngine(t *testing.T) {
 							{Name: operatorsv1.MCEDiscovery, Enabled: false},
 							{Name: operatorsv1.MCELocalCluster, Enabled: false},
 						},
-						InfrastructureCustomNamespace: "open-cluster-management",
 					},
 				},
 			},
@@ -377,8 +375,6 @@ func TestNewMultiClusterEngine(t *testing.T) {
 			g.Expect(got.Spec.TargetNamespace).To(gomega.Equal(tt.want.Spec.TargetNamespace))
 			g.Expect(got.Spec.Overrides.Components).To(gomega.Equal(tt.want.Spec.Overrides.Components))
 			g.Expect(got.Spec.Overrides.ImagePullPolicy).To(gomega.Equal(tt.want.Spec.Overrides.ImagePullPolicy))
-			g.Expect(got.Spec.Overrides.InfrastructureCustomNamespace).To(gomega.Equal(tt.want.Spec.Overrides.InfrastructureCustomNamespace))
-
 		})
 	}
 }
