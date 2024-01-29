@@ -8,16 +8,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"time"
 
+	operatorsapiv2 "github.com/operator-framework/api/pkg/operators/v2"
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
-	mchov1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
-	v1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
@@ -25,7 +23,6 @@ import (
 	ocmapi "open-cluster-management.io/api/addon/v1alpha1"
 
 	configv1 "github.com/openshift/api/config/v1"
-	netv1 "github.com/openshift/api/config/v1"
 	consolev1 "github.com/openshift/api/operator/v1"
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
@@ -36,7 +33,9 @@ import (
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -66,6 +65,21 @@ func ApplyPrereqs(k8sClient client.Client) {
 	Expect(k8sClient.Create(ctx, resources.MonitoringNamespace())).Should(Succeed())
 }
 
+func removeSubmarinerFinalizer(k8sClient client.Client, reconciler *MultiClusterHubReconciler) {
+	ctx := context.Background()
+
+	addonName, _ := operatorv1.GetClusterManagementAddonName(operatorv1.SubmarinerAddon)
+	clusterMgmtAddon := &ocmapi.ClusterManagementAddOn{}
+
+	if err := k8sClient.Get(ctx, types.NamespacedName{Name: addonName}, clusterMgmtAddon); err == nil {
+		// If the ClusterManagementAddon resource is found, remove the finalizer and update it.
+		clusterMgmtAddon.SetFinalizers([]string{})
+		if err := k8sClient.Update(ctx, clusterMgmtAddon); err != nil {
+			reconciler.Log.Error(err, "failed to update ClusterManagementAddon")
+		}
+	}
+}
+
 func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler, mchoDeployment *appsv1.Deployment) {
 	By("Applying prereqs")
 	ctx := context.Background()
@@ -77,7 +91,7 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 	Expect(k8sClient.Create(ctx, mchoDeployment)).Should(Succeed())
 
 	By("Ensuring MCH is created")
-	createdMCH := &mchov1.MultiClusterHub{}
+	createdMCH := &operatorv1.MultiClusterHub{}
 	Eventually(func() bool {
 		err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
 		return err == nil
@@ -93,7 +107,7 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 	Eventually(func() bool {
 		err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
 		Expect(err).Should(BeNil())
-		return reflect.DeepEqual(createdMCH.Spec.Ingress.SSLCiphers, utils.DefaultSSLCiphers) && createdMCH.Spec.AvailabilityConfig == mchov1.HAHigh
+		return createdMCH.Spec.AvailabilityConfig == operatorv1.HAHigh
 	}, timeout, interval).Should(BeTrue())
 
 	By("Ensuring Deployments")
@@ -156,15 +170,15 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 
 	By("Waiting for MCH to be in the running state")
 	Eventually(func() bool {
-		mch := &mchov1.MultiClusterHub{}
+		mch := &operatorv1.MultiClusterHub{}
 		err := k8sClient.Get(ctx, resources.MCHLookupKey, mch)
 		if err == nil {
-			return mch.Status.Phase == mchov1.HubRunning
+			return mch.Status.Phase == operatorv1.HubRunning
 		}
 		return false
 	}, timeout, interval).Should(BeTrue())
 
-	By("ensuring the trusted-ca-bundle ConfigMap is created")
+	By("Ensuring the trusted-ca-bundle ConfigMap is created")
 	Eventually(func(g Gomega) {
 		ctx := context.Background()
 		namespacedName := types.NamespacedName{
@@ -175,7 +189,7 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 		g.Expect(k8sClient.Get(ctx, namespacedName, res)).To(Succeed())
 	}, timeout, interval).Should(Succeed())
 
-	By("ensuring the acm consoleplugin is enabled on the cluster")
+	By("Ensuring the acm consoleplugin is enabled on the cluster")
 	clusterConsole := &consolev1.Console{}
 	Expect(k8sClient.Get(ctx, types.NamespacedName{Name: "cluster"}, clusterConsole)).To(Succeed())
 	Expect(clusterConsole.Spec.Plugins).To(ContainElement("acm"))
@@ -218,7 +232,7 @@ func PreexistingMCE(k8sClient client.Client, reconciler *MultiClusterHubReconcil
 	Expect(k8sClient.Create(ctx, mchoDeployment)).Should(Succeed())
 
 	By("Ensuring MCH is created")
-	createdMCH := &mchov1.MultiClusterHub{}
+	createdMCH := &operatorv1.MultiClusterHub{}
 	Eventually(func() bool {
 		err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
 		return err == nil
@@ -226,10 +240,10 @@ func PreexistingMCE(k8sClient client.Client, reconciler *MultiClusterHubReconcil
 
 	By("Waiting for MCH to be in the running state")
 	Eventually(func() bool {
-		mch := &mchov1.MultiClusterHub{}
+		mch := &operatorv1.MultiClusterHub{}
 		err := k8sClient.Get(ctx, resources.MCHLookupKey, mch)
 		if err == nil {
-			return mch.Status.Phase == mchov1.HubRunning
+			return mch.Status.Phase == operatorv1.HubRunning
 		}
 		return false
 	}, timeout, interval).Should(BeTrue())
@@ -258,7 +272,7 @@ func PreexistingMCE(k8sClient client.Client, reconciler *MultiClusterHubReconcil
 
 	By("Deleting MCH and waiting for it to terminate")
 	Eventually(func() bool {
-		mch := &mchov1.MultiClusterHub{}
+		mch := &operatorv1.MultiClusterHub{}
 		err := k8sClient.Get(ctx, resources.MCHLookupKey, mch)
 		if err != nil && errors.IsNotFound(err) {
 			return true
@@ -266,6 +280,8 @@ func PreexistingMCE(k8sClient client.Client, reconciler *MultiClusterHubReconcil
 			mch := resources.EmptyMCH()
 			k8sClient.Delete(ctx, &mch)
 		}
+
+		removeSubmarinerFinalizer(k8sClient, reconciler)
 		return false
 	}, timeout, interval).Should(BeTrue())
 
@@ -348,10 +364,9 @@ var _ = Describe("MultiClusterHub controller", func() {
 		Expect(scheme.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(searchv2v1alpha1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(promv1.AddToScheme(clientScheme)).Should(Succeed())
-		Expect(mchov1.AddToScheme(clientScheme)).Should(Succeed())
+		Expect(operatorv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(apiregistrationv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(apixv1.AddToScheme(clientScheme)).Should(Succeed())
-		Expect(netv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(olmv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(subv1alpha1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(mcev1.AddToScheme(clientScheme)).Should(Succeed())
@@ -360,7 +375,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 		Expect(olmapi.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(ocmapi.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(networking.AddToScheme(clientScheme)).Should(Succeed())
-
+		Expect(operatorsapiv2.AddToScheme(clientScheme)).Should(Succeed())
 		k8sManager, err := ctrl.NewManager(clientConfig, ctrl.Options{
 			Scheme:                 clientScheme,
 			MetricsBindAddress:     "0",
@@ -371,16 +386,20 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 		k8sClient = k8sManager.GetClient()
 		Expect(k8sClient).ToNot(BeNil())
-
+		upgradeableCondition, _ := utils.NewOperatorCondition(k8sClient, operatorsapiv2.Upgradeable)
 		reconciler = &MultiClusterHubReconciler{
-			Client: k8sClient,
-			Scheme: k8sManager.GetScheme(),
-			Log:    ctrl.Log.WithName("controllers").WithName("MultiClusterHub"),
+			Client:          k8sClient,
+			Scheme:          k8sManager.GetScheme(),
+			Log:             ctrl.Log.WithName("controllers").WithName("MultiClusterHub"),
+			UpgradeableCond: upgradeableCondition,
 			// CacheSpec: CacheSpec{
 			// 	ImageOverrides: map[string]string{},
 			// },
 		}
-		Expect(reconciler.SetupWithManager(k8sManager)).Should(Succeed())
+		//Expect(reconciler.SetupWithManager(k8sManager)).Should(Succeed())
+		success, err := reconciler.SetupWithManager(k8sManager)
+		Expect(success).ToNot(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 
 		go func() {
 			// For explanation of GinkgoRecover in a go routine, see
@@ -455,7 +474,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 		})
 
-		It("Should allow Search to be optional", func() {
+		It("Should allow MCH components to be optional", func() {
 			os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates")
 			defer os.Unsetenv("DIRECTORY_OVERRIDE")
 			os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
@@ -464,14 +483,14 @@ var _ = Describe("MultiClusterHub controller", func() {
 			ctx := context.Background()
 			ApplyPrereqs(k8sClient)
 
-			By("Creating a new Multiclusterhub with search disabled")
-			mch := resources.NoSearchMCH()
+			By("Creating a new Multiclusterhub with components disabled")
+			mch := resources.NoComponentMCH()
 			mch.Disable(operatorv1.Appsub)
 			Expect(k8sClient.Create(ctx, &mch)).Should(Succeed())
 			Expect(k8sClient.Create(ctx, mchoDeployment)).Should(Succeed())
 
 			By("Ensuring MCH is created")
-			createdMCH := &mchov1.MultiClusterHub{}
+			createdMCH := &operatorv1.MultiClusterHub{}
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
 				return err == nil
@@ -479,10 +498,38 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 			By("Waiting for MCH to be in the running state")
 			Eventually(func() bool {
-				mch := &mchov1.MultiClusterHub{}
+				mch := &operatorv1.MultiClusterHub{}
 				err := k8sClient.Get(ctx, resources.MCHLookupKey, mch)
 				if err == nil {
-					return mch.Status.Phase == mchov1.HubRunning
+					return mch.Status.Phase == operatorv1.HubRunning
+				}
+				return false
+			}, timeout, interval).Should(BeTrue())
+
+			By("Ensuring console is not subscribed")
+			Eventually(func() bool {
+				consoleDep := types.NamespacedName{
+					Name:      "console-chart-console-v2",
+					Namespace: mchNamespace,
+				}
+				deployment := appsv1.Deployment{}
+				err := k8sClient.Get(ctx, consoleDep, &deployment)
+				if err != nil && errors.IsNotFound(err) {
+					return true
+				}
+				return false
+			}, timeout, interval).Should(BeTrue())
+
+			By("Ensuring insights is not subscribed")
+			Eventually(func() bool {
+				insightsDep := types.NamespacedName{
+					Name:      "insights-client",
+					Namespace: mchNamespace,
+				}
+				deployment := appsv1.Deployment{}
+				err := k8sClient.Get(ctx, insightsDep, &deployment)
+				if err != nil && errors.IsNotFound(err) {
+					return true
 				}
 				return false
 			}, timeout, interval).Should(BeTrue())
@@ -501,13 +548,95 @@ var _ = Describe("MultiClusterHub controller", func() {
 				return false
 			}, timeout, interval).Should(BeTrue())
 
-			By("Updating MCH to enable search")
+			By("Ensuring grc is not subscribed")
+			Eventually(func() bool {
+				grcDep := types.NamespacedName{
+					Name:      "grc-policy-addon-controller",
+					Namespace: mchNamespace,
+				}
+				deployment := appsv1.Deployment{}
+				err := k8sClient.Get(ctx, grcDep, &deployment)
+				if err != nil && errors.IsNotFound(err) {
+					return true
+				}
+				return false
+			}, timeout, interval).Should(BeTrue())
+
+			By("Ensuring clusterlifecycle is not subscribed")
+			Eventually(func() bool {
+				clcDep := types.NamespacedName{
+					Name:      "klusterlet-addon-controller-v2",
+					Namespace: mchNamespace,
+				}
+				deployment := appsv1.Deployment{}
+				err := k8sClient.Get(ctx, clcDep, &deployment)
+				if err != nil && errors.IsNotFound(err) {
+					return true
+				}
+				return false
+			}, timeout, interval).Should(BeTrue())
+
+			By("Ensuring observability is not subscribed")
+			Eventually(func() bool {
+				obsDep := types.NamespacedName{
+					Name:      "multicluster-observability-operator",
+					Namespace: mchNamespace,
+				}
+				deployment := appsv1.Deployment{}
+				err := k8sClient.Get(ctx, obsDep, &deployment)
+				if err != nil && errors.IsNotFound(err) {
+					return true
+				}
+				return false
+			}, timeout, interval).Should(BeTrue())
+
+			By("Ensuring volsync is not subscribed")
+			Eventually(func() bool {
+				volDep := types.NamespacedName{
+					Name:      "volsync-addon-controller",
+					Namespace: mchNamespace,
+				}
+				deployment := appsv1.Deployment{}
+				err := k8sClient.Get(ctx, volDep, &deployment)
+				if err != nil && errors.IsNotFound(err) {
+					return true
+				}
+				return false
+			}, timeout, interval).Should(BeTrue())
+
+			By("Updating MCH to enable components")
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
-			createdMCH.Enable(v1.Search)
+
+			createdMCH.Enable(operatorv1.Console)
+			createdMCH.Enable(operatorv1.Insights)
+			createdMCH.Enable(operatorv1.Search)
+			createdMCH.Enable(operatorv1.GRC)
+			createdMCH.Enable(operatorv1.ClusterLifecycle)
+			createdMCH.Enable(operatorv1.MultiClusterObservability)
+			createdMCH.Enable(operatorv1.Volsync)
+
 			Expect(k8sClient.Update(ctx, createdMCH)).Should(Succeed())
+
+			By("Ensuring console is subscribed")
+			Eventually(func() error {
+				consoleDep := types.NamespacedName{
+					Name:      "console-chart-console-v2",
+					Namespace: mchNamespace,
+				}
+				return k8sClient.Get(ctx, consoleDep, &appsv1.Deployment{})
+			}, timeout, interval).Should(Succeed())
+
+			By("Ensuring insights is subscribed")
+			Eventually(func() error {
+				insightsDep := types.NamespacedName{
+					Name:      "insights-client",
+					Namespace: mchNamespace,
+				}
+				return k8sClient.Get(ctx, insightsDep, &appsv1.Deployment{})
+			}, timeout, interval).Should(Succeed())
 
 			By("Ensuring search is subscribed")
 			Eventually(func() error {
@@ -518,14 +647,76 @@ var _ = Describe("MultiClusterHub controller", func() {
 				return k8sClient.Get(ctx, searchDep, &appsv1.Deployment{})
 			}, timeout, interval).Should(Succeed())
 
+			By("Ensuring grc is subscribed")
+			Eventually(func() error {
+				grcDep := types.NamespacedName{
+					Name:      "grc-policy-addon-controller",
+					Namespace: mchNamespace,
+				}
+				return k8sClient.Get(ctx, grcDep, &appsv1.Deployment{})
+			}, timeout, interval).Should(Succeed())
+
+			By("Ensuring clusterlifecycle is subscribed")
+			Eventually(func() error {
+				clcDep := types.NamespacedName{
+					Name:      "klusterlet-addon-controller-v2",
+					Namespace: mchNamespace,
+				}
+				return k8sClient.Get(ctx, clcDep, &appsv1.Deployment{})
+			}, timeout, interval).Should(Succeed())
+
+			By("Ensuring observability is subscribed")
+			Eventually(func() error {
+				obsDep := types.NamespacedName{
+					Name:      "multicluster-observability-operator",
+					Namespace: mchNamespace,
+				}
+				return k8sClient.Get(ctx, obsDep, &appsv1.Deployment{})
+			}, timeout, interval).Should(Succeed())
+
+			By("Ensuring volsync is subscribed")
+			Eventually(func() error {
+				volDep := types.NamespacedName{
+					Name:      "volsync-addon-controller",
+					Namespace: mchNamespace,
+				}
+				return k8sClient.Get(ctx, volDep, &appsv1.Deployment{})
+			}, timeout, interval).Should(Succeed())
+
 			By("Updating MCH to disable search")
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
+
 			// Appending to components rather than replacing with `Disable()`
-			createdMCH.Spec.Overrides.Components = append(createdMCH.Spec.Overrides.Components, v1.ComponentConfig{Name: v1.Search, Enabled: false})
+			createdMCH.Spec.Overrides.Components = append(
+				createdMCH.Spec.Overrides.Components,
+				operatorv1.ComponentConfig{Name: operatorv1.Console, Enabled: false},
+				operatorv1.ComponentConfig{Name: operatorv1.GRC, Enabled: false},
+				operatorv1.ComponentConfig{Name: operatorv1.Insights, Enabled: false},
+				operatorv1.ComponentConfig{Name: operatorv1.Search, Enabled: false},
+				operatorv1.ComponentConfig{Name: operatorv1.ClusterLifecycle, Enabled: false},
+				operatorv1.ComponentConfig{Name: operatorv1.MultiClusterObservability, Enabled: false},
+				operatorv1.ComponentConfig{Name: operatorv1.Volsync, Enabled: false},
+			)
+
 			Expect(k8sClient.Update(ctx, createdMCH)).Should(Succeed())
+
+			By("Pausing MCH to pause reconciliation")
+			Eventually(func() bool {
+				annotations := createdMCH.GetAnnotations()
+				if annotations == nil {
+					annotations = make(map[string]string)
+				}
+
+				annotations[utils.AnnotationMCHPause] = "true"
+				createdMCH.Annotations = annotations
+				_ = k8sClient.Update(ctx, createdMCH)
+
+				reconciler.StopScheduleOperatorControllerResync()
+				return utils.IsPaused(createdMCH) && !scheduler.IsRunning()
+			}, timeout, interval).Should(BeTrue())
 		})
 	})
 
@@ -544,104 +735,140 @@ var _ = Describe("MultiClusterHub controller", func() {
 				testImages[v] = "quay.io/test/test:Test"
 			}
 
-			result, err := reconciler.ensureInsights(ctx, mch, testImages)
+			result, err := reconciler.ensureComponent(ctx, mch, operatorv1.Insights, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring No Insights")
-
-			result, err = reconciler.ensureNoInsights(ctx, mch, testImages)
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.Insights, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring Cluster Backup")
-
 			ns := BackupNamespace()
-			result, err = reconciler.ensureNamespace(mch, ns)
+			_, err = reconciler.ensureNamespace(mch, ns)
 			Expect(err).To(BeNil())
 
-			result, err = reconciler.ensureClusterBackup(ctx, mch, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.ClusterBackup, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
-			By("Ensuring No Insights")
-
-			result, err = reconciler.ensureNoClusterBackup(ctx, mch, testImages)
+			By("Ensuring No Cluster Backup")
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.ClusterBackup, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring Search-v2")
-
-			result, err = reconciler.ensureSearchV2(ctx, mch, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.Search, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring No Search-v2")
-
 			Eventually(func() bool {
-				result, err := reconciler.ensureNoSearchV2(ctx, mch, testImages)
+				result, err := reconciler.ensureNoComponent(ctx, mch, operatorv1.Search, testImages)
 				return (err == nil && result == ctrl.Result{})
 			}, timeout, interval).Should(BeTrue())
 
 			By("Ensuring CLC")
-
-			result, err = reconciler.ensureCLC(ctx, mch, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.ClusterLifecycle, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring No CLC")
-
-			result, err = reconciler.ensureNoCLC(ctx, mch, testImages)
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.ClusterLifecycle, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring App-Lifecycle")
-
-			result, err = reconciler.ensureAppsub(ctx, mch, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.Appsub, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring No App-Lifecycle")
-
-			result, err = reconciler.ensureNoAppsub(ctx, mch, testImages)
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.Appsub, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring GRC")
-
-			result, err = reconciler.ensureGRC(ctx, mch, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.GRC, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring No GRC")
-
-			result, err = reconciler.ensureNoGRC(ctx, mch, testImages)
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.GRC, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring Console")
-
-			result, err = reconciler.ensureConsole(ctx, mch, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.Console, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring No Console")
-
-			result, err = reconciler.ensureNoConsole(ctx, mch, testImages)
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.Console, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring Volsync")
-
-			result, err = reconciler.ensureVolsync(ctx, mch, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.Volsync, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring No Volsync")
-
-			result, err = reconciler.ensureNoVolsync(ctx, mch, testImages)
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.Volsync, testImages)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
+
+			By("Ensuring MultiClusterObservability")
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.MultiClusterObservability, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+
+			By("Ensuring No MultiClusterObservability")
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.MultiClusterObservability, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+
+			By("Ensuring ClusterPermission")
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.ClusterPermission, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+
+			By("Ensuring No ClusterPermission")
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.ClusterPermission, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+
+			By("Ensuring SubmarinerAddon")
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.SubmarinerAddon, testImages)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+
+			By("Ensuring No SubmarinerAddon")
+			Eventually(func() bool {
+				result, err := reconciler.ensureNoComponent(ctx, mch, operatorv1.SubmarinerAddon, testImages)
+				removeSubmarinerFinalizer(k8sClient, reconciler)
+
+				return (err == nil && result == ctrl.Result{})
+			}, timeout, interval).Should(BeTrue())
+
+			By("Ensuring No ClusterManagementAddon")
+			result, err = reconciler.ensureNoClusterManagementAddOn(mch, "unknown")
+			Expect(result).To(Equal(ctrl.Result{Requeue: true}))
+			Expect(err).To(Not(BeNil()))
+
+			By("Ensuring No Unregistered Component")
+			result, err = reconciler.ensureNoComponent(ctx, mch, "unknown", testImages)
+			Expect(result).To(Equal(ctrl.Result{RequeueAfter: resyncPeriod}))
+			Expect(err).To(BeNil())
+
+			By("Ensuring No OpenShift Cluster Monitoring Labels")
+			mch2 := &operatorv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{Name: "mch", Namespace: "test-ns-1"},
+			}
+
+			result, _ = reconciler.ensureOpenShiftNamespaceLabel(ctx, mch2)
+			Expect(result).To(Equal(ctrl.Result{Requeue: true}))
 		})
 	})
 
@@ -660,12 +887,98 @@ var _ = Describe("MultiClusterHub controller", func() {
 				testImages[v] = "quay.io/test/test:Test"
 			}
 
-			result, err := reconciler.ensureAppsub(ctx, mch, testImages)
+			result, err := reconciler.ensureComponent(ctx, mch, operatorv1.Appsub, testImages)
 			Expect(result).To(Equal(ctrl.Result{RequeueAfter: 20000000000}))
 			Expect(err).To(BeNil())
-			result, err = reconciler.ensureNoAppsub(ctx, mch, testImages)
+
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.Appsub, testImages)
 			Expect(result).To(Equal(ctrl.Result{RequeueAfter: 20000000000}))
 			Expect(err).To(BeNil())
+		})
+	})
+
+	Context("Legacy clean up tasks", func() {
+		It("Removes the legacy GRC Prometheus configuration", func() {
+			By("Applying prereqs")
+			ApplyPrereqs(k8sClient)
+
+			By("Creating the legacy GRC PrometheusRule and ServiceMonitor")
+			pr := &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"spec": map[string]interface{}{
+						"groups": []interface{}{
+							map[string]interface{}{
+								"name": "some-group",
+								"rules": []interface{}{
+									map[string]interface{}{
+										"expr": "something else",
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			pr.SetGroupVersionKind(schema.GroupVersionKind{
+				Group:   "monitoring.coreos.com",
+				Kind:    "PrometheusRule",
+				Version: "v1",
+			})
+			pr.SetName("ocm-grc-policy-propagator-metrics")
+			pr.SetNamespace("openshift-monitoring")
+
+			err := k8sClient.Create(context.TODO(), pr)
+			Expect(err).To(BeNil())
+
+			sm := &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"spec": map[string]interface{}{
+						"endpoints": []interface{}{
+							map[string]interface{}{
+								"path": "/some/path",
+							},
+						},
+						"selector": map[string]interface{}{
+							"matchLabels": map[string]interface{}{
+								"app": "grc",
+							},
+						},
+					},
+				},
+			}
+			sm.SetGroupVersionKind(schema.GroupVersionKind{
+				Group:   "monitoring.coreos.com",
+				Kind:    "ServiceMonitor",
+				Version: "v1",
+			})
+			sm.SetName("ocm-grc-policy-propagator-metrics")
+			sm.SetNamespace("openshift-monitoring")
+
+			err = k8sClient.Create(context.TODO(), sm)
+			Expect(err).To(BeNil())
+
+			legacyResourceKind := operatorv1.GetLegacyConfigKind()
+			ns := "openshift-monitoring"
+
+			By("Running the cleanup of the legacy configuration kinds")
+			for _, kind := range legacyResourceKind {
+				err = reconciler.removeLegacyConfigurations(context.TODO(), ns, kind)
+				Expect(err).To(BeNil())
+			}
+
+			By("Verifying that the legacy GRC PrometheusRule is deleted")
+			err = k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(pr), pr)
+			Expect(errors.IsNotFound(err)).To(BeTrue())
+
+			By("Verifying that the legacy GRC ServiceMonitor is deleted")
+			err = k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(sm), sm)
+			Expect(errors.IsNotFound(err)).To(BeTrue())
+
+			By("Running the cleanup of the legacy configuration again should do nothing")
+			for _, kind := range legacyResourceKind {
+				err = reconciler.removeLegacyConfigurations(context.TODO(), ns, kind)
+				Expect(err).To(BeNil())
+			}
 		})
 	})
 
@@ -673,7 +986,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 		ctx := context.Background()
 		By("Ensuring the MCH CR is deleted")
 		Eventually(func() bool {
-			mch := &mchov1.MultiClusterHub{}
+			mch := &operatorv1.MultiClusterHub{}
 			err := k8sClient.Get(ctx, resources.MCHLookupKey, mch)
 			if err != nil && errors.IsNotFound(err) {
 				return true
@@ -681,6 +994,8 @@ var _ = Describe("MultiClusterHub controller", func() {
 				mch := resources.EmptyMCH()
 				k8sClient.Delete(ctx, &mch)
 			}
+
+			removeSubmarinerFinalizer(k8sClient, reconciler)
 			return false
 		}, timeout, interval).Should(BeTrue())
 

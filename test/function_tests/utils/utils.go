@@ -18,8 +18,8 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/ghodss/yaml"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
+	"sigs.k8s.io/yaml"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

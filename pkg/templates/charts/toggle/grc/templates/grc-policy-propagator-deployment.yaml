@@ -19,6 +19,8 @@ spec:
       release: grc
   template:
     metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: governance-policy-propagator
       labels:
         app: grc
         ocm-antiaffinity-selector: "grcpolicypropagator"
@@ -79,6 +81,14 @@ spec:
       {{- end }}
       containers:
       - name: kube-rbac-proxy
+        securityContext:
+          privileged: false
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          capabilities:
+            drop:
+            - ALL
         image: {{ .Values.global.imageOverrides.kube_rbac_proxy}}
         imagePullPolicy: "{{ .Values.global.pullPolicy }}"
         args:
@@ -88,7 +98,7 @@ spec:
         - --v=6
         - "--tls-cert-file=/var/run/policy-metrics-cert/tls.crt"
         - "--tls-private-key-file=/var/run/policy-metrics-cert/tls.key"
-        - "--tls-min-version=VersionTLS13"
+        - "--tls-min-version=VersionTLS12"
         ports:
         - containerPort: 8443
           name: https
@@ -104,6 +114,10 @@ spec:
           requests:
             memory: "64Mi"
             cpu: "25m"
+        ports:
+        - containerPort: 9443
+          name: webhook-http
+          protocol: TCP
         securityContext:
           privileged: false
           readOnlyRootFilesystem: true
@@ -137,12 +151,19 @@ spec:
         volumeMounts:
         - name: tmp
           mountPath: "/tmp"
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
       volumes:
       - name: tmp
         emptyDir: {}
       - name: metrics-cert
         secret:
           secretName: grc-grc-metrics-cert
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: propagator-webhook-server-cert
       {{- if .Values.global.pullSecret  }}
       imagePullSecrets:
       - name: {{ .Values.global.pullSecret  }}

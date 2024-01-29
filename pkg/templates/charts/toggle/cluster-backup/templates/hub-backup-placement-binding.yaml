@@ -4,13 +4,13 @@ metadata:
   annotations:
     "helm.sh/hook": pre-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation
-  name: backup-restore-enabled
+  name: acm-hub-backup
   namespace: open-cluster-management-backup
 placementRef:
-  apiGroup: apps.open-cluster-management.io
-  kind: PlacementRule
-  name: backup-restore-enabled
+  name: acm-hub-backup
+  apiGroup: cluster.open-cluster-management.io
+  kind: Placement
 subjects:
-  - apiGroup: policy.open-cluster-management.io
-    kind: Policy
-    name: backup-restore-enabled
+  - name: acm-hub-backup
+    apiGroup: policy.open-cluster-management.io
+    kind: PolicySet

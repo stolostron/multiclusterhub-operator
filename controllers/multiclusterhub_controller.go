@@ -21,12 +21,13 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"time"
 
+	"github.com/go-co-op/gocron"
+	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/deploying"
 	"github.com/stolostron/multiclusterhub-operator/pkg/imageoverrides"
@@ -41,8 +42,8 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -53,6 +54,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -66,11 +68,12 @@ import (
 
 // MultiClusterHubReconciler reconciles a MultiClusterHub object
 type MultiClusterHubReconciler struct {
-	Client         client.Client
-	UncachedClient client.Client
-	CacheSpec      CacheSpec
-	Scheme         *runtime.Scheme
-	Log            logr.Logger
+	Client          client.Client
+	UncachedClient  client.Client
+	CacheSpec       CacheSpec
+	Scheme          *runtime.Scheme
+	Log             logr.Logger
+	UpgradeableCond utils.Condition
 }
 
 const (
@@ -83,12 +86,12 @@ const (
 
 	trustBundleNameEnvVar  = "TRUSTED_CA_BUNDLE"
 	defaultTrustBundleName = "trusted-ca-bundle"
-
-	mceUpgradeDuration = 10 * time.Minute
 )
 
 var (
-	mceUpgradeStartTime = time.Time{}
+	scheduler              *gocron.Scheduler
+	cronResyncTag          = "multiclusterhub-operator-resync"
+	reconciliationInterval = 10 // minutes
 )
 
 //+kubebuilder:rbac:groups="";"admissionregistration.k8s.io";"apiextensions.k8s.io";"apiregistration.k8s.io";"apps";"apps.open-cluster-management.io";"authorization.k8s.io";"hive.openshift.io";"mcm.ibm.com";"proxy.open-cluster-management.io";"rbac.authorization.k8s.io";"security.openshift.io";"clusterview.open-cluster-management.io";"discovery.open-cluster-management.io";"wgpolicyk8s.io",resources=apiservices;channels;clusterjoinrequests;clusterrolebindings;clusterstatuses/log;configmaps;customresourcedefinitions;deployments;discoveryconfigs;hiveconfigs;mutatingwebhookconfigurations;validatingwebhookconfigurations;namespaces;pods;policyreports;replicasets;rolebindings;secrets;serviceaccounts;services;subjectaccessreviews;subscriptions;helmreleases;managedclusters;managedclustersets,verbs=get
@@ -99,13 +102,13 @@ var (
 //+kubebuilder:rbac:groups="admissionregistration.k8s.io";"apiextensions.k8s.io";"apiregistration.k8s.io";"hive.openshift.io";"mcm.ibm.com";"rbac.authorization.k8s.io";,resources=apiservices;clusterroles;clusterrolebindings;customresourcedefinitions;hiveconfigs;mutatingwebhookconfigurations;validatingwebhookconfigurations,verbs=delete;deletecollection;list;watch;patch
 //+kubebuilder:rbac:groups="";"apps";"apiregistration.k8s.io";"apps.open-cluster-management.io";"apiextensions.k8s.io";,resources=deployments;services;channels;customresourcedefinitions;apiservices,verbs=delete
 //+kubebuilder:rbac:groups="";"action.open-cluster-management.io";"addon.open-cluster-management.io";"agent.open-cluster-management.io";"argoproj.io";"cluster.open-cluster-management.io";"work.open-cluster-management.io";"app.k8s.io";"apps.open-cluster-management.io";"authorization.k8s.io";"certificates.k8s.io";"clusterregistry.k8s.io";"config.openshift.io";"compliance.mcm.ibm.com";"hive.openshift.io";"hiveinternal.openshift.io";"internal.open-cluster-management.io";"inventory.open-cluster-management.io";"mcm.ibm.com";"multicloud.ibm.com";"policy.open-cluster-management.io";"proxy.open-cluster-management.io";"rbac.authorization.k8s.io";"view.open-cluster-management.io";"operator.open-cluster-management.io";"register.open-cluster-management.io";"coordination.k8s.io";"search.open-cluster-management.io";"submarineraddon.open-cluster-management.io";"discovery.open-cluster-management.io";"imageregistry.open-cluster-management.io",resources=applications;applications/status;applicationrelationships;applicationrelationships/status;certificatesigningrequests;certificatesigningrequests/approval;channels;channels/status;clustermanagementaddons;managedclusteractions;managedclusteractions/status;clusterdeployments;clusterpools;clusterclaims;discoveryconfigs;discoveredclusters;managedclusteraddons;managedclusteraddons/status;managedclusterinfos;managedclusterinfos/status;managedclustersets;managedclustersets/bind;managedclustersets/join;managedclustersets/status;managedclustersetbindings;managedclusters;managedclusters/accept;managedclusters/status;managedclusterviews;managedclusterviews/status;manifestworks;manifestworks/status;clustercurators;clustermanagers;clusterroles;clusterrolebindings;clusterstatuses/aggregator;clusterversions;compliances;configmaps;deployables;deployables/status;deployableoverrides;deployableoverrides/status;endpoints;endpointconfigs;events;helmrepos;helmrepos/status;klusterletaddonconfigs;machinepools;namespaces;placements;placementrules/status;placementdecisions;placementdecisions/status;placementrules;placementrules/status;pods;pods/log;policies;policies/status;placementbindings;policyautomations;policysets;policysets/status;roles;rolebindings;secrets;signers;subscriptions;subscriptions/status;subjectaccessreviews;submarinerconfigs;submarinerconfigs/status;syncsets;clustersyncs;leases;searchcustomizations;managedclusterimageregistries;managedclusterimageregistries/status,verbs=create;get;list;watch;update;delete;deletecollection;patch;approve;escalate;bind
-//+kubebuilder:rbac:groups="operators.coreos.com",resources=subscriptions;clusterserviceversions;operatorgroups,verbs=create;get;list;patch;update;delete;watch
+//+kubebuilder:rbac:groups="operators.coreos.com",resources=subscriptions;clusterserviceversions;operatorgroups;operatorconditions,verbs=create;get;list;patch;update;delete;watch
 //+kubebuilder:rbac:groups="multicluster.openshift.io",resources=multiclusterengines,verbs=create;get;list;patch;update;delete;watch
 //+kubebuilder:rbac:groups=console.openshift.io;search.open-cluster-management.io,resources=consoleplugins;consolelinks;searches,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=operator.openshift.io,resources=consoles,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups="";"apps",resources=deployments;services;serviceaccounts,verbs=patch;delete;get;deletecollection
 //+kubebuilder:rbac:groups=packages.operators.coreos.com,resources=packagemanifests,verbs=get;list;watch;update;patch
-//+kubebuilder:rbac:groups=monitoring.coreos.com,resources=prometheusrules;servicemonitors,verbs=create;delete;get;list;watch;update;patch
+//+kubebuilder:rbac:groups=monitoring.coreos.com,resources=prometheusrules;servicemonitors,verbs=create;delete;get;list;watch;update;patch;deletecollection
 
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=create;delete;get;list;watch;update;patch
 
@@ -122,15 +125,20 @@ var (
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Request) (retQueue ctrl.Result, retError error) {
-	r.Log = log.FromContext(ctx)
-
+	r.Log = log.Log.WithName("reconcile")
 	r.Log.Info("Reconciling MultiClusterHub")
+
+	// Initalize sceduler instance for operator resync cronjob.
+	if scheduler == nil {
+		r.Log.Info("Setting up scheduler for operator resync")
+		r.InitScheduler()
+	}
 
 	// Fetch the MultiClusterHub instance
 	multiClusterHub := &operatorv1.MultiClusterHub{}
 	err := r.Client.Get(context.TODO(), req.NamespacedName, multiClusterHub)
 	if err != nil {
-		if apierrors.IsNotFound(err) {
+		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
@@ -139,6 +147,17 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 		// Error reading the object - requeue the request.
 		r.Log.Error(err, "Failed to get MultiClusterHub CR")
+		return ctrl.Result{}, err
+	}
+
+	if multiClusterHub.IsInHostedMode() {
+		return r.HostedReconcile(ctx, multiClusterHub)
+	}
+
+	// Check to see if upgradeable
+	upgrade, err := r.setOperatorUpgradeableStatus(ctx, multiClusterHub)
+	if err != nil {
+		r.Log.Error(err, "Unable to set operator condition")
 		return ctrl.Result{}, err
 	}
 
@@ -239,6 +258,18 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{Requeue: true}, err
 	}
 
+	/*
+		In ACM 2.9, we need to ensure that the openshift.io/cluster-monitoring is added to the same namespace as the
+		MultiClusterHub to avoid conflicts with the openshift-* namespace when deploying PrometheusRules and
+		ServiceMonitors in ACM.
+	*/
+	_, err = r.ensureOpenShiftNamespaceLabel(ctx, multiClusterHub)
+	if err != nil {
+		r.Log.Error(err, "Failed to add to %s label to namespace: %s", utils.OpenShiftClusterMonitoringLabel,
+			multiClusterHub.GetNamespace())
+		return ctrl.Result{}, err
+	}
+
 	err = r.maintainImageManifestConfigmap(multiClusterHub)
 	if err != nil {
 		r.Log.Error(err, "Error storing image manifests in configmap")
@@ -249,7 +280,13 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	updatePausedCondition(multiClusterHub)
 	if utils.IsPaused(multiClusterHub) {
 		r.Log.Info("MultiClusterHub reconciliation is paused. Nothing more to do.")
+		if ok := scheduler.IsRunning(); ok {
+			r.Log.Info("Pausing MultiClusterHub operator controller resync job.")
+			go r.StopScheduleOperatorControllerResync()
+		}
 		return ctrl.Result{}, nil
+	} else if ok := scheduler.IsRunning(); !ok {
+		defer r.ScheduleOperatorControllerResync(ctx, req)
 	}
 
 	if !utils.ShouldIgnoreOCPVersion(multiClusterHub) {
@@ -264,9 +301,38 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 	}
 
-	result, err = r.ensureRenderRemovalsGone(multiClusterHub)
+	// 2.6 -> 2.7 upgrade logic
+	// There are ClusterManagementAddOns in the GRC appsub that need to be preserved when deleting the helmrelease
+	// To stop helm from removing them we will remove the finalizer on the GRC helmrelease, delete the appsub,
+	// and clean things up ourselves
+	err = r.cleanupGRCAppsub(multiClusterHub)
+	if err != nil {
+		return ctrl.Result{Requeue: true}, err
+	}
+
+	// Deploy appsub operator component
+	if multiClusterHub.Enabled(operatorv1.Appsub) {
+		result, err = r.ensureComponent(ctx, multiClusterHub, operatorv1.Appsub, r.CacheSpec.ImageOverrides)
+	} else {
+		result, err = r.ensureNoComponent(ctx, multiClusterHub, operatorv1.Appsub, r.CacheSpec.ImageOverrides)
+	}
 	if result != (ctrl.Result{}) {
 		return result, err
+	}
+
+	// Remove existing appsubs and helmreleases if present from upgrade
+	result, err = r.ensureAppsubsGone(multiClusterHub)
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	/*
+		Remove existing service and servicemonitor configurations, if present from upgrade. In ACM 2.2, operator-sdk
+		generated configurations for the MCH operator to be collecting metrics. In later releases, these resources are
+		no longer available; therefore, we need to explicitly remove them from the upgrade configuration.
+	*/
+	for _, kind := range operatorv1.GetLegacyConfigKind() {
+		_ = r.removeLegacyConfigurations(ctx, "openshift-monitoring", kind)
 	}
 
 	// Install CRDs
@@ -314,6 +380,16 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 
+	result, err = r.createMetricsService(ctx, multiClusterHub)
+	if err != nil {
+		return result, err
+	}
+
+	result, err = r.createMetricsServiceMonitor(ctx, multiClusterHub)
+	if err != nil {
+		return result, err
+	}
+
 	// Install CRDs
 	reason, err = r.deployResources(r.Log, multiClusterHub)
 	if err != nil {
@@ -333,91 +409,11 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	// Install the rest of the subscriptions in no particular order
-	if multiClusterHub.Enabled(operatorv1.Appsub) {
-		result, err = r.ensureAppsub(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
-	} else {
-		result, err = r.ensureNoAppsub(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
-	}
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-	if multiClusterHub.Enabled(operatorv1.Console) && ocpConsole {
-		result, err = r.ensureConsole(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
-	} else {
-		result, err = r.ensureNoConsole(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
-	}
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-	if multiClusterHub.Enabled(operatorv1.Insights) {
-		result, err = r.ensureInsights(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
-	} else {
-		result, err = r.ensureNoInsights(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
-	}
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-	if multiClusterHub.Enabled(operatorv1.Search) {
-		result, err = r.ensureSearchV2(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
-	} else {
-		result, err = r.ensureNoSearchV2(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
-	}
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-	if multiClusterHub.Enabled(operatorv1.GRC) {
-		result, err = r.ensureGRC(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
-	} else {
-		result, err = r.ensureNoGRC(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
-	}
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-	if multiClusterHub.Enabled(operatorv1.ClusterLifecycle) {
-		result, err = r.ensureCLC(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
-	} else {
-		result, err = r.ensureNoCLC(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
-	}
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-	if multiClusterHub.Enabled(operatorv1.Volsync) {
-		result, err = r.ensureVolsync(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
-	} else {
-		result, err = r.ensureNoVolsync(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
-	}
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-	if multiClusterHub.Enabled(operatorv1.ClusterBackup) {
-		ns := BackupNamespace()
-		result, err = r.ensureNamespace(multiClusterHub, ns)
+	for _, c := range operatorv1.MCHComponents {
+		result, err = r.ensureComponentOrNoComponent(ctx, multiClusterHub, c, r.CacheSpec.ImageOverrides, ocpConsole)
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
-		result, err = r.ensurePullSecret(multiClusterHub, ns.Name)
-		if result != (ctrl.Result{}) {
-			return result, err
-		}
-		result, err = r.ensureClusterBackup(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
-		if result != (ctrl.Result{}) {
-			return result, err
-		}
-	} else {
-		result, err = r.ensureNoClusterBackup(ctx, multiClusterHub, r.CacheSpec.ImageOverrides)
-		if result != (ctrl.Result{}) {
-			return result, err
-		}
-		result, err = r.ensureNoNamespace(multiClusterHub, BackupNamespaceUnstructured())
-		if result != (ctrl.Result{}) {
-			return result, err
-		}
-	}
-	if result != (ctrl.Result{}) {
-		return result, err
 	}
 
 	if !multiClusterHub.Spec.DisableHubSelfManagement {
@@ -434,13 +430,60 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			return result, err
 		}
 	}
+	if upgrade {
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
 
 	return retQueue, retError
 	// return ctrl.Result{}, nil
 }
 
+func (r *MultiClusterHubReconciler) setOperatorUpgradeableStatus(ctx context.Context, m *operatorv1.MultiClusterHub) (bool, error) {
+	// Temporary variable
+	var upgradeable bool
+
+	// Checking to see if the current version of the MCH matches the desired to determine if we are in an upgrade scenario
+	// If the current version doesn't exist, we are currently in a install which will also not allow it to upgrade
+
+	if m.Status.CurrentVersion != m.Status.DesiredVersion {
+		upgradeable = false
+	} else {
+		upgradeable = true
+	}
+	// 	These messages are drawn from operator condition
+	// Right now, they just indicate between upgrading and not
+	msg := utils.UpgradeableAllowMessage
+	status := metav1.ConditionTrue
+	reason := utils.UpgradeableAllowReason
+
+	// 	The condition is the only field that affects whether or not we can upgrade
+	// The rest are just status info
+	if !upgradeable {
+		status = metav1.ConditionFalse
+		reason = utils.UpgradeableUpgradingReason
+		msg = utils.UpgradeableUpgradingMessage
+
+	} else {
+
+		msg = utils.UpgradeableAllowMessage
+		status = metav1.ConditionTrue
+		reason = utils.UpgradeableAllowReason
+
+	}
+	// This error should only occur if the operator condition does not exist for some reason
+	if err := r.UpgradeableCond.Set(ctx, status, reason, msg); err != nil {
+		return true, err
+	}
+
+	if !upgradeable {
+		return true, nil
+	} else {
+		return false, nil
+	}
+}
+
 // SetupWithManager sets up the controller with the Manager.
-func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) (controller.Controller, error) {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(
 			&operatorv1.MultiClusterHub{},
@@ -459,13 +502,6 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) error {
 					ctrlpredicate.AnnotationChangedPredicate{},
 				),
 			),
-		).
-		Watches(
-			&source.Kind{Type: &corev1.ConfigMap{}},
-			&handler.EnqueueRequestForOwner{
-				IsController: true,
-				OwnerType:    &operatorv1.MultiClusterHub{},
-			},
 		).
 		Watches(
 			&source.Kind{Type: &apiregistrationv1.APIService{}},
@@ -528,11 +564,11 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				},
 			),
 		).
-		Complete(r)
+		Build(r)
 }
 
 func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operatorv1.MultiClusterHub, template *unstructured.Unstructured) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 	// Set owner reference.
 	if (template.GetKind() == "ClusterRole") || (template.GetKind() == "ClusterRoleBinding") || (template.GetKind() == "ServiceMonitor") || (template.GetKind() == "CustomResourceDefinition") {
 		utils.AddInstallerLabel(template, m.Name, m.Namespace)
@@ -557,308 +593,120 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterHubReconciler) ensureCLC(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) fetchChartLocation(ctx context.Context, component string) string {
+	log := log.Log.WithName("reconcile")
 
-	log := log.FromContext(ctx)
+	switch component {
+	case operatorv1.Appsub:
+		return utils.AppsubChartLocation
 
-	templates, errs := renderer.RenderChart(utils.CLCChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	case operatorv1.ClusterBackup:
+		return utils.ClusterBackupChartLocation
+
+	case operatorv1.ClusterLifecycle:
+		return utils.CLCChartLocation
+
+	case operatorv1.ClusterPermission:
+		return utils.ClusterPermissionChartLocation
+
+	case operatorv1.Console:
+		return utils.ConsoleChartLocation
+
+	case operatorv1.GRC:
+		return utils.GRCChartLocation
+
+	case operatorv1.Insights:
+		return utils.InsightsChartLocation
+
+	case operatorv1.MCH:
+		return ""
+
+	case operatorv1.MultiClusterObservability:
+		return utils.MCOChartLocation
+
+	case operatorv1.Search:
+		return utils.SearchV2ChartLocation
+
+	case operatorv1.SubmarinerAddon:
+		return utils.SubmarinerAddonChartLocation
+
+	case operatorv1.Volsync:
+		return utils.VolsyncChartLocation
+
+	default:
+		log.Info(fmt.Sprintf("Unregistered component detected: %v", component))
+		return fmt.Sprintf("/chart/toggle/%v", component)
 	}
-
-	// Applies all templates
-	for _, template := range templates {
-		result, err := r.applyTemplate(ctx, m, template)
-		if err != nil {
-			return result, err
-		}
-	}
-
-	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterHubReconciler) ensureNoCLC(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
+func (r *MultiClusterHubReconciler) ensureComponentOrNoComponent(ctx context.Context, m *operatorv1.MultiClusterHub,
+	component string, imageOverrides map[string]string, ocpConsole bool) (ctrl.Result, error) {
+	var result ctrl.Result
+	var err error
 
-	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(utils.CLCChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
+	log := log.Log.WithName("reconcile")
 
-	// Deletes all templates
-	for _, template := range templates {
-		result, err := r.deleteTemplate(ctx, m, template)
-		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
-			return result, err
+	if !m.Enabled(component) {
+		if component == operatorv1.ClusterBackup {
+			result, err = r.ensureNoComponent(ctx, m, component, imageOverrides)
+			if result != (ctrl.Result{}) || err != nil {
+				return result, err
+			}
+			return r.ensureNoNamespace(m, BackupNamespaceUnstructured())
 		}
+		return r.ensureNoComponent(ctx, m, component, imageOverrides)
+
+	} else {
+		if component == operatorv1.ClusterBackup {
+			result, err = r.ensureNamespaceAndPullSecret(m, BackupNamespace())
+			if result != (ctrl.Result{}) || err != nil {
+				return result, err
+			}
+		}
+
+		if component == operatorv1.Console && !ocpConsole {
+			log.Info("OCP console is not enabled")
+			return r.ensureNoComponent(ctx, m, component, imageOverrides)
+		}
+
+		return r.ensureComponent(ctx, m, component, imageOverrides)
 	}
-	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterHubReconciler) ensureConsole(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) ensureNamespaceAndPullSecret(m *operatorv1.MultiClusterHub, ns *corev1.Namespace) (
+	ctrl.Result, error) {
+	var result ctrl.Result
+	var err error
 
-	log := log.FromContext(ctx)
-
-	templates, errs := renderer.RenderChart(utils.ConsoleChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Applies all templates
-	for _, template := range templates {
-		result, err := r.applyTemplate(ctx, m, template)
-		if err != nil {
-			return result, err
-		}
-	}
-
-	return r.addPluginToConsole(m)
-}
-
-func (r *MultiClusterHubReconciler) ensureNoConsole(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-
-	ocpConsole, err := r.CheckConsole(ctx)
-	if err != nil {
-		r.Log.Error(err, "error finding OCP Console")
-		return ctrl.Result{}, err
-	}
-	if !ocpConsole {
-		// If Openshift console is disabled then no cleanup to be done, because MCH console cannot be installed
-		return ctrl.Result{}, nil
-	}
-
-	result, err := r.removePluginFromConsole(m)
+	result, err = r.ensureNamespace(m, ns)
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
 
-	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(utils.ConsoleChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Deletes all templates
-	for _, template := range templates {
-		result, err := r.deleteTemplate(ctx, m, template)
-		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
-			return result, err
-		}
-	}
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureInsights(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-
-	log := log.FromContext(ctx)
-
-	templates, errs := renderer.RenderChart(utils.InsightsChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Applies all templates
-	for _, template := range templates {
-		result, err := r.applyTemplate(ctx, m, template)
-		if err != nil {
-			return result, err
-		}
-	}
-
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureNoInsights(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-
-	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(utils.InsightsChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Deletes all templates
-	for _, template := range templates {
-		result, err := r.deleteTemplate(ctx, m, template)
-		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
-			return result, err
-		}
-	}
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureAppsub(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-
-	log := log.FromContext(ctx)
-
-	templates, errs := renderer.RenderChart(utils.AppsubChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Applies all templates
-	for _, template := range templates {
-		result, err := r.applyTemplate(ctx, m, template)
-		if err != nil {
-			return result, err
-		}
-	}
-
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureNoAppsub(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-
-	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(utils.AppsubChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Deletes all templates
-	for _, template := range templates {
-		result, err := r.deleteTemplate(ctx, m, template)
-		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
-			return result, err
-		}
-	}
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureGRC(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-
-	log := log.FromContext(ctx)
-
-	templates, errs := renderer.RenderChart(utils.GRCChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Applies all templates
-	for _, template := range templates {
-		result, err := r.applyTemplate(ctx, m, template)
-		if err != nil {
-			return result, err
-		}
-	}
-
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureNoGRC(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-
-	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(utils.GRCChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Deletes all templates
-	for _, template := range templates {
-		result, err := r.deleteTemplate(ctx, m, template)
-		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
-			return result, err
-		}
-	}
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureSearchV2(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-
-	log := log.FromContext(ctx)
-
-	templates, errs := renderer.RenderChart(utils.SearchV2ChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Applies all templates
-	for _, template := range templates {
-		result, err := r.applyTemplate(ctx, m, template)
-		if err != nil {
-			return result, err
-		}
-	}
-
-	result, err := r.ensureSearchCR(m)
-	return result, err
-}
-
-func (r *MultiClusterHubReconciler) ensureNoSearchV2(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-
-	result, err := r.ensureNoSearchCR(m)
-	if err != nil {
+	result, err = r.ensurePullSecret(m, ns.Name)
+	if result != (ctrl.Result{}) {
 		return result, err
 	}
 
-	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(utils.SearchV2ChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Deletes all templates
-	for _, template := range templates {
-		result, err = r.deleteTemplate(ctx, m, template)
-		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
-			return result, err
-		}
-	}
-	return ctrl.Result{}, nil
+	return result, err
 }
 
-func (r *MultiClusterHubReconciler) ensureClusterBackup(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *operatorv1.MultiClusterHub, component string,
+	images map[string]string) (ctrl.Result, error) {
 
-	log := log.FromContext(ctx)
+	/*
+		If the component is detected to be MCH, we can simply return successfully. MCH is only listed in the components
+		list for cleanup purposes.
+	*/
+	if component == operatorv1.MCH || component == operatorv1.MultiClusterEngine {
+		return ctrl.Result{}, nil
+	}
 
-	templates, errs := renderer.RenderChart(utils.ClusterBackupChartLocation, m, images)
+	log := log.Log.WithName("reconcile")
+	chartLocation := r.fetchChartLocation(ctx, component)
+
+	// Renders all templates from charts
+	templates, errs := renderer.RenderChart(chartLocation, m, images)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -868,20 +716,82 @@ func (r *MultiClusterHubReconciler) ensureClusterBackup(ctx context.Context, m *
 
 	// Applies all templates
 	for _, template := range templates {
+		annotations := template.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
+		annotations[utils.AnnotationReleaseVersion] = version.Version
+		template.SetAnnotations(annotations)
 		result, err := r.applyTemplate(ctx, m, template)
 		if err != nil {
 			return result, err
 		}
 	}
 
-	return ctrl.Result{}, nil
+	switch component {
+	case operatorv1.Console:
+		return r.addPluginToConsole(m)
+
+	case operatorv1.Search:
+		return r.ensureSearchCR(m)
+
+	default:
+		return ctrl.Result{}, nil
+	}
 }
 
-func (r *MultiClusterHubReconciler) ensureNoClusterBackup(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
+func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *operatorv1.MultiClusterHub,
+	component string, images map[string]string) (result ctrl.Result, err error) {
+
+	/*
+		If the component is detected to be MCH, we can simply return successfully. MCH is only listed in the components
+		list for cleanup purposes. If the component is detected to be MCE, we can simply return successfully.
+		MCE is only listed in the components list for webhook validation purposes.
+	*/
+	if component == operatorv1.MCH || component == operatorv1.MultiClusterEngine {
+		return ctrl.Result{}, nil
+	}
+
+	log := log.Log.WithName("reconcile")
+	chartLocation := r.fetchChartLocation(ctx, component)
+
+	switch component {
+	case operatorv1.Console:
+		ocpConsole, err := r.CheckConsole(ctx)
+		if err != nil {
+			r.Log.Error(err, "error finding OCP Console")
+			return ctrl.Result{}, err
+		}
+		if !ocpConsole {
+			// If Openshift console is disabled then no cleanup to be done, because MCH console cannot be installed
+			return ctrl.Result{}, nil
+		}
+
+		result, err := r.removePluginFromConsole(m)
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+
+	// SearchV2
+	case operatorv1.Search:
+		result, err := r.ensureNoSearchCR(m)
+		if err != nil {
+			return result, err
+		}
+
+	/*
+		In ACM 2.9 we need to ensure that the submariner ClusterManagementAddOn is removed before
+		removing the submariner-addon component.
+	*/
+	case operatorv1.SubmarinerAddon:
+		result, err := r.ensureNoClusterManagementAddOn(m, component)
+		if err != nil {
+			return result, err
+		}
+	}
 
 	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(utils.ClusterBackupChartLocation, m, images)
+	templates, errs := renderer.RenderChart(chartLocation, m, images)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -900,68 +810,43 @@ func (r *MultiClusterHubReconciler) ensureNoClusterBackup(ctx context.Context, m
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterHubReconciler) ensureVolsync(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) ensureOpenShiftNamespaceLabel(ctx context.Context,
+	m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
+	existingNs := &corev1.Namespace{}
 
-	templates, errs := renderer.RenderChart(utils.VolsyncChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	err := r.Client.Get(ctx, types.NamespacedName{Name: m.GetNamespace()}, existingNs)
+	if err != nil || errors.IsNotFound(err) {
+		log.Error(err, fmt.Sprintf("Failed to find namespace for MultiClusterHub: %s", m.GetNamespace()))
+		return ctrl.Result{Requeue: true}, err
 	}
 
-	// Applies all templates
-	for _, template := range templates {
-		result, err := r.applyTemplate(ctx, m, template)
+	if existingNs.Labels == nil || len(existingNs.Labels) == 0 {
+		existingNs.Labels = make(map[string]string)
+	}
+
+	if _, ok := existingNs.Labels[utils.OpenShiftClusterMonitoringLabel]; !ok {
+		r.Log.Info(fmt.Sprintf("Adding label: %s to namespace: %s", utils.OpenShiftClusterMonitoringLabel,
+			m.GetNamespace()))
+		existingNs.Labels[utils.OpenShiftClusterMonitoringLabel] = "true"
+
+		err = r.Client.Update(ctx, existingNs)
 		if err != nil {
-			return result, err
+			log.Error(err, fmt.Sprintf("Failed to update namespace for MultiClusterHub: %s with the label: %s",
+				m.GetNamespace(), utils.OpenShiftClusterMonitoringLabel))
+			return ctrl.Result{Requeue: true}, err
 		}
 	}
 
 	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) ensureNoVolsync(ctx context.Context, m *operatorv1.MultiClusterHub, images map[string]string) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-
-	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(utils.VolsyncChartLocation, m, images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Deletes all templates
-	for _, template := range templates {
-		result, err := r.deleteTemplate(ctx, m, template)
-		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
-			return result, err
-		}
-	}
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) updateSearchEnablement(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
-	m.Disable(operatorv1.Search)
-	err := r.Client.Update(ctx, m)
-	if err != nil {
-		r.Log.Error(err, "Failed to update MultiClusterHub", "MultiClusterHub.Namespace", m.Namespace, "MultiClusterHub.Name", m.Name)
-		return ctrl.Result{}, err
-	}
-	r.Log.Info("MultiClusterHub successfully updated")
-	return ctrl.Result{Requeue: true}, nil
 }
 
 func (r *MultiClusterHubReconciler) deleteTemplate(ctx context.Context, m *operatorv1.MultiClusterHub, template *unstructured.Unstructured) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 	err := r.Client.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()}, template)
 
-	if err != nil && (apierrors.IsNotFound(err) || apimeta.IsNoMatchError(err)) {
+	if err != nil && (errors.IsNotFound(err) || apimeta.IsNoMatchError(err)) {
 		return ctrl.Result{}, nil
 	}
 
@@ -983,7 +868,7 @@ func (r *MultiClusterHubReconciler) deleteTemplate(ctx context.Context, m *opera
 // createCAconfigmap creates a configmap that will be injected with the
 // trusted CA bundle for use with the OCP cluster wide proxy
 func (r *MultiClusterHubReconciler) createTrustBundleConfigmap(ctx context.Context, mch *operatorv1.MultiClusterHub) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 
 	// Get Trusted Bundle configmap name
 	trustBundleName := defaultTrustBundleName
@@ -1037,6 +922,139 @@ func (r *MultiClusterHubReconciler) createTrustBundleConfigmap(ctx context.Conte
 	return ctrl.Result{}, nil
 }
 
+func (r *MultiClusterHubReconciler) createMetricsService(ctx context.Context, m *operatorv1.MultiClusterHub) (
+	ctrl.Result, error) {
+	log := log.Log.WithName("reconcile")
+
+	const Port = 8383
+
+	sName := utils.MCHOperatorMetricsServiceName
+	sNamespace := m.GetNamespace()
+
+	namespacedName := types.NamespacedName{
+		Name:      sName,
+		Namespace: sNamespace,
+	}
+
+	// Check if service exists
+	if err := r.Client.Get(ctx, namespacedName, &corev1.Service{}); err != nil {
+		if !errors.IsNotFound(err) {
+			// Unknown error. Requeue
+			log.Error(err, fmt.Sprintf("error while getting multiclusterhub metrics service: %s/%s", sNamespace, sName))
+			return ctrl.Result{RequeueAfter: resyncPeriod}, err
+		}
+
+		// Create metrics service
+		s := &corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      sName,
+				Namespace: sNamespace,
+				Labels: map[string]string{
+					"name": operatorv1.MCH,
+				},
+			},
+			Spec: corev1.ServiceSpec{
+				Ports: []corev1.ServicePort{
+					{
+						Name:       "metrics",
+						Port:       int32(Port),
+						Protocol:   "TCP",
+						TargetPort: intstr.FromInt(Port),
+					},
+				},
+				Selector: map[string]string{
+					"name": operatorv1.MCH,
+				},
+			},
+		}
+
+		if err = ctrl.SetControllerReference(m, s, r.Scheme); err != nil {
+			return ctrl.Result{}, pkgerrors.Wrapf(
+				err, "error setting controller reference on metrics service: %s", sName,
+			)
+		}
+
+		if err = r.Client.Create(ctx, s); err != nil {
+			// Error creating metrics service
+			log.Error(err, fmt.Sprintf("error creating multiclusterhub metrics service: %s", sName))
+			return ctrl.Result{RequeueAfter: resyncPeriod}, err
+		}
+
+		log.Info(fmt.Sprintf("Created multiclusterhub metrics service: %s", sName))
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) createMetricsServiceMonitor(ctx context.Context, m *operatorv1.MultiClusterHub) (
+	ctrl.Result, error) {
+	log := log.Log.WithName("reconcile")
+
+	smName := utils.MCHOperatorMetricsServiceMonitorName
+	smNamespace := m.GetNamespace()
+
+	namespacedName := types.NamespacedName{
+		Name:      smName,
+		Namespace: smNamespace,
+	}
+
+	// Check if service exists
+	if err := r.Client.Get(ctx, namespacedName, &promv1.ServiceMonitor{}); err != nil {
+		if !errors.IsNotFound(err) {
+			// Unknown error. Requeue
+			log.Error(err, fmt.Sprintf("error while getting multiclusterhub metrics service: %s/%s", smNamespace, smName))
+			return ctrl.Result{RequeueAfter: resyncPeriod}, err
+		}
+
+		// Create metrics service
+		sm := &promv1.ServiceMonitor{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      smName,
+				Namespace: smNamespace,
+				Labels: map[string]string{
+					"name": operatorv1.MCH,
+				},
+			},
+			Spec: promv1.ServiceMonitorSpec{
+				Endpoints: []promv1.Endpoint{
+					{
+						BearerTokenFile: "/var/run/secrets/kubernetes.io/serviceaccount/token",
+						BearerTokenSecret: corev1.SecretKeySelector{
+							Key: "",
+						},
+						Port: "metrics",
+					},
+				},
+				NamespaceSelector: promv1.NamespaceSelector{
+					MatchNames: []string{
+						m.GetNamespace(),
+					},
+				},
+				Selector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"name": operatorv1.MCH,
+					},
+				},
+			},
+		}
+
+		if err = ctrl.SetControllerReference(m, sm, r.Scheme); err != nil {
+			return ctrl.Result{}, pkgerrors.Wrapf(
+				err, "error setting controller reference on multiclusterhub metrics servicemonitor: %s", smName)
+		}
+
+		if err = r.Client.Create(ctx, sm); err != nil {
+			// Error creating metrics servicemonitor
+			log.Error(err, fmt.Sprintf("error creating metrics servicemonitor: %s", smName))
+			return ctrl.Result{RequeueAfter: resyncPeriod}, err
+		}
+
+		log.Info(fmt.Sprintf("Created multiclusterhub metrics servicemonitor: %s", smName))
+	}
+
+	return ctrl.Result{}, nil
+}
+
 // ingressDomain is discovered from Openshift cluster configuration resources
 func (r *MultiClusterHubReconciler) ingressDomain(m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	if r.CacheSpec.IngressDomain != "" || utils.IsUnitTest() {
@@ -1064,57 +1082,27 @@ func (r *MultiClusterHubReconciler) ingressDomain(m *operatorv1.MultiClusterHub)
 }
 
 func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operatorv1.MultiClusterHub, ocpConsole bool) error {
+	imageOverrides := r.CacheSpec.ImageOverrides
+
 	if err := r.cleanupAppSubscriptions(reqLogger, m); err != nil {
 		return err
 	}
-	_, err := r.ensureNoClusterBackup(context.TODO(), m, r.CacheSpec.ImageOverrides)
-	if err != nil {
-		return err
-	}
-	if err := r.cleanupNamespaces(reqLogger); err != nil {
-		return err
-	}
-	_, err = r.ensureNoAppsub(context.TODO(), m, r.CacheSpec.ImageOverrides)
-	if err != nil {
-		return err
-	}
-	_, err = r.ensureNoInsights(context.TODO(), m, r.CacheSpec.ImageOverrides)
-	if err != nil {
-		return err
-	}
-	_, err = r.ensureNoCLC(context.TODO(), m, r.CacheSpec.ImageOverrides)
-	if err != nil {
-		return err
-	}
-	_, err = r.ensureNoGRC(context.TODO(), m, r.CacheSpec.ImageOverrides)
-	if err != nil {
-		return err
-	}
-	_, err = r.ensureNoConsole(context.TODO(), m, r.CacheSpec.ImageOverrides)
-	if err != nil {
-		return err
-	}
-	_, err = r.ensureNoVolsync(context.TODO(), m, r.CacheSpec.ImageOverrides)
-	if err != nil {
-		return err
-	}
-	_, err = r.ensureNoSearchV2(context.TODO(), m, r.CacheSpec.ImageOverrides)
-	if err != nil {
-		return err
-	}
-	if err := r.cleanupClusterRoles(reqLogger, m); err != nil {
-		return err
-	}
-	if err := r.cleanupClusterRoleBindings(reqLogger, m); err != nil {
-		return err
+
+	for _, c := range operatorv1.MCHComponents {
+		if _, err := r.ensureNoComponent(context.TODO(), m, c, imageOverrides); err != nil {
+			return err
+		}
 	}
 
-	if err := r.cleanupMultiClusterEngine(reqLogger, m); err != nil {
-		return err
+	cleanupFunctions := []func(reqLogger logr.Logger, m *operatorv1.MultiClusterHub) error{
+		r.cleanupNamespaces, r.cleanupClusterRoles, r.cleanupClusterRoleBindings,
+		r.cleanupMultiClusterEngine, r.orphanOwnedMultiClusterEngine,
 	}
 
-	if err := r.orphanOwnedMultiClusterEngine(m); err != nil {
-		return err
+	for _, cleanupFn := range cleanupFunctions {
+		if err := cleanupFn(reqLogger, m); err != nil {
+			return err
+		}
 	}
 
 	reqLogger.Info("Successfully finalized multiClusterHub")
@@ -1141,7 +1129,7 @@ func (r *MultiClusterHubReconciler) installCRDs(reqLogger logr.Logger, m *operat
 		utils.AddInstallerLabel(crd, m.GetName(), m.GetNamespace())
 		err, ok := deploying.Deploy(r.Client, crd)
 		if err != nil {
-			err := fmt.Errorf("Failed to deploy %s %s", crd.GetKind(), crd.GetName())
+			err := fmt.Errorf("failed to deploy %s %s", crd.GetKind(), crd.GetName())
 			reqLogger.Error(err, err.Error())
 			return DeployFailedReason, err
 		}
@@ -1179,7 +1167,7 @@ func (r *MultiClusterHubReconciler) deployResources(reqLogger logr.Logger, m *op
 		}
 
 		path := path.Join(resourceDir, fileName)
-		src, err := ioutil.ReadFile(filepath.Clean(path)) // #nosec G304 (filepath cleaned)
+		src, err := os.ReadFile(filepath.Clean(path)) // #nosec G304 (filepath cleaned)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("error reading file %s : %s", fileName, err))
 			continue
@@ -1216,7 +1204,7 @@ func (r *MultiClusterHubReconciler) deployResources(reqLogger logr.Logger, m *op
 		}
 		err, ok := deploying.Deploy(r.Client, res)
 		if err != nil {
-			err := fmt.Errorf("Failed to deploy %s %s", res.GetKind(), res.GetName())
+			err := fmt.Errorf("failed to deploy %s %s", res.GetKind(), res.GetName())
 			reqLogger.Error(err, err.Error())
 			return DeployFailedReason, err
 		}
@@ -1283,17 +1271,19 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 		updateNecessary = true
 	}
 
+	for _, c := range operatorv1.MCEComponents {
+		if m.Prune(c) {
+			log.Info(fmt.Sprintf("Removing MultiClusterEngine component: %v from existing MultiClusterHub", c))
+			updateNecessary = true
+		}
+	}
+
 	if utils.MchIsValid(m) && os.Getenv("ACM_HUB_OCP_VERSION") != "" && !updateNecessary {
 		return ctrl.Result{}, nil
 	}
 	log.Info("MultiClusterHub is Invalid. Updating with proper defaults")
 
-	if len(m.Spec.Ingress.SSLCiphers) == 0 {
-		m.Spec.Ingress.SSLCiphers = utils.DefaultSSLCiphers
-		updateNecessary = true
-	}
-
-	if !utils.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {
+	if !operatorv1.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {
 		m.Spec.AvailabilityConfig = operatorv1.HAHigh
 		updateNecessary = true
 	}
@@ -1341,4 +1331,31 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 	log.Info("No updates to defaults detected")
 	return ctrl.Result{}, nil
 
+}
+
+func (r *MultiClusterHubReconciler) InitScheduler() {
+	scheduler = gocron.NewScheduler(time.UTC)
+}
+
+func (r *MultiClusterHubReconciler) ScheduleOperatorControllerResync(ctx context.Context, req ctrl.Request) {
+	if ok := scheduler.IsRunning(); !ok {
+		_, err := scheduler.Tag(cronResyncTag).Every(reconciliationInterval).Minutes().Do(r.Reconcile, ctx, req)
+
+		if err != nil {
+			r.Log.Error(err, "failed to schedule scheduler job for operator controller resync")
+		} else {
+			r.Log.Info(fmt.Sprintf("Starting scheduler job for operator controller. Reconciling every %v minutes",
+				reconciliationInterval))
+			scheduler.StartAsync()
+		}
+	}
+}
+
+// StopScheduleOperatorControllerResync ...
+func (r *MultiClusterHubReconciler) StopScheduleOperatorControllerResync() {
+	scheduler.Stop()
+
+	if ok := scheduler.IsRunning(); !ok {
+		r.InitScheduler()
+	}
 }

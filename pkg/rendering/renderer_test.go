@@ -37,7 +37,10 @@ var chartPaths = []string{
 func TestRender(t *testing.T) {
 
 	proxyList := []string{"insights-client"}
-	mchNodeSelector := map[string]string{"select": "test"}
+	mchNodeSelector := map[string]string{
+		"select":  "test",
+		"select2": "test2",
+	}
 	mchImagePullSecret := "test"
 	mchNamespace := "default"
 	mchTolerations := []corev1.Toleration{
@@ -91,6 +94,7 @@ func TestRender(t *testing.T) {
 	os.Setenv("HTTPS_PROXY", "test2")
 	os.Setenv("NO_PROXY", "test3")
 	os.Setenv("DIRECTORY_OVERRIDE", "../templates")
+	os.Setenv("ACM_HUB_OCP_VERSION", "4.10.0")
 
 	testImages := map[string]string{}
 	for _, v := range utils.GetTestImages() {
@@ -245,6 +249,7 @@ func TestRender(t *testing.T) {
 	os.Unsetenv("NO_PROXY")
 	os.Unsetenv("POD_NAMESPACE")
 	os.Unsetenv("DIRECTORY_OVERRIDE")
+	os.Unsetenv("ACM_HUB_OCP_VERSION")
 
 }
 
@@ -335,7 +340,7 @@ func TestOADPAnnotation(t *testing.T) {
 		t.Error(fmt.Sprintf("Cluster Backup missing OADP overrides for name"))
 	}
 
-	if test2 != "stable-1.1" {
+	if test2 != "stable-1.3" {
 		t.Error(fmt.Sprintf("Cluster Backup missing OADP overrides for channel"))
 	}
 

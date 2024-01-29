@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Masterminds/semver/v3"
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
@@ -23,21 +24,22 @@ import (
 
 var (
 	// prod MCE variables
-	channel                = "stable-2.2"
+	channel                = "stable-2.5"
 	installPlanApproval    = subv1alpha1.ApprovalAutomatic
 	packageName            = "multicluster-engine"
 	catalogSourceName      = "redhat-operators"
 	catalogSourceNamespace = "openshift-marketplace" // https://olm.operatorframework.io/docs/tasks/troubleshooting/subscription/#a-subscription-in-namespace-x-cant-install-operators-from-a-catalogsource-in-namespace-y
+	operandNameSpace       = "multicluster-engine"
 
 	// community MCE variables
-	communityChannel           = "community-0.1"
+	communityChannel           = "community-0.3"
 	communityPackageName       = "stolostron-engine"
 	communityCatalogSourceName = "community-operators"
+	communityOperandNamepace   = "stolostron-engine"
 
 	// default names
-	MulticlusterengineName      = "multiclusterengine"
-	MulticlusterengineNamespace = "multicluster-engine"
-	operatorGroupName           = "default"
+	MulticlusterengineName = "multiclusterengine"
+	operatorGroupName      = "default"
 )
 
 // mocks returning a single manifest
@@ -63,7 +65,7 @@ var mockPackageManifests = func() *olmapi.PackageManifestList {
 }
 
 // NewMultiClusterEngine returns an MCE configured from a Multiclusterhub
-func NewMultiClusterEngine(m *operatorsv1.MultiClusterHub, infrastructureCustomNamespace string) *mcev1.MultiClusterEngine {
+func NewMultiClusterEngine(m *operatorsv1.MultiClusterHub) *mcev1.MultiClusterEngine {
 	labels := map[string]string{
 		"installer.name":        m.GetName(),
 		"installer.namespace":   m.GetNamespace(),
@@ -86,7 +88,7 @@ func NewMultiClusterEngine(m *operatorsv1.MultiClusterHub, infrastructureCustomN
 			Tolerations:        utils.GetTolerations(m),
 			NodeSelector:       m.Spec.NodeSelector,
 			AvailabilityConfig: availConfig,
-			TargetNamespace:    MulticlusterengineNamespace,
+			TargetNamespace:    OperandNameSpace(),
 			Overrides: &mcev1.Overrides{
 				Components: utils.GetMCEComponents(m),
 			},
@@ -95,10 +97,6 @@ func NewMultiClusterEngine(m *operatorsv1.MultiClusterHub, infrastructureCustomN
 
 	if m.Spec.Overrides != nil && m.Spec.Overrides.ImagePullPolicy != "" {
 		mce.Spec.Overrides.ImagePullPolicy = m.Spec.Overrides.ImagePullPolicy
-	}
-
-	if infrastructureCustomNamespace != "" {
-		mce.Spec.Overrides.InfrastructureCustomNamespace = infrastructureCustomNamespace
 	}
 
 	return mce
@@ -118,6 +116,8 @@ func RenderMultiClusterEngine(existingMCE *mcev1.MultiClusterEngine, m *operator
 			newAnnotations[key] = val
 		}
 		copy.SetAnnotations(newAnnotations)
+	} else {
+		RemoveSupportedAnnotations(copy)
 	}
 
 	if m.Spec.AvailabilityConfig == operatorsv1.HABasic {
@@ -157,19 +157,36 @@ func GetSupportedAnnotations(m *operatorsv1.MultiClusterHub) map[string]string {
 	return mceAnnotations
 }
 
+// RemoveSupportedAnnotations removes annotations relevant to MCE from MCE. If the annotation is
+// already present then sets value to empty rather than removing the key
+func RemoveSupportedAnnotations(mce *mcev1.MultiClusterEngine) map[string]string {
+	mceAnnotations := mce.GetAnnotations()
+	if mceAnnotations != nil {
+		if _, ok := mceAnnotations["imageRepository"]; ok {
+			mceAnnotations["imageRepository"] = ""
+		}
+	}
+	return mceAnnotations
+}
+
 func Namespace() *corev1.Namespace {
+	namespace := OperandNameSpace()
 	return &corev1.Namespace{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
 			Kind:       "Namespace",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: utils.MCESubscriptionNamespace,
+			Name: namespace,
+			Labels: map[string]string{
+				utils.OpenShiftClusterMonitoringLabel: "true",
+			},
 		},
 	}
 }
 
 func OperatorGroup() *olmv1.OperatorGroup {
+	namespace := OperandNameSpace()
 	return &olmv1.OperatorGroup{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: olmv1.GroupVersion.String(),
@@ -177,10 +194,10 @@ func OperatorGroup() *olmv1.OperatorGroup {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      operatorGroupName,
-			Namespace: utils.MCESubscriptionNamespace,
+			Namespace: namespace,
 		},
 		Spec: olmv1.OperatorGroupSpec{
-			TargetNamespaces: []string{utils.MCESubscriptionNamespace},
+			TargetNamespaces: []string{namespace},
 		},
 	}
 }
@@ -198,12 +215,7 @@ func GetCatalogSource(k8sClient client.Client) (types.NamespacedName, error) {
 		return nn, fmt.Errorf("No %s packageManifests found", DesiredPackage())
 	}
 
-	filtered := []olmapi.PackageManifest{}
-	for _, p := range pkgs {
-		if hasDesiredChannel(p) {
-			filtered = append(filtered, p)
-		}
-	}
+	filtered := filterPackageManifests(pkgs, desiredChannel())
 
 	// fail if more than one package satisfies requirements
 	if len(filtered) == 1 {
@@ -218,14 +230,37 @@ func GetCatalogSource(k8sClient client.Client) (types.NamespacedName, error) {
 	return nn, fmt.Errorf("No %s packageManifests found with desired channel %s", DesiredPackage(), desiredChannel())
 }
 
-// hasDesiredChannel returns true if the packagemanifest contains the desired channel
-func hasDesiredChannel(pm olmapi.PackageManifest) bool {
-	for _, c := range pm.Status.Channels {
-		if c.Name == desiredChannel() {
-			return true
+// filterPackageManifests returns a list of packagemanifests containing the desired channel
+// at the latest available version. Returns an empty list if no packagemanifests include the
+// channel. If more than one packagemanifest have the same latest version available it will
+// return them all.
+func filterPackageManifests(pkgManifests []olmapi.PackageManifest, desiredChannel string) []olmapi.PackageManifest {
+	filtered := []olmapi.PackageManifest{}
+	latestVersion := &semver.Version{}
+	for _, p := range pkgManifests {
+		for _, c := range p.Status.Channels {
+			if c.Name == desiredChannel {
+				versionString := c.CurrentCSVDesc.Version.String()
+				v, err := semver.NewVersion(versionString)
+				if err != nil {
+					log.Log.WithName("reconcile").Info("failed to parse version from packagemanifest", "catalogsource", p.Status.CatalogSource)
+					continue
+				}
+				if len(filtered) == 0 {
+					filtered = append(filtered, p)
+					latestVersion = v
+					continue
+				}
+				if v.Equal(latestVersion) {
+					filtered = append(filtered, p)
+				} else if v.GreaterThan(latestVersion) {
+					filtered = []olmapi.PackageManifest{p}
+					latestVersion = v
+				}
+			}
 		}
 	}
-	return false
+	return filtered
 }
 
 // desiredChannel is determined by whether operator is running in community mode or production mode
@@ -246,10 +281,19 @@ func DesiredPackage() string {
 	}
 }
 
+// OperandNameSpace is determined by whether operator is running in community mode or production mode
+func OperandNameSpace() string {
+	if utils.IsCommunityMode() {
+		return communityOperandNamepace
+	} else {
+		return operandNameSpace
+	}
+}
+
 // returns packagemanifests with the name multicluster-engine
 func GetMCEPackageManifests(k8sClient client.Client) ([]olmapi.PackageManifest, error) {
 	ctx := context.Background()
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 	packageManifests := &olmapi.PackageManifestList{}
 	var err error
 	if utils.IsUnitTest() {
@@ -280,9 +324,18 @@ func GetManagedMCE(ctx context.Context, k8sClient client.Client) (*mcev1.MultiCl
 	})
 	if err != nil {
 		return nil, err
-	} else if err == nil && len(mceList.Items) == 1 {
-		return &mceList.Items[0], nil
-	} else if len(mceList.Items) > 1 {
+	}
+	// filter out hosted MCEs
+	filteredMCEs := []mcev1.MultiClusterEngine{}
+	for _, mce := range mceList.Items {
+		if mce.Annotations == nil || mce.Annotations["deploymentmode"] != "Hosted" {
+			filteredMCEs = append(filteredMCEs, mce)
+		}
+	}
+
+	if err == nil && len(filteredMCEs) == 1 {
+		return &filteredMCEs[0], nil
+	} else if len(filteredMCEs) > 1 {
 		// will require manual resolution
 		return nil, fmt.Errorf("multiple MCEs found managed by MCH. Only one MCE is supported")
 	}
@@ -302,7 +355,7 @@ func FindAndManageMCE(ctx context.Context, k8sClient client.Client) (*mcev1.Mult
 	}
 
 	// if label doesn't work find it via list
-	log.FromContext(ctx).Info("Failed to find subscription via label")
+	log.Log.WithName("reconcile").Info("Failed to find subscription via label")
 	wholeList := &mcev1.MultiClusterEngineList{}
 	err = k8sClient.List(ctx, wholeList)
 	if err != nil {
@@ -311,21 +364,30 @@ func FindAndManageMCE(ctx context.Context, k8sClient client.Client) (*mcev1.Mult
 	if len(wholeList.Items) == 0 {
 		return nil, nil
 	}
-	if len(wholeList.Items) > 1 {
+
+	// filter hosted MCEs
+	filteredMCEs := []mcev1.MultiClusterEngine{}
+	for _, mce := range wholeList.Items {
+		if mce.Annotations == nil || mce.Annotations["deploymentmode"] != "Hosted" {
+			filteredMCEs = append(filteredMCEs, mce)
+		}
+	}
+
+	if len(filteredMCEs) > 1 {
 		return nil, fmt.Errorf("multiple MCEs found managed by MCH. Only one MCE is supported")
 	}
-	labels := wholeList.Items[0].GetLabels()
+	labels := filteredMCEs[0].GetLabels()
 	if labels == nil {
 		labels = map[string]string{}
 	}
 	labels[utils.MCEManagedByLabel] = "true"
-	wholeList.Items[0].SetLabels(labels)
-	log.FromContext(ctx).Info("Adding label to MCE")
-	if err := k8sClient.Update(ctx, &wholeList.Items[0]); err != nil {
-		log.FromContext(ctx).Error(err, "Failed to add managedBy label to preexisting MCE")
-		return &wholeList.Items[0], err
+	filteredMCEs[0].SetLabels(labels)
+	log.Log.WithName("reconcile").Info("Adding label to MCE")
+	if err := k8sClient.Update(ctx, &filteredMCEs[0]); err != nil {
+		log.Log.WithName("reconcile").Error(err, "Failed to add managedBy label to preexisting MCE")
+		return &filteredMCEs[0], err
 	}
-	return &wholeList.Items[0], nil
+	return &filteredMCEs[0], nil
 }
 
 // MCECreatedByMCH returns true if the provided MCE was created by the multiclusterhub-operator (as indicated by installer labels).

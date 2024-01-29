@@ -1,7 +1,7 @@
 apiVersion: v2
-appVersion: 1.16.0
+appVersion: 2.10.0
 description: An operator for deploying resources from object Bucket, helm repo or
   github repo to multiple managed clusters
 name: multicloud-operators-subscription
 type: application
-version: 2.3.0
+version: 2.10.0

@@ -40,9 +40,9 @@ spec:
         - /usr/local/bin/multicluster-operators-subscription
         - --standalone
         - --sync-interval=60
-        - --leader-election-lease-duration=137
-        - --renew-deadline=107
-        - --retry-period=26
+        - --leader-election-lease-duration=137s
+        - --leader-election-renew-deadline=107s
+        - --leader-election-retry-period=26s
         env:
 {{- if .Values.hubconfig.proxyConfigs }}
         - name: HTTP_PROXY
@@ -94,6 +94,7 @@ spec:
             drop:
             - ALL
           privileged: false
+          readOnlyRootFilesystem: true
         volumeMounts:
         - mountPath: /tmp
           name: tmp
@@ -113,6 +114,10 @@ spec:
 {{- end }}
       securityContext:
         runAsNonRoot: true
+{{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
+        seccompProfile:
+          type: RuntimeDefault
+{{- end }}
       serviceAccountName: multicluster-operators
 {{- with .Values.hubconfig.tolerations }}
       tolerations:

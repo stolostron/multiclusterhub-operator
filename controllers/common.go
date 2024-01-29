@@ -15,13 +15,15 @@ import (
 
 	consolev1 "github.com/openshift/api/operator/v1"
 
-	"github.com/Masterminds/semver"
+	"github.com/Masterminds/semver/v3"
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 
 	configv1 "github.com/openshift/api/config/v1"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+
+	ocmapi "open-cluster-management.io/api/addon/v1alpha1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -103,8 +105,6 @@ func (r *MultiClusterHubReconciler) ensureUnstructuredResource(m *operatorv1.Mul
 func (r *MultiClusterHubReconciler) ensureNamespace(m *operatorv1.MultiClusterHub, ns *corev1.Namespace) (ctrl.Result, error) {
 	ctx := context.Background()
 
-	r.Log.Info(fmt.Sprintf("Ensuring namespace: %s", ns.GetName()))
-
 	existingNS := &corev1.Namespace{}
 	err := r.Client.Get(ctx, types.NamespacedName{
 		Name: ns.GetName(),
@@ -178,21 +178,7 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 	}
 
 	if mce == nil {
-		// figure out if assisted service is already configured
-		infraNS := ""
-		configured, err := AssistedServiceConfigured(ctx, r.Client)
-		if err != nil {
-			return ctrl.Result{Requeue: true}, err
-		}
-		if configured {
-			ns, err := utils.FindNamespace()
-			if err != nil {
-				return ctrl.Result{Requeue: true}, err
-			}
-			infraNS = ns
-		}
-
-		mce = multiclusterengine.NewMultiClusterEngine(m, infraNS)
+		mce = multiclusterengine.NewMultiClusterEngine(m)
 		err = r.Client.Create(ctx, mce)
 		if err != nil {
 			return ctrl.Result{Requeue: true}, fmt.Errorf("Error creating new MCE: %w", err)
@@ -514,6 +500,7 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 		}
 	}
 
+	createSub := false
 	if mceSub == nil {
 		result, err := r.ensureNamespace(multiClusterHub, multiclusterengine.Namespace())
 		if result != (ctrl.Result{}) {
@@ -529,6 +516,7 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 		}
 		// Sub is nil so create a new one
 		mceSub = multiclusterengine.NewSubscription(multiClusterHub, subConfig, overrides, utils.IsCommunityMode())
+		createSub = true
 	} else if multiclusterengine.CreatedByMCH(mceSub, multiClusterHub) {
 		result, err := r.ensurePullSecret(multiClusterHub, multiclusterengine.Namespace().Name)
 		if result != (ctrl.Result{}) {
@@ -542,13 +530,15 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 
 	// Apply MCE sub
 	calcSub := multiclusterengine.RenderSubscription(mceSub, subConfig, overrides, ctlSrc, utils.IsCommunityMode())
-
-	force := true
-	err = r.Client.Patch(ctx, calcSub, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
-	if err != nil {
-		r.Log.Info(fmt.Sprintf("Error applying subscription: %s", err.Error()))
-		return ctrl.Result{Requeue: true}, err
+	if createSub {
+		err = r.Client.Create(ctx, calcSub)
+	} else {
+		err = r.Client.Update(ctx, calcSub)
 	}
+	if err != nil {
+		return ctrl.Result{Requeue: true}, fmt.Errorf("Error updating subscription %s: %w", calcSub.Name, err)
+	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -575,7 +565,7 @@ func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context) (ctrl.R
 		return ctrl.Result{Requeue: true}, err
 	}
 	if existingMCE == nil {
-		r.Log.Info(fmt.Sprintf("Multiclusterengine: %s is not yet present", existingMCE.GetName()))
+		r.Log.Info(fmt.Sprintf("Multiclusterengine is not yet present"))
 		return ctrl.Result{Requeue: true}, nil
 	}
 	if utils.IsUnitTest() {
@@ -645,7 +635,7 @@ func mergeErrors(errs []error) string {
 // GetSubConfig returns a SubscriptionConfig based on proxy variables and the mch operator configuration
 func (r *MultiClusterHubReconciler) GetSubConfig() (*subv1alpha1.SubscriptionConfig, error) {
 	found := &appsv1.Deployment{}
-	mchOperatorNS, err := utils.FindNamespace()
+	mchOperatorNS, err := utils.OperatorNamespace()
 	if err != nil {
 		return nil, err
 	}
@@ -797,46 +787,64 @@ func (r *MultiClusterHubReconciler) getClusterVersion(ctx context.Context) (stri
 func (r *MultiClusterHubReconciler) ensureSearchCR(m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	ctx := context.Background()
 
-	// If assisted installer is set up MCE needs to override the infrastructure
-	// operator namespace
-	searchList := &searchv2v1alpha1.SearchList{}
-	err := r.Client.List(ctx, searchList, client.InNamespace(m.GetNamespace()))
+	searchCR := &searchv2v1alpha1.Search{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: searchv2v1alpha1.GroupVersion.String(),
+			Kind:       "Search",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "search-v2-operator",
+			Namespace: m.Namespace,
+		},
+		Spec: searchv2v1alpha1.SearchSpec{
+			NodeSelector: m.Spec.NodeSelector,
+			Tolerations:  utils.GetTolerations(m),
+		},
+	}
+	force := true
+	err := r.Client.Patch(ctx, searchCR, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
 	if err != nil {
-		r.Log.Info(fmt.Sprintf("error locating Search CR. Error: %s", err.Error()))
+		r.Log.Info(fmt.Sprintf("error applying Search CR. Error: %s", err.Error()))
 		return ctrl.Result{Requeue: true}, err
 	}
 
-	if len(searchList.Items) == 0 {
-		searchCR := &searchv2v1alpha1.Search{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: searchv2v1alpha1.GroupVersion.String(),
-				Kind:       "Search",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "search-v2-operator",
-				Namespace: m.Namespace,
-			},
-			Spec: searchv2v1alpha1.SearchSpec{
-				NodeSelector: m.Spec.NodeSelector,
-				Tolerations:  utils.GetTolerations(m),
-			},
-		}
-		force := true
-		err = r.Client.Patch(ctx, searchCR, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
-		if err != nil {
-			r.Log.Info(fmt.Sprintf("error creating Search CR. Error: %s", err.Error()))
-			return ctrl.Result{Requeue: true}, err
-		}
-	}
 	return ctrl.Result{}, nil
+}
 
+func (r *MultiClusterHubReconciler) ensureNoClusterManagementAddOn(m *operatorv1.MultiClusterHub, component string) (
+	ctrl.Result, error) {
+	ctx := context.Background()
+
+	addonName, err := operatorv1.GetClusterManagementAddonName(component)
+	if err != nil {
+		r.Log.Info(fmt.Sprintf("Detected unregistered ClusterManagementAddon component: %s", err.Error()))
+		return ctrl.Result{Requeue: true}, err
+	}
+
+	clusterMgmtAddon := &ocmapi.ClusterManagementAddOn{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: addonName,
+		},
+	}
+
+	err = r.Client.Delete(context.TODO(), clusterMgmtAddon)
+	if err != nil && !errors.IsNotFound(err) {
+		r.Log.Error(err, fmt.Sprintf("Error deleting ClusterManagementAddOn CR"))
+		return ctrl.Result{Requeue: true}, err
+	}
+
+	err = r.Client.Get(ctx, types.NamespacedName{Name: clusterMgmtAddon.GetName()}, clusterMgmtAddon)
+	if err == nil {
+		return ctrl.Result{Requeue: true}, errors.NewBadRequest("ClusterManagementAddOn CR has not been deleted")
+	}
+
+	r.Log.Info(fmt.Sprintf("Successfully deleted ClusterManagementAddOn CR: %s", clusterMgmtAddon.GetName()))
+	return ctrl.Result{}, nil
 }
 
 func (r *MultiClusterHubReconciler) ensureNoSearchCR(m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	ctx := context.Background()
 
-	// If assisted installer is set up MCE needs to override the infrastructure
-	// operator namespace
 	searchList := &searchv2v1alpha1.SearchList{}
 	err := r.Client.List(ctx, searchList, client.InNamespace(m.GetNamespace()))
 	if err != nil {

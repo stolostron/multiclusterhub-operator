@@ -1,0 +1,26 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations: 
+    service.beta.openshift.io/inject-cabundle: "true"
+  name: propagator-webhook-validating-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: propagator-webhook-service
+      namespace: {{ .Values.global.namespace }}
+      path: /validate-policy-open-cluster-management-io-v1-policy
+  failurePolicy: Ignore
+  name: policy.open-cluster-management.io.webhook
+  rules:
+  - apiGroups:
+    - policy.open-cluster-management.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    resources:
+    - policies
+  sideEffects: None

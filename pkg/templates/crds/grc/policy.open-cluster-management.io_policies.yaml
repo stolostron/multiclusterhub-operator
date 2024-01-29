@@ -48,11 +48,17 @@ spec:
           spec:
             description: PolicySpec defines the desired state of Policy
             properties:
+              copyPolicyMetadata:
+                description: If set to true (default), all the policy's labels and
+                  annotations will be copied to the replicated policy. If set to false,
+                  only the policy framework specific policy labels and annotations
+                  will be copied to the replicated policy.
+                type: boolean
               dependencies:
                 description: PolicyDependencies that apply to each template in this
                   Policy
                 items:
-                  description: Each PolicyDepenency defines an object reference which
+                  description: Each PolicyDependency defines an object reference which
                     must be in a certain compliance state before the policy should
                     be created.
                   oneOf:
@@ -78,6 +84,10 @@ spec:
                     compliance:
                       description: The ComplianceState (at path .status.compliant)
                         required before the policy should be created
+                      enum:
+                      - Compliant
+                      - Pending
+                      - NonCompliant
                       type: string
                     kind:
                       description: 'Kind is a string value representing the REST resource
@@ -110,7 +120,7 @@ spec:
                       description: Additional PolicyDependencies that only apply to
                         this template
                       items:
-                        description: Each PolicyDepenency defines an object reference
+                        description: Each PolicyDependency defines an object reference
                           which must be in a certain compliance state before the policy
                           should be created.
                         oneOf:
@@ -136,6 +146,10 @@ spec:
                           compliance:
                             description: The ComplianceState (at path .status.compliant)
                               required before the policy should be created
+                            enum:
+                            - Compliant
+                            - Pending
+                            - NonCompliant
                             type: string
                           kind:
                             description: 'Kind is a string value representing the

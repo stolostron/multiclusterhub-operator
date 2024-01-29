@@ -8,13 +8,11 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -22,41 +20,88 @@ import (
 )
 
 const (
-	// WebhookServiceName ...
+	// WebhookServiceName is the name of the webhook service.
 	WebhookServiceName = "multiclusterhub-operator-webhook"
 
-	// CertManagerNamespace ...
+	// CertManagerNamespace is the namespace where CertManager is deployed.
 	CertManagerNamespace = "cert-manager"
 
+	// podNamespaceEnvVar is the environment variable name for the pod's namespace.
 	podNamespaceEnvVar = "POD_NAMESPACE"
-	rsaKeySize         = 2048
-	duration365d       = time.Hour * 24 * 365
 
-	// DefaultRepository ...
+	// DefaultRepository is the default repository for images.
 	DefaultRepository = "quay.io/stolostron"
 
-	// UnitTestEnvVar ...
+	// UnitTestEnvVar is the environment variable for unit testing.
 	UnitTestEnvVar = "UNIT_TEST"
 
-	// MCHOperatorName is the name of this operator deployment
+	// MCHOperatorName is the name of the Multicluster Hub operator deployment.
 	MCHOperatorName = "multiclusterhub-operator"
 
-	// SubscriptionOperatorName is the name of the operator deployment managing application subscriptions
+	// SubscriptionOperatorName is the name of the operator deployment managing application subscriptions.
 	SubscriptionOperatorName = "multicluster-operators-standalone-subscription"
 
-	MCESubscriptionName          = "multicluster-engine"
-	MCESubscriptionNamespace     = "multicluster-engine"
+	// MCESubscriptionName is the name of the Multicluster Engine subscription.
+	MCESubscriptionName = "multicluster-engine"
+
+	// MCESubscriptionNamespace is the namespace for the Multicluster Engine subscription.
+	MCESubscriptionNamespace = "multicluster-engine"
+
+	// ClusterSubscriptionNamespace is the namespace for the open-cluster-management-backup subscription.
 	ClusterSubscriptionNamespace = "open-cluster-management-backup"
 
-	MCEManagedByLabel          = "multiclusterhubs.operator.open-cluster-management.io/managed-by"
-	InsightsChartLocation      = "/charts/toggle/insights"
-	AppsubChartLocation        = "/charts/toggle/multicloud-operators-subscription"
-	SearchV2ChartLocation      = "/charts/toggle/search-v2-operator"
-	CLCChartLocation           = "/charts/toggle/cluster-lifecycle"
+	// MCEManagedByLabel is the label used to mark resources managed by Multicluster Hub.
+	MCEManagedByLabel = "multiclusterhubs.operator.open-cluster-management.io/managed-by"
+
+	// OpenShiftClusterMonitoringLabel is the label for OpenShift cluster monitoring.
+	OpenShiftClusterMonitoringLabel = "openshift.io/cluster-monitoring"
+
+	// AppsubChartLocation is the location of the App Subscription chart.
+	AppsubChartLocation = "/charts/toggle/multicloud-operators-subscription"
+
+	// CLCChartLocation is the location of the Cluster Lifecycle chart.
+	CLCChartLocation = "/charts/toggle/cluster-lifecycle"
+
+	// ClusterBackupChartLocation is the location of the Cluster Backup chart.
 	ClusterBackupChartLocation = "/charts/toggle/cluster-backup"
-	GRCChartLocation           = "/charts/toggle/grc"
-	ConsoleChartLocation       = "/charts/toggle/console"
-	VolsyncChartLocation       = "/charts/toggle/volsync-controller"
+
+	// ClusterPermissionChartLocation is the location of the Cluster Permission chart.
+	ClusterPermissionChartLocation = "/charts/toggle/cluster-permission"
+
+	// ConsoleChartLocation is the location of the Console chart.
+	ConsoleChartLocation = "/charts/toggle/console"
+
+	// GRCChartLocation is the location of the GRC chart.
+	GRCChartLocation = "/charts/toggle/grc"
+
+	// InsightsChartLocation is the location of the Insights chart.
+	InsightsChartLocation = "/charts/toggle/insights"
+
+	// MCOChartLocation is the location of the Multicluster Observability Operator chart.
+	MCOChartLocation = "/charts/toggle/multicluster-observability-operator"
+
+	// SearchV2ChartLocation is the location of the Search V2 Operator chart.
+	SearchV2ChartLocation = "/charts/toggle/search-v2-operator"
+
+	// SubmarinerAddonChartLocation is the location of the Submariner Addon chart.
+	SubmarinerAddonChartLocation = "/charts/toggle/submariner-addon"
+
+	// VolsyncChartLocation is the location of the Volsync Controller chart.
+	VolsyncChartLocation = "/charts/toggle/volsync-controller"
+)
+
+const (
+	/*
+	   MCHOperatorMetricsServiceName is the name of the service used to expose the metrics
+	   endpoint for the multiclusterhub-operator.
+	*/
+	MCHOperatorMetricsServiceName = "multiclusterhub-operator-metrics"
+
+	/*
+	   MCHOperatorMetricsServiceMonitorName is the name of the service monitor used to expose
+	   the metrics for the multiclusterhub-operator.
+	*/
+	MCHOperatorMetricsServiceMonitorName = "multiclusterhub-operator-metrics"
 )
 
 var (
@@ -172,7 +217,7 @@ func CoreToUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) 
 
 // MchIsValid Checks if the optional default parameters need to be set
 func MchIsValid(m *operatorsv1.MultiClusterHub) bool {
-	invalid := len(m.Spec.Ingress.SSLCiphers) == 0 || !AvailabilityConfigIsValid(m.Spec.AvailabilityConfig)
+	invalid := len(m.Spec.Ingress.SSLCiphers) == 0 || !operatorsv1.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig)
 	return !invalid
 }
 
@@ -183,16 +228,6 @@ func DefaultReplicaCount(mch *operatorsv1.MultiClusterHub) int {
 		return 1
 	}
 	return 2
-}
-
-// AvailabilityConfigIsValid ...
-func AvailabilityConfigIsValid(config operatorsv1.AvailabilityType) bool {
-	switch config {
-	case operatorsv1.HAHigh, operatorsv1.HABasic:
-		return true
-	default:
-		return false
-	}
 }
 
 // DistributePods returns a anti-affinity rule that specifies a preference for pod replicas with
@@ -237,7 +272,7 @@ func DistributePods(key string, value string) *corev1.Affinity {
 }
 
 // GetImagePullPolicy returns either pull policy from CR overrides or default of Always
-func GetImagePullPolicy(m *operatorsv1.MultiClusterHub) v1.PullPolicy {
+func GetImagePullPolicy(m *operatorsv1.MultiClusterHub) corev1.PullPolicy {
 	if m.Spec.Overrides == nil || m.Spec.Overrides.ImagePullPolicy == "" {
 		return corev1.PullIfNotPresent
 	}
@@ -250,7 +285,7 @@ func GetContainerArgs(dep *appsv1.Deployment) []string {
 }
 
 // GetContainerEnvVars returns environment variables for first container in deployment
-func GetContainerEnvVars(dep *appsv1.Deployment) []v1.EnvVar {
+func GetContainerEnvVars(dep *appsv1.Deployment) []corev1.EnvVar {
 	return dep.Spec.Template.Spec.Containers[0].Env
 }
 
@@ -279,7 +314,8 @@ func IsUnitTest() bool {
 }
 
 func GetTestImages() []string {
-	return []string{"LIFECYCLE_BACKEND_E2E", "BAILER", "CERT_POLICY_CONTROLLER", "CLUSTER_BACKUP_CONTROLLER",
+	return []string{
+		"LIFECYCLE_BACKEND_E2E", "BAILER", "CERT_POLICY_CONTROLLER", "CLUSTER_BACKUP_CONTROLLER",
 		"CLUSTER_LIFECYCLE_E2E", "CLUSTER_PROXY", "CLUSTER_PROXY_ADDON", "CONSOLE", "ENDPOINT_MONITORING_OPERATOR",
 		"GRAFANA", "GRAFANA_DASHBOARD_LOADER", "GRC_POLICY_FRAMEWORK_TESTS", "HELLOPROW_GO", "HELLOWORLD",
 		"HYPERSHIFT_DEPLOYMENT_CONTROLLER", "IAM_POLICY_CONTROLLER", "INSIGHTS_CLIENT", "INSIGHTS_METRICS",
@@ -292,13 +328,14 @@ func GetTestImages() []string {
 		"PROMETHEUS_CONFIG_RELOADER", "PROMETHEUS_OPERATOR", "RBAC_QUERY_PROXY", "REDISGRAPH_TLS",
 		"SEARCH_AGGREGATOR", "SEARCH_API", "SEARCH_COLLECTOR", "SEARCH_E2E", "SEARCH_INDEXER", "SEARCH_OPERATOR",
 		"SEARCH_V2_API", "SUBMARINER_ADDON", "THANOS", "VOLSYNC", "VOLSYNC_ADDON_CONTROLLER", "VOLSYNC_MOVER_RCLONE",
-		"VOLSYNC_MOVER_RESTIC", "VOLSYNC_MOVER_RSYNC", "kube_rbac_proxy", "insights_metrics", "insights_client",
+		"VOLSYNC_MOVER_RESTIC", "VOLSYNC_MOVER_RSYNC", "CLUSTER_PERMISSION", "kube_rbac_proxy", "insights_metrics", "insights_client",
 		"search_collector", "search_indexer", "search_v2_api", "postgresql_13", "search_v2_operator", "klusterlet_addon_controller",
 		"governance_policy_propagator", "governance_policy_addon_controller", "cert_policy_controller", "iam_policy_controller",
 		"config_policy_controller", "governance_policy_framework_addon",
 		"cluster_backup_controller", "console", "volsync_addon_controller", "multicluster_operators_application",
-		"multicloud_integrations", "multicluster_operators_channel", "multicluster_operators_subscription"}
-
+		"multicloud_integrations", "multicluster_operators_channel", "multicluster_operators_subscription",
+		"multicluster_observability_operator", "cluster_permission", "submariner_addon",
+	}
 }
 
 // FormatSSLCiphers converts an array of ciphers into a string consumed by the management
@@ -340,8 +377,8 @@ func ProxyEnvVarsAreSet() bool {
 	return false
 }
 
-// FindNamespace
-func FindNamespace() (string, error) {
+// OperatorNamespace returns the namespace where the MultiClusterHub operator is registered or deployed.
+func OperatorNamespace() (string, error) {
 	ns, found := os.LookupEnv(podNamespaceEnvVar)
 	if !found {
 		return "", fmt.Errorf("%s envvar is not set", podNamespaceEnvVar)
@@ -364,7 +401,7 @@ func GetDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	}
 	// community, _ := operatorsv1.IsCommunity()
 	// if community {
-	// 	nn = append(nn, types.NamespacedName{Name: "search-v2-operator-controller-manager", Namespace: m.Namespace})
+	//  nn = append(nn, types.NamespacedName{Name: "search-v2-operator-controller-manager", Namespace: m.Namespace})
 	// }
 	return nn
 }
@@ -413,6 +450,12 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole bool) []
 	}
 	if m.Enabled(operatorsv1.Volsync) {
 		nn = append(nn, types.NamespacedName{Name: "volsync-addon-controller", Namespace: m.Namespace})
+	}
+	if m.Enabled(operatorsv1.MultiClusterObservability) {
+		nn = append(nn, types.NamespacedName{Name: "multicluster-observability-operator", Namespace: m.Namespace})
+	}
+	if m.Enabled(operatorsv1.ClusterPermission) {
+		nn = append(nn, types.NamespacedName{Name: "cluster-permission", Namespace: m.Namespace})
 	}
 	return nn
 }
@@ -501,6 +544,19 @@ func SetDefaultComponents(m *operatorsv1.MultiClusterHub) (bool, error) {
 		}
 	}
 	return updated, nil
+}
+
+// SetHostedDefaultComponents returns true if changes are made
+func SetHostedDefaultComponents(m *operatorsv1.MultiClusterHub) bool {
+	updated := false
+	components := operatorsv1.GetDefaultHostedComponents()
+	for _, c := range components {
+		if !m.ComponentPresent(c) {
+			m.Enable(c)
+			updated = true
+		}
+	}
+	return updated
 }
 
 // DeduplicateComponents removes duplicate componentconfigs by name, keeping the config of the last

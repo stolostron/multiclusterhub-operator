@@ -389,6 +389,7 @@ rules:
   verbs:
   - create
   - delete
+  - deletecollection
   - get
   - list
   - patch
@@ -432,6 +433,7 @@ rules:
   - operators.coreos.com
   resources:
   - clusterserviceversions
+  - operatorconditions
   - operatorgroups
   - subscriptions
   verbs:

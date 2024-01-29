@@ -43,17 +43,17 @@ Click "Create security group"
 - For "Description", use `External SSH and all internal traffic`
 - For "VPC", select `my-dc1-vpc`
 - Under Inbound Rules, click "Add rule"
-    - Type: SSH
-    - Source: 0.0.0.0/0
+  - Type: SSH
+  - Source: 0.0.0.0/0
 - Under Inbound Rules, click "Add rule"
-    - Type: All traffic
-    - Source: 10.0.0.0/16
+  - Type: All traffic
+  - Source: 10.0.0.0/16
 - Under Outbound Rules, click "Add rule"
-    - Type: All traffic
-    - Destination: 0.0.0.0/0
+  - Type: All traffic
+  - Destination: 0.0.0.0/0
 - Under Tags, click "Add new tag"
-    - Key: Name
-    - Value: my-dc1-sg
+  - Key: Name
+  - Value: my-dc1-sg
 
 ### Create ec2 endpoint in VPC
 
@@ -123,42 +123,42 @@ Go to
 Click "Launch instances"
 
 - Step 1: Choose an Amazon Machine Image (AMI)
-    - Search for "Red Hat"
-    - Under "Red Hat Enterprise Linux 8 (HVM), SSD Volume Type" ensure "64-bit (x86)" is selected
-    - Click "Select" for "Red Hat Enterprise Linux 8 (HVM), SSD Volume Type"
+  - Search for "Red Hat"
+  - Under "Red Hat Enterprise Linux 8 (HVM), SSD Volume Type" ensure "64-bit (x86)" is selected
+  - Click "Select" for "Red Hat Enterprise Linux 8 (HVM), SSD Volume Type"
 - Step 2: Choose an instance type
-    - Select "t3.medium"
-    - Click "Next: Configure Instance Details"
+  - Select "t3.medium"
+  - Click "Next: Configure Instance Details"
 - Step 3: Configure Instance Details
-    - For "Network", select your VPC
-    - For "Subnet", select your public subnet
-    - For "Auto-assign Public IP", select "Enable"
-    - Click "Next: Add Storage"
+  - For "Network", select your VPC
+  - For "Subnet", select your public subnet
+  - For "Auto-assign Public IP", select "Enable"
+  - Click "Next: Add Storage"
 - Step 4: Add Storage
-    - For the Root volume, change size to "100"
-    - Click "Next: Add Tags"
+  - For the Root volume, change size to "100"
+  - Click "Next: Add Tags"
 - Step 5: Add Tags
-    - Click "Add Tag"
-    - Set Key to "Name"
-    - Set Value to `my-dc1-jumpbox`
-    - Click "Next: Configure Security Group"
+  - Click "Add Tag"
+  - Set Key to "Name"
+  - Set Value to `my-dc1-jumpbox`
+  - Click "Next: Configure Security Group"
 - Step 6: Configure Security Group
-    - Select "Select an existing security group"
-    - Select the security group named `my-dc1-sg1`
-    - Click "Review and Launch"
+  - Select "Select an existing security group"
+  - Select the security group named `my-dc1-sg1`
+  - Click "Review and Launch"
 - Step 7: Review Instance Launch
-    - Click "Launch"
+  - Click "Launch"
 - Dialog box "Select an exiting key pair or create a new key pair"
-    - If you already have a key pair stored:
-        - Select the key pair name
-        - Check the box acknowledging you have access to the private key file
-        - Click "Launch Instance"
-    - If you do not have a key pair stored:
-        - Select "Create a new key pair"
-        - For "Key pair type", select RSA
-        - For "Key pair name", enter `my-dc1-vpc-keypair`
-        - Click "Download Key Pair" and save the `.pem` file
-        - Click "Launch Instance"
+  - If you already have a key pair stored:
+    - Select the key pair name
+    - Check the box acknowledging you have access to the private key file
+    - Click "Launch Instance"
+  - If you do not have a key pair stored:
+    - Select "Create a new key pair"
+    - For "Key pair type", select RSA
+    - For "Key pair name", enter `my-dc1-vpc-keypair`
+    - Click "Download Key Pair" and save the `.pem` file
+    - Click "Launch Instance"
 
 Click "View Instances"
 
@@ -168,7 +168,7 @@ Wait for it to be in the state "Running".
 
 ### SSH into jumpbox
 
-```
+```bash
 ssh -i private-key.pem ec2-user@1.2.3.4
 ```
 
@@ -176,27 +176,27 @@ ssh -i private-key.pem ec2-user@1.2.3.4
 
 - Edit `/etc/default/grub`
 
-    ```
+    ```bash
     sudo vi /etc/default/grub
     ```
-    
+
 - Add `ip6.disable=1` to the end of the `GRUB_CMDLINE_LINUX` entry.
 - Save the file and exit.
 - Generate the `grub.cfg` file.
 
-    ```
+    ```bash
     sudo grub2-mkconfig -o /boot/grub2/grub.cfg
     ```
 
 - Reboot the jumpbox.
 
-    ```
+    ```bash
     sudo reboot
     ```
 
 - Log back into the jump box.
 
-    ```
+    ```bash
     ssh -i private-key.pem ec2-user@1.2.3.4
     ```
 
@@ -204,13 +204,13 @@ ssh -i private-key.pem ec2-user@1.2.3.4
 
 Run
 
-```
+```bash
 ping -c 1 $HOSTNAME
 ```
 
 You should see that the response is coming from your 10.0.0.x IPv4 address, such as
 
-```
+```bash
 PING ip-10-0-1-161.ec2.internal (10.0.1.161) 56(84) bytes of data.
 64 bytes from ip-10-0-1-161.ec2.internal (10.0.1.161): icmp_seq=1 ttl=64 time=0.068 ms
 ```
@@ -219,13 +219,13 @@ If this doesn't work, verify that you enabled DNS hostname and resolution in you
 
 ### Install required utilities
 
-```
+```bash
 sudo yum -y install bind-utils jq podman zip
 ```
 
 ### Install oc command
 
-```
+```bash
 curl -L -o oc.tgz https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/openshift-client-linux.tar.gz
 tar xf oc.tgz
 sudo mv oc kubectl /usr/bin
@@ -234,7 +234,7 @@ rm oc.tgz README.md
 
 ### Install the opm command
 
-```
+```bash
 curl -L -o opm.tgz https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/opm-linux.tar.gz
 tar xf opm.tgz
 sudo mv opm /usr/bin
@@ -243,7 +243,7 @@ rm opm.tgz
 
 ### Install AWS CLI
 
-```
+```bash
 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
 unzip awscliv2.zip
 sudo ./aws/install
@@ -252,14 +252,14 @@ rm -rf aws awscliv2.zip
 
 ### Store your AWS credentials
 
-```
+```bash
 mkdir "$HOME/.aws"
 vi "$HOME/.aws/credentials"
 ```
 
 The credentials file should look like this:
 
-```
+```bash
 [default]
 aws_access_key_id = AKI...
 aws_secret_access_key = QjX...
@@ -274,7 +274,7 @@ Docs are at
 
 Run
 
-```
+```bash
 curl -L -o mirror.tgz https://developers.redhat.com/content-gateway/file/pub/openshift-v4/clients/mirror-registry/1.0/mirror-registry.tar.gz
 tar xf mirror.tgz
 sudo ./mirror-registry install -v --quayHostname $HOSTNAME | tee quay-install.log
@@ -283,13 +283,13 @@ sudo rm *.tar mirror-registry mirror.tgz
 
 ### Extract quay password from install log
 
-```
+```bash
 grep -oP "init, \K[^)]+" quay-install.log | tee quay_creds
 ```
 
 ### Add the quay mirror registry CA to the system trust store
 
-```
+```bash
 sudo cp /etc/quay-install/quay-rootCA/rootCA.pem /etc/pki/ca-trust/source/anchors/
 sudo update-ca-trust extract
 trust list | grep -C 2 "$HOSTNAME"
@@ -297,12 +297,12 @@ trust list | grep -C 2 "$HOSTNAME"
 
 You should see output similar to this:
 
-```
+```yaml
 pkcs11:id=%83%C4%E2%B6%EA%D2%C5%21%45%38%15%A9%3A%19%59%E8%0A%AD%04%93;type=cert
-    type: certificate
-    label: ip-10-0-1-161.ec2.internal
-    trust: anchor
-    category: authority
+  type: certificate
+  label: ip-10-0-1-161.ec2.internal
+  trust: anchor
+  category: authority
 ```
 
 ### Download your OpenShift installation pull secret
@@ -312,13 +312,14 @@ pkcs11:id=%83%C4%E2%B6%EA%D2%C5%21%45%38%15%A9%3A%19%59%E8%0A%AD%04%93;type=cert
 - Select “Copy pull secret”.
 - In your jumpbox, run
 
-    ```
+    ```bash
     vi auth.json
     ```
+
 - Paste your pull secret into vi, save the file and exit.
 - Make this file the default auth file, run
 
-    ```
+    ```bash
     export REGISTRY_AUTH_FILE=$HOME/auth.json
     echo export REGISTRY_AUTH_FILE=$REGISTRY_AUTH_FILE >> $HOME/.bash_profile
     ```
@@ -330,7 +331,7 @@ recreated if you need to log out and back in to the jumpbox.
 
 This also compacts the auth.json file back down to a single line json file which is needed for openshift-install later.
 
-```
+```bash
 podman login -u init -p $(cat quay_creds) $HOSTNAME:8443
 jq -c . auth.json > auth.json.tmp && mv auth.json.tmp auth.json
 ```
@@ -345,7 +346,7 @@ For this example, we'll use `4.9.23-x86_64`.
 
 Run:
 
-```
+```bash
 export OCP_TAG=4.9.23-x86_64
 export OCP_REPO=quay.io/openshift-release-dev/ocp-release
 export LOCAL_REPO=$HOSTNAME:8443/ocp4/openshift4
@@ -366,7 +367,7 @@ oc adm release mirror -a auth.json \
 
 Run
 
-```
+```bash
 export INDEX_IMAGE=redhat-operator-index:v4.9
 export INDEX_REPO=registry.redhat.io/redhat/$INDEX_IMAGE
 export LOCAL_INDEX_REPO=$HOSTNAME:8443/ocp4/$INDEX_IMAGE
@@ -393,7 +394,7 @@ You should see a directory with a name similar to `manifests-redhat-operator-ind
 
 Save a reference to this directory for later use:
 
-```
+```bash
 export MANIFESTS=$HOME/manifests-redhat-operator-index-1646254114
 echo export MANIFESTS=$MANIFESTS >> $HOME/.bash_profile
 ```
@@ -402,14 +403,14 @@ echo export MANIFESTS=$MANIFESTS >> $HOME/.bash_profile
 
 ### Extract the OCP installer
 
-```
+```bash
 oc adm release extract -a auth.json \
     --command=openshift-install $LOCAL_REPO/ocp-release:$OCP_TAG 
 ```
 
 ### Generate SSH key for cluster nodes
 
-```
+```bash
 ssh-keygen -t ed25519 -N '' -f .ssh/id_cluster
 eval "$(ssh-agent -s)"
 ssh-add .ssh/id_cluster
@@ -419,7 +420,7 @@ ssh-add .ssh/id_cluster
 
 Note: You may want to have a second terminal open on the jumpbox to be able to copy your auth.json file.
 
-```
+```bash
 export INSTALL="$HOME/ocp-install"
 echo export INSTALL="$INSTALL" >> $HOME/.bash_profile
 
@@ -437,19 +438,19 @@ mkdir -p "$INSTALL"
 
 ### Edit install-config.yaml
 
-```
+```bash
 vi $INSTALL/install-config.yaml
 ```
 
 The `credentialsMode` field should be set to `Passthrough`:
 
-```
+```yaml
 credentialsMode: Passthrough
 ```
 
 The `compute` stanza should be
 
-```
+```yaml
 compute:
 - architecture: amd64
   hyperthreading: Enabled
@@ -468,7 +469,7 @@ compute:
 
 The `controlPlane` stanza should be
 
-```
+```yaml
 controlPlane:
   architecture: amd64
   hyperthreading: Enabled
@@ -488,7 +489,7 @@ controlPlane:
 
 The `networking` stanza should be
 
-```
+```yaml
 networking:
   clusterNetwork:
   - cidr: 10.128.0.0/14
@@ -502,7 +503,7 @@ networking:
 
 The `platform` stanza should be similar to
 
-```
+```yaml
 platform:
   aws:
     region: us-east-1
@@ -518,7 +519,7 @@ hosted zone you created when configuring your VPC.
 
 The `publish` field should be
 
-```
+```yaml
 publish: Internal
 ```
 
@@ -529,7 +530,7 @@ Save your changes to the file.
 Copy the contents of the file `/etc/quay-install/quay-rootCA/rootCA.pem` into the
 `additionalTrustBundle` field of the install file.
 
-```
+```bash
 cat <<EOF >>$INSTALL/install-config.yaml
 additionalTrustBundle: |
 $(sed 's/^/  /' /etc/quay-install/quay-rootCA/rootCA.pem)
@@ -538,7 +539,7 @@ EOF
 
 ### Add your quay mirror registry as an image content source to the install files
 
-```
+```bash
 cat <<EOF >>$INSTALL/install-config.yaml
 imageContentSources:
   - mirrors:
@@ -556,7 +557,7 @@ EOF
 
 Your `$INSTALL/install-config.yaml` file should be similar to this one:
 
-```
+```yaml
 apiVersion: v1
 baseDomain: dev01.red-chesterfield.com
 credentialsMode: Mint
@@ -632,7 +633,7 @@ imageContentSources:
 The `install-config.yaml` file will be deleted during cluster creation. Create a backup
 to use if you need to reinstall the cluster or to verify how the cluster was created.
 
-```
+```bash
 cp "$INSTALL/install-config.yaml" "$HOME/install.yaml.bak"
 ```
 
@@ -640,20 +641,20 @@ cp "$INSTALL/install-config.yaml" "$HOME/install.yaml.bak"
 
 ### Set up an alias to run oc with the new cluster credentials
 
-```
+```bash
 alias oc="oc --kubeconfig=$INSTALL/auth/kubeconfig"
 echo alias oc=\"oc --kubeconfig=$INSTALL/auth/kubeconfig\" >> $HOME/.bash_profile
 ```
 
 ### Run the installer to create your cluster
 
-```
+```bash
 ./openshift-install create cluster --dir $INSTALL --log-level=debug
 ```
 
 Once you see this entry on the install logs:
 
-```
+```bash
 INFO Waiting up to 40m0s for the cluster at https://api.my-dc1.dev01.red-chesterfield.com:6443 to initialize...
 ```
 
@@ -669,7 +670,7 @@ In the installer output, once all the resources have been created and the
 installer is waiting for the kubernetes API to be available, you should see a
 line like this in the log:
 
-```
+```bash
 DEBUG bootstrap_ip = 10.0.1.203
 ```
 
@@ -679,29 +680,28 @@ name similar to `my-dc1-ab123-bootstrap`.
 Once the bootstrap node is running, you can ssh into the boostrap node from
 the jumpbox by running
 
-```
+```bash
 ssh -i .ssh/id_cluster core@10.0.1.203
 ```
 
 On the bootstrap node, you can watch the cluster creation logs by running
 
-```
+```bash
 journalctl -b -f -n all -u release-image.service -u bootkube.service
 ```
-
 
 ### (Optional) Monitor cluster initialization
 
 In the installer output, once the installer is waiting for bootstrapping to complete,
 you'll see a line like this in the output:
 
-```
+```bash
 INFO Waiting up to 30m0s for bootstrapping to complete...
 ```
 
 You can find the IP addresses of the master nodes by running:
 
-```
+```bash
 $ oc get nodes
 NAME                         STATUS   ROLES    AGE   VERSION
 ip-10-0-1-19.ec2.internal    Ready    worker   12m   v1.22.3+b93fd35
@@ -714,7 +714,7 @@ ip-10-0-1-67.ec2.internal    Ready    worker   11m   v1.22.3+b93fd35
 
 You can then log in to one of the master nodes and watch the initialization logs by running:
 
-```
+```bash
 ssh -i .ssh/id_cluster core@10.0.1.231
 journalctl -b -f -n all -u kubelet.service -u crio.service
 ```
@@ -724,7 +724,7 @@ journalctl -b -f -n all -u kubelet.service -u crio.service
 In the installer output, once the bootstrap node has been destroyed, you should see a
 line like this in the log:
 
-```
+```bash
 INFO Waiting up to 40m0s for the cluster at https://api.my-dc1.dev01.red-chesterfield.com:6443 to initialize...
 ```
 
@@ -743,14 +743,14 @@ Make a note of the load balancer's name. You'll need to select it from a list in
 
 Open another terminal to the jumpbox and run:
 
-```
+```bash
 oc project openshift-ingress-operator
 oc edit dnses.config/cluster
 ```
 
 In the editor, under `spec`, remove the `privateZone` stanza. It should look similar to this:
 
-```
+```yaml
 apiVersion: config.openshift.io/v1
 kind: DNS
 metadata:
@@ -776,11 +776,11 @@ Click "Create record"
 - For "Record name", enter `*.apps`
 - For "Record type", ensure `A - Routes traffic to an IPv4 address and some AWS resources` is selected..
 - For "Value", click the toggle to enable "Alias"
-    - For "Choose endpoint", select `Alias to Application and Classic Load Balancer`
-    - For "Choose region", select `US East (N. Virginia) [us-east-1]`
-    - For "Choose load balancer", select your internal load balancer. Note: Its name in
-      this list will be prefixed with `dualstack.`. For example:
-      `dualstack.internal-a41440f20f34e42c194bcbf23206a4a0-1042296570.us-east-1.elb.amazonaws.com`
+  - For "Choose endpoint", select `Alias to Application and Classic Load Balancer`
+  - For "Choose region", select `US East (N. Virginia) [us-east-1]`
+  - For "Choose load balancer", select your internal load balancer. Note: Its name in
+    this list will be prefixed with `dualstack.`. For example:
+    `dualstack.internal-a41440f20f34e42c194bcbf23206a4a0-1042296570.us-east-1.elb.amazonaws.com`
 
 Click "Create Record"
 
@@ -792,7 +792,7 @@ The install should complete successfully.
 
 ### Disable the default OperatorHub sources
 
-```
+```bash
 oc patch OperatorHub cluster --type json \
     -p '[{"op": "add", "path": "/spec/disableAllDefaultSources", "value": true}]'
 ```
@@ -806,14 +806,14 @@ to that directory should be stored in the `$MANIFESTS` environment variable.
 In this directory are two YAML files that need to be applied to your cluster to mirrored operator
 catalog. Run:
 
-```
+```bash
 oc apply -f $MANIFESTS/catalogSource.yaml
 oc apply -f $MANIFESTS/imageContentSourcePolicy.yaml
 ```
 
 Verify the resources were created sucessfully:
 
-```
+```bash
 $ oc -n openshift-marketplace get catalogsources
 NAME                    DISPLAY               TYPE   PUBLISHER   AGE
 redhat-operator-index                         grpc               17m
@@ -824,9 +824,9 @@ marketplace-operator-5777f8869b-b4ngz   1/1     Running            1 (121m ago) 
 redhat-operator-index-qvlnl             1/1     Running            0              19m
 ```
 
-The `redhat-operator-index-*` pod should be running. 
+The `redhat-operator-index-*` pod should be running.
 
-```
+```bash
 $ oc -n openshift-marketplace get packagemanifest
 NAME                          CATALOG   AGE
 multicluster-engine                     20m
@@ -835,14 +835,13 @@ advanced-cluster-management             20m
 
 You should see the operators that you pruned into the operator catalog when you mirrored it.
 
-  
 ## Configure the ACM Operator
 
 ### Inspect the ACM operator
 
 View the versions of ACM available to install:
 
-```
+```bash
 oc -n openshift-marketplace get packagemanifest advanced-cluster-management -o json > acm.json
 
 jq '.status.channels[].name' acm.json
@@ -850,21 +849,21 @@ jq '.status.channels[].name' acm.json
 
 You'll see the possible versions to install, such as:
 
-```
+```yaml
 "release-2.3"
 "release-2.4"
 ```
 
 Save the ACM version you plan on using:
 
-```
+```bash
 export ACM_CHANNEL=release-2.4
 echo export ACM_CHANNEL=$ACM_CHANNEL >> $HOME/.bash_profile
 ```
 
 ### Create the ACM subscription
 
-```
+```bash
 cat <<EOF >> acm-subscription.yaml
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
@@ -883,14 +882,13 @@ oc apply -f acm-subscription.yaml
 
 At this point, ACM is available to install.
 
-
 ## Install ACM
 
 ### Create the ACM namespace
 
 The default namespace is `open-cluster-management`. Run:
 
-```
+```bash
 export ACM_NAMESPACE=open-cluster-management
 echo export ACM_NAMESPACE=$ACM_NAMESPACE >> $HOME/.bash_profile
 
@@ -903,7 +901,7 @@ oc project $ACM_NAMESPACE
 This pull secret needs to have credentials for the mirror registry. We'll use the
 `auth.json` file we created earlier when we created the mirror registry.
 
-```
+```bash
 export ACM_PULL_SECRET=open-cluster-management-pull-secret
 echo export ACM_PULL_SECRET=$ACM_PULL_SECRET >> $HOME/.bash_profile
 
@@ -914,7 +912,7 @@ oc create secret generic -n $ACM_NAMESPACE $ACM_PULL_SECRET \
 
 ### Create an operator group
 
-```
+```bash
 cat <<EOF >> operatorgroup.yaml
 apiVersion: operators.coreos.com/v1
 kind: OperatorGroup
@@ -930,7 +928,7 @@ oc apply -f operatorgroup.yaml
 
 ### Create the MultiClusterHub custom resource
 
-```
+```bash
 cat <<EOF >> multiclusterhub.yaml
 apiVersion: operator.open-cluster-management.io/v1
 kind: MultiClusterHub
@@ -948,7 +946,7 @@ oc apply -f multiclusterhub.yaml
 
 Run:
 
-```
+```bash
 $ oc get -n $ACM_NAMESPACE mch -o=jsonpath='{.items[0].status.phase}' ; echo
 oc get -n open-cluster-management mch -o=jsonpath='{.items[0].status.phase}' ; echo
 Installing
@@ -956,19 +954,19 @@ Installing
 
 You can also run:
 
-```
+```bash
 watch -n 15 -g oc get --kubeconfig=/home/ec2-user/ocp-install/auth/kubeconfig \
     -n $ACM_NAMESPACE mch -o=jsonpath='{.items[0].status.phase}'
 ```
 
 This will check the status every 15 seconds and exit when the output changes from `Installing`.
 
-When the phase is `Running`, ACM installation will be complete. It may 10 minutes or more for the 
+When the phase is `Running`, ACM installation will be complete. It may 10 minutes or more for the
 MultiClusterHub resource to reach the Running phase.
 
-### Verify the route has been added:
+### Verify the route has been added
 
-```
+```bash
 $ oc get -n $ACM_NAMESPACE routes
 NAME                 HOST/PORT                                                   PATH   SERVICES             PORT    TERMINATION          WILDCARD
 multicloud-console   multicloud-console.apps.my-dc1.dev01.red-chesterfield.com          management-ingress   https   reencrypt/Redirect   None

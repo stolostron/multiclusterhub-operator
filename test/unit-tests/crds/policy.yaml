@@ -50,7 +50,7 @@ spec:
                 description: PolicyDependencies that apply to each template in this
                   Policy
                 items:
-                  description: Each PolicyDepenency defines an object reference which
+                  description: Each PolicyDependency defines an object reference which
                     must be in a certain compliance state before the policy should
                     be created.
                   oneOf:
@@ -108,7 +108,7 @@ spec:
                       description: Additional PolicyDependencies that only apply to
                         this template
                       items:
-                        description: Each PolicyDepenency defines an object reference
+                        description: Each PolicyDependency defines an object reference
                           which must be in a certain compliance state before the policy
                           should be created.
                         oneOf:

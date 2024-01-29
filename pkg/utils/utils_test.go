@@ -146,11 +146,11 @@ var _ = Describe("utility functions", func() {
 	Context("AvailabilityConfigIsValid function", func() {
 		It("returns true for a valid config", func() {
 			c := mchv1.HAHigh
-			Expect(AvailabilityConfigIsValid(c)).To(BeTrue())
+			Expect(mchv1.AvailabilityConfigIsValid(c)).To(BeTrue())
 		})
 		It("returns false for an invalid config", func() {
 			c := mchv1.AvailabilityType("invalid")
-			Expect(AvailabilityConfigIsValid(c)).To(BeFalse())
+			Expect(mchv1.AvailabilityConfigIsValid(c)).To(BeFalse())
 		})
 	})
 
@@ -216,9 +216,21 @@ var _ = Describe("utility functions", func() {
 			d := GetDeploymentsForStatus(&mch, true)
 			Expect(len(d)).To(Equal(1))
 		})
+		It("gets deployments for status with observability enabled", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable(mchv1.MultiClusterObservability)
+			d := GetDeploymentsForStatus(&mch, true)
+			Expect(len(d)).To(Equal(1))
+		})
 		It("gets deployments for status with volsync enabled", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(mchv1.Volsync)
+			d := GetDeploymentsForStatus(&mch, true)
+			Expect(len(d)).To(Equal(1))
+		})
+		It("gets deployments for status with cluster-permission enabled", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable(mchv1.ClusterPermission)
 			d := GetDeploymentsForStatus(&mch, true)
 			Expect(len(d)).To(Equal(1))
 		})

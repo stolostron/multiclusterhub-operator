@@ -103,6 +103,8 @@ spec:
                 fieldPath: metadata.name
           - name: OPERATOR_NAME
             value: klusterlet-addon-controller
+          - name: HUB_VERSION
+            value: {{ .Values.hubconfig.hubVersion }}
           - name: USE_SHA_MANIFEST
             value: "true"
           - name: DEFAULT_IMAGE_PULL_SECRET

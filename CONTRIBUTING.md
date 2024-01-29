@@ -1,16 +1,16 @@
 [comment]: # ( Copyright Contributors to the Open Cluster Management project )
 
-- [Contributing guidelines](#contributing-guidelines)
-    - [Contributions](#contributions)
-    - [Certificate of Origin](#certificate-of-origin)
-    - [DCO Sign Off](#dco-sign-off)
-    - [Issues and Pull Request Etiquette](#issues-and-pull-request-etiquette)
-    - [Contributing changes](#contributing-changes)
-    - [Development and Testing](#development-and-testing)
-        - [Installing MultiClusterHub Operator with local code changes](#installing-multiclusterhub-operator-with-local-code-changes)
-        - [Automated testing of local development code](#automated-testing-of-local-development-code)
-
 # Contributing guidelines
+
+- [Contributing guidelines](#contributing-guidelines)
+  - [Contributions](#contributions)
+  - [Certificate of Origin](#certificate-of-origin)
+  - [DCO Sign Off](#dco-sign-off)
+  - [Issues and Pull Request Etiquette](#issues-and-pull-request-etiquette)
+  - [Contributing Changes](#contributing-changes)
+  - [Development and Testing](#development-and-testing)
+    - [Installing MultiClusterHub Operator with local code changes](#installing-multiclusterhub-operator-with-local-code-changes)
+    - [Automated testing of local development code](#automated-testing-of-local-development-code)
 
 ## Contributions
 
@@ -27,7 +27,7 @@ contribution. See the [DCO](DCO) file for details.
 
 You must sign off your commit to state that you certify the [DCO](https://github.com/open-cluster-management-io/community/blob/main/DCO). To certify your commit for DCO, add a line like the following at the end of your commit message:
 
-```
+```bash
 Signed-off-by: John Smith <john@example.com>
 ```
 
