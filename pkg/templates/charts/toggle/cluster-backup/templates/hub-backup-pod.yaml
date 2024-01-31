@@ -256,19 +256,19 @@ spec:
           name: oadp-channel
         spec:
           remediationAction: inform
-          severity: medium
+          severity: high
           object-templates-raw: |
-            {{- range $ss := (lookup "operators.coreos.com/v1alpha1" "Subscription" "" "").items }}
-            {{- if eq $ss.spec.name "redhat-oadp-operator" }}
+            {{ `{{- range $ss := (lookup "operators.coreos.com/v1alpha1" "Subscription" "" "").items }}` }}
+            {{ `{{- if eq $ss.spec.name "redhat-oadp-operator" }}` }}
             - complianceType: musthave
               objectDefinition:
                 kind: Subscription
                 apiVersion: operators.coreos.com/v1alpha1
                 metadata:
-                  name: {{ $ss.metadata.name }}
-                  namespace: {{ $ss.metadata.namespace }}
+                  name: {{ `{{ $ss.metadata.name }}` }}
+                  namespace: {{ `{{ $ss.metadata.namespace }}` }}
                 spec:
                   channel: {{ .Values.global.channel }}
-            {{- end }}
-            {{- end }}                                                                      
+            {{ `{{- end }}` }}
+            {{ `{{- end }}` }}                                                                      
   remediationAction: inform
