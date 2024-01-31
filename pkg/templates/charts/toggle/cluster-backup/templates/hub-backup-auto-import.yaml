@@ -31,21 +31,21 @@ spec:
           remediationAction: enforce
           severity: medium
           object-templates-raw: |
-            {{- range $ns := (lookup "v1" "Namespace" "" "" "cluster.open-cluster-management.io/managedCluster, cluster.open-cluster-management.io/managedCluster notin (local-cluster)").items }}
-              {{- range $ss := (lookup "v1" "Secret" $ns.metadata.name "").items  }} 
-                {{- if or (eq $ss.metadata.name "auto-import-account") (eq $ss.metadata.name "auto-import-account-pair") }}    
+            {{ `{{- range $ns := (lookup "v1" "Namespace" "" "" "cluster.open-cluster-management.io/managedCluster, cluster.open-cluster-management.io/managedCluster notin (local-cluster)").items }}` }}
+              {{ `{{- range $ss := (lookup "v1" "Secret" $ns.metadata.name "").items }}` }} 
+                {{ `{{- if or (eq $ss.metadata.name "auto-import-account") (eq $ss.metadata.name "auto-import-account-pair") }}` }}    
             - complianceType: musthave
               objectDefinition:
                 kind: Secret
                 apiVersion: v1
                 metadata:
-                  name: {{ $ss.metadata.name }}
-                  namespace: {{ $ns.metadata.name }}
+                  name: {{ `{{ $ss.metadata.name }}` }}
+                  namespace: {{ `{{ $ns.metadata.name }}` }}
                   labels:
                     cluster.open-cluster-management.io/backup: msa
-                {{- end }}
-              {{- end }}
-            {{- end }}
+                {{ `{{- end }}` }}
+              {{ `{{- end }}` }}
+            {{ `{{- end }}` }}
     - objectDefinition:
         apiVersion: policy.open-cluster-management.io/v1
         kind: ConfigurationPolicy
@@ -55,16 +55,16 @@ spec:
           remediationAction: inform
           severity: medium
           object-templates-raw: |
-            {{- range $ns := (lookup "v1" "Namespace" "" "" "cluster.open-cluster-management.io/managedCluster, cluster.open-cluster-management.io/managedCluster notin (local-cluster)").items }}
-            {{- $ms := (lookup "authentication.open-cluster-management.io/v1alpha1" "ManagedServiceAccount" $ns.metadata.name "auto-import-account") }} 
-              {{- if $ms }}   
+            {{ `{{- range $ns := (lookup "v1" "Namespace" "" "" "cluster.open-cluster-management.io/managedCluster, cluster.open-cluster-management.io/managedCluster notin (local-cluster)").items }}` }}
+            {{ `{{- $ms := (lookup "authentication.open-cluster-management.io/v1alpha1" "ManagedServiceAccount" $ns.metadata.name "auto-import-account") }}` }} 
+              {{ `{{- if $ms }}` }}   
             - complianceType: musthave
               objectDefinition:
                 kind: Secret
                 apiVersion: v1
                 metadata:
                   name: "auto-import-account"
-                  namespace: {{ $ns.metadata.name }}
-              {{- end }}
-            {{- end }}
+                  namespace: {{ `{{ $ns.metadata.name }}` }}
+              {{ `{{- end }}` }}
+            {{ `{{- end }}` }}
 
