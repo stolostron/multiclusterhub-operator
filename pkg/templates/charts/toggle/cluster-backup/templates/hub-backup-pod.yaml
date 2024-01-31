@@ -248,5 +248,27 @@ spec:
                 status:
                   phase: Error                                                       
           remediationAction: inform
-          severity: high                                                                        
+          severity: high
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: oadp-channel
+        spec:
+          remediationAction: inform
+          severity: high
+          object-templates-raw: |
+            {{ `{{- range $ss := (lookup "operators.coreos.com/v1alpha1" "Subscription" "" "").items }}` }}
+            {{ `{{- if eq $ss.spec.name "redhat-oadp-operator" }}` }}
+            - complianceType: musthave
+              objectDefinition:
+                kind: Subscription
+                apiVersion: operators.coreos.com/v1alpha1
+                metadata:
+                  name: {{ `{{ $ss.metadata.name }}` }}
+                  namespace: {{ `{{ $ss.metadata.namespace }}` }}
+                spec:
+                  channel: {{ .Values.global.channel }}
+            {{ `{{- end }}` }}
+            {{ `{{- end }}` }}                                                                      
   remediationAction: inform
