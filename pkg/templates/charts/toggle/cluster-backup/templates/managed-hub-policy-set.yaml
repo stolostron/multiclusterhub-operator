@@ -10,3 +10,4 @@ spec:
   description: ACM Managed Hub backup and restore 
   policies:
     - backup-restore-enabled
+    - backup-restore-auto-import
