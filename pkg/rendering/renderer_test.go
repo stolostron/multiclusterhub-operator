@@ -265,9 +265,17 @@ func TestRenderCRDs(t *testing.T) {
 			crdDir: crdsDir,
 		},
 	}
+	mchNamespace := "default"
+	testMCH := &v1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "testmch",
+			Namespace: mchNamespace,
+		},
+		Spec: v1.MultiClusterHubSpec{},
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, errs := RenderCRDs(tt.crdDir)
+			got, errs := RenderCRDs(tt.crdDir, testMCH)
 			if errs != nil && len(errs) > 1 {
 				t.Errorf("RenderCRDs() got = %v, want %v", errs, nil)
 			}
@@ -287,7 +295,7 @@ func TestRenderCRDs(t *testing.T) {
 	}
 
 	os.Setenv("CRD_OVERRIDE", "pkg/doesnotexist")
-	_, errs := RenderCRDs(crdsDir)
+	_, errs := RenderCRDs(crdsDir, testMCH)
 	if errs == nil {
 		t.Fatalf("Should have received an error")
 	}
@@ -356,12 +364,3 @@ func TestOADPAnnotation(t *testing.T) {
 		t.Error(fmt.Sprintf("Cluster Backup missing OADP overrides for source namespace"))
 	}
 }
-
-// func testFailures(t *testing.T) {
-// os.Setenv("CRD_OVERRIDE", "pkg/doesnotexist")
-// _, errs := RenderCRDs(crdsDir)
-// if errs == nil {
-// 	t.Fatalf("Should have received an error")
-// }
-// os.Unsetenv("CRD_OVERRIDE")
-// }
