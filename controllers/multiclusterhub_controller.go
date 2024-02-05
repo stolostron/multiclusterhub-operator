@@ -590,16 +590,7 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 		err := r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
 		if err != nil {
 			log.Info(err.Error())
-			componentErrorStatuses[template.GetName()] = &operatorv1.StatusCondition{
-				Kind:               template.GetKind(),
-				Available:          false,
-				LastUpdateTime:     metav1.Now(),
-				LastTransitionTime: metav1.Now(),
-				Type:               "Error",
-				Status:             "Unknown",
-				Reason:             "Template failed to apply",
-				Message:            string(err.Error()),
-			}
+			componentErrorStatuses[template.GetName()] = TemplateApplyFailureStatus(template.GetKind(), err.Error())
 			return ctrl.Result{}, pkgerrors.Wrapf(err, "error applying object Name: %s Kind: %s", template.GetName(), template.GetKind())
 		}
 	}

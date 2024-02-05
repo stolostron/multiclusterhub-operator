@@ -230,6 +230,7 @@ const (
 	HubUpdating        HubPhaseType = "Updating"
 	HubUninstalling    HubPhaseType = "Uninstalling"
 	HubUpdatingBlocked HubPhaseType = "UpdatingBlocked"
+	HubComponentError  HubPhaseType = "ComponentError"
 )
 
 // MultiClusterHubStatus defines the observed state of MultiClusterHub

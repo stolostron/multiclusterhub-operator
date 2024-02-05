@@ -122,6 +122,19 @@ var wrongVersionStatus = operatorsv1.StatusCondition{
 	Available:          false,
 }
 
+func TemplateApplyFailureStatus(kind string, errorMessage string) *operatorsv1.StatusCondition {
+	return &operatorsv1.StatusCondition{
+		Kind:               kind,
+		Available:          false,
+		LastUpdateTime:     metav1.Now(),
+		LastTransitionTime: metav1.Now(),
+		Type:               "Error",
+		Status:             "Unknown",
+		Reason:             "Template failed to apply",
+		Message:            errorMessage,
+	}
+}
+
 // ComponentsAreRunning ...
 func (r *MultiClusterHubReconciler) ComponentsAreRunning(m *operatorsv1.MultiClusterHub, ocpConsole bool) bool {
 	trackedNamespaces := utils.TrackedNamespaces(m)
@@ -225,9 +238,12 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 
 	// Set overall phase
 	isHubMarkedToBeDeleted := hub.GetDeletionTimestamp() != nil
+	hasErroringComponents := len(componentErrorStatuses) > 0
 	if isHubMarkedToBeDeleted {
 		// Hub cleaning up
 		status.Phase = operatorsv1.HubUninstalling
+	} else if hasErroringComponents {
+		status.Phase = operatorsv1.HubComponentError
 	} else {
 		status.Phase = aggregatePhase(status)
 	}
