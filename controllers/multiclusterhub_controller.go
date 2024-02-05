@@ -28,6 +28,7 @@ import (
 
 	"github.com/go-co-op/gocron"
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/deploying"
 	"github.com/stolostron/multiclusterhub-operator/pkg/imageoverrides"
@@ -128,6 +129,8 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	r.Log = log.Log.WithName("reconcile")
 	r.Log.Info("Reconciling MultiClusterHub")
 
+	componentErrorStatuses := map[string]*operatorv1.StatusCondition{}
+
 	// Initalize sceduler instance for operator resync cronjob.
 	if scheduler == nil {
 		r.Log.Info("Setting up scheduler for operator resync")
@@ -181,7 +184,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	originalStatus := multiClusterHub.Status.DeepCopy()
 	defer func() {
-		statusQueue, statusError := r.syncHubStatus(multiClusterHub, originalStatus, allDeploys, allCRs, ocpConsole)
+		statusQueue, statusError := r.syncHubStatus(multiClusterHub, originalStatus, allDeploys, allCRs, componentErrorStatuses, ocpConsole)
 		if statusError != nil {
 			r.Log.Error(retError, "Error updating status")
 		}
@@ -312,7 +315,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	// Deploy appsub operator component
 	if multiClusterHub.Enabled(operatorv1.Appsub) {
-		result, err = r.ensureComponent(ctx, multiClusterHub, operatorv1.Appsub, r.CacheSpec.ImageOverrides)
+		result, err = r.ensureComponent(ctx, multiClusterHub, operatorv1.Appsub, r.CacheSpec.ImageOverrides, componentErrorStatuses)
 	} else {
 		result, err = r.ensureNoComponent(ctx, multiClusterHub, operatorv1.Appsub, r.CacheSpec.ImageOverrides)
 	}
@@ -410,7 +413,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	// Install the rest of the subscriptions in no particular order
 	for _, c := range operatorv1.MCHComponents {
-		result, err = r.ensureComponentOrNoComponent(ctx, multiClusterHub, c, r.CacheSpec.ImageOverrides, ocpConsole)
+		result, err = r.ensureComponentOrNoComponent(ctx, multiClusterHub, c, r.CacheSpec.ImageOverrides, ocpConsole, componentErrorStatuses)
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
@@ -567,7 +570,7 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) (controll
 		Build(r)
 }
 
-func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operatorv1.MultiClusterHub, template *unstructured.Unstructured) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operatorv1.MultiClusterHub, template *unstructured.Unstructured, componentErrorStatuses map[string]*operatorsv1.StatusCondition) (ctrl.Result, error) {
 	log := log.Log.WithName("reconcile")
 	// Set owner reference.
 	if (template.GetKind() == "ClusterRole") || (template.GetKind() == "ClusterRoleBinding") || (template.GetKind() == "ServiceMonitor") || (template.GetKind() == "CustomResourceDefinition") {
@@ -587,6 +590,16 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 		err := r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
 		if err != nil {
 			log.Info(err.Error())
+			componentErrorStatuses[template.GetName()] = &operatorv1.StatusCondition{
+				Kind:               template.GetKind(),
+				Available:          false,
+				LastUpdateTime:     metav1.Now(),
+				LastTransitionTime: metav1.Now(),
+				Type:               "Error",
+				Status:             "Unknown",
+				Reason:             "Template failed to apply",
+				Message:            string(err.Error()),
+			}
 			return ctrl.Result{}, pkgerrors.Wrapf(err, "error applying object Name: %s Kind: %s", template.GetName(), template.GetKind())
 		}
 	}
@@ -640,7 +653,7 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(ctx context.Context, comp
 }
 
 func (r *MultiClusterHubReconciler) ensureComponentOrNoComponent(ctx context.Context, m *operatorv1.MultiClusterHub,
-	component string, imageOverrides map[string]string, ocpConsole bool) (ctrl.Result, error) {
+	component string, imageOverrides map[string]string, ocpConsole bool, componentErrorStatuses map[string]*operatorv1.StatusCondition) (ctrl.Result, error) {
 	var result ctrl.Result
 	var err error
 
@@ -669,7 +682,7 @@ func (r *MultiClusterHubReconciler) ensureComponentOrNoComponent(ctx context.Con
 			return r.ensureNoComponent(ctx, m, component, imageOverrides)
 		}
 
-		return r.ensureComponent(ctx, m, component, imageOverrides)
+		return r.ensureComponent(ctx, m, component, imageOverrides, componentErrorStatuses)
 	}
 }
 
@@ -692,7 +705,7 @@ func (r *MultiClusterHubReconciler) ensureNamespaceAndPullSecret(m *operatorv1.M
 }
 
 func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *operatorv1.MultiClusterHub, component string,
-	images map[string]string) (ctrl.Result, error) {
+	images map[string]string, componentErrorStatuses map[string]*operatorv1.StatusCondition) (ctrl.Result, error) {
 
 	/*
 		If the component is detected to be MCH, we can simply return successfully. MCH is only listed in the components
@@ -722,7 +735,7 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 		}
 		annotations[utils.AnnotationReleaseVersion] = version.Version
 		template.SetAnnotations(annotations)
-		result, err := r.applyTemplate(ctx, m, template)
+		result, err := r.applyTemplate(ctx, m, template, componentErrorStatuses)
 		if err != nil {
 			return result, err
 		}

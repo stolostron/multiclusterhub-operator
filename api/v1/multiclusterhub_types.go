@@ -297,6 +297,8 @@ const (
 
 	// Bocked means there is something preventing an update from occurring
 	Blocked HubConditionType = "Blocked"
+
+	Error HubConditionType = "Error"
 )
 
 // StatusCondition contains condition information.

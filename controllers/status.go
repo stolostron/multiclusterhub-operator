@@ -136,9 +136,10 @@ func (r *MultiClusterHubReconciler) ComponentsAreRunning(m *operatorsv1.MultiClu
 // syncHubStatus checks if the status is up-to-date and sync it if necessary
 func (r *MultiClusterHubReconciler) syncHubStatus(m *operatorsv1.MultiClusterHub,
 	original *operatorsv1.MultiClusterHubStatus, allDeps []*appsv1.Deployment,
-	allCRs map[string]*unstructured.Unstructured, ocpConsole bool) (reconcile.Result, error) {
+	allCRs map[string]*unstructured.Unstructured, componentErrorStatuses map[string]*operatorsv1.StatusCondition,
+	ocpConsole bool) (reconcile.Result, error) {
 
-	newStatus := calculateStatus(m, allDeps, allCRs, ocpConsole)
+	newStatus := calculateStatus(m, allDeps, allCRs, componentErrorStatuses, ocpConsole)
 	if reflect.DeepEqual(m.Status, original) {
 		r.Log.Info("Status hasn't changed")
 		return reconcile.Result{}, nil
@@ -166,11 +167,16 @@ func (r *MultiClusterHubReconciler) syncHubStatus(m *operatorsv1.MultiClusterHub
 }
 
 func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deployment,
-	allCRs map[string]*unstructured.Unstructured, ocpConsole bool) operatorsv1.MultiClusterHubStatus {
+	allCRs map[string]*unstructured.Unstructured, componentErrorStatuses map[string]*operatorsv1.StatusCondition,
+	ocpConsole bool) operatorsv1.MultiClusterHubStatus {
 
 	components := map[string]operatorsv1.StatusCondition{}
 	if paused := utils.IsPaused(hub); !paused {
 		components = getComponentStatuses(hub, allDeps, allCRs, ocpConsole)
+	}
+
+	for name := range componentErrorStatuses {
+		components[name] = *componentErrorStatuses[name]
 	}
 
 	status := operatorsv1.MultiClusterHubStatus{
@@ -599,7 +605,7 @@ func NewHubCondition(condType operatorsv1.HubConditionType, status metav1.Condit
 // SetHubCondition sets the status condition. It either overwrites the existing one or creates a new one.
 func SetHubCondition(status *operatorsv1.MultiClusterHubStatus, condition operatorsv1.HubCondition) {
 	currentCond := GetHubCondition(*status, condition.Type)
-	if currentCond != nil && currentCond.Status == condition.Status && currentCond.Reason == condition.Reason {
+	if currentCond != nil && currentCond.Type != operatorsv1.Error && currentCond.Status == condition.Status && currentCond.Reason == condition.Reason {
 		return
 	}
 	// Do not update lastTransitionTime if the status of the condition doesn't change.
