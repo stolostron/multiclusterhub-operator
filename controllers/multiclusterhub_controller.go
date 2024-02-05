@@ -28,7 +28,6 @@ import (
 
 	"github.com/go-co-op/gocron"
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/deploying"
 	"github.com/stolostron/multiclusterhub-operator/pkg/imageoverrides"
@@ -570,7 +569,7 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) (controll
 		Build(r)
 }
 
-func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operatorv1.MultiClusterHub, template *unstructured.Unstructured, componentErrorStatuses map[string]*operatorsv1.StatusCondition) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operatorv1.MultiClusterHub, template *unstructured.Unstructured, componentErrorStatuses map[string]*operatorv1.StatusCondition) (ctrl.Result, error) {
 	log := log.Log.WithName("reconcile")
 	// Set owner reference.
 	if (template.GetKind() == "ClusterRole") || (template.GetKind() == "ClusterRoleBinding") || (template.GetKind() == "ServiceMonitor") || (template.GetKind() == "CustomResourceDefinition") {
