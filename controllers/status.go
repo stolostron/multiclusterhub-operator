@@ -621,7 +621,7 @@ func NewHubCondition(condType operatorsv1.HubConditionType, status metav1.Condit
 // SetHubCondition sets the status condition. It either overwrites the existing one or creates a new one.
 func SetHubCondition(status *operatorsv1.MultiClusterHubStatus, condition operatorsv1.HubCondition) {
 	currentCond := GetHubCondition(*status, condition.Type)
-	if currentCond != nil && currentCond.Type != operatorsv1.Error && currentCond.Status == condition.Status && currentCond.Reason == condition.Reason {
+	if currentCond != nil && currentCond.Status == condition.Status && currentCond.Reason == condition.Reason {
 		return
 	}
 	// Do not update lastTransitionTime if the status of the condition doesn't change.
