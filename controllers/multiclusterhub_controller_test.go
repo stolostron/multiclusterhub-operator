@@ -727,7 +727,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 			By("Applying prereqs")
 			ApplyPrereqs(k8sClient)
 			ctx := context.Background()
-
+			componentErrorStatuses := map[string]*operatorv1.StatusCondition{}
 			By("Ensuring Insights")
 			mch := resources.SpecMCH()
 			testImages := map[string]string{}
@@ -735,7 +735,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 				testImages[v] = "quay.io/test/test:Test"
 			}
 
-			result, err := reconciler.ensureComponent(ctx, mch, operatorv1.Insights, testImages)
+			result, err := reconciler.ensureComponent(ctx, mch, operatorv1.Insights, testImages, componentErrorStatuses)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
@@ -749,7 +749,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 			_, err = reconciler.ensureNamespace(mch, ns)
 			Expect(err).To(BeNil())
 
-			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.ClusterBackup, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.ClusterBackup, testImages, componentErrorStatuses)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
@@ -759,7 +759,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(err).To(BeNil())
 
 			By("Ensuring Search-v2")
-			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.Search, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.Search, testImages, componentErrorStatuses)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
@@ -770,7 +770,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 			}, timeout, interval).Should(BeTrue())
 
 			By("Ensuring CLC")
-			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.ClusterLifecycle, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.ClusterLifecycle, testImages, componentErrorStatuses)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
@@ -780,7 +780,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(err).To(BeNil())
 
 			By("Ensuring App-Lifecycle")
-			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.Appsub, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.Appsub, testImages, componentErrorStatuses)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
@@ -790,7 +790,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(err).To(BeNil())
 
 			By("Ensuring GRC")
-			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.GRC, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.GRC, testImages, componentErrorStatuses)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
@@ -800,7 +800,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(err).To(BeNil())
 
 			By("Ensuring Console")
-			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.Console, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.Console, testImages, componentErrorStatuses)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
@@ -810,7 +810,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(err).To(BeNil())
 
 			By("Ensuring Volsync")
-			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.Volsync, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.Volsync, testImages, componentErrorStatuses)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
@@ -820,7 +820,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(err).To(BeNil())
 
 			By("Ensuring MultiClusterObservability")
-			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.MultiClusterObservability, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.MultiClusterObservability, testImages, componentErrorStatuses)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
@@ -830,7 +830,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(err).To(BeNil())
 
 			By("Ensuring ClusterPermission")
-			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.ClusterPermission, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.ClusterPermission, testImages, componentErrorStatuses)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
@@ -840,7 +840,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(err).To(BeNil())
 
 			By("Ensuring SubmarinerAddon")
-			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.SubmarinerAddon, testImages)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.SubmarinerAddon, testImages, componentErrorStatuses)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
@@ -879,6 +879,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 			By("Applying prereqs")
 			ApplyPrereqs(k8sClient)
 			ctx := context.Background()
+			componentErrorStatuses := map[string]*operatorv1.StatusCondition{}
 
 			By("Ensuring Insights")
 			mch := resources.SpecMCH()
@@ -887,7 +888,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 				testImages[v] = "quay.io/test/test:Test"
 			}
 
-			result, err := reconciler.ensureComponent(ctx, mch, operatorv1.Appsub, testImages)
+			result, err := reconciler.ensureComponent(ctx, mch, operatorv1.Appsub, testImages, componentErrorStatuses)
 			Expect(result).To(Equal(ctrl.Result{RequeueAfter: 20000000000}))
 			Expect(err).To(BeNil())
 
