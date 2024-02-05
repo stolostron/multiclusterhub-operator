@@ -1117,7 +1117,7 @@ func (r *MultiClusterHubReconciler) installCRDs(reqLogger logr.Logger, m *operat
 		return CRDRenderReason, err
 	}
 
-	crds, errs := renderer.RenderCRDs(crdDir)
+	crds, errs := renderer.RenderCRDs(crdDir, m)
 	if len(errs) > 0 {
 		message := mergeErrors(errs)
 		err := fmt.Errorf("failed to render CRD templates: %s", message)
