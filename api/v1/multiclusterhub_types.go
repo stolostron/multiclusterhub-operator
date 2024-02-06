@@ -230,6 +230,7 @@ const (
 	HubUpdating        HubPhaseType = "Updating"
 	HubUninstalling    HubPhaseType = "Uninstalling"
 	HubUpdatingBlocked HubPhaseType = "UpdatingBlocked"
+	HubError           HubPhaseType = "Error"
 )
 
 // MultiClusterHubStatus defines the observed state of MultiClusterHub
@@ -297,6 +298,9 @@ const (
 
 	// Bocked means there is something preventing an update from occurring
 	Blocked HubConditionType = "Blocked"
+
+	// ComponentFailure means a deployment failed during an Apply
+	ComponentFailure HubConditionType = "ComponentFailure"
 )
 
 // StatusCondition contains condition information.

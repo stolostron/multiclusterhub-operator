@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -70,6 +71,8 @@ const (
 	// RequirementsNotMetReason is when there is something missing or misconfigured
 	// that is preventing progress
 	RequirementsNotMetReason = "RequirementsNotMet"
+
+	FailedApplyingComponent = "FailedApplyingComponent"
 )
 
 func newComponentList(m *operatorsv1.MultiClusterHub, ocpConsole bool) map[string]operatorsv1.StatusCondition {
@@ -219,9 +222,12 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 
 	// Set overall phase
 	isHubMarkedToBeDeleted := hub.GetDeletionTimestamp() != nil
+	hasComponentFailure := HubConditionPresentWithSubstring(status, string(operatorsv1.ComponentFailure))
 	if isHubMarkedToBeDeleted {
 		// Hub cleaning up
 		status.Phase = operatorsv1.HubUninstalling
+	} else if hasComponentFailure {
+		status.Phase = operatorsv1.HubError
 	} else {
 		status.Phase = aggregatePhase(status)
 	}
@@ -649,10 +655,31 @@ func filterOutCondition(conditions []operatorsv1.HubCondition, condType operator
 	return newConditions
 }
 
+func filterOutConditionWithSubstring(conditions []operatorsv1.HubCondition, substring string) []operatorsv1.HubCondition {
+	var newConditions []operatorsv1.HubCondition
+	for _, c := range conditions {
+		if strings.Contains(string(c.Type), substring) {
+			continue
+		}
+		newConditions = append(newConditions, c)
+	}
+	return newConditions
+}
+
 // IsHubConditionPresentAndEqual indicates if the condition is present and equal to the given status.
 func HubConditionPresent(status operatorsv1.MultiClusterHubStatus, conditionType operatorsv1.HubConditionType) bool {
 	for _, condition := range status.HubConditions {
 		if condition.Type == conditionType {
+			return true
+		}
+	}
+	return false
+}
+
+// Variant of `HubConditionPresent()` that checks for substring instead of exact match
+func HubConditionPresentWithSubstring(status operatorsv1.MultiClusterHubStatus, substring string) bool {
+	for _, condition := range status.HubConditions {
+		if strings.Contains(string(condition.Type), substring) {
 			return true
 		}
 	}

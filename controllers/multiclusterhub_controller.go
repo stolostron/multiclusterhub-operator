@@ -150,6 +150,8 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
+	multiClusterHub.Status.HubConditions = filterOutConditionWithSubstring(multiClusterHub.Status.HubConditions, string(operatorv1.ComponentFailure))
+
 	if multiClusterHub.IsInHostedMode() {
 		return r.HostedReconcile(ctx, multiClusterHub)
 	}
@@ -587,7 +589,9 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 		err := r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
 		if err != nil {
 			log.Info(err.Error())
-			return ctrl.Result{}, pkgerrors.Wrapf(err, "error applying object Name: %s Kind: %s", template.GetName(), template.GetKind())
+			wrappedError := pkgerrors.Wrapf(err, "error applying object Name: %s Kind: %s", template.GetName(), template.GetKind())
+			SetHubCondition(&m.Status, *NewHubCondition(operatorv1.ComponentFailure+": "+operatorv1.HubConditionType(template.GetName())+"(Kind:)"+operatorv1.HubConditionType(template.GetKind()), metav1.ConditionTrue, FailedApplyingComponent, wrappedError.Error()))
+			return ctrl.Result{}, wrappedError
 		}
 	}
 	return ctrl.Result{}, nil
