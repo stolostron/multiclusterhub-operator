@@ -648,7 +648,7 @@ func hubPruning(status operatorsv1.MultiClusterHubStatus) bool {
 func filterOutCondition(conditions []operatorsv1.HubCondition, condType operatorsv1.HubConditionType) []operatorsv1.HubCondition {
 	var newConditions []operatorsv1.HubCondition
 	for _, c := range conditions {
-		if c.Type == condType && condType != operatorsv1.ComponentFailure {
+		if c.Type == condType {
 			continue
 		}
 		newConditions = append(newConditions, c)
