@@ -183,7 +183,6 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 	}
 
 	// Set current version
-	// TODO: I think this will be confusing now that we're reporting errors
 	successful := allComponentsSuccessful(components)
 	if successful {
 		status.CurrentVersion = version.Version
@@ -196,7 +195,6 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 	}
 
 	// Update hub conditions
-	// TODO: Components with template apply errors will still report "successful". This isn't ideal
 	if successful {
 		// don't label as complete until component pruning succeeds
 		if !hubPruning(status) && !utils.IsPaused(hub) {

@@ -225,7 +225,6 @@ func TestGetHubCondition(t *testing.T) {
 	}
 }
 
-// TODO: finish these
 func TestHubConditionPresent(t *testing.T) {
 	testStatusExact := operatorsv1.MultiClusterHubStatus{
 		HubConditions: []operatorsv1.HubCondition{
