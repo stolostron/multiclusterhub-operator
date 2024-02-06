@@ -225,6 +225,76 @@ func TestGetHubCondition(t *testing.T) {
 	}
 }
 
+// TODO: finish these
+func TestHubConditionPresent(t *testing.T) {
+	testStatusExact := operatorsv1.MultiClusterHubStatus{
+		HubConditions: []operatorsv1.HubCondition{
+			{
+				Type: operatorsv1.Complete,
+			},
+		},
+	}
+
+	testStatusSubstring := operatorsv1.MultiClusterHubStatus{
+		HubConditions: []operatorsv1.HubCondition{
+			{
+				Type: operatorsv1.ComponentFailure + operatorsv1.HubConditionType(": ") + operatorsv1.HubConditionType("test-component"),
+			},
+		},
+	}
+
+	exactTests := []struct {
+		name     string
+		condType operatorsv1.HubConditionType
+		want     bool
+	}{
+		{
+			name:     "exact type present",
+			condType: operatorsv1.Complete,
+			want:     true,
+		},
+		{
+			name:     "exact type not present",
+			condType: operatorsv1.Blocked,
+			want:     false,
+		},
+	}
+
+	substringTests := []struct {
+		name      string
+		substring string
+		want      bool
+	}{
+		{
+			name:      "substring present",
+			substring: "test-component",
+			want:      true,
+		},
+		{
+			name:      "substring not present",
+			substring: "failure-component",
+			want:      false,
+		},
+	}
+	for _, tt := range exactTests {
+		t.Run(tt.name, func(t *testing.T) {
+			exists := HubConditionPresent(testStatusExact, tt.condType)
+			if exists != tt.want {
+				t.Errorf("%s: expected condition to exist: %t, got: %t", tt.name, tt.want, exists)
+			}
+		})
+	}
+
+	for _, tt := range substringTests {
+		t.Run(tt.name, func(t *testing.T) {
+			exists := HubConditionPresentWithSubstring(testStatusSubstring, tt.substring)
+			if exists != tt.want {
+				t.Errorf("%s: expected condition to exist: %t, got: %t", tt.name, tt.want, exists)
+			}
+		})
+	}
+}
+
 func TestRemoveHubCondition(t *testing.T) {
 	tests := []struct {
 		name     string
