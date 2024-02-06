@@ -225,6 +225,77 @@ func TestGetHubCondition(t *testing.T) {
 	}
 }
 
+func TestFilterHubConditions(t *testing.T) {
+	testStatusExact := operatorsv1.MultiClusterHubStatus{
+		HubConditions: []operatorsv1.HubCondition{
+			{
+				Type: operatorsv1.Complete,
+			},
+		},
+	}
+
+	testStatusSubstring := operatorsv1.MultiClusterHubStatus{
+		HubConditions: []operatorsv1.HubCondition{
+			{
+				Type: operatorsv1.ComponentFailure + operatorsv1.HubConditionType(": ") + operatorsv1.HubConditionType("test-component"),
+			},
+		},
+	}
+
+	exactTests := []struct {
+		name     string
+		condType operatorsv1.HubConditionType
+		want     bool
+	}{
+		{
+			name:     "exact type filtered",
+			condType: operatorsv1.Complete,
+			want:     true,
+		},
+		{
+			name:     "exact type not filtered",
+			condType: operatorsv1.Blocked,
+			want:     false,
+		},
+	}
+
+	substringTests := []struct {
+		name      string
+		substring string
+		want      bool
+	}{
+		{
+			name:      "substring filtered",
+			substring: string(operatorsv1.ComponentFailure),
+			want:      true,
+		},
+		{
+			name:      "substring filtered",
+			substring: string(operatorsv1.Complete),
+			want:      false,
+		},
+	}
+
+	for _, tt := range exactTests {
+		t.Run(tt.name, func(t *testing.T) {
+			conditions := filterOutCondition(testStatusExact.HubConditions, tt.condType)
+			empty := len(conditions) == 0
+			if empty != tt.want {
+				t.Errorf("%s: expected condition to get filtered out: %t, got: %t", tt.name, tt.want, empty)
+			}
+		})
+	}
+
+	for _, tt := range substringTests {
+		t.Run(tt.name, func(t *testing.T) {
+			conditions := filterOutConditionWithSubstring(testStatusSubstring.HubConditions, tt.substring)
+			empty := len(conditions) == 0
+			if empty != tt.want {
+				t.Errorf("%s: expected condition to get filtered out: %t, got: %t", tt.name, tt.want, empty)
+			}
+		})
+	}
+}
 func TestHubConditionPresent(t *testing.T) {
 	testStatusExact := operatorsv1.MultiClusterHubStatus{
 		HubConditions: []operatorsv1.HubCondition{

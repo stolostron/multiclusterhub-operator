@@ -150,6 +150,8 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
+	filterOutConditionWithSubstring(multiClusterHub.Status.HubConditions, string(operatorv1.ComponentFailure))
+
 	if multiClusterHub.IsInHostedMode() {
 		return r.HostedReconcile(ctx, multiClusterHub)
 	}

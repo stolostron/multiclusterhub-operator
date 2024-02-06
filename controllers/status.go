@@ -655,6 +655,17 @@ func filterOutCondition(conditions []operatorsv1.HubCondition, condType operator
 	return newConditions
 }
 
+func filterOutConditionWithSubstring(conditions []operatorsv1.HubCondition, substring string) []operatorsv1.HubCondition {
+	var newConditions []operatorsv1.HubCondition
+	for _, c := range conditions {
+		if strings.Contains(string(c.Type), substring) {
+			continue
+		}
+		newConditions = append(newConditions, c)
+	}
+	return newConditions
+}
+
 // IsHubConditionPresentAndEqual indicates if the condition is present and equal to the given status.
 func HubConditionPresent(status operatorsv1.MultiClusterHubStatus, conditionType operatorsv1.HubConditionType) bool {
 	for _, condition := range status.HubConditions {
