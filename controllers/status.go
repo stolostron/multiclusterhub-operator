@@ -70,6 +70,8 @@ const (
 	// RequirementsNotMetReason is when there is something missing or misconfigured
 	// that is preventing progress
 	RequirementsNotMetReason = "RequirementsNotMet"
+
+	FailedApplyingComponent = "FailedApplyingComponent"
 )
 
 func newComponentList(m *operatorsv1.MultiClusterHub, ocpConsole bool) map[string]operatorsv1.StatusCondition {
@@ -180,6 +182,7 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 	}
 
 	// Set current version
+	// TODO: I think this will be confusing now that we're reporting errors
 	successful := allComponentsSuccessful(components)
 	if successful {
 		status.CurrentVersion = version.Version
@@ -192,6 +195,7 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 	}
 
 	// Update hub conditions
+	// TODO: Components with template apply errors will still report "successful". This isn't ideal
 	if successful {
 		// don't label as complete until component pruning succeeds
 		if !hubPruning(status) && !utils.IsPaused(hub) {
@@ -219,9 +223,12 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 
 	// Set overall phase
 	isHubMarkedToBeDeleted := hub.GetDeletionTimestamp() != nil
+	hasComponentFailure := HubConditionPresent(status, operatorsv1.ComponentFailure)
 	if isHubMarkedToBeDeleted {
 		// Hub cleaning up
 		status.Phase = operatorsv1.HubUninstalling
+	} else if hasComponentFailure {
+		status.Phase = operatorsv1.HubError
 	} else {
 		status.Phase = aggregatePhase(status)
 	}
@@ -641,7 +648,7 @@ func hubPruning(status operatorsv1.MultiClusterHubStatus) bool {
 func filterOutCondition(conditions []operatorsv1.HubCondition, condType operatorsv1.HubConditionType) []operatorsv1.HubCondition {
 	var newConditions []operatorsv1.HubCondition
 	for _, c := range conditions {
-		if c.Type == condType {
+		if c.Type == condType && condType != operatorsv1.ComponentFailure {
 			continue
 		}
 		newConditions = append(newConditions, c)

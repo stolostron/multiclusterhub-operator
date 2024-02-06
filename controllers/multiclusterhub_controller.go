@@ -587,7 +587,9 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 		err := r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
 		if err != nil {
 			log.Info(err.Error())
-			return ctrl.Result{}, pkgerrors.Wrapf(err, "error applying object Name: %s Kind: %s", template.GetName(), template.GetKind())
+			wrappedError := pkgerrors.Wrapf(err, "error applying object Name: %s Kind: %s", template.GetName(), template.GetKind())
+			SetHubCondition(&m.Status, *NewHubCondition(operatorv1.ComponentFailure, metav1.ConditionTrue, FailedApplyingComponent+": "+template.GetName(), wrappedError.Error()))
+			return ctrl.Result{}, wrappedError
 		}
 	}
 	return ctrl.Result{}, nil
