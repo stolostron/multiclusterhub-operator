@@ -1,0 +1,13 @@
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: ClusterManagementAddOn
+metadata:
+  name: search-collector
+spec:
+  addOnConfiguration: {}
+  addOnMeta:
+    description: >-
+      Collects cluster data to be indexed by search components on the hub
+      cluster.
+    displayName: Search Collector
+  installStrategy:
+    type: Manual
