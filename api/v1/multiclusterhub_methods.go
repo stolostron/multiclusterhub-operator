@@ -39,6 +39,7 @@ const (
 	MCEHypershiftLocalHosting       string = "hypershift-local-hosting"
 	MCEHypershiftPreview            string = "hypershift-preview"
 	MCEHypershift                   string = "hypershift"
+	MCEImageBasedInstallOperator    string = "image-based-install-operator"
 	MCELocalCluster                 string = "local-cluster"
 	MCEManagedServiceAccount        string = "managedserviceaccount"
 	MCEManagedServiceAccountPreview string = "managedserviceaccount-preview"
@@ -69,13 +70,12 @@ var allComponents = []string{
 	MCEConsole,
 	MCEDiscovery,
 	MCEHive,
-	MCEServerFoundation,
-	MCEConsole,
-	MCEManagedServiceAccount,
-	MCEManagedServiceAccountPreview,
 	MCEHypershift,
 	MCEHypershiftLocalHosting,
 	MCEHypershiftPreview,
+	MCEImageBasedInstallOperator,
+	MCEManagedServiceAccount,
+	MCEManagedServiceAccountPreview,
 	MCEManagedServiceAccount,
 	MCEServerFoundation,
 }
@@ -106,12 +106,12 @@ var MCEComponents = []string{
 	MCEConsole,
 	MCEDiscovery,
 	MCEHive,
-	MCEServerFoundation,
-	MCEManagedServiceAccount,
-	MCEManagedServiceAccountPreview,
 	MCEHypershift,
 	MCEHypershiftLocalHosting,
 	MCEHypershiftPreview,
+	MCEImageBasedInstallOperator,
+	MCEManagedServiceAccount,
+	MCEManagedServiceAccountPreview,
 	MCEManagedServiceAccount,
 	MCEServerFoundation,
 }
