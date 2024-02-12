@@ -6,6 +6,7 @@ package multiclusterengine
 import (
 	"context"
 	"fmt"
+	"math"
 
 	"github.com/Masterminds/semver/v3"
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
@@ -55,7 +56,7 @@ var mockPackageManifests = func() *olmapi.PackageManifestList {
 					CatalogSourceNamespace: "openshift-marketplace",
 					Channels: []olmapi.PackageChannel{
 						{
-							Name: desiredChannel(),
+							Name: DesiredChannel(),
 						},
 					},
 				},
@@ -211,23 +212,93 @@ func GetCatalogSource(k8sClient client.Client) (types.NamespacedName, error) {
 	if err != nil {
 		return nn, err
 	}
+
+	// Return an error if there are no package manifests found with the desired MCE package name.
 	if len(pkgs) == 0 {
-		return nn, fmt.Errorf("No %s packageManifests found", DesiredPackage())
+		return nn, fmt.Errorf("no %s packageManifests found", DesiredPackage())
 	}
 
-	filtered := filterPackageManifests(pkgs, desiredChannel())
-
-	// fail if more than one package satisfies requirements
-	if len(filtered) == 1 {
-		nn.Name = filtered[0].Status.CatalogSource
-		nn.Namespace = filtered[0].Status.CatalogSourceNamespace
-		return nn, nil
-	}
-	if len(filtered) > 1 {
-		return nn, fmt.Errorf("Found more than one %s catalogSource with expected channel %s", DesiredPackage(), desiredChannel())
+	filtered := filterPackageManifests(pkgs, DesiredChannel())
+	// Return an error if there are no package manifests found with the desired MCE channel name.
+	if len(filtered) == 0 {
+		return nn, fmt.Errorf("no %s packageManifests found with desired channel %s", DesiredPackage(), DesiredChannel())
 	}
 
-	return nn, fmt.Errorf("No %s packageManifests found with desired channel %s", DesiredPackage(), desiredChannel())
+	/*
+		Catalog sources managed by the Operator Lifecycle Manager (OLM) include a 'priority' option in their
+		specifications. By default, this value is set to 0 for most catalog sources. However, for the 'redhat-operator'
+		catalog source, it is assigned a default priority of -100. Leveraging the priority value, we can determine the
+		preferred catalog source to utilize when assembling the Multicluster Engine operator.
+	*/
+	catalogSource, err := findHighestPriorityCatalogSource(k8sClient, filtered)
+	if err != nil {
+		return nn, err
+	}
+
+	nn.Name = catalogSource.Name
+	nn.Namespace = catalogSource.Namespace
+	return nn, nil
+}
+
+// extractCatalogSource extracts namespaced name from the given PackageManifest.
+func extractCatalogSource(pm olmapi.PackageManifest) types.NamespacedName {
+	return types.NamespacedName{
+		Name:      pm.Status.CatalogSource,
+		Namespace: pm.Status.CatalogSourceNamespace,
+	}
+}
+
+// findHighestPriorityCatalogSource finds the catalog source with the highest priority among the given list.
+func findHighestPriorityCatalogSource(k8sClient client.Client, pkgs []olmapi.PackageManifest) (
+	*subv1alpha1.CatalogSource, error) {
+	var (
+		highestPriorityCatalogSources []*subv1alpha1.CatalogSource
+		maxPriority                   = math.MinInt64
+		log                           = log.Log.WithName("reconcile")
+	)
+
+	for _, pm := range pkgs {
+		cs := &subv1alpha1.CatalogSource{}
+		nn := extractCatalogSource(pm)
+
+		if err := k8sClient.Get(context.TODO(), nn, cs); err != nil {
+			// Log the error and continue to the next iteration
+			log.Error(err, fmt.Sprintf("failed to retrieve catalog source %s/%s", nn.Namespace, nn.Name))
+			continue
+		}
+
+		if cs.Spec.Priority > maxPriority {
+			// Found a new highest priority, reset the slice and update the maxPriority
+			maxPriority = cs.Spec.Priority
+			highestPriorityCatalogSources = []*subv1alpha1.CatalogSource{cs}
+
+		} else if cs.Spec.Priority == maxPriority {
+			// Found another catalog source with the same highest priority, append it to the slice
+			highestPriorityCatalogSources = append(highestPriorityCatalogSources, cs)
+		}
+	}
+
+	switch len(highestPriorityCatalogSources) {
+	case 0:
+		return nil, fmt.Errorf("no catalog sources found with a positive priority")
+
+	case 1:
+		catalogSource := highestPriorityCatalogSources[0]
+		log.V(2).Info(fmt.Sprintf("Using catalog source %v/%v with the highest priority: %v",
+			catalogSource.Namespace, catalogSource.Name, catalogSource.Spec.Priority))
+		return catalogSource, nil
+
+	default:
+		// Multiple catalog sources found with the same highest priority
+		var catalogNames []string
+		for _, cs := range highestPriorityCatalogSources {
+			catalogNames = append(catalogNames, fmt.Sprintf("%s/%s", cs.Namespace, cs.Name))
+		}
+
+		return nil, fmt.Errorf(
+			"found more than one %s catalogSource with expected channel %s with the highest priority:%v",
+			DesiredPackage(), DesiredChannel(), catalogNames)
+	}
 }
 
 // filterPackageManifests returns a list of packagemanifests containing the desired channel
@@ -263,8 +334,8 @@ func filterPackageManifests(pkgManifests []olmapi.PackageManifest, desiredChanne
 	return filtered
 }
 
-// desiredChannel is determined by whether operator is running in community mode or production mode
-func desiredChannel() string {
+// DesiredChannel is determined by whether operator is running in community mode or production mode
+func DesiredChannel() string {
 	if utils.IsCommunityMode() {
 		return communityChannel
 	} else {
