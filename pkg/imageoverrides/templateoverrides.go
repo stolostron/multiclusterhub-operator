@@ -10,27 +10,35 @@ import (
 
 const (
 	// TemplateOverridePrefix ...
-	TemplateOverridePrefix = "TEMPLATE_OVERRIDE"
+	TemplateOverridePrefix = "TEMPLATE_OVERRIDE_"
 )
 
-// GetTemplateOverrides Reads and formats full image reference from template manifest file.
+// GetTemplateOverrides reads and formats full image reference from environment variables.
 func GetTemplateOverrides() map[string]string {
 	templateOverrides := make(map[string]string)
 
-	// First check for environment variables containing the 'OPERAND_LIMIT_' prefix
+	// Iterate through environment variables
 	for _, e := range os.Environ() {
-		keyValuePair := strings.SplitN(e, "=", 2)
-		if strings.HasPrefix(keyValuePair[0], TemplateOverridePrefix) {
-			key := strings.ToLower(strings.Replace(keyValuePair[0], TemplateOverridePrefix, "", -1))
-			templateOverrides[key] = keyValuePair[1]
+		key, value := parseEnvVar(e)
+		if key != "" && value != "" {
+			templateOverrides[key] = value
 		}
 	}
 
-	// If entries exist containing operand limit prefix, return
+	// Check if any overrides were found
 	if len(templateOverrides) > 0 {
 		logf.Info("Found image overrides from environment variables set by operand image prefix")
-		return templateOverrides
 	}
 
 	return templateOverrides
+}
+
+// parseEnvVar parses the environment variable and extracts key and value
+func parseEnvVar(envVar string) (key string, value string) {
+	pair := strings.SplitN(envVar, "=", 2)
+	if len(pair) == 2 && strings.HasPrefix(pair[0], TemplateOverridePrefix) {
+		key = strings.ToLower(strings.TrimPrefix(pair[0], TemplateOverridePrefix))
+		value = pair[1]
+	}
+	return key, value
 }
