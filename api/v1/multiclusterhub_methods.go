@@ -29,21 +29,22 @@ const (
 
 // Component related to MultiCluster Engine (MCE)
 const (
-	MCEAssistedService              string = "assisted-service"
-	MCEClusterLifecycle             string = "cluster-lifecycle-mce"
-	MCEClusterManager               string = "cluster-manager"
-	MCEClusterProxyAddon            string = "cluster-proxy-addon"
-	MCEConsole                      string = "console-mce"
-	MCEDiscovery                    string = "discovery"
-	MCEHive                         string = "hive"
-	MCEHypershiftLocalHosting       string = "hypershift-local-hosting"
-	MCEHypershiftPreview            string = "hypershift-preview"
-	MCEHypershift                   string = "hypershift"
-	MCEImageBasedInstallOperator    string = "image-based-install-operator"
-	MCELocalCluster                 string = "local-cluster"
-	MCEManagedServiceAccount        string = "managedserviceaccount"
-	MCEManagedServiceAccountPreview string = "managedserviceaccount-preview"
-	MCEServerFoundation             string = "server-foundation"
+	MCEAssistedService                  string = "assisted-service"
+	MCEClusterLifecycle                 string = "cluster-lifecycle-mce"
+	MCEClusterManager                   string = "cluster-manager"
+	MCEClusterProxyAddon                string = "cluster-proxy-addon"
+	MCEConsole                          string = "console-mce"
+	MCEDiscovery                        string = "discovery"
+	MCEHive                             string = "hive"
+	MCEHypershiftLocalHosting           string = "hypershift-local-hosting"
+	MCEHypershiftPreview                string = "hypershift-preview"
+	MCEHypershift                       string = "hypershift"
+	MCEImageBasedInstallOperator        string = "image-based-install-operator"
+	MCEImageBasedInstallOperatorPreview string = "image-based-install-operator-preview"
+	MCELocalCluster                     string = "local-cluster"
+	MCEManagedServiceAccount            string = "managedserviceaccount"
+	MCEManagedServiceAccountPreview     string = "managedserviceaccount-preview"
+	MCEServerFoundation                 string = "server-foundation"
 )
 
 // allComponents is a slice containing all the component names from both "MCH" and "MCE" categories.
@@ -74,6 +75,7 @@ var allComponents = []string{
 	MCEHypershiftLocalHosting,
 	MCEHypershiftPreview,
 	MCEImageBasedInstallOperator,
+	MCEImageBasedInstallOperatorPreview,
 	MCEManagedServiceAccount,
 	MCEManagedServiceAccountPreview,
 	MCEManagedServiceAccount,
@@ -110,6 +112,7 @@ var MCEComponents = []string{
 	MCEHypershiftLocalHosting,
 	MCEHypershiftPreview,
 	MCEImageBasedInstallOperator,
+	MCEImageBasedInstallOperatorPreview,
 	MCEManagedServiceAccount,
 	MCEManagedServiceAccountPreview,
 	MCEManagedServiceAccount,
