@@ -44,9 +44,8 @@ func ConvertImageOverrides(overrides map[string]string, manifestImages []manifes
 			return fmt.Errorf("unexpected manifest image format: missing or empty ImageKey %v", m)
 		}
 
-		// Check if the environment variable already exists for the key.
-		key := strings.ToUpper(m.ImageKey)
-		if os.Getenv(OperandImagePrefix+key) != "" || os.Getenv(OSBSImagePrefix+key) != "" {
+		// Check if the key already exists.
+		if overrides[m.ImageKey] != "" {
 			continue // Skip processing if environment variable exists.
 		}
 
@@ -69,9 +68,9 @@ error if there's any issue converting values.
 */
 func ConvertTemplateOverrides(overrides map[string]string, manifestTemplate manifest.ManifestTemplate) error {
 	for key, value := range manifestTemplate.TemplateOverrides {
-		// Check if the environment variable already exists for the key.
-		k := strings.ToUpper(key)
-		if envValue := os.Getenv(TemplateOverridePrefix + strings.ToUpper(k)); envValue != "" {
+
+		// Check if the key already exists.
+		if overrides[key] != "" {
 			continue // Skip processing if environment variable exists.
 		}
 
