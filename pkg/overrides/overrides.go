@@ -136,17 +136,22 @@ func GetOverridesFromConfigmap(k8sClient client.Client, overrides map[string]str
 		if isTemplate {
 			var manifestTemplate manifest.ManifestTemplate
 			if err := json.Unmarshal([]byte(v), &manifestTemplate); err != nil {
-				return nil, err
+				return overrides, err
 			}
-			ConvertTemplateOverrides(overrides, manifestTemplate)
+
+			if err := ConvertTemplateOverrides(overrides, manifestTemplate); err != nil {
+				return overrides, err
+			}
 
 		} else {
 			var manifestImage []manifest.ManifestImage
 			if err := json.Unmarshal([]byte(v), &manifestImage); err != nil {
-				return nil, err
+				return overrides, err
 			}
 
-			ConvertImageOverrides(overrides, manifestImage)
+			if err := ConvertImageOverrides(overrides, manifestImage); err != nil {
+				return overrides, err
+			}
 		}
 	}
 

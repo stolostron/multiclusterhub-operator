@@ -279,8 +279,6 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 	}
 
 	for fileName, templateFile := range rawTemplates {
-		log.Info(fmt.Sprintf("templateFile: %s - ", templateFile))
-
 		unstructured := &unstructured.Unstructured{}
 		if err = yaml.Unmarshal([]byte(templateFile), unstructured); err != nil {
 			return nil, append(errs, fmt.Errorf("error converting file %s to unstructured: %v", fileName, err))
