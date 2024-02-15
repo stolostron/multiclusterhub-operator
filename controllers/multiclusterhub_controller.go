@@ -195,52 +195,64 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 	}()
 
-	// Read image overrides
-	// First, attempt to read image overrides from environmental variables
-	imageOverrides := overrides.GetImageOverrides()
+	// Attempt to retrieve image overrides from environmental variables.
+	imageOverrides := overrides.GetOverridesFromEnv(overrides.OperandImagePrefix)
+
+	// If no overrides found using OperandImagePrefix, attempt to retrieve using OSBSImagePrefix.
+	if len(imageOverrides) == 0 {
+		imageOverrides = overrides.GetOverridesFromEnv(overrides.OSBSImagePrefix)
+	}
+
+	// Check if no image overrides were found using either prefix.
 	if len(imageOverrides) == 0 {
 		r.Log.Error(err, "Could not get map of image overrides")
 		return ctrl.Result{}, nil
 	}
 
+	// Apply image repository override from annotation if present.
 	if imageRepo := utils.GetImageRepository(multiClusterHub); imageRepo != "" {
 		r.Log.Info(fmt.Sprintf("Overriding Image Repository from annotation 'mch-imageRepository': %s", imageRepo))
 		imageOverrides = utils.OverrideImageRepository(imageOverrides, imageRepo)
 	}
 
-	// Check for developer overrides
-	if imageOverridesConfigmap := utils.GetImageOverridesConfigmap(multiClusterHub); imageOverridesConfigmap != "" {
-		imageOverrides, err = r.OverrideImagesFromConfigmap(imageOverrides, multiClusterHub.GetNamespace(), imageOverridesConfigmap)
+	// Check for developer overrides in configmap.
+	if ioConfigmapName := utils.GetImageOverridesConfigmapName(multiClusterHub); ioConfigmapName != "" {
+		imageOverrides, err = overrides.GetOverridesFromConfigmap(r.Client, imageOverrides,
+			multiClusterHub.GetNamespace(), ioConfigmapName, false)
+
 		if err != nil {
-			r.Log.Error(err, fmt.Sprintf("Could not find image override configmap: %s/%s", multiClusterHub.GetNamespace(), imageOverridesConfigmap))
+			r.Log.Error(err, fmt.Sprintf("Failed to find image override configmap: %s/%s",
+				multiClusterHub.GetNamespace(), ioConfigmapName))
+
 			return ctrl.Result{}, err
 		}
 	}
 
+	// Update cache with image overrides and related information.
 	r.CacheSpec.ImageOverrides = imageOverrides
 	r.CacheSpec.ManifestVersion = version.Version
 	r.CacheSpec.ImageRepository = utils.GetImageRepository(multiClusterHub)
-	r.CacheSpec.ImageOverridesCM = utils.GetImageOverridesConfigmap(multiClusterHub)
+	r.CacheSpec.ImageOverridesCM = utils.GetImageOverridesConfigmapName(multiClusterHub)
 
-	// Read template overrides
-	// First, attempt to read template overrides from environment variables
-	templateOverrides := overrides.GetTemplateOverrides()
+	// Attempt to retrieve template overrides from environmental variables.
+	templateOverrides := overrides.GetOverridesFromEnv(overrides.TemplateOverridePrefix)
 
-	// Check for developer overrides
-	if templateOverridesConfigmap := utils.GetTemplateOverridesConfigmap(multiClusterHub); templateOverridesConfigmap != "" {
-		templateOverrides, err = r.OverrideTemplatesFromConfigmap(templateOverrides, multiClusterHub.GetNamespace(),
-			templateOverridesConfigmap)
+	// Check for developer overrides in configmap
+	if toConfigmapName := utils.GetTemplateOverridesConfigmapName(multiClusterHub); toConfigmapName != "" {
+		templateOverrides, err = overrides.GetOverridesFromConfigmap(r.Client, templateOverrides,
+			multiClusterHub.GetNamespace(), toConfigmapName, true)
 
 		if err != nil {
-			r.Log.Error(err, fmt.Sprintf("Could not find template override configmap: %s/%s",
-				multiClusterHub.GetNamespace(), templateOverridesConfigmap))
+			r.Log.Error(err, fmt.Sprintf("Failed to find template override configmap: %s/%s",
+				multiClusterHub.GetNamespace(), toConfigmapName))
 
 			return ctrl.Result{}, err
 		}
 	}
 
+	// Update cache with template overrides and related information.
 	r.CacheSpec.TemplateOverrides = templateOverrides
-	r.CacheSpec.TemplateOverridesCM = utils.GetTemplateOverridesConfigmap(multiClusterHub)
+	r.CacheSpec.TemplateOverridesCM = utils.GetTemplateOverridesConfigmapName(multiClusterHub)
 
 	// Check if the multiClusterHub instance is marked to be deleted, which is
 	// indicated by the deletion timestamp being set.

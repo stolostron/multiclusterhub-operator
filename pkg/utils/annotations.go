@@ -80,13 +80,13 @@ func GetImageRepository(instance *operatorsv1.MultiClusterHub) string {
 	return getAnnotation(instance, AnnotationImageRepo)
 }
 
-// GetImageOverridesConfigmap returns the images override configmap annotation, or an empty string if not set
-func GetImageOverridesConfigmap(instance *operatorsv1.MultiClusterHub) string {
+// GetImageOverridesConfigmapName returns the images override configmap annotation value, or an empty string if not set
+func GetImageOverridesConfigmapName(instance *operatorsv1.MultiClusterHub) string {
 	return getAnnotation(instance, AnnotationImageOverridesCM)
 }
 
-// GetTemplateOverridesConfigmap returns the templates override configmap annotation, or an empty string if not set
-func GetTemplateOverridesConfigmap(instance *operatorsv1.MultiClusterHub) string {
+// GetTemplateOverridesConfigmapName returns the templates override configmap annotation value, or an empty string if not set
+func GetTemplateOverridesConfigmapName(instance *operatorsv1.MultiClusterHub) string {
 	return getAnnotation(instance, AnnotationTemplateOverridesCM)
 }
 
