@@ -12,34 +12,61 @@ import (
 )
 
 var (
-	// AnnotationMCHPause is an annotation used in multiclusterhub to identify if the multiclusterhub is paused or not.
+	/*
+		AnnotationMCHPause is an annotation used in multiclusterhub to identify if the multiclusterhub is paused or not.
+	*/
 	AnnotationMCHPause = "mch-pause"
 
-	// AnnotationImageRepo is an annotation used in multiclusterhub to specify a custom image repository to use.
+	/*
+		AnnotationImageRepo is an annotation used in multiclusterhub to specify a custom image repository to use.
+	*/
 	AnnotationImageRepo = "mch-imageRepository"
 
-	// AnnotationImageOverridesCM is an annotation used in multiclusterhub to specify a custom ConfigMap containing image overrides.
+	/*
+		AnnotationImageOverridesCM is an annotation used in multiclusterhub to specify a custom ConfigMap containing
+		image overrides.
+	*/
 	AnnotationImageOverridesCM = "mch-imageOverridesCM"
 
-	// AnnotationLimitOverridesCM is an annotation used in multiclusterhub to specify a custom ConfigMap containing resource template overrides.
+	/*
+		AnnotationLimitOverridesCM is an annotation used in multiclusterhub to specify a custom ConfigMap
+		containing resource template overrides.
+	*/
 	AnnotationTemplateOverridesCM = "operator.multicluster.openshift.io/template-override-cm"
 
-	// AnnotationConfiguration is an annotation used in a resource's metadata to identify the configuration last used to create it.
+	/*
+		AnnotationConfiguration is an annotation used in a resource's metadata to identify the configuration
+		last used to create it.
+	*/
 	AnnotationConfiguration = "installer.open-cluster-management.io/last-applied-configuration"
 
-	// AnnotationMCESubscriptionSpec is an annotation used in multiclusterhub to identify the subscription spec last used to create the multiclustengine.
+	/*
+		AnnotationMCESubscriptionSpec is an annotation used in multiclusterhub to identify the subscription spec
+		last used to create the multiclustengine.
+	*/
 	AnnotationMCESubscriptionSpec = "installer.open-cluster-management.io/mce-subscription-spec"
 
-	// AnnotationOADPSubscriptionSpec is an annotation used to override the OADP subscription used in cluster-backup.
+	/*
+		AnnotationOADPSubscriptionSpec is an annotation used to override the OADP subscription used in cluster-backup.
+	*/
 	AnnotationOADPSubscriptionSpec = "installer.open-cluster-management.io/oadp-subscription-spec"
 
-	// AnnotationIgnoreOCPVersion is an annotation used to indicate the operator should not check the OpenShift Container Platform (OCP) version before proceeding when set.
+	/*
+		AnnotationIgnoreOCPVersion is an annotation used to indicate the operator should not check the OpenShift
+		Container Platform (OCP) version before proceeding when set.
+	*/
 	AnnotationIgnoreOCPVersion = "ignoreOCPVersion"
 
-	// AnnotationReleaseVersion is an annotation used to indicate the release version that should be applied to all resources managed by the MCH operator.
+	/*
+		AnnotationReleaseVersion is an annotation used to indicate the release version that should be applied to all
+		resources managed by the MCH operator.
+	*/
 	AnnotationReleaseVersion = "installer.open-cluster-management.io/release-version"
 
-	// AnnotationKubeconfig is an annotation used to specify the secret name residing in targetcontaining the kubeconfig to access the remote cluster.
+	/*
+		AnnotationKubeconfig is an annotation used to specify the secret name residing in targetcontaining the
+		kubeconfig to access the remote cluster.
+	*/
 	AnnotationKubeconfig = "mch-kubeconfig"
 )
 
