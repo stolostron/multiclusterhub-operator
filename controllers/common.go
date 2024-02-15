@@ -5,12 +5,10 @@ package controllers
 
 import (
 	"context"
-	"encoding/json"
 	e "errors"
 	"fmt"
 	"os"
 	"reflect"
-	"strconv"
 	"strings"
 	"time"
 
@@ -35,7 +33,6 @@ import (
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
-	"github.com/stolostron/multiclusterhub-operator/pkg/manifest"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 
@@ -294,97 +291,7 @@ func (r *MultiClusterHubReconciler) ensurePullSecretCreated(m *operatorv1.MultiC
 	}
 
 	return ctrl.Result{}, nil
-}
 
-// OverrideImagesFromConfigmap ...
-func (r *MultiClusterHubReconciler) OverrideImagesFromConfigmap(imageOverrides map[string]string, namespace, configmapName string) (map[string]string, error) {
-	r.Log.Info(fmt.Sprintf("Overriding images from configmap: %s/%s", namespace, configmapName))
-
-	configmap := &corev1.ConfigMap{}
-	err := r.Client.Get(context.TODO(), types.NamespacedName{
-		Name:      configmapName,
-		Namespace: namespace,
-	}, configmap)
-	if err != nil && errors.IsNotFound(err) {
-		return imageOverrides, err
-	}
-
-	if len(configmap.Data) != 1 {
-		return imageOverrides, fmt.Errorf(fmt.Sprintf("Unexpected number of keys in configmap: %s", configmapName))
-	}
-
-	for _, v := range configmap.Data {
-
-		var manifestImages []manifest.ManifestImage
-		err = json.Unmarshal([]byte(v), &manifestImages)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, manifestImage := range manifestImages {
-			if manifestImage.ImageDigest != "" {
-				imageOverrides[manifestImage.ImageKey] = fmt.Sprintf("%s/%s@%s", manifestImage.ImageRemote, manifestImage.ImageName, manifestImage.ImageDigest)
-			} else if manifestImage.ImageTag != "" {
-				imageOverrides[manifestImage.ImageKey] = fmt.Sprintf("%s/%s:%s", manifestImage.ImageRemote, manifestImage.ImageName, manifestImage.ImageTag)
-			}
-		}
-	}
-
-	return imageOverrides, nil
-}
-
-// OverrideTemplatesFromConfigmap ...
-func (r *MultiClusterHubReconciler) OverrideTemplatesFromConfigmap(templateOverrides map[string]string,
-	namespace, configmapName string) (map[string]string, error) {
-	r.Log.Info(fmt.Sprintf("Overriding template from configmap: %s/%s", namespace, configmapName))
-
-	configmap := &corev1.ConfigMap{}
-	err := r.Client.Get(context.TODO(), types.NamespacedName{
-		Name:      configmapName,
-		Namespace: namespace,
-	}, configmap)
-	if err != nil && errors.IsNotFound(err) {
-		return templateOverrides, err
-	}
-
-	if len(configmap.Data) != 1 {
-		return templateOverrides, fmt.Errorf(fmt.Sprintf("Unexpected number of keys in configmap: %s", configmapName))
-	}
-
-	var config manifest.ManifestTemplate
-	for _, v := range configmap.Data {
-		err = json.Unmarshal([]byte(v), &config)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	for key, value := range config.TemplateOverrides {
-		// Convert value to string if necessary
-		strValue, err := convertToString(value)
-		if err != nil {
-			return nil, fmt.Errorf("error converting value for key %s: %w", key, err)
-		}
-		templateOverrides[key] = strValue
-	}
-	return templateOverrides, nil
-}
-
-// convertToString converts a value to a string.
-func convertToString(value interface{}) (string, error) {
-	switch v := value.(type) {
-	case string:
-		return v, nil
-	case int, int32, int64:
-		return fmt.Sprintf("%d", v), nil
-	case float32, float64:
-		return fmt.Sprintf("%f", v), nil
-	case bool:
-		return strconv.FormatBool(v), nil
-	default:
-		return "", fmt.Errorf("unsupported type: %T", v)
-	}
-}
 
 func (r *MultiClusterHubReconciler) maintainImageManifestConfigmap(mch *operatorv1.MultiClusterHub) error {
 	// Define configmap
