@@ -16,6 +16,14 @@ rules:
 - apiGroups:
   - addon.open-cluster-management.io
   resources:
+  - addondeploymentconfigs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - addon.open-cluster-management.io
+  resources:
   - clustermanagementaddons
   verbs:
   - get
@@ -77,14 +85,6 @@ rules:
   - patch
   - update
 - apiGroups:
-  - addon.open-cluster-management.io
-  resources:
-  - addondeploymentconfigs
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
   - authorization.k8s.io
   resources:
   - subjectaccessreviews
@@ -110,8 +110,24 @@ rules:
   - approve
 - apiGroups:
   - cluster.open-cluster-management.io
+  resourceNames:
+  - id.k8s.io
+  resources:
+  - clusterclaims
+  verbs:
+  - get
+- apiGroups:
+  - cluster.open-cluster-management.io
   resources:
   - managedclusters
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - infrastructures
   verbs:
   - get
   - list
@@ -150,16 +166,6 @@ rules:
   - watch
 - apiGroups:
   - ""
-  resourceNames:
-  - policy-encryption-key
-  resources:
-  - secrets
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
   resources:
   - pods
   verbs:
@@ -167,9 +173,12 @@ rules:
   - list
   - watch
 - apiGroups:
-  - config.openshift.io
+  - ""
+  resourceNames:
+  - governance-policy-database
+  - policy-encryption-key
   resources:
-  - infrastructures
+  - secrets
   verbs:
   - get
   - list
@@ -240,6 +249,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - route.openshift.io
+  resources:
+  - routes
+  verbs:
+  - create
+- apiGroups:
+  - route.openshift.io
+  resourceNames:
+  - governance-history-api
+  resources:
+  - routes
+  verbs:
+  - delete
+  - get
+  - list
+  - update
+  - watch
 - apiGroups:
   - work.open-cluster-management.io
   resources:
