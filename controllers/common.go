@@ -291,7 +291,7 @@ func (r *MultiClusterHubReconciler) ensurePullSecretCreated(m *operatorv1.MultiC
 	}
 
 	return ctrl.Result{}, nil
-
+}
 
 func (r *MultiClusterHubReconciler) maintainImageManifestConfigmap(mch *operatorv1.MultiClusterHub) error {
 	// Define configmap
