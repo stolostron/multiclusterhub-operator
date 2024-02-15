@@ -1,0 +1,27 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: governance-policy-compliance-history-api
+  labels:
+    app: grc
+    chart: grc-chart-{{ .Values.hubconfig.hubVersion }}
+    component: "ocm-policy-propagator"
+    release: grc
+    app.kubernetes.io/instance: grc
+    app.kubernetes.io/name: grc
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: governance-policy-compliance-history-api-cert
+spec:
+  ports:
+  - name: compliance-history-api
+    port: 8384
+    protocol: TCP
+    targetPort: 8384
+  selector:
+    app: grc
+    component: "ocm-policy-propagator"
+    release: grc
+  sessionAffinity: None
+  type: ClusterIP
