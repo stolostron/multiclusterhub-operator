@@ -30,7 +30,7 @@ import (
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/deploying"
-	"github.com/stolostron/multiclusterhub-operator/pkg/imageoverrides"
+	"github.com/stolostron/multiclusterhub-operator/pkg/overrides"
 	"github.com/stolostron/multiclusterhub-operator/pkg/predicate"
 	renderer "github.com/stolostron/multiclusterhub-operator/pkg/rendering"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
@@ -197,7 +197,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	// Read image overrides
 	// First, attempt to read image overrides from environmental variables
-	imageOverrides := imageoverrides.GetImageOverrides()
+	imageOverrides := overrides.GetImageOverrides()
 	if len(imageOverrides) == 0 {
 		r.Log.Error(err, "Could not get map of image overrides")
 		return ctrl.Result{}, nil
@@ -224,7 +224,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	// Read template overrides
 	// First, attempt to read template overrides from environment variables
-	templateOverrides := imageoverrides.GetTemplateOverrides()
+	templateOverrides := overrides.GetTemplateOverrides()
 
 	// Check for developer overrides
 	if templateOverridesConfigmap := utils.GetTemplateOverridesConfigmap(multiClusterHub); templateOverridesConfigmap != "" {
