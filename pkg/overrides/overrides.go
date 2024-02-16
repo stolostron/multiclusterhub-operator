@@ -44,11 +44,6 @@ func ConvertImageOverrides(overrides map[string]string, manifestImages []manifes
 			return fmt.Errorf("unexpected manifest image format: missing or empty ImageKey %v", m)
 		}
 
-		// Check if the key already exists.
-		if overrides[m.ImageKey] != "" {
-			continue // Skip processing if environment variable exists.
-		}
-
 		// Check if either ImageDigest or ImageTag is provided.
 		if m.ImageDigest != "" {
 			overrides[m.ImageKey] = fmt.Sprintf("%s/%s@%s", m.ImageRemote, m.ImageName, m.ImageDigest)

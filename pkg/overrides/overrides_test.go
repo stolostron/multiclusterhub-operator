@@ -116,8 +116,8 @@ func Test_ConvertImageOverrides(t *testing.T) {
 			t.Fatalf("Expected conversion to pass, got: %v", got)
 		}
 
-		if ok := strings.Contains(overrides["foo"], "83b7f8"); ok {
-			t.Fatalf("Expected conversion to skip override due to preexisting value, got: %v", ok)
+		if ok := strings.Contains(overrides["foo"], "83b7f8"); !ok {
+			t.Fatalf("Expected conversion to override preexisting value, got: %v", ok)
 		}
 	})
 }
