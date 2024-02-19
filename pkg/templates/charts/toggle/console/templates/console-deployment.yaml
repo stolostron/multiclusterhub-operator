@@ -105,8 +105,17 @@ spec:
         imagePullPolicy: {{ .Values.global.pullPolicy }}
         resources:
           requests:
-            memory: "40Mi"
-            cpu: "3m"
+            memory: {{ .Values.global.templateOverrides.console_deployment_container_memory_request | default "40Mi" | quote }}
+            cpu: {{ .Values.global.templateOverrides.console_deployment_container_cpu_request | default "3m" | quote }}
+        {{- if or .Values.global.templateOverrides.console_deployment_container_memory_limit .Values.global.templateOverrides.console_deployment_container_cpu_limit }}
+          limits:
+          {{- if .Values.global.templateOverrides.console_deployment_container_memory_limit }}
+            memory: {{ .Values.global.templateOverrides.console_deployment_container_memory_limit | quote }}
+          {{- end }}
+          {{- if .Values.global.templateOverrides.console_deployment_container_cpu_limit }}
+            cpu: {{ .Values.global.templateOverrides.console_deployment_container_cpu_limit | quote }}
+          {{- end }}
+        {{- end }}
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
