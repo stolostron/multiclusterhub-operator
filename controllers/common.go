@@ -5,7 +5,6 @@ package controllers
 
 import (
 	"context"
-	"encoding/json"
 	e "errors"
 	"fmt"
 	"os"
@@ -34,7 +33,6 @@ import (
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
-	"github.com/stolostron/multiclusterhub-operator/pkg/manifest"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 
@@ -47,11 +45,13 @@ import (
 
 // CacheSpec ...
 type CacheSpec struct {
-	IngressDomain    string
-	ImageOverrides   map[string]string
-	ImageRepository  string
-	ManifestVersion  string
-	ImageOverridesCM string
+	IngressDomain       string
+	ImageOverrides      map[string]string
+	ImageOverridesCM    string
+	ImageRepository     string
+	ManifestVersion     string
+	TemplateOverrides   map[string]string
+	TemplateOverridesCM string
 }
 
 func (r *MultiClusterHubReconciler) ensureNoNamespace(m *operatorv1.MultiClusterHub, u *unstructured.Unstructured) (ctrl.Result, error) {
@@ -61,7 +61,7 @@ func (r *MultiClusterHubReconciler) ensureNoNamespace(m *operatorv1.MultiCluster
 		subLog.Error(err, "Failed to uninstall namespace")
 		return ctrl.Result{}, err
 	}
-	if gone == true {
+	if gone {
 		return ctrl.Result{}, nil
 	} else {
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
@@ -291,44 +291,6 @@ func (r *MultiClusterHubReconciler) ensurePullSecretCreated(m *operatorv1.MultiC
 	}
 
 	return ctrl.Result{}, nil
-}
-
-// OverrideImagesFromConfigmap ...
-func (r *MultiClusterHubReconciler) OverrideImagesFromConfigmap(imageOverrides map[string]string, namespace, configmapName string) (map[string]string, error) {
-	r.Log.Info(fmt.Sprintf("Overriding images from configmap: %s/%s", namespace, configmapName))
-
-	configmap := &corev1.ConfigMap{}
-	err := r.Client.Get(context.TODO(), types.NamespacedName{
-		Name:      configmapName,
-		Namespace: namespace,
-	}, configmap)
-	if err != nil && errors.IsNotFound(err) {
-		return imageOverrides, err
-	}
-
-	if len(configmap.Data) != 1 {
-		return imageOverrides, fmt.Errorf(fmt.Sprintf("Unexpected number of keys in configmap: %s", configmapName))
-	}
-
-	for _, v := range configmap.Data {
-
-		var manifestImages []manifest.ManifestImage
-		err = json.Unmarshal([]byte(v), &manifestImages)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, manifestImage := range manifestImages {
-			if manifestImage.ImageDigest != "" {
-				imageOverrides[manifestImage.ImageKey] = fmt.Sprintf("%s/%s@%s", manifestImage.ImageRemote, manifestImage.ImageName, manifestImage.ImageDigest)
-			} else if manifestImage.ImageTag != "" {
-				imageOverrides[manifestImage.ImageKey] = fmt.Sprintf("%s/%s:%s", manifestImage.ImageRemote, manifestImage.ImageName, manifestImage.ImageTag)
-			}
-
-		}
-	}
-
-	return imageOverrides, nil
 }
 
 func (r *MultiClusterHubReconciler) maintainImageManifestConfigmap(mch *operatorv1.MultiClusterHub) error {

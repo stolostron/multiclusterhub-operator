@@ -37,6 +37,10 @@ type ManifestImage struct {
 	ImageTag string `json:"image-tag"`
 }
 
+type ManifestTemplate struct {
+	TemplateOverrides map[string]interface{} `json:"templateOverrides" yaml:"templateOverrides"`
+}
+
 // GetImageOverrides Reads and formats full image reference from image manifest file.
 func GetImageOverrides(mch *operatorsv1.MultiClusterHub) (map[string]string, error) {
 	manifestData, err := readManifestFile(version.Version)
