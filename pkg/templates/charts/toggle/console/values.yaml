@@ -7,6 +7,12 @@ org: open-cluster-management
 global:
   imageOverrides:
     console: ""
+  templateOverrides: {}
+    # Available template overrides:
+    # console_deployment_container_memory_request: <memory-value>
+    # console_deployment_container_memory_limit: <memory-value>
+    # console_deployment_container_cpu_request: <cpu-value>
+    # console_deployment_container_cpu_limit: <cpu-value>
   namespace: default
   pullSecret: null
   pullPolicy: Always
