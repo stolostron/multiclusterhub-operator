@@ -102,7 +102,7 @@ type Overrides struct {
 	// Pull policy of the MultiCluster hub images
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 
-	// Provides optional configuration for components
+	// Provides optional configuration for components, the list of which can be found here: https://github.com/stolostron/multiclusterhub-operator/tree/main/docs/available-components.md
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Component Configuration",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	// +optional
 	Components []ComponentConfig `json:"components,omitempty"`
@@ -332,7 +332,8 @@ type HubCondition struct {
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:path=multiclusterhubs,scope=Namespaced,shortName=mch
 
-// MultiClusterHub defines the configuration for an instance of the MultiCluster Hub
+// MultiClusterHub defiMulticlusterHub defines the configuration for an instance of a multicluster hub, a central  point for managing multiple Kubernetes-based clusters.  
+// The deployment of the components of the multiclsuterhub will be determined based on the configuration defined in this resource.
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase",description="The overall status of the multiclusterhub"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +operator-sdk:csv:customresourcedefinitions:displayName="MultiClusterHub"
