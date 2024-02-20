@@ -3,8 +3,10 @@ global:
     multicluster_observability_operator: ''
   namespace: default
   pullSecret: null
+  templateOverrides: {}
 hubconfig:
   nodeSelector: null
+  ocpVersion: 4.12.0
   proxyConfigs: {}
   replicaCount: 1
   tolerations: []
