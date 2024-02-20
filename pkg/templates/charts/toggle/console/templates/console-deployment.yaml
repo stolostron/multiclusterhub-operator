@@ -105,14 +105,22 @@ spec:
         imagePullPolicy: {{ .Values.global.pullPolicy }}
         resources:
           requests:
-            memory: {{ .Values.global.templateOverrides.console_deployment_container_memory_request | default "40Mi" | quote }}
-            cpu: {{ .Values.global.templateOverrides.console_deployment_container_cpu_request | default "3m" | quote }}
-        {{- if or .Values.global.templateOverrides.console_deployment_container_memory_limit .Values.global.templateOverrides.console_deployment_container_cpu_limit }}
+          {{- if hasKey .Values.global.templateOverrides "console_deployment_container_memory_request" }}
+            memory: {{ .Values.global.templateOverrides.console_deployment_container_memory_request | quote }}
+          {{- else }}
+            memory: "40Mi"
+          {{- end }}
+          {{- if hasKey .Values.global.templateOverrides "console_deployment_container_cpu_request" }}
+            cpu: {{ .Values.global.templateOverrides.console_deployment_container_cpu_request | quote }}
+          {{- else }}
+            cpu: "3m"
+          {{- end }}
+        {{- if or (hasKey .Values.global.templateOverrides "console_deployment_container_memory_limit") (hasKey .Values.global.templateOverrides "console_deployment_container_cpu_limit") }}
           limits:
-          {{- if .Values.global.templateOverrides.console_deployment_container_memory_limit }}
+          {{- if hasKey .Values.global.templateOverrides "console_deployment_container_memory_limit" }}
             memory: {{ .Values.global.templateOverrides.console_deployment_container_memory_limit | quote }}
           {{- end }}
-          {{- if .Values.global.templateOverrides.console_deployment_container_cpu_limit }}
+          {{- if hasKey .Values.global.templateOverrides "console_deployment_container_cpu_limit" }}
             cpu: {{ .Values.global.templateOverrides.console_deployment_container_cpu_limit | quote }}
           {{- end }}
         {{- end }}
