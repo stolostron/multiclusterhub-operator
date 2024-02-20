@@ -4,6 +4,7 @@ global:
   pullPolicy: Always
   imageOverrides:
     volsync_addon_controller: ""
+  templateOverrides: {}
 
 pullSecret: null
 
@@ -12,3 +13,4 @@ hubconfig:
   replicaCount: 1
   proxyConfigs: {}
   tolerations: []
+  ocpVersion: 4.12.0

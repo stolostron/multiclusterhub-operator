@@ -19,12 +19,14 @@ global:
     insights_client: ""
     insights_metrics: ""
     kube_rbac_proxy: ""
+  templateOverrides: {}
 ocpingress: ""
     
 hubconfig:
   nodeSelector: null
   replicaCount: 1
   tolerations: []
+  ocpVersion: 4.12.0
 
 client:
   affinity:
