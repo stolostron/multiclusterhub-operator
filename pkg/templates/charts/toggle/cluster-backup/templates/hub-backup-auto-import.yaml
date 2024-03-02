@@ -55,16 +55,22 @@ spec:
           remediationAction: inform
           severity: medium
           object-templates-raw: |
-            {{ `{{- range $ns := (lookup "v1" "Namespace" "" "" "cluster.open-cluster-management.io/managedCluster, cluster.open-cluster-management.io/managedCluster notin (local-cluster)").items }}` }}
-            {{ `{{- $ms := (lookup "authentication.open-cluster-management.io/v1alpha1" "ManagedServiceAccount" $ns.metadata.name "auto-import-account") }}` }} 
-              {{ `{{- if $ms }}` }}   
+            {{ `{{- range $mce := (lookup "multicluster.openshift.io/v1" "MultiClusterEngine" "" "").items }}` }}
+              {{ `{{- range $cmp := $mce.spec.overrides.components }}` }}
+                {{ `{{- if and (or (eq $cmp.name "managedserviceaccount-preview") (eq $cmp.name "managedserviceaccount")) (eq $cmp.enabled true) }}` }}
+                  {{ `{{- range $ns := (lookup "v1" "Namespace" "" "" "cluster.open-cluster-management.io/managedCluster, cluster.open-cluster-management.io/managedCluster notin (local-cluster)").items }}` }}
+                    {{ `{{- range $ms := (lookup "authentication.open-cluster-management.io/v1alpha1" "ManagedServiceAccount" $ns.metadata.name "").items }}` }} 
+                      {{ `{{- if or (eq $ms.metadata.name "auto-import-account") (eq $ms.metadata.name "auto-import-account-pair") }}` }}   
             - complianceType: musthave
               objectDefinition:
                 kind: Secret
                 apiVersion: v1
                 metadata:
-                  name: "auto-import-account"
+                  name: {{ `{{ $ms.metadata.name }}` }}
                   namespace: {{ `{{ $ns.metadata.name }}` }}
+                      {{ `{{- end }}` }}
+                    {{ `{{- end }}` }}
+                  {{ `{{- end }}` }}
+                {{ `{{- end }}` }}
               {{ `{{- end }}` }}
             {{ `{{- end }}` }}
-
