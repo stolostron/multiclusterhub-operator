@@ -2,7 +2,7 @@
 # Copyright Contributors to the Open Cluster Management project
 
 apiVersion: v1
-appVersion: 2.10.0
+appVersion: 2.11.0
 description: Helm chart to install the Open Cluster Management Insights
 icon: https://raw.githubusercontent.com/kubernetes/kubernetes/master/logo/logo.png
 keywords:
@@ -15,5 +15,5 @@ keywords:
 - amd64
 - runtime
 name: policyreport
-tillerVersion: ">=2.10.0"
-version: 2.10.0
+tillerVersion: ">=2.11.0"
+version: 2.11.0
