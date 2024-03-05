@@ -2,7 +2,7 @@
 # Copyright Contributors to the Open Cluster Management project
 
 apiVersion: v1
-appVersion: 2.10.0
+appVersion: 2.11.0
 description: A Helm chart for multicloud grc
 category: "Development"
 keywords:
@@ -10,4 +10,4 @@ keywords:
   - grc
 name: grc
 verified: "RHACM"
-version: 2.10.0
+version: 2.11.0
