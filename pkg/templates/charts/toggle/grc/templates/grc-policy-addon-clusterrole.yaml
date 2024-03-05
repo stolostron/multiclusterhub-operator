@@ -42,6 +42,18 @@ rules:
   - update
 - apiGroups:
   - addon.open-cluster-management.io
+  resourceNames:
+  - cert-policy-controller
+  - config-policy-controller
+  - governance-policy-framework
+  - iam-policy-controller
+  resources:
+  - clustermanagementaddons/status
+  verbs:
+  - patch
+  - update
+- apiGroups:
+  - addon.open-cluster-management.io
   resources:
   - managedclusteraddons
   verbs:
