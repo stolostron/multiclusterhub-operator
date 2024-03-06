@@ -59,7 +59,7 @@ spec:
               {{ `{{- range $cmp := $mce.spec.overrides.components }}` }}
                 {{ `{{- if and (or (eq $cmp.name "managedserviceaccount-preview") (eq $cmp.name "managedserviceaccount")) (eq $cmp.enabled true) }}` }}
                   {{ `{{- range $ns := (lookup "v1" "Namespace" "" "" "cluster.open-cluster-management.io/managedCluster, cluster.open-cluster-management.io/managedCluster notin (local-cluster)").items }}` }}
-                    {{ `{{- range $ms := (lookup "authentication.open-cluster-management.io/v1alpha1" "ManagedServiceAccount" $ns.metadata.name "").items }}` }} 
+                    {{ `{{- range $ms := (lookup "authentication.open-cluster-management.io/v1beta1" "ManagedServiceAccount" $ns.metadata.name "").items }}` }} 
                       {{ `{{- if or (eq $ms.metadata.name "auto-import-account") (eq $ms.metadata.name "auto-import-account-pair") }}` }}   
             - complianceType: musthave
               objectDefinition:
