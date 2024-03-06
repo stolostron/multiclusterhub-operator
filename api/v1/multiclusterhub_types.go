@@ -332,8 +332,10 @@ type HubCondition struct {
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:path=multiclusterhubs,scope=Namespaced,shortName=mch
 
-// MultiClusterHub defiMulticlusterHub defines the configuration for an instance of a multicluster hub, a central  point for managing multiple Kubernetes-based clusters.  
-// The deployment of the components of the multiclsuterhub will be determined based on the configuration defined in this resource.
+// MulticlusterHub defines the configuration
+// for an instance of a multicluster hub, a central point for managing multiple
+// Kubernetes-based clusters. The deployment of multicluster hub components
+// is determined based on the configuration that is defined in this resource.
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase",description="The overall status of the multiclusterhub"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +operator-sdk:csv:customresourcedefinitions:displayName="MultiClusterHub"
