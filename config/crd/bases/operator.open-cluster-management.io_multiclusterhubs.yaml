@@ -28,10 +28,10 @@ spec:
     name: v1
     schema:
       openAPIV3Schema:
-        description: MultiClusterHub defiMulticlusterHub defines the configuration
-          for an instance of a multicluster hub, a central  point for managing multiple
-          Kubernetes-based clusters. The deployment of the components of the multiclsuterhub
-          will be determined based on the configuration defined in this resource.
+        description: MulticlusterHub defines the configuration for an instance of
+          a multicluster hub, a central point for managing multiple Kubernetes-based
+          clusters. The deployment of multicluster hub components is determined based
+          on the configuration that is defined in this resource.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
