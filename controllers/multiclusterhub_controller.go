@@ -24,6 +24,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
 	"time"
 
 	"github.com/go-co-op/gocron"
@@ -68,12 +69,13 @@ import (
 
 // MultiClusterHubReconciler reconciles a MultiClusterHub object
 type MultiClusterHubReconciler struct {
-	Client          client.Client
-	UncachedClient  client.Client
-	CacheSpec       CacheSpec
-	Scheme          *runtime.Scheme
-	Log             logr.Logger
-	UpgradeableCond utils.Condition
+	Client               client.Client
+	UncachedClient       client.Client
+	CacheSpec            CacheSpec
+	Scheme               *runtime.Scheme
+	Log                  logr.Logger
+	UpgradeableCond      utils.Condition
+	DeprecatedSpecFields map[string]bool
 }
 
 const (
@@ -150,7 +152,11 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	multiClusterHub.Status.HubConditions = filterOutConditionWithSubstring(multiClusterHub.Status.HubConditions, string(operatorv1.ComponentFailure))
+	multiClusterHub.Status.HubConditions = filterOutConditionWithSubstring(multiClusterHub.Status.HubConditions,
+		string(operatorv1.ComponentFailure))
+
+	// Check if any deprecated fields are present within the multiClusterHub spec.
+	r.CheckDeprecatedFieldUsage(multiClusterHub)
 
 	if multiClusterHub.IsInHostedMode() {
 		return r.HostedReconcile(ctx, multiClusterHub)
@@ -1392,5 +1398,30 @@ func (r *MultiClusterHubReconciler) StopScheduleOperatorControllerResync() {
 
 	if ok := scheduler.IsRunning(); !ok {
 		r.InitScheduler()
+	}
+}
+
+func (r *MultiClusterHubReconciler) CheckDeprecatedFieldUsage(m *operatorv1.MultiClusterHub) {
+	deprecatedSpecFields := []struct {
+		name      string
+		isPresent bool
+	}{
+		{"hive", m.Spec.Hive != nil},
+		{"ingress", !reflect.DeepEqual(m.Spec.Ingress, operatorv1.IngressSpec{})},
+		{"customCAConfigmap", m.Spec.CustomCAConfigmap != ""},
+		{"enableClusterBackup", m.Spec.EnableClusterBackup},
+		{"enableClusterProxyAddon", m.Spec.EnableClusterProxyAddon},
+		{"separateCertificateManagement", m.Spec.SeparateCertificateManagement},
+	}
+
+	if r.DeprecatedSpecFields == nil {
+		r.DeprecatedSpecFields = make(map[string]bool)
+	}
+
+	for _, f := range deprecatedSpecFields {
+		if f.isPresent && !r.DeprecatedSpecFields[f.name] {
+			r.Log.Info(fmt.Sprintf("Warning: %s field usage is deprecated in operator.", f.name))
+			r.DeprecatedSpecFields[f.name] = true
+		}
 	}
 }
