@@ -21,7 +21,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
       - uses: actions/setup-go@v2
         with:
-          go-version: '^1.20.2' # The Go version to download (if necessary) and use.
+          go-version: '^1.21.8' # The Go version to download (if necessary) and use.
       - name: Removing 'ok-to-test' label
         uses: buildsville/add-remove-label@v1
         with:
