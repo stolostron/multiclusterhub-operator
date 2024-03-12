@@ -1,5 +1,5 @@
 apiVersion: operators.coreos.com/v1
 kind: OperatorCondition
 metadata:
-  name: advanced-cluster-management-v2.10.0
+  name: advanced-cluster-management-v2.11.0
   namespace: open-cluster-management

@@ -4,11 +4,11 @@
 # Copyright Contributors to the Open Cluster Management project
 
 apiVersion: v1
-appVersion: 2.10.0
+appVersion: 2.11.0
 category: "Development"
 description: Helm chart for Open Cluster Management Console
 keywords:
   - ui
 kubeVersion: ">=1.10.0-0"
 name: console-chart
-version: 2.10.0
+version: 2.11.0
