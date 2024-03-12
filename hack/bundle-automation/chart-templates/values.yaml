@@ -6,8 +6,8 @@ org: open-cluster-management
 
 global:
   pullSecret: null
-  imageOverrides:
-    imageOverride: ""
+  imageOverrides: {}
+  templateOverrides: {}
   namespace: default
     
 hubconfig:
@@ -15,3 +15,4 @@ hubconfig:
   replicaCount: 1
   proxyConfigs: {}
   tolerations: []
+  ocpVersion: 4.12.0

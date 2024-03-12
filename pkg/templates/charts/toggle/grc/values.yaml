@@ -9,6 +9,7 @@ global:
     config_policy_controller: ""
     governance_policy_framework_addon: ""
     kube_rbac_proxy: ""
+  templateOverrides: {}
   namespace: default
   pullSecret: null
   pullPolicy: Always
@@ -17,4 +18,5 @@ hubconfig:
   proxyConfigs: {}
   replicaCount: 1
   tolerations: []
+  ocpVersion: 4.12.0
 org: open-cluster-management

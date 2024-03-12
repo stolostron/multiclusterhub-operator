@@ -1,6 +1,7 @@
 global:
   imageOverrides:
     cluster_permission: ''
+  templateOverrides: {}
   namespace: open-cluster-management
   pullSecret: null
 hubconfig:
@@ -8,4 +9,5 @@ hubconfig:
   proxyConfigs: {}
   replicaCount: 1
   tolerations: []
+  ocpVersion: 4.12.0
 org: open-cluster-management

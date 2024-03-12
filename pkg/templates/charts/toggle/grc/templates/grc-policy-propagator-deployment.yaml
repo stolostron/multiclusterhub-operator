@@ -126,7 +126,12 @@ spec:
           capabilities:
             drop:
             - ALL
-        command: ["governance-policy-propagator"]
+        command:
+        - governance-policy-propagator
+        args:
+        - "--compliance-history-api-host=0.0.0.0"
+        - "--compliance-history-api-cert=/var/run/compliance-history-api-cert/tls.crt"
+        - "--compliance-history-api-key=/var/run/compliance-history-api-cert/tls.key"
         env:
           - name: WATCH_NAMESPACE
             value: ""
@@ -154,12 +159,18 @@ spec:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
+        - mountPath: "/var/run/compliance-history-api-cert"
+          name: compliance-history-api-cert
+          readOnly: true
       volumes:
       - name: tmp
         emptyDir: {}
       - name: metrics-cert
         secret:
           secretName: grc-grc-metrics-cert
+      - name: compliance-history-api-cert
+        secret:
+          secretName: governance-policy-compliance-history-api-cert
       - name: cert
         secret:
           defaultMode: 420

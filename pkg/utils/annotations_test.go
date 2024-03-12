@@ -9,6 +9,7 @@ import (
 
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestIsPaused(t *testing.T) {
@@ -38,6 +39,24 @@ func TestIsPaused(t *testing.T) {
 		}
 	})
 
+}
+
+func Test_AnnotationMatch(t *testing.T) {
+	t.Run("Annotations match", func(t *testing.T) {
+		mch := &operatorsv1.MultiClusterHub{}
+		want := false
+		if got := IsPaused(mch); got != want {
+			t.Errorf("IsPaused() = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("Annotations do not match", func(t *testing.T) {
+		mch := &operatorsv1.MultiClusterHub{}
+		want := false
+		if got := IsPaused(mch); got != want {
+			t.Errorf("IsPaused() = %v, want %v", got, want)
+		}
+	})
 }
 
 func Test_getAnnotation(t *testing.T) {
@@ -76,6 +95,48 @@ func Test_getAnnotation(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_GetImageRepository(t *testing.T) {
+	t.Run("Get image repository for MCH", func(t *testing.T) {
+		mch := &operatorsv1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
+				AnnotationImageRepo: "quay.io/foo",
+			}},
+		}
+		want := "quay.io/foo"
+		if got := GetImageRepository(mch); got != want {
+			t.Errorf("GetImageRepository(mch) = %v, want %v", got, want)
+		}
+	})
+}
+
+func Test_GetImageOverridesConfigmapName(t *testing.T) {
+	t.Run("Get image overrides configmap name for MCH", func(t *testing.T) {
+		mch := &operatorsv1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
+				AnnotationImageOverridesCM: "image-override-cm",
+			}},
+		}
+		want := "image-override-cm"
+		if got := GetImageOverridesConfigmapName(mch); got != want {
+			t.Errorf("AnnotationImageOverridesCM(mch) = %v, want %v", got, want)
+		}
+	})
+}
+
+func Test_GetTemplateOverridesConfigmapName(t *testing.T) {
+	t.Run("Get template overrides configmap name for MCH", func(t *testing.T) {
+		mch := &operatorsv1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
+				AnnotationTemplateOverridesCM: "template-override-cm",
+			}},
+		}
+		want := "template-override-cm"
+		if got := GetTemplateOverridesConfigmapName(mch); got != want {
+			t.Errorf("GetTemplateOverridesConfigmapName() = %v, want %v", got, want)
+		}
+	})
 }
 
 func TestOverrideImageRepository(t *testing.T) {
@@ -124,6 +185,34 @@ func TestOverrideImageRepository(t *testing.T) {
 	}
 }
 
+func Test_GetMCEAnnotationOverrides(t *testing.T) {
+	t.Run("Get MCE annotation overrides for MCH", func(t *testing.T) {
+		mch := &operatorsv1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
+				AnnotationMCESubscriptionSpec: "mce-sub",
+			}},
+		}
+		want := "mce-sub"
+		if got := GetMCEAnnotationOverrides(mch); got != want {
+			t.Errorf("GetMCEAnnotationOverrides(mch) = %v, want %v", got, want)
+		}
+	})
+}
+
+func Test_GetOADPAnnotationOverrides(t *testing.T) {
+	t.Run("Get OADP annotation overrides for MCH", func(t *testing.T) {
+		mch := &operatorsv1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
+				AnnotationOADPSubscriptionSpec: "odap-sub",
+			}},
+		}
+		want := "odap-sub"
+		if got := GetOADPAnnotationOverrides(mch); got != want {
+			t.Errorf("GetOADPAnnotationOverrides(mch) = %v, want %v", got, want)
+		}
+	})
+}
+
 func TestShouldIgnoreOCPVersion(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -157,4 +246,22 @@ func TestShouldIgnoreOCPVersion(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_GetHostedCredentialsSecret(t *testing.T) {
+	t.Run("Get hosted credentials secret", func(t *testing.T) {
+		mch := &operatorsv1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "multiclusterhub",
+				Namespace: "test-ns",
+				Annotations: map[string]string{
+					AnnotationKubeconfig: "test-kubeconfig",
+				},
+			},
+		}
+		want := types.NamespacedName{Name: "test-kubeconfig", Namespace: mch.Namespace}
+		if got, _ := GetHostedCredentialsSecret(mch); got != want {
+			t.Errorf("GetHostedCredentialsSecret(mch) = %v, want %v", got, want)
+		}
+	})
 }

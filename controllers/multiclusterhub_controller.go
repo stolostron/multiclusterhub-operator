@@ -30,7 +30,7 @@ import (
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/deploying"
-	"github.com/stolostron/multiclusterhub-operator/pkg/imageoverrides"
+	"github.com/stolostron/multiclusterhub-operator/pkg/overrides"
 	"github.com/stolostron/multiclusterhub-operator/pkg/predicate"
 	renderer "github.com/stolostron/multiclusterhub-operator/pkg/rendering"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
@@ -195,31 +195,64 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 	}()
 
-	// Read image overrides
-	// First, attempt to read image overrides from environmental variables
-	imageOverrides := imageoverrides.GetImageOverrides()
+	// Attempt to retrieve image overrides from environmental variables.
+	imageOverrides := overrides.GetOverridesFromEnv(overrides.OperandImagePrefix)
+
+	// If no overrides found using OperandImagePrefix, attempt to retrieve using OSBSImagePrefix.
+	if len(imageOverrides) == 0 {
+		imageOverrides = overrides.GetOverridesFromEnv(overrides.OSBSImagePrefix)
+	}
+
+	// Check if no image overrides were found using either prefix.
 	if len(imageOverrides) == 0 {
 		r.Log.Error(err, "Could not get map of image overrides")
 		return ctrl.Result{}, nil
 	}
 
+	// Apply image repository override from annotation if present.
 	if imageRepo := utils.GetImageRepository(multiClusterHub); imageRepo != "" {
 		r.Log.Info(fmt.Sprintf("Overriding Image Repository from annotation 'mch-imageRepository': %s", imageRepo))
 		imageOverrides = utils.OverrideImageRepository(imageOverrides, imageRepo)
 	}
 
-	// Check for developer overrides
-	if imageOverridesConfigmap := utils.GetImageOverridesConfigmap(multiClusterHub); imageOverridesConfigmap != "" {
-		imageOverrides, err = r.OverrideImagesFromConfigmap(imageOverrides, multiClusterHub.GetNamespace(), imageOverridesConfigmap)
+	// Check for developer overrides in configmap.
+	if ioConfigmapName := utils.GetImageOverridesConfigmapName(multiClusterHub); ioConfigmapName != "" {
+		imageOverrides, err = overrides.GetOverridesFromConfigmap(r.Client, imageOverrides,
+			multiClusterHub.GetNamespace(), ioConfigmapName, false)
+
 		if err != nil {
-			r.Log.Error(err, fmt.Sprintf("Could not find image override configmap: %s/%s", multiClusterHub.GetNamespace(), imageOverridesConfigmap))
+			r.Log.Error(err, fmt.Sprintf("Failed to find image override configmap: %s/%s",
+				multiClusterHub.GetNamespace(), ioConfigmapName))
+
 			return ctrl.Result{}, err
 		}
 	}
+
+	// Update cache with image overrides and related information.
 	r.CacheSpec.ImageOverrides = imageOverrides
 	r.CacheSpec.ManifestVersion = version.Version
 	r.CacheSpec.ImageRepository = utils.GetImageRepository(multiClusterHub)
-	r.CacheSpec.ImageOverridesCM = utils.GetImageOverridesConfigmap(multiClusterHub)
+	r.CacheSpec.ImageOverridesCM = utils.GetImageOverridesConfigmapName(multiClusterHub)
+
+	// Attempt to retrieve template overrides from environmental variables.
+	templateOverrides := overrides.GetOverridesFromEnv(overrides.TemplateOverridePrefix)
+
+	// Check for developer overrides in configmap
+	if toConfigmapName := utils.GetTemplateOverridesConfigmapName(multiClusterHub); toConfigmapName != "" {
+		templateOverrides, err = overrides.GetOverridesFromConfigmap(r.Client, templateOverrides,
+			multiClusterHub.GetNamespace(), toConfigmapName, true)
+
+		if err != nil {
+			r.Log.Error(err, fmt.Sprintf("Failed to find template override configmap: %s/%s",
+				multiClusterHub.GetNamespace(), toConfigmapName))
+
+			return ctrl.Result{}, err
+		}
+	}
+
+	// Update cache with template overrides and related information.
+	r.CacheSpec.TemplateOverrides = templateOverrides
+	r.CacheSpec.TemplateOverridesCM = utils.GetTemplateOverridesConfigmapName(multiClusterHub)
 
 	// Check if the multiClusterHub instance is marked to be deleted, which is
 	// indicated by the deletion timestamp being set.
@@ -314,9 +347,9 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	// Deploy appsub operator component
 	if multiClusterHub.Enabled(operatorv1.Appsub) {
-		result, err = r.ensureComponent(ctx, multiClusterHub, operatorv1.Appsub, r.CacheSpec.ImageOverrides)
+		result, err = r.ensureComponent(ctx, multiClusterHub, operatorv1.Appsub, r.CacheSpec)
 	} else {
-		result, err = r.ensureNoComponent(ctx, multiClusterHub, operatorv1.Appsub, r.CacheSpec.ImageOverrides)
+		result, err = r.ensureNoComponent(ctx, multiClusterHub, operatorv1.Appsub, r.CacheSpec)
 	}
 	if result != (ctrl.Result{}) {
 		return result, err
@@ -412,7 +445,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	// Install the rest of the subscriptions in no particular order
 	for _, c := range operatorv1.MCHComponents {
-		result, err = r.ensureComponentOrNoComponent(ctx, multiClusterHub, c, r.CacheSpec.ImageOverrides, ocpConsole)
+		result, err = r.ensureComponentOrNoComponent(ctx, multiClusterHub, c, r.CacheSpec, ocpConsole)
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
@@ -644,7 +677,7 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(ctx context.Context, comp
 }
 
 func (r *MultiClusterHubReconciler) ensureComponentOrNoComponent(ctx context.Context, m *operatorv1.MultiClusterHub,
-	component string, imageOverrides map[string]string, ocpConsole bool) (ctrl.Result, error) {
+	component string, cachespec CacheSpec, ocpConsole bool) (ctrl.Result, error) {
 	var result ctrl.Result
 	var err error
 
@@ -652,13 +685,13 @@ func (r *MultiClusterHubReconciler) ensureComponentOrNoComponent(ctx context.Con
 
 	if !m.Enabled(component) {
 		if component == operatorv1.ClusterBackup {
-			result, err = r.ensureNoComponent(ctx, m, component, imageOverrides)
+			result, err = r.ensureNoComponent(ctx, m, component, cachespec)
 			if result != (ctrl.Result{}) || err != nil {
 				return result, err
 			}
 			return r.ensureNoNamespace(m, BackupNamespaceUnstructured())
 		}
-		return r.ensureNoComponent(ctx, m, component, imageOverrides)
+		return r.ensureNoComponent(ctx, m, component, cachespec)
 
 	} else {
 		if component == operatorv1.ClusterBackup {
@@ -670,10 +703,10 @@ func (r *MultiClusterHubReconciler) ensureComponentOrNoComponent(ctx context.Con
 
 		if component == operatorv1.Console && !ocpConsole {
 			log.Info("OCP console is not enabled")
-			return r.ensureNoComponent(ctx, m, component, imageOverrides)
+			return r.ensureNoComponent(ctx, m, component, cachespec)
 		}
 
-		return r.ensureComponent(ctx, m, component, imageOverrides)
+		return r.ensureComponent(ctx, m, component, cachespec)
 	}
 }
 
@@ -696,7 +729,7 @@ func (r *MultiClusterHubReconciler) ensureNamespaceAndPullSecret(m *operatorv1.M
 }
 
 func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *operatorv1.MultiClusterHub, component string,
-	images map[string]string) (ctrl.Result, error) {
+	cachespec CacheSpec) (ctrl.Result, error) {
 
 	/*
 		If the component is detected to be MCH, we can simply return successfully. MCH is only listed in the components
@@ -710,7 +743,7 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 	chartLocation := r.fetchChartLocation(ctx, component)
 
 	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(chartLocation, m, images)
+	templates, errs := renderer.RenderChart(chartLocation, m, cachespec.ImageOverrides, cachespec.TemplateOverrides)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -745,7 +778,7 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 }
 
 func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *operatorv1.MultiClusterHub,
-	component string, images map[string]string) (result ctrl.Result, err error) {
+	component string, cachespec CacheSpec) (result ctrl.Result, err error) {
 
 	/*
 		If the component is detected to be MCH, we can simply return successfully. MCH is only listed in the components
@@ -795,7 +828,7 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 	}
 
 	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(chartLocation, m, images)
+	templates, errs := renderer.RenderChart(chartLocation, m, cachespec.ImageOverrides, cachespec.TemplateOverrides)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -1086,14 +1119,12 @@ func (r *MultiClusterHubReconciler) ingressDomain(m *operatorv1.MultiClusterHub)
 }
 
 func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operatorv1.MultiClusterHub, ocpConsole bool) error {
-	imageOverrides := r.CacheSpec.ImageOverrides
-
 	if err := r.cleanupAppSubscriptions(reqLogger, m); err != nil {
 		return err
 	}
 
 	for _, c := range operatorv1.MCHComponents {
-		if _, err := r.ensureNoComponent(context.TODO(), m, c, imageOverrides); err != nil {
+		if _, err := r.ensureNoComponent(context.TODO(), m, c, r.CacheSpec); err != nil {
 			return err
 		}
 	}

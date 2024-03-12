@@ -33,6 +33,7 @@ type Values struct {
 
 type Global struct {
 	ImageOverrides      map[string]string    `json:"imageOverrides" structs:"imageOverrides"`
+	TemplateOverrides   map[string]string    `json:"templateOverrides" structs:"templateOverrides"`
 	PullPolicy          string               `json:"pullPolicy" structs:"pullPolicy"`
 	PullSecret          string               `json:"pullSecret" structs:"pullSecret"`
 	Namespace           string               `json:"namespace" structs:"namespace"`
@@ -189,23 +190,26 @@ func RenderCRDs(crdDir string, mch *v1.MultiClusterHub) ([]*unstructured.Unstruc
 	return crds, errs
 }
 
-func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]string) ([]*unstructured.Unstructured, []error) {
+func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]string, tpl map[string]string) ([]*unstructured.Unstructured, []error) {
 	log := log.Log.WithName("reconcile")
 	var templates []*unstructured.Unstructured
 	errs := []error{}
+
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
 		chartDir = path.Join(val, chartDir)
 	} else {
 		value, _ := os.LookupEnv("TEMPLATES_PATH")
 		chartDir = path.Join(value, chartDir)
 	}
+
 	charts, err := ioutil.ReadDir(chartDir)
 	if err != nil {
 		errs = append(errs, err)
 	}
+
 	for _, chart := range charts {
 		chartPath := filepath.Join(chartDir, chart.Name())
-		chartTemplates, errs := renderTemplates(chartPath, mch, images)
+		chartTemplates, errs := renderTemplates(chartPath, mch, images, tpl)
 		if len(errs) > 0 {
 			for _, err := range errs {
 				log.Info(err.Error())
@@ -217,9 +221,12 @@ func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]st
 	return templates, nil
 }
 
-func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]string) ([]*unstructured.Unstructured, []error) {
+func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]string, templates map[string]string) (
+	[]*unstructured.Unstructured, []error) {
+
 	log := log.Log.WithName("reconcile")
 	errs := []error{}
+
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
 		chartPath = path.Join(val, chartPath)
 	} else {
@@ -227,7 +234,8 @@ func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]st
 		chartPath = path.Join(value, chartPath)
 
 	}
-	chartTemplates, errs := renderTemplates(chartPath, mch, images)
+
+	chartTemplates, errs := renderTemplates(chartPath, mch, images, templates)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -238,17 +246,21 @@ func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]st
 
 }
 
-func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[string]string) ([]*unstructured.Unstructured, []error) {
+func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[string]string, tpl map[string]string) (
+	[]*unstructured.Unstructured, []error) {
+
 	log := log.Log.WithName("reconcile")
 	var templates []*unstructured.Unstructured
 	errs := []error{}
+
 	chart, err := loader.Load(chartPath)
 	if err != nil {
 		log.Info(fmt.Sprintf("error loading chart:"))
 		return nil, append(errs, err)
 	}
+
 	valuesYaml := &Values{}
-	injectValuesOverrides(valuesYaml, mch, images)
+	injectValuesOverrides(valuesYaml, mch, images, tpl)
 	helmEngine := engine.Engine{
 		Strict:   true,
 		LintMode: false,
@@ -269,7 +281,7 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 	for fileName, templateFile := range rawTemplates {
 		unstructured := &unstructured.Unstructured{}
 		if err = yaml.Unmarshal([]byte(templateFile), unstructured); err != nil {
-			return nil, append(errs, fmt.Errorf("error converting file %s to unstructured", fileName))
+			return nil, append(errs, fmt.Errorf("error converting file %s to unstructured: %v", fileName, err))
 		}
 
 		// Add namespace to namespaced resources
@@ -286,9 +298,11 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 	return templates, errs
 }
 
-func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[string]string) {
+func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[string]string, templates map[string]string) {
 
 	values.Global.ImageOverrides = images
+
+	values.Global.TemplateOverrides = templates
 
 	values.Global.PullPolicy = string(utils.GetImagePullPolicy(mch))
 
