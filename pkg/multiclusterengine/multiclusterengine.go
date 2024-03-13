@@ -32,7 +32,7 @@ var (
 	operandNameSpace       = "multicluster-engine"
 
 	// community MCE variables
-	communityChannel           = "community-0.1"
+	communityChannel           = "community-0.2"
 	communityPackageName       = "stolostron-engine"
 	communityCatalogSourceName = "community-operators"
 	communityOperandNamepace   = "stolostron-engine"
