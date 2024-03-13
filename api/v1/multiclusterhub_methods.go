@@ -47,41 +47,6 @@ const (
 	MCEServerFoundation                 string = "server-foundation"
 )
 
-// allComponents is a slice containing all the component names from both "MCH" and "MCE" categories.
-var allComponents = []string{
-	Appsub,
-	ClusterBackup,
-	ClusterLifecycle,
-	ClusterPermission,
-	Console,
-	GRC,
-	Insights,
-	ManagementIngress,
-	MultiClusterEngine,
-	MultiClusterObservability,
-	Repo,
-	Search,
-	SubmarinerAddon,
-	Volsync,
-
-	MCEAssistedService,
-	MCEClusterLifecycle,
-	MCEClusterManager,
-	MCEClusterProxyAddon,
-	MCEConsole,
-	MCEDiscovery,
-	MCEHive,
-	MCEHypershift,
-	MCEHypershiftLocalHosting,
-	MCEHypershiftPreview,
-	MCEImageBasedInstallOperator,
-	MCEImageBasedInstallOperatorPreview,
-	MCEManagedServiceAccount,
-	MCEManagedServiceAccountPreview,
-	MCEManagedServiceAccount,
-	MCEServerFoundation,
-}
-
 // MCHComponents is a slice containing component names specific to the "MCH" category.
 var MCHComponents = []string{
 	Appsub,
@@ -352,7 +317,7 @@ func IsCommunity() (bool, error) {
 	} else if (packageName == "stolostron") || (packageName == "") {
 		return true, nil
 	} else {
-		err := errors.New("There is an illegal value set for OPERATOR_PACKAGE")
+		err := errors.New("there is an illegal value set for OPERATOR_PACKAGE")
 		return true, err
 	}
 }
