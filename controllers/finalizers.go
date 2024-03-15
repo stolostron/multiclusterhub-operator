@@ -23,33 +23,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"k8s.io/apimachinery/pkg/types"
-	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
-
-func (r *MultiClusterHubReconciler) cleanupAPIServices(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
-	err := r.Client.DeleteAllOf(
-		context.TODO(),
-		&apiregistrationv1.APIService{},
-		client.MatchingLabels{
-			"installer.name":      m.GetName(),
-			"installer.namespace": m.GetNamespace(),
-		},
-	)
-
-	if err != nil {
-		if errors.IsNotFound(err) {
-			reqLogger.Info("No matching API services to finalize. Continuing.")
-			return nil
-		}
-		reqLogger.Error(err, "Error while deleting API services")
-		return err
-	}
-
-	reqLogger.Info("API services finalized")
-	return nil
-}
 
 func (r *MultiClusterHubReconciler) cleanupClusterRoles(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	err := r.Client.DeleteAllOf(context.TODO(), &rbacv1.ClusterRole{}, client.MatchingLabels{

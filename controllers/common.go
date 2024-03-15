@@ -400,24 +400,6 @@ func (r *MultiClusterHubReconciler) listCustomResources(m *operatorv1.MultiClust
 	return ret, nil
 }
 
-// addInstallerLabel adds the installer name and namespace to a deployment's labels
-// so it can be watched. Returns false if the labels are already present.
-func addInstallerLabel(d *appsv1.Deployment, name string, ns string) bool {
-	updated := false
-	if d.Labels == nil {
-		d.Labels = map[string]string{}
-	}
-	if d.Labels["installer.name"] != name {
-		d.Labels["installer.name"] = name
-		updated = true
-	}
-	if d.Labels["installer.namespace"] != ns {
-		d.Labels["installer.namespace"] = ns
-		updated = true
-	}
-	return updated
-}
-
 // addInstallerLabelSecret adds the installer name and namespace to a secret's labels
 // so it can be watched. Returns false if the labels are already present.
 func addInstallerLabelSecret(d *corev1.Secret, name string, ns string) bool {

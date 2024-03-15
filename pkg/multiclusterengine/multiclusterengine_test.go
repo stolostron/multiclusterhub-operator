@@ -11,7 +11,6 @@ import (
 	olmversion "github.com/operator-framework/api/pkg/lib/version"
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
-	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -28,9 +27,6 @@ func TestGetCatalogSource(t *testing.T) {
 	defer os.Unsetenv("UNIT_TEST")
 	defer os.Unsetenv("OPERATOR_PACKAGE")
 
-	type args struct {
-		k8sClient client.Client
-	}
 	tests := []struct {
 		name      string
 		k8sClient client.Client
@@ -193,7 +189,7 @@ func TestFindAndManageMCE(t *testing.T) {
 }
 
 func TestMCECreatedByMCH(t *testing.T) {
-	mch := &operatorsv1.MultiClusterHub{
+	mch := &operatorv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "mch",
 			Namespace: "mch-ns",
@@ -252,7 +248,7 @@ func TestNewMultiClusterEngine(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	type args struct {
-		m                             *operatorsv1.MultiClusterHub
+		m                             *operatorv1.MultiClusterHub
 		infrastructureCustomNamespace string
 	}
 	tests := []struct {
@@ -294,7 +290,7 @@ func TestNewMultiClusterEngine(t *testing.T) {
 					TargetNamespace:    OperandNameSpace(),
 					Overrides: &mcev1.Overrides{
 						Components: []mcev1.ComponentConfig{
-							{Name: operatorsv1.MCELocalCluster, Enabled: true},
+							{Name: operatorv1.MCELocalCluster, Enabled: true},
 						},
 					},
 				},
@@ -309,7 +305,7 @@ func TestNewMultiClusterEngine(t *testing.T) {
 						Namespace: "mch-ns",
 					},
 					Spec: operatorv1.MultiClusterHubSpec{
-						AvailabilityConfig: operatorsv1.HABasic,
+						AvailabilityConfig: operatorv1.HABasic,
 						NodeSelector: map[string]string{
 							"select": "this",
 						},
@@ -324,7 +320,7 @@ func TestNewMultiClusterEngine(t *testing.T) {
 						Overrides: &operatorv1.Overrides{
 							ImagePullPolicy: corev1.PullNever,
 							Components: []operatorv1.ComponentConfig{
-								{Name: operatorsv1.MCEDiscovery, Enabled: false},
+								{Name: operatorv1.MCEDiscovery, Enabled: false},
 							},
 						},
 					},
@@ -356,8 +352,8 @@ func TestNewMultiClusterEngine(t *testing.T) {
 					Overrides: &mcev1.Overrides{
 						ImagePullPolicy: corev1.PullNever,
 						Components: []mcev1.ComponentConfig{
-							{Name: operatorsv1.MCEDiscovery, Enabled: false},
-							{Name: operatorsv1.MCELocalCluster, Enabled: false},
+							{Name: operatorv1.MCEDiscovery, Enabled: false},
+							{Name: operatorv1.MCELocalCluster, Enabled: false},
 						},
 					},
 				},
@@ -410,8 +406,8 @@ func TestRenderMultiClusterEngine(t *testing.T) {
 			Overrides: &mcev1.Overrides{
 				ImagePullPolicy: corev1.PullNever,
 				Components: []mcev1.ComponentConfig{
-					{Name: operatorsv1.MCEDiscovery, Enabled: false},
-					{Name: operatorsv1.MCELocalCluster, Enabled: false},
+					{Name: operatorv1.MCEDiscovery, Enabled: false},
+					{Name: operatorv1.MCELocalCluster, Enabled: false},
 				},
 				InfrastructureCustomNamespace: "open-cluster-management",
 			},

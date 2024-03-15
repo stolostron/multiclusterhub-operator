@@ -21,7 +21,6 @@ var (
 	baseDomain          string
 	kubeadminUser       string
 	kubeadminCredential string
-	kubeconfig          string
 	reportFile          string
 )
 
