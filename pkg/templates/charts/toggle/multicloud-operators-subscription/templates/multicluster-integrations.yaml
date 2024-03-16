@@ -34,6 +34,7 @@ spec:
                   - multicluster-integrations
               topologyKey: kubernetes.io/hostname
             weight: 35
+      automountServiceAccountToken: true
       containers:
       - command:
         - /usr/local/bin/propagation

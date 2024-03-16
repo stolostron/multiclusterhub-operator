@@ -35,6 +35,7 @@ spec:
                   - search-v2-operator-controller-manager
               topologyKey: kubernetes.io/hostname
             weight: 35
+      automountServiceAccountToken: true
       containers:
       - args:
         - --secure-listen-address=0.0.0.0:8443
