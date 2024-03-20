@@ -7,7 +7,10 @@ metadata:
   name: acm-managed-hub-backup
   namespace: open-cluster-management-backup
 spec:
-  description: ACM Managed Hub backup and restore 
+  description: This PolicySet is used to place Hub backup policies on any managed cluster where ACM Hub has been installed. These managed clusters must have the is-hub=true label. 
   policies:
     - backup-restore-enabled
     - backup-restore-auto-import
+    - backup-pvc-config
+    - backup-pvc-source
+    - backup-pvc-destination
