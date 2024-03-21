@@ -115,7 +115,7 @@ spec:
                         name: {{ $rd_name }}
                         namespace: {{ $pvc_namespace }}
                 {{- else }}
-                {{- $common_restic_repo := ( lookup "v1" "Secret" $ns $volsync_secret ).data.RESTIC_REPOSITORY | base64dec }}
+                {{- $common_restic_repo := fromSecret $ns $volsync_secret "RESTIC_REPOSITORY" | base64dec }}
 
                   - complianceType: musthave
                     objectDefinition:

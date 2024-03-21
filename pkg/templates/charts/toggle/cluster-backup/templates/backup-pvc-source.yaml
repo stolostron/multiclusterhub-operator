@@ -115,7 +115,7 @@ spec:
                   {{- end }}   
 
                   {{- $volsync_pvcs_str = ( (cat $volsync_pvcs_str "##" $pvc.metadata.namespace "#" $pvc.metadata.name ) | replace " " "" ) }}
-                  {{- $common_restic_repo := ( lookup "v1" "Secret" $ns $volsync_secret ).data.RESTIC_REPOSITORY | base64dec }}
+                  {{- $common_restic_repo := fromSecret $ns $volsync_secret "RESTIC_REPOSITORY" | base64dec }}
                   {{- $secretName := ( (cat $pvc.metadata.name "-"  (fromConfigMap $ns $volsync_map "repository") ) | replace " " "" ) }}                 
                   - complianceType: musthave
                     objectDefinition:
