@@ -1,7 +1,7 @@
 
 - repo_name: multicloud-operators-subscription
   github_ref: "https://github.com/stolostron/multicloud-operators-subscription.git"
-  branch: "main"
+  branch: "release-2.11"
   operators:
     - name: multicloud-operators-subscription
       bundlePath: "deploy/olm-catalog/multicluster-operators-subscription/manifests/"
