@@ -80,7 +80,7 @@ type MultiClusterHubSpec struct {
 	// The resource allocation bucket for this hub to use.
 	// [S (Small), M (Medium), L (Large), XL (Extra Large)]. Defaults to (M)edium if not specified.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Hub Size",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
-	HubSize HubSize `json:"hubSize,omitempty`
+	HubSize HubSize `json:"hubSize,omitempty"`
 
 	// (Deprecated) Configuration options for ingress management
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Ingress Management",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
