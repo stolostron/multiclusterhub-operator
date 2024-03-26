@@ -210,14 +210,6 @@ func GetLegacyServiceName(component string) (string, error) {
 	}
 }
 
-// BOOKMARK: This might actually marshal with the default value. I'll unit test to find out
-func (mch *MultiClusterHub) GetHubSizeOrDefault() HubSize {
-	if mch.Spec.HubSize != Medium {
-		return mch.Spec.HubSize
-	}
-	return Medium
-}
-
 /*
 ComponentPresent checks if a specific component is present based on the provided component name in the
 MultiClusterHub struct.
