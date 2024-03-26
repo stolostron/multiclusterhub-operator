@@ -29,6 +29,8 @@ type AvailabilityType string
 // DeploymentMode
 type DeploymentMode string
 
+type HubSize int64
+
 const (
 	// HABasic stands up most app subscriptions with a replicaCount of 1
 	HABasic AvailabilityType = "Basic"
@@ -36,6 +38,14 @@ const (
 	HAHigh AvailabilityType = "High"
 	// ModeHosted deploys the MCH on a hosted virtual cluster
 	ModeHosted DeploymentMode = "Hosted"
+)
+
+// Medium is default when defined this way
+const (
+	Medium HubSize = iota
+	Small
+	Large
+	ExtraLarge
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -66,6 +76,11 @@ type MultiClusterHubSpec struct {
 	// (Deprecated) Overrides for the default HiveConfig spec
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Hive Config",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Hive *HiveConfigSpec `json:"hive,omitempty"`
+
+	// The resource allocation bucket for this hub to use.
+	// [S (Small), M (Medium), L (Large), XL (Extra Large)]. Defaults to (M)edium if not specified.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Hub Size",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	HubSize HubSize `json:"hubSize,omitempty`
 
 	// (Deprecated) Configuration options for ingress management
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Ingress Management",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
