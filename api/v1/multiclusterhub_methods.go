@@ -322,6 +322,26 @@ func IsCommunity() (bool, error) {
 	}
 }
 
+func (h HubSize) String() string {
+	return HubSizeStrings[h]
+}
+
+func (h *HubSize) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	fmt.Println("Unmarshaling YAML is occuring")
+	var hubsize string
+	if err := unmarshal(&hubsize); err != nil {
+		return err
+	}
+
+	var exists bool
+	*h, exists = HubSizeFromString[hubsize]
+
+	if !exists {
+		return fmt.Errorf("key %v does not exist in map", hubsize)
+	}
+	return nil
+}
+
 // IsInHostedMode returns true if mch is configured for hosted mode
 func (mch *MultiClusterHub) IsInHostedMode() bool {
 	a := mch.GetAnnotations()

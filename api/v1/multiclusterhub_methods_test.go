@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -318,26 +317,6 @@ func TestHubSizeDefault(t *testing.T) {
 			}
 		})
 	}
-}
-
-func (h HubSize) String() string {
-	return HubSizeStrings[h]
-}
-
-func (h *HubSize) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	fmt.Println("Unmarshaling YAML is occuring")
-	var hubsize string
-	if err := unmarshal(&hubsize); err != nil {
-		return err
-	}
-
-	var exists bool
-	*h, exists = HubSizeFromString[hubsize]
-
-	if !exists {
-		return fmt.Errorf("key %v does not exist in map", hubsize)
-	}
-	return nil
 }
 
 func TestHubSizeMarshal(t *testing.T) {
