@@ -35,7 +35,6 @@ spec:
                   - multicluster-observability-operator
               topologyKey: kubernetes.io/hostname
             weight: 35
-      automountServiceAccountToken: false
       containers:
       - args:
         - -leader-elect

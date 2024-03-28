@@ -35,7 +35,6 @@ spec:
                   - submariner-addon
               topologyKey: kubernetes.io/hostname
             weight: 35
-      automountServiceAccountToken: false
       containers:
       - args:
         - /submariner
