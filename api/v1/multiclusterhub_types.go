@@ -29,8 +29,6 @@ type AvailabilityType string
 // DeploymentMode
 type DeploymentMode string
 
-type HubSize int64
-
 const (
 	// HABasic stands up most app subscriptions with a replicaCount of 1
 	HABasic AvailabilityType = "Basic"
@@ -40,12 +38,29 @@ const (
 	ModeHosted DeploymentMode = "Hosted"
 )
 
-// Medium is default when defined this way
+type HubSize uint8
+
+// Putting medium first here defaults it to Medium
 const (
 	Medium HubSize = iota
 	Small
 	Large
 	ExtraLarge
+)
+
+var (
+	HubSizeStrings = map[HubSize]string{
+		Small:      "S",
+		Medium:     "M",
+		Large:      "L",
+		ExtraLarge: "XL",
+	}
+	HubSizeFromString = map[string]HubSize{
+		"S":  Small,
+		"M":  Medium,
+		"L":  Large,
+		"XL": ExtraLarge,
+	}
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!

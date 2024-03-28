@@ -1,9 +1,11 @@
 package v1
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
+	"gopkg.in/yaml.v3"
 	"k8s.io/utils/strings/slices"
 )
 
@@ -313,6 +315,61 @@ func TestHubSizeDefault(t *testing.T) {
 			hsize := tt.spec.HubSize
 			if hsize != tt.want {
 				t.Errorf("HubSize: %v, want: %v", hsize, tt.want)
+			}
+		})
+	}
+}
+
+func (h HubSize) String() string {
+	return HubSizeStrings[h]
+}
+
+func (h *HubSize) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	fmt.Println("Unmarshaling YAML is occuring")
+	var hubsize string
+	if err := unmarshal(&hubsize); err != nil {
+		return err
+	}
+
+	var exists bool
+	*h, exists = HubSizeFromString[hubsize]
+
+	if !exists {
+		return fmt.Errorf("key %v does not exist in map", hubsize)
+	}
+	return nil
+}
+
+func TestHubSizeMarshal(t *testing.T) {
+	tests := []struct {
+		name       string
+		yamlstring string
+		want       HubSize
+	}{
+		{
+			name:       "Marshal defaults to M",
+			yamlstring: ``,
+			want:       Medium,
+		},
+		{
+			name: "Marshals when overriding default with large",
+			yamlstring: `
+hubSize: L`,
+			want: Large,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var out MultiClusterHubSpec
+			// t.Logf("spec before marshal: %v\n", out)
+			t.Logf("yamlstring: %v", tt.yamlstring)
+			err := yaml.Unmarshal([]byte(tt.yamlstring), &out)
+			// t.Logf("spec after marshal: %v\n", out)
+			if err != nil {
+				t.Errorf("Unable to unmarshal yaml string: %v. %v", tt.yamlstring, err)
+			}
+			if out.HubSize != tt.want {
+				t.Errorf("Hubsize not desired. HubSize: %v, want: %v", out.HubSize, tt.want)
 			}
 		})
 	}
