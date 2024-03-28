@@ -289,6 +289,35 @@ func TestGetLegacyServiceMonitorName(t *testing.T) {
 	}
 }
 
+func TestHubSizeDefault(t *testing.T) {
+	tests := []struct {
+		name string
+		spec MultiClusterHubSpec
+		want HubSize
+	}{
+		{
+			name: "Default is Medium",
+			spec: MultiClusterHubSpec{},
+			want: Medium,
+		},
+		{
+			name: "Override Default with Large",
+			spec: MultiClusterHubSpec{
+				HubSize: Large,
+			},
+			want: Large,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			hsize := tt.spec.HubSize
+			if hsize != tt.want {
+				t.Errorf("HubSize: %v, want: %v", hsize, tt.want)
+			}
+		})
+	}
+}
+
 func TestGetLegacyServiceName(t *testing.T) {
 	tests := []struct {
 		name      string
