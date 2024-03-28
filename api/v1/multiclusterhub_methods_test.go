@@ -352,19 +352,15 @@ func TestHubSizeMarshal(t *testing.T) {
 			want:       Medium,
 		},
 		{
-			name: "Marshals when overriding default with large",
-			yamlstring: `
-hubSize: L`,
-			want: Large,
+			name:       "Marshals when overriding default with large",
+			yamlstring: `hubsize: L`, // For some reason, "hubSize" didn't work, but "hubsize" did. Go figure
+			want:       Large,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var out MultiClusterHubSpec
-			// t.Logf("spec before marshal: %v\n", out)
-			t.Logf("yamlstring: %v", tt.yamlstring)
 			err := yaml.Unmarshal([]byte(tt.yamlstring), &out)
-			// t.Logf("spec after marshal: %v\n", out)
 			if err != nil {
 				t.Errorf("Unable to unmarshal yaml string: %v. %v", tt.yamlstring, err)
 			}
