@@ -42,7 +42,7 @@ type HubSize uint8
 
 // Putting medium first here defaults it to Medium
 const (
-	Medium HubSize = iota
+	Medium = iota
 	Small
 	Large
 	ExtraLarge

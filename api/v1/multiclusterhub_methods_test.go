@@ -1,10 +1,10 @@
 package v1
 
 import (
+	"encoding/json"
 	"reflect"
 	"testing"
 
-	"gopkg.in/yaml.v3"
 	"k8s.io/utils/strings/slices"
 )
 
@@ -327,19 +327,19 @@ func TestHubSizeMarshal(t *testing.T) {
 	}{
 		{
 			name:       "Marshal defaults to M",
-			yamlstring: ``,
+			yamlstring: `{}`,
 			want:       Medium,
 		},
 		{
 			name:       "Marshals when overriding default with large",
-			yamlstring: `hubsize: L`, // For some reason, "hubSize" didn't work, but "hubsize" did. Go figure
+			yamlstring: `{"hubSize": "L"}`, // For some reason, "hubSize" didn't work, but "hubsize" did. Go figure
 			want:       Large,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var out MultiClusterHubSpec
-			err := yaml.Unmarshal([]byte(tt.yamlstring), &out)
+			err := json.Unmarshal([]byte(tt.yamlstring), &out)
 			if err != nil {
 				t.Errorf("Unable to unmarshal yaml string: %v. %v", tt.yamlstring, err)
 			}
