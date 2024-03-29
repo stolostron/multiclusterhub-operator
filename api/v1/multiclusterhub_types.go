@@ -38,6 +38,31 @@ const (
 	ModeHosted DeploymentMode = "Hosted"
 )
 
+type HubSize uint8
+
+// Putting medium first here defaults it to Medium
+const (
+	Medium = iota
+	Small
+	Large
+	ExtraLarge
+)
+
+var (
+	HubSizeStrings = map[HubSize]string{
+		Small:      "S",
+		Medium:     "M",
+		Large:      "L",
+		ExtraLarge: "XL",
+	}
+	HubSizeFromString = map[string]HubSize{
+		"S":  Small,
+		"M":  Medium,
+		"L":  Large,
+		"XL": ExtraLarge,
+	}
+)
+
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
@@ -66,6 +91,11 @@ type MultiClusterHubSpec struct {
 	// (Deprecated) Overrides for the default HiveConfig spec
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Hive Config",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Hive *HiveConfigSpec `json:"hive,omitempty"`
+
+	// The resource allocation bucket for this hub to use.
+	// [S (Small), M (Medium), L (Large), XL (Extra Large)]. Defaults to (M)edium if not specified.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Hub Size",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	HubSize HubSize `json:"hubSize,omitempty"`
 
 	// (Deprecated) Configuration options for ingress management
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Ingress Management",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}

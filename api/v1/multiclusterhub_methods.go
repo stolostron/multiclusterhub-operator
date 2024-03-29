@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -320,6 +321,26 @@ func IsCommunity() (bool, error) {
 		err := errors.New("there is an illegal value set for OPERATOR_PACKAGE")
 		return true, err
 	}
+}
+
+func (h HubSize) String() string {
+	return HubSizeStrings[h]
+}
+
+func (h *HubSize) UnmarshalJSON(b []byte) error {
+	fmt.Println("Unmarshaling JSON is occuring")
+	var hubsize string
+	if err := json.Unmarshal(b, &hubsize); err != nil {
+		return err
+	}
+
+	var exists bool
+	*h, exists = HubSizeFromString[hubsize]
+
+	if !exists {
+		return fmt.Errorf("key %v does not exist in map", hubsize)
+	}
+	return nil
 }
 
 // IsInHostedMode returns true if mch is configured for hosted mode
