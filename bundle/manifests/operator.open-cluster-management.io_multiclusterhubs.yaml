@@ -194,7 +194,7 @@ spec:
                 - failedProvisionConfig
                 type: object
               hubSize:
-                default: Medium
+                default: 1
                 description: The resource allocation bucket for this hub to use. [S
                   (Small), M (Medium), L (Large), XL (Extra Large)]. Defaults to (M)edium
                   if not specified.

@@ -95,7 +95,7 @@ type MultiClusterHubSpec struct {
 	// The resource allocation bucket for this hub to use.
 	// [S (Small), M (Medium), L (Large), XL (Extra Large)]. Defaults to (M)edium if not specified.
 	//+kubebuilder:validation:Enum:=Small;Medium;Large;ExtraLarge
-	//+kubebuilder:default:=Medium
+	//+kubebuilder:default:=1
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Hub Size",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	HubSize HubSize `json:"hubSize,omitempty"`
 
