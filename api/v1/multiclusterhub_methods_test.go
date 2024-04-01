@@ -332,7 +332,7 @@ func TestHubSizeMarshal(t *testing.T) {
 		},
 		{
 			name:       "Marshals when overriding default with large",
-			yamlstring: `{"hubSize": "L"}`, // For some reason, "hubSize" didn't work, but "hubsize" did. Go figure
+			yamlstring: `{"hubSize": "Large"}`, // For some reason, "hubSize" didn't work, but "hubsize" did. Go figure
 			want:       Large,
 		},
 	}

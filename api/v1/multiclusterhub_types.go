@@ -50,16 +50,16 @@ const (
 
 var (
 	HubSizeStrings = map[HubSize]string{
-		Small:      "S",
-		Medium:     "M",
-		Large:      "L",
-		ExtraLarge: "XL",
+		Small:      "Small",
+		Medium:     "Medium",
+		Large:      "Large",
+		ExtraLarge: "ExtraLarge",
 	}
 	HubSizeFromString = map[string]HubSize{
-		"S":  Small,
-		"M":  Medium,
-		"L":  Large,
-		"XL": ExtraLarge,
+		"Small":      Small,
+		"Medium":     Medium,
+		"Large":      Large,
+		"ExtraLarge": ExtraLarge,
 	}
 )
 
@@ -94,6 +94,8 @@ type MultiClusterHubSpec struct {
 
 	// The resource allocation bucket for this hub to use.
 	// [S (Small), M (Medium), L (Large), XL (Extra Large)]. Defaults to (M)edium if not specified.
+	//+kubebuilder:validation:Enum:=Small;Medium;Large;ExtraLarge
+	//+kubebuilder:default:=Medium
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Hub Size",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	HubSize HubSize `json:"hubSize,omitempty"`
 
