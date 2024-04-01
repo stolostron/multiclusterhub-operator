@@ -195,7 +195,7 @@ spec:
                 - failedProvisionConfig
                 type: object
               hubSize:
-                default: 1
+                default: Medium
                 description: The resource allocation bucket for this hub to use. [S
                   (Small), M (Medium), L (Large), XL (Extra Large)]. Defaults to (M)edium
                   if not specified.
@@ -204,7 +204,7 @@ spec:
                 - Medium
                 - Large
                 - ExtraLarge
-                type: integer
+                type: string
               imagePullSecret:
                 description: Override pull secret for accessing MultiClusterHub operand
                   and endpoint images

@@ -38,30 +38,30 @@ const (
 	ModeHosted DeploymentMode = "Hosted"
 )
 
-type HubSize uint8
+type HubSize string
 
 // Putting medium first here defaults it to Medium
 const (
-	Medium = iota
-	Small
-	Large
-	ExtraLarge
+	Small      HubSize = "Small"
+	Medium     HubSize = "Medium"
+	Large      HubSize = "Large"
+	ExtraLarge HubSize = "ExtraLarge"
 )
 
-var (
-	HubSizeStrings = map[HubSize]string{
-		Small:      "Small",
-		Medium:     "Medium",
-		Large:      "Large",
-		ExtraLarge: "ExtraLarge",
-	}
-	HubSizeFromString = map[string]HubSize{
-		"Small":      Small,
-		"Medium":     Medium,
-		"Large":      Large,
-		"ExtraLarge": ExtraLarge,
-	}
-)
+// var (
+// 	HubSizeStrings = map[HubSize]string{
+// 		Small:      "Small",
+// 		Medium:     "Medium",
+// 		Large:      "Large",
+// 		ExtraLarge: "ExtraLarge",
+// 	}
+// 	HubSizeFromString = map[string]HubSize{
+// 		"Small":      Small,
+// 		"Medium":     Medium,
+// 		"Large":      Large,
+// 		"ExtraLarge": ExtraLarge,
+// 	}
+// )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
@@ -95,7 +95,7 @@ type MultiClusterHubSpec struct {
 	// The resource allocation bucket for this hub to use.
 	// [S (Small), M (Medium), L (Large), XL (Extra Large)]. Defaults to (M)edium if not specified.
 	//+kubebuilder:validation:Enum:=Small;Medium;Large;ExtraLarge
-	//+kubebuilder:default:=1
+	//+kubebuilder:default:=Medium
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Hub Size",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	HubSize HubSize `json:"hubSize,omitempty"`
 
