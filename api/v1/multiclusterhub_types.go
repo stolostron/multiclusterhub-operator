@@ -38,30 +38,30 @@ const (
 	ModeHosted DeploymentMode = "Hosted"
 )
 
-type HubSize string
+type HubSize uint8
 
 // Putting medium first here defaults it to Medium
 const (
-	Small      HubSize = "Small"
-	Medium     HubSize = "Medium"
-	Large      HubSize = "Large"
-	ExtraLarge HubSize = "ExtraLarge"
+	Medium HubSize = iota
+	Small
+	Large
+	ExtraLarge
 )
 
-// var (
-// 	HubSizeStrings = map[HubSize]string{
-// 		Small:      "Small",
-// 		Medium:     "Medium",
-// 		Large:      "Large",
-// 		ExtraLarge: "ExtraLarge",
-// 	}
-// 	HubSizeFromString = map[string]HubSize{
-// 		"Small":      Small,
-// 		"Medium":     Medium,
-// 		"Large":      Large,
-// 		"ExtraLarge": ExtraLarge,
-// 	}
-// )
+var (
+	HubSizeStrings = map[HubSize]string{
+		Small:      "Small",
+		Medium:     "Medium",
+		Large:      "Large",
+		ExtraLarge: "ExtraLarge",
+	}
+	HubSizeFromString = map[string]HubSize{
+		"Small":      Small,
+		"Medium":     Medium,
+		"Large":      Large,
+		"ExtraLarge": ExtraLarge,
+	}
+)
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
