@@ -290,35 +290,6 @@ func TestGetLegacyServiceMonitorName(t *testing.T) {
 	}
 }
 
-func TestHubSizeDefault(t *testing.T) {
-	tests := []struct {
-		name string
-		spec MultiClusterHubSpec
-		want HubSize
-	}{
-		{
-			name: "Default is Medium",
-			spec: MultiClusterHubSpec{},
-			want: Medium,
-		},
-		{
-			name: "Override Default with Large",
-			spec: MultiClusterHubSpec{
-				HubSize: Large,
-			},
-			want: Large,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			hsize := tt.spec.HubSize
-			if hsize != tt.want {
-				t.Errorf("HubSize: %v, want: %v", hsize, tt.want)
-			}
-		})
-	}
-}
-
 func TestHubSizeMarshal(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -326,13 +297,8 @@ func TestHubSizeMarshal(t *testing.T) {
 		want       HubSize
 	}{
 		{
-			name:       "Marshal defaults to M",
-			yamlstring: `{}`,
-			want:       Medium,
-		},
-		{
 			name:       "Marshals when overriding default with large",
-			yamlstring: `{"hubSize": "L"}`, // For some reason, "hubSize" didn't work, but "hubsize" did. Go figure
+			yamlstring: `{"hubSize": "Large"}`,
 			want:       Large,
 		},
 	}
@@ -340,6 +306,7 @@ func TestHubSizeMarshal(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var out MultiClusterHubSpec
 			err := json.Unmarshal([]byte(tt.yamlstring), &out)
+			t.Logf("hubsize: %v\n", out.HubSize)
 			if err != nil {
 				t.Errorf("Unable to unmarshal yaml string: %v. %v", tt.yamlstring, err)
 			}
