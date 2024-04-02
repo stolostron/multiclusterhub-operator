@@ -195,7 +195,7 @@ spec:
                 type: object
               hubSize:
                 default: Medium
-                description: The resource allocation bucket for this hub to use. Small,
+                description: The resource allocation bucket for this hub to use. [Small,
                   Medium, Large, ExtraLarge]. Defaults to Medium if not specified.
                 enum:
                 - Small
