@@ -65,7 +65,7 @@ spec:
         path: hive
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: The resource allocation bucket for this hub to use. Small, Medium,
+      - description: The resource allocation bucket for this hub to use. [Small, Medium,
           Large, ExtraLarge]. Defaults to Medium if not specified.
         displayName: Hub Size
         path: hubSize
