@@ -1,0 +1,13 @@
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.20 AS builder
+
+RUN go install github.com/onsi/ginkgo/v2/ginkgo@latest
+RUN go install github.com/mikefarah/yq/v3@latest
+
+USER root
+
+ENV KUBECONFIG "/opt/.kube/config"
+COPY . ./src/github.com/stolostron/multiclusterhub-operator
+
+WORKDIR ./src/github.com/stolostron/multiclusterhub-operator
+
+ENTRYPOINT [ "./test/function_tests/start-tests.sh" ]
