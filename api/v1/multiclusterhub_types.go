@@ -77,7 +77,7 @@ type MultiClusterHubSpec struct {
 	Hive *HiveConfigSpec `json:"hive,omitempty"`
 
 	// The resource allocation bucket for this hub to use.
-	// Small, Medium, Large, ExtraLarge]. Defaults to Medium if not specified.
+	// [Small, Medium, Large, ExtraLarge]. Defaults to Medium if not specified.
 	//+kubebuilder:validation:Enum:=Small;Medium;Large;ExtraLarge
 	//+kubebuilder:default:=Medium
 	//+kubebuilder:validation:Type:=string
