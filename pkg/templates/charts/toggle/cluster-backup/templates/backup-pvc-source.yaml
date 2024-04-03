@@ -144,7 +144,10 @@ spec:
                           {{ `{{ $volsync_label }}` }}: acm
                       spec:
                         restic:
-                          cacheCapacity: '{{ `{{ fromConfigMap $ns $volsync_map "cacheCapacity" }}` }}'
+                          {{ `{{ $cacheCapacity := trimAll " " (fromConfigMap $ns $volsync_map "cacheCapacity") }}` }}
+                          {{ `{{- if not (eq $cacheCapacity "" ) }}` }}
+                          cacheCapacity: '{{ `{{ $cacheCapacity }}` }}'
+                          {{ `{{- end }}` }}
                           copyMethod: '{{ `{{ fromConfigMap $ns $volsync_map "copyMethod" }}` }}'
                           {{ `{{ $pruneIntervalDays := trimAll " " (fromConfigMap $ns $volsync_map "pruneIntervalDays") }}` }}
                           {{ `{{- if not (eq $pruneIntervalDays "" ) }}` }}
@@ -156,8 +159,10 @@ spec:
                           {{ `{{ $retain_weekly := trimAll " " (fromConfigMap $ns $volsync_map "retain_weekly") }}` }}
                           {{ `{{ $retain_monthly := trimAll " " (fromConfigMap $ns $volsync_map "retain_monthly") }}` }}
                           {{ `{{ $retain_yearly := trimAll " " (fromConfigMap $ns $volsync_map "retain_yearly") }}` }}
+                          {{ `{{ $retain_within := trimAll " " (fromConfigMap $ns $volsync_map "retain_within") }}` }}
+                          {{ `{{ $retain_last := trimAll " " (fromConfigMap $ns $volsync_map "retain_last") }}` }}
                           {{ `{{- /* if any of the retain options are set, create the retain section */ -}}` }}
-                          {{ `{{- if or (not (eq $retain_daily "" )) (not (eq $retain_hourly "" )) (not (eq $retain_weekly "" )) (not (eq $retain_monthly "" )) (not (eq $retain_yearly "" )) }}` }}
+                          {{ `{{- if or (not (eq $retain_within "" )) (not (eq $retain_last "" ))  (not (eq $retain_daily "" )) (not (eq $retain_hourly "" )) (not (eq $retain_weekly "" )) (not (eq $retain_monthly "" )) (not (eq $retain_yearly "" )) }}` }}
                           retain:
                           {{ `{{- end }}` }}
                           {{ `{{- if not (eq $retain_daily "" ) }}` }}
@@ -174,6 +179,12 @@ spec:
                           {{ `{{- end }}` }}
                           {{ `{{- if not (eq $retain_yearly "" ) }}` }}
                             yearly: '{{ `{{ $retain_yearly | toInt }}` }}'
+                          {{ `{{- end }}` }}
+                          {{ `{{- if not (eq $retain_within "" ) }}` }}
+                            within: '{{ `{{ $retain_within }}` }}'
+                          {{ `{{- end }}` }}
+                          {{ `{{- if not (eq $retain_last "" ) }}` }}
+                            last: '{{ `{{ $retain_last }}` }}'
                           {{ `{{- end }}` }}
                         sourcePVC: {{ `{{ $pvc.metadata.name }}` }}
                         trigger:
