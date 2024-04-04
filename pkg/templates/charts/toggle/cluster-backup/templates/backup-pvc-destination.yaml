@@ -86,6 +86,7 @@ spec:
 
                 {{ `{{- $pvc_config_name := ( (cat $volsync_map "-" $pvc_namespace "-" $pvc_name ) | replace " " "" ) }}` }}
                 {{ `{{ if eq ( lookup "v1" "ConfigMap" $ns $pvc_config_name ).metadata.name  $pvc_config_name }}` }}   
+                  {{ `{{- /* If the hub-pvc-backup-pvc-ns-pvcname ConfigMap exists, use it instead of the global  hub-pvc-backup ConfigMap  */ -}}` }}
                   {{ `{{ $volsync_map = $pvc_config_name }}` }}
                 {{ `{{- end }}` }}
                 {{ `{{- $secret_name := fromConfigMap $ns $volsync_map "repository" }}` }}
