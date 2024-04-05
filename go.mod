@@ -15,7 +15,7 @@ require (
 	github.com/operator-framework/operator-lifecycle-manager v0.22.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.73.0
-	github.com/stolostron/backplane-operator v0.0.0-20240404202617-441fcbca6e0b
+	github.com/stolostron/backplane-operator v0.0.0-20240405171654-01604d4a6be1
 	github.com/stolostron/search-v2-operator v0.0.0-20240321201500-bf46e7632ae6
 	go.uber.org/zap v1.27.0
 	helm.sh/helm/v3 v3.14.3
