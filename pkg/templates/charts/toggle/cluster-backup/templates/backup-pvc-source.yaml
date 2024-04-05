@@ -133,7 +133,7 @@ spec:
                         RESTIC_REPOSITORY: {{ `{{ ( ( (cat $common_restic_repo "/" $pvc.metadata.namespace "-" $pvc.metadata.name ) | replace " " "" ) | base64enc ) }}` }}                      
                       type: Opaque
                       
-                  - complianceType: musthave
+                  - complianceType: mustonlyhave
                     objectDefinition:
                       kind: ReplicationSource
                       apiVersion: volsync.backube/v1alpha1
@@ -185,6 +185,48 @@ spec:
                           {{ `{{- end }}` }}
                           {{ `{{- if not (eq $retain_last "" ) }}` }}
                             last: '{{ `{{ $retain_last }}` }}'
+                          {{ `{{- end }}` }}
+                          {{ `{{ $customCA_secretName := trimAll " " (fromConfigMap $ns $volsync_map "customCA_secretName") }}` }}
+                          {{ `{{ $customCA_configMapName := trimAll " " (fromConfigMap $ns $volsync_map "customCA_configMapName") }}` }}
+                          {{ `{{ $customCA_key := trimAll " " (fromConfigMap $ns $volsync_map "customCA_key") }}` }}
+                          {{ `{{- /* if any of the customCA options are set, create the customCA section */ -}}` }}
+                          {{ `{{- if or (not (eq $customCA_secretName "" )) (not (eq $customCA_configMapName "" )) (not (eq $customCA_key "" )) }}` }}
+                          customCA:
+                          {{ `{{- end }}` }}
+                          {{ `{{- if not (eq $customCA_key "" ) }}` }}
+                            key: '{{ `{{ $customCA_key }}` }}'
+                          {{ `{{- end }}` }}
+                          {{ `{{- if not (eq $customCA_secretName "" ) }}` }}
+                            secretName: '{{ `{{ $customCA_secretName }}` }}'
+                          {{ `{{- end }}` }}
+                          {{ `{{- if not (eq $customCA_configMapName "" ) }}` }}
+                            configMapName: '{{ `{{ $customCA_configMapName }}` }}'
+                          {{ `{{- end }}` }}
+                          {{ `{{ $volumeSnapshotClassName := trimAll " " (fromConfigMap $ns $volsync_map "volumeSnapshotClassName") }}` }}
+                          {{ `{{- if not (eq $volumeSnapshotClassName "" ) }}` }}
+                          volumeSnapshotClassName: '{{ `{{ $volumeSnapshotClassName }}` }}'
+                          {{ `{{- end }}` }}
+                          {{ `{{ $storageClassName := trimAll " " (fromConfigMap $ns $volsync_map "storageClassName") }}` }}
+                          {{ `{{- if not (eq $storageClassName "" ) }}` }}
+                          storageClassName: '{{ `{{ $storageClassName }}` }}'
+                          {{ `{{- end }}` }}
+                          {{ `{{ $cacheStorageClassName := trimAll " " (fromConfigMap $ns $volsync_map "cacheStorageClassName") }}` }}
+                          {{ `{{- if not (eq $cacheStorageClassName "" ) }}` }}
+                          cacheStorageClassName: '{{ `{{ $cacheStorageClassName }}` }}'
+                          {{ `{{- end }}` }}
+                          {{ `{{ $capacity := trimAll " " (fromConfigMap $ns $volsync_map "capacity") }}` }}
+                          {{ `{{- if not (eq $capacity "" ) }}` }}
+                          capacity: '{{ `{{ $capacity }}` }}'
+                          {{ `{{- end }}` }}
+                          {{ `{{ $accessModes := trimAll " " (fromConfigMap $ns $volsync_map "accessModes") }}` }}
+                          {{ `{{- if not (eq $accessModes "" ) }}` }}
+                          accessModes: 
+                            - '{{ `{{ $accessModes }}` }}'
+                          {{ `{{- end }}` }}
+                          {{ `{{ $cacheAccessModes := trimAll " " (fromConfigMap $ns $volsync_map "cacheAccessModes") }}` }}
+                          {{ `{{- if not (eq $cacheAccessModes "" ) }}` }}
+                          cacheAccessModes: 
+                            - '{{ `{{ $cacheAccessModes }}` }}'
                           {{ `{{- end }}` }}
                         sourcePVC: {{ `{{ $pvc.metadata.name }}` }}
                         trigger:
