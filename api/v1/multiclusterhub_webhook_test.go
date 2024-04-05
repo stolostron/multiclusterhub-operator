@@ -102,6 +102,11 @@ var _ = Describe("Multiclusterhub webhook", func() {
 				mch.Spec.SeparateCertificateManagement = !mch.Spec.SeparateCertificateManagement
 				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(), "updating SeparateCertificateManagement is forbidden")
 			})
+			By("because of having an empty hubList while in HostedMode", func() {
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)).To(Succeed())
+				mch.SetAnnotations(map[string]string{"deploymentmode": string(ModeHosted)})
+				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(), "a hosted Mode MCH can only be created once a non-hosted MCH is present")
+			})
 		})
 
 		It("Should delete multiclusterhub", func() {
