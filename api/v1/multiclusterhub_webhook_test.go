@@ -73,6 +73,16 @@ var _ = Describe("Multiclusterhub webhook", func() {
 				}
 				Expect(k8sClient.Create(ctx, mch)).NotTo(BeNil(), "Invalid components not allowed in config")
 			})
+			By("because of having an empty hubList while in HostedMode", func() {
+				mch := &MultiClusterHub{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        fmt.Sprintf("%s-2", multiClusterHubName),
+						Namespace:   "default",
+						Annotations: map[string]string{"deploymentmode": string(ModeHosted)},
+					},
+				}
+				Expect(k8sClient.Create(ctx, mch)).NotTo(BeNil(), "a hosted Mode MCH can only be created once a non-hosted MCH is present")
+			})
 		})
 
 		It("Should fail to update multiclusterhub", func() {
@@ -101,11 +111,6 @@ var _ = Describe("Multiclusterhub webhook", func() {
 				// flipping it directly
 				mch.Spec.SeparateCertificateManagement = !mch.Spec.SeparateCertificateManagement
 				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(), "updating SeparateCertificateManagement is forbidden")
-			})
-			By("because of having an empty hubList while in HostedMode", func() {
-				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)).To(Succeed())
-				mch.SetAnnotations(map[string]string{"deploymentmode": string(ModeHosted)})
-				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(), "a hosted Mode MCH can only be created once a non-hosted MCH is present")
 			})
 		})
 
