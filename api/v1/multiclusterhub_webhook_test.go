@@ -81,6 +81,7 @@ var _ = Describe("Multiclusterhub webhook", func() {
 						Annotations: map[string]string{"deploymentmode": string(ModeHosted)},
 					},
 				}
+				// TODO: How do I get the Client.List() function to produce an empty list for this test?
 				Expect(k8sClient.Create(ctx, mch)).NotTo(BeNil(), "a hosted Mode MCH can only be created once a non-hosted MCH is present")
 			})
 		})
