@@ -20,6 +20,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -72,9 +73,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	ctrlwebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -169,26 +171,38 @@ func main() {
 	}
 
 	mgrOptions := ctrl.Options{
-		Scheme:                  scheme,
-		MetricsBindAddress:      metricsAddr,
-		Port:                    9443,
-		HealthProbeBindAddress:  probeAddr,
-		LeaderElection:          enableLeaderElection,
-		LeaderElectionID:        "multicloudhub-operator-lock",
-		WebhookServer:           &ctrlwebhook.Server{TLSMinVersion: "1.2"},
+		Client: client.Options{
+			Cache: &client.CacheOptions{
+				DisableFor: []client.Object{
+					&corev1.Secret{},
+					&rbacv1.ClusterRole{},
+					&rbacv1.ClusterRoleBinding{},
+					&rbacv1.RoleBinding{},
+					&corev1.ConfigMap{},
+					&corev1.ServiceAccount{},
+				},
+			},
+		},
+		Scheme: scheme,
+		Metrics: metricsserver.Options{
+			BindAddress: metricsAddr,
+		},
+		HealthProbeBindAddress: probeAddr,
+		LeaderElection:         enableLeaderElection,
+		LeaderElectionID:       "multicloudhub-operator-lock",
+		// WebhookServer:          &ctrlwebhook.Server{TLSMinVersion: "1.2"},
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Port: 9443,
+			TLSOpts: []func(*tls.Config){func(config *tls.Config) {
+				config = &tls.Config{
+					MinVersion: tls.VersionTLS12,
+				}
+			}},
+		}),
 		LeaderElectionNamespace: ns,
 		LeaseDuration:           &leaseDuration,
 		RenewDeadline:           &renewDeadline,
 		RetryPeriod:             &retryPeriod,
-	}
-
-	mgrOptions.ClientDisableCacheFor = []client.Object{
-		&corev1.Secret{},
-		&rbacv1.ClusterRole{},
-		&rbacv1.ClusterRoleBinding{},
-		&rbacv1.RoleBinding{},
-		&corev1.ConfigMap{},
-		&corev1.ServiceAccount{},
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOptions)
@@ -287,7 +301,7 @@ func main() {
 	}
 
 	// go routine to check if mce exist, if it does add watch
-	go addMultiClusterEngineWatch(ctx, uncachedClient)
+	go addMultiClusterEngineWatch(ctx, mgr, uncachedClient)
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
@@ -301,7 +315,7 @@ const (
 	LocalRunMode    = "local"
 )
 
-func addMultiClusterEngineWatch(ctx context.Context, uncachedClient client.Client) {
+func addMultiClusterEngineWatch(ctx context.Context, mgr ctrl.Manager, uncachedClient client.Client) {
 	for {
 		crd := &apixv1.CustomResourceDefinition{}
 		mceName := "multiclusterengines.multicluster.openshift.io"
@@ -309,9 +323,9 @@ func addMultiClusterEngineWatch(ctx context.Context, uncachedClient client.Clien
 		//crdKey := client.ObjectKey{Name: multiclusterengine.Namespace().GetObjectMeta().GetName()}
 		//err := uncachedClient.Get(ctx, crdKey, &mcev1.MultiClusterEngine{})
 		if err == nil {
-			err := mchController.Watch(&source.Kind{Type: &mcev1.MultiClusterEngine{}},
+			err := mchController.Watch(source.Kind(mgr.GetCache(), &mcev1.MultiClusterEngine{}),
 				handler.Funcs{
-					UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
+					UpdateFunc: func(ctx context.Context, e event.UpdateEvent, q workqueue.RateLimitingInterface) {
 						labels := e.ObjectNew.GetLabels()
 						name := labels["installer.name"]
 						if name == "" {

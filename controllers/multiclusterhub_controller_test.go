@@ -43,6 +43,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -377,8 +378,10 @@ var _ = Describe("MultiClusterHub controller", func() {
 		Expect(networking.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(operatorsapiv2.AddToScheme(clientScheme)).Should(Succeed())
 		k8sManager, err := ctrl.NewManager(clientConfig, ctrl.Options{
-			Scheme:                 clientScheme,
-			MetricsBindAddress:     "0",
+			Scheme: clientScheme,
+			Metrics: metricsserver.Options{
+				BindAddress: "0",
+			},
 			HealthProbeBindAddress: "0",
 		})
 		Expect(err).ToNot(HaveOccurred())
