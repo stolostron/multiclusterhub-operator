@@ -95,6 +95,13 @@ var _ = Describe("Multiclusterhub webhook", func() {
 				}
 				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(), "invalid components should not be permitted")
 			})
+			By("because of updating SeparateCertificateManagement", func() {
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)).To(Succeed())
+
+				// flipping it directly
+				mch.Spec.SeparateCertificateManagement = !mch.Spec.SeparateCertificateManagement
+				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(), "updating SeparateCertificateManagement is forbidden")
+			})
 		})
 
 		It("Should delete multiclusterhub", func() {
