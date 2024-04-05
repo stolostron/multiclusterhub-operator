@@ -45,6 +45,8 @@ spec:
 
             {{ `{{- /* common volsync config; to define different config for a PVC, create a hub-pvc-backup-pvc-ns-pvcname configMap */ -}}` }}
             {{ `{{- $volsync_map := "hub-pvc-backup" }}` }} 
+            {{ `{{- /* optional, common volsync config for the ReplicationDestination and new PVC; if defined, overrides hub-pvc-backup-pvc_name PVC info */ -}}` }}           
+            {{ `{{- $volsync_restore_map := "hub-pvc-restore" }}` }}
             {{ `{{- $volsync_label := "cluster.open-cluster-management.io/backup-hub-pvc" }}` }}
 
             {{ `{{- $volsync_backup_cond := gt (len ( lookup $velero_api $kind_schedule $ns "" $schedule_label).items ) 0 }}` }}
@@ -84,23 +86,16 @@ spec:
                 {{ `{{- $pvc_namespace := $pvc_list._0 }}` }}
                 {{ `{{- $pvc_name := $pvc_list._1 }}` }}
 
+                {{ `{{- $pvc_config_info_name := ( (cat $volsync_map "-" $pvc_name ) | replace " " "" ) }}` }}
                 {{ `{{- $pvc_config_name := ( (cat $volsync_map "-" $pvc_namespace "-" $pvc_name ) | replace " " "" ) }}` }}
                 {{ `{{ if eq ( lookup "v1" "ConfigMap" $ns $pvc_config_name ).metadata.name  $pvc_config_name }}` }}   
                   {{ `{{- /* If the hub-pvc-backup-pvc-ns-pvcname ConfigMap exists, use it instead of the global  hub-pvc-backup ConfigMap  */ -}}` }}
                   {{ `{{ $volsync_map = $pvc_config_name }}` }}
                 {{ `{{- end }}` }}
                 {{ `{{- $secret_name := fromConfigMap $ns $volsync_map "repository" }}` }}
-                {{ `{{- $pvc_config_info_name := ( (cat $volsync_map "-" $pvc_name ) | replace " " "" ) }}` }}
 
                 {{ `{{ if eq ( lookup "v1" "ConfigMap" $pvc_namespace  $pvc_config_info_name ).metadata.name  $pvc_config_info_name }}` }}
 
-                  {{ `{{- $storageClassPVC := fromConfigMap $pvc_namespace $pvc_config_info_name "storageClassName" }}` }}
-                  {{ `{{- range $changeStorageMap := ( lookup "v1" "ConfigMap" $ns "" "velero.io/change-storage-class" ).items }}` }}
-                    {{ `{{ $mappingClass := fromConfigMap $ns $changeStorageMap.metadata.name $storageClassPVC }}` }} 
-                    {{ `{{- if not (eq $mappingClass "")}}` }}
-                      {{ `{{ $storageClassPVC = $mappingClass }}` }}
-                    {{ `{{- end }}` }}
-                  {{ `{{- end }}` }}
                 {{ `{{- $secretName := ( (cat $pvc_name "-"  (fromConfigMap $ns $volsync_map "repository") ) | replace " " "" ) }}` }}
                 {{ `{{- /* truncate from the front, the Dest name, if the string is longer than 50 chars ; a job batch starting with volsync-dst- is generated from this name and it must be less than 63 chars */ -}}` }}
                 {{ `{{- $rd_name :=  trunc -50 (cat $pvc_name $restore_timestamp_trim | replace " " "") }}` }}
@@ -118,6 +113,37 @@ spec:
                 {{ `{{- else }}` }}
                 {{ `{{- $common_restic_repo := ( lookup "v1" "Secret" $ns $volsync_secret ).data.RESTIC_REPOSITORY | base64dec }}` }}
 
+                {{ `{{- /* Get restore properties from the pvc_config_info_name configmap */ -}}` }}
+                {{ `{{- /* If a hub-pvc-restore ConfigMap exists in the open-cluster-management-backup ns, it suppersedes the pvc_config_info_name values */ -}}` }}
+                {{ `{{- /* If a hub-pvc-restore-pvc_ns-pvc_name ConfigMap exists in the open-cluster-management-backup ns, it suppersedes the hub-pvc-restore values */ -}}` }}
+                {{ `{{- $pvc_restore_config_name := $pvc_config_info_name }}` }}
+                {{ `{{- $capacity := fromConfigMap $pvc_namespace $pvc_config_info_name "resources.requests.storage" }}` }}
+                {{ `{{- $storageClassName := fromConfigMap $pvc_namespace $pvc_config_info_name "storageClassName" }}` }}
+
+                {{ `{{ if eq ( lookup "v1" "ConfigMap" $ns $volsync_restore_map ).metadata.name  $volsync_restore_map }}` }}   
+                  {{ `{{- /* If volsync_restore_map ConfigMap exists, use it instead of the pvc_config_info_name ConfigMap  */ -}}` }}
+                  {{ `{{- $capacity_overwrite := fromConfigMap $ns $volsync_restore_map "resources.requests.storage" }}` }}
+                  {{ `{{- if not (eq $capacity_overwrite "" ) }}` }}
+                    {{ `{{ $capacity = $capacity_overwrite }}` }}
+                  {{ `{{- end }}` }}
+                  {{ `{{- $storageClassName_overwrite := fromConfigMap $ns $volsync_restore_map "storageClassName" }}` }}
+                  {{ `{{- if not (eq $storageClassName_overwrite "" ) }}` }}
+                    {{ `{{ $storageClassName = $storageClassName_overwrite }}` }}
+                  {{ `{{- end }}` }}
+                {{ `{{- end }}` }}
+                {{ `{{- $pvc_restore_ovw_config_name := ( (cat $volsync_restore_map "-" $pvc_namespace "-" $pvc_name ) | replace " " "" ) }}` }}
+                {{ `{{ if eq ( lookup "v1" "ConfigMap" $ns $pvc_restore_ovw_config_name ).metadata.name  $pvc_restore_ovw_config_name }}` }}   
+                  {{ `{{- /* If pvc_restore_ovw_config_name ConfigMap exists, use it instead of the volsync_restore_map ConfigMap  */ -}}` }}
+                  {{ `{{- $capacity_overwrite := fromConfigMap $ns $pvc_restore_ovw_config_name "resources.requests.storage" }}` }}
+                  {{ `{{- if not (eq $capacity_overwrite "" ) }}` }}
+                    {{ `{{ $capacity = $capacity_overwrite }}` }}
+                  {{ `{{- end }}` }}
+                  {{ `{{- $storageClassName_overwrite := fromConfigMap $ns $pvc_restore_ovw_config_name "storageClassName" }}` }}
+                  {{ `{{- if not (eq $storageClassName_overwrite "" ) }}` }}
+                    {{ `{{ $storageClassName = $storageClassName_overwrite }}` }}
+                  {{ `{{- end }}` }}
+                {{ `{{- end }}` }}               
+
                   - complianceType: musthave
                     objectDefinition:
                       kind: PersistentVolumeClaim
@@ -132,7 +158,9 @@ spec:
                           kind: ReplicationDestination
                           apiGroup: volsync.backube
                           name: {{ `{{ $rd_name }}` }}
-                        storageClassName: {{ `{{ $storageClassPVC }}` }}
+                        {{ `{{- if not (eq $storageClassName "" ) }}` }}
+                        storageClassName: {{ `{{ $storageClassName }}` }}
+                        {{ `{{- end }}` }}
                         resources:
                           requests:
                             storage: '{{ `{{ fromConfigMap $pvc_namespace $pvc_config_info_name "resources.requests.storage" }}` }}'
@@ -178,8 +206,13 @@ spec:
                             {{ `{{- range $modes := split " " $accessModes }}` }} 
                             - {{ `{{ $modes }}` }}
                             {{ `{{- end }}` }}
+                          {{ `{{- end }}` }}
+                          {{ `{{- if not (eq $storageClassName "" ) }}` }}
+                          storageClassName: {{ `{{ $storageClassName }}` }}
                           {{ `{{- end }}` }} 
-                          capacity: '{{ `{{ fromConfigMap $pvc_namespace $pvc_config_info_name "resources.requests.storage" }}` }}' 
+                          {{ `{{- if not (eq $capacity "" ) }}` }}
+                          capacity: '{{ `{{ $capacity }}` }}' 
+                          {{ `{{- end }}` }}
                           repository: {{ `{{ $secretName }}` }} 
                           copyMethod: Snapshot
                         trigger:
