@@ -27,8 +27,10 @@ spec:
     name: v1
     schema:
       openAPIV3Schema:
-        description: MultiClusterHub defines the configuration for an instance of
-          the MultiCluster Hub
+        description: MulticlusterHub defines the configuration for an instance of
+          a multicluster hub, a central point for managing multiple Kubernetes-based
+          clusters. The deployment of multicluster hub components is determined based
+          on the configuration that is defined in this resource.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -191,6 +193,16 @@ spec:
                 required:
                 - failedProvisionConfig
                 type: object
+              hubSize:
+                default: Medium
+                description: The resource allocation bucket for this hub to use. [Small,
+                  Medium, Large, ExtraLarge]. Defaults to Medium if not specified.
+                enum:
+                - Small
+                - Medium
+                - Large
+                - ExtraLarge
+                type: string
               imagePullSecret:
                 description: Override pull secret for accessing MultiClusterHub operand
                   and endpoint images
@@ -214,7 +226,8 @@ spec:
                 description: Developer Overrides
                 properties:
                   components:
-                    description: Provides optional configuration for components
+                    description: 'Provides optional configuration for components,
+                      the list of which can be found here: https://github.com/stolostron/multiclusterhub-operator/tree/main/docs/available-components.md'
                     items:
                       description: ComponentConfig provides optional configuration
                         items for individual components
