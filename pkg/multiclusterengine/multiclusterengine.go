@@ -152,6 +152,9 @@ func GetSupportedAnnotations(m *operatorsv1.MultiClusterHub) map[string]string {
 	if m.GetAnnotations() != nil {
 		if val, ok := m.GetAnnotations()[utils.AnnotationImageRepo]; ok && val != "" {
 			mceAnnotations["imageRepository"] = val
+
+		} else if val, ok := m.GetAnnotations()[utils.DeprecatedAnnotationImageRepo]; ok && val != "" {
+			mceAnnotations["imageRepository"] = val
 		}
 	}
 	return mceAnnotations
