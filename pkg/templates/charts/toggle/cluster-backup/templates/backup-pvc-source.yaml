@@ -46,6 +46,8 @@ spec:
             {{ `{{- $pv_claim_cond := gt (len ( lookup "v1" "PersistentVolumeClaim" "" "" $volsync_label).items ) 0 }}` }}
             {{ `{{- $volsync_backup_cond := gt (len ( lookup $velero_api $kind_schedule $ns "" $schedule_label).items ) 0  }}` }}
             {{ `{{- $volsync_pvcs := "hub-pvc-backup-pvcs" }}` }}
+            {{ `{{- /* restic_secret_suffix is the suffix used for the secret when copied over to the PVC ns  */ -}}` }}
+            {{ `{{- $restic_secret_suffix := "restic-secret" }}` }}
 
             {{ `{{- /* Create the volsync ReplicationSource and secret - if BackupSchedule exists ; delete ReplicationSource otherwise */ -}}` }}
             {{ `{{ if $volsync_backup_cond }}` }}
@@ -116,7 +118,7 @@ spec:
 
                   {{ `{{- $volsync_pvcs_str = ( (cat $volsync_pvcs_str "##" $pvc.metadata.namespace "#" $pvc.metadata.name ) | replace " " "" ) }}` }}
                   {{ `{{- $common_restic_repo := ( lookup "v1" "Secret" $ns $volsync_secret ).data.RESTIC_REPOSITORY | base64dec }}` }}
-                  {{ `{{- $secretName := ( (cat $pvc.metadata.name "-"  (fromConfigMap $ns $volsync_map "repository") ) | replace " " "" ) }}` }}                 
+                  {{ `{{- $secretName := ( (cat $pvc.metadata.name "-"  $restic_secret_suffix ) | replace " " "" ) }}` }}                 
                   - complianceType: musthave
                     objectDefinition:
                       apiVersion: v1

@@ -92,11 +92,12 @@ spec:
                   {{ `{{- /* If the hub-pvc-backup-pvc-ns-pvcname ConfigMap exists, use it instead of the global  hub-pvc-backup ConfigMap  */ -}}` }}
                   {{ `{{ $volsync_map = $pvc_config_name }}` }}
                 {{ `{{- end }}` }}
-                {{ `{{- $secret_name := fromConfigMap $ns $volsync_map "repository" }}` }}
+                {{ `{{- /* restic_secret_suffix is the suffix used for the secret when copied over to the PVC ns  */ -}}` }}
+                {{ `{{- $restic_secret_suffix := "restic-secret" }}` }}
 
                 {{ `{{ if eq ( lookup "v1" "ConfigMap" $pvc_namespace  $pvc_config_info_name ).metadata.name  $pvc_config_info_name }}` }}
 
-                {{ `{{- $secretName := ( (cat $pvc_name "-"  (fromConfigMap $ns $volsync_map "repository") ) | replace " " "" ) }}` }}
+                {{ `{{- $secretName := ( (cat $pvc_name "-"  $restic_secret_suffix ) | replace " " "" ) }}` }}
                 {{ `{{- /* truncate from the front, the Dest name, if the string is longer than 50 chars ; a job batch starting with volsync-dst- is generated from this name and it must be less than 63 chars */ -}}` }}
                 {{ `{{- $rd_name :=  trunc -50 (cat $pvc_name $restore_timestamp_trim | replace " " "") }}` }}
 
@@ -161,9 +162,11 @@ spec:
                         {{ `{{- if not (eq $storageClassName "" ) }}` }}
                         storageClassName: {{ `{{ $storageClassName }}` }}
                         {{ `{{- end }}` }}
+                        {{ `{{- if not (eq $capacity "" ) }}` }}
                         resources:
                           requests:
-                            storage: '{{ `{{ fromConfigMap $pvc_namespace $pvc_config_info_name "resources.requests.storage" }}` }}'
+                            storage: '{{ `{{ $capacity }}` }}'
+                        {{ `{{- end }}` }}                        
                         volumeMode: '{{ `{{ fromConfigMap $pvc_namespace $pvc_config_info_name "volumeMode" }}` }}'    
                         {{ `{{ $accessModes := trimAll " " (fromConfigMap $pvc_namespace $pvc_config_info_name "resources.accessModes") }}` }}                  
                         {{ `{{- if not (eq $accessModes "" ) }}` }}
