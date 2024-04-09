@@ -93,7 +93,7 @@ spec:
                   {{ `{{ $volsync_map = $pvc_config_name }}` }}
                 {{ `{{- end }}` }}
                 {{ `{{- /* restic_secret_suffix is the suffix used for the secret when copied over to the PVC ns  */ -}}` }}
-                {{ `{{- $restic_secret_suffix := "restic-secret" }}` }}
+                {{ `{{- $restic_secret_suffix := "acm-pvc-restic" }}` }}
 
                 {{ `{{ if eq ( lookup "v1" "ConfigMap" $pvc_namespace  $pvc_config_info_name ).metadata.name  $pvc_config_info_name }}` }}
 

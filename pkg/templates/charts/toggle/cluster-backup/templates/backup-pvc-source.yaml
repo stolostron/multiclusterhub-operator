@@ -47,7 +47,7 @@ spec:
             {{ `{{- $volsync_backup_cond := gt (len ( lookup $velero_api $kind_schedule $ns "" $schedule_label).items ) 0  }}` }}
             {{ `{{- $volsync_pvcs := "hub-pvc-backup-pvcs" }}` }}
             {{ `{{- /* restic_secret_suffix is the suffix used for the secret when copied over to the PVC ns  */ -}}` }}
-            {{ `{{- $restic_secret_suffix := "restic-secret" }}` }}
+            {{ `{{- $restic_secret_suffix := "acm-pvc-restic" }}` }}
 
             {{ `{{- /* Create the volsync ReplicationSource and secret - if BackupSchedule exists ; delete ReplicationSource otherwise */ -}}` }}
             {{ `{{ if $volsync_backup_cond }}` }}
