@@ -136,6 +136,7 @@ var _ = Describe("Multiclusterhub webhook", func() {
 						Annotations: map[string]string{"deploymentmode": string(ModeHosted)},
 					},
 				}
+				Expect(k8sClient.Create(ctx, mch)).Should(Succeed())
 				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)).To(Succeed())
 				Expect(k8sClient.Delete(ctx, mch)).To(BeNil(), "MCH delete was blocked unexpectedly")
 			})
