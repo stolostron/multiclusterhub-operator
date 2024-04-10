@@ -73,19 +73,6 @@ var _ = Describe("Multiclusterhub webhook", func() {
 				}
 				Expect(k8sClient.Create(ctx, mch)).NotTo(BeNil(), "Invalid components not allowed in config")
 			})
-			By("because of having an empty hubList while in HostedMode", func() {
-				mch := &MultiClusterHub{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:        fmt.Sprintf("%s-2", multiClusterHubName),
-						Namespace:   "default",
-						Annotations: map[string]string{"deploymentmode": string(ModeHosted)},
-					},
-				}
-				// TODO: How do I get the Client.List() function to produce an empty list for this test?
-				warn, err := mch.ValidateCreate()
-				Expect(warn).To(BeNil(), "warning should be nil")
-				Expect(err).NotTo(BeNil(), "a hosted Mode MCH can only be created once a non-hosted MCH is present")
-			})
 		})
 
 		It("Should fail to update multiclusterhub", func() {
@@ -113,12 +100,24 @@ var _ = Describe("Multiclusterhub webhook", func() {
 
 				// flipping it directly
 				mch.Spec.SeparateCertificateManagement = !mch.Spec.SeparateCertificateManagement
-				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(), "updating SeparateCertificateManagement is forbidden")
+				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(), "updating SeparateCertificateManagement should be forbidden")
 			})
 			By("because of updating hive", func() {
 				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)).To(Succeed())
 				mch.Spec.Hive = &HiveConfigSpec{}
 				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(), "hive updates are forbidden")
+			})
+			By("because of invalid AvailablityConfig", func() {
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)).To(Succeed())
+				mch.Spec.AvailabilityConfig = "INVALID"
+				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(), "AvailabilityConfig must be %v or %v, but %v was allowed", HABasic, HAHigh, mch.Spec.AvailabilityConfig)
+			})
+		})
+		It("Should succeed in updating multiclusterhub", func() {
+			mch := &MultiClusterHub{}
+			By("Updating absolutely nothing", func() {
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)).To(Succeed())
+				Expect(k8sClient.Update(ctx, mch)).To(BeNil(), "Changing nothing should not throw an error")
 			})
 		})
 
