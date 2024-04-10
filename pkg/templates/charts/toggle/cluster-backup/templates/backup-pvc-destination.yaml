@@ -96,17 +96,16 @@ spec:
 
                 {{ `{{- /* If a PVC with this identity already exists in Bound state, delete the corresponding ResourceDestination then exit */ -}}` }}
                 {{ `{{- $bound_pvc := lookup "v1" "PersistentVolumeClaim" $pvc_namespace $pvc_name }}` }}
-                {{ `{{ if and (eq $bound_pvc.metadata.name  $pvc_name) (eq $bound_pvc.status.phase "Boundi") }}` }}
+                {{ `{{ if and (eq $bound_pvc.metadata.name  $pvc_name) (eq $bound_pvc.status.phase "Bound") }}` }}
                   - complianceType: mustnothave
                     objectDefinition:
                       kind: ReplicationDestination
                       apiVersion: volsync.backube/v1alpha1
                       metadata:
-                        name: abcd
+                        name: {{ `{{ $rd_name }}` }}
                         namespace: {{ `{{ $pvc_namespace }}` }}
                 {{ `{{- else }}` }}
                 {{ `{{- $common_restic_repo := ( lookup "v1" "Secret" $ns $volsync_secret ).data.RESTIC_REPOSITORY | base64dec }}` }}
-
 
                 {{ `{{- /* Get restore properties from the pvc_config_info_name configmap */ -}}` }}
                 {{ `{{- $capacity := fromConfigMap $pvc_namespace $pvc_config_info_name "capacity" }}` }}
@@ -115,7 +114,7 @@ spec:
 
                 {{ `{{- /* If a hub-pvc-restore ConfigMap exists in the open-cluster-management-backup ns, it supersedes the pvc_config_info_name values */ -}}` }}
                 {{ `{{- /* If a hub-pvc-restore-pvc_ns-pvc_name ConfigMap exists in the open-cluster-management-backup ns, it supersedes the hub-pvc-restore values */ -}}` }}
-                {{ `{{- /* That is, users who specify the pvc specific configmap hub-pvc-restore-pvc_ns-pvc_name need to set everything they want there; hub-pvc-restore will be ignored in this case for this PVC  */ -}}` }}
+                {{ `{{- /* Users who specify the pvc specific configmap hub-pvc-restore-pvc_ns-pvc_name need to set everything they want there; global hub-pvc-restore will be ignored for this PVC  */ -}}` }}
                 {{ `{{- $volsync_restore_ovw := "" }}` }}
                 {{ `{{- $global_restore_map := "hub-pvc-restore" }}` }}
                 {{ `{{ if eq ( lookup "v1" "ConfigMap" $ns $global_restore_map ).metadata.name  $global_restore_map }}` }}
@@ -219,9 +218,8 @@ spec:
                         labels:
                           "restore-name": {{ `{{ $restore_name }}` }}
                           "backup-name": {{ `{{ $backup_name }}` }}
-                          cacheCapacity: {{ `{{ $cacheCapacity }}` }}
                       spec:
-                        restic:                
+                        restic:
                           {{ `{{- if not (eq $accessModes "" ) }}` }}
                           accessModes:
                             {{ `{{- range $modes := split " " $accessModes }}` }} 
