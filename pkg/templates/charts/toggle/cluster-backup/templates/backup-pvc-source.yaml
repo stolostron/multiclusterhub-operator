@@ -98,18 +98,15 @@ spec:
                         {{ `{{- if not ( eq  $pvc.spec.storageClassName "") }}` }}
                         storageClassName: {{ `{{ $pvc.spec.storageClassName }}` }}
                         {{ `{{- end }}` }}
-                        {{ `{{- if not ( eq  $pvc.spec.volumeMode "") }}` }}
-                        volumeMode: {{ `{{ $pvc.spec.volumeMode }}` }}
-                        {{ `{{- end }}` }}
                         {{ `{{- if not ( eq  $pvc.spec.resources.requests.storage "") }}` }}
-                        resources.requests.storage: {{ `{{ $pvc.spec.resources.requests.storage }}` }}
+                        capacity: {{ `{{ $pvc.spec.resources.requests.storage }}` }}
                         {{ `{{- end }}` }}                        
                         {{ `{{- if not (empty $pvc.spec.accessModes ) }}` }}
                           {{ `{{ $am_val := ""}}` }}
                           {{ `{{- range $av := $pvc.spec.accessModes }}` }}
                              {{ `{{ $am_val =  cat $am_val $av }}` }}
                           {{ `{{- end }}` }}
-                        resources.accessModes: {{ `{{ $am_val }}` }}
+                        accessModes: {{ `{{ $am_val }}` }}
                         {{ `{{- end }}` }}                        
 
                   {{ `{{ if eq ( lookup "v1" "ConfigMap" $ns $pvc_config_name ).metadata.name  $pvc_config_name }}` }}   
@@ -322,6 +319,36 @@ spec:
                   status:
                     latestMoverStatus:
                       result: Failed
+              {{ `{{- end }}` }}  
+            {{ `{{- end }}` }}
+          remediationAction: inform
+          severity: high
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: check-hub-pvc-filesystem 
+        spec:
+          object-templates-raw: |
+            {{ `{{- $volsync_label := "cluster.open-cluster-management.io/backup-hub-pvc" }}` }}
+            {{ `{{- $ns := "open-cluster-management-backup" }}` }} 
+            {{ `{{- $schedule_label := "cluster.open-cluster-management.io/backup-schedule-type, cluster.open-cluster-management.io/backup-schedule-type in (resources)"}}` }}
+            {{ `{{- $velero_api := "velero.io/v1" }}` }}
+            {{ `{{- $kind_schedule := "Schedule" }}` }}
+            {{ `{{- $volsync_backup_cond := gt (len ( lookup $velero_api $kind_schedule $ns "" $schedule_label).items ) 0  }}` }}
+
+            {{ `{{- /* The PVC with a volsync_label should only use volumeMode: Filesystem */ -}}` }}
+            {{ `{{- range $pvc := (lookup "v1" "PersistentVolumeClaim" "" "" $volsync_label).items }}` }}
+              {{ `{{ if $volsync_backup_cond }}` }}      
+              - complianceType: musthave
+                objectDefinition:
+                  apiVersion: v1
+                  kind: PersistentVolumeClaim
+                  metadata:
+                    namespace: {{ `{{ $pvc.metadata.namespace }}` }}
+                    name: {{ `{{ $pvc.metadata.name }}` }}
+                  spec:
+                    volumeMode: Filesystem
               {{ `{{- end }}` }}  
             {{ `{{- end }}` }}
           remediationAction: inform

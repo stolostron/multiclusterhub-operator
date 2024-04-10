@@ -42,11 +42,8 @@ spec:
             {{ `{{- $kind_restore := "Restore" }}` }}
             {{ `{{- $ns := "open-cluster-management-backup" }}` }}   
             {{ `{{- $volsync_secret := "acm-hub-pvc-backup-restic-secret" }}` }} 
+            {{ `{{- $volsync_map := "hub-pvc-backup" }}` }}
 
-            {{ `{{- /* common volsync config; to define different config for a PVC, create a hub-pvc-backup-pvc-ns-pvcname configMap */ -}}` }}
-            {{ `{{- $volsync_map := "hub-pvc-backup" }}` }} 
-            {{ `{{- /* optional, common volsync config for the ReplicationDestination and new PVC; if defined, overrides hub-pvc-backup-pvc_name PVC info */ -}}` }}           
-            {{ `{{- $volsync_restore_map := "hub-pvc-restore" }}` }}
             {{ `{{- $volsync_label := "cluster.open-cluster-management.io/backup-hub-pvc" }}` }}
 
             {{ `{{- $volsync_backup_cond := gt (len ( lookup $velero_api $kind_schedule $ns "" $schedule_label).items ) 0 }}` }}
@@ -86,14 +83,10 @@ spec:
                 {{ `{{- $pvc_namespace := $pvc_list._0 }}` }}
                 {{ `{{- $pvc_name := $pvc_list._1 }}` }}
 
-                {{ `{{- $pvc_config_info_name := ( (cat $volsync_map "-" $pvc_name ) | replace " " "" ) }}` }}
-                {{ `{{- $pvc_config_name := ( (cat $volsync_map "-" $pvc_namespace "-" $pvc_name ) | replace " " "" ) }}` }}
-                {{ `{{ if eq ( lookup "v1" "ConfigMap" $ns $pvc_config_name ).metadata.name  $pvc_config_name }}` }}   
-                  {{ `{{- /* If the hub-pvc-backup-pvc-ns-pvcname ConfigMap exists, use it instead of the global  hub-pvc-backup ConfigMap  */ -}}` }}
-                  {{ `{{ $volsync_map = $pvc_config_name }}` }}
-                {{ `{{- end }}` }}
                 {{ `{{- /* restic_secret_suffix is the suffix used for the secret when copied over to the PVC ns  */ -}}` }}
                 {{ `{{- $restic_secret_suffix := "acm-pvc-restic" }}` }}
+
+                {{ `{{- $pvc_config_info_name := ( (cat $volsync_map "-" $pvc_name ) | replace " " "" ) }}` }}
 
                 {{ `{{ if eq ( lookup "v1" "ConfigMap" $pvc_namespace  $pvc_config_info_name ).metadata.name  $pvc_config_info_name }}` }}
 
@@ -103,47 +96,73 @@ spec:
 
                 {{ `{{- /* If a PVC with this identity already exists in Bound state, delete the corresponding ResourceDestination then exit */ -}}` }}
                 {{ `{{- $bound_pvc := lookup "v1" "PersistentVolumeClaim" $pvc_namespace $pvc_name }}` }}
-                {{ `{{ if and (eq $bound_pvc.metadata.name  $pvc_name) (eq $bound_pvc.status.phase "Bound") }}` }}
+                {{ `{{ if and (eq $bound_pvc.metadata.name  $pvc_name) (eq $bound_pvc.status.phase "Boundi") }}` }}
                   - complianceType: mustnothave
                     objectDefinition:
                       kind: ReplicationDestination
                       apiVersion: volsync.backube/v1alpha1
                       metadata:
-                        name: {{ `{{ $rd_name }}` }}
+                        name: abcd
                         namespace: {{ `{{ $pvc_namespace }}` }}
                 {{ `{{- else }}` }}
                 {{ `{{- $common_restic_repo := ( lookup "v1" "Secret" $ns $volsync_secret ).data.RESTIC_REPOSITORY | base64dec }}` }}
 
-                {{ `{{- /* Get restore properties from the pvc_config_info_name configmap */ -}}` }}
-                {{ `{{- /* If a hub-pvc-restore ConfigMap exists in the open-cluster-management-backup ns, it suppersedes the pvc_config_info_name values */ -}}` }}
-                {{ `{{- /* If a hub-pvc-restore-pvc_ns-pvc_name ConfigMap exists in the open-cluster-management-backup ns, it suppersedes the hub-pvc-restore values */ -}}` }}
-                {{ `{{- $pvc_restore_config_name := $pvc_config_info_name }}` }}
-                {{ `{{- $capacity := fromConfigMap $pvc_namespace $pvc_config_info_name "resources.requests.storage" }}` }}
-                {{ `{{- $storageClassName := fromConfigMap $pvc_namespace $pvc_config_info_name "storageClassName" }}` }}
 
-                {{ `{{ if eq ( lookup "v1" "ConfigMap" $ns $volsync_restore_map ).metadata.name  $volsync_restore_map }}` }}   
-                  {{ `{{- /* If volsync_restore_map ConfigMap exists, use it instead of the pvc_config_info_name ConfigMap  */ -}}` }}
-                  {{ `{{- $capacity_overwrite := fromConfigMap $ns $volsync_restore_map "resources.requests.storage" }}` }}
-                  {{ `{{- if not (eq $capacity_overwrite "" ) }}` }}
-                    {{ `{{ $capacity = $capacity_overwrite }}` }}
-                  {{ `{{- end }}` }}
-                  {{ `{{- $storageClassName_overwrite := fromConfigMap $ns $volsync_restore_map "storageClassName" }}` }}
-                  {{ `{{- if not (eq $storageClassName_overwrite "" ) }}` }}
-                    {{ `{{ $storageClassName = $storageClassName_overwrite }}` }}
-                  {{ `{{- end }}` }}
+                {{ `{{- /* Get restore properties from the pvc_config_info_name configmap */ -}}` }}
+                {{ `{{- $capacity := fromConfigMap $pvc_namespace $pvc_config_info_name "capacity" }}` }}
+                {{ `{{- $storageClassName := fromConfigMap $pvc_namespace $pvc_config_info_name "storageClassName" }}` }}
+                {{ `{{ $accessModes := trimAll " " (fromConfigMap $pvc_namespace $pvc_config_info_name "accessModes") }}` }}
+
+                {{ `{{- /* If a hub-pvc-restore ConfigMap exists in the open-cluster-management-backup ns, it supersedes the pvc_config_info_name values */ -}}` }}
+                {{ `{{- /* If a hub-pvc-restore-pvc_ns-pvc_name ConfigMap exists in the open-cluster-management-backup ns, it supersedes the hub-pvc-restore values */ -}}` }}
+                {{ `{{- /* That is, users who specify the pvc specific configmap hub-pvc-restore-pvc_ns-pvc_name need to set everything they want there; hub-pvc-restore will be ignored in this case for this PVC  */ -}}` }}
+                {{ `{{- $volsync_restore_ovw := "" }}` }}
+                {{ `{{- $global_restore_map := "hub-pvc-restore" }}` }}
+                {{ `{{ if eq ( lookup "v1" "ConfigMap" $ns $global_restore_map ).metadata.name  $global_restore_map }}` }}
+                  {{ `{{- $volsync_restore_ovw = $global_restore_map }}` }}
                 {{ `{{- end }}` }}
-                {{ `{{- $pvc_restore_ovw_config_name := ( (cat $volsync_restore_map "-" $pvc_namespace "-" $pvc_name ) | replace " " "" ) }}` }}
-                {{ `{{ if eq ( lookup "v1" "ConfigMap" $ns $pvc_restore_ovw_config_name ).metadata.name  $pvc_restore_ovw_config_name }}` }}   
-                  {{ `{{- /* If pvc_restore_ovw_config_name ConfigMap exists, use it instead of the volsync_restore_map ConfigMap  */ -}}` }}
-                  {{ `{{- $capacity_overwrite := fromConfigMap $ns $pvc_restore_ovw_config_name "resources.requests.storage" }}` }}
+                                
+                {{ `{{- $pvc_restore_ovw_config_name := ( (cat $global_restore_map "-" $pvc_namespace "-" $pvc_name ) | replace " " "" ) }}` }}
+                {{ `{{ if eq ( lookup "v1" "ConfigMap" $ns $pvc_restore_ovw_config_name ).metadata.name  $pvc_restore_ovw_config_name }}` }}
+                  {{ `{{- $volsync_restore_ovw = $pvc_restore_ovw_config_name }}` }}
+                {{ `{{- end }}` }}
+
+                {{ `{{- /* Optional ReplicationDestination properties, potentially set by the user using an overwrite ConfigMap  */ -}}` }}
+                {{ `{{- $volumeSnapshotClassName := "" }}` }}
+                {{ `{{- $cacheCapacity := "" }}` }}
+                {{ `{{- $cacheStorageClassName := "" }}` }}
+                {{ `{{- $cacheAccessModes := "" }}` }}
+                {{ `{{- $previous := "" }}` }}
+                {{ `{{- $restoreAsOf := "" }}` }}
+                {{ `{{- $customCA_secretName := "" }}` }}
+                {{ `{{- $customCA_configMapName := "" }}` }}
+                {{ `{{- $customCA_key := "" }}` }}
+
+                {{ `{{- if not (eq $volsync_restore_ovw "" ) }}` }}   
+                  {{ `{{- /* If user has defined an overwrite ConfigMap, use it instead of the pvc_config_info_name ConfigMap  */ -}}` }}
+                  {{ `{{- $capacity_overwrite := fromConfigMap $ns $volsync_restore_ovw "capacity" }}` }}
                   {{ `{{- if not (eq $capacity_overwrite "" ) }}` }}
                     {{ `{{ $capacity = $capacity_overwrite }}` }}
                   {{ `{{- end }}` }}
-                  {{ `{{- $storageClassName_overwrite := fromConfigMap $ns $pvc_restore_ovw_config_name "storageClassName" }}` }}
+                  {{ `{{- $storageClassName_overwrite := fromConfigMap $ns $volsync_restore_ovw "storageClassName" }}` }}
                   {{ `{{- if not (eq $storageClassName_overwrite "" ) }}` }}
                     {{ `{{ $storageClassName = $storageClassName_overwrite }}` }}
                   {{ `{{- end }}` }}
-                {{ `{{- end }}` }}               
+                  {{ `{{- $accessModes_overwrite := trimAll " " (fromConfigMap $ns $volsync_restore_ovw "accessModes") }}` }}
+                  {{ `{{- if not (eq $accessModes_overwrite "" ) }}` }}
+                    {{ `{{ $accessModes = $accessModes_overwrite }}` }}
+                  {{ `{{- end }}` }}
+
+                  {{ `{{- $volumeSnapshotClassName = fromConfigMap $ns $volsync_restore_ovw "volumeSnapshotClassName" }}` }}
+                  {{ `{{- $cacheCapacity = fromConfigMap $ns $volsync_restore_ovw "cacheCapacity" }}` }} 
+                  {{ `{{- $cacheStorageClassName = fromConfigMap $ns $volsync_restore_ovw "cacheStorageClassName" }}` }}
+                  {{ `{{- $cacheAccessModes = trimAll " " (fromConfigMap $ns $volsync_restore_ovw "cacheAccessModes") }}` }}
+                  {{ `{{- $previous = fromConfigMap $ns $volsync_restore_ovw "previous" }}` }}  
+                  {{ `{{- $restoreAsOf = fromConfigMap $ns $volsync_restore_ovw "restoreAsOf" }}` }}   
+                  {{ `{{ $customCA_secretName = trimAll " " (fromConfigMap $ns $volsync_restore_ovw "customCA_secretName") }}` }}
+                  {{ `{{ $customCA_configMapName = trimAll " " (fromConfigMap $ns $volsync_restore_ovw "customCA_configMapName") }}` }}
+                  {{ `{{ $customCA_key = trimAll " " (fromConfigMap $ns $volsync_restore_ovw "customCA_key") }}` }}               
+                {{ `{{- end }}` }}
 
                   - complianceType: musthave
                     objectDefinition:
@@ -167,8 +186,7 @@ spec:
                           requests:
                             storage: '{{ `{{ $capacity }}` }}'
                         {{ `{{- end }}` }}                        
-                        volumeMode: '{{ `{{ fromConfigMap $pvc_namespace $pvc_config_info_name "volumeMode" }}` }}'    
-                        {{ `{{ $accessModes := trimAll " " (fromConfigMap $pvc_namespace $pvc_config_info_name "resources.accessModes") }}` }}                  
+                        volumeMode: Filesystem    
                         {{ `{{- if not (eq $accessModes "" ) }}` }}
                         accessModes:
                           {{ `{{- range $modes := split " " $accessModes }}` }} 
@@ -201,9 +219,9 @@ spec:
                         labels:
                           "restore-name": {{ `{{ $restore_name }}` }}
                           "backup-name": {{ `{{ $backup_name }}` }}
+                          cacheCapacity: {{ `{{ $cacheCapacity }}` }}
                       spec:
-                        restic:
-                          {{ `{{ $accessModes := trimAll " " (fromConfigMap $pvc_namespace $pvc_config_info_name "resources.accessModes") }}` }}                  
+                        restic:                
                           {{ `{{- if not (eq $accessModes "" ) }}` }}
                           accessModes:
                             {{ `{{- range $modes := split " " $accessModes }}` }} 
@@ -217,6 +235,40 @@ spec:
                           capacity: '{{ `{{ $capacity }}` }}' 
                           {{ `{{- end }}` }}
                           repository: {{ `{{ $secretName }}` }} 
+                          {{ `{{- if not (eq $volumeSnapshotClassName "" ) }}` }}
+                          volumeSnapshotClassName: {{ `{{ $volumeSnapshotClassName }}` }}
+                          {{ `{{- end }}` }} 
+                          {{ `{{- if not (eq $cacheCapacity "" ) }}` }}
+                          cacheCapacity: {{ `{{ $cacheCapacity }}` }}
+                          {{ `{{- end }}` }} 
+                          {{ `{{- if not (eq $cacheStorageClassName "" ) }}` }}
+                          cacheStorageClassName: {{ `{{ $cacheStorageClassName }}` }}
+                          {{ `{{- end }}` }} 
+                          {{ `{{- if not (eq $cacheAccessModes "" ) }}` }}
+                          cacheAccessModes:
+                            {{ `{{- range $modes := split " " $cacheAccessModes }}` }} 
+                            - {{ `{{ $modes }}` }}
+                            {{ `{{- end }}` }}
+                          {{ `{{- end }}` }} 
+                          {{ `{{- if not (eq $previous "" ) }}` }}
+                          previous: {{ `{{ $previous | toInt }}` }}
+                          {{ `{{- end }}` }} 
+                          {{ `{{- if not (eq $restoreAsOf "" ) }}` }}
+                          restoreAsOf: {{ `{{ $restoreAsOf }}` }}
+                          {{ `{{- end }}` }}
+                          {{ `{{- /* if any of the customCA options are set, create the customCA section */ -}}` }}
+                          {{ `{{- if or (not (eq $customCA_secretName "" )) (not (eq $customCA_configMapName "" )) (not (eq $customCA_key "" )) }}` }}
+                          customCA:
+                          {{ `{{- end }}` }}
+                          {{ `{{- if not (eq $customCA_key "" ) }}` }}
+                            key: '{{ `{{ $customCA_key }}` }}'
+                          {{ `{{- end }}` }}
+                          {{ `{{- if not (eq $customCA_secretName "" ) }}` }}
+                            secretName: '{{ `{{ $customCA_secretName }}` }}'
+                          {{ `{{- end }}` }}
+                          {{ `{{- if not (eq $customCA_configMapName "" ) }}` }}
+                            configMapName: '{{ `{{ $customCA_configMapName }}` }}'
+                          {{ `{{- end }}` }}                                                                                                
                           copyMethod: Snapshot
                         trigger:
                           manual: restore-once
