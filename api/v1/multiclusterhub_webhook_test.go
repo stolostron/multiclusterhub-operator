@@ -136,6 +136,7 @@ var _ = Describe("Multiclusterhub webhook", func() {
 					},
 				}
 				mch.ObjectMeta.Annotations = map[string]string{"deploymentmode": string(ModeHosted)}
+				Expect(k8sClient.Create(ctx, mch)).ToNot(BeNil(), "MCH Creation was blocked unexpectedly")
 				Expect(k8sClient.Delete(ctx, mch)).To(BeNil(), "MCH delete was blocked unexpectedly")
 			})
 		})
