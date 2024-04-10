@@ -82,7 +82,9 @@ var _ = Describe("Multiclusterhub webhook", func() {
 					},
 				}
 				// TODO: How do I get the Client.List() function to produce an empty list for this test?
-				Expect(mch.ValidateCreate()).NotTo(BeNil(), "a hosted Mode MCH can only be created once a non-hosted MCH is present")
+				warn, err := mch.ValidateCreate()
+				Expect(warn).To(BeNil(), "warning should be nil")
+				Expect(err).NotTo(BeNil(), "a hosted Mode MCH can only be created once a non-hosted MCH is present")
 			})
 		})
 
@@ -112,6 +114,11 @@ var _ = Describe("Multiclusterhub webhook", func() {
 				// flipping it directly
 				mch.Spec.SeparateCertificateManagement = !mch.Spec.SeparateCertificateManagement
 				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(), "updating SeparateCertificateManagement is forbidden")
+			})
+			By("because of updating hive", func() {
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)).To(Succeed())
+				mch.Spec.Hive = &HiveConfigSpec{}
+				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(), "hive updates are forbidden")
 			})
 		})
 
