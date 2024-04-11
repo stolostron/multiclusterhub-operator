@@ -137,7 +137,7 @@ var _ = Describe("Multiclusterhub webhook", func() {
 				}
 				mch_hosted := &MultiClusterHub{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:        multiClusterHubName + "_hosted",
+						Name:        multiClusterHubName + "-hosted",
 						Namespace:   "default",
 						Annotations: map[string]string{"deploymentmode": string(ModeHosted)},
 					},
@@ -145,7 +145,7 @@ var _ = Describe("Multiclusterhub webhook", func() {
 				Expect(k8sClient.Create(ctx, mch)).Should(Succeed())
 				Expect(k8sClient.Create(ctx, mch_hosted)).Should(Succeed())
 				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)).To(Succeed())
-				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterHubName + "_hosted", Namespace: "default"}, mch_hosted)).To(Succeed())
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterHubName + "-hosted", Namespace: "default"}, mch_hosted)).To(Succeed())
 				Expect(k8sClient.Delete(ctx, mch_hosted)).To(BeNil(), "MCH delete was blocked unexpectedly")
 			})
 		})
