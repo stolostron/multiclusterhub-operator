@@ -41,7 +41,8 @@ spec:
             {{ `{{- $schedule_label := "cluster.open-cluster-management.io/backup-schedule-type, cluster.open-cluster-management.io/backup-schedule-type in (resources)"}}` }}
             {{ `{{- $kind_restore := "Restore" }}` }}
             {{ `{{- $ns := "open-cluster-management-backup" }}` }}   
-            {{ `{{- $volsync_secret := "acm-hub-pvc-backup-restic-secret" }}` }} 
+            {{ `{{- $volsync_secret := "acm-hub-pvc-backup-restic-secret" }}` }}
+            {{ `{{- $volsync_restore_secret := "acm-hub-pvc-restore-restic-secret" }}` }} 
             {{ `{{- $volsync_map := "hub-pvc-backup" }}` }}
 
             {{ `{{- $volsync_label := "cluster.open-cluster-management.io/backup-hub-pvc" }}` }}
@@ -51,7 +52,7 @@ spec:
             {{ `{{- $backup_name_prefix :=  "acm-credentials-schedule-" }}` }}
             {{ `{{- $volsync_pvcs := "hub-pvc-backup-pvcs" }}` }}
 
-            {{ `{{- /* Create the volsync ReplicationDestination and secret - if Restore exists, PVC is created by a Restore and no Backup is running */ -}}` }}
+            {{ `{{- /* Create the volsync ReplicationDestination and secret - only if Restore exists, PVC is created by a Restore and no Backup is running */ -}}` }}
             {{ `{{- /* Use the hub-pvc-backup-pvcs-pvcns-pvcname config instead of the default hub-pvc-backup-pvcs map, if such map exists under the $ns */ -}}` }}
 
             {{ `{{- /* hub-pvc-backup-pvcs map should exist and have a backup-name label */ -}}` }}
@@ -64,6 +65,12 @@ spec:
             {{ `{{- end }}` }}
               
             {{ `{{ if and ($backup_name) ( not $volsync_backup_cond ) ($volsync_restore_cond) }}` }}
+
+              {{ `{{ if eq ( lookup "v1" "Secret" $ns  $volsync_restore_secret ).metadata.name  $volsync_restore_secret }}` }}
+                {{ `{{- /* Optionally, a volsync_restore_secret is created by the user on the restore hub before the restore operation  */ -}}` }}
+                {{ `{{- /* If volsync_restore_secret is set, it is used instead of the volsync_secret secret, to get PVC snapshots  */ -}}` }}
+                {{ `{{- $volsync_secret =  $volsync_restore_secret }}` }}
+              {{ `{{- end }}` }}
 
               {{ `{{- $restore_name := (index $volsync_pvcs_map.metadata.labels "velero.io/restore-name") }}` }}
               {{ `{{- $restore_timestamp_trim := trimAll $backup_name_prefix $backup_name  }}` }}

@@ -147,7 +147,7 @@ spec:
                           {{ `{{- if not (eq $cacheCapacity "" ) }}` }}
                           cacheCapacity: '{{ `{{ $cacheCapacity }}` }}'
                           {{ `{{- end }}` }}
-                          copyMethod: '{{ `{{ fromConfigMap $ns $volsync_map "copyMethod" }}` }}'
+                          copyMethod: Snapshot
                           {{ `{{ $pruneIntervalDays := trimAll " " (fromConfigMap $ns $volsync_map "pruneIntervalDays") }}` }}
                           {{ `{{- if not (eq $pruneIntervalDays "" ) }}` }}
                           pruneIntervalDays: '{{ `{{ $pruneIntervalDays | toInt }}` }}'
