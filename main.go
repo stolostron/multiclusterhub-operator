@@ -42,6 +42,7 @@ import (
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/controllers"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
+	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -67,6 +68,7 @@ import (
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -83,12 +85,12 @@ import (
 const (
 	crdName            = "multiclusterhubs.operator.open-cluster-management.io"
 	OperatorVersionEnv = "OPERATOR_VERSION"
-	NoCacheEnv         = "DISABLE_CLIENT_CACHE"
 )
 
 var (
-	scheme        = runtime.NewScheme()
-	setupLog      = ctrl.Log.WithName("setup")
+	cacheDuration time.Duration = time.Minute * 5
+	scheme                      = runtime.NewScheme()
+	setupLog                    = ctrl.Log.WithName("setup")
 	mchController controller.Controller
 )
 
@@ -164,6 +166,8 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
+	ctrl.Log.WithName("MultiClusterHub Operator version").Info(fmt.Sprintf("%#v", version.Get()))
+
 	ns, err := getOperatorNamespace()
 	if err != nil {
 		setupLog.Error(err, "failed to get operator namespace")
@@ -203,6 +207,9 @@ func main() {
 		LeaseDuration:           &leaseDuration,
 		RenewDeadline:           &renewDeadline,
 		RetryPeriod:             &retryPeriod,
+		Controller: config.Controller{
+			CacheSyncTimeout: cacheDuration,
+		},
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOptions)
