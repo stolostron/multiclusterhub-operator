@@ -359,6 +359,21 @@ func TestNewMultiClusterEngine(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Adopt hubSize",
+			args: args{
+				m: &operatorv1.MultiClusterHub{
+					Spec: operatorv1.MultiClusterHubSpec{
+						HubSize: operatorv1.Large,
+					},
+				},
+			},
+			want: &mcev1.MultiClusterEngine{
+				Spec: mcev1.MultiClusterEngineSpec{
+					HubSize: mcev1.Large,
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -371,6 +386,7 @@ func TestNewMultiClusterEngine(t *testing.T) {
 			g.Expect(got.Spec.TargetNamespace).To(gomega.Equal(tt.want.Spec.TargetNamespace))
 			g.Expect(got.Spec.Overrides.Components).To(gomega.Equal(tt.want.Spec.Overrides.Components))
 			g.Expect(got.Spec.Overrides.ImagePullPolicy).To(gomega.Equal(tt.want.Spec.Overrides.ImagePullPolicy))
+			g.Expect(got.Spec.HubSize).To(gomega.Equal(tt.want.Spec.HubSize))
 		})
 	}
 }
