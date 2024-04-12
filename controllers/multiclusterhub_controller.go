@@ -61,7 +61,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/go-logr/logr"
 	pkgerrors "github.com/pkg/errors"
@@ -531,11 +530,10 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) (controll
 			builder.WithPredicates(predicate.GenerationChangedPredicate{}),
 		).
 		Watches(
-			&source.Kind{Type: &appsv1.Deployment{}},
-			&handler.EnqueueRequestForOwner{
-				IsController: true,
-				OwnerType:    &operatorv1.MultiClusterHub{},
-			},
+			&appsv1.Deployment{},
+			handler.EnqueueRequestForOwner(
+				mgr.GetScheme(), mgr.GetRESTMapper(), &operatorv1.MultiClusterHub{}, handler.OnlyControllerOwner(),
+			),
 			builder.WithPredicates(
 				ctrlpredicate.Or(
 					ctrlpredicate.GenerationChangedPredicate{},
@@ -545,9 +543,9 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) (controll
 			),
 		).
 		Watches(
-			&source.Kind{Type: &apiregistrationv1.APIService{}},
+			&apiregistrationv1.APIService{},
 			handler.Funcs{
-				DeleteFunc: func(e event.DeleteEvent, q workqueue.RateLimitingInterface) {
+				DeleteFunc: func(ctx context.Context, e event.DeleteEvent, q workqueue.RateLimitingInterface) {
 					labels := e.Object.GetLabels()
 					q.Add(
 						reconcile.Request{
@@ -561,9 +559,9 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) (controll
 			},
 			builder.WithPredicates(predicate.DeletePredicate{}),
 		).
-		Watches(&source.Kind{Type: &appsv1.Deployment{}},
+		Watches(&appsv1.Deployment{},
 			handler.EnqueueRequestsFromMapFunc(
-				func(a client.Object) []reconcile.Request {
+				func(ctx context.Context, a client.Object) []reconcile.Request {
 					return []reconcile.Request{
 						{
 							NamespacedName: types.NamespacedName{
@@ -586,9 +584,9 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) (controll
 			),
 		).
 		Watches(
-			&source.Kind{Type: &configv1.ClusterVersion{}},
+			&configv1.ClusterVersion{},
 			handler.EnqueueRequestsFromMapFunc(
-				func(a client.Object) []reconcile.Request {
+				func(ctx context.Context, a client.Object) []reconcile.Request {
 					multiClusterHubList := &operatorv1.MultiClusterHubList{}
 					if err := r.Client.List(context.TODO(), multiClusterHubList); err == nil && len(multiClusterHubList.Items) > 0 {
 						mch := multiClusterHubList.Items[0]
@@ -1062,7 +1060,7 @@ func (r *MultiClusterHubReconciler) createMetricsServiceMonitor(ctx context.Cont
 				Endpoints: []promv1.Endpoint{
 					{
 						BearerTokenFile: "/var/run/secrets/kubernetes.io/serviceaccount/token",
-						BearerTokenSecret: corev1.SecretKeySelector{
+						BearerTokenSecret: &corev1.SecretKeySelector{
 							Key: "",
 						},
 						Port: "metrics",

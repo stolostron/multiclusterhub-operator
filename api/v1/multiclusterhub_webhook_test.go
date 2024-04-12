@@ -95,14 +95,58 @@ var _ = Describe("Multiclusterhub webhook", func() {
 				}
 				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(), "invalid components should not be permitted")
 			})
+			By("because of updating SeparateCertificateManagement", func() {
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)).To(Succeed())
+
+				// flipping it directly
+				mch.Spec.SeparateCertificateManagement = !mch.Spec.SeparateCertificateManagement
+				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(), "updating SeparateCertificateManagement should be forbidden")
+			})
+			By("because of updating hive", func() {
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)).To(Succeed())
+				mch.Spec.Hive = &HiveConfigSpec{}
+				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(), "hive updates are forbidden")
+			})
+			By("because of invalid AvailablityConfig", func() {
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)).To(Succeed())
+				mch.Spec.AvailabilityConfig = "INVALID"
+				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(), "AvailabilityConfig must be %v or %v, but %v was allowed", HABasic, HAHigh, mch.Spec.AvailabilityConfig)
+			})
+		})
+		It("Should succeed in updating multiclusterhub", func() {
+			mch := &MultiClusterHub{}
+			By("Updating absolutely nothing", func() {
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)).To(Succeed())
+				Expect(k8sClient.Update(ctx, mch)).To(BeNil(), "Changing nothing should not throw an error")
+			})
 		})
 
 		It("Should delete multiclusterhub", func() {
-			mch := &MultiClusterHub{}
 
 			By("deleting", func() {
+				mch := &MultiClusterHub{}
 				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)).To(Succeed())
 				Expect(k8sClient.Delete(ctx, mch)).To(BeNil(), "MCH delete was blocked unexpectedly")
+			})
+			By("not blocking the deletion of a hosted mode MCH", func() {
+				mch := &MultiClusterHub{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      multiClusterHubName,
+						Namespace: "default",
+					},
+				}
+				mch_hosted := &MultiClusterHub{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        multiClusterHubName + "-hosted",
+						Namespace:   "default",
+						Annotations: map[string]string{"deploymentmode": string(ModeHosted)},
+					},
+				}
+				Expect(k8sClient.Create(ctx, mch)).Should(Succeed())
+				Expect(k8sClient.Create(ctx, mch_hosted)).Should(Succeed())
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)).To(Succeed())
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterHubName + "-hosted", Namespace: "default"}, mch_hosted)).To(Succeed())
+				Expect(k8sClient.Delete(ctx, mch_hosted)).To(BeNil(), "MCH delete was blocked unexpectedly")
 			})
 		})
 
