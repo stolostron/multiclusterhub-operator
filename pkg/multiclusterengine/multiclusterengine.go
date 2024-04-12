@@ -77,21 +77,6 @@ func NewMultiClusterEngine(m *operatorsv1.MultiClusterHub) *mcev1.MultiClusterEn
 		availConfig = mcev1.HABasic
 	}
 
-	// There has got to be a cleaner way of converting between enum types
-	// var hubsize mcev1.HubSize
-	// switch m.Spec.HubSize {
-	// case operatorsv1.Small:
-	// 	hubsize = mcev1.Small
-	// case operatorsv1.Medium:
-	// 	hubsize = mcev1.Medium
-	// case operatorsv1.Large:
-	// 	hubsize = mcev1.Large
-	// case operatorsv1.ExtraLarge:
-	// 	hubsize = mcev1.ExtraLarge
-	// default:
-	// 	hubsize = mcev1.Medium
-	// }
-
 	mce := &mcev1.MultiClusterEngine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        MulticlusterengineName,
