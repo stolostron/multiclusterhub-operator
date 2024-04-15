@@ -8,6 +8,52 @@ import (
 	"testing"
 )
 
+func Test_Get(t *testing.T) {
+	tests := []struct {
+		name string
+		want bool
+	}{
+		{
+			name: "should return information relatef to runtime version",
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			i := Get()
+
+			if i.GitVersion == "" {
+				t.Error("failed to return information related to git version")
+			}
+
+			if i.GitCommit == "" {
+				t.Error("failed to return information related to git commit")
+			}
+
+			if i.GitTreeState == "" {
+				t.Error("failed to return information related to git tree state")
+			}
+
+			if i.BuildDate == "" {
+				t.Error("failed to return information related to build date")
+			}
+
+			if i.GoVersion == "" {
+				t.Error("failed to return information related to go version")
+			}
+
+			if i.Compiler == "" {
+				t.Error("failed to return information related to compiler")
+			}
+
+			if i.Platform == "" {
+				t.Error("failed to return information related to platform")
+			}
+		})
+	}
+}
+
 func Test_ValidOCPVersion(t *testing.T) {
 	tests := []struct {
 		name       string
