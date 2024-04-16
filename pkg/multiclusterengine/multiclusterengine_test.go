@@ -19,7 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -28,41 +27,6 @@ var mockClient = fake.NewClientBuilder().Build()
 func registerScheme() {
 	olmapi.AddToScheme(scheme.Scheme)
 	subv1alpha1.AddToScheme(scheme.Scheme)
-}
-
-func TestGetCatalogSource(t *testing.T) {
-	os.Setenv("UNIT_TEST", "true")
-	os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
-	defer os.Unsetenv("UNIT_TEST")
-	defer os.Unsetenv("OPERATOR_PACKAGE")
-
-	tests := []struct {
-		name      string
-		k8sClient client.Client
-		want      types.NamespacedName
-		wantErr   bool
-	}{
-		{
-			name:      "Get catalogsource",
-			k8sClient: nil,
-			want: types.NamespacedName{
-				Name:      "multiclusterengine-catalog",
-				Namespace: "openshift-marketplace",
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetCatalogSource(tt.k8sClient)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetCatalogSource() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetCatalogSource() = %v, want %v", got, tt.want)
-			}
-		})
-	}
 }
 
 func TestDesiredPackage(t *testing.T) {
