@@ -32,6 +32,7 @@ import (
 
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 
+	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
@@ -185,6 +186,8 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 		}
 		return ctrl.Result{}, nil
 	}
+
+	mce.Spec.HubSize = mcev1.HubSize(m.Spec.HubSize)
 
 	// secret should be delivered to targetNamespace
 	if mce.Spec.TargetNamespace == "" {
