@@ -92,7 +92,7 @@ spec:
                     resources: {}
                 {{- with .Values.hubconfig.nodeSelector }}
                     nodeSelector:
-                {{ toYaml . | indent 24 }}
+                {{ toYaml . | indent 22 }}
                 {{- end }}
                 {{- with .Values.hubconfig.tolerations }}
                     tolerations:
