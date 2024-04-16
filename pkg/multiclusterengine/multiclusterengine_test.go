@@ -368,6 +368,49 @@ func TestNewMultiClusterEngine(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Adopt hubSize",
+			args: args{
+				m: &operatorv1.MultiClusterHub{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "mch",
+						Namespace: "mch-ns",
+					},
+					Spec: operatorv1.MultiClusterHubSpec{
+						HubSize: operatorv1.Large,
+					},
+				},
+			},
+			want: &mcev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: MulticlusterengineName,
+					Labels: map[string]string{
+						"installer.name":        "mch",
+						"installer.namespace":   "mch-ns",
+						utils.MCEManagedByLabel: "true",
+					},
+				},
+				Spec: mcev1.MultiClusterEngineSpec{
+					HubSize:         mcev1.Large,
+					ImagePullSecret: "",
+					Tolerations: []corev1.Toleration{
+						{
+							Effect:   "NoSchedule",
+							Key:      "node-role.kubernetes.io/infra",
+							Operator: "Exists",
+						},
+					},
+					NodeSelector:       nil,
+					AvailabilityConfig: mcev1.HAHigh,
+					TargetNamespace:    OperandNamespace(),
+					Overrides: &mcev1.Overrides{
+						Components: []mcev1.ComponentConfig{
+							{Name: operatorv1.MCELocalCluster, Enabled: true},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -380,6 +423,7 @@ func TestNewMultiClusterEngine(t *testing.T) {
 			g.Expect(got.Spec.TargetNamespace).To(gomega.Equal(tt.want.Spec.TargetNamespace))
 			g.Expect(got.Spec.Overrides.Components).To(gomega.Equal(tt.want.Spec.Overrides.Components))
 			g.Expect(got.Spec.Overrides.ImagePullPolicy).To(gomega.Equal(tt.want.Spec.Overrides.ImagePullPolicy))
+			g.Expect(got.Spec.HubSize).To(gomega.Equal(tt.want.Spec.HubSize))
 		})
 	}
 }
