@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"encoding/json"
 	"reflect"
 	"testing"
 
@@ -284,6 +285,33 @@ func TestGetLegacyServiceMonitorName(t *testing.T) {
 
 			if got != tt.want {
 				t.Errorf("GetLegacyServiceMonitorName(%v) = %v, want: %v", tt.component, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestHubSizeMarshal(t *testing.T) {
+	tests := []struct {
+		name       string
+		yamlstring string
+		want       HubSize
+	}{
+		{
+			name:       "Marshals when overriding default with large",
+			yamlstring: `{"hubSize": "Large"}`,
+			want:       Large,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var out MultiClusterHubSpec
+			err := json.Unmarshal([]byte(tt.yamlstring), &out)
+			t.Logf("hubsize: %v\n", out.HubSize)
+			if err != nil {
+				t.Errorf("Unable to unmarshal yaml string: %v. %v", tt.yamlstring, err)
+			}
+			if out.HubSize != tt.want {
+				t.Errorf("Hubsize not desired. HubSize: %v, want: %v", out.HubSize, tt.want)
 			}
 		})
 	}

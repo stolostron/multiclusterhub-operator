@@ -47,41 +47,6 @@ const (
 	MCEServerFoundation                 string = "server-foundation"
 )
 
-// allComponents is a slice containing all the component names from both "MCH" and "MCE" categories.
-var allComponents = []string{
-	Appsub,
-	ClusterBackup,
-	ClusterLifecycle,
-	ClusterPermission,
-	Console,
-	GRC,
-	Insights,
-	ManagementIngress,
-	MultiClusterEngine,
-	MultiClusterObservability,
-	Repo,
-	Search,
-	SubmarinerAddon,
-	Volsync,
-
-	MCEAssistedService,
-	MCEClusterLifecycle,
-	MCEClusterManager,
-	MCEClusterProxyAddon,
-	MCEConsole,
-	MCEDiscovery,
-	MCEHive,
-	MCEHypershift,
-	MCEHypershiftLocalHosting,
-	MCEHypershiftPreview,
-	MCEImageBasedInstallOperator,
-	MCEImageBasedInstallOperatorPreview,
-	MCEManagedServiceAccount,
-	MCEManagedServiceAccountPreview,
-	MCEManagedServiceAccount,
-	MCEServerFoundation,
-}
-
 // MCHComponents is a slice containing component names specific to the "MCH" category.
 var MCHComponents = []string{
 	Appsub,
@@ -352,10 +317,35 @@ func IsCommunity() (bool, error) {
 	} else if (packageName == "stolostron") || (packageName == "") {
 		return true, nil
 	} else {
-		err := errors.New("There is an illegal value set for OPERATOR_PACKAGE")
+		err := errors.New("there is an illegal value set for OPERATOR_PACKAGE")
 		return true, err
 	}
 }
+
+// func (h HubSize) String() string {
+// 	return HubSizeStrings[h]
+// }
+
+// func (h *HubSize) UnmarshalJSON(b []byte) error {
+// 	fmt.Printf("Unmarshaling JSON is occuring: %v\n", string(b))
+// 	var hubsize string
+// 	if err := json.Unmarshal(b, &hubsize); err != nil {
+// 		return err
+// 	}
+
+// 	fmt.Printf("HubSize: %v\n", hubsize)
+
+// 	var exists bool
+// 	hubsizeobj, exists := HubSizeFromString[hubsize]
+
+// 	if !exists {
+// 		return fmt.Errorf("key %v does not exist in map", hubsize)
+// 	}
+
+// 	fmt.Printf("Hubsize: %v\n", hubsizeobj)
+// 	*h = hubsizeobj
+// 	return nil
+// }
 
 // IsInHostedMode returns true if mch is configured for hosted mode
 func (mch *MultiClusterHub) IsInHostedMode() bool {

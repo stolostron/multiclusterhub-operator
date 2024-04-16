@@ -41,6 +41,7 @@ spec:
         - --upstream=http://127.0.0.1:8080/
         - --logtostderr=true
         - --v=10
+        - --tls-min-version=VersionTLS13
         env:
 {{- if .Values.hubconfig.proxyConfigs }}
         - name: HTTP_PROXY

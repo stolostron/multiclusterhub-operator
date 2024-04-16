@@ -38,6 +38,15 @@ const (
 	ModeHosted DeploymentMode = "Hosted"
 )
 
+type HubSize string
+
+const (
+	Small      HubSize = "Small"
+	Medium     HubSize = "Medium"
+	Large      HubSize = "Large"
+	ExtraLarge HubSize = "ExtraLarge"
+)
+
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
@@ -66,6 +75,14 @@ type MultiClusterHubSpec struct {
 	// (Deprecated) Overrides for the default HiveConfig spec
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Hive Config",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Hive *HiveConfigSpec `json:"hive,omitempty"`
+
+	// The resource allocation bucket for this hub to use.
+	// [Small, Medium, Large, ExtraLarge]. Defaults to Medium if not specified.
+	//+kubebuilder:validation:Enum:=Small;Medium;Large;ExtraLarge
+	//+kubebuilder:default:=Medium
+	//+kubebuilder:validation:Type:=string
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Hub Size",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	HubSize HubSize `json:"hubSize,omitempty"`
 
 	// (Deprecated) Configuration options for ingress management
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Ingress Management",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}

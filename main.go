@@ -20,6 +20,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -41,6 +42,7 @@ import (
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/controllers"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
+	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -56,7 +58,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -67,29 +68,30 @@ import (
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	ctrlwebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	//+kubebuilder:scaffold:imports
 )
 
 const (
 	crdName            = "multiclusterhubs.operator.open-cluster-management.io"
 	OperatorVersionEnv = "OPERATOR_VERSION"
-	NoCacheEnv         = "DISABLE_CLIENT_CACHE"
 )
 
 var (
-	scheme         = runtime.NewScheme()
-	setupLog       = ctrl.Log.WithName("setup")
-	mchController  controller.Controller
-	validatingPath = "/validate-v1-multiclusterhub"
+	cacheDuration time.Duration = time.Minute * 5
+	scheme                      = runtime.NewScheme()
+	setupLog                    = ctrl.Log.WithName("setup")
+	mchController controller.Controller
 )
 
 func init() {
@@ -164,6 +166,8 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
+	ctrl.Log.WithName("MultiClusterHub Operator version").Info(fmt.Sprintf("%#v", version.Get()))
+
 	ns, err := getOperatorNamespace()
 	if err != nil {
 		setupLog.Error(err, "failed to get operator namespace")
@@ -171,26 +175,41 @@ func main() {
 	}
 
 	mgrOptions := ctrl.Options{
-		Scheme:                  scheme,
-		MetricsBindAddress:      metricsAddr,
-		Port:                    9443,
-		HealthProbeBindAddress:  probeAddr,
-		LeaderElection:          enableLeaderElection,
-		LeaderElectionID:        "multicloudhub-operator-lock",
-		WebhookServer:           &ctrlwebhook.Server{TLSMinVersion: "1.2"},
+		Client: client.Options{
+			Cache: &client.CacheOptions{
+				DisableFor: []client.Object{
+					&corev1.Secret{},
+					&rbacv1.ClusterRole{},
+					&rbacv1.ClusterRoleBinding{},
+					&rbacv1.RoleBinding{},
+					&corev1.ConfigMap{},
+					&corev1.ServiceAccount{},
+				},
+			},
+		},
+		Scheme: scheme,
+		Metrics: metricsserver.Options{
+			BindAddress: metricsAddr,
+		},
+		HealthProbeBindAddress: probeAddr,
+		LeaderElection:         enableLeaderElection,
+		LeaderElectionID:       "multicloudhub-operator-lock",
+		// WebhookServer:          &ctrlwebhook.Server{TLSMinVersion: "1.2"},
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Port: 9443,
+			TLSOpts: []func(*tls.Config){func(config *tls.Config) {
+				config = &tls.Config{
+					MinVersion: tls.VersionTLS12,
+				}
+			}},
+		}),
 		LeaderElectionNamespace: ns,
 		LeaseDuration:           &leaseDuration,
 		RenewDeadline:           &renewDeadline,
 		RetryPeriod:             &retryPeriod,
-	}
-
-	mgrOptions.ClientDisableCacheFor = []client.Object{
-		&corev1.Secret{},
-		&rbacv1.ClusterRole{},
-		&rbacv1.ClusterRoleBinding{},
-		&rbacv1.RoleBinding{},
-		&corev1.ConfigMap{},
-		&corev1.ServiceAccount{},
+		Controller: config.Controller{
+			CacheSyncTimeout: cacheDuration,
+		},
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOptions)
@@ -289,7 +308,7 @@ func main() {
 	}
 
 	// go routine to check if mce exist, if it does add watch
-	go addMultiClusterEngineWatch(ctx, uncachedClient)
+	go addMultiClusterEngineWatch(ctx, mgr, uncachedClient)
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
@@ -303,7 +322,7 @@ const (
 	LocalRunMode    = "local"
 )
 
-func addMultiClusterEngineWatch(ctx context.Context, uncachedClient client.Client) {
+func addMultiClusterEngineWatch(ctx context.Context, mgr ctrl.Manager, uncachedClient client.Client) {
 	for {
 		crd := &apixv1.CustomResourceDefinition{}
 		mceName := "multiclusterengines.multicluster.openshift.io"
@@ -311,9 +330,9 @@ func addMultiClusterEngineWatch(ctx context.Context, uncachedClient client.Clien
 		//crdKey := client.ObjectKey{Name: multiclusterengine.Namespace().GetObjectMeta().GetName()}
 		//err := uncachedClient.Get(ctx, crdKey, &mcev1.MultiClusterEngine{})
 		if err == nil {
-			err := mchController.Watch(&source.Kind{Type: &mcev1.MultiClusterEngine{}},
+			err := mchController.Watch(source.Kind(mgr.GetCache(), &mcev1.MultiClusterEngine{}),
 				handler.Funcs{
-					UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
+					UpdateFunc: func(ctx context.Context, e event.UpdateEvent, q workqueue.RateLimitingInterface) {
 						labels := e.ObjectNew.GetLabels()
 						name := labels["installer.name"]
 						if name == "" {
@@ -365,47 +384,6 @@ func getOperatorNamespace() (string, error) {
 	}
 	ns := strings.TrimSpace(string(nsBytes))
 	return ns, nil
-}
-
-func ensureCRD(mgr ctrl.Manager, crd *unstructured.Unstructured) error {
-	ctx := context.Background()
-	maxAttempts := 5
-	go func() {
-		for i := 0; i < maxAttempts; i++ {
-			setupLog.Info(fmt.Sprintf("Ensuring '%s' CRD exists", crd.GetName()))
-			existingCRD := &unstructured.Unstructured{}
-			existingCRD.SetGroupVersionKind(crd.GroupVersionKind())
-			err := mgr.GetClient().Get(ctx, types.NamespacedName{Name: crd.GetName()}, existingCRD)
-			if err != nil && errors.IsNotFound(err) {
-				// CRD not found. Create and return
-				err = mgr.GetClient().Create(ctx, crd)
-				if err != nil {
-					setupLog.Error(err, fmt.Sprintf("Error creating '%s' CRD", crd.GetName()))
-					time.Sleep(5 * time.Second)
-					continue
-				}
-				return
-			} else if err != nil {
-				setupLog.Error(err, fmt.Sprintf("Error getting '%s' CRD", crd.GetName()))
-			} else if err == nil {
-				// CRD already exists. Update and return
-				setupLog.Info(fmt.Sprintf("'%s' CRD already exists. Updating.", crd.GetName()))
-				crd.SetResourceVersion(existingCRD.GetResourceVersion())
-				err = mgr.GetClient().Update(ctx, crd)
-				if err != nil {
-					setupLog.Error(err, fmt.Sprintf("Error updating '%s' CRD", crd.GetName()))
-					time.Sleep(5 * time.Second)
-					continue
-				}
-				return
-			}
-			time.Sleep(5 * time.Second)
-		}
-
-		setupLog.Info(fmt.Sprintf("Unable to ensure '%s' CRD exists in allotted time. Failing.", crd.GetName()))
-		os.Exit(1)
-	}()
-	return nil
 }
 
 func ensureWebhooks(k8sClient client.Client) error {

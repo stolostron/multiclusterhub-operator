@@ -17,9 +17,9 @@ metadata:
     capabilities: Basic Install
     categories: Integration & Delivery
     certified: "false"
-    createdAt: "2023-08-10T14:16:50Z"
+    createdAt: "2024-04-02T20:35:16Z"
     description: Open management of Openshift and Kubernetes clusters
-    operators.operatorframework.io/builder: operator-sdk-v1.28.0
+    operators.operatorframework.io/builder: operator-sdk-v1.34.1
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/open-cluster-management/multiclusterhub-operator
     support: The Open Cluster Management Project
@@ -29,8 +29,10 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: MultiClusterHub defines the configuration for an instance of the
-        MultiCluster Hub
+    - description: MulticlusterHub defines the configuration for an instance of a
+        multicluster hub, a central point for managing multiple Kubernetes-based clusters.
+        The deployment of multicluster hub components is determined based on the configuration
+        that is defined in this resource.
       displayName: MultiClusterHub
       kind: MultiClusterHub
       name: multiclusterhubs.operator.open-cluster-management.io
@@ -77,6 +79,12 @@ spec:
         path: hive
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: The resource allocation bucket for this hub to use. [Small, Medium,
+          Large, ExtraLarge]. Defaults to Medium if not specified.
+        displayName: Hub Size
+        path: hubSize
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Override pull secret for accessing MultiClusterHub operand and
           endpoint images
         displayName: Image Pull Secret
@@ -94,7 +102,8 @@ spec:
         path: overrides
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Provides optional configuration for components
+      - description: 'Provides optional configuration for components, the list of
+          which can be found here: https://github.com/stolostron/multiclusterhub-operator/tree/main/docs/available-components.md'
         displayName: Component Configuration
         path: overrides.components
         x-descriptors:
