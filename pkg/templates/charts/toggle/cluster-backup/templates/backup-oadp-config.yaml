@@ -20,7 +20,7 @@ metadata:
     policy.open-cluster-management.io/standards: NIST-CSF
     policy.open-cluster-management.io/source: system
 spec:
-  disabled: false
+  disabled: true
   policy-templates:
     - objectDefinition:
         apiVersion: policy.open-cluster-management.io/v1
@@ -29,7 +29,6 @@ spec:
           name: install-oadp
         spec:
           object-templates-raw: |
-
             {{` {{- /* Check cluster platform  */ -}}` }}
             {{` {{- $platformType := ""}}` }}
             {{` {{- range $infra := (lookup "config.openshift.io/v1" "Infrastructure" "" "" "").items }}` }}
