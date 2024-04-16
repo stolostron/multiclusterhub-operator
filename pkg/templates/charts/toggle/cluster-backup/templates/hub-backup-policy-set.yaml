@@ -14,3 +14,4 @@ spec:
     - backup-pvc-config
     - backup-pvc-source
     - backup-pvc-destination
+    - backup-restore-oadp
