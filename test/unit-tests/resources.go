@@ -13,6 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ocmapi "open-cluster-management.io/api/addon/v1alpha1"
 
+	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -28,6 +29,18 @@ var (
 	MCHLookupKey = types.NamespacedName{Name: MulticlusterhubName, Namespace: MulticlusterhubNamespace}
 	MCELookupKey = types.NamespacedName{Name: MultiClusterEngineName}
 )
+
+func MCECatalogSource() *subv1alpha1.CatalogSource {
+	return &subv1alpha1.CatalogSource{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "mce-custom-registry",
+			Namespace: "openshift-marketplace",
+		},
+		Spec: subv1alpha1.CatalogSourceSpec{
+			Priority: 0,
+		},
+	}
+}
 
 func EmptyMCE() mcev1.MultiClusterEngine {
 	return mcev1.MultiClusterEngine{
