@@ -9,6 +9,7 @@ import (
 	"github.com/blang/semver/v4"
 	"github.com/onsi/gomega"
 	olmversion "github.com/operator-framework/api/pkg/lib/version"
+	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
@@ -17,9 +18,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
+
+var mockClient = fake.NewClientBuilder().Build()
+
+func registerScheme() {
+	olmapi.AddToScheme(scheme.Scheme)
+	subv1alpha1.AddToScheme(scheme.Scheme)
+}
 
 func TestGetCatalogSource(t *testing.T) {
 	os.Setenv("UNIT_TEST", "true")
@@ -67,42 +76,42 @@ func TestDesiredPackage(t *testing.T) {
 	}
 }
 
-func TestOperandNameSpace(t *testing.T) {
+func TestOperandNamespace(t *testing.T) {
 	os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
-	if got := OperandNameSpace(); got != operandNameSpace {
-		t.Errorf("OperandNameSpace() = %v, want %v", got, operandNameSpace)
+	if got := OperandNamespace(); got != operandNamespace {
+		t.Errorf("OperandNamespace() = %v, want %v", got, operandNamespace)
 	}
 	os.Unsetenv("OPERATOR_PACKAGE")
-	if got := OperandNameSpace(); got != communityOperandNamepace {
-		t.Errorf("OperandNameSpace() = %v, want %v", got, communityOperandNamepace)
+	if got := OperandNamespace(); got != communityOperandNamepace {
+		t.Errorf("OperandNamespace() = %v, want %v", got, communityOperandNamepace)
 	}
 }
 
 func TestNameSpace(t *testing.T) {
 	os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
-	if got := Namespace().Name; got != operandNameSpace {
-		t.Errorf("OperandNameSpace() = %v, want %v", got, operandNameSpace)
+	if got := Namespace().Name; got != operandNamespace {
+		t.Errorf("OperandNamespace() = %v, want %v", got, operandNamespace)
 	}
 	os.Unsetenv("OPERATOR_PACKAGE")
 	if got := Namespace().Name; got != communityOperandNamepace {
-		t.Errorf("OperandNameSpace() = %v, want %v", got, communityOperandNamepace)
+		t.Errorf("OperandNamespace() = %v, want %v", got, communityOperandNamepace)
 	}
 }
 
 func TestOperatorGroup(t *testing.T) {
 	os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
-	if got := OperatorGroup().Namespace; got != operandNameSpace {
-		t.Errorf("OperandNameSpace() = %v, want %v", got, operandNameSpace)
+	if got := OperatorGroup().Namespace; got != operandNamespace {
+		t.Errorf("OperandNamespace() = %v, want %v", got, operandNamespace)
 	}
-	if got := OperatorGroup().Spec.TargetNamespaces[0]; got != operandNameSpace {
-		t.Errorf("OperandNameSpace() = %v, want %v", got, operandNameSpace)
+	if got := OperatorGroup().Spec.TargetNamespaces[0]; got != operandNamespace {
+		t.Errorf("OperandNamespace() = %v, want %v", got, operandNamespace)
 	}
 	os.Unsetenv("OPERATOR_PACKAGE")
 	if got := OperatorGroup().Namespace; got != communityOperandNamepace {
-		t.Errorf("OperandNameSpace() = %v, want %v", got, communityOperandNamepace)
+		t.Errorf("OperandNamespace() = %v, want %v", got, communityOperandNamepace)
 	}
 	if got := OperatorGroup().Spec.TargetNamespaces[0]; got != communityOperandNamepace {
-		t.Errorf("OperandNameSpace() = %v, want %v", got, communityOperandNamepace)
+		t.Errorf("OperandNamespace() = %v, want %v", got, communityOperandNamepace)
 	}
 }
 func TestFindAndManageMCE(t *testing.T) {
@@ -287,7 +296,7 @@ func TestNewMultiClusterEngine(t *testing.T) {
 					},
 					NodeSelector:       nil,
 					AvailabilityConfig: mcev1.HAHigh,
-					TargetNamespace:    OperandNameSpace(),
+					TargetNamespace:    OperandNamespace(),
 					Overrides: &mcev1.Overrides{
 						Components: []mcev1.ComponentConfig{
 							{Name: operatorv1.MCELocalCluster, Enabled: true},
@@ -348,7 +357,7 @@ func TestNewMultiClusterEngine(t *testing.T) {
 						"select": "this",
 					},
 					AvailabilityConfig: mcev1.HABasic,
-					TargetNamespace:    OperandNameSpace(),
+					TargetNamespace:    OperandNamespace(),
 					Overrides: &mcev1.Overrides{
 						ImagePullPolicy: corev1.PullNever,
 						Components: []mcev1.ComponentConfig{
@@ -813,6 +822,138 @@ func Test_filterPackageManifests(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := filterPackageManifests(tt.args.pkgManifests, tt.args.channel); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("filterPackageManifests() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_GetCatalogSource(t *testing.T) {
+	tests := []struct {
+		name        string
+		catalog     *subv1alpha1.CatalogSource
+		manifest    *olmapi.PackageManifest
+		packageName string
+		want        types.NamespacedName
+	}{
+		{
+			name: "should get catalog source",
+			catalog: &subv1alpha1.CatalogSource{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "mce-custom-registry",
+					Namespace: "openshift-marketplace",
+				},
+				Spec: subv1alpha1.CatalogSourceSpec{
+					Priority: 0,
+				},
+			},
+			manifest: &olmapi.PackageManifest{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      packageName,
+					Namespace: "default",
+				},
+				Status: olmapi.PackageManifestStatus{
+					CatalogSource:            "mce-custom-registry",
+					CatalogSourceDisplayName: "sample multicluster engine",
+					CatalogSourceNamespace:   "openshift-marketplace",
+					Channels: []olmapi.PackageChannel{
+						{
+							Name: "stable-2.6",
+						},
+					},
+				},
+			},
+			packageName: "advanced-cluster-management",
+			want: types.NamespacedName{
+				Name:      "mce-custom-registry",
+				Namespace: "openshift-marketplace",
+			},
+		},
+		{
+			name: "should get community catalog source",
+			catalog: &subv1alpha1.CatalogSource{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "mce-custom-registry",
+					Namespace: "openshift-marketplace",
+				},
+				Spec: subv1alpha1.CatalogSourceSpec{
+					Priority: 0,
+				},
+			},
+			manifest: &olmapi.PackageManifest{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      communityPackageName,
+					Namespace: "default",
+				},
+				Status: olmapi.PackageManifestStatus{
+					CatalogSource:          "mce-custom-registry",
+					CatalogSourceNamespace: "openshift-marketplace",
+					Channels: []olmapi.PackageChannel{
+						{
+							Name: "community-0.5",
+						},
+					},
+				},
+			},
+			want: types.NamespacedName{
+				Name:      "mce-custom-registry",
+				Namespace: "openshift-marketplace",
+			},
+		},
+	}
+
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			os.Setenv("OPERATOR_PACKAGE", tt.packageName)
+
+			if err := mockClient.Create(context.TODO(), tt.catalog); err != nil {
+				t.Errorf("failed to create catalog: %v", err)
+			}
+
+			if err := mockClient.Create(context.TODO(), tt.manifest); err != nil {
+				t.Errorf("failed to create manifest: %v", err)
+			}
+
+			if got, err := GetCatalogSource(mockClient); err != nil {
+				t.Errorf("GetCatalogSource(mockClient) = got %v, want %v, err %v", got, tt.want, err)
+			}
+
+			os.Unsetenv("OPERATOR_PACKAGE")
+			mockClient.Delete(context.TODO(), tt.catalog)
+			mockClient.Delete(context.TODO(), tt.manifest)
+		})
+	}
+}
+
+func Test_extractCatalogSource(t *testing.T) {
+	tests := []struct {
+		name string
+		pm   *olmapi.PackageManifest
+		want types.NamespacedName
+	}{
+		{
+			name: "should extract catalog source from package manifest",
+			pm: &olmapi.PackageManifest{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "sample-package-manifest",
+					Namespace: "sample-namespace",
+				},
+				Status: olmapi.PackageManifestStatus{
+					CatalogSource:          "sample-catalog-source",
+					CatalogSourceNamespace: "sample-namespace",
+				},
+			},
+			want: types.NamespacedName{
+				Name:      "sample-catalog-source",
+				Namespace: "sample-namespace",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := extractCatalogSource(*tt.pm); got != tt.want {
+				t.Errorf("extractCatalogSource(*tt.pm) = want %v, got %v", tt.want, got)
 			}
 		})
 	}

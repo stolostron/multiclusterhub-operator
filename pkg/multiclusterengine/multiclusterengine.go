@@ -13,7 +13,6 @@ import (
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
-	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -30,7 +29,7 @@ var (
 	packageName            = "multicluster-engine"
 	catalogSourceName      = "redhat-operators"
 	catalogSourceNamespace = "openshift-marketplace" // https://olm.operatorframework.io/docs/tasks/troubleshooting/subscription/#a-subscription-in-namespace-x-cant-install-operators-from-a-catalogsource-in-namespace-y
-	operandNameSpace       = "multicluster-engine"
+	operandNamespace       = "multicluster-engine"
 
 	// community MCE variables
 	communityChannel           = "community-0.5"
@@ -66,7 +65,7 @@ var mockPackageManifests = func() *olmapi.PackageManifestList {
 }
 
 // NewMultiClusterEngine returns an MCE configured from a Multiclusterhub
-func NewMultiClusterEngine(m *operatorsv1.MultiClusterHub) *mcev1.MultiClusterEngine {
+func NewMultiClusterEngine(m *operatorv1.MultiClusterHub) *mcev1.MultiClusterEngine {
 	labels := map[string]string{
 		"installer.name":        m.GetName(),
 		"installer.namespace":   m.GetNamespace(),
@@ -74,7 +73,7 @@ func NewMultiClusterEngine(m *operatorsv1.MultiClusterHub) *mcev1.MultiClusterEn
 	}
 	annotations := GetSupportedAnnotations(m)
 	availConfig := mcev1.HAHigh
-	if m.Spec.AvailabilityConfig == operatorsv1.HABasic {
+	if m.Spec.AvailabilityConfig == operatorv1.HABasic {
 		availConfig = mcev1.HABasic
 	}
 
@@ -89,7 +88,7 @@ func NewMultiClusterEngine(m *operatorsv1.MultiClusterHub) *mcev1.MultiClusterEn
 			Tolerations:        utils.GetTolerations(m),
 			NodeSelector:       m.Spec.NodeSelector,
 			AvailabilityConfig: availConfig,
-			TargetNamespace:    OperandNameSpace(),
+			TargetNamespace:    OperandNamespace(),
 			Overrides: &mcev1.Overrides{
 				Components: utils.GetMCEComponents(m),
 			},
@@ -103,7 +102,7 @@ func NewMultiClusterEngine(m *operatorsv1.MultiClusterHub) *mcev1.MultiClusterEn
 	return mce
 }
 
-func RenderMultiClusterEngine(existingMCE *mcev1.MultiClusterEngine, m *operatorsv1.MultiClusterHub) *mcev1.MultiClusterEngine {
+func RenderMultiClusterEngine(existingMCE *mcev1.MultiClusterEngine, m *operatorv1.MultiClusterHub) *mcev1.MultiClusterEngine {
 	copy := existingMCE.DeepCopy()
 
 	// add annotations
@@ -121,7 +120,7 @@ func RenderMultiClusterEngine(existingMCE *mcev1.MultiClusterEngine, m *operator
 		RemoveSupportedAnnotations(copy)
 	}
 
-	if m.Spec.AvailabilityConfig == operatorsv1.HABasic {
+	if m.Spec.AvailabilityConfig == operatorv1.HABasic {
 		copy.Spec.AvailabilityConfig = mcev1.HABasic
 	} else {
 		copy.Spec.AvailabilityConfig = mcev1.HAHigh
@@ -148,7 +147,7 @@ func RenderMultiClusterEngine(existingMCE *mcev1.MultiClusterEngine, m *operator
 
 // GetSupportedAnnotations copies annotations relevant to MCE from MCH. Currently this only
 // applies to the imageRepository override
-func GetSupportedAnnotations(m *operatorsv1.MultiClusterHub) map[string]string {
+func GetSupportedAnnotations(m *operatorv1.MultiClusterHub) map[string]string {
 	mceAnnotations := make(map[string]string)
 	if m.GetAnnotations() != nil {
 		if val, ok := m.GetAnnotations()[utils.AnnotationImageRepo]; ok && val != "" {
@@ -171,7 +170,7 @@ func RemoveSupportedAnnotations(mce *mcev1.MultiClusterEngine) map[string]string
 }
 
 func Namespace() *corev1.Namespace {
-	namespace := OperandNameSpace()
+	namespace := OperandNamespace()
 	return &corev1.Namespace{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
@@ -187,7 +186,7 @@ func Namespace() *corev1.Namespace {
 }
 
 func OperatorGroup() *olmv1.OperatorGroup {
-	namespace := OperandNameSpace()
+	namespace := OperandNamespace()
 	return &olmv1.OperatorGroup{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: olmv1.GroupVersion.String(),
@@ -352,12 +351,12 @@ func DesiredPackage() string {
 	}
 }
 
-// OperandNameSpace is determined by whether operator is running in community mode or production mode
-func OperandNameSpace() string {
+// OperandNamespace is determined by whether operator is running in community mode or production mode
+func OperandNamespace() string {
 	if utils.IsCommunityMode() {
 		return communityOperandNamepace
 	} else {
-		return operandNameSpace
+		return operandNamespace
 	}
 }
 
