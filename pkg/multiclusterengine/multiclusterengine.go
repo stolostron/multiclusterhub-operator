@@ -260,7 +260,6 @@ func findHighestPriorityCatalogSource(k8sClient client.Client, pkgs []olmapi.Pac
 	for _, pm := range pkgs {
 		cs := &subv1alpha1.CatalogSource{}
 		nn := extractCatalogSource(pm)
-		log.Info("Processing PackageManifest", "name", nn.Name, "namespace", nn.Namespace)
 
 		if err := k8sClient.Get(context.TODO(), nn, cs); err != nil {
 			// Log the error and continue to the next iteration

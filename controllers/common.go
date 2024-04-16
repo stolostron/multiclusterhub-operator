@@ -440,7 +440,7 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 	ctlSrc := types.NamespacedName{}
 	// Search for catalogsource if not defined in overrides
 	if overrides == nil || overrides.CatalogSource == "" {
-		ctlSrc, err = multiclusterengine.GetCatalogSource(r.UncachedClient)
+		ctlSrc, err = multiclusterengine.GetCatalogSource(r.Client)
 		if err != nil {
 			r.Log.Info("Failed to find a suitable catalogsource.", "error", err)
 			return ctrl.Result{RequeueAfter: 5 * time.Second}, err
