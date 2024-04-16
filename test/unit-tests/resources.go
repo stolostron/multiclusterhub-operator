@@ -185,7 +185,7 @@ func OCMNamespace() *corev1.Namespace {
 func MarketNamespace() *corev1.Namespace {
 	return &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "redhat-marketplace",
+			Name: "openshift-marketplace",
 		},
 	}
 }
