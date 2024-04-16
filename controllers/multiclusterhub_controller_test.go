@@ -65,6 +65,7 @@ func ApplyPrereqs(k8sClient client.Client) {
 	Expect(k8sClient.Create(ctx, resources.OCMNamespace())).Should(Succeed())
 	Expect(k8sClient.Create(ctx, resources.MonitoringNamespace())).Should(Succeed())
 
+	By("Applying MCE CatalogSource")
 	Expect(k8sClient.Create(ctx, resources.MarketNamespace())).Should(Succeed())
 	Expect(k8sClient.Create(ctx, resources.MCECatalogSource())).Should(Succeed())
 }

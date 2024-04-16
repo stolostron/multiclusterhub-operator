@@ -33,7 +33,7 @@ var (
 func MCECatalogSource() *subv1alpha1.CatalogSource {
 	return &subv1alpha1.CatalogSource{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "mce-custom-registry",
+			Name:      "multiclusterengine-catalog",
 			Namespace: "openshift-marketplace",
 		},
 		Spec: subv1alpha1.CatalogSourceSpec{
