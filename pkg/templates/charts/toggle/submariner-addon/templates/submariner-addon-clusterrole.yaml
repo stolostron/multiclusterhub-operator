@@ -113,6 +113,7 @@ rules:
   - get
   - list
   - watch
+  - delete
 - apiGroups:
   - cluster.open-cluster-management.io
   resources:
