@@ -64,11 +64,10 @@ spec:
             {{` {{- $isSTSEnabledCluster := and (eq $credentialsMode "Manual")  (not (eq $serviceAccountIssuer "")) (eq (lower $platformType) "aws")}}` }}
             {{` {{- $isManualInstall :=  eq (lower $manualInstall) "true" }}` }}
 
+            {{` {{- /* This is not an STS enabled cluster and the user did not set the manual install label - can install OADP  */ -}}` }}
+            {{` {{- /* Creates the OADP Operator namespace group  */ -}}` }}
+            {{` {{- /* All operator resources will be installed under the open-cluster-management-backup namespace  */ -}}` }}
             {{` {{ if not (or $isManualInstall  $isSTSEnabledCluster) }}` }}
-              {{` {{- /* This is not an STS enabled cluster and the user did not set the manual install label - can install OADP  */ -}}` }}
-              {{` {{- /* Creates the OADP Operator namespace group  */ -}}` }}
-              {{` {{- /* All operator resources will be installed under the open-cluster-management-backup namespace  */ -}}` }}
-
               - complianceType: musthave
                 objectDefinition:
                   apiVersion: operators.coreos.com/v1
@@ -117,6 +116,7 @@ spec:
                     name: {{ .Values.global.name }}
                     source: {{ .Values.global.source }}
                     sourceNamespace: {{ .Values.global.sourceNamespace }} 
-              {{` {{- end }}` }}             
+              {{` {{- end }}` }}
+          pruneObjectBehavior: DeleteIfCreated             
           remediationAction: enforce
           severity: high
