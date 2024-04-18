@@ -4,14 +4,6 @@ metadata:
   name: backup-restore-oadp
   namespace: open-cluster-management-backup
   labels:
-    app: cluster-backup-chart
-    chart: cluster-backup-chart
-    release: cluster-backup-chart
-    heritage: Helm
-    app.kubernetes.io/instance: cluster-backup-chart
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: cluster-backup-chart
-    helm.sh/chart: cluster-backup-chart
     velero.io/exclude-from-backup: "true"
     component: policy
   annotations:
@@ -19,6 +11,9 @@ metadata:
     policy.open-cluster-management.io/controls: PR.IP-4 Backups of information are conducted maintained and tested
     policy.open-cluster-management.io/standards: NIST-CSF
     policy.open-cluster-management.io/source: system
+    "helm.sh/hook": pre-install, post-delete
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/resource-policy": delete
 spec:
   disabled: false
   policy-templates:
