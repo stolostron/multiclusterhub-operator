@@ -119,9 +119,16 @@ func GetHostedAnnotations(m *operatorv1.MultiClusterHub) map[string]string {
 	if m.GetAnnotations() != nil {
 		if val, ok := m.GetAnnotations()[utils.AnnotationImageRepo]; ok && val != "" {
 			mceAnnotations["imageRepository"] = val
+
+		} else if val, ok := m.GetAnnotations()[utils.DeprecatedAnnotationImageRepo]; ok && val != "" {
+			mceAnnotations["imageRepository"] = val
 		}
+
 		// Hosted specific annotations
 		if val, ok := m.GetAnnotations()[utils.AnnotationKubeconfig]; ok && val != "" {
+			mceAnnotations["mce-kubeconfig"] = val
+
+		} else if val, ok := m.GetAnnotations()[utils.DeprecatedAnnotationKubeconfig]; ok && val != "" {
 			mceAnnotations["mce-kubeconfig"] = val
 		}
 	}

@@ -231,10 +231,18 @@ func (r *MultiClusterHubReconciler) ensureNoHostedMultiClusterEngineCR(ctx conte
 
 // copies the hosted kubeconfig secret from mch to the newNS namespace
 func (r *MultiClusterHubReconciler) ensureHostedKubeconfigSecret(m *operatorv1.MultiClusterHub, newNS string) (ctrl.Result, error) {
-	if m.Annotations == nil || m.Annotations[utils.AnnotationKubeconfig] == "" {
-		return ctrl.Result{}, fmt.Errorf("Kubeconfig annotation missing from hosted MCH")
+	if m.Annotations == nil || (m.Annotations[utils.AnnotationKubeconfig] == "" &&
+		m.Annotations[utils.DeprecatedAnnotationKubeconfig] == "") {
+		return ctrl.Result{}, fmt.Errorf("kubeconfig annotation missing from hosted MCH")
 	}
-	secretName := m.Annotations[utils.AnnotationKubeconfig]
+
+	var secretName = ""
+	if v, ok := m.Annotations[utils.AnnotationKubeconfig]; ok && v != "" {
+		secretName = v
+
+	} else if v, ok := m.Annotations[utils.DeprecatedAnnotationKubeconfig]; ok && v != "" {
+		secretName = v
+	}
 
 	kubeSecret := &corev1.Secret{}
 	err := r.Client.Get(context.TODO(), types.NamespacedName{

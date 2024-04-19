@@ -68,13 +68,13 @@ import (
 
 // MultiClusterHubReconciler reconciles a MultiClusterHub object
 type MultiClusterHubReconciler struct {
-	Client               client.Client
-	UncachedClient       client.Client
-	CacheSpec            CacheSpec
-	Scheme               *runtime.Scheme
-	Log                  logr.Logger
-	UpgradeableCond      utils.Condition
-	DeprecatedSpecFields map[string]bool
+	Client           client.Client
+	UncachedClient   client.Client
+	CacheSpec        CacheSpec
+	Scheme           *runtime.Scheme
+	Log              logr.Logger
+	UpgradeableCond  utils.Condition
+	DeprecatedFields map[string]bool
 }
 
 const (
@@ -216,7 +216,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	// Apply image repository override from annotation if present.
 	if imageRepo := utils.GetImageRepository(multiClusterHub); imageRepo != "" {
-		r.Log.Info(fmt.Sprintf("Overriding Image Repository from annotation 'mch-imageRepository': %s", imageRepo))
+		r.Log.Info(fmt.Sprintf("Overriding Image Repository from annotation: %s", imageRepo))
 		imageOverrides = utils.OverrideImageRepository(imageOverrides, imageRepo)
 	}
 
@@ -335,7 +335,9 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			return ctrl.Result{}, fmt.Errorf("failed to detect clusterversion: %w", err)
 		}
 		if err := version.ValidOCPVersion(currentOCPVersion); err != nil {
-			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason, fmt.Sprintf("OCP version requirement not met: %s", err.Error()))
+			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason,
+				fmt.Sprintf("OCP version requirement not met: %s", err.Error()))
+
 			SetHubCondition(&multiClusterHub.Status, *condition)
 			return ctrl.Result{}, err
 		}
@@ -1400,7 +1402,8 @@ func (r *MultiClusterHubReconciler) StopScheduleOperatorControllerResync() {
 }
 
 func (r *MultiClusterHubReconciler) CheckDeprecatedFieldUsage(m *operatorv1.MultiClusterHub) {
-	deprecatedSpecFields := []struct {
+	a := m.GetAnnotations()
+	df := []struct {
 		name      string
 		isPresent bool
 	}{
@@ -1410,16 +1413,21 @@ func (r *MultiClusterHubReconciler) CheckDeprecatedFieldUsage(m *operatorv1.Mult
 		{"enableClusterBackup", m.Spec.EnableClusterBackup},
 		{"enableClusterProxyAddon", m.Spec.EnableClusterProxyAddon},
 		{"separateCertificateManagement", m.Spec.SeparateCertificateManagement},
+		{utils.DeprecatedAnnotationIgnoreOCPVersion, a[utils.DeprecatedAnnotationIgnoreOCPVersion] != ""},
+		{utils.DeprecatedAnnotationImageOverridesCM, a[utils.DeprecatedAnnotationImageOverridesCM] != ""},
+		{utils.DeprecatedAnnotationImageRepo, a[utils.DeprecatedAnnotationImageRepo] != ""},
+		{utils.DeprecatedAnnotationKubeconfig, a[utils.DeprecatedAnnotationKubeconfig] != ""},
+		{utils.DeprecatedAnnotationMCHPause, a[utils.DeprecatedAnnotationMCHPause] != ""},
 	}
 
-	if r.DeprecatedSpecFields == nil {
-		r.DeprecatedSpecFields = make(map[string]bool)
+	if r.DeprecatedFields == nil {
+		r.DeprecatedFields = make(map[string]bool)
 	}
 
-	for _, f := range deprecatedSpecFields {
-		if f.isPresent && !r.DeprecatedSpecFields[f.name] {
+	for _, f := range df {
+		if f.isPresent && !r.DeprecatedFields[f.name] {
 			r.Log.Info(fmt.Sprintf("Warning: %s field usage is deprecated in operator.", f.name))
-			r.DeprecatedSpecFields[f.name] = true
+			r.DeprecatedFields[f.name] = true
 		}
 	}
 }
