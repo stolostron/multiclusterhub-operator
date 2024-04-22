@@ -46,6 +46,46 @@ ft-downstream-update:
 		--volume ~/.kube/config:/opt/.kube/config \
 		$(REGISTRY)/$(IMG)-tests:$(VERSION)
 
+## Run the installer downstream functional tests
+podman-ft-downstream-install:
+	podman run --network host \
+		--env pullSecret=$(PULL_SECRET_NAME) \
+		--env source=$(SOURCE_NAME) \
+		--env channel=$(CHANNEL) \
+		--env sourceNamespace=$(SOURCE_NAMESPACE) \
+		--env name=$(SUBSCRIPTION_NAME) \
+		--env TEST_MODE="install" \
+		--env full_test_suite="false" \
+		--volume ~/.kube/config:/opt/.kube/config \
+		$(REGISTRY)/$(IMG)-tests:$(VERSION)
+
+## Run the uninstall functional tests
+podman-ft-downstream-uninstall:
+	podman run --network host \
+		--env pullSecret=$(PULL_SECRET_NAME) \
+		--env source=$(SOURCE_NAME) \
+		--env channel=$(CHANNEL) \
+		--env sourceNamespace=$(SOURCE_NAMESPACE) \
+		--env name=$(SUBSCRIPTION_NAME) \
+		--env TEST_MODE="uninstall" \
+		--env skipSubscription="true" \
+		--volume ~/.kube/config:/opt/.kube/config \
+		$(REGISTRY)/$(IMG)-tests:$(VERSION)
+
+## Run the uninstall functional tests
+podman-ft-downstream-update:
+	podman run --network host \
+		--env pullSecret=$(PULL_SECRET_NAME) \
+		--env source=$(SOURCE_NAME) \
+		--env channel=$(CHANNEL) \
+		--env sourceNamespace=$(SOURCE_NAMESPACE) \
+		--env name=$(SUBSCRIPTION_NAME) \
+		--env TEST_MODE="update" \
+		--env startVersion="2.1.0" \
+		--env updateVersion="2.7.0" \
+		--volume ~/.kube/config:/opt/.kube/config \
+		$(REGISTRY)/$(IMG)-tests:$(VERSION)
+
 ## Run the install functional tests directly
 ft-install: 
 	export skipSubscription="true";	ginkgo -tags functional -v --slow-spec-threshold=150s test/function_tests/multiclusterhub_install_test
@@ -70,6 +110,13 @@ test-image: deps
 	go mod vendor
 	@echo "Building $(REGISTRY)/multiclusterhub-operator-tests:$(VERSION)"
 	docker build . -f build/Dockerfile.test.prow -t $(REGISTRY)/multiclusterhub-operator-tests:$(VERSION)
+	rm -rf vendor
+
+## Build the MCH functional test image
+podman-test-image: deps
+	go mod vendor
+	@echo "Building $(REGISTRY)/multiclusterhub-operator-tests:$(VERSION)"
+	podman build . -f build/Dockerfile.test.prow -t $(REGISTRY)/multiclusterhub-operator-tests:$(VERSION)
 	rm -rf vendor
 
 # Pass downstream bundle image snapshots for beginning version and the desired version to upgrade to 

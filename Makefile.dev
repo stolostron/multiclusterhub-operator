@@ -41,6 +41,9 @@ copy-charts: ## Regenerates the operator bundles
 # different from `in-cluster-install` (call no secrets, no observability-crd)
 mock-install: prereqs subscriptions docker-build docker-push deploy
 
+# different from `in-cluster-install` (call no secrets, no observability-crd)
+podman-mock-install: prereqs subscriptions podman-build podman-push deploy
+
 cr: 
 	oc apply -k config/samples
 
@@ -49,6 +52,8 @@ cr:
 full-catalog-install: manifests generate bundle bundle-build bundle-push catalog-build catalog-push prereqs subscriptions catalog
 
 full-dev-install: prereqs manifests generate update-manifest subscriptions docker-build docker-push deploy
+
+podman-full-dev-install: prereqs manifests generate update-manifest subscriptions podman-build podman-push deploy
 
 add-images: ## Retrieves latest manifest and injects image definitions directly into the deployment template
 	pip3 install -r ./hack/bundle-automation/requirements.txt
