@@ -3,13 +3,12 @@
 # Copyright Contributors to the Open Cluster Management project
 
 org: open-cluster-management
-
 global:
   pullSecret: null
   imageOverrides: {}
   templateOverrides: {}
   namespace: default
-    
+  hubSize: Small
 hubconfig:
   nodeSelector: null
   replicaCount: 1

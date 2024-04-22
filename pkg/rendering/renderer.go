@@ -43,6 +43,7 @@ type Global struct {
 	InstallPlanApproval subv1alpha1.Approval `json:"installPlanApproval" structs:"installPlanApproval"`
 	Source              string               `json:"source" structs:"source"`
 	SourceNamespace     string               `json:"sourceNamespace" structs:"sourceNamespace"`
+	HubSize             v1.HubSize           `json:"hubSize" structs:"hubSize" yaml:"hubSize"`
 }
 
 type HubConfig struct {
@@ -54,7 +55,6 @@ type HubConfig struct {
 	HubVersion        string            `json:"hubVersion" structs:"hubVersion"`
 	OCPIngress        string            `json:"ocpIngress" structs:"ocpIngress"`
 	SubscriptionPause string            `json:"subscriptionPause" structs:"subscriptionPause"`
-	HubSize           v1.HubSize        `json:"hubSize" structs:"hubSize" yaml:"hubSize"`
 }
 
 type Toleration struct {
@@ -313,13 +313,13 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 
 	values.Global.ImageRepository = utils.GetImageRepository(mch)
 
+	values.Global.HubSize = mch.Spec.HubSize
+
 	values.HubConfig.ReplicaCount = utils.DefaultReplicaCount(mch)
 
 	values.HubConfig.NodeSelector = mch.Spec.NodeSelector
 
 	values.HubConfig.Tolerations = convertTolerations(utils.GetTolerations(mch))
-
-	values.HubConfig.HubSize = mch.Spec.HubSize
 
 	values.HubConfig.OCPVersion = os.Getenv("ACM_HUB_OCP_VERSION")
 

@@ -5,7 +5,6 @@
 # Declare variables to be passed into your templates.
 
 org: open-cluster-management
-
 global:
   pullPolicy: Always
   pullSecret: null
@@ -17,7 +16,7 @@ global:
   installPlanApproval: Automatic
   source: redhat-operators
   sourceNamespace: openshift-marketplace
-
+  hubSize: Small
 hubconfig:
   nodeSelector: null
   replicaCount: 1
@@ -27,50 +26,43 @@ hubconfig:
     - key: dedicated
       operator: Exists
       effect: NoSchedule
-    - effect: NoSchedule 
-      key: node-role.kubernetes.io/infra 
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/infra
       operator: Exists
-
 affinity:
   podAntiAffinity:
     preferredDuringSchedulingIgnoredDuringExecution:
-    - weight: 70
-      podAffinityTerm:
-        topologyKey: topology.kubernetes.io/zone
-        labelSelector:
-          matchExpressions:
-          - key: ocm-antiaffinity-selector
-            operator: In
-            values:
-            - clusterbackup
-    - weight: 35
-      podAffinityTerm:
-        topologyKey: kubernetes.io/hostname
-        labelSelector:
-          matchExpressions:
-          - key: ocm-antiaffinity-selector
-            operator: In
-            values:
-            - clusterbackup
-
+      - weight: 70
+        podAffinityTerm:
+          topologyKey: topology.kubernetes.io/zone
+          labelSelector:
+            matchExpressions:
+              - key: ocm-antiaffinity-selector
+                operator: In
+                values:
+                  - clusterbackup
+      - weight: 35
+        podAffinityTerm:
+          topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchExpressions:
+              - key: ocm-antiaffinity-selector
+                operator: In
+                values:
+                  - clusterbackup
 arch:
-- amd64
-- ppc64le
-- s390x
-- arm64
-
+  - amd64
+  - ppc64le
+  - s390x
+  - arm64
 enabled: true
-
 clusterbackup:
   resources:
     requests:
       memory: "256Mi"
       cpu: "50m"
-
-
 BackupRestorePolicyName: backup-restore-enabled
 ClusterCollisionPhase: BackupCollision
-
 oadpOperator:
   name: redhat-oadp-operator
   channel: stable-1.3
