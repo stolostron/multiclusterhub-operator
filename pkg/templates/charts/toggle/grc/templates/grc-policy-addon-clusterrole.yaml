@@ -35,7 +35,6 @@ rules:
   - cert-policy-controller
   - config-policy-controller
   - governance-policy-framework
-  - iam-policy-controller
   resources:
   - clustermanagementaddons/finalizers
   verbs:
@@ -46,7 +45,6 @@ rules:
   - cert-policy-controller
   - config-policy-controller
   - governance-policy-framework
-  - iam-policy-controller
   resources:
   - clustermanagementaddons/status
   verbs:
@@ -68,7 +66,6 @@ rules:
   - cert-policy-controller
   - config-policy-controller
   - governance-policy-framework
-  - iam-policy-controller
   resources:
   - managedclusteraddons
   verbs:
@@ -79,7 +76,6 @@ rules:
   - cert-policy-controller
   - config-policy-controller
   - governance-policy-framework
-  - iam-policy-controller
   resources:
   - managedclusteraddons/finalizers
   verbs:
@@ -90,7 +86,6 @@ rules:
   - cert-policy-controller
   - config-policy-controller
   - governance-policy-framework
-  - iam-policy-controller
   resources:
   - managedclusteraddons/status
   verbs:
@@ -156,7 +151,6 @@ rules:
   - cert-policy-controller
   - config-policy-controller
   - governance-policy-framework
-  - iam-policy-controller
   resources:
   - leases
   verbs:
@@ -269,7 +263,6 @@ rules:
   - open-cluster-management:cert-policy-controller-hub
   - open-cluster-management:compliance-history-api-recorder
   - open-cluster-management:config-policy-controller-hub
-  - open-cluster-management:iam-policy-controller-hub
   - open-cluster-management:policy-framework-hub
   resources:
   - clusterroles
@@ -290,7 +283,6 @@ rules:
   - open-cluster-management:cert-policy-controller-hub
   - open-cluster-management:compliance-history-api-recorder
   - open-cluster-management:config-policy-controller-hub
-  - open-cluster-management:iam-policy-controller-hub
   - open-cluster-management:policy-framework-hub
   resources:
   - rolebindings

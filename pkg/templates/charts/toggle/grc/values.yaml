@@ -5,7 +5,6 @@ global:
     governance_policy_propagator: ""
     governance_policy_addon_controller: ""
     cert_policy_controller: ""
-    iam_policy_controller: ""
     config_policy_controller: ""
     governance_policy_framework_addon: ""
     kube_rbac_proxy: ""
