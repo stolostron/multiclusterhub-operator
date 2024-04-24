@@ -22,33 +22,33 @@ var (
 		AnnotationIgnoreOCPVersion is an annotation used to indicate the operator should not check the OpenShift
 		Container Platform (OCP) version before proceeding when set.
 	*/
-	AnnotationIgnoreOCPVersion           = "operator.open-cluster-management.io/ignore-ocp-version"
+	AnnotationIgnoreOCPVersion           = "installer.open-cluster-management.io/ignore-ocp-version"
 	DeprecatedAnnotationIgnoreOCPVersion = "ignoreOCPVersion"
 
 	/*
 		AnnotationImageOverridesCM is an annotation used in multiclusterhub to specify a custom ConfigMap containing
 		image overrides.
 	*/
-	AnnotationImageOverridesCM           = "operator.open-cluster-management.io/image-overrides-configmap"
+	AnnotationImageOverridesCM           = "installer.open-cluster-management.io/image-overrides-configmap"
 	DeprecatedAnnotationImageOverridesCM = "mch-imageOverridesCM"
 
 	/*
 		AnnotationImageRepo is an annotation used in multiclusterhub to specify a custom image repository to use.
 	*/
-	AnnotationImageRepo           = "operator.open-cluster-management.io/image-repository"
+	AnnotationImageRepo           = "installer.open-cluster-management.io/image-repository"
 	DeprecatedAnnotationImageRepo = "mch-imageRepository"
 
 	/*
 		AnnotationKubeconfig is an annotation used to specify the secret name residing in target containing the
 		kubeconfig to access the remote cluster.
 	*/
-	AnnotationKubeconfig           = "operator.open-cluster-management.io/kubeconfig"
+	AnnotationKubeconfig           = "installer.open-cluster-management.io/kubeconfig"
 	DeprecatedAnnotationKubeconfig = "mch-kubeconfig"
 
 	/*
 		AnnotationMCHPause is an annotation used in multiclusterhub to identify if the multiclusterhub is paused or not.
 	*/
-	AnnotationMCHPause           = "operator.open-cluster-management.io/pause"
+	AnnotationMCHPause           = "installer.open-cluster-management.io/pause"
 	DeprecatedAnnotationMCHPause = "mch-pause"
 
 	/*
@@ -72,7 +72,7 @@ var (
 		AnnotationTemplateOverridesCM is an annotation used in multiclusterhub to specify a custom ConfigMap
 		containing resource template overrides.
 	*/
-	AnnotationTemplateOverridesCM = "operator.multicluster.openshift.io/template-override-cm"
+	AnnotationTemplateOverridesCM = "installer.open-cluster-management.io/template-override-configmap"
 )
 
 /*
