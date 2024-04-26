@@ -1,5 +1,5 @@
 global:
-  hubSize: "Small"
+  hubSize: Small
   templateOverrides: {}
   imageOverrides:
     cluster_permission: ''
