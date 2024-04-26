@@ -1,4 +1,6 @@
 global:
+  hubSize: "Small"
+  templateOverrides: {}
   imageOverrides:
     cluster_permission: ''
   namespace: open-cluster-management
