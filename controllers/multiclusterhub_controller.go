@@ -350,6 +350,12 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{Requeue: true}, err
 	}
 
+	// iam-policy-controller was removed in 2.11
+	result, err = r.ensureNoClusterManagementAddOn(multiClusterHub, "iam-policy-controller")
+	if err != nil {
+		return result, err
+	}
+
 	// Deploy appsub operator component
 	if multiClusterHub.Enabled(operatorv1.Appsub) {
 		result, err = r.ensureComponent(ctx, multiClusterHub, operatorv1.Appsub, r.CacheSpec)

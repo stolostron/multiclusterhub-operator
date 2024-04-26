@@ -774,18 +774,32 @@ func (r *MultiClusterHubReconciler) ensureNoClusterManagementAddOn(m *operatorv1
 	}
 
 	err = r.Client.Delete(context.TODO(), clusterMgmtAddon)
-	if err != nil && !errors.IsNotFound(err) {
-		r.Log.Error(err, fmt.Sprintf("Error deleting ClusterManagementAddOn CR"))
-		return ctrl.Result{Requeue: true}, err
+	if errors.IsNotFound(err) {
+		return ctrl.Result{}, nil
 	}
+
+	if err != nil {
+		r.Log.Error(err, fmt.Sprintf("Error deleting ClusterManagementAddOn CR"))
+
+		return ctrl.Result{}, err
+	}
+
+	r.Log.Info("Deleting the ClusterManagementAddOn CR", "name", addonName)
 
 	err = r.Client.Get(ctx, types.NamespacedName{Name: clusterMgmtAddon.GetName()}, clusterMgmtAddon)
-	if err == nil {
-		return ctrl.Result{Requeue: true}, errors.NewBadRequest("ClusterManagementAddOn CR has not been deleted")
+	if errors.IsNotFound(err) {
+		r.Log.Info("Successfully deleted the ClusterManagementAddOn CR", "name", addonName)
+
+		return ctrl.Result{}, nil
 	}
 
-	r.Log.Info(fmt.Sprintf("Successfully deleted ClusterManagementAddOn CR: %s", clusterMgmtAddon.GetName()))
-	return ctrl.Result{}, nil
+	if err != nil {
+		r.Log.Error(err, "Failed to get the ClusterManagementAddOn CR", "name", addonName)
+
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, errors.NewBadRequest("ClusterManagementAddOn CR has not been deleted")
 }
 
 func (r *MultiClusterHubReconciler) ensureNoSearchCR(m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
