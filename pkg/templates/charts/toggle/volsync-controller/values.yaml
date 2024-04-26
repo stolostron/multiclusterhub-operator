@@ -1,13 +1,11 @@
 org: stolostron
-
 global:
   pullPolicy: Always
   imageOverrides:
     volsync_addon_controller: ""
   templateOverrides: {}
-
+  hubSize: Small
 pullSecret: null
-
 hubconfig:
   nodeSelector: null
   replicaCount: 1

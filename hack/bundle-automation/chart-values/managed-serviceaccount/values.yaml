@@ -5,3 +5,5 @@ agentInstallAll: false
 featureGates:
   ephemeralIdentity: true
 agentImagePullSecret: ""
+global:
+  hubSize: Small

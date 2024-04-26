@@ -13,6 +13,7 @@ global:
   namespace: default
   pullSecret: null
   pullPolicy: Always
+  hubSize: Small
 hubconfig:
   nodeSelector: null
   proxyConfigs: {}

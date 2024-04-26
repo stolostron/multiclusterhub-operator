@@ -43,6 +43,7 @@ type Global struct {
 	InstallPlanApproval subv1alpha1.Approval `json:"installPlanApproval" structs:"installPlanApproval"`
 	Source              string               `json:"source" structs:"source"`
 	SourceNamespace     string               `json:"sourceNamespace" structs:"sourceNamespace"`
+	HubSize             v1.HubSize           `json:"hubSize" structs:"hubSize" yaml:"hubSize"`
 }
 
 type HubConfig struct {
@@ -311,6 +312,8 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 	values.Global.PullSecret = mch.Spec.ImagePullSecret
 
 	values.Global.ImageRepository = utils.GetImageRepository(mch)
+
+	values.Global.HubSize = mch.Spec.HubSize
 
 	values.HubConfig.ReplicaCount = utils.DefaultReplicaCount(mch)
 

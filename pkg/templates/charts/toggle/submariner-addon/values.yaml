@@ -1,4 +1,5 @@
 global:
+  hubSize: Small
   imageOverrides:
     submariner_addon: ''
   namespace: default
