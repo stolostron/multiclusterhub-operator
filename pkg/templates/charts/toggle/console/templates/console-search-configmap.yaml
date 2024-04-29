@@ -1,0 +1,14 @@
+# Copyright (c) 2024 Red Hat, Inc.
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: console-search-config
+  labels:
+    app: console
+    component: 'console'
+    chart: console-chart-{{ .Values.hubconfig.hubVersion }}
+    release: console-chart
+data:
+  suggestedSearches: '[{"id":"search.suggested.workloads.name","name":"Workloads","description":"A pre-defined search to help you review your workloads","searchText":"kind:DaemonSet,Deployment,Job,StatefulSet,ReplicaSet"},{"id":"search.suggested.unhealthy.name","name":"Unhealthy pods","description":"Show pods with unhealthy status","searchText":"kind:Pod status:Pending,Error,Failed,Terminating,ImagePullBackOff,CrashLoopBackOff,RunContainerError,ContainerCreating"},{"id":"search.suggested.createdLastHour.name","name":"Created last hour","description":"Search for resources created within the last hour","searchText":"created:hour"}]'
