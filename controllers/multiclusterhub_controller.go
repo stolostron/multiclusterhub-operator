@@ -224,7 +224,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if ioConfigmapName := utils.GetImageOverridesConfigmapName(multiClusterHub); ioConfigmapName != "" {
 		imageOverrides, err = overrides.GetOverridesFromConfigmap(r.Client, imageOverrides,
 			multiClusterHub.GetNamespace(), ioConfigmapName, false)
-
 		if err != nil {
 			r.Log.Error(err, fmt.Sprintf("Failed to find image override configmap: %s/%s",
 				multiClusterHub.GetNamespace(), ioConfigmapName))
@@ -246,7 +245,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if toConfigmapName := utils.GetTemplateOverridesConfigmapName(multiClusterHub); toConfigmapName != "" {
 		templateOverrides, err = overrides.GetOverridesFromConfigmap(r.Client, templateOverrides,
 			multiClusterHub.GetNamespace(), toConfigmapName, true)
-
 		if err != nil {
 			r.Log.Error(err, fmt.Sprintf("Failed to find template override configmap: %s/%s",
 				multiClusterHub.GetNamespace(), toConfigmapName))
@@ -350,6 +348,12 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	err = r.cleanupGRCAppsub(multiClusterHub)
 	if err != nil {
 		return ctrl.Result{Requeue: true}, err
+	}
+
+	// iam-policy-controller was removed in 2.11
+	result, err = r.ensureNoClusterManagementAddOn(multiClusterHub, "iam-policy-controller")
+	if err != nil {
+		return result, err
 	}
 
 	// Deploy appsub operator component
@@ -613,7 +617,6 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 	// Set owner reference.
 	if (template.GetKind() == "ClusterRole") || (template.GetKind() == "ClusterRoleBinding") || (template.GetKind() == "ServiceMonitor") || (template.GetKind() == "CustomResourceDefinition") {
 		utils.AddInstallerLabel(template, m.Name, m.Namespace)
-
 	}
 
 	if template.GetKind() == "APIService" {
@@ -683,7 +686,8 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(ctx context.Context, comp
 }
 
 func (r *MultiClusterHubReconciler) ensureComponentOrNoComponent(ctx context.Context, m *operatorv1.MultiClusterHub,
-	component string, cachespec CacheSpec, ocpConsole bool) (ctrl.Result, error) {
+	component string, cachespec CacheSpec, ocpConsole bool,
+) (ctrl.Result, error) {
 	var result ctrl.Result
 	var err error
 
@@ -717,7 +721,8 @@ func (r *MultiClusterHubReconciler) ensureComponentOrNoComponent(ctx context.Con
 }
 
 func (r *MultiClusterHubReconciler) ensureNamespaceAndPullSecret(m *operatorv1.MultiClusterHub, ns *corev1.Namespace) (
-	ctrl.Result, error) {
+	ctrl.Result, error,
+) {
 	var result ctrl.Result
 	var err error
 
@@ -735,8 +740,8 @@ func (r *MultiClusterHubReconciler) ensureNamespaceAndPullSecret(m *operatorv1.M
 }
 
 func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *operatorv1.MultiClusterHub, component string,
-	cachespec CacheSpec) (ctrl.Result, error) {
-
+	cachespec CacheSpec,
+) (ctrl.Result, error) {
 	/*
 		If the component is detected to be MCH, we can simply return successfully. MCH is only listed in the components
 		list for cleanup purposes.
@@ -784,8 +789,8 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 }
 
 func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *operatorv1.MultiClusterHub,
-	component string, cachespec CacheSpec) (result ctrl.Result, err error) {
-
+	component string, cachespec CacheSpec,
+) (result ctrl.Result, err error) {
 	/*
 		If the component is detected to be MCH, we can simply return successfully. MCH is only listed in the components
 		list for cleanup purposes. If the component is detected to be MCE, we can simply return successfully.
@@ -854,8 +859,8 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 }
 
 func (r *MultiClusterHubReconciler) ensureOpenShiftNamespaceLabel(ctx context.Context,
-	m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
-
+	m *operatorv1.MultiClusterHub,
+) (ctrl.Result, error) {
 	log := log.Log.WithName("reconcile")
 	existingNs := &corev1.Namespace{}
 
@@ -966,7 +971,8 @@ func (r *MultiClusterHubReconciler) createTrustBundleConfigmap(ctx context.Conte
 }
 
 func (r *MultiClusterHubReconciler) createMetricsService(ctx context.Context, m *operatorv1.MultiClusterHub) (
-	ctrl.Result, error) {
+	ctrl.Result, error,
+) {
 	log := log.Log.WithName("reconcile")
 
 	const Port = 8383
@@ -1030,7 +1036,8 @@ func (r *MultiClusterHubReconciler) createMetricsService(ctx context.Context, m 
 }
 
 func (r *MultiClusterHubReconciler) createMetricsServiceMonitor(ctx context.Context, m *operatorv1.MultiClusterHub) (
-	ctrl.Result, error) {
+	ctrl.Result, error,
+) {
 	log := log.Log.WithName("reconcile")
 
 	smName := utils.MCHOperatorMetricsServiceMonitorName
@@ -1274,7 +1281,6 @@ func updatePausedCondition(m *operatorv1.MultiClusterHub) {
 			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, ResumedReason, "Multiclusterhub is resumed")
 			SetHubCondition(&m.Status, *condition)
 		}
-
 	}
 }
 
@@ -1371,7 +1377,6 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 	}
 	log.Info("No updates to defaults detected")
 	return ctrl.Result{}, nil
-
 }
 
 func (r *MultiClusterHubReconciler) InitScheduler() {

@@ -250,16 +250,6 @@
       "image-key": "openshift_hive"
     },
     {
-      "image-name": "iam-policy-controller",
-      "image-version": "2.0.0",
-      "image-tag": "2.0.0-a32b382e0b7b665396eea55e4c47814f63f75ee2",
-      "git-sha256": "a32b382e0b7b665396eea55e4c47814f63f75ee2",
-      "git-repository": "stolostron/iam-policy-controller",
-      "image-remote": "quay.io/stolostron",
-      "image-digest": "sha256:8e994ac2ee4bbd2fc21a67c5e4884f1040d726e0193fc3e8acd3c4b9da4d921c",
-      "image-key": "iam_policy_controller"
-    },
-    {
       "image-name": "management-ingress",
       "image-version": "1.0.0",
       "image-tag": "1.0.0-41989535249b3337b3096417c2240fe366296f8c",
