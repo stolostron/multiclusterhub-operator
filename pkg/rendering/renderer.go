@@ -4,7 +4,6 @@ package renderer
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -168,10 +167,11 @@ func RenderCRDs(crdDir string, mch *v1.MultiClusterHub) ([]*unstructured.Unstruc
 			return nil
 		}
 
-		bytesFile, e := ioutil.ReadFile(filepath.Clean(path))
+		bytesFile, e := os.ReadFile(filepath.Clean(path))
 		if e != nil {
-			errs = append(errs, fmt.Errorf("%s - error reading file: %v", info.Name(), err.Error()))
+			errs = append(errs, fmt.Errorf("%s - error reading file: %v", info.Name(), err))
 		}
+
 		if err = yaml.Unmarshal(bytesFile, crd); err != nil {
 			errs = append(errs, fmt.Errorf("%s - error unmarshalling file to unstructured: %v", info.Name(), err.Error()))
 		}
@@ -203,7 +203,7 @@ func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]st
 		chartDir = path.Join(value, chartDir)
 	}
 
-	charts, err := ioutil.ReadDir(chartDir)
+	charts, err := os.ReadDir(chartDir)
 	if err != nil {
 		errs = append(errs, err)
 	}
@@ -224,9 +224,7 @@ func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]st
 
 func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]string, templates map[string]string) (
 	[]*unstructured.Unstructured, []error) {
-
 	log := log.Log.WithName("reconcile")
-	errs := []error{}
 
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
 		chartPath = path.Join(val, chartPath)
@@ -256,7 +254,7 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 
 	chart, err := loader.Load(chartPath)
 	if err != nil {
-		log.Info(fmt.Sprintf("error loading chart:"))
+		log.Info("error loading chart")
 		return nil, append(errs, err)
 	}
 
@@ -300,7 +298,6 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 }
 
 func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[string]string, templates map[string]string) {
-
 	values.Global.ImageOverrides = images
 
 	values.Global.TemplateOverrides = templates
@@ -388,5 +385,4 @@ func GetOADPConfig(m *v1.MultiClusterHub) (string, string, subv1alpha1.Approval,
 		sourceNamespace = "openshift-marketplace"
 	}
 	return name, channel, installPlan, source, sourceNamespace
-
 }

@@ -27,7 +27,6 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/go-co-op/gocron"
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/deploying"
@@ -89,12 +88,6 @@ const (
 	defaultTrustBundleName = "trusted-ca-bundle"
 )
 
-var (
-	scheduler              *gocron.Scheduler
-	cronResyncTag          = "multiclusterhub-operator-resync"
-	reconciliationInterval = 10 // minutes
-)
-
 //+kubebuilder:rbac:groups="";"admissionregistration.k8s.io";"apiextensions.k8s.io";"apiregistration.k8s.io";"apps";"apps.open-cluster-management.io";"authorization.k8s.io";"hive.openshift.io";"mcm.ibm.com";"proxy.open-cluster-management.io";"rbac.authorization.k8s.io";"security.openshift.io";"clusterview.open-cluster-management.io";"discovery.open-cluster-management.io";"wgpolicyk8s.io",resources=apiservices;channels;clusterjoinrequests;clusterrolebindings;clusterstatuses/log;configmaps;customresourcedefinitions;deployments;discoveryconfigs;hiveconfigs;mutatingwebhookconfigurations;validatingwebhookconfigurations;namespaces;pods;policyreports;replicasets;rolebindings;secrets;serviceaccounts;services;subjectaccessreviews;subscriptions;helmreleases;managedclusters;managedclustersets,verbs=get
 //+kubebuilder:rbac:groups="";"admissionregistration.k8s.io";"apiextensions.k8s.io";"apiregistration.k8s.io";"apps";"apps.open-cluster-management.io";"authorization.k8s.io";"hive.openshift.io";"monitoring.coreos.com";"rbac.authorization.k8s.io";"mcm.ibm.com";"security.openshift.io",resources=apiservices;channels;clusterjoinrequests;clusterrolebindings;clusterroles;configmaps;customresourcedefinitions;deployments;hiveconfigs;mutatingwebhookconfigurations;validatingwebhookconfigurations;namespaces;rolebindings;secrets;serviceaccounts;services;servicemonitors;subjectaccessreviews;subscriptions;validatingwebhookconfigurations,verbs=create;update
 //+kubebuilder:rbac:groups="";"apps";"apps.open-cluster-management.io";"admissionregistration.k8s.io";"apiregistration.k8s.io";"authorization.k8s.io";"config.openshift.io";"inventory.open-cluster-management.io";"mcm.ibm.com";"observability.open-cluster-management.io";"operator.open-cluster-management.io";"rbac.authorization.k8s.io";"hive.openshift.io";"clusterview.open-cluster-management.io";"discovery.open-cluster-management.io";"wgpolicyk8s.io",resources=apiservices;clusterjoinrequests;configmaps;deployments;discoveryconfigs;helmreleases;ingresses;multiclusterhubs;multiclusterobservabilities;namespaces;hiveconfigs;rolebindings;servicemonitors;secrets;services;subjectaccessreviews;subscriptions;validatingwebhookconfigurations;pods;policyreports;managedclusters;managedclustersets,verbs=list
@@ -128,12 +121,6 @@ var (
 func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Request) (retQueue ctrl.Result, retError error) {
 	r.Log = log.Log.WithName("reconcile")
 	r.Log.Info("Reconciling MultiClusterHub")
-
-	// Initalize sceduler instance for operator resync cronjob.
-	if scheduler == nil {
-		r.Log.Info("Setting up scheduler for operator resync")
-		r.InitScheduler()
-	}
 
 	// Fetch the MultiClusterHub instance
 	multiClusterHub := &operatorv1.MultiClusterHub{}
@@ -318,13 +305,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	updatePausedCondition(multiClusterHub)
 	if utils.IsPaused(multiClusterHub) {
 		r.Log.Info("MultiClusterHub reconciliation is paused. Nothing more to do.")
-		if ok := scheduler.IsRunning(); ok {
-			r.Log.Info("Pausing MultiClusterHub operator controller resync job.")
-			go r.StopScheduleOperatorControllerResync()
-		}
 		return ctrl.Result{}, nil
-	} else if ok := scheduler.IsRunning(); !ok {
-		defer r.ScheduleOperatorControllerResync(ctx, req)
 	}
 
 	if !utils.ShouldIgnoreOCPVersion(multiClusterHub) {
@@ -480,8 +461,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
 
-	return retQueue, retError
-	// return ctrl.Result{}, nil
+	return ctrl.Result{RequeueAfter: utils.ShortRefreshInterval}, nil
 }
 
 func (r *MultiClusterHubReconciler) setOperatorUpgradeableStatus(ctx context.Context, m *operatorv1.MultiClusterHub) (bool, error) {
@@ -1377,33 +1357,6 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 	}
 	log.Info("No updates to defaults detected")
 	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) InitScheduler() {
-	scheduler = gocron.NewScheduler(time.UTC)
-}
-
-func (r *MultiClusterHubReconciler) ScheduleOperatorControllerResync(ctx context.Context, req ctrl.Request) {
-	if ok := scheduler.IsRunning(); !ok {
-		_, err := scheduler.Tag(cronResyncTag).Every(reconciliationInterval).Minutes().Do(r.Reconcile, ctx, req)
-
-		if err != nil {
-			r.Log.Error(err, "failed to schedule scheduler job for operator controller resync")
-		} else {
-			r.Log.Info(fmt.Sprintf("Starting scheduler job for operator controller. Reconciling every %v minutes",
-				reconciliationInterval))
-			scheduler.StartAsync()
-		}
-	}
-}
-
-// StopScheduleOperatorControllerResync ...
-func (r *MultiClusterHubReconciler) StopScheduleOperatorControllerResync() {
-	scheduler.Stop()
-
-	if ok := scheduler.IsRunning(); !ok {
-		r.InitScheduler()
-	}
 }
 
 func (r *MultiClusterHubReconciler) CheckDeprecatedFieldUsage(m *operatorv1.MultiClusterHub) {
