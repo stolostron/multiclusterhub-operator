@@ -169,7 +169,6 @@ func (r *MultiClusterHubReconciler) ensureOperatorGroup(m *operatorv1.MultiClust
 	}
 
 	return ctrl.Result{}, nil
-
 }
 
 func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
@@ -275,7 +274,7 @@ func (r *MultiClusterHubReconciler) ensurePullSecret(m *operatorv1.MultiClusterH
 // checks if imagepullsecret was created in mch namespace
 func (r *MultiClusterHubReconciler) ensurePullSecretCreated(m *operatorv1.MultiClusterHub, namespace string) (ctrl.Result, error) {
 	if m.Spec.ImagePullSecret == "" {
-		//No imagepullsecret set, continuing
+		// No imagepullsecret set, continuing
 		return ctrl.Result{}, nil
 	}
 
@@ -285,7 +284,6 @@ func (r *MultiClusterHubReconciler) ensurePullSecretCreated(m *operatorv1.MultiC
 		Name:      m.Spec.ImagePullSecret,
 		Namespace: m.Namespace,
 	}, pullSecret)
-
 	if err != nil {
 		return ctrl.Result{Requeue: true}, err
 	}
@@ -759,7 +757,8 @@ func (r *MultiClusterHubReconciler) ensureSearchCR(m *operatorv1.MultiClusterHub
 }
 
 func (r *MultiClusterHubReconciler) ensureNoClusterManagementAddOn(m *operatorv1.MultiClusterHub, component string) (
-	ctrl.Result, error) {
+	ctrl.Result, error,
+) {
 	ctx := context.Background()
 
 	addonName, err := operatorv1.GetClusterManagementAddonName(component)
@@ -775,18 +774,32 @@ func (r *MultiClusterHubReconciler) ensureNoClusterManagementAddOn(m *operatorv1
 	}
 
 	err = r.Client.Delete(context.TODO(), clusterMgmtAddon)
-	if err != nil && !errors.IsNotFound(err) {
-		r.Log.Error(err, "error deleting ClusterManagementAddOn CR")
-		return ctrl.Result{Requeue: true}, err
+	if errors.IsNotFound(err) {
+		return ctrl.Result{}, nil
 	}
+
+	if err != nil {
+		r.Log.Error(err, "Error deleting ClusterManagementAddOn CR")
+
+		return ctrl.Result{}, err
+	}
+
+	r.Log.Info("Deleting the ClusterManagementAddOn CR", "name", addonName)
 
 	err = r.Client.Get(ctx, types.NamespacedName{Name: clusterMgmtAddon.GetName()}, clusterMgmtAddon)
-	if err == nil {
-		return ctrl.Result{Requeue: true}, errors.NewBadRequest("ClusterManagementAddOn CR has not been deleted")
+	if errors.IsNotFound(err) {
+		r.Log.Info("Successfully deleted the ClusterManagementAddOn CR", "name", addonName)
+
+		return ctrl.Result{}, nil
 	}
 
-	r.Log.Info(fmt.Sprintf("Successfully deleted ClusterManagementAddOn CR: %s", clusterMgmtAddon.GetName()))
-	return ctrl.Result{}, nil
+	if err != nil {
+		r.Log.Error(err, "Failed to get the ClusterManagementAddOn CR", "name", addonName)
+
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, errors.NewBadRequest("ClusterManagementAddOn CR has not been deleted")
 }
 
 func (r *MultiClusterHubReconciler) ensureNoSearchCR(m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
@@ -817,7 +830,6 @@ func (r *MultiClusterHubReconciler) ensureNoSearchCR(m *operatorv1.MultiClusterH
 		return ctrl.Result{Requeue: true}, errors.NewBadRequest("Search CR has not been deleted")
 	}
 	return ctrl.Result{}, nil
-
 }
 
 // Checks if OCP Console is enabled and return true if so. If <OCP v4.12, always return true
@@ -841,7 +853,7 @@ func (r *MultiClusterHubReconciler) CheckConsole(ctx context.Context) (bool, err
 	}
 	// -0 allows for prerelease builds to pass the validation.
 	// If -0 is removed, developer/rc builds will not pass this check
-	//OCP Console can only be disabled in OCP 4.12+
+	// OCP Console can only be disabled in OCP 4.12+
 	constraint, err := semver.NewConstraint(">= 4.12.0-0")
 	if err != nil {
 		return false, fmt.Errorf("failed to set ocp version constraint: %w", err)

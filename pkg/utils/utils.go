@@ -104,15 +104,13 @@ const (
 	MCHOperatorMetricsServiceMonitorName = "multiclusterhub-operator-metrics"
 )
 
-var (
-	// DefaultSSLCiphers defines the default cipher configuration used by management ingress
-	DefaultSSLCiphers = []string{
-		"ECDHE-ECDSA-AES256-GCM-SHA384",
-		"ECDHE-RSA-AES256-GCM-SHA384",
-		"ECDHE-ECDSA-AES128-GCM-SHA256",
-		"ECDHE-RSA-AES128-GCM-SHA256",
-	}
-)
+// DefaultSSLCiphers defines the default cipher configuration used by management ingress
+var DefaultSSLCiphers = []string{
+	"ECDHE-ECDSA-AES256-GCM-SHA384",
+	"ECDHE-RSA-AES256-GCM-SHA384",
+	"ECDHE-ECDSA-AES128-GCM-SHA256",
+	"ECDHE-RSA-AES128-GCM-SHA256",
+}
 
 // CertManagerNS returns the namespace to deploy cert manager objects
 func CertManagerNS(m *operatorsv1.MultiClusterHub) string {
@@ -318,7 +316,7 @@ func GetTestImages() []string {
 		"LIFECYCLE_BACKEND_E2E", "BAILER", "CERT_POLICY_CONTROLLER", "CLUSTER_BACKUP_CONTROLLER",
 		"CLUSTER_LIFECYCLE_E2E", "CLUSTER_PROXY", "CLUSTER_PROXY_ADDON", "CONSOLE", "ENDPOINT_MONITORING_OPERATOR",
 		"GRAFANA", "GRAFANA_DASHBOARD_LOADER", "GRC_POLICY_FRAMEWORK_TESTS", "HELLOPROW_GO", "HELLOWORLD",
-		"HYPERSHIFT_DEPLOYMENT_CONTROLLER", "IAM_POLICY_CONTROLLER", "INSIGHTS_CLIENT", "INSIGHTS_METRICS",
+		"HYPERSHIFT_DEPLOYMENT_CONTROLLER", "INSIGHTS_CLIENT", "INSIGHTS_METRICS",
 		"KLUSTERLET_ADDON_CONTROLLER", "KLUSTERLET_ADDON_OPERATOR", "KUBE_RBAC_PROXY", "KUBE_STATE_METRICS",
 		"METRICS_COLLECTOR", "MULTICLOUD_INTEGRATIONS", "MULTICLUSTER_OBSERVABILITY_OPERATOR",
 		"MULTICLUSTER_OPERATORS_APPLICATION", "MULTICLUSTER_OPERATORS_CHANNEL", "MULTICLUSTER_OPERATORS_SUBSCRIPTION",
@@ -330,7 +328,7 @@ func GetTestImages() []string {
 		"SEARCH_V2_API", "SUBMARINER_ADDON", "THANOS", "VOLSYNC", "VOLSYNC_ADDON_CONTROLLER", "VOLSYNC_MOVER_RCLONE",
 		"VOLSYNC_MOVER_RESTIC", "VOLSYNC_MOVER_RSYNC", "CLUSTER_PERMISSION", "kube_rbac_proxy", "insights_metrics", "insights_client",
 		"search_collector", "search_indexer", "search_v2_api", "postgresql_13", "search_v2_operator", "klusterlet_addon_controller",
-		"governance_policy_propagator", "governance_policy_addon_controller", "cert_policy_controller", "iam_policy_controller",
+		"governance_policy_propagator", "governance_policy_addon_controller", "cert_policy_controller",
 		"config_policy_controller", "governance_policy_framework_addon",
 		"cluster_backup_controller", "console", "volsync_addon_controller", "multicluster_operators_application",
 		"multicloud_integrations", "multicluster_operators_channel", "multicluster_operators_subscription",
@@ -503,7 +501,6 @@ func Contains(s []string, e string) bool {
 }
 
 func AppendProxyVariables(existing []corev1.EnvVar, added []corev1.EnvVar) []corev1.EnvVar {
-
 	for i := 0; i < len(added); i++ {
 		existing = appendIfMissing(existing, added[i])
 	}
