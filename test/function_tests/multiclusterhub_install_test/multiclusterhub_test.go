@@ -46,12 +46,12 @@ var _ = Describe("Multiclusterhub", func() {
 
 			utils.CreateMCHNotManaged()
 			if err := utils.ValidateStatusesExist(); err != nil {
-				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				fmt.Printf("Error: %s\n", err.Error())
 				return
 			}
 			err := utils.ValidateMCH()
 			if err != nil {
-				fmt.Println(fmt.Sprintf("Error: %s\n", err.Error()))
+				fmt.Printf("Error: %s\n", err.Error())
 				return
 			}
 			fmt.Printf("Installation Time: %s\n", time.Since(start))

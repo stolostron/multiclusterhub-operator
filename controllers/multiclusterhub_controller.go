@@ -476,8 +476,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
 
-	return retQueue, retError
-	// return ctrl.Result{}, nil
+	return ctrl.Result{RequeueAfter: utils.ShortRefreshInterval}, nil
 }
 
 func (r *MultiClusterHubReconciler) setOperatorUpgradeableStatus(ctx context.Context, m *operatorv1.MultiClusterHub) (bool, error) {

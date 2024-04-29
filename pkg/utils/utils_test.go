@@ -15,7 +15,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
@@ -444,18 +443,18 @@ func TestGetImagePullPolicy(t *testing.T) {
 	noPullPolicyMCH := &mchv1.MultiClusterHub{}
 	pullPolicyMCH := &mchv1.MultiClusterHub{
 		Spec: mchv1.MultiClusterHubSpec{
-			Overrides: &mchv1.Overrides{ImagePullPolicy: v1.PullIfNotPresent},
+			Overrides: &mchv1.Overrides{ImagePullPolicy: corev1.PullIfNotPresent},
 		},
 	}
 
 	t.Run("No pull policy set", func(t *testing.T) {
-		want := v1.PullIfNotPresent
+		want := corev1.PullIfNotPresent
 		if got := GetImagePullPolicy(noPullPolicyMCH); got != want {
 			t.Errorf("GetImagePullPolicy() = %v, want %v", got, want)
 		}
 	})
 	t.Run("Pull policy set", func(t *testing.T) {
-		want := v1.PullIfNotPresent
+		want := corev1.PullIfNotPresent
 		if got := GetImagePullPolicy(pullPolicyMCH); got != want {
 			t.Errorf("GetImagePullPolicy() = %v, want %v", got, want)
 		}

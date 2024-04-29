@@ -620,10 +620,10 @@ func UpdateMCEOverrides(mce *mcev1.MultiClusterEngine, mch *operatorsv1.MultiClu
 	}
 	if mch.Spec.DisableHubSelfManagement {
 		mce.Disable(operatorsv1.MCELocalCluster)
+
 	} else {
 		mce.Enable(operatorsv1.MCELocalCluster)
 	}
-	return
 }
 
 // IsCommunityMode returns true if operator is running in community mode

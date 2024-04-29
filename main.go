@@ -23,7 +23,6 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -194,13 +193,10 @@ func main() {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "multicloudhub-operator-lock",
-		// WebhookServer:          &ctrlwebhook.Server{TLSMinVersion: "1.2"},
 		WebhookServer: webhook.NewServer(webhook.Options{
 			Port: 9443,
 			TLSOpts: []func(*tls.Config){func(config *tls.Config) {
-				config = &tls.Config{
-					MinVersion: tls.VersionTLS12,
-				}
+				config.MinVersion = tls.VersionTLS12
 			}},
 		}),
 		LeaderElectionNamespace: ns,
@@ -375,7 +371,7 @@ func getOperatorNamespace() (string, error) {
 		return "", fmt.Errorf("operator run mode forced to local")
 	}
 
-	nsBytes, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+	nsBytes, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
 	if err != nil {
 		if os.IsNotExist(err) {
 			return "", fmt.Errorf("namespace not found for current environment")
@@ -425,21 +421,23 @@ func ensureWebhooks(k8sClient client.Client) error {
 			Version: "v1",
 			Kind:    "ValidatingWebhookConfiguration",
 		})
-		err := k8sClient.Get(ctx, types.NamespacedName{Name: validatingWebhook.GetName()}, existingWebhook)
-		if err != nil && errors.IsNotFound(err) {
-			// Webhook not found. Create and return
-			err = k8sClient.Create(ctx, validatingWebhook)
-			if err != nil {
-				setupLog.Error(err, "Error creating validatingwebhookconfiguration")
-				time.Sleep(5 * time.Second)
-				continue
+		if err := k8sClient.Get(ctx, types.NamespacedName{Name: validatingWebhook.GetName()}, existingWebhook); err != nil {
+			if errors.IsNotFound(err) {
+				// Webhook not found. Create and return
+				err = k8sClient.Create(ctx, validatingWebhook)
+				if err != nil {
+					setupLog.Error(err, "Error creating validatingwebhookconfiguration")
+					time.Sleep(5 * time.Second)
+					continue
+				}
+				return nil
 			}
-			return nil
-		} else if err != nil {
+
 			setupLog.Error(err, "Error getting validatingwebhookconfiguration")
 			time.Sleep(5 * time.Second)
 			continue
-		} else if err == nil {
+
+		} else {
 			// Webhook already exists. Update and return
 			setupLog.Info("Updating existing validatingwebhookconfiguration")
 			existingWebhook.Webhooks = validatingWebhook.Webhooks

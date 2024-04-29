@@ -170,9 +170,7 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 
 	// Copy conditions one by one to not affect original object
 	conditions := hub.Status.HubConditions
-	for i := range conditions {
-		status.HubConditions = append(status.HubConditions, conditions[i])
-	}
+	status.HubConditions = append(status.HubConditions, conditions...)
 
 	// Update hub conditions
 	if successful {
@@ -254,11 +252,7 @@ func successfulDeploy(d *appsv1.Deployment) bool {
 		}
 	}
 
-	if d.Status.UnavailableReplicas > 0 {
-		return false
-	}
-
-	return true
+	return d.Status.UnavailableReplicas <= 0
 }
 
 func latestDeployCondition(conditions []appsv1.DeploymentCondition) appsv1.DeploymentCondition {
@@ -306,7 +300,7 @@ func mapDeployment(ds *appsv1.Deployment) operatorsv1.StatusCondition {
 
 	// Because our definition of success is different than the deployment's it is possible we indicate failure
 	// despite an available deployment present. To avoid confusion we should show a different status.
-	if dcs.Type == appsv1.DeploymentAvailable && dcs.Status == corev1.ConditionTrue && ret.Available == false {
+	if dcs.Type == appsv1.DeploymentAvailable && dcs.Status == corev1.ConditionTrue && !ret.Available {
 		sub := progressingDeployCondition(ds.Status.Conditions)
 		ret = operatorsv1.StatusCondition{
 			Kind:               "Deployment",
