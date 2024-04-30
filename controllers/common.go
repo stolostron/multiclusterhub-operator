@@ -773,7 +773,11 @@ func (r *MultiClusterHubReconciler) ensureNoClusterManagementAddOn(m *operatorv1
 		},
 	}
 
-	err = r.Client.Delete(context.TODO(), clusterMgmtAddon)
+	foreground := metav1.DeletePropagationForeground
+	err = r.Client.Delete(context.TODO(), clusterMgmtAddon, &client.DeleteOptions{
+		PropagationPolicy: &foreground,
+	})
+
 	if errors.IsNotFound(err) {
 		return ctrl.Result{}, nil
 	}
