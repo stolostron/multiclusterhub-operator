@@ -114,8 +114,8 @@ var MCHLegacyServices = map[string]string{
 
 // ClusterManagementAddOns is a map that associates certain component names with their corresponding add-ons.
 var ClusterManagementAddOns = map[string]string{
-	SubmarinerAddon:     "submariner",
 	IamPolicyController: "iam-policy-controller",
+	SubmarinerAddon:     "submariner",
 	// Add other components here when ClusterManagementAddOns is required.
 }
 
