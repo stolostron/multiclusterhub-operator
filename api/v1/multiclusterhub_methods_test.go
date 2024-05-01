@@ -289,7 +289,7 @@ func TestGetLegacyServiceMonitorName(t *testing.T) {
 	}
 }
 
-// TODO: Put this back later
+// TODO: put this back later
 // func TestHubSizeMarshal(t *testing.T) {
 // 	tests := []struct {
 // 		name       string
