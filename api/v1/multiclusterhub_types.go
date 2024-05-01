@@ -76,13 +76,14 @@ type MultiClusterHubSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Hive Config",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Hive *HiveConfigSpec `json:"hive,omitempty"`
 
-	// The resource allocation bucket for this hub to use.
-	// [Small, Medium, Large, ExtraLarge]. Defaults to Small if not specified.
-	//+kubebuilder:validation:Enum:=Small;Medium;Large;ExtraLarge
-	//+kubebuilder:default:=Small
-	//+kubebuilder:validation:Type:=string
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Hub Size",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
-	HubSize HubSize `json:"hubSize,omitempty"`
+	// TODO: Put this back later
+	// // The resource allocation bucket for this hub to use.
+	// // [Small, Medium, Large, ExtraLarge]. Defaults to Small if not specified.
+	// //+kubebuilder:validation:Enum:=Small;Medium;Large;ExtraLarge
+	// //+kubebuilder:default:=Small
+	// //+kubebuilder:validation:Type:=string
+	// //+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Hub Size",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	// HubSize HubSize `json:"hubSize,omitempty"`
 
 	// (Deprecated) Configuration options for ingress management
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Ingress Management",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}

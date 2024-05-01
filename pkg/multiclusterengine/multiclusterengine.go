@@ -88,7 +88,8 @@ func NewMultiClusterEngine(m *operatorv1.MultiClusterHub) *mcev1.MultiClusterEng
 			NodeSelector:       m.Spec.NodeSelector,
 			AvailabilityConfig: availConfig,
 			TargetNamespace:    OperandNameSpace(),
-			HubSize:            mcev1.HubSize(m.Spec.HubSize),
+			// TODO: put this back later
+			// HubSize:            mcev1.HubSize(m.Spec.HubSize),
 			Overrides: &mcev1.Overrides{
 				Components: utils.GetMCEComponents(m),
 			},
