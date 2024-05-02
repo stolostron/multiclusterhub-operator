@@ -16,7 +16,7 @@ data:
       {
         "id": "search.suggested.workloads.name",
         "name": "Workloads",
-        "description": "A pre-defined search to help you review your workloads",
+        "description": "Show workloads running on your fleet",
         "searchText": "kind:DaemonSet,Deployment,Job,StatefulSet,ReplicaSet"
       },
       {
@@ -28,7 +28,7 @@ data:
       {
         "id": "search.suggested.createdLastHour.name",
         "name": "Created last hour",
-        "description": "Search for resources created within the last hour",
+        "description": "Show resources created within the last hour",
         "searchText": "created:hour"
       },
       {
