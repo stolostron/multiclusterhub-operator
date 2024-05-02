@@ -5,6 +5,11 @@ global:
   namespace: default
   pullSecret: null
   templateOverrides: {}
+    # Available template overrides:
+    # multicluster_obs_operator_memory_request: <memory-value>
+    # multicluster_obs_operator_memory_limit: <memory-value>
+    # multicluster_obs_operator_cpu_request: <cpu-value>
+    # multicluster_obs_operator_cpu_limit: <cpu-value>
 hubconfig:
   nodeSelector: null
   ocpVersion: 4.12.0
