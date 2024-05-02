@@ -30,5 +30,11 @@ data:
         "name": "Created last hour",
         "description": "Search for resources created within the last hour",
         "searchText": "created:hour"
+      },
+      {
+        "id": "search.suggested.virtualmachines.name",
+        "name": "Virtual Machines",
+        "description": "Show virtual machines under management",
+        "searchText": "kind:VirtualMachine"
       }
     ]
