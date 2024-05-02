@@ -34,7 +34,7 @@ data:
       {
         "id": "search.suggested.virtualmachines.name",
         "name": "Virtual Machines",
-        "description": "Show virtual machines under management",
+        "description": "Show virtual machine resources",
         "searchText": "kind:VirtualMachine"
       }
     ]
