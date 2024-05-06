@@ -41,6 +41,71 @@ func TestIsPaused(t *testing.T) {
 
 }
 
+func TestGetHubSize(t *testing.T) {
+	tests := []struct {
+		name string
+		mce  *operatorsv1.MultiClusterHub
+		want operatorsv1.HubSize
+	}{
+		{
+			name: "get default",
+			mce:  &operatorsv1.MultiClusterHub{},
+			want: operatorsv1.Small,
+		},
+		{
+			name: "set hubsize Small",
+			mce: &operatorsv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationHubSize: "Small",
+					},
+				},
+			},
+			want: operatorsv1.Small,
+		},
+		{
+			name: "set hubsize Medium",
+			mce: &operatorsv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationHubSize: "Medium",
+					},
+				},
+			},
+			want: operatorsv1.Medium,
+		},
+		{
+			name: "set hubsize Large",
+			mce: &operatorsv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationHubSize: "Large",
+					},
+				},
+			},
+			want: operatorsv1.Large,
+		},
+		{
+			name: "set hubsize XLarge",
+			mce: &operatorsv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationHubSize: "XLarge",
+					},
+				},
+			},
+			want: operatorsv1.XLarge,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetHubSize(tt.mce); got != tt.want {
+				t.Errorf("GetHubSize() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func Test_AnnotationMatch(t *testing.T) {
 	tests := []struct {
 		name string
