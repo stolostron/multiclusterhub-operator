@@ -189,6 +189,9 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 
 	// TODO: remove this when m.Spec.Hubsize is back
 	mceannotations := mce.GetAnnotations()
+	if mceannotations == nil {
+		mceannotations = map[string]string{}
+	}
 	mceannotations[mceutils.AnnotationHubSize] = string(utils.GetHubSize(m))
 
 	// TODO: put this back later
