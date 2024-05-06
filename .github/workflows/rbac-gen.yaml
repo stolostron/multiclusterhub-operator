@@ -1,0 +1,57 @@
+name: RBAC validation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  rbac-check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go:
+          - '1.21'
+    name: Generate role permissions
+    steps:
+    - name: Checkout multiclusterhub
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Set up Go - ${{ matrix.go }}
+      uses: actions/setup-go@v2
+      id: go
+      with:
+        go-version: ${{ matrix.go }}
+
+    - name: Verify modules
+      run: |
+        go mod verify
+        
+    - name: Verify format
+      run: |
+        make fmt
+        git diff --exit-code
+
+    - name: Set up controller-gen
+      run: |
+        go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.9.2
+        
+    - name: Generate RBAC file
+      run: |
+        go generate
+        
+    - name: Regenerate role
+      run: |
+        controller-gen rbac:roleName=multiclusterhub-role webhook paths="./..."
+      
+    - name: Check if files have changed
+      run:  |
+        git diff
+        FILES_CHANGED=$(git diff --name-only | wc -l)
+        if [ "$FILES_CHANGED" != "0" ]; then echo "Remember to run go generate to update rbac"; exit 1; fi;
