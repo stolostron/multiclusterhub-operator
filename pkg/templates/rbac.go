@@ -4,24 +4,24 @@
 package main
 
 import (
-    "fmt"
-    "os"
-    "sort"
-    "strings"
-    "text/template"
+	"fmt"
+	"os"
+	"sort"
+	"strings"
+	"text/template"
 
-    operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
-    renderer "github.com/stolostron/multiclusterhub-operator/pkg/rendering"
-    "github.com/stolostron/multiclusterhub-operator/pkg/utils"
+	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	renderer "github.com/stolostron/multiclusterhub-operator/pkg/rendering"
+	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 
-    rbacv1 "k8s.io/api/rbac/v1"
-    metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-    "k8s.io/apimachinery/pkg/runtime"
+	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
-    chartsDir = "pkg/templates/charts/toggle"
-    crdsDir = "pkg/templates/crds"
+	chartsDir = "pkg/templates/charts/toggle"
+	crdsDir   = "pkg/templates/crds"
 )
 
 var resources = []string{
@@ -55,112 +55,112 @@ var resources = []string{
 }
 
 func main() {
-    // os.Setenv("DIRECTORY_OVERRIDE", "../../.git")
-    // defer os.Unsetenv("DIRECTORY_OVERRIDE")
-    os.Setenv("ACM_HUB_OCP_VERSION", "4.12.0")
+	// os.Setenv("DIRECTORY_OVERRIDE", "../../.git")
+	// defer os.Unsetenv("DIRECTORY_OVERRIDE")
+	os.Setenv("ACM_HUB_OCP_VERSION", "4.12.0")
 
-    testMCH := &operatorv1.MultiClusterHub{
-        ObjectMeta: metav1.ObjectMeta{
-            Name: "testMultiClusterHub",
-        },
-    }
+	testMCH := &operatorv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "testMultiClusterHub",
+		},
+	}
 
-    testImages := map[string]string{}
-    for _, v := range utils.GetTestImages() {
-        testImages[v] = "quay.io/test/test:Test"
-        fmt.Printf("%v = %v\n", v, testImages[v])
-    }
+	testImages := map[string]string{}
+	for _, v := range utils.GetTestImages() {
+		testImages[v] = "quay.io/test/test:Test"
+		fmt.Printf("%v = %v\n", v, testImages[v])
+	}
 
-    testTemplateOverrides := map[string]string{}
-    chartsDir := chartsDir
+	testTemplateOverrides := map[string]string{}
+	chartsDir := chartsDir
 
-    templates, errs := renderer.RenderCharts(chartsDir, testMCH, testImages, testTemplateOverrides)
-    if len(errs) > 0 {
-        panic(errs)
-    }
+	templates, errs := renderer.RenderCharts(chartsDir, testMCH, testImages, testTemplateOverrides)
+	if len(errs) > 0 {
+		panic(errs)
+	}
 
-    if len(templates) == 0 {
-        panic("No templates rendered")
-    }
+	if len(templates) == 0 {
+		panic("No templates rendered")
+	}
 
-    for _, template := range templates {
-        if template.GetKind() == "ClusterRole" {
-            clusterrole := &rbacv1.ClusterRole{}
-            err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, clusterrole)
-            if err != nil {
-                panic(err)
-            }
-        }
-    }
+	for _, template := range templates {
+		if template.GetKind() == "ClusterRole" {
+			clusterrole := &rbacv1.ClusterRole{}
+			err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, clusterrole)
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
 
-    f, err := os.Create("pkg/templates/rbac_gen.go")
-    if err != nil {
-        panic(err)
-    }
+	f, err := os.Create("pkg/templates/rbac_gen.go")
+	if err != nil {
+		panic(err)
+	}
 
-    defer func() {
-        if err := f.Close(); err != nil {
-            panic(err)
-        }
-    }()
+	defer func() {
+		if err := f.Close(); err != nil {
+			panic(err)
+		}
+	}()
 
-    lines := []string{}
-    for _, template := range templates {
-        if template.GetKind() == "ClusterRole" {
+	lines := []string{}
+	for _, template := range templates {
+		if template.GetKind() == "ClusterRole" {
 			// Copy all permission defined in Clusterroles
 			// Duplicate permissions will be deduplicated by controller gen
 
-            clusterrole := &rbacv1.ClusterRole{}
-            err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, clusterrole)
-            if err != nil {
-                panic(err)
-            }
+			clusterrole := &rbacv1.ClusterRole{}
+			err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, clusterrole)
+			if err != nil {
+				panic(err)
+			}
 
-            newlines := extractFromRules(clusterrole.Rules)
-            lines = append(lines, newlines...)
+			newlines := extractFromRules(clusterrole.Rules)
+			lines = append(lines, newlines...)
 
-        } else if template.GetKind() == "Role" {
-            role := &rbacv1.Role{}
-            err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, role)
-            if err != nil {
-                panic(err)
-            }
+		} else if template.GetKind() == "Role" {
+			role := &rbacv1.Role{}
+			err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, role)
+			if err != nil {
+				panic(err)
+			}
 
-            newlines := extractFromRules(role.Rules)
-            lines = append(lines, newlines...)
+			newlines := extractFromRules(role.Rules)
+			lines = append(lines, newlines...)
 
-        } else {
-            if template.GetKind() != "" {
-                // check that we have the permissions to apply this resource and
-                // error if not
-                apiGroup := template.GroupVersionKind().Group
-                resource := template.GetKind()
+		} else {
+			if template.GetKind() != "" {
+				// check that we have the permissions to apply this resource and
+				// error if not
+				apiGroup := template.GroupVersionKind().Group
+				resource := template.GetKind()
 
-                found := false
-                for _, k := range resources {
-                    if k == resource {
-                        found = true
-                    }
-                }
+				found := false
+				for _, k := range resources {
+					if k == resource {
+						found = true
+					}
+				}
 
-                if !found {
-                    panic(fmt.Sprintf("resource %s/%s not accounted for in RBAC generation", apiGroup, resource))
-                }
-            }
-        }
-    }
+				if !found {
+					panic(fmt.Sprintf("resource %s/%s not accounted for in RBAC generation", apiGroup, resource))
+				}
+			}
+		}
+	}
 
-    sort.Strings(lines)
+	sort.Strings(lines)
 
-    err = packageTemplate.Execute(f, struct {
-        Markers []string
-    }{
-        Markers: lines,
-    })
+	err = packageTemplate.Execute(f, struct {
+		Markers []string
+	}{
+		Markers: lines,
+	})
 
-    if err != nil {
-        panic(err)
-    }
+	if err != nil {
+		panic(err)
+	}
 }
 
 func extractFromRules(rules []rbacv1.PolicyRule) []string {
