@@ -277,6 +277,14 @@ func (r *MultiClusterHubReconciler) ensurePullSecret(m *operatorv1.MultiClusterH
 		return ctrl.Result{Requeue: true}, err
 	}
 
+	if !utils.DeployOnOCP() && m.Spec.ImagePullSecret != "open-cluster-management-image-pull-credentials" {
+		mceSecret.SetName("open-cluster-management-image-pull-credentials")
+		err = r.Client.Patch(context.TODO(), mceSecret, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
+		if err != nil {
+			r.Log.Info(fmt.Sprintf("Error applying pullSecret to mce namespace for clustermanager: %s", err.Error()))
+			return ctrl.Result{Requeue: true}, err
+		}
+	}
 	return ctrl.Result{}, nil
 }
 
