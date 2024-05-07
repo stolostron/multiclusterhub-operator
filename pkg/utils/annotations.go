@@ -73,6 +73,12 @@ var (
 		containing resource template overrides.
 	*/
 	AnnotationTemplateOverridesCM = "installer.open-cluster-management.io/template-override-configmap"
+
+	/*
+		AnnotationHubSize is an annotation used in multiclusterhub to specify a hub size that can be
+		used by other components
+	*/
+	AnnotationHubSize = "installer.open-cluster-management.io/hub-size"
 )
 
 /*
@@ -81,6 +87,17 @@ It returns true if the instance is paused, otherwise false.
 */
 func IsPaused(instance *operatorsv1.MultiClusterHub) bool {
 	return IsAnnotationTrue(instance, AnnotationMCHPause) || IsAnnotationTrue(instance, DeprecatedAnnotationMCHPause)
+}
+
+/*
+GetHubSize gets the current hubsize, returning "Small" as default if the annotation is not found.
+*/
+func GetHubSize(instance *operatorsv1.MultiClusterHub) operatorsv1.HubSize {
+	hubsize := getAnnotation(instance, AnnotationHubSize)
+	if hubsize != "" {
+		return operatorsv1.HubSize(hubsize)
+	}
+	return operatorsv1.Small
 }
 
 /*

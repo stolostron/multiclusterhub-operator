@@ -310,7 +310,11 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 
 	values.Global.ImageRepository = utils.GetImageRepository(mch)
 
-	values.Global.HubSize = mch.Spec.HubSize
+	// TODO: put this back later
+	// values.Global.HubSize = mch.Spec.HubSize
+
+	// TODO: remove this when mch.Spec.HubSize is valid again
+	values.Global.HubSize = utils.GetHubSize(mch)
 
 	values.HubConfig.ReplicaCount = utils.DefaultReplicaCount(mch)
 
