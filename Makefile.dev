@@ -34,7 +34,7 @@ regenerate-operator-bundles: ## Regenerates the operator bundles
 	pip3 install -r hack/bundle-automation/requirements.txt
 	python3 ./hack/bundle-automation/generate-shell.py --update-bundles
 
-regenerate-sha-commits: ## Regenerates the operator bundles
+regenerate-operator-sha-commits: ## Regenerates the operator bundles
 	pip3 install -r hack/bundle-automation/requirements.txt
 	python3 ./hack/bundle-automation/generate-shell.py --update-commits --repo pipeline --branch 2.11-integration
 

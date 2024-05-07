@@ -1,0 +1,72 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Regenerate Operator SHAs Commits
+
+# Controls when the action will run. 
+on:
+  # Runs every three hours
+  schedule:
+    - cron: "0 */6 * * *"
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9]
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.HUB_OPERATOR_TOKEN }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+    
+      # Runs a set of commands using the runners shell
+      - name: Regenerate Operator SHAs Commits
+        id: generate_sha_commit
+        run: |
+          make regenerate-operator-sha-commits
+          exit_code=$?
+          if [ $exit_code -ne 0 ]; then
+            echo "Regenerate Operator SHAs Commit step failed with exit code $exit_code"
+            exit $exit_code
+          fi
+
+      - name: Send Slack Message on Failure
+        if: ${{ failure() }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          SLACK_MESSAGE=":exclamation: *GitHub Actions Job Failed* :exclamation:\n\n"
+          SLACK_MESSAGE+="Job Name: $GITHUB_WORKFLOW/$GITHUB_JOB\n"
+          SLACK_MESSAGE+="Job URL: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID\n"
+          SLACK_MESSAGE+="Error Details: Your job failed. Please check the job logs for more information."
+
+          curl -X POST -H "Content-type: application/json" --data "{
+            \"text\": \"$SLACK_MESSAGE\"
+          }" $SLACK_WEBHOOK_URL
+      
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          signoff: true
+          branch: "regenerate-operator-sha-commits"
+          delete-branch: true
+          title: "Operator SHAs Commit Update"
+          committer: GitHub <noreply@github.com>
+          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+          labels: |
+            do-not-merge/hold
+            ok-to-test
+          reviewers: cameronmwall,dislbenn,ngraham20
