@@ -26,16 +26,24 @@ prep-mock-install:
 	make mock-build-image PRODUCT_VERSION=$(VERSION) MOCK_IMAGE_REGISTRY=$(REGISTRY) MOCK_IMAGE_SHA="sha256:test"
 	echo "mock install prepped!"
 
+lint-operator-bundles: ## Lints the operator bundles
+	pip3 install -r hack/bundle-automation/requirements.txt
+	python3 ./hack/bundle-automation/generate-shell.py --lint-bundles
+
 regenerate-operator-bundles: ## Regenerates the operator bundles
-	pip install -r hack/bundle-automation/requirements.txt
-	python3 ./hack/bundle-automation/generate-shell.py
+	pip3 install -r hack/bundle-automation/requirements.txt
+	python3 ./hack/bundle-automation/generate-shell.py --update-bundles
+
+regenerate-sha-commits: ## Regenerates the operator bundles
+	pip3 install -r hack/bundle-automation/requirements.txt
+	python3 ./hack/bundle-automation/generate-shell.py --update-commits --repo pipeline --branch 2.11-integration
 
 regenerate-charts: ## Regenerates the charts 
-	pip install -r hack/bundle-automation/chart-requirements.txt
+	pip3 install -r hack/bundle-automation/chart-requirements.txt
 	python3 ./hack/bundle-automation/generate-charts.py --destination pkg/templates/
 
 copy-charts: ## Regenerates the operator bundles
-	pip install -r hack/bundle-automation/requirements.txt
+	pip3 install -r hack/bundle-automation/requirements.txt
 	python3 ./hack/bundle-automation/copy-charts.py --destination pkg/templates/
 
 # different from `in-cluster-install` (call no secrets, no observability-crd)
