@@ -5,6 +5,7 @@ global:
   namespace: default
   pullSecret: null
   imageRepository: "" # utils.GetImageRepository(m)
+  hubSize: Small
 hubconfig:
   nodeSelector: null
   proxyConfigs: {}

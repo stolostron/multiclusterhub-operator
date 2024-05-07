@@ -45,6 +45,7 @@ const (
 	MCEManagedServiceAccount            string = "managedserviceaccount"
 	MCEManagedServiceAccountPreview     string = "managedserviceaccount-preview"
 	MCEServerFoundation                 string = "server-foundation"
+	IamPolicyController                 string = "iam-policy-controller"
 )
 
 // MCHComponents is a slice containing component names specific to the "MCH" category.
@@ -59,7 +60,7 @@ var MCHComponents = []string{
 	MultiClusterEngine, // Adding MCE component to ensure that the component is validated by the webhook.
 	MCH,                // Adding MCH component to ensure legacy resources are cleaned up properly.
 	MultiClusterObservability,
-	//Repo,
+	// Repo,
 	Search,
 	SubmarinerAddon,
 	Volsync,
@@ -84,14 +85,12 @@ var MCEComponents = []string{
 	MCEServerFoundation,
 }
 
-var (
-	/*
-		LegacyConfigKind is a slice of strings that represents the legacy resource kinds
-		supported by the Operator SDK and Prometheus. These kinds include "PrometheusRule", "Service",
-		and "ServiceMonitor".
-	*/
-	LegacyConfigKind = []string{"PrometheusRule", "Service", "ServiceMonitor"}
-)
+/*
+LegacyConfigKind is a slice of strings that represents the legacy resource kinds
+supported by the Operator SDK and Prometheus. These kinds include "PrometheusRule", "Service",
+and "ServiceMonitor".
+*/
+var LegacyConfigKind = []string{"PrometheusRule", "Service", "ServiceMonitor"}
 
 // MCHLegacyPrometheusRules is a map that associates certain component names with their corresponding prometheus rules.
 var MCHLegacyPrometheusRules = map[string]string{
@@ -115,7 +114,8 @@ var MCHLegacyServices = map[string]string{
 
 // ClusterManagementAddOns is a map that associates certain component names with their corresponding add-ons.
 var ClusterManagementAddOns = map[string]string{
-	SubmarinerAddon: "submariner",
+	IamPolicyController: "iam-policy-controller",
+	SubmarinerAddon:     "submariner",
 	// Add other components here when ClusterManagementAddOns is required.
 }
 
@@ -124,8 +124,8 @@ GetDefaultEnabledComponents returns a slice of default enabled component names.
 It is expected to be used to get a list of components that are enabled by default.
 */
 func GetDefaultEnabledComponents() ([]string, error) {
-	var defaultEnabledComponents = []string{
-		//Repo,
+	defaultEnabledComponents := []string{
+		// Repo,
 		Appsub,
 		ClusterLifecycle,
 		ClusterPermission,
@@ -147,7 +147,7 @@ GetDefaultDisabledComponents returns a slice of default disabled component names
 It is expected to be used to get a list of components that are disabled by default.
 */
 func GetDefaultDisabledComponents() ([]string, error) {
-	var defaultDisabledComponents = []string{
+	defaultDisabledComponents := []string{
 		ClusterBackup,
 	}
 	return defaultDisabledComponents, nil
@@ -158,7 +158,7 @@ GetDefaultHostedComponents returns a slice of default hosted components.
 These are components that are hosted within the system.
 */
 func GetDefaultHostedComponents() []string {
-	var defaultHostedComponents = []string{
+	defaultHostedComponents := []string{
 		MultiClusterEngine,
 		// Add other components here when added to hostedmode
 	}

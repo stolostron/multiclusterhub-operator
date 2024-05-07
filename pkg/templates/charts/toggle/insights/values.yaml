@@ -2,16 +2,16 @@
 # Copyright Contributors to the Open Cluster Management project
 
 org: open-cluster-management
-
 global:
   pullPolicy: Always
   pullSecret: null
+  hubSize: Small
   namespace: open-cluster-management
   arch:
-  - amd64
-  - ppc64le
-  - s390x
-  - arm64
+    - amd64
+    - ppc64le
+    - s390x
+    - arm64
   certificateAuthority:
     issuer: multicloud-ca-issuer
     kind: Issuer
@@ -21,59 +21,55 @@ global:
     kube_rbac_proxy: ""
   templateOverrides: {}
 ocpingress: ""
-    
 hubconfig:
   nodeSelector: null
   replicaCount: 1
   tolerations: []
   ocpVersion: 4.12.0
-
 client:
   affinity:
     podAntiAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 70
-        podAffinityTerm:
-          topologyKey: topology.kubernetes.io/zone
-          labelSelector:
-            matchExpressions:
-            - key: ocm-antiaffinity-selector
-              operator: In
-              values:
-              - insightsclient 
-      - weight: 35
-        podAffinityTerm:
-          topologyKey: kubernetes.io/hostname
-          labelSelector:
-            matchExpressions:
-            - key: ocm-antiaffinity-selector
-              operator: In
-              values:
-              - insightsclient 
-
+        - weight: 70
+          podAffinityTerm:
+            topologyKey: topology.kubernetes.io/zone
+            labelSelector:
+              matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                    - insightsclient
+        - weight: 35
+          podAffinityTerm:
+            topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                    - insightsclient
 metrics:
   affinity:
     podAntiAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 70
-        podAffinityTerm:
-          topologyKey: topology.kubernetes.io/zone
-          labelSelector:
-            matchExpressions:
-            - key: ocm-antiaffinity-selector
-              operator: In
-              values:
-              - insightsmetrics
-      - weight: 35
-        podAffinityTerm:
-          topologyKey: kubernetes.io/hostname
-          labelSelector:
-            matchExpressions:
-            - key: ocm-antiaffinity-selector
-              operator: In
-              values:
-              - insightsmetrics
-
+        - weight: 70
+          podAffinityTerm:
+            topologyKey: topology.kubernetes.io/zone
+            labelSelector:
+              matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                    - insightsmetrics
+        - weight: 35
+          podAffinityTerm:
+            topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                    - insightsmetrics
 insights:
   name: insights
   client:

@@ -1,4 +1,5 @@
 global:
+  hubSize: Small
   imageOverrides:
     kube_rbac_proxy: ''
     postgresql_13: ''

@@ -32,11 +32,12 @@ import (
 
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 
-	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 
+	// TODO: remove this when .spec.HubSize is back
+	mceutils "github.com/stolostron/backplane-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
@@ -169,7 +170,6 @@ func (r *MultiClusterHubReconciler) ensureOperatorGroup(m *operatorv1.MultiClust
 	}
 
 	return ctrl.Result{}, nil
-
 }
 
 func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
@@ -182,12 +182,20 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 		mce = multiclusterengine.NewMultiClusterEngine(m)
 		err = r.Client.Create(ctx, mce)
 		if err != nil {
-			return ctrl.Result{Requeue: true}, fmt.Errorf("Error creating new MCE: %w", err)
+			return ctrl.Result{Requeue: true}, fmt.Errorf("error creating new MCE: %w", err)
 		}
 		return ctrl.Result{}, nil
 	}
 
-	mce.Spec.HubSize = mcev1.HubSize(m.Spec.HubSize)
+	// TODO: remove this when m.Spec.Hubsize is back
+	mceannotations := mce.GetAnnotations()
+	if mceannotations == nil {
+		mceannotations = map[string]string{}
+	}
+	mceannotations[mceutils.AnnotationHubSize] = string(utils.GetHubSize(m))
+
+	// TODO: put this back later
+	// mce.Spec.HubSize = mcev1.HubSize(m.Spec.HubSize)
 
 	// secret should be delivered to targetNamespace
 	if mce.Spec.TargetNamespace == "" {
@@ -201,7 +209,7 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 	calcMCE := multiclusterengine.RenderMultiClusterEngine(mce, m)
 	err = r.Client.Update(ctx, calcMCE)
 	if err != nil {
-		return ctrl.Result{Requeue: true}, fmt.Errorf("Error updating MCE %s: %w", mce.Name, err)
+		return ctrl.Result{Requeue: true}, fmt.Errorf("error updating MCE %s: %w", mce.Name, err)
 	}
 	return ctrl.Result{}, nil
 }
@@ -275,7 +283,7 @@ func (r *MultiClusterHubReconciler) ensurePullSecret(m *operatorv1.MultiClusterH
 // checks if imagepullsecret was created in mch namespace
 func (r *MultiClusterHubReconciler) ensurePullSecretCreated(m *operatorv1.MultiClusterHub, namespace string) (ctrl.Result, error) {
 	if m.Spec.ImagePullSecret == "" {
-		//No imagepullsecret set, continuing
+		// No imagepullsecret set, continuing
 		return ctrl.Result{}, nil
 	}
 
@@ -285,7 +293,6 @@ func (r *MultiClusterHubReconciler) ensurePullSecretCreated(m *operatorv1.MultiC
 		Name:      m.Spec.ImagePullSecret,
 		Namespace: m.Namespace,
 	}, pullSecret)
-
 	if err != nil {
 		return ctrl.Result{Requeue: true}, err
 	}
@@ -483,7 +490,7 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 		err = r.Client.Update(ctx, calcSub)
 	}
 	if err != nil {
-		return ctrl.Result{Requeue: true}, fmt.Errorf("Error updating subscription %s: %w", calcSub.Name, err)
+		return ctrl.Result{Requeue: true}, fmt.Errorf("error updating subscription %s: %w", calcSub.Name, err)
 	}
 
 	return ctrl.Result{}, nil
@@ -512,7 +519,7 @@ func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context) (ctrl.R
 		return ctrl.Result{Requeue: true}, err
 	}
 	if existingMCE == nil {
-		r.Log.Info(fmt.Sprintf("Multiclusterengine is not yet present"))
+		r.Log.Info("Multiclusterengine is not yet present")
 		return ctrl.Result{Requeue: true}, nil
 	}
 	if utils.IsUnitTest() {
@@ -539,7 +546,7 @@ func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context) (ctrl.R
 // GetCSVFromSubscription retrieves CSV status information from the related subscription for status
 func (r *MultiClusterHubReconciler) GetCSVFromSubscription(sub *subv1alpha1.Subscription) (*unstructured.Unstructured, error) {
 	if sub == nil {
-		return nil, fmt.Errorf("Cannot find CSV from nil Subscription")
+		return nil, fmt.Errorf("cannot find CSV from nil Subscription")
 	}
 	mceSubscription := &subv1alpha1.Subscription{}
 	err := r.Client.Get(context.Background(), types.NamespacedName{
@@ -726,7 +733,7 @@ func (r *MultiClusterHubReconciler) getClusterVersion(ctx context.Context) (stri
 	}
 
 	if len(clusterVersion.Status.History) == 0 {
-		return "", e.New("Failed to detect status in clusterversion.status.history")
+		return "", e.New("failed to detect status in clusterversion.status.history")
 	}
 	return clusterVersion.Status.History[0].Version, nil
 }
@@ -759,7 +766,8 @@ func (r *MultiClusterHubReconciler) ensureSearchCR(m *operatorv1.MultiClusterHub
 }
 
 func (r *MultiClusterHubReconciler) ensureNoClusterManagementAddOn(m *operatorv1.MultiClusterHub, component string) (
-	ctrl.Result, error) {
+	ctrl.Result, error,
+) {
 	ctx := context.Background()
 
 	addonName, err := operatorv1.GetClusterManagementAddonName(component)
@@ -774,19 +782,37 @@ func (r *MultiClusterHubReconciler) ensureNoClusterManagementAddOn(m *operatorv1
 		},
 	}
 
-	err = r.Client.Delete(context.TODO(), clusterMgmtAddon)
-	if err != nil && !errors.IsNotFound(err) {
-		r.Log.Error(err, fmt.Sprintf("Error deleting ClusterManagementAddOn CR"))
-		return ctrl.Result{Requeue: true}, err
+	foreground := metav1.DeletePropagationForeground
+	err = r.Client.Delete(context.TODO(), clusterMgmtAddon, &client.DeleteOptions{
+		PropagationPolicy: &foreground,
+	})
+
+	if errors.IsNotFound(err) {
+		return ctrl.Result{}, nil
 	}
+
+	if err != nil {
+		r.Log.Error(err, "Error deleting ClusterManagementAddOn CR")
+
+		return ctrl.Result{}, err
+	}
+
+	r.Log.Info("Deleting the ClusterManagementAddOn CR", "name", addonName)
 
 	err = r.Client.Get(ctx, types.NamespacedName{Name: clusterMgmtAddon.GetName()}, clusterMgmtAddon)
-	if err == nil {
-		return ctrl.Result{Requeue: true}, errors.NewBadRequest("ClusterManagementAddOn CR has not been deleted")
+	if errors.IsNotFound(err) {
+		r.Log.Info("Successfully deleted the ClusterManagementAddOn CR", "name", addonName)
+
+		return ctrl.Result{}, nil
 	}
 
-	r.Log.Info(fmt.Sprintf("Successfully deleted ClusterManagementAddOn CR: %s", clusterMgmtAddon.GetName()))
-	return ctrl.Result{}, nil
+	if err != nil {
+		r.Log.Error(err, "Failed to get the ClusterManagementAddOn CR", "name", addonName)
+
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, errors.NewBadRequest("ClusterManagementAddOn CR has not been deleted")
 }
 
 func (r *MultiClusterHubReconciler) ensureNoSearchCR(m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
@@ -802,7 +828,7 @@ func (r *MultiClusterHubReconciler) ensureNoSearchCR(m *operatorv1.MultiClusterH
 	if len(searchList.Items) != 0 {
 		err = r.Client.Delete(context.TODO(), &searchList.Items[0])
 		if err != nil {
-			r.Log.Error(err, fmt.Sprintf("Error deleting Search CR"))
+			r.Log.Error(err, "Error deleting Search CR")
 			return ctrl.Result{Requeue: true}, err
 		}
 
@@ -813,11 +839,10 @@ func (r *MultiClusterHubReconciler) ensureNoSearchCR(m *operatorv1.MultiClusterH
 		return ctrl.Result{Requeue: true}, err
 	}
 	if len(searchList.Items) != 0 {
-		r.Log.Info(fmt.Sprintf("Waiting for Search CR to be deleted"))
+		r.Log.Info("Waiting for Search CR to be deleted")
 		return ctrl.Result{Requeue: true}, errors.NewBadRequest("Search CR has not been deleted")
 	}
 	return ctrl.Result{}, nil
-
 }
 
 // Checks if OCP Console is enabled and return true if so. If <OCP v4.12, always return true
@@ -841,7 +866,7 @@ func (r *MultiClusterHubReconciler) CheckConsole(ctx context.Context) (bool, err
 	}
 	// -0 allows for prerelease builds to pass the validation.
 	// If -0 is removed, developer/rc builds will not pass this check
-	//OCP Console can only be disabled in OCP 4.12+
+	// OCP Console can only be disabled in OCP 4.12+
 	constraint, err := semver.NewConstraint(">= 4.12.0-0")
 	if err != nil {
 		return false, fmt.Errorf("failed to set ocp version constraint: %w", err)

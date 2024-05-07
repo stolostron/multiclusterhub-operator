@@ -41,22 +41,115 @@ func TestIsPaused(t *testing.T) {
 
 }
 
-func Test_AnnotationMatch(t *testing.T) {
-	t.Run("Annotations match", func(t *testing.T) {
-		mch := &operatorsv1.MultiClusterHub{}
-		want := false
-		if got := IsPaused(mch); got != want {
-			t.Errorf("IsPaused() = %v, want %v", got, want)
-		}
-	})
+func TestGetHubSize(t *testing.T) {
+	tests := []struct {
+		name string
+		mce  *operatorsv1.MultiClusterHub
+		want operatorsv1.HubSize
+	}{
+		{
+			name: "get default",
+			mce:  &operatorsv1.MultiClusterHub{},
+			want: operatorsv1.Small,
+		},
+		{
+			name: "set hubsize Small",
+			mce: &operatorsv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationHubSize: "Small",
+					},
+				},
+			},
+			want: operatorsv1.Small,
+		},
+		{
+			name: "set hubsize Medium",
+			mce: &operatorsv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationHubSize: "Medium",
+					},
+				},
+			},
+			want: operatorsv1.Medium,
+		},
+		{
+			name: "set hubsize Large",
+			mce: &operatorsv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationHubSize: "Large",
+					},
+				},
+			},
+			want: operatorsv1.Large,
+		},
+		{
+			name: "set hubsize XLarge",
+			mce: &operatorsv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationHubSize: "XLarge",
+					},
+				},
+			},
+			want: operatorsv1.XLarge,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetHubSize(tt.mce); got != tt.want {
+				t.Errorf("GetHubSize() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
 
-	t.Run("Annotations do not match", func(t *testing.T) {
-		mch := &operatorsv1.MultiClusterHub{}
-		want := false
-		if got := IsPaused(mch); got != want {
-			t.Errorf("IsPaused() = %v, want %v", got, want)
-		}
-	})
+func Test_AnnotationMatch(t *testing.T) {
+	tests := []struct {
+		name string
+		new  map[string]string
+		old  map[string]string
+		want bool
+	}{
+		{
+			name: "Annotations should match",
+			new: map[string]string{
+				AnnotationMCHPause:         "false",
+				AnnotationImageRepo:        "sample-image-repo",
+				AnnotationImageOverridesCM: "sample-image-override",
+			},
+			old: map[string]string{
+				DeprecatedAnnotationMCHPause:         "false",
+				DeprecatedAnnotationImageRepo:        "sample-image-repo",
+				DeprecatedAnnotationImageOverridesCM: "sample-image-override",
+			},
+			want: true,
+		},
+		{
+			name: "Annotations should not match",
+			new: map[string]string{
+				AnnotationMCHPause:         "false",
+				AnnotationImageRepo:        "sample-image-repo",
+				AnnotationImageOverridesCM: "sample-image-override",
+			},
+			old: map[string]string{
+				DeprecatedAnnotationMCHPause:         "true",
+				DeprecatedAnnotationImageRepo:        "sample-image-repo",
+				DeprecatedAnnotationImageOverridesCM: "sample-image-override",
+			},
+			want: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := AnnotationsMatch(tt.old, tt.new); got != tt.want {
+				t.Errorf("AnnotationsMatch(old, new) = got: %v, want: %v", got, tt.want)
+			}
+		})
+	}
 }
 
 func Test_getAnnotation(t *testing.T) {

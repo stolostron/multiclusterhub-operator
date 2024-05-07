@@ -27,7 +27,6 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/go-co-op/gocron"
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/deploying"
@@ -68,13 +67,13 @@ import (
 
 // MultiClusterHubReconciler reconciles a MultiClusterHub object
 type MultiClusterHubReconciler struct {
-	Client               client.Client
-	UncachedClient       client.Client
-	CacheSpec            CacheSpec
-	Scheme               *runtime.Scheme
-	Log                  logr.Logger
-	UpgradeableCond      utils.Condition
-	DeprecatedSpecFields map[string]bool
+	Client           client.Client
+	UncachedClient   client.Client
+	CacheSpec        CacheSpec
+	Scheme           *runtime.Scheme
+	Log              logr.Logger
+	UpgradeableCond  utils.Condition
+	DeprecatedFields map[string]bool
 }
 
 const (
@@ -87,12 +86,6 @@ const (
 
 	trustBundleNameEnvVar  = "TRUSTED_CA_BUNDLE"
 	defaultTrustBundleName = "trusted-ca-bundle"
-)
-
-var (
-	scheduler              *gocron.Scheduler
-	cronResyncTag          = "multiclusterhub-operator-resync"
-	reconciliationInterval = 10 // minutes
 )
 
 //+kubebuilder:rbac:groups="";"admissionregistration.k8s.io";"apiextensions.k8s.io";"apiregistration.k8s.io";"apps";"apps.open-cluster-management.io";"authorization.k8s.io";"hive.openshift.io";"mcm.ibm.com";"proxy.open-cluster-management.io";"rbac.authorization.k8s.io";"security.openshift.io";"clusterview.open-cluster-management.io";"discovery.open-cluster-management.io";"wgpolicyk8s.io",resources=apiservices;channels;clusterjoinrequests;clusterrolebindings;clusterstatuses/log;configmaps;customresourcedefinitions;deployments;discoveryconfigs;hiveconfigs;mutatingwebhookconfigurations;validatingwebhookconfigurations;namespaces;pods;policyreports;replicasets;rolebindings;secrets;serviceaccounts;services;subjectaccessreviews;subscriptions;helmreleases;managedclusters;managedclustersets,verbs=get
@@ -128,12 +121,6 @@ var (
 func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Request) (retQueue ctrl.Result, retError error) {
 	r.Log = log.Log.WithName("reconcile")
 	r.Log.Info("Reconciling MultiClusterHub")
-
-	// Initalize sceduler instance for operator resync cronjob.
-	if scheduler == nil {
-		r.Log.Info("Setting up scheduler for operator resync")
-		r.InitScheduler()
-	}
 
 	// Fetch the MultiClusterHub instance
 	multiClusterHub := &operatorv1.MultiClusterHub{}
@@ -216,7 +203,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	// Apply image repository override from annotation if present.
 	if imageRepo := utils.GetImageRepository(multiClusterHub); imageRepo != "" {
-		r.Log.Info(fmt.Sprintf("Overriding Image Repository from annotation 'mch-imageRepository': %s", imageRepo))
+		r.Log.Info(fmt.Sprintf("Overriding Image Repository from annotation: %s", imageRepo))
 		imageOverrides = utils.OverrideImageRepository(imageOverrides, imageRepo)
 	}
 
@@ -224,7 +211,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if ioConfigmapName := utils.GetImageOverridesConfigmapName(multiClusterHub); ioConfigmapName != "" {
 		imageOverrides, err = overrides.GetOverridesFromConfigmap(r.Client, imageOverrides,
 			multiClusterHub.GetNamespace(), ioConfigmapName, false)
-
 		if err != nil {
 			r.Log.Error(err, fmt.Sprintf("Failed to find image override configmap: %s/%s",
 				multiClusterHub.GetNamespace(), ioConfigmapName))
@@ -246,7 +232,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if toConfigmapName := utils.GetTemplateOverridesConfigmapName(multiClusterHub); toConfigmapName != "" {
 		templateOverrides, err = overrides.GetOverridesFromConfigmap(r.Client, templateOverrides,
 			multiClusterHub.GetNamespace(), toConfigmapName, true)
-
 		if err != nil {
 			r.Log.Error(err, fmt.Sprintf("Failed to find template override configmap: %s/%s",
 				multiClusterHub.GetNamespace(), toConfigmapName))
@@ -320,13 +305,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	updatePausedCondition(multiClusterHub)
 	if utils.IsPaused(multiClusterHub) {
 		r.Log.Info("MultiClusterHub reconciliation is paused. Nothing more to do.")
-		if ok := scheduler.IsRunning(); ok {
-			r.Log.Info("Pausing MultiClusterHub operator controller resync job.")
-			go r.StopScheduleOperatorControllerResync()
-		}
 		return ctrl.Result{}, nil
-	} else if ok := scheduler.IsRunning(); !ok {
-		defer r.ScheduleOperatorControllerResync(ctx, req)
 	}
 
 	if !utils.ShouldIgnoreOCPVersion(multiClusterHub) {
@@ -335,7 +314,9 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			return ctrl.Result{}, fmt.Errorf("failed to detect clusterversion: %w", err)
 		}
 		if err := version.ValidOCPVersion(currentOCPVersion); err != nil {
-			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason, fmt.Sprintf("OCP version requirement not met: %s", err.Error()))
+			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason,
+				fmt.Sprintf("OCP version requirement not met: %s", err.Error()))
+
 			SetHubCondition(&multiClusterHub.Status, *condition)
 			return ctrl.Result{}, err
 		}
@@ -448,6 +429,12 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 
+	// iam-policy-controller was removed in 2.11
+	result, err = r.ensureNoClusterManagementAddOn(multiClusterHub, operatorv1.IamPolicyController)
+	if err != nil {
+		return result, err
+	}
+
 	// Install the rest of the subscriptions in no particular order
 	for _, c := range operatorv1.MCHComponents {
 		result, err = r.ensureComponentOrNoComponent(ctx, multiClusterHub, c, r.CacheSpec, ocpConsole)
@@ -474,8 +461,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
 
-	return retQueue, retError
-	// return ctrl.Result{}, nil
+	return ctrl.Result{RequeueAfter: utils.ShortRefreshInterval}, nil
 }
 
 func (r *MultiClusterHubReconciler) setOperatorUpgradeableStatus(ctx context.Context, m *operatorv1.MultiClusterHub) (bool, error) {
@@ -611,7 +597,6 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 	// Set owner reference.
 	if (template.GetKind() == "ClusterRole") || (template.GetKind() == "ClusterRoleBinding") || (template.GetKind() == "ServiceMonitor") || (template.GetKind() == "CustomResourceDefinition") {
 		utils.AddInstallerLabel(template, m.Name, m.Namespace)
-
 	}
 
 	if template.GetKind() == "APIService" {
@@ -681,7 +666,8 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(ctx context.Context, comp
 }
 
 func (r *MultiClusterHubReconciler) ensureComponentOrNoComponent(ctx context.Context, m *operatorv1.MultiClusterHub,
-	component string, cachespec CacheSpec, ocpConsole bool) (ctrl.Result, error) {
+	component string, cachespec CacheSpec, ocpConsole bool,
+) (ctrl.Result, error) {
 	var result ctrl.Result
 	var err error
 
@@ -715,7 +701,8 @@ func (r *MultiClusterHubReconciler) ensureComponentOrNoComponent(ctx context.Con
 }
 
 func (r *MultiClusterHubReconciler) ensureNamespaceAndPullSecret(m *operatorv1.MultiClusterHub, ns *corev1.Namespace) (
-	ctrl.Result, error) {
+	ctrl.Result, error,
+) {
 	var result ctrl.Result
 	var err error
 
@@ -733,8 +720,8 @@ func (r *MultiClusterHubReconciler) ensureNamespaceAndPullSecret(m *operatorv1.M
 }
 
 func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *operatorv1.MultiClusterHub, component string,
-	cachespec CacheSpec) (ctrl.Result, error) {
-
+	cachespec CacheSpec,
+) (ctrl.Result, error) {
 	/*
 		If the component is detected to be MCH, we can simply return successfully. MCH is only listed in the components
 		list for cleanup purposes.
@@ -782,8 +769,8 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 }
 
 func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *operatorv1.MultiClusterHub,
-	component string, cachespec CacheSpec) (result ctrl.Result, err error) {
-
+	component string, cachespec CacheSpec,
+) (result ctrl.Result, err error) {
 	/*
 		If the component is detected to be MCH, we can simply return successfully. MCH is only listed in the components
 		list for cleanup purposes. If the component is detected to be MCE, we can simply return successfully.
@@ -852,8 +839,8 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 }
 
 func (r *MultiClusterHubReconciler) ensureOpenShiftNamespaceLabel(ctx context.Context,
-	m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
-
+	m *operatorv1.MultiClusterHub,
+) (ctrl.Result, error) {
 	log := log.Log.WithName("reconcile")
 	existingNs := &corev1.Namespace{}
 
@@ -964,7 +951,8 @@ func (r *MultiClusterHubReconciler) createTrustBundleConfigmap(ctx context.Conte
 }
 
 func (r *MultiClusterHubReconciler) createMetricsService(ctx context.Context, m *operatorv1.MultiClusterHub) (
-	ctrl.Result, error) {
+	ctrl.Result, error,
+) {
 	log := log.Log.WithName("reconcile")
 
 	const Port = 8383
@@ -1028,7 +1016,8 @@ func (r *MultiClusterHubReconciler) createMetricsService(ctx context.Context, m 
 }
 
 func (r *MultiClusterHubReconciler) createMetricsServiceMonitor(ctx context.Context, m *operatorv1.MultiClusterHub) (
-	ctrl.Result, error) {
+	ctrl.Result, error,
+) {
 	log := log.Log.WithName("reconcile")
 
 	smName := utils.MCHOperatorMetricsServiceMonitorName
@@ -1272,7 +1261,6 @@ func updatePausedCondition(m *operatorv1.MultiClusterHub) {
 			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, ResumedReason, "Multiclusterhub is resumed")
 			SetHubCondition(&m.Status, *condition)
 		}
-
 	}
 }
 
@@ -1369,38 +1357,11 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 	}
 	log.Info("No updates to defaults detected")
 	return ctrl.Result{}, nil
-
-}
-
-func (r *MultiClusterHubReconciler) InitScheduler() {
-	scheduler = gocron.NewScheduler(time.UTC)
-}
-
-func (r *MultiClusterHubReconciler) ScheduleOperatorControllerResync(ctx context.Context, req ctrl.Request) {
-	if ok := scheduler.IsRunning(); !ok {
-		_, err := scheduler.Tag(cronResyncTag).Every(reconciliationInterval).Minutes().Do(r.Reconcile, ctx, req)
-
-		if err != nil {
-			r.Log.Error(err, "failed to schedule scheduler job for operator controller resync")
-		} else {
-			r.Log.Info(fmt.Sprintf("Starting scheduler job for operator controller. Reconciling every %v minutes",
-				reconciliationInterval))
-			scheduler.StartAsync()
-		}
-	}
-}
-
-// StopScheduleOperatorControllerResync ...
-func (r *MultiClusterHubReconciler) StopScheduleOperatorControllerResync() {
-	scheduler.Stop()
-
-	if ok := scheduler.IsRunning(); !ok {
-		r.InitScheduler()
-	}
 }
 
 func (r *MultiClusterHubReconciler) CheckDeprecatedFieldUsage(m *operatorv1.MultiClusterHub) {
-	deprecatedSpecFields := []struct {
+	a := m.GetAnnotations()
+	df := []struct {
 		name      string
 		isPresent bool
 	}{
@@ -1410,16 +1371,21 @@ func (r *MultiClusterHubReconciler) CheckDeprecatedFieldUsage(m *operatorv1.Mult
 		{"enableClusterBackup", m.Spec.EnableClusterBackup},
 		{"enableClusterProxyAddon", m.Spec.EnableClusterProxyAddon},
 		{"separateCertificateManagement", m.Spec.SeparateCertificateManagement},
+		{utils.DeprecatedAnnotationIgnoreOCPVersion, a[utils.DeprecatedAnnotationIgnoreOCPVersion] != ""},
+		{utils.DeprecatedAnnotationImageOverridesCM, a[utils.DeprecatedAnnotationImageOverridesCM] != ""},
+		{utils.DeprecatedAnnotationImageRepo, a[utils.DeprecatedAnnotationImageRepo] != ""},
+		{utils.DeprecatedAnnotationKubeconfig, a[utils.DeprecatedAnnotationKubeconfig] != ""},
+		{utils.DeprecatedAnnotationMCHPause, a[utils.DeprecatedAnnotationMCHPause] != ""},
 	}
 
-	if r.DeprecatedSpecFields == nil {
-		r.DeprecatedSpecFields = make(map[string]bool)
+	if r.DeprecatedFields == nil {
+		r.DeprecatedFields = make(map[string]bool)
 	}
 
-	for _, f := range deprecatedSpecFields {
-		if f.isPresent && !r.DeprecatedSpecFields[f.name] {
+	for _, f := range df {
+		if f.isPresent && !r.DeprecatedFields[f.name] {
 			r.Log.Info(fmt.Sprintf("Warning: %s field usage is deprecated in operator.", f.name))
-			r.DeprecatedSpecFields[f.name] = true
+			r.DeprecatedFields[f.name] = true
 		}
 	}
 }

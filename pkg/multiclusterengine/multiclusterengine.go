@@ -77,6 +77,9 @@ func NewMultiClusterEngine(m *operatorv1.MultiClusterHub) *mcev1.MultiClusterEng
 		availConfig = mcev1.HABasic
 	}
 
+	// TODO: remove this when m.Spec.HubSize is back
+	annotations[utils.AnnotationHubSize] = string(utils.GetHubSize(m))
+
 	mce := &mcev1.MultiClusterEngine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        MulticlusterengineName,
@@ -89,7 +92,8 @@ func NewMultiClusterEngine(m *operatorv1.MultiClusterHub) *mcev1.MultiClusterEng
 			NodeSelector:       m.Spec.NodeSelector,
 			AvailabilityConfig: availConfig,
 			TargetNamespace:    OperandNamespace(),
-			HubSize:            mcev1.HubSize(m.Spec.HubSize),
+			// TODO: put this back later
+			// HubSize:            mcev1.HubSize(m.Spec.HubSize),
 			Overrides: &mcev1.Overrides{
 				Components: utils.GetMCEComponents(m),
 			},
@@ -152,6 +156,9 @@ func GetSupportedAnnotations(m *operatorv1.MultiClusterHub) map[string]string {
 	mceAnnotations := make(map[string]string)
 	if m.GetAnnotations() != nil {
 		if val, ok := m.GetAnnotations()[utils.AnnotationImageRepo]; ok && val != "" {
+			mceAnnotations["imageRepository"] = val
+
+		} else if val, ok := m.GetAnnotations()[utils.DeprecatedAnnotationImageRepo]; ok && val != "" {
 			mceAnnotations["imageRepository"] = val
 		}
 	}
@@ -404,8 +411,9 @@ func GetManagedMCE(ctx context.Context, k8sClient client.Client) (*mcev1.MultiCl
 		}
 	}
 
-	if err == nil && len(filteredMCEs) == 1 {
+	if len(filteredMCEs) == 1 {
 		return &filteredMCEs[0], nil
+
 	} else if len(filteredMCEs) > 1 {
 		// will require manual resolution
 		return nil, fmt.Errorf("multiple MCEs found managed by MCH. Only one MCE is supported")

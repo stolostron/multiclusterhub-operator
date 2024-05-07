@@ -16,6 +16,7 @@ vendor/
 bundle/manifests/multiclusterhub-operator_v1_serviceaccount.yaml
 
 hack/prereqs/pull-secret.yaml
+hack/bundle-automation/tmp/
 
 test/function_tests/results
 hack/bundle-automation/__pycache__

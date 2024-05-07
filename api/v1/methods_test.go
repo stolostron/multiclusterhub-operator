@@ -1,13 +1,10 @@
 package v1_test
 
 import (
-	// "os"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	api "github.com/stolostron/multiclusterhub-operator/api/v1"
-	// "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 )
 
 func config(name string, enabled bool) api.ComponentConfig {
@@ -27,9 +24,8 @@ func makeMCH(configs ...api.ComponentConfig) *api.MultiClusterHub {
 	mch.Spec.Overrides = &api.Overrides{
 		Components: make([]api.ComponentConfig, len(configs)),
 	}
-	for i := range configs {
-		mch.Spec.Overrides.Components[i] = configs[i]
-	}
+
+	copy(mch.Spec.Overrides.Components, configs)
 	return mch
 }
 

@@ -12,6 +12,7 @@ import (
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
+	mceutils "github.com/stolostron/backplane-operator/pkg/utils"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -332,16 +333,15 @@ func TestNewMultiClusterEngine(t *testing.T) {
 				},
 			},
 		},
+		// TODO: change this back to spec when needed
 		{
 			name: "Adopt hubSize",
 			args: args{
 				m: &operatorv1.MultiClusterHub{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "mch",
-						Namespace: "mch-ns",
-					},
-					Spec: operatorv1.MultiClusterHubSpec{
-						HubSize: operatorv1.Large,
+						Name:        "mch",
+						Namespace:   "mch-ns",
+						Annotations: map[string]string{utils.AnnotationHubSize: string(operatorv1.Large)},
 					},
 				},
 			},
@@ -353,9 +353,9 @@ func TestNewMultiClusterEngine(t *testing.T) {
 						"installer.namespace":   "mch-ns",
 						utils.MCEManagedByLabel: "true",
 					},
+					Annotations: map[string]string{mceutils.AnnotationHubSize: string(mcev1.Large)},
 				},
 				Spec: mcev1.MultiClusterEngineSpec{
-					HubSize:         mcev1.Large,
 					ImagePullSecret: "",
 					Tolerations: []corev1.Toleration{
 						{
@@ -387,7 +387,9 @@ func TestNewMultiClusterEngine(t *testing.T) {
 			g.Expect(got.Spec.TargetNamespace).To(gomega.Equal(tt.want.Spec.TargetNamespace))
 			g.Expect(got.Spec.Overrides.Components).To(gomega.Equal(tt.want.Spec.Overrides.Components))
 			g.Expect(got.Spec.Overrides.ImagePullPolicy).To(gomega.Equal(tt.want.Spec.Overrides.ImagePullPolicy))
-			g.Expect(got.Spec.HubSize).To(gomega.Equal(tt.want.Spec.HubSize))
+
+			// TODO: put this back later
+			// g.Expect(got.Spec.HubSize).To(gomega.Equal(tt.want.Spec.HubSize))
 		})
 	}
 }

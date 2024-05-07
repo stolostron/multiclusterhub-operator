@@ -9,7 +9,6 @@ import (
 	"fmt"
 
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,7 +18,7 @@ import (
 )
 
 // NewSubscription returns an MCE subscription with desired default values
-func NewSubscription(m *operatorsv1.MultiClusterHub, c *subv1alpha1.SubscriptionConfig, subOverrides *subv1alpha1.SubscriptionSpec, community bool) *subv1alpha1.Subscription {
+func NewSubscription(m *operatorv1.MultiClusterHub, c *subv1alpha1.SubscriptionConfig, subOverrides *subv1alpha1.SubscriptionSpec, community bool) *subv1alpha1.Subscription {
 	chName, pkgName, catSourceName := channel, packageName, catalogSourceName
 	if community {
 		chName = communityChannel
@@ -100,7 +99,7 @@ func RenderSubscription(existingSubscription *subv1alpha1.Subscription, config *
 }
 
 // GetAnnotationOverrides returns an OLM SubscriptionSpec based on an annotation set in the Multiclusterhub
-func GetAnnotationOverrides(m *operatorsv1.MultiClusterHub) (*subv1alpha1.SubscriptionSpec, error) {
+func GetAnnotationOverrides(m *operatorv1.MultiClusterHub) (*subv1alpha1.SubscriptionSpec, error) {
 	mceAnnotationOverrides := utils.GetMCEAnnotationOverrides(m)
 	if mceAnnotationOverrides == "" {
 		return nil, nil
@@ -108,7 +107,7 @@ func GetAnnotationOverrides(m *operatorsv1.MultiClusterHub) (*subv1alpha1.Subscr
 	mceSub := &subv1alpha1.SubscriptionSpec{}
 	err := json.Unmarshal([]byte(mceAnnotationOverrides), mceSub)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to unmarshal MultiClusterEngine annotation '%s': %w", mceAnnotationOverrides, err)
+		return nil, fmt.Errorf("failed to unmarshal MultiClusterEngine annotation '%s': %w", mceAnnotationOverrides, err)
 	}
 	return mceSub, nil
 }
@@ -141,13 +140,12 @@ func ApplyAnnotationOverrides(sub *subv1alpha1.Subscription, subspec *subv1alpha
 // Finds MCE subscription by managed label. Returns nil if none found.
 func GetManagedMCESubscription(ctx context.Context, k8sClient client.Client) (*subv1alpha1.Subscription, error) {
 	subList := &subv1alpha1.SubscriptionList{}
-	err := k8sClient.List(ctx, subList, &client.MatchingLabels{
-		utils.MCEManagedByLabel: "true",
-	})
-	if err != nil {
+	if err := k8sClient.List(ctx, subList, &client.MatchingLabels{utils.MCEManagedByLabel: "true"}); err != nil {
 		return nil, err
-	} else if err == nil && len(subList.Items) == 1 {
+
+	} else if len(subList.Items) == 1 {
 		return &subList.Items[0], nil
+
 	} else if len(subList.Items) > 1 {
 		// will require manual resolution
 		return nil, fmt.Errorf("multiple engine subscriptions found managed by MCH. Only one MCE subscription is supported")

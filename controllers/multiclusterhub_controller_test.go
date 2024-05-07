@@ -721,8 +721,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 				createdMCH.Annotations = annotations
 				_ = k8sClient.Update(ctx, createdMCH)
 
-				reconciler.StopScheduleOperatorControllerResync()
-				return utils.IsPaused(createdMCH) && !scheduler.IsRunning()
+				return utils.IsPaused(createdMCH)
 			}, timeout, interval).Should(BeTrue())
 		})
 	})

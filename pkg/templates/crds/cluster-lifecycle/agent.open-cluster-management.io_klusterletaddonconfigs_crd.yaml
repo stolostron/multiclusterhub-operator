@@ -77,13 +77,18 @@ spec:
                 minLength: 1
                 type: string
               iamPolicyController:
-                description: IAMPolicyControllerConfig defines the configurations of IamPolicyController addon agent.
+                description: DEPRECATED in release 2.11 and will be removed in the future since not used anymore.
                 properties:
                   enabled:
-                    description: Enabled is the flag to enable/disable the addon. default is false.
+                    description: Enabled is the flag to enable/disable the addon.
+                      default is false.
                     type: boolean
                   proxyPolicy:
-                    description: ProxyPolicy defines the policy to set proxy for each addon agent. default is Disabled. Disabled means that the addon agent pods do not configure the proxy env variables. OCPGlobalProxy means that the addon agent pods use the cluster-wide proxy config of OCP cluster provisioned by ACM. CustomProxy means that the addon agent pods use the ProxyConfig specified in KlusterletAddonConfig.
+                    description: |-
+                      ProxyPolicy defines the policy to set proxy for each addon agent. default is Disabled.
+                      Disabled means that the addon agent pods do not configure the proxy env variables.
+                      OCPGlobalProxy means that the addon agent pods use the cluster-wide proxy config of OCP cluster provisioned by ACM.
+                      CustomProxy means that the addon agent pods use the ProxyConfig specified in KlusterletAddonConfig.
                     enum:
                     - Disabled
                     - OCPGlobalProxy
@@ -137,7 +142,6 @@ spec:
             required:
             - applicationManager
             - certPolicyController
-            - iamPolicyController
             - policyController
             - searchCollector
             type: object

@@ -113,6 +113,12 @@ docker-build: ## test ## Build docker image with the manager.
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
 
+podman-build: ## test ## Build podman image with the manager.
+	podman build --no-cache -t ${IMG} .
+
+podman-push: ## Push podman image with the manager.
+	podman push ${IMG}
+
 ##@ Deployment
 
 install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
@@ -175,6 +181,14 @@ bundle-build: ## Build the bundle image.
 bundle-push: ## Push the bundle image.
 	$(MAKE) docker-push IMG=$(BUNDLE_IMG)
 
+.PHONY: podman-bundle-build
+podman-bundle-build: ## Build the bundle image.
+	podman build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+
+.PHONY: podman-bundle-push
+podman-bundle-push: ## Push the bundle image.
+	$(MAKE) podman-push IMG=$(BUNDLE_IMG)
+
 .PHONY: opm
 OPM = ./bin/opm
 opm: ## Download opm locally if necessary.
@@ -215,6 +229,11 @@ catalog-build: opm ## Build a catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
+
+# Push the catalog image.
+.PHONY: podman-catalog-push
+catalog-push: ## Push a catalog image.
+	$(MAKE) podman-push IMG=$(CATALOG_IMG)
 
 
 -include Makefile.dev
