@@ -20,7 +20,7 @@ import (
 	"helm.sh/helm/v3/pkg/engine"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/yaml"
 )
 
@@ -46,6 +46,7 @@ type Global struct {
 }
 
 type HubConfig struct {
+	ClusterSTSEnabled bool              `json:"clusterSTSEnabled" structs:"clusterSTSEnabled"`
 	NodeSelector      map[string]string `json:"nodeSelector" structs:"nodeSelector"`
 	ProxyConfigs      map[string]string `json:"proxyConfigs" structs:"proxyConfigs"`
 	ReplicaCount      int               `json:"replicaCount" structs:"replicaCount"`
@@ -63,6 +64,8 @@ type Toleration struct {
 	Effect            corev1.TaintEffect        `json:"Effect" protobuf:"bytes,4,opt,name=effect,casttype=TaintEffect"`
 	TolerationSeconds *int64                    `json:"TolerationSeconds" protobuf:"varint,5,opt,name=tolerationSeconds"`
 }
+
+var log = logf.Log.WithName("reconcile")
 
 func convertTolerations(tols []corev1.Toleration) []Toleration {
 	var tolerations []Toleration
@@ -191,8 +194,9 @@ func RenderCRDs(crdDir string, mch *v1.MultiClusterHub) ([]*unstructured.Unstruc
 	return crds, errs
 }
 
-func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]string, tpl map[string]string) ([]*unstructured.Unstructured, []error) {
-	log := log.Log.WithName("reconcile")
+func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]string, tpl map[string]string,
+	isSTSEnabled bool) ([]*unstructured.Unstructured, []error) {
+
 	var templates []*unstructured.Unstructured
 	errs := []error{}
 
@@ -210,7 +214,7 @@ func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]st
 
 	for _, chart := range charts {
 		chartPath := filepath.Join(chartDir, chart.Name())
-		chartTemplates, errs := renderTemplates(chartPath, mch, images, tpl)
+		chartTemplates, errs := renderTemplates(chartPath, mch, images, tpl, isSTSEnabled)
 		if len(errs) > 0 {
 			for _, err := range errs {
 				log.Info(err.Error())
@@ -222,9 +226,8 @@ func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]st
 	return templates, nil
 }
 
-func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]string, templates map[string]string) (
-	[]*unstructured.Unstructured, []error) {
-	log := log.Log.WithName("reconcile")
+func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]string, templates map[string]string,
+	isSTSEnabled bool) ([]*unstructured.Unstructured, []error) {
 
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
 		chartPath = path.Join(val, chartPath)
@@ -234,7 +237,7 @@ func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]st
 
 	}
 
-	chartTemplates, errs := renderTemplates(chartPath, mch, images, templates)
+	chartTemplates, errs := renderTemplates(chartPath, mch, images, templates, isSTSEnabled)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -245,10 +248,9 @@ func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]st
 
 }
 
-func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[string]string, tpl map[string]string) (
-	[]*unstructured.Unstructured, []error) {
+func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[string]string, tpl map[string]string,
+	isSTSEnabled bool) ([]*unstructured.Unstructured, []error) {
 
-	log := log.Log.WithName("reconcile")
 	var templates []*unstructured.Unstructured
 	errs := []error{}
 
@@ -259,7 +261,7 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 	}
 
 	valuesYaml := &Values{}
-	injectValuesOverrides(valuesYaml, mch, images, tpl)
+	injectValuesOverrides(valuesYaml, mch, images, tpl, isSTSEnabled)
 	helmEngine := engine.Engine{
 		Strict:   true,
 		LintMode: false,
@@ -297,7 +299,8 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 	return templates, errs
 }
 
-func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[string]string, templates map[string]string) {
+func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[string]string,
+	templates map[string]string, isSTSEnabled bool) {
 	values.Global.ImageOverrides = images
 
 	values.Global.TemplateOverrides = templates
@@ -311,6 +314,8 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 	values.Global.ImageRepository = utils.GetImageRepository(mch)
 
 	values.Global.HubSize = mch.Spec.HubSize
+
+	values.HubConfig.ClusterSTSEnabled = isSTSEnabled
 
 	values.HubConfig.ReplicaCount = utils.DefaultReplicaCount(mch)
 
@@ -342,10 +347,10 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 }
 
 func GetOADPConfig(m *v1.MultiClusterHub) (string, string, subv1alpha1.Approval, string, string) {
-	log := log.Log.WithName("reconcile")
 	sub := &subv1alpha1.SubscriptionSpec{}
 	var name, channel, source, sourceNamespace string
 	var installPlan subv1alpha1.Approval
+
 	if oadpSpec := utils.GetOADPAnnotationOverrides(m); oadpSpec != "" {
 
 		err := json.Unmarshal([]byte(oadpSpec), sub)
