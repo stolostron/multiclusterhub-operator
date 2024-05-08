@@ -253,6 +253,24 @@ spec:
         apiVersion: policy.open-cluster-management.io/v1
         kind: ConfigurationPolicy
         metadata:
+          name: redhat-oadp-operator
+        spec:
+          object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: operators.coreos.com/v1alpha1
+                kind: Subscription
+                metadata:
+                  namespace: open-cluster-management-backup
+                spec:
+                  name: redhat-oadp-operator
+                  channel: {{ .Values.global.channel }}
+          remediationAction: inform
+          severity: high
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
           name: oadp-channel
         spec:
           remediationAction: inform
