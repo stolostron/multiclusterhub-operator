@@ -453,6 +453,9 @@ var _ = Describe("MultiClusterHub controller", func() {
 			},
 			Spec: consolev1.CloudCredentialSpec{
 				CredentialsMode: "",
+				OperatorSpec: consolev1.OperatorSpec{
+					ManagementState: "Managed",
+				},
 			},
 		})).To(Succeed())
 
