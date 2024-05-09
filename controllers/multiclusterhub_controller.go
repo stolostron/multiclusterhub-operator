@@ -449,6 +449,12 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 
+	if !multiClusterHub.Spec.DisableHubSelfManagement {
+		result, err = r.ensureKlusterletAddonConfig(multiClusterHub)
+		if result != (ctrl.Result{}) || err != nil {
+			return result, err
+		}
+	}
 	// iam-policy-controller was removed in 2.11
 	result, err = r.ensureNoClusterManagementAddOn(multiClusterHub, operatorv1.IamPolicyController)
 	if err != nil {
@@ -459,13 +465,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	for _, c := range operatorv1.MCHComponents {
 		result, err = r.ensureComponentOrNoComponent(ctx, multiClusterHub, c, r.CacheSpec, ocpConsole, stsEnabled)
 		if result != (ctrl.Result{}) {
-			return result, err
-		}
-	}
-
-	if !multiClusterHub.Spec.DisableHubSelfManagement {
-		result, err = r.ensureKlusterletAddonConfig(multiClusterHub)
-		if result != (ctrl.Result{}) || err != nil {
 			return result, err
 		}
 	}
@@ -550,7 +549,8 @@ func (r *MultiClusterHubReconciler) ensureInfrastructureAWS(ctx context.Context)
 ensureObjectExistsAndNotDeleted ensures the existence of the specified object and that it has not been deleted.
 */
 func (r *MultiClusterHubReconciler) ensureObjectExistsAndNotDeleted(ctx context.Context, obj client.Object,
-	name string) (bool, error) {
+	name string,
+) (bool, error) {
 	if err := r.Client.Get(ctx, types.NamespacedName{Name: name}, obj); err != nil {
 		if errors.IsNotFound(err) {
 			r.Log.Info(
@@ -594,7 +594,6 @@ func (r *MultiClusterHubReconciler) isSTSEnabled(ctx context.Context) (bool, err
 
 		if stsEnabledStatus {
 			r.Log.Info("STS is enabled.")
-
 		} else {
 			r.Log.Info("STS is not enabled.")
 		}
@@ -803,7 +802,8 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(ctx context.Context, comp
 }
 
 func (r *MultiClusterHubReconciler) ensureComponentOrNoComponent(ctx context.Context, m *operatorv1.MultiClusterHub,
-	component string, cachespec CacheSpec, ocpConsole, isSTSEnabled bool) (ctrl.Result, error) {
+	component string, cachespec CacheSpec, ocpConsole, isSTSEnabled bool,
+) (ctrl.Result, error) {
 	var result ctrl.Result
 	var err error
 
@@ -854,7 +854,8 @@ func (r *MultiClusterHubReconciler) ensureNamespaceAndPullSecret(m *operatorv1.M
 }
 
 func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *operatorv1.MultiClusterHub, component string,
-	cachespec CacheSpec, isSTSEnabled bool) (ctrl.Result, error) {
+	cachespec CacheSpec, isSTSEnabled bool,
+) (ctrl.Result, error) {
 	/*
 	   If the component is detected to be MCH, we can simply return successfully. MCH is only listed in the components
 	   list for cleanup purposes.
@@ -903,7 +904,8 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 }
 
 func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *operatorv1.MultiClusterHub,
-	component string, cachespec CacheSpec, isSTSEnabled bool) (result ctrl.Result, err error) {
+	component string, cachespec CacheSpec, isSTSEnabled bool,
+) (result ctrl.Result, err error) {
 	/*
 	   If the component is detected to be MCH, we can simply return successfully. MCH is only listed in the components
 	   list for cleanup purposes. If the component is detected to be MCE, we can simply return successfully.
@@ -973,7 +975,8 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 }
 
 func (r *MultiClusterHubReconciler) ensureOpenShiftNamespaceLabel(ctx context.Context, m *operatorv1.MultiClusterHub) (
-	ctrl.Result, error) {
+	ctrl.Result, error,
+) {
 	existingNs := &corev1.Namespace{}
 
 	err := r.Client.Get(ctx, types.NamespacedName{Name: m.GetNamespace()}, existingNs)
@@ -1003,7 +1006,8 @@ func (r *MultiClusterHubReconciler) ensureOpenShiftNamespaceLabel(ctx context.Co
 }
 
 func (r *MultiClusterHubReconciler) deleteTemplate(ctx context.Context, m *operatorv1.MultiClusterHub,
-	template *unstructured.Unstructured) (ctrl.Result, error) {
+	template *unstructured.Unstructured,
+) (ctrl.Result, error) {
 	err := r.Client.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()}, template)
 
 	if err != nil && (errors.IsNotFound(err) || apimeta.IsNoMatchError(err)) {
@@ -1028,8 +1032,8 @@ func (r *MultiClusterHubReconciler) deleteTemplate(ctx context.Context, m *opera
 // createCAconfigmap creates a configmap that will be injected with the
 // trusted CA bundle for use with the OCP cluster wide proxy
 func (r *MultiClusterHubReconciler) createTrustBundleConfigmap(ctx context.Context, mch *operatorv1.MultiClusterHub) (
-	ctrl.Result, error) {
-
+	ctrl.Result, error,
+) {
 	// Get Trusted Bundle configmap name
 	trustBundleName := defaultTrustBundleName
 	trustBundleNamespace := mch.Namespace
@@ -1083,7 +1087,8 @@ func (r *MultiClusterHubReconciler) createTrustBundleConfigmap(ctx context.Conte
 }
 
 func (r *MultiClusterHubReconciler) createMetricsService(ctx context.Context, m *operatorv1.MultiClusterHub) (
-	ctrl.Result, error) {
+	ctrl.Result, error,
+) {
 	const Port = 8383
 
 	sName := utils.MCHOperatorMetricsServiceName
@@ -1145,7 +1150,8 @@ func (r *MultiClusterHubReconciler) createMetricsService(ctx context.Context, m 
 }
 
 func (r *MultiClusterHubReconciler) createMetricsServiceMonitor(ctx context.Context, m *operatorv1.MultiClusterHub) (
-	ctrl.Result, error) {
+	ctrl.Result, error,
+) {
 	smName := utils.MCHOperatorMetricsServiceMonitorName
 	smNamespace := m.GetNamespace()
 
@@ -1238,7 +1244,8 @@ func (r *MultiClusterHubReconciler) ingressDomain(m *operatorv1.MultiClusterHub)
 }
 
 func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operatorv1.MultiClusterHub, ocpConsole,
-	isSTSEnabled bool) error {
+	isSTSEnabled bool,
+) error {
 	if err := r.cleanupAppSubscriptions(reqLogger, m); err != nil {
 		return err
 	}
