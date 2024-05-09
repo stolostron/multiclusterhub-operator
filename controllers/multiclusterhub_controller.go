@@ -481,6 +481,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
 
+	log.Log.Info("Reconcile completed. Requeuing after " + utils.ShortRefreshInterval.String())
 	return ctrl.Result{RequeueAfter: utils.ShortRefreshInterval}, nil
 }
 
@@ -1435,7 +1436,6 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 	if utils.MchIsValid(m) && os.Getenv("ACM_HUB_OCP_VERSION") != "" && !updateNecessary {
 		return ctrl.Result{}, nil
 	}
-	log.Info("MultiClusterHub is Invalid. Updating with proper defaults")
 
 	if !operatorv1.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {
 		m.Spec.AvailabilityConfig = operatorv1.HAHigh
