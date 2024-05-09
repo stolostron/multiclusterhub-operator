@@ -232,7 +232,7 @@ catalog-push: ## Push a catalog image.
 
 # Push the catalog image.
 .PHONY: podman-catalog-push
-catalog-push: ## Push a catalog image.
+podman-catalog-push: ## Push a catalog image.
 	$(MAKE) podman-push IMG=$(CATALOG_IMG)
 
 
