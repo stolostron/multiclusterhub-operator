@@ -12,29 +12,7 @@ spec:
     metadata:
       labels:
         control-plane: controller-manager
-        ocm-antiaffinity-selector: search-v2-operator-controller-manager
     spec:
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: ocm-antiaffinity-selector
-                  operator: In
-                  values:
-                  - search-v2-operator-controller-manager
-              topologyKey: topology.kubernetes.io/zone
-            weight: 70
-          - podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: ocm-antiaffinity-selector
-                  operator: In
-                  values:
-                  - search-v2-operator-controller-manager
-              topologyKey: kubernetes.io/hostname
-            weight: 35
       containers:
       - args:
         - --secure-listen-address=0.0.0.0:8443
@@ -42,17 +20,7 @@ spec:
         - --logtostderr=true
         - --v=10
         - --tls-min-version=VersionTLS13
-        env:
-{{- if .Values.hubconfig.proxyConfigs }}
-        - name: HTTP_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
-        - name: HTTPS_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
-        - name: NO_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
-{{- end }}
-        image: '{{ .Values.global.imageOverrides.kube_rbac_proxy }}'
-        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0
         name: kube-rbac-proxy
         ports:
         - containerPort: 8443
@@ -65,13 +33,6 @@ spec:
           requests:
             cpu: 100m
             memory: 256Mi
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          privileged: false
-          readOnlyRootFilesystem: true
       - args:
         - --health-probe-bind-address=:8081
         - --metrics-bind-address=127.0.0.1:8080
@@ -79,28 +40,19 @@ spec:
         command:
         - /manager
         env:
-{{- if .Values.hubconfig.proxyConfigs }}
-        - name: HTTP_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
-        - name: HTTPS_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
-        - name: NO_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
-{{- end }}
         - name: WATCH_NAMESPACE
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
         - name: POSTGRES_IMAGE
-          value: '{{ .Values.global.imageOverrides.postgresql_13 }}'
+          value: registry.redhat.io/rhel8/postgresql-13:1-56
         - name: INDEXER_IMAGE
-          value: '{{ .Values.global.imageOverrides.search_indexer }}'
+          value: quay.io/stolostron/search-indexer:2.7.0-4c1b1f4f692d5f8be9fca699ea26573227250f39
         - name: COLLECTOR_IMAGE
-          value: '{{ .Values.global.imageOverrides.search_collector }}'
+          value: quay.io/stolostron/search-collector:2.7.0-de589fdba4effc06198db8250c1ae3118125d685
         - name: API_IMAGE
-          value: '{{ .Values.global.imageOverrides.search_v2_api }}'
-        image: '{{ .Values.global.imageOverrides.search_v2_operator }}'
-        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+          value: quay.io/stolostron/search-v2-api:2.7.0-69590634c2de51ceec786af47ca5fb00f42a631a
+        image: quay.io/stolostron/search-v2-operator:2.7.0-dc0fc8c59239b6a0a3f440b7752101523d87f597
         livenessProbe:
           httpGet:
             path: /healthz
@@ -123,37 +75,9 @@ spec:
             memory: 256Mi
         securityContext:
           allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          privileged: false
-          readOnlyRootFilesystem: true
-      hostIPC: false
-      hostNetwork: false
-      hostPID: false
-{{- if .Values.global.pullSecret }}
       imagePullSecrets:
-      - name: {{ .Values.global.pullSecret }}
-{{- end }}
-{{- with .Values.hubconfig.nodeSelector }}
-      nodeSelector:
-{{ toYaml . | indent 8 }}
-{{- end }}
+      - name: search-pull-secret
       securityContext:
         runAsNonRoot: true
-{{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
-        seccompProfile:
-          type: RuntimeDefault
-{{- end }}
       serviceAccountName: search-v2-operator
       terminationGracePeriodSeconds: 10
-{{- with .Values.hubconfig.tolerations }}
-      tolerations:
-      {{- range . }}
-      - {{ if .Key }} key: {{ .Key }} {{- end }}
-        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
-        {{ if .Value }} value: {{ .Value }} {{- end }}
-        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
-        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
-        {{- end }}
-{{- end }}

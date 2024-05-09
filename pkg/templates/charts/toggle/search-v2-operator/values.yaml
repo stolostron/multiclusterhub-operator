@@ -1,19 +1,17 @@
+
+# Copyright (c) 2021 Red Hat, Inc.
+# Copyright Contributors to the Open Cluster Management project
+
+org: open-cluster-management
 global:
-  hubSize: Small
-  imageOverrides:
-    kube_rbac_proxy: ''
-    postgresql_13: ''
-    search_collector: ''
-    search_indexer: ''
-    search_v2_api: ''
-    search_v2_operator: ''
-  namespace: default
   pullSecret: null
+  imageOverrides: {}
   templateOverrides: {}
+  namespace: default
+  hubSize: Small
 hubconfig:
   nodeSelector: null
-  ocpVersion: 4.12.0
-  proxyConfigs: {}
   replicaCount: 1
+  proxyConfigs: {}
   tolerations: []
-org: open-cluster-management
+  ocpVersion: 4.12.0
