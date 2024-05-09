@@ -8,6 +8,7 @@ import coloredlogs
 import os
 import logging
 import shutil
+import sys
 import time
 
 from git import Repo, exc
@@ -26,7 +27,10 @@ def clone_repository(repo_url, repo_path, branch='main'):
 
 def prepare_operation(script_dir, operation_script, operation_args):
     shutil.copy(os.path.join(os.path.dirname(os.path.realpath(__file__)), f"{script_dir}/{operation_script}"), os.path.join(os.path.dirname(os.path.realpath(__file__)), operation_script))
-    os.system("python3 " + os.path.dirname(os.path.realpath(__file__)) +  f"/{operation_script} {operation_args}")
+    exit_code = os.system("python3 " + os.path.dirname(os.path.realpath(__file__)) +  f"/{operation_script} {operation_args}")
+    if exit_code != 0:
+        sys.exit(1)
+
     os.remove(os.path.join(os.path.dirname(os.path.realpath(__file__)), f"{operation_script}"))
 
 def main(args):
