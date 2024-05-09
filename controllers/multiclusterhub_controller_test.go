@@ -438,6 +438,34 @@ var _ = Describe("MultiClusterHub controller", func() {
 			},
 		})).To(Succeed())
 
+		Expect(k8sClient.Create(context.Background(), &configv1.Authentication{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "cluster",
+			},
+			Spec: configv1.AuthenticationSpec{
+				ServiceAccountIssuer: "",
+			},
+		}))
+
+		Expect(k8sClient.Create(context.Background(), &consolev1.CloudCredential{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "cluster",
+			},
+			Spec: consolev1.CloudCredentialSpec{
+				CredentialsMode: "",
+			},
+		}))
+
+		Expect(k8sClient.Create(context.Background(), &configv1.Infrastructure{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "cluster",
+			},
+			Spec: configv1.InfrastructureSpec{
+				PlatformSpec: configv1.PlatformSpec{
+					Type: "AWS",
+				},
+			},
+		}))
 	})
 
 	Context("When updating Multiclusterhub status", func() {

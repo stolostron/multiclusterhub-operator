@@ -259,8 +259,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{RequeueAfter: utils.WarningRefreshInterval}, err
 	}
 
-	r.Log.Info(fmt.Sprintf("STS enabled: %v", stsEnabled))
-
 	// Check if the multiClusterHub instance is marked to be deleted, which is
 	// indicated by the deletion timestamp being set.
 	isHubMarkedToBeDeleted := multiClusterHub.GetDeletionTimestamp() != nil
