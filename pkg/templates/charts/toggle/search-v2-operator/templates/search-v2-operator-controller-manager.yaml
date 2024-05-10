@@ -11,6 +11,7 @@ spec:
   template:
     metadata:
       labels:
+        app: search
         control-plane: controller-manager
         ocm-antiaffinity-selector: search-v2-operator-controller-manager
     spec:
@@ -61,7 +62,7 @@ spec:
         resources:
           limits:
             cpu: 200m
-            memory: 1024Mi
+            memory: 1Gi
           requests:
             cpu: 100m
             memory: 256Mi
@@ -107,7 +108,6 @@ spec:
             port: 8081
           initialDelaySeconds: 15
           periodSeconds: 20
-        name: manager
         readinessProbe:
           httpGet:
             path: /readyz
@@ -117,7 +117,7 @@ spec:
         resources:
           limits:
             cpu: 200m
-            memory: 1024Mi
+            memory: 1Gi
           requests:
             cpu: 50m
             memory: 256Mi
