@@ -4,9 +4,69 @@ metadata:
   name: '{{ .Values.org }}:{{ .Chart.Name }}:search-v2-operator'
 rules:
 - apiGroups:
-  - monitoring.coreos.com
+  - ''
   resources:
-  - servicemonitors
+  - configmaps
+  verbs:
+  - get
+  - patch
+- apiGroups:
+  - ''
+  resources:
+  - groups
+  - secrets
+  - serviceaccounts
+  - services
+  - users
+  verbs:
+  - create
+  - delete
+  - get
+  - impersonate
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - addon.open-cluster-management.io
+  resources:
+  - addondeploymentconfigs
+  - clustermanagementaddons
+  - managedclusteraddons
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+- apiGroups:
+  - addon.open-cluster-management.io
+  resources:
+  - clustermanagementaddons/finalizers
+  - managedclusteraddons/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - addon.open-cluster-management.io
+  resources:
+  - clustermanagementaddons/status
+  - managedclusteraddons/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - apps
+  resources:
+  - deployments
   verbs:
   - create
   - delete
@@ -16,12 +76,115 @@ rules:
   - update
   - watch
 - apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authentication.k8s.io
+  - authorization.k8s.io
+  resources:
+  - uids
+  - userextras/authentication.kubernetes.io/pod-name
+  - userextras/authentication.kubernetes.io/pod-uid
+  verbs:
+  - impersonate
+- apiGroups:
+  - authentication.open-cluster-management.io
+  resources:
+  - managedserviceaccounts
+  verbs:
+  - create
+  - delete
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+  - get
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests
+  - certificatesigningrequests/approval
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - signers
+  verbs:
+  - approve
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - managedclusters
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+- apiGroups:
+  - multicluster.openshift.io
+  resources:
+  - multiclusterengines
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - operator.open-cluster-management.io
+  resources:
+  - multiclusterglobalhubs
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - proxy.open-cluster-management.io
+  resources:
+  - clusterstatuses/aggregator
+  verbs:
+  - create
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  - clusterroles
+  - rolebindings
+  - roles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+- apiGroups:
   - search.open-cluster-management.io
   resources:
   - searches
   verbs:
-  - create
-  - delete
   - get
   - list
   - patch
@@ -42,6 +205,15 @@ rules:
   - patch
   - update
 - apiGroups:
+  - work.open-cluster-management.io
+  resources:
+  - manifestworks
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -51,93 +223,5 @@ rules:
   - authorization.k8s.io
   resources:
   - subjectaccessreviews
-  verbs:
-  - create
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterrolebindings
-  - clusterroles
-  verbs:
-  - '*'
-- apiGroups:
-  - authorization.k8s.io
-  resources:
-  - subjectaccessreviews
-  verbs:
-  - get
-  - create
-- apiGroups:
-  - certificates.k8s.io
-  resources:
-  - certificatesigningrequests
-  - certificatesigningrequests/approval
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-- apiGroups:
-  - certificates.k8s.io
-  resources:
-  - signers
-  verbs:
-  - approve
-- apiGroups:
-  - cluster.open-cluster-management.io
-  resources:
-  - managedclusters
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - work.open-cluster-management.io
-  resources:
-  - manifestworks
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - delete
-  - deletecollection
-  - patch
-- apiGroups:
-  - addon.open-cluster-management.io
-  resources:
-  - managedclusteraddons
-  - addondeploymentconfigs
-  - clustermanagementaddons
-  - managedclusteraddons/finalizers
-  - clustermanagementaddons/finalizers
-  - managedclusteraddons/status
-  - clustermanagementaddons/status
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - delete
-  - patch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - roles
-  - rolebindings
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - delete
-- apiGroups:
-  - proxy.open-cluster-management.io
-  resources:
-  - clusterstatuses/aggregator
   verbs:
   - create
