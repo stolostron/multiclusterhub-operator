@@ -9,11 +9,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"testing"
 	"time"
 
 	operatorsapiv2 "github.com/operator-framework/api/pkg/operators/v2"
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
@@ -24,6 +26,7 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	consolev1 "github.com/openshift/api/operator/v1"
+	ocopv1 "github.com/openshift/api/operator/v1"
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 
@@ -42,6 +45,7 @@ import (
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
@@ -57,7 +61,9 @@ const (
 	mchNamespace = "open-cluster-management"
 )
 
-var ()
+var (
+	recon = MultiClusterHubReconciler{Client: fake.NewClientBuilder().Build()}
+)
 
 func ApplyPrereqs(k8sClient client.Client) {
 	By("Applying Namespace")
@@ -1059,3 +1065,146 @@ var _ = Describe("MultiClusterHub controller", func() {
 		Expect(testEnv.Stop()).Should(Succeed())
 	})
 })
+
+func registerScheme() {
+	configv1.AddToScheme(scheme.Scheme)
+	ocopv1.AddToScheme(scheme.Scheme)
+	operatorv1.AddToScheme(scheme.Scheme)
+	backplanev1.AddToScheme(scheme.Scheme)
+}
+
+func Test_ensureAuthenticationIssuerNotEmpty(t *testing.T) {
+	tests := []struct {
+		name string
+		auth *configv1.Authentication
+		want bool
+	}{
+		{
+			name: "should ensure authentication issuer is not empty",
+			auth: &configv1.Authentication{
+				ObjectMeta: metav1.ObjectMeta{Name: "cluster"},
+				Spec:       configv1.AuthenticationSpec{ServiceAccountIssuer: "foo"},
+			},
+			want: true,
+		},
+		{
+			name: "should ensure authentication issuer is empty",
+			auth: &configv1.Authentication{
+				ObjectMeta: metav1.ObjectMeta{Name: "cluster"},
+				Spec:       configv1.AuthenticationSpec{ServiceAccountIssuer: ""},
+			},
+			want: false,
+		},
+	}
+
+	recon := MultiClusterHubReconciler{
+		Client: fake.NewClientBuilder().Build(),
+	}
+
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer func() {
+				stsEnabledStatus = true
+				recon.Client.Delete(context.TODO(), tt.auth)
+			}()
+
+			if err := recon.Client.Create(context.TODO(), tt.auth); err != nil {
+				t.Errorf("failed to create authentication resource: %v", err)
+			}
+
+			_, authOk, _ := recon.ensureAuthenticationIssuerNotEmpty(context.TODO())
+			if authOk != tt.want {
+				t.Errorf("ensureInfrastructureAWS(ctx) = %v, want %v", authOk, tt.want)
+			}
+		})
+	}
+}
+
+func Test_ensureCloudCredentialModeManual(t *testing.T) {
+	tests := []struct {
+		name      string
+		cloudCred *ocopv1.CloudCredential
+		want      bool
+	}{
+		{
+			name: "should ensure cloud credential is Manual",
+			cloudCred: &ocopv1.CloudCredential{
+				ObjectMeta: metav1.ObjectMeta{Name: "cluster"},
+				Spec:       ocopv1.CloudCredentialSpec{CredentialsMode: "Manual"},
+			},
+			want: true,
+		},
+		{
+			name: "should ensure cloud credential is not Manual",
+			cloudCred: &ocopv1.CloudCredential{
+				ObjectMeta: metav1.ObjectMeta{Name: "cluster"},
+				Spec:       ocopv1.CloudCredentialSpec{CredentialsMode: ""},
+			},
+			want: false,
+		},
+	}
+
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer func() {
+				stsEnabledStatus = true
+				recon.Client.Delete(context.TODO(), tt.cloudCred)
+			}()
+
+			if err := recon.Client.Create(context.TODO(), tt.cloudCred); err != nil {
+				t.Errorf("failed to create authentication resource: %v", err)
+			}
+
+			_, cloudCredOK, _ := recon.ensureCloudCredentialModeManual(context.TODO())
+			if cloudCredOK != tt.want {
+				t.Errorf("ensureInfrastructureAWS(ctx) = %v, want %v", cloudCredOK, tt.want)
+			}
+		})
+	}
+}
+
+func Test_ensureInfrastructureAWS(t *testing.T) {
+	tests := []struct {
+		name  string
+		infra *configv1.Infrastructure
+		want  bool
+	}{
+		{
+			name: "should ensure infrastructure is AWS",
+			infra: &configv1.Infrastructure{
+				ObjectMeta: metav1.ObjectMeta{Name: "cluster"},
+				Spec:       configv1.InfrastructureSpec{PlatformSpec: configv1.PlatformSpec{Type: "AWS"}},
+			},
+			want: true,
+		},
+		{
+			name: "should ensure infrastructure is not AWS",
+			infra: &configv1.Infrastructure{
+				ObjectMeta: metav1.ObjectMeta{Name: "cluster"},
+				Spec:       configv1.InfrastructureSpec{PlatformSpec: configv1.PlatformSpec{Type: "Azure"}},
+			},
+			want: false,
+		},
+	}
+
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer func() {
+				stsEnabledStatus = true
+				recon.Client.Delete(context.TODO(), tt.infra)
+			}()
+
+			if err := recon.Client.Create(context.TODO(), tt.infra); err != nil {
+				t.Errorf("failed to create authentication resource: %v", err)
+			}
+
+			_, infraOk, _ := recon.ensureInfrastructureAWS(context.TODO())
+			if infraOk != tt.want {
+				t.Errorf("ensureInfrastructureAWS(ctx) = %v, want %v", infraOk, tt.want)
+			}
+		})
+	}
+}
