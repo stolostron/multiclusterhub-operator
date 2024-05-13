@@ -9,7 +9,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
@@ -20,11 +19,6 @@ import (
 
 var r = MultiClusterHubReconciler{
 	Client: fake.NewClientBuilder().Build(),
-}
-
-func registerScheme() {
-	operatorv1.AddToScheme(scheme.Scheme)
-	backplanev1.AddToScheme(scheme.Scheme)
 }
 
 // func Test_HostedReconcile(t *testing.T) {

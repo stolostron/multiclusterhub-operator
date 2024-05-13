@@ -10,6 +10,7 @@ global:
   namespace: default
   hubSize: Small
 hubconfig:
+  clusterSTSEnabled: false
   nodeSelector: null
   replicaCount: 1
   proxyConfigs: {}

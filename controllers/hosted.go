@@ -24,13 +24,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 func (r *MultiClusterHubReconciler) HostedReconcile(ctx context.Context, mch *operatorv1.MultiClusterHub) (retRes ctrl.Result, retErr error) {
-	log := log.Log.WithName("reconcile")
-
 	defer func() {
 		statusQueue, statusError := r.updateHostedHubStatus(mch) //1
 		if statusError != nil {
@@ -99,8 +96,6 @@ func (r *MultiClusterHubReconciler) HostedReconcile(ctx context.Context, mch *op
 
 // setHostedDefaults configures the MCH with default values and updates
 func (r *MultiClusterHubReconciler) setHostedDefaults(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
-	log := log.Log.WithName("reconcile")
-
 	updateNecessary := false
 	if !operatorv1.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {
 		m.Spec.AvailabilityConfig = operatorv1.HAHigh
