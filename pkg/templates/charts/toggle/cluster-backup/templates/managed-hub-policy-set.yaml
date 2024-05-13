@@ -11,4 +11,3 @@ spec:
   policies:
     - backup-restore-enabled
     - backup-restore-auto-import
-    - backup-restore-oadp
