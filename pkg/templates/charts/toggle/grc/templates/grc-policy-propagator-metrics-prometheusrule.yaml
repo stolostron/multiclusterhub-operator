@@ -1,5 +1,5 @@
 # Copyright Contributors to the Open Cluster Management project
-
+{{- if eq .Values.global.deployOnOCP "true" }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -24,3 +24,4 @@ spec:
       expr: count by (policy) (policy_governance_info{type="propagated"})
     - record: policy:policy_governance_info:propagated_noncompliant_count
       expr: count by (policy) (policy_governance_info{type="propagated"}==1)
+{{- end }}

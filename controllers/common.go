@@ -534,6 +534,12 @@ func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context) (ctrl.R
 		return ctrl.Result{}, nil
 	}
 
+	// TODO: need to remove after mce can work well.
+	//  added for test because mce is always progressing if hypershift addon is not ready.
+	if !utils.DeployOnOCP() {
+		return ctrl.Result{}, nil
+	}
+
 	if existingMCE.Status.CurrentVersion == "" {
 		r.Log.Info(fmt.Sprintf("Multiclusterengine: %s is not yet available", existingMCE.GetName()))
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
@@ -856,6 +862,9 @@ func (r *MultiClusterHubReconciler) ensureNoSearchCR(m *operatorv1.MultiClusterH
 // Checks if OCP Console is enabled and return true if so. If <OCP v4.12, always return true
 // Otherwise check in the EnabledCapabilities spec for OCP console
 func (r *MultiClusterHubReconciler) CheckConsole(ctx context.Context) (bool, error) {
+	if !utils.DeployOnOCP() {
+		return false, nil
+	}
 	versionStatus := &configv1.ClusterVersion{}
 	err := r.Client.Get(ctx, types.NamespacedName{Name: "version"}, versionStatus)
 	if err != nil {

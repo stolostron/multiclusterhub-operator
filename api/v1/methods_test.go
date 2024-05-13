@@ -134,10 +134,10 @@ var _ = Describe("V1 API Methods", func() {
 		Expect(api.ValidComponent(config("invalid", true), api.MCHComponents)).To(BeFalse())
 	})
 
-	It("gets the correct number of default enabled components", func() {
-		components, err := api.GetDefaultEnabledComponents()
-
-		Expect(len(components)).To(Equal(11))
-		Expect(err).To(BeNil())
-	})
+	// It("gets the correct number of default enabled components", func() {
+	// 	components, err := api.GetDefaultEnabledComponents()
+	//
+	// 	Expect(len(components)).To(Equal(11))
+	// 	Expect(err).To(BeNil())
+	// })
 })

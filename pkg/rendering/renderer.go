@@ -43,6 +43,7 @@ type Global struct {
 	Source              string               `json:"source" structs:"source"`
 	SourceNamespace     string               `json:"sourceNamespace" structs:"sourceNamespace"`
 	HubSize             v1.HubSize           `json:"hubSize" structs:"hubSize" yaml:"hubSize"`
+	DeployOnOCP         string               `json:"deployOnOCP" structs:"deployOnOCP"`
 }
 
 type HubConfig struct {
@@ -85,7 +86,7 @@ func (u *Toleration) MarshalJSON() ([]byte, error) {
 	var operator corev1.TolerationOperator = u.Operator
 	var effect corev1.TaintEffect = u.Effect
 
-	//Marshal all Toleration fields that are a number or true/false into a string
+	// Marshal all Toleration fields that are a number or true/false into a string
 	for i := 0; i < reflect.Indirect(v).NumField(); i++ {
 		switch reflect.Indirect(v).Field(i).Kind() {
 		case reflect.String:
@@ -278,13 +279,20 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 	}
 
 	for fileName, templateFile := range rawTemplates {
+		if len(templateFile) == 0 {
+			continue
+		}
 		unstructured := &unstructured.Unstructured{}
 		if err = yaml.Unmarshal([]byte(templateFile), unstructured); err != nil {
 			return nil, append(errs, fmt.Errorf("error converting file %s to unstructured: %v", fileName, err))
 		}
 
+		kind := unstructured.GetKind()
+		if kind == "" {
+			continue
+		}
 		// Add namespace to namespaced resources
-		switch unstructured.GetKind() {
+		switch kind {
 		case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service", "ConfigMap", "Ingress", "Channel", "Subscription":
 			if unstructured.GetNamespace() == "" {
 				unstructured.SetNamespace(mch.Namespace)
@@ -315,6 +323,10 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 
 	// TODO: remove this when mch.Spec.HubSize is valid again
 	values.Global.HubSize = utils.GetHubSize(mch)
+
+	if utils.DeployOnOCP() {
+		values.Global.DeployOnOCP = "true"
+	}
 
 	values.HubConfig.ReplicaCount = utils.DefaultReplicaCount(mch)
 

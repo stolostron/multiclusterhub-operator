@@ -58,6 +58,30 @@ func getKlusterletAddonConfig() *unstructured.Unstructured {
 			},
 		},
 	}
+
+	if !utils.DeployOnOCP() {
+		klusterletaddonconfig.Object["spec"] = map[string]interface{}{
+			"applicationManager": map[string]interface{}{
+				"enabled": false,
+			},
+			"connectionManager": map[string]interface{}{
+				"enabledGlobalView": false,
+			},
+			"policyController": map[string]interface{}{
+				"enabled": true,
+			},
+			"prometheusIntegration": map[string]interface{}{
+				"enabled": false,
+			},
+			"searchCollector": map[string]interface{}{
+				"enabled": false,
+			},
+			"certPolicyController": map[string]interface{}{
+				"enabled": true,
+			},
+		}
+	}
+
 	return klusterletaddonconfig
 }
 

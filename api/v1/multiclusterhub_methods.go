@@ -85,6 +85,14 @@ var MCEComponents = []string{
 	MCEServerFoundation,
 }
 
+// MCEComponentsOnNonOCP is a slice containing component names specific to the "MCE" category when deploy on non ocp.
+var MCEComponentsOnNonOCP = []string{
+	MCEClusterManager,
+	MCEHypershift,
+	MCEHypershiftLocalHosting,
+	MCEServerFoundation,
+}
+
 /*
 LegacyConfigKind is a slice of strings that represents the legacy resource kinds
 supported by the Operator SDK and Prometheus. These kinds include "PrometheusRule", "Service",
@@ -117,53 +125,6 @@ var ClusterManagementAddOns = map[string]string{
 	IamPolicyController: "iam-policy-controller",
 	SubmarinerAddon:     "submariner",
 	// Add other components here when ClusterManagementAddOns is required.
-}
-
-/*
-GetDefaultEnabledComponents returns a slice of default enabled component names.
-It is expected to be used to get a list of components that are enabled by default.
-*/
-func GetDefaultEnabledComponents() ([]string, error) {
-	defaultEnabledComponents := []string{
-		// Repo,
-		Appsub,
-		ClusterLifecycle,
-		ClusterPermission,
-		Console,
-		GRC,
-		Insights,
-		MultiClusterEngine,
-		MultiClusterObservability,
-		Search,
-		SubmarinerAddon,
-		Volsync,
-	}
-
-	return defaultEnabledComponents, nil
-}
-
-/*
-GetDefaultDisabledComponents returns a slice of default disabled component names.
-It is expected to be used to get a list of components that are disabled by default.
-*/
-func GetDefaultDisabledComponents() ([]string, error) {
-	defaultDisabledComponents := []string{
-		ClusterBackup,
-	}
-	return defaultDisabledComponents, nil
-}
-
-/*
-GetDefaultHostedComponents returns a slice of default hosted components.
-These are components that are hosted within the system.
-*/
-func GetDefaultHostedComponents() []string {
-	defaultHostedComponents := []string{
-		MultiClusterEngine,
-		// Add other components here when added to hostedmode
-	}
-
-	return defaultHostedComponents
 }
 
 // GetClusterManagementAddonName returns the name of the ClusterManagementAddOn based on the provided component name.

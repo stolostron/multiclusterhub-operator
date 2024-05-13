@@ -404,7 +404,9 @@ func (r *CertGenerator) InjectCABundle(ctx context.Context, configmaps, validati
 			errs = append(errs, err)
 		default:
 			copyTargetConfigmap := targetConfigmap.DeepCopy()
-			if cb := copyTargetConfigmap.Data["ca-bundle.crt"]; len(cb) == 0 || cb != string(caBundle) {
+			if copyTargetConfigmap.Data == nil {
+				copyTargetConfigmap.Data = map[string]string{"ca-bundle.crt": string(caBundle)}
+			} else if cb := copyTargetConfigmap.Data["ca-bundle.crt"]; len(cb) == 0 || cb != string(caBundle) {
 				copyTargetConfigmap.Data["ca-bundle.crt"] = string(caBundle)
 				_, err = r.Client.CoreV1().ConfigMaps(r.Namespace).Update(ctx, copyTargetConfigmap, metav1.UpdateOptions{})
 				if err != nil {

@@ -36,7 +36,11 @@ const (
 	GpchAPICertSecretName = "governance-policy-compliance-history-api-cert"
 	GpchAPIServiceName    = "governance-policy-compliance-history-api"
 
-	GRCCABundleConfigmapName = "grc-ca-bundle"
+	GRCMetricCertSecretName  = "grc-grc-metrics-cert"
+	GRCMetricCertServiceName = "grc-policy-propagator-metrics"
+
+	GRCCABundleConfigmapName     = "grc-ca-bundle"
+	TrustedCABundleConfigmapName = "trusted-ca-bundle"
 )
 
 // Reconciler reconciles for the webhooks
@@ -81,6 +85,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (retRes ct
 		return ctrl.Result{}, err
 	}
 
+	err = r.CertGenerator.EnsureTargetCertKeyPair(ctx, signingCertKeyPair, cabundleCerts,
+		GRCMetricCertSecretName, GRCMetricCertServiceName)
+	if err != nil {
+		r.Log.Error(err, "failed to generate certKey secret grc metric ")
+		return ctrl.Result{}, err
+	}
+
 	err = r.CertGenerator.DumpCertSecret(ctx, MCHWebhookCertSecretName, MCHWebhookCertDir)
 	if err != nil {
 		r.Log.Error(err, "failed to write certKey into /tmp/k8s-webhook-server/serving-certs")
@@ -88,7 +99,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (retRes ct
 	}
 
 	err = r.CertGenerator.InjectCABundle(ctx,
-		[]string{GRCCABundleConfigmapName},
+		[]string{TrustedCABundleConfigmapName, GRCCABundleConfigmapName},
 		[]string{MCHValidatingWebhookName, PropagatorValidatingWebhookName},
 		[]string{})
 	if err != nil {

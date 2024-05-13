@@ -2,7 +2,6 @@
 
 /*
 Copyright 2021.
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -54,16 +53,17 @@ var (
 			ExceptionTotal: 1,
 			Exceptions:     []string{"local-cluster"},
 		},
-		{
-			Name: "MultiClusterObservability",
-			GVK: schema.GroupVersionKind{
-				Group:   "observability.open-cluster-management.io",
-				Version: "v1beta2",
-				Kind:    "MultiClusterObservabilityList",
-			},
-			ExceptionTotal: 0,
-			Exceptions:     []string{},
-		},
+		// TODO: add back after add inject cabundle to the crds
+		// {
+		// 	Name: "MultiClusterObservability",
+		// 	GVK: schema.GroupVersionKind{
+		// 		Group:   "observability.open-cluster-management.io",
+		// 		Version: "v1beta2",
+		// 		Kind:    "MultiClusterObservabilityList",
+		// 	},
+		// 	ExceptionTotal: 0,
+		// 	Exceptions:     []string{},
+		// },
 		{
 			Name: "DiscoveryConfig",
 			GVK: schema.GroupVersionKind{
@@ -104,7 +104,7 @@ func (r *MultiClusterHub) Default() {
 	mchlog.Info("default", "name", r.Name)
 }
 
-//+kubebuilder:webhook:name=multiclusterhub-operator-validating-webhook,path=/validate-operator-open-cluster-management-io-v1-multiclusterhub,mutating=false,failurePolicy=fail,sideEffects=None,groups=operator.open-cluster-management.io,resources=multiclusterhubs,verbs=create;update;delete,versions=v1,name=multiclusterhub.validating-webhook.open-cluster-management.io,admissionReviewVersions={v1,v1beta1}
+// +kubebuilder:webhook:name=multiclusterhub-operator-validating-webhook,path=/validate-operator-open-cluster-management-io-v1-multiclusterhub,mutating=false,failurePolicy=fail,sideEffects=None,groups=operator.open-cluster-management.io,resources=multiclusterhubs,verbs=create;update;delete,versions=v1,name=multiclusterhub.validating-webhook.open-cluster-management.io,admissionReviewVersions={v1,v1beta1}
 
 var _ webhook.Validator = &MultiClusterHub{}
 

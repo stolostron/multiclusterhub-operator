@@ -524,11 +524,11 @@ func appendIfMissing(slice []corev1.EnvVar, s corev1.EnvVar) []corev1.EnvVar {
 // SetDefaultComponents returns true if changes are made
 func SetDefaultComponents(m *operatorsv1.MultiClusterHub) (bool, error) {
 	updated := false
-	defaultEnabledComponents, err := operatorsv1.GetDefaultEnabledComponents()
+	defaultEnabledComponents, err := GetDefaultEnabledComponents()
 	if err != nil {
 		return updated, err
 	}
-	defaultDisabledComponents, err := operatorsv1.GetDefaultDisabledComponents()
+	defaultDisabledComponents, err := GetDefaultDisabledComponents()
 	if err != nil {
 		return true, err
 	}
@@ -550,7 +550,7 @@ func SetDefaultComponents(m *operatorsv1.MultiClusterHub) (bool, error) {
 // SetHostedDefaultComponents returns true if changes are made
 func SetHostedDefaultComponents(m *operatorsv1.MultiClusterHub) bool {
 	updated := false
-	components := operatorsv1.GetDefaultHostedComponents()
+	components := GetDefaultHostedComponents()
 	for _, c := range components {
 		if !m.ComponentPresent(c) {
 			m.Enable(c)
@@ -596,7 +596,11 @@ func deduplicate(config []operatorsv1.ComponentConfig) []operatorsv1.ComponentCo
 // getMCEComponents returns mce components that are present in mch
 func GetMCEComponents(mch *operatorsv1.MultiClusterHub) []mcev1.ComponentConfig {
 	config := []mcev1.ComponentConfig{}
-	for _, n := range operatorsv1.MCEComponents {
+	mceComponents := operatorsv1.MCEComponents
+	if !DeployOnOCP() {
+		mceComponents = operatorsv1.MCEComponentsOnNonOCP
+	}
+	for _, n := range mceComponents {
 		if mch.ComponentPresent(n) {
 			config = append(config, mcev1.ComponentConfig{Name: n, Enabled: mch.Enabled(n)})
 		}
@@ -667,4 +671,72 @@ func DetectOpenShift(kubeConfig *rest.Config) error {
 		return err
 	}
 	return nil
+}
+
+/*
+GetDefaultEnabledComponents returns a slice of default enabled component names.
+It is expected to be used to get a list of components that are enabled by default.
+*/
+func GetDefaultEnabledComponents() ([]string, error) {
+	defaultEnabledComponents := []string{
+		// Repo,
+		operatorsv1.Appsub,
+		operatorsv1.ClusterLifecycle,
+		operatorsv1.ClusterPermission,
+		operatorsv1.Console,
+		operatorsv1.GRC,
+		operatorsv1.Insights,
+		operatorsv1.MultiClusterEngine,
+		operatorsv1.MultiClusterObservability,
+		operatorsv1.Search,
+		operatorsv1.SubmarinerAddon,
+		operatorsv1.Volsync,
+	}
+
+	if !DeployOnOCP() {
+		defaultEnabledComponents = []string{
+			operatorsv1.GRC,
+			operatorsv1.MultiClusterEngine,
+		}
+	}
+
+	return defaultEnabledComponents, nil
+}
+
+/*
+GetDefaultDisabledComponents returns a slice of default disabled component names.
+It is expected to be used to get a list of components that are disabled by default.
+*/
+func GetDefaultDisabledComponents() ([]string, error) {
+	defaultDisabledComponents := []string{
+		operatorsv1.ClusterBackup,
+	}
+	if !DeployOnOCP() {
+		defaultDisabledComponents = []string{
+			operatorsv1.Appsub,
+			operatorsv1.ClusterLifecycle,
+			operatorsv1.ClusterPermission,
+			operatorsv1.Console,
+			operatorsv1.ClusterBackup,
+			operatorsv1.Insights,
+			operatorsv1.MultiClusterObservability,
+			operatorsv1.Search,
+			operatorsv1.SubmarinerAddon,
+			operatorsv1.Volsync,
+		}
+	}
+	return defaultDisabledComponents, nil
+}
+
+/*
+GetDefaultHostedComponents returns a slice of default hosted components.
+These are components that are hosted within the system.
+*/
+func GetDefaultHostedComponents() []string {
+	defaultHostedComponents := []string{
+		operatorsv1.MultiClusterEngine,
+		// Add other components here when added to hostedmode
+	}
+
+	return defaultHostedComponents
 }
