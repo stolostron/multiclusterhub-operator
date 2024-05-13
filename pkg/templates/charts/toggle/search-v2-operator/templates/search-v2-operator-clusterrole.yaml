@@ -61,6 +61,7 @@ rules:
   - managedclusteraddons/status
   verbs:
   - get
+  - patch
   - update
 - apiGroups:
   - apps
