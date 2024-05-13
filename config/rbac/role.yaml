@@ -88,7 +88,13 @@ rules:
   - serviceaccounts
   - services
   verbs:
-  - '*'
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - ""
   resources:
@@ -148,6 +154,23 @@ rules:
   - create
   - delete
   - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - groups
+  - secrets
+  - serviceaccounts
+  - services
+  - users
+  verbs:
+  - create
+  - delete
+  - get
+  - impersonate
   - list
   - patch
   - update
@@ -564,68 +587,69 @@ rules:
   resources:
   - addondeploymentconfigs
   - clustermanagementaddons
-  - clustermanagementaddons/finalizers
-  - clustermanagementaddons/status
   - managedclusteraddons
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+- apiGroups:
+  - addon.open-cluster-management.io
+  resources:
+  - clustermanagementaddons
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - addon.open-cluster-management.io
+  resources:
+  - clustermanagementaddons
+  - clustermanagementaddons/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - addon.open-cluster-management.io
+  resources:
+  - clustermanagementaddons
+  - managedclusteraddons
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - addon.open-cluster-management.io
+  resources:
+  - clustermanagementaddons
+  - managedclusteraddons
+  - managedclusteraddons/status
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - addon.open-cluster-management.io
+  resources:
+  - clustermanagementaddons/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - addon.open-cluster-management.io
+  resources:
+  - clustermanagementaddons/finalizers
   - managedclusteraddons/finalizers
-  - managedclusteraddons/status
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - addon.open-cluster-management.io
-  resources:
-  - clustermanagementaddons
-  verbs:
-  - create
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - addon.open-cluster-management.io
-  resources:
-  - clustermanagementaddons
-  - clustermanagementaddons/finalizers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - update
-  - watch
-- apiGroups:
-  - addon.open-cluster-management.io
-  resources:
-  - clustermanagementaddons
-  - managedclusteraddons
-  verbs:
-  - list
-  - watch
-- apiGroups:
-  - addon.open-cluster-management.io
-  resources:
-  - clustermanagementaddons
-  - managedclusteraddons
-  - managedclusteraddons/status
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - addon.open-cluster-management.io
-  resources:
-  - clustermanagementaddons/finalizers
   verbs:
   - update
 - apiGroups:
@@ -633,6 +657,15 @@ rules:
   resources:
   - clustermanagementaddons/status
   verbs:
+  - patch
+  - update
+- apiGroups:
+  - addon.open-cluster-management.io
+  resources:
+  - clustermanagementaddons/status
+  - managedclusteraddons/status
+  verbs:
+  - get
   - patch
   - update
 - apiGroups:
@@ -879,6 +912,18 @@ rules:
   - apps
   resources:
   - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
   - deployments/finalizers
   verbs:
   - create
@@ -894,8 +939,13 @@ rules:
   - deployments
   - replicasets
   verbs:
-  - '*'
+  - create
+  - delete
   - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -960,10 +1010,21 @@ rules:
   verbs:
   - create
 - apiGroups:
+  - authentication.k8s.io
+  - authorization.k8s.io
+  resources:
+  - uids
+  - userextras/authentication.kubernetes.io/pod-name
+  - userextras/authentication.kubernetes.io/pod-uid
+  verbs:
+  - impersonate
+- apiGroups:
   - authentication.open-cluster-management.io
   resources:
   - managedserviceaccounts
   verbs:
+  - create
+  - delete
   - get
   - list
   - watch
@@ -1420,6 +1481,13 @@ rules:
 - apiGroups:
   - operator.open-cluster-management.io
   resources:
+  - multiclusterglobalhubs
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - operator.open-cluster-management.io
+  resources:
   - multiclusterhubs
   verbs:
   - get
@@ -1568,13 +1636,6 @@ rules:
   resources:
   - clusterrolebindings
   - clusterroles
-  verbs:
-  - '*'
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterrolebindings
-  - clusterroles
   - rolebindings
   - roles
   verbs:
@@ -1690,8 +1751,6 @@ rules:
   resources:
   - searches
   verbs:
-  - create
-  - delete
   - get
   - list
   - patch
