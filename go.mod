@@ -8,7 +8,8 @@ require (
 	github.com/go-logr/logr v1.4.1
 	github.com/onsi/ginkgo/v2 v2.17.1
 	github.com/onsi/gomega v1.32.0
-	github.com/openshift/api v0.0.0-20240404200104-96ed2d49b255
+	github.com/openshift/api v0.0.0-20240424142232-29a704bf5aa2
+	github.com/openshift/library-go v0.0.0-20240506162756-6301addeda88
 	github.com/operator-framework/api v0.23.0
 	github.com/operator-framework/operator-lib v0.12.0
 	github.com/operator-framework/operator-lifecycle-manager v0.22.0
@@ -23,6 +24,7 @@ require (
 	k8s.io/apimachinery v0.29.3
 	k8s.io/client-go v0.29.3
 	k8s.io/klog v1.0.0
+	k8s.io/klog/v2 v2.120.1
 	k8s.io/kube-aggregator v0.29.3
 	k8s.io/utils v0.0.0-20240310230437-4693a0247e57
 	open-cluster-management.io/api v0.13.0
@@ -102,9 +104,10 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	k8s.io/apiserver v0.29.3 // indirect
 	k8s.io/component-base v0.29.3 // indirect
-	k8s.io/klog/v2 v2.120.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20240403164606-bc84c2ddaf99 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
+	sigs.k8s.io/kube-storage-version-migrator v0.0.6-0.20230721195810-5c8923c5ff96 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 )
