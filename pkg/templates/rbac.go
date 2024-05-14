@@ -52,6 +52,9 @@ var resources = []string{
 	"ValidatingWebhookConfiguration",
 	"AddOnDeploymentConfig",
 	"AddOnTemplate",
+	"Subscription",
+	"OperatorGroup",
+	"ConfigMap",
 }
 
 func main() {
