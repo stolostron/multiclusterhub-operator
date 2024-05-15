@@ -9,7 +9,7 @@ rules:
   - configmaps
   verbs:
   - get
-  - patch
+  - update
 - apiGroups:
   - ''
   resources:
