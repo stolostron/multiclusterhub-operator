@@ -6,6 +6,13 @@ import (
 	"os"
 )
 
+type ResourceGVK struct {
+	Group   string `json:"group"`
+	Kind    string `json:"kind"`
+	Name    string `json:"name"`
+	Version string `json:"version"`
+}
+
 // Name of the MultiClusterHub (MCH) operator.
 const MCH = "multiclusterhub-operator"
 
@@ -83,6 +90,15 @@ var MCEComponents = []string{
 	MCEManagedServiceAccountPreview,
 	MCEManagedServiceAccount,
 	MCEServerFoundation,
+}
+
+var MCECRDs = []ResourceGVK{
+	{
+		Group:   "addon.open-cluster-management.io",
+		Version: "v1alpha1",
+		Kind:    "ClusterManagementAddOn",
+		Name:    "clustermanagementaddons.addon.open-cluster-management.io",
+	},
 }
 
 /*
@@ -323,28 +339,28 @@ func IsCommunity() (bool, error) {
 }
 
 // func (h HubSize) String() string {
-// 	return HubSizeStrings[h]
+//  return HubSizeStrings[h]
 // }
 
 // func (h *HubSize) UnmarshalJSON(b []byte) error {
-// 	fmt.Printf("Unmarshaling JSON is occuring: %v\n", string(b))
-// 	var hubsize string
-// 	if err := json.Unmarshal(b, &hubsize); err != nil {
-// 		return err
-// 	}
+//  fmt.Printf("Unmarshaling JSON is occuring: %v\n", string(b))
+//  var hubsize string
+//  if err := json.Unmarshal(b, &hubsize); err != nil {
+//      return err
+//  }
 
-// 	fmt.Printf("HubSize: %v\n", hubsize)
+//  fmt.Printf("HubSize: %v\n", hubsize)
 
-// 	var exists bool
-// 	hubsizeobj, exists := HubSizeFromString[hubsize]
+//  var exists bool
+//  hubsizeobj, exists := HubSizeFromString[hubsize]
 
-// 	if !exists {
-// 		return fmt.Errorf("key %v does not exist in map", hubsize)
-// 	}
+//  if !exists {
+//      return fmt.Errorf("key %v does not exist in map", hubsize)
+//  }
 
-// 	fmt.Printf("Hubsize: %v\n", hubsizeobj)
-// 	*h = hubsizeobj
-// 	return nil
+//  fmt.Printf("Hubsize: %v\n", hubsizeobj)
+//  *h = hubsizeobj
+//  return nil
 // }
 
 // IsInHostedMode returns true if mch is configured for hosted mode

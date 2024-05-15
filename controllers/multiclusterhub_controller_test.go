@@ -1105,7 +1105,7 @@ func Test_ensureAuthenticationIssuerNotEmpty(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			defer func() {
-				stsEnabledStatus = true
+				STSEnabledStatus = true
 				recon.Client.Delete(context.TODO(), tt.auth)
 			}()
 
@@ -1149,7 +1149,7 @@ func Test_ensureCloudCredentialModeManual(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			defer func() {
-				stsEnabledStatus = true
+				STSEnabledStatus = true
 				recon.Client.Delete(context.TODO(), tt.cloudCred)
 			}()
 
@@ -1193,7 +1193,7 @@ func Test_ensureInfrastructureAWS(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			defer func() {
-				stsEnabledStatus = true
+				STSEnabledStatus = true
 				recon.Client.Delete(context.TODO(), tt.infra)
 			}()
 

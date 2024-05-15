@@ -178,19 +178,19 @@ var _ = Describe("utility functions", func() {
 		})
 		It("gets deployments for status with mcho-repo disabled", func() {
 			mch := resources.EmptyMCH()
-			d := GetDeploymentsForStatus(&mch, true)
+			d := GetDeploymentsForStatus(&mch, true, false)
 			Expect(len(d)).To(Equal(0))
 		})
 		It("gets deployments for status with insights enabled", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable("insights")
-			d := GetDeploymentsForStatus(&mch, true)
+			d := GetDeploymentsForStatus(&mch, true, false)
 			Expect(len(d)).To(Equal(2))
 		})
 		It("gets deployments for status with cluster-lifecycle enabled", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(mchv1.ClusterLifecycle)
-			d := GetDeploymentsForStatus(&mch, true)
+			d := GetDeploymentsForStatus(&mch, true, false)
 			Expect(len(d)).To(Equal(1))
 		})
 		It("gets deployments for status with cluster-backkup enabled", func() {
@@ -200,37 +200,37 @@ var _ = Describe("utility functions", func() {
 		It("gets deployments for status with grc enabled", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(mchv1.GRC)
-			d := GetDeploymentsForStatus(&mch, true)
+			d := GetDeploymentsForStatus(&mch, true, false)
 			Expect(len(d)).To(Equal(2))
 		})
 		It("gets deployments for status with app-lifecycle enabled", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(mchv1.Appsub)
-			d := GetDeploymentsForStatus(&mch, true)
+			d := GetDeploymentsForStatus(&mch, true, false)
 			Expect(len(d)).To(Equal(5))
 		})
 		It("gets deployments for status with console enabled", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(mchv1.Console)
-			d := GetDeploymentsForStatus(&mch, true)
+			d := GetDeploymentsForStatus(&mch, true, false)
 			Expect(len(d)).To(Equal(1))
 		})
 		It("gets deployments for status with observability enabled", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(mchv1.MultiClusterObservability)
-			d := GetDeploymentsForStatus(&mch, true)
+			d := GetDeploymentsForStatus(&mch, true, false)
 			Expect(len(d)).To(Equal(1))
 		})
 		It("gets deployments for status with volsync enabled", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(mchv1.Volsync)
-			d := GetDeploymentsForStatus(&mch, true)
+			d := GetDeploymentsForStatus(&mch, true, false)
 			Expect(len(d)).To(Equal(1))
 		})
 		It("gets deployments for status with cluster-permission enabled", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(mchv1.ClusterPermission)
-			d := GetDeploymentsForStatus(&mch, true)
+			d := GetDeploymentsForStatus(&mch, true, false)
 			Expect(len(d)).To(Equal(1))
 		})
 		It("Sets Default Component values", func() {
