@@ -178,19 +178,19 @@ var _ = Describe("utility functions", func() {
 		})
 		It("gets deployments for status with mcho-repo disabled", func() {
 			mch := resources.EmptyMCH()
-			d := GetDeploymentsForStatus(&mch, true)
+			d := GetDeploymentsForStatus(&mch, true, false)
 			Expect(len(d)).To(Equal(0))
 		})
 		It("gets deployments for status with insights enabled", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable("insights")
-			d := GetDeploymentsForStatus(&mch, true)
+			d := GetDeploymentsForStatus(&mch, true, false)
 			Expect(len(d)).To(Equal(2))
 		})
 		It("gets deployments for status with cluster-lifecycle enabled", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(mchv1.ClusterLifecycle)
-			d := GetDeploymentsForStatus(&mch, true)
+			d := GetDeploymentsForStatus(&mch, true, false)
 			Expect(len(d)).To(Equal(1))
 		})
 		It("gets deployments for status with cluster-backkup enabled", func() {
@@ -200,37 +200,37 @@ var _ = Describe("utility functions", func() {
 		It("gets deployments for status with grc enabled", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(mchv1.GRC)
-			d := GetDeploymentsForStatus(&mch, true)
+			d := GetDeploymentsForStatus(&mch, true, false)
 			Expect(len(d)).To(Equal(2))
 		})
 		It("gets deployments for status with app-lifecycle enabled", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(mchv1.Appsub)
-			d := GetDeploymentsForStatus(&mch, true)
+			d := GetDeploymentsForStatus(&mch, true, false)
 			Expect(len(d)).To(Equal(5))
 		})
 		It("gets deployments for status with console enabled", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(mchv1.Console)
-			d := GetDeploymentsForStatus(&mch, true)
+			d := GetDeploymentsForStatus(&mch, true, false)
 			Expect(len(d)).To(Equal(1))
 		})
 		It("gets deployments for status with observability enabled", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(mchv1.MultiClusterObservability)
-			d := GetDeploymentsForStatus(&mch, true)
+			d := GetDeploymentsForStatus(&mch, true, false)
 			Expect(len(d)).To(Equal(1))
 		})
 		It("gets deployments for status with volsync enabled", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(mchv1.Volsync)
-			d := GetDeploymentsForStatus(&mch, true)
+			d := GetDeploymentsForStatus(&mch, true, false)
 			Expect(len(d)).To(Equal(1))
 		})
 		It("gets deployments for status with cluster-permission enabled", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(mchv1.ClusterPermission)
-			d := GetDeploymentsForStatus(&mch, true)
+			d := GetDeploymentsForStatus(&mch, true, false)
 			Expect(len(d)).To(Equal(1))
 		})
 		It("Sets Default Component values", func() {
@@ -685,4 +685,66 @@ func TestUpdateMCEOverrides(t *testing.T) {
 		}
 	}
 	// Ok if local-cluster not found
+}
+
+func Test_GetDeploymentsForStatus(t *testing.T) {
+	tests := []struct {
+		name       string
+		mch        mchv1.MultiClusterHub
+		stsEnabled bool
+		want       int
+	}{
+		{
+			name:       "should get deployment status for MCH components",
+			mch:        resources.EmptyMCH(),
+			stsEnabled: false,
+			want:       19,
+		},
+		{
+			name: "should get deployment status for MCH components with STS enabled",
+			mch: mchv1.MultiClusterHub{
+				Spec: mchv1.MultiClusterHubSpec{
+					Overrides: &mchv1.Overrides{
+						Components: []mchv1.ComponentConfig{
+							{
+								Name:    mchv1.ClusterBackup,
+								Enabled: true,
+							},
+						},
+					},
+				},
+			},
+			stsEnabled: true,
+			want:       20,
+		},
+		{
+			name: "should get deployment status for MCH components with STS disabled",
+			mch: mchv1.MultiClusterHub{
+				Spec: mchv1.MultiClusterHubSpec{
+					Overrides: &mchv1.Overrides{
+						Components: []mchv1.ComponentConfig{
+							{
+								Name:    mchv1.ClusterBackup,
+								Enabled: true,
+							},
+						},
+					},
+				},
+			},
+			stsEnabled: false,
+			want:       21,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if _, err := SetDefaultComponents(&tt.mch); err != nil {
+				t.Errorf("failed to set default components: %v", err)
+			}
+
+			if deployments := GetDeploymentsForStatus(&tt.mch, true, tt.stsEnabled); len(deployments) != tt.want {
+				t.Errorf("expected %v, got %v", len(deployments), tt.want)
+			}
+		})
+	}
 }

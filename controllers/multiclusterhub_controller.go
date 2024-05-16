@@ -41,6 +41,7 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -92,7 +93,7 @@ const (
 
 var (
 	log              = logf.Log.WithName("reconcile")
-	stsEnabledStatus = false
+	STSEnabledStatus = false
 )
 
 //+kubebuilder:rbac:groups="";"admissionregistration.k8s.io";"apiextensions.k8s.io";"apiregistration.k8s.io";"apps";"apps.open-cluster-management.io";"authorization.k8s.io";"hive.openshift.io";"mcm.ibm.com";"proxy.open-cluster-management.io";"rbac.authorization.k8s.io";"security.openshift.io";"clusterview.open-cluster-management.io";"discovery.open-cluster-management.io";"wgpolicyk8s.io",resources=apiservices;channels;clusterjoinrequests;clusterrolebindings;clusterstatuses/log;configmaps;customresourcedefinitions;deployments;discoveryconfigs;hiveconfigs;mutatingwebhookconfigurations;validatingwebhookconfigurations;namespaces;pods;policyreports;replicasets;rolebindings;secrets;serviceaccounts;services;subjectaccessreviews;subscriptions;helmreleases;managedclusters;managedclustersets,verbs=get
@@ -181,9 +182,17 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
+	/*
+	   In ACM 2.11, we need to determine if the operator is running in a STS enabled environment.
+	*/
+	stsEnabled, err := r.isSTSEnabled(ctx)
+	if err != nil {
+		return ctrl.Result{RequeueAfter: utils.WarningRefreshInterval}, err
+	}
+
 	originalStatus := multiClusterHub.Status.DeepCopy()
 	defer func() {
-		statusQueue, statusError := r.syncHubStatus(multiClusterHub, originalStatus, allDeploys, allCRs, ocpConsole)
+		statusQueue, statusError := r.syncHubStatus(multiClusterHub, originalStatus, allDeploys, allCRs, ocpConsole, stsEnabled)
 		if statusError != nil {
 			r.Log.Error(retError, "Error updating status")
 		}
@@ -251,14 +260,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	// Update cache with template overrides and related information.
 	r.CacheSpec.TemplateOverrides = templateOverrides
 	r.CacheSpec.TemplateOverridesCM = utils.GetTemplateOverridesConfigmapName(multiClusterHub)
-
-	/*
-	  In ACM 2.11, we need to determine if the operator is running in a STS enabled environment.
-	*/
-	stsEnabled, err := r.isSTSEnabled(ctx)
-	if err != nil {
-		return ctrl.Result{RequeueAfter: utils.WarningRefreshInterval}, err
-	}
 
 	// Check if the multiClusterHub instance is marked to be deleted, which is
 	// indicated by the deletion timestamp being set.
@@ -338,6 +339,20 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 	}
 
+	// Install CRDs
+	var reason string
+	reason, err = r.installCRDs(r.Log, multiClusterHub)
+	if err != nil {
+		condition := NewHubCondition(
+			operatorv1.Progressing,
+			metav1.ConditionFalse,
+			reason,
+			fmt.Sprintf("Error installing CRDs: %s", err),
+		)
+		SetHubCondition(&multiClusterHub.Status, *condition)
+		return ctrl.Result{}, err
+	}
+
 	// 2.6 -> 2.7 upgrade logic
 	// There are ClusterManagementAddOns in the GRC appsub that need to be preserved when deleting the helmrelease
 	// To stop helm from removing them we will remove the finalizer on the GRC helmrelease, delete the appsub,
@@ -370,20 +385,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	*/
 	for _, kind := range operatorv1.GetLegacyConfigKind() {
 		_ = r.removeLegacyConfigurations(ctx, "openshift-monitoring", kind)
-	}
-
-	// Install CRDs
-	var reason string
-	reason, err = r.installCRDs(r.Log, multiClusterHub)
-	if err != nil {
-		condition := NewHubCondition(
-			operatorv1.Progressing,
-			metav1.ConditionFalse,
-			reason,
-			fmt.Sprintf("Error installing CRDs: %s", err),
-		)
-		SetHubCondition(&multiClusterHub.Status, *condition)
-		return ctrl.Result{}, err
 	}
 
 	if utils.ProxyEnvVarsAreSet() {
@@ -471,7 +472,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	// Cleanup unused resources once components up-to-date
-	if r.ComponentsAreRunning(multiClusterHub, ocpConsole) {
+	if r.ComponentsAreRunning(multiClusterHub, ocpConsole, stsEnabled) {
 		result, err = r.ensureRemovalsGone(multiClusterHub)
 		if result != (ctrl.Result{}) {
 			return result, err
@@ -498,7 +499,7 @@ func (r *MultiClusterHubReconciler) ensureAuthenticationIssuerNotEmpty(ctx conte
 
 	stsEnabled := auth.Spec.ServiceAccountIssuer != "" // Determine STS enabled status
 
-	if stsEnabledStatus && !stsEnabled {
+	if STSEnabledStatus && !stsEnabled {
 		r.Log.Info("Cluster is no longer STS enabled due to empty Authentication ServiceAccountIssuer",
 			"Name", auth.GetName())
 	}
@@ -519,7 +520,7 @@ func (r *MultiClusterHubReconciler) ensureCloudCredentialModeManual(ctx context.
 
 	stsEnabled := cloudCred.Spec.CredentialsMode == "Manual" // Determine STS enabled status
 
-	if stsEnabledStatus && !stsEnabled {
+	if STSEnabledStatus && !stsEnabled {
 		r.Log.Info("Cluster is no longer STS enabled due to CloudCredential CredentialMode not set to Manual.", "Name",
 			cloudCred.GetName())
 	}
@@ -540,7 +541,7 @@ func (r *MultiClusterHubReconciler) ensureInfrastructureAWS(ctx context.Context)
 
 	stsEnabled := infra.Spec.PlatformSpec.Type == "AWS"
 
-	if stsEnabledStatus && !stsEnabled {
+	if STSEnabledStatus && !stsEnabled {
 		r.Log.Info("Infrastructure platform type is not AWS. Cluster is not STS enabled", "Name", infra.GetName(),
 			"Type", infra.Spec.PlatformSpec.Type)
 	}
@@ -590,10 +591,10 @@ func (r *MultiClusterHubReconciler) isSTSEnabled(ctx context.Context) (bool, err
 	allConditionsMet := authOK && cloudCredOK && infraOK
 
 	// Check if the status has changed, and log the message if it has changed
-	if allConditionsMet != stsEnabledStatus {
-		stsEnabledStatus = allConditionsMet
+	if allConditionsMet != STSEnabledStatus {
+		STSEnabledStatus = allConditionsMet
 
-		if stsEnabledStatus {
+		if STSEnabledStatus {
 			r.Log.Info("STS is enabled.")
 
 		} else {
@@ -746,6 +747,23 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 			return result, err
 		}
 	} else {
+		// Check if the resource exists before creating it.
+		for _, gvk := range operatorv1.MCECRDs {
+			if template.GroupVersionKind().Group == gvk.Group && template.GetKind() == gvk.Kind && template.GroupVersionKind().Version == gvk.Version {
+				crd := &apixv1.CustomResourceDefinition{}
+
+				if err := r.Client.Get(ctx, types.NamespacedName{Name: gvk.Name}, crd); errors.IsNotFound(err) {
+					log.Info("CustomResourceDefinition does not exist. Skipping resource creation",
+						"Group", gvk.Group, "Version", gvk.Version, "Kind", gvk.Kind)
+
+					return ctrl.Result{RequeueAfter: utils.WarningRefreshInterval}, nil
+				} else if err != nil {
+					log.Error(err, "failed to get CustomResourceDefinition", "Resource", gvk)
+					return ctrl.Result{RequeueAfter: utils.WarningRefreshInterval}, err
+				}
+			}
+		}
+
 		// Apply the object data.
 		force := true
 		err := r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
@@ -759,7 +777,7 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterHubReconciler) fetchChartLocation(ctx context.Context, component string) string {
+func (r *MultiClusterHubReconciler) fetchChartLocation(component string) string {
 	switch component {
 	case operatorv1.Appsub:
 		return utils.AppsubChartLocation
@@ -864,7 +882,7 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 		return ctrl.Result{}, nil
 	}
 
-	chartLocation := r.fetchChartLocation(ctx, component)
+	chartLocation := r.fetchChartLocation(component)
 
 	// Renders all templates from charts
 	templates, errs := renderer.RenderChart(chartLocation, m, cachespec.ImageOverrides, cachespec.TemplateOverrides,
@@ -914,7 +932,7 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 		return ctrl.Result{}, nil
 	}
 
-	chartLocation := r.fetchChartLocation(ctx, component)
+	chartLocation := r.fetchChartLocation(component)
 
 	switch component {
 	case operatorv1.Console:
