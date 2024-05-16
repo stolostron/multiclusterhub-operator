@@ -1071,6 +1071,7 @@ func registerScheme() {
 	ocopv1.AddToScheme(scheme.Scheme)
 	operatorv1.AddToScheme(scheme.Scheme)
 	backplanev1.AddToScheme(scheme.Scheme)
+	subv1alpha1.AddToScheme(scheme.Scheme)
 }
 
 func Test_ensureAuthenticationIssuerNotEmpty(t *testing.T) {
