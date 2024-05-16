@@ -153,19 +153,6 @@ func GetDefaultDisabledComponents() ([]string, error) {
 	return defaultDisabledComponents, nil
 }
 
-/*
-GetDefaultHostedComponents returns a slice of default hosted components.
-These are components that are hosted within the system.
-*/
-func GetDefaultHostedComponents() []string {
-	defaultHostedComponents := []string{
-		MultiClusterEngine,
-		// Add other components here when added to hostedmode
-	}
-
-	return defaultHostedComponents
-}
-
 // GetClusterManagementAddonName returns the name of the ClusterManagementAddOn based on the provided component name.
 func GetClusterManagementAddonName(component string) (string, error) {
 	if val, ok := ClusterManagementAddOns[component]; !ok {
@@ -346,18 +333,6 @@ func IsCommunity() (bool, error) {
 // 	*h = hubsizeobj
 // 	return nil
 // }
-
-// IsInHostedMode returns true if mch is configured for hosted mode
-func (mch *MultiClusterHub) IsInHostedMode() bool {
-	a := mch.GetAnnotations()
-	if a == nil {
-		return false
-	}
-	if a["deploymentmode"] == string(ModeHosted) {
-		return true
-	}
-	return false
-}
 
 // AvailabilityConfigIsValid returns true is the availability type is a recognized value
 func AvailabilityConfigIsValid(config AvailabilityType) bool {

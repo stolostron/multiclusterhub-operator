@@ -152,10 +152,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	// Check if any deprecated fields are present within the multiClusterHub spec.
 	r.CheckDeprecatedFieldUsage(multiClusterHub)
 
-	if multiClusterHub.IsInHostedMode() {
-		return r.HostedReconcile(ctx, multiClusterHub)
-	}
-
 	// Check to see if upgradeable
 	upgrade, err := r.setOperatorUpgradeableStatus(ctx, multiClusterHub)
 	if err != nil {

@@ -326,16 +326,13 @@ func GetMCEPackageManifests(k8sClient client.Client) ([]olmapi.PackageManifest, 
 // Finds MCE by managed label. Returns nil if none found.
 func GetManagedMCE(ctx context.Context, k8sClient client.Client) (*mcev1.MultiClusterEngine, error) {
 	mceList := &mcev1.MultiClusterEngineList{}
-	err := k8sClient.List(ctx, mceList, &client.MatchingLabels{
-		utils.MCEManagedByLabel: "true",
-	})
-	if err != nil {
+	if err := k8sClient.List(ctx, mceList, &client.MatchingLabels{utils.MCEManagedByLabel: "true"}); err != nil {
 		return nil, err
 	}
-	// filter out hosted MCEs
+
 	filteredMCEs := []mcev1.MultiClusterEngine{}
 	for _, mce := range mceList.Items {
-		if mce.Annotations == nil || mce.Annotations["deploymentmode"] != "Hosted" {
+		if mce.Annotations == nil {
 			filteredMCEs = append(filteredMCEs, mce)
 		}
 	}
@@ -373,10 +370,9 @@ func FindAndManageMCE(ctx context.Context, k8sClient client.Client) (*mcev1.Mult
 		return nil, nil
 	}
 
-	// filter hosted MCEs
 	filteredMCEs := []mcev1.MultiClusterEngine{}
 	for _, mce := range wholeList.Items {
-		if mce.Annotations == nil || mce.Annotations["deploymentmode"] != "Hosted" {
+		if mce.Annotations == nil {
 			filteredMCEs = append(filteredMCEs, mce)
 		}
 	}

@@ -120,44 +120,6 @@ func TestGetDisabledComponents(t *testing.T) {
 	}
 }
 
-func TestGetDefaultHostedComponents(t *testing.T) {
-	tests := []struct {
-		name      string
-		component string
-		want      int
-		want2     bool
-	}{
-		{
-			name:      "default hosted components",
-			component: MultiClusterEngine,
-			want:      1,
-			want2:     true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			hostedComponents := GetDefaultHostedComponents()
-
-			if len(hostedComponents) != 1 {
-				t.Errorf("GetDefaultHostedComponents() = %v, want: %v", len(hostedComponents), tt.want)
-			}
-
-			pass := false
-			for _, c := range hostedComponents {
-				if c == tt.component {
-					pass = true
-				}
-			}
-
-			if !pass {
-				t.Errorf("GetDefaultHostedComponents() = %v, want: %v", pass, tt.want2)
-			}
-
-		})
-	}
-}
-
 func TestGetClusterManagementAddonName(t *testing.T) {
 	tests := []struct {
 		name      string
