@@ -1071,6 +1071,7 @@ func registerScheme() {
 	ocopv1.AddToScheme(scheme.Scheme)
 	operatorv1.AddToScheme(scheme.Scheme)
 	backplanev1.AddToScheme(scheme.Scheme)
+	subv1alpha1.AddToScheme(scheme.Scheme)
 }
 
 func Test_ensureAuthenticationIssuerNotEmpty(t *testing.T) {
@@ -1105,7 +1106,7 @@ func Test_ensureAuthenticationIssuerNotEmpty(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			defer func() {
-				stsEnabledStatus = true
+				STSEnabledStatus = true
 				recon.Client.Delete(context.TODO(), tt.auth)
 			}()
 
@@ -1149,7 +1150,7 @@ func Test_ensureCloudCredentialModeManual(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			defer func() {
-				stsEnabledStatus = true
+				STSEnabledStatus = true
 				recon.Client.Delete(context.TODO(), tt.cloudCred)
 			}()
 
@@ -1193,7 +1194,7 @@ func Test_ensureInfrastructureAWS(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			defer func() {
-				stsEnabledStatus = true
+				STSEnabledStatus = true
 				recon.Client.Delete(context.TODO(), tt.infra)
 			}()
 

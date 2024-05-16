@@ -26,6 +26,8 @@ import (
 )
 
 const (
+	// AwaitingCRDCreationReason is added in a hub when a desired CRD has not been installed yet
+	AwaitingCRDCreationReason = "AwaitingCRDCreation"
 	// ComponentsAvailableReason is added in a hub when all desired components are
 	// installed successfully
 	ComponentsAvailableReason = "ComponentsAvailable"
@@ -74,11 +76,12 @@ const (
 	FailedApplyingComponent = "FailedApplyingComponent"
 )
 
-func newComponentList(m *operatorsv1.MultiClusterHub, ocpConsole bool) map[string]operatorsv1.StatusCondition {
+func newComponentList(m *operatorsv1.MultiClusterHub, ocpConsole, isSTSEnabled bool) map[string]operatorsv1.StatusCondition {
 	components := make(map[string]operatorsv1.StatusCondition)
-	for _, d := range utils.GetDeploymentsForStatus(m, ocpConsole) {
+	for _, d := range utils.GetDeploymentsForStatus(m, ocpConsole, isSTSEnabled) {
 		components[d.Name] = unknownStatus
 	}
+
 	for _, cr := range utils.GetCustomResourcesForStatus(m) {
 		components[cr.Name] = unknownStatus
 	}
@@ -106,12 +109,13 @@ var unknownStatus = operatorsv1.StatusCondition{
 }
 
 // ComponentsAreRunning ...
-func (r *MultiClusterHubReconciler) ComponentsAreRunning(m *operatorsv1.MultiClusterHub, ocpConsole bool) bool {
+func (r *MultiClusterHubReconciler) ComponentsAreRunning(m *operatorsv1.MultiClusterHub, ocpConsole, isSTSEnabled bool) bool {
 	trackedNamespaces := utils.TrackedNamespaces(m)
 
 	deployList, _ := r.listDeployments(trackedNamespaces)
 	crList, _ := r.listCustomResources(m)
-	componentStatuses := getComponentStatuses(m, deployList, crList, ocpConsole)
+	componentStatuses := getComponentStatuses(m, deployList, crList, ocpConsole, isSTSEnabled)
+
 	delete(componentStatuses, ManagedClusterName)
 	return allComponentsSuccessful(componentStatuses)
 }
@@ -119,9 +123,9 @@ func (r *MultiClusterHubReconciler) ComponentsAreRunning(m *operatorsv1.MultiClu
 // syncHubStatus checks if the status is up-to-date and sync it if necessary
 func (r *MultiClusterHubReconciler) syncHubStatus(m *operatorsv1.MultiClusterHub,
 	original *operatorsv1.MultiClusterHubStatus, allDeps []*appsv1.Deployment,
-	allCRs map[string]*unstructured.Unstructured, ocpConsole bool) (reconcile.Result, error) {
+	allCRs map[string]*unstructured.Unstructured, ocpConsole, isSTSEnabled bool) (reconcile.Result, error) {
 
-	newStatus := calculateStatus(m, allDeps, allCRs, ocpConsole)
+	newStatus := calculateStatus(m, allDeps, allCRs, ocpConsole, isSTSEnabled)
 	if reflect.DeepEqual(m.Status, original) {
 		r.Log.Info("Status hasn't changed")
 		return reconcile.Result{}, nil
@@ -149,11 +153,11 @@ func (r *MultiClusterHubReconciler) syncHubStatus(m *operatorsv1.MultiClusterHub
 }
 
 func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deployment,
-	allCRs map[string]*unstructured.Unstructured, ocpConsole bool) operatorsv1.MultiClusterHubStatus {
+	allCRs map[string]*unstructured.Unstructured, ocpConsole, isSTSEnabled bool) operatorsv1.MultiClusterHubStatus {
 
 	components := map[string]operatorsv1.StatusCondition{}
 	if paused := utils.IsPaused(hub); !paused {
-		components = getComponentStatuses(hub, allDeps, allCRs, ocpConsole)
+		components = getComponentStatuses(hub, allDeps, allCRs, ocpConsole, isSTSEnabled)
 	}
 
 	status := operatorsv1.MultiClusterHubStatus{
@@ -215,8 +219,8 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 
 // getComponentStatuses populates a complete list of the hub component statuses
 func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deployment,
-	allCRs map[string]*unstructured.Unstructured, ocpConsole bool) map[string]operatorsv1.StatusCondition {
-	components := newComponentList(hub, ocpConsole)
+	allCRs map[string]*unstructured.Unstructured, ocpConsole, isSTSEnabled bool) map[string]operatorsv1.StatusCondition {
+	components := newComponentList(hub, ocpConsole, isSTSEnabled)
 
 	for _, d := range allDeps {
 		if _, ok := components[d.Name]; ok {

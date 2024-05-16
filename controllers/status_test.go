@@ -4,6 +4,7 @@
 package controllers
 
 import (
+	"context"
 	"encoding/json"
 	"reflect"
 	"testing"
@@ -12,6 +13,7 @@ import (
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -19,6 +21,8 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
+
+var replicas int32 = 1
 
 func Test_allComponentsSuccessful(t *testing.T) {
 	available := operatorsv1.StatusCondition{Type: "Available", Status: metav1.ConditionTrue, Available: true}
@@ -772,8 +776,147 @@ func Test_getComponentStatuses(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getComponentStatuses(tt.args.hub, tt.args.allDeps, tt.args.allCRs, true); len(got) == 0 {
+			if got := getComponentStatuses(tt.args.hub, tt.args.allDeps, tt.args.allCRs, true, false); len(got) == 0 {
 				t.Errorf("getComponentStatuses() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_ComponentsAreRunning(t *testing.T) {
+	tests := []struct {
+		name   string
+		csv    olmv1alpha1.ClusterServiceVersion
+		deploy appsv1.Deployment
+		mce    mcev1.MultiClusterEngine
+		mch    operatorsv1.MultiClusterHub
+		ns     corev1.Namespace
+		ns2    corev1.Namespace
+		sub    olmv1alpha1.Subscription
+		want   bool
+	}{
+		{
+			name: "should ensure that components are not running",
+			csv: olmv1alpha1.ClusterServiceVersion{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multicluster-engine.v2.6.0",
+					Namespace: "multicluster-engine",
+				},
+			},
+			deploy: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "search-v2-operator",
+					Namespace: "ocm",
+				},
+				Spec: appsv1.DeploymentSpec{
+					Replicas: &replicas,
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "search-v2-operator",
+							Namespace: "ocm",
+						},
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "agent",
+									Image: "quay.io/stolostron/search-v2-operator:latest",
+								},
+							},
+						},
+					},
+				},
+			},
+			mce: mcev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multiclusterengine",
+					Labels: map[string]string{
+						utils.MCEManagedByLabel: "true",
+					},
+				},
+				Spec: mcev1.MultiClusterEngineSpec{
+					TargetNamespace: "multicluster-engine",
+				},
+			},
+			mch: operatorsv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multiclusterhub",
+					Namespace: "ocm",
+				},
+			},
+			ns: corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "ocm",
+				},
+			},
+			ns2: corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multicluster-engine",
+				},
+			},
+			sub: olmv1alpha1.Subscription{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multicluster-engine",
+					Namespace: "multicluster-engine",
+					Labels: map[string]string{
+						utils.MCEManagedByLabel: "true",
+					},
+				},
+				Spec: &olmv1alpha1.SubscriptionSpec{
+					Channel:                "stable-2.6",
+					InstallPlanApproval:    "Automatic",
+					CatalogSource:          "multiclusterengine-catalog",
+					CatalogSourceNamespace: "openshift-marketplace",
+					Package:                "multicluster-engine",
+				},
+				Status: olmv1alpha1.SubscriptionStatus{
+					CurrentCSV: "multicluster-engine.v2.6.0",
+				},
+			},
+			want: false,
+		},
+	}
+
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer func() {
+				if err := recon.Client.Delete(context.TODO(), &tt.ns); err != nil {
+					t.Errorf("failed to delete namespace: %v", err)
+				}
+				if err := recon.Client.Delete(context.TODO(), &tt.ns2); err != nil {
+					t.Errorf("failed to delete namespace: %v", err)
+				}
+				if err := recon.Client.Delete(context.TODO(), &tt.mce); err != nil {
+					t.Errorf("failed to delete multiclusterengine: %v", err)
+				}
+			}()
+
+			if err := recon.Client.Create(context.TODO(), &tt.ns); err != nil {
+				t.Errorf("failed to create namespace: %v", err)
+			}
+
+			if err := recon.Client.Create(context.TODO(), &tt.ns2); err != nil {
+				t.Errorf("failed to create namespace: %v", err)
+			}
+
+			if err := recon.Client.Create(context.TODO(), &tt.sub); err != nil {
+				t.Errorf("failed to create subscription: %v", err)
+			}
+
+			if err := recon.Client.Create(context.TODO(), &tt.csv); err != nil {
+				t.Errorf("failed to create clusterserviceversion: %v", err)
+			}
+
+			if err := recon.Client.Create(context.TODO(), &tt.mce); err != nil {
+				t.Errorf("failed to create clusterserviceversion: %v", err)
+			}
+
+			if err := recon.Client.Create(context.TODO(), &tt.deploy); err != nil {
+				t.Errorf("failed to create deployment: %v", err)
+			}
+
+			if ok := recon.ComponentsAreRunning(&tt.mch, true, false); ok != tt.want {
+				t.Errorf("failed to ensure that components are running: %v", ok)
 			}
 		})
 	}
