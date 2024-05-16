@@ -80,7 +80,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	//+kubebuilder:scaffold:imports
+	// +kubebuilder:scaffold:imports
 )
 
 const (
@@ -130,7 +130,7 @@ func init() {
 
 	utilruntime.Must(ocmapi.AddToScheme(scheme))
 
-	//+kubebuilder:scaffold:scheme
+	// +kubebuilder:scaffold:scheme
 }
 
 func main() {
@@ -164,6 +164,12 @@ func main() {
 	}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
+
+	err := utils.DetectOpenShift(ctrl.GetConfigOrDie())
+	if err != nil {
+		setupLog.Error(err, "unable to detect if the operator is running on OCP")
+		os.Exit(1)
+	}
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
@@ -294,7 +300,7 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	//+kubebuilder:scaffold:builder
+	// +kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
@@ -325,8 +331,8 @@ func addMultiClusterEngineWatch(ctx context.Context, mgr ctrl.Manager, uncachedC
 		crd := &apixv1.CustomResourceDefinition{}
 		mceName := "multiclusterengines.multicluster.openshift.io"
 		err := uncachedClient.Get(ctx, types.NamespacedName{Name: mceName}, crd)
-		//crdKey := client.ObjectKey{Name: multiclusterengine.Namespace().GetObjectMeta().GetName()}
-		//err := uncachedClient.Get(ctx, crdKey, &mcev1.MultiClusterEngine{})
+		// crdKey := client.ObjectKey{Name: multiclusterengine.Namespace().GetObjectMeta().GetName()}
+		// err := uncachedClient.Get(ctx, crdKey, &mcev1.MultiClusterEngine{})
 		if err == nil {
 			err := mchController.Watch(source.Kind(mgr.GetCache(), &mcev1.MultiClusterEngine{}),
 				handler.Funcs{
