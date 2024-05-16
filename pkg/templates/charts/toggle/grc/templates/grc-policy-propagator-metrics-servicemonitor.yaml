@@ -1,5 +1,5 @@
 # Copyright Contributors to the Open Cluster Management project
-
+{{- if eq .Values.global.deployOnOCP "true" }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -31,3 +31,4 @@ spec:
       app: grc
       component: "ocm-policy-propagator"
       release: grc
+{{- end }}
