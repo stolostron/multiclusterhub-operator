@@ -91,7 +91,7 @@ spec:
         - name: WATCH_NAMESPACE
           valueFrom:
             fieldRef:
-              fieldPath: metadata.namespace
+              fieldPath: metadata.annotations['olm.targetNamespaces']
         - name: POSTGRES_IMAGE
           value: '{{ .Values.global.imageOverrides.postgresql_13 }}'
         - name: INDEXER_IMAGE
