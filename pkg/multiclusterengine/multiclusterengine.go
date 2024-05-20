@@ -326,24 +326,14 @@ func GetMCEPackageManifests(k8sClient client.Client) ([]olmapi.PackageManifest, 
 // Finds MCE by managed label. Returns nil if none found.
 func GetManagedMCE(ctx context.Context, k8sClient client.Client) (*mcev1.MultiClusterEngine, error) {
 	mceList := &mcev1.MultiClusterEngineList{}
-	err := k8sClient.List(ctx, mceList, &client.MatchingLabels{
-		utils.MCEManagedByLabel: "true",
-	})
-	if err != nil {
+	if err := k8sClient.List(ctx, mceList, &client.MatchingLabels{utils.MCEManagedByLabel: "true"}); err != nil {
 		return nil, err
 	}
-	// filter out hosted MCEs
-	filteredMCEs := []mcev1.MultiClusterEngine{}
-	for _, mce := range mceList.Items {
-		if mce.Annotations == nil || mce.Annotations["deploymentmode"] != "Hosted" {
-			filteredMCEs = append(filteredMCEs, mce)
-		}
-	}
 
-	if len(filteredMCEs) == 1 {
-		return &filteredMCEs[0], nil
+	if len(mceList.Items) == 1 {
+		return &mceList.Items[0], nil
 
-	} else if len(filteredMCEs) > 1 {
+	} else if len(mceList.Items) > 1 {
 		// will require manual resolution
 		return nil, fmt.Errorf("multiple MCEs found managed by MCH. Only one MCE is supported")
 	}
@@ -369,33 +359,27 @@ func FindAndManageMCE(ctx context.Context, k8sClient client.Client) (*mcev1.Mult
 	if err != nil {
 		return nil, err
 	}
+
 	if len(wholeList.Items) == 0 {
 		return nil, nil
 	}
 
-	// filter hosted MCEs
-	filteredMCEs := []mcev1.MultiClusterEngine{}
-	for _, mce := range wholeList.Items {
-		if mce.Annotations == nil || mce.Annotations["deploymentmode"] != "Hosted" {
-			filteredMCEs = append(filteredMCEs, mce)
-		}
-	}
-
-	if len(filteredMCEs) > 1 {
+	if len(wholeList.Items) > 1 {
 		return nil, fmt.Errorf("multiple MCEs found managed by MCH. Only one MCE is supported")
 	}
-	labels := filteredMCEs[0].GetLabels()
+	labels := wholeList.Items[0].GetLabels()
 	if labels == nil {
 		labels = map[string]string{}
 	}
 	labels[utils.MCEManagedByLabel] = "true"
-	filteredMCEs[0].SetLabels(labels)
+	wholeList.Items[0].SetLabels(labels)
 	log.Log.WithName("reconcile").Info("Adding label to MCE")
-	if err := k8sClient.Update(ctx, &filteredMCEs[0]); err != nil {
+
+	if err := k8sClient.Update(ctx, &wholeList.Items[0]); err != nil {
 		log.Log.WithName("reconcile").Error(err, "Failed to add managedBy label to preexisting MCE")
-		return &filteredMCEs[0], err
+		return &wholeList.Items[0], err
 	}
-	return &filteredMCEs[0], nil
+	return &wholeList.Items[0], nil
 }
 
 // MCECreatedByMCH returns true if the provided MCE was created by the multiclusterhub-operator (as indicated by installer labels).

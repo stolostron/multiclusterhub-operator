@@ -9,7 +9,6 @@ import (
 
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestIsPaused(t *testing.T) {
@@ -339,22 +338,4 @@ func TestShouldIgnoreOCPVersion(t *testing.T) {
 			}
 		})
 	}
-}
-
-func Test_GetHostedCredentialsSecret(t *testing.T) {
-	t.Run("Get hosted credentials secret", func(t *testing.T) {
-		mch := &operatorsv1.MultiClusterHub{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "multiclusterhub",
-				Namespace: "test-ns",
-				Annotations: map[string]string{
-					AnnotationKubeconfig: "test-kubeconfig",
-				},
-			},
-		}
-		want := types.NamespacedName{Name: "test-kubeconfig", Namespace: mch.Namespace}
-		if got, _ := GetHostedCredentialsSecret(mch); got != want {
-			t.Errorf("GetHostedCredentialsSecret(mch) = %v, want %v", got, want)
-		}
-	})
 }

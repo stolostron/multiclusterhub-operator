@@ -110,23 +110,17 @@ var _ webhook.Validator = &MultiClusterHub{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *MultiClusterHub) ValidateCreate() (admission.Warnings, error) {
-	mchlog.Info("validate create", "name", r.Name)
+	mchlog.Info("validate create", "Name", r.Name, "Namespace", r.Namespace)
+
 	multiClusterHubList := &MultiClusterHubList{}
 	if err := Client.List(context.Background(), multiClusterHubList); err != nil {
 		return nil, fmt.Errorf("unable to list MultiClusterHubs: %s", err)
 	}
 
-	// Standalone MCH must exist before a hosted MCH can be created
-	if len(multiClusterHubList.Items) == 0 && r.IsInHostedMode() {
-		return nil, fmt.Errorf("a hosted Mode MCH can only be created once a non-hosted MCH is present")
-	}
-
-	// Prevent two standaline MCH's
-	for _, existing := range multiClusterHubList.Items {
-		existingMCH := existing
-		if !r.IsInHostedMode() && !existingMCH.IsInHostedMode() {
-			return nil, fmt.Errorf("MultiClusterHub in Standalone mode already exists: `%s`. Only one resource may exist in Standalone mode", existingMCH.Name)
-		}
+	// Prevent two standalone MCH's
+	if len(multiClusterHubList.Items) > 0 {
+		existingMCH := multiClusterHubList.Items[0]
+		return nil, fmt.Errorf("MultiClusterHub in Standalone mode already exists: `%s`", existingMCH.GetName())
 	}
 
 	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
@@ -147,16 +141,12 @@ func (r *MultiClusterHub) ValidateCreate() (admission.Warnings, error) {
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
-	mchlog.Info("validate update", "name", r.Name)
+	mchlog.Info("validate update", "Name", r.Name, "Namespace", r.Namespace)
 
 	oldMCH := old.(*MultiClusterHub)
 
 	if oldMCH.Spec.SeparateCertificateManagement != r.Spec.SeparateCertificateManagement {
 		return nil, fmt.Errorf("updating SeparateCertificateManagement is forbidden")
-	}
-
-	if oldMCH.IsInHostedMode() != r.IsInHostedMode() {
-		return nil, fmt.Errorf("changes cannot be made to DeploymentMode")
 	}
 
 	if !reflect.DeepEqual(oldMCH.Spec.Hive, r.Spec.Hive) {
@@ -180,14 +170,7 @@ func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) (admission.Warnings
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (r *MultiClusterHub) ValidateDelete() (admission.Warnings, error) {
-	mchlog.Info("validate delete", "name", r.Name)
-
-	ctx := context.Background()
-
-	// Do not block delete of hosted mode, which does not spawn the resources
-	if r.IsInHostedMode() {
-		return nil, nil
-	}
+	mchlog.Info("validate delete", "Name", r.Name, "Namespace", r.Namespace)
 
 	cfg, err := config.GetConfig()
 	if err != nil {
@@ -205,7 +188,7 @@ func (r *MultiClusterHub) ValidateDelete() (admission.Warnings, error) {
 		err := discovery.ServerSupportsVersion(c, list.GroupVersionKind().GroupVersion())
 		if err == nil {
 			// List all resources
-			if err := Client.List(ctx, list); err != nil {
+			if err := Client.List(context.Background(), list); err != nil {
 				return nil, fmt.Errorf("unable to list %s: %s", resource.Name, err)
 			}
 			// If there are any unexpected resources, deny deletion
