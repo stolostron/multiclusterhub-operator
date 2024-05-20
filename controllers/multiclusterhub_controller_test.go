@@ -17,6 +17,7 @@ import (
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
+	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
@@ -61,9 +62,7 @@ const (
 	mchNamespace = "open-cluster-management"
 )
 
-var (
-	recon = MultiClusterHubReconciler{Client: fake.NewClientBuilder().Build()}
-)
+var recon = MultiClusterHubReconciler{Client: fake.NewClientBuilder().Build()}
 
 func ApplyPrereqs(k8sClient client.Client) {
 	By("Applying Namespace")
@@ -94,6 +93,8 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 
 	By("By creating a new Multiclusterhub")
 	mch := resources.EmptyMCH()
+	// To skip ensureKlusterletAddonConfig
+	mch.Spec.DisableHubSelfManagement = true
 	Expect(k8sClient.Create(ctx, &mch)).Should(Succeed())
 	Expect(k8sClient.Create(ctx, mchoDeployment)).Should(Succeed())
 
@@ -172,7 +173,6 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 		ns := LocalClusterNamespace()
 		_, err := reconciler.ensureNamespace(createdMCH, ns)
 		return err == nil
-
 	}, timeout, interval).Should(BeTrue())
 
 	By("Waiting for MCH to be in the running state")
@@ -234,6 +234,8 @@ func PreexistingMCE(k8sClient client.Client, reconciler *MultiClusterHubReconcil
 	}
 	Expect(k8sClient.Create(context.TODO(), testsecret)).Should(Succeed())
 	mch := resources.EmptyMCH()
+	// To skip ensureKlusterletAddonConfig
+	mch.Spec.DisableHubSelfManagement = true
 	mch.Spec.ImagePullSecret = "testsecret"
 	Expect(k8sClient.Create(ctx, &mch)).Should(Succeed())
 	Expect(k8sClient.Create(ctx, mchoDeployment)).Should(Succeed())
@@ -405,7 +407,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 			// 	ImageOverrides: map[string]string{},
 			// },
 		}
-		//Expect(reconciler.SetupWithManager(k8sManager)).Should(Succeed())
+		// Expect(reconciler.SetupWithManager(k8sManager)).Should(Succeed())
 		success, err := reconciler.SetupWithManager(k8sManager)
 		Expect(success).ToNot(BeNil())
 		Expect(err).ToNot(HaveOccurred())
@@ -492,7 +494,6 @@ var _ = Describe("MultiClusterHub controller", func() {
 			os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
 			defer os.Unsetenv("OPERATOR_PACKAGE")
 			PreexistingMCE(k8sClient, reconciler, mchoDeployment)
-
 		})
 
 		It("Should get to a running state in Community Mode", func() {
@@ -511,7 +512,6 @@ var _ = Describe("MultiClusterHub controller", func() {
 			os.Setenv("OPERATOR_PACKAGE", "stolostron")
 			defer os.Unsetenv("OPERATOR_PACKAGE")
 			PreexistingMCE(k8sClient, reconciler, mchoDeployment)
-
 		})
 
 		It("Should allow MCH components to be optional", func() {
@@ -525,12 +525,15 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 			By("Creating a new Multiclusterhub with components disabled")
 			mch := resources.NoComponentMCH()
+			// To skip ensureKlusterletAddonConfig
+			mch.Spec.DisableHubSelfManagement = true
 			mch.Disable(operatorv1.Appsub)
 			Expect(k8sClient.Create(ctx, &mch)).Should(Succeed())
 			Expect(k8sClient.Create(ctx, mchoDeployment)).Should(Succeed())
 
 			By("Ensuring MCH is created")
 			createdMCH := &operatorv1.MultiClusterHub{}
+
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
 				return err == nil
@@ -539,6 +542,9 @@ var _ = Describe("MultiClusterHub controller", func() {
 			By("Waiting for MCH to be in the running state")
 			Eventually(func() bool {
 				mch := &operatorv1.MultiClusterHub{}
+				// To skip ensureKlusterletAddonConfig
+				createdMCH.Spec.DisableHubSelfManagement = true
+
 				err := k8sClient.Get(ctx, resources.MCHLookupKey, mch)
 				if err == nil {
 					return mch.Status.Phase == operatorv1.HubRunning
@@ -1208,4 +1214,119 @@ func Test_ensureInfrastructureAWS(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_equivalentKlusterletAddonConfig(t *testing.T) {
+	grcEnabled := true
+
+	match := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "agent.open-cluster-management.io/v1",
+			"kind":       "KlusterletAddonConfig",
+			"metadata": map[string]interface{}{
+				"name":      KlusterletAddonConfigName,
+				"namespace": ManagedClusterName,
+			},
+			"spec": map[string]interface{}{
+				"applicationManager": map[string]interface{}{
+					"enabled": true,
+				},
+				"connectionManager": map[string]interface{}{
+					"enabledGlobalView": false,
+				},
+				"policyController": map[string]interface{}{
+					"enabled": grcEnabled,
+				},
+				"prometheusIntegration": map[string]interface{}{
+					"enabled": true,
+				},
+				"searchCollector": map[string]interface{}{
+					"enabled": false,
+				},
+				"certPolicyController": map[string]interface{}{
+					"enabled": grcEnabled,
+				},
+			},
+		},
+	}
+
+	notMatch := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "agent.open-cluster-management.io/v1",
+			"kind":       "KlusterletAddonConfig",
+			"metadata": map[string]interface{}{
+				"name":      KlusterletAddonConfigName,
+				"namespace": ManagedClusterName,
+			},
+			"spec": map[string]interface{}{
+				"applicationManager": map[string]interface{}{
+					"enabled": true,
+				},
+				"connectionManager": map[string]interface{}{
+					"enabledGlobalView": true,
+				},
+				"policyController": map[string]interface{}{
+					"enabled": true,
+				},
+				"prometheusIntegration": map[string]interface{}{
+					"enabled": true,
+				},
+				"searchCollector": map[string]interface{}{
+					"enabled": true,
+				},
+				"certPolicyController": map[string]interface{}{
+					"enabled": true,
+				},
+			},
+		},
+	}
+
+	mch := &operatorv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{Name: "mch", Namespace: "test-ns-1"},
+		Spec: operatorv1.MultiClusterHubSpec{
+			Overrides: &operatorv1.Overrides{
+				Components: []operatorv1.ComponentConfig{
+					{
+						Name:    operatorsv1.GRC,
+						Enabled: true,
+					},
+				},
+			},
+		},
+	}
+
+	t.Run("Should return isUpdate false when label does not exist", func(t *testing.T) {
+		isEquivalent, _, err := equivalentKlusterletAddonConfig(getKlusterletAddonConfig(mch), match, mch)
+		if err != nil {
+			t.Errorf("equivalentKlusterletAddonConfig has error: %v", err)
+		}
+
+		if isEquivalent {
+			t.Errorf("isEquivalent should be false")
+		}
+	})
+
+	t.Run("Should return isUpdate true when label exists", func(t *testing.T) {
+		utils.AddInstallerLabel(match, mch.GetName(), mch.GetNamespace())
+		isEquivalent, _, err := equivalentKlusterletAddonConfig(getKlusterletAddonConfig(mch), match, mch)
+		if err != nil {
+			t.Errorf("equivalentKlusterletAddonConfig has error: %v", err)
+		}
+
+		if !isEquivalent {
+			t.Errorf("isEquivalent should be true")
+		}
+	})
+
+	t.Run("Should return isUpdate false when not match", func(t *testing.T) {
+		utils.AddInstallerLabel(notMatch, mch.GetName(), mch.GetNamespace())
+		isEquivalent, _, err := equivalentKlusterletAddonConfig(getKlusterletAddonConfig(mch), notMatch, mch)
+		if err != nil {
+			t.Errorf("equivalentKlusterletAddonConfig has error: %v", err)
+		}
+
+		if isEquivalent {
+			t.Errorf("isEquivalent should be false")
+		}
+	})
 }
