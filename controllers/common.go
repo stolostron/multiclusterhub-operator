@@ -749,6 +749,7 @@ func (r *MultiClusterHubReconciler) ensureSearchCR(m *operatorv1.MultiClusterHub
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "search-v2-operator",
 			Namespace: m.Namespace,
+			Labels:    map[string]string{"cluster.open-cluster-management.io/backup": ""},
 		},
 		Spec: searchv2v1alpha1.SearchSpec{
 			NodeSelector: m.Spec.NodeSelector,
