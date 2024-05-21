@@ -1231,20 +1231,14 @@ func Test_equivalentKlusterletAddonConfig(t *testing.T) {
 				"applicationManager": map[string]interface{}{
 					"enabled": true,
 				},
-				"connectionManager": map[string]interface{}{
-					"enabledGlobalView": false,
+				"certPolicyController": map[string]interface{}{
+					"enabled": grcEnabled,
 				},
 				"policyController": map[string]interface{}{
 					"enabled": grcEnabled,
 				},
-				"prometheusIntegration": map[string]interface{}{
-					"enabled": true,
-				},
 				"searchCollector": map[string]interface{}{
 					"enabled": false,
-				},
-				"certPolicyController": map[string]interface{}{
-					"enabled": grcEnabled,
 				},
 			},
 		},
@@ -1262,19 +1256,13 @@ func Test_equivalentKlusterletAddonConfig(t *testing.T) {
 				"applicationManager": map[string]interface{}{
 					"enabled": true,
 				},
-				"connectionManager": map[string]interface{}{
-					"enabledGlobalView": true,
+				"certPolicyController": map[string]interface{}{
+					"enabled": true,
 				},
 				"policyController": map[string]interface{}{
 					"enabled": true,
 				},
-				"prometheusIntegration": map[string]interface{}{
-					"enabled": true,
-				},
 				"searchCollector": map[string]interface{}{
-					"enabled": true,
-				},
-				"certPolicyController": map[string]interface{}{
 					"enabled": true,
 				},
 			},
