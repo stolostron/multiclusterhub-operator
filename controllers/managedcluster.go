@@ -53,20 +53,14 @@ func getKlusterletAddonConfig(m *operatorsv1.MultiClusterHub) *unstructured.Unst
 				"applicationManager": map[string]interface{}{
 					"enabled": true,
 				},
-				"connectionManager": map[string]interface{}{
-					"enabledGlobalView": false,
+				"certPolicyController": map[string]interface{}{
+					"enabled": grcEnabled,
 				},
 				"policyController": map[string]interface{}{
 					"enabled": grcEnabled,
 				},
-				"prometheusIntegration": map[string]interface{}{
-					"enabled": true,
-				},
 				"searchCollector": map[string]interface{}{
 					"enabled": false,
-				},
-				"certPolicyController": map[string]interface{}{
-					"enabled": grcEnabled,
 				},
 			},
 		},
