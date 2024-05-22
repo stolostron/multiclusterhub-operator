@@ -99,11 +99,27 @@ spec:
           periodSeconds: 10
         resources:
           limits:
+          {{- if hasKey .Values.global.templateOverrides "multicluster_obs_operator_cpu_limit" }}
+            cpu: {{ .Values.global.templateOverrides.multicluster_obs_operator_cpu_limit | quote }}
+          {{- else }}
             cpu: 600m
+          {{- end }}
+          {{- if hasKey .Values.global.templateOverrides "multicluster_obs_operator_memory_limit" }}
+            memory: {{ .Values.global.templateOverrides.multicluster_obs_operator_memory_limit | quote }}
+          {{- else }}
             memory: 1Gi
+          {{- end }}
           requests:
+          {{- if hasKey .Values.global.templateOverrides "multicluster_obs_operator_cpu_request" }}
+            cpu: {{ .Values.global.templateOverrides.multicluster_obs_operator_cpu_request | quote }}
+          {{- else }}
             cpu: 100m
+          {{- end }}
+          {{- if hasKey .Values.global.templateOverrides "multicluster_obs_operator_memory_request" }}
+            memory: {{ .Values.global.templateOverrides.multicluster_obs_operator_memory_request | quote }}
+          {{- else }}
             memory: 128Mi
+          {{- end }}
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
