@@ -276,8 +276,8 @@ spec:
           severity: high
           object-templates-raw: |
             {{ printf `{{ $ch := %s }}` .Values.global.channel }}
-            {{ `{{- range $ss := (lookup "operators.coreos.com/v1alpha1" "Subscription" "" "").items }}` }}
-            {{ `{{- if and (eq $ss.spec.name "redhat-oadp-operator") (lt $ss.spec.channel  $ch) }}` }}
+            {{ `{{- range $ss := (lookup "operators.coreos.com/v1alpha1" "Subscription" "open-cluster-management-backup" "").items }}` }}
+              {{ `{{- if and (eq $ss.spec.name "redhat-oadp-operator") (lt $ss.spec.channel $ch) }}` }}
             - complianceType: musthave
               objectDefinition:
                 kind: Subscription
@@ -287,6 +287,37 @@ spec:
                   namespace: {{ `{{ $ss.metadata.namespace }}` }}
                 spec:
                   channel: {{ `{{ $ch }}` }}
+              {{ `{{- end }}` }}
             {{ `{{- end }}` }}
-            {{ `{{- end }}` }}                                                                      
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: custom-oadp-channel-validation
+        spec:
+          remediationAction: inform
+          severity: high
+          object-templates-raw: |
+            {{ `{{- $ch := "" }}` }}
+            {{ `{{- range $ss := (lookup "operators.coreos.com/v1alpha1" "Subscription" "open-cluster-management-backup" "").items }}` }}
+              {{ `{{- if (eq $ss.spec.name "redhat-oadp-operator") }}` }}
+                {{ `{{ $ch = $ss.spec.channel }}` }}
+                {{ `{{ break }}` }}
+              {{ `{{- end }}` }}
+            {{ `{{- end }}` }}
+            {{ `{{- if $ch }}` }}
+              {{ `{{- range $cs := (lookup "operators.coreos.com/v1alpha1" "Subscription" "" "").items }}` }}
+                {{ `{{- if and (eq $cs.spec.name "redhat-oadp-operator") (ne $cs.spec.channel $ch) }}` }}
+            - complianceType: musthave
+              objectDefinition:
+                kind: Subscription
+                apiVersion: operators.coreos.com/v1alpha1
+                metadata:
+                  name: {{ `{{ $cs.metadata.name }}` }}
+                  namespace: {{ `{{ $cs.metadata.namespace }}` }}
+                spec:
+                  channel: {{ `{{ $ch }}` }}
+                {{ `{{- end }}` }}
+              {{ `{{- end }}` }}
+            {{ `{{- end }}` }}                                                                  
   remediationAction: inform
