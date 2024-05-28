@@ -52,6 +52,8 @@ const (
 	DeleteTimestampReason = "DeletionTimestampPresent"
 	// PausedReason is added when the multiclusterhub is paused
 	PausedReason = "MCHPaused"
+	// PausedReason is added when the multiclusterhub is paused
+	ComponentPausedReason = "MCHComponentPaused"
 	// ResumedReason is added when the multiclusterhub is resumed
 	ResumedReason = "MCHResumed"
 	// ReconcileReason is added when the multiclusterhub is actively reconciling
@@ -179,7 +181,7 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 	// Update hub conditions
 	if successful {
 		// don't label as complete until component pruning succeeds
-		if !hubPruning(status) && !utils.IsPaused(hub) {
+		if !hubPruning(status) && !utils.IsPaused(hub) && !utils.IsComponentPaused(hub) {
 			available := NewHubCondition(operatorsv1.Complete, metav1.ConditionTrue, ComponentsAvailableReason, "All hub components ready.")
 			SetHubCondition(&status, *available)
 		} else {
@@ -490,8 +492,12 @@ func aggregatePhase(status operatorsv1.MultiClusterHubStatus) operatorsv1.HubPha
 	}
 
 	for _, condition := range status.HubConditions {
-		if condition.Reason == PausedReason {
+		switch condition.Reason {
+		case PausedReason:
 			return operatorsv1.HubPaused
+
+		case ComponentPausedReason:
+			return operatorsv1.HubComponentPaused
 		}
 	}
 

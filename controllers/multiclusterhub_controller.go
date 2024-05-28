@@ -822,7 +822,14 @@ func (r *MultiClusterHubReconciler) ensureComponentOrNoComponent(ctx context.Con
 	var result ctrl.Result
 	var err error
 
+	updateComponentPausedCondition(m)
 	if !m.Enabled(component) {
+		if m.ComponentPaused(component) {
+			r.Log.Info(fmt.Sprintf("Disabling process for component '%v' is paused. Awaiting unpause to continue.",
+				component))
+			return ctrl.Result{}, nil
+		}
+
 		if component == operatorv1.ClusterBackup {
 			result, err = r.ensureNoComponent(ctx, m, component, cachespec, isSTSEnabled)
 			if result != (ctrl.Result{}) || err != nil {
@@ -831,8 +838,14 @@ func (r *MultiClusterHubReconciler) ensureComponentOrNoComponent(ctx context.Con
 			return r.ensureNoNamespace(m, BackupNamespaceUnstructured())
 		}
 		return r.ensureNoComponent(ctx, m, component, cachespec, isSTSEnabled)
-
 	} else {
+		if m.ComponentPaused(component) {
+			r.Log.Info(fmt.Sprintf("Enabling process for component '%v' is paused. Awaiting unpause to continue.",
+				component))
+
+			return ctrl.Result{}, nil
+		}
+
 		if component == operatorv1.ClusterBackup {
 			result, err = r.ensureNamespaceAndPullSecret(m, BackupNamespace())
 			if result != (ctrl.Result{}) || err != nil {
@@ -1408,6 +1421,27 @@ func updatePausedCondition(m *operatorv1.MultiClusterHub) {
 		// Pause condition needs to come off
 		if c != nil && c.Reason == PausedReason {
 			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, ResumedReason, "Multiclusterhub is resumed")
+			SetHubCondition(&m.Status, *condition)
+		}
+	}
+}
+
+func updateComponentPausedCondition(m *operatorv1.MultiClusterHub) {
+	c := GetHubCondition(m.Status, operatorv1.Progressing)
+
+	if utils.IsComponentPaused(m) {
+		// Pause condition needs to go on
+		if c == nil || c.Reason != ComponentPausedReason {
+			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionUnknown, ComponentPausedReason,
+				"Multiclusterhub sub component is paused")
+			SetHubCondition(&m.Status, *condition)
+		}
+
+	} else {
+		// Pause condition needs to come off
+		if c != nil && c.Reason == ComponentPausedReason {
+			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, ComponentPausedReason,
+				"Multiclusterhub sub component is resumed")
 			SetHubCondition(&m.Status, *condition)
 		}
 	}

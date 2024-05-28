@@ -50,7 +50,6 @@ const (
 
 // MultiClusterHubSpec defines the desired state of MultiClusterHub
 type MultiClusterHubSpec struct {
-
 	// Override pull secret for accessing MultiClusterHub operand and endpoint images
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secret",xDescriptors={"urn:alm:descriptor:io.kubernetes:Secret","urn:alm:descriptor:com.tectonic.ui:advanced"}
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
@@ -128,6 +127,7 @@ type Overrides struct {
 type ComponentConfig struct {
 	Name    string `json:"name"`
 	Enabled bool   `json:"enabled"`
+	Paused  bool   `json:"paused"`
 }
 
 type HiveConfigSpec struct {
@@ -241,6 +241,7 @@ type HubPhaseType string
 const (
 	HubPending         HubPhaseType = "Pending"
 	HubPaused          HubPhaseType = "Paused"
+	HubComponentPaused HubPhaseType = "ComponentPaused"
 	HubRunning         HubPhaseType = "Running"
 	HubInstalling      HubPhaseType = "Installing"
 	HubUpdating        HubPhaseType = "Updating"

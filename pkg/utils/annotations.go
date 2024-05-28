@@ -89,6 +89,24 @@ func IsPaused(instance *operatorsv1.MultiClusterHub) bool {
 }
 
 /*
+IsComponentPaused checks if the MultiClusterHub instance components is labeled as paused.
+It returns true if the instance is paused, otherwise false.
+*/
+func IsComponentPaused(instance *operatorsv1.MultiClusterHub) bool {
+	if len(instance.Spec.Overrides.Components) == 0 {
+		return false
+	}
+
+	for _, c := range instance.Spec.Overrides.Components {
+		if c.Paused {
+			return true
+		}
+	}
+
+	return false
+}
+
+/*
 GetHubSize gets the current hubsize, returning "Small" as default if the annotation is not found.
 */
 func GetHubSize(instance *operatorsv1.MultiClusterHub) operatorsv1.HubSize {

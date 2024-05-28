@@ -226,6 +226,8 @@ spec:
                           type: boolean
                         name:
                           type: string
+                        paused:
+                          type: boolean
                       required:
                       - enabled
                       - name
