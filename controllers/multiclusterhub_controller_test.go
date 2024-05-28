@@ -15,9 +15,7 @@ import (
 	operatorsapiv2 "github.com/operator-framework/api/pkg/operators/v2"
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
-	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
@@ -27,7 +25,6 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	consolev1 "github.com/openshift/api/operator/v1"
-	ocopv1 "github.com/openshift/api/operator/v1"
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 
@@ -1078,10 +1075,11 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 func registerScheme() {
 	configv1.AddToScheme(scheme.Scheme)
-	ocopv1.AddToScheme(scheme.Scheme)
+	consolev1.AddToScheme(scheme.Scheme)
 	operatorv1.AddToScheme(scheme.Scheme)
-	backplanev1.AddToScheme(scheme.Scheme)
+	mcev1.AddToScheme(scheme.Scheme)
 	subv1alpha1.AddToScheme(scheme.Scheme)
+	olmv1.AddToScheme(scheme.Scheme)
 }
 
 func Test_ensureAuthenticationIssuerNotEmpty(t *testing.T) {
@@ -1135,22 +1133,22 @@ func Test_ensureAuthenticationIssuerNotEmpty(t *testing.T) {
 func Test_ensureCloudCredentialModeManual(t *testing.T) {
 	tests := []struct {
 		name      string
-		cloudCred *ocopv1.CloudCredential
+		cloudCred *consolev1.CloudCredential
 		want      bool
 	}{
 		{
 			name: "should ensure cloud credential is Manual",
-			cloudCred: &ocopv1.CloudCredential{
+			cloudCred: &consolev1.CloudCredential{
 				ObjectMeta: metav1.ObjectMeta{Name: "cluster"},
-				Spec:       ocopv1.CloudCredentialSpec{CredentialsMode: "Manual"},
+				Spec:       consolev1.CloudCredentialSpec{CredentialsMode: "Manual"},
 			},
 			want: true,
 		},
 		{
 			name: "should ensure cloud credential is not Manual",
-			cloudCred: &ocopv1.CloudCredential{
+			cloudCred: &consolev1.CloudCredential{
 				ObjectMeta: metav1.ObjectMeta{Name: "cluster"},
-				Spec:       ocopv1.CloudCredentialSpec{CredentialsMode: ""},
+				Spec:       consolev1.CloudCredentialSpec{CredentialsMode: ""},
 			},
 			want: false,
 		},
@@ -1279,7 +1277,7 @@ func Test_equivalentKlusterletAddonConfig(t *testing.T) {
 			Overrides: &operatorv1.Overrides{
 				Components: []operatorv1.ComponentConfig{
 					{
-						Name:    operatorsv1.GRC,
+						Name:    operatorv1.GRC,
 						Enabled: true,
 					},
 				},

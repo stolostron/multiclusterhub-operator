@@ -78,11 +78,17 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 
 	if mce != nil {
 		r.Log.Info("Deleting MultiClusterEngine resource")
-		err = r.Client.Delete(ctx, mce)
-		if err != nil && (!errors.IsNotFound(err) || !errors.IsGone(err)) {
-			return err
+		if err := r.Client.Delete(ctx, mce); err != nil {
+			if !errors.IsNotFound(err) || !errors.IsGone(err) {
+				return err
+			}
+
+			// Check if the resource has a deletion timestamp
+			if metav1.Now().After(mce.ObjectMeta.DeletionTimestamp.Time) {
+				return fmt.Errorf("MCE deletion in progress")
+			}
+			return fmt.Errorf("MCE has not yet been terminated")
 		}
-		return fmt.Errorf("MCE has not yet been terminated")
 	}
 
 	if utils.IsUnitTest() {
