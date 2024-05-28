@@ -412,7 +412,7 @@ func GetCustomResources(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	}
 }
 
-func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole bool) []types.NamespacedName {
+func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole, isSTSEnabled bool) []types.NamespacedName {
 	nn := []types.NamespacedName{}
 	if m.Enabled(operatorsv1.Insights) {
 		nn = append(nn, types.NamespacedName{Name: "insights-client", Namespace: m.Namespace})
@@ -437,7 +437,10 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole bool) []
 	}
 	if m.Enabled(operatorsv1.ClusterBackup) {
 		nn = append(nn, types.NamespacedName{Name: "cluster-backup-chart-clusterbackup", Namespace: ClusterSubscriptionNamespace})
-		nn = append(nn, types.NamespacedName{Name: "openshift-adp-controller-manager", Namespace: ClusterSubscriptionNamespace})
+
+		if !isSTSEnabled {
+			nn = append(nn, types.NamespacedName{Name: "openshift-adp-controller-manager", Namespace: ClusterSubscriptionNamespace})
+		}
 	}
 	if m.Enabled(operatorsv1.GRC) {
 		nn = append(nn, types.NamespacedName{Name: "grc-policy-addon-controller", Namespace: m.Namespace})
@@ -541,19 +544,6 @@ func SetDefaultComponents(m *operatorsv1.MultiClusterHub) (bool, error) {
 		}
 	}
 	return updated, nil
-}
-
-// SetHostedDefaultComponents returns true if changes are made
-func SetHostedDefaultComponents(m *operatorsv1.MultiClusterHub) bool {
-	updated := false
-	components := operatorsv1.GetDefaultHostedComponents()
-	for _, c := range components {
-		if !m.ComponentPresent(c) {
-			m.Enable(c)
-			updated = true
-		}
-	}
-	return updated
 }
 
 // DeduplicateComponents removes duplicate componentconfigs by name, keeping the config of the last

@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 var (
@@ -170,22 +169,6 @@ func getAnnotationOrDefaultForMap(old, new map[string]string, primaryKey, deprec
 	}
 
 	return oldValue == newValue
-}
-
-/*
-GetHostedCredentialsSecret returns the NamespacedName of the secret containing the kubeconfig
-to access the hosted cluster, using the primary annotation key and falling back to the deprecated key if not set.
-*/
-func GetHostedCredentialsSecret(mch *operatorsv1.MultiClusterHub) (types.NamespacedName, error) {
-	nn := types.NamespacedName{}
-	nn.Name = getAnnotationOrDefault(mch, AnnotationKubeconfig, DeprecatedAnnotationKubeconfig)
-
-	if nn.Name == "" {
-		return nn, fmt.Errorf("no kubeconfig secret annotation defined in %s", mch.Name)
-	}
-
-	nn.Namespace = mch.Namespace
-	return nn, nil
 }
 
 /*

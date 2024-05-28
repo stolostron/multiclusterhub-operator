@@ -65,12 +65,6 @@ spec:
         path: hive
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: The resource allocation bucket for this hub to use. [Small, Medium,
-          Large, ExtraLarge]. Defaults to Small if not specified.
-        displayName: Hub Size
-        path: hubSize
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Override pull secret for accessing MultiClusterHub operand and
           endpoint images
         displayName: Image Pull Secret

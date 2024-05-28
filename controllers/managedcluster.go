@@ -5,6 +5,7 @@ package controllers
 
 import (
 	"context"
+	"reflect"
 
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
@@ -27,7 +28,19 @@ const (
 	AnnotationNodeSelector = "open-cluster-management/nodeSelector"
 )
 
-func getKlusterletAddonConfig() *unstructured.Unstructured {
+func getKlusterletAddonConfig(m *operatorsv1.MultiClusterHub) *unstructured.Unstructured {
+	grcEnabled := true
+
+	if m.Spec.Overrides != nil {
+		for _, component := range m.Spec.Overrides.Components {
+			if component.Name == operatorsv1.GRC {
+				grcEnabled = component.Enabled
+
+				break
+			}
+		}
+	}
+
 	klusterletaddonconfig := &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": "agent.open-cluster-management.io/v1",
@@ -40,25 +53,39 @@ func getKlusterletAddonConfig() *unstructured.Unstructured {
 				"applicationManager": map[string]interface{}{
 					"enabled": true,
 				},
-				"connectionManager": map[string]interface{}{
-					"enabledGlobalView": false,
+				"certPolicyController": map[string]interface{}{
+					"enabled": grcEnabled,
 				},
 				"policyController": map[string]interface{}{
-					"enabled": true,
-				},
-				"prometheusIntegration": map[string]interface{}{
-					"enabled": true,
+					"enabled": grcEnabled,
 				},
 				"searchCollector": map[string]interface{}{
 					"enabled": false,
-				},
-				"certPolicyController": map[string]interface{}{
-					"enabled": true,
 				},
 			},
 		},
 	}
 	return klusterletaddonconfig
+}
+
+func equivalentKlusterletAddonConfig(desiredKlusterletaddonconfig, klusterletaddonconfig *unstructured.Unstructured,
+	m *operatorsv1.MultiClusterHub,
+) (bool, map[string]interface{}, error) {
+	newSpec, _, err := unstructured.NestedMap(desiredKlusterletaddonconfig.Object, "spec")
+	if err != nil {
+		return false, nil, err
+	}
+
+	currentSpec, _, err := unstructured.NestedMap(klusterletaddonconfig.Object, "spec")
+	if err != nil {
+		return false, nil, err
+	}
+
+	labels := klusterletaddonconfig.GetLabels()
+
+	hasLabels := labels["installer.name"] == m.Name && labels["installer.namespace"] == m.Namespace
+
+	return reflect.DeepEqual(newSpec, currentSpec) && hasLabels, newSpec, nil
 }
 
 func (r *MultiClusterHubReconciler) ensureKlusterletAddonConfig(m *operatorsv1.MultiClusterHub) (ctrl.Result, error) {
@@ -75,34 +102,58 @@ func (r *MultiClusterHubReconciler) ensureKlusterletAddonConfig(m *operatorsv1.M
 		return ctrl.Result{}, err
 	}
 
-	klusterletaddonconfig := getKlusterletAddonConfig()
+	desiredKlusterletaddonconfig := getKlusterletAddonConfig(m)
+	klusterletaddonconfig := desiredKlusterletaddonconfig.DeepCopy()
 	nsn := types.NamespacedName{
 		Name:      KlusterletAddonConfigName,
 		Namespace: ManagedClusterName,
 	}
-	err = r.Client.Get(ctx, nsn, klusterletaddonconfig)
-	if err != nil && errors.IsNotFound(err) {
-		// Creating new klusterletAddonConfig
-		newKlusterletaddonconfig := getKlusterletAddonConfig()
-		utils.AddInstallerLabel(newKlusterletaddonconfig, m.GetName(), m.GetNamespace())
 
-		err = r.Client.Create(ctx, newKlusterletaddonconfig)
-		if err != nil {
-			r.Log.Error(err, "Failed to create klusterletaddonconfig resource")
-			return ctrl.Result{}, err
+	err = r.Client.Get(ctx, nsn, klusterletaddonconfig)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// Creating new klusterletAddonConfig
+			utils.AddInstallerLabel(desiredKlusterletaddonconfig, m.GetName(), m.GetNamespace())
+
+			err = r.Client.Create(ctx, desiredKlusterletaddonconfig)
+			if err != nil {
+				r.Log.Error(err, "Failed to create klusterletaddonconfig resource")
+				return ctrl.Result{}, err
+			}
+			// KlusterletAddonConfig was successful
+			r.Log.Info("Created a new KlusterletAddonConfig")
+			return ctrl.Result{}, nil
 		}
-		// KlusterletAddonConfig was successful
-		r.Log.Info("Created a new KlusterletAddonConfig")
+
+		r.Log.Error(err, "Failed to get klusterletaddonconfig resource")
+		return ctrl.Result{}, err
+	}
+
+	isEquivalent, newSpec, err := equivalentKlusterletAddonConfig(desiredKlusterletaddonconfig, klusterletaddonconfig, m)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// Don't need to update klusterletaddonconfig when isEquivalent is true
+	if isEquivalent {
 		return ctrl.Result{}, nil
 	}
 
 	utils.AddInstallerLabel(klusterletaddonconfig, m.GetName(), m.GetNamespace())
+
+	err = unstructured.SetNestedMap(klusterletaddonconfig.Object, newSpec, "spec")
+	if err != nil {
+		r.Log.Error(err, "Failed to set the spec of the KlusterletAddonConfig")
+		return ctrl.Result{}, err
+	}
 
 	err = r.Client.Update(ctx, klusterletaddonconfig)
 	if err != nil {
 		r.Log.Error(err, "Failed to update klusterletaddonconfig resource")
 		return ctrl.Result{}, err
 	}
+
+	r.Log.Info("Updated the KlusterletAddonConfig")
 
 	return ctrl.Result{}, nil
 }

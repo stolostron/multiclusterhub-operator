@@ -11,6 +11,7 @@ spec:
   template:
     metadata:
       labels:
+        app: search
         control-plane: controller-manager
         ocm-antiaffinity-selector: search-v2-operator-controller-manager
     spec:
@@ -61,7 +62,7 @@ spec:
         resources:
           limits:
             cpu: 200m
-            memory: 1024Mi
+            memory: 1Gi
           requests:
             cpu: 100m
             memory: 256Mi
@@ -90,7 +91,7 @@ spec:
         - name: WATCH_NAMESPACE
           valueFrom:
             fieldRef:
-              fieldPath: metadata.namespace
+              fieldPath: metadata.annotations['olm.targetNamespaces']
         - name: POSTGRES_IMAGE
           value: '{{ .Values.global.imageOverrides.postgresql_13 }}'
         - name: INDEXER_IMAGE
@@ -117,7 +118,7 @@ spec:
         resources:
           limits:
             cpu: 200m
-            memory: 1024Mi
+            memory: 1Gi
           requests:
             cpu: 50m
             memory: 256Mi

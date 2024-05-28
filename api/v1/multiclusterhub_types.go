@@ -26,7 +26,7 @@ import (
 // AvailabilityType ...
 type AvailabilityType string
 
-// DeploymentMode
+// DeploymentMode ...
 type DeploymentMode string
 
 const (
@@ -34,8 +34,6 @@ const (
 	HABasic AvailabilityType = "Basic"
 	// HAHigh stands up most app subscriptions with a replicaCount of 2
 	HAHigh AvailabilityType = "High"
-	// ModeHosted deploys the MCH on a hosted virtual cluster
-	ModeHosted DeploymentMode = "Hosted"
 )
 
 type HubSize string
