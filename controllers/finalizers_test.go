@@ -101,6 +101,11 @@ func Test_cleanupMultiClusterEngine(t *testing.T) {
 				t.Errorf("failed to create MultiClusterEngine: %v", err)
 			}
 
+			// If MCE exists the first time it will return an error.
+			if err := recon.cleanupMultiClusterEngine(log, &tt.mch); err == nil {
+				t.Errorf("failed to cleanup MultiClusterEngine: %v", err)
+			}
+
 			if err := recon.cleanupMultiClusterEngine(log, &tt.mch); err != nil {
 				t.Errorf("failed to cleanup MultiClusterEngine: %v", err)
 			}
