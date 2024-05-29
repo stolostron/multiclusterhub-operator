@@ -126,8 +126,14 @@ type Overrides struct {
 
 // ComponentConfig provides optional configuration items for individual components
 type ComponentConfig struct {
-	Name    string `json:"name"`
-	Enabled bool   `json:"enabled"`
+	Name         string        `json:"name"`
+	Enabled      bool          `json:"enabled"`
+	EnvOverrides []EnvOverride `json:"envOverrides,omitempty"`
+}
+
+type EnvOverride struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 type HiveConfigSpec struct {

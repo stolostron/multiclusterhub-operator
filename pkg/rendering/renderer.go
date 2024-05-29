@@ -32,6 +32,7 @@ type Values struct {
 
 type Global struct {
 	ImageOverrides      map[string]string    `json:"imageOverrides" structs:"imageOverrides"`
+	EnvOverrides        []v1.EnvOverride     `json:"envOverrides" structs:"envOverrides"`
 	TemplateOverrides   map[string]string    `json:"templateOverrides" structs:"templateOverrides"`
 	PullPolicy          string               `json:"pullPolicy" structs:"pullPolicy"`
 	PullSecret          string               `json:"pullSecret" structs:"pullSecret"`
@@ -195,7 +196,7 @@ func RenderCRDs(crdDir string, mch *v1.MultiClusterHub) ([]*unstructured.Unstruc
 }
 
 func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]string, tpl map[string]string,
-	isSTSEnabled bool) ([]*unstructured.Unstructured, []error) {
+	envOverrides []v1.EnvOverride, isSTSEnabled bool) ([]*unstructured.Unstructured, []error) {
 
 	var templates []*unstructured.Unstructured
 	errs := []error{}
@@ -214,7 +215,7 @@ func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]st
 
 	for _, chart := range charts {
 		chartPath := filepath.Join(chartDir, chart.Name())
-		chartTemplates, errs := renderTemplates(chartPath, mch, images, tpl, isSTSEnabled)
+		chartTemplates, errs := renderTemplates(chartPath, mch, images, tpl, envOverrides, isSTSEnabled)
 		if len(errs) > 0 {
 			for _, err := range errs {
 				log.Info(err.Error())
@@ -227,7 +228,7 @@ func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]st
 }
 
 func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]string, templates map[string]string,
-	isSTSEnabled bool) ([]*unstructured.Unstructured, []error) {
+	envOverrides []v1.EnvOverride, isSTSEnabled bool) ([]*unstructured.Unstructured, []error) {
 
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
 		chartPath = path.Join(val, chartPath)
@@ -237,7 +238,7 @@ func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]st
 
 	}
 
-	chartTemplates, errs := renderTemplates(chartPath, mch, images, templates, isSTSEnabled)
+	chartTemplates, errs := renderTemplates(chartPath, mch, images, templates, envOverrides, isSTSEnabled)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -249,7 +250,7 @@ func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]st
 }
 
 func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[string]string, tpl map[string]string,
-	isSTSEnabled bool) ([]*unstructured.Unstructured, []error) {
+	envOverrides []v1.EnvOverride, isSTSEnabled bool) ([]*unstructured.Unstructured, []error) {
 
 	var templates []*unstructured.Unstructured
 	errs := []error{}
@@ -261,7 +262,7 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 	}
 
 	valuesYaml := &Values{}
-	injectValuesOverrides(valuesYaml, mch, images, tpl, isSTSEnabled)
+	injectValuesOverrides(valuesYaml, mch, images, tpl, envOverrides, isSTSEnabled)
 	helmEngine := engine.Engine{
 		Strict:   true,
 		LintMode: false,
@@ -300,10 +301,13 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 }
 
 func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[string]string,
-	templates map[string]string, isSTSEnabled bool) {
+	templates map[string]string, envOverrides []v1.EnvOverride, isSTSEnabled bool) {
+
 	values.Global.ImageOverrides = images
 
 	values.Global.TemplateOverrides = templates
+
+	values.Global.EnvOverrides = envOverrides
 
 	values.Global.PullPolicy = string(utils.GetImagePullPolicy(mch))
 
