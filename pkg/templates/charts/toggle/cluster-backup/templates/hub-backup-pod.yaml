@@ -275,18 +275,18 @@ spec:
           remediationAction: inform
           severity: high
           object-templates-raw: |
-            {{ printf `{{ $ch := "%s" }}` .Values.oadpOperator.channel }}
+            {{ printf `{{- $ch := "%s" }}` .Values.oadpOperator.channel }}
             {{ `{{- range $ss := (lookup "operators.coreos.com/v1alpha1" "Subscription" "open-cluster-management-backup" "").items }}` }}
               {{ `{{- if and (eq $ss.spec.name "redhat-oadp-operator") (lt $ss.spec.channel $ch) }}` }}
-            - complianceType: musthave
-              objectDefinition:
-                kind: Subscription
-                apiVersion: operators.coreos.com/v1alpha1
-                metadata:
-                  name: {{ `{{ $ss.metadata.name }}` }}
-                  namespace: {{ `{{ $ss.metadata.namespace }}` }}
-                spec:
-                  channel: {{ `{{ $ch }}` }}
+              - complianceType: musthave
+                objectDefinition:
+                  kind: Subscription
+                  apiVersion: operators.coreos.com/v1alpha1
+                  metadata:
+                    name: {{ `{{ $ss.metadata.name }}` }}
+                    namespace: {{ `{{ $ss.metadata.namespace }}` }}
+                  spec:
+                    channel: {{ `{{ $ch }}` }}
               {{ `{{- end }}` }}
             {{ `{{- end }}` }}
     - objectDefinition:
@@ -302,22 +302,22 @@ spec:
             {{ `{{- range $ss := (lookup "operators.coreos.com/v1alpha1" "Subscription" "open-cluster-management-backup" "").items }}` }}
               {{ `{{- if (eq $ss.spec.name "redhat-oadp-operator") }}` }}
                 {{ `{{ $ch = $ss.spec.channel }}` }}
-                {{ `{{ break }}` }}
+                {{ `{{- break }}` }}
               {{ `{{- end }}` }}
             {{ `{{- end }}` }}
             {{ `{{- if $ch }}` }}
               {{ `{{- range $cs := (lookup "operators.coreos.com/v1alpha1" "Subscription" "" "").items }}` }}
                 {{ `{{- if and (eq $cs.spec.name "redhat-oadp-operator") (ne $cs.spec.channel $ch) }}` }}
-            - complianceType: musthave
-              objectDefinition:
-                kind: Subscription
-                apiVersion: operators.coreos.com/v1alpha1
-                metadata:
-                  name: {{ `{{ $cs.metadata.name }}` }}
-                  namespace: {{ `{{ $cs.metadata.namespace }}` }}
-                spec:
-                  channel: {{ `{{ $ch }}` }}
+                - complianceType: musthave
+                  objectDefinition:
+                    kind: Subscription
+                    apiVersion: operators.coreos.com/v1alpha1
+                    metadata:
+                      name: {{ `{{ $cs.metadata.name }}` }}
+                      namespace: {{ `{{ $cs.metadata.namespace }}` }}
+                    spec:
+                      channel: {{ `{{ $ch }}` }}
                 {{ `{{- end }}` }}
               {{ `{{- end }}` }}
-            {{ `{{- end }}` }}                                                                  
+            {{ `{{- end }}` }}                                                             
   remediationAction: inform
