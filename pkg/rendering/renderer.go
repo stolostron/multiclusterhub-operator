@@ -39,6 +39,7 @@ type Global struct {
 	ImageRepository     string               `json:"imageRepository" structs:"namespace"`
 	Name                string               `json:"name" structs:"name"`
 	Channel             string               `json:"channel" structs:"Channel"`
+	MinOADPChannel      string               `json:"minOADPChannel" structs:"minOADPChannel"`
 	InstallPlanApproval subv1alpha1.Approval `json:"installPlanApproval" structs:"installPlanApproval"`
 	Source              string               `json:"source" structs:"source"`
 	SourceNamespace     string               `json:"sourceNamespace" structs:"sourceNamespace"`

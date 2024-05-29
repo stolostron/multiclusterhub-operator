@@ -275,7 +275,7 @@ spec:
           remediationAction: inform
           severity: high
           object-templates-raw: |
-            {{ printf `{{- $ch := "%s" }}` .Values.oadpOperator.channel }}
+            {{ printf `{{- $ch := "%s" }}` .Values.global.minOADPChannel }}
             {{ `{{- range $ss := (lookup "operators.coreos.com/v1alpha1" "Subscription" "open-cluster-management-backup" "").items }}` }}
               {{ `{{- if and (eq $ss.spec.name "redhat-oadp-operator") (lt $ss.spec.channel $ch) }}` }}
               - complianceType: musthave
