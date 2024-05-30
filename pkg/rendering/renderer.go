@@ -66,6 +66,15 @@ type Toleration struct {
 	TolerationSeconds *int64                    `json:"TolerationSeconds" protobuf:"varint,5,opt,name=tolerationSeconds"`
 }
 
+// defaults for the OADP subscription that will be created by the installer
+const (
+	defaultOADPChannel         = "stable-1.3" // This will also be the minOADPChannel (min version we expect to be installed)
+	defaultOADPName            = "redhat-oadp-operator"
+	defaultOADPInstallPlan     = "Automatic"
+	defaultOADPSource          = "redhat-operators"
+	defaultOADPSourceNamespace = "openshift-marketplace"
+)
+
 var log = logf.Log.WithName("reconcile")
 
 func convertTolerations(tols []corev1.Toleration) []Toleration {
@@ -348,6 +357,8 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 
 	values.Global.Name, values.Global.Channel, values.Global.InstallPlanApproval, values.Global.Source, values.Global.SourceNamespace = GetOADPConfig(mch)
 
+	values.Global.MinOADPChannel = defaultOADPChannel
+
 	// TODO: Define all overrides
 }
 
@@ -368,31 +379,31 @@ func GetOADPConfig(m *v1.MultiClusterHub) (string, string, subv1alpha1.Approval,
 	if sub.Package != "" {
 		name = sub.Package
 	} else {
-		name = "redhat-oadp-operator"
+		name = defaultOADPName
 	}
 
 	if sub.Channel != "" {
 		channel = sub.Channel
 	} else {
-		channel = "stable-1.3"
+		channel = defaultOADPChannel
 	}
 
 	if sub.InstallPlanApproval != "" {
 		installPlan = sub.InstallPlanApproval
 	} else {
-		installPlan = "Automatic"
+		installPlan = defaultOADPInstallPlan
 	}
 
 	if sub.CatalogSource != "" {
 		source = sub.CatalogSource
 	} else {
-		source = "redhat-operators"
+		source = defaultOADPSource
 	}
 
 	if sub.CatalogSourceNamespace != "" {
 		sourceNamespace = sub.CatalogSourceNamespace
 	} else {
-		sourceNamespace = "openshift-marketplace"
+		sourceNamespace = defaultOADPSourceNamespace
 	}
 	return name, channel, installPlan, source, sourceNamespace
 }
