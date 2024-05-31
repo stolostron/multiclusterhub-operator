@@ -13,6 +13,7 @@ global:
   templateOverrides: {}
   name: redhat-oadp-operator
   channel: stable-1.3
+  minOADPChannel: stable-1.3
   installPlanApproval: Automatic
   source: redhat-operators
   sourceNamespace: openshift-marketplace
@@ -64,9 +65,3 @@ clusterbackup:
       cpu: "50m"
 BackupRestorePolicyName: backup-restore-enabled
 ClusterCollisionPhase: BackupCollision
-oadpOperator:
-  name: redhat-oadp-operator
-  channel: stable-1.3
-  installPlanApproval: Automatic
-  source: redhat-operators
-  sourceNamespace: openshift-marketplace
