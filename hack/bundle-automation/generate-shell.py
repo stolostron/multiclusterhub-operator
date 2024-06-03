@@ -38,7 +38,7 @@ def main(args):
     start_time = time.time()  # Record start time
 
     repo_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp/dev-tools") # Destination path for cloned repository.
-    clone_repository("https://github.com/dislbenn/installer-dev-tools.git", repo_path)
+    clone_repository("https://github.com/stolostron/installer-dev-tools.git", repo_path)
     script_dir = "tmp/dev-tools/bundle-generation"
 
     if args.lint_bundles:
