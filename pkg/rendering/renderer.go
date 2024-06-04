@@ -68,7 +68,7 @@ type Toleration struct {
 
 // defaults for the OADP subscription that will be created by the installer
 const (
-	defaultOADPChannel         = "stable-1.3" // This will also be the minOADPChannel (min version we expect to be installed)
+	defaultOADPChannel         = "stable-1.4" // This will also be the minOADPChannel (min version we expect to be installed)
 	defaultOADPName            = "redhat-oadp-operator"
 	defaultOADPInstallPlan     = "Automatic"
 	defaultOADPSource          = "redhat-operators"
