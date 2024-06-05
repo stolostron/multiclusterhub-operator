@@ -5,12 +5,13 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:latest as cloner
 RUN microdnf install git findutils
 COPY hack/scripts hack/scripts
 
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.21 AS builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.20 AS builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
 COPY go.mod go.mod
 COPY go.sum go.sum
+
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
 RUN go mod download
@@ -22,11 +23,11 @@ COPY controllers/ controllers/
 COPY pkg/ pkg/
 
 # Copy required files
-
 COPY pkg/templates/ templates/
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o multiclusterhub-operator main.go
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go mod vendor
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -a -o multiclusterhub-operator main.go
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
