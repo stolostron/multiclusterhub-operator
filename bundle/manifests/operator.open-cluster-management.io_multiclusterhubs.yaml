@@ -287,6 +287,7 @@ spec:
                   description: StatusCondition contains condition information.
                   properties:
                     kind:
+                      description: The resource kind this condition represents
                       type: string
                     lastTransitionTime:
                       description: LastTransitionTime is the last time the condition
@@ -298,6 +299,7 @@ spec:
                         details about the last status change.
                       type: string
                     name:
+                      description: The component name
                       type: string
                     reason:
                       description: Reason is a (brief) reason for the condition's

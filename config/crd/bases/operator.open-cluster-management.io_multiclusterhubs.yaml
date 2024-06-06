@@ -287,6 +287,9 @@ spec:
                 additionalProperties:
                   description: StatusCondition contains condition information.
                   properties:
+                    kind:
+                      description: The resource kind this condition represents
+                      type: string
                     lastTransitionTime:
                       description: LastTransitionTime is the last time the condition
                         changed from one status to another.
@@ -295,6 +298,9 @@ spec:
                     message:
                       description: Message is a human-readable message indicating
                         details about the last status change.
+                      type: string
+                    name:
+                      description: The component name
                       type: string
                     reason:
                       description: Reason is a (brief) reason for the condition's
@@ -316,8 +322,6 @@ spec:
                 items:
                   description: StatusCondition contains condition information.
                   properties:
-                    kind:
-                      type: string
                     lastTransitionTime:
                       description: LastTransitionTime is the last time the condition
                         changed from one status to another.
@@ -330,8 +334,6 @@ spec:
                     message:
                       description: Message is a human-readable message indicating
                         details about the last status change.
-                      type: string
-                    name:
                       type: string
                     reason:
                       description: Reason is a (brief) reason for the condition's
