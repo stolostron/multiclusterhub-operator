@@ -35,6 +35,8 @@ jobs:
       # Runs a set of commands using the runners shell
       - name: Regenerate Operator SHAs Commits
         id: generate_sha_commit
+        env:
+          GH_READ_PAT: ${{ secrets.GH_READ_PAT }}
         run: |
           make regenerate-operator-sha-commits
           exit_code=$?
