@@ -30,9 +30,9 @@ lint-operator-bundles: ## Lints the operator bundles
 	pip3 install -r hack/bundle-automation/requirements.txt
 	python3 ./hack/bundle-automation/generate-shell.py --lint-bundles
 
-regenerate-operator-bundles: ## Regenerates the operator bundles
+regenerate-operator-charts: ## Regenerates the operator charts from bundles
 	pip3 install -r hack/bundle-automation/requirements.txt
-	python3 ./hack/bundle-automation/generate-shell.py --update-bundles
+	python3 ./hack/bundle-automation/generate-shell.py --update-operator-charts
 
 regenerate-operator-sha-commits: ## Regenerates the operator bundles
 	pip3 install -r hack/bundle-automation/requirements.txt
