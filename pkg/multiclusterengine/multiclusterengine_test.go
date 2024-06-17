@@ -968,3 +968,108 @@ func Test_extractCatalogSource(t *testing.T) {
 		})
 	}
 }
+
+func Test_findHighestPriorityCatalogSource(t *testing.T) {
+	tests := []struct {
+		name     string
+		catalogs []subv1alpha1.CatalogSource
+		pkgs     []olmapi.PackageManifest
+		want     bool
+	}{
+		{
+			name: "should find highest priority catalog source",
+			catalogs: []subv1alpha1.CatalogSource{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "redhat-operators",
+						Namespace: "openshift-marketplace",
+					},
+					Spec: subv1alpha1.CatalogSourceSpec{Priority: -100},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "multiclusterengine-catalog",
+						Namespace: "openshift-marketplace",
+					},
+				},
+			},
+			pkgs: []olmapi.PackageManifest{
+				{
+					ObjectMeta: metav1.ObjectMeta{},
+					Status: olmapi.PackageManifestStatus{
+						CatalogSource:          "redhat-operators",
+						CatalogSourceNamespace: "openshift-marketplace",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{},
+					Status: olmapi.PackageManifestStatus{
+						CatalogSource:          "multiclusterengine-catalog",
+						CatalogSourceNamespace: "openshift-marketplace",
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "should find more than one catalogsource with highest priority",
+			catalogs: []subv1alpha1.CatalogSource{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "redhat-operators",
+						Namespace: "openshift-marketplace",
+					},
+					Spec: subv1alpha1.CatalogSourceSpec{Priority: -100},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "multiclusterengine-catalog",
+						Namespace: "openshift-marketplace",
+					},
+					Spec: subv1alpha1.CatalogSourceSpec{Priority: -100},
+				},
+			},
+			pkgs: []olmapi.PackageManifest{
+				{
+					ObjectMeta: metav1.ObjectMeta{},
+					Status: olmapi.PackageManifestStatus{
+						CatalogSource:          "redhat-operators",
+						CatalogSourceNamespace: "openshift-marketplace",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{},
+					Status: olmapi.PackageManifestStatus{
+						CatalogSource:          "multiclusterengine-catalog",
+						CatalogSourceNamespace: "openshift-marketplace",
+					},
+				},
+			},
+			want: true,
+		},
+	}
+
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer func() {
+				for _, cs := range tt.catalogs {
+					if err := mockClient.Delete(context.TODO(), &cs); err != nil {
+						t.Errorf("failed to delete catalogsource: %v", err)
+					}
+				}
+			}()
+
+			for _, cs := range tt.catalogs {
+				if err := mockClient.Create(context.TODO(), &cs); err != nil {
+					t.Errorf("failed to create catalogsource: %v", err)
+				}
+			}
+
+			_, err := findHighestPriorityCatalogSource(mockClient, tt.pkgs)
+			if got := err != nil; got != tt.want {
+				t.Errorf("findHighestPriorityCatalogSource(mockClient, tt.pkgs) = got: %v, want: %v", got, tt.want)
+			}
+		})
+	}
+}
