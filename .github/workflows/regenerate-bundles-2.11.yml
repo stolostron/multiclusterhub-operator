@@ -37,7 +37,7 @@ jobs:
       - name: Regenerate Operator Charts From Bundles
         id: generate_charts_from_bundles
         run: |
-          make regenerate-operator-charts
+          make regenerate-charts-from-bundles
           exit_code=$?
           if [ $exit_code -ne 0 ]; then
             echo "Regenerate Operator Charts From Bundles step failed with exit code $exit_code"
