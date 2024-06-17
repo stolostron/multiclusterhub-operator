@@ -350,7 +350,7 @@ func TestOADPAnnotation(t *testing.T) {
 		t.Error("Cluster Backup missing OADP overrides for name")
 	}
 
-	if test2 != "stable-1.3" {
+	if test2 != "stable-1.4" {
 		t.Error("Cluster Backup missing OADP overrides for channel")
 	}
 
