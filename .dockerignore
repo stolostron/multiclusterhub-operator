@@ -3,3 +3,7 @@
 !**/*.go
 !**/*.mod
 !**/*.sum
+
+# Exclude test files
+**/*_test.go
+test/unit-test/**

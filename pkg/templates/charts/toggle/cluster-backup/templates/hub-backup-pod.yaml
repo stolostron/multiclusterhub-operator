@@ -253,7 +253,7 @@ spec:
         apiVersion: policy.open-cluster-management.io/v1
         kind: ConfigurationPolicy
         metadata:
-          name: redhat-oadp-operator
+          name: oadp-operator-exists
         spec:
           object-templates:
             - complianceType: musthave
@@ -264,29 +264,60 @@ spec:
                   namespace: open-cluster-management-backup
                 spec:
                   name: redhat-oadp-operator
-                  channel: {{ .Values.global.channel }}
           remediationAction: inform
           severity: high
     - objectDefinition:
         apiVersion: policy.open-cluster-management.io/v1
         kind: ConfigurationPolicy
         metadata:
-          name: oadp-channel
+          name: oadp-channel-validation
         spec:
           remediationAction: inform
           severity: high
           object-templates-raw: |
-            {{ `{{- range $ss := (lookup "operators.coreos.com/v1alpha1" "Subscription" "" "").items }}` }}
-            {{ `{{- if eq $ss.spec.name "redhat-oadp-operator" }}` }}
-            - complianceType: musthave
-              objectDefinition:
-                kind: Subscription
-                apiVersion: operators.coreos.com/v1alpha1
-                metadata:
-                  name: {{ `{{ $ss.metadata.name }}` }}
-                  namespace: {{ `{{ $ss.metadata.namespace }}` }}
-                spec:
-                  channel: {{ .Values.global.channel }}
+            {{ printf `{{- $ch := "%s" }}` .Values.global.minOADPChannel }}
+            {{ `{{- range $ss := (lookup "operators.coreos.com/v1alpha1" "Subscription" "open-cluster-management-backup" "").items }}` }}
+              {{ `{{- if and (eq $ss.spec.name "redhat-oadp-operator") (lt $ss.spec.channel $ch) }}` }}
+              - complianceType: musthave
+                objectDefinition:
+                  kind: Subscription
+                  apiVersion: operators.coreos.com/v1alpha1
+                  metadata:
+                    name: {{ `{{ $ss.metadata.name }}` }}
+                    namespace: {{ `{{ $ss.metadata.namespace }}` }}
+                  spec:
+                    channel: {{ `{{ $ch }}` }}
+              {{ `{{- end }}` }}
             {{ `{{- end }}` }}
-            {{ `{{- end }}` }}                                                                      
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: custom-oadp-channel-validation
+        spec:
+          remediationAction: inform
+          severity: high
+          object-templates-raw: |
+            {{ `{{- $ch := "" }}` }}
+            {{ `{{- range $ss := (lookup "operators.coreos.com/v1alpha1" "Subscription" "open-cluster-management-backup" "").items }}` }}
+              {{ `{{- if (eq $ss.spec.name "redhat-oadp-operator") }}` }}
+                {{ `{{ $ch = $ss.spec.channel }}` }}
+                {{ `{{- break }}` }}
+              {{ `{{- end }}` }}
+            {{ `{{- end }}` }}
+            {{ `{{- if $ch }}` }}
+              {{ `{{- range $cs := (lookup "operators.coreos.com/v1alpha1" "Subscription" "" "").items }}` }}
+                {{ `{{- if and (eq $cs.spec.name "redhat-oadp-operator") (ne $cs.spec.channel $ch) }}` }}
+                - complianceType: musthave
+                  objectDefinition:
+                    kind: Subscription
+                    apiVersion: operators.coreos.com/v1alpha1
+                    metadata:
+                      name: {{ `{{ $cs.metadata.name }}` }}
+                      namespace: {{ `{{ $cs.metadata.namespace }}` }}
+                    spec:
+                      channel: {{ `{{ $ch }}` }}
+                {{ `{{- end }}` }}
+              {{ `{{- end }}` }}
+            {{ `{{- end }}` }}                                                             
   remediationAction: inform

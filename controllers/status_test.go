@@ -515,6 +515,9 @@ func Test_mapCSV(t *testing.T) {
 		{
 			name: "Successful install",
 			csv: &olmv1alpha1.ClusterServiceVersion{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "advanced-cluster-management.v2.11.0",
+				},
 				Status: olmv1alpha1.ClusterServiceVersionStatus{
 					Conditions: []olmv1alpha1.ClusterServiceVersionCondition{
 						{
@@ -526,6 +529,7 @@ func Test_mapCSV(t *testing.T) {
 				},
 			},
 			want: operatorsv1.StatusCondition{
+				Name:      "advanced-cluster-management.v2.11.0",
 				Kind:      "ClusterServiceVersion",
 				Status:    metav1.ConditionTrue,
 				Reason:    "InstallSucceeded",
@@ -539,7 +543,7 @@ func Test_mapCSV(t *testing.T) {
 			csv: &olmv1alpha1.ClusterServiceVersion{
 				Status: olmv1alpha1.ClusterServiceVersionStatus{},
 			},
-			want: unknownStatus,
+			want: unknownStatus("advanced-cluster-management.v2.11.0", "ClusterServiceVersion"),
 		},
 	}
 	for _, tt := range tests {
@@ -579,6 +583,9 @@ func Test_mapMCE(t *testing.T) {
 		{
 			name: "Successful install",
 			mce: &mcev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multicluster-engine.v2.6.0",
+				},
 				Status: mcev1.MultiClusterEngineStatus{
 					Conditions: []mcev1.MultiClusterEngineCondition{
 						{
@@ -591,7 +598,8 @@ func Test_mapMCE(t *testing.T) {
 				},
 			},
 			want: operatorsv1.StatusCondition{
-				Kind:      "ClusterServiceVersion",
+				Name:      "multicluster-engine.v2.6.0",
+				Kind:      "MultiClusterEngine",
 				Status:    metav1.ConditionTrue,
 				Reason:    "Available",
 				Message:   "",
@@ -606,7 +614,7 @@ func Test_mapMCE(t *testing.T) {
 					Conditions: []mcev1.MultiClusterEngineCondition{},
 				},
 			},
-			want: unknownStatus,
+			want: unknownStatus("multicluster-engine.v2.6.0", "MultiClusterEngine"),
 		},
 	}
 	for _, tt := range tests {
@@ -672,7 +680,7 @@ func Test_mapSubscription(t *testing.T) {
 			sub: &olmv1alpha1.Subscription{
 				Status: olmv1alpha1.SubscriptionStatus{},
 			},
-			want: unknownStatus,
+			want: unknownStatus("test", "Subscription"),
 		},
 	}
 	for _, tt := range tests {
@@ -770,7 +778,7 @@ func Test_getComponentStatuses(t *testing.T) {
 				},
 			},
 			want: map[string]operatorsv1.StatusCondition{
-				"local-cluster": unknownStatus,
+				"local-cluster": unknownStatus("local-cluster", "Component"),
 			},
 		},
 	}

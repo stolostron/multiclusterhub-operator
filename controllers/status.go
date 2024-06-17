@@ -76,14 +76,18 @@ const (
 	FailedApplyingComponent = "FailedApplyingComponent"
 )
 
+var (
+	prevAvailability = make(map[string]bool)
+)
+
 func newComponentList(m *operatorsv1.MultiClusterHub, ocpConsole, isSTSEnabled bool) map[string]operatorsv1.StatusCondition {
 	components := make(map[string]operatorsv1.StatusCondition)
 	for _, d := range utils.GetDeploymentsForStatus(m, ocpConsole, isSTSEnabled) {
-		components[d.Name] = unknownStatus
+		components[d.Name] = unknownStatus(d.Name, "Deployment")
 	}
 
 	for _, cr := range utils.GetCustomResourcesForStatus(m) {
-		components[cr.Name] = unknownStatus
+		components[cr.Name] = unknownStatus(cr.Name, "Component")
 	}
 	return components
 }
@@ -96,16 +100,6 @@ var consoleUnavailableStatus = operatorsv1.StatusCondition{
 	Reason:             "OCP Console missing",
 	Message:            "The OCP Console must be enabled before using ACM Console",
 	Available:          true,
-}
-
-var unknownStatus = operatorsv1.StatusCondition{
-	Type:               "Unknown",
-	Status:             metav1.ConditionUnknown,
-	LastUpdateTime:     metav1.Now(),
-	LastTransitionTime: metav1.Now(),
-	Reason:             "No conditions available",
-	Message:            "No conditions available",
-	Available:          false,
 }
 
 // ComponentsAreRunning ...
@@ -284,11 +278,12 @@ func progressingDeployCondition(conditions []appsv1.DeploymentCondition) appsv1.
 
 func mapDeployment(ds *appsv1.Deployment) operatorsv1.StatusCondition {
 	if len(ds.Status.Conditions) < 1 {
-		return unknownStatus
+		return unknownStatus(ds.Name, ds.Kind)
 	}
 
 	dcs := latestDeployCondition(ds.Status.Conditions)
 	ret := operatorsv1.StatusCondition{
+		Name:               ds.Name,
 		Kind:               "Deployment",
 		Type:               string(dcs.Type),
 		Status:             metav1.ConditionStatus(string(dcs.Status)),
@@ -307,6 +302,7 @@ func mapDeployment(ds *appsv1.Deployment) operatorsv1.StatusCondition {
 	if dcs.Type == appsv1.DeploymentAvailable && dcs.Status == corev1.ConditionTrue && !ret.Available {
 		sub := progressingDeployCondition(ds.Status.Conditions)
 		ret = operatorsv1.StatusCondition{
+			Name:               ds.Name,
 			Kind:               "Deployment",
 			Type:               string(sub.Type),
 			Status:             metav1.ConditionStatus(string(sub.Status)),
@@ -323,19 +319,22 @@ func mapDeployment(ds *appsv1.Deployment) operatorsv1.StatusCondition {
 
 func mapSubscription(sub *unstructured.Unstructured) operatorsv1.StatusCondition {
 	if sub == nil {
-		return unknownStatus
+		return unknownStatus(sub.GetName(), "Subscription")
 	}
+
 	spec, ok := sub.Object["spec"].(map[string]interface{})
 	if !ok {
-		return unknownStatus
+		return unknownStatus(sub.GetName(), "Subscription")
 	}
+
 	status, ok := sub.Object["status"].(map[string]interface{})
 	if !ok {
-		return unknownStatus
+		return unknownStatus(sub.GetName(), "Subscription")
 	}
+
 	installPlanRef, ok := status["installPlanRef"].(map[string]interface{})
 	if !ok {
-		return unknownStatus
+		return unknownStatus(sub.GetName(), "Subscription")
 	}
 
 	componentStatus := "True"
@@ -354,6 +353,7 @@ func mapSubscription(sub *unstructured.Unstructured) operatorsv1.StatusCondition
 	}
 
 	return operatorsv1.StatusCondition{
+		Name:               sub.GetName(),
 		Kind:               "Subscription",
 		Status:             metav1.ConditionStatus(componentStatus),
 		LastUpdateTime:     metav1.Now(),
@@ -367,16 +367,16 @@ func mapSubscription(sub *unstructured.Unstructured) operatorsv1.StatusCondition
 
 func mapMultiClusterEngine(mce *unstructured.Unstructured) operatorsv1.StatusCondition {
 	if mce == nil {
-		return unknownStatus
+		return unknownStatus(mce.GetName(), "MultiClusterEngine")
 	}
 
 	status, ok := mce.Object["status"].(map[string]interface{})
 	if !ok {
-		return unknownStatus
+		return unknownStatus(mce.GetName(), "MultiClusterEngine")
 	}
 	conditions, ok := status["conditions"].([]interface{})
 	if !ok {
-		return unknownStatus
+		return unknownStatus(mce.GetName(), "MultiClusterEngine")
 	}
 
 	componentCondition := operatorsv1.StatusCondition{}
@@ -384,8 +384,7 @@ func mapMultiClusterEngine(mce *unstructured.Unstructured) operatorsv1.StatusCon
 	for _, condition := range conditions {
 		statusCondition, ok := condition.(map[string]interface{})
 		if !ok {
-			// log.Info("ClusterManager status conditions not properly formatted")
-			return unknownStatus
+			return unknownStatus(mce.GetName(), "MultiClusterEngine")
 		}
 
 		status, _ := statusCondition["status"].(string)
@@ -394,7 +393,8 @@ func mapMultiClusterEngine(mce *unstructured.Unstructured) operatorsv1.StatusCon
 		conditionType, _ := statusCondition["type"].(string)
 
 		componentCondition = operatorsv1.StatusCondition{
-			Kind:               "ClusterServiceVersion",
+			Name:               mce.GetName(),
+			Kind:               "MultiClusterEngine",
 			Status:             metav1.ConditionStatus(status),
 			LastUpdateTime:     metav1.Now(),
 			LastTransitionTime: metav1.Now(),
@@ -417,16 +417,16 @@ func mapMultiClusterEngine(mce *unstructured.Unstructured) operatorsv1.StatusCon
 
 func mapCSV(csv *unstructured.Unstructured) operatorsv1.StatusCondition {
 	if csv == nil {
-		return unknownStatus
+		return unknownStatus(csv.GetName(), "ClusterServiceVersion")
 	}
 
 	status, ok := csv.Object["status"].(map[string]interface{})
 	if !ok {
-		return unknownStatus
+		return unknownStatus(csv.GetName(), "ClusterServiceVersion")
 	}
 	conditions, ok := status["conditions"].([]interface{})
 	if !ok {
-		return unknownStatus
+		return unknownStatus(csv.GetName(), "ClusterServiceVersion")
 	}
 
 	componentCondition := operatorsv1.StatusCondition{}
@@ -434,8 +434,7 @@ func mapCSV(csv *unstructured.Unstructured) operatorsv1.StatusCondition {
 	for _, condition := range conditions {
 		statusCondition, ok := condition.(map[string]interface{})
 		if !ok {
-			// log.Info("ClusterManager status conditions not properly formatted")
-			return unknownStatus
+			return unknownStatus(csv.GetName(), "ClusterServiceVersion")
 		}
 
 		phase, _ := statusCondition["phase"].(string)
@@ -448,6 +447,7 @@ func mapCSV(csv *unstructured.Unstructured) operatorsv1.StatusCondition {
 		}
 
 		componentCondition = operatorsv1.StatusCondition{
+			Name:               csv.GetName(),
 			Kind:               "ClusterServiceVersion",
 			Status:             metav1.ConditionStatus(status),
 			LastUpdateTime:     metav1.Now(),
@@ -470,16 +470,40 @@ func mapCSV(csv *unstructured.Unstructured) operatorsv1.StatusCondition {
 	return componentCondition
 }
 
-func successfulComponent(sc operatorsv1.StatusCondition) bool { return sc.Available }
-
 // allComponentsSuccessful returns true if all components are successful, otherwise false
 func allComponentsSuccessful(components map[string]operatorsv1.StatusCondition) bool {
+	if len(components) == 0 {
+		return false
+	}
+
+	// Track availability status.
+	allAvailable := true
+
 	for _, val := range components {
-		if !successfulComponent(val) {
-			return false
+		if !val.Available {
+			// Check if the component's availability status has changed since the last reconciliation.
+			if prevStatus, exists := prevAvailability[val.Name]; !exists || prevStatus {
+				// Log the information about the newly unavailable component
+				log.Info("The component is not yet available.", "Kind", val.Kind, "Name", val.Name, "Reason", val.Reason)
+			}
+
+			// Update the previous availability status for this component
+			prevAvailability[val.Name] = false
+			allAvailable = false
+		} else {
+			// Check if the component's availability status has changed since the last reconciliation
+			if prevStatus, exists := prevAvailability[val.Name]; !exists || !prevStatus {
+				// Log the information about the newly available component
+				log.Info("The component is now available.", "Kind", val.Kind, "Name", val.Name)
+			}
+
+			// Update the previous availability status for this component
+			prevAvailability[val.Name] = true
 		}
 	}
-	return true
+
+	// Return the overall availability status
+	return allAvailable
 }
 
 // aggregatePhase calculates overall HubPhaseType based on hub status. This does NOT account for
@@ -617,4 +641,18 @@ func HubConditionPresentWithSubstring(status operatorsv1.MultiClusterHubStatus, 
 		}
 	}
 	return false
+}
+
+func unknownStatus(name, kind string) operatorsv1.StatusCondition {
+	return operatorsv1.StatusCondition{
+		Name:               name,
+		Kind:               kind,
+		Type:               "Unknown",
+		Status:             metav1.ConditionUnknown,
+		LastUpdateTime:     metav1.Now(),
+		LastTransitionTime: metav1.Now(),
+		Reason:             "No conditions available",
+		Message:            "No conditions available",
+		Available:          false,
+	}
 }

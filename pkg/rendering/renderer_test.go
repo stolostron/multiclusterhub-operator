@@ -344,25 +344,26 @@ func TestOADPAnnotation(t *testing.T) {
 		},
 	}
 
+	// These should all be the defaults (no overrides)
 	test1, test2, test3, test4, test5 = GetOADPConfig(mch)
 
-	if test1 != "redhat-oadp-operator" {
+	if test1 != defaultOADPName {
 		t.Error("Cluster Backup missing OADP overrides for name")
 	}
 
-	if test2 != "stable-1.3" {
+	if test2 != defaultOADPChannel {
 		t.Error("Cluster Backup missing OADP overrides for channel")
 	}
 
-	if test3 != "Automatic" {
+	if test3 != defaultOADPInstallPlan {
 		t.Error("Cluster Backup missing OADP overrides for install plan")
 	}
 
-	if test4 != "redhat-operators" {
+	if test4 != defaultOADPSource {
 		t.Error("Cluster Backup missing OADP overrides for source")
 	}
 
-	if test5 != "openshift-marketplace" {
+	if test5 != defaultOADPSourceNamespace {
 		t.Error("Cluster Backup missing OADP overrides for source namespace")
 	}
 }
