@@ -40,11 +40,11 @@ regenerate-operator-sha-commits: ## Regenerates the operator bundles
 
 regenerate-charts: ## Regenerates the charts 
 	pip3 install -r hack/bundle-automation/chart-requirements.txt
-	python3 ./hack/bundle-automation/generate-charts.py --destination pkg/templates/
+	python3 ./hack/bundle-automation/generate-shell.py --update-charts
 
 copy-charts: ## Regenerates the operator bundles
 	pip3 install -r hack/bundle-automation/requirements.txt
-	python3 ./hack/bundle-automation/copy-charts.py --destination pkg/templates/
+	python3 ./hack/bundle-automation/generate-shell.py --copy-charts
 
 # different from `in-cluster-install` (call no secrets, no observability-crd)
 mock-install: prereqs subscriptions docker-build docker-push deploy

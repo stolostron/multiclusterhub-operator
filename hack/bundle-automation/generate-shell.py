@@ -57,6 +57,22 @@ def main(args):
         prepare_operation(script_dir, operation_script, operation_args)
         logging.info("Bundles updated successfully.")
 
+    elif args.update_charts:
+        logging.info("Preparing to update operator...")
+        operation_script = "generate-charts.py"
+        operation_args = "--destination pkg/templates/"
+
+        prepare_operation(script_dir, operation_script, operation_args)
+        logging.info("Bundles updated successfully.")
+
+    elif args.copy_charts:
+        logging.info("Preparing to copy charts...")
+        operation_script = "move-charts.py"
+        operation_args = "--destination pkg/templates/"
+
+        prepare_operation(script_dir, operation_script, operation_args)
+        logging.info("Bundles updated successfully.")
+
     elif args.update_commits:
         logging.info("Preparing to update commit SHAs...")
         operation_script = "generate-sha-commits.py"
@@ -77,6 +93,8 @@ if __name__ == "__main__":
     parser.add_argument("--lint-bundles", action="store_true", help="Perform linting for operator bundles")
     parser.add_argument("--update-charts-from-bundles", action="store_true", help="Regenerate operator charts from bundles")
     parser.add_argument("--update-commits", action="store_true", help="Regenerate operator bundles with commit SHA")
+    parser.add_argument("--update-charts", action="store_true", help="Regenerate operator charts")
+    parser.add_argument("--copy-charts", action="store_true", help="Copy operator charts")
 
     parser.add_argument("--repo", help="Repository name")
     parser.add_argument("--branch", default='main', help="Branch name")
