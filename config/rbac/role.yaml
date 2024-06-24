@@ -1267,6 +1267,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
+  verbs:
+  - deletecollection
+- apiGroups:
   - discovery.open-cluster-management.io
   resources:
   - discoveredclusters
@@ -1439,6 +1445,15 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - multicluster.x-k8s.io
+  resources:
+  - serviceimports
+  verbs:
+  - delete
+  - get
+  - list
+  - update
 - apiGroups:
   - networking.k8s.io
   resources:
@@ -1787,6 +1802,13 @@ rules:
   - delete
   - get
   - update
+- apiGroups:
+  - submariner.io
+  resources:
+  - clusters
+  - endpoints
+  verbs:
+  - deletecollection
 - apiGroups:
   - submarineraddon.open-cluster-management.io
   resources:
