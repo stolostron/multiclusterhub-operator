@@ -1530,6 +1530,7 @@ rules:
 - apiGroups:
   - operators.coreos.com
   resources:
+  - catalogsources
   - clusterserviceversions
   - operatorconditions
   - operatorgroups
