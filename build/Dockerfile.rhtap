@@ -5,7 +5,7 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:latest as cloner
 RUN microdnf install git findutils
 COPY hack/scripts hack/scripts
 
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.21 AS builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.22 AS builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
