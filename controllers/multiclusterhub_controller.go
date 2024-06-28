@@ -257,6 +257,11 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	r.CacheSpec.TemplateOverrides = templateOverrides
 	r.CacheSpec.TemplateOverridesCM = utils.GetTemplateOverridesConfigmapName(multiClusterHub)
 
+	// Initalize the environment overrides configuration.
+	if r.CacheSpec.EnvironmentOverrides == nil {
+		r.CacheSpec.EnvironmentOverrides = make(map[string][]operatorv1.EnvOverride)
+	}
+
 	// Check if the multiClusterHub instance is marked to be deleted, which is
 	// indicated by the deletion timestamp being set.
 	isHubMarkedToBeDeleted := multiClusterHub.GetDeletionTimestamp() != nil
@@ -460,6 +465,9 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	// Install the rest of the subscriptions in no particular order
 	for _, c := range operatorv1.MCHComponents {
+		// Fetch the environment variables that are set for each component in the MCH instance.
+		r.CacheSpec.EnvironmentOverrides[c] = utils.GetComponentEnvOverrides(multiClusterHub, c)
+
 		result, err = r.ensureComponentOrNoComponent(ctx, multiClusterHub, c, r.CacheSpec, ocpConsole, stsEnabled)
 		if result != (ctrl.Result{}) {
 			return result, err
@@ -729,7 +737,9 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) (controll
 		Build(r)
 }
 
-func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operatorv1.MultiClusterHub, template *unstructured.Unstructured) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operatorv1.MultiClusterHub,
+	template *unstructured.Unstructured) (ctrl.Result, error) {
+
 	// Set owner reference.
 	if (template.GetKind() == "ClusterRole") || (template.GetKind() == "ClusterRoleBinding") || (template.GetKind() == "ServiceMonitor") || (template.GetKind() == "CustomResourceDefinition") {
 		utils.AddInstallerLabel(template, m.Name, m.Namespace)
@@ -817,8 +827,7 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(component string) string 
 }
 
 func (r *MultiClusterHubReconciler) ensureComponentOrNoComponent(ctx context.Context, m *operatorv1.MultiClusterHub,
-	component string, cachespec CacheSpec, ocpConsole, isSTSEnabled bool,
-) (ctrl.Result, error) {
+	component string, cachespec CacheSpec, ocpConsole, isSTSEnabled bool) (ctrl.Result, error) {
 	var result ctrl.Result
 	var err error
 
@@ -869,8 +878,7 @@ func (r *MultiClusterHubReconciler) ensureNamespaceAndPullSecret(m *operatorv1.M
 }
 
 func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *operatorv1.MultiClusterHub, component string,
-	cachespec CacheSpec, isSTSEnabled bool,
-) (ctrl.Result, error) {
+	cachespec CacheSpec, isSTSEnabled bool) (ctrl.Result, error) {
 	/*
 	   If the component is detected to be MCH, we can simply return successfully. MCH is only listed in the components
 	   list for cleanup purposes.
@@ -883,7 +891,7 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 
 	// Renders all templates from charts
 	templates, errs := renderer.RenderChart(chartLocation, m, cachespec.ImageOverrides, cachespec.TemplateOverrides,
-		isSTSEnabled)
+		cachespec.EnvironmentOverrides[component], isSTSEnabled)
 
 	if len(errs) > 0 {
 		for _, err := range errs {
@@ -969,7 +977,7 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 
 	// Renders all templates from charts
 	templates, errs := renderer.RenderChart(chartLocation, m, cachespec.ImageOverrides, cachespec.TemplateOverrides,
-		isSTSEnabled)
+		cachespec.EnvironmentOverrides[component], isSTSEnabled)
 
 	if len(errs) > 0 {
 		for _, err := range errs {

@@ -297,6 +297,32 @@ func GetContainerVolumes(dep *appsv1.Deployment) []corev1.Volume {
 	return dep.Spec.Template.Spec.Volumes
 }
 
+/*
+GetComponentEnvOverrides returns the component's environemt variable overrides from MCH.
+*/
+func GetComponentEnvOverrides(instance *operatorsv1.MultiClusterHub, component string) []operatorsv1.EnvOverride {
+	// Check if instance is empty
+	if instance == nil || instance.Spec.Overrides == nil {
+		return nil
+	}
+
+	// Check if Overrides.Component is empty
+	if len(instance.Spec.Overrides.Components) == 0 {
+		return nil
+	}
+
+	// Iterate through each component override
+	for _, c := range instance.Spec.Overrides.Components {
+		if c.Name == component && c.EnvOverrides != nil {
+			// Return the environement overrides for the specified component
+			return c.EnvOverrides
+		}
+	}
+
+	// No environment overrides found for the specific component, return an empty list.
+	return []operatorsv1.EnvOverride{}
+}
+
 // GetContainerRequestResources returns Request Requirements for first container in deployment
 func GetContainerRequestResources(dep *appsv1.Deployment) corev1.ResourceList {
 	return dep.Spec.Template.Spec.Containers[0].Resources.Requests
