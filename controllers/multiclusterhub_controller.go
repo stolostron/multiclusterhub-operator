@@ -27,6 +27,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/deploying"
@@ -212,6 +213,12 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if len(imageOverrides) == 0 {
 		r.Log.Error(err, "Could not get map of image overrides")
 		return ctrl.Result{}, nil
+	}
+
+	imageOverrides, err = r.overrideOauthImage(ctx, imageOverrides)
+	if err != nil {
+		r.Log.Error(err, "Could not override oauth image")
+		return ctrl.Result{}, err
 	}
 
 	// Apply image repository override from annotation if present.
@@ -1536,4 +1543,40 @@ func (r *MultiClusterHubReconciler) CheckDeprecatedFieldUsage(m *operatorv1.Mult
 			r.DeprecatedFields[f.name] = true
 		}
 	}
+}
+
+/*
+overrideOauthImage select the oauth image to use for the given build.
+Select oauth proxy image to use. If OCP 4.15 use old version. If OCP 4.16+ use new version. Set with key oauth_proxy
+before applying overrides.
+*/
+func (r *MultiClusterHubReconciler) overrideOauthImage(ctx context.Context, imageOverrides map[string]string) (
+	map[string]string, error) {
+	ocpVersion, err := r.getClusterVersion(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	semverVersion, err := semver.NewVersion(ocpVersion)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert ocp version to semver compatible version: %v", err)
+	}
+
+	constraint, err := semver.NewConstraint(">= 4.16.0-0")
+	if err != nil {
+		return nil, fmt.Errorf("failed to set ocp version constraint: %v", err)
+	}
+
+	oauthKey := "oauth_proxy"
+	oauthKeyOld := "oauth_proxy_415_and_below"
+	oauthKeyNew := "oauth_proxy_416_and_up"
+
+	if constraint.Check(semverVersion) { // use newer ouath image
+		imageOverrides[oauthKey] = imageOverrides[oauthKeyNew]
+
+	} else { // use older ouath image
+		imageOverrides[oauthKey] = imageOverrides[oauthKeyOld]
+	}
+
+	return imageOverrides, nil
 }
