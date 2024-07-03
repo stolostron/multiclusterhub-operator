@@ -33,13 +33,13 @@ jobs:
           python-version: ${{ matrix.python-version }}
     
       # Runs a set of commands using the runners shell
-      - name: Regenerate Operator Bundles
-        id: generate_bundle
+      - name: Regenerate Operator Charts From Bundles
+        id: generate_charts_from_bundles
         run: |
-          make regenerate-operator-bundles
+          make regenerate-charts-from-bundles
           exit_code=$?
           if [ $exit_code -ne 0 ]; then
-            echo "Regenerate Operator Bundles step failed with exit code $exit_code"
+            echo "Regenerate Operator Charts From Bundles step failed with exit code $exit_code"
             exit $exit_code
           fi
 
