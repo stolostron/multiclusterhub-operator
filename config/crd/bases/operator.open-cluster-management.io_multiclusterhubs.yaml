@@ -24,6 +24,14 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
+    - description: The current version of the multiclusterhub
+      jsonPath: .status.currentVersion
+      name: CurrentVersion
+      type: string
+    - description: The desired version of the multiclusterhub
+      jsonPath: .status.desiredVersion
+      name: DesiredVersion
+      type: string
     name: v1
     schema:
       openAPIV3Schema:
