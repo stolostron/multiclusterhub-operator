@@ -17,13 +17,21 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - description: The overall status of the multiclusterhub
+    - description: The overall status of the MultiClusterHub
       jsonPath: .status.phase
       name: Status
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
+    - description: The current version of the MultiClusterHub
+      jsonPath: .status.currentVersion
+      name: CurrentVersion
+      type: string
+    - description: The desired version of the MultiClusterHub
+      jsonPath: .status.desiredVersion
+      name: DesiredVersion
+      type: string
     name: v1
     schema:
       openAPIV3Schema:
