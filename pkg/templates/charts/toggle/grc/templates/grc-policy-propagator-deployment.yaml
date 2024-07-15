@@ -80,33 +80,6 @@ spec:
         {{- end }}
       {{- end }}
       containers:
-      - name: kube-rbac-proxy
-        securityContext:
-          privileged: false
-          readOnlyRootFilesystem: true
-          allowPrivilegeEscalation: false
-          runAsNonRoot: true
-          capabilities:
-            drop:
-            - ALL
-        image: {{ .Values.global.imageOverrides.kube_rbac_proxy}}
-        imagePullPolicy: "{{ .Values.global.pullPolicy }}"
-        args:
-        - --secure-listen-address=0.0.0.0:8443
-        - --upstream=http://127.0.0.1:8383/
-        - --logtostderr=true
-        - --v=6
-        - "--tls-cert-file=/var/run/policy-metrics-cert/tls.crt"
-        - "--tls-private-key-file=/var/run/policy-metrics-cert/tls.key"
-        - "--tls-min-version=VersionTLS12"
-        ports:
-        - containerPort: 8443
-          name: https
-          protocol: TCP
-        volumeMounts:
-        - mountPath: "/var/run/policy-metrics-cert"
-          name: metrics-cert
-          readOnly: true
       - name: governance-policy-propagator
         image: {{ .Values.global.imageOverrides.governance_policy_propagator}}
         imagePullPolicy: "{{ .Values.global.pullPolicy }}"

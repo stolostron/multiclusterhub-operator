@@ -94,8 +94,6 @@ spec:
           value: {{ .Values.global.imageOverrides.cert_policy_controller }}
         - name: CONFIG_POLICY_CONTROLLER_IMAGE
           value: {{ .Values.global.imageOverrides.config_policy_controller }}
-        - name: KUBE_RBAC_PROXY_IMAGE
-          value: {{ .Values.global.imageOverrides.kube_rbac_proxy }}
         - name: GOVERNANCE_POLICY_FRAMEWORK_ADDON_IMAGE
           value: {{ .Values.global.imageOverrides.governance_policy_framework_addon }}
         image: {{ .Values.global.imageOverrides.governance_policy_addon_controller }}
