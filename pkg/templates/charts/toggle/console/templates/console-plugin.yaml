@@ -1,5 +1,4 @@
 # Copyright Contributors to the Open Cluster Management project
-
 apiVersion: console.openshift.io/v1
 kind: ConsolePlugin
 metadata:
@@ -10,9 +9,8 @@ spec:
     service:
       basePath: /plugin/
       name: console-chart-console-v2
-      namespace: {{ .Values.global.namespace }}
+      namespace: { { .Values.global.namespace } }
       port: 3000
-    type: Service
   i18n:
     loadType: Preload
   proxy:
@@ -21,6 +19,6 @@ spec:
       endpoint:
         service:
           name: console-chart-console-v2
-          namespace: {{ .Values.global.namespace }}
+          namespace: { { .Values.global.namespace } }
           port: 3000
         type: Service
