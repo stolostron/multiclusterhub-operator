@@ -9,7 +9,7 @@ spec:
     service:
       basePath: /plugin/
       name: console-chart-console-v2
-      namespace: { { .Values.global.namespace } }
+      namespace: {{ .Values.global.namespace }}
       port: 3000
   i18n:
     loadType: Preload
@@ -19,6 +19,6 @@ spec:
       endpoint:
         service:
           name: console-chart-console-v2
-          namespace: { { .Values.global.namespace } }
+          namespace: {{ .Values.global.namespace }}
           port: 3000
         type: Service
