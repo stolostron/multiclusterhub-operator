@@ -19,13 +19,13 @@ For steps on how to contribute and test the MultiClusterHub Operator component, 
 Once installed, the hub operator will monitor changes in the cluster that affect an instance of the multiclusterhub (mch) and reconcile deviations to maintain desired state. To stop the installer from making these changes you can apply an annotation to the mch instance.
 
 ```bash
-kubectl annotate mch <mch-name> mch-pause=true
+kubectl annotate mch <mch-name> installer.open-cluster-management.io/pause=true
 ```
 
 Remove or edit this annotation to resume installer operations
 
 ```bash
-kubectl annotate mch <mch-name> mch-pause=false --overwrite
+kubectl annotate mch <mch-name> installer.open-cluster-management.io/pause=false --overwrite
 ```
 
 ### Add Image Overrides Via Configmap  
@@ -45,13 +45,13 @@ If overriding individual images, the minimum required parameters required to bui
 kubectl create configmap <my-config> --from-file=docs/examples/manifest-oneimage.json # Override 1 image example
 kubectl create configmap <my-config> --from-file=docs/examples/manifest-allimages.json # Overriding all images example
 
-kubectl annotate mch <mch-name> --overwrite mch-imageOverridesCM=<my-config> # Provide the configmap as an override to the MCH
+kubectl annotate mch <mch-name> --overwrite installer.open-cluster-management.io/image-overrides-configmap=<my-config> # Provide the configmap as an override to the MCH
 ```
 
 To remove this annotation to revert back to the original manifest
 
 ```bash
-kubectl annotate mch <mch-name> mch-imageOverridesCM- --overwrite # Remove annotation
+kubectl annotate mch <mch-name> installer.open-cluster-management.io/image-overrides-configmap --overwrite # Remove annotation
 kubectl delete configmap <my-config> # Delete configmap
 ```
 
@@ -105,10 +105,10 @@ The operator defines a minimum version of OCP it can run in to avoid unexpected 
 
 1. Set `DISABLE_OCP_MIN_VERSION` as an environment variable. The presence of this variable in the container the operator runs will skip the check.
 
-2. Set `ignoreOCPVersion` annotation in the MCH instance.
+2. Set `installer.open-cluster-management.io/ignore-ocp-version` annotation in the MCH instance.
 
 ```bash
-kubectl annotate mch <mch-name> ignoreOCPVersion=true
+kubectl annotate mch <mch-name> installer.open-cluster-management.io/ignore-ocp-version=true
 ```
 
 ### Ignore MCE Version Requirement
