@@ -38,7 +38,7 @@
 
 - repo_name: submariner-addon
   github_ref: "https://github.com/stolostron/submariner-addon.git"
-  branch: "release-2.12"
+  branch: "release-2.11"
   operators:
     - name: submariner-addon
       bundlePath: "deploy/olm-catalog/manifests/"
