@@ -2,7 +2,7 @@
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest as cloner
 
-RUN microdnf install git findutils
+RUN microdnf install -y git findutils
 COPY hack/scripts hack/scripts
 
 FROM registry.ci.openshift.org/stolostron/builder:go1.22-linux AS builder

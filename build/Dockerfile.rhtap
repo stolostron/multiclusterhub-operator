@@ -2,7 +2,7 @@
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest as cloner
 
-RUN microdnf install git findutils
+RUN microdnf install -y git findutils
 COPY hack/scripts hack/scripts
 
 FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.22 AS builder
