@@ -13,7 +13,7 @@ spec:
     singular: consoleplugin
   scope: Cluster
   versions:
-  - name: v1alpha1
+  - name: v1
     schema:
       openAPIV3Schema:
         description: "ConsolePlugin is an extension for customizing OpenShift web
