@@ -277,8 +277,11 @@ type MultiClusterHubStatus struct {
 
 // StatusCondition contains condition information.
 type StatusCondition struct {
+	// The component name
+	Name string `json:"name,omitempty"`
+
 	// The resource kind this condition represents
-	Kind string `json:"-"`
+	Kind string `json:"kind,omitempty"`
 
 	// Available indicates whether this component is considered properly running
 	Available bool `json:"-"`
@@ -358,8 +361,10 @@ type HubCondition struct {
 // for an instance of a multicluster hub, a central point for managing multiple
 // Kubernetes-based clusters. The deployment of multicluster hub components
 // is determined based on the configuration that is defined in this resource.
-// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase",description="The overall status of the multiclusterhub"
+// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase",description="The overall status of the MultiClusterHub"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:printcolumn:name="CurrentVersion",type="string",JSONPath=".status.currentVersion",description="The current version of the MultiClusterHub"
+// +kubebuilder:printcolumn:name="DesiredVersion",type="string",JSONPath=".status.desiredVersion",description="The desired version of the MultiClusterHub"
 // +operator-sdk:csv:customresourcedefinitions:displayName="MultiClusterHub"
 type MultiClusterHub struct {
 	metav1.TypeMeta   `json:",inline"`

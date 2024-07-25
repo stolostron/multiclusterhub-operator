@@ -1,7 +1,7 @@
 # Copyright Contributors to the Open Cluster Management project
 
 # Build the multiclusterhub-operator binary
-FROM golang:1.20 as builder
+FROM golang:1.22 as builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -24,7 +24,7 @@ COPY pkg/templates/ templates/
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o multiclusterhub-operator main.go
 
 # Use ubi minimal base image to package the multiclusterhub-operator binary
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 WORKDIR /
 COPY --from=builder /workspace/multiclusterhub-operator /usr/local/bin/multiclusterhub-operator
 COPY --from=builder /workspace/templates/ /usr/local/templates/

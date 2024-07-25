@@ -30,21 +30,21 @@ lint-operator-bundles: ## Lints the operator bundles
 	pip3 install -r hack/bundle-automation/requirements.txt
 	python3 ./hack/bundle-automation/generate-shell.py --lint-bundles
 
-regenerate-operator-bundles: ## Regenerates the operator bundles
+regenerate-charts-from-bundles: ## Regenerates the operator charts from bundles
 	pip3 install -r hack/bundle-automation/requirements.txt
-	python3 ./hack/bundle-automation/generate-shell.py --update-bundles
+	python3 ./hack/bundle-automation/generate-shell.py --update-charts-from-bundles
 
 regenerate-operator-sha-commits: ## Regenerates the operator bundles
 	pip3 install -r hack/bundle-automation/requirements.txt
-	python3 ./hack/bundle-automation/generate-shell.py --update-commits --repo pipeline --branch 2.11-integration
+	python3 ./hack/bundle-automation/generate-shell.py --update-commits --repo pipeline --branch 2.12-integration
 
 regenerate-charts: ## Regenerates the charts 
 	pip3 install -r hack/bundle-automation/chart-requirements.txt
-	python3 ./hack/bundle-automation/generate-charts.py --destination pkg/templates/
+	python3 ./hack/bundle-automation/generate-shell.py --update-charts
 
 copy-charts: ## Regenerates the operator bundles
 	pip3 install -r hack/bundle-automation/requirements.txt
-	python3 ./hack/bundle-automation/copy-charts.py --destination pkg/templates/
+	python3 ./hack/bundle-automation/generate-shell.py --copy-charts
 
 # different from `in-cluster-install` (call no secrets, no observability-crd)
 mock-install: prereqs subscriptions docker-build docker-push deploy

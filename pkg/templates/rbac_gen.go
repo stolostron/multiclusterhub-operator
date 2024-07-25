@@ -162,6 +162,7 @@ package main
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core.observatorium.io,resources=observatoria,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=discovery.k8s.io,resources=endpointslices,verbs=deletecollection
 //+kubebuilder:rbac:groups=discovery.open-cluster-management.io,resources=discoveryconfigs;discoveredclusters,verbs=list;watch
 //+kubebuilder:rbac:groups=extensions.hive.openshift.io,resources=agentclusterinstalls,verbs=list;watch
 //+kubebuilder:rbac:groups=hive.openshift.io,resources=clusterclaims;clusterdeployments;clusterpools;clusterimagesets;clusterprovisions;clusterdeprovisions;machinepools,verbs=list;watch
@@ -180,6 +181,7 @@ package main
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=get;create
 //+kubebuilder:rbac:groups=multicluster.openshift.io,resources=multiclusterengines,verbs=get;list
 //+kubebuilder:rbac:groups=multicluster.openshift.io,resources=multiclusterengines,verbs=list;watch
+//+kubebuilder:rbac:groups=multicluster.x-k8s.io,resources=serviceimports,verbs=list;get;update;delete
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;create;update;delete;deletecollection;watch
 //+kubebuilder:rbac:groups=oauth.openshift.io,resources=oauthclients,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=observability.open-cluster-management.io,resources=*;multiclusterobservabilities;endpointmonitorings,verbs=create;delete;get;list;patch;update;watch
@@ -224,6 +226,7 @@ package main
 //+kubebuilder:rbac:groups=storage.k8s.io,resources=storageclasses,verbs=list;watch
 //+kubebuilder:rbac:groups=storage.k8s.io,resources=storageclasses,verbs=watch;get;list
 //+kubebuilder:rbac:groups=submariner.io,resources=brokers,verbs=create;get;update;delete
+//+kubebuilder:rbac:groups=submariner.io,resources=endpoints;clusters,verbs=deletecollection
 //+kubebuilder:rbac:groups=submarineraddon.open-cluster-management.io,resources=submarinerconfigs,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups=submarineraddon.open-cluster-management.io,resources=submarinerconfigs,verbs=list;watch
 //+kubebuilder:rbac:groups=submarineraddon.open-cluster-management.io,resources=submarinerconfigs/status,verbs=update;patch
