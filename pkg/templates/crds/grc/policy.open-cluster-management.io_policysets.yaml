@@ -26,20 +26,20 @@ spec:
     name: v1beta1
     schema:
       openAPIV3Schema:
-        description: |-
+        description: >-
           PolicySet is the schema for the policysets API. A policy set is a logical grouping of policies
           from the same namespace. The policy set is bound to a placement resource and applies the
           placement to all policies within the set. The status reports the overall compliance of the set.
         properties:
           apiVersion:
-            description: |-
+            description: >-
               APIVersion defines the versioned schema of this representation of an object.
               Servers should convert recognized schemas to the latest internal value, and
               may reject unrecognized values.
               More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: |-
+            description: >-
               Kind is a string value representing the REST resource this object represents.
               Servers may infer this from the endpoint the client submits requests to.
               Cannot be updated.
@@ -79,23 +79,23 @@ spec:
                 type: string
               placement:
                 items:
-                  description: |-
+                  description: >-
                     PolicySetStatusPlacement reports how and what managed cluster placement resources are attached to
                     the policy set.
                   properties:
                     placement:
-                      description: |-
+                      description: >-
                         Placement is the name of the Placement resource, from the cluster.open-cluster-management.io
                         API group, that is bound to the policy.
                       type: string
                     placementBinding:
-                      description: |-
+                      description: >-
                         PlacementBinding is the name of the PlacementBinding resource, from the
                         policies.open-cluster-management.io API group, that binds the placement resource to the policy
                         set.
                       type: string
                     placementRule:
-                      description: |-
+                      description: >-
                         PlacementRule (deprecated) is the name of the PlacementRule resource, from the
                         apps.open-cluster-management.io API group, that is bound to the policy.
                       type: string

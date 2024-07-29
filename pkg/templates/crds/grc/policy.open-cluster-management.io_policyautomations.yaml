@@ -19,21 +19,21 @@ spec:
   - name: v1beta1
     schema:
       openAPIV3Schema:
-        description: |-
+        description: >-
           PolicyAutomation is the schema for the policyautomations API. PolicyAutomation configures
           creation of an AnsibleJob, from the tower.ansible.com API group, to initiate Ansible to run upon
           noncompliant events of the attached policy, or when you manually initiate the run with the
           "policy.open-cluster-management.io/rerun=true" annotation.
         properties:
           apiVersion:
-            description: |-
+            description: >-
               APIVersion defines the versioned schema of this representation of an object.
               Servers should convert recognized schemas to the latest internal value, and
               may reject unrecognized values.
               More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: |-
+            description: >-
               Kind is a string value representing the REST resource this object represents.
               Servers may infer this from the endpoint the client submits requests to.
               Cannot be updated.
@@ -55,7 +55,7 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                   jobTtl:
-                    description: |-
+                    description: >-
                       JobTTL sets the time to live for the Kubernetes AnsibleJob object after the Ansible job run has
                       finished.
                     type: integer
@@ -65,7 +65,7 @@ spec:
                     minLength: 1
                     type: string
                   policyViolationsLimit:
-                    description: |-
+                    description: >-
                       The maximum number of violating cluster contexts that are provided to the Ansible job as
                       extra variables. When policyViolationsLimit is set to "0", it means no limit. The default value
                       is "1000".
@@ -84,21 +84,21 @@ spec:
                 - secret
                 type: object
               delayAfterRunSeconds:
-                description: |-
+                description: >-
                   DelayAfterRunSeconds sets the minimum number of seconds before an automation can run again due
                   to a new violation on the same managed cluster. This only applies to the EveryEvent mode. The
                   default value is "0".
                 minimum: 0
                 type: integer
               eventHook:
-                description: |-
+                description: >-
                   EventHook specifies the compliance state that initiates automation. This must be set to
                   "noncompliant".
                 enum:
                 - noncompliant
                 type: string
               mode:
-                description: |-
+                description: >-
                   Mode specifies how often automation is initiated. The supported values are "once", "everyEvent",
                   and "disabled".
                 enum:
