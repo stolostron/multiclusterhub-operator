@@ -88,6 +88,9 @@ spec:
             memory: "64Mi"
             cpu: "25m"
         ports:
+        - containerPort: 8443
+          name: metrics-https
+          protocol: TCP
         - containerPort: 9443
           name: webhook-http
           protocol: TCP
@@ -105,6 +108,8 @@ spec:
         - "--compliance-history-api-host=0.0.0.0"
         - "--compliance-history-api-cert=/var/run/compliance-history-api-cert/tls.crt"
         - "--compliance-history-api-key=/var/run/compliance-history-api-cert/tls.key"
+        - "--secure-metrics=true"
+        - "--metrics-bind-address=0.0.0.0:8443"
         env:
           - name: WATCH_NAMESPACE
             value: ""
@@ -127,6 +132,9 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 15
         volumeMounts:
+        - mountPath: "/var/run/metrics-cert"
+          name: metrics-cert
+          readOnly: true
         - name: tmp
           mountPath: "/tmp"
         - mountPath: /tmp/k8s-webhook-server/serving-certs
