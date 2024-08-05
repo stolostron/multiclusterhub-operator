@@ -83,6 +83,9 @@ const (
 	// SearchV2ChartLocation is the location of the Search V2 Operator chart.
 	SearchV2ChartLocation = "/charts/toggle/search-v2-operator"
 
+	// SiteConfigChartLocation is the location of the SiteConfig Operator chart.
+	SiteConfigChartLocation = "/charts/toggle/search-v2-operator"
+
 	// SubmarinerAddonChartLocation is the location of the Submariner Addon chart.
 	SubmarinerAddonChartLocation = "/charts/toggle/submariner-addon"
 
@@ -326,14 +329,14 @@ func GetTestImages() []string {
 		"POSTGRESQL_12", "POSTGRESQL_13", "PROMETHEUS", "PROMETHEUS_ALERTMANAGER",
 		"PROMETHEUS_CONFIG_RELOADER", "PROMETHEUS_OPERATOR", "RBAC_QUERY_PROXY", "REDISGRAPH_TLS",
 		"SEARCH_AGGREGATOR", "SEARCH_API", "SEARCH_COLLECTOR", "SEARCH_E2E", "SEARCH_INDEXER", "SEARCH_OPERATOR",
-		"SEARCH_V2_API", "SUBMARINER_ADDON", "THANOS", "VOLSYNC", "VOLSYNC_ADDON_CONTROLLER", "VOLSYNC_MOVER_RCLONE",
+		"SEARCH_V2_API", "SITECONFIG_OPERATOR", "SUBMARINER_ADDON", "THANOS", "VOLSYNC", "VOLSYNC_ADDON_CONTROLLER", "VOLSYNC_MOVER_RCLONE",
 		"VOLSYNC_MOVER_RESTIC", "VOLSYNC_MOVER_RSYNC", "CLUSTER_PERMISSION", "kube_rbac_proxy", "insights_metrics",
 		"insights_client", "search_collector", "search_indexer", "search_v2_api", "postgresql_13", "search_v2_operator",
 		"klusterlet_addon_controller", "governance_policy_propagator", "governance_policy_addon_controller",
 		"cert_policy_controller", "config_policy_controller", "governance_policy_framework_addon",
 		"cluster_backup_controller", "console", "volsync_addon_controller", "multicluster_operators_application",
 		"multicloud_integrations", "multicluster_operators_channel", "multicluster_operators_subscription",
-		"multicluster_observability_operator", "cluster_permission", "submariner_addon",
+		"multicluster_observability_operator", "cluster_permission", "siteconfig_operator", "submariner_addon",
 	}
 }
 

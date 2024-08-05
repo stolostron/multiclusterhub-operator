@@ -30,6 +30,7 @@ const (
 	MultiClusterObservability string = "multicluster-observability"
 	Repo                      string = "multiclusterhub-repo"
 	Search                    string = "search"
+	SiteConfig                string = "siteconfig"
 	SubmarinerAddon           string = "submariner-addon"
 	Volsync                   string = "volsync"
 )
@@ -67,8 +68,8 @@ var MCHComponents = []string{
 	MultiClusterEngine, // Adding MCE component to ensure that the component is validated by the webhook.
 	MCH,                // Adding MCH component to ensure legacy resources are cleaned up properly.
 	MultiClusterObservability,
-	// Repo,
 	Search,
+	SiteConfig,
 	SubmarinerAddon,
 	Volsync,
 }
@@ -151,6 +152,7 @@ func GetDefaultEnabledComponents() ([]string, error) {
 		MultiClusterEngine,
 		MultiClusterObservability,
 		Search,
+		SiteConfig,
 		SubmarinerAddon,
 		Volsync,
 	}

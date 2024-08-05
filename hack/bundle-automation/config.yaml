@@ -36,6 +36,16 @@
         search-collector: search_collector
         search-v2-api: search_v2_api
 
+- repo_name: siteconfig
+  github_ref: "https://github.com/stolostron/siteconfig.git"
+  branch: "main"
+  operators:
+    - name: siteconfig-operator
+      bundlePath: "bundle/manifests/"
+      imageMappings:
+        kube-rbac-proxy: kube_rbac_proxy
+        siteconfig-operator: siteconfig_operator
+
 - repo_name: submariner-addon
   github_ref: "https://github.com/stolostron/submariner-addon.git"
   branch: "release-2.12"
