@@ -84,7 +84,7 @@ const (
 	SearchV2ChartLocation = "/charts/toggle/search-v2-operator"
 
 	// SiteConfigChartLocation is the location of the SiteConfig Operator chart.
-	SiteConfigChartLocation = "/charts/toggle/search-v2-operator"
+	SiteConfigChartLocation = "/charts/toggle/siteconfig-operator"
 
 	// SubmarinerAddonChartLocation is the location of the Submariner Addon chart.
 	SubmarinerAddonChartLocation = "/charts/toggle/submariner-addon"
