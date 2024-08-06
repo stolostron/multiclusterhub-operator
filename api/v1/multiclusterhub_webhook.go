@@ -157,14 +157,6 @@ func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) (admission.Warnings
 		return nil, fmt.Errorf("invalid AvailabilityConfig given")
 	}
 
-	// Validate components
-	if r.Spec.Overrides != nil {
-		for _, c := range r.Spec.Overrides.Components {
-			if !ValidComponent(c, MCHComponents) {
-				return nil, fmt.Errorf("invalid componentconfig: %s is not a known component", c.Name)
-			}
-		}
-	}
 	return nil, nil
 }
 
