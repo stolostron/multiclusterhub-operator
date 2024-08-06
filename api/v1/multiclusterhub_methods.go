@@ -152,7 +152,6 @@ func GetDefaultEnabledComponents() ([]string, error) {
 		MultiClusterEngine,
 		MultiClusterObservability,
 		Search,
-		SiteConfigPreview,
 		SubmarinerAddon,
 		Volsync,
 	}
@@ -167,6 +166,7 @@ It is expected to be used to get a list of components that are disabled by defau
 func GetDefaultDisabledComponents() ([]string, error) {
 	defaultDisabledComponents := []string{
 		ClusterBackup,
+		SiteConfigPreview,
 	}
 	return defaultDisabledComponents, nil
 }
