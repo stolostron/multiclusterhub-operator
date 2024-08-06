@@ -811,7 +811,7 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(component string) string 
 	case operatorv1.Search:
 		return utils.SearchV2ChartLocation
 
-	case operatorv1.SiteConfig:
+	case operatorv1.SiteConfigPreview:
 		return utils.SiteConfigChartLocation
 
 	case operatorv1.SubmarinerAddon:

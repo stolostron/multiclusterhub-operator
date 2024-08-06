@@ -30,7 +30,7 @@ const (
 	MultiClusterObservability string = "multicluster-observability"
 	Repo                      string = "multiclusterhub-repo"
 	Search                    string = "search"
-	SiteConfig                string = "siteconfig"
+	SiteConfigPreview         string = "siteconfig-preview"
 	SubmarinerAddon           string = "submariner-addon"
 	Volsync                   string = "volsync"
 )
@@ -69,7 +69,7 @@ var MCHComponents = []string{
 	MCH,                // Adding MCH component to ensure legacy resources are cleaned up properly.
 	MultiClusterObservability,
 	Search,
-	SiteConfig,
+	SiteConfigPreview,
 	SubmarinerAddon,
 	Volsync,
 }
@@ -152,7 +152,7 @@ func GetDefaultEnabledComponents() ([]string, error) {
 		MultiClusterEngine,
 		MultiClusterObservability,
 		Search,
-		SiteConfig,
+		SiteConfigPreview,
 		SubmarinerAddon,
 		Volsync,
 	}
