@@ -1,0 +1,16 @@
+global:
+  hubSize: Small
+  imageOverrides:
+    kube_rbac_proxy: ''
+    siteconfig_operator: ''
+  namespace: default
+  pullSecret: null
+  templateOverrides: {}
+hubconfig:
+  clusterSTSEnabled: false
+  nodeSelector: null
+  ocpVersion: 4.12.0
+  proxyConfigs: {}
+  replicaCount: 1
+  tolerations: []
+org: open-cluster-management

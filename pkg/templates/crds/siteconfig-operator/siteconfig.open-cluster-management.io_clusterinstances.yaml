@@ -1,0 +1,679 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.13.0
+  creationTimestamp: null
+  name: clusterinstances.siteconfig.open-cluster-management.io
+spec:
+  group: siteconfig.open-cluster-management.io
+  names:
+    kind: ClusterInstance
+    listKind: ClusterInstanceList
+    plural: clusterinstances
+    singular: clusterinstance
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Provisioned')].reason
+      name: ProvisionStatus
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Provisioned')].message
+      name: ProvisionDetails
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ClusterInstance is the Schema for the clusterinstances API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ClusterInstanceSpec defines the desired state of ClusterInstance
+            properties:
+              additionalNTPSources:
+                description: AdditionalNTPSources is a list of NTP sources (hostname
+                  or IP) to be added to all cluster hosts. They are added to any NTP
+                  sources that were configured through other means.
+                items:
+                  type: string
+                type: array
+              apiVIPs:
+                description: APIVIPs are the virtual IPs used to reach the OpenShift
+                  cluster's API. Enter one IP address for single-stack clusters, or
+                  up to two for dual-stack clusters (at most one IP address per IP
+                  stack used). The order of stacks should be the same as order of
+                  subnets in Cluster Networks, Service Networks, and Machine Networks.
+                items:
+                  type: string
+                maxItems: 2
+                type: array
+              baseDomain:
+                description: BaseDomain is the base domain to use for the deployed
+                  cluster.
+                type: string
+              caBundleRef:
+                description: CABundle is a reference to a config map containing the
+                  new bundle of trusted certificates for the host.
+                properties:
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?'
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              clusterImageSetNameRef:
+                description: ClusterImageSetNameRef is the name of the ClusterImageSet
+                  resource indicating which OpenShift version to deploy.
+                type: string
+              clusterLabels:
+                additionalProperties:
+                  type: string
+                description: ClusterLabels is used to assign labels to the cluster
+                  to assist with policy binding.
+                type: object
+              clusterName:
+                description: ClusterName is the name of the cluster.
+                type: string
+              clusterNetwork:
+                description: ClusterNetwork is the list of IP address pools for pods.
+                items:
+                  description: ClusterNetworkEntry is a single IP address block for
+                    pod IP blocks. IP blocks are allocated with size 2^HostSubnetLength.
+                  properties:
+                    cidr:
+                      description: CIDR is the IP block address pool.
+                      type: string
+                    hostPrefix:
+                      description: HostPrefix is the prefix size to allocate to each
+                        node from the CIDR. For example, 24 would allocate 2^8=256
+                        adresses to each node. If this field is not used by the plugin,
+                        it can be left unset.
+                      format: int32
+                      type: integer
+                  required:
+                  - cidr
+                  type: object
+                type: array
+              clusterType:
+                description: ClusterType is a string representing the cluster type
+                enum:
+                - SNO
+                - HighlyAvailable
+                type: string
+              cpuPartitioningMode:
+                default: None
+                description: CPUPartitioning determines if a cluster should be setup
+                  for CPU workload partitioning at install time. When this field is
+                  set the cluster will be flagged for CPU Partitioning allowing users
+                  to segregate workloads to specific CPU Sets. This does not make
+                  any decisions on workloads it only configures the nodes to allow
+                  CPU Partitioning. The "AllNodes" value will setup all nodes for
+                  CPU Partitioning, the default is "None".
+                enum:
+                - None
+                - AllNodes
+                type: string
+              diskEncryption:
+                description: DiskEncryption is the configuration to enable/disable
+                  disk encryption for cluster nodes.
+                properties:
+                  tang:
+                    items:
+                      properties:
+                        thumbprint:
+                          type: string
+                        url:
+                          type: string
+                      type: object
+                    type: array
+                  type:
+                    default: none
+                    type: string
+                type: object
+              extraAnnotations:
+                additionalProperties:
+                  additionalProperties:
+                    type: string
+                  type: object
+                description: Additional cluster-wide annotations to be applied to
+                  the rendered templates
+                type: object
+              extraManifestsRefs:
+                description: ExtraManifestsRefs is list of config map references containing
+                  additional manifests to be applied to the cluster.
+                items:
+                  description: LocalObjectReference contains enough information to
+                    let you locate the referenced object inside the same namespace.
+                  properties:
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                type: array
+              holdInstallation:
+                default: false
+                description: HoldInstallation will prevent installation from happening
+                  when true. Inspection and validation will proceed as usual, but
+                  once the RequirementsMet condition is true, installation will not
+                  begin until this field is set to false.
+                type: boolean
+              ignitionConfigOverride:
+                description: Json formatted string containing the user overrides for
+                  the initial ignition config
+                type: string
+              ingressVIPs:
+                description: IngressVIPs are the virtual IPs used for cluster ingress
+                  traffic. Enter one IP address for single-stack clusters, or up to
+                  two for dual-stack clusters (at most one IP address per IP stack
+                  used). The order of stacks should be the same as order of subnets
+                  in Cluster Networks, Service Networks, and Machine Networks.
+                items:
+                  type: string
+                maxItems: 2
+                type: array
+              installConfigOverrides:
+                description: InstallConfigOverrides is a Json formatted string that
+                  provides a generic way of passing install-config parameters.
+                type: string
+              machineNetwork:
+                description: MachineNetwork is the list of IP address pools for machines.
+                items:
+                  description: MachineNetworkEntry is a single IP address block for
+                    node IP blocks.
+                  properties:
+                    cidr:
+                      description: CIDR is the IP block address pool for machines
+                        within the cluster.
+                      type: string
+                  required:
+                  - cidr
+                  type: object
+                type: array
+              networkType:
+                default: OVNKubernetes
+                description: NetworkType is the Container Network Interface (CNI)
+                  plug-in to install The default value is OpenShiftSDN for IPv4, and
+                  OVNKubernetes for IPv6 or SNO
+                enum:
+                - OpenShiftSDN
+                - OVNKubernetes
+                type: string
+              nodes:
+                items:
+                  description: NodeSpec
+                  properties:
+                    automatedCleaningMode:
+                      default: disabled
+                      description: When set to disabled, automated cleaning will be
+                        avoided during provisioning and deprovisioning. Set the value
+                        to metadata to enable the removal of the disk’s partitioning
+                        table only, without fully wiping the disk. The default value
+                        is disabled.
+                      enum:
+                      - metadata
+                      - disabled
+                      type: string
+                    bmcAddress:
+                      description: BmcAddress holds the URL for accessing the controller
+                        on the network.
+                      type: string
+                    bmcCredentialsName:
+                      description: BmcCredentialsName is the name of the secret containing
+                        the BMC credentials (requires keys "username" and "password").
+                      properties:
+                        name:
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    bootMACAddress:
+                      description: Which MAC address will PXE boot? This is optional
+                        for some types, but required for libvirt VMs driven by vbmc.
+                      pattern: '[0-9a-fA-F]{2}(:[0-9a-fA-F]{2}){5}'
+                      type: string
+                    bootMode:
+                      default: UEFI
+                      description: Provide guidance about how to choose the device
+                        for the image being provisioned.
+                      enum:
+                      - UEFI
+                      - UEFISecureBoot
+                      - legacy
+                      type: string
+                    extraAnnotations:
+                      additionalProperties:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      description: Additional node-level annotations to be applied
+                        to the rendered templates
+                      type: object
+                    hostName:
+                      description: Hostname is the desired hostname for the host
+                      type: string
+                    ignitionConfigOverride:
+                      description: Json formatted string containing the user overrides
+                        for the host's ignition config IgnitionConfigOverride enables
+                        the assignment of partitions for persistent storage. Adjust
+                        disk ID and size to the specific hardware.
+                      type: string
+                    installerArgs:
+                      description: Json formatted string containing the user overrides
+                        for the host's coreos installer args
+                      type: string
+                    ironicInspect:
+                      default: ""
+                      description: IronicInspect is used to specify if automatic introspection
+                        carried out during registration of BMH is enabled or disabled
+                      type: string
+                    nodeLabels:
+                      additionalProperties:
+                        type: string
+                      description: NodeLabels allows the specification of custom roles
+                        for your nodes in your managed clusters. These are additional
+                        roles that are not used by any OpenShift Container Platform
+                        components, only by the user. When you add a custom role,
+                        it can be associated with a custom machine config pool that
+                        references a specific configuration for that role. Adding
+                        custom labels or roles during installation makes the deployment
+                        process more effective and prevents the need for additional
+                        reboots after the installation is complete.
+                      type: object
+                    nodeNetwork:
+                      description: NodeNetwork is a set of configurations pertaining
+                        to the network settings for the node.
+                      properties:
+                        config:
+                          description: yaml that can be processed by nmstate, using
+                            custom marshaling/unmarshaling that will allow to populate
+                            nmstate config as plain yaml.
+                          type: object
+                          x-kubernetes-preserve-unknown-fields: true
+                        interfaces:
+                          description: Interfaces is an array of interface objects
+                            containing the name and MAC address for interfaces that
+                            are referenced in the raw nmstate config YAML. Interfaces
+                            listed here will be automatically renamed in the nmstate
+                            config YAML to match the real device name that is observed
+                            to have the corresponding MAC address. At least one interface
+                            must be listed so that it can be used to identify the
+                            correct host, which is done by matching any MAC address
+                            in this list to any MAC address observed on the host.
+                          items:
+                            properties:
+                              macAddress:
+                                description: mac address present on the host.
+                                pattern: ^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$
+                                type: string
+                              name:
+                                description: 'nic name used in the yaml, which relates
+                                  1:1 to the mac address. Name in REST API: logicalNICName'
+                                type: string
+                            required:
+                            - macAddress
+                            - name
+                            type: object
+                          minItems: 1
+                          type: array
+                      type: object
+                    role:
+                      default: master
+                      enum:
+                      - master
+                      - worker
+                      type: string
+                    rootDeviceHints:
+                      description: 'RootDeviceHints specifies the device for deployment.
+                        Identifiers that are stable across reboots are recommended,
+                        for example, wwn: <disk_wwn> or deviceName: /dev/disk/by-path/<device_path>'
+                      properties:
+                        deviceName:
+                          description: A Linux device name like "/dev/vda", or a by-path
+                            link to it like "/dev/disk/by-path/pci-0000:01:00.0-scsi-0:2:0:0".
+                            The hint must match the actual value exactly.
+                          type: string
+                        hctl:
+                          description: A SCSI bus address like 0:0:0:0. The hint must
+                            match the actual value exactly.
+                          type: string
+                        minSizeGigabytes:
+                          description: The minimum size of the device in Gigabytes.
+                          minimum: 0
+                          type: integer
+                        model:
+                          description: A vendor-specific device identifier. The hint
+                            can be a substring of the actual value.
+                          type: string
+                        rotational:
+                          description: True if the device should use spinning media,
+                            false otherwise.
+                          type: boolean
+                        serialNumber:
+                          description: Device serial number. The hint must match the
+                            actual value exactly.
+                          type: string
+                        vendor:
+                          description: The name of the vendor or manufacturer of the
+                            device. The hint can be a substring of the actual value.
+                          type: string
+                        wwn:
+                          description: Unique storage identifier. The hint must match
+                            the actual value exactly.
+                          type: string
+                        wwnVendorExtension:
+                          description: Unique vendor storage identifier. The hint
+                            must match the actual value exactly.
+                          type: string
+                        wwnWithExtension:
+                          description: Unique storage identifier with the vendor extension
+                            appended. The hint must match the actual value exactly.
+                          type: string
+                      type: object
+                    suppressedManifests:
+                      description: SuppressedManifests is a list of node-level manifest
+                        names to be excluded from the template rendering process
+                      items:
+                        type: string
+                      type: array
+                    templateRefs:
+                      description: TemplateRefs is a list of references to node-level
+                        templates. A node-level template consists of a ConfigMap in
+                        which the keys of the data field represent the kind of the
+                        installation manifest(s). Node-level templates are instantiated
+                        once for each node in the ClusterInstance CR.
+                      items:
+                        description: TemplateRef is used to specify the installation
+                          CR templates
+                        properties:
+                          name:
+                            type: string
+                          namespace:
+                            type: string
+                        required:
+                        - name
+                        - namespace
+                        type: object
+                      type: array
+                  required:
+                  - bmcAddress
+                  - bmcCredentialsName
+                  - bootMACAddress
+                  - hostName
+                  - templateRefs
+                  type: object
+                type: array
+              proxy:
+                description: Proxy defines the proxy settings used for the install
+                  config
+                properties:
+                  httpProxy:
+                    description: HTTPProxy is the URL of the proxy for HTTP requests.
+                    type: string
+                  httpsProxy:
+                    description: HTTPSProxy is the URL of the proxy for HTTPS requests.
+                    type: string
+                  noProxy:
+                    description: NoProxy is a comma-separated list of domains and
+                      CIDRs for which the proxy should not be used.
+                    type: string
+                type: object
+              pullSecretRef:
+                description: PullSecretRef is the reference to the secret to use when
+                  pulling images.
+                properties:
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?'
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              serviceNetwork:
+                description: ServiceNetwork is the list of IP address pools for services.
+                items:
+                  description: ServiceNetworkEntry is a single IP address block for
+                    node IP blocks.
+                  properties:
+                    cidr:
+                      description: CIDR is the IP block address pool for machines
+                        within the cluster.
+                      type: string
+                  required:
+                  - cidr
+                  type: object
+                type: array
+              sshPublicKey:
+                description: SSHPublicKey is the public Secure Shell (SSH) key to
+                  provide access to instances. This key will be added to the host
+                  to allow ssh access
+                type: string
+              suppressedManifests:
+                description: SuppressedManifests is a list of manifest names to be
+                  excluded from the template rendering process
+                items:
+                  type: string
+                type: array
+              templateRefs:
+                description: TemplateRefs is a list of references to cluster-level
+                  templates. A cluster-level template consists of a ConfigMap in which
+                  the keys of the data field represent the kind of the installation
+                  manifest(s). Cluster-level templates are instantiated once per cluster
+                  (ClusterInstance CR).
+                items:
+                  description: TemplateRef is used to specify the installation CR
+                    templates
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                  required:
+                  - name
+                  - namespace
+                  type: object
+                type: array
+            required:
+            - baseDomain
+            - clusterImageSetNameRef
+            - clusterName
+            - nodes
+            - pullSecretRef
+            - templateRefs
+            type: object
+          status:
+            description: ClusterInstanceStatus defines the observed state of ClusterInstance
+            properties:
+              clusterDeploymentRef:
+                description: Reference to the associated ClusterDeployment resource.
+                properties:
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?'
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              conditions:
+                description: List of conditions pertaining to actions performed on
+                  the ClusterInstance resource.
+                items:
+                  description: "Condition contains details for one aspect of the current
+                    state of this API Resource. --- This struct is intended for direct
+                    use as an array at the field path .status.conditions.  For example,
+                    \n type FooStatus struct{ // Represents the observations of a
+                    foo's current state. // Known .status.conditions.type are: \"Available\",
+                    \"Progressing\", and \"Degraded\" // +patchMergeKey=type // +patchStrategy=merge
+                    // +listType=map // +listMapKey=type Conditions []metav1.Condition
+                    `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
+                    protobuf:\"bytes,1,rep,name=conditions\"` \n // other fields }"
+                  properties:
+                    lastTransitionTime:
+                      description: lastTransitionTime is the last time the condition
+                        transitioned from one status to another. This should be when
+                        the underlying condition changed.  If that is not known, then
+                        using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: message is a human readable message indicating
+                        details about the transition. This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: observedGeneration represents the .metadata.generation
+                        that the condition was set based upon. For instance, if .metadata.generation
+                        is currently 12, but the .status.conditions[x].observedGeneration
+                        is 9, the condition is out of date with respect to the current
+                        state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: reason contains a programmatic identifier indicating
+                        the reason for the condition's last transition. Producers
+                        of specific condition types may define expected values and
+                        meanings for this field, and whether the values are considered
+                        a guaranteed API. The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                        --- Many .condition.type values are consistent across resources
+                        like Available, but because arbitrary conditions can be useful
+                        (see .node.status.conditions), the ability to deconflict is
+                        important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              deploymentConditions:
+                description: List of hive status conditions associated with the ClusterDeployment
+                  resource.
+                items:
+                  description: ClusterDeploymentCondition contains details for the
+                    current condition of a cluster deployment
+                  properties:
+                    lastProbeTime:
+                      description: LastProbeTime is the last time we probed the condition.
+                      format: date-time
+                      type: string
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time the condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: Message is a human-readable message indicating
+                        details about last transition.
+                      type: string
+                    reason:
+                      description: Reason is a unique, one-word, CamelCase reason
+                        for the condition's last transition.
+                      type: string
+                    status:
+                      description: Status is the status of the condition.
+                      type: string
+                    type:
+                      description: Type is the type of the condition.
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              manifestsRendered:
+                description: List of manifests that have been rendered along with
+                  their status.
+                items:
+                  description: ManifestReference contains enough information to let
+                    you locate the typed referenced object inside the same namespace.
+                  properties:
+                    apiGroup:
+                      description: APIGroup is the group for the resource being referenced.
+                        If APIGroup is not specified, the specified Kind must be in
+                        the core API group. For any other third-party types, APIGroup
+                        is required.
+                      type: string
+                    kind:
+                      description: Kind is the type of resource being referenced
+                      type: string
+                    lastAppliedTime:
+                      description: lastAppliedTime is the last time the manifest was
+                        applied. This should be when the underlying manifest changed.  If
+                        that is not known, then using the time when the API field
+                        changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: message is a human readable message indicating
+                        details about the transition. This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    name:
+                      description: Name is the name of the resource being referenced
+                      type: string
+                    namespace:
+                      description: Namespace is the namespace of the resource being
+                        referenced
+                      type: string
+                    status:
+                      description: Status is the status of the manifest
+                      type: string
+                    syncWave:
+                      description: 'SyncWave is the order in which the resource should
+                        be processed: created in ascending order, deleted in descending
+                        order.'
+                      type: integer
+                  required:
+                  - apiGroup
+                  - kind
+                  - lastAppliedTime
+                  - name
+                  - status
+                  - syncWave
+                  type: object
+                  x-kubernetes-map-type: atomic
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null

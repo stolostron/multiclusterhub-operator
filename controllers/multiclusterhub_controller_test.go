@@ -902,6 +902,16 @@ var _ = Describe("MultiClusterHub controller", func() {
 				return (err == nil && result == ctrl.Result{})
 			}, timeout, interval).Should(BeTrue())
 
+			By("Ensuring SiteConfig")
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.SiteConfigPreview, testCacheSpec, false)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+
+			By("Ensuring No SiteConfig")
+			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.SiteConfigPreview, testCacheSpec, false)
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).To(BeNil())
+
 			By("Ensuring No ClusterManagementAddon")
 			result, err = reconciler.ensureNoClusterManagementAddOn(mch, "unknown")
 			Expect(result).To(Equal(ctrl.Result{Requeue: true}))
