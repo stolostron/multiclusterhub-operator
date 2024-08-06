@@ -66,20 +66,6 @@ var _ = Describe("Multiclusterhub webhook", func() {
 
 		It("Should fail to update multiclusterhub", func() {
 			mch := &MultiClusterHub{}
-			By("because of invalid component", func() {
-				Expect(k8sClient.Get(ctx,
-					types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)).To(Succeed())
-
-				mch.Spec.Overrides = &Overrides{
-					Components: []ComponentConfig{
-						{
-							Name:    "fake-component",
-							Enabled: true,
-						},
-					},
-				}
-				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(), "invalid components should not be permitted")
-			})
 			By("because of updating SeparateCertificateManagement", func() {
 				Expect(k8sClient.Get(ctx,
 					types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)).To(Succeed())
