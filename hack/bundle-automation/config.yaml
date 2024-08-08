@@ -38,7 +38,7 @@
 
 - repo_name: siteconfig
   github_ref: "https://github.com/stolostron/siteconfig.git"
-  branch: "main"
+  branch: "release-2.12"
   operators:
     - name: siteconfig-operator
       bundlePath: "bundle/manifests/"
