@@ -232,6 +232,21 @@ func (mch *MultiClusterHub) ComponentPresent(s string) bool {
 	return false
 }
 
+// ComponentPaused checks if a specific component is paused based on the provided component name in the MultiClusterHub struct.
+func (mch *MultiClusterHub) ComponentPaused(s string) bool {
+	if mch.Spec.Overrides == nil {
+		return false
+	}
+
+	for _, c := range mch.Spec.Overrides.Components {
+		if c.Name == s {
+			return c.Paused
+		}
+	}
+
+	return false
+}
+
 // Enabled checks if a specific component is enabled based on the provided component name in the MultiClusterHub struct.
 func (mch *MultiClusterHub) Enabled(s string) bool {
 	if mch.Spec.Overrides == nil {
@@ -260,6 +275,7 @@ func (mch *MultiClusterHub) Enable(s string) {
 	mch.Spec.Overrides.Components = append(mch.Spec.Overrides.Components, ComponentConfig{
 		Name:    s,
 		Enabled: true,
+		Paused:  false,
 	})
 }
 
@@ -277,6 +293,7 @@ func (mch *MultiClusterHub) Disable(s string) {
 	mch.Spec.Overrides.Components = append(mch.Spec.Overrides.Components, ComponentConfig{
 		Name:    s,
 		Enabled: false,
+		Paused:  false,
 	})
 }
 
