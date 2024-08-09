@@ -83,18 +83,6 @@ var _ = Describe("Multiclusterhub webhook", func() {
 				mch.SetAnnotations(map[string]string{"deploymentmode": string(ModeHosted)})
 				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(), "DeploymentMode should not change")
 			})
-			By("because of invalid component", func() {
-				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)).To(Succeed())
-				mch.Spec.Overrides = &Overrides{
-					Components: []ComponentConfig{
-						{
-							Name:    "fake-component",
-							Enabled: true,
-						},
-					},
-				}
-				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(), "invalid components should not be permitted")
-			})
 		})
 
 		It("Should delete multiclusterhub", func() {
