@@ -129,6 +129,13 @@ spec:
                   Disabled is a boolean parameter you can use to enable and disable the policy. When disabled,
                   the policy is removed from managed clusters.
                 type: boolean
+              hubTemplateOptions:
+                description: HubTemplateOptions changes the default behavior of hub
+                  templates.
+                properties:
+                  serviceAccountName:
+                    type: string
+                type: object
               policy-templates:
                 description: >-
                   PolicyTemplates is a list of definitions of policy engine resources to apply to managed
