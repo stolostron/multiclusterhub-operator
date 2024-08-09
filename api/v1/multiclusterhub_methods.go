@@ -67,7 +67,6 @@ var MCHComponents = []string{
 	MultiClusterEngine, // Adding MCE component to ensure that the component is validated by the webhook.
 	MCH,                // Adding MCH component to ensure legacy resources are cleaned up properly.
 	MultiClusterObservability,
-	// Repo,
 	Search,
 	SubmarinerAddon,
 	Volsync,
@@ -78,6 +77,7 @@ var MCEComponents = []string{
 	MCEAssistedService,
 	MCEClusterLifecycle,
 	MCEClusterManager,
+	MCEClusterProxyAddon,
 	MCEConsole,
 	MCEDiscovery,
 	MCEHive,
