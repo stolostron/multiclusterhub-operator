@@ -103,6 +103,7 @@ var MCEComponents = []string{
 	MCEAssistedService,
 	MCEClusterLifecycle,
 	MCEClusterManager,
+	MCEClusterProxyAddon,
 	MCEConsole,
 	MCEDiscovery,
 	MCEHive,

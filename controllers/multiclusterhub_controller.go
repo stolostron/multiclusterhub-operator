@@ -1120,10 +1120,12 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 		updateNecessary = true
 	}
 
-	for _, c := range operatorv1.MCEComponents {
-		if m.Prune(c) {
-			log.Info(fmt.Sprintf("Removing MultiClusterEngine component: %v from existing MultiClusterHub", c))
-			updateNecessary = true
+	for _, c := range m.Spec.Overrides.Components {
+		if !operatorv1.ValidComponent(c, operatorv1.MCHComponents) {
+			if m.Prune(c.Name) {
+				log.Info(fmt.Sprintf("Removing invalid component: %v from existing MultiClusterHub", c.Name))
+				updateNecessary = true
+			}
 		}
 	}
 
