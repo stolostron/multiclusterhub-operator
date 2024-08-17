@@ -665,6 +665,10 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                 type: array
+              observedGeneration:
+                description: Track the observed generation to avoid unnecessary reconciles
+                format: int64
+                type: integer
             type: object
         type: object
     served: true
