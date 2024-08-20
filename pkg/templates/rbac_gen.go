@@ -40,6 +40,7 @@ package main
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=create
 //+kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=delete;get;patch;update
+//+kubebuilder:rbac:groups="",resources=serviceaccounts/token,verbs=create
 //+kubebuilder:rbac:groups="",resources=services,verbs=list
 //+kubebuilder:rbac:groups="";events.k8s.io,resources=events,verbs=create;patch;update
 //+kubebuilder:rbac:groups=*,resources=*,verbs=*
