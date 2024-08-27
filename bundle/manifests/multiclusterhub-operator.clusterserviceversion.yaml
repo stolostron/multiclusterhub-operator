@@ -17,9 +17,9 @@ metadata:
     capabilities: Basic Install
     categories: Integration & Delivery
     certified: "false"
-    createdAt: "2024-06-28T18:25:40Z"
+    createdAt: "2024-08-27T13:44:04Z"
     description: Open management of Openshift and Kubernetes clusters
-    operators.operatorframework.io/builder: operator-sdk-v1.34.1
+    operators.operatorframework.io/builder: operator-sdk-v1.35.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/open-cluster-management/multiclusterhub-operator
     support: The Open Cluster Management Project
@@ -293,6 +293,17 @@ spec:
           - ""
           resources:
           - namespaces
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
           - serviceaccounts
           verbs:
           - create
@@ -332,6 +343,12 @@ spec:
           - get
           - patch
           - update
+        - apiGroups:
+          - ""
+          resources:
+          - serviceaccounts/token
+          verbs:
+          - create
         - apiGroups:
           - ""
           resources:
@@ -950,6 +967,36 @@ spec:
           - list
           - watch
         - apiGroups:
+          - agent-install.openshift.io
+          resources:
+          - infraenvs
+          verbs:
+          - create
+          - delete
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - agent-install.openshift.io
+          resources:
+          - nmstateconfigs
+          verbs:
+          - create
+          - delete
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - agent.open-cluster-management.io
+          resources:
+          - klusterletaddonconfigs
+          verbs:
+          - create
+          - delete
+          - get
+          - patch
+          - update
+        - apiGroups:
           - agent.open-cluster-management.io
           resources:
           - klusterletaddonconfigs
@@ -1239,8 +1286,12 @@ spec:
           resources:
           - managedclusters
           verbs:
+          - create
+          - delete
           - get
           - list
+          - patch
+          - update
           - watch
         - apiGroups:
           - cluster.open-cluster-management.io
@@ -1275,6 +1326,12 @@ spec:
           - get
           - list
           - watch
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
+          - managedclustersets/join
+          verbs:
+          - create
         - apiGroups:
           - config.openshift.io
           resources:
@@ -1399,8 +1456,23 @@ spec:
           resources:
           - agentclusterinstalls
           verbs:
+          - create
+          - delete
+          - get
           - list
+          - patch
+          - update
           - watch
+        - apiGroups:
+          - extensions.hive.openshift.io
+          resources:
+          - imageclusterinstalls
+          verbs:
+          - create
+          - delete
+          - get
+          - patch
+          - update
         - apiGroups:
           - hive.openshift.io
           resources:
@@ -1412,6 +1484,33 @@ spec:
           - clusterprovisions
           - machinepools
           verbs:
+          - list
+          - watch
+        - apiGroups:
+          - hive.openshift.io
+          resources:
+          - clusterdeployments
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - hive.openshift.io
+          resources:
+          - clusterdeployments/status
+          verbs:
+          - get
+          - watch
+        - apiGroups:
+          - hive.openshift.io
+          resources:
+          - clusterimagesets
+          verbs:
+          - get
           - list
           - watch
         - apiGroups:
@@ -1482,10 +1581,30 @@ spec:
           - metal3.io
           resources:
           - baremetalhosts
+          verbs:
+          - create
+          - delete
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - metal3.io
+          resources:
+          - baremetalhosts
           - provisionings
           verbs:
           - list
           - watch
+        - apiGroups:
+          - metal3.io
+          resources:
+          - hostfirmwaresettings
+          verbs:
+          - create
+          - delete
+          - get
+          - patch
+          - update
         - apiGroups:
           - migration.k8s.io
           resources:
@@ -1606,6 +1725,17 @@ spec:
           - list
           - patch
           - update
+          - watch
+        - apiGroups:
+          - operator.open-cluster-management.io
+          resources:
+          - internalhubcomponents
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
           - watch
         - apiGroups:
           - operator.open-cluster-management.io
@@ -1851,6 +1981,18 @@ spec:
           - patch
           - update
         - apiGroups:
+          - register.open-cluster-management.io
+          resources:
+          - managedclusters/accept
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
           - route.openshift.io
           resources:
           - routes
@@ -1895,6 +2037,32 @@ spec:
           - search.open-cluster-management.io
           resources:
           - searches/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - siteconfig.open-cluster-management.io
+          resources:
+          - clusterinstances
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - siteconfig.open-cluster-management.io
+          resources:
+          - clusterinstances/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - siteconfig.open-cluster-management.io
+          resources:
+          - clusterinstances/status
           verbs:
           - get
           - patch

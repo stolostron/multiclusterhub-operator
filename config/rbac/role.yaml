@@ -1614,6 +1614,17 @@ rules:
 - apiGroups:
   - operator.open-cluster-management.io
   resources:
+  - internalhubcomponents
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups:
+  - operator.open-cluster-management.io
+  resources:
   - multiclusterglobalhubs
   verbs:
   - get

@@ -377,6 +377,24 @@ type MultiClusterHubList struct {
 	Items           []MultiClusterHub `json:"items"`
 }
 
+// +kubebuilder:object:root=true
+// +operator-sdk:csv:customresourcedefinitions:displayName="InternalHubComponent"
+type InternalHubComponent struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Spec              InternalHubComponentSpec `json:"spec,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+type InternalHubComponentList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []InternalHubComponent `json:"items"`
+}
+
+type InternalHubComponentSpec struct{}
+
 func init() {
 	SchemeBuilder.Register(&MultiClusterHub{}, &MultiClusterHubList{})
+	SchemeBuilder.Register(&InternalHubComponent{}, &InternalHubComponentList{})
 }
