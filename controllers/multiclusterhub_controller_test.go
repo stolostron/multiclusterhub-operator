@@ -15,9 +15,7 @@ import (
 	operatorsapiv2 "github.com/operator-framework/api/pkg/operators/v2"
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
-	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
@@ -26,7 +24,6 @@ import (
 	ocmapi "open-cluster-management.io/api/addon/v1alpha1"
 
 	configv1 "github.com/openshift/api/config/v1"
-	consolev1 "github.com/openshift/api/operator/v1"
 	ocopv1 "github.com/openshift/api/operator/v1"
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
@@ -197,7 +194,7 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 	}, timeout, interval).Should(Succeed())
 
 	By("Ensuring the acm consoleplugin is enabled on the cluster")
-	clusterConsole := &consolev1.Console{}
+	clusterConsole := &ocopv1.Console{}
 	Expect(k8sClient.Get(ctx, types.NamespacedName{Name: "cluster"}, clusterConsole)).To(Succeed())
 	Expect(clusterConsole.Spec.Plugins).To(ContainElement("acm"))
 }
@@ -380,7 +377,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 		Expect(subv1alpha1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(mcev1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(configv1.AddToScheme(clientScheme)).Should(Succeed())
-		Expect(consolev1.AddToScheme(clientScheme)).Should(Succeed())
+		Expect(ocopv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(olmapi.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(ocmapi.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(networking.AddToScheme(clientScheme)).Should(Succeed())
@@ -435,13 +432,13 @@ var _ = Describe("MultiClusterHub controller", func() {
 		})).To(Succeed())
 
 		// Create a console (for configuring consoleplugin)
-		Expect(k8sClient.Create(context.Background(), &consolev1.Console{
+		Expect(k8sClient.Create(context.Background(), &ocopv1.Console{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "cluster",
 			},
-			Spec: consolev1.ConsoleSpec{
-				OperatorSpec: consolev1.OperatorSpec{
-					ManagementState: consolev1.Managed,
+			Spec: ocopv1.ConsoleSpec{
+				OperatorSpec: ocopv1.OperatorSpec{
+					ManagementState: ocopv1.Managed,
 				},
 			},
 		})).To(Succeed())
@@ -455,13 +452,13 @@ var _ = Describe("MultiClusterHub controller", func() {
 			},
 		})).To(Succeed())
 
-		Expect(k8sClient.Create(context.Background(), &consolev1.CloudCredential{
+		Expect(k8sClient.Create(context.Background(), &ocopv1.CloudCredential{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "cluster",
 			},
-			Spec: consolev1.CloudCredentialSpec{
+			Spec: ocopv1.CloudCredentialSpec{
 				CredentialsMode: "",
-				OperatorSpec: consolev1.OperatorSpec{
+				OperatorSpec: ocopv1.OperatorSpec{
 					ManagementState: "Managed",
 				},
 			},
@@ -1086,7 +1083,7 @@ func registerScheme() {
 	configv1.AddToScheme(scheme.Scheme)
 	ocopv1.AddToScheme(scheme.Scheme)
 	operatorv1.AddToScheme(scheme.Scheme)
-	backplanev1.AddToScheme(scheme.Scheme)
+	mcev1.AddToScheme(scheme.Scheme)
 	subv1alpha1.AddToScheme(scheme.Scheme)
 }
 
@@ -1112,10 +1109,6 @@ func Test_ensureAuthenticationIssuerNotEmpty(t *testing.T) {
 			},
 			want: false,
 		},
-	}
-
-	recon := MultiClusterHubReconciler{
-		Client: fake.NewClientBuilder().Build(),
 	}
 
 	registerScheme()
@@ -1285,7 +1278,7 @@ func Test_equivalentKlusterletAddonConfig(t *testing.T) {
 			Overrides: &operatorv1.Overrides{
 				Components: []operatorv1.ComponentConfig{
 					{
-						Name:    operatorsv1.GRC,
+						Name:    operatorv1.GRC,
 						Enabled: true,
 					},
 				},
@@ -1327,4 +1320,148 @@ func Test_equivalentKlusterletAddonConfig(t *testing.T) {
 			t.Errorf("isEquivalent should be false")
 		}
 	})
+}
+
+func Test_ensureInternalHubComponent(t *testing.T) {
+	tests := []struct {
+		name string
+		mch  *operatorv1.MultiClusterHub
+		ns   *corev1.Namespace
+		want bool
+	}{
+		{
+			name: "should ensure InternalHubComponent created",
+			mch: &operatorv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{Name: "mch", Namespace: "test-ns"},
+				Spec: operatorv1.MultiClusterHubSpec{
+					Overrides: &operatorv1.Overrides{
+						Components: []operatorv1.ComponentConfig{
+							{
+								Enabled: true,
+								Name:    "app-lifecycle",
+							},
+							{
+								Enabled: true,
+								Name:    "cluster-lifecycle",
+							},
+						},
+					},
+				},
+			},
+			ns: &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-ns"},
+			},
+			want: false,
+		},
+	}
+
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := recon.Client.Create(context.TODO(), tt.ns); err != nil {
+				t.Errorf("failed to create namespace %v: %v", tt.name, err)
+			}
+
+			for _, c := range tt.mch.Spec.Overrides.Components {
+				if _, err := recon.ensureInternalHubComponent(context.TODO(), tt.mch, c.Name); err != nil {
+					t.Errorf("ensureInternalHubComponent(context.TODO(), tt.mch, c.Name) = %v", err)
+				}
+
+				ihc := &operatorv1.InternalHubComponent{}
+				if err := recon.Client.Get(context.TODO(), types.NamespacedName{Name: ihc.GetName(),
+					Namespace: ihc.GetNamespace()}, ihc); err != nil {
+					t.Errorf("failed to get InternalHubComponent: %v", err)
+				}
+			}
+		})
+	}
+}
+
+func Test_ensureNoInternalHubComponent(t *testing.T) {
+	tests := []struct {
+		name string
+		mch  *operatorv1.MultiClusterHub
+		ns   *corev1.Namespace
+		want bool
+	}{
+		{
+			name: "should ensure no InternalHubComponent exist",
+			mch: &operatorv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{Name: "mch", Namespace: "test-ns"},
+				Spec: operatorv1.MultiClusterHubSpec{
+					Overrides: &operatorv1.Overrides{
+						Components: []operatorv1.ComponentConfig{
+							{
+								Enabled: true,
+								Name:    "app-lifecycle",
+							},
+							{
+								Enabled: true,
+								Name:    "cluster-lifecycle",
+							},
+						},
+					},
+				},
+			},
+			ns: &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-ns"},
+			},
+			want: false,
+		},
+	}
+
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := recon.Client.Create(context.TODO(), tt.ns); err != nil {
+				t.Errorf("failed to create namespace %v: %v", tt.name, err)
+			}
+
+			for _, c := range tt.mch.Spec.Overrides.Components {
+				// Should return nil since we haven't created any InternalHubComponents yet
+				if _, err := recon.ensureNoInternalHubComponent(context.TODO(), tt.mch, c.Name); err != nil {
+					t.Errorf("ensureNoInternalHubComponent(context.TODO(), tt.mch, c.Name) = %v", err)
+				}
+
+				// Create instances of the InternalHubComponent
+				if _, err := recon.ensureInternalHubComponent(context.TODO(), tt.mch, c.Name); err != nil {
+					t.Errorf("ensureInternalHubComponent(context.TODO(), tt.mch, c.Name) = %v", err)
+				}
+
+				ihc := &operatorv1.InternalHubComponent{}
+				if err := recon.Client.Get(context.TODO(), types.NamespacedName{Name: c.Name,
+					Namespace: tt.mch.GetNamespace()}, ihc); err != nil {
+					t.Errorf("failed to get InternalHubComponent: %v", err)
+				}
+
+				// Add finalizer to the InternalHubComponent
+				ihc.SetFinalizers([]string{"foo/bar"})
+				if err := recon.Client.Update(context.TODO(), ihc); err != nil {
+					t.Errorf("failed to update InternalHubComponent: %v", err)
+				}
+
+				// Should delete the InternalHubComponent but leave it existing due to the finalizer
+				if _, err := recon.ensureNoInternalHubComponent(context.TODO(), tt.mch, c.Name); err != nil {
+					t.Errorf("ensureInternalHubComponent(context.TODO(), tt.mch, c.Name) = %v", err)
+				}
+
+				// Check for the DeletionTimestamp on the InternalHubComponent
+				if err := recon.Client.Get(context.TODO(), types.NamespacedName{Name: ihc.GetName(),
+					Namespace: ihc.GetNamespace()}, ihc); err != nil {
+					t.Errorf("failed to get InternalHubComponent: %v", err)
+				}
+				if ihc.GetDeletionTimestamp() == nil {
+					t.Errorf("InternalHubComponent should have DeletionTimestamp")
+				}
+
+				// Reset finalizers on the InternalHubComponent
+				ihc.SetFinalizers([]string{})
+
+				// Resource should be deleted
+				if _, err := recon.ensureNoInternalHubComponent(context.TODO(), tt.mch, c.Name); err != nil {
+					t.Errorf("ensureInternalHubComponent(context.TODO(), tt.mch, c.Name) = %v", err)
+				}
+			}
+		})
+	}
 }

@@ -47,7 +47,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 
 	ocopv1 "github.com/openshift/api/operator/v1"
 
@@ -1041,15 +1040,16 @@ func (r *MultiClusterHubReconciler) ensureInternalHubComponent(ctx context.Conte
 		},
 	}
 
-	// Apply the component with force
-	patchOpts := &client.PatchOptions{
-		Force:        ptr.To(true),
-		FieldManager: "multiclusterhub-operator",
-	}
-
-	if err := r.Client.Patch(ctx, ihc, client.Apply, patchOpts); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to apply InternalHubComponent CR: %s/%s: %v",
-			ihc.GetNamespace(), ihc.GetName(), err)
+	if err := r.Client.Get(ctx, types.NamespacedName{Name: ihc.GetName(), Namespace: ihc.GetNamespace()}, ihc); err != nil {
+		if errors.IsNotFound(err) {
+			if err := r.Client.Create(ctx, ihc); err != nil {
+				return ctrl.Result{}, fmt.Errorf("failed to create InternalHubComponent CR: %s/%s: %v",
+					ihc.GetNamespace(), ihc.GetName(), err)
+			}
+		} else {
+			return ctrl.Result{}, fmt.Errorf("failed to get InternalHubComponent CR: %s/%s: %v",
+				ihc.GetNamespace(), ihc.GetName(), err)
+		}
 	}
 
 	return ctrl.Result{}, nil
