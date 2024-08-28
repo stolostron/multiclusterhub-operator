@@ -1322,6 +1322,107 @@ func Test_equivalentKlusterletAddonConfig(t *testing.T) {
 	})
 }
 
+func Test_ensureNamespaceAndPullSecret(t *testing.T) {
+	tests := []struct {
+		name      string
+		mch       *operatorv1.MultiClusterHub
+		ns        *corev1.Namespace
+		mceNS     *corev1.Namespace
+		mceSecret *corev1.Secret
+		mchSecret *corev1.Secret
+		want      error
+	}{
+		{
+			name:  "should ensure namespace and pull secret are created",
+			mch:   &operatorv1.MultiClusterHub{ObjectMeta: metav1.ObjectMeta{Name: "mch", Namespace: "ocm"}},
+			ns:    &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ocm"}},
+			mceNS: &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "mce"}},
+			mceSecret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "mce-image-pull-secret",
+					Namespace: "mce",
+					Labels: map[string]string{
+						"installer.name":      "mch",
+						"installer.namespace": "ocm",
+					},
+				},
+			},
+			mchSecret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "mch-image-pull-secret",
+					Namespace: "ocm",
+					Labels: map[string]string{
+						"installer.name":      "mch",
+						"installer.namespace": "ocm",
+					},
+				},
+			},
+			want: nil,
+		},
+	}
+
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Ensure that the namespace for MCE is created
+			if _, err := recon.ensureNamespaceAndPullSecret(tt.mch, tt.mceNS); err != nil {
+				t.Errorf("ensureNamespaceAndPullSecret(tt.mch, tt.ns) = %v, want = %v", err, tt.want)
+			}
+
+			// Verify that the namespace was created and available
+			ns := &corev1.Namespace{}
+			if err := recon.Client.Get(context.TODO(), types.NamespacedName{Name: tt.mceNS.GetName()}, ns); err != nil {
+				t.Errorf("failed to get namespace: %v", err)
+			}
+
+			// Update the namespace status phase to an active state
+			ns.Status.Phase = corev1.NamespaceActive
+			if err := recon.Client.Status().Update(context.TODO(), ns); err != nil {
+				t.Errorf("failed to update namespace status: %v", err)
+			}
+
+			// Create MCE secret
+			if err := recon.Client.Create(context.TODO(), tt.mceSecret); err != nil {
+				t.Errorf("failed to create MCE secret: %v", err)
+			}
+
+			secretList := &corev1.SecretList{}
+			if err := recon.Client.List(context.TODO(), secretList); err != nil {
+				t.Errorf("failed to list secrets: %v", err)
+			}
+
+			// MCE imagepullsecret should be deleted since MCH secret was not initialized
+			if _, err := recon.ensureNamespaceAndPullSecret(tt.mch, tt.mceNS); err != nil {
+				t.Errorf("ensureNamespaceAndPullSecret(tt.mch, tt.ns) = %v, want = %v", err, tt.want)
+			}
+
+			secretList = &corev1.SecretList{}
+			if err := recon.Client.List(context.TODO(), secretList); err != nil {
+				t.Errorf("failed to list secrets: %v", err)
+			}
+
+			if len(secretList.Items) != 0 {
+				t.Errorf("expected 0 secrets, got %d", len(secretList.Items))
+			}
+
+			// An error should occur because the MCH image pull secret has not been created yet
+			tt.mch.Spec.ImagePullSecret = tt.mchSecret.GetName()
+			if _, err := recon.ensureNamespaceAndPullSecret(tt.mch, tt.mceNS); err == nil {
+				t.Errorf("ensureNamespaceAndPullSecret(tt.mch, tt.ns) = %v, want = %v", err, tt.want)
+			}
+
+			if err := recon.Client.Create(context.TODO(), tt.mchSecret); err != nil {
+				t.Errorf("failed to create mch secret: %v", err)
+			}
+
+			// Fake clients does not allow for apply patching; therefore we will accept the error.
+			if _, err := recon.ensureNamespaceAndPullSecret(tt.mch, tt.mceNS); err == nil {
+				t.Errorf("ensureNamespaceAndPullSecret(tt.mch, tt.ns) = %v, want = %v", err, tt.want)
+			}
+		})
+	}
+}
+
 func Test_ensureInternalHubComponent(t *testing.T) {
 	tests := []struct {
 		name string

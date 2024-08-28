@@ -1040,7 +1040,9 @@ func (r *MultiClusterHubReconciler) ensureInternalHubComponent(ctx context.Conte
 		},
 	}
 
-	if err := r.Client.Get(ctx, types.NamespacedName{Name: ihc.GetName(), Namespace: ihc.GetNamespace()}, ihc); err != nil {
+	if err := r.Client.Get(
+		ctx, types.NamespacedName{Name: ihc.GetName(), Namespace: ihc.GetNamespace()}, ihc); err != nil {
+
 		if errors.IsNotFound(err) {
 			if err := r.Client.Create(ctx, ihc); err != nil {
 				return ctrl.Result{}, fmt.Errorf("failed to create InternalHubComponent CR: %s/%s: %v",
