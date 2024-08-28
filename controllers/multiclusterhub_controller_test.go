@@ -1358,6 +1358,14 @@ func Test_ensureInternalHubComponent(t *testing.T) {
 	registerScheme()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ihc := &operatorv1.InternalHubComponent{}
+
+			defer func() {
+				if err := recon.Client.Delete(context.TODO(), tt.ns); err != nil {
+					t.Errorf("failed to delete namespace: %v", err)
+				}
+			}()
+
 			if err := recon.Client.Create(context.TODO(), tt.ns); err != nil {
 				t.Errorf("failed to create namespace %v: %v", tt.name, err)
 			}
@@ -1367,9 +1375,8 @@ func Test_ensureInternalHubComponent(t *testing.T) {
 					t.Errorf("ensureInternalHubComponent(context.TODO(), tt.mch, c.Name) = %v", err)
 				}
 
-				ihc := &operatorv1.InternalHubComponent{}
-				if err := recon.Client.Get(context.TODO(), types.NamespacedName{Name: ihc.GetName(),
-					Namespace: ihc.GetNamespace()}, ihc); err != nil {
+				if err := recon.Client.Get(context.TODO(), types.NamespacedName{Name: c.Name,
+					Namespace: tt.mch.GetNamespace()}, ihc); err != nil {
 					t.Errorf("failed to get InternalHubComponent: %v", err)
 				}
 			}
@@ -1413,6 +1420,12 @@ func Test_ensureNoInternalHubComponent(t *testing.T) {
 	registerScheme()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			defer func() {
+				if err := recon.Client.Delete(context.TODO(), tt.ns); err != nil {
+					t.Errorf("failed to delete namespace: %v", err)
+				}
+			}()
+
 			if err := recon.Client.Create(context.TODO(), tt.ns); err != nil {
 				t.Errorf("failed to create namespace %v: %v", tt.name, err)
 			}
