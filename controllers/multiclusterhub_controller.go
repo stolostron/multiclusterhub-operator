@@ -187,7 +187,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	*/
 	stsEnabled, err := r.isSTSEnabled(ctx)
 	if err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{RequeueAfter: utils.WarningRefreshInterval}, err
 	}
 
 	originalStatus := multiClusterHub.Status.DeepCopy()
@@ -500,7 +500,7 @@ func (r *MultiClusterHubReconciler) ensureAuthenticationIssuerNotEmpty(ctx conte
 	exists, err := r.ensureObjectExistsAndNotDeleted(ctx, auth, "cluster")
 
 	if err != nil || !exists {
-		return ctrl.Result{}, false, err
+		return ctrl.Result{RequeueAfter: utils.WarningRefreshInterval}, false, err
 	}
 
 	stsEnabled := auth.Spec.ServiceAccountIssuer != "" // Determine STS enabled status
@@ -521,7 +521,7 @@ func (r *MultiClusterHubReconciler) ensureCloudCredentialModeManual(ctx context.
 	exists, err := r.ensureObjectExistsAndNotDeleted(ctx, cloudCred, "cluster")
 
 	if err != nil || !exists {
-		return ctrl.Result{}, false, err
+		return ctrl.Result{RequeueAfter: utils.WarningRefreshInterval}, false, err
 	}
 
 	stsEnabled := cloudCred.Spec.CredentialsMode == "Manual" // Determine STS enabled status
@@ -542,7 +542,7 @@ func (r *MultiClusterHubReconciler) ensureInfrastructureAWS(ctx context.Context)
 	exists, err := r.ensureObjectExistsAndNotDeleted(ctx, infra, "cluster")
 
 	if err != nil || !exists {
-		return ctrl.Result{}, false, err
+		return ctrl.Result{RequeueAfter: utils.WarningRefreshInterval}, false, err
 	}
 
 	stsEnabled := infra.Spec.PlatformSpec.Type == "AWS"
@@ -765,7 +765,7 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 
 				} else if err != nil {
 					log.Error(err, "failed to get CustomResourceDefinition", "Resource", gvk)
-					return ctrl.Result{}, err
+					return ctrl.Result{RequeueAfter: utils.WarningRefreshInterval}, err
 				}
 			}
 		}
@@ -1166,7 +1166,7 @@ func (r *MultiClusterHubReconciler) createTrustBundleConfigmap(ctx context.Conte
 		// Unknown error. Requeue
 		msg := fmt.Sprintf("error while getting trust bundle configmap %s/%s", trustBundleNamespace, trustBundleName)
 		log.Error(err, msg)
-		return ctrl.Result{}, err
+		return ctrl.Result{RequeueAfter: resyncPeriod}, err
 	} else if err == nil {
 		// configmap exists
 		return ctrl.Result{}, nil
@@ -1193,7 +1193,7 @@ func (r *MultiClusterHubReconciler) createTrustBundleConfigmap(ctx context.Conte
 	if err != nil {
 		// Error creating configmap
 		log.Info(fmt.Sprintf("error creating trust bundle configmap %s: %s", trustBundleName, err))
-		return ctrl.Result{}, err
+		return ctrl.Result{RequeueAfter: resyncPeriod}, err
 	}
 	// Configmap created successfully
 	return ctrl.Result{}, nil
@@ -1217,7 +1217,7 @@ func (r *MultiClusterHubReconciler) createMetricsService(ctx context.Context, m 
 		if !errors.IsNotFound(err) {
 			// Unknown error. Requeue
 			log.Error(err, fmt.Sprintf("error while getting multiclusterhub metrics service: %s/%s", sNamespace, sName))
-			return ctrl.Result{}, err
+			return ctrl.Result{RequeueAfter: resyncPeriod}, err
 		}
 
 		// Create metrics service
@@ -1253,7 +1253,7 @@ func (r *MultiClusterHubReconciler) createMetricsService(ctx context.Context, m 
 		if err = r.Client.Create(ctx, s); err != nil {
 			// Error creating metrics service
 			log.Error(err, fmt.Sprintf("error creating multiclusterhub metrics service: %s", sName))
-			return ctrl.Result{}, err
+			return ctrl.Result{RequeueAfter: resyncPeriod}, err
 		}
 
 		log.Info(fmt.Sprintf("Created multiclusterhub metrics service: %s", sName))
@@ -1278,7 +1278,7 @@ func (r *MultiClusterHubReconciler) createMetricsServiceMonitor(ctx context.Cont
 		if !errors.IsNotFound(err) {
 			// Unknown error. Requeue
 			log.Error(err, fmt.Sprintf("error while getting multiclusterhub metrics service: %s/%s", smNamespace, smName))
-			return ctrl.Result{}, err
+			return ctrl.Result{RequeueAfter: resyncPeriod}, err
 		}
 
 		// Create metrics service
@@ -1321,7 +1321,7 @@ func (r *MultiClusterHubReconciler) createMetricsServiceMonitor(ctx context.Cont
 		if err = r.Client.Create(ctx, sm); err != nil {
 			// Error creating metrics servicemonitor
 			log.Error(err, fmt.Sprintf("error creating metrics servicemonitor: %s", smName))
-			return ctrl.Result{}, err
+			return ctrl.Result{RequeueAfter: resyncPeriod}, err
 		}
 
 		log.Info(fmt.Sprintf("Created multiclusterhub metrics servicemonitor: %s", smName))
