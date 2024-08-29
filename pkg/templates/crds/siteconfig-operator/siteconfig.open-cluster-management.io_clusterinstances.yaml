@@ -332,6 +332,29 @@ spec:
                           minItems: 1
                           type: array
                       type: object
+                    pruneManifests:
+                      description: PruneManifests represents a list of Kubernetes
+                        resource references that indicates which "node-level" manifests
+                        should be pruned (removed).
+                      items:
+                        description: ResourceRef represents the API version and kind
+                          of a Kubernetes resource
+                        properties:
+                          apiVersion:
+                            description: APIVersion is the version of the Kubernetes
+                              API to use when interacting with the resource. It includes
+                              both the API group and the version, such as "v1" for
+                              core resources or "apps/v1" for deployments.
+                            type: string
+                          kind:
+                            description: Kind is the type of Kubernetes resource being
+                              referenced.
+                            type: string
+                        required:
+                        - apiVersion
+                        - kind
+                        type: object
+                      type: array
                     role:
                       default: master
                       enum:
@@ -433,6 +456,27 @@ spec:
                       CIDRs for which the proxy should not be used.
                     type: string
                 type: object
+              pruneManifests:
+                description: PruneManifests represents a list of Kubernetes resource
+                  references that indicates which manifests should be pruned (removed).
+                items:
+                  description: ResourceRef represents the API version and kind of
+                    a Kubernetes resource
+                  properties:
+                    apiVersion:
+                      description: APIVersion is the version of the Kubernetes API
+                        to use when interacting with the resource. It includes both
+                        the API group and the version, such as "v1" for core resources
+                        or "apps/v1" for deployments.
+                      type: string
+                    kind:
+                      description: Kind is the type of Kubernetes resource being referenced.
+                      type: string
+                  required:
+                  - apiVersion
+                  - kind
+                  type: object
+                type: array
               pullSecretRef:
                 description: PullSecretRef is the reference to the secret to use when
                   pulling images.
