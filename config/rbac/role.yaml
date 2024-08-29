@@ -1424,6 +1424,14 @@ rules:
   - list
   - watch
 - apiGroups:
+  - image.openshift.io
+  resources:
+  - imagestreams
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - imageregistry.open-cluster-management.io
   resources:
   - managedclusterimageregistries
