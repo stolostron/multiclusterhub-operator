@@ -50,7 +50,7 @@ package main
 //+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=addondeploymentconfigs,verbs=get;list;watch
 //+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=addondeploymentconfigs,verbs=get;list;watch
 //+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=addondeploymentconfigs,verbs=get;list;watch
-//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=addondeploymentconfigs,verbs=get;list;watch
+//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=addondeploymentconfigs,verbs=get;list;watch;create;patch;delete
 //+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=addondeploymentconfigs;clustermanagementaddons;managedclusteraddons,verbs=create;delete;get;list;update
 //+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=clustermanagementaddons,verbs=create;get;list;watch;update
 //+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=clustermanagementaddons,verbs=get;list;watch
@@ -187,6 +187,7 @@ package main
 //+kubebuilder:rbac:groups=hive.openshift.io,resources=clusterimagesets,verbs=get;list;watch
 //+kubebuilder:rbac:groups=hive.openshift.io;multicluster.openshift.io,resources=clusterimagesets;multiclusterengines,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=hypershift.openshift.io,resources=hostedclusters;nodepools,verbs=list;watch
+//+kubebuilder:rbac:groups=image.openshift.io,resources=imagestreams,verbs=get;list;watch
 //+kubebuilder:rbac:groups=imageregistry.open-cluster-management.io,resources=managedclusterimageregistries,verbs=get;list;watch
 //+kubebuilder:rbac:groups=imageregistry.open-cluster-management.io,resources=managedclusterimageregistries;managedclusterimageregistries/status,verbs=get;list;watch
 //+kubebuilder:rbac:groups=integreatly.org,resources=grafanas;grafanas/status;grafanas/finalizers;grafanadashboards;grafanadashboards/status;grafanadatasources;grafanadatasources/status,verbs=get;list;create;update;delete;deletecollection;watch

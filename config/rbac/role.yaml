@@ -595,8 +595,11 @@ rules:
   resources:
   - addondeploymentconfigs
   verbs:
+  - create
+  - delete
   - get
   - list
+  - patch
   - watch
 - apiGroups:
   - addon.open-cluster-management.io
@@ -1421,6 +1424,14 @@ rules:
   - list
   - watch
 - apiGroups:
+  - image.openshift.io
+  resources:
+  - imagestreams
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - imageregistry.open-cluster-management.io
   resources:
   - managedclusterimageregistries
@@ -1610,6 +1621,17 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - operator.open-cluster-management.io
+  resources:
+  - internalhubcomponents
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
   - watch
 - apiGroups:
   - operator.open-cluster-management.io

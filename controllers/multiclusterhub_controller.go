@@ -119,6 +119,9 @@ var (
 // AgentServiceConfig webhook delete check
 //+kubebuilder:rbac:groups=agent-install.openshift.io,resources=agentserviceconfigs,verbs=get;list;watch
 
+// InternalHubComponent
+// +kubebuilder:rbac:groups="operator.open-cluster-management.io",resources="internalhubcomponents",verbs=create;get;delete;patch;list;watch
+
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // TODO(user): Modify the Reconcile function to compare the state specified by
@@ -468,6 +471,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	// Install the rest of the subscriptions in no particular order
 	for _, c := range operatorv1.MCHComponents {
 		result, err = r.ensureComponentOrNoComponent(ctx, multiClusterHub, c, r.CacheSpec, ocpConsole, stsEnabled)
+
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
@@ -757,8 +761,8 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 				if err := r.Client.Get(ctx, types.NamespacedName{Name: gvk.Name}, crd); errors.IsNotFound(err) {
 					log.Info("CustomResourceDefinition does not exist. Skipping resource creation",
 						"Group", gvk.Group, "Version", gvk.Version, "Kind", gvk.Kind)
-
 					return ctrl.Result{RequeueAfter: utils.WarningRefreshInterval}, nil
+
 				} else if err != nil {
 					log.Error(err, "failed to get CustomResourceDefinition", "Resource", gvk)
 					return ctrl.Result{RequeueAfter: utils.WarningRefreshInterval}, err
@@ -891,6 +895,10 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 
 	chartLocation := r.fetchChartLocation(component)
 
+	if result, err := r.ensureInternalHubComponent(ctx, m, component); err != nil {
+		return result, err
+	}
+
 	// Renders all templates from charts
 	templates, errs := renderer.RenderChart(chartLocation, m, cachespec.ImageOverrides, cachespec.TemplateOverrides,
 		isSTSEnabled)
@@ -938,6 +946,10 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 	*/
 	if component == operatorv1.MCH || component == operatorv1.MultiClusterEngine {
 		return ctrl.Result{}, nil
+	}
+
+	if result, err := r.ensureNoInternalHubComponent(ctx, m, component); err != nil {
+		return result, err
 	}
 
 	chartLocation := r.fetchChartLocation(component)
@@ -999,6 +1011,82 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 	return ctrl.Result{}, nil
 }
 
+func (r *MultiClusterHubReconciler) ensureInternalHubComponent(ctx context.Context, m *operatorv1.MultiClusterHub,
+	component string) (ctrl.Result, error) {
+
+	ihc := &operatorv1.InternalHubComponent{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: operatorv1.GroupVersion.String(),
+			Kind:       "InternalHubComponent",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      component,
+			Namespace: m.GetNamespace(),
+		},
+	}
+
+	if err := r.Client.Get(
+		ctx, types.NamespacedName{Name: ihc.GetName(), Namespace: ihc.GetNamespace()}, ihc); err != nil {
+
+		if errors.IsNotFound(err) {
+			if err := r.Client.Create(ctx, ihc); err != nil {
+				return ctrl.Result{}, fmt.Errorf("failed to create InternalHubComponent CR: %s/%s: %v",
+					ihc.GetNamespace(), ihc.GetName(), err)
+			}
+		} else {
+			return ctrl.Result{}, fmt.Errorf("failed to get InternalHubComponent CR: %s/%s: %v",
+				ihc.GetNamespace(), ihc.GetName(), err)
+		}
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureNoInternalHubComponent(ctx context.Context, m *operatorv1.MultiClusterHub,
+	component string) (ctrl.Result, error) {
+
+	ihc := &operatorv1.InternalHubComponent{}
+	if err := r.Client.Get(ctx, types.NamespacedName{Name: component, Namespace: m.GetNamespace()}, ihc); err != nil {
+		if errors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
+
+		return ctrl.Result{}, fmt.Errorf("failed to get InternalHubComponent: %s/%s: %v",
+			m.GetNamespace(), component, err)
+	}
+
+	// Check if it has a deletion timestamp (indicating it's in the process of being deleted)
+	if ihc.GetDeletionTimestamp() != nil {
+		log.Info("InternalHubComponent deletion in progress", "Name", ihc.GetName(), "Namespace", ihc.GetNamespace(),
+			"DeletionTimestamp", ihc.GetDeletionTimestamp())
+
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	log.Info("Deleting InternalHubComponent", "Name", ihc.GetName(), "Namespace", ihc.GetNamespace())
+	if err := r.Client.Delete(ctx, ihc); err != nil {
+		if !errors.IsNotFound(err) {
+			return ctrl.Result{}, fmt.Errorf("failed to delete InternalHubComponent CR: %s/%s: %v",
+				ihc.GetNamespace(), ihc.GetName(), err)
+		}
+	}
+
+	// Ensure that the resource is fully deleted by attempting to refetch it
+	if err := r.Client.Get(ctx,
+		types.NamespacedName{Name: ihc.GetName(), Namespace: ihc.GetNamespace()}, ihc); err != nil {
+		if errors.IsNotFound(err) {
+			log.Info("InternalHubComponent successfully deleted", "Name", ihc.GetName(), "Namespace", ihc.GetNamespace())
+			return ctrl.Result{}, nil
+		}
+
+		return ctrl.Result{}, fmt.Errorf("failed to get InternalHubComponent %s/%s: %v",
+			ihc.GetNamespace(), ihc.GetName(), err)
+	}
+
+	// Requeue to check again after a short delay
+	return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+}
+
 func (r *MultiClusterHubReconciler) ensureOpenShiftNamespaceLabel(ctx context.Context, m *operatorv1.MultiClusterHub) (
 	ctrl.Result, error,
 ) {
@@ -1045,7 +1133,7 @@ func (r *MultiClusterHubReconciler) deleteTemplate(ctx context.Context, m *opera
 		return ctrl.Result{}, err
 	}
 
-	log.Info(fmt.Sprintf("finalizing template: %s\n", template.GetName()))
+	log.Info("Finalizing template", "Kind", template.GetKind(), "Name", template.GetName())
 	err = r.Client.Delete(ctx, template)
 	if err != nil {
 		log.Error(err, "Failed to delete template")

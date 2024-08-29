@@ -104,22 +104,21 @@ func (r *MultiClusterHubReconciler) ensureUnstructuredResource(m *operatorv1.Mul
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterHubReconciler) ensureNamespace(m *operatorv1.MultiClusterHub, ns *corev1.Namespace) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) ensureNamespace(m *operatorv1.MultiClusterHub, ns *corev1.Namespace) (
+	ctrl.Result, error) {
 	ctx := context.Background()
 
 	existingNS := &corev1.Namespace{}
-	err := r.Client.Get(ctx, types.NamespacedName{
-		Name: ns.GetName(),
-	}, existingNS)
-	if err != nil && errors.IsNotFound(err) {
-		err = r.Client.Create(ctx, ns)
-		if err != nil {
-			r.Log.Info(fmt.Sprintf("Error creating namespace: %s", err.Error()))
+	if err := r.Client.Get(ctx, types.NamespacedName{Name: ns.GetName()}, existingNS); err != nil {
+		if errors.IsNotFound(err) {
+			if err = r.Client.Create(ctx, ns); err != nil {
+				r.Log.Info(fmt.Sprintf("Error creating namespace: %s", err.Error()))
+				return ctrl.Result{Requeue: true}, nil
+			}
+		} else {
+			r.Log.Info(fmt.Sprintf("error locating namespace: %s. Error: %s", ns.GetName(), err.Error()))
 			return ctrl.Result{Requeue: true}, nil
 		}
-	} else if err != nil {
-		r.Log.Info(fmt.Sprintf("error locating namespace: %s. Error: %s", ns.GetName(), err.Error()))
-		return ctrl.Result{Requeue: true}, nil
 	}
 
 	condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
@@ -128,6 +127,7 @@ func (r *MultiClusterHubReconciler) ensureNamespace(m *operatorv1.MultiClusterHu
 	if existingNS.Status.Phase == corev1.NamespaceActive {
 		return ctrl.Result{}, nil
 	}
+
 	r.Log.Info(fmt.Sprintf("namespace '%s' is not in an active state", ns.GetName()))
 	return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 }
@@ -219,22 +219,15 @@ func (r *MultiClusterHubReconciler) ensurePullSecret(m *operatorv1.MultiClusterH
 	if m.Spec.ImagePullSecret == "" {
 		// Delete imagepullsecret in MCE namespace if present
 		secretList := &corev1.SecretList{}
-		err := r.Client.List(
-			context.TODO(),
-			secretList,
-			client.MatchingLabels{
-				"installer.name":      m.GetName(),
-				"installer.namespace": m.GetNamespace(),
-			},
-			client.InNamespace(newNS),
-		)
-		if err != nil {
+		if err := r.Client.List(context.TODO(), secretList, client.MatchingLabels{"installer.name": m.GetName(),
+			"installer.namespace": m.GetNamespace()}, client.InNamespace(newNS)); err != nil {
+
 			return ctrl.Result{Requeue: true}, err
 		}
+
 		for i, secret := range secretList.Items {
 			r.Log.Info("Deleting imagePullSecret", "Name", secret.Name, "Namespace", secret.Namespace)
-			err = r.Client.Delete(context.TODO(), &secretList.Items[i])
-			if err != nil {
+			if err := r.Client.Delete(context.TODO(), &secretList.Items[i]); err != nil {
 				r.Log.Error(err, fmt.Sprintf("Error deleting imagepullsecret: %s", secret.GetName()))
 				return ctrl.Result{Requeue: true}, err
 			}
@@ -244,11 +237,8 @@ func (r *MultiClusterHubReconciler) ensurePullSecret(m *operatorv1.MultiClusterH
 	}
 
 	pullSecret := &corev1.Secret{}
-	err := r.Client.Get(context.TODO(), types.NamespacedName{
-		Name:      m.Spec.ImagePullSecret,
-		Namespace: m.Namespace,
-	}, pullSecret)
-	if err != nil {
+	if err := r.Client.Get(context.TODO(), types.NamespacedName{Name: m.Spec.ImagePullSecret, Namespace: m.Namespace},
+		pullSecret); err != nil {
 		return ctrl.Result{Requeue: true}, err
 	}
 
@@ -265,14 +255,11 @@ func (r *MultiClusterHubReconciler) ensurePullSecret(m *operatorv1.MultiClusterH
 		Data: pullSecret.Data,
 		Type: corev1.SecretTypeDockerConfigJson,
 	}
-	mceSecret.SetName(m.Spec.ImagePullSecret)
-	mceSecret.SetNamespace(newNS)
-	mceSecret.SetLabels(pullSecret.Labels)
 	addInstallerLabelSecret(mceSecret, m.Name, m.Namespace)
 
 	force := true
-	err = r.Client.Patch(context.TODO(), mceSecret, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
-	if err != nil {
+	if err := r.Client.Patch(context.TODO(), mceSecret, client.Apply,
+		&client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"}); err != nil {
 		r.Log.Info(fmt.Sprintf("Error applying pullSecret to mce namespace: %s", err.Error()))
 		return ctrl.Result{Requeue: true}, err
 	}
