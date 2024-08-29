@@ -25,7 +25,6 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/Masterminds/semver/v3"
@@ -469,27 +468,13 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 
-	// Initialize component errors mapping
-	componentErrors := make(map[string]error)
-
 	// Install the rest of the subscriptions in no particular order
 	for _, c := range operatorv1.MCHComponents {
 		result, err = r.ensureComponentOrNoComponent(ctx, multiClusterHub, c, r.CacheSpec, ocpConsole, stsEnabled)
 
-		if result != (ctrl.Result{}) || err != nil {
-			componentErrors[c] = err
-			continue
+		if result != (ctrl.Result{}) {
+			return result, err
 		}
-	}
-
-	// Check if there were any errors
-	if len(componentErrors) > 0 {
-		errorMessages := []string{}
-
-		for component, err := range componentErrors {
-			errorMessages = append(errorMessages, fmt.Sprintf("Component %s: %v", component, err))
-		}
-		return ctrl.Result{}, fmt.Errorf("errors occurred during reconciliation: %s", strings.Join(errorMessages, ", "))
 	}
 
 	// Cleanup unused resources once components up-to-date
