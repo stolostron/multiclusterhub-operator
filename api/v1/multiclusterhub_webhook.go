@@ -165,6 +165,7 @@ func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) (admission.Warnings
 			}
 		}
 	}
+
 	return nil, nil
 }
 

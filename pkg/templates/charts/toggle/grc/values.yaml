@@ -7,7 +7,6 @@ global:
     cert_policy_controller: ""
     config_policy_controller: ""
     governance_policy_framework_addon: ""
-    kube_rbac_proxy: ""
   templateOverrides: {}
   namespace: default
   pullSecret: null
