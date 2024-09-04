@@ -920,7 +920,9 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 
 					log.V(2).Info("Applying deployment overrides for template", "Name", template.GetName())
 					for _, container := range deploymentConfig.Containers {
-						r.applyEnvConfig(template, container.Name, container.Env)
+						if err := r.applyEnvConfig(template, container.Name, container.Env); err != nil {
+							return ctrl.Result{}, err
+						}
 					}
 
 				} else {
