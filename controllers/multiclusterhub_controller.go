@@ -961,8 +961,7 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 }
 
 func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *operatorv1.MultiClusterHub,
-	component string, cachespec CacheSpec, isSTSEnabled bool,
-) (result ctrl.Result, err error) {
+	component string, cachespec CacheSpec, isSTSEnabled bool) (result ctrl.Result, err error) {
 	/*
 	   If the component is detected to be MCH, we can simply return successfully. MCH is only listed in the components
 	   list for cleanup purposes. If the component is detected to be MCE, we can simply return successfully.
@@ -972,7 +971,7 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 		return ctrl.Result{}, nil
 	}
 
-	if result, err := r.ensureNoInternalHubComponent(ctx, m, component); err != nil {
+	if result, err := r.ensureNoInternalHubComponent(ctx, m, component); result != (ctrl.Result{}) || err != nil {
 		return result, err
 	}
 
