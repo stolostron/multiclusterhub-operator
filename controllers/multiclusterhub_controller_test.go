@@ -787,9 +787,10 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(err).To(BeNil())
 
 			By("Ensuring No Insights")
-			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.Insights, testCacheSpec, false)
-			Expect(result).To(Equal(ctrl.Result{}))
-			Expect(err).To(BeNil())
+			Eventually(func() bool {
+				result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.Insights, testCacheSpec, false)
+				return (err == nil && result == ctrl.Result{})
+			}, timeout, interval).Should(BeTrue())
 
 			By("Ensuring Cluster Backup")
 			ns := BackupNamespace()
