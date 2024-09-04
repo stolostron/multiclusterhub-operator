@@ -238,51 +238,68 @@ spec:
                         items for individual components
                       properties:
                         configOverrides:
-                          type: object
-                          description: 'Optional configuration overrides for deployments and containers'
+                          description: ConfigOverrides contains optional configuration
+                            overrides for deployments and containers.
                           properties:
                             deployments:
-                              type: array
-                              description: 'List of deployments to override.'
+                              description: Deployments is a list of deployment specific
+                                configuration overrides.
                               items:
-                                type: object
+                                description: DeploymentConfig provides configuration
+                                  details for a specific deployment.
                                 properties:
-                                  name:
-                                    type: string
-                                    description: 'The name of the deployment being configured.'
                                   containers:
-                                    type: array
-                                    description: 'List of containers within the deployment that can be customized.'
+                                    description: Containers is a list of container
+                                      specific configurations within the deployment.
                                     items:
-                                      type: object
+                                      description: ContainerConfig holds configuration
+                                        details for a specific container within a
+                                        deployment.
                                       properties:
-                                        name:
-                                          type: string
-                                          description: 'The name of the container being configured.'
                                         env:
-                                          type: array
-                                          description: 'List of environment variables to override in the container.'
+                                          description: Env is a list of environment
+                                            variable overrides for the container.
                                           items:
-                                            type: object
+                                            description: EnvConfig represents an override
+                                              for an environment variable within a
+                                              container.
                                             properties:
                                               name:
+                                                description: Name specifies the name
+                                                  of the environment variable.
                                                 type: string
-                                                description: 'The name of the environment variable.'
                                               value:
+                                                description: Value specifies the value
+                                                  of the environment variable.
                                                 type: string
-                                                description: 'The value of the environment variable.'
-                                  required:
-                                  - name
-                                  - containers
-                              name:
-                                type: string
-                              value:
-                                type: string
+                                            type: object
+                                          type: array
+                                        name:
+                                          description: Name specifies the name of
+                                            the container being configured.
+                                          type: string
+                                      required:
+                                      - env
+                                      - name
+                                      type: object
+                                    type: array
+                                  name:
+                                    description: Name specifies the name of the deployment
+                                      being configured.
+                                    type: string
+                                required:
+                                - containers
+                                - name
+                                type: object
+                              type: array
+                          type: object
                         enabled:
-                          description: 'Indicates whether the component is enabled or disabled.'
+                          description: Enabled specifies whether the component is
+                            enabled or disabled.
                           type: boolean
                         name:
-                          description: 'The name of the component being configured.'
+                          description: Name denotes the name of the component being
+                            configured.
                           type: string
                       required:
                       - enabled

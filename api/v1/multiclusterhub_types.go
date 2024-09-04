@@ -126,31 +126,48 @@ type Overrides struct {
 
 // ComponentConfig provides optional configuration items for individual components
 type ComponentConfig struct {
-	Enabled         bool           `json:"enabled"`
-	Name            string         `json:"name"`
+	// Enabled specifies whether the component is enabled or disabled.
+	Enabled bool `json:"enabled"`
+
+	// Name denotes the name of the component being configured.
+	Name string `json:"name"`
+
+	// ConfigOverrides contains optional configuration overrides for deployments and containers.
 	ConfigOverrides ConfigOverride `json:"configOverrides,omitempty"`
 }
 
-// ConfigOverride represents overrides for specific deployments and containers
+// ConfigOverride holds overrides for configurations specific to deployments and containers.
 type ConfigOverride struct {
+	// Deployments is a list of deployment specific configuration overrides.
 	Deployments []DeploymentConfig `json:"deployments,omitempty"`
 }
 
-// DeploymentConfig provides configuration options for a specific deployment
+// DeploymentConfig provides configuration details for a specific deployment.
 type DeploymentConfig struct {
-	Name       string            `json:"name,omitempty"`
-	Containers []ContainerConfig `json:"containers,omitempty"`
+	// Name specifies the name of the deployment being configured.
+	Name string `json:"name"`
+
+	// Containers is a list of container specific configurations within the deployment.
+	Containers []ContainerConfig `json:"containers"`
 }
 
-// ContainerConfig provides configuration options for a specific container within a deployment
+// ContainerConfig holds configuration details for a specific container within a deployment.
 type ContainerConfig struct {
-	Name string      `json:"name,omitempty"`
-	Env  []EnvConfig `json:"env,omitempty"`
+	// Name specifies the name of the container being configured.
+	Name string `json:"name"`
+
+	// Env is a list of environment variable overrides for the container.
+	Env []EnvConfig `json:"env"`
 }
 
-// EnvConfig represents an environment variable override for a container
+// EnvConfig represents an override for an environment variable within a container.
 type EnvConfig struct {
-	Name  string `json:"name,omitempty"`
+	// Name specifies the name of the environment variable.
+	// +required
+	Name string `json:"name,omitempty"`
+
+	// Value specifies the value of the environment variable.
+	// +required
 	Value string `json:"value,omitempty"`
 }
 
