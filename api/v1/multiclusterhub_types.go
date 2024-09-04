@@ -163,11 +163,9 @@ type ContainerConfig struct {
 // EnvConfig represents an override for an environment variable within a container.
 type EnvConfig struct {
 	// Name specifies the name of the environment variable.
-	// +required
 	Name string `json:"name,omitempty"`
 
 	// Value specifies the value of the environment variable.
-	// +required
 	Value string `json:"value,omitempty"`
 }
 
