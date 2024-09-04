@@ -47,14 +47,13 @@ import (
 
 // CacheSpec ...
 type CacheSpec struct {
-	EnvironmentOverrides map[string][]operatorv1.EnvOverride
-	IngressDomain        string
-	ImageOverrides       map[string]string
-	ImageOverridesCM     string
-	ImageRepository      string
-	ManifestVersion      string
-	TemplateOverrides    map[string]string
-	TemplateOverridesCM  string
+	IngressDomain       string
+	ImageOverrides      map[string]string
+	ImageOverridesCM    string
+	ImageRepository     string
+	ManifestVersion     string
+	TemplateOverrides   map[string]string
+	TemplateOverridesCM string
 }
 
 func (r *MultiClusterHubReconciler) ensureNoNamespace(m *operatorv1.MultiClusterHub, u *unstructured.Unstructured) (ctrl.Result, error) {

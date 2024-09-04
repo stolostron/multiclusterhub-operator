@@ -126,14 +126,32 @@ type Overrides struct {
 
 // ComponentConfig provides optional configuration items for individual components
 type ComponentConfig struct {
-	Name         string        `json:"name"`
-	Enabled      bool          `json:"enabled"`
-	EnvOverrides []EnvOverride `json:"envOverrides,omitempty"`
+	Enabled         bool           `json:"enabled"`
+	Name            string         `json:"name"`
+	ConfigOverrides ConfigOverride `json:"configOverrides,omitempty"`
 }
 
-type EnvOverride struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
+// ConfigOverride represents overrides for specific deployments and containers
+type ConfigOverride struct {
+	Deployments []DeploymentConfig `json:"deployments,omitempty"`
+}
+
+// DeploymentConfig provides configuration options for a specific deployment
+type DeploymentConfig struct {
+	Name       string            `json:"name,omitempty"`
+	Containers []ContainerConfig `json:"containers,omitempty"`
+}
+
+// ContainerConfig provides configuration options for a specific container within a deployment
+type ContainerConfig struct {
+	Name string      `json:"name,omitempty"`
+	Env  []EnvConfig `json:"env,omitempty"`
+}
+
+// EnvConfig represents an environment variable override for a container
+type EnvConfig struct {
+	Name  string `json:"name,omitempty"`
+	Value string `json:"value,omitempty"`
 }
 
 type HiveConfigSpec struct {

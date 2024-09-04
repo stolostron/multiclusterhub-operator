@@ -259,9 +259,9 @@ func (mch *MultiClusterHub) Enable(s string) {
 	}
 
 	mch.Spec.Overrides.Components = append(mch.Spec.Overrides.Components, ComponentConfig{
-		Name:         s,
-		Enabled:      true,
-		EnvOverrides: []EnvOverride{},
+		Enabled:         true,
+		Name:            s,
+		ConfigOverrides: ConfigOverride{},
 	})
 }
 
@@ -279,9 +279,9 @@ func (mch *MultiClusterHub) Disable(s string) {
 	}
 
 	mch.Spec.Overrides.Components = append(mch.Spec.Overrides.Components, ComponentConfig{
-		Name:         s,
-		Enabled:      false,
-		EnvOverrides: []EnvOverride{},
+		Enabled:         false,
+		Name:            s,
+		ConfigOverrides: ConfigOverride{},
 	})
 }
 

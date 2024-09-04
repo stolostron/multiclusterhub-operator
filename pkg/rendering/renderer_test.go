@@ -102,11 +102,9 @@ func TestRender(t *testing.T) {
 	}
 	templateOverrides := map[string]string{}
 
-	testEnvOverride := []v1.EnvOverride{}
-
 	// multiple charts
 	chartsDir := chartsDir
-	templates, errs := RenderCharts(chartsDir, testMCH, testImages, templateOverrides, testEnvOverride, false)
+	templates, errs := RenderCharts(chartsDir, testMCH, testImages, templateOverrides, false)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			t.Logf(err.Error())
@@ -181,7 +179,7 @@ func TestRender(t *testing.T) {
 
 	for _, chartsPath := range chartPaths {
 		chartsPath := chartsPath
-		singleChartTemplates, errs := RenderChart(chartsPath, testMCH, singleChartTestImages, templateOverrides, testEnvOverride, false)
+		singleChartTemplates, errs := RenderChart(chartsPath, testMCH, singleChartTestImages, templateOverrides, false)
 		if len(errs) > 0 {
 			for _, err := range errs {
 				t.Logf(err.Error())
