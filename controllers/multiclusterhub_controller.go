@@ -1046,8 +1046,6 @@ func (r *MultiClusterHubReconciler) getComponentConfig(components []operatorv1.C
 			return c, true
 		}
 	}
-
-	log.Info("Component config not found", "Component", componentName)
 	return operatorv1.ComponentConfig{}, false
 }
 
@@ -1062,8 +1060,6 @@ func (r *MultiClusterHubReconciler) getDeploymentConfig(deployments []operatorv1
 			return &d, true
 		}
 	}
-
-	log.Info("Deployment config not found", "Deployment", deploymentName)
 	return &operatorv1.DeploymentConfig{}, false
 }
 
