@@ -915,8 +915,8 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 	if componentConfig, found := r.getComponentConfig(m.Spec.Overrides.Components, component); found {
 		for _, template := range templates {
 			if ok := template.GetKind() == "Deployment"; ok {
-				if deploymentConfig := r.getDeploymentConfig(componentConfig.ConfigOverrides.Deployments,
-					template.GetName()); deploymentConfig != nil {
+				if deploymentConfig, found := r.getDeploymentConfig(componentConfig.ConfigOverrides.Deployments,
+					template.GetName()); found {
 
 					log.V(2).Info("Applying deployment overrides for template", "Name", template.GetName())
 					for _, container := range deploymentConfig.Containers {
@@ -1056,15 +1056,15 @@ getDeploymentConfig searches for a deployment configuration in the provided list
 by deployment name. It returns a pointer to the configuration and nil if not found.
 */
 func (r *MultiClusterHubReconciler) getDeploymentConfig(deployments []operatorv1.DeploymentConfig,
-	deploymentName string) *operatorv1.DeploymentConfig {
+	deploymentName string) (*operatorv1.DeploymentConfig, bool) {
 	for _, d := range deployments {
 		if d.Name == deploymentName {
-			return &d
+			return &d, true
 		}
 	}
 
 	log.Info("Deployment config not found", "Deployment", deploymentName)
-	return nil
+	return &operatorv1.DeploymentConfig{}, false
 }
 
 /*
