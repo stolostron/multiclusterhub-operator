@@ -126,8 +126,47 @@ type Overrides struct {
 
 // ComponentConfig provides optional configuration items for individual components
 type ComponentConfig struct {
-	Name    string `json:"name"`
-	Enabled bool   `json:"enabled"`
+	// Enabled specifies whether the component is enabled or disabled.
+	Enabled bool `json:"enabled"`
+
+	// Name denotes the name of the component being configured.
+	Name string `json:"name"`
+
+	// ConfigOverrides contains optional configuration overrides for deployments and containers.
+	ConfigOverrides ConfigOverride `json:"configOverrides,omitempty"`
+}
+
+// ConfigOverride holds overrides for configurations specific to deployments and containers.
+type ConfigOverride struct {
+	// Deployments is a list of deployment specific configuration overrides.
+	Deployments []DeploymentConfig `json:"deployments,omitempty"`
+}
+
+// DeploymentConfig provides configuration details for a specific deployment.
+type DeploymentConfig struct {
+	// Name specifies the name of the deployment being configured.
+	Name string `json:"name"`
+
+	// Containers is a list of container specific configurations within the deployment.
+	Containers []ContainerConfig `json:"containers"`
+}
+
+// ContainerConfig holds configuration details for a specific container within a deployment.
+type ContainerConfig struct {
+	// Name specifies the name of the container being configured.
+	Name string `json:"name"`
+
+	// Env is a list of environment variable overrides for the container.
+	Env []EnvConfig `json:"env"`
+}
+
+// EnvConfig represents an override for an environment variable within a container.
+type EnvConfig struct {
+	// Name specifies the name of the environment variable.
+	Name string `json:"name,omitempty"`
+
+	// Value specifies the value of the environment variable.
+	Value string `json:"value,omitempty"`
 }
 
 type HiveConfigSpec struct {

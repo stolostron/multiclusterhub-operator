@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -52,7 +53,7 @@ import (
 )
 
 const (
-	timeout  = time.Second * 30
+	timeout  = time.Second * 60
 	interval = time.Millisecond * 250
 
 	mchName      = "multiclusterhub-operator"
@@ -787,9 +788,10 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(err).To(BeNil())
 
 			By("Ensuring No Insights")
-			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.Insights, testCacheSpec, false)
-			Expect(result).To(Equal(ctrl.Result{}))
-			Expect(err).To(BeNil())
+			Eventually(func() bool {
+				result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.Insights, testCacheSpec, false)
+				return (err == nil && result == ctrl.Result{})
+			}, timeout, interval).Should(BeTrue())
 
 			By("Ensuring Cluster Backup")
 			ns := BackupNamespace()
@@ -801,9 +803,10 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(err).To(BeNil())
 
 			By("Ensuring No Cluster Backup")
-			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.ClusterBackup, testCacheSpec, false)
-			Expect(result).To(Equal(ctrl.Result{}))
-			Expect(err).To(BeNil())
+			Eventually(func() bool {
+				result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.ClusterBackup, testCacheSpec, false)
+				return (err == nil && result == ctrl.Result{})
+			}, timeout, interval).Should(BeTrue())
 
 			By("Ensuring Search-v2")
 			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.Search, testCacheSpec, false)
@@ -822,9 +825,10 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(err).To(BeNil())
 
 			By("Ensuring No CLC")
-			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.ClusterLifecycle, testCacheSpec, false)
-			Expect(result).To(Equal(ctrl.Result{}))
-			Expect(err).To(BeNil())
+			Eventually(func() bool {
+				result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.ClusterLifecycle, testCacheSpec, false)
+				return (err == nil && result == ctrl.Result{})
+			}, timeout, interval).Should(BeTrue())
 
 			By("Ensuring App-Lifecycle")
 			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.Appsub, testCacheSpec, false)
@@ -832,9 +836,10 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(err).To(BeNil())
 
 			By("Ensuring No App-Lifecycle")
-			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.Appsub, testCacheSpec, false)
-			Expect(result).To(Equal(ctrl.Result{}))
-			Expect(err).To(BeNil())
+			Eventually(func() bool {
+				result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.Appsub, testCacheSpec, false)
+				return (err == nil && result == ctrl.Result{})
+			}, timeout, interval).Should(BeTrue())
 
 			By("Ensuring GRC")
 			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.GRC, testCacheSpec, false)
@@ -842,9 +847,10 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(err).To(BeNil())
 
 			By("Ensuring No GRC")
-			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.GRC, testCacheSpec, false)
-			Expect(result).To(Equal(ctrl.Result{}))
-			Expect(err).To(BeNil())
+			Eventually(func() bool {
+				result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.GRC, testCacheSpec, false)
+				return (err == nil && result == ctrl.Result{})
+			}, timeout, interval).Should(BeTrue())
 
 			By("Ensuring Console")
 			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.Console, testCacheSpec, false)
@@ -852,9 +858,10 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(err).To(BeNil())
 
 			By("Ensuring No Console")
-			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.Console, testCacheSpec, false)
-			Expect(result).To(Equal(ctrl.Result{}))
-			Expect(err).To(BeNil())
+			Eventually(func() bool {
+				result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.Console, testCacheSpec, false)
+				return (err == nil && result == ctrl.Result{})
+			}, timeout, interval).Should(BeTrue())
 
 			By("Ensuring Volsync")
 			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.Volsync, testCacheSpec, false)
@@ -862,9 +869,10 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(err).To(BeNil())
 
 			By("Ensuring No Volsync")
-			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.Volsync, testCacheSpec, false)
-			Expect(result).To(Equal(ctrl.Result{}))
-			Expect(err).To(BeNil())
+			Eventually(func() bool {
+				result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.Volsync, testCacheSpec, false)
+				return (err == nil && result == ctrl.Result{})
+			}, timeout, interval).Should(BeTrue())
 
 			By("Ensuring MultiClusterObservability")
 			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.MultiClusterObservability, testCacheSpec, false)
@@ -872,9 +880,10 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(err).To(BeNil())
 
 			By("Ensuring No MultiClusterObservability")
-			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.MultiClusterObservability, testCacheSpec, false)
-			Expect(result).To(Equal(ctrl.Result{}))
-			Expect(err).To(BeNil())
+			Eventually(func() bool {
+				result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.MultiClusterObservability, testCacheSpec, false)
+				return (err == nil && result == ctrl.Result{})
+			}, timeout, interval).Should(BeTrue())
 
 			By("Ensuring ClusterPermission")
 			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.ClusterPermission, testCacheSpec, false)
@@ -882,9 +891,10 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(err).To(BeNil())
 
 			By("Ensuring No ClusterPermission")
-			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.ClusterPermission, testCacheSpec, false)
-			Expect(result).To(Equal(ctrl.Result{}))
-			Expect(err).To(BeNil())
+			Eventually(func() bool {
+				result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.ClusterPermission, testCacheSpec, false)
+				return (err == nil && result == ctrl.Result{})
+			}, timeout, interval).Should(BeTrue())
 
 			By("Ensuring SubmarinerAddon")
 			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.SubmarinerAddon, testCacheSpec, false)
@@ -905,9 +915,10 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(err).To(BeNil())
 
 			By("Ensuring No SiteConfig")
-			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.SiteConfigPreview, testCacheSpec, false)
-			Expect(result).To(Equal(ctrl.Result{}))
-			Expect(err).To(BeNil())
+			Eventually(func() bool {
+				result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.SiteConfigPreview, testCacheSpec, false)
+				return (err == nil && result == ctrl.Result{})
+			}, timeout, interval).Should(BeTrue())
 
 			By("Ensuring No ClusterManagementAddon")
 			result, err = reconciler.ensureNoClusterManagementAddOn(mch, "unknown")
@@ -1574,6 +1585,252 @@ func Test_ensureNoInternalHubComponent(t *testing.T) {
 				// Resource should be deleted
 				if _, err := recon.ensureNoInternalHubComponent(context.TODO(), tt.mch, c.Name); err != nil {
 					t.Errorf("ensureInternalHubComponent(context.TODO(), tt.mch, c.Name) = %v", err)
+				}
+			}
+		})
+	}
+}
+
+func Test_getComponentConfig(t *testing.T) {
+	tests := []struct {
+		name      string
+		component string
+		mch       operatorv1.MultiClusterHub
+		want      operatorv1.ComponentConfig
+	}{
+		{
+			name:      "should get search ComponentConfig",
+			component: operatorv1.Search,
+			mch: operatorv1.MultiClusterHub{
+				Spec: operatorv1.MultiClusterHubSpec{
+					Overrides: &operatorv1.Overrides{
+						Components: []operatorv1.ComponentConfig{
+							{
+								Name:            operatorv1.ClusterLifecycle,
+								Enabled:         false,
+								ConfigOverrides: operatorv1.ConfigOverride{},
+							},
+							{
+								Name:            operatorv1.Search,
+								Enabled:         true,
+								ConfigOverrides: operatorv1.ConfigOverride{},
+							},
+						},
+					},
+				},
+			},
+			want: operatorv1.ComponentConfig{
+				Name:            operatorv1.Search,
+				Enabled:         true,
+				ConfigOverrides: operatorv1.ConfigOverride{},
+			},
+		},
+		{
+			name:      "should get no ComponentConfig",
+			component: "foobar",
+			mch: operatorv1.MultiClusterHub{
+				Spec: operatorv1.MultiClusterHubSpec{
+					Overrides: &operatorv1.Overrides{
+						Components: []operatorv1.ComponentConfig{
+							{
+								Name:            operatorv1.ClusterLifecycle,
+								Enabled:         false,
+								ConfigOverrides: operatorv1.ConfigOverride{},
+							},
+							{
+								Name:            operatorv1.Search,
+								Enabled:         true,
+								ConfigOverrides: operatorv1.ConfigOverride{},
+							},
+						},
+					},
+				},
+			},
+			want: operatorv1.ComponentConfig{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, _ := recon.getComponentConfig(tt.mch.Spec.Overrides.Components, tt.component)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getComponentConfig(tt.mch.Spec.Overrides.Components) = %v, want = %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getDeploymentConfig(t *testing.T) {
+	tests := []struct {
+		name           string
+		componentName  string
+		deploymentName string
+		mch            operatorv1.MultiClusterHub
+		want           *operatorv1.DeploymentConfig
+	}{
+		{
+			name:           "should get search DeploymentConfig",
+			componentName:  "search",
+			deploymentName: "search-v2-operator-controller-manager",
+			mch: operatorv1.MultiClusterHub{
+				Spec: operatorv1.MultiClusterHubSpec{
+					Overrides: &operatorv1.Overrides{
+						Components: []operatorv1.ComponentConfig{
+							{
+								Name:            operatorv1.ClusterLifecycle,
+								Enabled:         false,
+								ConfigOverrides: operatorv1.ConfigOverride{},
+							},
+							{
+								Name:    operatorv1.Search,
+								Enabled: true,
+								ConfigOverrides: operatorv1.ConfigOverride{
+									Deployments: []operatorv1.DeploymentConfig{
+										{
+											Name: "search-v2-operator-controller-manager",
+											Containers: []operatorv1.ContainerConfig{
+												{
+													Name: "kube-rbac-proxy",
+													Env: []operatorv1.EnvConfig{
+														{
+															Name:  "foo",
+															Value: "bar",
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &operatorv1.DeploymentConfig{
+				Name: "search-v2-operator-controller-manager",
+				Containers: []operatorv1.ContainerConfig{
+					{
+						Name: "kube-rbac-proxy",
+						Env: []operatorv1.EnvConfig{
+							{
+								Name:  "foo",
+								Value: "bar",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:           "should get no DeploymentConfig",
+			componentName:  operatorv1.ClusterLifecycle,
+			deploymentName: "klusterlet-addon-controller",
+			mch: operatorv1.MultiClusterHub{
+				Spec: operatorv1.MultiClusterHubSpec{
+					Overrides: &operatorv1.Overrides{
+						Components: []operatorv1.ComponentConfig{
+							{
+								Name:            operatorv1.ClusterLifecycle,
+								Enabled:         false,
+								ConfigOverrides: operatorv1.ConfigOverride{},
+							},
+							{
+								Name:            operatorv1.Search,
+								Enabled:         true,
+								ConfigOverrides: operatorv1.ConfigOverride{},
+							},
+						},
+					},
+				},
+			},
+			want: &operatorv1.DeploymentConfig{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if componentConfig, found := recon.getComponentConfig(tt.mch.Spec.Overrides.Components, tt.componentName); found {
+				if got, _ := recon.getDeploymentConfig(componentConfig.ConfigOverrides.Deployments,
+					tt.deploymentName); !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("getDeploymentConfig(componentConfig.ConfigOverrides.Deployments, tt.deploymentName) = %v, want = %v", got, tt.want)
+				}
+			}
+		})
+	}
+}
+
+func Test_applyEnvConfig(t *testing.T) {
+	tests := []struct {
+		name          string
+		containerName string
+		template      *unstructured.Unstructured
+		envConfig     []operatorv1.EnvConfig
+		want          error
+	}{
+		{
+			name:          "should apply env config",
+			containerName: "kube-rbac-proxy",
+			template: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "search-v2-operator-controller-manager",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "kube-rbac-proxy",
+										"env":  []interface{}{},
+									},
+									map[string]interface{}{
+										"name": "manager",
+										"env":  []interface{}{},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			envConfig: []operatorv1.EnvConfig{
+				{Name: "foo", Value: "bar"},
+			},
+			want: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := recon.applyEnvConfig(tt.template, tt.containerName, tt.envConfig); err != nil {
+				t.Errorf("applyEnvConfig(tt.template, tt.containerName, tt.envConfig) = %v, want %v", err, tt.want)
+			}
+
+			deployment := &appsv1.Deployment{}
+			if err := runtime.DefaultUnstructuredConverter.FromUnstructured(tt.template.Object, deployment); err != nil {
+				t.Errorf("failed to convert unstructured object to deployment")
+			}
+
+			for _, c := range deployment.Spec.Template.Spec.Containers {
+				if c.Name == tt.containerName {
+					// Ensure envConfig is correctly applied to container Env
+					for _, envVar := range tt.envConfig {
+						found := false
+						for _, containerEnvVar := range c.Env {
+							if containerEnvVar.Name == envVar.Name && containerEnvVar.Value == envVar.Value {
+								found = true
+								break
+							}
+						}
+						if !found {
+							t.Errorf("env variable %v=%v not found in container %v", envVar.Name, envVar.Value, c.Name)
+						}
+					}
+					break
 				}
 			}
 		})

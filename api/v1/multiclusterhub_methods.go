@@ -257,9 +257,11 @@ func (mch *MultiClusterHub) Enable(s string) {
 			return
 		}
 	}
+
 	mch.Spec.Overrides.Components = append(mch.Spec.Overrides.Components, ComponentConfig{
-		Name:    s,
-		Enabled: true,
+		Enabled:         true,
+		Name:            s,
+		ConfigOverrides: ConfigOverride{},
 	})
 }
 
@@ -268,15 +270,18 @@ func (mch *MultiClusterHub) Disable(s string) {
 	if mch.Spec.Overrides == nil {
 		mch.Spec.Overrides = &Overrides{}
 	}
+
 	for i, c := range mch.Spec.Overrides.Components {
 		if c.Name == s {
 			mch.Spec.Overrides.Components[i].Enabled = false
 			return
 		}
 	}
+
 	mch.Spec.Overrides.Components = append(mch.Spec.Overrides.Components, ComponentConfig{
-		Name:    s,
-		Enabled: false,
+		Enabled:         false,
+		Name:            s,
+		ConfigOverrides: ConfigOverride{},
 	})
 }
 
