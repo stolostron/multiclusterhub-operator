@@ -1088,7 +1088,6 @@ func (r *MultiClusterHubReconciler) applyEnvConfig(template *unstructured.Unstru
 					"value": envConfig.Value,
 				}
 				existingEnv = append(existingEnv, envVar)
-				log.Info("Adding environment variable", "Container", containerName, "Env", envVar)
 			}
 
 			if err := unstructured.SetNestedSlice(containerMap, existingEnv, "env"); err != nil {
@@ -1097,7 +1096,6 @@ func (r *MultiClusterHubReconciler) applyEnvConfig(template *unstructured.Unstru
 
 			} else {
 				containers[i] = containerMap
-				log.Info("Updated container with new environment variables", "Container", containerName)
 			}
 			break
 		}
