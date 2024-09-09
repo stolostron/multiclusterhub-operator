@@ -372,6 +372,7 @@ rules:
   - create
   - patch
   - delete
+  - update
 - apiGroups:
   - image.openshift.io
   resources:
