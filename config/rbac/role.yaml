@@ -600,6 +600,7 @@ rules:
   - get
   - list
   - patch
+  - update
   - watch
 - apiGroups:
   - addon.open-cluster-management.io
