@@ -84,13 +84,13 @@ func TestGetDisabledComponents(t *testing.T) {
 		name      string
 		component string
 		want      bool
-		want2     int
+		wantCount int
 	}{
 		{
 			name:      "default disabled components",
 			component: ClusterBackup,
 			want:      true,
-			want2:     2,
+			wantCount: 3,
 		},
 	}
 
@@ -113,8 +113,8 @@ func TestGetDisabledComponents(t *testing.T) {
 				t.Errorf("GetDefaultDisabledComponents() = %v, want: %v", pass, tt.want)
 			}
 
-			if len(disabledComponents) != 2 {
-				t.Errorf("GetDefaultDisabledComponents() = %v, want: %v", len(disabledComponents), tt.want2)
+			if len(disabledComponents) != tt.wantCount {
+				t.Errorf("GetDefaultDisabledComponents() = %v, want: %v", len(disabledComponents), tt.wantCount)
 			}
 		})
 	}

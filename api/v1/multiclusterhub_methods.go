@@ -18,21 +18,22 @@ const MCH = "multiclusterhub-operator"
 
 // Component related to MultiClusterHub (MCH)
 const (
-	Appsub                    string = "app-lifecycle"
-	ClusterBackup             string = "cluster-backup"
-	ClusterLifecycle          string = "cluster-lifecycle"
-	ClusterPermission         string = "cluster-permission"
-	Console                   string = "console"
-	GRC                       string = "grc"
-	Insights                  string = "insights"
-	ManagementIngress         string = "management-ingress"
-	MultiClusterEngine        string = "multicluster-engine"
-	MultiClusterObservability string = "multicluster-observability"
-	Repo                      string = "multiclusterhub-repo"
-	Search                    string = "search"
-	SiteConfigPreview         string = "siteconfig-preview"
-	SubmarinerAddon           string = "submariner-addon"
-	Volsync                   string = "volsync"
+	Appsub                      string = "app-lifecycle"
+	ClusterBackup               string = "cluster-backup"
+	ClusterLifecycle            string = "cluster-lifecycle"
+	ClusterPermission           string = "cluster-permission"
+	Console                     string = "console"
+	GRC                         string = "grc"
+	Insights                    string = "insights"
+	ManagementIngress           string = "management-ingress"
+	MultiClusterEngine          string = "multicluster-engine"
+	MultiClusterObservability   string = "multicluster-observability"
+	Repo                        string = "multiclusterhub-repo"
+	Search                      string = "search"
+	DeprecatedSiteConfigPreview string = "siteconfig-preview"
+	SiteConfig                  string = "siteconfig"
+	SubmarinerAddon             string = "submariner-addon"
+	Volsync                     string = "volsync"
 )
 
 // Component related to MultiCluster Engine (MCE)
@@ -69,7 +70,8 @@ var MCHComponents = []string{
 	MCH,                // Adding MCH component to ensure legacy resources are cleaned up properly.
 	MultiClusterObservability,
 	Search,
-	SiteConfigPreview,
+	DeprecatedSiteConfigPreview, // Do we need this in the components list?
+	SiteConfig,
 	SubmarinerAddon,
 	Volsync,
 }
@@ -167,7 +169,8 @@ It is expected to be used to get a list of components that are disabled by defau
 func GetDefaultDisabledComponents() ([]string, error) {
 	defaultDisabledComponents := []string{
 		ClusterBackup,
-		SiteConfigPreview,
+		DeprecatedSiteConfigPreview,
+		SiteConfig,
 	}
 	return defaultDisabledComponents, nil
 }
