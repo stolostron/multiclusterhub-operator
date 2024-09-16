@@ -910,13 +910,13 @@ var _ = Describe("MultiClusterHub controller", func() {
 			}, timeout, interval).Should(BeTrue())
 
 			By("Ensuring SiteConfig")
-			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.SiteConfig, testCacheSpec, false)
+			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.SiteConfigPreview, testCacheSpec, false)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
 
 			By("Ensuring No SiteConfig")
 			Eventually(func() bool {
-				result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.SiteConfig, testCacheSpec, false)
+				result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.SiteConfigPreview, testCacheSpec, false)
 				return (err == nil && result == ctrl.Result{})
 			}, timeout, interval).Should(BeTrue())
 
