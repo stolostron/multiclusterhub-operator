@@ -422,6 +422,9 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole, isSTSEn
 		nn = append(nn, types.NamespacedName{Name: "insights-client", Namespace: m.Namespace})
 		nn = append(nn, types.NamespacedName{Name: "insights-metrics", Namespace: m.Namespace})
 	}
+	if m.Enabled(operatorsv1.SiteConfig) {
+		nn = append(nn, types.NamespacedName{Name: "siteconfig-controller-manager", Namespace: m.Namespace})
+	}
 	if m.Enabled(operatorsv1.Search) {
 		nn = append(nn, types.NamespacedName{Name: "search-v2-operator-controller-manager", Namespace: m.Namespace})
 		nn = append(nn, types.NamespacedName{Name: "search-api", Namespace: m.Namespace})
