@@ -30,7 +30,7 @@ const (
 	MultiClusterObservability string = "multicluster-observability"
 	Repo                      string = "multiclusterhub-repo"
 	Search                    string = "search"
-	SiteConfigPreview         string = "siteconfig-preview"
+	SiteConfig                string = "siteconfig"
 	SubmarinerAddon           string = "submariner-addon"
 	Volsync                   string = "volsync"
 )
@@ -69,7 +69,7 @@ var MCHComponents = []string{
 	MCH,                // Adding MCH component to ensure legacy resources are cleaned up properly.
 	MultiClusterObservability,
 	Search,
-	SiteConfigPreview,
+	SiteConfig,
 	SubmarinerAddon,
 	Volsync,
 }
@@ -167,7 +167,7 @@ It is expected to be used to get a list of components that are disabled by defau
 func GetDefaultDisabledComponents() ([]string, error) {
 	defaultDisabledComponents := []string{
 		ClusterBackup,
-		SiteConfigPreview,
+		SiteConfig,
 	}
 	return defaultDisabledComponents, nil
 }
