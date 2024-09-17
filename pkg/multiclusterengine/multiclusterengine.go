@@ -24,7 +24,7 @@ import (
 
 var (
 	// prod MCE variables
-	channel                = "stable-2.6"
+	channel                = "stable-2.7"
 	installPlanApproval    = subv1alpha1.ApprovalAutomatic
 	packageName            = "multicluster-engine"
 	catalogSourceName      = "redhat-operators"
@@ -32,7 +32,7 @@ var (
 	operandNamespace       = "multicluster-engine"
 
 	// community MCE variables
-	communityChannel           = "community-0.5"
+	communityChannel           = "community-0.4"
 	communityPackageName       = "stolostron-engine"
 	communityCatalogSourceName = "community-operators"
 	communityOperandNamepace   = "stolostron-engine"

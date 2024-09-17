@@ -67,5 +67,7 @@ jobs:
           title: "Operator Bundle Update"
           committer: GitHub <noreply@github.com>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
-          labels: do-not-merge/hold
+          labels: |
+            do-not-merge/hold
+            ok-to-test
           reviewers: cameronmwall,dislbenn,ngraham20

@@ -126,8 +126,47 @@ type Overrides struct {
 
 // ComponentConfig provides optional configuration items for individual components
 type ComponentConfig struct {
-	Name    string `json:"name"`
-	Enabled bool   `json:"enabled"`
+	// Enabled specifies whether the component is enabled or disabled.
+	Enabled bool `json:"enabled"`
+
+	// Name denotes the name of the component being configured.
+	Name string `json:"name"`
+
+	// ConfigOverrides contains optional configuration overrides for deployments and containers.
+	ConfigOverrides ConfigOverride `json:"configOverrides,omitempty"`
+}
+
+// ConfigOverride holds overrides for configurations specific to deployments and containers.
+type ConfigOverride struct {
+	// Deployments is a list of deployment specific configuration overrides.
+	Deployments []DeploymentConfig `json:"deployments,omitempty"`
+}
+
+// DeploymentConfig provides configuration details for a specific deployment.
+type DeploymentConfig struct {
+	// Name specifies the name of the deployment being configured.
+	Name string `json:"name"`
+
+	// Containers is a list of container specific configurations within the deployment.
+	Containers []ContainerConfig `json:"containers"`
+}
+
+// ContainerConfig holds configuration details for a specific container within a deployment.
+type ContainerConfig struct {
+	// Name specifies the name of the container being configured.
+	Name string `json:"name"`
+
+	// Env is a list of environment variable overrides for the container.
+	Env []EnvConfig `json:"env"`
+}
+
+// EnvConfig represents an override for an environment variable within a container.
+type EnvConfig struct {
+	// Name specifies the name of the environment variable.
+	Name string `json:"name,omitempty"`
+
+	// Value specifies the value of the environment variable.
+	Value string `json:"value,omitempty"`
 }
 
 type HiveConfigSpec struct {
@@ -355,8 +394,10 @@ type HubCondition struct {
 // for an instance of a multicluster hub, a central point for managing multiple
 // Kubernetes-based clusters. The deployment of multicluster hub components
 // is determined based on the configuration that is defined in this resource.
-// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase",description="The overall status of the multiclusterhub"
+// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase",description="The overall status of the MultiClusterHub"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:printcolumn:name="CurrentVersion",type="string",JSONPath=".status.currentVersion",description="The current version of the MultiClusterHub"
+// +kubebuilder:printcolumn:name="DesiredVersion",type="string",JSONPath=".status.desiredVersion",description="The desired version of the MultiClusterHub"
 // +operator-sdk:csv:customresourcedefinitions:displayName="MultiClusterHub"
 type MultiClusterHub struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -375,6 +416,24 @@ type MultiClusterHubList struct {
 	Items           []MultiClusterHub `json:"items"`
 }
 
+// +kubebuilder:object:root=true
+// +operator-sdk:csv:customresourcedefinitions:displayName="InternalHubComponent"
+type InternalHubComponent struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Spec              InternalHubComponentSpec `json:"spec,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+type InternalHubComponentList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []InternalHubComponent `json:"items"`
+}
+
+type InternalHubComponentSpec struct{}
+
 func init() {
 	SchemeBuilder.Register(&MultiClusterHub{}, &MultiClusterHubList{})
+	SchemeBuilder.Register(&InternalHubComponent{}, &InternalHubComponentList{})
 }

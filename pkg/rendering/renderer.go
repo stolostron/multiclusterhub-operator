@@ -311,6 +311,7 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 
 func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[string]string,
 	templates map[string]string, isSTSEnabled bool) {
+
 	values.Global.ImageOverrides = images
 
 	values.Global.TemplateOverrides = templates

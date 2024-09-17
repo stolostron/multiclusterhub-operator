@@ -16,7 +16,7 @@ spec:
   endpoints:
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     path: /metrics
-    port: https
+    port: metrics-https
     scheme: https
     interval: 60s
     scrapeTimeout: 10s

@@ -1,8 +1,8 @@
 [comment]: # ( Copyright Contributors to the Open Cluster Management project )
 
-# multiclusterhub Configurations
+# MultiClusterHub Configurations
 
-This directory contains examples that cover various configurations for multiclusterhub.
+This directory contains examples that cover various configurations for MultiClusterHub.
 
 ## Configurations
 
@@ -31,7 +31,7 @@ spec:
 
 > The instance is installed with High availability by default if not otherwise specified
 
-### Specify ingress SSL ciphers to support
+### (Deprecated) Specify ingress SSL ciphers to support
 
 ```yaml
 spec:
@@ -41,7 +41,7 @@ spec:
     - "ECDHE-RSA-AES128-GCM-SHA256"
 ```
 
-### Install Cert Manager in its own namespace
+### (Deprecated) Install Cert Manager in its own namespace
 
 ```yaml
 spec:
@@ -67,7 +67,7 @@ metadata:
   name: multiclusterhub
   namespace: open-cluster-management
   annotations:
-    "mch-imageRepository": "quay.io/stolostron"
+    "installer.open-cluster-management.io/image-repository": "quay.io/stolostron"
 ```
 
 ### Disable install operator actions
@@ -79,5 +79,5 @@ metadata:
   name: multiclusterhub
   namespace: open-cluster-management
   annotations:
-    "mch-pause": "true"
+    "installer.open-cluster-management.io/pause": "true"
 ```

@@ -119,6 +119,9 @@ var (
 // AgentServiceConfig webhook delete check
 //+kubebuilder:rbac:groups=agent-install.openshift.io,resources=agentserviceconfigs,verbs=get;list;watch
 
+// InternalHubComponent
+// +kubebuilder:rbac:groups="operator.open-cluster-management.io",resources="internalhubcomponents",verbs=create;get;delete;patch;list;watch
+
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // TODO(user): Modify the Reconcile function to compare the state specified by
@@ -468,6 +471,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	// Install the rest of the subscriptions in no particular order
 	for _, c := range operatorv1.MCHComponents {
 		result, err = r.ensureComponentOrNoComponent(ctx, multiClusterHub, c, r.CacheSpec, ocpConsole, stsEnabled)
+
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
@@ -736,7 +740,9 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) (controll
 		Build(r)
 }
 
-func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operatorv1.MultiClusterHub, template *unstructured.Unstructured) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operatorv1.MultiClusterHub,
+	template *unstructured.Unstructured) (ctrl.Result, error) {
+
 	// Set owner reference.
 	if (template.GetKind() == "ClusterRole") || (template.GetKind() == "ClusterRoleBinding") || (template.GetKind() == "ServiceMonitor") || (template.GetKind() == "CustomResourceDefinition") {
 		utils.AddInstallerLabel(template, m.Name, m.Namespace)
@@ -757,8 +763,8 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 				if err := r.Client.Get(ctx, types.NamespacedName{Name: gvk.Name}, crd); errors.IsNotFound(err) {
 					log.Info("CustomResourceDefinition does not exist. Skipping resource creation",
 						"Group", gvk.Group, "Version", gvk.Version, "Kind", gvk.Kind)
-
 					return ctrl.Result{RequeueAfter: utils.WarningRefreshInterval}, nil
+
 				} else if err != nil {
 					log.Error(err, "failed to get CustomResourceDefinition", "Resource", gvk)
 					return ctrl.Result{RequeueAfter: utils.WarningRefreshInterval}, err
@@ -811,6 +817,9 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(component string) string 
 	case operatorv1.Search:
 		return utils.SearchV2ChartLocation
 
+	case operatorv1.SiteConfig:
+		return utils.SiteConfigChartLocation
+
 	case operatorv1.SubmarinerAddon:
 		return utils.SubmarinerAddonChartLocation
 
@@ -824,8 +833,7 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(component string) string 
 }
 
 func (r *MultiClusterHubReconciler) ensureComponentOrNoComponent(ctx context.Context, m *operatorv1.MultiClusterHub,
-	component string, cachespec CacheSpec, ocpConsole, isSTSEnabled bool,
-) (ctrl.Result, error) {
+	component string, cachespec CacheSpec, ocpConsole, isSTSEnabled bool) (ctrl.Result, error) {
 	var result ctrl.Result
 	var err error
 
@@ -876,8 +884,7 @@ func (r *MultiClusterHubReconciler) ensureNamespaceAndPullSecret(m *operatorv1.M
 }
 
 func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *operatorv1.MultiClusterHub, component string,
-	cachespec CacheSpec, isSTSEnabled bool,
-) (ctrl.Result, error) {
+	cachespec CacheSpec, isSTSEnabled bool) (ctrl.Result, error) {
 	/*
 	   If the component is detected to be MCH, we can simply return successfully. MCH is only listed in the components
 	   list for cleanup purposes.
@@ -888,6 +895,11 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 
 	chartLocation := r.fetchChartLocation(component)
 
+	// Ensure that the InternalHubComponent CR instance is created for each component in MCH.
+	if result, err := r.ensureInternalHubComponent(ctx, m, component); err != nil {
+		return result, err
+	}
+
 	// Renders all templates from charts
 	templates, errs := renderer.RenderChart(chartLocation, m, cachespec.ImageOverrides, cachespec.TemplateOverrides,
 		isSTSEnabled)
@@ -897,6 +909,29 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// Apply overrides if available for the component
+	if componentConfig, found := r.getComponentConfig(m.Spec.Overrides.Components, component); found {
+		for _, template := range templates {
+			if ok := template.GetKind() == "Deployment"; ok {
+				if deploymentConfig, found := r.getDeploymentConfig(componentConfig.ConfigOverrides.Deployments,
+					template.GetName()); found {
+
+					log.V(2).Info("Applying deployment overrides for template", "Name", template.GetName())
+					for _, container := range deploymentConfig.Containers {
+						if err := r.applyEnvConfig(template, container.Name, container.Env); err != nil {
+							return ctrl.Result{}, err
+						}
+					}
+
+				} else {
+					log.V(2).Info("No deployment config found for deployment", "Name", template.GetName())
+				}
+			}
+		}
+	} else {
+		log.V(2).Info("No component config found", "Component", component)
 	}
 
 	// Applies all templates
@@ -926,8 +961,7 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 }
 
 func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *operatorv1.MultiClusterHub,
-	component string, cachespec CacheSpec, isSTSEnabled bool,
-) (result ctrl.Result, err error) {
+	component string, cachespec CacheSpec, isSTSEnabled bool) (result ctrl.Result, err error) {
 	/*
 	   If the component is detected to be MCH, we can simply return successfully. MCH is only listed in the components
 	   list for cleanup purposes. If the component is detected to be MCE, we can simply return successfully.
@@ -935,6 +969,10 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 	*/
 	if component == operatorv1.MCH || component == operatorv1.MultiClusterEngine {
 		return ctrl.Result{}, nil
+	}
+
+	if result, err := r.ensureNoInternalHubComponent(ctx, m, component); result != (ctrl.Result{}) || err != nil {
+		return result, err
 	}
 
 	chartLocation := r.fetchChartLocation(component)
@@ -996,6 +1034,157 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 	return ctrl.Result{}, nil
 }
 
+/*
+getComponentConfig searches for a component configuration in the provided list
+by component name. It returns the configuration and a boolean indicating
+whether it was found.
+*/
+func (r *MultiClusterHubReconciler) getComponentConfig(components []operatorv1.ComponentConfig, componentName string) (
+	operatorv1.ComponentConfig, bool) {
+	for _, c := range components {
+		if c.Name == componentName {
+			return c, true
+		}
+	}
+	return operatorv1.ComponentConfig{}, false
+}
+
+/*
+getDeploymentConfig searches for a deployment configuration in the provided list
+by deployment name. It returns a pointer to the configuration and nil if not found.
+*/
+func (r *MultiClusterHubReconciler) getDeploymentConfig(deployments []operatorv1.DeploymentConfig,
+	deploymentName string) (*operatorv1.DeploymentConfig, bool) {
+	for _, d := range deployments {
+		if d.Name == deploymentName {
+			return &d, true
+		}
+	}
+	return &operatorv1.DeploymentConfig{}, false
+}
+
+/*
+applyEnvConfig updates the specified container in the provided template with
+new environment variables. Logs errors if encountered during retrieval or update operations.
+*/
+func (r *MultiClusterHubReconciler) applyEnvConfig(template *unstructured.Unstructured, containerName string,
+	envConfigs []operatorv1.EnvConfig) error {
+
+	containers, found, err := unstructured.NestedSlice(template.Object, "spec", "template", "spec", "containers")
+	if err != nil || !found {
+		log.Error(err, "Failed to get containers from template", "Kind", template.GetKind(), "Name", template.GetName())
+		return err
+	}
+
+	for i, container := range containers {
+		// We need to cast the container to a map of string interfaces to access the container fields.
+		containerMap := container.(map[string]interface{})
+
+		if containerMap["name"] == containerName {
+			existingEnv, _, _ := unstructured.NestedSlice(containerMap, "env")
+			for _, envConfig := range envConfigs {
+				envVar := map[string]interface{}{
+					"name":  envConfig.Name,
+					"value": envConfig.Value,
+				}
+				existingEnv = append(existingEnv, envVar)
+			}
+
+			if err := unstructured.SetNestedSlice(containerMap, existingEnv, "env"); err != nil {
+				log.Error(err, "Failed to set environment variable", "Container", containerName)
+				return err
+
+			} else {
+				containers[i] = containerMap
+			}
+			break
+		}
+	}
+
+	if err = unstructured.SetNestedSlice(template.Object, containers, "spec", "template", "spec", "containers"); err != nil {
+		log.Error(err, "Failed to set containers in template", "Template", template.GetName())
+		return err
+	}
+
+	return nil
+}
+
+func (r *MultiClusterHubReconciler) ensureInternalHubComponent(ctx context.Context, m *operatorv1.MultiClusterHub,
+	component string) (ctrl.Result, error) {
+
+	ihc := &operatorv1.InternalHubComponent{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: operatorv1.GroupVersion.String(),
+			Kind:       "InternalHubComponent",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      component,
+			Namespace: m.GetNamespace(),
+		},
+	}
+
+	if err := r.Client.Get(
+		ctx, types.NamespacedName{Name: ihc.GetName(), Namespace: ihc.GetNamespace()}, ihc); err != nil {
+
+		if errors.IsNotFound(err) {
+			if err := r.Client.Create(ctx, ihc); err != nil {
+				return ctrl.Result{}, fmt.Errorf("failed to create InternalHubComponent CR: %s/%s: %v",
+					ihc.GetNamespace(), ihc.GetName(), err)
+			}
+		} else {
+			return ctrl.Result{}, fmt.Errorf("failed to get InternalHubComponent CR: %s/%s: %v",
+				ihc.GetNamespace(), ihc.GetName(), err)
+		}
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureNoInternalHubComponent(ctx context.Context, m *operatorv1.MultiClusterHub,
+	component string) (ctrl.Result, error) {
+
+	ihc := &operatorv1.InternalHubComponent{}
+	if err := r.Client.Get(ctx, types.NamespacedName{Name: component, Namespace: m.GetNamespace()}, ihc); err != nil {
+		if errors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
+
+		return ctrl.Result{}, fmt.Errorf("failed to get InternalHubComponent: %s/%s: %v",
+			m.GetNamespace(), component, err)
+	}
+
+	// Check if it has a deletion timestamp (indicating it's in the process of being deleted)
+	if ihc.GetDeletionTimestamp() != nil {
+		log.Info("InternalHubComponent deletion in progress", "Name", ihc.GetName(), "Namespace", ihc.GetNamespace(),
+			"DeletionTimestamp", ihc.GetDeletionTimestamp())
+
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	log.Info("Deleting InternalHubComponent", "Name", ihc.GetName(), "Namespace", ihc.GetNamespace())
+	if err := r.Client.Delete(ctx, ihc); err != nil {
+		if !errors.IsNotFound(err) {
+			return ctrl.Result{}, fmt.Errorf("failed to delete InternalHubComponent CR: %s/%s: %v",
+				ihc.GetNamespace(), ihc.GetName(), err)
+		}
+	}
+
+	// Ensure that the resource is fully deleted by attempting to refetch it
+	if err := r.Client.Get(ctx,
+		types.NamespacedName{Name: ihc.GetName(), Namespace: ihc.GetNamespace()}, ihc); err != nil {
+		if errors.IsNotFound(err) {
+			log.Info("InternalHubComponent successfully deleted", "Name", ihc.GetName(), "Namespace", ihc.GetNamespace())
+			return ctrl.Result{}, nil
+		}
+
+		return ctrl.Result{}, fmt.Errorf("failed to get InternalHubComponent %s/%s: %v",
+			ihc.GetNamespace(), ihc.GetName(), err)
+	}
+
+	// Requeue to check again after a short delay
+	return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+}
+
 func (r *MultiClusterHubReconciler) ensureOpenShiftNamespaceLabel(ctx context.Context, m *operatorv1.MultiClusterHub) (
 	ctrl.Result, error,
 ) {
@@ -1042,7 +1231,7 @@ func (r *MultiClusterHubReconciler) deleteTemplate(ctx context.Context, m *opera
 		return ctrl.Result{}, err
 	}
 
-	log.Info(fmt.Sprintf("finalizing template: %s\n", template.GetName()))
+	log.Info("Finalizing template", "Kind", template.GetKind(), "Name", template.GetName())
 	err = r.Client.Delete(ctx, template)
 	if err != nil {
 		log.Error(err, "Failed to delete template")
@@ -1454,10 +1643,12 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 		updateNecessary = true
 	}
 
-	for _, c := range operatorv1.MCEComponents {
-		if m.Prune(c) {
-			log.Info(fmt.Sprintf("Removing MultiClusterEngine component: %v from existing MultiClusterHub", c))
-			updateNecessary = true
+	for _, c := range m.Spec.Overrides.Components {
+		if !operatorv1.ValidComponent(c, operatorv1.MCHComponents) {
+			if m.Prune(c.Name) {
+				log.Info(fmt.Sprintf("Removing invalid component: %v from existing MultiClusterHub", c.Name))
+				updateNecessary = true
+			}
 		}
 	}
 
