@@ -377,7 +377,7 @@ spec:
               There is no redhat-oadp-operator subscription installed in a namespace other than the open-cluster-management-backup namespace,
               or a redhat-oadp-operator subscription is installed and matches the version of the redhat-oadp-operator subscription installed under the open-cluster-management-backup namespace.
             noncompliant: |-
-              There is a version of redhat-oadp-operator subscription installed in a namespace other than the open-cluster-management-backup namespace 
-              and this version doesn't match the version set by the backup and restore operator Helm chart 
-              or the version of the redhat-oadp-operator subscription installed under the open-cluster-management-backup namespace.
+              There is a version of redhat-oadp-operator subscription installed in a namespace other than the open-cluster-management-backup namespace
+              and this version doesn't match the version set by the backup and restore operator Helm chart.
+              Alternatively, the version doesn't match the version of the redhat-oadp-operator subscription that is installed within the open-cluster-management-backup namespace.
   remediationAction: inform
