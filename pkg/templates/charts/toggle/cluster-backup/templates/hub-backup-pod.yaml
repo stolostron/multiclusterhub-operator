@@ -64,7 +64,7 @@ spec:
           customMessage:
             noncompliant: |-
               The openshift-adp-controller-manager pod is either not running in the open-cluster-management-backup namespace or there is an error. 
-              If the openshift-adp-controller-manager pod is not running in the open-cluster-management-backup namespace check the 
+              If the openshift-adp-controller-manager pod is not running in the open-cluster-management-backup namespace, check the 
               multiclusterhub-operator pod for errors related to the OADP operator installation.
           remediationAction: inform
           severity: high 
@@ -109,7 +109,7 @@ spec:
             compliant: "The oadp.openshift.io.DataProtectionApplication resource exists in the open-cluster-management-backup namespace."
             noncompliant: |-
               The oadp.openshift.io.DataProtectionApplication resource does not exist in the open-cluster-management-backup namespace. 
-              You must create this resource which is used to connect to the backup storage location.
+              You must create this resource to connect to the backup storage location.
           remediationAction: inform
           severity: high
     - objectDefinition:
@@ -375,7 +375,7 @@ spec:
           customMessage:
             compliant: |- 
               There is no redhat-oadp-operator subscription installed in a namespace other than the open-cluster-management-backup namespace,
-              or a redhat-oadp-operator subscription is installed and matches the version of the redhat-oadp-operator subscription installed under the open-cluster-management-backup namespace.
+              or a redhat-oadp-operator subscription is installed and matches the version of the redhat-oadp-operator subscription installed within the open-cluster-management-backup namespace.
             noncompliant: |-
               There is a version of redhat-oadp-operator subscription installed in a namespace other than the open-cluster-management-backup namespace
               and this version doesn't match the version set by the backup and restore operator Helm chart.
