@@ -151,10 +151,10 @@ spec:
                     velero.io/schedule-name: acm-validation-policy-schedule
                   namespace: open-cluster-management-backup
           customMessage:
-            compliant: "Template is compliant, a BackupSchedule is active and generating hub backups at the specified storage location."
+            compliant: "The BackupSchedule resource is active and generating hub cluster backups at the specified storage location."
             noncompliant: |-
-              Template is not compliant, there is no backup schedule actively running and generating hub backups at the specified storage location.
-              Verify that you have a hub, connected to the specified storage location, with a BackupSchedule resource active and generating hub backup.
+              There is no backup schedule actively running and generating hub cluster backups at the specified storage location.
+              Verify that you have a hub cluster connected to the specified storage location, with a BackupSchedule resource active and generating hub cluster backup.
           remediationAction: inform
           severity: high 
     - objectDefinition:
@@ -212,7 +212,7 @@ spec:
                   phase: InProgress 
           customMessage:
             compliant: |- 
-              Template is compliant, no Backup with an InProgress status found.  This template is useful to identify backups unable to complete.                                                        
+              The Backup resource with an InProgress status does not exist. This template is useful to identify incomplete backups.                                                        
           remediationAction: inform
           severity: medium
     - objectDefinition:
