@@ -31,6 +31,7 @@ var resources = []string{
 	"ClusterRoleBinding",
 	"ClusterRole",
 	"ConfigMap",
+	"ConsoleCLIDownload",
 	"ConsolePlugin",
 	"ConsoleQuickStart",
 	"CustomResourceDefinition",

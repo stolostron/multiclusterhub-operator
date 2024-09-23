@@ -335,7 +335,7 @@ func GetTestImages() []string {
 		"cert_policy_controller", "config_policy_controller", "governance_policy_framework_addon",
 		"cluster_backup_controller", "console", "volsync_addon_controller", "multicluster_operators_application",
 		"multicloud_integrations", "multicluster_operators_channel", "multicluster_operators_subscription",
-		"multicluster_observability_operator", "cluster_permission", "siteconfig_operator", "submariner_addon",
+		"multicluster_observability_operator", "cluster_permission", "siteconfig_operator", "submariner_addon", "acm_cli",
 	}
 }
 
