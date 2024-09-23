@@ -135,10 +135,11 @@ spec:
                 properties:
                   serviceAccountName:
                     description: >-
-                      ServiceAccountName is the name of a service account in the same namespace as the policy to use for all hub
-                      template lookups. The service account must have list and watch permissions on any object the hub templates
-                      look up. If not specified, lookups are restricted to namespaced objects in the same namespace as the policy and
-                      to the `ManagedCluster` object associated with the propagated policy.
+                      ServiceAccountName is the name of a service account in the same namespace as the policy to use for
+                      all hub template lookups. The service account must have list and watch permissions on any object
+                      the hub templates look up. If not specified, lookups are restricted to namespaced objects in the
+                      same namespace as the policy and to the `ManagedCluster` object associated with the propagated
+                      policy.
                     type: string
                 type: object
               policy-templates:
