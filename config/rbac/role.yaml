@@ -1064,6 +1064,9 @@ rules:
   - authorization.k8s.io
   resources:
   - uids
+  - userextras/authentication.kubernetes.io/credential-id
+  - userextras/authentication.kubernetes.io/node-name
+  - userextras/authentication.kubernetes.io/node-uid
   - userextras/authentication.kubernetes.io/pod-name
   - userextras/authentication.kubernetes.io/pod-uid
   verbs:
