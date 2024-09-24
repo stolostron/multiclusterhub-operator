@@ -420,16 +420,6 @@
       "image-key": "open_cluster_management_e2e"
     },
     {
-      "image-name": "origin-oauth-proxy",
-      "image-version": "4.5",
-      "image-tag": "4.5",
-      "git-sha256": "ffffffffffffffffffffffffffffffffffffffff",
-      "git-repository": "stolostron/origin-oauth-proxy",
-      "image-remote": "quay.io/stolostron",
-      "image-digest": "sha256:ae1b3ad6a9e76271de5c6d16abe5586abac043da032d686d1fc78f43ed7f3606",
-      "image-key": "oauth_proxy"
-    },
-    {
       "image-name": "rcm-controller",
       "image-version": "2.1.0",
       "image-tag": "2.1.0-f92feea06e901c8f39538b4c6b0a3d3496d198cf",
