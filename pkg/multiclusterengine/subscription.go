@@ -30,7 +30,7 @@ func NewSubscription(m *operatorv1.MultiClusterHub, c *subv1alpha1.SubscriptionC
 		"installer.namespace":   m.GetNamespace(),
 		utils.MCEManagedByLabel: "true",
 	}
-	namespace := OperandNameSpace()
+	namespace := OperandNamespace()
 	sub := &subv1alpha1.Subscription{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: subv1alpha1.SubscriptionCRDAPIVersion,

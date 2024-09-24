@@ -100,7 +100,7 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 
 	if mceSub != nil {
 		csv, err := r.GetCSVFromSubscription(mceSub)
-		namespace := multiclusterengine.OperandNameSpace()
+		namespace := multiclusterengine.OperandNamespace()
 		if err == nil { // CSV Exists
 			err = r.Client.Delete(ctx, csv)
 			if err != nil && !errors.IsNotFound(err) {
