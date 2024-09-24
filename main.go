@@ -328,9 +328,9 @@ func addMultiClusterEngineWatch(ctx context.Context, mgr ctrl.Manager, uncachedC
 		//crdKey := client.ObjectKey{Name: multiclusterengine.Namespace().GetObjectMeta().GetName()}
 		//err := uncachedClient.Get(ctx, crdKey, &mcev1.MultiClusterEngine{})
 		if err == nil {
-			err := mchController.Watch(source.Kind(mgr.GetCache(), &mcev1.MultiClusterEngine{}),
-				handler.Funcs{
-					UpdateFunc: func(ctx context.Context, e event.UpdateEvent, q workqueue.RateLimitingInterface) {
+			err := mchController.Watch(source.Kind(mgr.GetCache(), &mcev1.MultiClusterEngine{},
+				handler.TypedFuncs[*mcev1.MultiClusterEngine]{
+					UpdateFunc: func(ctx context.Context, e event.TypedUpdateEvent[*mcev1.MultiClusterEngine], q workqueue.RateLimitingInterface) {
 						labels := e.ObjectNew.GetLabels()
 						name := labels["installer.name"]
 						if name == "" {
@@ -354,7 +354,7 @@ func addMultiClusterEngineWatch(ctx context.Context, mgr ctrl.Manager, uncachedC
 							},
 						)
 					},
-				})
+				}))
 			if err == nil {
 				setupLog.Info("mce watch added")
 				return

@@ -17,7 +17,7 @@ metadata:
     capabilities: Basic Install
     categories: Integration & Delivery
     certified: "false"
-    createdAt: "2024-08-27T13:44:04Z"
+    createdAt: "2024-09-20T16:41:29Z"
     description: Open management of Openshift and Kubernetes clusters
     operators.operatorframework.io/builder: operator-sdk-v1.35.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -710,8 +710,12 @@ spec:
           resources:
           - addondeploymentconfigs
           verbs:
+          - create
+          - delete
           - get
           - list
+          - patch
+          - update
           - watch
         - apiGroups:
           - addon.open-cluster-management.io
@@ -1533,6 +1537,14 @@ spec:
           - hostedclusters
           - nodepools
           verbs:
+          - list
+          - watch
+        - apiGroups:
+          - image.openshift.io
+          resources:
+          - imagestreams
+          verbs:
+          - get
           - list
           - watch
         - apiGroups:
