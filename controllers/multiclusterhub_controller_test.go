@@ -60,7 +60,11 @@ const (
 	mchNamespace = "open-cluster-management"
 )
 
-var recon = MultiClusterHubReconciler{Client: fake.NewClientBuilder().Build()}
+var (
+	ctrlCtx    context.Context
+	ctrlCancel context.CancelFunc
+	recon      = MultiClusterHubReconciler{Client: fake.NewClientBuilder().Build()}
+)
 
 func ApplyPrereqs(k8sClient client.Client) {
 	By("Applying Namespace")
@@ -102,10 +106,10 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 
 	By("Ensuring MCH is created")
 	createdMCH := &operatorv1.MultiClusterHub{}
-	Eventually(func() bool {
-		err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
-		return err == nil
-	}, timeout, interval).Should(BeTrue())
+	Eventually(
+		k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH),
+		timeout, interval,
+	).Should(Succeed())
 
 	annotations := map[string]string{
 		"mch-imageRepository": "quay.io/test",
@@ -114,11 +118,11 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 	Expect(k8sClient.Update(ctx, createdMCH)).Should(Succeed())
 
 	By("Ensuring Defaults are set")
-	Eventually(func() bool {
+	Eventually(func() operatorv1.MultiClusterHub {
 		err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
 		Expect(err).Should(BeNil())
-		return createdMCH.Spec.AvailabilityConfig == operatorv1.HAHigh
-	}, timeout, interval).Should(BeTrue())
+		return *createdMCH
+	}, timeout, interval).Should(HaveField("Spec.AvailabilityConfig", operatorv1.HAHigh))
 
 	By("Ensuring Deployments")
 	Eventually(func() bool {
@@ -171,32 +175,29 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 	})
 
 	By("Ensuring Klusterlet Addon is created")
-	Eventually(func() bool {
+	Eventually(func() error {
 		ns := LocalClusterNamespace()
 		_, err := reconciler.ensureNamespace(createdMCH, ns)
-		return err == nil
-	}, timeout, interval).Should(BeTrue())
+		return err
+	}, timeout, interval).Should(Succeed(), "KlusterletAddon should be created")
 
 	By("Waiting for MCH to be in the running state")
-	Eventually(func() bool {
+	Eventually(func(g Gomega) operatorv1.MultiClusterHub {
 		mch := &operatorv1.MultiClusterHub{}
-		err := k8sClient.Get(ctx, resources.MCHLookupKey, mch)
-		if err == nil {
-			return mch.Status.Phase == operatorv1.HubRunning
-		}
-		return false
-	}, timeout, interval).Should(BeTrue())
+		g.Expect(k8sClient.Get(ctx, resources.MCHLookupKey, mch)).Should(Succeed())
+		return *mch
+	}, timeout, interval).Should(HaveField("Status.Phase", operatorv1.HubRunning))
 
 	By("Ensuring the trusted-ca-bundle ConfigMap is created")
-	Eventually(func(g Gomega) {
+	Eventually(func() error {
 		ctx := context.Background()
 		namespacedName := types.NamespacedName{
 			Name:      defaultTrustBundleName,
 			Namespace: mchNamespace,
 		}
 		res := &corev1.ConfigMap{}
-		g.Expect(k8sClient.Get(ctx, namespacedName, res)).To(Succeed())
-	}, timeout, interval).Should(Succeed())
+		return k8sClient.Get(ctx, namespacedName, res)
+	}, timeout, interval).Should(Succeed(), "trusted-ca-bundle ConfigMap should be created")
 
 	By("Ensuring the acm consoleplugin is enabled on the cluster")
 	clusterConsole := &ocopv1.Console{}
@@ -419,7 +420,9 @@ var _ = Describe("MultiClusterHub controller", func() {
 			// https://onsi.github.io/ginkgo/#mental-model-how-ginkgo-handles-failure
 			defer GinkgoRecover()
 
-			Expect(k8sManager.Start(signalHandlerContext)).Should(Succeed())
+			ctrlCtx, ctrlCancel = context.WithCancel(context.TODO())
+
+			Expect(k8sManager.Start(ctrlCtx)).Should(Succeed(), "MCH controller should start successfully")
 		}()
 	})
 
@@ -1089,6 +1092,12 @@ var _ = Describe("MultiClusterHub controller", func() {
 			return false
 		}, timeout, interval).Should(BeTrue())
 
+		By("Stopping the controller")
+		ctrlCancel()
+
+		// Teardown the test environment once controller is finished.
+		// Otherwise from Kubernetes 1.21+, teardon timeouts waiting on
+		// kube-apiserver to return.
 		By("Tearing down the test environment")
 		Expect(testEnv.Stop()).Should(Succeed())
 	})

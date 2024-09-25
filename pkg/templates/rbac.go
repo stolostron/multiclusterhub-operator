@@ -13,10 +13,11 @@ import (
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	renderer "github.com/stolostron/multiclusterhub-operator/pkg/rendering"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
-
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 const (
@@ -30,6 +31,7 @@ var resources = []string{
 	"ClusterRoleBinding",
 	"ClusterRole",
 	"ConfigMap",
+	"ConsoleCLIDownload",
 	"ConsolePlugin",
 	"ConsoleQuickStart",
 	"CustomResourceDefinition",
@@ -61,6 +63,8 @@ func main() {
 	// os.Setenv("DIRECTORY_OVERRIDE", "../../.git")
 	// defer os.Unsetenv("DIRECTORY_OVERRIDE")
 	os.Setenv("ACM_HUB_OCP_VERSION", "4.12.0")
+
+	ctrl.SetLogger(zap.New(zap.ConsoleEncoder()))
 
 	testMCH := &operatorv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
