@@ -7,6 +7,7 @@ rules:
   - ''
   resources:
   - configmaps
+  - secrets
   verbs:
   - create
   - delete
@@ -27,30 +28,9 @@ rules:
   - patch
   - update
 - apiGroups:
-  - ''
-  resources:
-  - secrets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - agent-install.openshift.io
   resources:
   - infraenvs
-  verbs:
-  - create
-  - delete
-  - get
-  - patch
-  - update
-- apiGroups:
-  - agent-install.openshift.io
-  resources:
   - nmstateconfigs
   verbs:
   - create
@@ -90,15 +70,6 @@ rules:
   - extensions.hive.openshift.io
   resources:
   - agentclusterinstalls
-  verbs:
-  - create
-  - delete
-  - get
-  - patch
-  - update
-- apiGroups:
-  - extensions.hive.openshift.io
-  resources:
   - imageclusterinstalls
   verbs:
   - create
@@ -137,15 +108,6 @@ rules:
   - metal3.io
   resources:
   - baremetalhosts
-  verbs:
-  - create
-  - delete
-  - get
-  - patch
-  - update
-- apiGroups:
-  - metal3.io
-  resources:
   - hostfirmwaresettings
   verbs:
   - create
@@ -191,15 +153,3 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - authentication.k8s.io
-  resources:
-  - tokenreviews
-  verbs:
-  - create
-- apiGroups:
-  - authorization.k8s.io
-  resources:
-  - subjectaccessreviews
-  verbs:
-  - create
