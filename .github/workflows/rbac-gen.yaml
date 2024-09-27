@@ -12,22 +12,15 @@ defaults:
 jobs:
   rbac-check:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go:
-          - '1.22'
     name: Generate role permissions
     steps:
     - name: Checkout multiclusterhub
-      uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
+      uses: actions/checkout@v4
 
-    - name: Set up Go - ${{ matrix.go }}
-      uses: actions/setup-go@v2
-      id: go
+    - name: Set up Go
+      uses: actions/setup-go@v5
       with:
-        go-version: ${{ matrix.go }}
+        go-version-file: go.mod
 
     - name: Verify modules
       run: |
@@ -38,17 +31,13 @@ jobs:
         make fmt
         git diff --exit-code
 
-    - name: Set up controller-gen
-      run: |
-        go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.15.0
-        
     - name: Generate RBAC file
       run: |
         go generate
         
     - name: Regenerate role
       run: |
-        controller-gen rbac:roleName=multiclusterhub-role webhook paths="./..."
+        make manifests
       
     - name: Check if files have changed
       run:  |
