@@ -16,8 +16,8 @@ jobs:
   function-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
           go-version: '^1.20.2' # The Go version to download (if necessary) and use.
       - name: Run FULL Function Tests
