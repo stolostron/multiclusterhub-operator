@@ -16,10 +16,10 @@ jobs:
     if: contains(github.event.pull_request.labels.*.name, 'ok-to-test')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v5
         with:
           go-version: '^1.20.2' # The Go version to download (if necessary) and use.
       - name: Removing 'ok-to-test' label

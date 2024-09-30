@@ -411,7 +411,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 
-	result, err = r.ingressDomain(multiClusterHub)
+	result, err = r.ingressDomain(ctx, multiClusterHub)
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
@@ -1423,28 +1423,36 @@ func (r *MultiClusterHubReconciler) createMetricsServiceMonitor(ctx context.Cont
 }
 
 // ingressDomain is discovered from Openshift cluster configuration resources
-func (r *MultiClusterHubReconciler) ingressDomain(m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
-	if r.CacheSpec.IngressDomain != "" || utils.IsUnitTest() {
-		err := os.Setenv("INGRESS_DOMAIN", "dev01.red-chesterfield.com")
-		return ctrl.Result{}, err
-	}
+func (r *MultiClusterHubReconciler) ingressDomain(
+	ctx context.Context,
+	m *operatorv1.MultiClusterHub,
+) (ctrl.Result, error) {
 	ingress := &configv1.Ingress{}
-	err := r.Client.Get(context.TODO(), types.NamespacedName{
+	err := r.Client.Get(ctx, types.NamespacedName{
 		Name: "cluster",
 	}, ingress)
-	// Don't fail on a unit test (Fake client won't find "cluster" Ingress)
 	if err != nil {
 		r.Log.Error(err, "Failed to get Ingress")
+
 		return ctrl.Result{}, err
 	}
 
-	r.CacheSpec.IngressDomain = ingress.Spec.Domain
-	// Set OCP version as env var, so that charts can render this value
-	err = os.Setenv("INGRESS_DOMAIN", ingress.Spec.Domain)
-	if err != nil {
-		r.Log.Error(err, "Failed to set INGRESS_DOMAIN environment variable")
-		return ctrl.Result{}, err
+	domain := ingress.Spec.Domain
+	if r.CacheSpec.IngressDomain != domain {
+		if r.CacheSpec.IngressDomain != "" {
+			r.Log.Info("Detected ingress domain mismatch. Current value: " + r.CacheSpec.IngressDomain)
+		}
+		r.Log.Info("Setting ingress domain to: " + domain)
+		r.CacheSpec.IngressDomain = domain
+		// Set OCP version as env var, so that charts can render this value
+		err = os.Setenv("INGRESS_DOMAIN", domain)
+		if err != nil {
+			r.Log.Error(err, "Failed to set INGRESS_DOMAIN environment variable")
+
+			return ctrl.Result{}, err
+		}
 	}
+
 	return ctrl.Result{}, nil
 }
 

@@ -6,6 +6,7 @@ package resources
 import (
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 
+	configv1 "github.com/openshift/api/config/v1"
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 
@@ -170,6 +171,17 @@ func InsightsMCH() operatorsv1.MultiClusterHub {
 					},
 				},
 			},
+		},
+	}
+}
+
+func OCPIngress() *configv1.Ingress {
+	return &configv1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "cluster",
+		},
+		Spec: configv1.IngressSpec{
+			Domain: "dev01.red-chesterfield.com",
 		},
 	}
 }
