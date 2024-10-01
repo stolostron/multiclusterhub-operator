@@ -783,6 +783,13 @@ func (r *MultiClusterHubReconciler) ensureNoClusterManagementAddOn(m *operatorv1
 		return ctrl.Result{Requeue: true}, err
 	}
 
+	// if CRD doesn't exist, return
+	cmaCRD := &apixv1.CustomResourceDefinition{}
+	err = r.Client.Get(context.Background(), types.NamespacedName{Name: "clustermanagementaddons.addon.open-cluster-management.io"}, cmaCRD)
+	if errors.IsNotFound(err) {
+		return ctrl.Result{}, nil
+	}
+
 	clusterMgmtAddon := &ocmapi.ClusterManagementAddOn{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: addonName,
