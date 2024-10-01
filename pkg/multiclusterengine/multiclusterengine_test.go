@@ -962,7 +962,7 @@ func Test_extractCatalogSource(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := extractCatalogSource(*tt.pm); got != tt.want {
+			if got, err := extractCatalogSource(*tt.pm); got != tt.want || err != nil {
 				t.Errorf("extractCatalogSource(*tt.pm) = want %v, got %v", tt.want, got)
 			}
 		})

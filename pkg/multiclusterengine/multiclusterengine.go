@@ -40,6 +40,8 @@ var (
 	// default names
 	MulticlusterengineName = "multiclusterengine"
 	operatorGroupName      = "default"
+
+	logf = log.Log.WithName("multiclusterengine")
 )
 
 // mocks returning a single manifest
@@ -248,11 +250,15 @@ func GetCatalogSource(k8sClient client.Client) (types.NamespacedName, error) {
 }
 
 // extractCatalogSource extracts namespaced name from the given PackageManifest.
-func extractCatalogSource(pm olmapi.PackageManifest) types.NamespacedName {
+func extractCatalogSource(pm olmapi.PackageManifest) (types.NamespacedName, error) {
+	if pm.Status.CatalogSource == "" || pm.Status.CatalogSourceNamespace == "" {
+		return types.NamespacedName{}, fmt.Errorf("missing catalog source or namespace in package manifest: %s", pm.Name)
+	}
+
 	return types.NamespacedName{
 		Name:      pm.Status.CatalogSource,
 		Namespace: pm.Status.CatalogSourceNamespace,
-	}
+	}, nil
 }
 
 // findHighestPriorityCatalogSource finds the catalog source with the highest priority among the given list.
@@ -261,16 +267,19 @@ func findHighestPriorityCatalogSource(k8sClient client.Client, pkgs []olmapi.Pac
 	var (
 		highestPriorityCatalogSources []*subv1alpha1.CatalogSource
 		maxPriority                   = math.MinInt64
-		log                           = log.Log.WithName("reconcile")
 	)
 
 	for _, pm := range pkgs {
 		cs := &subv1alpha1.CatalogSource{}
-		nn := extractCatalogSource(pm)
+		nn, err := extractCatalogSource(pm)
+		if err != nil {
+			logf.Error(err, "failed to extract catalog source", "packageManifest", pm.Name)
+			continue
+		}
 
 		if err := k8sClient.Get(context.TODO(), nn, cs); err != nil {
 			// Log the error and continue to the next iteration
-			log.Error(err, fmt.Sprintf("failed to retrieve catalog source %s/%s", nn.Namespace, nn.Name))
+			logf.Error(err, fmt.Sprintf("failed to retrieve catalog source %s/%s", nn.Namespace, nn.Name))
 			continue
 		}
 
@@ -291,7 +300,7 @@ func findHighestPriorityCatalogSource(k8sClient client.Client, pkgs []olmapi.Pac
 
 	case 1:
 		catalogSource := highestPriorityCatalogSources[0]
-		log.V(2).Info(fmt.Sprintf("Using catalog source %v/%v with the highest priority: %v",
+		logf.V(2).Info(fmt.Sprintf("Using catalog source %v/%v with the highest priority: %v",
 			catalogSource.Namespace, catalogSource.Name, catalogSource.Spec.Priority))
 		return catalogSource, nil
 
