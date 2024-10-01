@@ -23,100 +23,6 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - configmaps
-  - endpoints
-  - persistentvolumeclaims
-  - pods
-  - secrets
-  - serviceaccounts
-  - services
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  - events
-  verbs:
-  - create
-  - delete
-  - deletecollection
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  - events
-  - secrets
-  - serviceaccounts
-  - services
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  - jobs
-  - namespaces
-  - pods
-  - secrets
-  verbs:
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  - secrets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - endpoints
-  - pods
-  - services
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - events
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - groups
   - users
   verbs:
@@ -1065,12 +971,16 @@ rules:
   resources:
   - agentclusterinstalls
   verbs:
+  - create
+  - delete
+  - get
   - list
+  - patch
+  - update
   - watch
 - apiGroups:
   - extensions.hive.openshift.io
   resources:
-  - agentclusterinstalls
   - imageclusterinstalls
   verbs:
   - create
@@ -1184,7 +1094,6 @@ rules:
   - metal3.io
   resources:
   - baremetalhosts
-  - hostfirmwaresettings
   verbs:
   - create
   - delete
@@ -1192,6 +1101,23 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - metal3.io
+  resources:
+  - hostfirmwaresettings
+  verbs:
+  - create
+  - delete
+  - get
+  - patch
+  - update
+- apiGroups:
+  - metal3.io
+  resources:
+  - provisionings
+  verbs:
+  - list
   - watch
 - apiGroups:
   - migration.k8s.io
