@@ -10,7 +10,6 @@ import (
 	"os"
 	"reflect"
 	"strings"
-	"time"
 
 	consolev1 "github.com/openshift/api/operator/v1"
 
@@ -437,7 +436,7 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 		ctlSrc, err = multiclusterengine.GetCatalogSource(r.UncachedClient)
 		if err != nil {
 			r.Log.Info("Failed to find a suitable catalogsource.", "error", err)
-			return ctrl.Result{RequeueAfter: 5 * time.Second}, err
+			return ctrl.Result{}, err
 		}
 	}
 
