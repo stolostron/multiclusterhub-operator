@@ -79,6 +79,7 @@ func ApplyPrereqs(k8sClient client.Client) {
 	By("Applying MCE CatalogSource")
 	Expect(k8sClient.Create(ctx, resources.MarketNamespace())).Should(Succeed())
 	Expect(k8sClient.Create(ctx, resources.MCECatalogSource())).Should(Succeed())
+	Expect(k8sClient.Create(ctx, resources.PackageManifest())).Should(Succeed())
 }
 
 func removeSubmarinerFinalizer(k8sClient client.Client, reconciler *MultiClusterHubReconciler) {

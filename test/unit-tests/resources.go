@@ -7,6 +7,7 @@ import (
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 
 	configv1 "github.com/openshift/api/config/v1"
+	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 
@@ -30,6 +31,19 @@ var (
 	MCHLookupKey = types.NamespacedName{Name: MulticlusterhubName, Namespace: MulticlusterhubNamespace}
 	MCELookupKey = types.NamespacedName{Name: MultiClusterEngineName}
 )
+
+func PackageManifest() *olmapi.PackageManifest {
+	return &olmapi.PackageManifest{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "multicluster-engine",
+		},
+		Spec: olmapi.PackageManifestSpec{},
+		Status: olmapi.PackageManifestStatus{
+			CatalogSource:          "multiclusterengine-catalog",
+			CatalogSourceNamespace: "openshift-marketplace",
+		},
+	}
+}
 
 func MCECatalogSource() *subv1alpha1.CatalogSource {
 	return &subv1alpha1.CatalogSource{

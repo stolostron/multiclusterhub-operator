@@ -252,6 +252,8 @@ func GetCatalogSource(k8sClient client.Client) (types.NamespacedName, error) {
 // extractCatalogSource extracts namespaced name from the given PackageManifest.
 func extractCatalogSource(pm olmapi.PackageManifest) (types.NamespacedName, error) {
 	if pm.Status.CatalogSource == "" || pm.Status.CatalogSourceNamespace == "" {
+		logf.Error(fmt.Errorf("missing catalog source or namespace"),
+			"CatalogSource or CatalogSourceNamespace is empty", "PackageManifest", pm.Name)
 		return types.NamespacedName{}, fmt.Errorf("missing catalog source or namespace in package manifest: %s", pm.Name)
 	}
 
