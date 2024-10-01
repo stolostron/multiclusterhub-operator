@@ -185,6 +185,7 @@ func main() {
 					&rbacv1.RoleBinding{},
 					&corev1.ConfigMap{},
 					&corev1.ServiceAccount{},
+					&olmapi.PackageManifest{},
 				},
 			},
 		},
