@@ -3,681 +3,162 @@ kind: CustomResourceDefinition
 metadata:
   name: packagemanifests.packages.operators.coreos.com
 spec:
-  conversion:
-    strategy: None
   group: packages.operators.coreos.com
-  names:
-    kind: PackageManifest
-    listKind: PackageManifestList
-    plural: packagemanifests
-    singular: packagemanifest
-  scope: Namespaced
   versions:
-  - name: v1
-    schema:
-      openAPIV3Schema:
-        description: PackageManifest holds information about a package, which is a
-          reference to one (or more) channels under a single package.
-        properties:
-          apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-            type: string
-          kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-            type: string
-          metadata:
-            type: object
-          spec:
-            additionalProperties:
-              description: PackageManifestSpec defines the desired state of PackageManifest
-              x-kubernetes-embedded-resource: true
-            description: PackageManifestSpec defines the desired state of PackageManifest
-            type: object
-          status:
-            description: PackageManifestStatus represents the current status of the
-              PackageManifest
-            properties:
-              catalogSource:
-                description: CatalogSource is the name of the CatalogSource this package
-                  belongs to
-                type: string
-              catalogSourceDisplayName:
-                type: string
-              catalogSourceNamespace:
-                description: |2-
-
-                   CatalogSourceNamespace is the namespace of the owning CatalogSource
-                type: string
-              catalogSourcePublisher:
-                type: string
-              channels:
-                description: Channels are the declared channels for the package, ala
-                  `stable` or `alpha`.
-                items:
-                  description: PackageChannel defines a single channel under a package,
-                    pointing to a version of that package.
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+            status:
+              type: object
+              properties:
+                catalogSource:
+                  type: string
+                catalogSourceDisplayName:
+                  type: string
+                catalogSourcePublisher:
+                  type: string
+                catalogSourceNamespace:
+                  type: string
+                provider:
+                  type: object
                   properties:
-                    currentCSV:
-                      description: CurrentCSV defines a reference to the CSV holding
-                        the version of this package currently for the channel.
+                    name:
                       type: string
-                    currentCSVDesc:
-                      description: CurrentCSVSpec holds the spec of the current CSV
-                      properties:
-                        annotations:
-                          additionalProperties:
+                    url:
+                      type: string
+                packageName:
+                  type: string
+                deprecation:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                channels:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      currentCSV:
+                        type: string
+                      currentCSVDesc:
+                        type: object
+                        properties:
+                          displayName:
                             type: string
-                          type: object
-                        apiservicedefinitions:
-                          description: APIServiceDefinitions declares all of the extension
-                            apis managed or required by an operator being ran by ClusterServiceVersion.
-                          properties:
-                            owned:
-                              items:
-                                description: APIServiceDescription provides details
-                                  to OLM about apis provided via aggregation
-                                properties:
-                                  actionDescriptors:
-                                    items:
-                                      description: ActionDescriptor describes a declarative
-                                        action that can be performed on a custom resource
-                                        instance
-                                      properties:
-                                        description:
-                                          type: string
-                                        displayName:
-                                          type: string
-                                        path:
-                                          type: string
-                                        value:
-                                          format: byte
-                                          type: string
-                                        x-descriptors:
-                                          items:
-                                            type: string
-                                          type: array
-                                      required:
-                                      - path
-                                      type: object
-                                    type: array
-                                  containerPort:
-                                    format: int32
-                                    type: integer
-                                  deploymentName:
-                                    type: string
-                                  description:
-                                    type: string
-                                  displayName:
-                                    type: string
-                                  group:
-                                    type: string
-                                  kind:
-                                    type: string
-                                  name:
-                                    type: string
-                                  resources:
-                                    items:
-                                      description: APIResourceReference is a Kubernetes
-                                        resource type used by a custom resource
-                                      properties:
-                                        kind:
-                                          type: string
-                                        name:
-                                          type: string
-                                        version:
-                                          type: string
-                                      required:
-                                      - name
-                                      - kind
-                                      - version
-                                      type: object
-                                    type: array
-                                  specDescriptors:
-                                    items:
-                                      description: SpecDescriptor describes a field
-                                        in a spec block of a CRD so that OLM can consume
-                                        it
-                                      properties:
-                                        description:
-                                          type: string
-                                        displayName:
-                                          type: string
-                                        path:
-                                          type: string
-                                        value:
-                                          format: byte
-                                          type: string
-                                        x-descriptors:
-                                          items:
-                                            type: string
-                                          type: array
-                                      required:
-                                      - path
-                                      type: object
-                                    type: array
-                                  statusDescriptors:
-                                    items:
-                                      description: StatusDescriptor describes a field
-                                        in a status block of a CRD so that OLM can
-                                        consume it
-                                      properties:
-                                        description:
-                                          type: string
-                                        displayName:
-                                          type: string
-                                        path:
-                                          type: string
-                                        value:
-                                          format: byte
-                                          type: string
-                                        x-descriptors:
-                                          items:
-                                            type: string
-                                          type: array
-                                      required:
-                                      - path
-                                      type: object
-                                    type: array
-                                  version:
-                                    type: string
-                                required:
-                                - name
-                                - group
-                                - version
-                                - kind
-                                type: object
-                              type: array
-                            required:
-                              items:
-                                description: APIServiceDescription provides details
-                                  to OLM about apis provided via aggregation
-                                properties:
-                                  actionDescriptors:
-                                    items:
-                                      description: ActionDescriptor describes a declarative
-                                        action that can be performed on a custom resource
-                                        instance
-                                      properties:
-                                        description:
-                                          type: string
-                                        displayName:
-                                          type: string
-                                        path:
-                                          type: string
-                                        value:
-                                          format: byte
-                                          type: string
-                                        x-descriptors:
-                                          items:
-                                            type: string
-                                          type: array
-                                      required:
-                                      - path
-                                      type: object
-                                    type: array
-                                  containerPort:
-                                    format: int32
-                                    type: integer
-                                  deploymentName:
-                                    type: string
-                                  description:
-                                    type: string
-                                  displayName:
-                                    type: string
-                                  group:
-                                    type: string
-                                  kind:
-                                    type: string
-                                  name:
-                                    type: string
-                                  resources:
-                                    items:
-                                      description: APIResourceReference is a Kubernetes
-                                        resource type used by a custom resource
-                                      properties:
-                                        kind:
-                                          type: string
-                                        name:
-                                          type: string
-                                        version:
-                                          type: string
-                                      required:
-                                      - name
-                                      - kind
-                                      - version
-                                      type: object
-                                    type: array
-                                  specDescriptors:
-                                    items:
-                                      description: SpecDescriptor describes a field
-                                        in a spec block of a CRD so that OLM can consume
-                                        it
-                                      properties:
-                                        description:
-                                          type: string
-                                        displayName:
-                                          type: string
-                                        path:
-                                          type: string
-                                        value:
-                                          format: byte
-                                          type: string
-                                        x-descriptors:
-                                          items:
-                                            type: string
-                                          type: array
-                                      required:
-                                      - path
-                                      type: object
-                                    type: array
-                                  statusDescriptors:
-                                    items:
-                                      description: StatusDescriptor describes a field
-                                        in a status block of a CRD so that OLM can
-                                        consume it
-                                      properties:
-                                        description:
-                                          type: string
-                                        displayName:
-                                          type: string
-                                        path:
-                                          type: string
-                                        value:
-                                          format: byte
-                                          type: string
-                                        x-descriptors:
-                                          items:
-                                            type: string
-                                          type: array
-                                      required:
-                                      - path
-                                      type: object
-                                    type: array
-                                  version:
-                                    type: string
-                                required:
-                                - name
-                                - group
-                                - version
-                                - kind
-                                type: object
-                              type: array
-                          type: object
-                        customresourcedefinitions:
-                          description: |-
-                            CustomResourceDefinitions declares all of the CRDs managed or required by an operator being ran by ClusterServiceVersion.
-
-                            If the CRD is present in the Owned list, it is implicitly required.
-                          properties:
-                            owned:
-                              items:
-                                description: CRDDescription provides details to OLM
-                                  about the CRDs
-                                properties:
-                                  actionDescriptors:
-                                    items:
-                                      description: ActionDescriptor describes a declarative
-                                        action that can be performed on a custom resource
-                                        instance
-                                      properties:
-                                        description:
-                                          type: string
-                                        displayName:
-                                          type: string
-                                        path:
-                                          type: string
-                                        value:
-                                          format: byte
-                                          type: string
-                                        x-descriptors:
-                                          items:
-                                            type: string
-                                          type: array
-                                      required:
-                                      - path
-                                      type: object
-                                    type: array
-                                  description:
-                                    type: string
-                                  displayName:
-                                    type: string
-                                  kind:
-                                    type: string
-                                  name:
-                                    type: string
-                                  resources:
-                                    items:
-                                      description: APIResourceReference is a Kubernetes
-                                        resource type used by a custom resource
-                                      properties:
-                                        kind:
-                                          type: string
-                                        name:
-                                          type: string
-                                        version:
-                                          type: string
-                                      required:
-                                      - name
-                                      - kind
-                                      - version
-                                      type: object
-                                    type: array
-                                  specDescriptors:
-                                    items:
-                                      description: SpecDescriptor describes a field
-                                        in a spec block of a CRD so that OLM can consume
-                                        it
-                                      properties:
-                                        description:
-                                          type: string
-                                        displayName:
-                                          type: string
-                                        path:
-                                          type: string
-                                        value:
-                                          format: byte
-                                          type: string
-                                        x-descriptors:
-                                          items:
-                                            type: string
-                                          type: array
-                                      required:
-                                      - path
-                                      type: object
-                                    type: array
-                                  statusDescriptors:
-                                    items:
-                                      description: StatusDescriptor describes a field
-                                        in a status block of a CRD so that OLM can
-                                        consume it
-                                      properties:
-                                        description:
-                                          type: string
-                                        displayName:
-                                          type: string
-                                        path:
-                                          type: string
-                                        value:
-                                          format: byte
-                                          type: string
-                                        x-descriptors:
-                                          items:
-                                            type: string
-                                          type: array
-                                      required:
-                                      - path
-                                      type: object
-                                    type: array
-                                  version:
-                                    type: string
-                                required:
-                                - name
-                                - version
-                                - kind
-                                type: object
-                              type: array
-                            required:
-                              items:
-                                description: CRDDescription provides details to OLM
-                                  about the CRDs
-                                properties:
-                                  actionDescriptors:
-                                    items:
-                                      description: ActionDescriptor describes a declarative
-                                        action that can be performed on a custom resource
-                                        instance
-                                      properties:
-                                        description:
-                                          type: string
-                                        displayName:
-                                          type: string
-                                        path:
-                                          type: string
-                                        value:
-                                          format: byte
-                                          type: string
-                                        x-descriptors:
-                                          items:
-                                            type: string
-                                          type: array
-                                      required:
-                                      - path
-                                      type: object
-                                    type: array
-                                  description:
-                                    type: string
-                                  displayName:
-                                    type: string
-                                  kind:
-                                    type: string
-                                  name:
-                                    type: string
-                                  resources:
-                                    items:
-                                      description: APIResourceReference is a Kubernetes
-                                        resource type used by a custom resource
-                                      properties:
-                                        kind:
-                                          type: string
-                                        name:
-                                          type: string
-                                        version:
-                                          type: string
-                                      required:
-                                      - name
-                                      - kind
-                                      - version
-                                      type: object
-                                    type: array
-                                  specDescriptors:
-                                    items:
-                                      description: SpecDescriptor describes a field
-                                        in a spec block of a CRD so that OLM can consume
-                                        it
-                                      properties:
-                                        description:
-                                          type: string
-                                        displayName:
-                                          type: string
-                                        path:
-                                          type: string
-                                        value:
-                                          format: byte
-                                          type: string
-                                        x-descriptors:
-                                          items:
-                                            type: string
-                                          type: array
-                                      required:
-                                      - path
-                                      type: object
-                                    type: array
-                                  statusDescriptors:
-                                    items:
-                                      description: StatusDescriptor describes a field
-                                        in a status block of a CRD so that OLM can
-                                        consume it
-                                      properties:
-                                        description:
-                                          type: string
-                                        displayName:
-                                          type: string
-                                        path:
-                                          type: string
-                                        value:
-                                          format: byte
-                                          type: string
-                                        x-descriptors:
-                                          items:
-                                            type: string
-                                          type: array
-                                      required:
-                                      - path
-                                      type: object
-                                    type: array
-                                  version:
-                                    type: string
-                                required:
-                                - name
-                                - version
-                                - kind
-                                type: object
-                              type: array
-                          type: object
-                        description:
-                          description: LongDescription is the CSV's description
-                          type: string
-                        displayName:
-                          description: DisplayName is the CSV's display name
-                          type: string
-                        icon:
-                          description: Icon is the CSV's base64 encoded icon
-                          items:
-                            description: Icon defines a base64 encoded icon and media
-                              type
-                            properties:
-                              base64data:
-                                type: string
-                              mediatype:
-                                type: string
+                          icon:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                base64data:
+                                  type: string
+                                mediatype:
+                                  type: string
+                          version:
                             type: object
-                          type: array
-                          x-kubernetes-list-type: set
-                        installModes:
-                          description: InstallModes specify supported installation
-                            types
-                          items:
-                            description: InstallMode associates an InstallModeType
-                              with a flag representing if the CSV supports it
                             properties:
-                              supported:
-                                type: boolean
-                              type:
+                              version:
                                 type: string
-                            required:
-                            - type
-                            - supported
+                          provider:
                             type: object
-                          type: array
-                          x-kubernetes-list-type: set
-                        keywords:
-                          items:
-                            type: string
-                          type: array
-                          x-kubernetes-list-type: set
-                        links:
-                          items:
-                            description: AppLink defines a link to an application
                             properties:
                               name:
                                 type: string
                               url:
                                 type: string
+                          annotations:
                             type: object
-                          type: array
-                          x-kubernetes-list-type: set
-                        maintainers:
-                          items:
-                            description: Maintainer defines a project maintainer
-                            properties:
-                              email:
-                                type: string
-                              name:
-                                type: string
+                            additionalProperties:
+                              type: string
+                          keywords:
+                            type: array
+                            items:
+                              type: string
+                          links:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                url:
+                                  type: string
+                          maintainers:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                email:
+                                  type: string
+                          maturity:
+                            type: string
+                          longDescription:
+                            type: string
+                          installModes:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                type:
+                                  type: string
+                                supported:
+                                  type: boolean
+                          customResourceDefinitions:
                             type: object
-                          type: array
-                          x-kubernetes-list-type: set
-                        maturity:
-                          type: string
-                        minKubeVersion:
-                          description: Minimum Kubernetes version for operator installation
-                          type: string
-                        nativeApis:
-                          items:
-                            description: GroupVersionKind unambiguously identifies
-                              a kind.  It doesn't anonymously include GroupVersion
-                              to avoid automatic coersion.  It doesn't use a GroupVersion
-                              to avoid custom marshalling
-                            properties:
-                              group:
-                                type: string
-                              kind:
-                                type: string
-                              version:
-                                type: string
-                            required:
-                            - group
-                            - version
-                            - kind
+                          apiServiceDefinitions:
                             type: object
-                          type: array
-                        provider:
-                          description: Provider is the CSV's provider
+                          nativeAPIs:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                group:
+                                  type: string
+                                version:
+                                  type: string
+                                kind:
+                                  type: string
+                          minKubeVersion:
+                            type: string
+                          relatedImages:
+                            type: array
+                            items:
+                              type: string
+                      deprecation:
+                        type: object
+                        properties:
+                          message:
+                            type: string
+                      entries:
+                        type: array
+                        items:
+                          type: object
                           properties:
                             name:
                               type: string
-                            url:
+                            version:
                               type: string
-                          type: object
-                        relatedImages:
-                          description: List of related images
-                          items:
-                            type: string
-                          type: array
-                        version:
-                          description: Version is the CSV's semantic version
-                          format: semver
-                          type: string
-                      type: object
-                    name:
-                      description: Name is the name of the channel, e.g. `alpha` or
-                        `stable`
-                      type: string
-                  required:
-                  - name
-                  - currentCSV
-                  type: object
-                type: array
-                x-kubernetes-list-type: set
-              defaultChannel:
-                description: DefaultChannel is, if specified, the name of the default
-                  channel for the package. The default channel will be installed if
-                  no other channel is explicitly given. If the package has a single
-                  channel, then that channel is implicitly the default.
-                type: string
-              packageName:
-                description: PackageName is the name of the overall package, ala `etcd`.
-                type: string
-              provider:
-                description: Provider is the provider of the PackageManifest's default
-                  CSV
-                properties:
-                  name:
-                    type: string
-                  url:
-                    type: string
-                type: object
-            required:
-            - catalogSource
-            - catalogSourceDisplayName
-            - catalogSourcePublisher
-            - catalogSourceNamespace
-            - packageName
-            - channels
-            - defaultChannel
-            type: object
-        type: object
-    served: true
-    storage: true
-    subresources: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: null
-  storedVersions:
-  - v1
+                            deprecation:
+                              type: object
+                              properties:
+                                message:
+                                  type: string
+                defaultChannel:
+                  type: string
+  names:
+    plural: packagemanifests
+    singular: packagemanifest
+    kind: PackageManifest
+    shortNames:
+      - pm
+  scope: Namespaced
