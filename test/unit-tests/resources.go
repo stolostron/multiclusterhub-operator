@@ -36,7 +36,7 @@ func PackageManifest() *olmapi.PackageManifest {
 	return &olmapi.PackageManifest{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "multicluster-engine",
-			Namespace: "multicluster-engine",
+			Namespace: MulticlusterhubNamespace,
 		},
 		Spec: olmapi.PackageManifestSpec{},
 		Status: olmapi.PackageManifestStatus{
