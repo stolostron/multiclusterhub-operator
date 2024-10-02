@@ -308,10 +308,11 @@ func PreexistingMCE(k8sClient client.Client, reconciler *MultiClusterHubReconcil
 
 var _ = Describe("MultiClusterHub controller", func() {
 	var (
-		testEnv      *envtest.Environment
-		clientConfig *rest.Config
-		clientScheme = runtime.NewScheme()
-		k8sClient    client.Client
+		testEnv           *envtest.Environment
+		clientConfig      *rest.Config
+		clientScheme      = runtime.NewScheme()
+		k8sClient         client.Client
+		uncachedk8sClient client.Client
 
 		specLabels       *metav1.LabelSelector
 		templateMetadata metav1.ObjectMeta
@@ -405,17 +406,22 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 		k8sClient = k8sManager.GetClient()
 		Expect(k8sClient).ToNot(BeNil())
+
+		uncachedk8sClient, err = client.New(ctrl.GetConfigOrDie(), client.Options{
+			Scheme: clientScheme,
+		})
+		Expect(err).ToNot(HaveOccurred())
+		Expect(uncachedk8sClient).ToNot(BeNil())
+
 		upgradeableCondition, _ := utils.NewOperatorCondition(k8sClient, operatorsapiv2.Upgradeable)
 		reconciler = &MultiClusterHubReconciler{
+			UncachedClient:  uncachedk8sClient,
 			Client:          k8sClient,
 			Scheme:          k8sManager.GetScheme(),
 			Log:             ctrl.Log.WithName("controllers").WithName("MultiClusterHub"),
 			UpgradeableCond: upgradeableCondition,
-			// CacheSpec: CacheSpec{
-			// 	ImageOverrides: map[string]string{},
-			// },
 		}
-		// Expect(reconciler.SetupWithManager(k8sManager)).Should(Succeed())
+
 		success, err := reconciler.SetupWithManager(k8sManager)
 		Expect(success).ToNot(BeNil())
 		Expect(err).ToNot(HaveOccurred())
