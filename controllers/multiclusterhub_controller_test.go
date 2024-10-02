@@ -933,7 +933,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 			By("Ensuring No ClusterManagementAddon")
 			result, err = reconciler.ensureNoClusterManagementAddOn(mch, "unknown")
-			Expect(result).To(Equal(ctrl.Result{Requeue: true}))
+			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(Not(BeNil()))
 
 			By("Ensuring No Unregistered Component")
@@ -946,8 +946,9 @@ var _ = Describe("MultiClusterHub controller", func() {
 				ObjectMeta: metav1.ObjectMeta{Name: "mch", Namespace: "test-ns-1"},
 			}
 
-			result, _ = reconciler.ensureOpenShiftNamespaceLabel(ctx, mch2)
+			result, err = reconciler.ensureOpenShiftNamespaceLabel(ctx, mch2)
 			Expect(result).To(Equal(ctrl.Result{Requeue: true}))
+			Expect(err).To(BeNil())
 		})
 	})
 
