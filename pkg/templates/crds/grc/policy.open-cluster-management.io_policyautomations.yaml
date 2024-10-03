@@ -94,6 +94,7 @@ spec:
                 description: >-
                   EventHook specifies the compliance state that initiates automation. This must be set to
                   "noncompliant".
+                default: noncompliant
                 enum:
                 - noncompliant
                 type: string
@@ -116,7 +117,6 @@ spec:
                 type: string
             required:
             - automationDef
-            - eventHook
             - mode
             - policyRef
             type: object
