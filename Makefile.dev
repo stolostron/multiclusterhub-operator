@@ -35,7 +35,7 @@ prep-mock-install:
 
 lint-operator-bundles: ## Lints the operator bundles
 	pip3 install -r hack/bundle-automation/requirements.txt
-	python3 ./hack/bundle-automation/generate-shell.py --lint-bundles
+	python3 ./hack/bundle-automation/generate-shell.py --lint-bundles --org $(ORG) --repo $(REPO) --branch $(BRANCH)
 
 regenerate-charts-from-bundles: ## Regenerates the operator charts from bundles
 	pip3 install -r hack/bundle-automation/requirements.txt
