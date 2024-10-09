@@ -219,24 +219,17 @@ func (r *MultiClusterHubReconciler) ensurePullSecret(m *operatorv1.MultiClusterH
 	if m.Spec.ImagePullSecret == "" {
 		// Delete imagepullsecret in MCE namespace if present
 		secretList := &corev1.SecretList{}
-		err := r.Client.List(
-			context.TODO(),
-			secretList,
-			client.MatchingLabels{
-				"installer.name":      m.GetName(),
-				"installer.namespace": m.GetNamespace(),
-			},
-			client.InNamespace(newNS),
-		)
-		if err != nil {
-			return ctrl.Result{Requeue: true}, err
+		if err := r.Client.List(context.TODO(), secretList, client.MatchingLabels{"installer.name": m.GetName(),
+			"installer.namespace": m.GetNamespace()}, client.InNamespace(newNS)); err != nil {
+
+			return ctrl.Result{}, err
 		}
 		for i, secret := range secretList.Items {
 			r.Log.Info("Deleting imagePullSecret", "Name", secret.Name, "Namespace", secret.Namespace)
 			err = r.Client.Delete(context.TODO(), &secretList.Items[i])
 			if err != nil {
 				r.Log.Error(err, fmt.Sprintf("Error deleting imagepullsecret: %s", secret.GetName()))
-				return ctrl.Result{Requeue: true}, err
+				return ctrl.Result{}, err
 			}
 		}
 
@@ -244,12 +237,9 @@ func (r *MultiClusterHubReconciler) ensurePullSecret(m *operatorv1.MultiClusterH
 	}
 
 	pullSecret := &corev1.Secret{}
-	err := r.Client.Get(context.TODO(), types.NamespacedName{
-		Name:      m.Spec.ImagePullSecret,
-		Namespace: m.Namespace,
-	}, pullSecret)
-	if err != nil {
-		return ctrl.Result{Requeue: true}, err
+	if err := r.Client.Get(context.TODO(), types.NamespacedName{Name: m.Spec.ImagePullSecret, Namespace: m.Namespace},
+		pullSecret); err != nil {
+		return ctrl.Result{}, err
 	}
 
 	mceSecret := &corev1.Secret{
@@ -274,7 +264,7 @@ func (r *MultiClusterHubReconciler) ensurePullSecret(m *operatorv1.MultiClusterH
 	err = r.Client.Patch(context.TODO(), mceSecret, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
 	if err != nil {
 		r.Log.Info(fmt.Sprintf("Error applying pullSecret to mce namespace: %s", err.Error()))
-		return ctrl.Result{Requeue: true}, err
+		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
@@ -294,10 +284,10 @@ func (r *MultiClusterHubReconciler) ensurePullSecretCreated(m *operatorv1.MultiC
 		Namespace: m.Namespace,
 	}, pullSecret)
 	if err != nil {
-		return ctrl.Result{Requeue: true}, err
+		return ctrl.Result{}, err
 	}
 	if pullSecret.Namespace == "" || pullSecret.Namespace != namespace {
-		return ctrl.Result{Requeue: true}, fmt.Errorf("pullsecret doest not exist in namespace: %s", namespace)
+		return ctrl.Result{}, fmt.Errorf("pullsecret doest not exist in namespace: %s", namespace)
 	}
 
 	return ctrl.Result{}, nil
@@ -432,17 +422,17 @@ func addInstallerLabelSecret(d *corev1.Secret, name string, ns string) bool {
 func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	mceSub, err := multiclusterengine.FindAndManageMCESubscription(ctx, r.Client)
 	if err != nil {
-		return ctrl.Result{Requeue: true}, err
+		return ctrl.Result{}, err
 	}
 
 	// Get sub config, catalogsource, and annotation overrides
 	subConfig, err := r.GetSubConfig()
 	if err != nil {
-		return ctrl.Result{Requeue: true}, err
+		return ctrl.Result{}, err
 	}
 	overrides, err := multiclusterengine.GetAnnotationOverrides(multiClusterHub)
 	if err != nil {
-		return ctrl.Result{Requeue: true}, err
+		return ctrl.Result{}, err
 	}
 	ctlSrc := types.NamespacedName{}
 	// Search for catalogsource if not defined in overrides
@@ -516,7 +506,7 @@ func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context) (ctrl.R
 	// Wait for MCE to be ready
 	existingMCE, err := multiclusterengine.GetManagedMCE(ctx, r.Client)
 	if err != nil {
-		return ctrl.Result{Requeue: true}, err
+		return ctrl.Result{}, err
 	}
 	if existingMCE == nil {
 		r.Log.Info("Multiclusterengine is not yet present")
@@ -635,7 +625,7 @@ func (r *MultiClusterHubReconciler) addPluginToConsole(multiClusterHub *operator
 	err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster"}, console)
 	if err != nil {
 		log.Info("Failed to find console: cluster")
-		return ctrl.Result{Requeue: true}, err
+		return ctrl.Result{}, err
 	}
 
 	if console.Spec.Plugins == nil {
@@ -649,7 +639,7 @@ func (r *MultiClusterHubReconciler) addPluginToConsole(multiClusterHub *operator
 		err = r.Client.Update(ctx, console)
 		if err != nil {
 			log.Info("Failed to add acm consoleplugin to console")
-			return ctrl.Result{Requeue: true}, err
+			return ctrl.Result{}, err
 		} else {
 			log.Info("Added acm consoleplugin to console")
 		}
@@ -668,7 +658,7 @@ func (r *MultiClusterHubReconciler) removePluginFromConsole(multiClusterHub *ope
 	err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster"}, console)
 	if err != nil {
 		log.Info("Failed to find console: cluster")
-		return ctrl.Result{Requeue: true}, err
+		return ctrl.Result{}, err
 	}
 
 	// If No plugins, it is already removed
@@ -682,7 +672,7 @@ func (r *MultiClusterHubReconciler) removePluginFromConsole(multiClusterHub *ope
 		err = r.Client.Update(ctx, console)
 		if err != nil {
 			log.Info("Failed to remove acm consoleplugin to console")
-			return ctrl.Result{Requeue: true}, err
+			return ctrl.Result{}, err
 		} else {
 			log.Info("Removed acm consoleplugin to console")
 		}
@@ -760,7 +750,7 @@ func (r *MultiClusterHubReconciler) ensureSearchCR(m *operatorv1.MultiClusterHub
 	err := r.Client.Patch(ctx, searchCR, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
 	if err != nil {
 		r.Log.Info(fmt.Sprintf("error applying Search CR. Error: %s", err.Error()))
-		return ctrl.Result{Requeue: true}, err
+		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
@@ -774,7 +764,7 @@ func (r *MultiClusterHubReconciler) ensureNoClusterManagementAddOn(m *operatorv1
 	addonName, err := operatorv1.GetClusterManagementAddonName(component)
 	if err != nil {
 		r.Log.Info(fmt.Sprintf("Detected unregistered ClusterManagementAddon component: %s", err.Error()))
-		return ctrl.Result{Requeue: true}, err
+		return ctrl.Result{}, err
 	}
 
 	// if CRD doesn't exist, return
@@ -830,25 +820,25 @@ func (r *MultiClusterHubReconciler) ensureNoSearchCR(m *operatorv1.MultiClusterH
 	err := r.Client.List(ctx, searchList, client.InNamespace(m.GetNamespace()))
 	if err != nil {
 		r.Log.Info(fmt.Sprintf("error locating Search CR. Error: %s", err.Error()))
-		return ctrl.Result{Requeue: true}, err
+		return ctrl.Result{}, err
 	}
 
 	if len(searchList.Items) != 0 {
 		err = r.Client.Delete(context.TODO(), &searchList.Items[0])
 		if err != nil {
 			r.Log.Error(err, "Error deleting Search CR")
-			return ctrl.Result{Requeue: true}, err
+			return ctrl.Result{}, err
 		}
 
 	}
 	err = r.Client.List(ctx, searchList, client.InNamespace(m.GetNamespace()))
 	if err != nil {
 		r.Log.Info(fmt.Sprintf("error locating Search CR. Error: %s", err.Error()))
-		return ctrl.Result{Requeue: true}, err
+		return ctrl.Result{}, err
 	}
 	if len(searchList.Items) != 0 {
 		r.Log.Info("Waiting for Search CR to be deleted")
-		return ctrl.Result{Requeue: true}, errors.NewBadRequest("Search CR has not been deleted")
+		return ctrl.Result{}, errors.NewBadRequest("Search CR has not been deleted")
 	}
 	return ctrl.Result{}, nil
 }
