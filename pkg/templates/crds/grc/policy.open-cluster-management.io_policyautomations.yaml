@@ -91,10 +91,10 @@ spec:
                 minimum: 0
                 type: integer
               eventHook:
+                default: noncompliant
                 description: >-
                   EventHook specifies the compliance state that initiates automation. This must be set to
                   "noncompliant".
-                default: noncompliant
                 enum:
                 - noncompliant
                 type: string

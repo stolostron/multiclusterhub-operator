@@ -12,15 +12,19 @@ metadata:
   name: acm-cli-downloads
 spec:
   description: |
-    With the CLIs for Red Hat Advanced Cluster Management for Kubernetes (RHACM) you 
-    can enhance your multicluster experience at the terminal. This includes:
+    Enhance your multicluster experience in the terminal with the CLIs for 
+    Red Hat Advanced Cluster Management for Kubernetes. This includes:
     - `policytools`
-        - Interact with RHACM policies locally, including resolving templates locally.
+        - Interact with Red Hat Advanced Cluster Management policies locally, 
+          such as resolving templates locally and reconciling a 
+          ConfigurationPolicy locally (Dev Preview).
     - `PolicyGenerator`
-        - Build RHACM policies from Kubernetes manifest YAML files, which are 
-          provided through a `PolicyGenerator` manifest YAML file that is used to 
-          configure it. The Policy Generator is implemented as a Kustomize generator 
-          plug-in, allowing integration with GitOps.
+        - Build Red Hat Advanced Cluster Management policies from Kubernetes 
+          manifest YAML files, which are provided through a `PolicyGenerator` 
+          manifest YAML file that is used to configure it. The Policy 
+          Generator is implemented as a Kustomize generator plug-in, allowing 
+          integration with GitOps. See the [Policy Generator documentation](https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_management_for_kubernetes/{{ $v := semver .Values.hubconfig.hubVersion }}{{ printf "%d.%d" $v.Major $v.Minor }}/html/governance/integrate-third-party-policy-controllers#policy-generator)
+          for details.
   displayName: "Advanced Cluster Management - {{ .Values.hubconfig.hubVersion }}"
   links:
     - href: "https://acm-cli-downloads.{{ .Values.hubconfig.ocpIngress }}/linux-amd64-policytools.tar.gz"
