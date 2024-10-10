@@ -76,7 +76,7 @@ spec:
         - name: USE_MOCK 
           value: "false"
         - name: CCX_SERVER
-          value: "https://console.redhat.com/api/insights-results-aggregator/v1"
+          value: "https://console.redhat.com/api/insights-results-aggregator/v2"
         {{- if .Values.hubconfig.proxyConfigs }}
         - name: HTTP_PROXY
           value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
