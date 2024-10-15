@@ -3,6 +3,8 @@ approvers:
 - dislbenn
 - gparvin
 - joeg-pro
+- kurwang
+- msmigiel-rh
 - ngraham20
 
 reviewers:
@@ -10,4 +12,6 @@ reviewers:
 - dislbenn
 - gparvin
 - joeg-pro
+- kurwang
+- msmigiel-rh
 - ngraham20
