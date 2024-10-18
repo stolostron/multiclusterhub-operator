@@ -40,15 +40,7 @@ spec:
         - --leader-election-lease-duration=137s
         - --leader-election-renew-deadline=107s
         - --leader-election-retry-period=26s
-        env:
-{{- if .Values.hubconfig.proxyConfigs }}
-        - name: HTTP_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
-        - name: HTTPS_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
-        - name: NO_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
-{{- end }}
+        env: {}
         image: '{{ .Values.global.imageOverrides.multicloud_integrations }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         livenessProbe:
@@ -88,14 +80,6 @@ spec:
         - --leader-election-renew-deadline=107s
         - --leader-election-retry-period=26s
         env:
-{{- if .Values.hubconfig.proxyConfigs }}
-        - name: HTTP_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
-        - name: HTTPS_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
-        - name: NO_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
-{{- end }}
         - name: WATCH_NAMESPACE
         - name: POD_NAME
           valueFrom:
@@ -150,14 +134,6 @@ spec:
         - --leader-election-renew-deadline=107s
         - --leader-election-retry-period=26s
         env:
-{{- if .Values.hubconfig.proxyConfigs }}
-        - name: HTTP_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
-        - name: HTTPS_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
-        - name: NO_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
-{{- end }}
         - name: WATCH_NAMESPACE
         - name: POD_NAME
           valueFrom:
@@ -207,31 +183,14 @@ spec:
       hostIPC: false
       hostNetwork: false
       hostPID: false
-{{- if .Values.global.pullSecret }}
-      imagePullSecrets:
-      - name: {{ .Values.global.pullSecret }}
-{{- end }}
-{{- with .Values.hubconfig.nodeSelector }}
-      nodeSelector:
-{{ toYaml . | indent 8 }}
-{{- end }}
+      imagePullSecrets: ''
+      nodeSelector: ''
       securityContext:
         runAsNonRoot: true
-{{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
         seccompProfile:
           type: RuntimeDefault
-{{- end }}
       serviceAccountName: multicluster-applications
-{{- with .Values.hubconfig.tolerations }}
-      tolerations:
-      {{- range . }}
-      - {{ if .Key }} key: {{ .Key }} {{- end }}
-        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
-        {{ if .Value }} value: {{ .Value }} {{- end }}
-        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
-        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
-        {{- end }}
-{{- end }}
+      tolerations: ''
       volumes:
       - emptyDir: {}
         name: multicluster-integrations-syncresource
