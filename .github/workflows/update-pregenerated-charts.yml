@@ -4,9 +4,9 @@ name: Update Pregenerated Charts
 
 # Controls when the action will run. 
 on:
-  # Runs every day
+  # Runs every six hours
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "0 */6 * * *"
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -18,8 +18,17 @@ jobs:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false # If one jobs fail, we still want the other jobs to run.
       matrix:
         python-version: [3.9]
+        branch: ['main', 'release-2.10', 'release-2.11', 'release-2.12']
+        include:
+          - branch: release-2.10
+            go-version: "1.20"
+          - branch: release-2.11
+            go-version: "1.21"
+          - branch: release-2.12
+            go-version: "1.22"
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -27,15 +36,20 @@ jobs:
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.HUB_OPERATOR_TOKEN }}
+          ref: ${{ matrix.branch }}
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-    
+
+      - name: Set up Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ matrix.go-version }} # Specify the Go version from the matrix
+
       # Runs a set of commands using the runners shell
-      - name: Regenerate Operator Bundles
-        continue-on-error: true
-        id: generate_bundle
+      - name: Copy Charts for Operator Bundles
         run: |
           make copy-charts
           exit_code=$?
@@ -43,6 +57,16 @@ jobs:
             echo "Regenerate Operator Bundles step failed with exit code $exit_code"
             exit $exit_code
           fi
+
+      - name: Generate code
+        run: |
+          echo "Running go generate..."
+          go generate
+    
+      - name: Generate Manifests
+        run: |
+          echo "Generating manifests..."
+          make manifests
 
       - name: Send Slack Message on Failure
         if: ${{ failure() }}
@@ -62,9 +86,9 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           signoff: true
-          branch: "regenerate-operator-bundles"
+          branch: "regenerate-copy-chart-${{ matrix.branch }}"
           delete-branch: true
-          title: "Operator Bundle Update"
+          title: "Operator Chart Copy Update [${{ matrix.branch }}]"
           committer: GitHub <noreply@github.com>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
           labels: |
