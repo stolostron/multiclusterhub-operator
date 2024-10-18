@@ -4,15 +4,16 @@
 
 org: open-cluster-management
 global:
-  pullSecret: null
-  imageOverrides: {}
-  templateOverrides: {}
-  namespace: default
+  deployOnOCP: true
   hubSize: Small
+  imageOverrides: {}
+  namespace: default
+  pullSecret: null
+  templateOverrides: {}
 hubconfig:
   clusterSTSEnabled: false
   nodeSelector: null
-  replicaCount: 1
-  proxyConfigs: {}
-  tolerations: []
   ocpVersion: 4.12.0
+  proxyConfigs: {}
+  replicaCount: 1
+  tolerations: []

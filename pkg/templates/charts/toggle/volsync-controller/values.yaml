@@ -1,5 +1,6 @@
 org: stolostron
 global:
+  deployOnOCP: true
   pullPolicy: Always
   imageOverrides:
     volsync_addon_controller: ""
