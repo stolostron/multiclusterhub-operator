@@ -4,7 +4,7 @@ name: Regenerate Operator SHAs Commits
 
 # Controls when the action will run. 
 on:
-  # Runs every three hours
+  # Runs every six hours
   schedule:
     - cron: "0 */6 * * *"
 
@@ -18,8 +18,10 @@ jobs:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false # If one jobs fail, we still want the other jobs to run.
       matrix:
         python-version: [3.9]
+        branch: ['main', 'release-2.11', 'release-2.12']
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -27,6 +29,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.HUB_OPERATOR_TOKEN }}
+          ref: ${{ matrix.branch }}
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
@@ -34,7 +38,6 @@ jobs:
     
       # Runs a set of commands using the runners shell
       - name: Regenerate Operator SHAs Commits
-        id: generate_sha_commit
         env:
           GH_READ_PAT: ${{ secrets.GH_READ_PAT }}
         run: |
@@ -63,9 +66,9 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           signoff: true
-          branch: "regenerate-operator-sha-commits"
+          branch: "regenerate-operator-sha-commits-${{ matrix.branch }}"
           delete-branch: true
-          title: "Operator SHAs Commit Update"
+          title: "Operator SHAs Commit Update [${{ matrix.branch }}]"
           committer: GitHub <noreply@github.com>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
           labels: |
