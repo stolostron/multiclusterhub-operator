@@ -1014,6 +1014,9 @@ rules:
   - authorization.k8s.io
   resources:
   - uids
+  - userextras/authentication.kubernetes.io/credential-id
+  - userextras/authentication.kubernetes.io/node-name
+  - userextras/authentication.kubernetes.io/node-uid
   - userextras/authentication.kubernetes.io/pod-name
   - userextras/authentication.kubernetes.io/pod-uid
   verbs:
@@ -1267,6 +1270,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
+  verbs:
+  - deletecollection
+- apiGroups:
   - discovery.open-cluster-management.io
   resources:
   - discoveredclusters
@@ -1439,6 +1448,15 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - multicluster.x-k8s.io
+  resources:
+  - serviceimports
+  verbs:
+  - delete
+  - get
+  - list
+  - update
 - apiGroups:
   - networking.k8s.io
   resources:
@@ -1787,6 +1805,13 @@ rules:
   - delete
   - get
   - update
+- apiGroups:
+  - submariner.io
+  resources:
+  - clusters
+  - endpoints
+  verbs:
+  - deletecollection
 - apiGroups:
   - submarineraddon.open-cluster-management.io
   resources:
