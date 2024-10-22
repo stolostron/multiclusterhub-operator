@@ -142,9 +142,11 @@ spec:
 {{- end }}
       securityContext:
         runAsNonRoot: true
+{{- if .Values.global.deployOnOCP }}
 {{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
         seccompProfile:
           type: RuntimeDefault
+{{- end }}
 {{- end }}
       serviceAccountName: search-v2-operator
       terminationGracePeriodSeconds: 10
