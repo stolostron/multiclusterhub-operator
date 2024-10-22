@@ -338,6 +338,14 @@ rules:
   - get
   - patch
 - apiGroups:
+  - addon.open-cluster-management.io
+  resources:
+  - managedclusteraddons
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - admissionregistration.k8s.io
   - apiextensions.k8s.io
   - apiregistration.k8s.io
@@ -362,6 +370,22 @@ rules:
   - agent-install.openshift.io
   resources:
   - agentserviceconfigs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - authentication.open-cluster-management.io
+  resources:
+  - managedserviceaccounts
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - managedclusters
   verbs:
   - get
   - list
@@ -449,6 +473,44 @@ rules:
   resources:
   - packagemanifests
   verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.open-cluster-management.io
+  resources:
+  - clusterpermissions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.open-cluster-management.io
+  resources:
+  - clusterpermissions/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - rbac.open-cluster-management.io
+  resources:
+  - clusterpermissions/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - work.open-cluster-management.io
+  resources:
+  - manifestworks
+  verbs:
+  - create
+  - delete
   - get
   - list
   - patch
