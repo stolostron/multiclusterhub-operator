@@ -3,6 +3,7 @@
 
 org: open-cluster-management
 global:
+  deployOnOCP: true
   pullPolicy: Always
   pullSecret: null
   hubSize: Small
