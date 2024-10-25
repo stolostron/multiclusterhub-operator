@@ -32,7 +32,7 @@ type Values struct {
 
 type Global struct {
 	Channel             string               `json:"channel" structs:"Channel"`
-	DeployOnOCP         bool                 `json:"deployOnOCP" structs:deployOnOCP"`
+	DeployOnOCP         bool                 `json:"deployOnOCP" structs:"deployOnOCP"`
 	HubSize             v1.HubSize           `json:"hubSize" structs:"hubSize" yaml:"hubSize"`
 	ImageOverrides      map[string]string    `json:"imageOverrides" structs:"imageOverrides"`
 	ImageRepository     string               `json:"imageRepository" structs:"namespace"`
