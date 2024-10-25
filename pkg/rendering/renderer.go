@@ -60,11 +60,11 @@ type HubConfig struct {
 }
 
 type Toleration struct {
-	Effect            corev1.TaintEffect        `json:"Effect" protobuf:"bytes,4,opt,name=effect,casttype=TaintEffect"`
 	Key               string                    `json:"Key" protobuf:"bytes,1,opt,name=key"`
 	Operator          corev1.TolerationOperator `json:"Operator" protobuf:"bytes,2,opt,name=operator,casttype=TolerationOperator"`
-	TolerationSeconds *int64                    `json:"TolerationSeconds" protobuf:"varint,5,opt,name=tolerationSeconds"`
 	Value             string                    `json:"Value" protobuf:"bytes,3,opt,name=value"`
+	Effect            corev1.TaintEffect        `json:"Effect" protobuf:"bytes,4,opt,name=effect,casttype=TaintEffect"`
+	TolerationSeconds *int64                    `json:"TolerationSeconds" protobuf:"varint,5,opt,name=tolerationSeconds"`
 }
 
 // defaults for the OADP subscription that will be created by the installer
@@ -323,9 +323,9 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 
 	values.Global.PullSecret = mch.Spec.ImagePullSecret
 
-	values.Global.DeployOnOCP = utils.DeployOnOCP()
-
 	values.Global.ImageRepository = utils.GetImageRepository(mch)
+
+	values.Global.DeployOnOCP = utils.DeployOnOCP()
 
 	// TODO: put this back later
 	// values.Global.HubSize = mch.Spec.HubSize
