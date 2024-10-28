@@ -1456,15 +1456,19 @@ func (r *MultiClusterHubReconciler) ingressDomain(
 }
 
 func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operatorv1.MultiClusterHub, ocpConsole,
-	isSTSEnabled bool,
-) error {
+	isSTSEnabled bool) error {
 	if err := r.cleanupAppSubscriptions(reqLogger, m); err != nil {
 		return err
 	}
 
 	for _, c := range operatorv1.MCHComponents {
-		if _, err := r.ensureNoComponent(context.TODO(), m, c, r.CacheSpec, isSTSEnabled); err != nil {
+		result, err := r.ensureNoComponent(context.TODO(), m, c, r.CacheSpec, isSTSEnabled)
+		if err != nil {
 			return err
+		}
+
+		if result != (ctrl.Result{}) {
+			return errors.NewBadRequest(fmt.Sprintf("Requeue needed for component: %v", c))
 		}
 	}
 
