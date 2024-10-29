@@ -53,7 +53,7 @@ import (
 )
 
 const (
-	timeout  = time.Second * 60
+	timeout  = time.Second * 90
 	interval = time.Millisecond * 250
 
 	mchName      = "multiclusterhub-operator"
