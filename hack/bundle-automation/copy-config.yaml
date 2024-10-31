@@ -1,9 +1,9 @@
 - repo_name: "cluster-permission"
   github_ref: "https://github.com/stolostron/cluster-permission.git"
+  branch: "release-2.13"
   charts:
     - name: "cluster-permission"
       chart-path: "chart/"
       always-or-toggle: "toggle"
-      branch: "release-2.13"
       imageMappings:
         cluster-permission: cluster_permission
