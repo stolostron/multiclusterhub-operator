@@ -7,8 +7,8 @@ global:
   pullSecret: null
 hubconfig:
   nodeSelector: null
+  ocpVersion: 4.12.0
   proxyConfigs: {}
   replicaCount: 1
   tolerations: []
-  ocpVersion: 4.12.0
 org: open-cluster-management
