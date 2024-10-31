@@ -180,12 +180,6 @@ rules:
   - watch
 - apiGroups:
   - ""
-  resources:
-  - secrets
-  verbs:
-  - create
-- apiGroups:
-  - ""
   resourceNames:
   - governance-policy-database
   - policy-encryption-key
@@ -195,36 +189,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - ""
-  resourceNames:
-  - open-cluster-management-compliance-history-api-recorder
-  resources:
-  - secrets
-  verbs:
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - serviceaccounts
-  verbs:
-  - create
-- apiGroups:
-  - ""
-  resourceNames:
-  - open-cluster-management-compliance-history-api-recorder
-  resources:
-  - serviceaccounts
-  verbs:
-  - delete
-  - get
-  - patch
-  - update
 - apiGroups:
   - policy.open-cluster-management.io
   resources:
@@ -261,7 +225,6 @@ rules:
   - rbac.authorization.k8s.io
   resourceNames:
   - open-cluster-management:cert-policy-controller-hub
-  - open-cluster-management:compliance-history-api-recorder
   - open-cluster-management:config-policy-controller-hub
   - open-cluster-management:policy-framework-hub
   resources:
@@ -281,7 +244,6 @@ rules:
   - rbac.authorization.k8s.io
   resourceNames:
   - open-cluster-management:cert-policy-controller-hub
-  - open-cluster-management:compliance-history-api-recorder
   - open-cluster-management:config-policy-controller-hub
   - open-cluster-management:policy-framework-hub
   resources:
