@@ -1,5 +1,12 @@
 # Copyright Contributors to the Open Cluster Management project
 
+ORG ?= stolostron
+REPO ?= installer-dev-tools
+BRANCH ?= main
+
+PIPELINE_REPO ?= pipeline
+PIPELINE_BRANCH ?= 2.10-integration
+
 .PHONY: update-manifest 
 
 deps:
@@ -26,20 +33,31 @@ prep-mock-install:
 	make mock-build-image PRODUCT_VERSION=$(VERSION) MOCK_IMAGE_REGISTRY=$(REGISTRY) MOCK_IMAGE_SHA="sha256:test"
 	echo "mock install prepped!"
 
-regenerate-charts-from-bundles: ## Regenerates the operator bundles
-	pip install -r hack/bundle-automation/requirements.txt
-	python3 ./hack/bundle-automation/generate-shell.py
+lint-operator-bundles: ## Lints the operator bundles
+	pip3 install -r hack/bundle-automation/requirements.txt
+	python3 ./hack/bundle-automation/generate-shell.py --lint-bundles --org $(ORG) --repo $(REPO) --branch $(BRANCH)
+
+regenerate-charts-from-bundles: ## Regenerates the operator charts from bundles
+	pip3 install -r hack/bundle-automation/requirements.txt
+	python3 ./hack/bundle-automation/generate-shell.py --update-charts-from-bundles --org $(ORG) --repo $(REPO) --branch $(BRANCH)
+
+regenerate-operator-sha-commits: ## Regenerates the operator bundles
+	pip3 install -r hack/bundle-automation/requirements.txt
+	python3 ./hack/bundle-automation/generate-shell.py --update-commits --org $(ORG) --repo $(REPO) --branch $(BRANCH) --pipeline-repo $(PIPELINE_REPO) --pipeline-branch $(PIPELINE_BRANCH)
 
 regenerate-charts: ## Regenerates the charts 
-	pip install -r hack/bundle-automation/chart-requirements.txt
-	python ./hack/bundle-automation/generate-charts.py --destination pkg/templates/
+	pip3 install -r hack/bundle-automation/chart-requirements.txt
+	python3 ./hack/bundle-automation/generate-shell.py --update-charts --org $(ORG) --repo $(REPO) --branch $(BRANCH)
 
 copy-charts: ## Regenerates the operator bundles
-	pip install -r hack/bundle-automation/requirements.txt
-	python3 ./hack/bundle-automation/copy-charts.py --destination pkg/templates/
+	pip3 install -r hack/bundle-automation/requirements.txt
+	python3 ./hack/bundle-automation/generate-shell.py --copy-charts --org $(ORG) --repo $(REPO) --branch $(BRANCH)
 
 # different from `in-cluster-install` (call no secrets, no observability-crd)
 mock-install: prereqs subscriptions docker-build docker-push deploy
+
+# different from `in-cluster-install` (call no secrets, no observability-crd)
+podman-mock-install: prereqs subscriptions podman-build podman-push deploy
 
 cr: 
 	oc apply -k config/samples
@@ -49,6 +67,8 @@ cr:
 full-catalog-install: manifests generate bundle bundle-build bundle-push catalog-build catalog-push prereqs subscriptions catalog
 
 full-dev-install: prereqs manifests generate update-manifest subscriptions docker-build docker-push deploy
+
+podman-full-dev-install: prereqs manifests generate update-manifest subscriptions podman-build podman-push deploy
 
 add-images: ## Retrieves latest manifest and injects image definitions directly into the deployment template
 	pip3 install -r ./hack/bundle-automation/requirements.txt
