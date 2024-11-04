@@ -234,6 +234,7 @@ package main
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=delete;get;list;update;watch
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes;routes/custom-host;routes/status,verbs=get;list;create;update;delete;deletecollection;watch;create
 //+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=searches,verbs=get;list;patch;update;watch
+//+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=searches,verbs=list;watch
 //+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=searches/finalizers,verbs=update
 //+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=searches/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=siteconfig.open-cluster-management.io,resources=clusterinstances,verbs=create;delete;get;list;patch;update;watch
