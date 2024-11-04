@@ -105,9 +105,6 @@ spec:
         command:
         - governance-policy-propagator
         args:
-        - "--compliance-history-api-host=0.0.0.0"
-        - "--compliance-history-api-cert=/var/run/compliance-history-api-cert/tls.crt"
-        - "--compliance-history-api-key=/var/run/compliance-history-api-cert/tls.key"
         - "--secure-metrics=true"
         - "--metrics-bind-address=0.0.0.0:8443"
         env:
@@ -140,18 +137,12 @@ spec:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
-        - mountPath: "/var/run/compliance-history-api-cert"
-          name: compliance-history-api-cert
-          readOnly: true
       volumes:
       - name: tmp
         emptyDir: {}
       - name: metrics-cert
         secret:
           secretName: grc-grc-metrics-cert
-      - name: compliance-history-api-cert
-        secret:
-          secretName: governance-policy-compliance-history-api-cert
       - name: cert
         secret:
           defaultMode: 420

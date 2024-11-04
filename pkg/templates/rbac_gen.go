@@ -31,14 +31,10 @@ package main
 //+kubebuilder:rbac:groups="",resources=pods;services;services/finalizers;endpoints;persistentvolumeclaims;events;configmaps;secrets,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=pods;services;services/finalizers;endpoints;persistentvolumeclaims;events;configmaps;secrets;serviceaccounts;namespaces;nodes,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=create
-//+kubebuilder:rbac:groups="",resources=secrets,verbs=create
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=create;get;list;watch;delete
-//+kubebuilder:rbac:groups="",resources=secrets,verbs=delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=delete;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
-//+kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=create
-//+kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=delete;get;patch;update
 //+kubebuilder:rbac:groups="",resources=serviceaccounts/token,verbs=create
 //+kubebuilder:rbac:groups="",resources=services,verbs=list
 //+kubebuilder:rbac:groups="";events.k8s.io,resources=events,verbs=create;patch;update
