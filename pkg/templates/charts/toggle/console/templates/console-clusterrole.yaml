@@ -274,3 +274,11 @@ rules:
   - watch
   resources:
   - multiclusterengines
+
+- apiGroups:
+    - search.open-cluster-management.io
+  verbs:
+    - list
+    - watch
+  resources:
+    - searches
