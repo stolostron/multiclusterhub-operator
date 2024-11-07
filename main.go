@@ -187,6 +187,7 @@ func main() {
 					&corev1.ServiceAccount{},
 					&olmapi.PackageManifest{},
 					&ocmapi.ClusterManagementAddOn{},
+					&subv1alpha1.ClusterServiceVersion{},
 				},
 			},
 		},
