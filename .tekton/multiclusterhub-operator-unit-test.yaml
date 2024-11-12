@@ -16,6 +16,8 @@ spec:
       name: EXPECTED_OUTPUT
       default: ""
       type: string
+  workspaces:
+    - name: shared-workspace
   tasks:
     - name: unit-test
       description: Run unit tests, and read results
@@ -28,71 +30,72 @@ spec:
           value: $(params.EXPECTED_OUTPUT)
       retries: 3
       taskSpec:
+        workspaces:
+          - name: shared-workspace
         params:
-        - name: SNAPSHOT
-        - name: NAMESPACE
-        - name: EXPECTED_OUTPUT
-        results:
-        - name: TEST_OUTPUT
-          description: Test output
-        steps:
-        - image: registry.redhat.io/openshift4/ose-cli:latest
-          env:
           - name: SNAPSHOT
-            value: $(params.SNAPSHOT)
           - name: NAMESPACE
-            value: $(params.NAMESPACE)
           - name: EXPECTED_OUTPUT
-            value: $(params.EXPECTED_OUTPUT)
-          script: |
-            # Install Deps
-            dnf -y install jq git make
+        results:
+          - name: TEST_OUTPUT
+            description: Test output
+        steps:
+          - name: install-deps
+            image: registry.redhat.io/openshift4/ose-cli:latest
+            script: |
+              # Install Deps
+              dnf -y install jq git make
+            workspaces:
+              - name: shared-workspace
 
-            # Install golang with a given version
-            export GOVERSION=1.22.4
-            curl -O -J https://dl.google.com/go/go$GOVERSION.linux-amd64.tar.gz
-            rm -rf /usr/local/go && tar -C /usr/local -xzf go$GOVERSION.linux-amd64.tar.gz
-
-            # Runtime Env Config
-            export GOPATH=$HOME/.go
-            export PATH="$PATH:$GOPATH/bin"
-            go install github.com/onsi/ginkgo/ginkgo@latest
-            go install gotest.tools/gotestsum@latest
-
-            # Set Vars
-            TARGET_COMPONENT_NAME="multiclusterhub-operator"
-            REPO_URL=$(echo $SNAPSHOT | jq -r --arg name "$TARGET_COMPONENT_NAME" '.components[] | select(.name == $name) | .source.git.url')
-            REPO_COMMIT=$(echo $SNAPSHOT | jq -r --arg name "$TARGET_COMPONENT_NAME" '.components[] | select(.name == $name) | .source.git.revision')
-            test_output_file=${PWD}/test_output.json
-
-            # Log Vars for Tracibility
-            echo "REPO_URL: $REPO_URL"
-            echo "TARGET_COMPONENT_NAME: $TARGET_COMPONENT_NAME"
-            echo "REPO_COMMIT: $REPO_COMMIT"
-            echo "SNAPSHOT: $(echo $SNAPSHOT | jq)"
-
-            # Clone Repo and checkout at snapshot commit
-            git clone $REPO_URL $TARGET_COMPONENT_NAME
-            cd $TARGET_COMPONENT_NAME
-            git checkout $REPO_COMMIT
-
-            # Run unit tests with JSON output
-            make test unit_test_json_output="$test_output_file"
-
-            # Read, process, and write output in accepted format
-            # Formatting docs: https://redhat-appstudio.github.io/book/ADR/0030-tekton-results-naming-convention.html#test_output-schema-validation
-            FAILURES=$(cat $test_output_file | jq 'select(.Action == "fail")' | jq -r --slurp 'length')
-            SUCCESSES=$(cat $test_output_file | jq 'select(.Action == "pass")' | jq -r --slurp 'length')
-            # Hard-code warnings
-            WARNINGS=0
-            RESULT="$(if [[ $FAILURES == 0 ]]; then echo "SUCCESS"; else echo "FAILURE"; fi)"
-            TIMESTAMP="$(date +%s)"
-            TEST_OUTPUT=$(jq -r --null-input \
-              --arg failures $FAILURES \
-              --arg successes $SUCCESSES \
-              --arg warnings $WARNINGS \
-              --arg result "$RESULT" \
-              --arg timestamp "$TIMESTAMP" \
-              '{"result": $result, "successes": $successes|tonumber, "failures": $failures|tonumber, "warnings": $warnings|tonumber, "timestamp": $timestamp}' \
-            )
-            echo -n "$TEST_OUTPUT" | tee $(results.TEST_OUTPUT.path)
+          - name: run-tests
+            image: golang:1.22.4 # Use Go 1.22.4 directly from the Go image
+            env:
+              - name: SNAPSHOT
+                value: $(params.SNAPSHOT)
+              - name: NAMESPACE
+                value: $(params.NAMESPACE)
+              - name: EXPECTED_OUTPUT
+                value: $(params.EXPECTED_OUTPUT)
+            script: |
+              # Runtime Env Config
+              go install github.com/onsi/ginkgo/ginkgo@latest
+              go install gotest.tools/gotestsum@latest
+  
+              # Set Vars
+              TARGET_COMPONENT_NAME="multiclusterhub-operator"
+              REPO_URL=$(echo $SNAPSHOT | jq -r --arg name "$TARGET_COMPONENT_NAME" '.components[] | select(.name == $name) | .source.git.url')
+              REPO_COMMIT=$(echo $SNAPSHOT | jq -r --arg name "$TARGET_COMPONENT_NAME" '.components[] | select(.name == $name) | .source.git.revision')
+              test_output_file=${PWD}/test_output.json
+  
+              # Log Vars for Tracibility
+              echo "REPO_URL: $REPO_URL"
+              echo "TARGET_COMPONENT_NAME: $TARGET_COMPONENT_NAME"
+              echo "REPO_COMMIT: $REPO_COMMIT"
+              echo "SNAPSHOT: $(echo $SNAPSHOT | jq)"
+  
+              # Clone Repo and checkout at snapshot commit
+              git clone $REPO_URL $TARGET_COMPONENT_NAME
+              cd $TARGET_COMPONENT_NAME
+              git checkout $REPO_COMMIT
+  
+              # Run unit tests with JSON output
+              make test unit_test_json_output="$test_output_file"
+  
+              # Read, process, and write output in accepted format
+              # Formatting docs: https://redhat-appstudio.github.io/book/ADR/0030-tekton-results-naming-convention.html#test_output-schema-validation
+              FAILURES=$(cat $test_output_file | jq 'select(.Action == "fail")' | jq -r --slurp 'length')
+              SUCCESSES=$(cat $test_output_file | jq 'select(.Action == "pass")' | jq -r --slurp 'length')
+              # Hard-code warnings
+              WARNINGS=0
+              RESULT="$(if [[ $FAILURES == 0 ]]; then echo "SUCCESS"; else echo "FAILURE"; fi)"
+              TIMESTAMP="$(date +%s)"
+              TEST_OUTPUT=$(jq -r --null-input \
+                --arg failures $FAILURES \
+                --arg successes $SUCCESSES \
+                --arg warnings $WARNINGS \
+                --arg result "$RESULT" \
+                --arg timestamp "$TIMESTAMP" \
+                '{"result": $result, "successes": $successes|tonumber, "failures": $failures|tonumber, "warnings": $warnings|tonumber, "timestamp": $timestamp}' \
+              )
+              echo -n "$TEST_OUTPUT" | tee $(results.TEST_OUTPUT.path)
