@@ -1,7 +1,7 @@
 kind: Pipeline
 apiVersion: tekton.dev/v1
 metadata:
-  name: multiclusterhub-operator-acm-9.9-unit-test
+  name: multiclusterhub-operator-acm-99-unit-test
 spec:
   params:
     - description: 'Snapshot of the application'
