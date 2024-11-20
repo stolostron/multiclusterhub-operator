@@ -1,7 +1,7 @@
 kind: Pipeline
 apiVersion: tekton.dev/v1
 metadata:
-  name: multiclusterhub-operator-acm-9.9-unit-test
+  name: multiclusterhub-operator-unit-test
 spec:
   params:
     - description: 'Snapshot of the application'
@@ -20,7 +20,6 @@ spec:
     - name: shared-workspace
   tasks:
     - name: unit-test
-      description: Run unit tests, and read results
       params:
         - name: SNAPSHOT
           value: $(params.SNAPSHOT)
@@ -30,15 +29,12 @@ spec:
           value: $(params.EXPECTED_OUTPUT)
       retries: 3
       taskSpec:
-        workspaces:
-          - name: shared-workspace
         params:
           - name: SNAPSHOT
           - name: NAMESPACE
           - name: EXPECTED_OUTPUT
         results:
           - name: TEST_OUTPUT
-            description: Test output
         steps:
           - name: install-deps
             image: registry.redhat.io/openshift4/ose-cli:latest
@@ -47,7 +43,7 @@ spec:
               dnf -y install jq git make
             workspaces:
               - name: shared-workspace
-
+  
           - name: run-tests
             image: golang:1.22.4 # Use Go 1.22.4 directly from the Go image
             env:
@@ -61,7 +57,7 @@ spec:
               # Runtime Env Config
               go install github.com/onsi/ginkgo/ginkgo@latest
               go install gotest.tools/gotestsum@latest
-  
+
               # Set Vars
               TARGET_COMPONENT_NAME="multiclusterhub-operator"
               REPO_URL=$(echo $SNAPSHOT | jq -r --arg name "$TARGET_COMPONENT_NAME" '.components[] | select(.name == $name) | .source.git.url')
@@ -99,4 +95,3 @@ spec:
                 '{"result": $result, "successes": $successes|tonumber, "failures": $failures|tonumber, "warnings": $warnings|tonumber, "timestamp": $timestamp}' \
               )
               echo -n "$TEST_OUTPUT" | tee $(results.TEST_OUTPUT.path)
-
