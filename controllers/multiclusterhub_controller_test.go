@@ -63,7 +63,10 @@ const (
 var (
 	ctrlCtx    context.Context
 	ctrlCancel context.CancelFunc
-	recon      = MultiClusterHubReconciler{Client: fake.NewClientBuilder().Build()}
+	recon      = MultiClusterHubReconciler{
+		Client: fake.NewClientBuilder().Build(),
+		Scheme: runtime.NewScheme(),
+	}
 )
 
 func ApplyPrereqs(k8sClient client.Client) {
