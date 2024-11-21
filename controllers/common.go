@@ -534,12 +534,11 @@ func (r *MultiClusterHubReconciler) GetCSVFromSubscription(sub *subv1alpha1.Subs
 	if sub == nil {
 		return nil, fmt.Errorf("cannot find CSV from nil Subscription")
 	}
+
 	mceSubscription := &subv1alpha1.Subscription{}
-	err := r.Client.Get(context.Background(), types.NamespacedName{
-		Name:      sub.GetName(),
-		Namespace: sub.GetNamespace(),
-	}, mceSubscription)
-	if err != nil {
+	if err := r.Client.Get(context.Background(), types.NamespacedName{
+		Name: sub.GetName(), Namespace: sub.GetNamespace()}, mceSubscription); err != nil {
+		log.Error(err, "Failed to get MCE Subscription", "Name", sub.GetName(), "Namespace", sub.GetNamespace())
 		return nil, err
 	}
 
@@ -549,18 +548,20 @@ func (r *MultiClusterHubReconciler) GetCSVFromSubscription(sub *subv1alpha1.Subs
 	}
 
 	mceCSV := &subv1alpha1.ClusterServiceVersion{}
-	err = r.Client.Get(context.Background(), types.NamespacedName{
-		Name:      currentCSV,
-		Namespace: sub.GetNamespace(),
-	}, mceCSV)
-	if err != nil {
+	if err := r.Client.Get(context.Background(), types.NamespacedName{
+		Name: currentCSV, Namespace: sub.GetNamespace()}, mceCSV); err != nil {
+		log.Error(err, "Failed to get MCE CSV", "Name", currentCSV, "Namespace", sub.GetNamespace())
 		return nil, err
 	}
-	csv, err := runtime.DefaultUnstructuredConverter.ToUnstructured(mceCSV)
-	if err != nil {
+
+	csv := &unstructured.Unstructured{}
+	if err := r.Scheme.Convert(mceCSV, csv, nil); err != nil {
+		log.Error(err, "Failed to convert MCE CSV to unstructured", "Name", mceCSV.GetName(), "Namespace",
+			mceCSV.GetNamespace())
 		return nil, err
 	}
-	return &unstructured.Unstructured{Object: csv}, nil
+
+	return csv, nil
 }
 
 // mergeErrors combines errors into a single string

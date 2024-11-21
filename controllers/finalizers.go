@@ -104,23 +104,26 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 		if err == nil { // CSV Exists
 			err = r.Client.Delete(ctx, csv)
 			if err != nil && !errors.IsNotFound(err) {
+				log.Error(err, "Failed to delete MCE CSV", "Name", csv.GetName(), "Namespace",
+					csv.GetNamespace())
 				return err
 			}
-			err = r.Client.Get(ctx,
-				types.NamespacedName{Name: csv.GetName(), Namespace: namespace},
-				csv)
+
+			err = r.Client.Get(ctx, types.NamespacedName{Name: csv.GetName(), Namespace: namespace}, csv)
 			if err == nil {
 				return fmt.Errorf("CSV has not yet been terminated")
 			}
 		}
 
-		err = r.Client.Get(ctx,
-			types.NamespacedName{Name: mceSub.Name, Namespace: namespace},
-			&subv1alpha1.Subscription{})
-		if err == nil {
+		err = r.Client.Get(ctx, types.NamespacedName{
+			Name: mceSub.Name, Namespace: namespace}, &subv1alpha1.Subscription{})
 
+		if err == nil {
 			err = r.Client.Delete(ctx, mceSub)
 			if err != nil && !errors.IsNotFound(err) {
+				log.Error(err, "Failed to delete MCE Subscription", "Name", mceSub.GetName(), "Namespace",
+					mceSub.GetNamespace())
+
 				return err
 			}
 			return fmt.Errorf("subscription has not yet been terminated")
@@ -129,6 +132,7 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 
 	err = r.Client.Delete(ctx, multiclusterengine.OperatorGroup())
 	if err != nil && !errors.IsNotFound(err) {
+		log.Error(err, "Failed to delete MCE OperatorGroup", "Name", multiclusterengine.OperatorGroup().GetName())
 		return err
 	}
 
@@ -146,6 +150,7 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 		r.Log.Info("MCE shares namespace with MCH; skipping namespace termination")
 	}
 
+	log.Info("MultiClusterEngine finalized")
 	return nil
 }
 func (r *MultiClusterHubReconciler) cleanupNamespaces(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
