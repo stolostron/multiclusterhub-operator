@@ -71,6 +71,7 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 	if err != nil && !apimeta.IsNoMatchError(err) {
 		return err
 	}
+
 	if mce != nil && !multiclusterengine.MCECreatedByMCH(mce, m) {
 		r.Log.Info("Preexisting MCE exists, skipping MCE finalization")
 		return nil
@@ -93,6 +94,7 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 	if err != nil {
 		return err
 	}
+
 	if mceSub != nil && !multiclusterengine.CreatedByMCH(mceSub, m) {
 		r.Log.Info("Preexisting MCE subscription exists, skipping MCE subscription finalization")
 		return nil

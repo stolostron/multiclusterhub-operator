@@ -65,7 +65,7 @@ var (
 	ctrlCancel context.CancelFunc
 	recon      = MultiClusterHubReconciler{
 		Client: fake.NewClientBuilder().Build(),
-		Scheme: runtime.NewScheme(),
+		Scheme: scheme.Scheme,
 	}
 )
 
