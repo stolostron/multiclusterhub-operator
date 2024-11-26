@@ -556,11 +556,13 @@ func (r *MultiClusterHubReconciler) GetCSVFromSubscription(sub *subv1alpha1.Subs
 	if err != nil {
 		return nil, err
 	}
-	csv, err := runtime.DefaultUnstructuredConverter.ToUnstructured(mceCSV)
-	if err != nil {
+
+	csv := &unstructured.Unstructured{}
+	if err := r.Scheme.Convert(mceCSV, csv, nil); err != nil {
 		return nil, err
 	}
-	return &unstructured.Unstructured{Object: csv}, nil
+
+	return csv, nil
 }
 
 // mergeErrors combines errors into a single string
