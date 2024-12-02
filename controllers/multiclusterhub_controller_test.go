@@ -62,7 +62,14 @@ const (
 	mchNamespace = "open-cluster-management"
 )
 
-var recon = MultiClusterHubReconciler{Client: fake.NewClientBuilder().Build()}
+var (
+	ctrlCtx    context.Context
+	ctrlCancel context.CancelFunc
+	recon      = MultiClusterHubReconciler{
+		Client: fake.NewClientBuilder().Build(),
+		Scheme: scheme.Scheme,
+	}
+)
 
 func ApplyPrereqs(k8sClient client.Client) {
 	By("Applying Namespace")

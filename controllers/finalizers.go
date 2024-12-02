@@ -146,6 +146,7 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 		r.Log.Info("MCE shares namespace with MCH; skipping namespace termination")
 	}
 
+	log.Info("MultiClusterEngine finalized")
 	return nil
 }
 func (r *MultiClusterHubReconciler) cleanupNamespaces(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
