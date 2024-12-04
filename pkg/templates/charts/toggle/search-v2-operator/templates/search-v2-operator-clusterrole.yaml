@@ -100,6 +100,7 @@ rules:
   verbs:
   - create
   - delete
+  - get
 - apiGroups:
   - authorization.k8s.io
   resources:
@@ -184,6 +185,14 @@ rules:
   - get
   - list
   - update
+- apiGroups:
+  - rbac.open-cluster-management.io
+  resources:
+  - clusterpermissions
+  verbs:
+  - create
+  - delete
+  - get
 - apiGroups:
   - search.open-cluster-management.io
   resources:
