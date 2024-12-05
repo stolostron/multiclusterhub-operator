@@ -75,8 +75,12 @@ spec:
                   new bundle of trusted certificates for the host.
                 properties:
                   name:
+                    default: ""
                     description: |-
                       Name of the referent.
+                      This field is effectively required, but due to backwards compatibility is
+                      allowed to be empty. Instances of this type with an empty value here are
+                      almost certainly wrong.
                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                     type: string
                 type: object
@@ -170,8 +174,12 @@ spec:
                     referenced object inside the same namespace.
                   properties:
                     name:
+                      default: ""
                       description: |-
                         Name of the referent.
+                        This field is effectively required, but due to backwards compatibility is
+                        allowed to be empty. Instances of this type with an empty value here are
+                        almost certainly wrong.
                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                       type: string
                   type: object
@@ -227,6 +235,7 @@ spec:
                 - OVNKubernetes
                 type: string
               nodes:
+                description: List of node objects
                 items:
                   description: NodeSpec
                   properties:
@@ -526,12 +535,44 @@ spec:
                   pulling images.
                 properties:
                   name:
+                    default: ""
                     description: |-
                       Name of the referent.
+                      This field is effectively required, but due to backwards compatibility is
+                      allowed to be empty. Instances of this type with an empty value here are
+                      almost certainly wrong.
                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
+              reinstall:
+                description: Reinstall specifications
+                properties:
+                  generation:
+                    description: |-
+                      Generation specifies the desired generation for the reinstallation operation.
+                      Updating this field triggers a new reinstall request.
+                    type: string
+                  preservationMode:
+                    default: None
+                    description: |-
+                      PreservationMode defines the strategy for data preservation during reinstallation.
+                      Supported values:
+                      - None: No data will be preserved.
+                      - All: All Secrets and ConfigMaps in the ClusterInstance namespace labeled with the PreservationLabelKey will be
+                        preserved.
+                      - ClusterIdentity: Only Secrets and ConfigMaps in the ClusterInstance namespace labeled with both the
+                        PreservationLabelKey and the ClusterIdentityLabelValue will be preserved.
+                      This field ensures critical cluster identity data is preserved when required.
+                    enum:
+                    - None
+                    - All
+                    - ClusterIdentity
+                    type: string
+                required:
+                - generation
+                - preservationMode
+                type: object
               serviceNetwork:
                 description: ServiceNetwork is the list of IP address pools for services.
                 items:
@@ -590,8 +631,12 @@ spec:
                 description: Reference to the associated ClusterDeployment resource.
                 properties:
                   name:
+                    default: ""
                     description: |-
                       Name of the referent.
+                      This field is effectively required, but due to backwards compatibility is
+                      allowed to be empty. Instances of this type with an empty value here are
+                      almost certainly wrong.
                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                     type: string
                 type: object
@@ -748,6 +793,50 @@ spec:
                 description: Track the observed generation to avoid unnecessary reconciles
                 format: int64
                 type: integer
+              reinstall:
+                description: Reinstall status information.
+                properties:
+                  history:
+                    description: |-
+                      History maintains a record of all previous reinstallation attempts.
+                      Each entry captures details such as the generation, timestamp, and the differences in the ClusterInstance
+                      specification that triggered the reinstall.
+                      This field is useful for debugging, auditing, and tracking reinstallation events over time.
+                    items:
+                      description: ReinstallHistory represents a record of a reinstallation
+                        event for a ClusterInstance.
+                      properties:
+                        clusterInstanceSpecDiff:
+                          description: |-
+                            ClusterInstanceSpecDiff provides a JSON representation of the differences between the
+                            ClusterInstance spec at the time of reinstallation and the previous spec.
+                            This field helps in tracking changes that triggered the reinstallation.
+                          type: string
+                        generation:
+                          description: |-
+                            Generation specifies the generation of the ClusterInstance at the time of the reinstallation.
+                            This value corresponds to the ReinstallSpec.Generation field associated with the reinstallation request.
+                          type: string
+                        timestamp:
+                          description: Timestamp indicates the date and time when
+                            the reinstallation occurred.
+                          format: date-time
+                          type: string
+                      required:
+                      - clusterInstanceSpecDiff
+                      - generation
+                      - timestamp
+                      type: object
+                    type: array
+                  observedGeneration:
+                    description: |-
+                      ObservedGeneration is the generation of the ClusterInstance that has been processed for reinstallation.
+                      It corresponds to the Generation field in ReinstallSpec and indicates the latest reinstall request that
+                      the controller has acted upon.
+                    type: string
+                required:
+                - observedGeneration
+                type: object
             type: object
         type: object
     served: true
