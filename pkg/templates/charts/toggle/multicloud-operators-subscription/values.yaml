@@ -1,4 +1,5 @@
 global:
+  deployOnOCP: true
   hubSize: Small
   imageOverrides:
     multicloud_integrations: ''

@@ -4,6 +4,7 @@
 
 org: open-cluster-management
 global:
+  deployOnOCP: true
   imageOverrides:
     console: ""
   templateOverrides: {}

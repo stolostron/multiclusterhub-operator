@@ -31,31 +31,32 @@ type Values struct {
 }
 
 type Global struct {
+	Channel             string               `json:"channel" structs:"Channel"`
+	DeployOnOCP         bool                 `json:"deployOnOCP" structs:"deployOnOCP"`
+	HubSize             v1.HubSize           `json:"hubSize" structs:"hubSize" yaml:"hubSize"`
 	ImageOverrides      map[string]string    `json:"imageOverrides" structs:"imageOverrides"`
-	TemplateOverrides   map[string]string    `json:"templateOverrides" structs:"templateOverrides"`
+	ImageRepository     string               `json:"imageRepository" structs:"namespace"`
+	InstallPlanApproval subv1alpha1.Approval `json:"installPlanApproval" structs:"installPlanApproval"`
+	MinOADPChannel      string               `json:"minOADPChannel" structs:"minOADPChannel"`
+	Name                string               `json:"name" structs:"name"`
+	Namespace           string               `json:"namespace" structs:"namespace"`
 	PullPolicy          string               `json:"pullPolicy" structs:"pullPolicy"`
 	PullSecret          string               `json:"pullSecret" structs:"pullSecret"`
-	Namespace           string               `json:"namespace" structs:"namespace"`
-	ImageRepository     string               `json:"imageRepository" structs:"namespace"`
-	Name                string               `json:"name" structs:"name"`
-	Channel             string               `json:"channel" structs:"Channel"`
-	MinOADPChannel      string               `json:"minOADPChannel" structs:"minOADPChannel"`
-	InstallPlanApproval subv1alpha1.Approval `json:"installPlanApproval" structs:"installPlanApproval"`
 	Source              string               `json:"source" structs:"source"`
 	SourceNamespace     string               `json:"sourceNamespace" structs:"sourceNamespace"`
-	HubSize             v1.HubSize           `json:"hubSize" structs:"hubSize" yaml:"hubSize"`
+	TemplateOverrides   map[string]string    `json:"templateOverrides" structs:"templateOverrides"`
 }
 
 type HubConfig struct {
 	ClusterSTSEnabled bool              `json:"clusterSTSEnabled" structs:"clusterSTSEnabled"`
+	HubVersion        string            `json:"hubVersion" structs:"hubVersion"`
 	NodeSelector      map[string]string `json:"nodeSelector" structs:"nodeSelector"`
+	OCPIngress        string            `json:"ocpIngress" structs:"ocpIngress"`
+	OCPVersion        string            `json:"ocpVersion" structs:"ocpVersion"`
 	ProxyConfigs      map[string]string `json:"proxyConfigs" structs:"proxyConfigs"`
 	ReplicaCount      int               `json:"replicaCount" structs:"replicaCount"`
-	Tolerations       []Toleration      `json:"tolerations" structs:"tolerations"`
-	OCPVersion        string            `json:"ocpVersion" structs:"ocpVersion"`
-	HubVersion        string            `json:"hubVersion" structs:"hubVersion"`
-	OCPIngress        string            `json:"ocpIngress" structs:"ocpIngress"`
 	SubscriptionPause string            `json:"subscriptionPause" structs:"subscriptionPause"`
+	Tolerations       []Toleration      `json:"tolerations" structs:"tolerations"`
 }
 
 type Toleration struct {
@@ -69,8 +70,8 @@ type Toleration struct {
 // defaults for the OADP subscription that will be created by the installer
 const (
 	defaultOADPChannel         = "stable-1.4" // This will also be the minOADPChannel (min version we expect to be installed)
-	defaultOADPName            = "redhat-oadp-operator"
 	defaultOADPInstallPlan     = "Automatic"
+	defaultOADPName            = "redhat-oadp-operator"
 	defaultOADPSource          = "redhat-operators"
 	defaultOADPSourceNamespace = "openshift-marketplace"
 )
@@ -323,6 +324,8 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 	values.Global.PullSecret = mch.Spec.ImagePullSecret
 
 	values.Global.ImageRepository = utils.GetImageRepository(mch)
+
+	values.Global.DeployOnOCP = utils.DeployOnOCP()
 
 	// TODO: put this back later
 	// values.Global.HubSize = mch.Spec.HubSize
