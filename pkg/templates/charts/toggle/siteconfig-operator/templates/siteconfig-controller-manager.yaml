@@ -83,7 +83,7 @@ spec:
         - --metrics-bind-address=127.0.0.1:8080
         - --leader-elect
         command:
-        - /usr/local/bin/manager
+        - /usr/local/bin/siteconfig-manager
         env:
 {{- if .Values.hubconfig.proxyConfigs }}
         - name: HTTP_PROXY
