@@ -115,6 +115,16 @@ var DefaultSSLCiphers = []string{
 	"ECDHE-RSA-AES128-GCM-SHA256",
 }
 
+var GlobalDeployOnOCP = true
+
+func SetDeployOnOCP(v bool) {
+	GlobalDeployOnOCP = v
+}
+
+func DeployOnOCP() bool {
+	return GlobalDeployOnOCP
+}
+
 // CertManagerNS returns the namespace to deploy cert manager objects
 func CertManagerNS(m *operatorsv1.MultiClusterHub) string {
 	if m.Spec.SeparateCertificateManagement {
