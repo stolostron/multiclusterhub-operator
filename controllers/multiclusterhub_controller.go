@@ -416,6 +416,11 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 
+	result, err = r.openShiftApiUrl(ctx, multiClusterHub)
+	if err != nil {
+		return result, err
+	}
+
 	result, err = r.createTrustBundleConfigmap(ctx, multiClusterHub)
 	if err != nil {
 		return result, err

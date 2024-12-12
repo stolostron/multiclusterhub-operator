@@ -75,6 +75,9 @@ func ApplyPrereqs(k8sClient client.Client) {
 	By("Creating Ingress")
 	Expect(k8sClient.Create(ctx, resources.OCPIngress())).Should(Succeed())
 
+	// By("Creating Infrastructure")
+	// Expect(k8sClient.Create(ctx, resources.OCPInfrastructure())).Should(Succeed())
+
 	By("Applying Namespace")
 	Expect(k8sClient.Create(ctx, resources.OCMNamespace())).Should(Succeed())
 	Expect(k8sClient.Create(ctx, resources.MonitoringNamespace())).Should(Succeed())
