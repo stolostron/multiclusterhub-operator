@@ -56,6 +56,7 @@ type HubConfig struct {
 	HubVersion        string            `json:"hubVersion" structs:"hubVersion"`
 	OCPIngress        string            `json:"ocpIngress" structs:"ocpIngress"`
 	SubscriptionPause string            `json:"subscriptionPause" structs:"subscriptionPause"`
+	EnabledKey        map[string]bool   `json:"enabledKey" structs:"enabledKey"`
 }
 
 type Toleration struct {
@@ -345,6 +346,18 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 	values.HubConfig.OCPIngress = os.Getenv("INGRESS_DOMAIN")
 
 	values.HubConfig.SubscriptionPause = utils.GetDisableClusterImageSets(mch)
+
+	enabledKeys := map[string]bool{}
+
+	for _, component := range v1.MCHComponents {
+		if mch.Enabled(component) {
+			enabledKeys[component] = true
+		} else {
+			enabledKeys[component] = false
+		}
+	}
+
+	values.HubConfig.EnabledKey = enabledKeys
 
 	values.Org = "open-cluster-management"
 
