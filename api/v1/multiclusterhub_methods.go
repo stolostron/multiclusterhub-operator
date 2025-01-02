@@ -30,6 +30,7 @@ const (
 	MultiClusterObservability string = "multicluster-observability"
 	Repo                      string = "multiclusterhub-repo"
 	Search                    string = "search"
+	FlightControl             string = "flight-control"
 	SiteConfig                string = "siteconfig"
 	SubmarinerAddon           string = "submariner-addon"
 	Volsync                   string = "volsync"
@@ -69,6 +70,7 @@ var MCHComponents = []string{
 	MCH,                // Adding MCH component to ensure legacy resources are cleaned up properly.
 	MultiClusterObservability,
 	Search,
+	FlightControl,
 	SiteConfig,
 	SubmarinerAddon,
 	Volsync,
@@ -168,6 +170,7 @@ func GetDefaultDisabledComponents() ([]string, error) {
 	defaultDisabledComponents := []string{
 		ClusterBackup,
 		SiteConfig,
+		FlightControl,
 	}
 	return defaultDisabledComponents, nil
 }
