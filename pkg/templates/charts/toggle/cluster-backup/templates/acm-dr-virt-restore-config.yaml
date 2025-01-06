@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: acm-dr-virt-restore-config
+  namespace: open-cluster-management-backup
+data:
+  ###### Configuration for the acm-dr-virt-restore policy, defining the vms to be restored on this cluster ###
+  ###### replace <clusterID> in the properties names with the id of the cluster where the restore should be executed
+  ########################################################
+
+  # define the name of the velero restore to be created on the cluster with ID clusterID; for example restore-acm-rho-virt-schedule-twice-a-day-20241211120055
+  # set this to "" if this is not a restore operation for the cluster with ID clusterID
+  # for example, for a cluster ID 41965c15-1d7e-41c7-b038-ce09372d9ab9, the property name is 41965c15-1d7e-41c7-b038-ce09372d9ab9_restoreName
+  # 41965c15-1d7e-41c7-b038-ce09372d9ab9_restoreName: ""
+  #clusterID_restoreName: ""
+
+  # define the list of VM UID to be restored  on the cluster with ID clusterID; enter the UIDs separated by space
+  # for example, for a cluster ID 41965c15-1d7e-41c7-b038-ce09372d9ab9, the property name is 41965c15-1d7e-41c7-b038-ce09372d9ab9_vmsUID
+  # 41965c15-1d7e-41c7-b038-ce09372d9ab9_vmsUID: "uid1 uid2"
+  #clusterID_vmsUID: "uid1 uid2"
+  
+  # clusterID_backupName is the name of the backup to restore on the cluster with ID clusterID
+  # for example, for a cluster ID 41965c15-1d7e-41c7-b038-ce09372d9ab9, the property name is 41965c15-1d7e-41c7-b038-ce09372d9ab9_backupName
+  # 41965c15-1d7e-41c7-b038-ce09372d9ab9_backupName: acm-rho-virt-schedule-twice-a-day-20241211120055 
+  #clusterID_backupName: backupName
