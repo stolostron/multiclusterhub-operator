@@ -215,7 +215,7 @@ spec:
                     metadata:
                       name: {{ `{{ $credentialsName }}` }}
                       namespace: {{ `{{ $ns }}` }}
-                    data: '{{hub copySecretData "" (fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "credentials_hub_secret_name") hub}}'
+                    data: {{ `'{{hub copySecretData "" (fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "credentials_hub_secret_name") hub}}'` }}
 
                 - complianceType: musthave
                   objectDefinition:
@@ -252,9 +252,9 @@ spec:
                     apiVersion: oadp.openshift.io/v1alpha1
                     kind: DataProtectionApplication
                     metadata:
-                      name: {{hub fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "dpa_name" hub}}
+                      name: {{ `{{hub fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "dpa_name" hub}}` }}
                       namespace: {{ `{{ $ns }}` }}
-                    spec: '{{hub (fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "dpa_spec") | toLiteral hub}}'
+                    spec: {{ `'{{hub (fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "dpa_spec") | toLiteral hub}}'` }}
                   {{ `{{- end }}` }}
                 {{ `{{- end }}` }}
                 {{ `{{- end }}` }}

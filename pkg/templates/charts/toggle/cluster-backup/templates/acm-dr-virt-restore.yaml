@@ -51,7 +51,7 @@ spec:
                     metadata:
                       name: {{ `{{ $cls_restore_configmap_name }}` }}
                       namespace: {{ `{{ $ns }}` }}
-                    data: '{{hub copyConfigMapData "" (fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "restore_hub_config_name") hub}}'
+                    data: {{ ` '{{hub copyConfigMapData "" (fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "restore_hub_config_name") hub}}'` }}
             {{ `{{- end }}` }}
           remediationAction: enforce
           severity: high

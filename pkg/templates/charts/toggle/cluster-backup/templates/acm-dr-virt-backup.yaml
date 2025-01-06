@@ -51,7 +51,7 @@ spec:
                     metadata:
                       name: "acm-virt-config-cls"
                       namespace: {{ `{{ $ns }}` }}
-                    data: '{{hub copyConfigMapData "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) hub}}'
+                    data: {{ `'{{hub copyConfigMapData "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) hub}}'` }}
 
                 - complianceType: mustonlyhave
                   objectDefinition:
@@ -60,7 +60,7 @@ spec:
                     metadata:
                       name: {{ `{{ $cron_schedule_configmap_name }}` }}
                       namespace: {{ `{{ $ns }}` }}
-                    data: '{{hub copyConfigMapData "" (fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "schedule_hub_config_name") hub}}'
+                    data: {{ `'{{hub copyConfigMapData "" (fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "schedule_hub_config_name") hub}}'` }}
             {{ `{{- end }}` }}
           remediationAction: enforce
           severity: high
