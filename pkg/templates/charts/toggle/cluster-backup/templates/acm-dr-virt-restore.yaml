@@ -1,0 +1,225 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: acm-dr-virt-restore
+  namespace: open-cluster-management-backup
+  annotations:
+    policy.open-cluster-management.io/categories: CA Security Assessment and Authorization
+    policy.open-cluster-management.io/controls: CA-2 Security Assessments, CA-7 Continuous Monitoring
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+    policy.open-cluster-management.io/description: |
+      Creates a velero Restore using the restore_hub_config_name ConfigMap property.
+spec:
+  dependencies:
+  - apiVersion: policy.open-cluster-management.io/v1
+    compliance: Compliant
+    kind: Policy
+    name: acm-dr-virt-install
+  disabled: false
+  policy-templates:                                                                                                                                             
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: create-restore-config
+        spec:
+          object-templates-raw: |
+            {{ `{{- /* check if velero is installed  */ -}}` }}
+            {{ `{{- $sch_crd_name := "schedules.velero.io" }}` }}
+            {{ `{{- $sch_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" $sch_crd_name  }}` }}
+            {{ `{{- $sch_crd_exists := eq $sch_crd.metadata.name  $sch_crd_name }}` }}
+
+            {{ `{{ if $sch_crd_exists }}` }}
+              {{ `{{- /* ns is the namespace for the OADP deployment  */ -}}` }}
+              {{ `{{- $ns := "open-cluster-management-backup" }}` }}
+
+              {{ `{{- /* check if this is a hub, acm installed  */ -}}` }}
+              {{ `{{- $acm_crd_name := "multiclusterhubs.operator.open-cluster-management.io" }}` }}
+              {{ `{{- $acm_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" $acm_crd_name  }}` }}
+              {{ `{{- $is_hub := eq $acm_crd.metadata.name  $acm_crd_name }}` }}
+              {{ `{{ if not $is_hub }}` }}
+                {{ `{{- $ns = "{{hub fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "backupNS" hub}}" }}` }}
+              {{ `{{- end }}` }}
+
+              {{ `{{- /* cls_restore_configmap_name is the name of the main restore config map, copied over to the cluster  */ -}}` }}
+              {{ `{{- $cls_restore_configmap_name := "acm-virt-restore-cls" }}` }}
+
+                - complianceType: mustonlyhave
+                  objectDefinition:
+                    apiVersion: v1
+                    kind: ConfigMap
+                    metadata:
+                      name: {{ `{{ $cls_restore_configmap_name }}` }}
+                      namespace: {{ `{{ $ns }}` }}
+                    data: {{ ` '{{hub copyConfigMapData "" (fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "restore_hub_config_name") hub}}'` }}
+            {{ `{{- end }}` }}
+          remediationAction: enforce
+          severity: high
+          pruneObjectBehavior: DeleteIfCreated
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: create-velero-restore
+        spec:
+          object-templates-raw: |
+            {{ `{{- /* check if velero is installed  */ -}}` }}
+            {{ `{{- $sch_crd_name := "schedules.velero.io" }}` }}
+            {{ `{{- $sch_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" $sch_crd_name  }}` }}
+            {{ `{{- $sch_crd_exists := eq $sch_crd.metadata.name  $sch_crd_name }}` }}
+
+            {{ `{{ if $sch_crd_exists }}` }}
+            {{ `{{- /* ns is the namespace for the OADP deployment  */ -}}` }}
+            {{ `{{- $ns := "open-cluster-management-backup" }}` }}
+
+            {{ `{{- /* check if this is a hub, acm installed  */ -}}` }}
+            {{ `{{- $acm_crd_name := "multiclusterhubs.operator.open-cluster-management.io" }}` }}
+            {{ `{{- $acm_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" $acm_crd_name  }}` }}
+            {{ `{{- $is_hub := eq $acm_crd.metadata.name  $acm_crd_name }}` }}
+            {{ `{{ if not $is_hub }}` }}
+              {{ `{{- $ns = "{{hub fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "backupNS" hub}}" }}` }}
+            {{ `{{- end }}` }}
+
+            {{ `{{- /* cls_restore_configmap_name is the name of the main restore config map, copied over to the cluster  */ -}}` }}
+            {{ `{{- $cls_restore_configmap_name := "acm-virt-restore-cls" }}` }}
+            
+            {{ `{{- $restoreClusterID := fromClusterClaim "id.openshift.io" }}` }}
+            {{ `{{- $restoreNameProp := (cat  $restoreClusterID "_" "restoreName") | replace " " ""}}` }}
+
+            {{ `{{- $restoreName := fromConfigMap $ns $cls_restore_configmap_name $restoreNameProp }}` }}
+           
+            {{ `{{ if not (eq "" $restoreName) }}` }}
+
+              {{ `{{- $backupNameProp := (cat  $restoreClusterID "_" "backupName") | replace " " ""}}` }}
+              {{ `{{- $backupName := fromConfigMap $ns $cls_restore_configmap_name $backupNameProp }}` }}
+
+              {{ `{{- $vmUIDsProp := (cat  $restoreClusterID "_" "vmsUID") | replace " " ""}}` }}
+              {{ `{{- $vmUIDs := fromConfigMap $ns $cls_restore_configmap_name $vmUIDsProp }}` }}
+
+              {{ `{{- /* vms_ns gives the list of all namespaces where VM exist  */ -}}` }}
+              {{ `{{ $vms_ns := " " }}` }}
+              {{ `{{- /* vms_ns gives the list of all VM names  */ -}}` }}
+              {{ `{{ $vms_names := " " }}` }}
+              {{ `{{- $backup_to_restore := lookup "velero.io/v1" "Backup" $ns $backupName }}` }}
+              {{ `{{ if eq $backup_to_restore.metadata.name $backupName }}` }}
+
+                {{ `{{- range $vms_uid := split " " $vmUIDs }}` }}
+                  {{ `{{ if and (not (eq $vms_uid "")) (hasKey $backup_to_restore.metadata.annotations $vms_uid) }}` }}
+
+                    {{ `{{- $vm_identity := index $backup_to_restore.metadata.annotations $vms_uid }}` }}
+
+                    {{ `{{- $vm_list := splitn "--" 2 $vm_identity }}` }}
+                    {{ `{{- $vm_namespace := $vm_list._0 }}` }}
+                    {{ `{{- $vm_name := $vm_list._1 }}` }}
+
+                    {{ `{{ if not (contains $vm_namespace $vms_ns) }}` }}
+                      {{ `{{- /* add VM namespace if not already in the vms_ns  */ -}}` }}
+                      {{ `{{- $vms_ns = (cat $vms_ns $vm_namespace " ") }}` }}
+                    {{ `{{- end }}` }}
+                    {{ `{{ if not (contains $vm_name $vms_names) }}` }}
+                      {{ `{{- /* add VM name if not already in the vms_names  */ -}}` }}
+                      {{ `{{- $vms_names = (cat $vms_names $vm_name " ") }}` }}
+                    {{ `{{- end }}` }}
+                  {{ `{{- end }}` }}
+                {{ `{{- /* go over all UUIDs from the restore config map and find vm ns and name */ -}}` }}
+                {{ `{{- end }}` }}
+              {{ `{{- /* backup exists */ -}}` }}
+              {{ `{{- end }}` }}
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: velero.io/v1
+                kind: Restore
+                metadata:
+                  name: {{ `{{ $restoreName }}` }}
+                  namespace: {{ `{{ $ns }}` }}
+                spec:
+                  backupName: {{ `{{ $backupName }}` }}
+                  restorePVs: true
+                  {{ `{{ if not (eq $vms_ns " ") }}` }}
+                  includedNamespaces:
+                    {{ `{{- range $vms_namespace := split " " $vms_ns }}` }}
+                    {{ `{{ if not (eq $vms_namespace "") }}` }}
+                    - {{ `{{ $vms_namespace }}` }}
+                    {{ `{{- end }}` }}
+                    {{ `{{- end }}` }}
+                  {{ `{{- end }}` }}
+                  orLabelSelectors:
+                    - matchExpressions:
+                        - values:
+                          {{ `{{- range $vms_uid := split " " $vmUIDs }}` }}
+                            {{ `{{ if not (eq $vms_uid "") }}` }}
+                          - {{ `{{ $vms_uid }}` }}
+                            {{ `{{- end }}` }}
+                          {{ `{{- end }}` }}
+                          key: kubevirt.io/created-by
+                          operator: In
+                    {{ `{{ if not (eq $vms_ns " ") }}` }}
+                    - matchExpressions:
+                        - values:
+                          {{ `{{- range $vms_name := split " " $vms_names }}` }}
+                            {{ `{{ if not (eq $vms_name "") }}` }}
+                          - {{ `{{ $vms_name }}` }}
+                            {{ `{{- end }}` }}
+                          {{ `{{- end }}` }}
+                          key: app
+                          operator: In
+                    - matchExpressions:
+                        - values:
+                          {{ `{{- range $vms_name := split " " $vms_names }}` }}
+                            {{ `{{ if not (eq $vms_name "") }}` }}
+                          - {{ `{{ $vms_name }}` }}
+                            {{ `{{- end }}` }}
+                          {{ `{{- end }}` }}
+                          key: kubevirt.io/domain
+                          operator: In
+              {{ `{{- end }}` }}
+            {{ `{{- end }}` }}
+            {{ `{{- end }}` }}
+          remediationAction: enforce
+          severity: high
+          pruneObjectBehavior: DeleteIfCreated
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: check-velero-restore-status
+        spec:
+          object-templates-raw: |
+            {{ `{{- /* check if velero is installed  */ -}}` }}
+            {{ `{{- $sch_crd_name := "schedules.velero.io" }}` }}
+            {{ `{{- $sch_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" $sch_crd_name  }}` }}
+            {{ `{{- $sch_crd_exists := eq $sch_crd.metadata.name  $sch_crd_name }}` }}
+
+            {{ `{{ if $sch_crd_exists }}` }}
+            {{ `{{- /* ns is the namespace for the OADP deployment  */ -}}` }}
+            {{ `{{- $ns := "open-cluster-management-backup" }}` }}
+
+            {{ `{{- /* check if this is a hub, acm installed  */ -}}` }}
+            {{ `{{- $acm_crd_name := "multiclusterhubs.operator.open-cluster-management.io" }}` }}
+            {{ `{{- $acm_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" $acm_crd_name  }}` }}
+            {{ `{{- $is_hub := eq $acm_crd.metadata.name  $acm_crd_name }}` }}
+            {{ `{{ if not $is_hub }}` }}
+              {{ `{{- $ns = "{{hub fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "backupNS" hub}}" }}` }}
+            {{ `{{- end }}` }}
+
+            {{ `{{- /* cls_restore_configmap_name is the name of the main restore config map, copied over to the cluster  */ -}}` }}
+            {{ `{{- $cls_restore_configmap_name := "acm-virt-restore-cls" }}` }}
+            {{ `{{- $restoreNameProp := (cat  (fromClusterClaim "id.openshift.io") "_" "restoreName") | replace " " ""}}` }}
+            {{ `{{- $restoreName := fromConfigMap $ns $cls_restore_configmap_name $restoreNameProp }}` }}
+
+            {{ `{{- $restore_exists := and (not (eq "" $restoreName)) (eq (lookup "velero.io/v1" "Restore" $ns $restoreName).metadata.name $restoreName) }}` }}
+            {{ `{{ if $restore_exists }}` }}
+
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: velero.io/v1
+                kind: Restore
+                metadata:
+                  name: {{ `{{ $restoreName }}` }}
+                  namespace: {{ `{{ $ns }}` }}
+                status:
+                  phase: Completed
+            {{ `{{- end }}` }}
+            {{ `{{- end }}` }}
+          remediationAction: inform
+          severity: high

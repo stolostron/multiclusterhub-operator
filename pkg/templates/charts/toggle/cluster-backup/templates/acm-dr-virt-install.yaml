@@ -1,0 +1,263 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: acm-dr-virt-install
+  namespace: open-cluster-management-backup
+  annotations:
+    policy.open-cluster-management.io/categories: CA Security Assessment and Authorization
+    policy.open-cluster-management.io/controls: CA-2 Security Assessments, CA-7 Continuous Monitoring
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+    policy.open-cluster-management.io/description: |
+      Installs OADP and configures DataProtectionApplication on the managed cluster.
+spec:
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: check-oadp-channel
+        spec:
+          remediationAction: inform
+          severity: high
+          object-templates-raw: |
+            {{ `{{- /* check if there is an OADP version installed on the cluster and it doesn't match the version installed by the policy  */ -}}` }}
+            {{ `{{- $acm_crd_name := "multiclusterhubs.operator.open-cluster-management.io" }}` }}
+            {{ `{{- $acm_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" $acm_crd_name  }}` }}
+            {{ `{{- /* check if this is a hub, acm installed  */ -}}` }}
+            {{ `{{- $is_hub := eq $acm_crd.metadata.name  $acm_crd_name }}` }}
+            {{ `{{ if not $is_hub }}` }}
+              {{ `{{- $ch := "{{hub fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "channel" hub}}" }}` }}
+              {{ `{{- range $ss := (lookup "operators.coreos.com/v1alpha1" "Subscription" "" "").items }}` }}
+                {{ `{{ if (eq $ss.spec.name "redhat-oadp-operator")  }}` }}
+                - complianceType: musthave
+                  objectDefinition:
+                    kind: Subscription
+                    apiVersion: operators.coreos.com/v1alpha1
+                    metadata:
+                      name: {{ `{{ $ss.metadata.name }}` }}
+                      namespace: {{ `{{ $ss.metadata.namespace }}` }}
+                    spec:
+                      channel: {{ `{{ $ch }}` }}
+                {{ `{{- end }}` }}
+              {{ `{{- end }}` }}
+            {{ `{{- end}}` }}
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: check-dpa-config
+        spec:
+          object-templates-raw: |
+                {{ `{{- /* check if OADP CRD is installed  */ -}}` }}
+                {{ `{{- $dpa_crd_name := "dataprotectionapplications.oadp.openshift.io" }}` }}
+                {{ `{{- $dpa_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" $dpa_crd_name  }}` }}
+                {{ `{{- $dpa_crd_exists := eq $dpa_crd.metadata.name  $dpa_crd_name }}` }}
+
+                {{ `{{ if $dpa_crd_exists }}` }}
+
+                  {{ `{{- /* ns is the namespace for the OADP deployment  */ -}}` }}
+                  {{ `{{- $ns := "open-cluster-management-backup" }}` }}
+                  {{ `{{- /* check if this is a hub, acm installed  */ -}}` }}
+                  {{ `{{- $acm_crd_name := "multiclusterhubs.operator.open-cluster-management.io" }}` }}
+                  {{ `{{- $acm_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" $acm_crd_name  }}` }}
+                  {{ `{{- $is_hub := eq $acm_crd.metadata.name  $acm_crd_name }}` }}
+
+                  {{ `{{- $dpa_name := "" }}` }}
+                  {{ `{{ if not $is_hub }}` }}
+                    {{ `{{- $ns = "{{hub fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "backupNS" hub}}" }}` }}
+                    {{ `{{- $dpa_name = "{{hub fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "dpa_name" hub}}" }}` }}
+                  {{ `{{ else }}` }}
+                    {{ `{{- /* get DPA name  */ -}}` }}
+                    {{ `{{- range $dpa_objs := (lookup "oadp.openshift.io/v1alpha1" "DataProtectionApplication" $ns "").items  }}` }}
+                      {{ `{{- $dpa_name = $dpa_objs.metadata.name }}` }}
+                    {{ `{{- end}}` }}
+                  {{ `{{- end }}` }}
+                  {{ `{{- $bsl_name := "{{hub fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "storageLocation" hub}}" }}` }}
+                  {{ `{{if (eq "" $bsl_name) }}` }}
+                    {{ `{{- range $bsl_objs := (lookup "velero.io/v1" "BackupStorageLocation" $ns "").items  }}` }}
+                      {{ `{{ if and (hasKey $bsl_objs.spec "default") $bsl_objs.spec.default }}` }}
+                        {{ `{{- $bsl_name = $bsl_objs.metadata.name }}` }}
+                      {{ `{{- end }}` }}
+                    {{ `{{- end}}` }}
+                  {{ `{{- end }}` }}
+                  {{ `{{- $ch := "{{hub fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "channel" hub}}" }}` }}
+                  {{ `{{- /* use the subscription name and operator group from the existing OADP installation, if one exists in this ns  */ -}}` }}
+                  {{ `{{- $subscription_name := "redhat-oadp-operator-subscription" }}` }}
+                  {{ `{{- range $ss := (lookup "operators.coreos.com/v1alpha1" "Subscription" $ns "").items }}` }}
+                    {{ `{{ if eq $ss.spec.name "redhat-oadp-operator" }}` }}
+                      {{ `{{- $subscription_name = $ss.metadata.name }}` }}
+                    {{ `{{- end }}` }}
+                  {{ `{{- end }}` }}
+
+                - complianceType: musthave
+                  objectDefinition:
+                    apiVersion: operators.coreos.com/v1alpha1
+                    kind: Subscription
+                    metadata:
+                      name: {{ `{{ $subscription_name }}` }}
+                      namespace: {{ `{{ $ns }}` }}
+                    spec:
+                      channel: {{ `{{ $ch }}` }}
+                    status:
+                      conditions:
+                        - reason: AllCatalogSourcesHealthy
+                          status: 'False'
+                          type: CatalogSourcesUnhealthy
+
+                - complianceType: musthave
+                  objectDefinition:
+                    apiVersion: oadp.openshift.io/v1alpha1
+                    kind: DataProtectionApplication
+                    metadata:
+                      namespace: {{ `{{ $ns }}` }}
+                      name: {{ `{{ $dpa_name }}` }}
+                    spec:
+                      configuration:
+                        velero:
+                          defaultPlugins:
+                            - csi
+                            - openshift
+                            - kubevirt
+                        nodeAgent:
+                          enable: true
+                          uploaderType: kopia
+                    status:
+                      conditions:
+                        - reason: Complete
+                          status: 'True'
+                          type: Reconciled
+               
+                  {{ `{{ if not (eq "" $dpa_name )}}` }}
+                - complianceType: musthave
+                  objectDefinition:
+                    apiVersion: velero.io/v1
+                    kind: BackupStorageLocation
+                    metadata:
+                      namespace: {{ `{{ $ns }}` }}
+                      {{ `{{if not (eq "" $bsl_name) }}` }}
+                      name: {{ `{{ $bsl_name }}` }}
+                      {{ `{{- end }}` }}
+                      ownerReferences:
+                      - apiVersion: oadp.openshift.io/v1alpha1
+                        blockOwnerDeletion: true
+                        controller: true
+                        kind: DataProtectionApplication
+                        name: {{ `{{ $dpa_name }}` }}
+                    {{ `{{if eq "" $bsl_name }}` }}
+                    spec:
+                      default: true
+                    {{ `{{- end }}` }}
+                    status:
+                      phase: Available
+                    {{ `{{- end}}` }}
+                  {{ `{{- end }}` }}
+          remediationAction: inform
+          severity: high
+
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: install-oadp-copy-config
+        spec:
+          object-templates-raw: |
+            {{ `{{- /* check if this is a hub, acm installed  */ -}}` }}
+            {{ `{{- $acm_crd_name := "multiclusterhubs.operator.open-cluster-management.io" }}` }}
+            {{ `{{- $acm_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" $acm_crd_name  }}` }}
+            {{ `{{- $is_hub := eq $acm_crd.metadata.name  $acm_crd_name }}` }}
+
+                  {{ `{{- /* for managed clusters and hub, copy user created cron schedule yaml to the OADP namespace and name it acm-virt-cron-schedules  */ -}}` }}
+                  {{ `{{- /* for managed clusters and hub, copy user created acm-virt-config yaml to the OADP namespace and name it acm-virt-config-cls  */ -}}` }}
+                  {{ `{{- /* this simplifies config search on managed clusters, since it removes the need to access it from the hub  */ -}}` }}
+
+                  {{ `{{- $oadp_channel := "{{hub fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "channel" hub}}" }}` }}
+                  {{ `{{- $credentialsName := "{{hub fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "credentials_name" hub}}" }}` }}
+                  {{ `{{- /* ns is the namespace for the OADP deployment  */ -}}` }}
+                  {{ `{{- $ns := "open-cluster-management-backup" }}` }}
+                  {{ `{{ if not $is_hub }}` }}
+                    {{ `{{- $ns = "{{hub fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "backupNS" hub}}" }}` }}
+                  {{ `{{- end }}` }}
+
+                - complianceType: musthave
+                  objectDefinition:
+                    apiVersion: v1
+                    kind: Namespace
+                    metadata:
+                      name: {{ `{{ $ns }}` }}
+
+            {{ `{{- /* for managed clusters only, copy the oadp secret and install OADP  */ -}}` }}
+            {{ `{{ if (not $is_hub) }}` }}
+                {{ `{{- /* use the subscription name and operator group from the existing OADP installation, if one exists in this ns  */ -}}` }}
+                {{ `{{- $subscription_name := "redhat-oadp-operator-subscription" }}` }}
+                {{ `{{- /* if another OADP version was installed don't try to install this version  */ -}}` }}
+                {{ `{{- $found_other_version := false }}` }}
+                {{ `{{- range $ss := (lookup "operators.coreos.com/v1alpha1" "Subscription" "" "").items }}` }}
+                  {{ `{{ if and (not $found_other_version) (eq $ss.spec.name "redhat-oadp-operator") }}` }}
+                    {{ `{{ if eq $ss.spec.channel $oadp_channel }}` }}
+                      {{ `{{- $subscription_name = $ss.metadata.name }}` }}
+                    {{ `{{- else }}` }}
+                      {{ `{{- $found_other_version = true }}` }}
+                    {{ `{{- end }}` }}
+                  {{ `{{- end }}` }}
+                {{ `{{- end }}` }}
+
+                {{ `{{- $operator_name := "redhat-oadp-operator-group" }}` }}
+                {{ `{{- range $ops := (lookup "operators.coreos.com/v1" "OperatorGroup" $ns "").items }}` }}
+                  {{ `{{- $operator_name = $ops.metadata.name }}` }}
+                {{ `{{- end }}` }}
+
+                {{ `{{ if not $found_other_version }}` }}
+                - complianceType: musthave
+                  objectDefinition:
+                    apiVersion: v1
+                    kind: Secret
+                    metadata:
+                      name: {{ `{{ $credentialsName }}` }}
+                      namespace: {{ `{{ $ns }}` }}
+                    data: {{ `'{{hub copySecretData "" (fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "credentials_hub_secret_name") hub}}'` }}
+
+                - complianceType: musthave
+                  objectDefinition:
+                    apiVersion: operators.coreos.com/v1
+                    kind: OperatorGroup
+                    metadata:
+                      name: {{ `{{ $operator_name }}` }}
+                      namespace: {{ `{{ $ns }}` }}
+                    spec:
+                      targetNamespaces:
+                      - {{ `{{ $ns }}` }}
+
+                - complianceType: musthave
+                  objectDefinition:
+                    apiVersion: operators.coreos.com/v1alpha1
+                    kind: Subscription
+                    metadata:
+                      name: {{ `{{ $subscription_name }}` }}
+                      namespace: {{ `{{ $ns }}` }}
+                    spec:
+                      channel: {{ `{{ $oadp_channel }}` }}
+                      installPlanApproval: "Automatic"
+                      name: "redhat-oadp-operator"
+                      source: "redhat-operators"
+                      sourceNamespace: "openshift-marketplace"
+
+                {{ `{{- /* check if OADP CRD is installed  */ -}}` }}
+                {{ `{{- $dpa_crd_name := "dataprotectionapplications.oadp.openshift.io" }}` }}
+                {{ `{{- $dpa_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" "dataprotectionapplications.oadp.openshift.io"  }}` }}
+                {{ `{{- $dpa_crd_exists := eq $dpa_crd.metadata.name  $dpa_crd_name }}` }}
+                  {{ `{{- if $dpa_crd_exists }}` }}
+                - complianceType: mustonlyhave
+                  objectDefinition:
+                    apiVersion: oadp.openshift.io/v1alpha1
+                    kind: DataProtectionApplication
+                    metadata:
+                      name: {{ `{{hub fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "dpa_name" hub}}` }}
+                      namespace: {{ `{{ $ns }}` }}
+                    spec: {{ `'{{hub (fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "dpa_spec") | toLiteral hub}}'` }}
+                  {{ `{{- end }}` }}
+                {{ `{{- end }}` }}
+                {{ `{{- end }}` }}
+          remediationAction: enforce
+          pruneObjectBehavior: DeleteIfCreated
+          severity: high

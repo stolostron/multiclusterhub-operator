@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: acm-dr-virt-schedule-cron
+  namespace: open-cluster-management-backup
+data:
+
+  ###### Configuration for the acm-dr-virt-backup policy, defining supported cron jobs for the backup schedule ###
+  ########################################################
+
+  # define the schedules to be used by the vm backup; for a vm to use the twice_a_day schedule, set this label on the vm 
+  # cluster.open-cluster-management.io/backup-vm: twice_a_day
+  hourly: "0 */1 * * *"
+  every_2_hours: "0 */2 * * *"
+  every_3_hours: "0 */3 * * *"
+  every_4_hours: "0 */4 * * *"
+  every_5_hours: "0 */5 * * *"
+  every_6_hours: "0 */6 * * *"
+  twice_a_day: "0 */12 * * *"
+  daily_8am: "0 8 * * *"
+  every_sunday: "0 0 * * 0" 
+

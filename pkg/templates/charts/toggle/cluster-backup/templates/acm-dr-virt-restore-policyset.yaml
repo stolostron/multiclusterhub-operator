@@ -1,0 +1,11 @@
+apiVersion: policy.open-cluster-management.io/v1beta1
+kind: PolicySet
+metadata:
+  name: acm-dr-virt-restore-policyset
+  namespace: open-cluster-management-backup
+spec:
+  description: |
+    Restores virtualmachines.kubevirt.io resources created on hub or OpenShift managed clusters, using OADP. 
+  policies:
+    - acm-dr-virt-install
+    - acm-dr-virt-restore

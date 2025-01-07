@@ -42,6 +42,7 @@ var resources = []string{
 	"MutatingWebhookConfiguration",
 	"PlacementBinding",
 	"PlacementRule",
+	"Placement",
 	"Policy",
 	"PolicySet",
 	"PrometheusRule",
