@@ -134,7 +134,7 @@ spec:
                   namespace: {{ `{{ $ns }}` }}
                 spec:
                   namespaceMapping:
-                    open-cluster-management-backup: {{ `{{ $ns }} ` }}              
+                    open-cluster-management-backup: {{ `{{ $ns }} ` }}
                   backupName: {{ `{{ $backupName }}` }}
                   restorePVs: true
                   {{ `{{ if not (eq $vms_ns " ") }}` }}
