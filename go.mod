@@ -6,11 +6,11 @@ require (
 	github.com/Masterminds/semver/v3 v3.2.0
 	github.com/blang/semver/v4 v4.0.0
 	github.com/go-logr/logr v1.2.3
-	github.com/onsi/ginkgo/v2 v2.6.0
+	github.com/onsi/ginkgo/v2 v2.6.1
 	github.com/onsi/gomega v1.24.1
 	github.com/openshift/api v0.0.0-20230228142948-d170fcdc0fa6
-	github.com/operator-framework/api v0.17.3
-	github.com/operator-framework/operator-lib v0.11.0
+	github.com/operator-framework/api v0.17.4-0.20230223191600-0131a6301e42
+	github.com/operator-framework/operator-lib v0.11.1-0.20230306195046-28cadc6b6055
 	github.com/operator-framework/operator-lifecycle-manager v0.22.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.58.0
@@ -24,9 +24,9 @@ require (
 	k8s.io/client-go v0.26.4
 	k8s.io/klog v1.0.0
 	k8s.io/kube-aggregator v0.24.3
-	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448
+	k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5
 	open-cluster-management.io/api v0.8.0
-	sigs.k8s.io/controller-runtime v0.14.4
+	sigs.k8s.io/controller-runtime v0.14.5
 	sigs.k8s.io/yaml v1.3.0
 )
 
