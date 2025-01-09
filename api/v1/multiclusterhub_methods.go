@@ -38,6 +38,10 @@ const (
 // Component related to MultiCluster Engine (MCE)
 const (
 	MCEAssistedService                  string = "assisted-service"
+	MCEClusterAPI                       string = "cluster-api"
+	MCEClusterAPIPreview                string = "cluster-api-preview"
+	MCEClusterAPIProviderAWS            string = "cluster-api-provider-aws"
+	MCEClusterAPIProviderAWSPreview     string = "cluster-api-provider-aws-preview"
 	MCEClusterLifecycle                 string = "cluster-lifecycle-mce"
 	MCEClusterManager                   string = "cluster-manager"
 	MCEClusterProxyAddon                string = "cluster-proxy-addon"
@@ -76,7 +80,10 @@ var MCHComponents = []string{
 
 // MCEComponents is a slice containing component names specific to the "MCE" category.
 var MCEComponents = []string{
-	MCEAssistedService,
+	MCEClusterAPI,
+	MCEClusterAPIPreview,
+	MCEClusterAPIProviderAWS,
+	MCEClusterAPIProviderAWSPreview,
 	MCEClusterLifecycle,
 	MCEClusterManager,
 	MCEClusterProxyAddon,
