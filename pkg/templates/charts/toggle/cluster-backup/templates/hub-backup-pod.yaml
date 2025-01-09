@@ -26,6 +26,96 @@ spec:
         apiVersion: policy.open-cluster-management.io/v1
         kind: ConfigurationPolicy
         metadata:
+          name: vm-config-setup
+        spec:
+          remediationAction: enforce
+          severity: high
+          object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: v1
+                kind: ConfigMap
+                metadata:
+                  name: acm-dr-virt-restore-config
+                  namespace: open-cluster-management-backup
+                data:
+                  clusterID_restoreName: ""
+                  clusterID_vmsUID: "uid1 uid2"
+                  clusterID_backupName: backupName
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: v1
+                kind: ConfigMap
+                metadata:
+                  name: acm-dr-virt-schedule-cron
+                  namespace: open-cluster-management-backup
+                data:
+                  hourly: "0 */1 * * *"
+                  every_2_hours: "0 */2 * * *"
+                  every_3_hours: "0 */3 * * *"
+                  every_4_hours: "0 */4 * * *"
+                  every_5_hours: "0 */5 * * *"
+                  every_6_hours: "0 */6 * * *"
+                  twice_a_day: "0 */12 * * *"
+                  daily_8am: "0 8 * * *"
+                  every_sunday: "0 0 * * 0"
+            - complianceType: musthave
+              recordDiff: InStatus
+              objectDefinition:
+                apiVersion: v1
+                kind: ConfigMap
+                metadata:
+                  name: acm-dr-virt-config
+                  namespace: open-cluster-management-backup
+                data:
+                  backupNS: open-cluster-management-backup
+                  channel: stable-1.4
+                  credentials_hub_secret_name: cloud-credentials
+                  credentials_name: cloud-credentials
+                  dpa_name: dpa-vm-policy
+                  scheduleTTL: 120h
+                  schedule_hub_config_name: acm-dr-virt-schedule-cron
+                  restore_hub_config_name: acm-dr-virt-restore-config
+                  dpa_spec: "{
+                  \"backupLocations\": [
+                    {
+                      \"velero\": {
+                        \"config\": {
+                          \"profile\": \"default\",
+                          \"region\": \"us-east-1-change-me\"
+                        },
+                        \"credential\": {
+                          \"key\": \"cloud\",
+                          \"name\": \"cloud-credentials\"
+                        },
+                        \"default\": true,
+                        \"objectStorage\": {
+                          \"bucket\": \"velero-bucket-change-me\",
+                          \"prefix\": \"velero-prefix-change-me\"
+                        },
+                        \"provider\": \"aws\"
+                      }
+                    }
+                  ],
+                  \"configuration\": {
+                    \"nodeAgent\": {
+                      \"enable\": true,
+                      \"uploaderType\": \"kopia\"
+                    },
+                    \"velero\": {
+                      \"defaultPlugins\": [
+                        \"csi\",       
+                        \"openshift\",
+                        \"kubevirt\",
+                        \"aws\"
+                      ],
+                    }
+                  },
+                }"
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
           name: acm-backup-pod-running
         spec:
           object-templates:
@@ -380,4 +470,3 @@ spec:
               There is a version of redhat-oadp-operator subscription installed in a namespace other than the open-cluster-management-backup namespace
               and this version doesn't match the version set by the backup and restore operator Helm chart.
               Alternatively, the version doesn't match the version of the redhat-oadp-operator subscription that is installed within the open-cluster-management-backup namespace.
-  remediationAction: inform
