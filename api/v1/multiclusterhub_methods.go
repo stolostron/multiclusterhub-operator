@@ -80,6 +80,7 @@ var MCHComponents = []string{
 
 // MCEComponents is a slice containing component names specific to the "MCE" category.
 var MCEComponents = []string{
+	MCEAssistedService,
 	MCEClusterAPI,
 	MCEClusterAPIPreview,
 	MCEClusterAPIProviderAWS,
