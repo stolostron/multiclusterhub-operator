@@ -77,37 +77,37 @@ spec:
                   schedule_hub_config_name: acm-dr-virt-schedule-cron
                   restore_hub_config_name: acm-dr-virt-restore-config
                   dpa_spec: "{
-                  \"backupLocations\": [
+                  backupLocations: [
                     {
-                      \"velero\": {
-                        \"config\": {
-                          \"profile\": \"default\",
-                          \"region\": \"us-east-1-change-me\"
+                      velero: {
+                        config: {
+                          profile: default,
+                          region: us-east-1-change-me,
                         },
-                        \"credential\": {
-                          \"key\": \"cloud\",
-                          \"name\": \"cloud-credentials\"
+                        credential: {
+                          key: cloud,
+                          name: cloud-credentials,
                         },
-                        \"default\": true,
-                        \"objectStorage\": {
-                          \"bucket\": \"velero-bucket-change-me\",
-                          \"prefix\": \"velero-prefix-change-me\"
+                        default: true,
+                        objectStorage: {
+                          bucket: velero-bucket-change-me,
+                          prefix: velero-prefix-change-me,
                         },
-                        \"provider\": \"aws\"
+                        provider: aws
                       }
                     }
                   ],
-                  \"configuration\": {
-                    \"nodeAgent\": {
-                      \"enable\": true,
-                      \"uploaderType\": \"kopia\"
+                  configuration: {
+                    nodeAgent: {
+                      enable: true,
+                      uploaderType: kopia,
                     },
-                    \"velero\": {
-                      \"defaultPlugins\": [
-                        \"csi\",       
-                        \"openshift\",
-                        \"kubevirt\",
-                        \"aws\"
+                    velero: {
+                      defaultPlugins: [
+                        csi,       
+                        openshift,
+                        kubevirt,
+                        aws
                       ],
                     }
                   },

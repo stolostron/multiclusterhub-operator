@@ -53,6 +53,10 @@ spec:
                       namespace: {{ `{{ $ns }}` }}
                     data: {{ `'{{hub copyConfigMapData "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) hub}}'` }}
 
+              {{ `{{hub $cron_file_name := (fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "schedule_hub_config_name") hub}}` }}
+              {{ `{{hub $cron_file := lookup "v1" "ConfigMap" "" $cron_file_name hub}}` }}
+              {{ `{{hub $cron_file_exists := eq $cron_file.metadata.name $cron_file_name hub}}` }}
+              {{ `{{hub if $cron_file_exists hub}}` }}
                 - complianceType: mustonlyhave
                   objectDefinition:
                     apiVersion: v1
@@ -60,7 +64,8 @@ spec:
                     metadata:
                       name: {{ `{{ $cron_schedule_configmap_name }}` }}
                       namespace: {{ `{{ $ns }}` }}
-                    data: {{ `'{{hub copyConfigMapData "" (fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "schedule_hub_config_name") hub}}'` }}
+                    data: '{{ `{{hub copyConfigMapData "" $cron_file_name hub}}` }}'
+              {{ `{{hub end hub}}` }}
             {{ `{{- end }}` }}
           remediationAction: enforce
           severity: high
@@ -418,3 +423,25 @@ spec:
             compliant: "All cron schedule names used with the VirtualMachines cluster.open-cluster-management.io/backup-vm label are valid."
             noncompliant: |-
               Some VirtualMachines use invalid cron job names for the cluster.open-cluster-management.io/backup-vm label as they are not defined by the acm-virt-cron-schedules ConfigMap.
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: check-backup-config
+        spec:
+          object-templates-raw: |
+            {{ `{{hub $cron_file_name := (fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "schedule_hub_config_name") hub}}` }}
+            {{ `{{hub $cron_file := lookup "v1" "ConfigMap" "" $cron_file_name hub}}` }}
+            {{ `{{hub $cron_file_exists := eq $cron_file.metadata.name $cron_file_name hub}}` }}
+            {{ `{{hub if not $cron_file_exists hub}}` }}
+              - complianceType: musthave
+                objectDefinition:
+                  apiVersion: v1
+                  kind: ConfigMap
+                  metadata:
+                    name: {{ `{{hub $cron_file_name hub}}` }}
+                    namespace: "open-cluster-management-backup"
+            {{ `{{hub end hub}}` }}
+          remediationAction: inform
+          severity: high
+
