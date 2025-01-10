@@ -311,7 +311,7 @@ spec:
 
                 {{ `{{ if not $found_other_version }}` }}
                   {{ `{{hub $cloud_creds_file_name := (fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "credentials_hub_secret_name") hub}}` }}
-                  {{ `{{hub $cloud_creds_file := lookup "v1" "ConfigMap" "" $cloud_creds_file_name hub}}` }}
+                  {{ `{{hub $cloud_creds_file := lookup "v1" "Secret" "" $cloud_creds_file_name hub}}` }}
                   {{ `{{hub $cloud_creds_file_exists := eq $cloud_creds_file.metadata.name $cloud_creds_file_name hub}}` }}
                   {{ `{{hub if $cloud_creds_file_exists hub}}` }}
                   {{ `{{- $credentialsName := "{{hub fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "credentials_name" hub}}" }}` }}
@@ -323,7 +323,7 @@ spec:
                     metadata:
                       name: {{ `{{ $credentialsName }}` }}
                       namespace: {{ `{{ $ns }}` }}
-                    data: '{{ `{{hub copySecretData "" (fromConfigMap "" $cloud_creds_file_name) hub}}` }}'
+                    data: '{{ `{{hub copySecretData "" $cloud_creds_file_name hub}}` }}'
                 {{ `{{hub end hub}}` }}
 
                 - complianceType: musthave
