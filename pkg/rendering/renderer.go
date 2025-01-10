@@ -44,6 +44,9 @@ type Global struct {
 	Source              string               `json:"source" structs:"source"`
 	SourceNamespace     string               `json:"sourceNamespace" structs:"sourceNamespace"`
 	HubSize             v1.HubSize           `json:"hubSize" structs:"hubSize" yaml:"hubSize"`
+	APIUrl              string               `json:"apiUrl" structs:"apiUrl"`
+	Target              string               `json:"target" structs:"target"`
+	BaseDomain          string               `json:"baseDomain" structs:"baseDomain"`
 }
 
 type HubConfig struct {
@@ -55,8 +58,6 @@ type HubConfig struct {
 	OCPVersion        string            `json:"ocpVersion" structs:"ocpVersion"`
 	HubVersion        string            `json:"hubVersion" structs:"hubVersion"`
 	OCPIngress        string            `json:"ocpIngress" structs:"ocpIngress"`
-	APIUrl            string            `json:"apiUrl" structs:"apiUrl"`
-	Target            string            `json:"target" structs:"target"`
 	SubscriptionPause string            `json:"subscriptionPause" structs:"subscriptionPause"`
 }
 
@@ -346,9 +347,11 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 
 	values.HubConfig.OCPIngress = os.Getenv("INGRESS_DOMAIN")
 
-	values.HubConfig.APIUrl = os.Getenv("API_URL")
+	values.Global.BaseDomain = os.Getenv("INGRESS_DOMAIN")
 
-	values.HubConfig.Target = "acm"
+	values.Global.APIUrl = os.Getenv("API_URL")
+
+	values.Global.Target = "acm"
 
 	values.HubConfig.SubscriptionPause = utils.GetDisableClusterImageSets(mch)
 
