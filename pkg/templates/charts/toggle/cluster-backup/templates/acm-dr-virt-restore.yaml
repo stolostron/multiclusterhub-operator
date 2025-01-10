@@ -43,7 +43,9 @@ spec:
 
               {{ `{{- /* cls_restore_configmap_name is the name of the main restore config map, copied over to the cluster  */ -}}` }}
               {{ `{{- $cls_restore_configmap_name := "acm-virt-restore-cls" }}` }}
-
+              {{ `{{hub $restore_file_name := (fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "restore_hub_config_name") hub}}` }}
+              {{ `{{hub $restore_file := lookup "v1" "ConfigMap" "" $restore_file_name hub}}` }}
+              {{ `{{hub $restore_file_exists := eq $restore_file.metadata.name $restore_file_name hub}}` }}
                 - complianceType: mustonlyhave
                   objectDefinition:
                     apiVersion: v1
@@ -51,7 +53,11 @@ spec:
                     metadata:
                       name: {{ `{{ $cls_restore_configmap_name }}` }}
                       namespace: {{ `{{ $ns }}` }}
-                    data: {{ ` '{{hub copyConfigMapData "" (fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "restore_hub_config_name") hub}}'` }}
+              {{ `{{hub if $restore_file_exists hub}}` }}
+                    data:  '{{ `{{hub copyConfigMapData "" $restore_file_name hub}}` }}'
+              {{ `{{hub else hub}}` }}
+                    data:
+              {{ `{{hub end hub}}` }}
             {{ `{{- end }}` }}
           remediationAction: enforce
           severity: high
@@ -223,5 +229,26 @@ spec:
                   phase: Completed
             {{ `{{- end }}` }}
             {{ `{{- end }}` }}
+          remediationAction: inform
+          severity: high
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: check-restore-config
+        spec:
+          object-templates-raw: |
+            {{ `{{hub $restore_file_name := (fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "restore_hub_config_name") hub}}` }}
+            {{ `{{hub $restore_file := lookup "v1" "ConfigMap" "" $restore_file_name hub}}` }}
+            {{ `{{hub $restore_file_exists := eq $restore_file.metadata.name $restore_file_name hub}}` }}
+            {{ `{{hub if not $restore_file_exists hub}}` }}
+              - complianceType: musthave
+                objectDefinition:
+                  apiVersion: v1
+                  kind: ConfigMap
+                  metadata:
+                    name: {{ `{{hub $restore_file_name hub}}` }}
+                    namespace: "open-cluster-management-backup"
+            {{ `{{hub end hub}}` }}
           remediationAction: inform
           severity: high
