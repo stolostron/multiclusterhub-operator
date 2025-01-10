@@ -1,0 +1,35 @@
+
+- repo_name: "managed-serviceaccount"
+  github_ref: "https://github.com/stolostron/managed-serviceaccount.git"
+  branch: "backplane-2.4"
+  charts:
+    - name: "managed-serviceaccount"
+      chart-path: "charts/managed-serviceaccount"
+      always-or-toggle: "toggle"
+      imageMappings:
+        managed-serviceaccount: managed_serviceaccount
+      inclusions:
+        - "pullSecretOverride"
+      skipRBACOverrides: true
+      updateChartVersion: true # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.4 -> 2.4
+      escape-template-variables:
+        - "CLUSTER_NAME"
+        - "HUB_KUBECONFIG"
+        - "INSTALL_NAMESPACE"
+
+- repo_name: "flight-control"
+  github_ref: "https://github.com/cameronmwall/flightctl.git"
+  branch: "flying"
+  charts:
+    - name: "flight-control"
+      chart-path: "deploy/helm/flightctl"
+      always-or-toggle: "toggle"
+      imageMappings:
+      inclusions:
+        - "pullSecretOverride"
+      skipRBACOverrides: true
+      updateChartVersion: false # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.4 -> 2.4
+      escape-template-variables:
+
+
+
