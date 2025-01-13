@@ -78,10 +78,6 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 10
         resources:
-          limits:
-            cpu: '2'
-            ephemeral-storage: 10Gi
-            memory: 16Gi
           requests:
             cpu: 100m
             ephemeral-storage: 1Gi
