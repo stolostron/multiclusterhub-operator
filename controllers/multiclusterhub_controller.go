@@ -774,7 +774,7 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 				if err := r.Client.Create(ctx, template, &client.CreateOptions{}); err != nil {
 					return r.logAndSetCondition(err, "failed to create resource", template, m)
 				}
-				log.Info("Created resource", "Name", template.GetName(), "Kind", template.GetKind())
+				log.Info("Creating resource", "Name", template.GetName(), "Kind", template.GetKind())
 			} else {
 				return r.logAndSetCondition(err, "failed to get resource", templateCopy, m)
 			}
