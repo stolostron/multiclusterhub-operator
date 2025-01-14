@@ -764,28 +764,27 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 				}
 			}
 		}
-		err := r.Client.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()}, template)
-		template.SetManagedFields(nil)
-		// resource not found
-		if err != nil {
-			err := r.Client.Create(ctx, template, &client.CreateOptions{})
-			if err != nil {
-				log.Info(err.Error())
-				wrappedError := pkgerrors.Wrapf(err, "error applying object Name: %s Kind: %s", template.GetName(), template.GetKind())
-				SetHubCondition(&m.Status, *NewHubCondition(operatorv1.ComponentFailure+": "+operatorv1.HubConditionType(template.GetName())+"(Kind:)"+operatorv1.HubConditionType(template.GetKind()), metav1.ConditionTrue, FailedApplyingComponent, wrappedError.Error()))
-				return ctrl.Result{}, wrappedError
+
+		templateCopy := template.DeepCopy()
+		if err := r.Client.Get(ctx, types.NamespacedName{
+			Name: templateCopy.GetName(), Namespace: templateCopy.GetNamespace()}, templateCopy); err != nil {
+
+			// Template resource does not exist
+			if errors.IsNotFound(err) {
+				if err := r.Client.Create(ctx, template, &client.CreateOptions{}); err != nil {
+					return r.logAndSetCondition(err, "failed to create resource", template, m)
+				}
+				log.Info("Created resource", "Name", template.GetName(), "Kind", template.GetKind())
 			} else {
-				r.Log.Info("Creating resource", "Name", template.GetName(), "Kind", template.GetKind())
+				return r.logAndSetCondition(err, "failed to get resource", templateCopy, m)
 			}
 		} else {
-			// resource found
+			// Resource exists; use the original template for patching to avoid issues with managedFields
+			// Apply the object data.
 			force := true
-			err := r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
-			if err != nil {
-				log.Info(err.Error())
-				wrappedError := pkgerrors.Wrapf(err, "error applying object Name: %s Kind: %s", template.GetName(), template.GetKind())
-				SetHubCondition(&m.Status, *NewHubCondition(operatorv1.ComponentFailure+": "+operatorv1.HubConditionType(template.GetName())+"(Kind:)"+operatorv1.HubConditionType(template.GetKind()), metav1.ConditionTrue, FailedApplyingComponent, wrappedError.Error()))
-				return ctrl.Result{}, wrappedError
+			if err := r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{
+				Force: &force, FieldManager: "multiclusterhub-operator"}); err != nil {
+				return r.logAndSetCondition(err, "failed to update resource", template, m)
 			}
 		}
 	}
@@ -1754,4 +1753,19 @@ func (r *MultiClusterHubReconciler) CheckDeprecatedFieldUsage(m *operatorv1.Mult
 			r.DeprecatedFields[f.name] = true
 		}
 	}
+}
+
+func (r *MultiClusterHubReconciler) logAndSetCondition(err error, message string,
+	template *unstructured.Unstructured, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+
+	log.Error(err, message, "Name", template.GetName(), "Kind", template.GetKind())
+	wrappedError := pkgerrors.Wrapf(err, "%s Name: %s Kind: %s", message, template.GetName(), template.GetKind())
+
+	condType := fmt.Sprintf("%v: %v (Kind:%v)", operatorv1.ComponentFailure, template.GetName(),
+		template.GetKind())
+
+	SetHubCondition(&m.Status, *NewHubCondition(operatorv1.HubConditionType(condType), metav1.ConditionTrue,
+		FailedApplyingComponent, wrappedError.Error()))
+
+	return ctrl.Result{}, wrappedError
 }
