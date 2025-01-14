@@ -31,15 +31,15 @@
 ## @param hubConfig.apiUrl Same as global.auth.openShiftApiUrl but this property is expected to be set by ACM operator
 
 global:
-  target: "standalone" # standalone, acm
-  baseDomain: "test"
+  target: "acm" # standalone, acm
+  baseDomain: ""
   ocpIngress: "test" # alternative to baseDomain used by the multiclusterhub operator
   baseDomainTls:
     cert: ""
     key: ""
   storageClassName: ""
   imagePullSecretName: ""
-  apiUrl: "" # alternative used by multiclusterhub operator
+  apiUrl: "test" # alternative used by multiclusterhub operator
   auth:
     type: "builtin" # builtin, k8s, oidc, none
     caCert: ""

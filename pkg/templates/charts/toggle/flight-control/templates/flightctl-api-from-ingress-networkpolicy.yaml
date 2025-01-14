@@ -1,0 +1,18 @@
+
+# Source: flightctl/templates/flightctl-api-networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: flightctl-api-from-ingress
+  namespace:  open-cluster-management
+spec:
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          network.openshift.io/policy-group: ingress
+  podSelector:
+    matchLabels:
+      flightctl.service: flightctl-api
+  policyTypes:
+  - Ingress
