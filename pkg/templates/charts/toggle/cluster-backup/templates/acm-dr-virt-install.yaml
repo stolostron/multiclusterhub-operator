@@ -7,7 +7,8 @@ metadata:
     policy.open-cluster-management.io/categories: CA Security Assessment and Authorization
     policy.open-cluster-management.io/controls: CA-2 Security Assessments, CA-7 Continuous Monitoring
     policy.open-cluster-management.io/standards: NIST SP 800-53
-    policy.open-cluster-management.io/description: |
+    policy.open-cluster-management.io/description: |-
+      Policy is placed on hub or managed clusters with label acm-virt-config=acm-dr-virt-config-file-name.
       Installs OADP and configures DataProtectionApplication on the managed cluster.
 spec:
   disabled: false

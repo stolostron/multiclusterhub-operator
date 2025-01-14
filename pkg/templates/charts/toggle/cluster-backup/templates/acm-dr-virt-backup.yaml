@@ -7,7 +7,8 @@ metadata:
     policy.open-cluster-management.io/categories: CA Security Assessment and Authorization
     policy.open-cluster-management.io/controls: CA-2 Security Assessments, CA-7 Continuous Monitoring
     policy.open-cluster-management.io/standards: NIST SP 800-53
-    policy.open-cluster-management.io/description: |
+    policy.open-cluster-management.io/description: |-
+      Policy is placed on hub or managed clusters with label acm-virt-config=acm-dr-virt-config-file-name.
       Creates a velero Schedule for all virtualmachines.kubevirt.io resources with a cluster.open-cluster-management.io/backup-vm label.
 spec:
   dependencies:
@@ -413,7 +414,7 @@ spec:
                       name: "acm-virt-cron-schedules"
                       namespace: {{ `{{ $ns }}` }}
                     data:
-                      {{ `{{ $vm_cron_value }}` }}: "cron schedule used by VM {{ `{{$vms_to_backup.metadata.namespace}}` }} {{ `{{$vms_to_backup.metadata.name}}` }}"
+                      {{ `{{ $vm_cron_value }}` }}: {{ `{{$vms_to_backup.metadata.name}}` }}
                 {{ `{{- end }}` }}
               {{ `{{- end }}` }}
             {{ `{{- end }}` }}

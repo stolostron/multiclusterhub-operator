@@ -7,8 +7,11 @@ metadata:
     policy.open-cluster-management.io/categories: CA Security Assessment and Authorization
     policy.open-cluster-management.io/controls: CA-2 Security Assessments, CA-7 Continuous Monitoring
     policy.open-cluster-management.io/standards: NIST SP 800-53
-    policy.open-cluster-management.io/description: |
-      Creates a velero Restore using the restore_hub_config_name ConfigMap property.
+    policy.open-cluster-management.io/description: |-
+      Policy is placed on hub or managed clusters with label acm-virt-config=acm-dr-virt-config, where acm-dr-virt-config is a 
+      ConfigMap .
+
+      Creates a velero Restore using the restore_hub_config_name ConfigMap property, defined by the acm-dr-virt-config.
 spec:
   dependencies:
   - apiVersion: policy.open-cluster-management.io/v1
