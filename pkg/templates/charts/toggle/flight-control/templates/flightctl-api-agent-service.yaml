@@ -1,0 +1,16 @@
+
+# Source: flightctl/templates/flightctl-api-service-agent.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    flightctl.service: flightctl-api
+  name: flightctl-api-agent
+  namespace: open-cluster-management
+spec:
+  ports:
+    - name: "agent-api"
+      port: 7443
+      targetPort: 7443
+  selector:
+    flightctl.service: flightctl-api

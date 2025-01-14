@@ -1,0 +1,17 @@
+
+# Source: flightctl/templates/flightctl-api-certs-persistentvolumeclaim.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    kubernetes.io/reclaimPolicy: Delete
+  
+  name: flightctl-api-certs
+  namespace: open-cluster-management
+spec:
+  storageClassName: 
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 128Mi

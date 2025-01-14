@@ -1,0 +1,19 @@
+
+# Source: flightctl/templates/flightctl-api-route.yaml
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: flightctl-api-route
+  namespace: open-cluster-management
+spec:
+  host: api.test
+  port:
+    targetPort: 3443
+  tls:
+    termination: passthrough # the service is responsible for terminating TLS and authenticating devices through TLSs
+    insecureEdgeTerminationPolicy: None
+  to:
+    kind: Service
+    name: flightctl-api
+    weight: 100
+  wildcardPolicy: None

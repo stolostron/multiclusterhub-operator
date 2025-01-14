@@ -1,0 +1,131 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    flightctl.service: flightctl-db
+  name: flightctl-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      flightctl.service: flightctl-db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        flightctl.service: flightctl-db
+        ocm-antiaffinity-selector: flightctl-db
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - flightctl-db
+              topologyKey: topology.kubernetes.io/zone
+            weight: 70
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - flightctl-db
+              topologyKey: kubernetes.io/hostname
+            weight: 35
+      containers:
+      - args: []
+        env:
+{{- if .Values.global.pullSecret }}
+        - name: AGENT_IMAGE_PULL_SECRET
+          value: {{ .Values.global.pullSecret }}
+{{- end }}
+{{- if .Values.hubconfig.proxyConfigs }}
+        - name: HTTP_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+        - name: HTTPS_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+        - name: NO_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+{{- end }}
+        - name: PGPASSWORD
+          value: adminpass
+        - name: POSTGRESQL_DATABASE
+          value: flightctl
+        - name: POSTGRESQL_MASTER_PASSWORD
+          value: adminpass
+        - name: POSTGRESQL_MASTER_USER
+          value: admin
+        - name: POSTGRESQL_PASSWORD
+          value: demopass
+        - name: POSTGRESQL_USER
+          value: demouser
+        - name: POSTGRESQL_MAX_CONNECTIONS
+          value: '200'
+        image: '{{ .Values.global.imageOverrides.postgresql_12_c8s }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+        name: flightctl-db
+        ports:
+        - containerPort: 5432
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 2000m
+            memory: 2Gi
+          requests:
+            cpu: 512m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        volumeMounts:
+        - mountPath: /var/lib/pgsql/data
+          name: flightctl-db
+        - mountPath: /usr/share/container-scripts/postgresql/start/enable-superuser.sh
+          name: init-scripts
+          subPath: enable-superuser.sh
+      hostIPC: false
+      hostNetwork: false
+      hostPID: false
+{{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
+{{- end }}
+{{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      restartPolicy: Always
+      securityContext:
+        runAsNonRoot: true
+{{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
+        seccompProfile:
+          type: RuntimeDefault
+{{- end }}
+{{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+{{- end }}
+      volumes:
+      - name: flightctl-db
+        persistentVolumeClaim:
+          claimName: flightctl-db
+      - configMap:
+          name: flightctl-db
+        name: init-scripts

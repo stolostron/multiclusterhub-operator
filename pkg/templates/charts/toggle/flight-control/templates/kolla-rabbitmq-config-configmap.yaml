@@ -1,0 +1,12 @@
+
+# Source: flightctl/templates/flightctl-rabbitmq-statefulset.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kolla-rabbitmq-config
+  namespace: open-cluster-management
+data:
+  config.json: |
+    {
+      "command": "rabbitmq-server"
+    }
