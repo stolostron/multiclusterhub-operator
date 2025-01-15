@@ -1,20 +1,18 @@
-
-# Source: flightctl/templates/flightctl-rabbitmq-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: flightctl-rabbitmq
-  namespace: open-cluster-management
   labels:
     flightctl.service: flightctl-rabbitmq
+  name: flightctl-rabbitmq
+  namespace: '{{ .Values.global.namespace }}'
 spec:
-  type: ClusterIP
   ports:
-    - port: 5672
-      targetPort: 5672
-      name: amqp
-    - port: 15672
-      targetPort: 15672
-      name: management
+  - name: amqp
+    port: 5672
+    targetPort: 5672
+  - name: management
+    port: 15672
+    targetPort: 15672
   selector:
     flightctl.service: flightctl-rabbitmq
+  type: ClusterIP

@@ -1,18 +1,7 @@
-
-# Source: flightctl/templates/flightctl-db-config.yaml
 apiVersion: v1
+data:
+  enable-superuser.sh: "#!/bin/bash\n\n_psql () { psql --set ON_ERROR_STOP=1 \"$@\" ; }\n\n# Ensure POSTGRESQL_MASTER_USER is treated as a superuser\nif [ -n \"${POSTGRESQL_MASTER_USER}\" ]; then\n  echo \"Granting superuser privileges to ${POSTGRESQL_MASTER_USER}\"\n  _psql -c \"ALTER ROLE ${POSTGRESQL_MASTER_USER} WITH SUPERUSER;\"\nfi\n"
 kind: ConfigMap
 metadata:
   name: flightctl-db
-  namespace: open-cluster-management
-data:
-  enable-superuser.sh: |
-    #!/bin/bash
-
-    _psql () { psql --set ON_ERROR_STOP=1 "$@" ; }
-
-    # Ensure POSTGRESQL_MASTER_USER is treated as a superuser
-    if [ -n "${POSTGRESQL_MASTER_USER}" ]; then
-      echo "Granting superuser privileges to ${POSTGRESQL_MASTER_USER}"
-      _psql -c "ALTER ROLE ${POSTGRESQL_MASTER_USER} WITH SUPERUSER;"
-    fi
+  namespace: '{{ .Values.global.namespace }}'
