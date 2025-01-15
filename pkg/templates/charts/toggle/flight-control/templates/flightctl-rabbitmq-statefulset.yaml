@@ -1,66 +1,63 @@
-
-# Source: flightctl/templates/flightctl-rabbitmq-statefulset.yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: flightctl-rabbitmq
-  namespace: open-cluster-management
   labels:
     flightctl.service: flightctl-rabbitmq
+  name: flightctl-rabbitmq
+  namespace: '{{ .Values.global.namespace }}'
 spec:
-  serviceName: flightctl-rabbitmq
   replicas: 1
   selector:
     matchLabels:
       flightctl.service: flightctl-rabbitmq
+  serviceName: flightctl-rabbitmq
   template:
     metadata:
       labels:
         flightctl.service: flightctl-rabbitmq
     spec:
       containers:
-        - name: rabbitmq
-          image: docker.io/library/rabbitmq:3.13-management
-          imagePullPolicy: IfNotPresent
-          ports:
-            - name: amqp
-              containerPort: 5672
-            - name: management
-              containerPort: 15672
-            - name: prom-target
-              containerPort: 15692
-          env:
-            - name: RABBITMQ_DEFAULT_USER
-              value: "user"
-            - name: RABBITMQ_DEFAULT_PASS
-              valueFrom:
-                secretKeyRef:
-                  name: flightctl-rabbitmq-auth
-                  key: password
-            - name: RABBITMQ_MNESIA_DIR
-              value: /var/lib/rabbitmq/mnesia
-            - name: KOLLA_CONFIG_STRATEGY
-              value: COPY_ALWAYS
-          volumeMounts:
-            - name: rabbitmq-data
-              mountPath: /var/lib/rabbitmq/mnesia
-            - name: kolla-rabbitmq-config
-              mountPath: /var/lib/kolla/config_files/config.json
-              subPath: config.json
+      - env:
+        - name: RABBITMQ_DEFAULT_USER
+          value: user
+        - name: RABBITMQ_DEFAULT_PASS
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: flightctl-rabbitmq-auth
+        - name: RABBITMQ_MNESIA_DIR
+          value: /var/lib/rabbitmq/mnesia
+        - name: KOLLA_CONFIG_STRATEGY
+          value: COPY_ALWAYS
+        image: docker.io/library/rabbitmq:3.13-management
+        imagePullPolicy: IfNotPresent
+        name: rabbitmq
+        ports:
+        - containerPort: 5672
+          name: amqp
+        - containerPort: 15672
+          name: management
+        - containerPort: 15692
+          name: prom-target
+        volumeMounts:
+        - mountPath: /var/lib/rabbitmq/mnesia
+          name: rabbitmq-data
+        - mountPath: /var/lib/kolla/config_files/config.json
+          name: kolla-rabbitmq-config
+          subPath: config.json
       volumes:
-        - name: kolla-rabbitmq-config
-          configMap:
-            name: kolla-rabbitmq-config
+      - configMap:
+          name: kolla-rabbitmq-config
+        name: kolla-rabbitmq-config
   volumeClaimTemplates:
-    - metadata:
-        name: rabbitmq-data
-        annotations:
-          kubernetes.io/reclaimPolicy: Delete
-        
-      spec:
-        storageClassName: 
-        accessModes:
-          - ReadWriteOnce
-        resources:
-          requests:
-            storage: 10Gi
+  - metadata:
+      annotations:
+        kubernetes.io/reclaimPolicy: Delete
+      name: rabbitmq-data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
+      storageClassName: null

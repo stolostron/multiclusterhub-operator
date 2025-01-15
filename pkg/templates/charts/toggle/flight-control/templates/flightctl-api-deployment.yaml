@@ -100,9 +100,11 @@ spec:
       restartPolicy: Always
       securityContext:
         runAsNonRoot: true
+{{- if .Values.global.deployOnOCP }}
 {{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
         seccompProfile:
           type: RuntimeDefault
+{{- end }}
 {{- end }}
       serviceAccountName: flightctl-api
 {{- with .Values.hubconfig.tolerations }}

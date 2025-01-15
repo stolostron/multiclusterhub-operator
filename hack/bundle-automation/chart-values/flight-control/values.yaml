@@ -32,7 +32,7 @@
 
 global:
   target: "acm" # standalone, acm
-  baseDomain: ""
+  baseDomain: "test"
   ocpIngress: "test" # alternative to baseDomain used by the multiclusterhub operator
   baseDomainTls:
     cert: ""

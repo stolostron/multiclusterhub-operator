@@ -1,23 +1,7 @@
-
-# Source: flightctl/templates/flightctl-worker-config.yaml
 apiVersion: v1
+data:
+  config.yaml: "database:\n    hostname: flightctl-db.open-cluster-management.svc.cluster.local\n    type: pgsql\n    port: 5432\n    name: flightctl\n    user: admin\n    password: adminpass   # we should funnel this via secrets instead\nservice: {}\nqueue:\n    amqpUrl: amqp://user:password@flightctl-rabbitmq.open-cluster-management.svc.cluster.local:5672/\nkv:\n    hostname: flightctl-kv.open-cluster-management.svc.cluster.local\n    port: 6379\n    password: adminpass   # we should funnel this via secrets instead"
 kind: ConfigMap
 metadata:
   name: flightctl-worker-config
-  namespace: open-cluster-management
-data:
-  config.yaml: |-
-    database:
-        hostname: flightctl-db.open-cluster-management.svc.cluster.local
-        type: pgsql
-        port: 5432
-        name: flightctl
-        user: admin
-        password: adminpass   # we should funnel this via secrets instead
-    service: {}
-    queue:
-        amqpUrl: amqp://user:password@flightctl-rabbitmq.open-cluster-management.svc.cluster.local:5672/
-    kv:
-        hostname: flightctl-kv.open-cluster-management.svc.cluster.local
-        port: 6379
-        password: adminpass   # we should funnel this via secrets instead
+  namespace: '{{ .Values.global.namespace }}'
