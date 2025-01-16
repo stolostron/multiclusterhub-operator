@@ -416,6 +416,11 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 
+	result, err = r.openShiftApiUrl(ctx, multiClusterHub)
+	if err != nil {
+		return result, err
+	}
+
 	result, err = r.createTrustBundleConfigmap(ctx, multiClusterHub)
 	if err != nil {
 		return result, err
@@ -1465,6 +1470,32 @@ func (r *MultiClusterHubReconciler) ingressDomain(
 
 			return ctrl.Result{}, err
 		}
+	}
+
+	return ctrl.Result{}, nil
+}
+
+// ingressDomain is discovered from Openshift cluster configuration resources
+func (r *MultiClusterHubReconciler) openShiftApiUrl(
+	ctx context.Context,
+	m *operatorv1.MultiClusterHub,
+) (ctrl.Result, error) {
+	infrastructure := &configv1.Infrastructure{}
+	err := r.Client.Get(ctx, types.NamespacedName{
+		Name: "cluster",
+	}, infrastructure)
+	if err != nil {
+		r.Log.Error(err, "Failed to get Infrastructure")
+
+		return ctrl.Result{}, err
+	}
+
+	url := infrastructure.Status.APIServerURL
+	err = os.Setenv("API_URL", url)
+	if err != nil {
+		r.Log.Error(err, "Failed to set API_URL environment variable")
+
+		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
