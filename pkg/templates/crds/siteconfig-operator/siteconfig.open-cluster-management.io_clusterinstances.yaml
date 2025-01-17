@@ -120,6 +120,15 @@ spec:
                 - SNO
                 - HighlyAvailable
                 type: string
+              cpuArchitecture:
+                default: x86_64
+                description: CPUArchitecture is the default software architecture
+                  used for nodes that do not have an architecture defined.
+                enum:
+                - x86_64
+                - aarch64
+                - multi
+                type: string
               cpuPartitioningMode:
                 default: None
                 description: |-
@@ -277,6 +286,15 @@ spec:
                       - UEFI
                       - UEFISecureBoot
                       - legacy
+                      type: string
+                    cpuArchitecture:
+                      default: x86_64
+                      description: |-
+                        CPUArchitecture is the software architecture of the node.
+                        If it is not defined here then it is inheirited from the ClusterInstanceSpec.
+                      enum:
+                      - x86_64
+                      - aarch64
                       type: string
                     extraAnnotations:
                       additionalProperties:
