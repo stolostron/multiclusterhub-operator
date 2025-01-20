@@ -34,6 +34,8 @@ const (
 	// ComponentsUnavailableReason is added in a hub when one or more components are
 	// in an unready state
 	ComponentsUnavailableReason = "ComponentsUnavailable"
+	// ComponentUpdatingReason is added when the hub is actively updating a component resource
+	ComponentsUpdatingReason = "UpdatingComponentResource"
 	// NewComponentReason is added when the hub creates a new install resource successfully
 	NewComponentReason = "NewResourceCreated"
 	// DeployFailedReason is added when the hub fails to deploy a resource
@@ -189,6 +191,7 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 			progressing := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, ReconcileReason, "Hub is reconciling.")
 			SetHubCondition(&status, *progressing)
 		}
+
 		// only add unavailable status if complete status already present
 		if HubConditionPresent(status, operatorsv1.Complete) {
 			unavailable := NewHubCondition(operatorsv1.Complete, metav1.ConditionFalse, ComponentsUnavailableReason, "Not all hub components ready.")
@@ -533,14 +536,15 @@ func aggregatePhase(status operatorsv1.MultiClusterHubStatus) operatorsv1.HubPha
 	case cv == "":
 		// Hub has not reached success for first time
 		return operatorsv1.HubInstalling
-	case cv != version.Version:
 
+	case cv != version.Version:
 		if HubConditionPresent(status, operatorsv1.Blocked) {
 			return operatorsv1.HubUpdatingBlocked
 		} else {
 			// Hub has not completed upgrade to newest version
 			return operatorsv1.HubUpdating
 		}
+
 	default:
 		// Hub has reached desired version, but degraded
 		return operatorsv1.HubPending
@@ -578,7 +582,7 @@ func RemoveHubCondition(status *operatorsv1.MultiClusterHubStatus, condType oper
 	status.HubConditions = filterOutCondition(status.HubConditions, condType)
 }
 
-// FindHubCondition returns the condition you're looking for or nil.
+// GetHubCondition returns the condition you're looking for or nil.
 func GetHubCondition(status operatorsv1.MultiClusterHubStatus, condType operatorsv1.HubConditionType) *operatorsv1.HubCondition {
 	for i := range status.HubConditions {
 		c := status.HubConditions[i]
@@ -623,7 +627,7 @@ func filterOutConditionWithSubstring(conditions []operatorsv1.HubCondition, subs
 	return newConditions
 }
 
-// IsHubConditionPresentAndEqual indicates if the condition is present and equal to the given status.
+// HubConditionPresent indicates if the condition is present and equal to the given status.
 func HubConditionPresent(status operatorsv1.MultiClusterHubStatus, conditionType operatorsv1.HubConditionType) bool {
 	for _, condition := range status.HubConditions {
 		if condition.Type == conditionType {

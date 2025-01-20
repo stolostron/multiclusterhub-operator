@@ -56,7 +56,7 @@ type CacheSpec struct {
 }
 
 func (r *MultiClusterHubReconciler) ensureNoNamespace(m *operatorv1.MultiClusterHub, u *unstructured.Unstructured) (ctrl.Result, error) {
-	subLog := r.Log.WithValues("Name", u.GetName(), "Kind", u.GetKind())
+	subLog := r.Log.WithValues("Kind", u.GetKind(), "Name", u.GetName())
 	gone, err := r.uninstall(m, u)
 	if err != nil {
 		subLog.Error(err, "Failed to uninstall namespace")
@@ -70,7 +70,7 @@ func (r *MultiClusterHubReconciler) ensureNoNamespace(m *operatorv1.MultiCluster
 }
 
 func (r *MultiClusterHubReconciler) ensureUnstructuredResource(m *operatorv1.MultiClusterHub, u *unstructured.Unstructured) (ctrl.Result, error) {
-	obLog := r.Log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName(), "Kind", u.GetKind())
+	obLog := r.Log.WithValues("Namespace", u.GetNamespace(), "Kind", u.GetKind(), "Name", u.GetName())
 
 	found := &unstructured.Unstructured{}
 	found.SetGroupVersionKind(u.GroupVersionKind())
@@ -524,7 +524,7 @@ func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context) (ctrl.R
 		err = version.ValidMCEVersion(existingMCE.Status.CurrentVersion)
 	}
 	if err != nil {
-		return ctrl.Result{RequeueAfter: resyncPeriod}, fmt.Errorf("MCE version requirement not met: %w", err)
+		return ctrl.Result{}, fmt.Errorf("MCE version requirement not met: %w", err)
 	}
 	return ctrl.Result{}, nil
 }
