@@ -773,7 +773,7 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 				if err := r.Client.Create(ctx, template, &client.CreateOptions{}); err != nil {
 					return r.logAndSetCondition(err, "failed to create resource", template, m)
 				}
-				log.Info("Creating resource", "Name", template.GetName(), "Kind", template.GetKind())
+				log.Info("Creating resource", "Kind", template.GetKind(), "Name", template.GetName())
 			} else {
 				return r.logAndSetCondition(err, "failed to get resource", existing, m)
 			}
@@ -1256,7 +1256,7 @@ func (r *MultiClusterHubReconciler) deleteTemplate(ctx context.Context, m *opera
 		log.Error(err, "Failed to delete template")
 		return ctrl.Result{}, err
 	} else {
-		r.Log.Info("Finalizing template... Deleting resource", "Name", template.GetName(), "Kind", template.GetKind())
+		r.Log.Info("Finalizing template... Deleting resource", "Kind", template.GetKind(), "Name", template.GetName())
 	}
 	return ctrl.Result{}, nil
 }
@@ -1797,8 +1797,8 @@ func (r *MultiClusterHubReconciler) ensureResourceVersionAlignment(template *uns
 func (r *MultiClusterHubReconciler) logAndSetCondition(err error, message string,
 	template *unstructured.Unstructured, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 
-	log.Error(err, message, "Name", template.GetName(), "Kind", template.GetKind())
-	wrappedError := pkgerrors.Wrapf(err, "%s Name: %s Kind: %s", message, template.GetName(), template.GetKind())
+	log.Error(err, message, "Kind", template.GetKind(), "Name", template.GetName())
+	wrappedError := pkgerrors.Wrapf(err, "%s Kind: %s Name: %s", message, template.GetName(), template.GetKind())
 
 	condType := fmt.Sprintf("%v: %v (Kind:%v)", operatorv1.ComponentFailure, template.GetName(),
 		template.GetKind())
