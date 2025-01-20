@@ -524,7 +524,7 @@ func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context) (ctrl.R
 		err = version.ValidMCEVersion(existingMCE.Status.CurrentVersion)
 	}
 	if err != nil {
-		return ctrl.Result{RequeueAfter: resyncPeriod}, fmt.Errorf("MCE version requirement not met: %w", err)
+		return ctrl.Result{}, fmt.Errorf("MCE version requirement not met: %w", err)
 	}
 	return ctrl.Result{}, nil
 }
