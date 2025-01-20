@@ -153,9 +153,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	multiClusterHub.Status.HubConditions = filterOutConditionWithSubstring(multiClusterHub.Status.HubConditions,
 		string(operatorv1.ComponentFailure))
 
-	multiClusterHub.Status.HubConditions = filterOutCondition(multiClusterHub.Status.HubConditions,
-		operatorv1.Progressing)
-
 	// Check if any deprecated fields are present within the multiClusterHub spec.
 	r.CheckDeprecatedFieldUsage(multiClusterHub)
 
@@ -768,9 +765,9 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 			}
 		}
 
-		templateCopy := template.DeepCopy()
-		if err := r.Client.Get(ctx, types.NamespacedName{
-			Name: templateCopy.GetName(), Namespace: templateCopy.GetNamespace()}, templateCopy); err != nil {
+		existing := template.DeepCopy()
+		if err := r.Client.Get(ctx, types.NamespacedName{Name: existing.GetName(),
+			Namespace: existing.GetNamespace()}, existing); err != nil {
 			// Template resource does not exist
 			if errors.IsNotFound(err) {
 				if err := r.Client.Create(ctx, template, &client.CreateOptions{}); err != nil {
@@ -778,36 +775,21 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 				}
 				log.Info("Creating resource", "Name", template.GetName(), "Kind", template.GetKind())
 			} else {
-				return r.logAndSetCondition(err, "failed to get resource", templateCopy, m)
+				return r.logAndSetCondition(err, "failed to get resource", existing, m)
 			}
 		} else {
-			// Check the release version annotation and verify that current and desired versions are the same.
-			annotations := templateCopy.GetAnnotations()
-			currentVersion, ok := annotations[utils.AnnotationReleaseVersion]
+			desiredVersion := os.Getenv("OPERATOR_VERSION")
+			if desiredVersion == "" {
+				log.Info("Warning: OPERATOR_VERSION environment variable is not set")
+			}
 
-			if !ok {
-				log.Info(fmt.Sprintf("Annotation '%v' not found on resource", utils.AnnotationReleaseVersion),
-					"Name", templateCopy.GetName(), "Kind", template.GetKind())
-			} else {
-				desiredVersion := os.Getenv("OPERATOR_VERSION")
-				if desiredVersion == "" {
-					log.Info("OPERATOR_VERSION environment variable is not set")
-				}
-
-				if currentVersion != desiredVersion {
-					log.Info("Resource version mismatch detected; attempting to update resource",
-						"Name", templateCopy.GetName(), "Kind", template.GetKind(), "CurrentVersion", currentVersion,
-						"DesiredVersion", desiredVersion)
-
-					condition := NewHubCondition(
-						operatorv1.Progressing,
-						metav1.ConditionTrue,
-						ComponentsUpdatingReason,
-						fmt.Sprintf("(%s) Updating '%s' to target version (%s).",
-							templateCopy.GetKind(), templateCopy.GetName(), desiredVersion),
-					)
-					SetHubCondition(&m.Status, *condition)
-				}
+			if !r.ensureResourceVersionAlignment(existing, desiredVersion) {
+				condition := NewHubCondition(
+					operatorv1.Progressing, metav1.ConditionTrue, ComponentsUpdatingReason,
+					fmt.Sprintf("Updating %s/%s to target version: %s.", template.GetKind(),
+						template.GetName(), desiredVersion),
+				)
+				SetHubCondition(&m.Status, *condition)
 			}
 
 			// Resource exists; use the original template for patching to avoid issues with managedFields
@@ -1784,6 +1766,32 @@ func (r *MultiClusterHubReconciler) CheckDeprecatedFieldUsage(m *operatorv1.Mult
 			r.DeprecatedFields[f.name] = true
 		}
 	}
+}
+
+func (r *MultiClusterHubReconciler) ensureResourceVersionAlignment(template *unstructured.Unstructured,
+	desiredVersion string) bool {
+	if desiredVersion == "" {
+		return false
+	}
+
+	// Check the release version annotation on the existing resource
+	annotations := template.GetAnnotations()
+	currentVersion, ok := annotations[utils.AnnotationReleaseVersion]
+	if !ok {
+		log.Info(fmt.Sprintf("Annotation '%v' not found on resource", utils.AnnotationReleaseVersion),
+			"Kind", template.GetKind(), "Name", template.GetName())
+		return false
+	}
+
+	if currentVersion != desiredVersion {
+		log.Info("Resource version mismatch detected; attempting to update resource",
+			"Kind", template.GetName(), "Name", template.GetKind(),
+			"CurrentVersion", currentVersion, "DesiredVersion", desiredVersion)
+
+		return false
+	}
+
+	return true // Resource is aligned with the desired version
 }
 
 func (r *MultiClusterHubReconciler) logAndSetCondition(err error, message string,
