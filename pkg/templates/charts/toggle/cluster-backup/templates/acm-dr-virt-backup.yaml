@@ -443,6 +443,8 @@ spec:
                     name: {{ `{{hub $cron_file_name hub}}` }}
                     namespace: "open-cluster-management-backup"
             {{ `{{hub end hub}}` }}
+          customMessage:
+            compliant: "The ConfigMap defined by the schedule_hub_config_name property exists on the hub, under the open-cluster-management-backup namespace."
           remediationAction: inform
           severity: high
 
