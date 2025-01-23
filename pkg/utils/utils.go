@@ -340,7 +340,6 @@ func GetTestImages() []string {
 	}
 }
 
-
 // FormatSSLCiphers converts an array of ciphers into a string consumed by the management
 // ingress chart
 func FormatSSLCiphers(ciphers []string) string {
