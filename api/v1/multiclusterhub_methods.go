@@ -30,7 +30,7 @@ const (
 	MultiClusterObservability string = "multicluster-observability"
 	Repo                      string = "multiclusterhub-repo"
 	Search                    string = "search"
-	FlightControl             string = "flight-control"
+	FlightControl             string = "flight-control-preview"
 	SiteConfig                string = "siteconfig"
 	SubmarinerAddon           string = "submariner-addon"
 	Volsync                   string = "volsync"
