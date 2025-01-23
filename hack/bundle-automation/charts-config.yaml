@@ -1,6 +1,6 @@
 - repo_name: "flight-control"
-  github_ref: "https://github.com/cameronmwall/flightctl.git"
-  branch: "flying"
+  github_ref: "https://github.com/flightctl/flightctl.git"
+  branch: "main"
   charts:
     - name: "flight-control"
       chart-path: "deploy/helm/flightctl"
