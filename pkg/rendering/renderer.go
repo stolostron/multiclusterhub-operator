@@ -47,7 +47,7 @@ type Global struct {
 	APIUrl              string               `json:"apiUrl" structs:"apiUrl"`
 	Target              string               `json:"target" structs:"target"`
 	BaseDomain          string               `json:"baseDomain" structs:"baseDomain"`
-	DeployOnOCP			bool          `json:"deployOnOCP" structs:"deployOnOCP" yaml:"deployOnOCP"`
+	DeployOnOCP			bool         		 `json:"deployOnOCP" structs:"deployOnOCP" yaml:"deployOnOCP"`
 }
 
 type HubConfig struct {
