@@ -82,7 +82,7 @@ spec:
               name: flightctl-db-secret
         - name: POSTGRESQL_MAX_CONNECTIONS
           value: '200'
-        image: '{{ .Values.global.imageOverrides.postgresql_12_c8s }}'
+        image: '{{ .Values.global.imageOverrides.postgresql_12 }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         name: flightctl-db
         ports:
@@ -120,9 +120,11 @@ spec:
       restartPolicy: Always
       securityContext:
         runAsNonRoot: true
+{{- if .Values.global.deployOnOCP }}
 {{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
         seccompProfile:
           type: RuntimeDefault
+{{- end }}
 {{- end }}
 {{- with .Values.hubconfig.tolerations }}
       tolerations:

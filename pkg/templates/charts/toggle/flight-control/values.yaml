@@ -5,7 +5,7 @@ global:
     flightctl_ocp_ui: ''
     flightctl_periodic: ''
     flightctl_worker: ''
-    postgresql_12_c8s: ''
+    postgresql_12: ''
   namespace: default
   pullSecret: null
   templateOverrides: {}

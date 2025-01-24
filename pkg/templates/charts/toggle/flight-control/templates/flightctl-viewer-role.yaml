@@ -1,17 +1,15 @@
-
-# Source: flightctl/templates/flightctl-default-user-roles.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: flightctl-viewer
-  namespace: open-cluster-management
+  namespace: '{{ .Values.global.namespace }}'
 rules:
-  - verbs:
-      - get
-      - list
-    apiGroups:
-      - flightctl.io
-    resources:
-      - devices
-      - fleets
-      - resourcesyncs
+- apiGroups:
+  - flightctl.io
+  resources:
+  - devices
+  - fleets
+  - resourcesyncs
+  verbs:
+  - get
+  - list

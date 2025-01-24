@@ -1,5 +1,3 @@
-
-# Source: flightctl/templates/flightctl-api-clusterrole.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -7,6 +5,9 @@ metadata:
     flightctl.service: flightctl-api
   name: flightctl-api-open-cluster-management
 rules:
-  - apiGroups: ["authentication.k8s.io"]
-    resources: ["tokenreviews"]
-    verbs: ["create"]
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
