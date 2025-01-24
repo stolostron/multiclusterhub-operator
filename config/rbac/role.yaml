@@ -2,6 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
+  creationTimestamp: null
   name: multiclusterhub-role
 rules:
 - apiGroups:
@@ -1355,6 +1356,60 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - flightctl.io
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- apiGroups:
+  - flightctl.io
+  resources:
+  - certificatesigningrequests
+  verbs:
+  - create
+  - get
+  - list
+- apiGroups:
+  - flightctl.io
+  resources:
+  - devices
+  - fleets
+  - resourcesyncs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+- apiGroups:
+  - flightctl.io
+  resources:
+  - devices/console
+  verbs:
+  - get
+- apiGroups:
+  - flightctl.io
+  resources:
+  - enrollmentrequests
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - flightctl.io
+  resources:
+  - enrollmentrequests/approval
+  verbs:
+  - post
+- apiGroups:
+  - flightctl.io
+  resources:
+  - fleets/templateversions
+  - repositories
+  verbs:
+  - get
+  - list
 - apiGroups:
   - hive.openshift.io
   resources:
