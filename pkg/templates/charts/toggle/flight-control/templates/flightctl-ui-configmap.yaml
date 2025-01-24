@@ -1,12 +1,10 @@
-
-# Source: flightctl/charts/ui/templates/flightctl-ui-cm.yaml
 apiVersion: v1
+data:
+  FLIGHTCTL_GRPC_SERVER: grpcs://flightctl-api-agent-grpc:7444/
+  FLIGHTCTL_SERVER: https://flightctl-api:3443/
+  FLIGHTCTL_SERVER_INSECURE_SKIP_VERIFY: 'true'
+  K8S_RBAC_NS: open-cluster-management
 kind: ConfigMap
 metadata:
   name: flightctl-ui
-  namespace: open-cluster-management
-data:
-  FLIGHTCTL_SERVER: "https://flightctl-api:3443/"
-  FLIGHTCTL_GRPC_SERVER: "grpcs://flightctl-api-agent-grpc:7444/"
-  FLIGHTCTL_SERVER_INSECURE_SKIP_VERIFY: "true"
-  K8S_RBAC_NS: "open-cluster-management"
+  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'

@@ -107,6 +107,7 @@ package main
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
+//+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 //+kubebuilder:rbac:groups=authentication.k8s.io;authorization.k8s.io,resources=uids;userextras/authentication.kubernetes.io/credential-id;userextras/authentication.kubernetes.io/node-name;userextras/authentication.kubernetes.io/node-uid;userextras/authentication.kubernetes.io/pod-name;userextras/authentication.kubernetes.io/pod-uid,verbs=impersonate
 //+kubebuilder:rbac:groups=authentication.open-cluster-management.io,resources=managedserviceaccounts,verbs=create;delete;get
 //+kubebuilder:rbac:groups=authentication.open-cluster-management.io,resources=managedserviceaccounts,verbs=get;list;watch
@@ -172,6 +173,14 @@ package main
 //+kubebuilder:rbac:groups=discovery.open-cluster-management.io,resources=discoveryconfigs;discoveredclusters,verbs=list;watch
 //+kubebuilder:rbac:groups=extensions.hive.openshift.io,resources=agentclusterinstalls,verbs=list;watch
 //+kubebuilder:rbac:groups=extensions.hive.openshift.io,resources=agentclusterinstalls;imageclusterinstalls,verbs=create;delete;get;patch;update
+//+kubebuilder:rbac:groups=flightctl.io,resources=*,verbs=*
+//+kubebuilder:rbac:groups=flightctl.io,resources=certificatesigningrequests,verbs=get;list;create
+//+kubebuilder:rbac:groups=flightctl.io,resources=devices/console,verbs=get
+//+kubebuilder:rbac:groups=flightctl.io,resources=devices;fleets;resourcesyncs,verbs=get;list
+//+kubebuilder:rbac:groups=flightctl.io,resources=devices;fleets;resourcesyncs,verbs=get;list;create;delete;update;patch
+//+kubebuilder:rbac:groups=flightctl.io,resources=enrollmentrequests,verbs=get;list
+//+kubebuilder:rbac:groups=flightctl.io,resources=enrollmentrequests/approval,verbs=post
+//+kubebuilder:rbac:groups=flightctl.io,resources=repositories;fleets/templateversions,verbs=get;list
 //+kubebuilder:rbac:groups=hive.openshift.io,resources=clusterclaims;clusterdeployments;clusterpools;clusterimagesets;clusterprovisions;clusterdeprovisions;machinepools,verbs=list;watch
 //+kubebuilder:rbac:groups=hive.openshift.io,resources=clusterdeployments,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=hive.openshift.io,resources=clusterdeployments/status,verbs=get;watch

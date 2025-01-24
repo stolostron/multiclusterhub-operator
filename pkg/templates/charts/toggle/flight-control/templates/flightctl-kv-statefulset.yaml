@@ -4,7 +4,7 @@ metadata:
   labels:
     flightctl.service: flightctl-kv
   name: flightctl-kv
-  namespace: '{{ .Values.global.namespace }}'
+  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
 spec:
   replicas: 1
   selector:
