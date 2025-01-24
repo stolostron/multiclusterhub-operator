@@ -190,6 +190,25 @@ rules:
   - list
   - watch
 - apiGroups:
+  - operator.open-cluster-management.io
+  resourceNames:
+  - grc
+  resources:
+  - internalhubcomponents
+  verbs:
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - operator.open-cluster-management.io
+  resourceNames:
+  - grc
+  resources:
+  - internalhubcomponents/finalizers
+  verbs:
+  - update
+- apiGroups:
   - policy.open-cluster-management.io
   resources:
   - policies
