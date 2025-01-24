@@ -1617,7 +1617,14 @@ rules:
   - get
   - list
   - patch
+  - update
   - watch
+- apiGroups:
+  - operator.open-cluster-management.io
+  resources:
+  - internalhubcomponents/finalizers
+  verbs:
+  - update
 - apiGroups:
   - operator.open-cluster-management.io
   resources:
