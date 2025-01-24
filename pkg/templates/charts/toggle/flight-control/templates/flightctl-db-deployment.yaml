@@ -54,17 +54,32 @@ spec:
           value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
 {{- end }}
         - name: PGPASSWORD
-          value: adminpass
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: flightctl-db-secret
         - name: POSTGRESQL_DATABASE
           value: flightctl
         - name: POSTGRESQL_MASTER_PASSWORD
-          value: adminpass
+          valueFrom:
+            secretKeyRef:
+              key: masterPassword
+              name: flightctl-db-secret
         - name: POSTGRESQL_MASTER_USER
-          value: admin
+          valueFrom:
+            secretKeyRef:
+              key: masterUser
+              name: flightctl-db-secret
         - name: POSTGRESQL_PASSWORD
-          value: demopass
+          valueFrom:
+            secretKeyRef:
+              key: userPassword
+              name: flightctl-db-secret
         - name: POSTGRESQL_USER
-          value: demouser
+          valueFrom:
+            secretKeyRef:
+              key: user
+              name: flightctl-db-secret
         - name: POSTGRESQL_MAX_CONNECTIONS
           value: '200'
         image: '{{ .Values.global.imageOverrides.postgresql_12_c8s }}'
@@ -74,9 +89,6 @@ spec:
         - containerPort: 5432
           protocol: TCP
         resources:
-          limits:
-            cpu: 2000m
-            memory: 2Gi
           requests:
             cpu: 512m
             memory: 512Mi
@@ -108,11 +120,9 @@ spec:
       restartPolicy: Always
       securityContext:
         runAsNonRoot: true
-{{- if .Values.global.deployOnOCP }}
 {{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
         seccompProfile:
           type: RuntimeDefault
-{{- end }}
 {{- end }}
 {{- with .Values.hubconfig.tolerations }}
       tolerations:

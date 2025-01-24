@@ -1,34 +1,26 @@
+
+# Source: flightctl/templates/flightctl-kv-statefulset.yaml
+# ConfigMap for Redis configuration
 apiVersion: v1
-data:
-  redis.conf: 'bind 0.0.0.0
-
-    protected-mode yes
-
-    port 6379
-
-    dir /var/lib/redis/data
-
-
-    # Logging
-
-    loglevel warning
-
-
-    # Snapshotting configuration
-
-    save 300 1
-
-    dbfilename dump.rdb
-
-
-    # AOF configuration
-
-    appendonly yes
-
-    appendfilename "appendonly.aof"
-
-    appendfsync everysec'
 kind: ConfigMap
 metadata:
   name: flightctl-kv-config
-  namespace: '{{ .Values.global.namespace }}'
+  namespace: open-cluster-management
+data:
+  redis.conf: |-
+    bind 0.0.0.0
+    protected-mode yes
+    port 6379
+    dir /var/lib/redis/data
+
+    # Logging
+    loglevel warning
+
+    # Snapshotting configuration
+    save 300 1
+    dbfilename dump.rdb
+
+    # AOF configuration
+    appendonly yes
+    appendfilename "appendonly.aof"
+    appendfsync everysec

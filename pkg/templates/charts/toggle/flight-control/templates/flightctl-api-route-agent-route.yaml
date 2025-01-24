@@ -1,15 +1,17 @@
+
+# Source: flightctl/templates/flightctl-api-route-agent.yaml
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
   name: flightctl-api-route-agent
-  namespace: '{{ .Values.global.namespace }}'
+  namespace: open-cluster-management
 spec:
-  host: agent-api.{{ .Values.global.baseDomain  }}
+  host: agent-api.test
   port:
     targetPort: 7443
   tls:
+    termination: passthrough # the service is responsible for terminating TLS and authenticating devices through TLSs
     insecureEdgeTerminationPolicy: None
-    termination: passthrough
   to:
     kind: Service
     name: flightctl-api-agent

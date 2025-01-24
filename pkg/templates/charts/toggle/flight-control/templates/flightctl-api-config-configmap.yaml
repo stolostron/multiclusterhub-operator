@@ -12,8 +12,6 @@ data:
         type: pgsql
         port: 5432
         name: flightctl
-        user: admin
-        password: adminpass   # we should funnel this via secrets instead
     service:
         address: :3443
         agentEndpointAddress: :7443
@@ -39,12 +37,9 @@ data:
           - flightctl-api-agent-grpc
           - flightctl-api-agent-grpc.open-cluster-management
           - flightctl-api-agent-grpc.open-cluster-management.svc.cluster.local
-    queue:
-        amqpUrl: amqp://user:password@flightctl-rabbitmq.open-cluster-management.svc.cluster.local:5672/
     kv:
         hostname: flightctl-kv.open-cluster-management.svc.cluster.local
         port: 6379
-        password: adminpass   # we should funnel this via secrets instead
     auth:
         insecureSkipTlsVerify: false
         caCert: 

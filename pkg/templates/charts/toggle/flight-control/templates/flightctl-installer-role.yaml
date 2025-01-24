@@ -1,0 +1,29 @@
+
+# Source: flightctl/templates/flightctl-default-user-roles.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: flightctl-installer
+  namespace: open-cluster-management
+rules:
+  - verbs:
+      - get
+      - list
+    apiGroups:
+      - flightctl.io
+    resources:
+      - enrollmentrequests
+  - verbs:
+      - post
+    apiGroups:
+      - flightctl.io
+    resources:
+      - enrollmentrequests/approval
+  - verbs:
+      - get
+      - list
+      - create
+    apiGroups:
+      - flightctl.io
+    resources:
+      - certificatesigningrequests

@@ -1,7 +1,0 @@
-apiVersion: v1
-data:
-  config.json: "{\n  \"command\": \"rabbitmq-server\"\n}\n"
-kind: ConfigMap
-metadata:
-  name: kolla-rabbitmq-config
-  namespace: '{{ .Values.global.namespace }}'

@@ -1,0 +1,14 @@
+
+# Source: flightctl/templates/flightctl-default-user-roles.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: flightctl-admin
+  namespace: open-cluster-management
+rules:
+  - verbs:
+      - '*'
+    apiGroups:
+      - flightctl.io
+    resources:
+      - '*'

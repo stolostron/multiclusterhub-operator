@@ -1,14 +1,16 @@
+
+# Source: flightctl/templates/flightctl-db-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
   labels:
     flightctl.service: flightctl-db
   name: flightctl-db
-  namespace: '{{ .Values.global.namespace }}'
+  namespace:  open-cluster-management
 spec:
   ports:
-  - name: '5432'
-    port: 5432
-    targetPort: 5432
+    - name: "5432"
+      port: 5432
+      targetPort: 5432
   selector:
     flightctl.service: flightctl-db

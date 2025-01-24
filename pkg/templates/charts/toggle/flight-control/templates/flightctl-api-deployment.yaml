@@ -55,6 +55,21 @@ spec:
 {{- end }}
         - name: HOME
           value: /root
+        - name: KV_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: flightctl-kv-secret
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: masterPassword
+              name: flightctl-db-secret
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              key: masterUser
+              name: flightctl-db-secret
         image: '{{ .Values.global.imageOverrides.flightctl_api }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         name: flightctl-api
@@ -100,11 +115,9 @@ spec:
       restartPolicy: Always
       securityContext:
         runAsNonRoot: true
-{{- if .Values.global.deployOnOCP }}
 {{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
         seccompProfile:
           type: RuntimeDefault
-{{- end }}
 {{- end }}
       serviceAccountName: flightctl-api
 {{- with .Values.hubconfig.tolerations }}

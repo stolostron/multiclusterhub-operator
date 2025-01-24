@@ -1,8 +1,10 @@
+
+# Source: flightctl/templates/flightctl-networkpolicy.yaml
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-from-flightctl
-  namespace: '{{ .Values.global.namespace }}'
+  namespace:  open-cluster-management
 spec:
   ingress:
   - from:
