@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    flightctl.service: flightctl-api
+  name: flightctl-api
+  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
+spec:
+  ports:
+  - name: flightctl-api
+    port: 3443
+    targetPort: 3443
+  selector:
+    flightctl.service: flightctl-api

@@ -1,0 +1,141 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    flightctl.service: flightctl-api
+  name: flightctl-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      flightctl.service: flightctl-api
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        flightctl.service: flightctl-api
+        ocm-antiaffinity-selector: flightctl-api
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - flightctl-api
+              topologyKey: topology.kubernetes.io/zone
+            weight: 70
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - flightctl-api
+              topologyKey: kubernetes.io/hostname
+            weight: 35
+      containers:
+      - args: []
+        env:
+{{- if .Values.global.pullSecret }}
+        - name: AGENT_IMAGE_PULL_SECRET
+          value: {{ .Values.global.pullSecret }}
+{{- end }}
+{{- if .Values.hubconfig.proxyConfigs }}
+        - name: HTTP_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+        - name: HTTPS_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+        - name: NO_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+{{- end }}
+        - name: HOME
+          value: /root
+        - name: KV_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: flightctl-kv-secret
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: masterPassword
+              name: flightctl-db-secret
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              key: masterUser
+              name: flightctl-db-secret
+        image: '{{ .Values.global.imageOverrides.flightctl_api }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+        name: flightctl-api
+        ports:
+        - containerPort: 3443
+          name: service-api
+          protocol: TCP
+        - containerPort: 7443
+          name: agent-api
+          protocol: TCP
+        - containerPort: 15690
+          name: api-prom-target
+          protocol: TCP
+        - containerPort: 15691
+          name: db-prom-target
+          protocol: TCP
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        volumeMounts:
+        - mountPath: /root/.flightctl/
+          name: flightctl-api-certs
+        - mountPath: /root/.flightctl/config.yaml
+          name: flightctl-api-config
+          readOnly: true
+          subPath: config.yaml
+      hostIPC: false
+      hostNetwork: false
+      hostPID: false
+{{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
+{{- end }}
+{{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      restartPolicy: Always
+      securityContext:
+        runAsNonRoot: true
+{{- if .Values.global.deployOnOCP }}
+{{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
+        seccompProfile:
+          type: RuntimeDefault
+{{- end }}
+{{- end }}
+      serviceAccountName: flightctl-api
+{{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+{{- end }}
+      volumes:
+      - name: flightctl-api-certs
+        persistentVolumeClaim:
+          claimName: flightctl-api-certs
+      - configMap:
+          name: flightctl-api-config
+        name: flightctl-api-config

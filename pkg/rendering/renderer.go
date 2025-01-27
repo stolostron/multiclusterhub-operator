@@ -47,6 +47,7 @@ type Global struct {
 	APIUrl              string               `json:"apiUrl" structs:"apiUrl"`
 	Target              string               `json:"target" structs:"target"`
 	BaseDomain          string               `json:"baseDomain" structs:"baseDomain"`
+	DeployOnOCP         bool                 `json:"deployOnOCP" structs:"deployOnOCP"`
 }
 
 type HubConfig struct {
@@ -332,6 +333,8 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 
 	// TODO: remove this when mch.Spec.HubSize is valid again
 	values.Global.HubSize = utils.GetHubSize(mch)
+
+	values.Global.DeployOnOCP = true
 
 	values.HubConfig.ClusterSTSEnabled = isSTSEnabled
 

@@ -32,6 +32,7 @@ var chartPaths = []string{
 	utils.GRCChartLocation,
 	utils.ConsoleChartLocation,
 	utils.VolsyncChartLocation,
+	utils.FlightControlChartLocation,
 }
 
 func TestRender(t *testing.T) {

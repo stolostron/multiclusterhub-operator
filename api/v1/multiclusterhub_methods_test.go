@@ -90,7 +90,7 @@ func TestGetDisabledComponents(t *testing.T) {
 			name:      "default disabled components",
 			component: ClusterBackup,
 			want:      true,
-			want2:     2,
+			want2:     3,
 		},
 	}
 
@@ -113,7 +113,7 @@ func TestGetDisabledComponents(t *testing.T) {
 				t.Errorf("GetDefaultDisabledComponents() = %v, want: %v", pass, tt.want)
 			}
 
-			if len(disabledComponents) != 2 {
+			if len(disabledComponents) != 3 {
 				t.Errorf("GetDefaultDisabledComponents() = %v, want: %v", len(disabledComponents), tt.want2)
 			}
 		})
