@@ -88,7 +88,7 @@ def copy_scripts(script_dependencies):
         if src.is_dir():
             shutil.copytree(src, dest)
             logging.debug(f"Copied directory {src} to {dest}")
-            
+
         else:
             shutil.copy(src, dest)
             logging.debug(f"Copied file {src} to {dest}")
@@ -98,7 +98,7 @@ def cleanup_scripts(script_dependencies):
     for script in script_dependencies:
         # If the script is in a subdirectory like 'utils/', construct the path properly
         dest = DEST_DIR / script
-        
+
         # Check if the destination path is a directory or a file
         if dest.exists():
             if dest.is_dir():
@@ -109,7 +109,6 @@ def cleanup_scripts(script_dependencies):
                 # If the destination is a file, unlink it
                 dest.unlink(missing_ok=True)
                 logging.debug(f"Removed file {dest}")
-        
 
 def prepare_and_execute(operation, operation_data, args):
     """Prepares and executes the operation based on the provided operation data."""
@@ -167,7 +166,7 @@ def main(args):
 if __name__ == "__main__":
     # Set up argument parsing for command-line execution
     parser = argparse.ArgumentParser()
-    
+
     # Define command-line arguments and their help descriptions
     for operation, operation_data in SUPPORTED_OPERATIONS.items():
         parser.add_argument(
