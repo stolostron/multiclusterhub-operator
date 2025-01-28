@@ -1,0 +1,17 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: flightctl-api-route-agent
+  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
+spec:
+  host: agent-api.test
+  port:
+    targetPort: 7443
+  tls:
+    insecureEdgeTerminationPolicy: None
+    termination: passthrough
+  to:
+    kind: Service
+    name: flightctl-api-agent
+    weight: 100
+  wildcardPolicy: None

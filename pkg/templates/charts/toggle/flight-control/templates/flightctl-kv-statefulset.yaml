@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    flightctl.service: flightctl-kv
+  name: flightctl-kv
+  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      flightctl.service: flightctl-kv
+  serviceName: flightctl-kv
+  template:
+    metadata:
+      labels:
+        flightctl.service: flightctl-kv
+    spec:
+      containers:
+      - command:
+        - redis-server
+        - /etc/redis/redis.conf
+        - --requirepass
+        - $(REDIS_PASSWORD)
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: flightctl-kv-secret
+        image: docker.io/redis:7.4.1
+        imagePullPolicy: Always
+        name: flightctl-kv
+        ports:
+        - containerPort: 6379
+          name: kv
+        resources:
+          requests:
+            cpu: 1000m
+            memory: 2Gi
+        volumeMounts:
+        - mountPath: /var/lib/redis/data
+          name: flightctl-kv-data
+        - mountPath: /etc/redis/redis.conf
+          name: flightctl-kv-config
+          subPath: redis.conf
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: flightctl-kv-config
+        name: flightctl-kv-config
+  volumeClaimTemplates:
+  - metadata:
+      annotations:
+        kubernetes.io/reclaimPolicy: Delete
+      name: flightctl-kv-data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 2Gi
+      storageClassName: null

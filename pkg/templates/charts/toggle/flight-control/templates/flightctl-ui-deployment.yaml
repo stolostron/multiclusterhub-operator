@@ -1,0 +1,144 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: flightctl-ui
+    role: frontend
+  name: flightctl-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flightctl-ui
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: flightctl-ui
+        ocm-antiaffinity-selector: flightctl-ui
+        role: frontend
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - flightctl-ui
+              topologyKey: topology.kubernetes.io/zone
+            weight: 70
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - flightctl-ui
+              topologyKey: kubernetes.io/hostname
+            weight: 35
+      containers:
+      - args: []
+        env:
+{{- if .Values.global.pullSecret }}
+        - name: AGENT_IMAGE_PULL_SECRET
+          value: {{ .Values.global.pullSecret }}
+{{- end }}
+{{- if .Values.hubconfig.proxyConfigs }}
+        - name: HTTP_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+        - name: HTTPS_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+        - name: NO_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+{{- end }}
+        - name: API_PORT
+          value: '8080'
+        - name: FLIGHTCTL_SERVER
+          valueFrom:
+            configMapKeyRef:
+              key: FLIGHTCTL_SERVER
+              name: flightctl-ui
+        - name: FLIGHTCTL_GRPC_SERVER
+          valueFrom:
+            configMapKeyRef:
+              key: FLIGHTCTL_GRPC_SERVER
+              name: flightctl-ui
+        - name: FLIGHTCTL_SERVER_INSECURE_SKIP_VERIFY
+          valueFrom:
+            configMapKeyRef:
+              key: FLIGHTCTL_SERVER_INSECURE_SKIP_VERIFY
+              name: flightctl-ui
+        - name: TLS_KEY
+          value: /app/serving-cert/tls.key
+        - name: TLS_CERT
+          value: /app/serving-cert/tls.crt
+        - name: IS_OCP_PLUGIN
+          value: 'true'
+        - name: K8S_RBAC_NS
+          valueFrom:
+            configMapKeyRef:
+              key: K8S_RBAC_NS
+              name: flightctl-ui
+        image: '{{ .Values.global.imageOverrides.flightctl_ocp_ui }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+        name: flightctl-ui
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        volumeMounts:
+        - mountPath: /app/certs
+          name: flightctl-ui-certs
+        - mountPath: /app/serving-cert
+          name: flightctl-ui-serving-cert
+      hostIPC: false
+      hostNetwork: false
+      hostPID: false
+{{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
+{{- end }}
+{{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      restartPolicy: Always
+      securityContext:
+        runAsNonRoot: true
+{{- if .Values.global.deployOnOCP }}
+{{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
+        seccompProfile:
+          type: RuntimeDefault
+{{- end }}
+{{- end }}
+{{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+{{- end }}
+      volumes:
+      - name: flightctl-ui-certs
+        secret:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          secretName: flightctl-ui-certs
+      - name: flightctl-ui-serving-cert
+        secret:
+          defaultMode: 420
+          secretName: flightctl-ui-serving-cert

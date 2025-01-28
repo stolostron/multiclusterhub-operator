@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.alpha.openshift.io/serving-cert-secret-name: flightctl-ui-serving-cert
+  labels:
+    app: flightctl-ui
+  name: flightctl-ui
+  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
+spec:
+  ports:
+  - name: 8080-tcp
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: flightctl-ui

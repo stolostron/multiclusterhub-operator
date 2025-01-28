@@ -1,0 +1,22 @@
+- repo_name: "flight-control"
+  github_ref: "https://github.com/flightctl/flightctl.git"
+  branch: "main"
+  charts:
+    - name: "flight-control"
+      chart-path: "deploy/helm/flightctl"
+      always-or-toggle: "toggle"
+      imageMappings:
+        flightctl-worker: flightctl_worker
+        flightctl-periodic: flightctl_periodic
+        flightctl-api: flightctl_api
+        flightctl-ui: flightctl_ui
+        flightctl-ocp-ui: flightctl_ocp_ui
+        postgresql-12-c8s: postgresql_12
+      inclusions:
+        - "pullSecretOverride"
+      skipRBACOverrides: true
+      updateChartVersion: false # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.4 -> 2.4
+      escape-template-variables:
+
+
+
