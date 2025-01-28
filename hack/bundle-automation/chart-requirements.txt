@@ -6,5 +6,4 @@ packaging
 semver
 chardet
 coloredlogs
-subprocess
 inquirer

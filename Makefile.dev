@@ -57,6 +57,10 @@ copy-charts: ## Regenerates the operator bundles
 	pip3 install -r hack/bundle-automation/requirements.txt
 	python3 ./hack/bundle-automation/generate-shell.py --copy-charts --org $(ORG) --repo $(REPO) --branch $(BRANCH)
 
+onboard-new-component: ## Regenerates the operator bundles
+	pip3 install -r hack/bundle-automation/requirements.txt
+	python3 ./hack/bundle-automation/generate-shell.py --onboard-new-component --org $(ORG) --repo $(REPO) --branch $(BRANCH)
+
 # different from `in-cluster-install` (call no secrets, no observability-crd)
 mock-install: prereqs subscriptions docker-build docker-push deploy
 
