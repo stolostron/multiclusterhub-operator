@@ -11,7 +11,7 @@
         flightctl-api: flightctl_api
         flightctl-ui: flightctl_ui
         flightctl-ocp-ui: flightctl_ocp_ui
-        postgresql-12-c8s: postgresql_12
+        postgresql-12-c8s: postgresql_16
       inclusions:
         - "pullSecretOverride"
       skipRBACOverrides: true
