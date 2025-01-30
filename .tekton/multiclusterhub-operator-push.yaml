@@ -23,7 +23,7 @@ spec:
     - name: output-image
       value: quay.io/redhat-user-workloads/crt-redhat-acm-tenant/multiclusterhub-operator:{{revision}}
     - name: dockerfile
-      value: Dockerfile
+      value: build/Dockerfile.rhtap
     - name: hermetic
       value: "true"
   pipelineSpec:
