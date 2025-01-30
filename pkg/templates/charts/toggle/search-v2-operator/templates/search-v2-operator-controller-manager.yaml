@@ -93,7 +93,7 @@ spec:
             fieldRef:
               fieldPath: metadata.annotations['olm.targetNamespaces']
         - name: POSTGRES_IMAGE
-          value: '{{ .Values.global.imageOverrides.postgresql_13 }}'
+          value: '{{ .Values.global.imageOverrides.postgresql_16 }}'
         - name: INDEXER_IMAGE
           value: '{{ .Values.global.imageOverrides.search_indexer }}'
         - name: COLLECTOR_IMAGE
