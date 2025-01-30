@@ -18,6 +18,8 @@ spec:
       type: string
     - name: hermetic
       value: "true"
+    - name: prefetch-input
+      value: '[{"type": "gomod", "path": "."}]'
   tasks:
     - name: unit-test
       params:
