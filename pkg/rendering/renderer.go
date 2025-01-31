@@ -2,13 +2,17 @@
 package renderer
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"os"
 	"path"
 	"path/filepath"
 	"reflect"
 	"strconv"
+	"strings"
 
 	loader "helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -48,6 +52,7 @@ type Global struct {
 	Target              string               `json:"target" structs:"target"`
 	BaseDomain          string               `json:"baseDomain" structs:"baseDomain"`
 	DeployOnOCP         bool                 `json:"deployOnOCP" structs:"deployOnOCP"`
+	MasterPassword      string               `json:"masterPassword" structs:"masterPassword"`
 }
 
 type HubConfig struct {
@@ -167,6 +172,41 @@ func (val *Values) ToValues() (chartutil.Values, error) {
 	}
 	return vals, nil
 
+}
+
+func generateRandomAlphaNumString(length int) (string, error) {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	var output strings.Builder
+	for i := 0; i < length; i++ {
+		idx, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		if err != nil {
+			return "", err
+		}
+		output.WriteByte(charset[idx.Int64()])
+	}
+	return output.String(), nil
+}
+
+func generatePassword() (string, error) {
+	// Generate random 20-character string
+	password, err := generateRandomAlphaNumString(20)
+	if err != nil {
+		return "", err
+	}
+
+	// Split password into 4 parts
+	part1 := password[:5]
+	part2 := password[5:10]
+	part3 := password[10:15]
+	part4 := password[15:20]
+
+	// Format the password with hyphens
+	formattedPassword := fmt.Sprintf("%s-%s-%s-%s", part1, part2, part3, part4)
+
+	// Base64 encode the formatted password
+	encodedPassword := base64.StdEncoding.EncodeToString([]byte(formattedPassword))
+
+	return encodedPassword, nil
 }
 
 func RenderCRDs(crdDir string, mch *v1.MultiClusterHub) ([]*unstructured.Unstructured, []error) {
@@ -327,6 +367,12 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 	values.Global.PullSecret = mch.Spec.ImagePullSecret
 
 	values.Global.ImageRepository = utils.GetImageRepository(mch)
+
+	masterPassword, err := generatePassword()
+
+	if err == nil {
+		values.Global.MasterPassword = masterPassword
+	}
 
 	// TODO: put this back later
 	// values.Global.HubSize = mch.Spec.HubSize

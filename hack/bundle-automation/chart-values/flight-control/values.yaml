@@ -68,6 +68,8 @@ global:
   gatewayPorts:
     tls: 443
     http: 80
+  generateSecrets: true
+  
 
 ## @section ACM operator specific parameters
 hubConfig:
@@ -84,8 +86,8 @@ db:
     image: quay.io/sclorg/postgresql-12-c8s
     tag: latest
     pullPolicy: Always
-  password: adminpass
-  masterPassword: adminpass
+  password: ""
+  masterPassword: ""
   masterUser: admin
   user: demouser
   userPassword: demopass
@@ -107,7 +109,7 @@ kv:
     image: docker.io/redis
     tag: 7.4.1
     pullPolicy: Always
-  password: adminpass
+  password: ""
   # Save if at least 1 key changed in 5 minutes
   save: 300 1
   loglevel: warning
