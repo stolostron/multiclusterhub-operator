@@ -81,9 +81,6 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 15
         resources:
-          limits:
-            cpu: 1500m
-            memory: 1.5Gi
           requests:
             cpu: 300m
             memory: 64Mi
@@ -141,9 +138,6 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 15
         resources:
-          limits:
-            cpu: 100m
-            memory: 1Gi
           requests:
             cpu: 25m
             memory: 64Mi
@@ -206,9 +200,6 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 15
         resources:
-          limits:
-            cpu: 100m
-            memory: 512Mi
           requests:
             cpu: 25m
             memory: 64Mi
