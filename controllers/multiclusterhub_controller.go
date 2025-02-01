@@ -260,6 +260,15 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	r.CacheSpec.TemplateOverrides = templateOverrides
 	r.CacheSpec.TemplateOverridesCM = utils.GetTemplateOverridesConfigmapName(multiClusterHub)
 
+	var result ctrl.Result
+	result, err = r.setDefaults(multiClusterHub, ocpConsole)
+	if result != (ctrl.Result{}) {
+		return ctrl.Result{}, err
+	}
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	// Check if the multiClusterHub instance is marked to be deleted, which is
 	// indicated by the deletion timestamp being set.
 	isHubMarkedToBeDeleted := multiClusterHub.GetDeletionTimestamp() != nil
@@ -288,15 +297,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 
 		return ctrl.Result{}, nil
-	}
-
-	var result ctrl.Result
-	result, err = r.setDefaults(multiClusterHub, ocpConsole)
-	if result != (ctrl.Result{}) {
-		return ctrl.Result{}, err
-	}
-	if err != nil {
-		return ctrl.Result{}, err
 	}
 
 	/*
