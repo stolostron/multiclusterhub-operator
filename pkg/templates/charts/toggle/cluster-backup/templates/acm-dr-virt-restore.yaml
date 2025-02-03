@@ -13,11 +13,6 @@ metadata:
 
       Creates a velero Restore using the restore_hub_config_name ConfigMap property, defined by the acm-dr-virt-config.
 spec:
-  dependencies:
-  - apiVersion: policy.open-cluster-management.io/v1
-    compliance: Compliant
-    kind: Policy
-    name: acm-dr-virt-install
   disabled: false
   policy-templates:                                                                                                                                             
     - objectDefinition:
@@ -77,7 +72,14 @@ spec:
             {{ `{{- $sch_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" $sch_crd_name  }}` }}
             {{ `{{- $sch_crd_exists := eq $sch_crd.metadata.name  $sch_crd_name }}` }}
 
-            {{ `{{ if $sch_crd_exists }}` }}
+            {{ `{{- /* check if install policy is compliant */ -}}` }}
+            {{ `{{- $policy_install_compliant := "false" }}` }}
+            {{ `{{- $policy_label := "policy.open-cluster-management.io/root-policy, policy.open-cluster-management.io/root-policy in (open-cluster-management-backup.acm-dr-virt-install)"}}` }}
+            {{ `{{- range $policy_install := (lookup "policy.open-cluster-management.io/v1" "Policy" "" "" $policy_label).items }}` }}
+              {{ `{{- $policy_install_compliant = eq $policy_install.status.compliant "Compliant" }}` }}
+            {{ `{{- end }}` }}
+
+            {{ `{{ if and $sch_crd_exists $policy_install_compliant }}` }}
             {{ `{{- /* ns is the namespace for the OADP deployment  */ -}}` }}
             {{ `{{- $ns := "open-cluster-management-backup" }}` }}
 
