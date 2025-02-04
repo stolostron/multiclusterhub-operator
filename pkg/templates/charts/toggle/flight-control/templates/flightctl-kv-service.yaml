@@ -4,7 +4,7 @@ metadata:
   labels:
     flightctl.service: flightctl-kv
   name: flightctl-kv
-  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
+  namespace: '{{ default "default" .Values.global.namespace }}'
 spec:
   ports:
   - name: '6379'

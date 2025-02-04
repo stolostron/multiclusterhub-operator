@@ -4,4 +4,4 @@ data:
 kind: ConfigMap
 metadata:
   name: flightctl-db
-  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
+  namespace: '{{ default "default" .Values.global.namespace }}'

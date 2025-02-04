@@ -2,7 +2,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: flightctl-installer
-  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
+  namespace: '{{ default "default" .Values.global.namespace }}'
 rules:
 - apiGroups:
   - flightctl.io

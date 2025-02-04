@@ -3,7 +3,7 @@ kind: ClusterRole
 metadata:
   labels:
     flightctl.service: flightctl-api
-  name: flightctl-api-open-cluster-management
+  name: flightctl-api-default
 rules:
 - apiGroups:
   - authentication.k8s.io

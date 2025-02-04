@@ -37,7 +37,7 @@ global:
   baseDomainTls:
     cert: ""
     key: ""
-  storageClassName: ""
+  storageClassName: "gp3-csi"
   imagePullSecretName: ""
   apiUrl: "test" # alternative used by multiclusterhub operator
   auth:
@@ -68,6 +68,7 @@ global:
   gatewayPorts:
     tls: 443
     http: 80
+  generateSecrets: true
 
 ## @section ACM operator specific parameters
 hubConfig:
