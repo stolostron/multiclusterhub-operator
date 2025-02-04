@@ -1,0 +1,271 @@
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  annotations:
+    installer.open-cluster-management.io/release-version: 2.13.0-59
+  resourceVersion: '1469277'
+  name: flightctl-kv
+  uid: ec305a91-25ac-40ca-b36c-5d2b77729ca9
+  creationTimestamp: '2025-02-04T19:36:34Z'
+  generation: 1
+  managedFields:
+    - manager: multiclusterhub-operator
+      operation: Apply
+      apiVersion: apps/v1
+      time: '2025-02-04T19:37:05Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:metadata':
+          'f:annotations':
+            'f:installer.open-cluster-management.io/release-version': {}
+          'f:labels':
+            'f:flightctl.service': {}
+            'f:installer.name': {}
+            'f:installer.namespace': {}
+        'f:spec':
+          'f:replicas': {}
+          'f:selector': {}
+          'f:serviceName': {}
+          'f:template':
+            'f:metadata':
+              'f:labels':
+                'f:flightctl.service': {}
+            'f:spec':
+              'f:containers':
+                'k:{"name":"flightctl-kv"}':
+                  'f:image': {}
+                  'f:volumeMounts':
+                    'k:{"mountPath":"/etc/redis/redis.conf"}':
+                      .: {}
+                      'f:mountPath': {}
+                      'f:name': {}
+                      'f:subPath': {}
+                    'k:{"mountPath":"/var/lib/redis/data"}':
+                      .: {}
+                      'f:mountPath': {}
+                      'f:name': {}
+                  .: {}
+                  'f:resources':
+                    'f:requests':
+                      'f:cpu': {}
+                      'f:memory': {}
+                  'f:command': {}
+                  'f:env':
+                    'k:{"name":"REDIS_PASSWORD"}':
+                      .: {}
+                      'f:name': {}
+                      'f:valueFrom':
+                        'f:secretKeyRef': {}
+                  'f:imagePullPolicy': {}
+                  'f:ports':
+                    'k:{"containerPort":6379,"protocol":"TCP"}':
+                      .: {}
+                      'f:containerPort': {}
+                      'f:name': {}
+                  'f:name': {}
+              'f:volumes':
+                'k:{"name":"flightctl-kv-config"}':
+                  .: {}
+                  'f:configMap':
+                    'f:defaultMode': {}
+                    'f:name': {}
+                  'f:name': {}
+          'f:volumeClaimTemplates': {}
+    - manager: kube-controller-manager
+      operation: Update
+      apiVersion: apps/v1
+      time: '2025-02-04T19:36:34Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:status':
+          'f:collisionCount': {}
+          'f:currentReplicas': {}
+          'f:currentRevision': {}
+          'f:observedGeneration': {}
+          'f:replicas': {}
+          'f:updateRevision': {}
+          'f:updatedReplicas': {}
+      subresource: status
+    - manager: multiclusterhub-operator
+      operation: Update
+      apiVersion: apps/v1
+      time: '2025-02-04T19:36:34Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:metadata':
+          'f:annotations':
+            .: {}
+            'f:installer.open-cluster-management.io/release-version': {}
+          'f:labels':
+            .: {}
+            'f:flightctl.service': {}
+            'f:installer.name': {}
+            'f:installer.namespace': {}
+        'f:spec':
+          'f:persistentVolumeClaimRetentionPolicy':
+            .: {}
+            'f:whenDeleted': {}
+            'f:whenScaled': {}
+          'f:podManagementPolicy': {}
+          'f:replicas': {}
+          'f:revisionHistoryLimit': {}
+          'f:selector': {}
+          'f:serviceName': {}
+          'f:template':
+            'f:metadata':
+              'f:labels':
+                .: {}
+                'f:flightctl.service': {}
+            'f:spec':
+              'f:containers':
+                'k:{"name":"flightctl-kv"}':
+                  'f:image': {}
+                  'f:volumeMounts':
+                    .: {}
+                    'k:{"mountPath":"/etc/redis/redis.conf"}':
+                      .: {}
+                      'f:mountPath': {}
+                      'f:name': {}
+                      'f:subPath': {}
+                    'k:{"mountPath":"/var/lib/redis/data"}':
+                      .: {}
+                      'f:mountPath': {}
+                      'f:name': {}
+                  'f:terminationMessagePolicy': {}
+                  .: {}
+                  'f:resources':
+                    .: {}
+                    'f:requests':
+                      .: {}
+                      'f:memory': {}
+                  'f:command': {}
+                  'f:env':
+                    .: {}
+                    'k:{"name":"REDIS_PASSWORD"}':
+                      .: {}
+                      'f:name': {}
+                      'f:valueFrom':
+                        .: {}
+                        'f:secretKeyRef': {}
+                  'f:terminationMessagePath': {}
+                  'f:imagePullPolicy': {}
+                  'f:ports':
+                    .: {}
+                    'k:{"containerPort":6379,"protocol":"TCP"}':
+                      .: {}
+                      'f:containerPort': {}
+                      'f:name': {}
+                      'f:protocol': {}
+                  'f:name': {}
+              'f:dnsPolicy': {}
+              'f:restartPolicy': {}
+              'f:schedulerName': {}
+              'f:securityContext': {}
+              'f:terminationGracePeriodSeconds': {}
+              'f:volumes':
+                .: {}
+                'k:{"name":"flightctl-kv-config"}':
+                  .: {}
+                  'f:configMap':
+                    .: {}
+                    'f:defaultMode': {}
+                    'f:name': {}
+                  'f:name': {}
+          'f:updateStrategy':
+            'f:rollingUpdate':
+              .: {}
+              'f:partition': {}
+            'f:type': {}
+  namespace: open-cluster-management
+  labels:
+    flightctl.service: flightctl-kv
+    installer.name: multiclusterhub
+    installer.namespace: open-cluster-management
+spec:
+  serviceName: flightctl-kv
+  revisionHistoryLimit: 10
+#   persistentVolumeClaimRetentionPolicy:
+#     whenDeleted: Retain
+#     whenScaled: Retain
+  volumeClaimTemplates:
+    - kind: PersistentVolumeClaim
+      apiVersion: v1
+      metadata:
+        name: flightctl-kv-data
+        creationTimestamp: null
+        annotations:
+          kubernetes.io/reclaimPolicy: Delete
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 2Gi
+        volumeMode: Filesystem
+      status:
+        phase: Pending
+#   template:
+#     metadata:
+#       creationTimestamp: null
+#       labels:
+#         flightctl.service: flightctl-kv
+#     spec:
+#       volumes:
+#         - name: flightctl-kv-config
+#           configMap:
+#             name: flightctl-kv-config
+#             defaultMode: 420
+#       containers:
+#         - resources:
+#             requests:
+#               cpu: '1'
+#               memory: 2Gi
+#           terminationMessagePath: /dev/termination-log
+#           name: flightctl-kv
+#           command:
+#             - redis-server
+#             - /etc/redis/redis.conf
+#             - '--requirepass'
+#             - $(REDIS_PASSWORD)
+#           env:
+#             - name: REDIS_PASSWORD
+#               valueFrom:
+#                 secretKeyRef:
+#                   name: flightctl-kv-secret
+#                   key: password
+#           ports:
+#             - name: kv
+#               containerPort: 6379
+#               protocol: TCP
+#           imagePullPolicy: Always
+#           volumeMounts:
+#             - name: flightctl-kv-data
+#               mountPath: /var/lib/redis/data
+#             - name: flightctl-kv-config
+#               mountPath: /etc/redis/redis.conf
+#               subPath: redis.conf
+#           terminationMessagePolicy: File
+#           image: 'docker.io/redis:7.4.1'
+#       restartPolicy: Always
+#       terminationGracePeriodSeconds: 30
+#       dnsPolicy: ClusterFirst
+#       securityContext: {}
+#       schedulerName: default-scheduler
+  podManagementPolicy: OrderedReady
+#   replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: 0
+  selector:
+    matchLabels:
+      flightctl.service: flightctl-kv
+status:
+  observedGeneration: 1
+  replicas: 1
+  currentReplicas: 1
+  updatedReplicas: 1
+  currentRevision: flightctl-kv-77b89d957
+  updateRevision: flightctl-kv-77b89d957
+  collisionCount: 0
+  availableReplicas: 0
