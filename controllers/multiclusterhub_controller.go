@@ -490,6 +490,7 @@ ensureAuthenticationIssuerNotEmpty ensures that the Authentication ServiceAccoun
 */
 func (r *MultiClusterHubReconciler) ensureAuthenticationIssuerNotEmpty(ctx context.Context) (ctrl.Result, bool, error) {
 	auth := &configv1.Authentication{}
+
 	exists, err := r.ensureObjectExistsAndNotDeleted(ctx, auth, "cluster")
 
 	if err != nil || !exists {
@@ -511,6 +512,7 @@ ensureCloudCredentialModeManual ensures that the CloudCredential CredentialMode 
 */
 func (r *MultiClusterHubReconciler) ensureCloudCredentialModeManual(ctx context.Context) (ctrl.Result, bool, error) {
 	cloudCred := &ocopv1.CloudCredential{}
+
 	exists, err := r.ensureObjectExistsAndNotDeleted(ctx, cloudCred, "cluster")
 
 	if err != nil || !exists {
@@ -532,6 +534,7 @@ ensureInfrastructureAWS ensures that the infrastructure platform type is AWS.
 */
 func (r *MultiClusterHubReconciler) ensureInfrastructureAWS(ctx context.Context) (ctrl.Result, bool, error) {
 	infra := &configv1.Infrastructure{}
+
 	exists, err := r.ensureObjectExistsAndNotDeleted(ctx, infra, "cluster")
 
 	if err != nil || !exists {
@@ -545,6 +548,28 @@ func (r *MultiClusterHubReconciler) ensureInfrastructureAWS(ctx context.Context)
 			"Type", infra.Spec.PlatformSpec.Type)
 	}
 	return ctrl.Result{}, stsEnabled, nil
+}
+
+/*
+verifyCRDExists checks if the crd exists in the environment
+*/
+func (r *MultiClusterHubReconciler) verifyCRDExists(ctx context.Context, gvk operatorv1.ResourceGVK) (bool, error) {
+	crd := &apixv1.CustomResourceDefinition{}
+
+	// Attempt to find the crd using name
+	if err := r.Client.Get(ctx, types.NamespacedName{Name: gvk.Name}, crd); err != nil {
+		// CRD does not exist, so we can return false and nil
+		if errors.IsNotFound(err) {
+			r.Log.Info("Warning: CRD does not exist", "Name", gvk.Name)
+			return false, nil
+		}
+
+		r.Log.Error(err, "failed to get the CRD", "Name", gvk.Name)
+		return false, err
+	}
+
+	//found crd
+	return true, nil
 }
 
 /*
@@ -572,6 +597,12 @@ func (r *MultiClusterHubReconciler) ensureObjectExistsAndNotDeleted(ctx context.
 isSTSEnabled checks if STS (Security Token Service) is enabled by verifying that all required conditions are met.
 */
 func (r *MultiClusterHubReconciler) isSTSEnabled(ctx context.Context) (bool, error) {
+	for _, crd := range operatorv1.RequiredSTSCRDs {
+		if ok, err := r.verifyCRDExists(ctx, crd); err != nil || !ok {
+			return ok, err
+		}
+	}
+
 	_, authOK, err := r.ensureAuthenticationIssuerNotEmpty(ctx)
 	if err != nil {
 		return false, err
