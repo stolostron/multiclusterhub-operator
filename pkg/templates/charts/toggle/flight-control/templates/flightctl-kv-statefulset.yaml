@@ -60,4 +60,4 @@ spec:
       resources:
         requests:
           storage: 2Gi
-      storageClassName: null
+      storageClassName: gp3-csi
