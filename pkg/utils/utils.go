@@ -92,8 +92,8 @@ const (
 	// VolsyncChartLocation is the location of the Volsync Controller chart.
 	VolsyncChartLocation = "/charts/toggle/volsync-controller"
 
-	// FlightControlChartLocation is the location of the Flight Control Controller chart.
-	FlightControlChartLocation = "/charts/toggle/flight-control"
+	// EdgeManagementChartLocation is the location of the Flight Control Controller chart.
+	EdgeManagementChartLocation = "/charts/toggle/flight-control"
 )
 
 const (
