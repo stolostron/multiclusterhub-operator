@@ -1,7 +1,18 @@
+
+# Source: flightctl/templates/flightctl-worker-config.yaml
 apiVersion: v1
-data:
-  config.yaml: "database:\n    hostname: flightctl-db.default.svc.cluster.local\n    type: pgsql\n    port: 5432\n    name: flightctl\nservice: {}\nkv:\n    hostname: flightctl-kv.default.svc.cluster.local\n    port: 6379"
 kind: ConfigMap
 metadata:
   name: flightctl-worker-config
-  namespace: '{{ default "default" .Values.global.namespace }}'
+  namespace: {{ .Values.global.namespace}}
+data:
+  config.yaml: |-
+    database:
+        hostname: flightctl-db.{{ .Values.global.namespace}}.svc.cluster.local
+        type: pgsql
+        port: 5432
+        name: flightctl
+    service: {}
+    kv:
+        hostname: flightctl-kv.{{ .Values.global.namespace}}.svc.cluster.local
+        port: 6379

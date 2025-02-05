@@ -7,4 +7,4 @@ data:
 kind: ConfigMap
 metadata:
   name: flightctl-ui
-  namespace: '{{ default "default" .Values.global.namespace }}'
+  namespace: '{{ .Values.global.namespace  }}'

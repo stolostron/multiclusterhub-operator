@@ -4,7 +4,7 @@ metadata:
   labels:
     flightctl.service: flightctl-api
   name: flightctl-api
-  namespace: '{{ default "default" .Values.global.namespace }}'
+  namespace: '{{ .Values.global.namespace }}'
 spec:
   ports:
   - name: flightctl-api

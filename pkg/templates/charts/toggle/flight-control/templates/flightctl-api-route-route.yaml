@@ -2,9 +2,9 @@ apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
   name: flightctl-api-route
-  namespace: '{{ default "default" .Values.global.namespace }}'
+  namespace: '{{ .Values.global.namespace }}'
 spec:
-  host: api.test
+  host: api.{{ .Values.global.baseDomain  }}
   port:
     targetPort: 3443
   tls:

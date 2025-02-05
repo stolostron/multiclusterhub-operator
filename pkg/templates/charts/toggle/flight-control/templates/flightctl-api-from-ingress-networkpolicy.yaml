@@ -1,8 +1,10 @@
+
+# Source: flightctl/templates/flightctl-api-networkpolicy.yaml
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: flightctl-api-from-ingress
-  namespace: '{{ default "default" .Values.global.namespace }}'
+  namespace:  default
 spec:
   ingress:
   - from:

@@ -4,4 +4,4 @@ data:
 kind: ConfigMap
 metadata:
   name: flightctl-db
-  namespace: '{{ default "default" .Values.global.namespace }}'
+  namespace: '{{ .Values.global.namespace  }}'
