@@ -11,4 +11,4 @@ spec:
   resources:
     requests:
       storage: 60Gi
-  storageClassName: null
+  storageClassName: '{{ .Values.global.storageClassName }}'

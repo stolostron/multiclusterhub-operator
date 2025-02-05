@@ -71,6 +71,9 @@ var (
 
 func ApplyPrereqs(k8sClient client.Client) {
 	ctx := context.Background()
+	if err := os.Setenv("DEFAULT_STORAGE_CLASS_NAME", "gp3-csi"); err != nil {
+		log.Error(err, "failed to set default storage class")
+	}
 
 	By("Creating Ingress")
 	Expect(k8sClient.Create(ctx, resources.OCPIngress())).Should(Succeed())

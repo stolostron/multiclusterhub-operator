@@ -25,6 +25,7 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"time"
 
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -48,6 +49,7 @@ import (
 
 	ocopv1 "github.com/openshift/api/operator/v1"
 
+	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -267,6 +269,14 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 	if err != nil {
 		return ctrl.Result{}, err
+	}
+
+	/*
+		In ACM 2.13, we are required to get the default storage class name for the Edge Management (aka Flight-Control)
+		component. To ensure that we can pass the default storage class, we will store it as an environment variable.
+	*/
+	if err := r.SetDefaultStorageClassName(ctx); err != nil {
+		r.Log.Error(err, "failed to get StorageClass resources")
 	}
 
 	// Check if the multiClusterHub instance is marked to be deleted, which is
@@ -797,6 +807,25 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 				SetHubCondition(&m.Status, *condition)
 			}
 
+			/*
+				In ACM 2.13 we are applying a PersistentVolumeClaim (PVC) for Edge Management. When the PVC is created,
+				we cannot patch the resource if there is a new storageClass available. The user would need to delete the
+				pre-existing PVC and allow MCH to recreate a new version with the latest default storageClass version.
+			*/
+			if existing.GetKind() == "PersistentVolumeClaim" {
+				storageClassName, found, err := unstructured.NestedString(existing.Object, "spec", "storageClassName")
+				if err != nil {
+					r.Log.Error(err, "failed to retrieve storageClassName from PVC", "Name", existing.GetName())
+					return ctrl.Result{}, err
+				}
+
+				if found && storageClassName != os.Getenv("DEFAULT_STORAGE_CLASS_NAME") {
+					r.Log.Info("Storage class mismatch default. To update, delete the existing PVC",
+						"Name", existing.GetName())
+					return ctrl.Result{}, nil
+				}
+			}
+
 			// Resource exists; use the original template for patching to avoid issues with managedFields
 			// Apply the object data.
 			force := true
@@ -1211,6 +1240,78 @@ func (r *MultiClusterHubReconciler) ensureNoInternalHubComponent(ctx context.Con
 
 	// Requeue to check again after a short delay
 	return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+}
+
+func (r *MultiClusterHubReconciler) SetDefaultStorageClassName(ctx context.Context) error {
+	storageClasses := storagev1.StorageClassList{}
+
+	// Fetch previously set storage class (fallback).
+	prevStorageClass := os.Getenv("DEFAULT_STORAGE_CLASS_NAME")
+
+	if err := r.Client.List(ctx, &storageClasses); err != nil {
+		if errors.IsNotFound(err) {
+			r.Log.Info("No StorageClass resources found.")
+			return nil
+		}
+
+		if prevStorageClass != "" {
+			r.Log.Error(err, "failed to list StorageClasses. Retaining previous storage class.",
+				"storageClassName", prevStorageClass)
+		}
+		return err
+	}
+
+	var defaultStorageClass string
+	var fallbackStorageClass string
+
+	for _, sc := range storageClasses.Items {
+		if annotations := sc.GetAnnotations(); annotations != nil {
+			if strings.EqualFold(annotations[utils.AnnotationDefaultStorageClass], "true") {
+				defaultStorageClass = sc.GetName()
+				break // Found the default storage class, exit loop
+			}
+		}
+
+		// Use the first available SC as fallback
+		if fallbackStorageClass == "" {
+			fallbackStorageClass = sc.GetName()
+		}
+	}
+
+	if defaultStorageClass != "" {
+		if prevStorageClass == defaultStorageClass {
+			// No change, no need to log
+			return nil
+		}
+
+		// Update environment variable and log the change
+		if err := os.Setenv("DEFAULT_STORAGE_CLASS_NAME", defaultStorageClass); err != nil {
+			return err
+		}
+
+		r.Log.Info("Default StorageClass updated", "storageClass", defaultStorageClass)
+		return nil
+	}
+
+	// If no explicitly marked default, use the fallback
+	if fallbackStorageClass != "" {
+		if prevStorageClass == fallbackStorageClass {
+			// No change, no need to log
+			return nil
+		}
+
+		r.Log.Info("No explicitly default StorageClass found. Using fallback", "storageClass", fallbackStorageClass)
+		return nil
+	}
+
+	// No storage classes found at all
+	if prevStorageClass != "" {
+		if err := os.Unsetenv("DEFAULT_STORAGE_CLASS_NAME"); err != nil {
+			return err
+		}
+		r.Log.Info("No StorageClass available. Cleared previously set storage class.")
+	}
+	return nil
 }
 
 func (r *MultiClusterHubReconciler) ensureOpenShiftNamespaceLabel(ctx context.Context, m *operatorv1.MultiClusterHub) (

@@ -48,6 +48,7 @@ type Global struct {
 	Target              string               `json:"target" structs:"target"`
 	BaseDomain          string               `json:"baseDomain" structs:"baseDomain"`
 	DeployOnOCP         bool                 `json:"deployOnOCP" structs:"deployOnOCP"`
+	StorageClassName    string               `json:"storageClassName" structs:"storageClassName"`
 }
 
 type HubConfig struct {
@@ -327,6 +328,8 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 	values.Global.PullSecret = mch.Spec.ImagePullSecret
 
 	values.Global.ImageRepository = utils.GetImageRepository(mch)
+
+	values.Global.StorageClassName = os.Getenv("DEFAULT_STORAGE_CLASS_NAME")
 
 	// TODO: put this back later
 	// values.Global.HubSize = mch.Spec.HubSize

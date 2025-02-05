@@ -57,6 +57,7 @@ import (
 	admissionregistration "k8s.io/api/admissionregistration/v1"
 	networking "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -129,6 +130,8 @@ func init() {
 	utilruntime.Must(networking.AddToScheme(scheme))
 
 	utilruntime.Must(ocmapi.AddToScheme(scheme))
+
+	utilruntime.Must(storagev1.AddToScheme(scheme))
 
 	//+kubebuilder:scaffold:scheme
 }

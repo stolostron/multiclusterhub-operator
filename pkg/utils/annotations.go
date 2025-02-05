@@ -75,9 +75,15 @@ var (
 
 	/*
 		AnnotationHubSize is an annotation used in multiclusterhub to specify a hub size that can be
-		used by other components
+		used by other components.
 	*/
 	AnnotationHubSize = "installer.open-cluster-management.io/hub-size"
+
+	/*
+		AnnotationDefaultStorageClass is an annotation used in the cluster to determine the default storage class
+		resource.
+	*/
+	AnnotationDefaultStorageClass = "storageclass.kubernetes.io/is-default-class"
 )
 
 /*
