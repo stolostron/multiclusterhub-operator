@@ -673,6 +673,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 			createdMCH.Enable(operatorv1.ClusterLifecycle)
 			createdMCH.Enable(operatorv1.MultiClusterObservability)
 			createdMCH.Enable(operatorv1.Volsync)
+			createdMCH.Enable(operatorv1.FlightControl)
 
 			Expect(k8sClient.Update(ctx, createdMCH)).Should(Succeed())
 
