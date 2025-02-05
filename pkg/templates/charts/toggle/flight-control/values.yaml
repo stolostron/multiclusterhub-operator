@@ -9,6 +9,7 @@ global:
   namespace: default
   apiUrl: ''
   baseDomain: ''
+  storageClassName: ''
   pullSecret: null
   templateOverrides: {}
 hubconfig:
