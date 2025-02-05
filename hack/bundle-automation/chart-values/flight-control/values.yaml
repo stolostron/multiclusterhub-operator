@@ -32,14 +32,14 @@
 
 global:
   target: "acm" # standalone, acm
-  baseDomain: "placeholder-basedomain"
+  baseDomain: "placeholder_basedomain"
   ocpIngress: "test" # alternative to baseDomain used by the multiclusterhub operator
   baseDomainTls:
     cert: ""
     key: ""
   storageClassName: "gp3-csi"
   imagePullSecretName: ""
-  apiUrl: "placeholder-url" # alternative used by multiclusterhub operator
+  apiUrl: "placeholder_apiurl" # alternative used by multiclusterhub operator
   auth:
     type: "builtin" # builtin, k8s, oidc, none
     caCert: ""

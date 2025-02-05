@@ -4,7 +4,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: flightctl-api-from-ingress
-  namespace:  default
+  namespace:  PLACEHOLDER_NAMESPACE
 spec:
   ingress:
   - from:

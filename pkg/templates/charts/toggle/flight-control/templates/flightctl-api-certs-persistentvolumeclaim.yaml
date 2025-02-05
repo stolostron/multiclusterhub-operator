@@ -11,4 +11,4 @@ spec:
   resources:
     requests:
       storage: 128Mi
-  storageClassName: gp3-csi
+  storageClassName: '{{ default "gp3-csi" .Values.global.storageClassName }}'

@@ -10,8 +10,6 @@ spec:
   selector:
     matchLabels:
       flightctl.service: flightctl-kv
-  revisionHistoryLimit: 10
-  podManagementPolicy: OrderedReady
   serviceName: flightctl-kv
   template:
     metadata:

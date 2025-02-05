@@ -1,18 +1,7 @@
-
-# Source: flightctl/templates/flightctl-periodic-config.yaml
 apiVersion: v1
+data:
+  config.yaml: "database:\n  hostname: flightctl-db.{{ .Values.global.namespace }}.svc.cluster.local\n  name: flightctl\n  port: 5432\n  type: pgsql\nkv:\n  hostname: flightctl-kv.{{ .Values.global.namespace }}.svc.cluster.local\n  port: 6379\nservice: {}\n"
 kind: ConfigMap
 metadata:
   name: flightctl-periodic-config
-  namespace: default
-data:
-  config.yaml: |-
-    database:
-        hostname: flightctl-db.default.svc.cluster.local
-        type: pgsql
-        port: 5432
-        name: flightctl
-    service: {}
-    kv:
-        hostname: flightctl-kv.default.svc.cluster.local
-        port: 6379
+  namespace: '{{ .Values.global.namespace  }}'

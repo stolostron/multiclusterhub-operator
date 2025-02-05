@@ -3,7 +3,7 @@ data:
   FLIGHTCTL_GRPC_SERVER: grpcs://flightctl-api-agent-grpc:7444/
   FLIGHTCTL_SERVER: https://flightctl-api:3443/
   FLIGHTCTL_SERVER_INSECURE_SKIP_VERIFY: 'true'
-  K8S_RBAC_NS: default
+  K8S_RBAC_NS: {{  .Values.global.namespace }}
 kind: ConfigMap
 metadata:
   name: flightctl-ui

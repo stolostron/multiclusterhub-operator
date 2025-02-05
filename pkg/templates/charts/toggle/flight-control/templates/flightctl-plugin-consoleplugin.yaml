@@ -9,7 +9,7 @@ spec:
     service:
       basePath: /
       name: flightctl-ui
-      namespace: default
+      namespace: {{  .Values.global.namespace }}
       port: 8080
     type: Service
   displayName: FCTL Plugin
@@ -21,6 +21,6 @@ spec:
       endpoint:
         service:
           name: flightctl-ui
-          namespace: default
+          namespace: {{  .Values.global.namespace }}
           port: 8080
         type: Service
