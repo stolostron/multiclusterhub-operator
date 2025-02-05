@@ -851,8 +851,8 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(component string) string 
 	case operatorv1.Volsync:
 		return utils.VolsyncChartLocation
 
-	case operatorv1.FlightControl:
-		return utils.FlightControlChartLocation
+	case operatorv1.EdgeManagement:
+		return utils.EdgeManagementChartLocation
 
 	default:
 		log.Info(fmt.Sprintf("Unregistered component detected: %v", component))
