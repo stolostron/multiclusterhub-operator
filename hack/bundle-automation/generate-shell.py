@@ -7,37 +7,142 @@ import argparse
 import coloredlogs
 import os
 import logging
+import subprocess
 import shutil
 import sys
 import time
 
+from pathlib import Path
 from git import Repo, exc
 
 # Configure logging with coloredlogs
 coloredlogs.install(level='DEBUG')  # Set the logging level as needed
 
+TMP_DIR = Path(__file__).resolve().parent / "tmp/dev-tools"
+SCRIPTS_DIR = TMP_DIR / "scripts"
+DEST_DIR = Path(__file__).resolve().parent
+SUPPORTED_OPERATIONS = {
+    "copy-charts": {
+        "script": "bundle-generation/move-charts.py",
+        "args": "--destination pkg/templates/",
+        "help": "Copy existing Helm charts to a target directory",
+    },
+    "lint-bundles": {
+        "script": "bundle-generation/onboard-new-components.py",
+        "args": "--lint --destination pkg/templates/",
+        "help": "Perform linting for operator bundles",
+    },
+    "onboard-new-components": {
+        "script": "release/onboard-new-components.py",
+        "args": "",
+        "help": "Onboard new component configurations by adding them to the operator's resource definitions",
+    },
+    "refresh-image-aliases": {
+        "script": "release/refresh-image-aliases.py",
+        "args": "--repo {pipeline_repo} --branch {pipeline_branch}",
+        "help": "Refresh image alias mappings for the specified repository and branch, updating them for new versions",
+    },
+    "update-charts": {
+        "script": "bundle-generation/generate-charts.py",
+        "args": "--destination pkg/templates/",
+        "help": "Convert standard Helm charts to customized versions for your specific use case",
+    },
+    "update-charts-from-bundles": {
+        "script": "bundle-generation/bundles-to-charts.py",
+        "args": "--destination pkg/templates/",
+        "help": "Generate Helm charts from OpenShift Operator Lifecycle Manager (OLM) bundles",
+    },
+    "update-commits": {
+        "script": "bundle-generation/generate-sha-commits.py",
+        "args": "--repo {pipeline_repo} --branch {pipeline_branch}",
+        "help": "Synchronize commit SHA values in operator bundles with the latest repository changes",
+    },
+}
+
 def clone_repository(git_url, repo_path, branch):
+    """Clones a Git repository to a specific path."""
     if os.path.exists(repo_path):
         logging.warning(f"Repository path: {repo_path} already exists. Removing existing directory.")
         shutil.rmtree(repo_path)
 
-    logging.info(f"Cloning Git repository: {git_url} (branch={branch}) to {repo_path}")
+    logging.info(f"Cloning repository: {git_url} (branch={branch}) to {repo_path}")
     try:
         repository = Repo.clone_from(git_url, repo_path)
         repository.git.checkout(branch)
         logging.info(f"Git repository: {git_url} successfully cloned.")
 
     except Exception as e:
-        logging.error(f"Failed to clone Git repository: {git_url} (branch={branch}): {e}.")
+        logging.error(f"Failed to clone repository: {git_url} (branch={branch}): {e}")
         raise
 
-def prepare_operation(script_dir, operation_script, operation_args):
-    shutil.copy(os.path.join(os.path.dirname(os.path.realpath(__file__)), f"{script_dir}/{operation_script}"), os.path.join(os.path.dirname(os.path.realpath(__file__)), operation_script))
-    exit_code = os.system("python3 " + os.path.dirname(os.path.realpath(__file__)) +  f"/{operation_script} {operation_args}")
-    if exit_code != 0:
+def copy_scripts(script_dependencies):
+    """Copies necessary scripts from the temporary directory."""
+    for dependency in script_dependencies:
+        src = SCRIPTS_DIR / dependency
+        dest = DEST_DIR / Path(dependency).name
+
+        if not src.exists():
+            logging.error(f"Required script or directory {src} not found.")
+            sys.exit(1)
+
+        if src.is_dir():
+            shutil.copytree(src, dest)
+            logging.debug(f"Copied directory {src} to {dest}")
+
+        else:
+            shutil.copy(src, dest)
+            logging.debug(f"Copied file {src} to {dest}")
+
+def cleanup_scripts(script_dependencies):
+    """Cleans up copied scripts from the destination directory."""
+    for script in script_dependencies:
+        # If the script is in a subdirectory like 'utils/', construct the path properly
+        dest = DEST_DIR / script
+
+        # Check if the destination path is a directory or a file
+        if dest.exists():
+            if dest.is_dir():
+                # If the destination is a directory (e.g., utils/), remove it and its contents
+                shutil.rmtree(dest)
+                logging.debug(f"Removed directory {dest}")
+            else:
+                # If the destination is a file, unlink it
+                dest.unlink(missing_ok=True)
+                logging.debug(f"Removed file {dest}")
+
+def prepare_and_execute(operation, operation_data, args):
+    """Prepares and executes the operation based on the provided operation data."""
+    script = Path(operation_data["script"])
+    script_dependencies = [script, "utils"]
+    copy_scripts(script_dependencies)
+
+    operations_args = operation_data.get("args", "").format(
+        pipeline_repo=args.pipeline_repo,
+        pipeline_branch=args.pipeline_branch
+    ) if "args" in operation_data else ""
+
+    # Execute the script
+    execute_script(script, operations_args)
+
+    # Clean up the copied scripts
+    cleanup_scripts(script_dependencies)
+
+def execute_script(script, args):
+    """Executes a Python script with arguments."""
+    script_path = DEST_DIR / Path(script).name
+
+    if not script_path.exists():
+        logging.error(f"Script {script_path} not found.")
         sys.exit(1)
 
-    os.remove(os.path.join(os.path.dirname(os.path.realpath(__file__)), f"{operation_script}"))
+    command = ["python3", str(script_path)] + args.split()
+    try:
+        subprocess.run(command, check=True)
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Script {script} failed with exit code {e.returncode}")
+        sys.exit(e.returncode)
+    finally:
+        script_path.unlink(missing_ok=True)  # Clean up after execution
 
 def main(args):
     logging.basicConfig(level=logging.INFO)
@@ -45,70 +150,17 @@ def main(args):
     start_time = time.time()  # Record start time
     logging.info("🔄 Initiating the generate-shell script for operator bundle management and updates.")
 
-    # Extract org, repo, branch, pipeline_repo, and pipeline_branch from command-line arguments
-    # Use the specified org and branch or the defaults ('stolostron', 'installer-dev-tools', 'main', 'pipeline', '2.12-integration')
-    org = args.org
-    repo = args.repo
-    branch = args.branch
-    pipeline_repo = args.pipeline_repo
-    pipeline_branch = args.pipeline_branch
+    # Clone the repository
+    git_url = f"https://github.com/{args.org}/{args.repo}.git"
+    clone_repository(git_url, TMP_DIR, args.branch)
 
-    # Define the destination path for the cloned repository
-    repo_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp/dev-tools")
+    for operation, operation_data in SUPPORTED_OPERATIONS.items():
+        if getattr(args, operation.replace('-', '_'), False):
+            logging.info(f"Executing operatior: {operation}")
+            prepare_and_execute(operation, operation_data, args)
+            break
 
-    # Clone the repository using the specified git_url, destination path, and branch
-    git_url = f"https://github.com/{org}/{repo}.git"
-    clone_repository(git_url, repo_path, branch)
-
-    # Define the directory containing the bundle generation scripts
-    script_dir = "tmp/dev-tools/bundle-generation"
-
-    # Check which operation is requested based on command-line arguments
-    if args.lint_bundles:
-        logging.info("Starting linting for bundles...")
-        operation_script = "bundles-to-charts.py"
-        operation_args = "--lint --destination pkg/templates/"
-
-        prepare_operation(script_dir, operation_script, operation_args)
-        logging.info("✔️ Bundles linted successfully.")
-
-    elif args.update_charts_from_bundles:
-        logging.info("Updating operator charts from bundles...")
-        operation_script = "bundles-to-charts.py"
-        operation_args = "--destination pkg/templates/"
-
-        prepare_operation(script_dir, operation_script, operation_args)
-        logging.info("✔️ Bundles updated successfully.")
-
-    elif args.update_charts:
-        logging.info("Updating operator charts...")
-        operation_script = "generate-charts.py"
-        operation_args = "--destination pkg/templates/"
-
-        prepare_operation(script_dir, operation_script, operation_args)
-        logging.info("✔️ Bundles updated successfully.")
-
-    elif args.copy_charts:
-        logging.info("Copying charts...")
-        operation_script = "move-charts.py"
-        operation_args = "--destination pkg/templates/"
-
-        prepare_operation(script_dir, operation_script, operation_args)
-        logging.info("✔️ Bundles updated successfully.")
-
-    elif args.update_commits:
-        logging.info("Updating commit SHAs...")
-        operation_script = "generate-sha-commits.py"
-        operation_args = f"--repo {pipeline_repo} --branch {pipeline_branch}"
-
-        prepare_operation(script_dir, operation_script, operation_args)
-        logging.info("✔️ Commit SHAs updated successfully.")
-
-    else:
-        logging.warning("⚠️ No operation specified.")
-
-    # Record the end time and log the duration of the script execution
-    end_time = time.time()
+    end_time = time.time() # Record the end time and log the duration of the script execution
     logging.info(f"Script execution took {end_time - start_time:.2f} seconds.")
 
 if __name__ == "__main__":
@@ -116,12 +168,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     # Define command-line arguments and their help descriptions
-    parser.add_argument("--lint-bundles", action="store_true", help="Perform linting for operator bundles")
-    parser.add_argument("--update-charts-from-bundles", action="store_true", help="Regenerate operator charts from bundles")
-    parser.add_argument("--update-commits", action="store_true", help="Regenerate operator bundles with commit SHA")
-    parser.add_argument("--update-charts", action="store_true", help="Regenerate operator charts")
-    parser.add_argument("--copy-charts", action="store_true", help="Copy operator charts")
+    for operation, operation_data in SUPPORTED_OPERATIONS.items():
+        parser.add_argument(
+            f"--{operation}",
+            action="store_true",
+            help=operation_data["help"],
+        )
 
+    # Command-Line Arguments
     parser.add_argument("--org", help="GitHub Org name")
     parser.add_argument("--repo", help="Github Repo name")
     parser.add_argument("--branch", help="Github Repo Branch name")

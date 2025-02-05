@@ -5,7 +5,7 @@ REPO ?= installer-dev-tools
 BRANCH ?= main
 
 PIPELINE_REPO ?= pipeline
-PIPELINE_BRANCH ?= 2.12-integration
+PIPELINE_BRANCH ?= 2.13-integration
 
 .PHONY: update-manifest 
 
@@ -37,6 +37,10 @@ lint-operator-bundles: ## Lints the operator bundles
 	pip3 install -r hack/bundle-automation/requirements.txt
 	python3 ./hack/bundle-automation/generate-shell.py --lint-bundles --org $(ORG) --repo $(REPO) --branch $(BRANCH)
 
+refresh-image-aliases: ## Regenerates the operator bundles
+	pip3 install -r hack/bundle-automation/requirements.txt
+	python3 ./hack/bundle-automation/generate-shell.py --refresh-image-aliases --org $(ORG) --repo $(REPO) --branch $(BRANCH) --pipeline-repo $(PIPELINE_REPO) --pipeline-branch $(PIPELINE_BRANCH)
+
 regenerate-charts-from-bundles: ## Regenerates the operator charts from bundles
 	pip3 install -r hack/bundle-automation/requirements.txt
 	python3 ./hack/bundle-automation/generate-shell.py --update-charts-from-bundles --org $(ORG) --repo $(REPO) --branch $(BRANCH)
@@ -52,6 +56,10 @@ regenerate-charts: ## Regenerates the charts
 copy-charts: ## Regenerates the operator bundles
 	pip3 install -r hack/bundle-automation/requirements.txt
 	python3 ./hack/bundle-automation/generate-shell.py --copy-charts --org $(ORG) --repo $(REPO) --branch $(BRANCH)
+
+onboard-new-component: ## Regenerates the operator bundles
+	pip3 install -r hack/bundle-automation/requirements.txt
+	python3 ./hack/bundle-automation/generate-shell.py --onboard-new-component --org $(ORG) --repo $(REPO) --branch $(BRANCH)
 
 # different from `in-cluster-install` (call no secrets, no observability-crd)
 mock-install: prereqs subscriptions docker-build docker-push deploy
