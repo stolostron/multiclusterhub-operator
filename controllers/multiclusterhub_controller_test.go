@@ -32,6 +32,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networking "k8s.io/api/networking/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -1087,6 +1088,7 @@ func registerScheme() {
 	mcev1.AddToScheme(scheme.Scheme)
 	subv1alpha1.AddToScheme(scheme.Scheme)
 	olmv1.AddToScheme(scheme.Scheme)
+	storagev1.AddToScheme(scheme.Scheme)
 }
 
 func Test_ensureAuthenticationIssuerNotEmpty(t *testing.T) {
@@ -1933,6 +1935,72 @@ func Test_ensureResourceVersionAlignment(t *testing.T) {
 			got := recon.ensureResourceVersionAlignment(tt.template, os.Getenv("OPERATOR_VERSION"))
 			if got != tt.want {
 				t.Errorf("ensureResourceVersionAlignment() = %v, want: %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_SetDefaultStorageClassName(t *testing.T) {
+	allowVolumeExpansion := true
+	reclaimPolicy := corev1.PersistentVolumeReclaimDelete
+	volumeBindingMode := storagev1.VolumeBindingWaitForFirstConsumer
+
+	tests := []struct {
+		name string
+		sc   *storagev1.StorageClass
+		want string
+	}{
+		{
+			name: "should get default storage class name (gp3-csi)",
+			sc: &storagev1.StorageClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "gp3-csi",
+					Annotations: map[string]string{
+						utils.AnnotationDefaultStorageClass: "true",
+					},
+				},
+				Provisioner: "ebs.csi.aws.com",
+				Parameters: map[string]string{
+					"encrypted": "true",
+					"type":      "gp3",
+				},
+				ReclaimPolicy:        &reclaimPolicy,
+				AllowVolumeExpansion: &allowVolumeExpansion,
+				VolumeBindingMode:    &volumeBindingMode,
+			},
+			want: "gp3-csi",
+		},
+		{
+			name: "should continue using default storage class name (gp3-csi)",
+			sc: &storagev1.StorageClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "gp2-csi",
+				},
+				Provisioner: "ebs.csi.aws.com",
+				Parameters: map[string]string{
+					"encrypted": "true",
+					"type":      "gp2",
+				},
+				ReclaimPolicy:        &reclaimPolicy,
+				AllowVolumeExpansion: &allowVolumeExpansion,
+				VolumeBindingMode:    &volumeBindingMode,
+			},
+			want: "gp3-csi",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := recon.Client.Create(context.TODO(), tt.sc); err != nil {
+				t.Errorf("failed to create storageClass resource: %v", err)
+			}
+
+			if err := recon.SetDefaultStorageClassName(context.TODO()); err != nil {
+				t.Errorf("SetDefaultStorageClassName() = %v", err)
+			}
+
+			if tt.want != os.Getenv("DEFAULT_STORAGE_CLASS_NAME") {
+				t.Errorf("Expected storageClass name, got %v, want %v", os.Getenv("DEFAULT_STORAGE_CLASS_NAME"), tt.want)
 			}
 		})
 	}
