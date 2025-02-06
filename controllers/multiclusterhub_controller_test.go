@@ -1946,61 +1946,78 @@ func Test_SetDefaultStorageClassName(t *testing.T) {
 	volumeBindingMode := storagev1.VolumeBindingWaitForFirstConsumer
 
 	tests := []struct {
-		name string
-		sc   *storagev1.StorageClass
-		want string
+		name           string
+		storageClasses []storagev1.StorageClass
+		expectedEnv    string
 	}{
 		{
-			name: "should get default storage class name (gp3-csi)",
-			sc: &storagev1.StorageClass{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "gp3-csi",
-					Annotations: map[string]string{
-						utils.AnnotationDefaultStorageClass: "true",
-					},
-				},
-				Provisioner: "ebs.csi.aws.com",
-				Parameters: map[string]string{
-					"encrypted": "true",
-					"type":      "gp3",
-				},
-				ReclaimPolicy:        &reclaimPolicy,
-				AllowVolumeExpansion: &allowVolumeExpansion,
-				VolumeBindingMode:    &volumeBindingMode,
-			},
-			want: "gp3-csi",
+			name:           "should not set default storage class name due to empty StorageClasses",
+			storageClasses: []storagev1.StorageClass{},
+			expectedEnv:    "",
 		},
 		{
-			name: "should continue using default storage class name (gp3-csi)",
-			sc: &storagev1.StorageClass{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "gp2-csi",
+			name: "should set fallback storageClassName when default is not marked",
+			storageClasses: []storagev1.StorageClass{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        "gp2-csi",
+						Annotations: map[string]string{},
+					},
+					Provisioner: "ebs.csi.aws.com",
+					Parameters: map[string]string{
+						"encrypted": "true",
+						"type":      "gp3",
+					},
+					ReclaimPolicy:        &reclaimPolicy,
+					AllowVolumeExpansion: &allowVolumeExpansion,
+					VolumeBindingMode:    &volumeBindingMode,
 				},
-				Provisioner: "ebs.csi.aws.com",
-				Parameters: map[string]string{
-					"encrypted": "true",
-					"type":      "gp2",
-				},
-				ReclaimPolicy:        &reclaimPolicy,
-				AllowVolumeExpansion: &allowVolumeExpansion,
-				VolumeBindingMode:    &volumeBindingMode,
 			},
-			want: "gp3-csi",
+			expectedEnv: "gp2-csi",
 		},
+		{
+			name: "should set default storageClassName when default marked",
+			storageClasses: []storagev1.StorageClass{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "gp3-csi",
+						Annotations: map[string]string{
+							utils.AnnotationDefaultStorageClass: "true",
+						},
+					},
+					Provisioner: "ebs.csi.aws.com",
+					Parameters: map[string]string{
+						"encrypted": "true",
+						"type":      "gp3",
+					},
+					ReclaimPolicy:        &reclaimPolicy,
+					AllowVolumeExpansion: &allowVolumeExpansion,
+					VolumeBindingMode:    &volumeBindingMode,
+				},
+			},
+			expectedEnv: "gp3-csi",
+		},
+	}
+
+	if err := os.Setenv("DEFAULT_STORAGE_CLASS_NAME", "test-storage-class"); err != nil {
+		t.Errorf("failed to set default StorageClassName: %v", err)
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := recon.Client.Create(context.TODO(), tt.sc); err != nil {
-				t.Errorf("failed to create storageClass resource: %v", err)
+			for _, sc := range tt.storageClasses {
+				if err := recon.Client.Create(context.TODO(), &sc); err != nil {
+					t.Errorf("failed to create StorageClass: %v", err)
+				}
 			}
 
+			// Call the function under test
 			if err := recon.SetDefaultStorageClassName(context.TODO()); err != nil {
-				t.Errorf("SetDefaultStorageClassName() = %v", err)
+				t.Errorf("SetDefaultStorageClassName failed: %v", err)
 			}
 
-			if tt.want != os.Getenv("DEFAULT_STORAGE_CLASS_NAME") {
-				t.Errorf("Expected storageClass name, got %v, want %v", os.Getenv("DEFAULT_STORAGE_CLASS_NAME"), tt.want)
+			if got := os.Getenv("DEFAULT_STORAGE_CLASS_NAME"); got != tt.expectedEnv {
+				t.Errorf("Expected StorageClassName to be set to: %v, got: %v", tt.expectedEnv, got)
 			}
 		})
 	}

@@ -1300,6 +1300,10 @@ func (r *MultiClusterHubReconciler) SetDefaultStorageClassName(ctx context.Conte
 			return nil
 		}
 
+		if err := os.Setenv("DEFAULT_STORAGE_CLASS_NAME", fallbackStorageClass); err != nil {
+			return err
+		}
+
 		r.Log.Info("No explicitly default StorageClass found. Using fallback", "storageClass", fallbackStorageClass)
 		return nil
 	}
