@@ -304,6 +304,15 @@ spec:
                     metadata:
                       name: {{ `{{ $ns }}` }}
 
+                - complianceType: mustonlyhave
+                  objectDefinition:
+                    apiVersion: v1
+                    kind: ConfigMap
+                    metadata:
+                      name: "acm-virt-config-cls"
+                      namespace: {{ `{{ $ns }}` }}
+                    data: {{ `'{{hub copyConfigMapData "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) hub}}'` }}
+
               {{ `{{hub $cron_file_name := (fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "schedule_hub_config_name") hub}}` }}
               {{ `{{hub $cron_file := lookup "v1" "ConfigMap" "" $cron_file_name hub}}` }}
               {{ `{{hub $cron_file_exists := eq $cron_file.metadata.name $cron_file_name hub}}` }}
