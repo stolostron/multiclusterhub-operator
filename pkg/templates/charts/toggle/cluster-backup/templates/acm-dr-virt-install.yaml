@@ -183,6 +183,11 @@ spec:
                   {{ `{{- $subscription_name = $ss.metadata.name }}` }}
                 {{ `{{- end }}` }}
               {{ `{{- end }}` }}
+              {{ `{{- $csv_name := "oadp-operator" }}` }}
+              {{ `{{- $csv_oadp_label := (cat "operators.coreos.com/redhat-oadp-operator" $ns) | replace " " "." }}` }}
+              {{ `{{- range $csv := (lookup "operators.coreos.com/v1alpha1" "ClusterServiceVersion" $ns "" $csv_oadp_label ).items }}` }}
+                {{ `{{- $csv_name = $csv.metadata.name }}` }}
+              {{ `{{- end }}` }}
 
                 - complianceType: musthave
                   objectDefinition:
@@ -198,6 +203,18 @@ spec:
                         - reason: AllCatalogSourcesHealthy
                           status: 'False'
                           type: CatalogSourcesUnhealthy
+
+                - complianceType: musthave
+                  objectDefinition:
+                    apiVersion: operators.coreos.com/v1alpha1
+                    kind: ClusterServiceVersion
+                    metadata:
+                      namespace: {{ `{{ $ns }}` }}
+                      name: {{ `{{ $csv_name }}` }}
+                      annotations:
+                        olm.operatorGroup: redhat-oadp-operator-group
+                    status:
+                      phase: Succeded
 
                 - complianceType: musthave
                   objectDefinition:
