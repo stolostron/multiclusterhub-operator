@@ -1506,7 +1506,7 @@ func (r *MultiClusterHubReconciler) openShiftApiUrl(
 		return ctrl.Result{}, err
 	}
 
-	url := infrastructure.Status.ApiServerURL
+	url := infrastructure.Status.apiServerURL
 	err = os.Setenv("API_URL", url)
 	if err != nil {
 		r.Log.Error(err, "Failed to set API_URL environment variable")
