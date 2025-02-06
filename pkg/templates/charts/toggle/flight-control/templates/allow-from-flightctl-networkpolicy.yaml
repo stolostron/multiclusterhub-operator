@@ -12,6 +12,7 @@ spec:
           operator: In
           values:
           - '{{ .Values.global.namespace }}'
+          - '{{ .Values.global.namespace }}'
           - openshift-console
       podSelector: {}
   podSelector: {}
