@@ -7,7 +7,7 @@ global:
     flightctl_worker: ''
     postgresql_16: ''
   namespace: default
-  aPIUrl: ''
+  apiUrl: ''
   baseDomain: ''
   storageClassName: ''
   pullSecret: null
