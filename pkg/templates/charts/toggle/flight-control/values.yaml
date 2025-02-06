@@ -7,9 +7,6 @@ global:
     flightctl_worker: ''
     postgresql_16: ''
   namespace: default
-  apiUrl: ''
-  baseDomain: ''
-  storageClassName: ''
   pullSecret: null
   templateOverrides: {}
 hubconfig:
