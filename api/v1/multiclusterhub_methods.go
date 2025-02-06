@@ -113,6 +113,28 @@ var MCECRDs = []ResourceGVK{
 	},
 }
 
+// resources to check for sts enabled or not
+var RequiredSTSCRDs = []ResourceGVK{
+	{
+		Group:   "config.openshift.io",
+		Version: "v1",
+		Kind:    "Infrastructure",
+		Name:    "infrastructures.config.openshift.io",
+	},
+	{
+		Group:   "config.openshift.io",
+		Version: "v1",
+		Kind:    "Authentication",
+		Name:    "authentications.config.openshift.io",
+	},
+	{
+		Group:   "operator.openshift.io",
+		Version: "v1",
+		Kind:    "CloudCredential",
+		Name:    "cloudcredentials.operator.openshift.io",
+	},
+}
+
 /*
 LegacyConfigKind is a slice of strings that represents the legacy resource kinds
 supported by the Operator SDK and Prometheus. These kinds include "PrometheusRule", "Service",
