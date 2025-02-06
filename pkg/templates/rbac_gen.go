@@ -33,6 +33,7 @@ package main
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=create
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=create;get;list;watch;delete
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=delete;patch;update;watch
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;create
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=serviceaccounts/token,verbs=create

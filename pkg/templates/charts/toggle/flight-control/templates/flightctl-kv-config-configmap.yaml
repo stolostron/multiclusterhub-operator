@@ -31,4 +31,4 @@ data:
 kind: ConfigMap
 metadata:
   name: flightctl-kv-config
-  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
+  namespace: '{{ .Values.global.namespace  }}'

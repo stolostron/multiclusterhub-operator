@@ -9,6 +9,8 @@ global:
   templateOverrides: {}
   namespace: default
   hubSize: Small
+  baseDomain: ''
+  apiUrl: ''
 hubconfig:
   clusterSTSEnabled: false
   nodeSelector: null

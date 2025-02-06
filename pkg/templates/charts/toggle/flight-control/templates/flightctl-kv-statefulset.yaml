@@ -4,8 +4,9 @@ metadata:
   labels:
     flightctl.service: flightctl-kv
   name: flightctl-kv
-  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
+  namespace: '{{ .Values.global.namespace }}'
 spec:
+  podManagementPolicy: OrderedReady
   replicas: 1
   selector:
     matchLabels:
@@ -16,6 +17,7 @@ spec:
       labels:
         flightctl.service: flightctl-kv
     spec:
+      revisionHistoryLimit: 10
       containers:
       - command:
         - redis-server
@@ -60,4 +62,4 @@ spec:
       resources:
         requests:
           storage: 2Gi
-      storageClassName: null
+      storageClassName: gp3-csi
