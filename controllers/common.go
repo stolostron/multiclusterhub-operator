@@ -193,10 +193,10 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 	}
 	mceannotations[mceutils.AnnotationHubSize] = string(utils.GetHubSize(m))
 
-	if m.Enabled(operatorv1.FlightControl) {
-		mceannotations[mceutils.AnnotationFlightEnabled] = "true"
+	if m.Enabled(operatorv1.EdgeManagement) {
+		mceannotations[mceutils.AnnotationEdgeManagementEnabled] = "true"
 	} else {
-		mceannotations[mceutils.AnnotationFlightEnabled] = "false"
+		mceannotations[mceutils.AnnotationEdgeManagementEnabled] = "false"
 	}
 
 	// TODO: put this back later
