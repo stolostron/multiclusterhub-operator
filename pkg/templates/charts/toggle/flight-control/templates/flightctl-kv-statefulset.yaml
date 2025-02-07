@@ -13,7 +13,6 @@ spec:
     matchLabels:
       flightctl.service: flightctl-kv
   serviceName: flightctl-kv
-  storageClassName: '{{ .Values.global.storageClassName }}'
   template:
     metadata:
       labels:
@@ -63,4 +62,4 @@ spec:
       resources:
         requests:
           storage: 2Gi
-      storageClassName: gp3-csi
+      storageClassName: '{{ .Values.global.storageClassName }}'
