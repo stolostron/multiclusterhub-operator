@@ -6,11 +6,13 @@ metadata:
   name: flightctl-kv
   namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
 spec:
+  podManagementPolicy: OrderedReady
   replicas: 1
   selector:
     matchLabels:
       flightctl.service: flightctl-kv
   serviceName: flightctl-kv
+  storageClassName: '{{ .Values.global.storageClassName }}'
   template:
     metadata:
       labels:
