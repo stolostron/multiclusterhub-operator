@@ -1,4 +1,6 @@
 global:
+  apiUrl: ''
+  baseDomain: ''
   hubSize: Small
   imageOverrides:
     flightctl_api: ''

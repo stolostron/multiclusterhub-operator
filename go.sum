@@ -269,6 +269,8 @@ github.com/stolostron/backplane-operator v0.0.0-20240919204243-44de210f0aa2 h1:4
 github.com/stolostron/backplane-operator v0.0.0-20240919204243-44de210f0aa2/go.mod h1:dA7UlrmR3yAxnihHRb403oTeZbEz6lv0reTvZ3CfJQE=
 github.com/stolostron/backplane-operator v0.0.0-20250123185031-fff1c21a3de7 h1:mgyRxOK+Cm35NFpJuJAZx3JcwrVuuHvWd9L6+uHSktc=
 github.com/stolostron/backplane-operator v0.0.0-20250123185031-fff1c21a3de7/go.mod h1:f6Cllmbeq5MWQ5SosQsB2yryoyJfeeP4r+FK8nGd4Yg=
+github.com/stolostron/backplane-operator v0.0.0-20250205200614-f1da926f6495 h1:xbkE5LnEXK6AdmVfyuFgLL2uCeZd087JqJW+o/N0Ddc=
+github.com/stolostron/backplane-operator v0.0.0-20250205200614-f1da926f6495/go.mod h1:f6Cllmbeq5MWQ5SosQsB2yryoyJfeeP4r+FK8nGd4Yg=
 github.com/stolostron/search-v2-operator v0.0.0-20240321201500-bf46e7632ae6 h1:h0/iHMlrF0nk+hj4cAF6+3ounX23Ij5o3pmpvzNag/s=
 github.com/stolostron/search-v2-operator v0.0.0-20240321201500-bf46e7632ae6/go.mod h1:J5mvuCh1wG+xbbqHX0EIHUYa8b4MKoQkrf1ZsehJmrI=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
