@@ -30,7 +30,7 @@ const (
 	MultiClusterObservability string = "multicluster-observability"
 	Repo                      string = "multiclusterhub-repo"
 	Search                    string = "search"
-	EdgeManagement string = "edge-management-preview"
+	EdgeManagement            string = "edge-management-preview"
 	SiteConfig                string = "siteconfig"
 	SubmarinerAddon           string = "submariner-addon"
 	Volsync                   string = "volsync"
