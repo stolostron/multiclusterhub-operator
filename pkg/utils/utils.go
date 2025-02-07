@@ -405,17 +405,6 @@ func GetDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 		nn = append(nn, types.NamespacedName{Name: "cluster-backup-chart-clusterbackup", Namespace: ClusterSubscriptionNamespace})
 		nn = append(nn, types.NamespacedName{Name: "openshift-adp-controller-manager", Namespace: ClusterSubscriptionNamespace})
 	}
-	if m.Enabled(operatorsv1.EdgeManagement) {
-		nn = append(nn, types.NamespacedName{Name: "flightctl-api", Namespace: m.Namespace})
-		nn = append(nn, types.NamespacedName{Name: "flightctl-db", Namespace: m.Namespace})
-		nn = append(nn, types.NamespacedName{Name: "flightctl-ui", Namespace: m.Namespace})
-		nn = append(nn, types.NamespacedName{Name: "flightctl-periodic", Namespace: m.Namespace})
-		nn = append(nn, types.NamespacedName{Name: "flightctl-worker", Namespace: m.Namespace})
-	}
-	// community, _ := operatorsv1.IsCommunity()
-	// if community {
-	//  nn = append(nn, types.NamespacedName{Name: "search-v2-operator-controller-manager", Namespace: m.Namespace})
-	// }
 	return nn
 }
 
@@ -475,6 +464,13 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole, isSTSEn
 	}
 	if m.Enabled(operatorsv1.ClusterPermission) {
 		nn = append(nn, types.NamespacedName{Name: "cluster-permission", Namespace: m.Namespace})
+	}
+	if m.Enabled(operatorsv1.EdgeManagement) {
+		nn = append(nn, types.NamespacedName{Name: "flightctl-api", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "flightctl-db", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "flightctl-ui", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "flightctl-periodic", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "flightctl-worker", Namespace: m.Namespace})
 	}
 	return nn
 }

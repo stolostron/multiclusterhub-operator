@@ -25,11 +25,13 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"time"
 
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/deploying"
+	"github.com/stolostron/multiclusterhub-operator/pkg/helpers"
 	"github.com/stolostron/multiclusterhub-operator/pkg/overrides"
 	"github.com/stolostron/multiclusterhub-operator/pkg/predicate"
 	renderer "github.com/stolostron/multiclusterhub-operator/pkg/rendering"
@@ -48,6 +50,7 @@ import (
 
 	ocopv1 "github.com/openshift/api/operator/v1"
 
+	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -267,6 +270,14 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 	if err != nil {
 		return ctrl.Result{}, err
+	}
+
+	/*
+		In ACM 2.13, we are required to get the default storage class name for the Edge Management (aka Flight-Control)
+		component. To ensure that we can pass the default storage class, we will store it as an environment variable.
+	*/
+	if err := r.SetDefaultStorageClassName(ctx); err != nil {
+		r.Log.Error(err, "failed to get StorageClass resources")
 	}
 
 	// Check if the multiClusterHub instance is marked to be deleted, which is
@@ -828,6 +839,25 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 				SetHubCondition(&m.Status, *condition)
 			}
 
+			/*
+				In ACM 2.13 we are applying a PersistentVolumeClaim (PVC) for Edge Management. When the PVC is created,
+				we cannot patch the resource if there is a new storageClass available. The user would need to delete the
+				pre-existing PVC and allow MCH to recreate a new version with the latest default storageClass version.
+			*/
+			if existing.GetKind() == "PersistentVolumeClaim" {
+				storageClassName, found, err := unstructured.NestedString(existing.Object, "spec", "storageClassName")
+				if err != nil {
+					r.Log.Error(err, "failed to retrieve storageClassName from PVC", "Name", existing.GetName())
+					return ctrl.Result{}, err
+				}
+
+				if found && storageClassName != os.Getenv(helpers.DefaultStorageClassName) {
+					r.Log.Info("Storage class mismatch default. To update, delete the existing PVC",
+						"Name", existing.GetName())
+					return ctrl.Result{}, nil
+				}
+			}
+
 			// Resource exists; use the original template for patching to avoid issues with managedFields
 			// Apply the object data.
 			force := true
@@ -1244,6 +1274,75 @@ func (r *MultiClusterHubReconciler) ensureNoInternalHubComponent(ctx context.Con
 	return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 }
 
+/*
+UpdateEnvVar updates an environment variable with a new value and log the change.
+It only updates the environment variable if the new value is different from the previous value.
+*/
+func UpdateEnvVar(envVar, newValue, prevValue string) error {
+	if prevValue != newValue {
+		if err := os.Setenv(envVar, newValue); err != nil {
+			log.Error(err, "failed to set environment variable %s", envVar)
+			return err
+		}
+		log.Info(fmt.Sprintf("%s updated: %s", envVar, newValue))
+	}
+	return nil
+}
+
+func (r *MultiClusterHubReconciler) GetDefaultStorageClassName(storageClasses storagev1.StorageClassList) string {
+	var storageClassName string
+
+	for _, sc := range storageClasses.Items {
+		if annotations := sc.GetAnnotations(); annotations != nil {
+			if strings.EqualFold(annotations[utils.AnnotationDefaultStorageClass], "true") {
+				// Return default storage class name
+				return sc.GetName()
+			}
+		}
+
+		if storageClassName == "" {
+			storageClassName = sc.GetName()
+		}
+	}
+	return storageClassName
+}
+
+func (r *MultiClusterHubReconciler) SetDefaultStorageClassName(ctx context.Context) error {
+	storageClasses := storagev1.StorageClassList{}
+
+	// Fetch previously set storage class (fallback).
+	currentStorageClass := os.Getenv(helpers.DefaultStorageClassName)
+
+	if err := r.Client.List(ctx, &storageClasses); err != nil {
+		if errors.IsNotFound(err) {
+			r.Log.Info("No StorageClass resources found.")
+			return nil
+		}
+
+		if currentStorageClass != "" {
+			r.Log.Error(err, "failed to list StorageClasses. Retaining previous storage class.",
+				"storageClassName", currentStorageClass)
+		}
+		return err
+	}
+
+	if storageClassName := r.GetDefaultStorageClassName(storageClasses); storageClassName != "" {
+		if err := UpdateEnvVar(helpers.DefaultStorageClassName, storageClassName, currentStorageClass); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	// No storage classes found at all
+	if currentStorageClass != "" {
+		if err := os.Unsetenv(helpers.DefaultStorageClassName); err != nil {
+			return err
+		}
+		r.Log.Info(fmt.Sprintf("No StorageClass available. Unsetting %s value", helpers.DefaultStorageClassName))
+	}
+	return nil
+}
+
 func (r *MultiClusterHubReconciler) ensureOpenShiftNamespaceLabel(ctx context.Context, m *operatorv1.MultiClusterHub) (
 	ctrl.Result, error,
 ) {
@@ -1523,10 +1622,8 @@ func (r *MultiClusterHubReconciler) ingressDomain(
 }
 
 // ingressDomain is discovered from Openshift cluster configuration resources
-func (r *MultiClusterHubReconciler) openShiftApiUrl(
-	ctx context.Context,
-	m *operatorv1.MultiClusterHub,
-) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) openShiftApiUrl(ctx context.Context, m *operatorv1.MultiClusterHub) (
+	ctrl.Result, error) {
 	infrastructure := &configv1.Infrastructure{}
 	err := r.Client.Get(ctx, types.NamespacedName{
 		Name: "cluster",

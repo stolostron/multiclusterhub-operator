@@ -111,6 +111,12 @@ var MCECRDs = []ResourceGVK{
 		Kind:    "ClusterManagementAddOn",
 		Name:    "clustermanagementaddons.addon.open-cluster-management.io",
 	},
+	{
+		Group:   "addon.open-cluster-management.io",
+		Version: "v1alpha1",
+		Kind:    "AddOnTemplate",
+		Name:    "addontemplates.addon.open-cluster-management.io",
+	},
 }
 
 // resources to check for sts enabled or not
