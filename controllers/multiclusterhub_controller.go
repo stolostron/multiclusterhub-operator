@@ -31,6 +31,7 @@ import (
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/deploying"
+	"github.com/stolostron/multiclusterhub-operator/pkg/helpers"
 	"github.com/stolostron/multiclusterhub-operator/pkg/overrides"
 	"github.com/stolostron/multiclusterhub-operator/pkg/predicate"
 	renderer "github.com/stolostron/multiclusterhub-operator/pkg/rendering"
@@ -819,7 +820,7 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 					return ctrl.Result{}, err
 				}
 
-				if found && storageClassName != os.Getenv("DEFAULT_STORAGE_CLASS_NAME") {
+				if found && storageClassName != os.Getenv(helpers.DefaultStorageClassName) {
 					r.Log.Info("Storage class mismatch default. To update, delete the existing PVC",
 						"Name", existing.GetName())
 					return ctrl.Result{}, nil
@@ -1242,11 +1243,44 @@ func (r *MultiClusterHubReconciler) ensureNoInternalHubComponent(ctx context.Con
 	return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 }
 
+/*
+UpdateEnvVar updates an environment variable with a new value and log the change.
+It only updates the environment variable if the new value is different from the previous value.
+*/
+func UpdateEnvVar(envVar, newValue, prevValue string) error {
+	if prevValue != newValue {
+		if err := os.Setenv(envVar, newValue); err != nil {
+			log.Error(err, "failed to set environment variable %s", envVar)
+			return err
+		}
+		log.Info(fmt.Sprintf("%s updated: %s", envVar, newValue))
+	}
+	return nil
+}
+
+func (r *MultiClusterHubReconciler) GetDefaultStorageClassName(storageClasses storagev1.StorageClassList) string {
+	var storageClassName string
+
+	for _, sc := range storageClasses.Items {
+		if annotations := sc.GetAnnotations(); annotations != nil {
+			if strings.EqualFold(annotations[utils.AnnotationDefaultStorageClass], "true") {
+				// Return default storage class name
+				return sc.GetName()
+			}
+		}
+
+		if storageClassName == "" {
+			storageClassName = sc.GetName()
+		}
+	}
+	return storageClassName
+}
+
 func (r *MultiClusterHubReconciler) SetDefaultStorageClassName(ctx context.Context) error {
 	storageClasses := storagev1.StorageClassList{}
 
 	// Fetch previously set storage class (fallback).
-	prevStorageClass := os.Getenv("DEFAULT_STORAGE_CLASS_NAME")
+	currentStorageClass := os.Getenv(helpers.DefaultStorageClassName)
 
 	if err := r.Client.List(ctx, &storageClasses); err != nil {
 		if errors.IsNotFound(err) {
@@ -1254,66 +1288,26 @@ func (r *MultiClusterHubReconciler) SetDefaultStorageClassName(ctx context.Conte
 			return nil
 		}
 
-		if prevStorageClass != "" {
+		if currentStorageClass != "" {
 			r.Log.Error(err, "failed to list StorageClasses. Retaining previous storage class.",
-				"storageClassName", prevStorageClass)
+				"storageClassName", currentStorageClass)
 		}
 		return err
 	}
 
-	var defaultStorageClass string
-	var fallbackStorageClass string
-
-	for _, sc := range storageClasses.Items {
-		if annotations := sc.GetAnnotations(); annotations != nil {
-			if strings.EqualFold(annotations[utils.AnnotationDefaultStorageClass], "true") {
-				defaultStorageClass = sc.GetName()
-				break // Found the default storage class, exit loop
-			}
-		}
-
-		// Use the first available SC as fallback
-		if fallbackStorageClass == "" {
-			fallbackStorageClass = sc.GetName()
-		}
-	}
-
-	if defaultStorageClass != "" {
-		if prevStorageClass == defaultStorageClass {
-			// No change, no need to log
-			return nil
-		}
-
-		// Update environment variable and log the change
-		if err := os.Setenv("DEFAULT_STORAGE_CLASS_NAME", defaultStorageClass); err != nil {
+	if storageClassName := r.GetDefaultStorageClassName(storageClasses); storageClassName != "" {
+		if err := UpdateEnvVar(helpers.DefaultStorageClassName, storageClassName, currentStorageClass); err != nil {
 			return err
 		}
-
-		r.Log.Info("Default StorageClass updated", "storageClass", defaultStorageClass)
-		return nil
-	}
-
-	// If no explicitly marked default, use the fallback
-	if fallbackStorageClass != "" {
-		if prevStorageClass == fallbackStorageClass {
-			// No change, no need to log
-			return nil
-		}
-
-		if err := os.Setenv("DEFAULT_STORAGE_CLASS_NAME", fallbackStorageClass); err != nil {
-			return err
-		}
-
-		r.Log.Info("No explicitly default StorageClass found. Using fallback", "storageClass", fallbackStorageClass)
 		return nil
 	}
 
 	// No storage classes found at all
-	if prevStorageClass != "" {
-		if err := os.Unsetenv("DEFAULT_STORAGE_CLASS_NAME"); err != nil {
+	if currentStorageClass != "" {
+		if err := os.Unsetenv(helpers.DefaultStorageClassName); err != nil {
 			return err
 		}
-		r.Log.Info("No StorageClass available. Cleared previously set storage class.")
+		r.Log.Info(fmt.Sprintf("No StorageClass available. Unsetting %s value", helpers.DefaultStorageClassName))
 	}
 	return nil
 }
@@ -1597,10 +1591,8 @@ func (r *MultiClusterHubReconciler) ingressDomain(
 }
 
 // ingressDomain is discovered from Openshift cluster configuration resources
-func (r *MultiClusterHubReconciler) openShiftApiUrl(
-	ctx context.Context,
-	m *operatorv1.MultiClusterHub,
-) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) openShiftApiUrl(ctx context.Context, m *operatorv1.MultiClusterHub) (
+	ctrl.Result, error) {
 	infrastructure := &configv1.Infrastructure{}
 	err := r.Client.Get(ctx, types.NamespacedName{
 		Name: "cluster",

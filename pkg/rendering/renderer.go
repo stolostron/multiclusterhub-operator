@@ -15,6 +15,7 @@ import (
 
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	v1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/helpers"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 	"helm.sh/helm/v3/pkg/engine"
@@ -329,7 +330,7 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 
 	values.Global.ImageRepository = utils.GetImageRepository(mch)
 
-	values.Global.StorageClassName = os.Getenv("DEFAULT_STORAGE_CLASS_NAME")
+	values.Global.StorageClassName = os.Getenv(helpers.DefaultStorageClassName)
 
 	// TODO: put this back later
 	// values.Global.HubSize = mch.Spec.HubSize

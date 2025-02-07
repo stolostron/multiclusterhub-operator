@@ -18,6 +18,7 @@ import (
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/helpers"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
@@ -72,7 +73,7 @@ var (
 
 func ApplyPrereqs(k8sClient client.Client) {
 	ctx := context.Background()
-	if err := os.Setenv("DEFAULT_STORAGE_CLASS_NAME", "gp3-csi"); err != nil {
+	if err := os.Setenv(helpers.DefaultStorageClassName, "gp3-csi"); err != nil {
 		log.Error(err, "failed to set default storage class")
 	}
 
@@ -1999,7 +2000,7 @@ func Test_SetDefaultStorageClassName(t *testing.T) {
 		},
 	}
 
-	if err := os.Setenv("DEFAULT_STORAGE_CLASS_NAME", "test-storage-class"); err != nil {
+	if err := os.Setenv(helpers.DefaultStorageClassName, "test-storage-class"); err != nil {
 		t.Errorf("failed to set default StorageClassName: %v", err)
 	}
 
@@ -2016,7 +2017,7 @@ func Test_SetDefaultStorageClassName(t *testing.T) {
 				t.Errorf("SetDefaultStorageClassName failed: %v", err)
 			}
 
-			if got := os.Getenv("DEFAULT_STORAGE_CLASS_NAME"); got != tt.expectedEnv {
+			if got := os.Getenv(helpers.DefaultStorageClassName); got != tt.expectedEnv {
 				t.Errorf("Expected StorageClassName to be set to: %v, got: %v", tt.expectedEnv, got)
 			}
 		})
