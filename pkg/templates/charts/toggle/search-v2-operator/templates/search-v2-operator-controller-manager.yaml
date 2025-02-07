@@ -60,11 +60,8 @@ spec:
           name: https
           protocol: TCP
         resources:
-          limits:
-            cpu: 200m
-            memory: 1Gi
           requests:
-            cpu: 100m
+            cpu: 10m
             memory: 256Mi
         securityContext:
           allowPrivilegeEscalation: false
@@ -116,11 +113,8 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 10
         resources:
-          limits:
-            cpu: 200m
-            memory: 6Gi
           requests:
-            cpu: 50m
+            cpu: 10m
             memory: 256Mi
         securityContext:
           allowPrivilegeEscalation: false

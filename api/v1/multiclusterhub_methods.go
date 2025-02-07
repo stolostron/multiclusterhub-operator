@@ -30,7 +30,7 @@ const (
 	MultiClusterObservability string = "multicluster-observability"
 	Repo                      string = "multiclusterhub-repo"
 	Search                    string = "search"
-	FlightControl             string = "flight-control-preview"
+	EdgeManagement            string = "edge-management-preview"
 	SiteConfig                string = "siteconfig"
 	SubmarinerAddon           string = "submariner-addon"
 	Volsync                   string = "volsync"
@@ -74,7 +74,7 @@ var MCHComponents = []string{
 	MCH,                // Adding MCH component to ensure legacy resources are cleaned up properly.
 	MultiClusterObservability,
 	Search,
-	FlightControl,
+	EdgeManagement,
 	SiteConfig,
 	SubmarinerAddon,
 	Volsync,
@@ -116,6 +116,28 @@ var MCECRDs = []ResourceGVK{
 		Version: "v1alpha1",
 		Kind:    "AddOnTemplate",
 		Name:    "addontemplates.addon.open-cluster-management.io",
+	},
+}
+
+// resources to check for sts enabled or not
+var RequiredSTSCRDs = []ResourceGVK{
+	{
+		Group:   "config.openshift.io",
+		Version: "v1",
+		Kind:    "Infrastructure",
+		Name:    "infrastructures.config.openshift.io",
+	},
+	{
+		Group:   "config.openshift.io",
+		Version: "v1",
+		Kind:    "Authentication",
+		Name:    "authentications.config.openshift.io",
+	},
+	{
+		Group:   "operator.openshift.io",
+		Version: "v1",
+		Kind:    "CloudCredential",
+		Name:    "cloudcredentials.operator.openshift.io",
 	},
 }
 
@@ -184,7 +206,7 @@ func GetDefaultDisabledComponents() ([]string, error) {
 	defaultDisabledComponents := []string{
 		ClusterBackup,
 		SiteConfig,
-		FlightControl,
+		EdgeManagement,
 	}
 	return defaultDisabledComponents, nil
 }

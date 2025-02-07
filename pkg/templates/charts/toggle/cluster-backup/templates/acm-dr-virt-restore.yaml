@@ -74,7 +74,11 @@ spec:
               {{ `{{- $policy_install_compliant = eq $policy_install.status.compliant "Compliant" }}` }}
             {{ `{{- end }}` }}
 
-            {{ `{{ if and $sch_crd_exists $policy_install_compliant }}` }}
+            {{ `{{- /* check if acm-virt-restore-cls exists */ -}}` }}
+            {{ `{{- $restore_config_file := lookup "v1" "ConfigMap" $ns $cls_restore_configmap_name }}` }}
+            {{ `{{- $restore_config_file_exists := eq $restore_config_file.metadata.name $cls_restore_configmap_name }}` }}
+
+            {{ `{{ if and $sch_crd_exists $policy_install_compliant $restore_config_file_exists }}` }}
             
             {{ `{{- $restoreClusterID := fromClusterClaim "id.openshift.io" }}` }}
             {{ `{{- $restoreNameProp := (cat  $restoreClusterID "_" "restoreName") | replace " " ""}}` }}

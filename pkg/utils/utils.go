@@ -92,8 +92,8 @@ const (
 	// VolsyncChartLocation is the location of the Volsync Controller chart.
 	VolsyncChartLocation = "/charts/toggle/volsync-controller"
 
-	// FlightControlChartLocation is the location of the Flight Control Controller chart.
-	FlightControlChartLocation = "/charts/toggle/flight-control"
+	// EdgeManagementChartLocation is the location of the Edge Management Controller chart.
+	EdgeManagementChartLocation = "/charts/toggle/flight-control"
 )
 
 const (
@@ -404,6 +404,13 @@ func GetDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	if m.Enabled(operatorsv1.ClusterBackup) {
 		nn = append(nn, types.NamespacedName{Name: "cluster-backup-chart-clusterbackup", Namespace: ClusterSubscriptionNamespace})
 		nn = append(nn, types.NamespacedName{Name: "openshift-adp-controller-manager", Namespace: ClusterSubscriptionNamespace})
+	}
+	if m.Enabled(operatorsv1.EdgeManagement) {
+		nn = append(nn, types.NamespacedName{Name: "flightctl-api", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "flightctl-db", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "flightctl-ui", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "flightctl-periodic", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "flightctl-worker", Namespace: m.Namespace})
 	}
 	// community, _ := operatorsv1.IsCommunity()
 	// if community {

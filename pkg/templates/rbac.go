@@ -36,6 +36,7 @@ var resources = []string{
 	"ConsoleQuickStart",
 	"CustomResourceDefinition",
 	"Deployment",
+	"Job",
 	"NetworkPolicy",
 	"ManagedClusterSetBinding",
 	"ManagedProxyConfiguration",

@@ -1224,6 +1224,49 @@ func Test_ensureInfrastructureAWS(t *testing.T) {
 	}
 }
 
+func Test_verifyCRDExists(t *testing.T) {
+	tests := []struct {
+		name string
+		ctx  context.Context
+		crd  *apixv1.CustomResourceDefinition
+		want bool
+	}{
+		{
+			name: "Check crd exists and returns true",
+			ctx:  context.TODO(),
+			crd: &apixv1.CustomResourceDefinition{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+				},
+			},
+			want: true,
+		},
+		{
+			name: "Check crd does not exist and returns false",
+			ctx:  context.TODO(),
+			crd:  nil,
+			want: false,
+		},
+	}
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer func() {
+				recon.Client.Delete(context.TODO(), tt.crd)
+			}()
+
+			recon.Client.Create(context.TODO(), tt.crd)
+			gvk := operatorv1.ResourceGVK{
+				Name: "test",
+			}
+			ok, _ := recon.verifyCRDExists(context.TODO(), gvk)
+			if ok != tt.want {
+				t.Errorf("Got %v, want %v", ok, tt.want)
+			}
+		})
+	}
+}
+
 func Test_equivalentKlusterletAddonConfig(t *testing.T) {
 	grcEnabled := true
 
