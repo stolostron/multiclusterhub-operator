@@ -295,6 +295,7 @@ spec:
                   {{ `{{ if not (eq "" $subscriptionSourceConfig) }}` }}
                     {{ `{{- $subscriptionSource = $subscriptionSourceConfig }}` }}
                   {{ `{{- end }}` }}
+                  {{ `{{- $startingCSV := "{{hub fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "subscriptionStartingCSV" hub}}" }}` }}
 
                   {{ `{{- /* ns is the namespace for the OADP deployment  */ -}}` }}
                   {{ `{{- $ns := "open-cluster-management-backup" }}` }}
@@ -400,6 +401,9 @@ spec:
                       name: {{ `{{ $channelName }}` }}
                       source: {{ `{{ $subscriptionSource }}` }}
                       sourceNamespace: {{ `{{ $subscriptionSourceNamespace }}` }}
+                      {{ `{{ if not (eq "" $startingCSV) }}` }}
+                      startingCSV: {{ `{{ $startingCSV }}` }}
+                      {{ `{{- end }}` }}
 
                   {{ `{{- /* tag the csv with the subscription uid; to be used when policy is installed and need to clean up previous policy csv - they are not cleaned up when the policy is uninstalled  */ -}}` }}
                   {{ `{{- $installedSubs := lookup "operators.coreos.com/v1alpha1" "Subscription" $ns $subscription_name }}` }}
