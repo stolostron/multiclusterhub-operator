@@ -32,7 +32,7 @@ var chartPaths = []string{
 	utils.GRCChartLocation,
 	utils.ConsoleChartLocation,
 	utils.VolsyncChartLocation,
-	utils.EdgeManagementChartLocation,
+	utils.EdgeManagerChartLocation,
 }
 
 func TestRender(t *testing.T) {

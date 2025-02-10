@@ -92,8 +92,8 @@ const (
 	// VolsyncChartLocation is the location of the Volsync Controller chart.
 	VolsyncChartLocation = "/charts/toggle/volsync-controller"
 
-	// EdgeManagementChartLocation is the location of the Edge Management Controller chart.
-	EdgeManagementChartLocation = "/charts/toggle/flight-control"
+	// EdgeManagerChartLocation is the location of the Edge Manager Controller chart.
+	EdgeManagerChartLocation = "/charts/toggle/flight-control"
 )
 
 const (
@@ -465,7 +465,7 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole, isSTSEn
 	if m.Enabled(operatorsv1.ClusterPermission) {
 		nn = append(nn, types.NamespacedName{Name: "cluster-permission", Namespace: m.Namespace})
 	}
-	if m.Enabled(operatorsv1.EdgeManagement) {
+	if m.Enabled(operatorsv1.EdgeManagerPreview) {
 		nn = append(nn, types.NamespacedName{Name: "flightctl-api", Namespace: m.Namespace})
 		nn = append(nn, types.NamespacedName{Name: "flightctl-db", Namespace: m.Namespace})
 		nn = append(nn, types.NamespacedName{Name: "flightctl-ui", Namespace: m.Namespace})
