@@ -30,7 +30,8 @@ const (
 	MultiClusterObservability string = "multicluster-observability"
 	Repo                      string = "multiclusterhub-repo"
 	Search                    string = "search"
-	EdgeManagement            string = "edge-management-preview"
+	EdgeManager               string = "edge-manager"
+	EdgeManagerPreview        string = "edge-manager-preview"
 	SiteConfig                string = "siteconfig"
 	SubmarinerAddon           string = "submariner-addon"
 	Volsync                   string = "volsync"
@@ -74,7 +75,7 @@ var MCHComponents = []string{
 	MCH,                // Adding MCH component to ensure legacy resources are cleaned up properly.
 	MultiClusterObservability,
 	Search,
-	EdgeManagement,
+	EdgeManagerPreview,
 	SiteConfig,
 	SubmarinerAddon,
 	Volsync,
@@ -206,7 +207,7 @@ func GetDefaultDisabledComponents() ([]string, error) {
 	defaultDisabledComponents := []string{
 		ClusterBackup,
 		SiteConfig,
-		EdgeManagement,
+		EdgeManagerPreview,
 	}
 	return defaultDisabledComponents, nil
 }
