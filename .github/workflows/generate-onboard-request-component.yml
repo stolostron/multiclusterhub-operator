@@ -30,7 +30,7 @@ jobs:
           ls -la
           CONFIG_FILE="onboard-request.yaml"
 
-          for i in $(yq e '.operators | keys | .[]' $CONFIG_FILE); do
+          for i in $(yq e '. | keys | .[]' $CONFIG_FILE); do
             OPERATOR_NAME=$(yq e ".operators[$i].name" $CONFIG_FILE)
             OPERATOR_DESCRIPTION=$(yq e ".operators[$i].description // \"No description available\"" $CONFIG_FILE)
             OPERATOR_ENABLED=$(yq e ".operators[$i].enabled // false" $CONFIG_FILE)
