@@ -10,6 +10,13 @@
         multicloud-integrations: multicloud_integrations
         multicluster-operators-application: multicluster_operators_application
         multicluster-operators-channel: multicluster_operators_channel
+      escape-template-variables:
+        - GITOPS_OPERATOR_IMAGE
+        - GITOPS_OPERATOR_NAMESPACE
+        - GITOPS_IMAGE
+        - GITOPS_NAMESPACE
+        - REDIS_IMAGE
+        - RECONCILE_SCOPE
       exclusions:
         - readOnlyRootFilesystem
 
@@ -31,7 +38,7 @@
       imageMappings:
         search-v2-operator: search_v2_operator
         kube-rbac-proxy: kube_rbac_proxy
-        postgresql-13: postgresql_13
+        postgresql-13: postgresql_16
         search-indexer: search_indexer
         search-collector: search_collector
         search-v2-api: search_v2_api

@@ -11,66 +11,8 @@ metadata:
       Policy is placed on hub or managed clusters with label acm-virt-config=acm-dr-virt-config-file-name.
       Creates a velero Schedule for all virtualmachines.kubevirt.io resources with a cluster.open-cluster-management.io/backup-vm label.
 spec:
-  dependencies:
-  - apiVersion: policy.open-cluster-management.io/v1
-    compliance: Compliant
-    kind: Policy
-    name: acm-dr-virt-install
   disabled: false
-  policy-templates:
-    - objectDefinition:
-        apiVersion: policy.open-cluster-management.io/v1
-        kind: ConfigurationPolicy
-        metadata:
-          name: create-cron-schedule-config
-        spec:
-          object-templates-raw: |
-            {{ `{{- /* check if velero is installed  */ -}}` }}
-            {{ `{{- $sch_crd_name := "schedules.velero.io" }}` }}
-            {{ `{{- $sch_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" $sch_crd_name  }}` }}
-            {{ `{{- $sch_crd_exists := eq $sch_crd.metadata.name  $sch_crd_name }}` }}
-
-            {{ `{{ if $sch_crd_exists }}` }}
-              {{ `{{- /* ns is the namespace for the OADP deployment  */ -}}` }}
-              {{ `{{- $ns := "open-cluster-management-backup" }}` }}
-
-              {{ `{{- /* check if this is a hub, acm installed  */ -}}` }}
-              {{ `{{- $acm_crd_name := "multiclusterhubs.operator.open-cluster-management.io" }}` }}
-              {{ `{{- $acm_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" $acm_crd_name  }}` }}
-              {{ `{{- $is_hub := eq $acm_crd.metadata.name  $acm_crd_name }}` }}
-              {{ `{{ if not $is_hub }}` }}
-                {{ `{{- $ns = "{{hub fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "backupNS" hub}}" }}` }}
-              {{ `{{- end }}` }}
-
-              {{ `{{- /* cron_schedule_configmap_name is the name of the main cron config map, copied over to the cluster  */ -}}` }}
-              {{ `{{- $cron_schedule_configmap_name := "acm-virt-cron-schedules" }}` }}
-
-                - complianceType: mustonlyhave
-                  objectDefinition:
-                    apiVersion: v1
-                    kind: ConfigMap
-                    metadata:
-                      name: "acm-virt-config-cls"
-                      namespace: {{ `{{ $ns }}` }}
-                    data: {{ `'{{hub copyConfigMapData "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) hub}}'` }}
-
-              {{ `{{hub $cron_file_name := (fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "schedule_hub_config_name") hub}}` }}
-              {{ `{{hub $cron_file := lookup "v1" "ConfigMap" "" $cron_file_name hub}}` }}
-              {{ `{{hub $cron_file_exists := eq $cron_file.metadata.name $cron_file_name hub}}` }}
-              {{ `{{hub if $cron_file_exists hub}}` }}
-                - complianceType: mustonlyhave
-                  objectDefinition:
-                    apiVersion: v1
-                    kind: ConfigMap
-                    metadata:
-                      name: {{ `{{ $cron_schedule_configmap_name }}` }}
-                      namespace: {{ `{{ $ns }}` }}
-                    data: '{{ `{{hub copyConfigMapData "" $cron_file_name hub}}` }}'
-              {{ `{{hub end hub}}` }}
-            {{ `{{- end }}` }}
-          remediationAction: enforce
-          severity: high
-          pruneObjectBehavior: DeleteIfCreated                                                                                                                                            
+  policy-templates:                                                                                                                                           
     - objectDefinition:
         apiVersion: policy.open-cluster-management.io/v1
         kind: ConfigurationPolicy
@@ -83,126 +25,133 @@ spec:
             {{ `{{- $sch_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" $sch_crd_name  }}` }}
             {{ `{{- $sch_crd_exists := eq $sch_crd.metadata.name  $sch_crd_name }}` }}
 
-            {{ `{{ if ($sch_crd_exists) }}` }}
-              {{ `{{- /* ns is the namespace for the OADP deployment  */ -}}` }}
-              {{ `{{- $ns := "open-cluster-management-backup" }}` }}
-              {{ `{{- $acm_virt_sch_name := "acm-rho-virt-schedule" }}` }}
+            {{ `{{hub $config_name := index .ManagedClusterLabels "acm-virt-config" hub}}` }}
+            {{ `{{hub $config_file := lookup "v1" "ConfigMap" "" $config_name hub}}` }}
+            {{ `{{hub $config_file_exists := eq $config_file.metadata.name $config_name hub}}` }}
+            {{ `{{hub if $config_file_exists hub}}` }}
+              {{ `{{- /* check if schedule_hub_config_name configMap exists */ -}}` }}
+              {{ `{{hub $cron_file_name := (fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "schedule_hub_config_name") hub}}` }}
+              {{ `{{hub $cron_file := lookup "v1" "ConfigMap" "" $cron_file_name hub}}` }}
+              {{ `{{- $cron_file_exists := {{hub eq $cron_file.metadata.name $cron_file_name hub}} }}` }}
 
-              {{ `{{- /* check if VM CRD is not installed  */ -}}` }}
-              {{ `{{- $vm_crd_name := "virtualmachines.kubevirt.io" }}` }}
-              {{ `{{- $vm_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" $vm_crd_name }}` }}
-              {{ `{{- $vm_crd_exists := eq $vm_crd.metadata.name  $vm_crd_name }}` }}
+              {{ `{{ if and $sch_crd_exists $cron_file_exists }}` }}
+                {{ `{{- /* ns is the namespace for the OADP deployment  */ -}}` }}
+                {{ `{{- $ns := "open-cluster-management-backup" }}` }}
+                {{ `{{- $acm_virt_sch_name := "acm-rho-virt-schedule" }}` }}
+                {{ `{{- /* check if VM CRD is not installed  */ -}}` }}
+                {{ `{{- $vm_crd_name := "virtualmachines.kubevirt.io" }}` }}
+                {{ `{{- $vm_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" $vm_crd_name }}` }}
+                {{ `{{- $vm_crd_exists := eq $vm_crd.metadata.name  $vm_crd_name }}` }}
 
-              {{ `{{- /* true if there are any VM instances  */ -}}` }}
-              {{ `{{- $vms_inst_exists := false  }}` }}
-              {{ `{{- $vms := "" }}` }}
+                {{ `{{- /* true if there are any VM instances  */ -}}` }}
+                {{ `{{- $vms_inst_exists := false  }}` }}
+                {{ `{{- $vms := "" }}` }}
 
-              {{ `{{- /* if vm CRD is installed check if there are VM instances  */ -}}` }}
-              {{ `{{ if $vm_crd_exists }}` }}
-                {{ `{{- $vms = (lookup "kubevirt.io/v1" "VirtualMachine" "" "" "cluster.open-cluster-management.io/backup-vm").items }}` }}
-                {{ `{{- $vms_inst_exists = gt (len ($vms)) 0  }}` }}
-              {{ `{{- end }}` }}
-
-              {{ `{{- $generateSchedule := $vms_inst_exists }}` }}
-              {{ `{{- /* keep track of schedules created as a result of vm annotations; any schedule not in this list must be deleted  */ -}}` }}
-              {{ `{{- $valid_schedules := "=" }}` }}
-              {{ `{{- /* if there are any vm instances  */ -}}` }}
-              {{ `{{ if $vms_inst_exists }}` }}
-                {{ `{{- $cron_schedule := "10 */1 * * *" }}` }}
-                {{ `{{- $ttl_schedule := "24h0m0s" }}` }}
-                {{ `{{- $paused_schedule := false }}` }}
-
-                {{ `{{- /* check if this is a hub, acm installed  */ -}}` }}
-                {{ `{{- $acm_crd_name := "multiclusterhubs.operator.open-cluster-management.io" }}` }}
-                {{ `{{- $acm_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" $acm_crd_name  }}` }}
-                {{ `{{- $is_hub := eq $acm_crd.metadata.name  $acm_crd_name }}` }}
-                {{ `{{- $skipImmediately := false }}` }}
-                {{ `{{- $useOwnerReferencesInBackup := false }}` }}
-
-                {{ `{{- /* check if OADP CRD is installed  */ -}}` }}
-                {{ `{{- $dpa_crd_name := "dataprotectionapplications.oadp.openshift.io" }}` }}
-                {{ `{{- $dpa_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" "dataprotectionapplications.oadp.openshift.io"  }}` }}
-                {{ `{{- $dpa_crd_exists := eq $dpa_crd.metadata.name  $dpa_crd_name }}` }}
-                {{ `{{- $storageLocation := "" }}` }}
-
-                {{ `{{- $oadp_channel := "" }}` }}
-                {{ `{{ if ($sch_crd_exists) }}` }}
-                  {{ `{{- /* Velero Schedule CRD is installed */ -}}` }}
-
-                  {{ `{{ if not $is_hub }}` }}
-                    {{ `{{- $ns = "{{hub fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "backupNS" hub}}" }}` }}
-                  {{ `{{- end}}` }}
-
-                  {{ `{{- $config_map := lookup "v1" "ConfigMap" $ns "acm-virt-config-cls" }}` }}
-                  {{ `{{ if hasKey $config_map.data "scheduleTTL" }}` }}
-                  {{ `{{- $ttl_schedule = $config_map.data.scheduleTTL }}` }}
-                  {{ `{{- end }}` }}
-                  {{ `{{ if hasKey $config_map.data "schedule_paused" }}` }}
-                    {{ `{{- $paused_schedule = ($config_map.data.schedule_paused) | toBool }}` }}
-                  {{ `{{- end }}` }}
-                  {{ `{{ if hasKey $config_map.data "schedule_skipImmediately" }}` }}
-                    {{ `{{- $skipImmediately = ( $config_map.data.schedule_skipImmediately ) | toBool }}` }}
-                  {{ `{{- end }}` }}
-                  {{ `{{ if hasKey $config_map.data "schedule_useOwnerReferencesInBackup" }}` }}
-                    {{ `{{- $useOwnerReferencesInBackup = ( $config_map.data.schedule_useOwnerReferencesInBackup ) | toBool }}` }}
-                  {{ `{{- end }}` }}
-                  {{ `{{- $storageLocation = fromConfigMap $ns "acm-virt-config-cls" "storageLocation" }}` }}
-                  {{ `{{- $oadp_channel = fromConfigMap $ns "acm-virt-config-cls" "channel" }}` }}
-
-                {{ `{{- /* Velero Schedule CRD is installed */ -}}` }}
+                {{ `{{- /* if vm CRD is installed check if there are VM instances  */ -}}` }}
+                {{ `{{ if $vm_crd_exists }}` }}
+                  {{ `{{- $vms = (lookup "kubevirt.io/v1" "VirtualMachine" "" "" "cluster.open-cluster-management.io/backup-vm").items }}` }}
+                  {{ `{{- $vms_inst_exists = gt (len ($vms)) 0  }}` }}
                 {{ `{{- end }}` }}
 
-                {{ `{{ if $generateSchedule }}` }}
+                {{ `{{- $generateSchedule := $vms_inst_exists }}` }}
+                {{ `{{- /* keep track of schedules created as a result of vm annotations; any schedule not in this list must be deleted  */ -}}` }}
+                {{ `{{- $valid_schedules := "=" }}` }}
+                {{ `{{- /* if there are any vm instances  */ -}}` }}
+                {{ `{{ if $vms_inst_exists }}` }}
+                  {{ `{{- $cron_schedule := "10 */1 * * *" }}` }}
+                  {{ `{{- $ttl_schedule := "24h0m0s" }}` }}
+                  {{ `{{- $paused_schedule := false }}` }}
 
-                  {{ `{{- $schedule_label := "cluster.open-cluster-management.io/backup-vm" }}` }}
-                  {{ `{{- /* get all vms with a backup label  */ -}}` }}
-                  {{ `{{- $vms_to_backup := (lookup "kubevirt.io/v1" "VirtualMachine" "" "" $schedule_label) }}` }}
+                  {{ `{{- /* check if this is a hub, acm installed  */ -}}` }}
+                  {{ `{{- $acm_crd_name := "multiclusterhubs.operator.open-cluster-management.io" }}` }}
+                  {{ `{{- $acm_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" $acm_crd_name  }}` }}
+                  {{ `{{- $is_hub := eq $acm_crd.metadata.name  $acm_crd_name }}` }}
+                  {{ `{{- $skipImmediately := false }}` }}
+                  {{ `{{- $useOwnerReferencesInBackup := false }}` }}
 
-                  {{ `{{- /* get all cron jobs; for each of them define a backup schedule, if any vms are found for this schedule  */ -}}` }}
-                  {{ `{{- $jobs_map := ( lookup "v1" "ConfigMap" $ns "acm-virt-cron-schedules" ) }}` }}
+                  {{ `{{- /* check if OADP CRD is installed  */ -}}` }}
+                  {{ `{{- $dpa_crd_name := "dataprotectionapplications.oadp.openshift.io" }}` }}
+                  {{ `{{- $dpa_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" "dataprotectionapplications.oadp.openshift.io"  }}` }}
+                  {{ `{{- $dpa_crd_exists := eq $dpa_crd.metadata.name  $dpa_crd_name }}` }}
+                  {{ `{{- $storageLocation := "" }}` }}
 
-                  {{ `{{- range $jobs := $jobs_map.data }}` }}
-
-                    {{ `{{- /* vms_ns gives the list of all namespaces where VM exist  */ -}}` }}
-                    {{ `{{ $vms_ns := " " }}` }}
-                    {{ `{{- /* vms_ns gives the list of all VM names  */ -}}` }}
-                    {{ `{{ $vms_names := " " }}` }}
-                    {{ `{{- /* vms_uids gives the list of all VM UIDs and the namespace--name for the vm  */ -}}` }}
-                    {{ `{{- /* this will be used to find the UID of the vm; the information is added to the velero Schedule label is this format : uid: ns--name  */ -}}` }}
-                    {{ `{{ $vms_uids := " " }}` }}
-                    {{ `{{- $acm_virt_sch_name_cron := "" }}` }}
-
-                    {{ `{{- /* go through all vms with a backup label and process only the ones with the same cron job as the one in current iteration */ -}}` }}
-                    {{ `{{- range $vms := $vms_to_backup.items }}` }}
-
-                      {{ `{{- /* get the name of the cron job from the vm label  */ -}}` }}
-                      {{ `{{- $cron_name := (index $vms.metadata.labels $schedule_label) }}` }}
-
-                      {{ `{{- $cron_schedule = fromConfigMap $ns "acm-virt-cron-schedules" $cron_name }}` }}
-
-                      {{ `{{ if eq $cron_schedule $jobs }}` }}
-
-                        {{ `{{- /* get the value of the cron from the cron schedule config map  */ -}}` }}
-                        {{ `{{- /* create a schedule name using the cron name  */ -}}` }}
-                        {{ `{{- $acm_virt_sch_name_cron = ((cat $acm_virt_sch_name $cron_name) | replace "_" "-") | replace " " "-" }}` }}
-
-                        {{ `{{ if not (contains $vms.metadata.namespace $vms_ns) }}` }}
-                          {{ `{{- /* add VM namespace if not already in the vms_ns  */ -}}` }}
-                          {{ `{{- $vms_ns = (cat $vms_ns $vms.metadata.namespace " ") }}` }}
-                        {{ `{{- end }}` }}
-                        {{ `{{ if not (contains $vms.metadata.name $vms_names) }}` }}
-                          {{ `{{- /* add VM name if not already in the vms_names  */ -}}` }}
-                          {{ `{{- $vms_names = (cat $vms_names $vms.metadata.name " ") }}` }}
-                        {{ `{{- end }}` }}
-                        {{ `{{ if not (contains $vms.metadata.uid $vms_uids) }}` }}
-                          {{ `{{- /* add VM uid if not already in the vms_uids  */ -}}` }}
-                          {{ `{{- $vms_uids = (cat ((cat $vms_uids $vms.metadata.uid "#" $vms.metadata.namespace "--" $vms.metadata.name) | replace " " "") "*") | replace " " "" }}` }}
-                        {{ `{{- end }}` }}
-                      {{ `{{- end }}` }}
+                  {{ `{{- $oadp_channel := "" }}` }}
+                  {{ `{{ if ($sch_crd_exists) }}` }}
+                    {{ `{{- /* Velero Schedule CRD is installed */ -}}` }}
+                    {{ `{{ if not $is_hub }}` }}
+                      {{ `{{- $ns = "{{hub fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "backupNS" hub}}" }}` }}
                     {{ `{{- end }}` }}
 
-                  {{ `{{ if and (not (eq $vms_ns " ")) (not (eq $vms_names " ")) }}` }}
-                    {{ `{{- $valid_schedules = (cat $valid_schedules $acm_virt_sch_name_cron "=") | replace " " "" }}` }}
+                    {{ `{{- $config_map := lookup "v1" "ConfigMap" $ns "acm-virt-config-cls" }}` }}
+                    {{ `{{ if hasKey $config_map.data "scheduleTTL" }}` }}
+                    {{ `{{- $ttl_schedule = $config_map.data.scheduleTTL }}` }}
+                    {{ `{{- end }}` }}
+                    {{ `{{ if hasKey $config_map.data "schedule_paused" }}` }}
+                      {{ `{{- $paused_schedule = ($config_map.data.schedule_paused) | toBool }}` }}
+                    {{ `{{- end }}` }}
+                    {{ `{{ if hasKey $config_map.data "schedule_skipImmediately" }}` }}
+                      {{ `{{- $skipImmediately = ( $config_map.data.schedule_skipImmediately ) | toBool }}` }}
+                    {{ `{{- end }}` }}
+                    {{ `{{ if hasKey $config_map.data "schedule_useOwnerReferencesInBackup" }}` }}
+                      {{ `{{- $useOwnerReferencesInBackup = ( $config_map.data.schedule_useOwnerReferencesInBackup ) | toBool }}` }}
+                    {{ `{{- end }}` }}
+                    {{ `{{- $storageLocation = fromConfigMap $ns "acm-virt-config-cls" "storageLocation" }}` }}
+                    {{ `{{- $oadp_channel = fromConfigMap $ns "acm-virt-config-cls" "channel" }}` }}
+
+                  {{ `{{- /* Velero Schedule CRD is installed */ -}}` }}
+                  {{ `{{- end }}` }}
+
+                  {{ `{{ if $generateSchedule }}` }}
+
+                    {{ `{{- $schedule_label := "cluster.open-cluster-management.io/backup-vm" }}` }}
+                    {{ `{{- /* get all vms with a backup label  */ -}}` }}
+                    {{ `{{- $vms_to_backup := (lookup "kubevirt.io/v1" "VirtualMachine" "" "" $schedule_label) }}` }}
+
+                    {{ `{{- /* get all cron jobs; for each of them define a backup schedule, if any vms are found for this schedule  */ -}}` }}
+                    {{ `{{- $jobs_map := ( lookup "v1" "ConfigMap" $ns "acm-virt-cron-schedules" ) }}` }}
+
+                    {{ `{{- range $jobs := $jobs_map.data }}` }}
+
+                      {{ `{{- /* vms_ns gives the list of all namespaces where VM exist  */ -}}` }}
+                      {{ `{{ $vms_ns := " " }}` }}
+                      {{ `{{- /* vms_ns gives the list of all VM names  */ -}}` }}
+                      {{ `{{ $vms_names := " " }}` }}
+                      {{ `{{- /* vms_uids gives the list of all VM UIDs and the namespace--name for the vm  */ -}}` }}
+                      {{ `{{- /* this will be used to find the UID of the vm; the information is added to the velero Schedule label is this format : uid: ns--name  */ -}}` }}
+                      {{ `{{ $vms_uids := " " }}` }}
+                      {{ `{{- $acm_virt_sch_name_cron := "" }}` }}
+
+                      {{ `{{- /* go through all vms with a backup label and process only the ones with the same cron job as the one in current iteration */ -}}` }}
+                      {{ `{{- range $vms := $vms_to_backup.items }}` }}
+
+                        {{ `{{- /* get the name of the cron job from the vm label  */ -}}` }}
+                        {{ `{{- $cron_name := (index $vms.metadata.labels $schedule_label) }}` }}
+
+                        {{ `{{- $cron_schedule = fromConfigMap $ns "acm-virt-cron-schedules" $cron_name }}` }}
+
+                        {{ `{{ if eq $cron_schedule $jobs }}` }}
+
+                          {{ `{{- /* get the value of the cron from the cron schedule config map  */ -}}` }}
+                          {{ `{{- /* create a schedule name using the cron name  */ -}}` }}
+                          {{ `{{- $acm_virt_sch_name_cron = ((cat $acm_virt_sch_name $cron_name) | replace "_" "-") | replace " " "-" }}` }}
+
+                          {{ `{{ if not (contains $vms.metadata.namespace $vms_ns) }}` }}
+                            {{ `{{- /* add VM namespace if not already in the vms_ns  */ -}}` }}
+                            {{ `{{- $vms_ns = (cat $vms_ns $vms.metadata.namespace " ") }}` }}
+                          {{ `{{- end }}` }}
+                          {{ `{{ if not (contains $vms.metadata.name $vms_names) }}` }}
+                            {{ `{{- /* add VM name if not already in the vms_names  */ -}}` }}
+                            {{ `{{- $vms_names = (cat $vms_names $vms.metadata.name " ") }}` }}
+                          {{ `{{- end }}` }}
+                          {{ `{{ if not (contains $vms.metadata.uid $vms_uids) }}` }}
+                            {{ `{{- /* add VM uid if not already in the vms_uids  */ -}}` }}
+                            {{ `{{- $vms_uids = (cat ((cat $vms_uids $vms.metadata.uid "#" $vms.metadata.namespace "--" $vms.metadata.name) | replace " " "") "*") | replace " " "" }}` }}
+                          {{ `{{- end }}` }}
+                        {{ `{{- end }}` }}
+                      {{ `{{- end }}` }}
+
+                    {{ `{{ if and (not (eq $vms_ns " ")) (not (eq $vms_names " ")) }}` }}
+                      {{ `{{- $valid_schedules = (cat $valid_schedules $acm_virt_sch_name_cron "=") | replace " " "" }}` }}
                     - complianceType: mustonlyhave
                       objectDefinition:
                         apiVersion: velero.io/v1
@@ -262,20 +211,20 @@ spec:
                             {{ `{{ if not (eq "" $storageLocation) }}` }}
                             storageLocation: "{{ `{{ $storageLocation }}` }}"
                             {{ `{{- end }}` }}
-                    {{ `{{- /* there are VM resources */ -}}` }}
+                      {{ `{{- /* there are VM resources */ -}}` }}
+                      {{ `{{- end }}` }}
+                    {{ `{{- /* end query cron schedules */ -}}` }}
                     {{ `{{- end }}` }}
-                  {{ `{{- /* end query cron schedules */ -}}` }}
-                  {{ `{{- end }}` }}
-                {{ `{{- /* generateSchedule is true */ -}}` }}
+                  {{ `{{- /* generateSchedule is true */ -}}` }}
+                  {{ `{{- end}}` }}
                 {{ `{{- end}}` }}
-              {{ `{{- end}}` }}
 
-              {{ `{{- /* clean old schedules  */ -}}` }}
-             {{ `{{- $schedule_label := "cluster.open-cluster-management.io/backup-schedule-type, cluster.open-cluster-management.io/backup-schedule-type in (kubevirt)"}}` }}
-              {{ `{{- range $scheduleObj := (lookup "velero.io/v1" "Schedule" "" ""  $schedule_label).items }}` }}
+                {{ `{{- /* clean old schedules  */ -}}` }}
+                {{ `{{- $schedule_label := "cluster.open-cluster-management.io/backup-schedule-type, cluster.open-cluster-management.io/backup-schedule-type in (kubevirt)"}}` }}
+                {{ `{{- range $scheduleObj := (lookup "velero.io/v1" "Schedule" "" ""  $schedule_label).items }}` }}
 
-                {{ `{{- $search_str := (cat "=" $scheduleObj.metadata.name "=") | replace " " ""}}` }}
-                {{ `{{ if not (contains $search_str $valid_schedules) }}` }}
+                  {{ `{{- $search_str := (cat "=" $scheduleObj.metadata.name "=") | replace " " ""}}` }}
+                  {{ `{{ if not (contains $search_str $valid_schedules) }}` }}
                     - complianceType: mustnothave
                       objectDefinition:
                         apiVersion: velero.io/v1
@@ -283,10 +232,10 @@ spec:
                         metadata:
                           namespace: {{ `{{ $scheduleObj.metadata.namespace }}` }}
                           name: {{ `{{ $scheduleObj.metadata.name }}` }}
+                  {{ `{{- end }}` }}
                 {{ `{{- end }}` }}
               {{ `{{- end }}` }}
-
-            {{ `{{- end }}` }}
+            {{ `{{hub end hub}}` }}
           remediationAction: enforce
           pruneObjectBehavior: DeleteIfCreated
           severity: high
@@ -379,32 +328,38 @@ spec:
           name: check-cron-schedule-valid
         spec:
           object-templates-raw: |
-            {{ `{{- /* check if VM CRD is not installed  */ -}}` }}
-            {{ `{{- $vm_crd_name := "virtualmachines.kubevirt.io" }}` }}
-            {{ `{{- $vm_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" $vm_crd_name }}` }}
-            {{ `{{- $vm_crd_exists := eq $vm_crd.metadata.name  $vm_crd_name }}` }}
+            {{ `{{hub $config_name := index .ManagedClusterLabels "acm-virt-config" hub}}` }}
+            {{ `{{hub $config_file := lookup "v1" "ConfigMap" "" $config_name hub}}` }}
+            {{ `{{hub $config_file_exists := eq $config_file.metadata.name $config_name hub}}` }}
 
-            {{ `{{ if $vm_crd_exists }}` }}
+            {{ `{{hub if $config_file_exists hub}}` }}
 
-              {{ `{{- /* ns is the namespace for the OADP deployment  */ -}}` }}
-              {{ `{{- $ns := "open-cluster-management-backup" }}` }}
+              {{ `{{- /* check if VM CRD is not installed  */ -}}` }}
+              {{ `{{- $vm_crd_name := "virtualmachines.kubevirt.io" }}` }}
+              {{ `{{- $vm_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" $vm_crd_name }}` }}
+              {{ `{{- $vm_crd_exists := eq $vm_crd.metadata.name  $vm_crd_name }}` }}
 
-              {{ `{{- /* check if this is a hub, acm installed  */ -}}` }}
-              {{ `{{- $acm_crd_name := "multiclusterhubs.operator.open-cluster-management.io" }}` }}
-              {{ `{{- $acm_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" $acm_crd_name  }}` }}
-              {{ `{{- $is_hub := eq $acm_crd.metadata.name  $acm_crd_name }}` }}
-              {{ `{{ if not $is_hub }}` }}
-                {{ `{{- $ns = "{{hub fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "backupNS" hub}}" }}` }}
-              {{ `{{- end }}` }}
+              {{ `{{ if $vm_crd_exists }}` }}
 
-              {{ `{{- $jobs_map := ( lookup "v1" "ConfigMap" $ns "acm-virt-cron-schedules" ).data }}` }}
-              {{ `{{- $cron_label := "cluster.open-cluster-management.io/backup-vm" }}` }}
+                {{ `{{- /* ns is the namespace for the OADP deployment  */ -}}` }}
+                {{ `{{- $ns := "open-cluster-management-backup" }}` }}
 
-              {{ `{{- /* get all vms with a backup label and check that the specified cron job name is valid  */ -}}` }}
-              {{ `{{- range $vms_to_backup := (lookup "kubevirt.io/v1" "VirtualMachine" "" "" $cron_label).items }}` }}
+                {{ `{{- /* check if this is a hub, acm installed  */ -}}` }}
+                {{ `{{- $acm_crd_name := "multiclusterhubs.operator.open-cluster-management.io" }}` }}
+                {{ `{{- $acm_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" $acm_crd_name  }}` }}
+                {{ `{{- $is_hub := eq $acm_crd.metadata.name  $acm_crd_name }}` }}
+                {{ `{{ if not $is_hub }}` }}
+                  {{ `{{- $ns = "{{hub fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "backupNS" hub}}" }}` }}
+                {{ `{{- end }}` }}
 
-                {{ `{{- $vm_cron_value := (index $vms_to_backup.metadata.labels $cron_label) }}` }}
-                {{ `{{if not (hasKey $jobs_map $vm_cron_value) }}` }}
+                {{ `{{- $jobs_map := ( lookup "v1" "ConfigMap" $ns "acm-virt-cron-schedules" ).data }}` }}
+                {{ `{{- $cron_label := "cluster.open-cluster-management.io/backup-vm" }}` }}
+
+                {{ `{{- /* get all vms with a backup label and check that the specified cron job name is valid  */ -}}` }}
+                {{ `{{- range $vms_to_backup := (lookup "kubevirt.io/v1" "VirtualMachine" "" "" $cron_label).items }}` }}
+
+                  {{ `{{- $vm_cron_value := (index $vms_to_backup.metadata.labels $cron_label) }}` }}
+                  {{ `{{if not (hasKey $jobs_map $vm_cron_value) }}` }}
                 - complianceType: musthave
                   recordDiff: InStatus
                   objectDefinition:
@@ -415,36 +370,13 @@ spec:
                       namespace: {{ `{{ $ns }}` }}
                     data:
                       {{ `{{ $vm_cron_value }}` }}: {{ `{{$vms_to_backup.metadata.name}}` }}
+                  {{ `{{- end }}` }}
                 {{ `{{- end }}` }}
               {{ `{{- end }}` }}
-            {{ `{{- end }}` }}
+            {{ `{{hub end hub}}` }}
           remediationAction: inform
           severity: high
           customMessage:
             compliant: "All cron schedule names used with the VirtualMachines cluster.open-cluster-management.io/backup-vm label are valid."
             noncompliant: |-
               Some VirtualMachines use invalid cron job names for the cluster.open-cluster-management.io/backup-vm label as they are not defined by the acm-virt-cron-schedules ConfigMap.
-    - objectDefinition:
-        apiVersion: policy.open-cluster-management.io/v1
-        kind: ConfigurationPolicy
-        metadata:
-          name: check-backup-config
-        spec:
-          object-templates-raw: |
-            {{ `{{hub $cron_file_name := (fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "schedule_hub_config_name") hub}}` }}
-            {{ `{{hub $cron_file := lookup "v1" "ConfigMap" "" $cron_file_name hub}}` }}
-            {{ `{{hub $cron_file_exists := eq $cron_file.metadata.name $cron_file_name hub}}` }}
-            {{ `{{hub if not $cron_file_exists hub}}` }}
-              - complianceType: musthave
-                objectDefinition:
-                  apiVersion: v1
-                  kind: ConfigMap
-                  metadata:
-                    name: {{ `{{hub $cron_file_name hub}}` }}
-                    namespace: "open-cluster-management-backup"
-            {{ `{{hub end hub}}` }}
-          customMessage:
-            compliant: "The ConfigMap defined by the schedule_hub_config_name property exists on the hub, under the open-cluster-management-backup namespace."
-          remediationAction: inform
-          severity: high
-

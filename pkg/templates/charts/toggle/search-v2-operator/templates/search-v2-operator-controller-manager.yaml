@@ -60,11 +60,8 @@ spec:
           name: https
           protocol: TCP
         resources:
-          limits:
-            cpu: 200m
-            memory: 1Gi
           requests:
-            cpu: 100m
+            cpu: 10m
             memory: 256Mi
         securityContext:
           allowPrivilegeEscalation: false
@@ -93,7 +90,7 @@ spec:
             fieldRef:
               fieldPath: metadata.annotations['olm.targetNamespaces']
         - name: POSTGRES_IMAGE
-          value: '{{ .Values.global.imageOverrides.postgresql_13 }}'
+          value: '{{ .Values.global.imageOverrides.postgresql_16 }}'
         - name: INDEXER_IMAGE
           value: '{{ .Values.global.imageOverrides.search_indexer }}'
         - name: COLLECTOR_IMAGE
@@ -116,11 +113,8 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 10
         resources:
-          limits:
-            cpu: 200m
-            memory: 6Gi
           requests:
-            cpu: 50m
+            cpu: 10m
             memory: 256Mi
         securityContext:
           allowPrivilegeEscalation: false

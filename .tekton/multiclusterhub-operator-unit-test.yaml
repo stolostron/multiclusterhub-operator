@@ -64,21 +64,21 @@ spec:
               REPO_URL=$(echo $SNAPSHOT | jq -r --arg name "$TARGET_COMPONENT_NAME" '.components[] | select(.name == $name) | .source.git.url')
               REPO_COMMIT=$(echo $SNAPSHOT | jq -r --arg name "$TARGET_COMPONENT_NAME" '.components[] | select(.name == $name) | .source.git.revision')
               test_output_file=${PWD}/test_output.json
-  
+
               # Log Vars for Tracibility
               echo "REPO_URL: $REPO_URL"
               echo "TARGET_COMPONENT_NAME: $TARGET_COMPONENT_NAME"
               echo "REPO_COMMIT: $REPO_COMMIT"
               echo "SNAPSHOT: $(echo $SNAPSHOT | jq)"
-  
+
               # Clone Repo and checkout at snapshot commit
               git clone $REPO_URL $TARGET_COMPONENT_NAME
               cd $TARGET_COMPONENT_NAME
               git checkout $REPO_COMMIT
-  
+
               # Run unit tests with JSON output
               make test unit_test_json_output="$test_output_file"
-  
+
               # Read, process, and write output in accepted format
               # Formatting docs: https://redhat-appstudio.github.io/book/ADR/0030-tekton-results-naming-convention.html#test_output-schema-validation
               FAILURES=$(cat $test_output_file | jq 'select(.Action == "fail")' | jq -r --slurp 'length')

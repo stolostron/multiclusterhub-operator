@@ -38,6 +38,30 @@ spec:
                       name: "{{ `{{hub $config_name hub}}` }}"
                       namespace: "open-cluster-management-backup"
             {{ `{{hub else hub}}` }}
+                {{ `{{hub $restore_file_name := (fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "restore_hub_config_name") hub}}` }}
+                {{ `{{hub $restore_file := lookup "v1" "ConfigMap" "" $restore_file_name hub}}` }}
+                {{ `{{hub $restore_file_exists := eq $restore_file.metadata.name $restore_file_name hub}}` }}
+                {{ `{{hub if not $restore_file_exists hub}}` }}
+                - complianceType: musthave
+                  objectDefinition:
+                    apiVersion: v1
+                    kind: ConfigMap
+                    metadata:
+                      name: "{{ `{{hub $restore_file_name hub}}` }}"
+                      namespace: "open-cluster-management-backup"
+                {{ `{{hub end hub}}` }}
+                {{ `{{hub $cron_file_name := (fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "schedule_hub_config_name") hub}}` }}
+                {{ `{{hub $cron_file := lookup "v1" "ConfigMap" "" $cron_file_name hub}}` }}
+                {{ `{{hub $cron_file_exists := eq $cron_file.metadata.name $cron_file_name hub}}` }}
+                {{ `{{hub if not $cron_file_exists hub}}` }}
+                - complianceType: musthave
+                  objectDefinition:
+                    apiVersion: v1
+                    kind: ConfigMap
+                    metadata:
+                      name: {{ `{{hub $cron_file_name hub}}` }}
+                      namespace: "open-cluster-management-backup"
+                {{ `{{hub end hub}}` }}
                 {{ `{{- $acm_crd_name := "multiclusterhubs.operator.open-cluster-management.io" }}` }}
                 {{ `{{- $acm_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" $acm_crd_name  }}` }}
                 {{ `{{- /* check if this is a hub, acm installed  */ -}}` }}
@@ -70,7 +94,6 @@ spec:
           remediationAction: inform
           severity: high
           object-templates-raw: |
-            {{ `{{- /* check if there is an OADP version installed on the cluster and it matches the version installed by the policy  */ -}}` }}
             {{ `{{hub $config_name := index .ManagedClusterLabels "acm-virt-config" hub}}` }}
             {{ `{{hub $config_file := lookup "v1" "ConfigMap" "" $config_name hub}}` }}
             {{ `{{hub $config_file_exists := eq $config_file.metadata.name $config_name hub}}` }}
@@ -96,8 +119,37 @@ spec:
                       namespace: {{ `{{ $ss.metadata.namespace }}` }}
                     spec:
                       channel: {{ `{{ $ch }}` }}
+                    status:
+                      conditions:
+                        - reason: AllCatalogSourcesHealthy
+                          status: 'False'
+                          type: CatalogSourcesUnhealthy
                 {{ `{{- end }}` }}
               {{ `{{- end }}` }}
+              {{ `{{- $acm_crd_name := "multiclusterhubs.operator.open-cluster-management.io" }}` }}
+              {{ `{{- $acm_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" $acm_crd_name  }}` }}
+              {{ `{{- $is_hub := eq $acm_crd.metadata.name  $acm_crd_name }}` }}
+              {{ `{{- /* ns is the namespace for the OADP deployment  */ -}}` }}
+              {{ `{{- $ns := "open-cluster-management-backup" }}` }}
+              {{ `{{ if not $is_hub }}` }}
+                {{ `{{- $ns = "{{hub fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "backupNS" hub}}" }}` }}
+              {{ `{{- end }}` }}
+              {{ `{{- $csv_name := "oadp-operator" }}` }}
+              {{ `{{- $csv_oadp_label := (cat "operators.coreos.com/redhat-oadp-operator" $ns) | replace " " "." }}` }}
+              {{ `{{- range $csv := (lookup "operators.coreos.com/v1alpha1" "ClusterServiceVersion" $ns "" $csv_oadp_label ).items }}` }}
+                {{ `{{- $csv_name = $csv.metadata.name }}` }}
+              {{ `{{- end }}` }}
+                - complianceType: musthave
+                  objectDefinition:
+                    apiVersion: operators.coreos.com/v1alpha1
+                    kind: ClusterServiceVersion
+                    metadata:
+                      namespace: {{ `{{ $ns }}` }}
+                      name: {{ `{{ $csv_name }}` }}
+                      annotations:
+                        olm.operatorGroup: redhat-oadp-operator-group
+                    status:
+                      phase: Succeeded
             {{ `{{hub end hub}}` }}
     - objectDefinition:
         apiVersion: policy.open-cluster-management.io/v1
@@ -152,30 +204,6 @@ spec:
                   {{ `{{- end }}` }}
                 {{ `{{- end}}` }}
               {{ `{{- end }}` }}
-              {{ `{{- $ch := "{{hub fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "channel" hub}}" }}` }}
-              {{ `{{- /* use the subscription name and operator group from the existing OADP installation, if one exists in this ns  */ -}}` }}
-              {{ `{{- $subscription_name := "redhat-oadp-operator-subscription" }}` }}
-              {{ `{{- range $ss := (lookup "operators.coreos.com/v1alpha1" "Subscription" $ns "").items }}` }}
-                {{ `{{ if eq $ss.spec.name "redhat-oadp-operator" }}` }}
-                  {{ `{{- $subscription_name = $ss.metadata.name }}` }}
-                {{ `{{- end }}` }}
-              {{ `{{- end }}` }}
-
-                - complianceType: musthave
-                  objectDefinition:
-                    apiVersion: operators.coreos.com/v1alpha1
-                    kind: Subscription
-                    metadata:
-                      name: {{ `{{ $subscription_name }}` }}
-                      namespace: {{ `{{ $ns }}` }}
-                    spec:
-                      channel: {{ `{{ $ch }}` }}
-                    status:
-                      conditions:
-                        - reason: AllCatalogSourcesHealthy
-                          status: 'False'
-                          type: CatalogSourcesUnhealthy
-
                 - complianceType: musthave
                   objectDefinition:
                     apiVersion: oadp.openshift.io/v1alpha1
@@ -267,6 +295,7 @@ spec:
                   {{ `{{ if not (eq "" $subscriptionSourceConfig) }}` }}
                     {{ `{{- $subscriptionSource = $subscriptionSourceConfig }}` }}
                   {{ `{{- end }}` }}
+                  {{ `{{- $startingCSV := "{{hub fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "subscriptionStartingCSV" hub}}" }}` }}
 
                   {{ `{{- /* ns is the namespace for the OADP deployment  */ -}}` }}
                   {{ `{{- $ns := "open-cluster-management-backup" }}` }}
@@ -281,8 +310,33 @@ spec:
                     metadata:
                       name: {{ `{{ $ns }}` }}
 
-            {{ `{{- /* for managed clusters only, copy the oadp secret and install OADP  */ -}}` }}
-            {{ `{{ if (not $is_hub) }}` }}
+                - complianceType: mustonlyhave
+                  objectDefinition:
+                    apiVersion: v1
+                    kind: ConfigMap
+                    metadata:
+                      name: "acm-virt-config-cls"
+                      namespace: {{ `{{ $ns }}` }}
+                    data: {{ `'{{hub copyConfigMapData "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) hub}}'` }}
+
+              {{ `{{hub $cron_file_name := (fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "schedule_hub_config_name") hub}}` }}
+              {{ `{{hub $cron_file := lookup "v1" "ConfigMap" "" $cron_file_name hub}}` }}
+              {{ `{{hub $cron_file_exists := eq $cron_file.metadata.name $cron_file_name hub}}` }}
+              {{ `{{- /* cron_schedule_configmap_name is the name of the main cron config map, copied over to the cluster  */ -}}` }}
+              {{ `{{- $cron_schedule_configmap_name := "acm-virt-cron-schedules" }}` }}
+              {{ `{{hub if $cron_file_exists hub}}` }}
+                - complianceType: mustonlyhave
+                  objectDefinition:
+                    apiVersion: v1
+                    kind: ConfigMap
+                    metadata:
+                      name: {{ `{{ $cron_schedule_configmap_name }}` }}
+                      namespace: {{ `{{ $ns }}` }}
+                    data: '{{ `{{hub copyConfigMapData "" $cron_file_name hub}}` }}'
+              {{ `{{hub end hub}}` }}
+
+              {{ `{{- /* for managed clusters only, copy the oadp secret and install OADP  */ -}}` }}
+              {{ `{{ if (not $is_hub) }}` }}
                 {{ `{{- /* use the subscription name and operator group from the existing OADP installation, if one exists in this ns  */ -}}` }}
                 {{ `{{- $subscription_name := "redhat-oadp-operator-subscription" }}` }}
                 {{ `{{- /* if another OADP version was installed don't try to install this version  */ -}}` }}
@@ -347,6 +401,9 @@ spec:
                       name: {{ `{{ $channelName }}` }}
                       source: {{ `{{ $subscriptionSource }}` }}
                       sourceNamespace: {{ `{{ $subscriptionSourceNamespace }}` }}
+                      {{ `{{ if not (eq "" $startingCSV) }}` }}
+                      startingCSV: {{ `{{ $startingCSV }}` }}
+                      {{ `{{- end }}` }}
 
                   {{ `{{- /* tag the csv with the subscription uid; to be used when policy is installed and need to clean up previous policy csv - they are not cleaned up when the policy is uninstalled  */ -}}` }}
                   {{ `{{- $installedSubs := lookup "operators.coreos.com/v1alpha1" "Subscription" $ns $subscription_name }}` }}

@@ -92,8 +92,8 @@ const (
 	// VolsyncChartLocation is the location of the Volsync Controller chart.
 	VolsyncChartLocation = "/charts/toggle/volsync-controller"
 
-	// FlightControlChartLocation is the location of the Flight Control Controller chart.
-	FlightControlChartLocation = "/charts/toggle/flight-control"
+	// EdgeManagerChartLocation is the location of the Edge Manager Controller chart.
+	EdgeManagerChartLocation = "/charts/toggle/flight-control"
 )
 
 const (
@@ -340,7 +340,7 @@ func GetTestImages() []string {
 		"multicloud_integrations", "multicluster_operators_channel", "multicluster_operators_subscription",
 		"multicluster_observability_operator", "cluster_permission", "siteconfig_operator", "submariner_addon", "acm_cli",
 		"flightctl_worker", "flightctl_periodic", "flightctl_api", "flightctl_ui", "flightctl_ocp_ui",
-		"postgresql_12_c8s", "postgresql_12",
+		"postgresql_12_c8s", "postgresql_12", "postgresql_16",
 	}
 }
 
@@ -405,10 +405,6 @@ func GetDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 		nn = append(nn, types.NamespacedName{Name: "cluster-backup-chart-clusterbackup", Namespace: ClusterSubscriptionNamespace})
 		nn = append(nn, types.NamespacedName{Name: "openshift-adp-controller-manager", Namespace: ClusterSubscriptionNamespace})
 	}
-	// community, _ := operatorsv1.IsCommunity()
-	// if community {
-	//  nn = append(nn, types.NamespacedName{Name: "search-v2-operator-controller-manager", Namespace: m.Namespace})
-	// }
 	return nn
 }
 
@@ -468,6 +464,13 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole, isSTSEn
 	}
 	if m.Enabled(operatorsv1.ClusterPermission) {
 		nn = append(nn, types.NamespacedName{Name: "cluster-permission", Namespace: m.Namespace})
+	}
+	if m.Enabled(operatorsv1.EdgeManagerPreview) {
+		nn = append(nn, types.NamespacedName{Name: "flightctl-api", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "flightctl-db", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "flightctl-ui", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "flightctl-periodic", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "flightctl-worker", Namespace: m.Namespace})
 	}
 	return nn
 }

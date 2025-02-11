@@ -82,7 +82,7 @@ spec:
               name: flightctl-db-secret
         - name: POSTGRESQL_MAX_CONNECTIONS
           value: '200'
-        image: '{{ .Values.global.imageOverrides.postgresql_12 }}'
+        image: '{{ .Values.global.imageOverrides.postgresql_16 }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         name: flightctl-db
         ports:
@@ -98,7 +98,7 @@ spec:
             drop:
             - ALL
           privileged: false
-          readOnlyRootFilesystem: true
+          readOnlyRootFilesystem: false
           runAsNonRoot: true
         volumeMounts:
         - mountPath: /var/lib/pgsql/data

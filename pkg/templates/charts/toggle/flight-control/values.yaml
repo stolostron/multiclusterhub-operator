@@ -1,11 +1,13 @@
 global:
+  apiUrl: ''
+  baseDomain: ''
   hubSize: Small
   imageOverrides:
     flightctl_api: ''
     flightctl_ocp_ui: ''
     flightctl_periodic: ''
     flightctl_worker: ''
-    postgresql_12: ''
+    postgresql_16: ''
   namespace: default
   pullSecret: null
   templateOverrides: {}

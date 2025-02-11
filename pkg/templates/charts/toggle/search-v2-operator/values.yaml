@@ -1,8 +1,10 @@
 global:
+  apiUrl: ''
+  baseDomain: ''
   hubSize: Small
   imageOverrides:
     kube_rbac_proxy: ''
-    postgresql_13: ''
+    postgresql_16: ''
     search_collector: ''
     search_indexer: ''
     search_v2_api: ''

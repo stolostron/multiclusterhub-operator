@@ -18,6 +18,7 @@ import (
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/helpers"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
@@ -32,6 +33,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networking "k8s.io/api/networking/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -71,6 +73,9 @@ var (
 
 func ApplyPrereqs(k8sClient client.Client) {
 	ctx := context.Background()
+	if err := os.Setenv(helpers.DefaultStorageClassName, "gp3-csi"); err != nil {
+		log.Error(err, "failed to set default storage class")
+	}
 
 	By("Creating Ingress")
 	Expect(k8sClient.Create(ctx, resources.OCPIngress())).Should(Succeed())
@@ -1084,6 +1089,7 @@ func registerScheme() {
 	mcev1.AddToScheme(scheme.Scheme)
 	subv1alpha1.AddToScheme(scheme.Scheme)
 	olmv1.AddToScheme(scheme.Scheme)
+	storagev1.AddToScheme(scheme.Scheme)
 }
 
 func Test_ensureAuthenticationIssuerNotEmpty(t *testing.T) {
@@ -1213,6 +1219,49 @@ func Test_ensureInfrastructureAWS(t *testing.T) {
 			_, infraOk, _ := recon.ensureInfrastructureAWS(context.TODO())
 			if infraOk != tt.want {
 				t.Errorf("ensureInfrastructureAWS(ctx) = %v, want %v", infraOk, tt.want)
+			}
+		})
+	}
+}
+
+func Test_verifyCRDExists(t *testing.T) {
+	tests := []struct {
+		name string
+		ctx  context.Context
+		crd  *apixv1.CustomResourceDefinition
+		want bool
+	}{
+		{
+			name: "Check crd exists and returns true",
+			ctx:  context.TODO(),
+			crd: &apixv1.CustomResourceDefinition{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+				},
+			},
+			want: true,
+		},
+		{
+			name: "Check crd does not exist and returns false",
+			ctx:  context.TODO(),
+			crd:  nil,
+			want: false,
+		},
+	}
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer func() {
+				recon.Client.Delete(context.TODO(), tt.crd)
+			}()
+
+			recon.Client.Create(context.TODO(), tt.crd)
+			gvk := operatorv1.ResourceGVK{
+				Name: "test",
+			}
+			ok, _ := recon.verifyCRDExists(context.TODO(), gvk)
+			if ok != tt.want {
+				t.Errorf("Got %v, want %v", ok, tt.want)
 			}
 		})
 	}
@@ -1930,6 +1979,89 @@ func Test_ensureResourceVersionAlignment(t *testing.T) {
 			got := recon.ensureResourceVersionAlignment(tt.template, os.Getenv("OPERATOR_VERSION"))
 			if got != tt.want {
 				t.Errorf("ensureResourceVersionAlignment() = %v, want: %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_SetDefaultStorageClassName(t *testing.T) {
+	allowVolumeExpansion := true
+	reclaimPolicy := corev1.PersistentVolumeReclaimDelete
+	volumeBindingMode := storagev1.VolumeBindingWaitForFirstConsumer
+
+	tests := []struct {
+		name           string
+		storageClasses []storagev1.StorageClass
+		expectedEnv    string
+	}{
+		{
+			name:           "should not set default storage class name due to empty StorageClasses",
+			storageClasses: []storagev1.StorageClass{},
+			expectedEnv:    "",
+		},
+		{
+			name: "should set fallback storageClassName when default is not marked",
+			storageClasses: []storagev1.StorageClass{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        "gp2-csi",
+						Annotations: map[string]string{},
+					},
+					Provisioner: "ebs.csi.aws.com",
+					Parameters: map[string]string{
+						"encrypted": "true",
+						"type":      "gp3",
+					},
+					ReclaimPolicy:        &reclaimPolicy,
+					AllowVolumeExpansion: &allowVolumeExpansion,
+					VolumeBindingMode:    &volumeBindingMode,
+				},
+			},
+			expectedEnv: "gp2-csi",
+		},
+		{
+			name: "should set default storageClassName when default marked",
+			storageClasses: []storagev1.StorageClass{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "gp3-csi",
+						Annotations: map[string]string{
+							utils.AnnotationDefaultStorageClass: "true",
+						},
+					},
+					Provisioner: "ebs.csi.aws.com",
+					Parameters: map[string]string{
+						"encrypted": "true",
+						"type":      "gp3",
+					},
+					ReclaimPolicy:        &reclaimPolicy,
+					AllowVolumeExpansion: &allowVolumeExpansion,
+					VolumeBindingMode:    &volumeBindingMode,
+				},
+			},
+			expectedEnv: "gp3-csi",
+		},
+	}
+
+	if err := os.Setenv(helpers.DefaultStorageClassName, "test-storage-class"); err != nil {
+		t.Errorf("failed to set default StorageClassName: %v", err)
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			for _, sc := range tt.storageClasses {
+				if err := recon.Client.Create(context.TODO(), &sc); err != nil {
+					t.Errorf("failed to create StorageClass: %v", err)
+				}
+			}
+
+			// Call the function under test
+			if err := recon.SetDefaultStorageClassName(context.TODO()); err != nil {
+				t.Errorf("SetDefaultStorageClassName failed: %v", err)
+			}
+
+			if got := os.Getenv(helpers.DefaultStorageClassName); got != tt.expectedEnv {
+				t.Errorf("Expected StorageClassName to be set to: %v, got: %v", tt.expectedEnv, got)
 			}
 		})
 	}

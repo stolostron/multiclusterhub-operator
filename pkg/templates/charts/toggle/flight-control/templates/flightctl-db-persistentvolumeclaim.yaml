@@ -4,11 +4,11 @@ metadata:
   annotations:
     kubernetes.io/reclaimPolicy: Delete
   name: flightctl-db
-  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
+  namespace: '{{ .Values.global.namespace }}'
 spec:
   accessModes:
   - ReadWriteOnce
   resources:
     requests:
       storage: 60Gi
-  storageClassName: null
+  storageClassName: '{{ .Values.global.storageClassName }}'

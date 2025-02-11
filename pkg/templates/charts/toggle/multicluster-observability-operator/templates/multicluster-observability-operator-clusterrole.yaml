@@ -341,6 +341,7 @@ rules:
   - monitoring.coreos.com
   resources:
   - prometheusrules
+  - scrapeconfigs
   verbs:
   - create
   - delete
