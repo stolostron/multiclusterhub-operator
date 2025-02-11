@@ -55,6 +55,87 @@ type CacheSpec struct {
 	TemplateOverridesCM string
 }
 
+func (r *MultiClusterHubReconciler) deleteEdgeManagerResources(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+	// List of resource names and types to delete
+	resources := []struct {
+		kind      string
+		name      string
+		namespace string
+	}{
+		{"Secret", "flightctl-db-secret", m.GetNamespace()},
+		{"Secret", "flightctl-kv-secret", m.GetNamespace()},
+		{"PersistentVolumeClaim", "flightctl-kv-data-flightctl-kv-0", m.GetNamespace()},
+	}
+
+	// Delete Secrets
+	for _, resource := range resources[:2] {
+		err := r.deleteSecret(ctx, m, resource.name, resource.namespace)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	// Delete PersistentVolumeClaim
+	err := r.deletePVC(ctx, m, "flightctl-kv-data-flightctl-kv-0", m.GetNamespace())
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// Delete Pod with label
+	err = r.deletePodWithLabel(ctx, m, "flightctl.service=secrets-job", m.GetNamespace())
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) deleteSecret(ctx context.Context, m *operatorv1.MultiClusterHub, name, namespace string) error {
+	secret := &corev1.Secret{}
+	err := r.Client.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, secret)
+	if err != nil && errors.IsNotFound(err) {
+		return err
+	}
+
+	err = r.Client.Delete(ctx, secret)
+	if err != nil && errors.IsNotFound(err) {
+		return err
+	}
+	return nil
+}
+
+func (r *MultiClusterHubReconciler) deletePVC(ctx context.Context, m *operatorv1.MultiClusterHub, name, namespace string) error {
+	pvc := &corev1.PersistentVolumeClaim{}
+	err := r.Client.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, pvc)
+	if err != nil && errors.IsNotFound(err) {
+		return err
+	}
+
+	err = r.Client.Delete(ctx, pvc)
+	if err != nil && errors.IsNotFound(err) {
+		return err
+	}
+	return nil
+}
+
+func (r *MultiClusterHubReconciler) deletePodWithLabel(ctx context.Context, m *operatorv1.MultiClusterHub, labelSelector, namespace string) error {
+	podList := &corev1.PodList{}
+
+	err := r.Client.List(ctx, podList, client.InNamespace(namespace), client.MatchingLabels{"flightctl.service": "secrets-job"})
+	if err != nil && errors.IsNotFound(err) {
+		return err
+	}
+
+	for _, pod := range podList.Items {
+		err := r.Client.Delete(ctx, &pod)
+		if err != nil && errors.IsNotFound(err) {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (r *MultiClusterHubReconciler) ensureNoNamespace(m *operatorv1.MultiClusterHub, u *unstructured.Unstructured) (ctrl.Result, error) {
 	subLog := r.Log.WithValues("Kind", u.GetKind(), "Name", u.GetName())
 	gone, err := r.uninstall(m, u)
