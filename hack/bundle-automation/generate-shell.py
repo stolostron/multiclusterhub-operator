@@ -28,12 +28,12 @@ SUPPORTED_OPERATIONS = {
         "help": "Copy existing Helm charts to a target directory",
     },
     "lint-bundles": {
-        "script": "bundle-generation/onboard-new-components.py",
+        "script": "bundle-generation/bundles-to-charts.py",
         "args": "--lint --destination pkg/templates/",
         "help": "Perform linting for operator bundles",
     },
     "onboard-new-components": {
-        "script": "release/onboard-new-components.py",
+        "script": "release/create-component-onboard-request.py",
         "args": "",
         "help": "Onboard new component configurations by adding them to the operator's resource definitions",
     },
