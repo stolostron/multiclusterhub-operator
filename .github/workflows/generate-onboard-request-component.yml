@@ -6,7 +6,7 @@ on:
     types: [opened, synchronize, reopened]
     paths:
       - onboard-request.yaml
-
+ 
 jobs: 
   onboard-component:
     runs-on: ubuntu-latest
@@ -32,6 +32,7 @@ jobs:
             echo "OPERATOR_NAME=$OPERATOR_NAME" >> $GITHUB_ENV
             echo "OPERATOR_DESCRIPTION=$OPERATOR_DESCRIPTION" >> $GITHUB_ENV
             echo "OPERATOR_ENABLED=$OPERATOR_ENABLED" >> $GITHUB_ENV
+          done
 
       - name: Add component entry to config file
         run: |
