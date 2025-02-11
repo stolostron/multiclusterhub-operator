@@ -1,11 +1,20 @@
-- branch: main
-  github_ref: https://github.com/solostron/discovery.git
+- repo_name: multicloud-operators-subscription
+  github_ref: "https://github.com/stolostron/multicloud-operators-subscription.git"
+  branch: "release-2.13"
   operators:
-  - bundlePath: bundles/manifests/
-    escape-template-variables: []
-    exclusions: []
-    imageMappings: {}
-    name: discovery-operator
-  repo_name: discovery
-
-
+    - name: multicloud-operators-subscription
+      bundlePath: "deploy/olm-catalog/multicluster-operators-subscription/manifests/"
+      imageMappings:
+        multicluster-operators-subscription: multicluster_operators_subscription
+        multicloud-integrations: multicloud_integrations
+        multicluster-operators-application: multicluster_operators_application
+        multicluster-operators-channel: multicluster_operators_channel
+      escape-template-variables:
+        - GITOPS_OPERATOR_IMAGE
+        - GITOPS_OPERATOR_NAMESPACE
+        - GITOPS_IMAGE
+        - GITOPS_NAMESPACE
+        - REDIS_IMAGE
+        - RECONCILE_SCOPE
+      exclusions:
+        - readOnlyRootFilesystem

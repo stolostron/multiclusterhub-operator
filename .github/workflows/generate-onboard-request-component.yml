@@ -23,12 +23,15 @@ jobs:
           # Parse YAML using yq and extract needed fields
           ls -la
           CONFIG_FILE="onboard-request.yaml"
-          COMPONENT_NAME=$(yq e '.repo_name' $CONFIG_FILE)
-          COMPONENT_DESCRIPTION=$(yq e '.repo_name' $CONFIG_FILE)
-          COMPONENT_ENABLED=$(yq e '.repo_name' $CONFIG_FILE)
-          echo "COMPONENT_NAME=$COMPONENT_NAME" >> $GITHUB_ENV
-          echo "COMPONENT_DESCRIPTION=$COMPONENT_DESCRIPTION" >> $GITHUB_ENV
-          echo "COMPONENT_ENABLED=$COMPONENT_ENABLED" >> $GITHUB_ENV
+
+          for i in $(yq e '.operators | keys | .[]' $CONFIG_FILE); do
+            OPERATOR_NAME=$(yq e ".operators[$i].name" $CONFIG_FILE)
+            OPERATOR_DESCRIPTION=$(yq e ".operators[$i].description // \"No description available\"" $CONFIG_FILE)
+            OPERATOR_ENABLED=$(yq e ".operators[$i].enabled // false" $CONFIG_FILE)
+
+            echo "OPERATOR_NAME=$OPERATOR_NAME" >> $GITHUB_ENV
+            echo "OPERATOR_DESCRIPTION=$OPERATOR_DESCRIPTION" >> $GITHUB_ENV
+            echo "OPERATOR_ENABLED=$OPERATOR_ENABLED" >> $GITHUB_ENV
 
       - name: Add component entry to config file
         run: |
