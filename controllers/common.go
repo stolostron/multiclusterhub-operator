@@ -93,12 +93,18 @@ func (r *MultiClusterHubReconciler) deleteEdgeManagerResources(ctx context.Conte
 func (r *MultiClusterHubReconciler) deleteSecret(ctx context.Context, m *operatorv1.MultiClusterHub, name, namespace string) error {
 	secret := &corev1.Secret{}
 	err := r.Client.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, secret)
-	if err != nil && errors.IsNotFound(err) {
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
 		return err
 	}
 
 	err = r.Client.Delete(ctx, secret)
-	if err != nil && errors.IsNotFound(err) {
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
 		return err
 	}
 	return nil
@@ -107,12 +113,18 @@ func (r *MultiClusterHubReconciler) deleteSecret(ctx context.Context, m *operato
 func (r *MultiClusterHubReconciler) deletePVC(ctx context.Context, m *operatorv1.MultiClusterHub, name, namespace string) error {
 	pvc := &corev1.PersistentVolumeClaim{}
 	err := r.Client.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, pvc)
-	if err != nil && errors.IsNotFound(err) {
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
 		return err
 	}
 
 	err = r.Client.Delete(ctx, pvc)
-	if err != nil && errors.IsNotFound(err) {
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
 		return err
 	}
 	return nil
@@ -122,17 +134,22 @@ func (r *MultiClusterHubReconciler) deletePodWithLabel(ctx context.Context, m *o
 	podList := &corev1.PodList{}
 
 	err := r.Client.List(ctx, podList, client.InNamespace(namespace), client.MatchingLabels{"flightctl.service": "secrets-job"})
-	if err != nil && errors.IsNotFound(err) {
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
 		return err
 	}
 
 	for _, pod := range podList.Items {
 		err := r.Client.Delete(ctx, &pod)
-		if err != nil && errors.IsNotFound(err) {
+		if err != nil {
+			if errors.IsNotFound(err) {
+				return nil
+			}
 			return err
 		}
 	}
-
 	return nil
 }
 
