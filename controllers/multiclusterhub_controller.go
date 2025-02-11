@@ -934,6 +934,14 @@ func (r *MultiClusterHubReconciler) ensureComponentOrNoComponent(ctx context.Con
 			}
 			return r.ensureNoNamespace(m, BackupNamespaceUnstructured())
 		}
+		if component == operatorv1.EdgeManagerPreview {
+			result, err := r.ensureNoComponent(ctx, m, component, cachespec, isSTSEnabled)
+			if result != (ctrl.Result{}) || err != nil {
+				return result, err
+			}
+			return r.deleteEdgeManagerResources(ctx, m)
+		}
+
 		return r.ensureNoComponent(ctx, m, component, cachespec, isSTSEnabled)
 
 	} else {
@@ -1671,6 +1679,11 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 		if err := cleanupFn(reqLogger, m); err != nil {
 			return err
 		}
+	}
+
+	_, err := r.deleteEdgeManagerResources(context.Background(), m)
+	if err != nil {
+		return err
 	}
 
 	reqLogger.Info("Successfully finalized multiClusterHub")
