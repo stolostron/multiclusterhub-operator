@@ -278,7 +278,12 @@ spec:
                       phase: Enabled
 
                   {{ `{{ if not (eq $scheduleObjLastBckTime "") }}` }}
-                    {{ `{{- range $backupList := (lookup "velero.io/v1" "Backup" "" "" $schedule_label).items }}` }}
+                    {{ `{{- /* get only backups created by this cluster  */ -}}` }}
+                    {{ `{{- $cluster_version := fromClusterClaim "id.openshift.io" }}` }}
+                    {{ `{{- $backup_label := "schedule_label_tmp, cluster.open-cluster-management.io/backup-cluster, cluster.open-cluster-management.io/backup-cluster in (cluster_version_tmp)"}}` }}
+                    {{ `{{- $backup_label = replace "schedule_label_tmp" $schedule_label $backup_label }}` }}
+                    {{ `{{- $backup_label = replace "cluster_version_tmp" $cluster_version $backup_label }}` }}
+                    {{ `{{- range $backupList := (lookup "velero.io/v1" "Backup" "" "" $backup_label).items }}` }}
                       {{ `{{- $backupCreation := $backupList.metadata.creationTimestamp  }}` }}
                       {{ `{{ if eq $backupCreation $scheduleObjLastBckTime }}` }}
 
@@ -307,7 +312,7 @@ spec:
                       namespace: {{ `{{ $backupList.metadata.namespace }}` }}
                       name: {{ `{{ $backupList.metadata.name }}` }}
                       labels:
-                        cluster.open-cluster-management.io/backup-cluster: {{ `{{ fromClusterClaim "id.openshift.io" }}` }}
+                        cluster.open-cluster-management.io/backup-cluster: {{ `{{ $cluster_version }}` }}
                         cluster.open-cluster-management.io/backup-schedule-type: kubevirt
                         velero.io/schedule-name: {{ `{{ $scheduleObj.metadata.name }}` }}
                     status:
