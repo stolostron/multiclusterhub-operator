@@ -35,6 +35,7 @@ rules:
   - cert-policy-controller
   - config-policy-controller
   - governance-policy-framework
+  - governance-standalone-hub-templating
   resources:
   - clustermanagementaddons/finalizers
   verbs:
@@ -45,6 +46,7 @@ rules:
   - cert-policy-controller
   - config-policy-controller
   - governance-policy-framework
+  - governance-standalone-hub-templating
   resources:
   - clustermanagementaddons/status
   verbs:
@@ -66,6 +68,7 @@ rules:
   - cert-policy-controller
   - config-policy-controller
   - governance-policy-framework
+  - governance-standalone-hub-templating
   resources:
   - managedclusteraddons
   verbs:
@@ -76,6 +79,7 @@ rules:
   - cert-policy-controller
   - config-policy-controller
   - governance-policy-framework
+  - governance-standalone-hub-templating
   resources:
   - managedclusteraddons/finalizers
   verbs:
@@ -86,6 +90,7 @@ rules:
   - cert-policy-controller
   - config-policy-controller
   - governance-policy-framework
+  - governance-standalone-hub-templating
   resources:
   - managedclusteraddons/status
   verbs:
@@ -151,6 +156,7 @@ rules:
   - cert-policy-controller
   - config-policy-controller
   - governance-policy-framework
+  - governance-standalone-hub-templating
   resources:
   - leases
   verbs:
@@ -246,6 +252,7 @@ rules:
   - open-cluster-management:cert-policy-controller-hub
   - open-cluster-management:config-policy-controller-hub
   - open-cluster-management:policy-framework-hub
+  - open-cluster-management:governance-standalone-hub-templating
   resources:
   - clusterroles
   verbs:
@@ -265,6 +272,7 @@ rules:
   - open-cluster-management:cert-policy-controller-hub
   - open-cluster-management:config-policy-controller-hub
   - open-cluster-management:policy-framework-hub
+  - open-cluster-management:governance-standalone-hub-templating
   resources:
   - rolebindings
   verbs:
