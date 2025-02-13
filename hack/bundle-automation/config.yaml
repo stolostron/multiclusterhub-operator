@@ -19,7 +19,6 @@
   operators:
     - name: multicluster-observability-operator
       bundlePath: "operators/multiclusterobservability/bundle/manifests/"
-      ignore-webhook-definitions: true
       imageMappings:
         multicluster-observability-operator: multicluster_observability_operator
 
