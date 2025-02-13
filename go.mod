@@ -1,6 +1,6 @@
 module github.com/stolostron/multiclusterhub-operator
 
-go 1.23.6
+go 1.23.4
 
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
