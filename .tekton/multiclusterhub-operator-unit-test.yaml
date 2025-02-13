@@ -48,7 +48,7 @@ spec:
               dnf -y install jq git make podman
 
               # Install golang with a given version
-              export GOVERSION=1.22.4
+              export GOVERSION=1.23.6
               curl -O -J https://dl.google.com/go/go$GOVERSION.linux-amd64.tar.gz
               rm -rf /usr/local/go && tar -C /usr/local -xzf go$GOVERSION.linux-amd64.tar.gz
 
