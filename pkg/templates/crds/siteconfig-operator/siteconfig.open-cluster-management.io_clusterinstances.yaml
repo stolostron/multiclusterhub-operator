@@ -15,6 +15,9 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
+    - jsonPath: .status.paused.timeSet
+      name: Paused
+      type: date
     - jsonPath: .status.conditions[?(@.type=='Provisioned')].reason
       name: ProvisionStatus
       type: string
@@ -811,6 +814,26 @@ spec:
                 description: Track the observed generation to avoid unnecessary reconciles
                 format: int64
                 type: integer
+              paused:
+                description: |-
+                  Paused provides information about the pause annotation set by the controller
+                  to temporarily pause reconciliation of the ClusterInstance.
+                properties:
+                  reason:
+                    description: |-
+                      Reason provides an explanation for why the paused annotation was applied.
+                      This field may not be empty.
+                    maxLength: 32768
+                    type: string
+                  timeSet:
+                    description: TimeSet indicates when the paused annotation was
+                      applied.
+                    format: date-time
+                    type: string
+                required:
+                - reason
+                - timeSet
+                type: object
               reinstall:
                 description: Reinstall status information.
                 properties:
