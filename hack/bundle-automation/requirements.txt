@@ -6,3 +6,4 @@ packaging
 semver
 chardet
 coloredlogs
+inquirer
