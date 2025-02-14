@@ -1,19 +1,19 @@
-[comment]: # ( Copyright Contributors to the Open Cluster Management project )
+
 
 # Contributing guidelines
 
 - [Contributing guidelines](#contributing-guidelines)
-  - [Contributions](#contributions)
-  - [Certificate of Origin](#certificate-of-origin)
-  - [DCO Sign Off](#dco-sign-off)
-  - [Contributing A Patch](#contributing-a-patch)
-  - [Issues and Pull Request Management](#issues-and-pull-request-management)
-  - [Pull Request Etiquette](#pull-request-etiquette)
-  - [Pre-check before submitting a PR](#pre-check-before-submitting-a-pr)
-  - [Build images](#build-images)
-  - [Development and Testing](#development-and-testing)
-    - [Installing MultiClusterHub Operator with local code changes](#installing-multiclusterhub-operator-with-local-code-changes)
-    - [Automated testing of local development code](#automated-testing-of-local-development-code)
+   - [Contributions](#contributions)
+   - [Certificate of Origin](#certificate-of-origin)
+   - [DCO Sign Off](#dco-sign-off)
+   - [Contributing A Patch](#contributing-a-patch)
+   - [Issues and Pull Request Management](#issues-and-pull-request-management)
+   - [Pull Request Etiquette](#pull-request-etiquette)
+   - [Pre-check before submitting a PR](#pre-check-before-submitting-a-pr)
+   - [Build images](#build-images)
+   - [Development and Testing](#development-and-testing)
+      - [Installing MultiClusterHub Operator with local code changes](#installing-multiclusterhub-operator-with-local-code-changes)
+      - [Automated testing of local development code](#automated-testing-of-local-development-code)
 
 ## Contributions
 
@@ -91,14 +91,12 @@ sub-components).
 1. Confirm the following are installed and configured on your local machine:
 
    - `docker` or `podman`
-   - `go` (version 1.22.4 minimum)
+   - `go` (version 1.23.4 minimum)
    - `python3`
    - `make`
 
 2. `oc login` into an OCP cluster. See [Requirements and recommendations](https://access.redhat.com/documentation/en-us/red_hat_advanced_cluster_management_for_kubernetes/2.2/html/install/installing#requirements-and-recommendations) for supported cluster sizes.
-
 3. Fork the `multiclusterhub-operator` GitHub repository
-
 4. Export the following environment variables:
 
 ```bash
