@@ -916,15 +916,21 @@ spec:
                             Generation specifies the generation of the ClusterInstance at the time of the reinstallation.
                             This value corresponds to the ReinstallSpec.Generation field associated with the reinstallation request.
                           type: string
-                        timestamp:
-                          description: Timestamp indicates the date and time when
-                            the reinstallation occurred.
+                        requestEndTime:
+                          description: RequestEndTime indicates the time at which
+                            SiteConfig completed processing the reinstall request.
+                          format: date-time
+                          type: string
+                        requestStartTime:
+                          description: RequestStartTime indicates the time at which
+                            SiteConfig was requested to reinstall.
                           format: date-time
                           type: string
                       required:
                       - clusterInstanceSpecDiff
                       - generation
-                      - timestamp
+                      - requestEndTime
+                      - requestStartTime
                       type: object
                     type: array
                   inProgressGeneration:
