@@ -44,7 +44,7 @@ jobs:
         run: bash hack/scripts/sync-hub-crds.sh
 
       - name: Commit changes
-        uses: stefanzweifel/git-auto-commit-action@v5.0.1
+        uses: stefanzweifel/git-auto-commit-action@v5.1.0
         with:
           commit_message: ${{ env.commit_message }}
           commit_options: '--signoff'
