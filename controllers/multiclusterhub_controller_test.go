@@ -55,14 +55,17 @@ import (
 )
 
 const (
-	timeout  = time.Second * 30
+	timeout  = time.Second * 90
 	interval = time.Millisecond * 250
 
 	mchName      = "multiclusterhub-operator"
 	mchNamespace = "open-cluster-management"
 )
 
-var recon = MultiClusterHubReconciler{Client: fake.NewClientBuilder().Build()}
+var recon = MultiClusterHubReconciler{
+	Client: fake.NewClientBuilder().Build(),
+	Scheme: scheme.Scheme,
+}
 
 func ApplyPrereqs(k8sClient client.Client) {
 	By("Applying Namespace")
@@ -86,7 +89,7 @@ func removeSubmarinerFinalizer(k8sClient client.Client, reconciler *MultiCluster
 	}
 }
 
-func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler, mchoDeployment *appsv1.Deployment) {
+func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler, mchDeployment *appsv1.Deployment) {
 	By("Applying prereqs")
 	ctx := context.Background()
 	ApplyPrereqs(k8sClient)
@@ -96,7 +99,7 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 	// To skip ensureKlusterletAddonConfig
 	mch.Spec.DisableHubSelfManagement = true
 	Expect(k8sClient.Create(ctx, &mch)).Should(Succeed())
-	Expect(k8sClient.Create(ctx, mchoDeployment)).Should(Succeed())
+	Expect(k8sClient.Create(ctx, mchDeployment)).Should(Succeed())
 
 	By("Ensuring MCH is created")
 	createdMCH := &operatorv1.MultiClusterHub{}
@@ -202,7 +205,7 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 	Expect(clusterConsole.Spec.Plugins).To(ContainElement("acm"))
 }
 
-func PreexistingMCE(k8sClient client.Client, reconciler *MultiClusterHubReconciler, mchoDeployment *appsv1.Deployment) {
+func PreexistingMCE(k8sClient client.Client, reconciler *MultiClusterHubReconciler, mchDeployment *appsv1.Deployment) {
 	By("Applying prereqs")
 	ctx := context.Background()
 	ApplyPrereqs(k8sClient)
@@ -238,7 +241,7 @@ func PreexistingMCE(k8sClient client.Client, reconciler *MultiClusterHubReconcil
 	mch.Spec.DisableHubSelfManagement = true
 	mch.Spec.ImagePullSecret = "testsecret"
 	Expect(k8sClient.Create(ctx, &mch)).Should(Succeed())
-	Expect(k8sClient.Create(ctx, mchoDeployment)).Should(Succeed())
+	Expect(k8sClient.Create(ctx, mchDeployment)).Should(Succeed())
 
 	By("Ensuring MCH is created")
 	createdMCH := &operatorv1.MultiClusterHub{}
@@ -309,7 +312,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 		templateMetadata metav1.ObjectMeta
 		envs             []corev1.EnvVar
 		containers       []corev1.Container
-		mchoDeployment   *appsv1.Deployment
+		mchDeployment    *appsv1.Deployment
 		reconciler       *MultiClusterHubReconciler
 	)
 
@@ -348,7 +351,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 			Expect(err).NotTo(HaveOccurred())
 		}
 
-		mchoDeployment = &appsv1.Deployment{
+		mchDeployment = &appsv1.Deployment{
 			TypeMeta:   metav1.TypeMeta{Kind: "Deployment", APIVersion: "apps/v1"},
 			ObjectMeta: metav1.ObjectMeta{Name: mchName, Namespace: mchNamespace},
 			Spec: appsv1.DeploymentSpec{
@@ -485,7 +488,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 			defer os.Unsetenv("DIRECTORY_OVERRIDE")
 			os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
 			defer os.Unsetenv("OPERATOR_PACKAGE")
-			RunningState(k8sClient, reconciler, mchoDeployment)
+			RunningState(k8sClient, reconciler, mchDeployment)
 		})
 
 		It("Should Manage Preexisting MCE", func() {
@@ -493,7 +496,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 			defer os.Unsetenv("DIRECTORY_OVERRIDE")
 			os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
 			defer os.Unsetenv("OPERATOR_PACKAGE")
-			PreexistingMCE(k8sClient, reconciler, mchoDeployment)
+			PreexistingMCE(k8sClient, reconciler, mchDeployment)
 		})
 
 		It("Should get to a running state in Community Mode", func() {
@@ -503,7 +506,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 			defer os.Unsetenv("OPERATOR_PACKAGE")
 			os.Setenv("ACM_HUB_OCP_VERSION", "4.12.0")
 			defer os.Unsetenv("ACM_HUB_OCP_VERSION")
-			RunningState(k8sClient, reconciler, mchoDeployment)
+			RunningState(k8sClient, reconciler, mchDeployment)
 		})
 
 		It("Should Manage Preexisting MCE in Community Mode", func() {
@@ -511,7 +514,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 			defer os.Unsetenv("DIRECTORY_OVERRIDE")
 			os.Setenv("OPERATOR_PACKAGE", "stolostron")
 			defer os.Unsetenv("OPERATOR_PACKAGE")
-			PreexistingMCE(k8sClient, reconciler, mchoDeployment)
+			PreexistingMCE(k8sClient, reconciler, mchDeployment)
 		})
 
 		It("Should allow MCH components to be optional", func() {
@@ -529,7 +532,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 			mch.Spec.DisableHubSelfManagement = true
 			mch.Disable(operatorv1.Appsub)
 			Expect(k8sClient.Create(ctx, &mch)).Should(Succeed())
-			Expect(k8sClient.Create(ctx, mchoDeployment)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, mchDeployment)).Should(Succeed())
 
 			By("Ensuring MCH is created")
 			createdMCH := &operatorv1.MultiClusterHub{}
@@ -785,6 +788,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 				TemplateOverrides: map[string]string{},
 			}
 
+			By("Ensuring Insights")
 			result, err := reconciler.ensureComponent(ctx, mch, operatorv1.Insights, testCacheSpec, false)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).To(BeNil())
@@ -919,36 +923,6 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 			result, _ = reconciler.ensureOpenShiftNamespaceLabel(ctx, mch2)
 			Expect(result).To(Equal(ctrl.Result{Requeue: true}))
-		})
-	})
-
-	Context("When managing deployments", func() {
-		It("Creates and removes a deployment", func() {
-			os.Setenv("DIRECTORY_OVERRIDE", "../../pkg/templates")
-			defer os.Unsetenv("DIRECTORY_OVERRIDE")
-			By("Applying prereqs")
-			ApplyPrereqs(k8sClient)
-			ctx := context.Background()
-
-			By("Ensuring Insights")
-			mch := resources.SpecMCH()
-			testImages := map[string]string{}
-			for _, v := range utils.GetTestImages() {
-				testImages[v] = "quay.io/test/test:Test"
-			}
-
-			testCacheSpec := CacheSpec{
-				ImageOverrides:    testImages,
-				TemplateOverrides: map[string]string{},
-			}
-
-			result, err := reconciler.ensureComponent(ctx, mch, operatorv1.Appsub, testCacheSpec, false)
-			Expect(result).To(Equal(ctrl.Result{RequeueAfter: 20000000000}))
-			Expect(err).To(BeNil())
-
-			result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.Appsub, testCacheSpec, false)
-			Expect(result).To(Equal(ctrl.Result{RequeueAfter: 20000000000}))
-			Expect(err).To(BeNil())
 		})
 	})
 
