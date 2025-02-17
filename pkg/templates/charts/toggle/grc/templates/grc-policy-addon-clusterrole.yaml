@@ -244,6 +244,7 @@ rules:
   - rbac.authorization.k8s.io
   resources:
   - clusterroles
+  - clusterrolebindings
   verbs:
   - create
 - apiGroups:
@@ -255,6 +256,17 @@ rules:
   - open-cluster-management:governance-standalone-hub-templating
   resources:
   - clusterroles
+  verbs:
+  - delete
+  - get
+  - patch
+  - update
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resourceNames:
+  - open-cluster-management:governance-standalone-hub-templating
+  resources:
+  - clusterrolebindings
   verbs:
   - delete
   - get
