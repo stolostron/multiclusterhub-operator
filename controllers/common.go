@@ -226,7 +226,7 @@ func (r *MultiClusterHubReconciler) ensurePullSecret(m *operatorv1.MultiClusterH
 		}
 		for i, secret := range secretList.Items {
 			r.Log.Info("Deleting imagePullSecret", "Name", secret.Name, "Namespace", secret.Namespace)
-			err = r.Client.Delete(context.TODO(), &secretList.Items[i])
+			err := r.Client.Delete(context.TODO(), &secretList.Items[i])
 			if err != nil {
 				r.Log.Error(err, fmt.Sprintf("Error deleting imagepullsecret: %s", secret.GetName()))
 				return ctrl.Result{}, err
@@ -261,7 +261,7 @@ func (r *MultiClusterHubReconciler) ensurePullSecret(m *operatorv1.MultiClusterH
 	addInstallerLabelSecret(mceSecret, m.Name, m.Namespace)
 
 	force := true
-	err = r.Client.Patch(context.TODO(), mceSecret, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
+	err := r.Client.Patch(context.TODO(), mceSecret, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
 	if err != nil {
 		r.Log.Info(fmt.Sprintf("Error applying pullSecret to mce namespace: %s", err.Error()))
 		return ctrl.Result{}, err
