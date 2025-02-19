@@ -19,11 +19,9 @@ limitations under the License.
 package controllers
 
 import (
-	"context"
 	"os"
 	"testing"
 
-	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
@@ -40,15 +38,8 @@ func TestController(t *testing.T) {
 	RunSpecs(t, "Controller Suite")
 }
 
-var signalHandlerContext context.Context
-
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
-
-	// SetupSignalHandler can only be called once, so we'll save the
-	// context it returns and reuse it each time we start a new
-	// manager.
-	signalHandlerContext = ctrl.SetupSignalHandler()
 
 	os.Setenv("POD_NAMESPACE", "open-cluster-management")
 	os.Setenv("CRDS_PATH", "../pkg/templates/crds")

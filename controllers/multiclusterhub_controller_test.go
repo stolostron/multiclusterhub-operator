@@ -424,7 +424,8 @@ var _ = Describe("MultiClusterHub controller", func() {
 			// https://onsi.github.io/ginkgo/#mental-model-how-ginkgo-handles-failure
 			defer GinkgoRecover()
 
-			Expect(k8sManager.Start(signalHandlerContext)).Should(Succeed())
+			ctrlCtx, ctrlCancel = context.WithCancel(context.TODO())
+			Expect(k8sManager.Start(ctrlCtx)).Should(Succeed(), "MCH controller should start successfully")
 		}()
 	})
 
@@ -1037,6 +1038,12 @@ var _ = Describe("MultiClusterHub controller", func() {
 			}
 			return false
 		}, timeout, interval).Should(BeTrue())
+
+		By("Stopping the controller")
+		ctrlCancel()
+		// Teardown the test environment once controller is finished.
+		// Otherwise from Kubernetes 1.21+, teardon timeouts waiting on
+		// kube-apiserver to return.
 
 		By("Tearing down the test environment")
 		Expect(testEnv.Stop()).Should(Succeed())
