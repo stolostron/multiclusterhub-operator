@@ -1171,10 +1171,10 @@ func (r *MultiClusterHubReconciler) installCRDs(reqLogger logr.Logger, m *operat
 		utils.AddInstallerLabel(crd, m.GetName(), m.GetNamespace())
 		err, ok := deploying.Deploy(r.Client, crd)
 		if err != nil {
-			err := fmt.Errorf("failed to deploy %s %s", crd.GetKind(), crd.GetName())
-			reqLogger.Error(err, err.Error())
+			reqLogger.Error(err, "failed to deploy", "Kind", crd.GetKind(), "Name", crd.GetName())
 			return DeployFailedReason, err
 		}
+
 		if ok {
 			message := fmt.Sprintf("created new resource: %s %s", crd.GetKind(), crd.GetName())
 			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, message)
