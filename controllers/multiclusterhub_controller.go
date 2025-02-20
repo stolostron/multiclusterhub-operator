@@ -750,12 +750,13 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 	} else {
 		// Check if the resource exists before creating it.
 		for _, gvk := range operatorv1.MCECRDs {
-			if template.GroupVersionKind().Group == gvk.Group && template.GetKind() == gvk.Kind && template.GroupVersionKind().Version == gvk.Version {
+			if template.GroupVersionKind().Group == gvk.Group && template.GetKind() == gvk.Kind &&
+				template.GroupVersionKind().Version == gvk.Version {
 				crd := &apixv1.CustomResourceDefinition{}
 
 				if err := r.Client.Get(ctx, types.NamespacedName{Name: gvk.Name}, crd); errors.IsNotFound(err) {
 					log.Info("CustomResourceDefinition does not exist. Skipping resource creation",
-						"Group", gvk.Group, "Version", gvk.Version, "Kind", gvk.Kind)
+						"Group", gvk.Group, "Version", gvk.Version, "Kind", gvk.Kind, "Name", template.GetName())
 					return ctrl.Result{RequeueAfter: utils.WarningRefreshInterval}, nil
 
 				} else if err != nil {
