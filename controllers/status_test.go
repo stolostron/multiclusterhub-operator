@@ -916,7 +916,7 @@ func Test_ComponentsAreRunning(t *testing.T) {
 			}
 
 			if err := recon.Client.Create(context.TODO(), &tt.mce); err != nil {
-				t.Errorf("failed to create clusterserviceversion: %v", err)
+				t.Errorf("failed to create multiclusterengine: %v", err)
 			}
 
 			if err := recon.Client.Create(context.TODO(), &tt.deploy); err != nil {
