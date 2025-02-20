@@ -1,17 +1,7 @@
 apiVersion: v1
 data:
-  controller_manager_config.yaml: |
-    apiVersion: controller-runtime.sigs.k8s.io/v1alpha1
-    kind: ControllerManagerConfig
-    health:
-      healthProbeBindAddress: :8081
-    metrics:
-      bindAddress: 127.0.0.1:8383
-    webhook:
-      port: 9443
-    leaderElection:
-      leaderElect: true
-      resourceName: b9d51391.open-cluster-management.io
+  controller_manager_config.yaml: "apiVersion: controller-runtime.sigs.k8s.io/v1alpha1\nkind: ControllerManagerConfig\nhealth:\n  healthProbeBindAddress: :8081\nmetrics:\n  bindAddress: 127.0.0.1:8383\nwebhook:\n  port: 9443\nleaderElection:\n  leaderElect: true\n  resourceName: b9d51391.open-cluster-management.io\n"
 kind: ConfigMap
 metadata:
   name: manager-config
+  namespace: '{{ .Values.global.namespace }}'

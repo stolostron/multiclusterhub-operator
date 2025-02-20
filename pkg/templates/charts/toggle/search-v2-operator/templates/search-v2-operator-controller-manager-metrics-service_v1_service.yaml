@@ -5,6 +5,7 @@ metadata:
   labels:
     control-plane: controller-manager
   name: search-v2-operator-controller-manager-metrics-service
+  namespace: '{{ .Values.global.namespace }}'
 spec:
   ports:
   - name: https
