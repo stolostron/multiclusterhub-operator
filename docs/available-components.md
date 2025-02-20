@@ -8,6 +8,7 @@
 | cluster-lifecycle | Provides cluster management capabilities for {ocp-short} and {product-title-short} hub clusters. | True |
 | cluster-permission |  Automatically distributes RBAC resources to managed clusters and manage the lifecycle of those resources. | True |
 | console | Enables {product-title-short} web console plug-in. | True |
+| edge-manager-preview | Enables a service for declarative, GitOps-driven management of edge device fleets | False
 | grc | Enables the security enhancement for you to define policies for your clusters. | True |
 | insights | Identifies existing or potential problems in your clusters. | True |
 | multicluster-observability | Enables monitoring to gain further insights into the health of your managed clusters. | True |
