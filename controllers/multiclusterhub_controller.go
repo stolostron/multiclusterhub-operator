@@ -1388,8 +1388,7 @@ func (r *MultiClusterHubReconciler) deployResources(reqLogger logr.Logger, m *op
 		}
 		err, ok := deploying.Deploy(r.Client, res)
 		if err != nil {
-			err := fmt.Errorf("failed to deploy %s %s", res.GetKind(), res.GetName())
-			reqLogger.Error(err, err.Error())
+			reqLogger.Error(err, "failed to deploy resource", "Kind", res.GetKind(), "Name", res.GetName())
 			return DeployFailedReason, err
 		}
 		if ok {
