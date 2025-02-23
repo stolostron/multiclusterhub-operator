@@ -267,8 +267,8 @@ github.com/stoewer/go-strcase v1.3.0 h1:g0eASXYtp+yvN9fK8sH94oCIk0fau9uV1/ZdJ0AV
 github.com/stoewer/go-strcase v1.3.0/go.mod h1:fAH5hQ5pehh+j3nZfvwdk2RgEgQjAoM8wodgtPmh1xo=
 github.com/stolostron/backplane-operator v0.0.0-20250216010551-da7d71d87d4a h1:8i4+1KNyhfp0Exw8llB1ZbTxj9NGfsWyG+9hFg1kSWI=
 github.com/stolostron/backplane-operator v0.0.0-20250216010551-da7d71d87d4a/go.mod h1:qbR6lDR0j0ZomoKNKgsMclZKmdyIDRBrQigqQcKcw0k=
-github.com/stolostron/search-v2-operator v0.0.0-20250205132200-b81bc61baccd h1:JJ7Aa9YTvpiUO62BUvbb6v3ldyWYmpbMGVa1+oqliAo=
-github.com/stolostron/search-v2-operator v0.0.0-20250205132200-b81bc61baccd/go.mod h1:4+8+aSdP3eruPVwLjhs2qFJoytDGn5sgfmQHyxY5Sm8=
+github.com/stolostron/search-v2-operator v0.0.0-20250221183011-ae721e3c45ec h1:j9d4ITwMqpdNcFAFFVeQDOxkltfzDp3YjadcmiN2/H8=
+github.com/stolostron/search-v2-operator v0.0.0-20250221183011-ae721e3c45ec/go.mod h1:4+8+aSdP3eruPVwLjhs2qFJoytDGn5sgfmQHyxY5Sm8=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.4.0/go.mod h1:YvHI0jy2hoMjB+UWwv71VJQ9isScKT/TqJzVSSt89Yw=
 github.com/stretchr/objx v0.5.0/go.mod h1:Yh+to48EsGEfYuaHDzXPcE3xhTkx73EhmCGUpEOglKo=
