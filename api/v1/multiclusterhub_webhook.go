@@ -21,6 +21,7 @@ package v1
 import (
 	"context"
 	"fmt"
+	"os"
 	"reflect"
 
 	admissionregistration "k8s.io/api/admissionregistration/v1"
@@ -29,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -168,13 +170,18 @@ func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) (admission.Warnings
 	return nil, nil
 }
 
+var cfg *rest.Config
+
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (r *MultiClusterHub) ValidateDelete() (admission.Warnings, error) {
 	mchlog.Info("validate delete", "Name", r.Name, "Namespace", r.Namespace)
 
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return nil, err
+	if val, ok := os.LookupEnv("ENV_TEST"); !ok || val == "false" {
+		var err error
+		cfg, err = config.GetConfig()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	c, err := discovery.NewDiscoveryClientForConfig(cfg)

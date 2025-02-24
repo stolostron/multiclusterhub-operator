@@ -184,7 +184,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	*/
 	stsEnabled, err := r.isSTSEnabled(ctx)
 	if err != nil {
-		return ctrl.Result{RequeueAfter: utils.WarningRefreshInterval}, err
+		return ctrl.Result{}, err
 	}
 
 	originalStatus := multiClusterHub.Status.DeepCopy()
@@ -300,7 +300,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 	if err != nil {
-		return ctrl.Result{Requeue: true}, err
+		return ctrl.Result{}, err
 	}
 
 	/*
@@ -362,7 +362,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	// and clean things up ourselves
 	err = r.cleanupGRCAppsub(multiClusterHub)
 	if err != nil {
-		return ctrl.Result{Requeue: true}, err
+		return ctrl.Result{}, err
 	}
 
 	// Deploy appsub operator component
@@ -761,7 +761,7 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 					return ctrl.Result{RequeueAfter: utils.WarningRefreshInterval}, nil
 				} else if err != nil {
 					log.Error(err, "failed to get CustomResourceDefinition", "Resource", gvk)
-					return ctrl.Result{RequeueAfter: utils.WarningRefreshInterval}, err
+					return ctrl.Result{}, err
 				}
 			}
 		}
@@ -1004,7 +1004,7 @@ func (r *MultiClusterHubReconciler) ensureOpenShiftNamespaceLabel(ctx context.Co
 	err := r.Client.Get(ctx, types.NamespacedName{Name: m.GetNamespace()}, existingNs)
 	if err != nil || errors.IsNotFound(err) {
 		log.Error(err, fmt.Sprintf("Failed to find namespace for MultiClusterHub: %s", m.GetNamespace()))
-		return ctrl.Result{Requeue: true}, err
+		return ctrl.Result{}, err
 	}
 
 	if existingNs.Labels == nil || len(existingNs.Labels) == 0 {
@@ -1020,7 +1020,7 @@ func (r *MultiClusterHubReconciler) ensureOpenShiftNamespaceLabel(ctx context.Co
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to update namespace for MultiClusterHub: %s with the label: %s",
 				m.GetNamespace(), utils.OpenShiftClusterMonitoringLabel))
-			return ctrl.Result{Requeue: true}, err
+			return ctrl.Result{}, err
 		}
 	}
 
@@ -1075,7 +1075,7 @@ func (r *MultiClusterHubReconciler) createTrustBundleConfigmap(ctx context.Conte
 		// Unknown error. Requeue
 		msg := fmt.Sprintf("error while getting trust bundle configmap %s/%s", trustBundleNamespace, trustBundleName)
 		log.Error(err, msg)
-		return ctrl.Result{RequeueAfter: resyncPeriod}, err
+		return ctrl.Result{}, err
 	} else if err == nil {
 		// configmap exists
 		return ctrl.Result{}, nil
@@ -1102,7 +1102,7 @@ func (r *MultiClusterHubReconciler) createTrustBundleConfigmap(ctx context.Conte
 	if err != nil {
 		// Error creating configmap
 		log.Info(fmt.Sprintf("error creating trust bundle configmap %s: %s", trustBundleName, err))
-		return ctrl.Result{RequeueAfter: resyncPeriod}, err
+		return ctrl.Result{}, err
 	}
 	// Configmap created successfully
 	return ctrl.Result{}, nil
@@ -1126,7 +1126,7 @@ func (r *MultiClusterHubReconciler) createMetricsService(ctx context.Context, m 
 		if !errors.IsNotFound(err) {
 			// Unknown error. Requeue
 			log.Error(err, fmt.Sprintf("error while getting multiclusterhub metrics service: %s/%s", sNamespace, sName))
-			return ctrl.Result{RequeueAfter: resyncPeriod}, err
+			return ctrl.Result{}, err
 		}
 
 		// Create metrics service
@@ -1162,7 +1162,7 @@ func (r *MultiClusterHubReconciler) createMetricsService(ctx context.Context, m 
 		if err = r.Client.Create(ctx, s); err != nil {
 			// Error creating metrics service
 			log.Error(err, fmt.Sprintf("error creating multiclusterhub metrics service: %s", sName))
-			return ctrl.Result{RequeueAfter: resyncPeriod}, err
+			return ctrl.Result{}, err
 		}
 
 		log.Info(fmt.Sprintf("Created multiclusterhub metrics service: %s", sName))
@@ -1187,7 +1187,7 @@ func (r *MultiClusterHubReconciler) createMetricsServiceMonitor(ctx context.Cont
 		if !errors.IsNotFound(err) {
 			// Unknown error. Requeue
 			log.Error(err, fmt.Sprintf("error while getting multiclusterhub metrics service: %s/%s", smNamespace, smName))
-			return ctrl.Result{RequeueAfter: resyncPeriod}, err
+			return ctrl.Result{}, err
 		}
 
 		// Create metrics service
@@ -1230,7 +1230,7 @@ func (r *MultiClusterHubReconciler) createMetricsServiceMonitor(ctx context.Cont
 		if err = r.Client.Create(ctx, sm); err != nil {
 			// Error creating metrics servicemonitor
 			log.Error(err, fmt.Sprintf("error creating metrics servicemonitor: %s", smName))
-			return ctrl.Result{RequeueAfter: resyncPeriod}, err
+			return ctrl.Result{}, err
 		}
 
 		log.Info(fmt.Sprintf("Created multiclusterhub metrics servicemonitor: %s", smName))
@@ -1266,15 +1266,19 @@ func (r *MultiClusterHubReconciler) ingressDomain(m *operatorv1.MultiClusterHub)
 }
 
 func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operatorv1.MultiClusterHub, ocpConsole,
-	isSTSEnabled bool,
-) error {
+	isSTSEnabled bool) error {
 	if err := r.cleanupAppSubscriptions(reqLogger, m); err != nil {
 		return err
 	}
 
 	for _, c := range operatorv1.MCHComponents {
-		if _, err := r.ensureNoComponent(context.TODO(), m, c, r.CacheSpec, isSTSEnabled); err != nil {
+		result, err := r.ensureNoComponent(context.TODO(), m, c, r.CacheSpec, isSTSEnabled)
+		if err != nil {
 			return err
+		}
+
+		if result != (ctrl.Result{}) {
+			return errors.NewBadRequest(fmt.Sprintf("Requeue needed for component: %v", c))
 		}
 	}
 
