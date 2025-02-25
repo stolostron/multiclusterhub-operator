@@ -83,7 +83,7 @@ hubConfig:
 db:
   image:
     image: quay.io/sclorg/postgresql-12-c8s
-    tag: latest
+    tag: "20250214"
     pullPolicy: Always
   password: adminpass
   masterPassword: adminpass
@@ -127,6 +127,11 @@ worker:
     pullPolicy: Always
     tag: ""
   enableSecretsClusterRoleBinding: true
+secretsJob:
+  image:
+    image: quay.io/openshift/origin-cli
+    tag: "4.20.0"
+    pullPolicy: Always
 periodic:
   enabled: true
   image:
