@@ -59,6 +59,8 @@ spec:
                   runAsUser: 1000
               serviceAccountName: gitops-addon
       - apiVersion: v1
+        imagePullSecrets:
+        - name: open-cluster-management-image-pull-credentials
         kind: ServiceAccount
         metadata:
           name: gitops-addon
