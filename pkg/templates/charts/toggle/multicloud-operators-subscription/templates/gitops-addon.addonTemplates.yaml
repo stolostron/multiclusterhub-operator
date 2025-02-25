@@ -45,6 +45,8 @@ spec:
                   value: '{{ `{{REDIS_IMAGE}}` }}'
                 - name: RECONCILE_SCOPE
                   value: '{{ `{{RECONCILE_SCOPE}}` }}'
+                - name: ACTION
+                  value: '{{ `{{ACTION}}` }}'
                 image: '{{ .Values.global.imageOverrides.multicloud_integrations }}'
                 imagePullPolicy: IfNotPresent
                 name: gitops-addon

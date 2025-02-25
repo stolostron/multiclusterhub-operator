@@ -11,6 +11,7 @@
         multicluster-operators-application: multicluster_operators_application
         multicluster-operators-channel: multicluster_operators_channel
       escape-template-variables:
+        - ACTION
         - GITOPS_OPERATOR_IMAGE
         - GITOPS_OPERATOR_NAMESPACE
         - GITOPS_IMAGE
