@@ -315,7 +315,7 @@ spec:
                     apiVersion: v1
                     kind: ConfigMap
                     metadata:
-                      name: "acm-virt-config-cls"
+                      name: "acm-dr-virt-config--cls"
                       namespace: {{ `{{ $ns }}` }}
                     data: {{ `'{{hub copyConfigMapData "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) hub}}'` }}
 
@@ -323,7 +323,7 @@ spec:
               {{ `{{hub $cron_file := lookup "v1" "ConfigMap" "" $cron_file_name hub}}` }}
               {{ `{{hub $cron_file_exists := eq $cron_file.metadata.name $cron_file_name hub}}` }}
               {{ `{{- /* cron_schedule_configmap_name is the name of the main cron config map, copied over to the cluster  */ -}}` }}
-              {{ `{{- $cron_schedule_configmap_name := "acm-virt-cron-schedules" }}` }}
+              {{ `{{- $cron_schedule_configmap_name := "acm-dr-virt-schedule-cron--cls" }}` }}
               {{ `{{hub if $cron_file_exists hub}}` }}
                 - complianceType: mustonlyhave
                   objectDefinition:

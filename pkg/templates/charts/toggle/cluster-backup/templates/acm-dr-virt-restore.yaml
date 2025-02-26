@@ -31,7 +31,7 @@ spec:
             {{ `{{- $is_hub := eq $acm_crd.metadata.name  $acm_crd_name }}` }}
 
             {{ `{{- /* cls_restore_configmap_name is the name of the main restore config map, copied over to the cluster  */ -}}` }}
-            {{ `{{- $cls_restore_configmap_name := "acm-virt-restore-cls" }}` }}
+            {{ `{{- $cls_restore_configmap_name := "acm-dr-virt-restore-config--cls" }}` }}
             {{ `{{hub $restore_file_exists := "false" hub}}` }}
 
             {{ `{{hub $config_name := index .ManagedClusterLabels "acm-virt-config" hub}}` }}
@@ -66,7 +66,7 @@ spec:
             {{ `{{- $sch_crd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" $sch_crd_name  }}` }}
             {{ `{{- $sch_crd_exists := eq $sch_crd.metadata.name  $sch_crd_name }}` }}
 
-            {{ `{{- /* check if acm-virt-restore-cls exists */ -}}` }}
+            {{ `{{- /* check if acm-dr-virt-restore-config--cls exists */ -}}` }}
             {{ `{{- $restore_config_file := lookup "v1" "ConfigMap" $ns $cls_restore_configmap_name }}` }}
             {{ `{{- $restore_config_file_exists := eq $restore_config_file.metadata.name $cls_restore_configmap_name }}` }}
 
@@ -204,7 +204,7 @@ spec:
                 {{ `{{- end }}` }}
 
                 {{ `{{- /* cls_restore_configmap_name is the name of the main restore config map, copied over to the cluster  */ -}}` }}
-                {{ `{{- $cls_restore_configmap_name := "acm-virt-restore-cls" }}` }}
+                {{ `{{- $cls_restore_configmap_name := "acm-dr-virt-restore-config--cls" }}` }}
                 {{ `{{- $restoreNameProp := (cat  (fromClusterClaim "id.openshift.io") "_" "restoreName") | replace " " ""}}` }}
                 {{ `{{- $restoreName := fromConfigMap $ns $cls_restore_configmap_name $restoreNameProp }}` }}
 
