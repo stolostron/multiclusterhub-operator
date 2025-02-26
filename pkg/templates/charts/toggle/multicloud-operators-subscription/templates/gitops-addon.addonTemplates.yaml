@@ -55,11 +55,15 @@ spec:
                   capabilities:
                     drop:
                     - ALL
-                  privileged: false
                   readOnlyRootFilesystem: true
                   runAsNonRoot: true
-                  runAsUser: 1000
+                volumeMounts:
+                - mountPath: /tmp
+                  name: tmp-volume
               serviceAccountName: gitops-addon
+              volumes:
+              - emptyDir: {}
+                name: tmp-volume
       - apiVersion: v1
         imagePullSecrets:
         - name: open-cluster-management-image-pull-credentials
