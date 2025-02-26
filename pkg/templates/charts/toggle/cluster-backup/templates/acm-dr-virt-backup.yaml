@@ -82,7 +82,7 @@ spec:
                       {{ `{{- $ns = "{{hub fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "backupNS" hub}}" }}` }}
                     {{ `{{- end }}` }}
 
-                    {{ `{{- $config_map := lookup "v1" "ConfigMap" $ns "acm-virt-config-cls" }}` }}
+                    {{ `{{- $config_map := lookup "v1" "ConfigMap" $ns "acm-dr-virt-config--cls" }}` }}
                     {{ `{{ if hasKey $config_map.data "scheduleTTL" }}` }}
                     {{ `{{- $ttl_schedule = $config_map.data.scheduleTTL }}` }}
                     {{ `{{- end }}` }}
@@ -95,8 +95,8 @@ spec:
                     {{ `{{ if hasKey $config_map.data "schedule_useOwnerReferencesInBackup" }}` }}
                       {{ `{{- $useOwnerReferencesInBackup = ( $config_map.data.schedule_useOwnerReferencesInBackup ) | toBool }}` }}
                     {{ `{{- end }}` }}
-                    {{ `{{- $storageLocation = fromConfigMap $ns "acm-virt-config-cls" "storageLocation" }}` }}
-                    {{ `{{- $oadp_channel = fromConfigMap $ns "acm-virt-config-cls" "channel" }}` }}
+                    {{ `{{- $storageLocation = fromConfigMap $ns "acm-dr-virt-config--cls" "storageLocation" }}` }}
+                    {{ `{{- $oadp_channel = fromConfigMap $ns "acm-dr-virt-config--cls" "channel" }}` }}
 
                   {{ `{{- /* Velero Schedule CRD is installed */ -}}` }}
                   {{ `{{- end }}` }}
@@ -108,7 +108,7 @@ spec:
                     {{ `{{- $vms_to_backup := (lookup "kubevirt.io/v1" "VirtualMachine" "" "" $schedule_label) }}` }}
 
                     {{ `{{- /* get all cron jobs; for each of them define a backup schedule, if any vms are found for this schedule  */ -}}` }}
-                    {{ `{{- $jobs_map := ( lookup "v1" "ConfigMap" $ns "acm-virt-cron-schedules" ) }}` }}
+                    {{ `{{- $jobs_map := ( lookup "v1" "ConfigMap" $ns "acm-dr-virt-schedule-cron--cls" ) }}` }}
 
                     {{ `{{- range $jobs := $jobs_map.data }}` }}
 
@@ -127,7 +127,7 @@ spec:
                         {{ `{{- /* get the name of the cron job from the vm label  */ -}}` }}
                         {{ `{{- $cron_name := (index $vms.metadata.labels $schedule_label) }}` }}
 
-                        {{ `{{- $cron_schedule = fromConfigMap $ns "acm-virt-cron-schedules" $cron_name }}` }}
+                        {{ `{{- $cron_schedule = fromConfigMap $ns "acm-dr-virt-schedule-cron--cls" $cron_name }}` }}
 
                         {{ `{{ if eq $cron_schedule $jobs }}` }}
 
@@ -357,7 +357,7 @@ spec:
                   {{ `{{- $ns = "{{hub fromConfigMap "" (printf "%s" (index .ManagedClusterLabels "acm-virt-config")) "backupNS" hub}}" }}` }}
                 {{ `{{- end }}` }}
 
-                {{ `{{- $jobs_map := ( lookup "v1" "ConfigMap" $ns "acm-virt-cron-schedules" ).data }}` }}
+                {{ `{{- $jobs_map := ( lookup "v1" "ConfigMap" $ns "acm-dr-virt-schedule-cron--cls" ).data }}` }}
                 {{ `{{- $cron_label := "cluster.open-cluster-management.io/backup-vm" }}` }}
 
                 {{ `{{- /* get all vms with a backup label and check that the specified cron job name is valid  */ -}}` }}
@@ -371,7 +371,7 @@ spec:
                     apiVersion: v1
                     kind: ConfigMap
                     metadata:
-                      name: "acm-virt-cron-schedules"
+                      name: "acm-dr-virt-schedule-cron--cls"
                       namespace: {{ `{{ $ns }}` }}
                     data:
                       {{ `{{ $vm_cron_value }}` }}: {{ `{{$vms_to_backup.metadata.name}}` }}
@@ -384,4 +384,4 @@ spec:
           customMessage:
             compliant: "All cron schedule names used with the VirtualMachines cluster.open-cluster-management.io/backup-vm label are valid."
             noncompliant: |-
-              Some VirtualMachines use invalid cron job names for the cluster.open-cluster-management.io/backup-vm label as they are not defined by the acm-virt-cron-schedules ConfigMap.
+              Some VirtualMachines use invalid cron job names for the cluster.open-cluster-management.io/backup-vm label as they are not defined by the acm-dr-virt-schedule-cron--cls ConfigMap.
