@@ -16,8 +16,6 @@ spec:
       name: EXPECTED_OUTPUT
       default: ""
       type: string
-    - name: hermetic
-      value: "true"
   tasks:
     - name: unit-test
       params:
