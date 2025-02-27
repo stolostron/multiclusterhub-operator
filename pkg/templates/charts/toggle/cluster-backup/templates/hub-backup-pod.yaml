@@ -31,7 +31,7 @@ spec:
           remediationAction: enforce
           severity: high
           object-templates-raw: |
-            {{ `{{hub $config_name := "acm-dr-virt-schedule-cron" hub}}` }}
+            {{ `{{hub $config_name := "acm-dr-virt-config" hub}}` }}
             {{ `{{hub $config_file := lookup "v1" "ConfigMap" "" $config_name hub}}` }}
             {{ `{{hub $config_file_exists := eq $config_file.metadata.name $config_name hub}}` }}
             {{ `{{hub if not $config_file_exists hub}}` }}
