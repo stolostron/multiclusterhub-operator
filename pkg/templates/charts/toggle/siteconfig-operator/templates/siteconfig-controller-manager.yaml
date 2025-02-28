@@ -9,7 +9,7 @@ spec:
     matchLabels:
       app.kubernetes.io/component: siteconfig
       app.kubernetes.io/name: siteconfig-controller
-      control-plane: controller-manager
+      control-plane: siteconfig-controller-manager
   strategy: {}
   template:
     metadata:
@@ -19,7 +19,7 @@ spec:
       labels:
         app.kubernetes.io/component: siteconfig
         app.kubernetes.io/name: siteconfig-controller
-        control-plane: controller-manager
+        control-plane: siteconfig-controller-manager
         ocm-antiaffinity-selector: siteconfig-controller-manager
     spec:
       affinity:
@@ -72,6 +72,10 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 20
         name: manager
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
         readinessProbe:
           httpGet:
             path: /readyz
@@ -90,6 +94,10 @@ spec:
             - ALL
           privileged: false
           readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
       - args:
         - --secure-listen-address=0.0.0.0:8443
         - --upstream=http://127.0.0.1:8080/
@@ -154,3 +162,8 @@ spec:
         {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
         {{- end }}
 {{- end }}
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: siteconfig-webhook-server-cert
