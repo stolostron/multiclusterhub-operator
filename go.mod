@@ -7,7 +7,7 @@ require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/go-logr/logr v1.2.4
 	github.com/onsi/ginkgo/v2 v2.11.0
-	github.com/onsi/gomega v1.27.10
+	github.com/onsi/gomega v1.36.2
 	github.com/openshift/api v0.0.0-20230228142948-d170fcdc0fa6
 	github.com/operator-framework/api v0.17.3
 	github.com/operator-framework/operator-lib v0.11.0
