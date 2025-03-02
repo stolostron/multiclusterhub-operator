@@ -11,7 +11,7 @@ require (
 	github.com/openshift/api v0.0.0-20230228142948-d170fcdc0fa6
 	github.com/operator-framework/api v0.17.3
 	github.com/operator-framework/operator-lib v0.11.0
-	github.com/operator-framework/operator-lifecycle-manager v0.22.0
+	github.com/operator-framework/operator-lifecycle-manager v0.31.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.58.0
 	github.com/stolostron/backplane-operator v0.0.0-20220727154840-1f60baf1fb98
