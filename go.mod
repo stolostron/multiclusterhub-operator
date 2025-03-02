@@ -18,12 +18,12 @@ require (
 	github.com/stolostron/search-v2-operator v0.0.0-20221129033931-c0685753a4e0
 	go.uber.org/zap v1.24.0
 	helm.sh/helm/v3 v3.11.1
-	k8s.io/api v0.26.4
-	k8s.io/apiextensions-apiserver v0.26.1
-	k8s.io/apimachinery v0.26.4
-	k8s.io/client-go v0.26.4
+	k8s.io/api v0.32.2
+	k8s.io/apiextensions-apiserver v0.32.2
+	k8s.io/apimachinery v0.32.2
+	k8s.io/client-go v0.32.2
 	k8s.io/klog v1.0.0
-	k8s.io/kube-aggregator v0.24.3
+	k8s.io/kube-aggregator v0.32.2
 	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448
 	open-cluster-management.io/api v0.8.0
 	sigs.k8s.io/controller-runtime v0.14.4
