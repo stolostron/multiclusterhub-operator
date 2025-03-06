@@ -29,6 +29,8 @@ spec:
       value: build/Dockerfile.rhtap
     - name: path-context
       value: .
+    - name: build-source-image
+      value: "true"
     - name: hermetic
       value: "true"
     - name: prefetch-input
