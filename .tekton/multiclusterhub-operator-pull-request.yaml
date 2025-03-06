@@ -27,6 +27,8 @@ spec:
       value: 5d
     - name: dockerfile
       value: build/Dockerfile.rhtap
+    - name: build-source-image
+      value: "true"
     - name: hermetic
       value: "true"
     - name: prefetch-input

@@ -24,6 +24,8 @@ spec:
       value: quay.io/redhat-user-workloads/crt-redhat-acm-tenant/multiclusterhub-operator:{{revision}}
     - name: dockerfile
       value: build/Dockerfile.rhtap
+    - name: build-source-image
+      value: "true"
     - name: hermetic
       value: "true"
     - name: prefetch-input
