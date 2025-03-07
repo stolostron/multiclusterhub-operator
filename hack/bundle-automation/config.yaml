@@ -1,7 +1,7 @@
 
 - repo_name: multicloud-operators-subscription
   github_ref: "https://github.com/stolostron/multicloud-operators-subscription.git"
-  branch: "release-2.13"
+  branch: "release-2.14"
   operators:
     - name: multicloud-operators-subscription
       bundlePath: "deploy/olm-catalog/multicluster-operators-subscription/manifests/"
@@ -46,19 +46,19 @@
 
 - repo_name: siteconfig
   github_ref: "https://github.com/stolostron/siteconfig.git"
-  branch: "release-2.13"
+  branch: "release-2.14"
   operators:
     - name: siteconfig-operator
       bundlePath: "bundle/manifests/"
       imageMappings:
-        kube-rbac-proxy: kube_rbac_proxy
+        origin-kube-rbac-proxy: kube_rbac_proxy
         siteconfig-operator: siteconfig_operator
       webhook_paths:
         - config/webhook/manifests.yaml
 
 - repo_name: submariner-addon
   github_ref: "https://github.com/stolostron/submariner-addon.git"
-  branch: "release-2.13"
+  branch: "release-2.14"
   operators:
     - name: submariner-addon
       bundlePath: "deploy/olm-catalog/manifests/"
