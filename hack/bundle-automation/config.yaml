@@ -52,7 +52,7 @@
       bundlePath: "bundle/manifests/"
       ignore-webhook-definitions: false
       imageMappings:
-        kube-rbac-proxy: kube_rbac_proxy
+        origin-kube-rbac-proxy: kube_rbac_proxy
         siteconfig-operator: siteconfig_operator
       webhook_paths:
         - config/webhook/manifests.yaml
