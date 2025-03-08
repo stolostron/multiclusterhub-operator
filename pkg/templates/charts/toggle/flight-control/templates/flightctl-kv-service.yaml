@@ -1,14 +1,16 @@
+
+# Source: flightctl/templates/flightctl-kv-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
   labels:
     flightctl.service: flightctl-kv
   name: flightctl-kv
-  namespace: '{{ .Values.global.namespace }}'
+  namespace:  PLACEHOLDER_NAMESPACE
 spec:
   ports:
-  - name: '6379'
-    port: 6379
-    targetPort: 6379
+    - name: "6379"
+      port: 6379
+      targetPort: 6379
   selector:
     flightctl.service: flightctl-kv
