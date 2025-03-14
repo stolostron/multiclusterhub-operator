@@ -193,6 +193,14 @@ spec:
             workspace: git-auth
           - name: netrc
             workspace: netrc
+      - name: unit-test
+        params:
+        - name : SOURCE_ARTIFACT
+          value : $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+        runAfter:
+        - prefetch-dependencies
+        taskRef:
+          name: unit-test
       - name: build-container
         params:
           - name: IMAGE
@@ -219,7 +227,7 @@ spec:
           - name: CACHI2_ARTIFACT
             value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
         runAfter:
-          - prefetch-dependencies
+          - unit-test
         taskRef:
           params:
             - name: name

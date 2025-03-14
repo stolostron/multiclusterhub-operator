@@ -1,0 +1,65 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: unit-test
+spec:
+  description: "Runs unit test for MultiClusterHub Operator"
+  params:
+    - default: -race -cover -v
+      description: Flags to use for the test command
+      name: GO_TEST_FLAGS
+    - default: linux
+      description: Operating system to use for testing
+      name: GOOS
+    - default: amd64
+      description: System architecture to use for testing
+      name: GOARCH
+    - default: auto
+      description: Go module support
+      name: GO111MODULE
+    - default: ""
+      description: Go caching directory path
+      name: GOCACHE
+    - default: ""
+      description: Go mod caching directory path
+      name: GOMODCACHE
+    - description: The Trusted Artifact URI pointing to the artifact with the application source code.
+      name: SOURCE_ARTIFACT
+      type: string
+  stepTemplate:
+    volumeMounts:
+      - mountPath: /var/workdir
+        name: workdir
+        readOnly: false
+    # run as root to be able to do write operations in the run-test task
+    securityContext:
+      runAsUser: 0
+  steps:
+    # step to fetch the Trusted Artifact and make it available to the next steps.
+    - name: use-trusted-artifact
+      image: quay.io/redhat-appstudio/build-trusted-artifacts:latest@sha256:52f1391e6f1c472fd10bb838f64fae2ed3320c636f536014978a5ddbdfc6b3af
+      args:
+        - use
+        - $(params.SOURCE_ARTIFACT)=/var/workdir/source
+    - name: run-tests
+      image: registry.redhat.io/openshift4/ose-cli:latest
+      env:
+        - name: GOOS
+          value: $(params.GOOS)
+        - name: GOARCH
+          value: $(params.GOARCH)
+        - name: GO_TEST_FLAGS
+          value: $(params.GO_TEST_FLAGS)
+        - name: GO111MODULE
+          value: $(params.GO111MODULE)
+        - name: GOCACHE
+          value: $(params.GOCACHE)
+        - name: GOMODCACHE
+          value: $(params.GOMODCACHE)
+      script: |
+        #!/usr/bin/env bash
+        make test
+      volumes:
+        # volume to store a copy of the source code accessible only to this Task.
+        - name: workdir
+          emptyDir: {}
