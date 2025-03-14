@@ -27,10 +27,10 @@ spec:
       name: SOURCE_ARTIFACT
       type: string
   stepTemplate:
-    volumeMounts:
-      - mountPath: /var/workdir
-        name: workdir
-        readOnly: false
+    # volumeMounts:
+    #   - mountPath: /var/workdir
+    #     name: workdir
+    #     readOnly: false
     # run as root to be able to do write operations in the run-test task
     securityContext:
       runAsUser: 0
@@ -59,8 +59,8 @@ spec:
       script: |
         #!/usr/bin/env bash
         make test
-      workingDir: /var/workdir/source
-      volumes:
+      # workingDir: /var/workdir/source
+      # volumes:
         # volume to store a copy of the source code accessible only to this Task.
-        - name: workdir
-          emptyDir: {}
+        # - name: workdir
+          # emptyDir: {}
