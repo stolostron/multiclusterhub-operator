@@ -59,6 +59,7 @@ spec:
       script: |
         #!/usr/bin/env bash
         make test
+      workingDir: /var/workdir/source
       volumes:
         # volume to store a copy of the source code accessible only to this Task.
         - name: workdir
