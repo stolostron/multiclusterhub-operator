@@ -3,12 +3,12 @@ kind: ClusterRoleBinding
 metadata:
   labels:
     flightctl.service: flightctl-api
-  name: flightctl-api-{{ .Values.global.namespace }}
+  name: flightctl-api-PLACEHOLDER_NAMESPACE
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: flightctl-api-{{ .Values.global.namespace }}
+  name: flightctl-api-PLACEHOLDER_NAMESPACE
 subjects:
 - kind: ServiceAccount
   name: flightctl-api
-  namespace: '{{ default "PLACEHOLDER_NAMESPACE" .Values.global.namespace }}'
+  namespace: PLACEHOLDER_NAMESPACE
