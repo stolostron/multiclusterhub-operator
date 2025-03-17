@@ -59,7 +59,7 @@ spec:
       script: |
         #!/usr/bin/env bash
         # Install Deps
-        dnf -y install jq git make podman
+        dnf -y install make
 
         make test
       # workingDir: /var/workdir/source
