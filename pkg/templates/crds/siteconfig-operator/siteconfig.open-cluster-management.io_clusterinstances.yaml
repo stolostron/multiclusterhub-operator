@@ -318,6 +318,23 @@ spec:
                     hostName:
                       description: Hostname is the desired hostname for the host
                       type: string
+                    hostRef:
+                      description: HostRef is used to specify a reference to a BareMetalHost
+                        resource.
+                      properties:
+                        name:
+                          description: Name specifies the name of the referenced object.
+                          minLength: 1
+                          type: string
+                        namespace:
+                          description: Namespace specifies the namespace of the referenced
+                            object.
+                          minLength: 1
+                          type: string
+                      required:
+                      - name
+                      - namespace
+                      type: object
                     ignitionConfigOverride:
                       description: |-
                         Json formatted string containing the user overrides for the host's ignition config
@@ -482,12 +499,19 @@ spec:
                         in which the keys of the data field represent the kind of the installation manifest(s).
                         Node-level templates are instantiated once for each node in the ClusterInstance CR.
                       items:
-                        description: TemplateRef is used to specify the installation
-                          CR templates
+                        description: |-
+                          TemplateRef is a reference to an installation Custom Resource (CR) template.
+                          It provides a way to specify the template to be used for an installation process.
                         properties:
                           name:
+                            description: Name specifies the name of the referenced
+                              object.
+                            minLength: 1
                             type: string
                           namespace:
+                            description: Namespace specifies the namespace of the
+                              referenced object.
+                            minLength: 1
                             type: string
                         required:
                         - name
@@ -625,12 +649,18 @@ spec:
                   in which the keys of the data field represent the kind of the installation manifest(s).
                   Cluster-level templates are instantiated once per cluster (ClusterInstance CR).
                 items:
-                  description: TemplateRef is used to specify the installation CR
-                    templates
+                  description: |-
+                    TemplateRef is a reference to an installation Custom Resource (CR) template.
+                    It provides a way to specify the template to be used for an installation process.
                   properties:
                     name:
+                      description: Name specifies the name of the referenced object.
+                      minLength: 1
                       type: string
                     namespace:
+                      description: Namespace specifies the namespace of the referenced
+                        object.
+                      minLength: 1
                       type: string
                   required:
                   - name
