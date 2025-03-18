@@ -12,6 +12,10 @@ spec:
       namespace: {{ .Values.global.namespace }}
       port: 3000
     type: Service
+  contentSecurityPolicy:
+    - directive: 'ConnectSrc'
+      values:
+        - 'https://api.github.com'
   i18n:
     loadType: Preload
   proxy:
