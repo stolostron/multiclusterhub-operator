@@ -2049,6 +2049,8 @@ func Test_SetDefaultStorageClassName(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			defer os.Unsetenv(helpers.DefaultStorageClassName)
+
 			for _, sc := range tt.storageClasses {
 				if err := recon.Client.Create(context.TODO(), &sc); err != nil {
 					t.Errorf("failed to create StorageClass: %v", err)
