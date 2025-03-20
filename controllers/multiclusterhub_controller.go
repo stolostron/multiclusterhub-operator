@@ -273,11 +273,11 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	/*
-		In ACM 2.13, we are required to get the default storage class name for the Edge Management (aka Flight-Control)
+		In ACM 2.13, we are required to get the default storage class name for the Edge Manager (aka Flight-Control)
 		component. To ensure that we can pass the default storage class, we will store it as an environment variable.
 	*/
 	if err := r.SetDefaultStorageClassName(ctx); err != nil {
-		r.Log.Error(err, "failed to get StorageClass resources")
+		r.Log.Error(err, "failed to set default StorageClass name")
 	}
 
 	// Check if the multiClusterHub instance is marked to be deleted, which is
@@ -841,7 +841,7 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 			}
 
 			/*
-				In ACM 2.13 we are applying a PersistentVolumeClaim (PVC) for Edge Management. When the PVC is created,
+				In ACM 2.13 we are applying a PersistentVolumeClaim (PVC) for Edge Manager. When the PVC is created,
 				we cannot patch the resource if there is a new storageClass available. The user would need to delete the
 				pre-existing PVC and allow MCH to recreate a new version with the latest default storageClass version.
 			*/
@@ -856,6 +856,43 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 					r.Log.Info("Storage class mismatch default. To update, delete the existing PVC",
 						"Name", existing.GetName())
 					return ctrl.Result{}, nil
+				}
+			}
+
+			/*
+				In ACM 2.13 we are applying a StatefulSet (SS) for Edge Manager. When the SS is created,
+				we cannot patch the resource if there is a new storageClass available. The user would need to delete the
+				pre-existing SS and allow MCH to recreate a new version with the latest default storageClass version.
+			*/
+			if existing.GetKind() == "StatefulSet" {
+				volumeClaimTemplates, found, err := unstructured.NestedSlice(existing.Object, "spec",
+					"volumeClaimTemplates")
+
+				if err != nil {
+					r.Log.Error(err, "failed to retrieve volumeClaimTemplates from StatefulSet", "Name",
+						existing.GetName())
+					return ctrl.Result{}, err
+				}
+
+				if found {
+					// Loop through each volumeClaimTemplate to verify that the storage class name remains unchanged.
+					for i, volumeClaimTemplate := range volumeClaimTemplates {
+						// Extract the storageClassName from each volumeClaimTemplate
+						storageClassName, found, err := unstructured.NestedString(
+							volumeClaimTemplate.(map[string]interface{}), "spec", "storageClassName")
+
+						if err != nil {
+							r.Log.Error(err, "failed to retrieve storageClassName from volumeClaimTemplate", "Index", i,
+								"Name", existing.GetName())
+							return ctrl.Result{}, err
+						}
+
+						if found && storageClassName != os.Getenv(helpers.DefaultStorageClassName) {
+							r.Log.Info("Storage class mismatch default. To update, delete the existing SS",
+								"Name", existing.GetName())
+							return ctrl.Result{}, nil
+						}
+					}
 				}
 			}
 
@@ -1288,7 +1325,7 @@ UpdateEnvVar updates an environment variable with a new value and log the change
 It only updates the environment variable if the new value is different from the previous value.
 */
 func UpdateEnvVar(envVar, newValue, prevValue string) error {
-	if prevValue != newValue {
+	if newValue != prevValue {
 		if err := os.Setenv(envVar, newValue); err != nil {
 			log.Error(err, "failed to set environment variable %s", envVar)
 			return err
@@ -1319,36 +1356,53 @@ func (r *MultiClusterHubReconciler) GetDefaultStorageClassName(storageClasses st
 func (r *MultiClusterHubReconciler) SetDefaultStorageClassName(ctx context.Context) error {
 	storageClasses := storagev1.StorageClassList{}
 
-	// Fetch previously set storage class (fallback).
-	currentStorageClass := os.Getenv(helpers.DefaultStorageClassName)
+	// Fetch StorageClass name from environment variable (fallback)
+	envStorageClass := os.Getenv(helpers.DefaultStorageClassName)
 
+	/*
+	   Retrieve the latest list of storage classes to determine the default storage class name.
+	   If retrieval fails, fall back to the storage class name specified in the environment variable, if available.
+	*/
 	if err := r.Client.List(ctx, &storageClasses); err != nil {
 		if errors.IsNotFound(err) {
-			r.Log.Info("No StorageClass resources found.")
+			r.Log.Info("No StorageClass resources found in the cluster.")
 			return nil
 		}
 
-		if currentStorageClass != "" {
-			r.Log.Error(err, "failed to list StorageClasses. Retaining previous storage class.",
-				"storageClassName", currentStorageClass)
+		if envStorageClass != "" {
+			r.Log.Error(err, "Failed to retrieve StorageClasses from the cluster. Using existing environment variable.",
+				"fallbackStorageClass", envStorageClass)
+			return nil
 		}
 		return err
 	}
 
-	if storageClassName := r.GetDefaultStorageClassName(storageClasses); storageClassName != "" {
-		if err := UpdateEnvVar(helpers.DefaultStorageClassName, storageClassName, currentStorageClass); err != nil {
+	// Determine the defauly storage class name
+	defaultStorageClass := r.GetDefaultStorageClassName(storageClasses)
+	if defaultStorageClass == "" {
+		// No storage class found, unset the environment variable if it was previously set
+		if envStorageClass != "" {
+			if err := os.Unsetenv(helpers.DefaultStorageClassName); err != nil {
+				return err
+			}
+			r.Log.Info(fmt.Sprintf("No StorageClass available. Unsetting %s value", helpers.DefaultStorageClassName))
+		}
+		return nil
+	}
+
+	if envStorageClass == "" {
+		if err := UpdateEnvVar(helpers.DefaultStorageClassName, defaultStorageClass, envStorageClass); err != nil {
 			return err
 		}
 		return nil
 	}
 
-	// No storage classes found at all
-	if currentStorageClass != "" {
-		if err := os.Unsetenv(helpers.DefaultStorageClassName); err != nil {
-			return err
-		}
-		r.Log.Info(fmt.Sprintf("No StorageClass available. Unsetting %s value", helpers.DefaultStorageClassName))
+	// If the environment variable is already set but differs from the determined default, return without changing
+	if envStorageClass != defaultStorageClass {
+		log.Info("Environment variable StorageClass differs from the determined default. Retaining current value.",
+			"envStorageClass", envStorageClass, "determinedDefault", defaultStorageClass)
 	}
+
 	return nil
 }
 
