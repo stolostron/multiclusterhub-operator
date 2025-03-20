@@ -103,7 +103,6 @@ spec:
         - --upstream=http://127.0.0.1:8080/
         - --logtostderr=true
         - --v=10
-        - --http2-disable=true
         env:
 {{- if .Values.hubconfig.proxyConfigs }}
         - name: HTTP_PROXY
