@@ -22,6 +22,7 @@ hubconfig:
   replicaCount: 1
   tolerations: []
   hubVersion: ""
+  ocpVersion: 4.12.0
   ocpIngress: ""
   subscriptionPause: "false"
 # clusterImageSets:
