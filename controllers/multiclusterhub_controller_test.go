@@ -20,6 +20,7 @@ import (
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/helpers"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
+	renderer "github.com/stolostron/multiclusterhub-operator/pkg/rendering"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
@@ -2064,6 +2065,73 @@ func Test_SetDefaultStorageClassName(t *testing.T) {
 
 			if got := os.Getenv(helpers.DefaultStorageClassName); got != tt.expectedEnv {
 				t.Errorf("Expected StorageClassName to be set to: %v, got: %v", tt.expectedEnv, got)
+			}
+		})
+	}
+}
+
+func Test_ApplyTemplate(t *testing.T) {
+	tests := []struct {
+		name             string
+		chartLocation    string
+		component        string
+		mch              *operatorv1.MultiClusterHub
+		storageClassName string
+		want             error
+	}{
+		{
+			name:             "should apply template for component",
+			chartLocation:    filepath.Join("../pkg/templates/", utils.EdgeManagerChartLocation),
+			component:        operatorv1.EdgeManagerPreview,
+			mch:              &operatorv1.MultiClusterHub{},
+			storageClassName: "gp2-csi",
+			want:             nil,
+		},
+	}
+
+	testImages := map[string]string{}
+	for _, v := range utils.GetTestImages() {
+		testImages[v] = "quay.io/test/test:Test"
+	}
+
+	testCacheSpec := CacheSpec{
+		ImageOverrides:    testImages,
+		TemplateOverrides: map[string]string{},
+	}
+
+	// Renders all templates from charts
+	registerScheme()
+	os.Setenv("ACM_HUB_OCP_VERSION", "4.18.0")
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			templates, errs := renderer.RenderChart(tt.chartLocation, tt.mch, testCacheSpec.ImageOverrides,
+				testCacheSpec.TemplateOverrides, false)
+
+			if errs != nil {
+				t.Errorf("Failed to render chart for %v", tt.component)
+			}
+
+			for _, template := range templates {
+				if _, err := recon.applyTemplate(context.TODO(), tt.mch, template); err != nil {
+					t.Errorf("failed: %v", err)
+				}
+			}
+
+			os.Setenv(helpers.DefaultStorageClassName, "gp3-csi")
+			templates, errs = renderer.RenderChart(tt.chartLocation, tt.mch, testCacheSpec.ImageOverrides,
+				testCacheSpec.TemplateOverrides, false)
+
+			if errs != nil {
+				t.Errorf("Failed to render chart for %v", tt.component)
+			}
+
+			for _, template := range templates {
+				if template.GetKind() == "PersistentVolumeClaim" || template.GetKind() == "StatefulSet" {
+					if _, err := recon.applyTemplate(context.TODO(), tt.mch, template); err != nil {
+						t.Errorf("applyTemplate() = %v, want = %v", err, tt.want)
+					}
+				}
 			}
 		})
 	}
