@@ -12,10 +12,12 @@ spec:
       namespace: {{ .Values.global.namespace }}
       port: 3000
     type: Service
+  {{- if semverCompare ">=4.19.0" .Values.hubconfig.ocpVersion }}
   contentSecurityPolicy:
     - directive: 'ConnectSrc'
       values:
         - 'https://api.github.com'
+  {{- end }}
   i18n:
     loadType: Preload
   proxy:
