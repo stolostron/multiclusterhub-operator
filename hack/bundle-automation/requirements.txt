@@ -1,8 +1,9 @@
-pyyaml
-gitpython
-requests
-urllib3
-packaging
-semver
 chardet
 coloredlogs
+gitpython
+inquirer
+packaging
+pyyaml
+requests
+semver
+urllib3
