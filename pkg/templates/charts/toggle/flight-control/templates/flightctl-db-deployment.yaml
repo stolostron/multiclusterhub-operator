@@ -98,7 +98,7 @@ spec:
             drop:
             - ALL
           privileged: false
-          readOnlyRootFilesystem: false
+          readOnlyRootFilesystem: true
           runAsNonRoot: true
         volumeMounts:
         - mountPath: /var/lib/pgsql/data
@@ -120,11 +120,9 @@ spec:
       restartPolicy: Always
       securityContext:
         runAsNonRoot: true
-{{- if .Values.global.deployOnOCP }}
 {{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
         seccompProfile:
           type: RuntimeDefault
-{{- end }}
 {{- end }}
 {{- with .Values.hubconfig.tolerations }}
       tolerations:
