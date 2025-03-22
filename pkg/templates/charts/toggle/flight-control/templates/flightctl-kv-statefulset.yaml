@@ -6,9 +6,9 @@ metadata:
   name: flightctl-kv
   namespace: '{{ .Values.global.namespace }}'
 spec:
-  revisionHistoryLimit: 10
   podManagementPolicy: OrderedReady
   replicas: 1
+  revisionHistoryLimit: 10
   selector:
     matchLabels:
       flightctl.service: flightctl-kv
