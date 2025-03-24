@@ -1992,42 +1992,52 @@ func Test_SetDefaultStorageClassName(t *testing.T) {
 
 	tests := []struct {
 		name           string
+		mch            *operatorv1.MultiClusterHub
 		storageClasses []storagev1.StorageClass
 		expectedEnv    string
 	}{
 		{
-			name:           "should not set default storage class name due to empty StorageClasses",
-			storageClasses: []storagev1.StorageClass{},
-			expectedEnv:    "",
-		},
-		{
-			name: "should set fallback storageClassName when default is not marked",
+			name: "should set default storageClassName with MCH annotation",
+			mch: &operatorv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multiclusterhub",
+					Namespace: "test-ns",
+					Annotations: map[string]string{
+						utils.AnnotationDefaultStorageClass: "gp3-csi",
+					},
+				},
+			},
 			storageClasses: []storagev1.StorageClass{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:        "gp2-csi",
-						Annotations: map[string]string{},
+						Name: "gp2-csi",
 					},
 					Provisioner: "ebs.csi.aws.com",
 					Parameters: map[string]string{
 						"encrypted": "true",
-						"type":      "gp3",
+						"type":      "gp2",
 					},
 					ReclaimPolicy:        &reclaimPolicy,
 					AllowVolumeExpansion: &allowVolumeExpansion,
 					VolumeBindingMode:    &volumeBindingMode,
 				},
 			},
-			expectedEnv: "gp2-csi",
+			expectedEnv: "gp3-csi",
 		},
 		{
 			name: "should set default storageClassName when default marked",
+			mch: &operatorv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multiclusterhub",
+					Namespace: "test-ns",
+				},
+			},
 			storageClasses: []storagev1.StorageClass{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "gp3-csi",
 						Annotations: map[string]string{
-							utils.AnnotationDefaultStorageClass: "true",
+							utils.AnnotationKubeDefaultStorageClass: "true",
 						},
 					},
 					Provisioner: "ebs.csi.aws.com",
@@ -2044,10 +2054,6 @@ func Test_SetDefaultStorageClassName(t *testing.T) {
 		},
 	}
 
-	if err := os.Setenv(helpers.DefaultStorageClassName, "test-storage-class"); err != nil {
-		t.Errorf("failed to set default StorageClassName: %v", err)
-	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			defer os.Unsetenv(helpers.DefaultStorageClassName)
@@ -2059,7 +2065,7 @@ func Test_SetDefaultStorageClassName(t *testing.T) {
 			}
 
 			// Call the function under test
-			if err := recon.SetDefaultStorageClassName(context.TODO()); err != nil {
+			if _, err := recon.SetDefaultStorageClassName(context.TODO(), tt.mch); err != nil {
 				t.Errorf("SetDefaultStorageClassName failed: %v", err)
 			}
 

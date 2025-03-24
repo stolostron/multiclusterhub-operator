@@ -276,8 +276,9 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		In ACM 2.13, we are required to get the default storage class name for the Edge Manager (aka Flight-Control)
 		component. To ensure that we can pass the default storage class, we will store it as an environment variable.
 	*/
-	if err := r.SetDefaultStorageClassName(ctx); err != nil {
-		r.Log.Error(err, "failed to set default StorageClass name")
+	if result, err = r.SetDefaultStorageClassName(ctx, multiClusterHub); err != nil {
+		r.Log.Error(err, "failed to set the default StorageClass name")
+		return ctrl.Result{}, err
 	}
 
 	// Check if the multiClusterHub instance is marked to be deleted, which is
@@ -841,9 +842,10 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 			}
 
 			/*
-				In ACM 2.13 we are applying a PersistentVolumeClaim (PVC) for Edge Manager. When the PVC is created,
-				we cannot patch the resource if there is a new storageClass available. The user would need to delete the
-				pre-existing PVC and allow MCH to recreate a new version with the latest default storageClass version.
+				In ACM 2.13 we are applying a StatefulSet and PersistentVolumeClaim (PVC) for Edge Manager.
+				When the PVC is created, we cannot patch the resource if there is a new storageClass available.
+				The user would need to delete the pre-existing PVC and allow MCH to recreate a new version with the
+				latest default storageClass version.
 			*/
 			if existing.GetKind() == "PersistentVolumeClaim" {
 				storageClassName, found, err := unstructured.NestedString(existing.Object, "spec", "storageClassName")
@@ -853,18 +855,11 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 				}
 
 				if found && storageClassName != os.Getenv(helpers.DefaultStorageClassName) {
-					r.Log.Info("Storage class mismatch default. To update, delete the existing PVC",
+					r.Log.Info("StorageClass name mismatch default. To update, delete the existing PVC",
 						"Name", existing.GetName())
 					return ctrl.Result{}, nil
 				}
-			}
-
-			/*
-				In ACM 2.13 we are applying a StatefulSet (SS) for Edge Manager. When the SS is created,
-				we cannot patch the resource if there is a new storageClass available. The user would need to delete the
-				pre-existing SS and allow MCH to recreate a new version with the latest default storageClass version.
-			*/
-			if existing.GetKind() == "StatefulSet" {
+			} else if existing.GetKind() == "StatefulSet" {
 				volumeClaimTemplates, found, err := unstructured.NestedSlice(existing.Object, "spec",
 					"volumeClaimTemplates")
 
@@ -888,7 +883,7 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 						}
 
 						if found && storageClassName != os.Getenv(helpers.DefaultStorageClassName) {
-							r.Log.Info("Storage class mismatch default. To update, delete the existing SS",
+							r.Log.Info("Storageclass name mismatch default. To update, delete the existing SS",
 								"Name", existing.GetName())
 							return ctrl.Result{}, nil
 						}
@@ -1319,91 +1314,65 @@ func (r *MultiClusterHubReconciler) ensureNoInternalHubComponent(ctx context.Con
 	// Requeue to check again after a short delay
 	return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 }
-
-/*
-UpdateEnvVar updates an environment variable with a new value and log the change.
-It only updates the environment variable if the new value is different from the previous value.
-*/
-func UpdateEnvVar(envVar, newValue, prevValue string) error {
-	if newValue != prevValue {
-		if err := os.Setenv(envVar, newValue); err != nil {
-			log.Error(err, "failed to set environment variable %s", envVar)
-			return err
-		}
-		log.Info(fmt.Sprintf("%s updated: %s", envVar, newValue))
-	}
-	return nil
-}
-
 func (r *MultiClusterHubReconciler) GetDefaultStorageClassName(storageClasses storagev1.StorageClassList) string {
-	var storageClassName string
-
 	for _, sc := range storageClasses.Items {
 		if annotations := sc.GetAnnotations(); annotations != nil {
-			if strings.EqualFold(annotations[utils.AnnotationDefaultStorageClass], "true") {
-				// Return default storage class name
+			if strings.EqualFold(annotations[utils.AnnotationKubeDefaultStorageClass], "true") {
 				return sc.GetName()
 			}
 		}
-
-		if storageClassName == "" {
-			storageClassName = sc.GetName()
-		}
 	}
-	return storageClassName
+	return ""
 }
 
-func (r *MultiClusterHubReconciler) SetDefaultStorageClassName(ctx context.Context) error {
-	storageClasses := storagev1.StorageClassList{}
+func (r *MultiClusterHubReconciler) SetDefaultStorageClassName(ctx context.Context, m *operatorv1.MultiClusterHub) (
+	ctrl.Result, error) {
 
-	// Fetch StorageClass name from environment variable (fallback)
+	// Retrieve the default storage class name from the environment variable, if set.
 	envStorageClass := os.Getenv(helpers.DefaultStorageClassName)
 
 	/*
-	   Retrieve the latest list of storage classes to determine the default storage class name.
-	   If retrieval fails, fall back to the storage class name specified in the environment variable, if available.
+	   Check if the MultiClusterHub instance contains a default storage class annotation.
+	   If the annotation is present and different from the environment variable, override it.
 	*/
+	if overrideStorageClass := utils.GetDefaultStorageClassOverride(m); overrideStorageClass != "" &&
+		overrideStorageClass != envStorageClass {
+
+		if err := os.Setenv(helpers.DefaultStorageClassName, overrideStorageClass); err != nil {
+			log.Error(err, "unable to set the default StorageClass environment variable from annotation",
+				helpers.DefaultStorageClassName, overrideStorageClass)
+
+			return ctrl.Result{}, err
+		}
+
+		log.Info("Applied default StorageClass annotation override",
+			"StorageClassName", overrideStorageClass)
+		return ctrl.Result{}, nil
+	}
+
+	// If no annotation override is found, we need to discover the default storage class from the cluster.
+	storageClasses := storagev1.StorageClassList{}
 	if err := r.Client.List(ctx, &storageClasses); err != nil {
 		if errors.IsNotFound(err) {
-			r.Log.Info("No StorageClass resources found in the cluster.")
-			return nil
+			r.Log.Info("No StorageClass resources found in the cluster. Skipping default StorageClass update")
+			return ctrl.Result{}, nil
 		}
 
-		if envStorageClass != "" {
-			r.Log.Error(err, "Failed to retrieve StorageClasses from the cluster. Using existing environment variable.",
-				"fallbackStorageClass", envStorageClass)
-			return nil
+		r.Log.Error(err, "failed to list StorageClass resources")
+		return ctrl.Result{}, err
+	}
+
+	// Retrieve the default storage class from the cluster's StorageClass resources.
+	if defaultStorageClass := r.GetDefaultStorageClassName(storageClasses); defaultStorageClass != "" &&
+		defaultStorageClass != envStorageClass {
+		if err := os.Setenv(helpers.DefaultStorageClassName, defaultStorageClass); err != nil {
+			return ctrl.Result{}, err
 		}
-		return err
-	}
 
-	// Determine the defauly storage class name
-	defaultStorageClass := r.GetDefaultStorageClassName(storageClasses)
-	if defaultStorageClass == "" {
-		// No storage class found, unset the environment variable if it was previously set
-		if envStorageClass != "" {
-			if err := os.Unsetenv(helpers.DefaultStorageClassName); err != nil {
-				return err
-			}
-			r.Log.Info(fmt.Sprintf("No StorageClass available. Unsetting %s value", helpers.DefaultStorageClassName))
-		}
-		return nil
+		log.Info("Default StorageClassName set from cluster resources",
+			"Name", defaultStorageClass)
 	}
-
-	if envStorageClass == "" {
-		if err := UpdateEnvVar(helpers.DefaultStorageClassName, defaultStorageClass, envStorageClass); err != nil {
-			return err
-		}
-		return nil
-	}
-
-	// If the environment variable is already set but differs from the determined default, return without changing
-	if envStorageClass != defaultStorageClass {
-		log.Info("Environment variable StorageClass differs from the determined default. Retaining current value.",
-			"envStorageClass", envStorageClass, "determinedDefault", defaultStorageClass)
-	}
-
-	return nil
+	return ctrl.Result{}, nil
 }
 
 func (r *MultiClusterHubReconciler) ensureOpenShiftNamespaceLabel(ctx context.Context, m *operatorv1.MultiClusterHub) (
