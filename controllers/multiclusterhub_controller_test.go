@@ -2021,6 +2021,20 @@ func Test_SetDefaultStorageClassName(t *testing.T) {
 			storageClasses: []storagev1.StorageClass{
 				{
 					ObjectMeta: metav1.ObjectMeta{
+						Name: "gp2-csi",
+					},
+					Provisioner: "ebs.csi.aws.com",
+					Parameters: map[string]string{
+						"encrypted": "true",
+						"type":      "gp2",
+					},
+					ReclaimPolicy:        &reclaimPolicy,
+					AllowVolumeExpansion: &allowVolumeExpansion,
+					VolumeBindingMode:    &volumeBindingMode,
+				},
+			},
+				{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "gp3-csi",
 						Annotations: map[string]string{
 							utils.AnnotationKubeDefaultStorageClass: "true",
