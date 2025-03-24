@@ -330,7 +330,14 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 
 	values.Global.ImageRepository = utils.GetImageRepository(mch)
 
-	values.Global.StorageClassName = os.Getenv(helpers.DefaultStorageClassName)
+	annotations := mch.GetAnnotations()
+	if val, ok := annotations[utils.AnnotationEdgeManagerDefaultStorageClass]; ok {
+		values.Global.StorageClassName = val
+	} else {
+		values.Global.StorageClassName = os.Getenv(helpers.DefaultStorageClassName)
+	}
+	
+	
 
 	// TODO: put this back later
 	// values.Global.HubSize = mch.Spec.HubSize

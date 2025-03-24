@@ -84,6 +84,7 @@ var (
 		resource.
 	*/
 	AnnotationDefaultStorageClass = "storageclass.kubernetes.io/is-default-class"
+	AnnotationEdgeManagerDefaultStorageClass = "installer.open-cluster-management.io/default-storage-class"
 )
 
 /*
