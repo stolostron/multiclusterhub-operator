@@ -2003,26 +2003,12 @@ func Test_SetDefaultStorageClassName(t *testing.T) {
 					Name:      "multiclusterhub",
 					Namespace: "test-ns",
 					Annotations: map[string]string{
-						utils.AnnotationDefaultStorageClass: "gp3-csi",
+						utils.AnnotationDefaultStorageClass: "gp2-csi",
 					},
 				},
 			},
-			storageClasses: []storagev1.StorageClass{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "gp2-csi",
-					},
-					Provisioner: "ebs.csi.aws.com",
-					Parameters: map[string]string{
-						"encrypted": "true",
-						"type":      "gp2",
-					},
-					ReclaimPolicy:        &reclaimPolicy,
-					AllowVolumeExpansion: &allowVolumeExpansion,
-					VolumeBindingMode:    &volumeBindingMode,
-				},
-			},
-			expectedEnv: "gp3-csi",
+			storageClasses: []storagev1.StorageClass{},
+			expectedEnv:    "gp2-csi",
 		},
 		{
 			name: "should set default storageClassName when default marked",
@@ -2054,6 +2040,7 @@ func Test_SetDefaultStorageClassName(t *testing.T) {
 		},
 	}
 
+	os.Setenv(helpers.DefaultStorageClassName, "test-storage-class")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			defer os.Unsetenv(helpers.DefaultStorageClassName)
