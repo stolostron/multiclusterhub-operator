@@ -2032,7 +2032,6 @@ func Test_SetDefaultStorageClassName(t *testing.T) {
 					AllowVolumeExpansion: &allowVolumeExpansion,
 					VolumeBindingMode:    &volumeBindingMode,
 				},
-			},
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "gp3-csi",
