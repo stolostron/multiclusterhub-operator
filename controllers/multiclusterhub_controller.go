@@ -842,7 +842,7 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 			}
 
 			/*
-				In ACM 2.13 we are applying a StatefulSet and PersistentVolumeClaim (PVC) for Edge Manager.
+				In ACM 2.13 we are applying a PersistentVolumeClaim (PVC) and StatefulSet (STS) for Edge Manager.
 				When the PVC is created, we cannot patch the resource if there is a new storageClass available.
 				The user would need to delete the pre-existing PVC and allow MCH to recreate a new version with the
 				latest default storageClass version.
@@ -850,13 +850,15 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 			if existing.GetKind() == "PersistentVolumeClaim" {
 				storageClassName, found, err := unstructured.NestedString(existing.Object, "spec", "storageClassName")
 				if err != nil {
-					r.Log.Error(err, "failed to retrieve storageClassName from PVC", "Name", existing.GetName())
+					log.Error(err, "failed to retrieve storageClassName from PVC", "Name", existing.GetName())
 					return ctrl.Result{}, err
 				}
 
 				if found && storageClassName != os.Getenv(helpers.DefaultStorageClassName) {
-					r.Log.Info("StorageClass name mismatch default. To update, delete the existing PVC",
-						"Name", existing.GetName())
+					log.Info(
+						"To update the PVC with a new StorageClass, delete the existing PVC to allow it to be recreated.",
+						"Name", existing.GetName(), "CurrentStorageClass", storageClassName,
+						"NewStorageClass", os.Getenv(helpers.DefaultStorageClassName))
 					return ctrl.Result{}, nil
 				}
 			} else if existing.GetKind() == "StatefulSet" {
@@ -864,7 +866,7 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 					"volumeClaimTemplates")
 
 				if err != nil {
-					r.Log.Error(err, "failed to retrieve volumeClaimTemplates from StatefulSet", "Name",
+					log.Error(err, "failed to retrieve volumeClaimTemplates from StatefulSet", "Name",
 						existing.GetName())
 					return ctrl.Result{}, err
 				}
@@ -877,14 +879,16 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 							volumeClaimTemplate.(map[string]interface{}), "spec", "storageClassName")
 
 						if err != nil {
-							r.Log.Error(err, "failed to retrieve storageClassName from volumeClaimTemplate", "Index", i,
+							log.Error(err, "failed to retrieve storageClassName from volumeClaimTemplate", "Index", i,
 								"Name", existing.GetName())
 							return ctrl.Result{}, err
 						}
 
 						if found && storageClassName != os.Getenv(helpers.DefaultStorageClassName) {
-							r.Log.Info("Storageclass name mismatch default. To update, delete the existing SS",
-								"Name", existing.GetName())
+							log.Info(
+								"To update the STS with a new StorageClass, delete the existing STS to allow it to be recreated.",
+								"Name", existing.GetName(), "CurrentStorageClass", storageClassName,
+								"NewStorageClass", os.Getenv(helpers.DefaultStorageClassName))
 							return ctrl.Result{}, nil
 						}
 					}
@@ -1321,6 +1325,10 @@ func (r *MultiClusterHubReconciler) GetDefaultStorageClassName(storageClasses st
 				return sc.GetName()
 			}
 		}
+	}
+
+	if len(storageClasses.Items) > 1 {
+		log.Info("Warning: Multiple non-default storage classes found. A default storage class needs to be declared.")
 	}
 	return ""
 }

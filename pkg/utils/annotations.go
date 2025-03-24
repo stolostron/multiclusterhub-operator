@@ -81,7 +81,7 @@ var (
 
 	/*
 		AnnotationDefaultStorageClass is an annotation used to set the default storage class name for multiclusterhub
-		component resources to use.
+		operand resources to use.
 	*/
 	AnnotationDefaultStorageClass = "installer.open-cluster-management.io/default-storage-class"
 
