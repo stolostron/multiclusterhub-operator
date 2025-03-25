@@ -3,7 +3,6 @@ global:
   baseDomain: ''
   hubSize: Small
   imageOverrides:
-    kube_rbac_proxy: ''
     siteconfig_operator: ''
   namespace: default
   pullSecret: null

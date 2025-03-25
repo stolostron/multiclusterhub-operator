@@ -46,7 +46,9 @@ spec:
       containers:
       - args:
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=127.0.0.1:8080
+        - --metrics-bind-address=127.0.0.1:8443
+        - --metrics-tls-cert-dir=/secrets/certs/metrics
+        - --clusterinstance-webhook-tls-cert-dir=/secrets/certs/webhook-server
         - --leader-elect
         command:
         - /usr/local/bin/siteconfig-manager
@@ -76,6 +78,9 @@ spec:
         - containerPort: 9443
           name: webhook-server
           protocol: TCP
+        - containerPort: 8443
+          name: https
+          protocol: TCP
         readinessProbe:
           httpGet:
             path: /readyz
@@ -95,45 +100,12 @@ spec:
           privileged: false
           readOnlyRootFilesystem: true
         volumeMounts:
-        - mountPath: /tmp/k8s-webhook-server/serving-certs
-          name: cert
+        - mountPath: /secrets/certs/webhook-server
+          name: webhook-certs
           readOnly: true
-      - args:
-        - --secure-listen-address=0.0.0.0:8443
-        - --upstream=http://127.0.0.1:8080/
-        - --logtostderr=true
-        - --v=10
-        - --http2-disable=true
-        env:
-{{- if .Values.hubconfig.proxyConfigs }}
-        - name: HTTP_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
-        - name: HTTPS_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
-        - name: NO_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
-{{- end }}
-        image: '{{ .Values.global.imageOverrides.kube_rbac_proxy }}'
-        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
-        name: kube-rbac-proxy
-        ports:
-        - containerPort: 8443
-          name: https
-          protocol: TCP
-        resources:
-          limits:
-            cpu: 500m
-            memory: 128Mi
-          requests:
-            cpu: 5m
-            memory: 64Mi
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          privileged: false
-          readOnlyRootFilesystem: true
+        - mountPath: /secrets/certs/metrics
+          name: metrics-certs
+          readOnly: true
       hostIPC: false
       hostNetwork: false
       hostPID: false
@@ -164,7 +136,11 @@ spec:
         {{- end }}
 {{- end }}
       volumes:
-      - name: cert
+      - name: webhook-certs
         secret:
           defaultMode: 420
           secretName: siteconfig-webhook-server-cert
+      - name: metrics-certs
+        secret:
+          defaultMode: 420
+          secretName: siteconfig-metrics-server-cert
