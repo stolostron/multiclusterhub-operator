@@ -80,11 +80,16 @@ var (
 	AnnotationHubSize = "installer.open-cluster-management.io/hub-size"
 
 	/*
-		AnnotationDefaultStorageClass is an annotation used in the cluster to determine the default storage class
+		AnnotationDefaultStorageClass is an annotation used to set the default storage class name for multiclusterhub
+		operand resources to use.
+	*/
+	AnnotationDefaultStorageClass = "installer.open-cluster-management.io/default-storage-class"
+
+	/*
+		AnnotationKubeDefaultStorageClass is an annotation used in the cluster to determine the default storage class
 		resource.
 	*/
-	AnnotationDefaultStorageClass = "storageclass.kubernetes.io/is-default-class"
-	AnnotationEdgeManagerDefaultStorageClass = "installer.open-cluster-management.io/default-storage-class"
+	AnnotationKubeDefaultStorageClass = "storageclass.kubernetes.io/is-default-class"
 )
 
 /*
@@ -176,6 +181,13 @@ func getAnnotationOrDefaultForMap(old, new map[string]string, primaryKey, deprec
 	}
 
 	return oldValue == newValue
+}
+
+/*
+GetDefaultStorageClassOverride
+*/
+func GetDefaultStorageClassOverride(instance *operatorsv1.MultiClusterHub) string {
+	return getAnnotation(instance, AnnotationDefaultStorageClass)
 }
 
 /*
