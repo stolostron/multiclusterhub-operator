@@ -306,7 +306,7 @@ func TestRenderCRDs(t *testing.T) {
 }
 
 func TestOADPAnnotation(t *testing.T) {
-	oadp := `{"channel": "stable-1.0", "installPlanApproval": "Manual", "name": "redhat-oadp-operator2", "source": "redhat-operators2", "sourceNamespace": "openshift-marketplace2"}`
+	oadp := `{"channel": "stable-1.0", "installPlanApproval": "Manual", "name": "redhat-oadp-operator2", "source": "redhat-operators2", "sourceNamespace": "openshift-marketplace2", "startingCSV": "test-csv"}`
 	mch := &v1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "test",
@@ -316,7 +316,7 @@ func TestOADPAnnotation(t *testing.T) {
 		},
 	}
 
-	test1, test2, test3, test4, test5 := GetOADPConfig(mch)
+	test1, test2, test3, test4, test5, test6 := GetOADPConfig(mch)
 
 	if test1 != "redhat-oadp-operator2" {
 		t.Error("Cluster Backup missing OADP overrides for name")
@@ -338,13 +338,18 @@ func TestOADPAnnotation(t *testing.T) {
 		t.Error("Cluster Backup missing OADP overrides for source namespace")
 	}
 
+	if test6 != "test-csv" {
+		t.Error("Cluster Backup missing startingCSV overrides for source")
+	}
+
 	mch = &v1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "test",
 		},
 	}
 
-	test1, test2, test3, test4, test5 = GetOADPConfig(mch)
+	// These should all be the defaults (no overrides)
+	test1, test2, test3, test4, test5, test6 = GetOADPConfig(mch)
 
 	if test1 != "redhat-oadp-operator" {
 		t.Error("Cluster Backup missing OADP overrides for name")
@@ -364,5 +369,9 @@ func TestOADPAnnotation(t *testing.T) {
 
 	if test5 != "openshift-marketplace" {
 		t.Error("Cluster Backup missing OADP overrides for source namespace")
+	}
+
+	if test6 != "" {
+		t.Error("Cluster Backup Defaulted to something other than \"\"")
 	}
 }
