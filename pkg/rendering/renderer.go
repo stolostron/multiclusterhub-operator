@@ -44,6 +44,7 @@ type Global struct {
 	Source              string               `json:"source" structs:"source"`
 	SourceNamespace     string               `json:"sourceNamespace" structs:"sourceNamespace"`
 	HubSize             v1.HubSize           `json:"hubSize" structs:"hubSize" yaml:"hubSize"`
+	StartingCSV         string               `json:"startingCSV" structs:"startingCSV"`
 }
 
 type HubConfig struct {
@@ -356,16 +357,16 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 		values.HubConfig.ProxyConfigs = proxyVar
 	}
 
-	values.Global.Name, values.Global.Channel, values.Global.InstallPlanApproval, values.Global.Source, values.Global.SourceNamespace = GetOADPConfig(mch)
+	values.Global.Name, values.Global.Channel, values.Global.InstallPlanApproval, values.Global.Source, values.Global.SourceNamespace, values.Global.StartingCSV = GetOADPConfig(mch)
 
 	values.Global.MinOADPChannel = defaultOADPChannel
 
 	// TODO: Define all overrides
 }
 
-func GetOADPConfig(m *v1.MultiClusterHub) (string, string, subv1alpha1.Approval, string, string) {
+func GetOADPConfig(m *v1.MultiClusterHub) (string, string, subv1alpha1.Approval, string, string, string) {
 	sub := &subv1alpha1.SubscriptionSpec{}
-	var name, channel, source, sourceNamespace string
+	var name, channel, source, sourceNamespace, startingCSV string
 	var installPlan subv1alpha1.Approval
 
 	if oadpSpec := utils.GetOADPAnnotationOverrides(m); oadpSpec != "" {
@@ -373,7 +374,7 @@ func GetOADPConfig(m *v1.MultiClusterHub) (string, string, subv1alpha1.Approval,
 		err := json.Unmarshal([]byte(oadpSpec), sub)
 		if err != nil {
 			log.Info(fmt.Sprintf("Failed to unmarshal OADP annotation: %s.", oadpSpec))
-			return "", "", "", "", ""
+			return "", "", "", "", "", ""
 		}
 	}
 
@@ -406,5 +407,9 @@ func GetOADPConfig(m *v1.MultiClusterHub) (string, string, subv1alpha1.Approval,
 	} else {
 		sourceNamespace = defaultOADPSourceNamespace
 	}
-	return name, channel, installPlan, source, sourceNamespace
+
+	if sub.StartingCSV != "" {
+		startingCSV = sub.StartingCSV
+	}
+	return name, channel, installPlan, source, sourceNamespace, startingCSV
 }
