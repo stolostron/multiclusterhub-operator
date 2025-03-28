@@ -305,6 +305,20 @@ func Test_GetOADPAnnotationOverrides(t *testing.T) {
 	})
 }
 
+func Test_GetDefaultStorageClassOverride(t *testing.T) {
+	t.Run("Get Default storage class annotation override for MCH", func(t *testing.T) {
+		mch := &operatorsv1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
+				AnnotationDefaultStorageClass: "gp3-csi",
+			}},
+		}
+		want := "gp3-csi"
+		if got := GetDefaultStorageClassOverride(mch); got != want {
+			t.Errorf("GetDefaultStorageClassOverride(mch) = %v, want %v", got, want)
+		}
+	})
+}
+
 func TestShouldIgnoreOCPVersion(t *testing.T) {
 	tests := []struct {
 		name     string
