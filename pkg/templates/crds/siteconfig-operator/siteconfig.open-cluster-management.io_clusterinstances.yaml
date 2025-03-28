@@ -291,7 +291,6 @@ spec:
                       - legacy
                       type: string
                     cpuArchitecture:
-                      default: x86_64
                       description: |-
                         CPUArchitecture is the software architecture of the node.
                         If it is not defined here then it is inheirited from the ClusterInstanceSpec.
