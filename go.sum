@@ -267,8 +267,8 @@ github.com/stoewer/go-strcase v1.3.0 h1:g0eASXYtp+yvN9fK8sH94oCIk0fau9uV1/ZdJ0AV
 github.com/stoewer/go-strcase v1.3.0/go.mod h1:fAH5hQ5pehh+j3nZfvwdk2RgEgQjAoM8wodgtPmh1xo=
 github.com/stolostron/backplane-operator v0.0.0-20250313215011-c961c65170ee h1:5uFWgEKDjoxNhPP4G8fA8C5xSGuX5fjkMQPOEBV7zXc=
 github.com/stolostron/backplane-operator v0.0.0-20250313215011-c961c65170ee/go.mod h1:qbR6lDR0j0ZomoKNKgsMclZKmdyIDRBrQigqQcKcw0k=
-github.com/stolostron/search-v2-operator v0.0.0-20250205132200-b81bc61baccd h1:JJ7Aa9YTvpiUO62BUvbb6v3ldyWYmpbMGVa1+oqliAo=
-github.com/stolostron/search-v2-operator v0.0.0-20250205132200-b81bc61baccd/go.mod h1:4+8+aSdP3eruPVwLjhs2qFJoytDGn5sgfmQHyxY5Sm8=
+github.com/stolostron/search-v2-operator v0.0.0-20250328175715-c789830f4144 h1:L2BqMCmvyd0a3pjgArX4m+zRq7FmZIyA4VA+dpg5x64=
+github.com/stolostron/search-v2-operator v0.0.0-20250328175715-c789830f4144/go.mod h1:QvhpE4eqrt9lMvFihjfBl3kXBW6/gLtBF0rrLo1mH/c=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.4.0/go.mod h1:YvHI0jy2hoMjB+UWwv71VJQ9isScKT/TqJzVSSt89Yw=
 github.com/stretchr/objx v0.5.0/go.mod h1:Yh+to48EsGEfYuaHDzXPcE3xhTkx73EhmCGUpEOglKo=
@@ -364,8 +364,8 @@ golang.org/x/net v0.0.0-20220722155237-a158d28d115b/go.mod h1:XRhObCWvk6IyKnWLug
 golang.org/x/net v0.2.0/go.mod h1:KqCZLdyyvdV855qA2rE3GC2aiw5xGR5TEjj8smXukLY=
 golang.org/x/net v0.33.0 h1:74SYHlV8BIgHIFC/LrYkOGIwL19eTYXQ5wc6TBuO36I=
 golang.org/x/net v0.33.0/go.mod h1:HXLR5J+9DxmrqMwG9qjGCxZ+zKXxBru04zlTvWlWuN4=
-golang.org/x/oauth2 v0.27.0 h1:da9Vo7/tDv5RH/7nZDz1eMGS/q1Vv1N/7FCrBhI9I3M=
-golang.org/x/oauth2 v0.27.0/go.mod h1:onh5ek6nERTohokkhCD/y2cV4Do3fxFHFuAejCkRWT8=
+golang.org/x/oauth2 v0.28.0 h1:CrgCKl8PPAVtLnU3c+EDw6x11699EWlsDeWNWKdIOkc=
+golang.org/x/oauth2 v0.28.0/go.mod h1:onh5ek6nERTohokkhCD/y2cV4Do3fxFHFuAejCkRWT8=
 golang.org/x/sync v0.0.0-20190423024810-112230192c58/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
