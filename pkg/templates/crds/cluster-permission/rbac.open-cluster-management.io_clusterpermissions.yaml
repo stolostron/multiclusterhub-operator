@@ -101,6 +101,30 @@ spec:
                 description: ClusterRoleBinding represents the ClusterRoleBinding
                   that is being created on the managed cluster
                 properties:
+                  name:
+                    description: Name of the ClusterRoleBinding if a name different
+                      than the ClusterPermission name is used
+                    type: string
+                  roleRef:
+                    description: RoleRef contains information that points to the ClusterRole
+                      being used
+                    properties:
+                      apiGroup:
+                        description: APIGroup is the group for the resource being
+                          referenced
+                        type: string
+                      kind:
+                        description: Kind is the type of resource being referenced
+                        type: string
+                      name:
+                        description: Name is the name of resource being referenced
+                        type: string
+                    required:
+                    - apiGroup
+                    - kind
+                    - name
+                    type: object
+                    x-kubernetes-map-type: atomic
                   subject:
                     description: |-
                       Subject contains a reference to the object or user identities a ClusterPermission binding applies to.
@@ -140,6 +164,10 @@ spec:
                   description: RoleBinding represents the RoleBinding that is being
                     created on the managed cluster
                   properties:
+                    name:
+                      description: Name of the RoleBinding if a name different than
+                        the ClusterPermission name is used
+                      type: string
                     namespace:
                       description: Namespace of the Role for that is being created
                         on the managed cluster
@@ -196,8 +224,15 @@ spec:
                       description: RoleRef contains information that points to the
                         role being used
                       properties:
+                        apiGroup:
+                          description: APIGroup is the group for the resource being
+                            referenced
+                          type: string
                         kind:
                           description: Kind is the type of resource being referenced
+                          type: string
+                        name:
+                          description: Name is the name of resource being referenced
                           type: string
                       required:
                       - kind
