@@ -61,11 +61,6 @@ spec:
             configMapKeyRef:
               key: FLIGHTCTL_SERVER
               name: flightctl-ui
-        - name: FLIGHTCTL_GRPC_SERVER
-          valueFrom:
-            configMapKeyRef:
-              key: FLIGHTCTL_GRPC_SERVER
-              name: flightctl-ui
         - name: FLIGHTCTL_SERVER_INSECURE_SKIP_VERIFY
           valueFrom:
             configMapKeyRef:
