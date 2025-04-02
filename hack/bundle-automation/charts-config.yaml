@@ -11,7 +11,9 @@
         flightctl-api: flightctl_api
         flightctl-ui: flightctl_ui
         flightctl-ocp-ui: flightctl_ocp_ui
+        origin-cli: origin_cli
         postgresql-12-c8s: postgresql_16
+        redis: redis
       inclusions:
         - "pullSecretOverride"
       skipRBACOverrides: true
