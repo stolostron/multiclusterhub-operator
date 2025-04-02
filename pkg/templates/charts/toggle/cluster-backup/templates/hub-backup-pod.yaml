@@ -415,7 +415,17 @@ spec:
           remediationAction: inform
           severity: high
           object-templates-raw: |
-            {{ printf `{{- $ch := "%s" }}` .Values.global.minOADPChannel }}
+            {{ `{{- $ch := "stable-1.4" }}` }}
+            {{ `{{- $ocp_version := "" }}` }}
+            {{ `{{- $cluster_version := (lookup "config.openshift.io/v1" "ClusterVersion" "" "version")  }}` }}
+            {{ `{{- if eq $cluster_version.metadata.name  "version" }}` }}
+              {{ `{{- range $hist := $cluster_version.status.history}}` }}
+                {{ `{{- $ocp_version = $hist.version }}` }}
+              {{ `{{- end }}` }}
+            {{ `{{- end }}` }}
+            {{ `{{ if hasPrefix "4.19" $ocp_version }}` }}
+            {{ `{{- $ch = "stable-1.5" }}` }}
+            {{ `{{- end }}` }}
             {{ `{{- range $ss := (lookup "operators.coreos.com/v1alpha1" "Subscription" "open-cluster-management-backup" "").items }}` }}
               {{ `{{- if and (eq $ss.spec.name "redhat-oadp-operator") (lt $ss.spec.channel $ch) }}` }}
               - complianceType: musthave
