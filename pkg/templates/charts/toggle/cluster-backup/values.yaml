@@ -19,6 +19,7 @@ global:
   sourceNamespace: openshift-marketplace
   hubSize: Small
   startingCSV: ""
+  channel15: stable-1.5
 hubconfig:
   clusterSTSEnabled: false
   nodeSelector: null
