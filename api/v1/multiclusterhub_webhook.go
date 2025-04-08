@@ -39,23 +39,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
+type BlockDeletionResource struct {
+	Name           string
+	GVK            schema.GroupVersionKind
+	ExceptionTotal int
+	Exceptions     []string
+}
+
 var (
-	blockDeletionResources = []struct {
-		Name           string
-		GVK            schema.GroupVersionKind
-		ExceptionTotal int
-		Exceptions     []string
-	}{
-		{
-			Name: "ManagedCluster",
-			GVK: schema.GroupVersionKind{
-				Group:   "cluster.open-cluster-management.io",
-				Version: "v1",
-				Kind:    "ManagedClusterList",
-			},
-			ExceptionTotal: 1,
-			Exceptions:     []string{"local-cluster"},
-		},
+	blockDeletionResources = []BlockDeletionResource{
 		{
 			Name: "MultiClusterObservability",
 			GVK: schema.GroupVersionKind{
@@ -190,6 +182,16 @@ func (r *MultiClusterHub) ValidateDelete() (admission.Warnings, error) {
 		return nil, err
 	}
 
+	blockDeletionResources = append(blockDeletionResources, BlockDeletionResource{
+		Name: "ManagedCluster",
+		GVK: schema.GroupVersionKind{
+			Group:   "cluster.open-cluster-management.io",
+			Version: "v1",
+			Kind:    "ManagedClusterList",
+		},
+		ExceptionTotal: 1,
+		Exceptions:     []string{r.Spec.LocalClusterName},
+	})
 	for _, resource := range blockDeletionResources {
 		list := &unstructured.UnstructuredList{}
 		list.SetGroupVersionKind(resource.GVK)

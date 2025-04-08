@@ -14,8 +14,13 @@ require (
 	github.com/operator-framework/operator-lifecycle-manager v0.22.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.0
-	github.com/stolostron/backplane-operator v0.0.0-20250411195042-3fedb83a8f33
+<<<<<<< HEAD
+	github.com/stolostron/backplane-operator v0.0.0-20250313215011-c961c65170ee
 	github.com/stolostron/search-v2-operator v0.0.0-20250331195916-a2e917a3ef39
+=======
+	github.com/stolostron/backplane-operator v0.0.0-20250403142233-0078b1b2dc60
+	github.com/stolostron/search-v2-operator v0.0.0-20250328175715-c789830f4144
+>>>>>>> 847523fc (Replaced some local-cluster hardcoded values)
 	go.uber.org/zap v1.27.0
 	helm.sh/helm/v3 v3.14.3
 	k8s.io/api v0.30.3
@@ -33,6 +38,7 @@ require (
 require (
 	github.com/BurntSushi/toml v1.5.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
+	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -71,6 +77,9 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/openshift/custom-resource-status v1.1.3-0.20220503160415-f2fdb4999d87 // indirect
+	github.com/openshift/hive/apis v0.0.0-20240402204308-5f27f3c5d23e // indirect
+	github.com/openshift/library-go v0.0.0-20240116081341-964bcb3f545c // indirect
 	github.com/operator-framework/operator-registry v1.39.0 // indirect
 	github.com/prometheus/client_golang v1.19.1 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
@@ -102,8 +111,10 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	k8s.io/apiserver v0.30.3 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20240808142205-8e686545bdb8 // indirect
+	open-cluster-management.io/sdk-go v0.13.1-0.20240607073142-990fcdba50a6 // indirect
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 )
