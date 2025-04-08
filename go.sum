@@ -368,15 +368,10 @@ github.com/stoewer/go-strcase v1.3.0 h1:g0eASXYtp+yvN9fK8sH94oCIk0fau9uV1/ZdJ0AV
 github.com/stoewer/go-strcase v1.3.0/go.mod h1:fAH5hQ5pehh+j3nZfvwdk2RgEgQjAoM8wodgtPmh1xo=
 github.com/stolostron/backplane-operator v0.0.0-20250313215011-c961c65170ee h1:5uFWgEKDjoxNhPP4G8fA8C5xSGuX5fjkMQPOEBV7zXc=
 github.com/stolostron/backplane-operator v0.0.0-20250313215011-c961c65170ee/go.mod h1:qbR6lDR0j0ZomoKNKgsMclZKmdyIDRBrQigqQcKcw0k=
-<<<<<<< HEAD
-github.com/stolostron/search-v2-operator v0.0.0-20250331195916-a2e917a3ef39 h1:glK6bWsXoSatPmPpHNeLshpxLz8w8c7SS8chfaNcNqE=
-github.com/stolostron/search-v2-operator v0.0.0-20250331195916-a2e917a3ef39/go.mod h1:QvhpE4eqrt9lMvFihjfBl3kXBW6/gLtBF0rrLo1mH/c=
-=======
 github.com/stolostron/backplane-operator v0.0.0-20250403142233-0078b1b2dc60 h1:F6ca4fFrYuaGkFEDdbT11AuR1nm4iAVQ7RvgT/oonUw=
 github.com/stolostron/backplane-operator v0.0.0-20250403142233-0078b1b2dc60/go.mod h1:P0vETufKHaP6sRuLeIOo0GCBybykXAzrdhL/odqGDcs=
 github.com/stolostron/search-v2-operator v0.0.0-20250328175715-c789830f4144 h1:L2BqMCmvyd0a3pjgArX4m+zRq7FmZIyA4VA+dpg5x64=
 github.com/stolostron/search-v2-operator v0.0.0-20250328175715-c789830f4144/go.mod h1:QvhpE4eqrt9lMvFihjfBl3kXBW6/gLtBF0rrLo1mH/c=
->>>>>>> 847523fc (Replaced some local-cluster hardcoded values)
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.4.0/go.mod h1:YvHI0jy2hoMjB+UWwv71VJQ9isScKT/TqJzVSSt89Yw=
 github.com/stretchr/objx v0.5.0/go.mod h1:Yh+to48EsGEfYuaHDzXPcE3xhTkx73EhmCGUpEOglKo=
