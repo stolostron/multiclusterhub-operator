@@ -112,7 +112,7 @@ func (r *MultiClusterHubReconciler) ComponentsAreRunning(m *operatorsv1.MultiClu
 	crList, _ := r.listCustomResources(m)
 	componentStatuses := getComponentStatuses(m, deployList, crList, ocpConsole, isSTSEnabled)
 
-	delete(componentStatuses, ManagedClusterName)
+	delete(componentStatuses, m.Spec.LocalClusterName)
 	return allComponentsSuccessful(componentStatuses)
 }
 
