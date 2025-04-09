@@ -364,11 +364,11 @@ func TestOADPAnnotation(t *testing.T) {
 		t.Error("Cluster Backup missing OADP overrides for install plan")
 	}
 
-	if test4 != defaultOADPSource {
+	if test4 != defaultOADPCatalogSource {
 		t.Error("Cluster Backup missing OADP overrides for source")
 	}
 
-	if test5 != defaultOADPSourceNamespace {
+	if test5 != defaultOADPCatalogSourceNamespace {
 		t.Error("Cluster Backup missing OADP overrides for source namespace")
 	}
 
