@@ -111,6 +111,11 @@ type MultiClusterHubSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Cluster Backup",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	// +optional
 	EnableClusterBackup bool `json:"enableClusterBackup"`
+
+	// The name of the local-cluster resource
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Local Cluster Name",xDescriptors={"urn:alm:descriptor:io.kubernetes:text","urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+kubebuilder:default="local-cluster"
+	LocalClusterName string `json:"localClusterName,omitempty"`
 }
 
 // Overrides provides developer overrides for MCH installation
