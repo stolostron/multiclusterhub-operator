@@ -13,8 +13,8 @@ metadata:
     "helm.sh/hook": pre-install
     "helm.sh/hook-weight": "-2"
 data:
-  {{- if (hasPrefix "4.19" .Values.hubconfig.ocpVersion) }}
-  channel: {{ .Values.global.channel15 }}
+  {{- if or (hasPrefix "4.19" .Values.hubconfig.ocpVersion) (hasPrefix "4.2" .Values.hubconfig.ocpVersion) }}
+  channel: stable
   {{- else }}
   channel: {{ .Values.global.channel }}
   {{- end }}
@@ -37,8 +37,8 @@ metadata:
     "helm.sh/hook-weight": "-1"
     "helm.sh/resource-policy": delete
 spec:
-  {{- if (hasPrefix "4.19" .Values.hubconfig.ocpVersion) }}
-  channel: {{ .Values.global.channel15 }}
+  {{- if or (hasPrefix "4.19" .Values.hubconfig.ocpVersion) (hasPrefix "4.2" .Values.hubconfig.ocpVersion) }}
+  channel: stable
   {{- else }}
   channel: {{ .Values.global.channel }}
   {{- end }}
