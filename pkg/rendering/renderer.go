@@ -31,10 +31,6 @@ const (
 	// This also represents the minimum expected version for installation.
 	defaultOADPChannel = "stable-1.4"
 
-	// ocp419OADPChannel indicates the required OADP channel for clusters running OCP 4.19.
-	// Only the "stable-1.5" channel is supported on OCP 4.19.
-	ocp419OADPChannel = "stable-1.5"
-
 	// defaultOADPName is the name of the OADP operator to be created by the installer.
 	defaultOADPName = "redhat-oadp-operator"
 
@@ -341,8 +337,6 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 	}
 
 	values.Global.Name, values.Global.Channel, values.Global.InstallPlanApproval, values.Global.Source, values.Global.SourceNamespace, values.Global.StartingCSV = GetOADPConfig(mch)
-
-	values.Global.Channel15 = ocp419OADPChannel
 
 	values.Global.MinOADPChannel = defaultOADPChannel
 
