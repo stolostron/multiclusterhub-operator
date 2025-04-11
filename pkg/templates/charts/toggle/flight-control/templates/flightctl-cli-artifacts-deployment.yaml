@@ -2,21 +2,20 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: flightctl-ui
-    role: frontend
-  name: flightctl-ui
+    flightctl.service: flightctl-cli-artifacts
+  name: flightctl-cli-artifacts
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: flightctl-ui
+      flightctl.service: flightctl-cli-artifacts
+  strategy:
+    type: Recreate
   template:
     metadata:
-      creationTimestamp: null
       labels:
-        app: flightctl-ui
-        ocm-antiaffinity-selector: flightctl-ui
-        role: frontend
+        flightctl.service: flightctl-cli-artifacts
+        ocm-antiaffinity-selector: flightctl-cli-artifacts
     spec:
       affinity:
         podAntiAffinity:
@@ -27,7 +26,7 @@ spec:
                 - key: ocm-antiaffinity-selector
                   operator: In
                   values:
-                  - flightctl-ui
+                  - flightctl-cli-artifacts
               topologyKey: topology.kubernetes.io/zone
             weight: 70
           - podAffinityTerm:
@@ -36,7 +35,7 @@ spec:
                 - key: ocm-antiaffinity-selector
                   operator: In
                   values:
-                  - flightctl-ui
+                  - flightctl-cli-artifacts
               topologyKey: kubernetes.io/hostname
             weight: 35
       containers:
@@ -54,39 +53,14 @@ spec:
         - name: NO_PROXY
           value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
 {{- end }}
-        - name: API_PORT
-          value: '8080'
-        - name: FLIGHTCTL_SERVER
-          valueFrom:
-            configMapKeyRef:
-              key: FLIGHTCTL_SERVER
-              name: flightctl-ui
-        - name: FLIGHTCTL_CLI_ARTIFACTS_SERVER
-          valueFrom:
-            configMapKeyRef:
-              key: FLIGHTCTL_CLI_ARTIFACTS_SERVER
-              name: flightctl-ui
-        - name: FLIGHTCTL_SERVER_INSECURE_SKIP_VERIFY
-          valueFrom:
-            configMapKeyRef:
-              key: FLIGHTCTL_SERVER_INSECURE_SKIP_VERIFY
-              name: flightctl-ui
-        - name: TLS_KEY
-          value: /app/serving-cert/tls.key
-        - name: TLS_CERT
-          value: /app/serving-cert/tls.crt
-        - name: IS_OCP_PLUGIN
-          value: 'true'
-        - name: K8S_RBAC_NS
-          valueFrom:
-            configMapKeyRef:
-              key: K8S_RBAC_NS
-              name: flightctl-ui
-        image: '{{ .Values.global.imageOverrides.flightctl_ocp_ui }}'
+        - name: CLI_ARTIFACTS_BASE_URL
+          value: https://cli-artifacts.placeholder_basedomain
+        image: '{{ .Values.global.imageOverrides.flightctl_cli_artifacts }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
-        name: flightctl-ui
+        name: flightctl-cli-artifacts
         ports:
-        - containerPort: 8080
+        - containerPort: 8090
+          name: cli-artifacts
           protocol: TCP
         securityContext:
           allowPrivilegeEscalation: false
@@ -96,11 +70,6 @@ spec:
           privileged: false
           readOnlyRootFilesystem: true
           runAsNonRoot: true
-        volumeMounts:
-        - mountPath: /app/certs
-          name: flightctl-ui-certs
-        - mountPath: /app/serving-cert
-          name: flightctl-ui-serving-cert
       hostIPC: false
       hostNetwork: false
       hostPID: false
@@ -131,14 +100,3 @@ spec:
         {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
         {{- end }}
 {{- end }}
-      volumes:
-      - name: flightctl-ui-certs
-        secret:
-          items:
-          - key: ca.crt
-            path: ca.crt
-          secretName: flightctl-ui-certs
-      - name: flightctl-ui-serving-cert
-        secret:
-          defaultMode: 420
-          secretName: flightctl-ui-serving-cert
