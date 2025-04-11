@@ -45,7 +45,6 @@ spec:
                   namespace: open-cluster-management-backup
                 data:
                   backupNS: open-cluster-management-backup
-                  channel: stable-1.4
                   credentials_hub_secret_name: cloud-credentials
                   credentials_name: cloud-credentials
                   dpa_name: dpa-vm-policy
