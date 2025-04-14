@@ -67,7 +67,9 @@ spec:
     - name: NO_PROXY
       value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
     {{- end }}
+  {{- if .Values.global.startingCSV }}
   startingCSV: {{ .Values.global.startingCSV }}
+  {{- end }}
   installPlanApproval: {{ .Values.global.installPlanApproval}}
   name: {{ .Values.global.name }}
   source: {{ .Values.global.source }}
