@@ -14,7 +14,7 @@ require (
 	github.com/operator-framework/operator-lifecycle-manager v0.22.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.0
-	github.com/stolostron/backplane-operator v0.0.0-20250313215011-c961c65170ee
+	github.com/stolostron/backplane-operator v0.0.0-20250411195042-3fedb83a8f33
 	github.com/stolostron/search-v2-operator v0.0.0-20250331195916-a2e917a3ef39
 	go.uber.org/zap v1.27.0
 	helm.sh/helm/v3 v3.14.3
@@ -31,7 +31,7 @@ require (
 )
 
 require (
-	github.com/BurntSushi/toml v1.3.2 // indirect
+	github.com/BurntSushi/toml v1.5.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
