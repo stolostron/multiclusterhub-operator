@@ -40,10 +40,11 @@ import (
 )
 
 type BlockDeletionResource struct {
-	Name           string
-	GVK            schema.GroupVersionKind
-	ExceptionTotal int
-	Exceptions     []string
+	Name            string
+	GVK             schema.GroupVersionKind
+	ExceptionTotal  int
+	NameExceptions  []string
+	LabelExceptions map[string]string
 }
 
 var (
@@ -56,7 +57,7 @@ var (
 				Kind:    "MultiClusterObservabilityList",
 			},
 			ExceptionTotal: 0,
-			Exceptions:     []string{},
+			NameExceptions: []string{},
 		},
 		{
 			Name: "DiscoveryConfig",
@@ -66,7 +67,7 @@ var (
 				Kind:    "DiscoveryConfigList",
 			},
 			ExceptionTotal: 0,
-			Exceptions:     []string{},
+			NameExceptions: []string{},
 		},
 		{
 			Name: "AgentServiceConfig",
@@ -76,7 +77,7 @@ var (
 				Kind:    "AgentServiceConfigList",
 			},
 			ExceptionTotal: 0,
-			Exceptions:     []string{},
+			NameExceptions: []string{},
 		},
 	}
 )
@@ -182,17 +183,18 @@ func (r *MultiClusterHub) ValidateDelete() (admission.Warnings, error) {
 		return nil, err
 	}
 
-	blockDeletionResources = append(blockDeletionResources, BlockDeletionResource{
+	tmpBlockDeletionResources := append(blockDeletionResources, BlockDeletionResource{
 		Name: "ManagedCluster",
 		GVK: schema.GroupVersionKind{
 			Group:   "cluster.open-cluster-management.io",
 			Version: "v1",
 			Kind:    "ManagedClusterList",
 		},
-		ExceptionTotal: 1,
-		Exceptions:     []string{r.Spec.LocalClusterName},
+		ExceptionTotal:  1,
+		NameExceptions:  []string{r.Spec.LocalClusterName},
+		LabelExceptions: map[string]string{"local-cluster": "true"},
 	})
-	for _, resource := range blockDeletionResources {
+	for _, resource := range tmpBlockDeletionResources {
 		list := &unstructured.UnstructuredList{}
 		list.SetGroupVersionKind(resource.GVK)
 		err := discovery.ServerSupportsVersion(c, list.GroupVersionKind().GroupVersion())
@@ -208,14 +210,27 @@ func (r *MultiClusterHub) ValidateDelete() (admission.Warnings, error) {
 			// if exception resources are present, check if they are the same as the exception resources
 			if resource.ExceptionTotal > 0 {
 				for _, item := range list.Items {
-					if !contains(resource.Exceptions, item.GetName()) {
+					if !contains(resource.NameExceptions, item.GetName()) {
 						return nil, fmt.Errorf("cannot delete MultiClusterHub resource because %s resource(s) exist", resource.Name)
+					}
+					if !hasIntersection(resource.LabelExceptions, item.GetLabels()) {
+						return nil, fmt.Errorf("cannot delete MultiClusterHub resource because %s resource(s) are missing %v labels", resource.Name, resource.LabelExceptions)
 					}
 				}
 			}
 		}
 	}
 	return nil, nil
+}
+
+func hasIntersection(smallerMap map[string]string, largerMap map[string]string) bool {
+	// iterate through the keys of the smaller map to save time
+	for k, sVal := range smallerMap {
+		if lVal, _ := largerMap[k]; lVal == sVal {
+			return true // return true if A and B share any complete key-value pair
+		}
+	}
+	return false
 }
 
 // ValidatingWebhook returns the ValidatingWebhookConfiguration used for the multiclusterhub

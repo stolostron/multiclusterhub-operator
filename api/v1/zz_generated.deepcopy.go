@@ -50,8 +50,8 @@ func (in *BackupConfig) DeepCopy() *BackupConfig {
 func (in *BlockDeletionResource) DeepCopyInto(out *BlockDeletionResource) {
 	*out = *in
 	out.GVK = in.GVK
-	if in.Exceptions != nil {
-		in, out := &in.Exceptions, &out.Exceptions
+	if in.NameExceptions != nil {
+		in, out := &in.NameExceptions, &out.NameExceptions
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
