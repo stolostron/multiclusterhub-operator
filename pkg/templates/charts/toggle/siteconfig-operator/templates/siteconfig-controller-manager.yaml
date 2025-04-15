@@ -99,6 +99,7 @@ spec:
             - ALL
           privileged: false
           readOnlyRootFilesystem: true
+          runAsNonRoot: true
         volumeMounts:
         - mountPath: /secrets/certs/webhook-server
           name: webhook-certs
