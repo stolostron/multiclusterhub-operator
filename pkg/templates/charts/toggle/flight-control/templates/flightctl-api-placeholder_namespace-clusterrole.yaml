@@ -1,13 +1,12 @@
+
+# Source: flightctl/templates/flightctl-api-clusterrole.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
     flightctl.service: flightctl-api
-  name: flightctl-api-{{ .Values.global.namespace }}
+  name: flightctl-api-PLACEHOLDER_NAMESPACE
 rules:
-- apiGroups:
-  - authentication.k8s.io
-  resources:
-  - tokenreviews
-  verbs:
-  - create
+  - apiGroups: ["authentication.k8s.io"]
+    resources: ["tokenreviews"]
+    verbs: ["create"]

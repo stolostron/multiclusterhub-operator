@@ -4,11 +4,11 @@ metadata:
   labels:
     flightctl.service: flightctl-kv
   name: flightctl-kv
-  namespace: '{{ .Values.global.namespace }}'
+  namespace: PLACEHOLDER_NAMESPACE
 spec:
-  revisionHistoryLimit: 10
   podManagementPolicy: OrderedReady
   replicas: 1
+  revisionHistoryLimit: 10
   selector:
     matchLabels:
       flightctl.service: flightctl-kv
@@ -30,8 +30,8 @@ spec:
             secretKeyRef:
               key: password
               name: flightctl-kv-secret
-        image: docker.io/redis:7.4.1
-        imagePullPolicy: Always
+        image: '{{ .Values.global.imageOverrides.redis }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         name: flightctl-kv
         ports:
         - containerPort: 6379
@@ -62,4 +62,4 @@ spec:
       resources:
         requests:
           storage: 2Gi
-      storageClassName: '{{ .Values.global.storageClassName }}'
+      storageClassName: null

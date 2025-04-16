@@ -92,14 +92,6 @@ spec:
           requests:
             cpu: 512m
             memory: 512Mi
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          privileged: false
-          readOnlyRootFilesystem: false
-          runAsNonRoot: true
         volumeMounts:
         - mountPath: /var/lib/pgsql/data
           name: flightctl-db
@@ -118,14 +110,6 @@ spec:
 {{ toYaml . | indent 8 }}
 {{- end }}
       restartPolicy: Always
-      securityContext:
-        runAsNonRoot: true
-{{- if .Values.global.deployOnOCP }}
-{{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
-        seccompProfile:
-          type: RuntimeDefault
-{{- end }}
-{{- end }}
 {{- with .Values.hubconfig.tolerations }}
       tolerations:
       {{- range . }}
