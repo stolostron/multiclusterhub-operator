@@ -76,6 +76,7 @@ spec:
             - ALL
           privileged: false
           readOnlyRootFilesystem: true
+          runAsNonRoot: true
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
       - command:
@@ -133,6 +134,7 @@ spec:
             - ALL
           privileged: false
           readOnlyRootFilesystem: true
+          runAsNonRoot: true
         volumeMounts:
         - mountPath: /etc/gitops-resources
           name: multicluster-integrations-syncresource
@@ -192,6 +194,7 @@ spec:
             - ALL
           privileged: false
           readOnlyRootFilesystem: true
+          runAsNonRoot: true
         volumeMounts:
         - mountPath: /etc/gitops-resources
           name: multicluster-integrations-syncresource
