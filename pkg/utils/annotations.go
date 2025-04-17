@@ -95,6 +95,12 @@ var (
 		AnnotationFineGrainedRbac is an annotation used in the cluster to determine if fine grained rbac is enabled.
 	*/
 	AnnotationFineGrainedRbac = "fine-grained-rbac-preview"
+
+	/*
+		AnnotationEditable is an annotation used on specific resources deployed by the hub to mark them as able 
+		to be ended by customer without being overridden.
+	*/
+	AnnotationEditable = "installer.open-cluster-management.io/is-editable"
 )
 
 /*
