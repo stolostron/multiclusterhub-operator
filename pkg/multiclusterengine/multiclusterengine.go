@@ -87,6 +87,7 @@ func NewMultiClusterEngine(m *operatorv1.MultiClusterHub) *mcev1.MultiClusterEng
 			Annotations: annotations,
 		},
 		Spec: mcev1.MultiClusterEngineSpec{
+			LocalClusterName:   m.Spec.LocalClusterName,
 			ImagePullSecret:    m.Spec.ImagePullSecret,
 			Tolerations:        utils.GetTolerations(m),
 			NodeSelector:       m.Spec.NodeSelector,
@@ -134,6 +135,7 @@ func RenderMultiClusterEngine(existingMCE *mcev1.MultiClusterEngine, m *operator
 	copy.Spec.ImagePullSecret = m.Spec.ImagePullSecret
 	copy.Spec.Tolerations = utils.GetTolerations(m)
 	copy.Spec.NodeSelector = m.Spec.NodeSelector
+	copy.Spec.LocalClusterName = m.Spec.LocalClusterName
 
 	for _, component := range utils.GetMCEComponents(m) {
 		if component.Enabled {
