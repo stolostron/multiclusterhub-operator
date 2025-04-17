@@ -84,6 +84,12 @@ var (
 		resource.
 	*/
 	AnnotationDefaultStorageClass = "storageclass.kubernetes.io/is-default-class"
+
+	/*
+		AnnotationEditable is an annotation used on specific resources deployed by the hub to mark them as able 
+		to be ended by customer without being overridden.
+	*/
+	AnnotationEditable = "installer.open-cluster-management.io/is-editable"
 )
 
 /*
