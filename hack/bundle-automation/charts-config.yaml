@@ -16,9 +16,12 @@
         redis: redis
       inclusions:
         - "pullSecretOverride"
-      skipRBACOverrides: true
+      escape-template-variables: []
       updateChartVersion: false # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.4 -> 2.4
-      escape-template-variables:
-
-
-
+      security-context-constraints:
+        - kind: "Deployment"
+          name: flightctl-db
+          containers:
+            - name: flightctl-db
+              readOnlyRootFilesystem: false
+      skipRBACOverrides: true
