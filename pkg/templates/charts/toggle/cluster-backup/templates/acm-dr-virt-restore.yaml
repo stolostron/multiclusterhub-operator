@@ -85,6 +85,9 @@ spec:
               {{ `{{- $vmUIDsProp := (cat  $restoreClusterID "_" "vmsUID") | replace " " ""}}` }}
               {{ `{{- $vmUIDs := fromConfigMap $ns $cls_restore_configmap_name $vmUIDsProp }}` }}
 
+              {{ `{{- $nsMappingProp := (cat  $restoreClusterID "_" "namespaceMapping") | replace " " ""}}` }}
+              {{ `{{- $nsMapping := fromConfigMap $ns $cls_restore_configmap_name $nsMappingProp }}` }}
+
               {{ `{{- /* vms_ns gives the list of all namespaces where VM exist  */ -}}` }}
               {{ `{{ $vms_ns := " " }}` }}
               {{ `{{- /* vms_ns gives the list of all VM names  */ -}}` }}
@@ -124,6 +127,17 @@ spec:
                 spec:
                   backupName: {{ `{{ $backupName }}` }}
                   restorePVs: true
+                  {{ `{{ if not (eq $nsMapping " ") }}` }}
+                  namespaceMapping:
+                    {{ `{{- range $ns_map := split " " $nsMapping }}` }}
+                    {{ `{{ if not (eq $ns_map "") }}` }}
+                    {{ `{{- $vm_ns_list := splitn "=" 2 $ns_map }}` }}
+                    {{ `{{- $vm_namespace_old := $vm_ns_list._0 }}` }}
+                    {{ `{{- $vm_namespace_new := $vm_ns_list._1 }}` }}
+                    {{ `{{ $vm_namespace_old }}` }}: {{ `{{ $vm_namespace_new }}` }}
+                    {{ `{{- end }}` }}
+                    {{ `{{- end }}` }}
+                  {{ `{{- end }}` }}
                   {{ `{{ if not (eq $vms_ns " ") }}` }}
                   includedNamespaces:
                     {{ `{{- range $vms_namespace := split " " $vms_ns }}` }}
