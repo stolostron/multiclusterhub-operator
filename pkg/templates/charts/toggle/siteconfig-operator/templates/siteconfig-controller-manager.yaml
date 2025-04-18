@@ -94,6 +94,7 @@ spec:
             - ALL
           privileged: false
           readOnlyRootFilesystem: true
+          runAsNonRoot: true
         volumeMounts:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
@@ -133,6 +134,7 @@ spec:
             - ALL
           privileged: false
           readOnlyRootFilesystem: true
+          runAsNonRoot: true
       hostIPC: false
       hostNetwork: false
       hostPID: false
