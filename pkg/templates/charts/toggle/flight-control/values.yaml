@@ -7,7 +7,9 @@ global:
     flightctl_ocp_ui: ''
     flightctl_periodic: ''
     flightctl_worker: ''
+    origin_cli: ''
     postgresql_16: ''
+    redis: ''
   namespace: default
   pullSecret: null
   templateOverrides: {}
