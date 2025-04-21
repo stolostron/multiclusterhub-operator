@@ -1,0 +1,82 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Resync OWNERS File
+
+# Controls when the action will run. 
+on:
+  # Only trigger for changes to the `main` branch and if `OWNERS` file has changed
+  push:
+    branches:
+      - main
+    paths:
+      - 'OWNERS'
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        branch: [
+            'release-2.13',
+            'release-2.12',
+            'release-2.11',
+            'release-2.10'
+        ]
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checkout the current branch in the matrix
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.HUB_OPERATOR_TOKEN }}
+          ref: ${{ matrix.branch }}
+
+      # Checkout the main branch to get the latest OWNERS file
+      - name: Checkout main branch to get OWNRES file
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.HUB_OPERATOR_TOKEN }}
+          ref: main
+          path: workflow
+          sparse-checkout: |
+            OWNERS
+          show-progress: true
+
+      # Runs a set of commands using the runners shell
+      - name: Resync OWNERS File [${{ matrix.branch }}]
+        id: resync_owners
+        run: |
+            echo "Resyncing OWNERS file for branch ${{ matrix.branch }}"
+            cp workflow/OWNERS ./OWNERS
+            rm -rf workflow
+
+      - name: Send Slack Message on Failure
+        if: ${{ failure() }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          SLACK_MESSAGE=":exclamation: *GitHub Actions Job Failed* :exclamation:\n\n"
+          SLACK_MESSAGE+="Job Name: $GITHUB_WORKFLOW/$GITHUB_JOB\n"
+          SLACK_MESSAGE+="Job URL: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID\n"
+          SLACK_MESSAGE+="Error Details: Your job failed. Please check the job logs for more information."
+
+          curl -X POST -H "Content-type: application/json" --data "{
+            \"text\": \"$SLACK_MESSAGE\"
+          }" $SLACK_WEBHOOK_URL
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          signoff: true
+          branch: "resync-owner-file-${{ matrix.branch }}"
+          delete-branch: true
+          title: "Resync OWNERS [${{ matrix.branch }}]"
+          committer: GitHub <noreply@github.com>
+          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+          labels: |
+            do-not-merge/hold
+            ok-to-test

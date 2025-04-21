@@ -41,3 +41,6 @@ build/_output/*
 *.swp
 *.swo
 *~
+
+# Ignore partial workflow directory
+workflow/
