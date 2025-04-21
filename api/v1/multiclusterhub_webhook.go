@@ -198,28 +198,32 @@ func (r *MultiClusterHub) ValidateDelete() (admission.Warnings, error) {
 		list := &unstructured.UnstructuredList{}
 		list.SetGroupVersionKind(resource.GVK)
 		err := discovery.ServerSupportsVersion(c, list.GroupVersionKind().GroupVersion())
-		if err == nil {
-			// List all resources
-			if err := Client.List(context.Background(), list); err != nil {
-				return nil, fmt.Errorf("unable to list %s: %s", resource.Name, err)
-			}
-			// If there are any unexpected resources, deny deletion
-			if len(list.Items) > resource.ExceptionTotal {
-				return nil, fmt.Errorf("cannot delete MultiClusterHub resource because %s resource(s) exist", resource.Name)
-			}
-			// if exception resources are present, check if they are the same as the exception resources
-			if resource.ExceptionTotal > 0 {
-				for _, item := range list.Items {
-					if !contains(resource.NameExceptions, item.GetName()) {
-						return nil, fmt.Errorf("cannot delete MultiClusterHub resource because %s resource(s) exist", resource.Name)
-					}
-					if !hasIntersection(resource.LabelExceptions, item.GetLabels()) {
-						return nil, fmt.Errorf("cannot delete MultiClusterHub resource because %s resource(s) are missing %v labels", resource.Name, resource.LabelExceptions)
-					}
+		if err != nil {
+			fmt.Printf("Error in validateDelte(): %v\n", err)
+			continue
+		}
+		fmt.Printf("Made it past the error with resource: %v\n", resource)
+		// List all resources
+		if err := Client.List(context.Background(), list); err != nil {
+			return nil, fmt.Errorf("unable to list %s: %s", resource.Name, err)
+		}
+		// If there are any unexpected resources, deny deletion
+		if len(list.Items) > resource.ExceptionTotal {
+			return nil, fmt.Errorf("cannot delete MultiClusterHub resource because %s resource(s) exist", resource.Name)
+		}
+		// if exception resources are present, check if they are the same as the exception resources
+		if resource.ExceptionTotal > 0 {
+			for _, item := range list.Items {
+				if !contains(resource.NameExceptions, item.GetName()) {
+					return nil, fmt.Errorf("cannot delete MultiClusterHub resource because %s resource(s) exist", resource.Name)
+				}
+				if !hasIntersection(resource.LabelExceptions, item.GetLabels()) {
+					return nil, fmt.Errorf("cannot delete MultiClusterHub resource because %s resource(s) are missing %v labels", resource.Name, resource.LabelExceptions)
 				}
 			}
 		}
 	}
+	fmt.Printf("Successfully ran validateDelete()\n")
 	return nil, nil
 }
 
