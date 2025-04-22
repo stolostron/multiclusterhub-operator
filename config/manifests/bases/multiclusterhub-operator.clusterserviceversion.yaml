@@ -15,10 +15,11 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: MulticlusterHub defines the configuration for an instance of a
-        multicluster hub, a central point for managing multiple Kubernetes-based clusters.
-        The deployment of multicluster hub components is determined based on the configuration
-        that is defined in this resource.
+    - description: |-
+        MulticlusterHub defines the configuration
+        for an instance of a multicluster hub, a central point for managing multiple
+        Kubernetes-based clusters. The deployment of multicluster hub components
+        is determined based on the configuration that is defined in this resource.
       displayName: MultiClusterHub
       kind: MultiClusterHub
       name: multiclusterhubs.operator.open-cluster-management.io
@@ -76,6 +77,12 @@ spec:
         displayName: Ingress Management
         path: ingress
         x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: The name of the local-cluster resource
+        displayName: Local Cluster Name
+        path: localClusterName
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:text
         - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Developer Overrides
         displayName: Developer Overrides

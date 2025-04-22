@@ -17,10 +17,10 @@ metadata:
     capabilities: Basic Install
     categories: Integration & Delivery
     certified: "false"
-    createdAt: "2024-09-20T16:41:29Z"
+    createdAt: "2025-04-08T22:11:43Z"
     description: Open management of Openshift and Kubernetes clusters
-    operators.operatorframework.io/builder: operator-sdk-v1.35.0
-    operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+    operators.operatorframework.io/builder: operator-sdk-v1.39.2
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
     repository: https://github.com/open-cluster-management/multiclusterhub-operator
     support: The Open Cluster Management Project
   name: multiclusterhub-operator.v0.0.1
@@ -29,10 +29,11 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: MulticlusterHub defines the configuration for an instance of a
-        multicluster hub, a central point for managing multiple Kubernetes-based clusters.
-        The deployment of multicluster hub components is determined based on the configuration
-        that is defined in this resource.
+    - description: |-
+        MulticlusterHub defines the configuration
+        for an instance of a multicluster hub, a central point for managing multiple
+        Kubernetes-based clusters. The deployment of multicluster hub components
+        is determined based on the configuration that is defined in this resource.
       displayName: MultiClusterHub
       kind: MultiClusterHub
       name: multiclusterhubs.operator.open-cluster-management.io
@@ -90,6 +91,12 @@ spec:
         displayName: Ingress Management
         path: ingress
         x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: The name of the local-cluster resource
+        displayName: Local Cluster Name
+        path: localClusterName
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:text
         - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Developer Overrides
         displayName: Developer Overrides
@@ -253,6 +260,19 @@ spec:
         - apiGroups:
           - ""
           resources:
+          - configmaps
+          - secrets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
           - endpoints
           - pods
           - services
@@ -333,16 +353,6 @@ spec:
           - patch
           - update
           - watch
-        - apiGroups:
-          - ""
-          resources:
-          - serviceaccounts
-          verbs:
-          - create
-          - delete
-          - get
-          - patch
-          - update
         - apiGroups:
           - ""
           resources:
@@ -974,15 +984,6 @@ spec:
           - agent-install.openshift.io
           resources:
           - infraenvs
-          verbs:
-          - create
-          - delete
-          - get
-          - patch
-          - update
-        - apiGroups:
-          - agent-install.openshift.io
-          resources:
           - nmstateconfigs
           verbs:
           - create
@@ -1179,6 +1180,9 @@ spec:
           - authorization.k8s.io
           resources:
           - uids
+          - userextras/authentication.kubernetes.io/credential-id
+          - userextras/authentication.kubernetes.io/node-name
+          - userextras/authentication.kubernetes.io/node-uid
           - userextras/authentication.kubernetes.io/pod-name
           - userextras/authentication.kubernetes.io/pod-uid
           verbs:
@@ -1460,16 +1464,12 @@ spec:
           resources:
           - agentclusterinstalls
           verbs:
-          - create
-          - delete
-          - get
           - list
-          - patch
-          - update
           - watch
         - apiGroups:
           - extensions.hive.openshift.io
           resources:
+          - agentclusterinstalls
           - imageclusterinstalls
           verbs:
           - create
@@ -1477,6 +1477,60 @@ spec:
           - get
           - patch
           - update
+        - apiGroups:
+          - flightctl.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - flightctl.io
+          resources:
+          - certificatesigningrequests
+          verbs:
+          - create
+          - get
+          - list
+        - apiGroups:
+          - flightctl.io
+          resources:
+          - devices
+          - fleets
+          - resourcesyncs
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+        - apiGroups:
+          - flightctl.io
+          resources:
+          - devices/console
+          verbs:
+          - get
+        - apiGroups:
+          - flightctl.io
+          resources:
+          - enrollmentrequests
+          verbs:
+          - get
+          - list
+        - apiGroups:
+          - flightctl.io
+          resources:
+          - enrollmentrequests/approval
+          verbs:
+          - post
+        - apiGroups:
+          - flightctl.io
+          resources:
+          - fleets/templateversions
+          - repositories
+          verbs:
+          - get
+          - list
         - apiGroups:
           - hive.openshift.io
           resources:
@@ -1593,6 +1647,7 @@ spec:
           - metal3.io
           resources:
           - baremetalhosts
+          - hostfirmwaresettings
           verbs:
           - create
           - delete
@@ -1607,16 +1662,6 @@ spec:
           verbs:
           - list
           - watch
-        - apiGroups:
-          - metal3.io
-          resources:
-          - hostfirmwaresettings
-          verbs:
-          - create
-          - delete
-          - get
-          - patch
-          - update
         - apiGroups:
           - migration.k8s.io
           resources:
@@ -1644,6 +1689,7 @@ spec:
           - monitoring.coreos.com
           resources:
           - prometheusrules
+          - scrapeconfigs
           verbs:
           - create
           - delete
@@ -1748,7 +1794,14 @@ spec:
           - get
           - list
           - patch
+          - update
           - watch
+        - apiGroups:
+          - operator.open-cluster-management.io
+          resources:
+          - internalhubcomponents/finalizers
+          verbs:
+          - update
         - apiGroups:
           - operator.open-cluster-management.io
           resources:
@@ -1903,6 +1956,22 @@ spec:
           - '*'
           verbs:
           - '*'
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - clusterrolebindings
+          verbs:
+          - delete
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - clusterrolebindings
+          - clusterroles
+          verbs:
+          - create
         - apiGroups:
           - rbac.authorization.k8s.io
           resources:

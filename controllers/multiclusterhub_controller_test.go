@@ -191,7 +191,7 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 
 	By("Ensuring Klusterlet Addon is created")
 	Eventually(func() error {
-		ns := LocalClusterNamespace()
+		ns := LocalClusterNamespace(createdMCH.Spec.LocalClusterName)
 		_, err := reconciler.ensureNamespace(createdMCH, ns)
 		return err
 	}, timeout, interval).Should(Succeed(), "KlusterletAddon should be created")
@@ -1270,13 +1270,28 @@ func Test_verifyCRDExists(t *testing.T) {
 func Test_equivalentKlusterletAddonConfig(t *testing.T) {
 	grcEnabled := true
 
+	mch := &operatorv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{Name: "mch", Namespace: "test-ns-1"},
+		Spec: operatorv1.MultiClusterHubSpec{
+			LocalClusterName: "local-cluster",
+			Overrides: &operatorv1.Overrides{
+				Components: []operatorv1.ComponentConfig{
+					{
+						Name:    operatorv1.GRC,
+						Enabled: true,
+					},
+				},
+			},
+		},
+	}
+
 	match := &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": "agent.open-cluster-management.io/v1",
 			"kind":       "KlusterletAddonConfig",
 			"metadata": map[string]interface{}{
-				"name":      KlusterletAddonConfigName,
-				"namespace": ManagedClusterName,
+				"name":      mch.Spec.LocalClusterName,
+				"namespace": mch.Spec.LocalClusterName,
 			},
 			"spec": map[string]interface{}{
 				"applicationManager": map[string]interface{}{
@@ -1300,8 +1315,8 @@ func Test_equivalentKlusterletAddonConfig(t *testing.T) {
 			"apiVersion": "agent.open-cluster-management.io/v1",
 			"kind":       "KlusterletAddonConfig",
 			"metadata": map[string]interface{}{
-				"name":      KlusterletAddonConfigName,
-				"namespace": ManagedClusterName,
+				"name":      mch.Spec.LocalClusterName,
+				"namespace": mch.Spec.LocalClusterName,
 			},
 			"spec": map[string]interface{}{
 				"applicationManager": map[string]interface{}{
@@ -1315,20 +1330,6 @@ func Test_equivalentKlusterletAddonConfig(t *testing.T) {
 				},
 				"searchCollector": map[string]interface{}{
 					"enabled": true,
-				},
-			},
-		},
-	}
-
-	mch := &operatorv1.MultiClusterHub{
-		ObjectMeta: metav1.ObjectMeta{Name: "mch", Namespace: "test-ns-1"},
-		Spec: operatorv1.MultiClusterHubSpec{
-			Overrides: &operatorv1.Overrides{
-				Components: []operatorv1.ComponentConfig{
-					{
-						Name:    operatorv1.GRC,
-						Enabled: true,
-					},
 				},
 			},
 		},
