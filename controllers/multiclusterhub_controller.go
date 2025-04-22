@@ -897,7 +897,7 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 
 			static := IsTemplateAnnotationTrue(template, AnnotationEditable)
 
-			if static = false {
+			if static == false {
 			// Resource exists; use the original template for patching to avoid issues with managedFields
 			// Apply the object data.
 				force := true
