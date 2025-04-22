@@ -1,27 +1,29 @@
-- repo_name: "flight-control"
-  github_ref: "https://github.com/flightctl/flightctl.git"
-  branch: "release-0.5"
-  charts:
-    - name: "flight-control"
-      chart-path: "deploy/helm/flightctl"
-      always-or-toggle: "toggle"
-      imageMappings:
-        flightctl-worker: flightctl_worker
-        flightctl-periodic: flightctl_periodic
-        flightctl-api: flightctl_api
-        flightctl-ui: flightctl_ui
-        flightctl-ocp-ui: flightctl_ocp_ui
-        origin-cli: origin_cli
-        postgresql-12-c8s: postgresql_16
-        redis: redis
-      inclusions:
-        - "pullSecretOverride"
-      escape-template-variables: []
-      updateChartVersion: false # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.4 -> 2.4
-      security-context-constraints:
-        - kind: "Deployment"
-          name: flightctl-db
-          containers:
-            - name: flightctl-db
-              readOnlyRootFilesystem: false
-      skipRBACOverrides: true
+acm-release-version: '2.13'
+components:
+  - repo_name: "flight-control"
+    github_ref: "https://github.com/flightctl/flightctl.git"
+    branch: "release-0.5"
+    charts:
+      - name: "flight-control"
+        chart-path: "deploy/helm/flightctl"
+        always-or-toggle: "toggle"
+        imageMappings:
+          flightctl-worker: flightctl_worker
+          flightctl-periodic: flightctl_periodic
+          flightctl-api: flightctl_api
+          flightctl-ui: flightctl_ui
+          flightctl-ocp-ui: flightctl_ocp_ui
+          origin-cli: origin_cli
+          postgresql-12-c8s: postgresql_16
+          redis: redis
+        inclusions:
+          - "pullSecretOverride"
+        escape-template-variables: []
+        updateChartVersion: false # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.4 -> 2.4
+        security-context-constraints:
+          - kind: "Deployment"
+            name: flightctl-db
+            containers:
+              - name: flightctl-db
+                readOnlyRootFilesystem: false
+        skipRBACOverrides: true
