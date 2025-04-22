@@ -199,10 +199,8 @@ func (r *MultiClusterHub) ValidateDelete() (admission.Warnings, error) {
 		list.SetGroupVersionKind(resource.GVK)
 		err := discovery.ServerSupportsVersion(c, list.GroupVersionKind().GroupVersion())
 		if err != nil {
-			fmt.Printf("Error in validateDelte(): %v\n", err)
 			continue
 		}
-		fmt.Printf("Made it past the error with resource: %v\n", resource)
 		// List all resources
 		if err := Client.List(context.Background(), list); err != nil {
 			return nil, fmt.Errorf("unable to list %s: %s", resource.Name, err)
@@ -223,14 +221,13 @@ func (r *MultiClusterHub) ValidateDelete() (admission.Warnings, error) {
 			}
 		}
 	}
-	fmt.Printf("Successfully ran validateDelete()\n")
 	return nil, nil
 }
 
 func hasIntersection(smallerMap map[string]string, largerMap map[string]string) bool {
 	// iterate through the keys of the smaller map to save time
 	for k, sVal := range smallerMap {
-		if lVal, _ := largerMap[k]; lVal == sVal {
+		if lVal := largerMap[k]; lVal == sVal {
 			return true // return true if A and B share any complete key-value pair
 		}
 	}
