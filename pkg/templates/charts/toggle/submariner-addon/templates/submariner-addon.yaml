@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: submariner-addon
   namespace: '{{ .Values.global.namespace }}'
+  annotations:
+    installer.open-cluster-management.io/is-editable: true
 spec:
   replicas: 1
   selector:

@@ -895,11 +895,11 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 				}
 			}
 
-			static := IsTemplateAnnotationTrue(template, AnnotationEditable)
+			static := utils.IsTemplateAnnotationTrue(template, utils.AnnotationEditable)
 
 			if static == false {
-			// Resource exists; use the original template for patching to avoid issues with managedFields
-			// Apply the object data.
+				// Resource exists; use the original template for patching to avoid issues with managedFields
+				// Apply the object data.
 				force := true
 				if err := r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{
 					Force: &force, FieldManager: "multiclusterhub-operator"}); err != nil {
