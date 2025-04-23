@@ -7,7 +7,7 @@ COMPONENT ?= ""
 CONFIG ?= ""
 
 PIPELINE_REPO ?= pipeline
-PIPELINE_BRANCH ?= 2.12-integration
+PIPELINE_BRANCH ?= 2.14-integration
 
 .PHONY: update-manifest 
 
