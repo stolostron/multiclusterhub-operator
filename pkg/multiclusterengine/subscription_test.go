@@ -11,7 +11,7 @@ import (
 	"github.com/onsi/gomega"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
-	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
+	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -166,7 +166,7 @@ func TestFindAndManageMCESubscription(t *testing.T) {
 			Name:      "mce-sub",
 			Namespace: "mce",
 			Labels: map[string]string{
-				utils.MCEManagedByLabel: "true",
+				multiclusterengineutils.MCEManagedByLabel: "true",
 			},
 		},
 	}
@@ -175,7 +175,7 @@ func TestFindAndManageMCESubscription(t *testing.T) {
 			Name:      "mce-sub2",
 			Namespace: "mce2",
 			Labels: map[string]string{
-				utils.MCEManagedByLabel: "true",
+				multiclusterengineutils.MCEManagedByLabel: "true",
 			},
 		},
 	}
@@ -233,7 +233,7 @@ func TestFindAndManageMCESubscription(t *testing.T) {
 	if got.Name != unmanagedSub1.Name || got.Namespace != unmanagedSub1.Namespace {
 		t.Errorf("FindAndManageMCESubscription() return subscription %s, want %s", got.Name, managedSub1.Name)
 	}
-	if got.Labels[utils.MCEManagedByLabel] != "true" {
+	if got.Labels[multiclusterengineutils.MCEManagedByLabel] != "true" {
 		t.Errorf("FindAndManageMCESubscription() should have set the managed label on the subscription")
 	}
 	gotSub := &subv1alpha1.Subscription{}
@@ -242,7 +242,7 @@ func TestFindAndManageMCESubscription(t *testing.T) {
 	if err != nil {
 		t.Errorf("Got error from mock client %v", err)
 	}
-	if gotSub.Labels[utils.MCEManagedByLabel] != "true" {
+	if gotSub.Labels[multiclusterengineutils.MCEManagedByLabel] != "true" {
 		t.Errorf("FindAndManageMCESubscription() should have updated the managed label on the subscription")
 	}
 
@@ -279,7 +279,7 @@ func TestCreatedByMCH(t *testing.T) {
 			sub: &subv1alpha1.Subscription{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						utils.MCEManagedByLabel: "true",
+						multiclusterengineutils.MCEManagedByLabel: "true",
 					},
 				},
 			},

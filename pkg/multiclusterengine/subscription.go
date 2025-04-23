@@ -10,6 +10,7 @@ import (
 
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -26,9 +27,9 @@ func NewSubscription(m *operatorv1.MultiClusterHub, c *subv1alpha1.SubscriptionC
 		catSourceName = communityCatalogSourceName
 	}
 	labels := map[string]string{
-		"installer.name":        m.GetName(),
-		"installer.namespace":   m.GetNamespace(),
-		utils.MCEManagedByLabel: "true",
+		"installer.name":                          m.GetName(),
+		"installer.namespace":                     m.GetNamespace(),
+		multiclusterengineutils.MCEManagedByLabel: "true",
 	}
 	namespace := OperandNamespace()
 	sub := &subv1alpha1.Subscription{
@@ -140,7 +141,7 @@ func ApplyAnnotationOverrides(sub *subv1alpha1.Subscription, subspec *subv1alpha
 // Finds MCE subscription by managed label. Returns nil if none found.
 func GetManagedMCESubscription(ctx context.Context, k8sClient client.Client) (*subv1alpha1.Subscription, error) {
 	subList := &subv1alpha1.SubscriptionList{}
-	if err := k8sClient.List(ctx, subList, &client.MatchingLabels{utils.MCEManagedByLabel: "true"}); err != nil {
+	if err := k8sClient.List(ctx, subList, &client.MatchingLabels{multiclusterengineutils.MCEManagedByLabel: "true"}); err != nil {
 		return nil, err
 
 	} else if len(subList.Items) == 1 {
@@ -183,7 +184,7 @@ func FindAndManageMCESubscription(ctx context.Context, k8sClient client.Client) 
 			if labels == nil {
 				labels = map[string]string{}
 			}
-			labels[utils.MCEManagedByLabel] = "true"
+			labels[multiclusterengineutils.MCEManagedByLabel] = "true"
 			wholeList.Items[i].SetLabels(labels)
 			log.Log.WithName("reconcile").Info("Adding label to subscription")
 			if err := k8sClient.Update(ctx, &wholeList.Items[i]); err != nil {

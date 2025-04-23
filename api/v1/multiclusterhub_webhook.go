@@ -24,6 +24,7 @@ import (
 	"os"
 	"reflect"
 
+	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
 	admissionregistration "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -129,6 +130,16 @@ func (r *MultiClusterHub) ValidateCreate() (admission.Warnings, error) {
 				return nil, fmt.Errorf("invalid component config: %s is not a known component", c.Name)
 			}
 		}
+	}
+
+	// If MCE CR exists, then spec.localClusterName must match
+	mce, err := multiclusterengineutils.GetManagedMCE(context.Background(), Client)
+	if err != nil {
+		return nil, fmt.Errorf("error getting Managed MCE: %v", err)
+	}
+	// if MCE isn't nil, then the spec.localClusterName must match
+	if mce != nil && mce.Spec.LocalClusterName != r.Spec.LocalClusterName {
+		return nil, fmt.Errorf("Spec.LocalClusterName does not match MCE Spec.LocalClusterName: %s. Correct before installing", mce.Spec.LocalClusterName)
 	}
 
 	return nil, nil

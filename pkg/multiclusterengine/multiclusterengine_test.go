@@ -14,6 +14,7 @@ import (
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	mceutils "github.com/stolostron/backplane-operator/pkg/utils"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -85,7 +86,7 @@ func TestFindAndManageMCE(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "mce-sub",
 			Labels: map[string]string{
-				utils.MCEManagedByLabel: "true",
+				multiclusterengineutils.MCEManagedByLabel: "true",
 			},
 		},
 	}
@@ -93,7 +94,7 @@ func TestFindAndManageMCE(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "mce-sub2",
 			Labels: map[string]string{
-				utils.MCEManagedByLabel: "true",
+				multiclusterengineutils.MCEManagedByLabel: "true",
 			},
 		},
 	}
@@ -147,7 +148,7 @@ func TestFindAndManageMCE(t *testing.T) {
 	if got.Name != unmanagedmce1.Name {
 		t.Errorf("FindAndManageMCE() return mce %s, want %s", got.Name, managedmce1.Name)
 	}
-	if got.Labels[utils.MCEManagedByLabel] != "true" {
+	if got.Labels[multiclusterengineutils.MCEManagedByLabel] != "true" {
 		t.Errorf("FindAndManageMCE() should have set the managed label on the mce")
 	}
 	gotMCE := &mcev1.MultiClusterEngine{}
@@ -156,7 +157,7 @@ func TestFindAndManageMCE(t *testing.T) {
 	if err != nil {
 		t.Errorf("Got error from mock client %v", err)
 	}
-	if gotMCE.Labels[utils.MCEManagedByLabel] != "true" {
+	if gotMCE.Labels[multiclusterengineutils.MCEManagedByLabel] != "true" {
 		t.Errorf("FindAndManageMCE() should have updated the managed label on the mce")
 	}
 
@@ -193,7 +194,7 @@ func TestMCECreatedByMCH(t *testing.T) {
 			mce: &mcev1.MultiClusterEngine{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						utils.MCEManagedByLabel: "true",
+						multiclusterengineutils.MCEManagedByLabel: "true",
 					},
 				},
 			},
@@ -245,9 +246,9 @@ func TestNewMultiClusterEngine(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: MulticlusterengineName,
 					Labels: map[string]string{
-						"installer.name":        "mch",
-						"installer.namespace":   "mch-ns",
-						utils.MCEManagedByLabel: "true",
+						"installer.name":                          "mch",
+						"installer.namespace":                     "mch-ns",
+						multiclusterengineutils.MCEManagedByLabel: "true",
 					},
 				},
 				Spec: mcev1.MultiClusterEngineSpec{
@@ -304,9 +305,9 @@ func TestNewMultiClusterEngine(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: MulticlusterengineName,
 					Labels: map[string]string{
-						"installer.name":        "mch",
-						"installer.namespace":   "mch-ns",
-						utils.MCEManagedByLabel: "true",
+						"installer.name":                          "mch",
+						"installer.namespace":                     "mch-ns",
+						multiclusterengineutils.MCEManagedByLabel: "true",
 					},
 				},
 				Spec: mcev1.MultiClusterEngineSpec{
@@ -349,9 +350,9 @@ func TestNewMultiClusterEngine(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: MulticlusterengineName,
 					Labels: map[string]string{
-						"installer.name":        "mch",
-						"installer.namespace":   "mch-ns",
-						utils.MCEManagedByLabel: "true",
+						"installer.name":                          "mch",
+						"installer.namespace":                     "mch-ns",
+						multiclusterengineutils.MCEManagedByLabel: "true",
 					},
 					Annotations: map[string]string{mceutils.AnnotationHubSize: string(mcev1.Large)},
 				},
@@ -401,8 +402,8 @@ func TestRenderMultiClusterEngine(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "randomName",
 			Labels: map[string]string{
-				"random":                "label",
-				utils.MCEManagedByLabel: "true",
+				"random": "label",
+				multiclusterengineutils.MCEManagedByLabel: "true",
 			},
 			Annotations: map[string]string{
 				"random": "annotation",
