@@ -9,7 +9,7 @@ metadata:
   labels:
     open-cluster-management.io/policy-cnv: virt-rbac
   name: policy-virt-clusterroles
-  namespace: policies
+  namespace: {{ .Values.global.namespace }}
 spec:
   disabled: false
   policy-templates:

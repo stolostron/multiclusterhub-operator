@@ -4,7 +4,7 @@ metadata:
   labels:
     open-cluster-management.io/policy-cnv: virt-rbac
   name: placement-policy-virt-rbac
-  namespace: policies
+  namespace: {{ .Values.global.namespace }}
 spec:
   predicates:
   - requiredClusterSelector:
