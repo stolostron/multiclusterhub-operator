@@ -24,7 +24,7 @@ import (
 	"os"
 	"reflect"
 
-	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
+	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	admissionregistration "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -133,13 +133,15 @@ func (r *MultiClusterHub) ValidateCreate() (admission.Warnings, error) {
 	}
 
 	// If MCE CR exists, then spec.localClusterName must match
-	mce, err := multiclusterengineutils.GetManagedMCE(context.Background(), Client)
-	if err != nil {
-		return nil, fmt.Errorf("error getting Managed MCE: %v", err)
+	mceList := &mcev1.MultiClusterEngineList{}
+	if err := Client.List(context.Background(), mceList); err != nil {
+		return nil, fmt.Errorf("failed to list MCE resources")
 	}
-	// if MCE isn't nil, then the spec.localClusterName must match
-	if mce != nil && mce.Spec.LocalClusterName != r.Spec.LocalClusterName {
-		return nil, fmt.Errorf("Spec.LocalClusterName does not match MCE Spec.LocalClusterName: %s", mce.Spec.LocalClusterName)
+	if len(mceList.Items) == 1 {
+		mce := mceList.Items[0]
+		if mce.Spec.LocalClusterName != r.Spec.LocalClusterName {
+			return nil, fmt.Errorf("Spec.LocalClusterName does not match MCE Spec.LocalClusterName: %s", mce.Spec.LocalClusterName)
+		}
 	}
 
 	return nil, nil
