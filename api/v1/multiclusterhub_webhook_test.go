@@ -8,7 +8,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	mce "github.com/stolostron/backplane-operator/api/v1"
-	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -144,7 +143,6 @@ var _ = Describe("Multiclusterhub webhook", func() {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-mce",
 					Namespace: "test-mce",
-					Labels:    map[string]string{multiclusterengineutils.MCEManagedByLabel: "true"},
 				},
 				Spec: mce.MultiClusterEngineSpec{
 					LocalClusterName: "local-cluster",
