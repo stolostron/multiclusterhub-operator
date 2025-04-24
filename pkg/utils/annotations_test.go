@@ -42,9 +42,18 @@ func TestIsPaused(t *testing.T) {
 }
 
 func TestIsTemplateAnnotationTrue(t *testing.T) {
-	t.Run("Unpaused MCH", func(t *testing.T) {
+	t.Run("Annotation true", func(t *testing.T) {
 		tst := &unstructured.Unstructured{}
 		want := false
+		if got := IsTemplateAnnotationTrue(tst, AnnotationEditable); got != want {
+			t.Errorf("IsTemplateAnnotationTrue() = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("Annotation true", func(t *testing.T) {
+		tst := &unstructured.Unstructured{}
+		tst.SetAnnotations(map[string]string{AnnotationEditable: "true"})
+		want := true
 		if got := IsTemplateAnnotationTrue(tst, AnnotationEditable); got != want {
 			t.Errorf("IsTemplateAnnotationTrue() = %v, want %v", got, want)
 		}
