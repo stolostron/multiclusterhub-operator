@@ -7,6 +7,9 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	mce "github.com/stolostron/backplane-operator/api/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
@@ -127,6 +130,53 @@ var _ = Describe("Multiclusterhub webhook", func() {
 			By("deleting", func() {
 				Expect(k8sClient.Delete(ctx, mch)).To(BeNil(), "MCH delete was blocked unexpectedly")
 			})
+		})
+	})
+
+	Context("Adopting an MCE during MCH Creation", func() {
+		It("Should be the only MCH to exist", func() {
+			mch := &MultiClusterHub{}
+			err := k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)
+			Expect(errors.IsNotFound(err)).To(BeTrue())
+		})
+		It("Should create the MCE", func() {
+			mce := &mce.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-mce",
+					Namespace: "test-mce",
+					Labels:    map[string]string{multiclusterengineutils.MCEManagedByLabel: "true"},
+				},
+				Spec: mce.MultiClusterEngineSpec{
+					LocalClusterName: "local-cluster",
+				},
+			}
+			Expect(k8sClient.Create(ctx, mce)).To(Succeed())
+		})
+
+		It("Should fail to create the ACM", func() {
+			mch := &MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      multiClusterHubName,
+					Namespace: "default",
+				},
+				Spec: MultiClusterHubSpec{
+					LocalClusterName: "renamed-local-cluster",
+				},
+			}
+			Expect(k8sClient.Create(ctx, mch)).NotTo(Succeed())
+		})
+
+		It("Should succeed in creating the multiclusterhub", func() {
+			mch := &MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      multiClusterHubName,
+					Namespace: "default",
+				},
+				Spec: MultiClusterHubSpec{
+					LocalClusterName: "local-cluster",
+				},
+			}
+			Expect(k8sClient.Create(ctx, mch)).To(Succeed())
 		})
 	})
 })

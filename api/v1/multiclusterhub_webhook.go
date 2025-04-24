@@ -139,7 +139,7 @@ func (r *MultiClusterHub) ValidateCreate() (admission.Warnings, error) {
 	}
 	// if MCE isn't nil, then the spec.localClusterName must match
 	if mce != nil && mce.Spec.LocalClusterName != r.Spec.LocalClusterName {
-		return nil, fmt.Errorf("Spec.LocalClusterName does not match MCE Spec.LocalClusterName: %s. Correct before installing", mce.Spec.LocalClusterName)
+		return nil, fmt.Errorf("Spec.LocalClusterName does not match MCE Spec.LocalClusterName: %s", mce.Spec.LocalClusterName)
 	}
 
 	return nil, nil
