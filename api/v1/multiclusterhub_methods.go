@@ -23,6 +23,8 @@ const (
 	ClusterLifecycle          string = "cluster-lifecycle"
 	ClusterPermission         string = "cluster-permission"
 	Console                   string = "console"
+	FineGrainedRbac           string = "fine-grained-rbac"
+	FineGrainedRbacPreview    string = "fine-grained-rbac-preview"
 	GRC                       string = "grc"
 	Insights                  string = "insights"
 	ManagementIngress         string = "management-ingress"
@@ -69,13 +71,14 @@ var MCHComponents = []string{
 	ClusterLifecycle,
 	ClusterPermission,
 	Console,
+	EdgeManagerPreview,
+	FineGrainedRbacPreview,
 	GRC,
 	Insights,
 	MultiClusterEngine, // Adding MCE component to ensure that the component is validated by the webhook.
 	MCH,                // Adding MCH component to ensure legacy resources are cleaned up properly.
 	MultiClusterObservability,
 	Search,
-	EdgeManagerPreview,
 	SiteConfig,
 	SubmarinerAddon,
 	Volsync,
@@ -206,8 +209,9 @@ It is expected to be used to get a list of components that are disabled by defau
 func GetDefaultDisabledComponents() ([]string, error) {
 	defaultDisabledComponents := []string{
 		ClusterBackup,
-		SiteConfig,
 		EdgeManagerPreview,
+		FineGrainedRbacPreview,
+		SiteConfig,
 	}
 	return defaultDisabledComponents, nil
 }

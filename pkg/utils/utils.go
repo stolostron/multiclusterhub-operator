@@ -94,6 +94,9 @@ const (
 
 	// EdgeManagerChartLocation is the location of the Edge Manager Controller chart.
 	EdgeManagerChartLocation = "/charts/toggle/flight-control"
+
+	// FineGrainedRbacChartLocation is the location of the Fine Grained RBAC chart.
+	FineGrainedRbacChartLocation = "/charts/toggle/fine-grained-rbac"
 )
 
 const (
@@ -537,20 +540,24 @@ func appendIfMissing(slice []corev1.EnvVar, s corev1.EnvVar) []corev1.EnvVar {
 // SetDefaultComponents returns true if changes are made
 func SetDefaultComponents(m *operatorsv1.MultiClusterHub) (bool, error) {
 	updated := false
+
 	defaultEnabledComponents, err := operatorsv1.GetDefaultEnabledComponents()
 	if err != nil {
 		return updated, err
 	}
+
 	defaultDisabledComponents, err := operatorsv1.GetDefaultDisabledComponents()
 	if err != nil {
 		return true, err
 	}
+
 	for _, c := range defaultEnabledComponents {
 		if !m.ComponentPresent(c) {
 			m.Enable(c)
 			updated = true
 		}
 	}
+
 	for _, c := range defaultDisabledComponents {
 		if !m.ComponentPresent(c) {
 			m.Disable(c)

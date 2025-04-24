@@ -84,6 +84,11 @@ var (
 		resource.
 	*/
 	AnnotationDefaultStorageClass = "storageclass.kubernetes.io/is-default-class"
+
+	/*
+		AnnotationFineGrainedRbac is an annotation used in the cluster to determine if fine grained rbac is enabled.
+	*/
+	AnnotationFineGrainedRbac = "fine-grained-rbac-preview"
 )
 
 /*

@@ -889,6 +889,12 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(component string) string 
 	case operatorv1.Console:
 		return utils.ConsoleChartLocation
 
+	case operatorv1.EdgeManagerPreview:
+		return utils.EdgeManagerChartLocation
+
+	case operatorv1.FineGrainedRbacPreview:
+		return utils.FineGrainedRbacChartLocation
+
 	case operatorv1.GRC:
 		return utils.GRCChartLocation
 
@@ -912,9 +918,6 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(component string) string 
 
 	case operatorv1.Volsync:
 		return utils.VolsyncChartLocation
-
-	case operatorv1.EdgeManagerPreview:
-		return utils.EdgeManagerChartLocation
 
 	default:
 		log.Info(fmt.Sprintf("Unregistered component detected: %v", component))
