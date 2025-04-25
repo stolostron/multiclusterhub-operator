@@ -1,0 +1,7 @@
+apiVersion: v2
+appVersion: 2.12.0
+description: This operator discovers OpenShift Conatiner Platform clusters which are
+  not yet under management by Open Cluster Management.
+name: discovery-operator
+type: application
+version: 2.12.0
