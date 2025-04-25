@@ -20,6 +20,7 @@ import (
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/helpers"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
+	renderer "github.com/stolostron/multiclusterhub-operator/pkg/rendering"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
@@ -1992,42 +1993,51 @@ func Test_SetDefaultStorageClassName(t *testing.T) {
 
 	tests := []struct {
 		name           string
+		mch            *operatorv1.MultiClusterHub
 		storageClasses []storagev1.StorageClass
 		expectedEnv    string
 	}{
 		{
-			name:           "should not set default storage class name due to empty StorageClasses",
+			name: "should set default storageClassName with MCH annotation",
+			mch: &operatorv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multiclusterhub",
+					Namespace: "test-ns",
+					Annotations: map[string]string{
+						utils.AnnotationDefaultStorageClass: "gp2-csi",
+					},
+				},
+			},
 			storageClasses: []storagev1.StorageClass{},
-			expectedEnv:    "",
+			expectedEnv:    "gp2-csi",
 		},
 		{
-			name: "should set fallback storageClassName when default is not marked",
+			name: "should set default storageClassName when default marked",
+			mch: &operatorv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multiclusterhub",
+					Namespace: "test-ns",
+				},
+			},
 			storageClasses: []storagev1.StorageClass{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:        "gp2-csi",
-						Annotations: map[string]string{},
+						Name: "gp2-csi",
 					},
 					Provisioner: "ebs.csi.aws.com",
 					Parameters: map[string]string{
 						"encrypted": "true",
-						"type":      "gp3",
+						"type":      "gp2",
 					},
 					ReclaimPolicy:        &reclaimPolicy,
 					AllowVolumeExpansion: &allowVolumeExpansion,
 					VolumeBindingMode:    &volumeBindingMode,
 				},
-			},
-			expectedEnv: "gp2-csi",
-		},
-		{
-			name: "should set default storageClassName when default marked",
-			storageClasses: []storagev1.StorageClass{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "gp3-csi",
 						Annotations: map[string]string{
-							utils.AnnotationDefaultStorageClass: "true",
+							utils.AnnotationKubeDefaultStorageClass: "true",
 						},
 					},
 					Provisioner: "ebs.csi.aws.com",
@@ -2044,12 +2054,11 @@ func Test_SetDefaultStorageClassName(t *testing.T) {
 		},
 	}
 
-	if err := os.Setenv(helpers.DefaultStorageClassName, "test-storage-class"); err != nil {
-		t.Errorf("failed to set default StorageClassName: %v", err)
-	}
-
+	os.Setenv(helpers.DefaultStorageClassName, "test-storage-class")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			defer os.Unsetenv(helpers.DefaultStorageClassName)
+
 			for _, sc := range tt.storageClasses {
 				if err := recon.Client.Create(context.TODO(), &sc); err != nil {
 					t.Errorf("failed to create StorageClass: %v", err)
@@ -2057,12 +2066,79 @@ func Test_SetDefaultStorageClassName(t *testing.T) {
 			}
 
 			// Call the function under test
-			if err := recon.SetDefaultStorageClassName(context.TODO()); err != nil {
+			if _, err := recon.SetDefaultStorageClassName(context.TODO(), tt.mch); err != nil {
 				t.Errorf("SetDefaultStorageClassName failed: %v", err)
 			}
 
 			if got := os.Getenv(helpers.DefaultStorageClassName); got != tt.expectedEnv {
 				t.Errorf("Expected StorageClassName to be set to: %v, got: %v", tt.expectedEnv, got)
+			}
+		})
+	}
+}
+
+func Test_ApplyTemplate(t *testing.T) {
+	tests := []struct {
+		name             string
+		chartLocation    string
+		component        string
+		mch              *operatorv1.MultiClusterHub
+		storageClassName string
+		want             error
+	}{
+		{
+			name:             "should apply template for component",
+			chartLocation:    filepath.Join("../pkg/templates/", utils.EdgeManagerChartLocation),
+			component:        operatorv1.EdgeManagerPreview,
+			mch:              &operatorv1.MultiClusterHub{},
+			storageClassName: "gp2-csi",
+			want:             nil,
+		},
+	}
+
+	testImages := map[string]string{}
+	for _, v := range utils.GetTestImages() {
+		testImages[v] = "quay.io/test/test:Test"
+	}
+
+	testCacheSpec := CacheSpec{
+		ImageOverrides:    testImages,
+		TemplateOverrides: map[string]string{},
+	}
+
+	// Renders all templates from charts
+	registerScheme()
+	os.Setenv("ACM_HUB_OCP_VERSION", "4.18.0")
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			templates, errs := renderer.RenderChart(tt.chartLocation, tt.mch, testCacheSpec.ImageOverrides,
+				testCacheSpec.TemplateOverrides, false)
+
+			if errs != nil {
+				t.Errorf("Failed to render chart for %v", tt.component)
+			}
+
+			for _, template := range templates {
+				if _, err := recon.applyTemplate(context.TODO(), tt.mch, template); err != nil {
+					t.Errorf("failed: %v", err)
+				}
+			}
+
+			os.Setenv(helpers.DefaultStorageClassName, "gp3-csi")
+			templates, errs = renderer.RenderChart(tt.chartLocation, tt.mch, testCacheSpec.ImageOverrides,
+				testCacheSpec.TemplateOverrides, false)
+
+			if errs != nil {
+				t.Errorf("Failed to render chart for %v", tt.component)
+			}
+
+			for _, template := range templates {
+				if template.GetKind() == "PersistentVolumeClaim" || template.GetKind() == "StatefulSet" {
+					if _, err := recon.applyTemplate(context.TODO(), tt.mch, template); err != nil {
+						t.Errorf("applyTemplate() = %v, want = %v", err, tt.want)
+					}
+				}
 			}
 		})
 	}
