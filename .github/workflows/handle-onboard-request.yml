@@ -1,0 +1,86 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Handle New Onboard Request
+
+# Controls when the action will run. 
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch: {}
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+
+    paths:
+      - onboard-request.yaml
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          token: ${{ secrets.HUB_OPERATOR_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+
+      - name: Install yq
+        run: |
+          sudo wget https://github.com/mikefarah/yq/releases/download/v4.40.5/yq_linux_amd64 -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
+
+      - name: Determine Onboard Type
+        id: onboard_type
+        run: |
+          ONBOARD_TYPE=$(yq '.onboard-type' onboard-request.yaml)
+          echo "onboard-type is: $ONBOARD_TYPE"
+          echo "onboard_type=$ONBOARD_TYPE" >> $GITHUB_OUTPUT
+
+      - name: Run OLM Automation
+        if: ${{ steps.onboard_type.outputs.onboard_type == 'olm' }}
+        env:
+          ONBOARD_REQUEST_FILE: onboard-request.yaml
+        run: |
+          echo "Running OLM automation..."
+          make regenerate-charts-from-bundles --config $(ONBOARD_REQUEST_FILE)
+        
+      - name: Run Helm Automation
+        if: ${{ steps.onboard_type.outputs.onboard_type == 'helm' }}
+        env:
+          ONBOARD_REQUEST_FILE: onboard-request.yaml
+        run: |
+          echo "Running Helm automation..."
+          make regenerate-charts --config $(ONBOARD_REQUEST_FILE)
+
+      - name: Commit and Push Changes
+        if: success()
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+          git add .
+          git diff --cached --quiet || git commit -m "Auto-apply onboard automation changes"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.HUB_OPERATOR_TOKEN }}
+
+      - name: Send Slack Message on Failure
+        if: ${{ failure() }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          SLACK_MESSAGE=":exclamation: *GitHub Actions Job Failed* :exclamation:\n\n"
+          SLACK_MESSAGE+="Job Name: $GITHUB_WORKFLOW/$GITHUB_JOB\n"
+          SLACK_MESSAGE+="Job URL: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID\n"
+          SLACK_MESSAGE+="Error Details: Your job failed. Please check the job logs for more information."
+
+          curl -X POST -H "Content-type: application/json" --data "{
+            \"text\": \"$SLACK_MESSAGE\"
+          }" $SLACK_WEBHOOK_URL
+
