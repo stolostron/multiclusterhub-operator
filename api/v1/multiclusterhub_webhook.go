@@ -135,7 +135,7 @@ func (r *MultiClusterHub) ValidateCreate() (admission.Warnings, error) {
 	// If MCE CR exists, then spec.localClusterName must match
 	mceList := &mcev1.MultiClusterEngineList{}
 	if err := Client.List(context.Background(), mceList); err != nil {
-		return nil, fmt.Errorf("failed to list MCE resources")
+		return nil, fmt.Errorf("failed to list MCE resources: %v", err)
 	}
 	if len(mceList.Items) == 1 {
 		mce := mceList.Items[0]
