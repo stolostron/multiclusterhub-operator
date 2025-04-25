@@ -85,6 +85,7 @@ var _ = Describe("Multiclusterhub webhook", func() {
 					},
 				}
 				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(), "invalid components should not be permitted")
+				mch.Spec.Overrides = &Overrides{}
 			})
 			By("because of updating SeparateCertificateManagement", func() {
 				Expect(k8sClient.Get(ctx,
