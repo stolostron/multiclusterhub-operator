@@ -26,6 +26,7 @@ import (
 
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	admissionregistration "k8s.io/api/admissionregistration/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -135,7 +136,7 @@ func (r *MultiClusterHub) ValidateCreate() (admission.Warnings, error) {
 	// If MCE CR exists, then spec.localClusterName must match
 	mceList := &mcev1.MultiClusterEngineList{}
 	if err := Client.List(context.Background(), mceList); err != nil {
-		return nil, fmt.Errorf("failed to list MCE resources: %v", err)
+		return nil, fmt.Errorf("failed to list MCE resources: %v with reason: %v", err, errors.ReasonForError(err))
 	}
 	if len(mceList.Items) == 1 {
 		mce := mceList.Items[0]
