@@ -17,6 +17,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      ONBOARD_REQUEST_FILE: onboard-request.yaml
+
     steps:
       - name: Checkout PR code
         uses: actions/checkout@v4
@@ -44,19 +47,37 @@ jobs:
 
       - name: Run OLM Automation
         if: ${{ steps.onboard_type.outputs.onboard_type == 'olm' }}
-        env:
-          ONBOARD_REQUEST_FILE: onboard-request.yaml
         run: |
           echo "Running OLM automation..."
           make regenerate-charts-from-bundles --config $(ONBOARD_REQUEST_FILE)
         
       - name: Run Helm Automation
         if: ${{ steps.onboard_type.outputs.onboard_type == 'helm' }}
-        env:
-          ONBOARD_REQUEST_FILE: onboard-request.yaml
         run: |
           echo "Running Helm automation..."
           make regenerate-charts --config $(ONBOARD_REQUEST_FILE)
+
+      - name: Merge config and onboard request if automation is successful
+        env:
+          CONFIG_FILE: hack/bundle-automation/config.yaml
+          CHARTS_CONFIG_FILE: hack/bundle-automation/charts-config.yaml
+
+        if: ${{ success() }}
+        run: |
+          echo "Merging config and onboard request files based on onboard type..."
+          
+          if [[ "${{ steps.onboard_type.outputs.onboard_type }}" == "olm" ]]; then
+            yq eval-all '. as $item ireduce ({}; . *+ $item)' $CONFIG_FILE $ONBOARD_REQUEST_FILE > merged-config.yaml
+            echo "Merged config.yaml and onboard-request.yaml for OLM:"
+            cat merged-config.yaml
+            mv merged-config.yaml $CONFIG_YAML
+
+          elif [[ "${{ steps.onboard_type.outputs.onboard_type }}" == "helm" ]]; then
+            yq eval-all '. as $item ireduce ({}; . *+ $item)' $CHARTS_CONFIG_FILE $ONBOARD_REQUEST_FILE > merged-config.yaml
+            echo "Merged config.yaml and onboard-request.yaml for Helm:"
+            cat merged-config.yaml
+            mv merged-config.yaml $CHARTS_CONFIG_YAML
+          fi
 
       - name: Commit and Push Changes
         if: success()
