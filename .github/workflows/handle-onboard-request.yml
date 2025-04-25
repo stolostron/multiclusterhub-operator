@@ -70,13 +70,13 @@ jobs:
             yq eval-all '. as $item ireduce ({}; . *+ $item)' $CONFIG_FILE $ONBOARD_REQUEST_FILE > merged-config.yaml
             echo "Merged config.yaml and onboard-request.yaml for OLM:"
             cat merged-config.yaml
-            mv merged-config.yaml $CONFIG_YAML
+            mv merged-config.yaml $CONFIG_FILE
 
           elif [[ "${{ steps.onboard_type.outputs.onboard_type }}" == "helm" ]]; then
             yq eval-all '. as $item ireduce ({}; . *+ $item)' $CHARTS_CONFIG_FILE $ONBOARD_REQUEST_FILE > merged-config.yaml
             echo "Merged config.yaml and onboard-request.yaml for Helm:"
             cat merged-config.yaml
-            mv merged-config.yaml $CHARTS_CONFIG_YAML
+            mv merged-config.yaml $CHARTS_CONFIG_FILE
           fi
 
       - name: Commit and Push Changes
