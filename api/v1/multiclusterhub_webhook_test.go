@@ -28,6 +28,9 @@ var _ = Describe("Multiclusterhub webhook", func() {
 						Name:      multiClusterHubName,
 						Namespace: "default",
 					},
+					Spec: MultiClusterHubSpec{
+						LocalClusterName: "test-local-cluster",
+					},
 				}
 				Expect(k8sClient.Create(ctx, mch)).Should(Succeed())
 			})
@@ -108,6 +111,14 @@ var _ = Describe("Multiclusterhub webhook", func() {
 					"AvailabilityConfig must be %v or %v, but %v was allowed", HABasic, HAHigh,
 					mch.Spec.AvailabilityConfig)
 			})
+
+			By("because of existing local-cluster resource", func() {
+				managedCluster := NewManagedCluster(mch.Spec.LocalClusterName)
+				Expect(k8sClient.Create(ctx, managedCluster)).To(Succeed())
+
+				mch.Spec.LocalClusterName = "updated-local-cluster"
+				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(), "updating local-cluster name while one exists should not be permitted")
+			})
 		})
 
 		It("Should succeed in updating multiclusterhub", func() {
@@ -122,10 +133,19 @@ var _ = Describe("Multiclusterhub webhook", func() {
 		It("Should delete multiclusterhub", func() {
 			mch := &MultiClusterHub{}
 			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)).To(Succeed())
-			By("Creating the managedCluster", func() {
-				managedCluster := NewManagedCluster(mch.Spec.LocalClusterName)
-				Expect(k8sClient.Create(ctx, managedCluster)).To(Succeed())
+			By("expecting the managedCluster to exist", func() {
+				managedCluster := &unstructured.Unstructured{
+					Object: map[string]interface{}{
+						"apiVersion": "cluster.open-cluster-management.io/v1",
+						"kind":       "ManagedCluster",
+						"metadata": map[string]interface{}{
+							"name": mch.Spec.LocalClusterName,
+						},
+					},
+				}
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: mch.Spec.LocalClusterName}, managedCluster)).To(Succeed())
 			})
+
 			By("deleting", func() {
 				Expect(k8sClient.Delete(ctx, mch)).To(BeNil(), "MCH delete was blocked unexpectedly")
 			})
