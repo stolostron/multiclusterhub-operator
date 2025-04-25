@@ -49,13 +49,13 @@ jobs:
         if: ${{ steps.onboard_type.outputs.onboard_type == 'olm' }}
         run: |
           echo "Running OLM automation..."
-          make regenerate-charts-from-bundles --config $(ONBOARD_REQUEST_FILE)
+          make regenerate-charts-from-bundles --config $ONBOARD_REQUEST_FILE
         
       - name: Run Helm Automation
         if: ${{ steps.onboard_type.outputs.onboard_type == 'helm' }}
         run: |
           echo "Running Helm automation..."
-          make regenerate-charts --config $(ONBOARD_REQUEST_FILE)
+          make regenerate-charts --config $ONBOARD_REQUEST_FILE
 
       - name: Merge config and onboard request if automation is successful
         env:
