@@ -73,7 +73,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/openshift/custom-resource-status v1.1.3-0.20220503160415-f2fdb4999d87 // indirect
-	github.com/openshift/hive/apis v0.0.0-20240402204308-5f27f3c5d23e // indirect
+	github.com/openshift/hive/apis 7f610bd3f6d2 // indirect
 	github.com/openshift/library-go v0.0.0-20240116081341-964bcb3f545c // indirect
 	github.com/operator-framework/operator-registry v1.39.0 // indirect
 	github.com/prometheus/client_golang v1.19.1 // indirect
