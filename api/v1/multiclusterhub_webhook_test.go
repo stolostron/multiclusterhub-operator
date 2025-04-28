@@ -111,6 +111,7 @@ var _ = Describe("Multiclusterhub webhook", func() {
 				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(),
 					"AvailabilityConfig must be %v or %v, but %v was allowed", HABasic, HAHigh,
 					mch.Spec.AvailabilityConfig)
+				mch.Spec.AvailabilityConfig = ""
 			})
 
 			By("because of existing local-cluster resource", func() {
