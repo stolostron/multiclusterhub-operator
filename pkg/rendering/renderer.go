@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strconv"
+	"strings"
 
 	loader "helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -29,7 +30,13 @@ import (
 const (
 	// defaultOADPChannel specifies the minimum OADP channel version that should be installed by default.
 	// This also represents the minimum expected version for installation.
+	// Used by ACM installed on OCP 4.18 or older
 	defaultOADPChannel = "stable-1.4"
+
+	// defaultOADPChannel specifies the minimum OADP channel version that should be installed by default.
+	// This also represents the minimum expected version for installation.
+	// Used by ACM installed on OCP 4.19 or newer
+	defaultOADPStableChannel = "stable"
 
 	// defaultOADPName is the name of the OADP operator to be created by the installer.
 	defaultOADPName = "redhat-oadp-operator"
@@ -339,6 +346,7 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 	values.Global.Name, values.Global.Channel, values.Global.InstallPlanApproval, values.Global.Source, values.Global.SourceNamespace, values.Global.StartingCSV = GetOADPConfig(mch)
 
 	values.Global.MinOADPChannel = defaultOADPChannel
+	values.Global.MinOADPStableChannel = defaultOADPStableChannel
 
 	// TODO: Define all overrides
 }
@@ -366,7 +374,19 @@ func GetOADPConfig(m *v1.MultiClusterHub) (string, string, subv1alpha1.Approval,
 	if sub.Channel != "" {
 		channel = sub.Channel
 	} else {
-		channel = defaultOADPChannel
+
+		ocpVersion := os.Getenv("ACM_HUB_OCP_VERSION")
+		isOCP419orNewer := strings.HasPrefix(ocpVersion, "4.19") ||
+			strings.HasPrefix(ocpVersion, "4.2") ||
+			strings.HasPrefix(ocpVersion, "4.3")
+
+		if isOCP419orNewer {
+			// use stable channel for OCP 2.19 or newer
+			channel = defaultOADPStableChannel
+		} else {
+			channel = defaultOADPChannel
+		}
+
 	}
 
 	if sub.InstallPlanApproval != "" {

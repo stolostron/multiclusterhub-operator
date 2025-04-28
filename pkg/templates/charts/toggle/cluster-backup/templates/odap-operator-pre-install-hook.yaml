@@ -37,11 +37,7 @@ metadata:
     "helm.sh/hook-weight": "-1"
     "helm.sh/resource-policy": delete
 spec:
-  {{- if or (hasPrefix "4.19" .Values.hubconfig.ocpVersion) (hasPrefix "4.2" .Values.hubconfig.ocpVersion) }}
-  channel: stable
-  {{- else }}
   channel: {{ .Values.global.channel }}
-  {{- end }}
   config:
     resources: {}
 {{- with .Values.hubconfig.nodeSelector }}
