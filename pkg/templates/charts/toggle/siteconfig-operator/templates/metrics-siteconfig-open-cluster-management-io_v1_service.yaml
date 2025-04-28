@@ -3,7 +3,6 @@ kind: Service
 metadata:
   annotations:
     service.beta.openshift.io/serving-cert-secret-name: siteconfig-metrics-server-cert
-    installer.open-cluster-management.io/is-editable: true
   creationTimestamp: null
   name: metrics-siteconfig-open-cluster-management-io
   namespace: '{{ .Values.global.namespace }}'
