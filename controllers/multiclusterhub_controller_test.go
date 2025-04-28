@@ -20,6 +20,7 @@ import (
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/helpers"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
+	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
 	renderer "github.com/stolostron/multiclusterhub-operator/pkg/rendering"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
@@ -232,7 +233,7 @@ func PreexistingMCE(k8sClient client.Client, reconciler *MultiClusterHubReconcil
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "multicluster-engine",
 			Namespace: "multicluster-engine",
-			Labels:    map[string]string{utils.MCEManagedByLabel: "true"},
+			Labels:    map[string]string{multiclusterengineutils.MCEManagedByLabel: "true"},
 		},
 		Spec: &subv1alpha1.SubscriptionSpec{
 			Package: multiclusterengine.DesiredPackage(),
@@ -284,7 +285,7 @@ func PreexistingMCE(k8sClient client.Client, reconciler *MultiClusterHubReconcil
 		if labels == nil {
 			return false
 		}
-		if val, ok := labels[utils.MCEManagedByLabel]; ok && val == "true" {
+		if val, ok := labels[multiclusterengineutils.MCEManagedByLabel]; ok && val == "true" {
 			return true
 		}
 		return false

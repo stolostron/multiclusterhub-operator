@@ -6,7 +6,7 @@ import (
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
-	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
+	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
 	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
 )
 
@@ -93,9 +93,9 @@ func Test_cleanupMultiClusterEngine(t *testing.T) {
 			}
 
 			tt.mce.Labels = map[string]string{
-				"installer.name":        tt.mch.GetName(),
-				"installer.namespace":   tt.mch.GetNamespace(),
-				utils.MCEManagedByLabel: "true",
+				"installer.name":                          tt.mch.GetName(),
+				"installer.namespace":                     tt.mch.GetNamespace(),
+				multiclusterengineutils.MCEManagedByLabel: "true",
 			}
 			if err := recon.Client.Create(context.TODO(), &tt.mce); err != nil {
 				t.Errorf("failed to create MultiClusterEngine: %v", err)

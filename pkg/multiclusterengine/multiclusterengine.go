@@ -14,6 +14,7 @@ import (
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -67,9 +68,9 @@ var mockPackageManifests = func() *olmapi.PackageManifestList {
 // NewMultiClusterEngine returns an MCE configured from a Multiclusterhub
 func NewMultiClusterEngine(m *operatorv1.MultiClusterHub) *mcev1.MultiClusterEngine {
 	labels := map[string]string{
-		"installer.name":        m.GetName(),
-		"installer.namespace":   m.GetNamespace(),
-		utils.MCEManagedByLabel: "true",
+		"installer.name":                          m.GetName(),
+		"installer.namespace":                     m.GetNamespace(),
+		multiclusterengineutils.MCEManagedByLabel: "true",
 	}
 	annotations := GetSupportedAnnotations(m)
 	availConfig := mcev1.HAHigh
@@ -396,28 +397,10 @@ func GetMCEPackageManifests(k8sClient client.Client) ([]olmapi.PackageManifest, 
 	return pkgList, nil
 }
 
-// Finds MCE by managed label. Returns nil if none found.
-func GetManagedMCE(ctx context.Context, k8sClient client.Client) (*mcev1.MultiClusterEngine, error) {
-	mceList := &mcev1.MultiClusterEngineList{}
-	if err := k8sClient.List(ctx, mceList, &client.MatchingLabels{utils.MCEManagedByLabel: "true"}); err != nil {
-		return nil, err
-	}
-
-	if len(mceList.Items) == 1 {
-		return &mceList.Items[0], nil
-
-	} else if len(mceList.Items) > 1 {
-		// will require manual resolution
-		return nil, fmt.Errorf("multiple MCEs found managed by MCH. Only one MCE is supported")
-	}
-
-	return nil, nil
-}
-
 // find MCE. label it for future. return nil if no mce found.
 func FindAndManageMCE(ctx context.Context, k8sClient client.Client) (*mcev1.MultiClusterEngine, error) {
 	// first find subscription via managed-by label
-	mce, err := GetManagedMCE(ctx, k8sClient)
+	mce, err := multiclusterengineutils.GetManagedMCE(ctx, k8sClient)
 	if err != nil {
 		return nil, err
 	}
@@ -444,7 +427,7 @@ func FindAndManageMCE(ctx context.Context, k8sClient client.Client) (*mcev1.Mult
 	if labels == nil {
 		labels = map[string]string{}
 	}
-	labels[utils.MCEManagedByLabel] = "true"
+	labels[multiclusterengineutils.MCEManagedByLabel] = "true"
 	wholeList.Items[0].SetLabels(labels)
 	log.Log.WithName("reconcile").Info("Adding label to MCE")
 

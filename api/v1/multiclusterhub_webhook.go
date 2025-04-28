@@ -20,10 +20,12 @@ package v1
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"reflect"
 
+	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	admissionregistration "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -128,6 +130,19 @@ func (r *MultiClusterHub) ValidateCreate() (admission.Warnings, error) {
 			if !ValidComponent(c, MCHComponents) {
 				return nil, fmt.Errorf("invalid component config: %s is not a known component", c.Name)
 			}
+		}
+	}
+
+	// If MCE CR exists, then spec.localClusterName must match
+	mceList := &mcev1.MultiClusterEngineList{}
+	// If installing ACM standalone, then MCE will fail to list. This is expected
+	if err := Client.List(context.Background(), mceList); errors.Is(err, errors.New("no matches for kind \"MultiClusterEngine\" in version \"multicluster.openshift.io/v1\"")) {
+		return nil, err
+	}
+	if len(mceList.Items) == 1 {
+		mce := mceList.Items[0]
+		if mce.Spec.LocalClusterName != r.Spec.LocalClusterName {
+			return nil, fmt.Errorf("Spec.LocalClusterName does not match MCE Spec.LocalClusterName: %s", mce.Spec.LocalClusterName)
 		}
 	}
 

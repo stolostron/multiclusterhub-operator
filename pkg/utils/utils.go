@@ -50,9 +50,6 @@ const (
 	// ClusterSubscriptionNamespace is the namespace for the open-cluster-management-backup subscription.
 	ClusterSubscriptionNamespace = "open-cluster-management-backup"
 
-	// MCEManagedByLabel is the label used to mark resources managed by Multicluster Hub.
-	MCEManagedByLabel = "multiclusterhubs.operator.open-cluster-management.io/managed-by"
-
 	// OpenShiftClusterMonitoringLabel is the label for OpenShift cluster monitoring.
 	OpenShiftClusterMonitoringLabel = "openshift.io/cluster-monitoring"
 
