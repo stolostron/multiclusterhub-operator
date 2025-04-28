@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 
 	consolev1 "github.com/openshift/api/operator/v1"
@@ -843,12 +844,17 @@ func (r *MultiClusterHubReconciler) ensureSearchCR(m *operatorv1.MultiClusterHub
 			Name:      "search-v2-operator",
 			Namespace: m.Namespace,
 			Labels:    map[string]string{"cluster.open-cluster-management.io/backup": ""},
+			Annotations: map[string]string{
+				utils.AnnotationFineGrainedRbac: strconv.FormatBool(
+					m.Enabled(operatorv1.FineGrainedRbacPreview)),
+			},
 		},
 		Spec: searchv2v1alpha1.SearchSpec{
 			NodeSelector: m.Spec.NodeSelector,
 			Tolerations:  utils.GetTolerations(m),
 		},
 	}
+
 	force := true
 	err := r.Client.Patch(ctx, searchCR, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
 	if err != nil {

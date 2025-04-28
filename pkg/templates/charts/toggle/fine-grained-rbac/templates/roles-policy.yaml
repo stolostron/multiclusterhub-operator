@@ -1,0 +1,478 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  annotations:
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
+    policy.open-cluster-management.io/description: ""
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+  labels:
+    open-cluster-management.io/policy-cnv: virt-rbac
+  name: roles
+  namespace: {{ .Values.global.namespace }}
+spec:
+  disabled: false
+  policy-templates:
+  - objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: roles
+      spec:
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: rbac.authorization.k8s.io/v1
+            kind: Role
+            metadata:
+              name: cdi-apiserver
+              namespace: openshift-cnv
+            rules:
+            - apiGroups:
+              - ""
+              resources:
+              - secrets
+              - configmaps
+              verbs:
+              - get
+              - list
+              - watch
+              - create
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: rbac.authorization.k8s.io/v1
+            kind: Role
+            metadata:
+              name: cdi-deployment
+              namespace: openshift-cnv
+            rules:
+            - apiGroups:
+              - ""
+              resources:
+              - configmaps
+              verbs:
+              - get
+              - list
+              - watch
+              - create
+              - update
+              - delete
+            - apiGroups:
+              - ""
+              resources:
+              - secrets
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - batch
+              resources:
+              - cronjobs
+              verbs:
+              - get
+              - list
+              - watch
+              - create
+              - update
+              - deletecollection
+            - apiGroups:
+              - batch
+              resources:
+              - jobs
+              verbs:
+              - create
+              - deletecollection
+              - list
+              - watch
+            - apiGroups:
+              - coordination.k8s.io
+              resources:
+              - leases
+              verbs:
+              - get
+              - create
+              - update
+            - apiGroups:
+              - networking.k8s.io
+              resources:
+              - ingresses
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - route.openshift.io
+              resources:
+              - routes
+              verbs:
+              - get
+              - list
+              - watch
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: rbac.authorization.k8s.io/v1
+            kind: Role
+            metadata:
+              name: cdi-monitoring
+              namespace: openshift-cnv
+            rules:
+            - apiGroups:
+              - ""
+              resources:
+              - services
+              - endpoints
+              - pods
+              verbs:
+              - get
+              - list
+              - watch
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: rbac.authorization.k8s.io/v1
+            kind: Role
+            metadata:
+              name: cdi-uploadproxy
+              namespace: openshift-cnv
+            rules:
+            - apiGroups:
+              - ""
+              resources:
+              - configmaps
+              verbs:
+              - get
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: rbac.authorization.k8s.io/v1
+            kind: Role
+            metadata:
+              name: cluster-network-addons-operator-monitoring
+              namespace: openshift-cnv
+            rules:
+            - apiGroups:
+              - ""
+              resources:
+              - services
+              - endpoints
+              - pods
+              verbs:
+              - get
+              - list
+              - watch
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: rbac.authorization.k8s.io/v1
+            kind: Role
+            metadata:
+              name: hco-webhook-service-cert
+              namespace: openshift-cnv
+            rules:
+            - apiGroups:
+              - ""
+              resourceNames:
+              - hco-webhook-service-cert
+              resources:
+              - secrets
+              verbs:
+              - get
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: rbac.authorization.k8s.io/v1
+            kind: Role
+            metadata:
+              name: hostpath-provisioner-operator-service-cert
+              namespace: openshift-cnv
+            rules:
+            - apiGroups:
+              - ""
+              resourceNames:
+              - hostpath-provisioner-operator-service-cert
+              resources:
+              - secrets
+              verbs:
+              - get
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: rbac.authorization.k8s.io/v1
+            kind: Role
+            metadata:
+              name: hyperconverged-cluster-operator-metrics
+              namespace: openshift-cnv
+            rules:
+            - apiGroups:
+              - ""
+              resources:
+              - services
+              - endpoints
+              - pods
+              verbs:
+              - get
+              - list
+              - watch
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: rbac.authorization.k8s.io/v1
+            kind: Role
+            metadata:
+              name: kubevirt-apiserver
+              namespace: openshift-cnv
+            rules:
+            - apiGroups:
+              - ""
+              resources:
+              - configmaps
+              verbs:
+              - get
+              - list
+              - watch
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: rbac.authorization.k8s.io/v1
+            kind: Role
+            metadata:
+              name: kubevirt-controller
+              namespace: openshift-cnv
+            rules:
+            - apiGroups:
+              - route.openshift.io
+              resources:
+              - routes
+              verbs:
+              - list
+              - get
+              - watch
+            - apiGroups:
+              - ""
+              resources:
+              - secrets
+              verbs:
+              - list
+              - get
+              - watch
+            - apiGroups:
+              - networking.k8s.io
+              resources:
+              - ingresses
+              verbs:
+              - list
+              - get
+              - watch
+            - apiGroups:
+              - coordination.k8s.io
+              resources:
+              - leases
+              verbs:
+              - get
+              - list
+              - watch
+              - delete
+              - update
+              - create
+              - patch
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: rbac.authorization.k8s.io/v1
+            kind: Role
+            metadata:
+              name: kubevirt-exportproxy
+              namespace: openshift-cnv
+            rules:
+            - apiGroups:
+              - ""
+              resourceNames:
+              - kubevirt-export-ca
+              resources:
+              - configmaps
+              verbs:
+              - get
+              - list
+              - watch
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: rbac.authorization.k8s.io/v1
+            kind: Role
+            metadata:
+              name: kubevirt-handler
+              namespace: openshift-cnv
+            rules:
+            - apiGroups:
+              - ""
+              resources:
+              - configmaps
+              verbs:
+              - get
+              - list
+              - watch
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: rbac.authorization.k8s.io/v1
+            kind: Role
+            metadata:
+              name: kubevirt-ipam-controller-leader-election-role
+              namespace: openshift-cnv
+            rules:
+            - apiGroups:
+              - ""
+              resources:
+              - configmaps
+              verbs:
+              - get
+              - list
+              - watch
+              - create
+              - update
+              - patch
+              - delete
+            - apiGroups:
+              - coordination.k8s.io
+              resources:
+              - leases
+              verbs:
+              - get
+              - list
+              - watch
+              - create
+              - update
+              - patch
+              - delete
+            - apiGroups:
+              - ""
+              resources:
+              - events
+              verbs:
+              - create
+              - patch
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: rbac.authorization.k8s.io/v1
+            kind: Role
+            metadata:
+              name: kubevirt-monitoring
+              namespace: openshift-cnv
+            rules:
+            - apiGroups:
+              - ""
+              resources:
+              - services
+              - endpoints
+              - pods
+              verbs:
+              - get
+              - list
+              - watch
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: rbac.authorization.k8s.io/v1
+            kind: Role
+            metadata:
+              name: kubevirt-ui-config-reader
+              namespace: openshift-cnv
+            rules:
+            - apiGroups:
+              - ""
+              resourceNames:
+              - kubevirt-user-settings
+              resources:
+              - configmaps
+              verbs:
+              - get
+              - update
+              - patch
+            - apiGroups:
+              - ""
+              resourceNames:
+              - kubevirt-ui-features
+              resources:
+              - configmaps
+              verbs:
+              - get
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: rbac.authorization.k8s.io/v1
+            kind: Role
+            metadata:
+              name: os-images.kubevirt.io:view
+              namespace: openshift-virtualization-os-images
+            rules:
+            - apiGroups:
+              - ""
+              resources:
+              - persistentvolumeclaims
+              - persistentvolumeclaims/status
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - cdi.kubevirt.io
+              resources:
+              - datavolumes
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - cdi.kubevirt.io
+              resources:
+              - datavolumes/source
+              verbs:
+              - create
+            - apiGroups:
+              - cdi.kubevirt.io
+              resources:
+              - datasources
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - cdi.kubevirt.io
+              resources:
+              - dataimportcrons
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - ""
+              resources:
+              - namespaces
+              verbs:
+              - get
+              - list
+              - watch
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: rbac.authorization.k8s.io/v1
+            kind: Role
+            metadata:
+              name: ssp-operator-service-cert
+              namespace: openshift-cnv
+            rules:
+            - apiGroups:
+              - ""
+              resourceNames:
+              - ssp-operator-service-cert
+              resources:
+              - secrets
+              verbs:
+              - get
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: rbac.authorization.k8s.io/v1
+            kind: Role
+            metadata:
+              name: virtio-win
+              namespace: openshift-cnv
+            rules:
+            - apiGroups:
+              - ""
+              resourceNames:
+              - virtio-win
+              resources:
+              - configmaps
+              verbs:
+              - get
+        remediationAction: inform
+        severity: medium
+  remediationAction: inform
