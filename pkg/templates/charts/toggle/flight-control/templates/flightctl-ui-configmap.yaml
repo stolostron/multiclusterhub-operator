@@ -1,8 +1,11 @@
 apiVersion: v1
 data:
-  FLIGHTCTL_GRPC_SERVER: grpcs://flightctl-api-agent-grpc:7444/
+  AUTH_CLIENT_ID: flightctl
+  AUTH_INSECURE_SKIP_VERIFY: 'false'
+  FLIGHTCTL_CLI_ARTIFACTS_SERVER: https://cli-artifacts.placeholder_basedomain
   FLIGHTCTL_SERVER: https://flightctl-api:3443/
   FLIGHTCTL_SERVER_INSECURE_SKIP_VERIFY: 'true'
+  IS_RHEM: 'false'
   K8S_RBAC_NS: '{{ .Values.global.namespace }}'
 kind: ConfigMap
 metadata:
