@@ -9,6 +9,7 @@ import (
 
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 func TestIsPaused(t *testing.T) {
@@ -35,6 +36,26 @@ func TestIsPaused(t *testing.T) {
 		want := false
 		if got := IsPaused(mch); got != want {
 			t.Errorf("IsPaused() = %v, want %v", got, want)
+		}
+	})
+
+}
+
+func TestIsTemplateAnnotationTrue(t *testing.T) {
+	t.Run("Annotation true", func(t *testing.T) {
+		tst := &unstructured.Unstructured{}
+		want := false
+		if got := IsTemplateAnnotationTrue(tst, AnnotationEditable); got != want {
+			t.Errorf("IsTemplateAnnotationTrue() = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("Annotation true", func(t *testing.T) {
+		tst := &unstructured.Unstructured{}
+		tst.SetAnnotations(map[string]string{AnnotationEditable: "true"})
+		want := true
+		if got := IsTemplateAnnotationTrue(tst, AnnotationEditable); got != want {
+			t.Errorf("IsTemplateAnnotationTrue() = %v, want %v", got, want)
 		}
 	})
 
