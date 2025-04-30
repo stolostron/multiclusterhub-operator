@@ -6,3 +6,4 @@
       discovery-operator: discovery_operator
     name: discovery-operator
   repo_name: discovery-operator
+onboard-type: olm
