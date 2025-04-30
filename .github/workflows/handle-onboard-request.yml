@@ -38,6 +38,7 @@ jobs:
             echo "skip_ci=true" >> $GITHUB_OUTPUT
           else
             echo "skip_ci=false" >> $GITHUB_OUTPUT
+          fi
 
       # Exit early if commit message includes [skip ci]
       - name: Exit early if [skip ci] is found
