@@ -48,30 +48,33 @@ jobs:
           exit 0
 
       - name: Set up Python
+        if: steps.skip_check.outputs.skip_ci == 'false'
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
 
       - name: Install yq
+        if: steps.skip_check.outputs.skip_ci == 'false'
         run: |
           sudo wget https://github.com/mikefarah/yq/releases/download/v4.40.5/yq_linux_amd64 -O /usr/bin/yq
           sudo chmod +x /usr/bin/yq
 
       - name: Determine Onboard Type
         id: onboard_type
+        if: steps.skip_check.outputs.skip_ci == 'false'
         run: |
           ONBOARD_TYPE=$(yq '.onboard-type' onboard-request.yaml)
           echo "onboard-type is: $ONBOARD_TYPE"
           echo "onboard_type=$ONBOARD_TYPE" >> $GITHUB_OUTPUT
 
       - name: Run OLM Automation
-        if: ${{ steps.onboard_type.outputs.onboard_type == 'olm' }}
+        if: steps.skip_check.outputs.skip_ci == 'false' && steps.onboard_type.outputs.onboard_type == 'olm'
         run: |
           echo "Running OLM automation..."
           make regenerate-charts-from-bundles CONFIG=$ONBOARD_REQUEST_FILE
         
       - name: Run Helm Automation
-        if: ${{ steps.onboard_type.outputs.onboard_type == 'helm' }}
+        if: steps.skip_check.outputs.skip_ci == 'false' && steps.onboard_type.outputs.onboard_type == 'helm'
         run: |
           echo "Running Helm automation..."
           make regenerate-charts CONFIG=$ONBOARD_REQUEST_FILE
@@ -81,7 +84,7 @@ jobs:
           CONFIG_FILE: hack/bundle-automation/config.yaml
           CHARTS_CONFIG_FILE: hack/bundle-automation/charts-config.yaml
 
-        if: ${{ success() }}
+        if: steps.skip_check.outputs.skip_ci == 'false' && success()
         run: |
           echo "Merging config and onboard request files based on onboard type..."
           
@@ -99,7 +102,7 @@ jobs:
           fi
 
       - name: Commit and Push Changes
-        if: ${{ success() }}
+        if: steps.skip_check.outputs.skip_ci == 'false' && success()
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
