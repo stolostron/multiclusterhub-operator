@@ -1,0 +1,18 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  labels:
+    open-cluster-management.io/policy-cnv: virt-rbac
+  name: binding-policy-virt-rbac
+  namespace: {{ .Values.global.namespace }}
+placementRef:
+  apiGroup: cluster.open-cluster-management.io
+  kind: Placement
+  name: placement-policy-virt-rbac
+subjects:
+- apiGroup: policy.open-cluster-management.io
+  kind: Policy
+  name: policy-virt-clusterroles
+- apiGroup: policy.open-cluster-management.io
+  kind: Policy
+  name: roles

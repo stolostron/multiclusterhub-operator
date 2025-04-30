@@ -14,25 +14,26 @@ type Values struct {
 }
 
 type Global struct {
-	ImageOverrides      map[string]string    `json:"imageOverrides" structs:"imageOverrides"`
-	TemplateOverrides   map[string]string    `json:"templateOverrides" structs:"templateOverrides"`
-	PullPolicy          string               `json:"pullPolicy" structs:"pullPolicy"`
-	PullSecret          string               `json:"pullSecret" structs:"pullSecret"`
-	Namespace           string               `json:"namespace" structs:"namespace"`
-	ImageRepository     string               `json:"imageRepository" structs:"namespace"`
-	Name                string               `json:"name" structs:"name"`
-	Channel             string               `json:"channel" structs:"channel"`
-	MinOADPChannel      string               `json:"minOADPChannel" structs:"minOADPChannel"`
-	InstallPlanApproval subv1alpha1.Approval `json:"installPlanApproval" structs:"installPlanApproval"`
-	Source              string               `json:"source" structs:"source"`
-	SourceNamespace     string               `json:"sourceNamespace" structs:"sourceNamespace"`
-	HubSize             v1.HubSize           `json:"hubSize" structs:"hubSize" yaml:"hubSize"`
-	APIUrl              string               `json:"apiUrl" structs:"apiUrl"`
-	Target              string               `json:"target" structs:"target"`
-	BaseDomain          string               `json:"baseDomain" structs:"baseDomain"`
-	DeployOnOCP         bool                 `json:"deployOnOCP" structs:"deployOnOCP"`
-	StorageClassName    string               `json:"storageClassName" structs:"storageClassName"`
-	StartingCSV         string               `json:"startingCSV" structs:"startingCSV"`
+	ImageOverrides       map[string]string    `json:"imageOverrides" structs:"imageOverrides"`
+	TemplateOverrides    map[string]string    `json:"templateOverrides" structs:"templateOverrides"`
+	PullPolicy           string               `json:"pullPolicy" structs:"pullPolicy"`
+	PullSecret           string               `json:"pullSecret" structs:"pullSecret"`
+	Namespace            string               `json:"namespace" structs:"namespace"`
+	ImageRepository      string               `json:"imageRepository" structs:"namespace"`
+	Name                 string               `json:"name" structs:"name"`
+	Channel              string               `json:"channel" structs:"channel"`
+	MinOADPChannel       string               `json:"minOADPChannel" structs:"minOADPChannel"`
+	MinOADPStableChannel string               `json:"MinOADPStableChannel" structs:"MinOADPStableChannel"`
+	InstallPlanApproval  subv1alpha1.Approval `json:"installPlanApproval" structs:"installPlanApproval"`
+	Source               string               `json:"source" structs:"source"`
+	SourceNamespace      string               `json:"sourceNamespace" structs:"sourceNamespace"`
+	HubSize              v1.HubSize           `json:"hubSize" structs:"hubSize" yaml:"hubSize"`
+	APIUrl               string               `json:"apiUrl" structs:"apiUrl"`
+	Target               string               `json:"target" structs:"target"`
+	BaseDomain           string               `json:"baseDomain" structs:"baseDomain"`
+	DeployOnOCP          bool                 `json:"deployOnOCP" structs:"deployOnOCP"`
+	StorageClassName     string               `json:"storageClassName" structs:"storageClassName"`
+	StartingCSV          string               `json:"startingCSV" structs:"startingCSV"`
 }
 
 type HubConfig struct {

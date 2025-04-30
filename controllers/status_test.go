@@ -13,7 +13,7 @@ import (
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
-	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
+	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -838,7 +838,7 @@ func Test_ComponentsAreRunning(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "multiclusterengine",
 					Labels: map[string]string{
-						utils.MCEManagedByLabel: "true",
+						multiclusterengineutils.MCEManagedByLabel: "true",
 					},
 				},
 				Spec: mcev1.MultiClusterEngineSpec{
@@ -866,7 +866,7 @@ func Test_ComponentsAreRunning(t *testing.T) {
 					Name:      "multicluster-engine",
 					Namespace: "multicluster-engine",
 					Labels: map[string]string{
-						utils.MCEManagedByLabel: "true",
+						multiclusterengineutils.MCEManagedByLabel: "true",
 					},
 				},
 				Spec: &olmv1alpha1.SubscriptionSpec{

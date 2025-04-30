@@ -895,12 +895,14 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 				}
 			}
 
-			// Resource exists; use the original template for patching to avoid issues with managedFields
-			// Apply the object data.
-			force := true
-			if err := r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{
-				Force: &force, FieldManager: "multiclusterhub-operator"}); err != nil {
-				return r.logAndSetCondition(err, "failed to update resource", template, m)
+			if !utils.IsTemplateAnnotationTrue(template, utils.AnnotationEditable) {
+				// Resource exists; use the original template for patching to avoid issues with managedFields
+				// Apply the object data.
+				force := true
+				if err := r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{
+					Force: &force, FieldManager: "multiclusterhub-operator"}); err != nil {
+					return r.logAndSetCondition(err, "failed to update resource", template, m)
+				}
 			}
 		}
 	}
@@ -925,6 +927,12 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(component string) string 
 	case operatorv1.Console:
 		return utils.ConsoleChartLocation
 
+	case operatorv1.EdgeManagerPreview:
+		return utils.EdgeManagerChartLocation
+
+	case operatorv1.FineGrainedRbacPreview:
+		return utils.FineGrainedRbacChartLocation
+
 	case operatorv1.GRC:
 		return utils.GRCChartLocation
 
@@ -948,9 +956,6 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(component string) string 
 
 	case operatorv1.Volsync:
 		return utils.VolsyncChartLocation
-
-	case operatorv1.EdgeManagerPreview:
-		return utils.EdgeManagerChartLocation
 
 	default:
 		log.Info(fmt.Sprintf("Unregistered component detected: %v", component))

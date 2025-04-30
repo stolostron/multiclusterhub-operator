@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 
 	consolev1 "github.com/openshift/api/operator/v1"
@@ -29,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
+	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
@@ -483,7 +485,7 @@ func (r *MultiClusterHubReconciler) listCustomResources(m *operatorv1.MultiClust
 	}
 
 	var mce *unstructured.Unstructured
-	gotMCE, err := multiclusterengine.GetManagedMCE(context.Background(), r.Client)
+	gotMCE, err := multiclusterengineutils.GetManagedMCE(context.Background(), r.Client)
 	if err != nil || gotMCE == nil {
 		mce = nil
 	} else {
@@ -604,7 +606,7 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(ctx context.Context
 // waitForMCE checks that MCE is in a running state and at the expected version.
 func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context) (ctrl.Result, error) {
 	// Wait for MCE to be ready
-	existingMCE, err := multiclusterengine.GetManagedMCE(ctx, r.Client)
+	existingMCE, err := multiclusterengineutils.GetManagedMCE(ctx, r.Client)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -842,12 +844,17 @@ func (r *MultiClusterHubReconciler) ensureSearchCR(m *operatorv1.MultiClusterHub
 			Name:      "search-v2-operator",
 			Namespace: m.Namespace,
 			Labels:    map[string]string{"cluster.open-cluster-management.io/backup": ""},
+			Annotations: map[string]string{
+				utils.AnnotationFineGrainedRbac: strconv.FormatBool(
+					m.Enabled(operatorv1.FineGrainedRbacPreview)),
+			},
 		},
 		Spec: searchv2v1alpha1.SearchSpec{
 			NodeSelector: m.Spec.NodeSelector,
 			Tolerations:  utils.GetTolerations(m),
 		},
 	}
+
 	force := true
 	err := r.Client.Patch(ctx, searchCR, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
 	if err != nil {

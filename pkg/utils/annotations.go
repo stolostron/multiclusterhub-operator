@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 var (
@@ -90,6 +91,17 @@ var (
 		resource.
 	*/
 	AnnotationKubeDefaultStorageClass = "storageclass.kubernetes.io/is-default-class"
+
+	/*
+		AnnotationFineGrainedRbac is an annotation used in the cluster to determine if fine grained rbac is enabled.
+	*/
+	AnnotationFineGrainedRbac = "fine-grained-rbac-preview"
+
+	/*
+		AnnotationEditable is an annotation used on specific resources deployed by the hub to mark them as able
+		to be ended by customer without being overridden.
+	*/
+	AnnotationEditable = "installer.open-cluster-management.io/is-editable"
 )
 
 /*
@@ -115,6 +127,19 @@ func GetHubSize(instance *operatorsv1.MultiClusterHub) operatorsv1.HubSize {
 IsAnnotationTrue checks if a specific annotation key in the given instance is set to "true".
 */
 func IsAnnotationTrue(instance *operatorsv1.MultiClusterHub, annotationKey string) bool {
+	a := instance.GetAnnotations()
+	if a == nil {
+		return false
+	}
+
+	value := strings.EqualFold(a[annotationKey], "true")
+	return value
+}
+
+/*
+IsAnnotationTrue checks if a specific annotation key in the given instance is set to "true".
+*/
+func IsTemplateAnnotationTrue(instance *unstructured.Unstructured, annotationKey string) bool {
 	a := instance.GetAnnotations()
 	if a == nil {
 		return false

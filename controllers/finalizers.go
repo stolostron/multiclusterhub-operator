@@ -12,6 +12,7 @@ import (
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
+	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -67,7 +68,7 @@ func (r *MultiClusterHubReconciler) cleanupClusterRoleBindings(reqLogger logr.Lo
 func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	ctx := context.Background()
 
-	mce, err := multiclusterengine.GetManagedMCE(ctx, r.Client)
+	mce, err := multiclusterengineutils.GetManagedMCE(ctx, r.Client)
 	if err != nil && !apimeta.IsNoMatchError(err) {
 		return err
 	}
@@ -254,7 +255,7 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 func (r *MultiClusterHubReconciler) orphanOwnedMultiClusterEngine(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	ctx := context.Background()
 
-	mce, err := multiclusterengine.GetManagedMCE(ctx, r.Client)
+	mce, err := multiclusterengineutils.GetManagedMCE(ctx, r.Client)
 	if mce == nil {
 		// MCE does not exist
 		return nil
@@ -270,7 +271,7 @@ func (r *MultiClusterHubReconciler) orphanOwnedMultiClusterEngine(reqLogger logr
 	r.Log.Info("Preexisting MCE exists, orphaning resource")
 	controllerutil.RemoveFinalizer(mce, hubFinalizer)
 	labels := mce.GetLabels()
-	delete(labels, utils.MCEManagedByLabel)
+	delete(labels, multiclusterengineutils.MCEManagedByLabel)
 	mce.SetLabels(labels)
 	if err = r.Client.Update(ctx, mce); err != nil {
 		return err

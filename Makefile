@@ -97,7 +97,7 @@ test-prep: manifests generate fmt vet envtest ## prepare to run tests.
 
 test: manifests generate fmt vet envtest ## Run tests.
 	OPERATOR_VERSION=9.9.9 KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" \
-	  ENV_TEST="true" go test $(shell go list ./... | grep -E -v "test") -coverprofile cover.out
+	  ENV_TEST="true" go test -v $(shell go list ./... | grep -E -v "test") -coverprofile cover.out
 
 ##@ Build
 
