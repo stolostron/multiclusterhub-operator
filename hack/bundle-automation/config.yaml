@@ -3493,4 +3493,12 @@ components:
           discovery-operator: discovery_operator
         name: discovery-operator
     repo_name: discovery-operator
+  - branch: backplane-2.9
+    github_ref: https://github.com/stolostron/discovery.git
+    operators:
+      - bundlePath: bundle/manifests/
+        imageMappings:
+          discovery-operator: discovery_operator
+        name: discovery-operator
+    repo_name: discovery-operator
 onboard-type: olm
