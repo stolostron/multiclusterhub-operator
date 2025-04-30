@@ -28,6 +28,24 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           token: ${{ secrets.HUB_OPERATOR_TOKEN }}
 
+      - name: Check for [skip ci] in latest commit message
+        id: skip_check
+        run: |
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          echo "Commit message: $COMMIT_MSG"
+          if [[ "$COMMIT_MSG" == *"[skip ci]"* ]]; then
+            echo "Skipping workflow due to [skip ci]"
+            echo "skip_ci=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip_ci=false" >> $GITHUB_OUTPUT
+
+      # Exit early if commit message includes [skip ci]
+      - name: Exit early if [skip ci] is found
+        if: steps.skip_check.outputs.skip_ci == 'true'
+        run: |
+          echo "Exiting job early because [skip ci] was found in commit message."
+          exit 0
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -80,13 +98,13 @@ jobs:
           fi
 
       - name: Commit and Push Changes
-        if: success()
+        if: ${{ success() }}
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
 
           git add .
-          git diff --cached --quiet || git commit -m "[skip ci] Auto-apply onboard automation changes"
+          git diff --cached --quiet || git commit -sm "[skip ci] Auto-apply onboard automation changes"
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
         env:
           GITHUB_TOKEN: ${{ secrets.HUB_OPERATOR_TOKEN }}
