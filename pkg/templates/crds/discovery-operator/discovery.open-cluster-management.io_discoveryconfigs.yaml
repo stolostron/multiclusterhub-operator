@@ -1,0 +1,165 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.15.0
+  creationTimestamp: null
+  name: discoveryconfigs.discovery.open-cluster-management.io
+spec:
+  group: discovery.open-cluster-management.io
+  names:
+    kind: DiscoveryConfig
+    listKind: DiscoveryConfigList
+    plural: discoveryconfigs
+    singular: discoveryconfig
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: DiscoveryConfig is the Schema for the discoveryconfigs API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DiscoveryConfigSpec defines the desired state of DiscoveryConfig
+            properties:
+              credential:
+                description: Credential is the secret containing credentials to connect
+                  to the OCM api on behalf of a user
+                type: string
+              filters:
+                description: Sets restrictions on what kind of clusters to discover
+                properties:
+                  clusterTypes:
+                    description: |-
+                      ClusterTypes is the list of cluster types to discover. These types represent the platform
+                      the cluster is running on, such as OpenShift Container Platform (OCP), Azure Red Hat OpenShift (ARO),
+                      or others.
+                    items:
+                      type: string
+                    type: array
+                  infrastructureProviders:
+                    description: |-
+                      InfrastructureProviders is the list of infrastructure providers to discover. This can be
+                      a list of cloud providers or platforms (e.g., AWS, Azure, GCP) where clusters might be running.
+                    items:
+                      type: string
+                    type: array
+                  lastActive:
+                    description: LastActive is the last active in days of clusters
+                      to discover, determined by activity timestamp
+                    type: integer
+                  openShiftVersions:
+                    description: OpenShiftVersions is the list of release versions
+                      of OpenShift of the form "<Major>.<Minor>"
+                    items:
+                      description: |-
+                        Semver represents a partial semver string with the major and minor version
+                        in the form "<Major>.<Minor>". For example: "4.5"
+                      pattern: ^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$
+                      type: string
+                    type: array
+                  regions:
+                    description: |-
+                      Regions is the list of regions where OpenShift clusters are located. This helps in filtering
+                      clusters based on geographic location or data center region, useful for compliance or latency
+                      requirements.
+                    items:
+                      type: string
+                    type: array
+                type: object
+            required:
+            - credential
+            type: object
+          status:
+            description: DiscoveryConfigStatus defines the observed state of DiscoveryConfig
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+  - deprecated: true
+    deprecationWarning: discovery.open-cluster-management.io/v1alpha1 DiscoveryConfig
+      is deprecated in v2.5+, unavailable in v2.6+; use discovery.open-cluster-management.io/v1
+      DiscoveryConfig
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: DiscoveryConfig is the Schema for the discoveryconfigs API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DiscoveryConfigSpec defines the desired state of DiscoveryConfig
+            properties:
+              credential:
+                description: Credential is the secret containing credentials to connect
+                  to the OCM api on behalf of a user
+                type: string
+              filters:
+                description: Sets restrictions on what kind of clusters to discover
+                properties:
+                  lastActive:
+                    description: LastActive is the last active in days of clusters
+                      to discover, determined by activity timestamp
+                    type: integer
+                  openShiftVersions:
+                    description: OpenShiftVersions is the list of release versions
+                      of OpenShift of the form "<Major>.<Minor>"
+                    items:
+                      description: |-
+                        Semver represents a partial semver string with the major and minor version
+                        in the form "<Major>.<Minor>". For example: "4.5"
+                      pattern: ^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$
+                      type: string
+                    type: array
+                type: object
+            required:
+            - credential
+            type: object
+          status:
+            description: DiscoveryConfigStatus defines the observed state of DiscoveryConfig
+            type: object
+        type: object
+    served: true
+    storage: false
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null

@@ -1,0 +1,17 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  creationTimestamp: null
+  name: '{{ .Values.org }}:{{ .Chart.Name }}:discovery-operator-metrics-reader'
+  namespace: '{{ .Values.global.namespace }}'
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - pods
+  - services
+  - endpoints
+  verbs:
+  - get
+  - list
+  - watch
