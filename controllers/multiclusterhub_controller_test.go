@@ -1979,7 +1979,8 @@ func Test_ensureResourceVersionAlignment(t *testing.T) {
 	os.Setenv("OPERATOR_VERSION", "2.13.0")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := recon.ensureResourceVersionAlignment(tt.template, os.Getenv("OPERATOR_VERSION"))
+			currentVersion, _ := getCurrentVersion(tt.template)
+			got := recon.ensureResourceVersionAlignment(tt.template, currentVersion, os.Getenv("OPERATOR_VERSION"))
 			if got != tt.want {
 				t.Errorf("ensureResourceVersionAlignment() = %v, want: %v", got, tt.want)
 			}

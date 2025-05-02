@@ -25,6 +25,7 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strings"
 	"time"
 
@@ -832,13 +833,22 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 				log.Info("Warning: OPERATOR_VERSION environment variable is not set")
 			}
 
-			if !r.ensureResourceVersionAlignment(existing, desiredVersion) {
+			currentVersion, ok := getCurrentVersion(template)
+
+			if !r.ensureResourceVersionAlignment(existing, currentVersion, desiredVersion) || !ok {
 				condition := NewHubCondition(
 					operatorv1.Progressing, metav1.ConditionTrue, ComponentsUpdatingReason,
 					fmt.Sprintf("Updating %s/%s to target version: %s.", template.GetKind(),
 						template.GetName(), desiredVersion),
 				)
 				SetHubCondition(&m.Status, *condition)
+
+				// when upgrading from 2.12, deployment/siteconfig-controller-manager needs to be deleted in order for the patch to work
+				if template.GetName() == "siteconfig-controller-manager" {
+					if matchCurrent, _ := regexp.MatchString("2/.12/.[0-9]+", currentVersion); matchCurrent {
+						r.Client.Delete(ctx, template)
+					}
+				}
 			}
 
 			/*
@@ -1981,18 +1991,9 @@ func (r *MultiClusterHubReconciler) CheckDeprecatedFieldUsage(m *operatorv1.Mult
 	}
 }
 
-func (r *MultiClusterHubReconciler) ensureResourceVersionAlignment(template *unstructured.Unstructured,
+func (r *MultiClusterHubReconciler) ensureResourceVersionAlignment(template *unstructured.Unstructured, currentVersion string,
 	desiredVersion string) bool {
 	if desiredVersion == "" {
-		return false
-	}
-
-	// Check the release version annotation on the existing resource
-	annotations := template.GetAnnotations()
-	currentVersion, ok := annotations[utils.AnnotationReleaseVersion]
-	if !ok {
-		log.Info(fmt.Sprintf("Annotation '%v' not found on resource", utils.AnnotationReleaseVersion),
-			"Kind", template.GetKind(), "Name", template.GetName())
 		return false
 	}
 
@@ -2005,6 +2006,18 @@ func (r *MultiClusterHubReconciler) ensureResourceVersionAlignment(template *uns
 	}
 
 	return true // Resource is aligned with the desired version
+}
+
+func getCurrentVersion(template *unstructured.Unstructured) (currentVersion string, ok bool) {
+	// Check the release version annotation on the existing resource
+	annotations := template.GetAnnotations()
+	currentVersion, ok = annotations[utils.AnnotationReleaseVersion]
+	if !ok {
+		log.Info(fmt.Sprintf("Annotation '%v' not found on resource", utils.AnnotationReleaseVersion),
+			"Kind", template.GetKind(), "Name", template.GetName())
+		return "", false
+	}
+	return currentVersion, true
 }
 
 func (r *MultiClusterHubReconciler) logAndSetCondition(err error, message string,
