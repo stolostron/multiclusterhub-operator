@@ -16,8 +16,8 @@ spec:
     Red Hat Advanced Cluster Management for Kubernetes. This includes:
     - `policytools`
         - Interact with Red Hat Advanced Cluster Management policies locally, 
-          such as resolving templates locally and reconciling a 
-          ConfigurationPolicy locally (Dev Preview).
+          including resolving templates locally and reconciling a 
+          ConfigurationPolicy locally.
     - `PolicyGenerator`
         - Build Red Hat Advanced Cluster Management policies from Kubernetes 
           manifest YAML files, which are provided through a `PolicyGenerator` 
