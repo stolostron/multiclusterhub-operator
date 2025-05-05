@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"regexp"
 	"strings"
 
 	consolev1 "github.com/openshift/api/operator/v1"
@@ -983,4 +984,30 @@ func (r *MultiClusterHubReconciler) CheckConsole(ctx context.Context) (bool, err
 		}
 	}
 	return false, nil
+}
+
+func getCurrentVersion(template *unstructured.Unstructured) (currentVersion string, ok bool) {
+	// Check the release version annotation on the existing resource
+	annotations := template.GetAnnotations()
+	currentVersion, ok = annotations[utils.AnnotationReleaseVersion]
+	if !ok {
+		log.Info(fmt.Sprintf("Annotation '%v' not found on resource", utils.AnnotationReleaseVersion),
+			"Kind", template.GetKind(), "Name", template.GetName())
+		return "", false
+	}
+	return currentVersion, true
+}
+
+func (r *MultiClusterHubReconciler) patchSiteconfigControllerManager(ctx context.Context, template *unstructured.Unstructured, currentVersion string) (err error) {
+	// when upgrading from 2.12, deployment/siteconfig-controller-manager needs to be deleted
+	// in order for the patch to work
+	if template.GetName() == "siteconfig-controller-manager" {
+		if matchCurrent, _ := regexp.MatchString("2/.12/.[0-9]+", currentVersion); matchCurrent {
+			if err := r.Client.Delete(ctx, template); err != nil {
+				log.Error(err, "failed to delete siteconfig-controller-manager")
+				return err
+			}
+		}
+	}
+	return nil
 }
