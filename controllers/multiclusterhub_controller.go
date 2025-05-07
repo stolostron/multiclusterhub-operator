@@ -832,13 +832,19 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 				log.Info("Warning: OPERATOR_VERSION environment variable is not set")
 			}
 
-			if !r.ensureResourceVersionAlignment(existing, desiredVersion) {
+			currentVersion, ok := getCurrentVersion(template)
+
+			if !r.ensureResourceVersionAlignment(existing, currentVersion, desiredVersion) || !ok {
 				condition := NewHubCondition(
 					operatorv1.Progressing, metav1.ConditionTrue, ComponentsUpdatingReason,
 					fmt.Sprintf("Updating %s/%s to target version: %s.", template.GetKind(),
 						template.GetName(), desiredVersion),
 				)
 				SetHubCondition(&m.Status, *condition)
+
+				if err = r.patchSiteconfigControllerManager(ctx, template, currentVersion); err != nil {
+					return ctrl.Result{}, err
+				}
 			}
 
 			/*
@@ -1976,17 +1982,8 @@ func (r *MultiClusterHubReconciler) CheckDeprecatedFieldUsage(m *operatorv1.Mult
 }
 
 func (r *MultiClusterHubReconciler) ensureResourceVersionAlignment(template *unstructured.Unstructured,
-	desiredVersion string) bool {
+	currentVersion string, desiredVersion string) bool {
 	if desiredVersion == "" {
-		return false
-	}
-
-	// Check the release version annotation on the existing resource
-	annotations := template.GetAnnotations()
-	currentVersion, ok := annotations[utils.AnnotationReleaseVersion]
-	if !ok {
-		log.Info(fmt.Sprintf("Annotation '%v' not found on resource", utils.AnnotationReleaseVersion),
-			"Kind", template.GetKind(), "Name", template.GetName())
 		return false
 	}
 
