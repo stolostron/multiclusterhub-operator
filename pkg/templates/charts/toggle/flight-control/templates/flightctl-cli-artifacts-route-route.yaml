@@ -1,0 +1,17 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: flightctl-cli-artifacts-route
+  namespace: '{{ .Values.global.namespace }}'
+spec:
+  host: cli-artifacts.placeholder_basedomain
+  port:
+    targetPort: 8090
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: edge
+  to:
+    kind: Service
+    name: flightctl-cli-artifacts
+    weight: 100
+  wildcardPolicy: None
