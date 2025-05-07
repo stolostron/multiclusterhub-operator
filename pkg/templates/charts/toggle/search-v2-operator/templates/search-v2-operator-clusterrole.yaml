@@ -163,6 +163,7 @@ rules:
   - operator.open-cluster-management.io
   resources:
   - multiclusterglobalhubs
+  - multiclusterhubs
   verbs:
   - get
   - list

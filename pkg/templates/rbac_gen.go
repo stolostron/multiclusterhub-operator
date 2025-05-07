@@ -209,7 +209,7 @@ package main
 //+kubebuilder:rbac:groups=observability.open-cluster-management.io,resources=*;multiclusterobservabilities;endpointmonitorings,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=internalhubcomponents,verbs=get;list;update;watch
 //+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=internalhubcomponents/finalizers,verbs=update
-//+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=multiclusterglobalhubs,verbs=get;list
+//+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=multiclusterglobalhubs;multiclusterhubs,verbs=get;list
 //+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=multiclusterhubs,verbs=get
 //+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=multiclusterhubs,verbs=get;list
 //+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=multiclusterhubs,verbs=get;list;watch
