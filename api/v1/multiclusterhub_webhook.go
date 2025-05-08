@@ -133,6 +133,11 @@ func (r *MultiClusterHub) ValidateCreate() (admission.Warnings, error) {
 		}
 	}
 
+	// validate local-cluster name length
+	if err := validateLocalClusterNameLength(r.Spec.LocalClusterName); err != nil {
+		return nil, err
+	}
+
 	// If MCE CR exists, then spec.localClusterName must match
 	mceList := &mcev1.MultiClusterEngineList{}
 	// If installing ACM standalone, then MCE will fail to list. This is expected
@@ -147,6 +152,13 @@ func (r *MultiClusterHub) ValidateCreate() (admission.Warnings, error) {
 	}
 
 	return nil, nil
+}
+
+func validateLocalClusterNameLength(name string) (err error) {
+	if len(name) >= 64 {
+		return fmt.Errorf("local-cluster name must be shorter than 64 characters")
+	}
+	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
@@ -179,6 +191,10 @@ func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) (admission.Warnings
 	// Block changing localClusterName if ManagdCluster with label `local-cluster = true` exists
 	// if the Spec.LocalClusterName field has changed
 	if oldMCH.Spec.LocalClusterName != r.Spec.LocalClusterName {
+		if err := validateLocalClusterNameLength(r.Spec.LocalClusterName); err != nil {
+			return nil, err
+		}
+
 		ctx := context.Background()
 		managedClusterGVK := schema.GroupVersionKind{
 			Group:   "cluster.open-cluster-management.io",
