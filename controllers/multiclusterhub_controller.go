@@ -1874,6 +1874,24 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 		updateNecessary = true
 	}
 
+	// Automatically replace and prune preview components.
+	// If a preview component is enabled and a stable equivalent exists,
+	// enable the stable version. Then, regardless of status, prune the preview.
+	for preview, stable := range operatorv1.PreviewToStable {
+		if m.Enabled(preview) {
+			log.Info("Stable component version enabled due to preview being enabled",
+				"preview", preview,
+				"stable", stable,
+			)
+			m.Enable(stable)
+		}
+
+		if m.Prune(preview) {
+			log.Info("Pruning preview component", "preview", preview)
+			updateNecessary = true
+		}
+	}
+
 	if utils.DeduplicateComponents(m) {
 		updateNecessary = true
 	}
