@@ -108,6 +108,12 @@ var MCEComponents = []string{
 	MCEServerFoundation,
 }
 
+/*
+PreviewToStable maps each preview component to its corresponding stable replacement.
+This mapping is used to enable the stable component when the preview version is pruned.
+*/
+var PreviewToStable = map[string]string{}
+
 var MCECRDs = []ResourceGVK{
 	{
 		Group:   "addon.open-cluster-management.io",
