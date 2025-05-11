@@ -4,7 +4,7 @@ metadata:
   labels:
     open-cluster-management.io/policy-cnv: virt-rbac
   name: binding-policy-virt-rbac
-  namespace: {{ .Values.global.namespace }}
+  namespace: open-cluster-management-global-set
 placementRef:
   apiGroup: cluster.open-cluster-management.io
   kind: Placement
@@ -15,4 +15,4 @@ subjects:
   name: policy-virt-clusterroles
 - apiGroup: policy.open-cluster-management.io
   kind: Policy
-  name: roles
+  name: policy-virt-oauth
