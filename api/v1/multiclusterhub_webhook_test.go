@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	mce "github.com/stolostron/backplane-operator/api/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
@@ -125,7 +125,24 @@ var _ = Describe("Multiclusterhub webhook", func() {
 
 			By("because the local-cluster name must be less than 35 characters long", func() {
 				mch.Spec.LocalClusterName = strings.Repeat("t", 35)
-				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(), "local-cluster name must be less than 35 characters long")
+				expectedError := &k8serrors.StatusError{
+					ErrStatus: metav1.Status{
+						TypeMeta: metav1.TypeMeta{Kind: "", APIVersion: ""},
+						ListMeta: metav1.ListMeta{
+							SelfLink:           "",
+							ResourceVersion:    "",
+							Continue:           "",
+							RemainingItemCount: nil,
+						},
+						Status:  "Failure",
+						Message: "admission webhook \"multiclusterhub.validating-webhook.open-cluster-management.io\" denied the request: local-cluster name must be shorter than 35 characters",
+						Reason:  "Forbidden",
+						Details: nil,
+						Code:    403,
+					},
+				}
+				// errors.New("local-cluster name must be shorter than 35 characters")
+				Expect(k8sClient.Update(ctx, mch)).To(Equal(expectedError), "local-cluster name must be less than 35 characters long")
 			})
 		})
 
@@ -164,7 +181,7 @@ var _ = Describe("Multiclusterhub webhook", func() {
 		It("Should be the only MCH to exist", func() {
 			mch := &MultiClusterHub{}
 			err := k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)
-			Expect(errors.IsNotFound(err)).To(BeTrue())
+			Expect(k8serrors.IsNotFound(err)).To(BeTrue())
 		})
 		It("Should create the MCE", func() {
 			mce := &mce.MultiClusterEngine{
