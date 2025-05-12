@@ -4,6 +4,7 @@ package v1
 
 import (
 	"fmt"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -120,6 +121,11 @@ var _ = Describe("Multiclusterhub webhook", func() {
 
 				mch.Spec.LocalClusterName = "updated-local-cluster"
 				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(), "updating local-cluster name while one exists should not be permitted")
+			})
+
+			By("because the local-cluster name must be less than 35 characters long", func() {
+				mch.Spec.LocalClusterName = strings.Repeat("t", 35)
+				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(), "local-cluster name must be less than 35 characters long")
 			})
 		})
 
