@@ -141,7 +141,6 @@ var _ = Describe("Multiclusterhub webhook", func() {
 						Code:    403,
 					},
 				}
-				// errors.New("local-cluster name must be shorter than 35 characters")
 				Expect(k8sClient.Update(ctx, mch)).To(Equal(expectedError), "local-cluster name must be less than 35 characters long")
 			})
 		})
