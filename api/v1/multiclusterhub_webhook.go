@@ -155,8 +155,8 @@ func (r *MultiClusterHub) ValidateCreate() (admission.Warnings, error) {
 }
 
 func validateLocalClusterNameLength(name string) (err error) {
-	if len(name) >= 64 {
-		return fmt.Errorf("local-cluster name must be shorter than 64 characters")
+	if len(name) >= 35 {
+		return fmt.Errorf("local-cluster name must be shorter than 35 characters")
 	}
 	return nil
 }
