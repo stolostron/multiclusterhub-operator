@@ -1275,6 +1275,13 @@ rules:
   - list
   - watch
 - apiGroups:
+  - config.openshift.io/v1
+  resources:
+  - oauths
+  verbs:
+  - list
+  - watch
+- apiGroups:
   - console.open-cluster-management.io
   resources:
   - userpreferences
