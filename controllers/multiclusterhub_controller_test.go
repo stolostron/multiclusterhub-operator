@@ -2144,3 +2144,92 @@ func Test_ApplyTemplate(t *testing.T) {
 		})
 	}
 }
+
+func Test_ReplaceAndPrunePreview(t *testing.T) {
+	tests := []struct {
+		name string
+		mch  operatorv1.MultiClusterHub
+		mch2 operatorv1.MultiClusterHub
+		want bool
+	}{
+		{
+			name: "should replace and prune preview components",
+			mch: operatorv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-mch",
+					Namespace: "test-ns",
+				},
+				Spec: operatorv1.MultiClusterHubSpec{
+					Overrides: &operatorv1.Overrides{
+						Components: []operatorv1.ComponentConfig{
+							{
+								Name:    operatorv1.FineGrainedRbacPreview,
+								Enabled: true,
+							},
+							{
+								Name:    operatorv1.EdgeManagerPreview,
+								Enabled: false,
+							},
+							{
+								Name:    operatorv1.Search,
+								Enabled: true,
+							},
+						},
+					},
+				},
+			},
+			mch2: operatorv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-mch",
+					Namespace: "test-ns",
+				},
+				Spec: operatorv1.MultiClusterHubSpec{
+					Overrides: &operatorv1.Overrides{
+						Components: []operatorv1.ComponentConfig{
+							{
+								Name:    operatorv1.FineGrainedRbac,
+								Enabled: true,
+							},
+							{
+								Name:    operatorv1.EdgeManager,
+								Enabled: false,
+							},
+							{
+								Name:    operatorv1.Search,
+								Enabled: true,
+							},
+						},
+					},
+				},
+			},
+			want: true,
+		},
+	}
+
+	operatorv1.PreviewToStable[operatorv1.FineGrainedRbacPreview] = operatorv1.FineGrainedRbac
+	operatorv1.PreviewToStable[operatorv1.EdgeManagerPreview] = operatorv1.EdgeManager
+
+	fmt.Printf("\n%v", operatorv1.PreviewToStable)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := recon.ReplaceAndPrunePreviews(&tt.mch); got != tt.want {
+				t.Errorf("ReplaceAndPrunePreviews(tt.mch) = %v, want = %v", got, tt.want)
+			}
+
+			// Check if all components from mch are present in mch2
+			for _, component := range tt.mch.Spec.Overrides.Components {
+				found := false
+				for _, component2 := range tt.mch2.Spec.Overrides.Components {
+					if component.Name == component2.Name {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Errorf("Component %s from mch is missing in mch2", component.Name)
+				}
+			}
+		})
+	}
+}

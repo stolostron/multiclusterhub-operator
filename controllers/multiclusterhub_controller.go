@@ -1854,6 +1854,30 @@ func updatePausedCondition(m *operatorv1.MultiClusterHub) {
 	}
 }
 
+func (r *MultiClusterHubReconciler) ReplaceAndPrunePreviews(m *operatorv1.MultiClusterHub) bool {
+	updateNecessary := false
+
+	// Automatically replace and prune preview components.
+	// If a preview component is enabled and a stable equivalent exists,
+	// enable the stable version. Then, regardless of status, prune the preview.
+	for preview, stable := range operatorv1.PreviewToStable {
+		if m.Enabled(preview) {
+			log.Info("Stable component version enabled due to preview being enabled",
+				"preview", preview,
+				"stable", stable,
+			)
+			m.Enable(stable)
+		}
+
+		if m.Prune(preview) {
+			log.Info("Pruning preview component", "preview", preview)
+			updateNecessary = true
+		}
+	}
+
+	return updateNecessary
+}
+
 func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, ocpConsole bool) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log
@@ -1874,22 +1898,8 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 		updateNecessary = true
 	}
 
-	// Automatically replace and prune preview components.
-	// If a preview component is enabled and a stable equivalent exists,
-	// enable the stable version. Then, regardless of status, prune the preview.
-	for preview, stable := range operatorv1.PreviewToStable {
-		if m.Enabled(preview) {
-			log.Info("Stable component version enabled due to preview being enabled",
-				"preview", preview,
-				"stable", stable,
-			)
-			m.Enable(stable)
-		}
-
-		if m.Prune(preview) {
-			log.Info("Pruning preview component", "preview", preview)
-			updateNecessary = true
-		}
+	if r.ReplaceAndPrunePreviews(m) {
+		updateNecessary = true
 	}
 
 	if utils.DeduplicateComponents(m) {
