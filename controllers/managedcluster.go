@@ -111,9 +111,9 @@ func (r *MultiClusterHubReconciler) ensureKlusterletAddonConfig(m *operatorsv1.M
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Creating new klusterletAddonConfig
-			utils.AddInstallerLabel(desiredKlusterletaddonconfig, m.GetName(), m.GetNamespace())
+			utils.AddInstallerLabel(klusterletaddonconfig, m.GetName(), m.GetNamespace())
 
-			err = r.Client.Create(ctx, desiredKlusterletaddonconfig)
+			err = r.Client.Create(ctx, klusterletaddonconfig)
 			if err != nil {
 				r.Log.Error(err, "Failed to create klusterletaddonconfig resource")
 				return ctrl.Result{}, err
@@ -127,7 +127,7 @@ func (r *MultiClusterHubReconciler) ensureKlusterletAddonConfig(m *operatorsv1.M
 		return ctrl.Result{}, err
 	}
 
-	iutils.AddInstallerLabel(klusterletaddonconfig, m.GetName(), m.GetNamespace())
+	utils.AddInstallerLabel(klusterletaddonconfig, m.GetName(), m.GetNamespace())
 
 	err = r.Client.Update(ctx, klusterletaddonconfig)
 	if err != nil {
