@@ -102,20 +102,18 @@ func (r *MultiClusterHubReconciler) ensureKlusterletAddonConfig(m *operatorsv1.M
 		return ctrl.Result{}, err
 	}
 
-	desiredKlusterletaddonconfig := getKlusterletAddonConfig(m)
-	klusterletaddonconfig := desiredKlusterletaddonconfig.DeepCopy()
+	klusterletaddonconfig := getKlusterletAddonConfig(m)
 	nsn := types.NamespacedName{
 		Name:      KlusterletAddonConfigName,
 		Namespace: ManagedClusterName,
 	}
-
 	err = r.Client.Get(ctx, nsn, klusterletaddonconfig)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Creating new klusterletAddonConfig
-			utils.AddInstallerLabel(desiredKlusterletaddonconfig, m.GetName(), m.GetNamespace())
+			utils.AddInstallerLabel(klusterletaddonconfig, m.GetName(), m.GetNamespace())
 
-			err = r.Client.Create(ctx, desiredKlusterletaddonconfig)
+			err = r.Client.Create(ctx, klusterletaddonconfig)
 			if err != nil {
 				r.Log.Error(err, "Failed to create klusterletaddonconfig resource")
 				return ctrl.Result{}, err
@@ -129,29 +127,14 @@ func (r *MultiClusterHubReconciler) ensureKlusterletAddonConfig(m *operatorsv1.M
 		return ctrl.Result{}, err
 	}
 
-	isEquivalent, newSpec, err := equivalentKlusterletAddonConfig(desiredKlusterletaddonconfig, klusterletaddonconfig, m)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	// Don't need to update klusterletaddonconfig when isEquivalent is true
-	if isEquivalent {
-		return ctrl.Result{}, nil
-	}
-
 	utils.AddInstallerLabel(klusterletaddonconfig, m.GetName(), m.GetNamespace())
-
-	err = unstructured.SetNestedMap(klusterletaddonconfig.Object, newSpec, "spec")
-	if err != nil {
-		r.Log.Error(err, "Failed to set the spec of the KlusterletAddonConfig")
-		return ctrl.Result{}, err
-	}
 
 	err = r.Client.Update(ctx, klusterletaddonconfig)
 	if err != nil {
 		r.Log.Error(err, "Failed to update klusterletaddonconfig resource")
 		return ctrl.Result{}, err
 	}
+
 
 	r.Log.Info("Updated the KlusterletAddonConfig")
 
