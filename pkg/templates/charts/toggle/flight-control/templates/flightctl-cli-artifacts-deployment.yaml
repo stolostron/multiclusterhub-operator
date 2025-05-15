@@ -2,20 +2,20 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    flightctl.service: flightctl-api
-  name: flightctl-api
+    flightctl.service: flightctl-cli-artifacts
+  name: flightctl-cli-artifacts
 spec:
   replicas: 1
   selector:
     matchLabels:
-      flightctl.service: flightctl-api
+      flightctl.service: flightctl-cli-artifacts
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        flightctl.service: flightctl-api
-        ocm-antiaffinity-selector: flightctl-api
+        flightctl.service: flightctl-cli-artifacts
+        ocm-antiaffinity-selector: flightctl-cli-artifacts
     spec:
       affinity:
         podAntiAffinity:
@@ -26,7 +26,7 @@ spec:
                 - key: ocm-antiaffinity-selector
                   operator: In
                   values:
-                  - flightctl-api
+                  - flightctl-cli-artifacts
               topologyKey: topology.kubernetes.io/zone
             weight: 70
           - podAffinityTerm:
@@ -35,7 +35,7 @@ spec:
                 - key: ocm-antiaffinity-selector
                   operator: In
                   values:
-                  - flightctl-api
+                  - flightctl-cli-artifacts
               topologyKey: kubernetes.io/hostname
             weight: 35
       containers:
@@ -53,38 +53,14 @@ spec:
         - name: NO_PROXY
           value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
 {{- end }}
-        - name: HOME
-          value: /root
-        - name: KV_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: password
-              name: flightctl-kv-secret
-        - name: DB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: masterPassword
-              name: flightctl-db-secret
-        - name: DB_USER
-          valueFrom:
-            secretKeyRef:
-              key: masterUser
-              name: flightctl-db-secret
-        image: '{{ .Values.global.imageOverrides.flightctl_api }}'
+        - name: CLI_ARTIFACTS_BASE_URL
+          value: https://cli-artifacts.placeholder_basedomain
+        image: '{{ .Values.global.imageOverrides.flightctl_cli_artifacts }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
-        name: flightctl-api
+        name: flightctl-cli-artifacts
         ports:
-        - containerPort: 3443
-          name: service-api
-          protocol: TCP
-        - containerPort: 7443
-          name: agent-api
-          protocol: TCP
-        - containerPort: 15690
-          name: api-prom-target
-          protocol: TCP
-        - containerPort: 15691
-          name: db-prom-target
+        - containerPort: 8090
+          name: cli-artifacts
           protocol: TCP
         securityContext:
           allowPrivilegeEscalation: false
@@ -94,13 +70,6 @@ spec:
           privileged: false
           readOnlyRootFilesystem: true
           runAsNonRoot: true
-        volumeMounts:
-        - mountPath: /root/.flightctl/
-          name: flightctl-api-certs
-        - mountPath: /root/.flightctl/config.yaml
-          name: flightctl-api-config
-          readOnly: true
-          subPath: config.yaml
       hostIPC: false
       hostNetwork: false
       hostPID: false
@@ -119,7 +88,6 @@ spec:
         seccompProfile:
           type: RuntimeDefault
 {{- end }}
-      serviceAccountName: flightctl-api
 {{- with .Values.hubconfig.tolerations }}
       tolerations:
       {{- range . }}
@@ -130,10 +98,3 @@ spec:
         {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
         {{- end }}
 {{- end }}
-      volumes:
-      - name: flightctl-api-certs
-        persistentVolumeClaim:
-          claimName: flightctl-api-certs
-      - configMap:
-          name: flightctl-api-config
-        name: flightctl-api-config

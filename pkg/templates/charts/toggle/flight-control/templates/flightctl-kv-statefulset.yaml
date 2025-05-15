@@ -6,9 +6,9 @@ metadata:
   name: flightctl-kv
   namespace: '{{ .Values.global.namespace }}'
 spec:
-  revisionHistoryLimit: 10
   podManagementPolicy: OrderedReady
   replicas: 1
+  revisionHistoryLimit: 10
   selector:
     matchLabels:
       flightctl.service: flightctl-kv
@@ -30,8 +30,8 @@ spec:
             secretKeyRef:
               key: password
               name: flightctl-kv-secret
-        image: docker.io/redis:7.4.1
-        imagePullPolicy: Always
+        image: '{{ .Values.global.imageOverrides.redis_7_c9s }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         name: flightctl-kv
         ports:
         - containerPort: 6379
@@ -40,12 +40,24 @@ spec:
           requests:
             cpu: 1000m
             memory: 2Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
         volumeMounts:
         - mountPath: /var/lib/redis/data
           name: flightctl-kv-data
         - mountPath: /etc/redis/redis.conf
           name: flightctl-kv-config
           subPath: redis.conf
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       volumes:
       - configMap:
           defaultMode: 420
