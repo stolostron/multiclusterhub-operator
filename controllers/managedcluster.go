@@ -5,7 +5,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
@@ -19,6 +18,12 @@ import (
 )
 
 const (
+	// ManagedClusterName name of the hub cluster managedcluster resource
+	ManagedClusterName = "local-cluster"
+
+	// KlusterletAddonConfigName name of the hub cluster managedcluster resource
+	KlusterletAddonConfigName = "local-cluster"
+
 	// AnnotationNodeSelector key name of nodeSelector annotation synced from mch
 	AnnotationNodeSelector = "open-cluster-management/nodeSelector"
 )
@@ -41,8 +46,8 @@ func getKlusterletAddonConfig(m *operatorsv1.MultiClusterHub) *unstructured.Unst
 			"apiVersion": "agent.open-cluster-management.io/v1",
 			"kind":       "KlusterletAddonConfig",
 			"metadata": map[string]interface{}{
-				"name":      m.Spec.LocalClusterName,
-				"namespace": m.Spec.LocalClusterName,
+				"name":      KlusterletAddonConfigName,
+				"namespace": ManagedClusterName,
 			},
 			"spec": map[string]interface{}{
 				"applicationManager": map[string]interface{}{
@@ -86,31 +91,29 @@ func equivalentKlusterletAddonConfig(desiredKlusterletaddonconfig, klusterletadd
 func (r *MultiClusterHubReconciler) ensureKlusterletAddonConfig(m *operatorsv1.MultiClusterHub) (ctrl.Result, error) {
 	ctx := context.Background()
 
-	r.Log.Info(fmt.Sprintf("Checking for ManagedCluster %v namespace", m.Spec.LocalClusterName))
+	r.Log.Info("Checking for local-cluster namespace")
 	ns := &corev1.Namespace{}
-	err := r.Client.Get(ctx, types.NamespacedName{Name: m.Spec.LocalClusterName}, ns)
+	err := r.Client.Get(ctx, types.NamespacedName{Name: ManagedClusterName}, ns)
 	if err != nil && errors.IsNotFound(err) {
-		r.Log.Info(fmt.Sprintf("Waiting for %v namespace to be created", m.Spec.LocalClusterName))
+		r.Log.Info("Waiting for local-cluster namespace to be created")
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	} else if err != nil {
-		r.Log.Error(err, fmt.Sprintf("Failed to check for %v namespace", m.Spec.LocalClusterName))
+		r.Log.Error(err, "Failed to check for local-cluster namespace")
 		return ctrl.Result{}, err
 	}
 
-	desiredKlusterletaddonconfig := getKlusterletAddonConfig(m)
-	klusterletaddonconfig := desiredKlusterletaddonconfig.DeepCopy()
+	klusterletaddonconfig := getKlusterletAddonConfig(m)
 	nsn := types.NamespacedName{
-		Name:      m.Spec.LocalClusterName,
-		Namespace: m.Spec.LocalClusterName,
+		Name:      KlusterletAddonConfigName,
+		Namespace: ManagedClusterName,
 	}
-
 	err = r.Client.Get(ctx, nsn, klusterletaddonconfig)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Creating new klusterletAddonConfig
-			utils.AddInstallerLabel(desiredKlusterletaddonconfig, m.GetName(), m.GetNamespace())
+			utils.AddInstallerLabel(klusterletaddonconfig, m.GetName(), m.GetNamespace())
 
-			err = r.Client.Create(ctx, desiredKlusterletaddonconfig)
+			err = r.Client.Create(ctx, klusterletaddonconfig)
 			if err != nil {
 				r.Log.Error(err, "Failed to create klusterletaddonconfig resource")
 				return ctrl.Result{}, err
@@ -124,29 +127,14 @@ func (r *MultiClusterHubReconciler) ensureKlusterletAddonConfig(m *operatorsv1.M
 		return ctrl.Result{}, err
 	}
 
-	isEquivalent, newSpec, err := equivalentKlusterletAddonConfig(desiredKlusterletaddonconfig, klusterletaddonconfig, m)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	// Don't need to update klusterletaddonconfig when isEquivalent is true
-	if isEquivalent {
-		return ctrl.Result{}, nil
-	}
-
 	utils.AddInstallerLabel(klusterletaddonconfig, m.GetName(), m.GetNamespace())
-
-	err = unstructured.SetNestedMap(klusterletaddonconfig.Object, newSpec, "spec")
-	if err != nil {
-		r.Log.Error(err, "Failed to set the spec of the KlusterletAddonConfig")
-		return ctrl.Result{}, err
-	}
 
 	err = r.Client.Update(ctx, klusterletaddonconfig)
 	if err != nil {
 		r.Log.Error(err, "Failed to update klusterletaddonconfig resource")
 		return ctrl.Result{}, err
 	}
+
 
 	r.Log.Info("Updated the KlusterletAddonConfig")
 
