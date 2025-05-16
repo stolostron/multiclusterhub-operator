@@ -41,15 +41,7 @@ spec:
         - --leader-election-lease-duration=137s
         - --leader-election-renew-deadline=107s
         - --leader-election-retry-period=26s
-        env:
-{{- if .Values.hubconfig.proxyConfigs }}
-        - name: HTTP_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
-        - name: HTTPS_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
-        - name: NO_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
-{{- end }}
+        env: []
         image: '{{ .Values.global.imageOverrides.multicloud_integrations }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         livenessProbe:
