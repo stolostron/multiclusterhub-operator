@@ -12,7 +12,7 @@ global:
     cluster_backup_controller: ""
   templateOverrides: {}
   name: redhat-oadp-operator
-  channel: stable-2.4
+  channel: stable-1.4
   minOADPChannel: stable-1.4
   minOADPStableChannel: stable
   installPlanApproval: Automatic
