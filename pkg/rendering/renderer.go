@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strconv"
+	"strings"
 
 	loader "helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -25,61 +26,30 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-type Values struct {
-	Global    Global    `json:"global" structs:"global"`
-	HubConfig HubConfig `json:"hubconfig" structs:"hubconfig"`
-	Org       string    `json:"org" structs:"org"`
-}
-
-type Global struct {
-	ImageOverrides      map[string]string    `json:"imageOverrides" structs:"imageOverrides"`
-	TemplateOverrides   map[string]string    `json:"templateOverrides" structs:"templateOverrides"`
-	PullPolicy          string               `json:"pullPolicy" structs:"pullPolicy"`
-	PullSecret          string               `json:"pullSecret" structs:"pullSecret"`
-	Namespace           string               `json:"namespace" structs:"namespace"`
-	ImageRepository     string               `json:"imageRepository" structs:"namespace"`
-	Name                string               `json:"name" structs:"name"`
-	Channel             string               `json:"channel" structs:"Channel"`
-	MinOADPChannel      string               `json:"minOADPChannel" structs:"minOADPChannel"`
-	InstallPlanApproval subv1alpha1.Approval `json:"installPlanApproval" structs:"installPlanApproval"`
-	Source              string               `json:"source" structs:"source"`
-	SourceNamespace     string               `json:"sourceNamespace" structs:"sourceNamespace"`
-	HubSize             v1.HubSize           `json:"hubSize" structs:"hubSize" yaml:"hubSize"`
-	APIUrl              string               `json:"apiUrl" structs:"apiUrl"`
-	Target              string               `json:"target" structs:"target"`
-	BaseDomain          string               `json:"baseDomain" structs:"baseDomain"`
-	DeployOnOCP         bool                 `json:"deployOnOCP" structs:"deployOnOCP"`
-	StorageClassName    string               `json:"storageClassName" structs:"storageClassName"`
-	StartingCSV         string               `json:"startingCSV" structs:"startingCSV"`
-}
-
-type HubConfig struct {
-	ClusterSTSEnabled bool              `json:"clusterSTSEnabled" structs:"clusterSTSEnabled"`
-	NodeSelector      map[string]string `json:"nodeSelector" structs:"nodeSelector"`
-	ProxyConfigs      map[string]string `json:"proxyConfigs" structs:"proxyConfigs"`
-	ReplicaCount      int               `json:"replicaCount" structs:"replicaCount"`
-	Tolerations       []Toleration      `json:"tolerations" structs:"tolerations"`
-	OCPVersion        string            `json:"ocpVersion" structs:"ocpVersion"`
-	HubVersion        string            `json:"hubVersion" structs:"hubVersion"`
-	OCPIngress        string            `json:"ocpIngress" structs:"ocpIngress"`
-	SubscriptionPause string            `json:"subscriptionPause" structs:"subscriptionPause"`
-}
-
-type Toleration struct {
-	Key               string                    `json:"Key" protobuf:"bytes,1,opt,name=key"`
-	Operator          corev1.TolerationOperator `json:"Operator" protobuf:"bytes,2,opt,name=operator,casttype=TolerationOperator"`
-	Value             string                    `json:"Value" protobuf:"bytes,3,opt,name=value"`
-	Effect            corev1.TaintEffect        `json:"Effect" protobuf:"bytes,4,opt,name=effect,casttype=TaintEffect"`
-	TolerationSeconds *int64                    `json:"TolerationSeconds" protobuf:"varint,5,opt,name=tolerationSeconds"`
-}
-
 // defaults for the OADP subscription that will be created by the installer
 const (
-	defaultOADPChannel         = "stable-1.4" // This will also be the minOADPChannel (min version we expect to be installed)
-	defaultOADPName            = "redhat-oadp-operator"
-	defaultOADPInstallPlan     = "Automatic"
-	defaultOADPSource          = "redhat-operators"
-	defaultOADPSourceNamespace = "openshift-marketplace"
+	// defaultOADPChannel specifies the minimum OADP channel version that should be installed by default.
+	// This also represents the minimum expected version for installation.
+	// Used by ACM installed on OCP 4.18 or older
+	defaultOADPChannel = "stable-1.4"
+
+	// defaultOADPChannel specifies the minimum OADP channel version that should be installed by default.
+	// This also represents the minimum expected version for installation.
+	// Used by ACM installed on OCP 4.19 or newer
+	defaultOADPStableChannel = "stable"
+
+	// defaultOADPName is the name of the OADP operator to be created by the installer.
+	defaultOADPName = "redhat-oadp-operator"
+
+	// defaultOADPInstallPlan defines the default approval policy for the OADP subscription's install plan.
+	// Supported values are: "Automatic" or "Manual".
+	defaultOADPInstallPlan = "Automatic"
+
+	// defaultOADPCatalogSource specifies the default operator catalog source for the OADP subscription.
+	defaultOADPCatalogSource = "redhat-operators"
+
+	// defaultOADPCatalogSourceNamespace defines the default namespace where the OADP operator catalog source is located.
+	defaultOADPCatalogSourceNamespace = "openshift-marketplace"
 )
 
 var log = logf.Log.WithName("reconcile")
@@ -381,6 +351,7 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 	values.Global.Name, values.Global.Channel, values.Global.InstallPlanApproval, values.Global.Source, values.Global.SourceNamespace, values.Global.StartingCSV = GetOADPConfig(mch)
 
 	values.Global.MinOADPChannel = defaultOADPChannel
+	values.Global.MinOADPStableChannel = defaultOADPStableChannel
 
 	// TODO: Define all overrides
 }
@@ -408,7 +379,17 @@ func GetOADPConfig(m *v1.MultiClusterHub) (string, string, subv1alpha1.Approval,
 	if sub.Channel != "" {
 		channel = sub.Channel
 	} else {
-		channel = defaultOADPChannel
+		ocpVersion := os.Getenv("ACM_HUB_OCP_VERSION")
+		isOCP419orNewer := strings.HasPrefix(ocpVersion, "4.19") ||
+			strings.HasPrefix(ocpVersion, "4.2") ||
+			strings.HasPrefix(ocpVersion, "4.3")
+
+		if isOCP419orNewer {
+			// use stable channel for OCP 2.19 or newer
+			channel = defaultOADPStableChannel
+		} else {
+			channel = defaultOADPChannel
+		}
 	}
 
 	if sub.InstallPlanApproval != "" {
@@ -420,13 +401,13 @@ func GetOADPConfig(m *v1.MultiClusterHub) (string, string, subv1alpha1.Approval,
 	if sub.CatalogSource != "" {
 		source = sub.CatalogSource
 	} else {
-		source = defaultOADPSource
+		source = defaultOADPCatalogSource
 	}
 
 	if sub.CatalogSourceNamespace != "" {
 		sourceNamespace = sub.CatalogSourceNamespace
 	} else {
-		sourceNamespace = defaultOADPSourceNamespace
+		sourceNamespace = defaultOADPCatalogSourceNamespace
 	}
 
 	if sub.StartingCSV != "" {

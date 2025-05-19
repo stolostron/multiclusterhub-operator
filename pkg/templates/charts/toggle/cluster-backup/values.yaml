@@ -14,6 +14,7 @@ global:
   name: redhat-oadp-operator
   channel: stable-1.4
   minOADPChannel: stable-1.4
+  minOADPStableChannel: stable
   installPlanApproval: Automatic
   source: redhat-operators
   sourceNamespace: openshift-marketplace
