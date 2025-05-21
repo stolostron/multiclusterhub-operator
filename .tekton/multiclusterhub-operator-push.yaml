@@ -23,6 +23,12 @@ spec:
     value: '{{revision}}'
   - name: output-image
     value: quay.io/redhat-user-workloads/crt-redhat-acm-tenant/multiclusterhub-operator:{{revision}}
+  - name: build-platforms
+    value:
+    - linux/x86_64
+    - linux/ppc64le
+    - linux/s390x
+    - linux/arm64
   - name: dockerfile
     value: build/Dockerfile.rhtap
   - name: build-source-image
