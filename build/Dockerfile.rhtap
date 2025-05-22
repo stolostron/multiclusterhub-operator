@@ -22,7 +22,7 @@ COPY pkg/ pkg/
 COPY pkg/templates/ templates/
 
 # Build
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -mod=readonly -o multiclusterhub-operator main.go
+RUN CGO_ENABLED=1 go build -mod=readonly -o multiclusterhub-operator main.go
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 
