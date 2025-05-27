@@ -23,12 +23,12 @@ SCRIPTS_DIR = TMP_DIR / "scripts"
 DEST_DIR = Path(__file__).resolve().parent
 SUPPORTED_OPERATIONS = {
     "copy-charts": {
-        "script": "../bundle-generation/move-charts.py",
+        "script": "bundle-generation/move-charts.py",
         "args": "--destination pkg/templates/",
         "help": "Copy existing Helm charts to a target directory",
     },
     "lint-bundles": {
-        "script": "../bundle-generation/bundles-to-charts.py",
+        "script": "bundle-generation/bundles-to-charts.py",
         "args": "--lint --destination pkg/templates/",
         "help": "Perform linting for operator bundles",
     },
@@ -43,17 +43,17 @@ SUPPORTED_OPERATIONS = {
         "help": "Refresh image alias mappings for the specified repository and branch, updating them for new versions",
     },
     "update-charts": {
-        "script": "../bundle-generation/generate-charts.py",
+        "script": "bundle-generation/generate-charts.py",
         "args": "--destination pkg/templates/",
         "help": "Convert standard Helm charts to customized versions for your specific use case",
     },
     "update-charts-from-bundles": {
-        "script": "../bundle-generation/bundles-to-charts.py",
+        "script": "bundle-generation/bundles-to-charts.py",
         "args": "--destination pkg/templates/",
         "help": "Generate Helm charts from OpenShift Operator Lifecycle Manager (OLM) bundles",
     },
     "update-commits": {
-        "script": "../bundle-generation/generate-sha-commits.py",
+        "script": "bundle-generation/generate-sha-commits.py",
         "args": "--repo {pipeline_repo} --branch {pipeline_branch}",
         "help": "Synchronize commit SHA values in operator bundles with the latest repository changes",
     },
