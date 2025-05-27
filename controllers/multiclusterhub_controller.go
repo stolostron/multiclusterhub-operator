@@ -833,10 +833,8 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 			}
 
 			currentVersion, ok := getCurrentVersion(existing)
-			log.Info("DEBUG: CURRENT VERSION: %v", currentVersion)
 
 			if !r.ensureResourceVersionAlignment(existing, currentVersion, desiredVersion) || !ok {
-				log.Info("DEBUG: UPDATING RESOURCE: %v/%v FROM VERSION %v TO VERSION %v", template.GetKind(), template.GetName(), currentVersion, desiredVersion)
 				condition := NewHubCondition(
 					operatorv1.Progressing, metav1.ConditionTrue, ComponentsUpdatingReason,
 					fmt.Sprintf("Updating %s/%s to target version: %s.", template.GetKind(),
