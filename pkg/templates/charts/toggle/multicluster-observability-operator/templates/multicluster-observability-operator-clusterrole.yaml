@@ -229,6 +229,7 @@ rules:
   - delete
   - list
   - watch
+  - patch
 - apiGroups:
   - addon.open-cluster-management.io
   resources:
