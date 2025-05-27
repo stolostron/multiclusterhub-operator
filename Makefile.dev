@@ -3,77 +3,112 @@
 ORG ?= stolostron
 REPO ?= installer-dev-tools
 BRANCH ?= main
+COMPONENT ?= ""
+CONFIG ?= ""
 
 PIPELINE_REPO ?= pipeline
 PIPELINE_BRANCH ?= 2.10-integration
 
 .PHONY: update-manifest 
 
+.PHONY: deps
 deps:
 	curl -sL https://github.com/operator-framework/operator-sdk/releases/download/v1.9.0/operator-sdk_darwin_amd64 -o bin/operator-sdk
 	chmod +x bin/operator-sdk
 
+.PHONY: subscriptions
 subscriptions:
 	oc apply -k hack/subscriptions
 
+.PHONY: catalog
 catalog:
 	oc apply -k hack/catalog
 
+.PHONY: prereqs
 prereqs:
 	oc apply -k hack/prereqs
 
+.PHONY: copyright
 copyright:
 	bash ./hack/scripts/copyright.sh
 
+.PHONY: update-version
 update-version:
 	./hack/scripts/update-version.sh <START_VERSION> <UPDATE_VERSION>
 
+.PHONY: prep-mock-install
 prep-mock-install:
 	export PRODUCT_VERSION=$(shell cat COMPONENT_VERSION); \
 	make mock-build-image PRODUCT_VERSION=$(VERSION) MOCK_IMAGE_REGISTRY=$(REGISTRY) MOCK_IMAGE_SHA="sha256:test"
 	echo "mock install prepped!"
 
-lint-operator-bundles: ## Lints the operator bundles
+.PHONY: install-requirements
+install-requirements:
 	pip3 install -r hack/bundle-automation/requirements.txt
-	python3 ./hack/bundle-automation/generate-shell.py --lint-bundles --org $(ORG) --repo $(REPO) --branch $(BRANCH)
 
-regenerate-charts-from-bundles: ## Regenerates the operator charts from bundles
-	pip3 install -r hack/bundle-automation/requirements.txt
-	python3 ./hack/bundle-automation/generate-shell.py --update-charts-from-bundles --org $(ORG) --repo $(REPO) --branch $(BRANCH)
+## Lints the operator bundles
+.PHONY: lint-operator-bundles
+lint-operator-bundles: install-requirements
+	python3 ./hack/bundle-automation/generate-shell.py --lint-bundles --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component $(COMPONENT) --config $(CONFIG)
 
-regenerate-operator-sha-commits: ## Regenerates the operator bundles
-	pip3 install -r hack/bundle-automation/requirements.txt
-	python3 ./hack/bundle-automation/generate-shell.py --update-commits --org $(ORG) --repo $(REPO) --branch $(BRANCH) --pipeline-repo $(PIPELINE_REPO) --pipeline-branch $(PIPELINE_BRANCH)
+## Regenerates the operator bundles
+.PHONY: refresh-image-aliases
+refresh-image-aliases: install-requirements
+	python3 ./hack/bundle-automation/generate-shell.py --refresh-image-aliases --org $(ORG) --repo $(REPO) --branch $(BRANCH) --pipeline-repo $(PIPELINE_REPO) --pipeline-branch $(PIPELINE_BRANCH) --component $(COMPONENT)
 
-regenerate-charts: ## Regenerates the charts 
-	pip3 install -r hack/bundle-automation/chart-requirements.txt
-	python3 ./hack/bundle-automation/generate-shell.py --update-charts --org $(ORG) --repo $(REPO) --branch $(BRANCH)
+## Regenerates the operator charts from bundles
+.PHONY: regenerate-charts-from-bundles
+regenerate-charts-from-bundles: install-requirements
+	python3 ./hack/bundle-automation/generate-shell.py --update-charts-from-bundles --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component $(COMPONENT) --config $(CONFIG)
 
-copy-charts: ## Regenerates the operator bundles
-	pip3 install -r hack/bundle-automation/requirements.txt
-	python3 ./hack/bundle-automation/generate-shell.py --copy-charts --org $(ORG) --repo $(REPO) --branch $(BRANCH)
+## Regenerates the operator bundles
+.PHONY: regenerate-operator-sha-commits
+regenerate-operator-sha-commits: install-requirements
+	python3 ./hack/bundle-automation/generate-shell.py --update-commits --org $(ORG) --repo $(REPO) --branch $(BRANCH) --pipeline-repo $(PIPELINE_REPO) --pipeline-branch $(PIPELINE_BRANCH) --component $(COMPONENT) --config $(CONFIG)
+
+## Regenerates the charts
+.PHONY: regenerate-charts
+regenerate-charts: install-requirements
+	python3 ./hack/bundle-automation/generate-shell.py --update-charts --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component $(COMPONENT) --config $(CONFIG)
+
+## Regenerates the operator bundles
+.PHONY: copy-charts
+copy-charts: install-requirements
+	python3 ./hack/bundle-automation/generate-shell.py --copy-charts --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component $(COMPONENT) --config $(CONFIG)
+
+## Onboard new OLM/Chart component
+.PHONY: onboard-new-component
+onboard-new-component: install-requirements
+	python3 ./hack/bundle-automation/generate-shell.py --onboard-new-component --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component $(COMPONENT)
 
 # different from `in-cluster-install` (call no secrets, no observability-crd)
+.PHONY: mock-install
 mock-install: prereqs subscriptions docker-build docker-push deploy
 
 # different from `in-cluster-install` (call no secrets, no observability-crd)
+.PHONY: podman-mock-install
 podman-mock-install: prereqs subscriptions podman-build podman-push deploy
 
+.PHONY: cr
 cr: 
 	oc apply -k config/samples
 
-
 ## Ensure the quay repos are open or pull secrets are configured
+.PHONY: full-catalog-install
 full-catalog-install: manifests generate bundle bundle-build bundle-push catalog-build catalog-push prereqs subscriptions catalog
 
+.PHONY: full-dev-install
 full-dev-install: prereqs manifests generate update-manifest subscriptions docker-build docker-push deploy
 
+.PHONY: podman-full-dev-install
 podman-full-dev-install: prereqs manifests generate update-manifest subscriptions podman-build podman-push deploy
 
-add-images: ## Retrieves latest manifest and injects image definitions directly into the deployment template
-	pip3 install -r ./hack/bundle-automation/requirements.txt
+## Retrieves latest manifest and injects image definitions directly into the deployment template
+.PHONY: add-images
+add-images: install-requirements
 	python3 ./hack/scripts/dev-update-image-references.py
 
-add-images-local:  ## Generates a local image manifest. Source this file to define necessary environment variables to run the operator locally
-	pip3 install -r ./hack/bundle-automation/requirements.txt
+## Generates a local image manifest. Source this file to define necessary environment variables to run the operator locally
+.PHONY: add-images-local
+add-images-local: install-requirements
 	python3 ./hack/scripts/dev-update-image-references.py --local
