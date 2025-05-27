@@ -150,6 +150,7 @@ package main
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters;managedclustersets;managedclustersetbindings;clustercurators;placements;placementdecisions,verbs=list;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters;placementdecisions;placements,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclustersets/join,verbs=create
+//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=placements,verbs=get;list;create;update;watch;delete
 //+kubebuilder:rbac:groups=config.openshift.io,resources=*;infrastructures,verbs=*
 //+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers;infrastructures;infrastructures/status,verbs=get
 //+kubebuilder:rbac:groups=config.openshift.io,resources=clusterversions,verbs=list;get;watch
@@ -223,6 +224,7 @@ package main
 //+kubebuilder:rbac:groups=policy.open-cluster-management.io,resources=policies,verbs=list;get;watch
 //+kubebuilder:rbac:groups=policy.open-cluster-management.io,resources=policies/finalizers,verbs=update
 //+kubebuilder:rbac:groups=policy.open-cluster-management.io,resources=policies/status,verbs=get;patch;update
+//+kubebuilder:rbac:groups=policy.open-cluster-management.io,resources=policies;placementbindings,verbs=get;list;create;update;watch;delete
 //+kubebuilder:rbac:groups=policy.open-cluster-management.io,resources=policysets,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=policy.open-cluster-management.io,resources=policysets/finalizers,verbs=update
 //+kubebuilder:rbac:groups=policy.open-cluster-management.io,resources=policysets/status,verbs=get;patch;update
