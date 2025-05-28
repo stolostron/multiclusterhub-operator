@@ -61,10 +61,10 @@ spec:
             configMapKeyRef:
               key: FLIGHTCTL_SERVER
               name: flightctl-ui
-        - name: FLIGHTCTL_GRPC_SERVER
+        - name: FLIGHTCTL_CLI_ARTIFACTS_SERVER
           valueFrom:
             configMapKeyRef:
-              key: FLIGHTCTL_GRPC_SERVER
+              key: FLIGHTCTL_CLI_ARTIFACTS_SERVER
               name: flightctl-ui
         - name: FLIGHTCTL_SERVER_INSECURE_SKIP_VERIFY
           valueFrom:
@@ -115,11 +115,9 @@ spec:
       restartPolicy: Always
       securityContext:
         runAsNonRoot: true
-{{- if .Values.global.deployOnOCP }}
 {{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
         seccompProfile:
           type: RuntimeDefault
-{{- end }}
 {{- end }}
 {{- with .Values.hubconfig.tolerations }}
       tolerations:
