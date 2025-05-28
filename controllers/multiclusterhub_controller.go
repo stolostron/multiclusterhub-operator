@@ -832,7 +832,7 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 				log.Info("Warning: OPERATOR_VERSION environment variable is not set")
 			}
 
-			currentVersion, ok := getCurrentVersion(template)
+			currentVersion, ok := getCurrentVersion(existing)
 
 			if !r.ensureResourceVersionAlignment(existing, currentVersion, desiredVersion) || !ok {
 				condition := NewHubCondition(
