@@ -4,7 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.14.0
     service.beta.openshift.io/inject-cabundle: "true"
-  creationASDFTimestamp: null
+  creationTimestamp: null
   name: multiclusterobservabilities.observability.open-cluster-management.io
 spec:
   conversion:
