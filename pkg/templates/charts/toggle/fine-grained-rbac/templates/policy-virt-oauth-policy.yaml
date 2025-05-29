@@ -8,6 +8,7 @@ metadata:
     policy.open-cluster-management.io/standards: NIST SP 800-53
   labels:
     open-cluster-management.io/policy-cnv: virt-rbac
+    velero.io/exclude-from-backup: 'true'
   name: policy-virt-oauth
   namespace: open-cluster-management-global-set
 spec:
