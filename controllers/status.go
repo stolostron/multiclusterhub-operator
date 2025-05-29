@@ -533,6 +533,10 @@ func aggregatePhase(status operatorsv1.MultiClusterHubStatus) operatorsv1.HubPha
 			return operatorsv1.HubPending
 		}
 
+		if hubDeployFailing(status) {
+			return operatorsv1.HubError
+		}
+
 		// Hub running
 		return operatorsv1.HubRunning
 	}
@@ -603,6 +607,16 @@ func hubPruning(status operatorsv1.MultiClusterHubStatus) bool {
 	progressingCondition := GetHubCondition(status, operatorsv1.Progressing)
 	if progressingCondition != nil {
 		if progressingCondition.Reason == OldComponentRemovedReason || progressingCondition.Reason == OldComponentNotRemovedReason {
+			return true
+		}
+	}
+	return false
+}
+
+func hubDeployFailing(status operatorsv1.MultiClusterHubStatus) bool {
+	progressingCondition := GetHubCondition(status, operatorsv1.Progressing)
+	if progressingCondition != nil {
+		if progressingCondition.Reason == DeployFailedReason {
 			return true
 		}
 	}
