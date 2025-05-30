@@ -21,6 +21,9 @@ metadata:
     description: Open management of Openshift and Kubernetes clusters
     operators.operatorframework.io/builder: operator-sdk-v1.39.2
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
+    features.operators.openshift.io/cnf: "false"
+    features.operators.openshift.io/cni: "false"
+    features.operators.openshift.io/csi: "false"
     repository: https://github.com/open-cluster-management/multiclusterhub-operator
     support: The Open Cluster Management Project
   name: multiclusterhub-operator.v0.0.1
