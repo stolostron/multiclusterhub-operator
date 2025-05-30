@@ -1,6 +1,8 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
+  labels:
+    velero.io/exclude-from-backup: 'true'
   name: open-cluster-management:policy-hub-oauth
 rules:
 - apiGroups:

@@ -3,6 +3,7 @@ kind: PlacementBinding
 metadata:
   labels:
     open-cluster-management.io/policy-cnv: virt-rbac
+    velero.io/exclude-from-backup: 'true'
   name: binding-policy-virt-rbac
   namespace: open-cluster-management-global-set
 placementRef:
