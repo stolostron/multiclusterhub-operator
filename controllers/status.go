@@ -527,6 +527,25 @@ func aggregatePhase(status operatorsv1.MultiClusterHubStatus) operatorsv1.HubPha
 		}
 	}
 
+	phase := operatorsv1.HubPending
+	switch cv := status.CurrentVersion; {
+	case cv == "":
+		// Hub has not reached success for first time
+		phase = operatorsv1.HubInstalling
+
+	case cv != version.Version:
+		if HubConditionPresent(status, operatorsv1.Blocked) {
+			phase = operatorsv1.HubUpdatingBlocked
+		} else {
+			// Hub has not completed upgrade to newest version
+			phase = operatorsv1.HubUpdating
+		}
+	}
+
+	if hubDeployFailing(status) {
+		return phase
+	}
+
 	if successful := allComponentsSuccessful(status.Components); successful {
 		if hubPruning(status) {
 			// hub is in pruning phase
@@ -537,23 +556,7 @@ func aggregatePhase(status operatorsv1.MultiClusterHubStatus) operatorsv1.HubPha
 		return operatorsv1.HubRunning
 	}
 
-	switch cv := status.CurrentVersion; {
-	case cv == "":
-		// Hub has not reached success for first time
-		return operatorsv1.HubInstalling
-
-	case cv != version.Version:
-		if HubConditionPresent(status, operatorsv1.Blocked) {
-			return operatorsv1.HubUpdatingBlocked
-		} else {
-			// Hub has not completed upgrade to newest version
-			return operatorsv1.HubUpdating
-		}
-
-	default:
-		// Hub has reached desired version, but degraded
-		return operatorsv1.HubPending
-	}
+	return phase
 }
 
 // NewHubCondition creates a new hub condition.
@@ -603,6 +606,16 @@ func hubPruning(status operatorsv1.MultiClusterHubStatus) bool {
 	progressingCondition := GetHubCondition(status, operatorsv1.Progressing)
 	if progressingCondition != nil {
 		if progressingCondition.Reason == OldComponentRemovedReason || progressingCondition.Reason == OldComponentNotRemovedReason {
+			return true
+		}
+	}
+	return false
+}
+
+func hubDeployFailing(status operatorsv1.MultiClusterHubStatus) bool {
+	progressingCondition := GetHubCondition(status, operatorsv1.Progressing)
+	if progressingCondition != nil {
+		if progressingCondition.Reason == DeployFailedReason {
 			return true
 		}
 	}
