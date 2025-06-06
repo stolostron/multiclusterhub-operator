@@ -31,6 +31,10 @@ spec:
       text: Download policytools for Linux for x86_64
     - href: "https://acm-cli-downloads.{{ .Values.hubconfig.ocpIngress }}/linux-arm64-policytools.tar.gz"
       text: Download policytools for Linux for ARM64
+    - href: "https://acm-cli-downloads.{{ .Values.hubconfig.ocpIngress }}/linux-ppc64le-policytools.tar.gz"
+      text: Download policytools for Linux for PPC64LE
+    - href: "https://acm-cli-downloads.{{ .Values.hubconfig.ocpIngress }}/linux-s390x-policytools.tar.gz"
+      text: Download policytools for Linux for s390x
     - href: "https://acm-cli-downloads.{{ .Values.hubconfig.ocpIngress }}/darwin-amd64-policytools.tar.gz"
       text: Download policytools for Mac for x86_64
     - href: "https://acm-cli-downloads.{{ .Values.hubconfig.ocpIngress }}/darwin-arm64-policytools.tar.gz"
@@ -43,6 +47,10 @@ spec:
       text: Download PolicyGenerator for Linux for x86_64
     - href: "https://acm-cli-downloads.{{ .Values.hubconfig.ocpIngress }}/linux-arm64-PolicyGenerator.tar.gz"
       text: Download PolicyGenerator for Linux for ARM64
+    - href: "https://acm-cli-downloads.{{ .Values.hubconfig.ocpIngress }}/linux-ppc64le-PolicyGenerator.tar.gz"
+      text: Download PolicyGenerator for Linux for PPC64LE
+    - href: "https://acm-cli-downloads.{{ .Values.hubconfig.ocpIngress }}/linux-s390x-PolicyGenerator.tar.gz"
+      text: Download PolicyGenerator for Linux for s390x
     - href: "https://acm-cli-downloads.{{ .Values.hubconfig.ocpIngress }}/darwin-amd64-PolicyGenerator.tar.gz"
       text: Download PolicyGenerator for Mac for x86_64
     - href: "https://acm-cli-downloads.{{ .Values.hubconfig.ocpIngress }}/darwin-arm64-PolicyGenerator.tar.gz"
