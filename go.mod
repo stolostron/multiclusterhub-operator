@@ -6,7 +6,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.3.1
 	github.com/blang/semver/v4 v4.0.0
 	github.com/go-logr/logr v1.4.2
-	github.com/onsi/ginkgo/v2 v2.20.0
+	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.34.1
 	github.com/openshift/api v0.0.0-20240404200104-96ed2d49b255
 	github.com/operator-framework/api v0.23.0
