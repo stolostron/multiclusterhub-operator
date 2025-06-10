@@ -1,7 +1,7 @@
 
 global:
   target: "acm" # standalone, acm
-  baseDomain: "placeholder_basedomain"
+  baseDomain: "{{ .Values.global.baseDomain }}"
   ocpIngress: "test" # alternative to baseDomain used by the multiclusterhub operator
   baseDomainTls:
     cert: ""

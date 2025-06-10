@@ -54,7 +54,7 @@ spec:
           value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
 {{- end }}
         - name: CLI_ARTIFACTS_BASE_URL
-          value: https://cli-artifacts.placeholder_basedomain
+          value: https://cli-artifacts.{{ .Values.global.baseDomain }}
         image: '{{ .Values.global.imageOverrides.flightctl_cli_artifacts }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         name: flightctl-cli-artifacts

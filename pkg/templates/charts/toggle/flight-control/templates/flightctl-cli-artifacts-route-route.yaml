@@ -4,7 +4,7 @@ metadata:
   name: flightctl-cli-artifacts-route
   namespace: '{{ .Values.global.namespace }}'
 spec:
-  host: cli-artifacts.placeholder_basedomain
+  host: cli-artifacts.{{ .Values.global.baseDomain }}
   port:
     targetPort: 8090
   tls:
