@@ -27,4 +27,9 @@ components:
             containers:
               - name: flightctl-db
                 readOnlyRootFilesystem: false
+          - kind: "Deployment"
+            name: flightctl-cli-artifacts
+            containers:
+              - name: flightctl-cli-artifacts
+                readOnlyRootFilesystem: false
         skipRBACOverrides: true
