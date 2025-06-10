@@ -2,7 +2,7 @@ apiVersion: v1
 data:
   AUTH_CLIENT_ID: flightctl
   AUTH_INSECURE_SKIP_VERIFY: 'false'
-  FLIGHTCTL_CLI_ARTIFACTS_SERVER: https://cli-artifacts.placeholder_basedomain
+  FLIGHTCTL_CLI_ARTIFACTS_SERVER: https://cli-artifacts.{{ .Values.global.baseDomain }}
   FLIGHTCTL_SERVER: https://flightctl-api:3443/
   FLIGHTCTL_SERVER_INSECURE_SKIP_VERIFY: 'true'
   IS_RHEM: 'false'
