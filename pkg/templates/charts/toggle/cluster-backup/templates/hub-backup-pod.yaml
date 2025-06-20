@@ -422,8 +422,8 @@ spec:
                 {{ `{{- $ocp_version = $hist.version }}` }}
               {{ `{{- end }}` }}
             {{ `{{- end }}` }}
-            {{ `{{ if hasPrefix "4.19" $ocp_version }}` }}
-            {{ `{{- $ch = "stable-1.5" }}` }}
+            {{ `{{ if or (hasPrefix "4.19" $ocp_version) (hasPrefix "4.2" $ocp_version) }}` }}
+            {{ `{{- $ch = "stable" }}` }}
             {{ `{{- end }}` }}
             {{ `{{- range $ss := (lookup "operators.coreos.com/v1alpha1" "Subscription" "open-cluster-management-backup" "").items }}` }}
               {{ `{{- if and (eq $ss.spec.name "redhat-oadp-operator") (lt $ss.spec.channel $ch) }}` }}
@@ -441,10 +441,10 @@ spec:
           customMessage:
             compliant: |- 
               The redhat-oadp-operator subscription installation does not exist in the open-cluster-management-backup namespace, 
-              or the installed version matches or exceeds the version set by the backup and restore operator Helm chart.
+              or the installed version matches or exceeds the supported version set by the backup and restore operator Helm chart.
             noncompliant: 
               The version of the redhat-oadp-operator operator installed in the open-cluster-management-backup namespace 
-              is lower than the version set by the backup and restore operator Helm chart.
+              is lower than the supported version set by the backup and restore operator Helm chart.
     - objectDefinition:
         apiVersion: policy.open-cluster-management.io/v1
         kind: ConfigurationPolicy
