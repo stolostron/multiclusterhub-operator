@@ -335,7 +335,7 @@ func GetTestImages() []string {
 		"VOLSYNC_MOVER_RESTIC", "VOLSYNC_MOVER_RSYNC", "CLUSTER_PERMISSION", "kube_rbac_proxy", "insights_metrics",
 		"insights_client", "search_collector", "search_indexer", "search_v2_api", "postgresql_13", "search_v2_operator",
 		"klusterlet_addon_controller", "governance_policy_propagator", "governance_policy_addon_controller",
-		"cert_policy_controller", "config_policy_controller", "governance_policy_framework_addon",
+		"cert_policy_controller", "config_policy_controller", "governance_policy_framework_addon", "mtv_integrations_controller",
 		"cluster_backup_controller", "console", "volsync_addon_controller", "multicluster_operators_application",
 		"multicloud_integrations", "multicluster_operators_channel", "multicluster_operators_subscription",
 		"multicluster_observability_operator", "cluster_permission", "siteconfig_operator", "submariner_addon", "acm_cli",
@@ -625,7 +625,6 @@ func UpdateMCEOverrides(mce *mcev1.MultiClusterEngine, mch *operatorsv1.MultiClu
 	}
 	if mch.Spec.DisableHubSelfManagement {
 		mce.Disable(operatorsv1.MCELocalCluster)
-
 	} else {
 		mce.Enable(operatorsv1.MCELocalCluster)
 	}
