@@ -1,0 +1,20 @@
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: ClusterManagementAddOn
+metadata:
+  name: kubevirt-hyperconverged-operator
+  annotations:
+    addon.open-cluster-management.io/lifecycle: "addon-manager"
+spec:
+  addOnMeta:
+    description: Kubevirt Hyperconverged Operator
+    displayName: Kubevirt Hyperconverged Operator
+  supportedConfigs:
+    - group: addon.open-cluster-management.io
+      resource: addontemplates
+      defaultConfig:
+        name: kubevirt-hyperconverged-operator
+  installStrategy:
+    type: Placements
+    placements:
+    - name: openshift-cnv
+      namespace: open-cluster-management
