@@ -1,0 +1,20 @@
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: ClusterManagementAddOn
+metadata:
+  name: mtv-operator
+  annotations:
+    addon.open-cluster-management.io/lifecycle: "addon-manager"
+spec:
+  addOnMeta:
+    description: MTV Operator
+    displayName: MTV Operator
+  supportedConfigs:
+    - group: addon.open-cluster-management.io
+      resource: addontemplates
+      defaultConfig:
+        name: mtv-operator
+  installStrategy:
+    type: Placements
+    placements:
+    - name: openshift-mtv
+      namespace: open-cluster-management

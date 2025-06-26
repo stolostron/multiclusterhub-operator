@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/name: mtv-integrations
+  name: mtv-integrations-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: mtv-integrations-manager-role
+subjects:
+- kind: ServiceAccount
+  name: mtv-integrations-manager
+  namespace: {{ .Values.global.namespace }}
