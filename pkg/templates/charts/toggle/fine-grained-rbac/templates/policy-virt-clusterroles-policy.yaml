@@ -26,8 +26,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: aaqs.aaq.kubevirt.io-v1alpha1-admin
             rules:
             - apiGroups:
@@ -41,8 +39,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: aaqs.aaq.kubevirt.io-v1alpha1-crdview
             rules:
             - apiGroups:
@@ -58,8 +54,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: aaqs.aaq.kubevirt.io-v1alpha1-edit
             rules:
             - apiGroups:
@@ -76,8 +70,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: aaqs.aaq.kubevirt.io-v1alpha1-view
             rules:
             - apiGroups:
@@ -93,8 +85,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: bridge-marker-cr
             rules:
             - apiGroups:
@@ -111,8 +101,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: cdi-apiserver
             rules:
             - apiGroups:
@@ -223,8 +211,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: cdi-cronjob
             rules:
             - apiGroups:
@@ -240,8 +226,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: cdi-uploadproxy
             rules:
             - apiGroups:
@@ -255,8 +239,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: cdi.kubevirt.io:admin
             rules:
             - apiGroups:
@@ -287,8 +269,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: cdi.kubevirt.io:config-reader
             rules:
             - apiGroups:
@@ -305,8 +285,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: cdi.kubevirt.io:edit
             rules:
             - apiGroups:
@@ -337,8 +315,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: cdi.kubevirt.io:view
             rules:
             - apiGroups:
@@ -368,8 +344,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: cdi
             rules:
             - apiGroups:
@@ -525,8 +499,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: cdis.cdi.kubevirt.io-v1beta1-admin
             rules:
             - apiGroups:
@@ -540,8 +512,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: cdis.cdi.kubevirt.io-v1beta1-crdview
             rules:
             - apiGroups:
@@ -557,8 +527,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: cdis.cdi.kubevirt.io-v1beta1-edit
             rules:
             - apiGroups:
@@ -575,8 +543,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: cdis.cdi.kubevirt.io-v1beta1-view
             rules:
             - apiGroups:
@@ -592,8 +558,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: hostpathprovisioners.hostpathprovisioner.kubevirt.io-v1beta1-admin
             rules:
             - apiGroups:
@@ -607,8 +571,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: hostpathprovisioners.hostpathprovisioner.kubevirt.io-v1beta1-crdview
             rules:
             - apiGroups:
@@ -624,8 +586,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: hostpathprovisioners.hostpathprovisioner.kubevirt.io-v1beta1-edit
             rules:
             - apiGroups:
@@ -642,8 +602,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: hostpathprovisioners.hostpathprovisioner.kubevirt.io-v1beta1-view
             rules:
             - apiGroups:
@@ -659,8 +617,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: hyperconvergeds.hco.kubevirt.io-v1beta1-admin
             rules:
             - apiGroups:
@@ -674,8 +630,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: hyperconvergeds.hco.kubevirt.io-v1beta1-crdview
             rules:
             - apiGroups:
@@ -691,8 +645,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: hyperconvergeds.hco.kubevirt.io-v1beta1-edit
             rules:
             - apiGroups:
@@ -709,8 +661,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: hyperconvergeds.hco.kubevirt.io-v1beta1-view
             rules:
             - apiGroups:
@@ -726,8 +676,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: instancetype.kubevirt.io:view
             rules:
             - apiGroups:
@@ -744,8 +692,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: kubemacpool-manager-role
             rules:
             - apiGroups:
@@ -825,8 +771,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: kubevirt-apiserver
             rules:
             - apiGroups:
@@ -968,8 +912,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: kubevirt-controller
             rules:
             - apiGroups:
@@ -1254,8 +1196,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: kubevirt-exportproxy
             rules:
             - apiGroups:
@@ -1278,8 +1218,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: kubevirt-handler
             rules:
             - apiGroups:
@@ -1343,8 +1281,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: kubevirt-ipam-controller-manager-role
             rules:
             - apiGroups:
@@ -1550,8 +1486,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: kubevirt.io:default
             rules:
             - apiGroups:
@@ -1831,8 +1765,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: kubevirts.kubevirt.io-v1-admin
             rules:
             - apiGroups:
@@ -1846,8 +1778,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: kubevirts.kubevirt.io-v1-crdview
             rules:
             - apiGroups:
@@ -1863,8 +1793,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: kubevirts.kubevirt.io-v1-edit
             rules:
             - apiGroups:
@@ -1881,8 +1809,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: kubevirts.kubevirt.io-v1-view
             rules:
             - apiGroups:
@@ -1898,8 +1824,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: networkaddonsconfigs.networkaddonsoperator.network.kubevirt.io-v1-admin
             rules:
             - apiGroups:
@@ -1913,8 +1837,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: networkaddonsconfigs.networkaddonsoperator.network.kubevirt.io-v1-crdview
             rules:
             - apiGroups:
@@ -1930,8 +1852,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: networkaddonsconfigs.networkaddonsoperator.network.kubevirt.io-v1-edit
             rules:
             - apiGroups:
@@ -1948,8 +1868,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: networkaddonsconfigs.networkaddonsoperator.network.kubevirt.io-v1-view
             rules:
             - apiGroups:
@@ -1965,8 +1883,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: os-images.kubevirt.io:edit
             rules:
             - apiGroups:
@@ -2036,8 +1952,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: prometheus-k8s-ssp
             rules:
             - apiGroups:
@@ -2055,8 +1969,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: ssps.ssp.kubevirt.io-v1beta2-admin
             rules:
             - apiGroups:
@@ -2070,8 +1982,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: ssps.ssp.kubevirt.io-v1beta2-crdview
             rules:
             - apiGroups:
@@ -2087,8 +1997,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: ssps.ssp.kubevirt.io-v1beta2-edit
             rules:
             - apiGroups:
@@ -2105,8 +2013,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: ssps.ssp.kubevirt.io-v1beta2-view
             rules:
             - apiGroups:
@@ -2122,8 +2028,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: ssps.ssp.kubevirt.io-v1beta3-admin
             rules:
             - apiGroups:
@@ -2137,8 +2041,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: ssps.ssp.kubevirt.io-v1beta3-crdview
             rules:
             - apiGroups:
@@ -2154,8 +2056,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: ssps.ssp.kubevirt.io-v1beta3-edit
             rules:
             - apiGroups:
@@ -2172,8 +2072,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: ssps.ssp.kubevirt.io-v1beta3-view
             rules:
             - apiGroups:
@@ -2189,8 +2087,6 @@ spec:
             apiVersion: rbac.authorization.k8s.io/v1
             kind: ClusterRole
             metadata:
-              labels:
-                rbac.open-cluster-management.io/filter: vm-clusterroles
               name: template:view
             rules:
             - apiGroups:
