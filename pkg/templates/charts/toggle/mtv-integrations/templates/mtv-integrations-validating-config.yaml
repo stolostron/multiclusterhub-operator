@@ -1,0 +1,27 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    service.beta.openshift.io/inject-cabundle: "true"
+  name: mtv-plan-webhook-validating-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: mtv-plan-webhook-service
+      namespace: {{ .Values.global.namespace }}
+      path: /validate-plan
+  failurePolicy: Fail
+  name: validate.mtv.plan
+  rules:
+  - apiGroups:
+    - forklift.konveyor.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - plans
+  sideEffects: None
