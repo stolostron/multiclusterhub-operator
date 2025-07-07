@@ -2,7 +2,7 @@ acm-release-version: '2.14'
 components:
   - repo_name: "flight-control"
     github_ref: "https://github.com/flightctl/flightctl.git"
-    branch: "main"
+    branch: "release-0.7"
     charts:
       - name: "flight-control"
         chart-path: "deploy/helm/flightctl"
