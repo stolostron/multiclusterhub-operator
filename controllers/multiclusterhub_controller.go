@@ -2011,7 +2011,7 @@ func (r *MultiClusterHubReconciler) logAndSetCondition(err error, message string
 	template *unstructured.Unstructured, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 
 	log.Error(err, message, "Kind", template.GetKind(), "Name", template.GetName())
-	wrappedError := pkgerrors.Wrapf(err, "%s Kind: %s Name: %s", message, template.GetName(), template.GetKind())
+	wrappedError := pkgerrors.Wrapf(err, "%s Kind: %s Name: %s", message, template.GetKind(), template.GetName())
 
 	condType := fmt.Sprintf("%v: %v (Kind:%v)", operatorv1.ComponentFailure, template.GetName(),
 		template.GetKind())
