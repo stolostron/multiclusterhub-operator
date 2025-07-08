@@ -3,6 +3,9 @@ global:
   baseDomain: ''
   hubSize: Small
   imageOverrides:
+    alertmanager: ''
+    flightctl_alert_exporter: ''
+    flightctl_alertmanager_proxy: ''
     flightctl_api: ''
     flightctl_cli_artifacts: ''
     flightctl_ocp_ui: ''
