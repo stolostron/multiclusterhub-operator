@@ -1,4 +1,4 @@
-acm-release-version: '2.14'
+acm-release-version: '2.15'
 components:
   - repo_name: "flight-control"
     github_ref: "https://github.com/flightctl/flightctl.git"
@@ -8,12 +8,15 @@ components:
         chart-path: "deploy/helm/flightctl"
         always-or-toggle: "toggle"
         imageMappings:
-          flightctl-worker: flightctl_worker
-          flightctl-periodic: flightctl_periodic
+          alertmanager: alertmanager
+          flightctl-alertmanager-proxy: flightctl_alertmanager_proxy
+          flightctl-alert-exporter: flightctl_alert_exporter
           flightctl-api: flightctl_api
-          flightctl-ui: flightctl_ui
-          flightctl-ocp-ui: flightctl_ocp_ui
           flightctl-cli-artifacts: flightctl_cli_artifacts
+          flightctl-ocp-ui: flightctl_ocp_ui
+          flightctl-periodic: flightctl_periodic
+          flightctl-ui: flightctl_ui
+          flightctl-worker: flightctl_worker
           origin-cli: origin_cli
           postgresql-16-c9s: postgresql_16
           redis-7-c9s: redis_7_c9s

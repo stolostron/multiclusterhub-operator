@@ -341,6 +341,7 @@ func GetTestImages() []string {
 		"multicluster_observability_operator", "cluster_permission", "siteconfig_operator", "submariner_addon", "acm_cli",
 		"flightctl_worker", "flightctl_periodic", "flightctl_api", "flightctl_ui", "flightctl_ocp_ui",
 		"flightctl_cli_artifacts", "postgresql_12_c8s", "postgresql_12", "postgresql_16", "origin_cli", "redis_7_c9s",
+		"alertmanager", "flightctl_alertmanager_proxy", "flightctl_alert_exporter",
 	}
 }
 
