@@ -1,0 +1,7 @@
+apiVersion: v1
+data:
+  config.yaml: "alertmanager:\n  hostname: flightctl-alertmanager.{{ .Values.global.namespace }}.svc.cluster.local\n  port: 9093\ndatabase:\n  hostname: flightctl-db.{{ .Values.global.namespace }}.svc.cluster.local\n  name: flightctl\n  port: 5432\n  type: pgsql\nkv:\n  hostname: flightctl-kv.{{ .Values.global.namespace }}.svc.cluster.local\n  port: 6379\nservice:\n  alertPollingInterval: 1m\n"
+kind: ConfigMap
+metadata:
+  name: flightctl-alert-exporter-config
+  namespace: '{{ .Values.global.namespace  }}'
