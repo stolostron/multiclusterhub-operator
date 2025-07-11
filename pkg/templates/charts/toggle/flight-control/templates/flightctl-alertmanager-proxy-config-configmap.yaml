@@ -1,0 +1,20 @@
+
+# Source: flightctl/templates/flightctl-alertmanager-proxy-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: flightctl-alertmanager-proxy-config
+  namespace: PLACEHOLDER_NAMESPACE
+data:
+  config.yaml: |-
+    service:
+      certStore: "/app/certs"
+    ca:
+      internalConfig:
+        certStore: "/tmp/ca-certs"
+    auth:
+      insecureSkipTlsVerify: false
+      k8s:
+        apiUrl: https://kubernetes.default.svc
+        externalOpenShiftApiUrl: placeholder_apiurl
+        rbacNs: PLACEHOLDER_NAMESPACE
