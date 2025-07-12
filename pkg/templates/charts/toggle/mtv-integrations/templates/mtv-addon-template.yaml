@@ -1,0 +1,168 @@
+---
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: AddOnTemplate
+metadata:
+  name: mtv-operator
+spec:
+  addonName: mtv-operator
+  registration:
+    - type: CustomSigner
+      customSigner:
+        signerName: open-cluster-management.io/kubevirt-hyperconverged-addon
+        signingCA:
+          name: mtv-operator-ca
+          namespace: openshift-mtv
+  agentSpec:
+    workload:
+      manifests:
+        - apiVersion: policy.open-cluster-management.io/v1beta1
+          kind: OperatorPolicy
+          metadata:
+            name: mtv-operator
+            namespace: open-cluster-management-policies
+          spec:
+            complianceType: musthave
+            remediationAction: enforce
+            subscription:
+              channel: release-v2.8
+              name: mtv-operator
+              namespace: openshift-mtv
+            upgradeApproval: Automatic
+        - apiVersion: forklift.konveyor.io/v1beta1
+          kind: ForkliftController
+          metadata:
+            name: forklift-controller
+            namespace: openshift-mtv
+          spec:
+            feature_ui_plugin: 'true'
+            feature_validation: 'true'
+            feature_volume_populator: 'true'
+        - apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: mtv-integrations-controller
+            namespace: {{ .Values.global.namespace }}
+            labels:
+              app: mtv-integrations
+              ocm-antiaffinity-selector: "mtvintegrations"
+              chart: mtv-integrations-{{ .Values.hubconfig.hubVersion }}
+              app.kubernetes.io/name: mtv-integrations
+              app.kubernetes.io/instance: mtv-integrations
+              component: "ocm-mtv-integrations-ctrl"
+              release: mtv-integrations
+          spec:
+            selector:
+              matchLabels:
+                app: mtv-integrations
+                component: "ocm-mtv-integrations-ctrl"
+                release: mtv-integrations
+            replicas: {{ .Values.hubconfig.replicaCount }}
+            template:
+              metadata:
+                annotations:
+                  kubectl.kubernetes.io/default-container: controller
+                labels:
+                  control-plane: mtv-controller
+                  app.kubernetes.io/name: mtv-integrations
+              spec:
+                serviceAccountName: mtv-integrations-manager
+                hostNetwork: false
+                hostPID: false
+                hostIPC: false
+                securityContext:
+                  runAsNonRoot: true
+                affinity:
+                  nodeAffinity:
+                    requiredDuringSchedulingIgnoredDuringExecution:
+                      nodeSelectorTerms:
+                        - matchExpressions:
+                            - key: kubernetes.io/arch
+                              operator: In
+                              values:
+                                - amd64
+                                - ppc64le
+                                - s390x
+                                - arm64
+                  podAntiAffinity:
+                    preferredDuringSchedulingIgnoredDuringExecution:
+                      - weight: 70
+                        podAffinityTerm:
+                          topologyKey: topology.kubernetes.io/zone
+                          labelSelector:
+                            matchExpressions:
+                              - key: ocm-antiaffinity-selector
+                                operator: In
+                                values:
+                                  - mtvintegrations
+                      - weight: 35
+                        podAffinityTerm:
+                          topologyKey: kubernetes.io/hostname
+                          labelSelector:
+                            matchExpressions:
+                              - key: ocm-antiaffinity-selector
+                                operator: In
+                                values:
+                                  - mtvintegrations
+                {{- with .Values.hubconfig.tolerations }}
+                tolerations:
+                {{- range . }}
+                - {{ if .Key }} key: {{ .Key }} {{- end }}
+                  {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+                  {{ if .Value }} value: {{ .Value }} {{- end }}
+                  {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+                  {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+                  {{- end }}
+                {{- end }}
+                containers:
+                  - name: mtv-integrations-controller
+                    command:
+                      - /manager
+                    args:
+                      - --health-probe-bind-address=:8081
+                    image: {{ .Values.global.imageOverrides.mtv_integrations_controller }}
+                    imagePullPolicy: "{{ .Values.global.pullPolicy }}"
+                    ports:
+                      - containerPort: 9443
+                        protocol: TCP
+                        name: webhook-http
+                    securityContext:
+                      privileged: false
+                      readOnlyRootFilesystem: true
+                      allowPrivilegeEscalation: false
+                      runAsNonRoot: true
+                      capabilities:
+                        drop:
+                          - ALL
+                    livenessProbe:
+                      httpGet:
+                        path: /healthz
+                        port: 8081
+                      initialDelaySeconds: 15
+                      periodSeconds: 20
+                    readinessProbe:
+                      httpGet:
+                        path: /readyz
+                        port: 8081
+                      initialDelaySeconds: 5
+                      periodSeconds: 10
+                    resources:
+                      requests:
+                        cpu: 10m
+                        memory: 64Mi
+                    volumeMounts:
+                      - mountPath: /tmp/k8s-webhook-server/serving-certs
+                        name: cert
+                        readOnly: true
+                volumes:
+                  - name: cert
+                    secret:
+                      defaultMode: 420
+                      secretName: mtv-plan-webhook-server-cert
+                {{- if .Values.global.pullSecret }}
+                imagePullSecrets:
+                  - name: {{ .Values.global.pullSecret }}
+                {{- end }}
+                {{- with .Values.hubconfig.nodeSelector }}
+                nodeSelector:
+                {{- toYaml . | nindent 18 }}
+                {{- end }}
