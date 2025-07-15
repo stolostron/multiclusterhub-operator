@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    flightctl.service: flightctl-alertmanager
+  name: flightctl-alertmanager
+  namespace: '{{ .Values.global.namespace }}'
+spec:
+  podManagementPolicy: OrderedReady
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      flightctl.service: flightctl-alertmanager
+  serviceName: flightctl-alertmanager
+  template:
+    metadata:
+      labels:
+        flightctl.service: flightctl-alertmanager
+    spec:
+      containers:
+      - args:
+        - --config.file=/etc/alertmanager/alertmanager.yml
+        - --storage.path=/alertmanager
+        - --web.listen-address=:9093
+        env: []
+        image: '{{ .Values.global.imageOverrides.alertmanager }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+        name: flightctl-alertmanager
+        ports:
+        - containerPort: 9093
+          name: web
+        resources:
+          limits:
+            cpu: '1'
+            memory: 2Gi
+          requests:
+            cpu: 500m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        volumeMounts:
+        - mountPath: /alertmanager
+          name: flightctl-alertmanager-data
+        - mountPath: /etc/alertmanager/alertmanager.yml
+          name: flightctl-alertmanager-config
+          subPath: alertmanager.yml
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: flightctl-alertmanager-config
+        name: flightctl-alertmanager-config
+  volumeClaimTemplates:
+  - metadata:
+      name: flightctl-alertmanager-data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 2Gi
+      storageClassName: '{{ .Values.global.storageClassName }}'
