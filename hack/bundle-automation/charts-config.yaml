@@ -2,15 +2,16 @@ acm-release-version: '2.15'
 components:
   - repo_name: "flight-control"
     github_ref: "https://github.com/flightctl/flightctl.git"
-    branch: "main"
+    branch: "release-0.7"
     charts:
       - name: "flight-control"
         chart-path: "deploy/helm/flightctl"
         always-or-toggle: "toggle"
         imageMappings:
-          alertmanager: alertmanager
-          flightctl-alertmanager-proxy: flightctl_alertmanager_proxy
-          flightctl-alert-exporter: flightctl_alert_exporter
+          # These images will be required when we update to the newest version of flightctl
+          # alertmanager: alertmanager
+          # flightctl-alertmanager-proxy: flightctl_alertmanager_proxy
+          # flightctl-alert-exporter: flightctl_alert_exporter
           flightctl-api: flightctl_api
           flightctl-cli-artifacts: flightctl_cli_artifacts
           flightctl-ocp-ui: flightctl_ocp_ui
