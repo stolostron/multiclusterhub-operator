@@ -29,9 +29,6 @@ spec:
               containers:
               - command:
                 - /usr/local/bin/gitopsaddon
-                - --leader-election-lease-duration=137s
-                - --leader-election-renew-deadline=107s
-                - --leader-election-retry-period=26s
                 env:
                 - name: GITOPS_OPERATOR_IMAGE
                   value: '{{ `{{GITOPS_OPERATOR_IMAGE}}` }}'
