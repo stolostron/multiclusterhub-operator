@@ -1488,7 +1488,12 @@ rules:
   - hostedclusters
   - nodepools
   verbs:
+  - create
+  - delete
+  - get
   - list
+  - patch
+  - update
   - watch
 - apiGroups:
   - image.openshift.io

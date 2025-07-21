@@ -105,6 +105,17 @@ rules:
   - list
   - watch
 - apiGroups:
+  - hypershift.openshift.io
+  resources:
+  - hostedclusters
+  - nodepools
+  verbs:
+  - create
+  - delete
+  - get
+  - patch
+  - update
+- apiGroups:
   - metal3.io
   resources:
   - baremetalhosts
