@@ -37,3 +37,38 @@ components:
               - name: flightctl-cli-artifacts
                 readOnlyRootFilesystem: false
         skipRBACOverrides: true
+  - repo_name: "mtv-integrations"
+    github_ref: "https://github.com/ngraham20/mtv-integrations-public-playground.git"
+    branch: "two-toggles"
+    charts:
+      - name: "mtv-integrations-mtv"
+        chart-path: "charts/mtv"
+        always-or-toggle: "toggle"
+        imageMappings:
+          mtv-integrations: mtv_integrations_controller
+        inclusions:
+          - "pullSecretOverride"
+        skipRBACOverrides: true
+        updateChartVersion: true # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.6 -> 2.6
+        escape-template-variables:
+          - "CLUSTER_NAME"
+          - "HUB_KUBECONFIG"
+          - "INSTALL_NAMESPACE"
+        auto-install-for-all-clusters: true
+  - repo_name: "mtv-integrations-cnv"
+    github_ref: "https://github.com/ngraham20/mtv-integrations-public-playground.git"
+    branch: "two-toggles"
+    charts:
+      - name: "cnv"
+        chart-path: "charts/cnv"
+        always-or-toggle: "toggle"
+        imageMappings: {}
+        inclusions:
+          - "pullSecretOverride"
+        skipRBACOverrides: true
+        updateChartVersion: true # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.6 -> 2.6
+        escape-template-variables:
+          - "CLUSTER_NAME"
+          - "HUB_KUBECONFIG"
+          - "INSTALL_NAMESPACE"
+        auto-install-for-all-clusters: true

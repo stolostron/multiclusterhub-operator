@@ -1,0 +1,119 @@
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: AddOnTemplate
+metadata:
+  name: kubevirt-hyperconverged-operator
+spec:
+  addonName: kubevirt-hyperconverged-operator
+  agentSpec:
+    workload:
+      manifests:
+      - apiVersion: rbac.authorization.k8s.io/v1
+        kind: Role
+        metadata:
+          name: operatorpolicy-manager
+          namespace: open-cluster-management-policies
+        rules:
+        - apiGroups:
+          - policy.open-cluster-management.io
+          resources:
+          - operatorpolicies
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+      - apiVersion: rbac.authorization.k8s.io/v1
+        kind: RoleBinding
+        metadata:
+          name: operatorpolicy-manager-binding
+          namespace: open-cluster-management-policies
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: Role
+          name: operatorpolicy-manager
+        subjects:
+        - kind: ServiceAccount
+          name: klusterlet-work-sa
+          namespace: open-cluster-management-agent
+      - apiVersion: policy.open-cluster-management.io/v1beta1
+        kind: OperatorPolicy
+        metadata:
+          name: kubevirt-hyperconverged-operator
+          namespace: open-cluster-management-policies
+        spec:
+          complianceType: musthave
+          operatorGroup:
+            name: openshift-cnv
+            namespace: openshift-cnv
+            targetNamespaces:
+            - openshift-cnv
+          remediationAction: enforce
+          subscription:
+            channel: stable
+            name: kubevirt-hyperconverged
+            namespace: openshift-cnv
+          upgradeApproval: Automatic
+      - apiVersion: hco.kubevirt.io/v1beta1
+        kind: HyperConverged
+        metadata:
+          annotations:
+            deployOVS: 'false'
+          name: kubevirt-hyperconverged
+          namespace: openshift-cnv
+        spec:
+          applicationAwareConfig:
+            allowApplicationAwareClusterResourceQuota: false
+            vmiCalcConfigName: DedicatedVirtualResources
+          certConfig:
+            ca:
+              duration: 48h0m0s
+              renewBefore: 24h0m0s
+            server:
+              duration: 24h0m0s
+              renewBefore: 12h0m0s
+          featureGates:
+            alignCPUs: false
+            autoResourceLimits: false
+            deployKubeSecondaryDNS: false
+            deployKubevirtIpamController: false
+            deployTektonTaskResources: false
+            deployVmConsoleProxy: false
+            disableMDevConfiguration: false
+            downwardMetrics: false
+            enableApplicationAwareQuota: false
+            enableCommonBootImageImport: true
+            enableManagedTenantQuota: false
+            nonRoot: true
+            persistentReservation: false
+            primaryUserDefinedNetworkBinding: false
+            withHostPassthroughCPU: false
+          higherWorkloadDensity:
+            memoryOvercommitPercentage: 100
+          liveMigrationConfig:
+            allowAutoConverge: false
+            allowPostCopy: false
+            completionTimeoutPerGiB: 800
+            parallelMigrationsPerCluster: 5
+            parallelOutboundMigrationsPerNode: 2
+            progressTimeout: 150
+          resourceRequirements:
+            vmiCPUAllocationRatio: 10
+          uninstallStrategy: BlockUninstallIfWorkloadsExist
+          virtualMachineOptions:
+            disableFreePageReporting: false
+            disableSerialConsoleLog: true
+          workloadUpdateStrategy:
+            batchEvictionInterval: 1m0s
+            batchEvictionSize: 10
+            workloadUpdateMethods:
+            - LiveMigrate
+  registration:
+  - customSigner:
+      signerName: open-cluster-management.io/kubevirt-hyperconverged-addon
+      signingCA:
+        name: kubevirt-hyperconverged-ca
+        namespace: openshift-cnv
+    type: CustomSigner
