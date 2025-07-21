@@ -38,7 +38,7 @@ components:
                 readOnlyRootFilesystem: false
         skipRBACOverrides: true
   - repo_name: "mtv-integrations"
-    github_ref: "https://github.com/yiraeChristineKim/mtv-integrations-public-playground.git"
+    github_ref: "https://github.com/ngraham20/mtv-integrations-public-playground.git"
     branch: "two-toggles"
     charts:
       - name: "mtv-integrations-mtv"
@@ -55,11 +55,11 @@ components:
           - "HUB_KUBECONFIG"
           - "INSTALL_NAMESPACE"
         auto-install-for-all-clusters: true
-  - repo_name: "mtv-integrations-cnv"
-    github_ref: "https://github.com/yiraeChristineKim/mtv-integrations-public-playground.git"
+  - repo_name: "mtv-integrations"
+    github_ref: "https://github.com/ngraham20/mtv-integrations-public-playground.git"
     branch: "two-toggles"
     charts:
-      - name: "cnv"
+      - name: "mtv-integrations-cnv"
         chart-path: "charts/cnv"
         always-or-toggle: "toggle"
         imageMappings: {}
