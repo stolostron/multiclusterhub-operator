@@ -1,0 +1,150 @@
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: AddOnTemplate
+metadata:
+  name: mtv-operator
+spec:
+  addonName: mtv-operator
+  agentSpec:
+    workload:
+      manifests:
+      - apiVersion: policy.open-cluster-management.io/v1beta1
+        kind: OperatorPolicy
+        metadata:
+          name: mtv-operator
+          namespace: open-cluster-management-policies
+        spec:
+          complianceType: musthave
+          remediationAction: enforce
+          subscription:
+            channel: release-v2.8
+            name: mtv-operator
+            namespace: openshift-mtv
+          upgradeApproval: Automatic
+      - apiVersion: forklift.konveyor.io/v1beta1
+        kind: ForkliftController
+        metadata:
+          name: forklift-controller
+          namespace: openshift-mtv
+        spec:
+          feature_ui_plugin: 'true'
+          feature_validation: 'true'
+          feature_volume_populator: 'true'
+      - apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          labels:
+            app: mtv-integrations
+            app.kubernetes.io/instance: mtv-integrations
+            app.kubernetes.io/name: mtv-integrations
+            chart: mtv-integrations-
+            component: ocm-mtv-integrations-ctrl
+            ocm-antiaffinity-selector: mtvintegrations
+            release: mtv-integrations
+          name: mtv-integrations-controller
+          namespace: open-cluster-management
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: mtv-integrations
+              component: ocm-mtv-integrations-ctrl
+              release: mtv-integrations
+          template:
+            metadata:
+              annotations:
+                kubectl.kubernetes.io/default-container: controller
+                target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
+              labels:
+                app.kubernetes.io/name: mtv-integrations
+                control-plane: mtv-controller
+            spec:
+              affinity:
+                nodeAffinity:
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                    nodeSelectorTerms:
+                    - matchExpressions:
+                      - key: kubernetes.io/arch
+                        operator: In
+                        values:
+                        - amd64
+                        - ppc64le
+                        - s390x
+                        - arm64
+                podAntiAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                  - podAffinityTerm:
+                      labelSelector:
+                        matchExpressions:
+                        - key: ocm-antiaffinity-selector
+                          operator: In
+                          values:
+                          - mtvintegrations
+                      topologyKey: topology.kubernetes.io/zone
+                    weight: 70
+                  - podAffinityTerm:
+                      labelSelector:
+                        matchExpressions:
+                        - key: ocm-antiaffinity-selector
+                          operator: In
+                          values:
+                          - mtvintegrations
+                      topologyKey: kubernetes.io/hostname
+                    weight: 35
+              containers:
+              - args:
+                - --health-probe-bind-address=:8081
+                command:
+                - /manager
+                image: '{{ .Values.global.imageOverrides.mtv_integrations_controller }}'
+                imagePullPolicy: Always
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8081
+                  initialDelaySeconds: 15
+                  periodSeconds: 20
+                name: mtv-integrations-controller
+                ports:
+                - containerPort: 9443
+                  name: webhook-http
+                  protocol: TCP
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: 8081
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                resources:
+                  requests:
+                    cpu: 10m
+                    memory: 64Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                    - ALL
+                  privileged: false
+                  readOnlyRootFilesystem: true
+                  runAsNonRoot: true
+                volumeMounts:
+                - mountPath: /tmp/k8s-webhook-server/serving-certs
+                  name: cert
+                  readOnly: true
+              hostIPC: false
+              hostNetwork: false
+              hostPID: false
+              securityContext:
+                runAsNonRoot: true
+              serviceAccountName: mtv-integrations-manager
+              volumes:
+              - name: cert
+                secret:
+                  defaultMode: 420
+                  secretName: mtv-plan-webhook-server-cert
+  registration:
+  - customSigner:
+      signerName: open-cluster-management.io/kubevirt-hyperconverged-addon
+      signingCA:
+        name: mtv-operator-ca
+        namespace: openshift-mtv
+    type: CustomSigner
