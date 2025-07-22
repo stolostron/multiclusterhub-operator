@@ -1,5 +1,5 @@
 
-# Source: mtv-integrations-cnv/templates/cnv-global-placement.yaml
+# Source: mtv-integrations-mtv/templates/cnv-global-placement.yaml
 apiVersion: cluster.open-cluster-management.io/v1beta1
 kind: Placement
 metadata:

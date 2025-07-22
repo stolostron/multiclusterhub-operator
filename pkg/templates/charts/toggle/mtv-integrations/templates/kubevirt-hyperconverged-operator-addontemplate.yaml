@@ -28,6 +28,19 @@ spec:
       - apiVersion: rbac.authorization.k8s.io/v1
         kind: RoleBinding
         metadata:
+          name: operatorpolicy-manager-hosted-binding
+          namespace: open-cluster-management-policies
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: Role
+          name: operatorpolicy-manager
+        subjects:
+        - kind: ServiceAccount
+          name: klusterlet-{{ `{{CLUSTER_NAME}}` }}-work-sa
+          namespace: open-cluster-management-{{ `{{CLUSTER_NAME}}` }}
+      - apiVersion: rbac.authorization.k8s.io/v1
+        kind: RoleBinding
+        metadata:
           name: operatorpolicy-manager-binding
           namespace: open-cluster-management-policies
         roleRef:
