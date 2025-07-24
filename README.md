@@ -28,7 +28,7 @@ Remove or edit this annotation to resume installer operations
 kubectl annotate mch <mch-name> installer.open-cluster-management.io/pause=false --overwrite
 ```
 
-### Add Image Overrides Via Configmap  
+### Add Image Overrides Via Configmap
 
 Developer image overrides can be added by specifiying a configmap containing the overrides for the MCH resource. This configmap must be in the same namespace as the MCH resource.
 
@@ -104,7 +104,6 @@ oc annotate mch multiclusterhub installer.open-cluster-management.io/oadp-subscr
 The operator defines a minimum version of OCP it can run in to avoid unexpected behavior. If the OCP environment is below this threshold then the MCH instance will report failure early on. This requirement can be ignored in the following two ways
 
 1. Set `DISABLE_OCP_MIN_VERSION` as an environment variable. The presence of this variable in the container the operator runs will skip the check.
-
 2. Set `installer.open-cluster-management.io/ignore-ocp-version` annotation in the MCH instance.
 
 ```bash
@@ -123,4 +122,4 @@ After deploying MCE the operator waits for MCE install to complete and verifies 
 - [Configuration Guide](/docs/configuration.md)
 - [Deploy automation](https://github.com/stolostron/deploy)
 
-Rebuild Image: Wed Mar 12 13:58:47 EDT 2025
+Rebuild Image: Thu Jul 24 10:04:30 EDT 2025
