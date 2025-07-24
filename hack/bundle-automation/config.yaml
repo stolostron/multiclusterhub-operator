@@ -40,7 +40,7 @@ components:
         imageMappings:
           search-v2-operator: search_v2_operator
           kube-rbac-proxy: kube_rbac_proxy
-          postgresql-13: postgresql_16
+          postgresql-16: postgresql_16
           search-indexer: search_indexer
           search-collector: search_collector
           search-v2-api: search_v2_api
