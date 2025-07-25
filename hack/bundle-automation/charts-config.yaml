@@ -38,8 +38,8 @@ components:
                 readOnlyRootFilesystem: false
         skipRBACOverrides: true
   - repo_name: "mtv-integrations"
-    github_ref: "https://github.com/yiraeChristineKim/mtv-integrations-public.git"
-    branch: "two-toggles"
+    github_ref: "https://github.com/stolostron/mtv-integrations.git"
+    branch: "release-2.15"
     charts:
       - name: "mtv-integrations"
         chart-path: "charts"
