@@ -36,7 +36,7 @@ spec:
             app: mtv-integrations
             app.kubernetes.io/instance: mtv-integrations
             app.kubernetes.io/name: mtv-integrations
-            chart: mtv-integrations-
+            chart: mtv-integrations-2.15.0
             component: ocm-mtv-integrations-ctrl
             ocm-antiaffinity-selector: mtvintegrations
             release: mtv-integrations

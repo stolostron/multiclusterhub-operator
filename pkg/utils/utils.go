@@ -80,6 +80,9 @@ const (
 	// SearchV2ChartLocation is the location of the Search V2 Operator chart.
 	SearchV2ChartLocation = "/charts/toggle/search-v2-operator"
 
+	// MTVIntegrationsChartLocation is the location of the MTV Integrations charts.
+	MTVIntegrationsChartLocation = "/charts/toggle/mtv-integrations"
+
 	// SiteConfigChartLocation is the location of the SiteConfig Operator chart.
 	SiteConfigChartLocation = "/charts/toggle/siteconfig-operator"
 

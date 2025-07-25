@@ -90,7 +90,7 @@ func TestGetDisabledComponents(t *testing.T) {
 			name:      "default disabled components",
 			component: ClusterBackup,
 			want:      true,
-			want2:     4,
+			want2:     5,
 		},
 	}
 

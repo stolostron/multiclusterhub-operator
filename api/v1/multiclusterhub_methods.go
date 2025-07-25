@@ -25,6 +25,7 @@ const (
 	Console                   string = "console"
 	EdgeManager               string = "edge-manager"
 	EdgeManagerPreview        string = "edge-manager-preview"
+	MTVIntegrationsPreview    string = "mtv-integrations-preview"
 	FineGrainedRbac           string = "fine-grained-rbac"
 	FineGrainedRbacPreview    string = "fine-grained-rbac-preview"
 	GRC                       string = "grc"
@@ -73,6 +74,7 @@ var MCHComponents = []string{
 	Console,
 	EdgeManagerPreview,
 	FineGrainedRbacPreview,
+	MTVIntegrationsPreview,
 	GRC,
 	Insights,
 	MultiClusterEngine, // Adding MCE component to ensure that the component is validated by the webhook.
@@ -212,6 +214,7 @@ func GetDefaultDisabledComponents() ([]string, error) {
 		EdgeManagerPreview,
 		FineGrainedRbacPreview,
 		SiteConfig,
+		MTVIntegrationsPreview,
 	}
 	return defaultDisabledComponents, nil
 }
