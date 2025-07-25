@@ -14,9 +14,14 @@ spec:
           namespace: open-cluster-management-policies
         spec:
           complianceType: musthave
+          operatorGroup:
+            name: openshift-mtv
+            namespace: openshift-mtv
+            targetNamespaces:
+            - openshift-mtv
           remediationAction: enforce
           subscription:
-            channel: release-v2.8
+            channel: release-v2.9
             name: mtv-operator
             namespace: openshift-mtv
           upgradeApproval: Automatic
