@@ -32,6 +32,12 @@ spec:
     - linux/x86_64
   - name: dockerfile
     value: build/Dockerfile.rhtap
+  - name: build-source-image
+    value: "true"
+  - name: hermetic
+    value: "true"
+  - name: prefetch-input
+    value: '[{"type": "gomod", "path": "."}]'
   - name: path-context
     value: .
   pipelineSpec:
