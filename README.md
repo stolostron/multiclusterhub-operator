@@ -122,4 +122,4 @@ After deploying MCE the operator waits for MCE install to complete and verifies 
 - [Configuration Guide](/docs/configuration.md)
 - [Deploy automation](https://github.com/stolostron/deploy)
 
-Rebuild Image: Thu Jul 24 10:04:30 EDT 2025
+Rebuild Image: Mon Jul 28 10:19:08 EDT 2025
