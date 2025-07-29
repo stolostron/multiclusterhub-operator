@@ -121,10 +121,8 @@ func GetOverridesFromConfigmap(k8sClient client.Client, overrides map[string]str
 	}
 
 	if len(configmap.Data) != 1 {
-		return overrides, fmt.Errorf(
-			fmt.Sprintf("Unexpected number of keys in ConfigMap %s: expected 1 key, found %d keys", configmapName,
-				len(configmap.Data)),
-		)
+		return overrides, fmt.Errorf("Unexpected number of keys in ConfigMap %s: expected 1 key, found %d keys", configmapName,
+			len(configmap.Data))
 	}
 
 	for _, v := range configmap.Data {
