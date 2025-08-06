@@ -1,15 +1,12 @@
-# Copyright (c) 2024 Red Hat, Inc.
-# Copyright Contributors to the Open Cluster Management project
-
 apiVersion: v1
 appVersion: 2.12.0
+category: Development
 description: A Helm chart for multicloud mtv-integrations
-category: "Development"
 keywords:
-  - acm
-  - mtv
-  - cnv
-  - vm
+- acm
+- mtv
+- cnv
+- vm
 name: mtv-integrations-mtv
-verified: "RHACM"
-version: 2.12.0
+verified: RHACM
+version: '2.15'
