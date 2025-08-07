@@ -5,7 +5,7 @@ FROM registry.access.redhat.com/ubi9/ubi-minimal:latest as cloner
 RUN microdnf install -y git findutils
 COPY hack/scripts hack/scripts
 
-FROM registry.ci.openshift.org/stolostron/builder:go1.23-linux AS builder
+FROM registry.ci.openshift.org/stolostron/builder:go1.24-linux AS builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
