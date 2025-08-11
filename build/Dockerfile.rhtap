@@ -34,7 +34,14 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 LABEL org.label-schema.vendor="Red Hat" \
       org.label-schema.name="multiclusterhub-operator" \
       org.label-schema.description="Installer operator for Red Hat Advanced Cluster Management" \
-      org.label-schema.license="Red Hat Advanced Cluster Management for Kubernetes EULA"
+      org.label-schema.license="Red Hat Advanced Cluster Management for Kubernetes EULA" \
+      name="rhacm2/multiclusterhub-rhel9" \
+      summary="MultiClusterHub installer for Red Hat Advanced Cluster Management" \
+      description="Installer operator for Red Hat Advanced Cluster Management" \
+      io.k8s.display-name="MultiClusterHub operator" \
+      io.k8s.description="Installer operator for Red Hat Advanced Cluster Management" \
+      com.redhat.component="multiclusterhub-operator-container" \
+      io.openshift.tags="data,images"
 
 WORKDIR /
 COPY --from=builder /workspace/multiclusterhub-operator /usr/local/bin/multiclusterhub-operator
