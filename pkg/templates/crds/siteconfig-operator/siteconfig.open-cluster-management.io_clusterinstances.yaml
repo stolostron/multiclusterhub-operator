@@ -122,6 +122,7 @@ spec:
                 enum:
                 - SNO
                 - HighlyAvailable
+                - HostedControlPlane
                 type: string
               cpuArchitecture:
                 default: x86_64
