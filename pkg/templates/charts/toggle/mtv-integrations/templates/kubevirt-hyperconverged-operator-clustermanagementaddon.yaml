@@ -11,7 +11,7 @@ spec:
   installStrategy:
     placements:
     - name: openshift-cnv
-      namespace: open-cluster-management
+      namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
     type: Placements
   supportedConfigs:
   - defaultConfig:

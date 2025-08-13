@@ -1,13 +1,11 @@
-
-# Source: mtv-integrations-mtv/templates/cnv-global-placement.yaml
 apiVersion: cluster.open-cluster-management.io/v1beta1
 kind: Placement
 metadata:
   name: openshift-cnv
-  namespace: open-cluster-management
+  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
 spec:
   predicates:
-    - requiredClusterSelector:
-        labelSelector:
-          matchLabels:
-            acm/cnv-operator-install: "true"
+  - requiredClusterSelector:
+      labelSelector:
+        matchLabels:
+          acm/cnv-operator-install: 'true'
