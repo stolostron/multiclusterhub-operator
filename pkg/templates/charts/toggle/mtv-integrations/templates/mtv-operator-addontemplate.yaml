@@ -51,7 +51,7 @@ spec:
             ocm-antiaffinity-selector: mtvintegrations
             release: mtv-integrations
           name: mtv-integrations-controller
-          namespace: open-cluster-management
+          namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
         spec:
           replicas: 1
           selector:
