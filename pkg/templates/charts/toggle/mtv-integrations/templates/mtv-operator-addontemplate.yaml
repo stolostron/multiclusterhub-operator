@@ -58,15 +58,14 @@ spec:
             matchLabels:
               app: mtv-integrations
               component: ocm-mtv-integrations-ctrl
-              release: mtv-integrations
           template:
             metadata:
               annotations:
                 kubectl.kubernetes.io/default-container: controller
                 target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
               labels:
-                app.kubernetes.io/name: mtv-integrations
-                control-plane: mtv-controller
+                app: mtv-integrations
+                component: ocm-mtv-integrations-ctrl
             spec:
               affinity:
                 nodeAffinity:
@@ -105,7 +104,7 @@ spec:
                 - --health-probe-bind-address=:8081
                 command:
                 - /manager
-                image: '{{ .Values.global.imageOverrides.mtv_integrations_controller }}'
+                image: '{{ .Values.global.imageOverrides.mtv_integrations }}'
                 imagePullPolicy: Always
                 livenessProbe:
                   httpGet:
@@ -151,10 +150,3 @@ spec:
                 secret:
                   defaultMode: 420
                   secretName: mtv-plan-webhook-server-cert
-  registration:
-  - customSigner:
-      signerName: open-cluster-management.io/kubevirt-hyperconverged-addon
-      signingCA:
-        name: mtv-operator-ca
-        namespace: openshift-mtv
-    type: CustomSigner
