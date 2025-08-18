@@ -12,7 +12,7 @@ webhooks:
       name: mtv-plan-webhook-service
       namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
       path: /validate-plan
-  failurePolicy: Fail
+  failurePolicy: Ignore
   name: validate.mtv.plan
   rules:
   - apiGroups:

@@ -3,7 +3,7 @@ global:
   baseDomain: ''
   hubSize: Small
   imageOverrides:
-    mtv_integrations_controller: ''
+    mtv_integrations: ''
   namespace: default
   pullSecret: null
   templateOverrides: {}
