@@ -45,7 +45,7 @@ components:
         chart-path: "charts"
         always-or-toggle: "toggle"
         imageMappings:
-          mtv-integrations: mtv_integrations_controller
+          mtv-integrations: mtv_integrations
         inclusions:
           - "pullSecretOverride"
         skipRBACOverrides: true
