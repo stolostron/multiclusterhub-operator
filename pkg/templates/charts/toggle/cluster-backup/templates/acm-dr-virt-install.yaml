@@ -108,14 +108,8 @@ spec:
                       namespace: "open-cluster-management-backup"
             {{ `{{hub else hub}}` }}
               {{ `{{- $oadp_channel := "stable-1.4" }}` }}
-              {{ `{{- $ocp_version := "" }}` }}
-              {{ `{{- $cluster_version := (lookup "config.openshift.io/v1" "ClusterVersion" "" "version")  }}` }}
-              {{ `{{- if eq $cluster_version.metadata.name  "version" }}` }}
-                {{ `{{- range $hist := $cluster_version.status.history}}` }}
-                  {{ `{{- $ocp_version = $hist.version }}` }}
-                {{ `{{- end }}` }}
-              {{ `{{- end }}` }}
-              {{ `{{ if or (hasPrefix "4.19" $ocp_version) (hasPrefix "4.2" $ocp_version) }}` }}
+              {{ `{{- $ocp_version := fromClusterClaim "version.openshift.io" }}` }}
+              {{ `{{ if or (eq $ocp_version "") (hasPrefix "4.19" $ocp_version) (not (hasPrefix "4.1" $ocp_version)) }}` }}
               {{ `{{- $oadp_channel = "stable" }}` }}
               {{ `{{- end }}` }}
               {{ `{{ if hasPrefix "4.12" $ocp_version }}` }}
@@ -286,14 +280,8 @@ spec:
 
             {{ `{{- /* inferre the oadp channel from the cluster ocp version */ -}}` }}
             {{ `{{- $oadp_channel := "stable-1.4" }}` }}
-            {{ `{{- $ocp_version := "" }}` }}
-            {{ `{{- $cluster_version := (lookup "config.openshift.io/v1" "ClusterVersion" "" "version")  }}` }}
-            {{ `{{- if eq $cluster_version.metadata.name  "version" }}` }}
-              {{ `{{- range $hist := $cluster_version.status.history}}` }}
-                {{ `{{- $ocp_version = $hist.version }}` }}
-              {{ `{{- end }}` }}
-            {{ `{{- end }}` }}
-            {{ `{{ if or (hasPrefix "4.19" $ocp_version) (hasPrefix "4.2" $ocp_version) }}` }}
+            {{ `{{- $ocp_version := fromClusterClaim "version.openshift.io" }}` }}
+            {{ `{{ if or (eq $ocp_version "") (hasPrefix "4.19" $ocp_version) (not (hasPrefix "4.1" $ocp_version)) }}` }}
             {{ `{{- $oadp_channel = "stable" }}` }}
             {{ `{{- end }}` }}
             {{ `{{ if hasPrefix "4.12" $ocp_version }}` }}

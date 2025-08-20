@@ -350,6 +350,14 @@ func TestOADPAnnotation(t *testing.T) {
 	}
 
 	// These should all be the defaults (no overrides)
+	// no ACM_HUB_OCP_VERSION set, should return stable channel
+	test1, test2, test3, test4, test5, test6 = GetOADPConfig(mch)
+	if test2 != defaultOADPStableChannel {
+		t.Error("Cluster Backup missing OADP overrides for 1.4 channel on unknown version of ocp")
+	}
+
+	// fake the ocp version to 4.18.0, it should result in stable-1.4 channel
+	os.Setenv("ACM_HUB_OCP_VERSION", "4.18.0")
 	test1, test2, test3, test4, test5, test6 = GetOADPConfig(mch)
 
 	if test1 != defaultOADPName {
@@ -357,7 +365,7 @@ func TestOADPAnnotation(t *testing.T) {
 	}
 
 	if test2 != defaultOADPChannel {
-		t.Error("Cluster Backup missing OADP overrides for channel")
+		t.Error("Cluster Backup missing OADP overrides for 1.4 channel on ocp 4.18")
 	}
 
 	if test3 != defaultOADPInstallPlan {
@@ -375,4 +383,19 @@ func TestOADPAnnotation(t *testing.T) {
 	if test6 != "" {
 		t.Error("Cluster Backup Defaulted to something other than \"\"")
 	}
+
+	// fake the ocp version to 4.30.0, it should result in stable channel
+	os.Setenv("ACM_HUB_OCP_VERSION", "4.30.0")
+	test1, test2, test3, test4, test5, test6 = GetOADPConfig(mch)
+	if test2 != defaultOADPStableChannel {
+		t.Error("Cluster Backup missing OADP overrides for stable channel on ocp 4.30")
+	}
+
+	// fake the ocp version to something starting with anything other than 1.4, it should result in stable channel
+	os.Setenv("ACM_HUB_OCP_VERSION", "5.1.0")
+	test1, test2, test3, test4, test5, test6 = GetOADPConfig(mch)
+	if test2 != defaultOADPStableChannel {
+		t.Error("Cluster Backup missing OADP overrides for stable channel on ocp 5.1.0")
+	}
+
 }
