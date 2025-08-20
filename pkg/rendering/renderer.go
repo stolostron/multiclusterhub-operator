@@ -376,11 +376,11 @@ func GetOADPConfig(m *v1.MultiClusterHub) (string, string, subv1alpha1.Approval,
 	} else {
 
 		ocpVersion := os.Getenv("ACM_HUB_OCP_VERSION")
-		isOCP419orNewer := strings.HasPrefix(ocpVersion, "4.19") ||
+		isOCP419orNewer := ocpVersion == "" || strings.HasPrefix(ocpVersion, "4.19") ||
 			!strings.HasPrefix(ocpVersion, "4.1")
 
 		if isOCP419orNewer {
-			// use stable channel for OCP 2.19 or newer
+			// use stable channel for OCP 4.19 or newer, or unknown ocp version
 			channel = defaultOADPStableChannel
 		} else {
 			channel = defaultOADPChannel
