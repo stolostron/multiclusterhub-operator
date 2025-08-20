@@ -324,7 +324,7 @@ func TestOADPAnnotation(t *testing.T) {
 	}
 
 	if test2 != "stable-1.0" {
-		t.Error("Cluster Backup missing OADP overrides for channel" + " OCP IS " + os.Getenv("ACM_HUB_OCP_VERSION"))
+		t.Error("Cluster Backup missing OADP overrides for channel")
 	}
 
 	if test3 != "Manual" {
@@ -356,7 +356,7 @@ func TestOADPAnnotation(t *testing.T) {
 		t.Error("Cluster Backup missing OADP overrides for 1.4 channel on unknown version of ocp")
 	}
 
-	// fake the ocp version to 4.18.0, it should result in stable channel
+	// fake the ocp version to 4.18.0, it should result in stable-1.4 channel
 	os.Setenv("ACM_HUB_OCP_VERSION", "4.18.0")
 	test1, test2, test3, test4, test5, test6 = GetOADPConfig(mch)
 
