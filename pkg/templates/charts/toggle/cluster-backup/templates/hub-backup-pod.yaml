@@ -416,7 +416,7 @@ spec:
           object-templates-raw: |
             {{ `{{- $ch := "stable-1.4" }}` }}
             {{ `{{- $ocp_version := fromClusterClaim "version.openshift.io" }}` }}
-            {{ `{{ if or (hasPrefix "4.19" $ocp_version) (not (hasPrefix "4.1" $ocp_version)) }}` }}
+            {{ `{{ if or (eq $ocp_version "") (hasPrefix "4.19" $ocp_version) (not (hasPrefix "4.1" $ocp_version)) }}` }}
             {{ `{{- $ch = "stable" }}` }}
             {{ `{{- end }}` }}
             {{ `{{- range $ss := (lookup "operators.coreos.com/v1alpha1" "Subscription" "open-cluster-management-backup" "").items }}` }}
