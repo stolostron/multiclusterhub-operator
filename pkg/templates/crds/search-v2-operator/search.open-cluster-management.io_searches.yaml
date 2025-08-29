@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.3
+    controller-gen.kubebuilder.io/version: v0.18.0
   creationTimestamp: null
   name: searches.search.open-cluster-management.io
 spec:
@@ -20,14 +20,19 @@ spec:
         description: Search is the Schema for the searches API
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -79,16 +84,16 @@ spec:
                                 be a C_IDENTIFIER.
                               type: string
                             value:
-                              description: 'Variable references $(VAR_NAME) are expanded
-                                using the previously defined environment variables
-                                in the container and any service environment variables.
-                                If a variable cannot be resolved, the reference in
-                                the input string will be unchanged. Double $$ are
-                                reduced to a single $, which allows for escaping the
-                                $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will produce
-                                the string literal "$(VAR_NAME)". Escaped references
-                                will never be expanded, regardless of whether the
-                                variable exists or not. Defaults to "".'
+                              description: |-
+                                Variable references $(VAR_NAME) are expanded
+                                using the previously defined environment variables in the container and
+                                any service environment variables. If a variable cannot be resolved,
+                                the reference in the input string will be unchanged. Double $$ are reduced
+                                to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+                                Escaped references will never be expanded, regardless of whether the variable
+                                exists or not.
+                                Defaults to "".
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -101,10 +106,13 @@ spec:
                                       description: The key to select.
                                       type: string
                                     name:
-                                      description: 'Name of the referent. More info:
-                                        https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Add other useful fields. apiVersion,
-                                        kind, uid?'
+                                      default: ""
+                                      description: |-
+                                        Name of the referent.
+                                        This field is effectively required, but due to backwards compatibility is
+                                        allowed to be empty. Instances of this type with an empty value here are
+                                        almost certainly wrong.
+                                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                                       type: string
                                     optional:
                                       description: Specify whether the ConfigMap or
@@ -114,11 +122,9 @@ spec:
                                   - key
                                   type: object
                                 fieldRef:
-                                  description: 'Selects a field of the pod: supports
-                                    metadata.name, metadata.namespace, `metadata.labels[''<KEY>'']`,
-                                    `metadata.annotations[''<KEY>'']`, spec.nodeName,
-                                    spec.serviceAccountName, status.hostIP, status.podIP,
-                                    status.podIPs.'
+                                  description: |-
+                                    Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
+                                    spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
                                   properties:
                                     apiVersion:
                                       description: Version of the schema the FieldPath
@@ -132,11 +138,9 @@ spec:
                                   - fieldPath
                                   type: object
                                 resourceFieldRef:
-                                  description: 'Selects a resource of the container:
-                                    only resources limits and requests (limits.cpu,
-                                    limits.memory, limits.ephemeral-storage, requests.cpu,
-                                    requests.memory and requests.ephemeral-storage)
-                                    are currently supported.'
+                                  description: |-
+                                    Selects a resource of the container: only resources limits and requests
+                                    (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
                                   properties:
                                     containerName:
                                       description: 'Container name: required for volumes,
@@ -165,10 +169,13 @@ spec:
                                         from.  Must be a valid secret key.
                                       type: string
                                     name:
-                                      description: 'Name of the referent. More info:
-                                        https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Add other useful fields. apiVersion,
-                                        kind, uid?'
+                                      default: ""
+                                      description: |-
+                                        Name of the referent.
+                                        This field is effectively required, but due to backwards compatibility is
+                                        allowed to be empty. Instances of this type with an empty value here are
+                                        almost certainly wrong.
+                                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                                       type: string
                                     optional:
                                       description: Specify whether the Secret or its
@@ -194,19 +201,28 @@ spec:
                         description: Compute Resources required by deployment
                         properties:
                           claims:
-                            description: "Claims lists the names of resources, defined
-                              in spec.resourceClaims, that are used by this container.
-                              \n This is an alpha field and requires enabling the
-                              DynamicResourceAllocation feature gate. \n This field
-                              is immutable."
+                            description: |-
+                              Claims lists the names of resources, defined in spec.resourceClaims,
+                              that are used by this container.
+
+                              This is an alpha field and requires enabling the
+                              DynamicResourceAllocation feature gate.
+
+                              This field is immutable. It can only be set for containers.
                             items:
                               description: ResourceClaim references one entry in PodSpec.ResourceClaims.
                               properties:
                                 name:
-                                  description: Name must match the name of one entry
-                                    in pod.spec.resourceClaims of the Pod where this
-                                    field is used. It makes that resource available
+                                  description: |-
+                                    Name must match the name of one entry in pod.spec.resourceClaims of
+                                    the Pod where this field is used. It makes that resource available
                                     inside a container.
+                                  type: string
+                                request:
+                                  description: |-
+                                    Request is the name chosen for a request in the referenced claim.
+                                    If empty, everything from the claim is made available, otherwise
+                                    only the result of this request.
                                   type: string
                               required:
                               - name
@@ -222,8 +238,9 @@ spec:
                               - type: string
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
-                            description: 'Limits describes the maximum amount of compute
-                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            description: |-
+                              Limits describes the maximum amount of compute resources allowed.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                             type: object
                           requests:
                             additionalProperties:
@@ -232,11 +249,11 @@ spec:
                               - type: string
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
-                            description: 'Requests describes the minimum amount of
-                              compute resources required. If Requests is omitted for
-                              a container, it defaults to Limits if that is explicitly
-                              specified, otherwise to an implementation-defined value.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            description: |-
+                              Requests describes the minimum amount of compute resources required.
+                              If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+                              otherwise to an implementation-defined value. Requests cannot exceed Limits.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                             type: object
                         type: object
                     type: object
@@ -259,16 +276,16 @@ spec:
                                 be a C_IDENTIFIER.
                               type: string
                             value:
-                              description: 'Variable references $(VAR_NAME) are expanded
-                                using the previously defined environment variables
-                                in the container and any service environment variables.
-                                If a variable cannot be resolved, the reference in
-                                the input string will be unchanged. Double $$ are
-                                reduced to a single $, which allows for escaping the
-                                $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will produce
-                                the string literal "$(VAR_NAME)". Escaped references
-                                will never be expanded, regardless of whether the
-                                variable exists or not. Defaults to "".'
+                              description: |-
+                                Variable references $(VAR_NAME) are expanded
+                                using the previously defined environment variables in the container and
+                                any service environment variables. If a variable cannot be resolved,
+                                the reference in the input string will be unchanged. Double $$ are reduced
+                                to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+                                Escaped references will never be expanded, regardless of whether the variable
+                                exists or not.
+                                Defaults to "".
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -281,10 +298,13 @@ spec:
                                       description: The key to select.
                                       type: string
                                     name:
-                                      description: 'Name of the referent. More info:
-                                        https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Add other useful fields. apiVersion,
-                                        kind, uid?'
+                                      default: ""
+                                      description: |-
+                                        Name of the referent.
+                                        This field is effectively required, but due to backwards compatibility is
+                                        allowed to be empty. Instances of this type with an empty value here are
+                                        almost certainly wrong.
+                                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                                       type: string
                                     optional:
                                       description: Specify whether the ConfigMap or
@@ -294,11 +314,9 @@ spec:
                                   - key
                                   type: object
                                 fieldRef:
-                                  description: 'Selects a field of the pod: supports
-                                    metadata.name, metadata.namespace, `metadata.labels[''<KEY>'']`,
-                                    `metadata.annotations[''<KEY>'']`, spec.nodeName,
-                                    spec.serviceAccountName, status.hostIP, status.podIP,
-                                    status.podIPs.'
+                                  description: |-
+                                    Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
+                                    spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
                                   properties:
                                     apiVersion:
                                       description: Version of the schema the FieldPath
@@ -312,11 +330,9 @@ spec:
                                   - fieldPath
                                   type: object
                                 resourceFieldRef:
-                                  description: 'Selects a resource of the container:
-                                    only resources limits and requests (limits.cpu,
-                                    limits.memory, limits.ephemeral-storage, requests.cpu,
-                                    requests.memory and requests.ephemeral-storage)
-                                    are currently supported.'
+                                  description: |-
+                                    Selects a resource of the container: only resources limits and requests
+                                    (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
                                   properties:
                                     containerName:
                                       description: 'Container name: required for volumes,
@@ -345,10 +361,13 @@ spec:
                                         from.  Must be a valid secret key.
                                       type: string
                                     name:
-                                      description: 'Name of the referent. More info:
-                                        https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Add other useful fields. apiVersion,
-                                        kind, uid?'
+                                      default: ""
+                                      description: |-
+                                        Name of the referent.
+                                        This field is effectively required, but due to backwards compatibility is
+                                        allowed to be empty. Instances of this type with an empty value here are
+                                        almost certainly wrong.
+                                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                                       type: string
                                     optional:
                                       description: Specify whether the Secret or its
@@ -374,19 +393,28 @@ spec:
                         description: Compute Resources required by deployment
                         properties:
                           claims:
-                            description: "Claims lists the names of resources, defined
-                              in spec.resourceClaims, that are used by this container.
-                              \n This is an alpha field and requires enabling the
-                              DynamicResourceAllocation feature gate. \n This field
-                              is immutable."
+                            description: |-
+                              Claims lists the names of resources, defined in spec.resourceClaims,
+                              that are used by this container.
+
+                              This is an alpha field and requires enabling the
+                              DynamicResourceAllocation feature gate.
+
+                              This field is immutable. It can only be set for containers.
                             items:
                               description: ResourceClaim references one entry in PodSpec.ResourceClaims.
                               properties:
                                 name:
-                                  description: Name must match the name of one entry
-                                    in pod.spec.resourceClaims of the Pod where this
-                                    field is used. It makes that resource available
+                                  description: |-
+                                    Name must match the name of one entry in pod.spec.resourceClaims of
+                                    the Pod where this field is used. It makes that resource available
                                     inside a container.
+                                  type: string
+                                request:
+                                  description: |-
+                                    Request is the name chosen for a request in the referenced claim.
+                                    If empty, everything from the claim is made available, otherwise
+                                    only the result of this request.
                                   type: string
                               required:
                               - name
@@ -402,8 +430,9 @@ spec:
                               - type: string
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
-                            description: 'Limits describes the maximum amount of compute
-                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            description: |-
+                              Limits describes the maximum amount of compute resources allowed.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                             type: object
                           requests:
                             additionalProperties:
@@ -412,11 +441,11 @@ spec:
                               - type: string
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
-                            description: 'Requests describes the minimum amount of
-                              compute resources required. If Requests is omitted for
-                              a container, it defaults to Limits if that is explicitly
-                              specified, otherwise to an implementation-defined value.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            description: |-
+                              Requests describes the minimum amount of compute resources required.
+                              If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+                              otherwise to an implementation-defined value. Requests cannot exceed Limits.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                             type: object
                         type: object
                     type: object
@@ -439,16 +468,16 @@ spec:
                                 be a C_IDENTIFIER.
                               type: string
                             value:
-                              description: 'Variable references $(VAR_NAME) are expanded
-                                using the previously defined environment variables
-                                in the container and any service environment variables.
-                                If a variable cannot be resolved, the reference in
-                                the input string will be unchanged. Double $$ are
-                                reduced to a single $, which allows for escaping the
-                                $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will produce
-                                the string literal "$(VAR_NAME)". Escaped references
-                                will never be expanded, regardless of whether the
-                                variable exists or not. Defaults to "".'
+                              description: |-
+                                Variable references $(VAR_NAME) are expanded
+                                using the previously defined environment variables in the container and
+                                any service environment variables. If a variable cannot be resolved,
+                                the reference in the input string will be unchanged. Double $$ are reduced
+                                to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+                                Escaped references will never be expanded, regardless of whether the variable
+                                exists or not.
+                                Defaults to "".
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -461,10 +490,13 @@ spec:
                                       description: The key to select.
                                       type: string
                                     name:
-                                      description: 'Name of the referent. More info:
-                                        https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Add other useful fields. apiVersion,
-                                        kind, uid?'
+                                      default: ""
+                                      description: |-
+                                        Name of the referent.
+                                        This field is effectively required, but due to backwards compatibility is
+                                        allowed to be empty. Instances of this type with an empty value here are
+                                        almost certainly wrong.
+                                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                                       type: string
                                     optional:
                                       description: Specify whether the ConfigMap or
@@ -474,11 +506,9 @@ spec:
                                   - key
                                   type: object
                                 fieldRef:
-                                  description: 'Selects a field of the pod: supports
-                                    metadata.name, metadata.namespace, `metadata.labels[''<KEY>'']`,
-                                    `metadata.annotations[''<KEY>'']`, spec.nodeName,
-                                    spec.serviceAccountName, status.hostIP, status.podIP,
-                                    status.podIPs.'
+                                  description: |-
+                                    Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
+                                    spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
                                   properties:
                                     apiVersion:
                                       description: Version of the schema the FieldPath
@@ -492,11 +522,9 @@ spec:
                                   - fieldPath
                                   type: object
                                 resourceFieldRef:
-                                  description: 'Selects a resource of the container:
-                                    only resources limits and requests (limits.cpu,
-                                    limits.memory, limits.ephemeral-storage, requests.cpu,
-                                    requests.memory and requests.ephemeral-storage)
-                                    are currently supported.'
+                                  description: |-
+                                    Selects a resource of the container: only resources limits and requests
+                                    (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
                                   properties:
                                     containerName:
                                       description: 'Container name: required for volumes,
@@ -525,10 +553,13 @@ spec:
                                         from.  Must be a valid secret key.
                                       type: string
                                     name:
-                                      description: 'Name of the referent. More info:
-                                        https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Add other useful fields. apiVersion,
-                                        kind, uid?'
+                                      default: ""
+                                      description: |-
+                                        Name of the referent.
+                                        This field is effectively required, but due to backwards compatibility is
+                                        allowed to be empty. Instances of this type with an empty value here are
+                                        almost certainly wrong.
+                                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                                       type: string
                                     optional:
                                       description: Specify whether the Secret or its
@@ -554,19 +585,28 @@ spec:
                         description: Compute Resources required by deployment
                         properties:
                           claims:
-                            description: "Claims lists the names of resources, defined
-                              in spec.resourceClaims, that are used by this container.
-                              \n This is an alpha field and requires enabling the
-                              DynamicResourceAllocation feature gate. \n This field
-                              is immutable."
+                            description: |-
+                              Claims lists the names of resources, defined in spec.resourceClaims,
+                              that are used by this container.
+
+                              This is an alpha field and requires enabling the
+                              DynamicResourceAllocation feature gate.
+
+                              This field is immutable. It can only be set for containers.
                             items:
                               description: ResourceClaim references one entry in PodSpec.ResourceClaims.
                               properties:
                                 name:
-                                  description: Name must match the name of one entry
-                                    in pod.spec.resourceClaims of the Pod where this
-                                    field is used. It makes that resource available
+                                  description: |-
+                                    Name must match the name of one entry in pod.spec.resourceClaims of
+                                    the Pod where this field is used. It makes that resource available
                                     inside a container.
+                                  type: string
+                                request:
+                                  description: |-
+                                    Request is the name chosen for a request in the referenced claim.
+                                    If empty, everything from the claim is made available, otherwise
+                                    only the result of this request.
                                   type: string
                               required:
                               - name
@@ -582,8 +622,9 @@ spec:
                               - type: string
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
-                            description: 'Limits describes the maximum amount of compute
-                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            description: |-
+                              Limits describes the maximum amount of compute resources allowed.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                             type: object
                           requests:
                             additionalProperties:
@@ -592,11 +633,11 @@ spec:
                               - type: string
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
-                            description: 'Requests describes the minimum amount of
-                              compute resources required. If Requests is omitted for
-                              a container, it defaults to Limits if that is explicitly
-                              specified, otherwise to an implementation-defined value.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            description: |-
+                              Requests describes the minimum amount of compute resources required.
+                              If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+                              otherwise to an implementation-defined value. Requests cannot exceed Limits.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                             type: object
                         type: object
                     type: object
@@ -619,16 +660,16 @@ spec:
                                 be a C_IDENTIFIER.
                               type: string
                             value:
-                              description: 'Variable references $(VAR_NAME) are expanded
-                                using the previously defined environment variables
-                                in the container and any service environment variables.
-                                If a variable cannot be resolved, the reference in
-                                the input string will be unchanged. Double $$ are
-                                reduced to a single $, which allows for escaping the
-                                $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will produce
-                                the string literal "$(VAR_NAME)". Escaped references
-                                will never be expanded, regardless of whether the
-                                variable exists or not. Defaults to "".'
+                              description: |-
+                                Variable references $(VAR_NAME) are expanded
+                                using the previously defined environment variables in the container and
+                                any service environment variables. If a variable cannot be resolved,
+                                the reference in the input string will be unchanged. Double $$ are reduced
+                                to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+                                Escaped references will never be expanded, regardless of whether the variable
+                                exists or not.
+                                Defaults to "".
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -641,10 +682,13 @@ spec:
                                       description: The key to select.
                                       type: string
                                     name:
-                                      description: 'Name of the referent. More info:
-                                        https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Add other useful fields. apiVersion,
-                                        kind, uid?'
+                                      default: ""
+                                      description: |-
+                                        Name of the referent.
+                                        This field is effectively required, but due to backwards compatibility is
+                                        allowed to be empty. Instances of this type with an empty value here are
+                                        almost certainly wrong.
+                                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                                       type: string
                                     optional:
                                       description: Specify whether the ConfigMap or
@@ -654,11 +698,9 @@ spec:
                                   - key
                                   type: object
                                 fieldRef:
-                                  description: 'Selects a field of the pod: supports
-                                    metadata.name, metadata.namespace, `metadata.labels[''<KEY>'']`,
-                                    `metadata.annotations[''<KEY>'']`, spec.nodeName,
-                                    spec.serviceAccountName, status.hostIP, status.podIP,
-                                    status.podIPs.'
+                                  description: |-
+                                    Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
+                                    spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
                                   properties:
                                     apiVersion:
                                       description: Version of the schema the FieldPath
@@ -672,11 +714,9 @@ spec:
                                   - fieldPath
                                   type: object
                                 resourceFieldRef:
-                                  description: 'Selects a resource of the container:
-                                    only resources limits and requests (limits.cpu,
-                                    limits.memory, limits.ephemeral-storage, requests.cpu,
-                                    requests.memory and requests.ephemeral-storage)
-                                    are currently supported.'
+                                  description: |-
+                                    Selects a resource of the container: only resources limits and requests
+                                    (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
                                   properties:
                                     containerName:
                                       description: 'Container name: required for volumes,
@@ -705,10 +745,13 @@ spec:
                                         from.  Must be a valid secret key.
                                       type: string
                                     name:
-                                      description: 'Name of the referent. More info:
-                                        https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Add other useful fields. apiVersion,
-                                        kind, uid?'
+                                      default: ""
+                                      description: |-
+                                        Name of the referent.
+                                        This field is effectively required, but due to backwards compatibility is
+                                        allowed to be empty. Instances of this type with an empty value here are
+                                        almost certainly wrong.
+                                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                                       type: string
                                     optional:
                                       description: Specify whether the Secret or its
@@ -734,19 +777,28 @@ spec:
                         description: Compute Resources required by deployment
                         properties:
                           claims:
-                            description: "Claims lists the names of resources, defined
-                              in spec.resourceClaims, that are used by this container.
-                              \n This is an alpha field and requires enabling the
-                              DynamicResourceAllocation feature gate. \n This field
-                              is immutable."
+                            description: |-
+                              Claims lists the names of resources, defined in spec.resourceClaims,
+                              that are used by this container.
+
+                              This is an alpha field and requires enabling the
+                              DynamicResourceAllocation feature gate.
+
+                              This field is immutable. It can only be set for containers.
                             items:
                               description: ResourceClaim references one entry in PodSpec.ResourceClaims.
                               properties:
                                 name:
-                                  description: Name must match the name of one entry
-                                    in pod.spec.resourceClaims of the Pod where this
-                                    field is used. It makes that resource available
+                                  description: |-
+                                    Name must match the name of one entry in pod.spec.resourceClaims of
+                                    the Pod where this field is used. It makes that resource available
                                     inside a container.
+                                  type: string
+                                request:
+                                  description: |-
+                                    Request is the name chosen for a request in the referenced claim.
+                                    If empty, everything from the claim is made available, otherwise
+                                    only the result of this request.
                                   type: string
                               required:
                               - name
@@ -762,8 +814,9 @@ spec:
                               - type: string
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
-                            description: 'Limits describes the maximum amount of compute
-                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            description: |-
+                              Limits describes the maximum amount of compute resources allowed.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                             type: object
                           requests:
                             additionalProperties:
@@ -772,20 +825,20 @@ spec:
                               - type: string
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
-                            description: 'Requests describes the minimum amount of
-                              compute resources required. If Requests is omitted for
-                              a container, it defaults to Limits if that is explicitly
-                              specified, otherwise to an implementation-defined value.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            description: |-
+                              Requests describes the minimum amount of compute resources required.
+                              If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+                              otherwise to an implementation-defined value. Requests cannot exceed Limits.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                             type: object
                         type: object
                     type: object
                 type: object
               externalDBInstance:
-                description: '[PLACEHOLDER, NOT IMPLEMENTED] Kubernetes secret name
-                  containing user provided db secret Secret should contain connection
-                  parameters [db_host, db_port, db_user, db_password, db_name, ca_cert]
-                  Not supported for development preview.'
+                description: |-
+                  [PLACEHOLDER, NOT IMPLEMENTED] Kubernetes secret name containing user provided db secret
+                  Secret should contain connection parameters [db_host, db_port, db_user, db_password, db_name, ca_cert]
+                  Not supported for development preview.
                 type: string
               imagePullPolicy:
                 description: ImagePullPolicy
@@ -801,40 +854,39 @@ spec:
               tolerations:
                 description: Tolerations to schedule pods on nodes with matching taints
                 items:
-                  description: The pod this Toleration is attached to tolerates any
-                    taint that matches the triple <key,value,effect> using the matching
-                    operator <operator>.
+                  description: |-
+                    The pod this Toleration is attached to tolerates any taint that matches
+                    the triple <key,value,effect> using the matching operator <operator>.
                   properties:
                     effect:
-                      description: Effect indicates the taint effect to match. Empty
-                        means match all taint effects. When specified, allowed values
-                        are NoSchedule, PreferNoSchedule and NoExecute.
+                      description: |-
+                        Effect indicates the taint effect to match. Empty means match all taint effects.
+                        When specified, allowed values are NoSchedule, PreferNoSchedule and NoExecute.
                       type: string
                     key:
-                      description: Key is the taint key that the toleration applies
-                        to. Empty means match all taint keys. If the key is empty,
-                        operator must be Exists; this combination means to match all
-                        values and all keys.
+                      description: |-
+                        Key is the taint key that the toleration applies to. Empty means match all taint keys.
+                        If the key is empty, operator must be Exists; this combination means to match all values and all keys.
                       type: string
                     operator:
-                      description: Operator represents a key's relationship to the
-                        value. Valid operators are Exists and Equal. Defaults to Equal.
-                        Exists is equivalent to wildcard for value, so that a pod
-                        can tolerate all taints of a particular category.
+                      description: |-
+                        Operator represents a key's relationship to the value.
+                        Valid operators are Exists and Equal. Defaults to Equal.
+                        Exists is equivalent to wildcard for value, so that a pod can
+                        tolerate all taints of a particular category.
                       type: string
                     tolerationSeconds:
-                      description: TolerationSeconds represents the period of time
-                        the toleration (which must be of effect NoExecute, otherwise
-                        this field is ignored) tolerates the taint. By default, it
-                        is not set, which means tolerate the taint forever (do not
-                        evict). Zero and negative values will be treated as 0 (evict
-                        immediately) by the system.
+                      description: |-
+                        TolerationSeconds represents the period of time the toleration (which must be
+                        of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
+                        it is not set, which means tolerate the taint forever (do not evict). Zero and
+                        negative values will be treated as 0 (evict immediately) by the system.
                       format: int64
                       type: integer
                     value:
-                      description: Value is the taint value the toleration matches
-                        to. If the operator is Exists, the value should be empty,
-                        otherwise just a regular string.
+                      description: |-
+                        Value is the taint value the toleration matches to.
+                        If the operator is Exists, the value should be empty, otherwise just a regular string.
                       type: string
                   type: object
                 type: array
@@ -845,45 +897,35 @@ spec:
               conditions:
                 description: Conditions
                 items:
-                  description: "Condition contains details for one aspect of the current
-                    state of this API Resource. --- This struct is intended for direct
-                    use as an array at the field path .status.conditions.  For example,
-                    \n \ttype FooStatus struct{ \t    // Represents the observations
-                    of a foo's current state. \t    // Known .status.conditions.type
-                    are: \"Available\", \"Progressing\", and \"Degraded\" \t    //
-                    +patchMergeKey=type \t    // +patchStrategy=merge \t    // +listType=map
-                    \t    // +listMapKey=type \t    Conditions []metav1.Condition
-                    `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
-                    protobuf:\"bytes,1,rep,name=conditions\"` \n \t    // other fields
-                    \t}"
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
                   properties:
                     lastTransitionTime:
-                      description: lastTransitionTime is the last time the condition
-                        transitioned from one status to another. This should be when
-                        the underlying condition changed.  If that is not known, then
-                        using the time when the API field changed is acceptable.
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
                       format: date-time
                       type: string
                     message:
-                      description: message is a human readable message indicating
-                        details about the transition. This may be an empty string.
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
                       maxLength: 32768
                       type: string
                     observedGeneration:
-                      description: observedGeneration represents the .metadata.generation
-                        that the condition was set based upon. For instance, if .metadata.generation
-                        is currently 12, but the .status.conditions[x].observedGeneration
-                        is 9, the condition is out of date with respect to the current
-                        state of the instance.
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
                       format: int64
                       minimum: 0
                       type: integer
                     reason:
-                      description: reason contains a programmatic identifier indicating
-                        the reason for the condition's last transition. Producers
-                        of specific condition types may define expected values and
-                        meanings for this field, and whether the values are considered
-                        a guaranteed API. The value should be a CamelCase string.
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
                         This field may not be empty.
                       maxLength: 1024
                       minLength: 1
@@ -898,10 +940,6 @@ spec:
                       type: string
                     type:
                       description: type of condition in CamelCase or in foo.example.com/CamelCase.
-                        --- Many .condition.type values are consistent across resources
-                        like Available, but because arbitrary conditions can be useful
-                        (see .node.status.conditions), the ability to deconflict is
-                        important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
                       maxLength: 316
                       pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                       type: string
