@@ -150,3 +150,8 @@ spec:
                 secret:
                   defaultMode: 420
                   secretName: mtv-plan-webhook-server-cert
+      - apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: mtv-integrations
+        spec: {}
