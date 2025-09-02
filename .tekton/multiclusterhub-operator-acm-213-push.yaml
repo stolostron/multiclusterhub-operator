@@ -44,7 +44,7 @@ spec:
   - name: konflux-application-name
     value: release-acm-213
   - name: slack-member-id
-    value: S05L3R4SM89 # @acm-hub-install-ic, The slack member id of the current component owner.
+    value: UU77A0LC8 # @dbennett, The slack member id of the current component owner.
   pipelineRef:
     resolver: git
     params:
