@@ -14,7 +14,7 @@ require (
 	github.com/operator-framework/operator-lifecycle-manager v0.22.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.0
-	github.com/stolostron/backplane-operator v0.0.0-20250814144149-b5438698d74b
+	github.com/stolostron/backplane-operator v0.0.0-20250828195818-ffaaa2936ae6
 	github.com/stolostron/search-v2-operator v0.0.0-20250818191351-8d847101bcdd
 	go.uber.org/zap v1.27.0
 	helm.sh/helm/v3 v3.14.3
@@ -24,7 +24,7 @@ require (
 	k8s.io/client-go v0.30.3
 	k8s.io/klog v1.0.0
 	k8s.io/kube-aggregator v0.29.3
-	k8s.io/utils v0.0.0-20241210054802-24370beab758
+	k8s.io/utils v0.0.0-20250820121507-0af2bda4dd1d
 	open-cluster-management.io/api v0.16.0
 	sigs.k8s.io/controller-runtime v0.18.5
 	sigs.k8s.io/yaml v1.4.0
@@ -57,7 +57,7 @@ require (
 	github.com/google/gnostic-models v0.7.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/google/pprof v0.0.0-20250820193118-f64d9cf942d6 // indirect
+	github.com/google/pprof v0.0.0-20250830080959-101d87ff5bc3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/h2non/filetype v1.1.3 // indirect
 	github.com/h2non/go-is-svg v0.0.0-20160927212452-35e8c4b0612c // indirect
@@ -98,10 +98,10 @@ require (
 	golang.org/x/time v0.6.0 // indirect
 	golang.org/x/tools v0.36.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250811230008-5f3141c8851a // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250826171959-ef028d996bc1 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250818200422-3122310a409c // indirect
 	google.golang.org/grpc v1.71.0 // indirect
-	google.golang.org/protobuf v1.36.7 // indirect
+	google.golang.org/protobuf v1.36.8 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
