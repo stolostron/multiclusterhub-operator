@@ -293,6 +293,21 @@ const (
 	HubError           HubPhaseType = "Error"
 )
 
+// MCEVersionComplianceStatus tracks MultiClusterEngine version compliance against required channel
+type MCEVersionComplianceStatus struct {
+	// RequiredChannel is the channel version that MCE should meet or exceed
+	RequiredChannel string `json:"requiredChannel,omitempty"`
+
+	// CurrentVersion is the actual version of the MCE that is currently installed
+	CurrentVersion string `json:"currentVersion,omitempty"`
+
+	// IsCompliant indicates whether the current MCE version meets or exceeds the required channel version
+	IsCompliant bool `json:"isCompliant,omitempty"`
+
+	// Message provides additional details about the compliance status
+	Message string `json:"message,omitempty"`
+}
+
 // MultiClusterHubStatus defines the observed state of MultiClusterHub
 type MultiClusterHubStatus struct {
 
@@ -311,6 +326,9 @@ type MultiClusterHubStatus struct {
 
 	// Components []ComponentCondition `json:"manifests,omitempty"`
 	Components map[string]StatusCondition `json:"components,omitempty"`
+
+	// MCEVersionCompliance tracks whether the MCE version meets the required channel version
+	MCEVersionCompliance *MCEVersionComplianceStatus `json:"mceVersionCompliance,omitempty"`
 }
 
 // StatusCondition contains condition information.
