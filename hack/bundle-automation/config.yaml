@@ -13,6 +13,11 @@ components:
           multicluster-operators-channel: multicluster_operators_channel
         escape-template-variables:
           - ACTION
+          - ARGOCD_AGENT_ENABLED
+          - ARGOCD_AGENT_IMAGE
+          - ARGOCD_AGENT_MODE
+          - ARGOCD_AGENT_SERVER_ADDRESS
+          - ARGOCD_AGENT_SERVER_PORT
           - GITOPS_OPERATOR_IMAGE
           - GITOPS_OPERATOR_NAMESPACE
           - GITOPS_IMAGE
