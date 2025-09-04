@@ -44,14 +44,15 @@ rules:
   - configmaps
   - endpoints
   - events
-  - persistentvolumeclaims
-  - pods
+  - namespaces
   - secrets
+  - serviceaccounts
   - services
-  - services/finalizers
+  - services/proxy
   verbs:
   - create
   - delete
+  - deletecollection
   - get
   - list
   - patch
@@ -63,14 +64,14 @@ rules:
   - configmaps
   - endpoints
   - events
+  - persistentvolumeclaims
+  - pods
   - secrets
-  - serviceaccounts
   - services
-  - services/proxy
+  - services/finalizers
   verbs:
   - create
   - delete
-  - deletecollection
   - get
   - list
   - patch
