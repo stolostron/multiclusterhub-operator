@@ -929,3 +929,110 @@ func Test_ComponentsAreRunning(t *testing.T) {
 		})
 	}
 }
+
+func TestCalculateMCEVersionCompliance(t *testing.T) {
+	registerScheme()
+
+	tests := []struct {
+		name            string
+		mce             *mcev1.MultiClusterEngine
+		createMCE       bool
+		expectedStatus  *operatorsv1.MCEVersionComplianceStatus
+		expectCompliant bool
+	}{
+		{
+			name:      "MCE not found",
+			createMCE: false,
+			expectedStatus: &operatorsv1.MCEVersionComplianceStatus{
+				RequiredChannel: "stable-2.10",
+				CurrentVersion:  "",
+				IsCompliant:     false,
+				Message:         "MCE not yet installed",
+			},
+			expectCompliant: false,
+		},
+		{
+			name:      "MCE without current version",
+			createMCE: true,
+			mce: &mcev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multiclusterengine",
+					Labels: map[string]string{
+						multiclusterengineutils.MCEManagedByLabel: "true",
+					},
+				},
+				Status: mcev1.MultiClusterEngineStatus{},
+			},
+			expectedStatus: &operatorsv1.MCEVersionComplianceStatus{
+				RequiredChannel: "stable-2.10",
+				CurrentVersion:  "",
+				IsCompliant:     false,
+				Message:         "MCE version not yet available - installation in progress",
+			},
+			expectCompliant: false,
+		},
+		{
+			name:      "MCE with valid version",
+			createMCE: true,
+			mce: &mcev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multiclusterengine",
+					Labels: map[string]string{
+						multiclusterengineutils.MCEManagedByLabel: "true",
+					},
+				},
+				Status: mcev1.MultiClusterEngineStatus{
+					CurrentVersion: "2.10.0",
+				},
+			},
+			expectedStatus: &operatorsv1.MCEVersionComplianceStatus{
+				RequiredChannel: "stable-2.10",
+				CurrentVersion:  "2.10.0",
+				IsCompliant:     true,
+				Message:         "MCE version 2.10.0 meets channel stable-2.10 requirements",
+			},
+			expectCompliant: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.TODO()
+
+			// Create MCE if specified
+			if tt.createMCE && tt.mce != nil {
+				if err := recon.Client.Create(ctx, tt.mce); err != nil {
+					t.Errorf("failed to create MCE: %v", err)
+				}
+				defer func() {
+					if err := recon.Client.Delete(ctx, tt.mce); err != nil {
+						t.Errorf("failed to delete MCE: %v", err)
+					}
+				}()
+			}
+
+			// Test the function
+			result := recon.calculateMCEVersionCompliance(ctx)
+
+			// Verify required channel (this comes from the system)
+			if result.RequiredChannel == "" {
+				t.Errorf("RequiredChannel should not be empty")
+			}
+
+			// Verify current version
+			if result.CurrentVersion != tt.expectedStatus.CurrentVersion {
+				t.Errorf("CurrentVersion = %v, want %v", result.CurrentVersion, tt.expectedStatus.CurrentVersion)
+			}
+
+			// Verify compliance status
+			if result.IsCompliant != tt.expectCompliant {
+				t.Errorf("IsCompliant = %v, want %v", result.IsCompliant, tt.expectCompliant)
+			}
+
+			// Verify message is not empty
+			if result.Message == "" {
+				t.Errorf("Message should not be empty")
+			}
+		})
+	}
+}
