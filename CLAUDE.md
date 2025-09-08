@@ -85,7 +85,7 @@ Used for smoketesting an image:
 
 ## Pre-approved Commands
 
-The following commands are safe to run without prompting:
+All of the following pre-approved commands are safe to run without prompting (Everything in the Pre-approved Commands section):
 
 ### Read-only Operations
 ```bash
@@ -104,7 +104,31 @@ git branch
 git diff
 git config user.name                    # Safe to read git user configuration
 git config user.email                   # Safe to read git user configuration
+git fetch                               # Safe to fetch remote changes
+git checkout [branch]                   # Safe to checkout branches
+git pull                                # Safe to pull changes when on appropriate branch
 ```
+
+## Git Repository Workflow
+This repository typically involves working with forks. When performing git operations:
+
+1. **Identify Repository Type**: Always check which remote is the fork vs. upstream by examining remote URLs:
+   ```bash
+   git remote -v
+   ```
+   Look for URLs containing personal usernames (forks) vs. organization names (upstream).
+   
+2. **Find Fork Remote**: Check for common fork remote names in this order:
+   - `fork` (preferred for this user)
+   - `origin` (if it points to a personal fork)
+   - Any remote with a personal username in the URL
+   
+3. **Push to Fork**: When pushing branches for PRs, prefer pushing to the fork remote:
+   ```bash
+   git push -u [fork-remote-name] [branch-name]
+   ```
+   
+4. **Upstream Pushes**: Generally prefer pushing to fork remotes over upstream (organization) remotes, though direct upstream pushes may sometimes be necessary
 
 ### Safe Analysis Commands
 ```bash
@@ -176,6 +200,38 @@ When the user asks you to run `make test`, automatically spawn a parallel agent 
 - subagent_type: "general-purpose"
 
 This allows the main session to continue working while tests run in parallel.
+
+## Live Cluster Deployment Updates
+
+### Updating Running Operator via CSV
+When deploying custom operator images to test code changes, update the CSV (not the deployment directly):
+
+**Important**: The CSV contains the image reference for the MCH operator deployment. MCE likely has a similar CSV structure. ACM CSV can be in various namespaces.
+
+```bash
+# Find the ACM CSV and namespace
+kubectl get csv -A | grep advanced-cluster-management
+
+# Look for the custom image line to identify the correct path
+kubectl get csv <csv-name> -n <namespace> -o yaml | grep -n "<custom-registry-pattern>"
+
+# Update image in CSV 
+kubectl patch csv <csv-name> -n <namespace> --type='json' \
+  -p='[{"op": "replace", "path": "/spec/install/spec/deployments/0/spec/template/spec/containers/0/image", "value": "<desired-image>"}]'
+```
+
+**Note**: Always ask the user for the desired image registry/tag when smoketesting, as custom images may be in various registries.
+
+### Smoketest Verification Commands
+Quick health checks after deployment changes:
+
+```bash
+# Check MCH/MCE status - MCH should show "Running", MCE should show "Available" when ready
+kubectl get multiclusterhub -A && kubectl get multiclusterengine -A
+
+# Find any crashlooping pods across all namespaces
+kubectl get pods -A | grep -E "(CrashLoopBackOff|Error|Pending)"
+```
 
 ## When writing commit messages
 - Include a signoff message for the developer in the format "Signed-off-by: {user.name} <{user.email}>
