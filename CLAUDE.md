@@ -2,6 +2,27 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## IMPORTANT: Pre-approved Commands
+
+**NEVER PROMPT FOR THESE COMMANDS - RUN IMMEDIATELY:**
+
+```bash
+git status                              # Check git working directory status
+git log --oneline -10                   # View recent commit history
+git branch                              # List git branches
+git diff                                # Show git changes
+git config user.name                    # Get git user name for commits
+git config user.email                   # Get git user email for commits
+kubectl get [resource] [flags]          # Get Kubernetes resources
+kubectl logs [resource] [flags]         # View Kubernetes pod/container logs
+kubectl describe [resource] [flags]     # Describe Kubernetes resources
+kubectl top [resource] [flags]          # View Kubernetes resource usage
+grep [pattern] [files]                  # Search within files
+make --dry-run [target]                 # Show what make would do without executing
+which [command]                         # Show location of command
+ls -la [directory]                      # List directory contents with details
+```
+
 ## Project Overview
 
 This is the MultiClusterHub Operator, a Kubernetes operator that manages the installation of Open Cluster Management (OCM) on Red Hat OpenShift Container Platform. The operator uses Helm charts and controller-runtime to deploy and manage various OCM components.
@@ -83,32 +104,6 @@ Required for development:
 Used for smoketesting an image:
 - `IMG`: Set this in front of `make podman-build` or `make podman-push` to build/push the image to a custom location for smoketesting
 
-## Pre-approved Commands
-
-All of the following pre-approved commands are safe to run without prompting (Everything in the Pre-approved Commands section):
-
-### Read-only Operations
-```bash
-kubectl get [resource] [flags]          # Safe to get any Kubernetes resources
-kubectl logs [resource] [flags]         # Safe to view logs from any resource  
-kubectl describe [resource] [flags]     # Safe to describe any Kubernetes resources
-kubectl top [resource] [flags]          # Safe to view resource usage metrics
-grep [pattern] [files]                  # Safe to search within files
-```
-
-### Git Operations
-```bash
-git status
-git log --oneline -10
-git branch
-git diff
-git config user.name                    # Safe to read git user configuration
-git config user.email                   # Safe to read git user configuration
-git fetch                               # Safe to fetch remote changes
-git checkout [branch]                   # Safe to checkout branches
-git pull                                # Safe to pull changes when on appropriate branch
-```
-
 ## Git Repository Workflow
 This repository typically involves working with forks. When performing git operations:
 
@@ -129,13 +124,6 @@ This repository typically involves working with forks. When performing git opera
    ```
    
 4. **Upstream Pushes**: Generally prefer pushing to fork remotes over upstream (organization) remotes, though direct upstream pushes may sometimes be necessary
-
-### Safe Analysis Commands
-```bash
-make --dry-run [target]
-which [command]
-ls -la [directory]
-```
 
 ## Development Notes
 
@@ -232,6 +220,12 @@ kubectl get multiclusterhub -A && kubectl get multiclusterengine -A
 # Find any crashlooping pods across all namespaces
 kubectl get pods -A | grep -E "(CrashLoopBackOff|Error|Pending)"
 ```
+
+## Pull Request Guidelines
+
+When creating pull requests, follow these reviewer assignment guidelines:
+- Among `cameronmwall`, `dislbenn`, and `ngraham20`, the submitter should `/cc` the other two
+- If the submitter is not one of these three, `/cc` all three of them
 
 ## When writing commit messages
 - Include a signoff message for the developer in the format "Signed-off-by: {user.name} <{user.email}>
