@@ -2,6 +2,27 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## IMPORTANT: Pre-approved Commands
+
+**NEVER PROMPT FOR THESE COMMANDS - RUN IMMEDIATELY:**
+
+```bash
+git status                              # Check git working directory status
+git log --oneline -10                   # View recent commit history
+git branch                              # List git branches
+git diff                                # Show git changes
+git config user.name                    # Get git user name for commits
+git config user.email                   # Get git user email for commits
+kubectl get [resource] [flags]          # Get Kubernetes resources
+kubectl logs [resource] [flags]         # View Kubernetes pod/container logs
+kubectl describe [resource] [flags]     # Describe Kubernetes resources
+kubectl top [resource] [flags]          # View Kubernetes resource usage
+grep [pattern] [files]                  # Search within files
+make --dry-run [target]                 # Show what make would do without executing
+which [command]                         # Show location of command
+ls -la [directory]                      # List directory contents with details
+```
+
 ## Project Overview
 
 This is the MultiClusterHub Operator, a Kubernetes operator that manages the installation of Open Cluster Management (OCM) on Red Hat OpenShift Container Platform. The operator uses Helm charts and controller-runtime to deploy and manage various OCM components.
@@ -83,35 +104,26 @@ Required for development:
 Used for smoketesting an image:
 - `IMG`: Set this in front of `make podman-build` or `make podman-push` to build/push the image to a custom location for smoketesting
 
-## Pre-approved Commands
+## Git Repository Workflow
+This repository typically involves working with forks. When performing git operations:
 
-The following commands are safe to run without prompting:
-
-### Read-only Operations
-```bash
-kubectl get [resource] [flags]          # Safe to get any Kubernetes resources
-kubectl logs [resource] [flags]         # Safe to view logs from any resource  
-kubectl describe [resource] [flags]     # Safe to describe any Kubernetes resources
-kubectl top [resource] [flags]          # Safe to view resource usage metrics
-grep [pattern] [files]                  # Safe to search within files
-```
-
-### Git Operations
-```bash
-git status
-git log --oneline -10
-git branch
-git diff
-git config user.name                    # Safe to read git user configuration
-git config user.email                   # Safe to read git user configuration
-```
-
-### Safe Analysis Commands
-```bash
-make --dry-run [target]
-which [command]
-ls -la [directory]
-```
+1. **Identify Repository Type**: Always check which remote is the fork vs. upstream by examining remote URLs:
+   ```bash
+   git remote -v
+   ```
+   Look for URLs containing personal usernames (forks) vs. organization names (upstream).
+   
+2. **Find Fork Remote**: Check for common fork remote names in this order:
+   - `fork` (preferred for this user)
+   - `origin` (if it points to a personal fork)
+   - Any remote with a personal username in the URL
+   
+3. **Push to Fork**: When pushing branches for PRs, prefer pushing to the fork remote:
+   ```bash
+   git push -u [fork-remote-name] [branch-name]
+   ```
+   
+4. **Upstream Pushes**: Generally prefer pushing to fork remotes over upstream (organization) remotes, though direct upstream pushes may sometimes be necessary
 
 ## Development Notes
 
@@ -176,6 +188,44 @@ When the user asks you to run `make test`, automatically spawn a parallel agent 
 - subagent_type: "general-purpose"
 
 This allows the main session to continue working while tests run in parallel.
+
+## Live Cluster Deployment Updates
+
+### Updating Running Operator via CSV
+When deploying custom operator images to test code changes, update the CSV (not the deployment directly):
+
+**Important**: The CSV contains the image reference for the MCH operator deployment. MCE likely has a similar CSV structure. ACM CSV can be in various namespaces.
+
+```bash
+# Find the ACM CSV and namespace
+kubectl get csv -A | grep advanced-cluster-management
+
+# Look for the custom image line to identify the correct path
+kubectl get csv <csv-name> -n <namespace> -o yaml | grep -n "<custom-registry-pattern>"
+
+# Update image in CSV 
+kubectl patch csv <csv-name> -n <namespace> --type='json' \
+  -p='[{"op": "replace", "path": "/spec/install/spec/deployments/0/spec/template/spec/containers/0/image", "value": "<desired-image>"}]'
+```
+
+**Note**: Always ask the user for the desired image registry/tag when smoketesting, as custom images may be in various registries.
+
+### Smoketest Verification Commands
+Quick health checks after deployment changes:
+
+```bash
+# Check MCH/MCE status - MCH should show "Running", MCE should show "Available" when ready
+kubectl get multiclusterhub -A && kubectl get multiclusterengine -A
+
+# Find any crashlooping pods across all namespaces
+kubectl get pods -A | grep -E "(CrashLoopBackOff|Error|Pending)"
+```
+
+## Pull Request Guidelines
+
+When creating pull requests, follow these reviewer assignment guidelines:
+- Among `cameronmwall`, `dislbenn`, and `ngraham20`, the submitter should `/cc` the other two
+- If the submitter is not one of these three, `/cc` all three of them
 
 ## When writing commit messages
 - Include a signoff message for the developer in the format "Signed-off-by: {user.name} <{user.email}>
