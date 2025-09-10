@@ -227,5 +227,80 @@ When creating pull requests, follow these reviewer assignment guidelines:
 - Among `cameronmwall`, `dislbenn`, and `ngraham20`, the submitter should `/cc` the other two
 - If the submitter is not one of these three, `/cc` all three of them
 
+## Custom Bundle and Catalog Development
+
+### Quick Bundle Development Workflow
+
+For testing operator changes with custom bundles:
+
+1. **Make code changes** in multiclusterhub-operator
+2. **Build operator image**:
+   ```bash
+   IMG=quay.io/YOUR_USERNAME/multiclusterhub-operator:2.15.0-custom-v1 make podman-build
+   podman push quay.io/YOUR_USERNAME/multiclusterhub-operator:2.15.0-custom-v1
+   ```
+
+3. **Clone and modify bundle**:
+   ```bash
+   git clone https://github.com/stolostron/acm-operator-bundle.git
+   cd acm-operator-bundle
+   # Update CSV with your operator image and OPERATOR_VERSION
+   ```
+
+4. **Build and push bundle**:
+   ```bash
+   podman build -t quay.io/YOUR_USERNAME/acm-custom-bundle:2.15.0-custom-v1 .
+   podman push quay.io/YOUR_USERNAME/acm-custom-bundle:2.15.0-custom-v1
+   ```
+
+5. **Create catalog structure** in main repo:
+   ```bash
+   mkdir -p custom-catalog/advanced-cluster-management
+   # Create bundles.yaml, channel.yaml, package.yaml, Dockerfile
+   ```
+
+6. **Build and push catalog**:
+   ```bash
+   cd custom-catalog
+   podman build -t quay.io/YOUR_USERNAME/acm-custom-catalog:v1.0.0 .
+   podman push quay.io/YOUR_USERNAME/acm-custom-catalog:v1.0.0
+   ```
+
+7. **Deploy to cluster**:
+   ```bash
+   kubectl apply -f catalogsource.yaml
+   kubectl apply -f subscription.yaml
+   ```
+
+### Critical Requirements
+
+**Version Synchronization**: These MUST match exactly:
+- Operator image tag: `2.15.0-custom-v1` 
+- CSV OPERATOR_VERSION env var: `2.15.0-custom-v1`
+- Bundle image tag: `2.15.0-custom-v1`
+
+**Naming Consistency**: These MUST match exactly:
+- CSV metadata.name: `advanced-cluster-management.v2.15.0-custom`
+- Bundle name in bundles.yaml: `advanced-cluster-management.v2.15.0-custom`
+- Channel entries.name: `advanced-cluster-management.v2.15.0-custom`
+- Subscription startingCSV: `advanced-cluster-management.v2.15.0-custom`
+
+### Troubleshooting
+
+**Image-Code Mismatch**: If changes don't work, verify operator image contains your code:
+- Always increment image tag after code changes
+- Update both image reference AND OPERATOR_VERSION in CSV
+
+**Subscription Issues**: If CSV won't install:
+- Delete and recreate subscription to get fresh install plan
+- Check catalog source is healthy: `kubectl get catalogsource -n openshift-marketplace`
+
+**Missing Status Fields**: If new CRD fields don't appear:
+- Copy updated CRDs to bundle manifests
+- Apply CRDs to cluster: `kubectl apply -f config/crd/bases/operator.open-cluster-management.io_multiclusterhubs.yaml`
+
+### Documentation References
+
+See `CLONED_BUNDLE_GUIDE.md` and `CUSTOM_BUNDLE_GUIDE.md` for complete step-by-step instructions.
 ## When writing commit messages
 - Include a signoff message for the developer in the format "Signed-off-by: {user.name} <{user.email}>
