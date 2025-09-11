@@ -28,7 +28,7 @@ jobs:
           - branch: release-2.11
             go-version: "1.21"
           - branch: release-2.12
-            go-version: "1.22"
+            go-version: "1.23"
           - branch: release-2.13
             go-version: "1.23"
           - branch: release-2.14
