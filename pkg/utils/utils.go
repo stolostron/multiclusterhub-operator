@@ -345,7 +345,7 @@ func GetTestImages() []string {
 		"flightctl_worker", "flightctl_periodic", "flightctl_api", "flightctl_ui", "flightctl_ocp_ui",
 		"flightctl_cli_artifacts", "postgresql_12_c8s", "postgresql_12", "postgresql_16", "origin_cli", "redis_7_c9s",
 		"alertmanager", "flightctl_alertmanager_proxy", "flightctl_alert_exporter", "prometheus_alertmanager",
-        "flightctl_db_setup", "flightctl_userinfo_proxy",
+		"flightctl_db_setup", "flightctl_userinfo_proxy",
 	}
 }
 
