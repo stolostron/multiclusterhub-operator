@@ -1,0 +1,172 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: hook-succeeded
+    helm.sh/hook-weight: '10'
+  labels:
+    app: flightctl-db-migration
+    release: release-name
+  name: flightctl-db-migration-1
+  namespace: '{{ .Values.global.namespace }}'
+spec:
+  template:
+    metadata:
+      labels:
+        app: flightctl-db-migration
+        release: release-name
+    spec:
+      containers:
+      - command:
+        - /bin/bash
+        - -c
+        - 'set -eo pipefail
+
+          echo "Running database migrations..."
+
+
+          # Copy config file to a writable location
+
+          mkdir -p /tmp/.flightctl
+
+          cp /root/.flightctl/config.yaml /tmp/.flightctl/config.yaml
+
+          export HOME=/tmp
+
+
+          /usr/local/bin/flightctl-db-migrate
+
+          echo "Migrations completed successfully!"
+
+
+          # Grant permissions on all existing tables to the application user
+
+          echo "Granting permissions on existing tables to application user..."
+
+          # Need to get admin credentials from init container environment
+
+          DB_HOST="flightctl-db.{{ .Values.global.namespace }}.svc.cluster.local"
+
+          # Get admin credentials from the same secrets used by init container
+
+          export PGPASSWORD="$DB_ADMIN_PASSWORD"
+
+          psql -h "$DB_HOST" -p 5432 -U "$DB_ADMIN_USER" -d "flightctl" -c "SELECT grant_app_permissions_on_existing_tables();"
+
+          echo "Permission granting completed successfully!"
+
+          '
+        env:
+        - name: HOME
+          value: /root
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              key: migrationUser
+              name: flightctl-db-migration-secret
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: migrationPassword
+              name: flightctl-db-migration-secret
+        - name: DB_MIGRATION_USER
+          valueFrom:
+            secretKeyRef:
+              key: migrationUser
+              name: flightctl-db-migration-secret
+        - name: DB_MIGRATION_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: migrationPassword
+              name: flightctl-db-migration-secret
+        - name: DB_APP_USER
+          valueFrom:
+            secretKeyRef:
+              key: user
+              name: flightctl-db-app-secret
+        - name: DB_APP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: userPassword
+              name: flightctl-db-app-secret
+        - name: DB_ADMIN_USER
+          valueFrom:
+            secretKeyRef:
+              key: masterUser
+              name: flightctl-db-admin-secret
+        - name: DB_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: masterPassword
+              name: flightctl-db-admin-secret
+        image: '{{ .Values.global.imageOverrides.flightctl_db_setup }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+        name: run-migrations
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        volumeMounts:
+        - mountPath: /root/.flightctl/
+          name: flightctl-db-migration-config
+          readOnly: true
+      initContainers:
+      - command:
+        - /bin/bash
+        - -c
+        - "set -eo pipefail\n\n# Wait for database to be ready\necho \"Waiting for database to be ready...\"\nfor i in {1..60}; do\n  if PGPASSWORD=\"$DB_ADMIN_PASSWORD\" psql -h \"$DB_HOST\" -p \"$DB_PORT\" -U \"$DB_ADMIN_USER\" -d \"$DB_NAME\" -c \"SELECT 1\" >/dev/null 2>&1; then\n    break\n  fi\n  echo \"Database not ready, waiting...\"\n  sleep 5\ndone\n[[ $i == 60 ]] && { echo \"Database unreachable after 5 min\"; exit 1; }\n\necho \"Database is ready. Setting up users...\"\n\n# Create temporary SQL file with environment variable substitution\nexport DB_HOST DB_PORT DB_NAME DB_ADMIN_USER DB_ADMIN_PASSWORD\nexport DB_MIGRATION_USER DB_MIGRATION_PASSWORD DB_APP_USER DB_APP_PASSWORD\n\nSQL_FILE=\"/tmp/setup_database_users.sql\"\nenvsubst < ./deploy/scripts/setup_database_users.sql > \"$SQL_FILE\"\n\n# Execute the SQL file\necho \"Running database user setup SQL...\"\nPGPASSWORD=\"$DB_ADMIN_PASSWORD\" psql -h \"$DB_HOST\" -p \"$DB_PORT\" -U \"$DB_ADMIN_USER\" -d \"$DB_NAME\" -f \"$SQL_FILE\"\n\n# Clean up temporary file\nrm -f \"$SQL_FILE\"\n\necho \"Database users setup completed successfully!\"\n"
+        env:
+        - name: DB_HOST
+          value: flightctl-db.{{ .Values.global.namespace }}.svc.cluster.local
+        - name: DB_PORT
+          value: '5432'
+        - name: DB_NAME
+          value: flightctl
+        - name: DB_ADMIN_USER
+          valueFrom:
+            secretKeyRef:
+              key: masterUser
+              name: flightctl-db-admin-secret
+        - name: DB_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: masterPassword
+              name: flightctl-db-admin-secret
+        - name: DB_MIGRATION_USER
+          valueFrom:
+            secretKeyRef:
+              key: migrationUser
+              name: flightctl-db-migration-secret
+        - name: DB_MIGRATION_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: migrationPassword
+              name: flightctl-db-migration-secret
+        - name: DB_APP_USER
+          valueFrom:
+            secretKeyRef:
+              key: user
+              name: flightctl-db-app-secret
+        - name: DB_APP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: userPassword
+              name: flightctl-db-app-secret
+        image: quay.io/flightctl/flightctl-db-setup:latest
+        imagePullPolicy: IfNotPresent
+        name: setup-database-users
+      restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: flightctl-db-migration
+      volumes:
+      - configMap:
+          name: flightctl-db-migration-config
+        name: flightctl-db-migration-config

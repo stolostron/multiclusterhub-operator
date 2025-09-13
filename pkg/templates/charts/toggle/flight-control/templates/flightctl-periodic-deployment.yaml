@@ -63,13 +63,13 @@ spec:
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
-              key: masterPassword
-              name: flightctl-db-secret
+              key: userPassword
+              name: flightctl-db-app-secret
         - name: DB_USER
           valueFrom:
             secretKeyRef:
-              key: masterUser
-              name: flightctl-db-secret
+              key: user
+              name: flightctl-db-app-secret
         image: '{{ .Values.global.imageOverrides.flightctl_periodic }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         name: periodic

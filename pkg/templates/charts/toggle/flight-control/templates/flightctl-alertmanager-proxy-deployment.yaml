@@ -2,20 +2,20 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    flightctl.service: flightctl-worker
-  name: flightctl-worker
+    flightctl.service: flightctl-alertmanager-proxy
+  name: flightctl-alertmanager-proxy
 spec:
   replicas: 1
   selector:
     matchLabels:
-      flightctl.service: flightctl-worker
+      flightctl.service: flightctl-alertmanager-proxy
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        flightctl.service: flightctl-worker
-        ocm-antiaffinity-selector: flightctl-worker
+        flightctl.service: flightctl-alertmanager-proxy
+        ocm-antiaffinity-selector: flightctl-alertmanager-proxy
     spec:
       affinity:
         podAntiAffinity:
@@ -26,7 +26,7 @@ spec:
                 - key: ocm-antiaffinity-selector
                   operator: In
                   values:
-                  - flightctl-worker
+                  - flightctl-alertmanager-proxy
               topologyKey: topology.kubernetes.io/zone
             weight: 70
           - podAffinityTerm:
@@ -35,7 +35,7 @@ spec:
                 - key: ocm-antiaffinity-selector
                   operator: In
                   values:
-                  - flightctl-worker
+                  - flightctl-alertmanager-proxy
               topologyKey: kubernetes.io/hostname
             weight: 35
       containers:
@@ -55,24 +55,38 @@ spec:
 {{- end }}
         - name: HOME
           value: /root
-        - name: KV_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: password
-              name: flightctl-kv-secret
-        - name: DB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: userPassword
-              name: flightctl-db-app-secret
-        - name: DB_USER
-          valueFrom:
-            secretKeyRef:
-              key: user
-              name: flightctl-db-app-secret
-        image: '{{ .Values.global.imageOverrides.flightctl_worker }}'
+        - name: ALERTMANAGER_URL
+          value: http://flightctl-alertmanager.PLACEHOLDER_NAMESPACE.svc.cluster.local:9093
+        image: '{{ .Values.global.imageOverrides.flightctl_alertmanager_proxy }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
-        name: flightctl-worker
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8443
+            scheme: HTTPS
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+        name: alertmanager-proxy
+        ports:
+        - containerPort: 8443
+          name: proxy
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8443
+            scheme: HTTPS
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -82,10 +96,16 @@ spec:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
         volumeMounts:
+        - mountPath: /app/certs
+          name: flightctl-alertmanager-proxy-certs
         - mountPath: /root/.flightctl/config.yaml
-          name: flightctl-worker-config
+          name: flightctl-alertmanager-proxy-config
           readOnly: true
           subPath: config.yaml
+        - mountPath: /root/.flightctl
+          name: flightctl-config-dir
+        - mountPath: /tmp
+          name: tmp-dir
       hostIPC: false
       hostNetwork: false
       hostPID: false
@@ -93,6 +113,22 @@ spec:
       imagePullSecrets:
       - name: {{ .Values.global.pullSecret }}
 {{- end }}
+      initContainers:
+      - command:
+        - /bin/sh
+        - -c
+        - 'mkdir -p /root/.flightctl/certs /tmp/certs /tmp/ca-certs
+
+          chmod 700 /root/.flightctl/certs /tmp/certs /tmp/ca-certs
+
+          '
+        image: registry.access.redhat.com/ubi9/ubi-minimal:latest
+        name: init-certs
+        volumeMounts:
+        - mountPath: /root/.flightctl
+          name: flightctl-config-dir
+        - mountPath: /tmp
+          name: tmp-dir
 {{- with .Values.hubconfig.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
@@ -104,7 +140,7 @@ spec:
         seccompProfile:
           type: RuntimeDefault
 {{- end }}
-      serviceAccountName: flightctl-worker
+      serviceAccountName: flightctl-alertmanager-proxy
 {{- with .Values.hubconfig.tolerations }}
       tolerations:
       {{- range . }}
@@ -116,6 +152,18 @@ spec:
         {{- end }}
 {{- end }}
       volumes:
+      - name: flightctl-alertmanager-proxy-certs
+        secret:
+          defaultMode: 288
+          items:
+          - key: ca.crt
+            path: ca.crt
+          optional: true
+          secretName: flightctl-alertmanager-proxy-certs
       - configMap:
-          name: flightctl-worker-config
-        name: flightctl-worker-config
+          name: flightctl-alertmanager-proxy-config
+        name: flightctl-alertmanager-proxy-config
+      - emptyDir: {}
+        name: flightctl-config-dir
+      - emptyDir: {}
+        name: tmp-dir
