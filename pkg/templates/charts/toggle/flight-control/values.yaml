@@ -3,13 +3,17 @@ global:
   baseDomain: ''
   hubSize: Small
   imageOverrides:
+    flightctl_alert_exporter: ''
+    flightctl_alertmanager_proxy: ''
     flightctl_api: ''
     flightctl_cli_artifacts: ''
+    flightctl_db_setup: ''
     flightctl_ocp_ui: ''
     flightctl_periodic: ''
     flightctl_worker: ''
     origin_cli: ''
     postgresql_16: ''
+    prometheus_alertmanager: ''
     redis_7_c9s: ''
   namespace: default
   pullSecret: null

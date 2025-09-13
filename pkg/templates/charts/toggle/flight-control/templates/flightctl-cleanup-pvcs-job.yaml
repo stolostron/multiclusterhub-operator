@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    helm.sh/hook: post-delete
+    helm.sh/hook-delete-policy: hook-succeeded
+  name: flightctl-cleanup-pvcs
+  namespace: '{{ .Values.global.namespace }}'
+spec:
+  template:
+    metadata:
+      labels:
+        flightctl.service: pvc-cleanup
+    spec:
+      containers:
+      - args:
+        - "set -e\necho \"Starting post-delete cleanup process...\"\necho \"Deleting orphaned PVCs...\"\noc delete pvc -l flightctl.service=flightctl-kv -n {{ .Values.global.namespace }} --ignore-not-found\noc get pvc -n {{ .Values.global.namespace }} -o name \\\n  | grep \"flightctl-alertmanager-data-flightctl-alertmanager-\" \\\n  | xargs -r oc delete -n {{ .Values.global.namespace }} --ignore-not-found\necho \"Cleanup completed successfully!\"\nexit 0\n"
+        command:
+        - /bin/sh
+        - -c
+        env: []
+        image: '{{ .Values.global.imageOverrides.origin_cli }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+        name: cleanup
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: flightctl-cleanup

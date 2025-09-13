@@ -53,33 +53,28 @@ spec:
         - name: NO_PROXY
           value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
 {{- end }}
-        - name: PGPASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: password
-              name: flightctl-db-secret
         - name: POSTGRESQL_DATABASE
           value: flightctl
         - name: POSTGRESQL_MASTER_PASSWORD
           valueFrom:
             secretKeyRef:
               key: masterPassword
-              name: flightctl-db-secret
+              name: flightctl-db-admin-secret
         - name: POSTGRESQL_MASTER_USER
           valueFrom:
             secretKeyRef:
               key: masterUser
-              name: flightctl-db-secret
+              name: flightctl-db-admin-secret
         - name: POSTGRESQL_PASSWORD
           valueFrom:
             secretKeyRef:
               key: userPassword
-              name: flightctl-db-secret
+              name: flightctl-db-app-secret
         - name: POSTGRESQL_USER
           valueFrom:
             secretKeyRef:
               key: user
-              name: flightctl-db-secret
+              name: flightctl-db-app-secret
         - name: POSTGRESQL_MAX_CONNECTIONS
           value: '200'
         image: '{{ .Values.global.imageOverrides.postgresql_16 }}'

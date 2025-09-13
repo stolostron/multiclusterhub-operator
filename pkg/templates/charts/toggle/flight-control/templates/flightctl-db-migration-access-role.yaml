@@ -1,15 +1,17 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: flightctl-secrets
+  labels:
+    app: flightctl-db-migration
+    security.level: schema-privilege
+  name: flightctl-db-migration-access
   namespace: '{{ .Values.global.namespace }}'
 rules:
 - apiGroups:
   - ''
+  resourceNames:
+  - flightctl-db-migration-secret
   resources:
   - secrets
   verbs:
   - get
-  - list
-  - create
-  - delete
