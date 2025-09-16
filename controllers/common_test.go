@@ -414,7 +414,7 @@ func TestEnsureMCESubscriptionWithInstallPlanApproval(t *testing.T) {
 	}
 
 	// Create cataclog source (required for MCE subscription creation)
-	cataclogSource := &subv1alpha1.CatalogSource{
+	catalogSource := &subv1alpha1.CatalogSource{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-catalog",
 			Namespace: "openshift-marketplace",
