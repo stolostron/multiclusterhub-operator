@@ -53,7 +53,7 @@ const (
 )
 
 var (
-	log              = logf.Log.WithName("reconcile")
+	// log              = logf.Log.WithName("reconcile")
 	STSEnabledStatus = false
 )
 
