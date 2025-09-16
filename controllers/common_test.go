@@ -18,7 +18,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	clog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func TestFindMultiClusterHubOperatorSubscription(t *testing.T) {
@@ -228,7 +228,7 @@ func TestFindMultiClusterHubOperatorSubscription(t *testing.T) {
 			reconciler := &MultiClusterHubReconciler{
 				Client: fakeClient,
 				Scheme: s,
-				Log:    log.Log.WithName("test"),
+				Log:    clog.Log.WithName("test"),
 			}
 
 			// Test FindMultiClusterHubOperatorSubscription
@@ -263,7 +263,7 @@ func TestFindMultiClusterHubOperatorSubscription(t *testing.T) {
 
 func TestGetInstallPlanApprovalFromSubscription(t *testing.T) {
 	reconciler := &MultiClusterHubReconciler{
-		Log: log.Log.WithName("test"),
+		Log: clog.Log.WithName("test"),
 	}
 
 	tests := []struct {
@@ -413,8 +413,8 @@ func TestEnsureMCESubscriptionWithInstallPlanApproval(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: mceNamespace},
 	}
 
-	// Create catalog source (required for MCE subscription creation)
-	catalogSource := &subv1alpha1.CatalogSource{
+	// Create cataclog source (required for MCE subscription creation)
+	cataclogSource := &subv1alpha1.CatalogSource{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-catalog",
 			Namespace: "openshift-marketplace",
@@ -450,7 +450,7 @@ func TestEnsureMCESubscriptionWithInstallPlanApproval(t *testing.T) {
 	reconciler := &MultiClusterHubReconciler{
 		Client: fakeClient,
 		Scheme: s,
-		Log:    log.Log.WithName("test"),
+		Log:    clog.Log.WithName("test"),
 		CacheSpec: CacheSpec{
 			ImageOverrides:    map[string]string{},
 			ManifestVersion:   "test-version",
