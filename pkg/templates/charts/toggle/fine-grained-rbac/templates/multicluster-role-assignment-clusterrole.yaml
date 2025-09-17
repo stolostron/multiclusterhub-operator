@@ -1,0 +1,44 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: multicluster-role-assignment-manager-role
+  labels:
+    app.kubernetes.io/name: multicluster-role-assignment
+    app.kubernetes.io/managed-by: multiclusterhub-operator
+    velero.io/exclude-from-backup: "true"
+rules:
+  - apiGroups:
+      - cluster.open-cluster-management.io
+    resources:
+      - managedclusters
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - rbac.open-cluster-management.io
+    resources:
+      - clusterpermissions
+      - multiclusterroleassignments
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - rbac.open-cluster-management.io
+    resources:
+      - multiclusterroleassignments/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - rbac.open-cluster-management.io
+    resources:
+      - multiclusterroleassignments/status
+    verbs:
+      - get
+      - patch
+      - update
