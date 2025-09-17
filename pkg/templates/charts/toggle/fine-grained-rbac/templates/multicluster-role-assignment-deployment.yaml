@@ -32,7 +32,8 @@ spec:
         args:
           - --leader-elect
           - --health-probe-bind-address=:8081
-        image: {{ .Values.global.imageOverrides.multicluster_role_assignment | default "quay.io/stolostron/multicluster-role-assignment:latest" }}
+        image: '{{ .Values.global.imageOverrides.multicluster_role_assignment }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         name: manager
         ports: []
         securityContext:
