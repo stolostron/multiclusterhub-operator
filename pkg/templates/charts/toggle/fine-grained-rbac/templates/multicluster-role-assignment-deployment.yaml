@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: multicluster-role-assignment-controller
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    control-plane: multicluster-role-assignment-controller
+    app.kubernetes.io/name: multicluster-role-assignment
+    app.kubernetes.io/managed-by: multiclusterhub-operator
+    velero.io/exclude-from-backup: 'true'
+spec:
+  selector:
+    matchLabels:
+      control-plane: multicluster-role-assignment-controller
+      app.kubernetes.io/name: multicluster-role-assignment
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        control-plane: multicluster-role-assignment-controller
+        app.kubernetes.io/name: multicluster-role-assignment
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - command:
+        - /manager
+        args:
+          - --leader-elect
+          - --health-probe-bind-address=:8081
+        image: '{{ .Values.global.imageOverrides.multicluster_role_assignment }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+        name: manager
+        ports: []
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - "ALL"
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 200m
+            memory: 512Mi
+          requests:
+            cpu: 25m
+            memory: 64Mi
+        volumeMounts: []
+      volumes: []
+      serviceAccountName: multicluster-role-assignment-controller
+      terminationGracePeriodSeconds: 10
+{{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
+{{- end }}
+{{- if .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.hubconfig.nodeSelector | indent 8 }}
+{{- end }}
+{{- with .Values.hubconfig.tolerations }}
+      tolerations:
+{{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+{{- end }}
+{{- end }}
