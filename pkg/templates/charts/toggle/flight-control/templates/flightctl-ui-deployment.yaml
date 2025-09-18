@@ -40,20 +40,7 @@ spec:
               topologyKey: kubernetes.io/hostname
             weight: 35
       containers:
-      - args: []
-        env:
-{{- if .Values.global.pullSecret }}
-        - name: AGENT_IMAGE_PULL_SECRET
-          value: {{ .Values.global.pullSecret }}
-{{- end }}
-{{- if .Values.hubconfig.proxyConfigs }}
-        - name: HTTP_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
-        - name: HTTPS_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
-        - name: NO_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
-{{- end }}
+      - env:
         - name: API_PORT
           value: '8080'
         - name: FLIGHTCTL_SERVER
