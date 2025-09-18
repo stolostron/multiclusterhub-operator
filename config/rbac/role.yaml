@@ -773,6 +773,7 @@ rules:
   - view.open-cluster-management.io
   - work.open-cluster-management.io
   resources:
+  - addondeploymentconfigs
   - channels
   - channels/finalizers
   - channels/status
