@@ -39,24 +39,11 @@ spec:
               topologyKey: kubernetes.io/hostname
             weight: 35
       containers:
-      - args: []
-        env:
-{{- if .Values.global.pullSecret }}
-        - name: AGENT_IMAGE_PULL_SECRET
-          value: {{ .Values.global.pullSecret }}
-{{- end }}
-{{- if .Values.hubconfig.proxyConfigs }}
-        - name: HTTP_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
-        - name: HTTPS_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
-        - name: NO_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
-{{- end }}
+      - env:
         - name: HOME
           value: /root
         - name: ALERTMANAGER_URL
-          value: http://flightctl-alertmanager.PLACEHOLDER_NAMESPACE.svc.cluster.local:9093
+          value: http://flightctl-alertmanager.{{ .Values.global.namespace }}.svc.cluster.local:9093
         image: '{{ .Values.global.imageOverrides.flightctl_alertmanager_proxy }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         livenessProbe:
@@ -114,7 +101,8 @@ spec:
       - name: {{ .Values.global.pullSecret }}
 {{- end }}
       initContainers:
-      - command:
+      - args: []
+        command:
         - /bin/sh
         - -c
         - 'mkdir -p /root/.flightctl/certs /tmp/certs /tmp/ca-certs
@@ -122,7 +110,8 @@ spec:
           chmod 700 /root/.flightctl/certs /tmp/certs /tmp/ca-certs
 
           '
-        image: registry.access.redhat.com/ubi9/ubi-minimal:latest
+        image: '{{ .Values.global.imageOverrides.origin_cli }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         name: init-certs
         volumeMounts:
         - mountPath: /root/.flightctl

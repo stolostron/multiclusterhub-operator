@@ -109,7 +109,7 @@ spec:
             drop:
             - ALL
           privileged: false
-          readOnlyRootFilesystem: true
+          readOnlyRootFilesystem: false
           runAsNonRoot: true
         volumeMounts:
         - mountPath: /root/.flightctl/
@@ -157,8 +157,8 @@ spec:
             secretKeyRef:
               key: userPassword
               name: flightctl-db-app-secret
-        image: quay.io/flightctl/flightctl-db-setup:latest
-        imagePullPolicy: IfNotPresent
+        image: '{{ .Values.global.imageOverrides.flightctl_db_setup }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         name: setup-database-users
       restartPolicy: OnFailure
       securityContext:
