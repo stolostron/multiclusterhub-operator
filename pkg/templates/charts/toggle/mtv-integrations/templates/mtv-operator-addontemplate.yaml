@@ -20,13 +20,8 @@ spec:
             targetNamespaces:
             - openshift-mtv
           remediationAction: enforce
-          removalBehavior:
-            clusterServiceVersions: Delete
-            customResourceDefinitions: Delete
-            operatorGroups: DeleteIfUnused
-            subscriptions: Delete
           subscription:
-            channel: release-v2.8
+            channel: release-v2.10
             name: mtv-operator
             namespace: openshift-mtv
           upgradeApproval: Automatic
