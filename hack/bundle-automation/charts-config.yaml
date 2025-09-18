@@ -20,6 +20,7 @@ components:
           flightctl-ui: flightctl_ui
           flightctl-worker: flightctl_worker
           origin-cli: origin_cli
+          ubi-minimal: origin_cli
           postgresql-16-c9s: postgresql_16
           redis-7-c9s: redis_7_c9s
         inclusions:

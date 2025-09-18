@@ -2,20 +2,20 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    flightctl.service: flightctl-worker
-  name: flightctl-worker
+    flightctl.service: flightctl-alert-exporter
+  name: flightctl-alert-exporter
 spec:
   replicas: 1
   selector:
     matchLabels:
-      flightctl.service: flightctl-worker
+      flightctl.service: flightctl-alert-exporter
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        flightctl.service: flightctl-worker
-        ocm-antiaffinity-selector: flightctl-worker
+        flightctl.service: flightctl-alert-exporter
+        ocm-antiaffinity-selector: flightctl-alert-exporter
     spec:
       affinity:
         podAntiAffinity:
@@ -26,7 +26,7 @@ spec:
                 - key: ocm-antiaffinity-selector
                   operator: In
                   values:
-                  - flightctl-worker
+                  - flightctl-alert-exporter
               topologyKey: topology.kubernetes.io/zone
             weight: 70
           - podAffinityTerm:
@@ -35,7 +35,7 @@ spec:
                 - key: ocm-antiaffinity-selector
                   operator: In
                   values:
-                  - flightctl-worker
+                  - flightctl-alert-exporter
               topologyKey: kubernetes.io/hostname
             weight: 35
       containers:
@@ -57,9 +57,28 @@ spec:
             secretKeyRef:
               key: user
               name: flightctl-db-app-secret
-        image: '{{ .Values.global.imageOverrides.flightctl_worker }}'
+        image: '{{ .Values.global.imageOverrides.flightctl_alert_exporter }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
-        name: flightctl-worker
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8081
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+        name: alert-exporter
+        ports:
+        - containerPort: 8081
+          name: metrics
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -69,10 +88,9 @@ spec:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
         volumeMounts:
-        - mountPath: /root/.flightctl/config.yaml
-          name: flightctl-worker-config
+        - mountPath: /root/.flightctl
+          name: flightctl-alert-exporter-config
           readOnly: true
-          subPath: config.yaml
       hostIPC: false
       hostNetwork: false
       hostPID: false
@@ -91,7 +109,6 @@ spec:
         seccompProfile:
           type: RuntimeDefault
 {{- end }}
-      serviceAccountName: flightctl-worker
 {{- with .Values.hubconfig.tolerations }}
       tolerations:
       {{- range . }}
@@ -104,5 +121,5 @@ spec:
 {{- end }}
       volumes:
       - configMap:
-          name: flightctl-worker-config
-        name: flightctl-worker-config
+          name: flightctl-alert-exporter-config
+        name: flightctl-alert-exporter-config

@@ -39,20 +39,7 @@ spec:
               topologyKey: kubernetes.io/hostname
             weight: 35
       containers:
-      - args: []
-        env:
-{{- if .Values.global.pullSecret }}
-        - name: AGENT_IMAGE_PULL_SECRET
-          value: {{ .Values.global.pullSecret }}
-{{- end }}
-{{- if .Values.hubconfig.proxyConfigs }}
-        - name: HTTP_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
-        - name: HTTPS_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
-        - name: NO_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
-{{- end }}
+      - env:
         - name: HOME
           value: /root
         - name: KV_PASSWORD
@@ -63,13 +50,13 @@ spec:
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
-              key: masterPassword
-              name: flightctl-db-secret
+              key: userPassword
+              name: flightctl-db-app-secret
         - name: DB_USER
           valueFrom:
             secretKeyRef:
-              key: masterUser
-              name: flightctl-db-secret
+              key: user
+              name: flightctl-db-app-secret
         image: '{{ .Values.global.imageOverrides.flightctl_periodic }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         name: periodic
