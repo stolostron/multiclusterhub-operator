@@ -26,7 +26,7 @@ import (
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // MultiClusterHubReconciler reconciles a MultiClusterHub object
@@ -53,7 +53,7 @@ const (
 )
 
 var (
-	log              = logf.Log.WithName("reconcile")
+	log              = ctrllog.Log.WithName("reconcile")
 	STSEnabledStatus = false
 )
 
