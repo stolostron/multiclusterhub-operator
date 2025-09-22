@@ -27,6 +27,7 @@ RUN CGO_ENABLED=1 go build -mod=readonly -o multiclusterhub-operator main.go
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 
 LABEL org.label-schema.vendor="Red Hat" \
+      url="https://github.com/stolostron/multiclusterhub-operator" \
       org.label-schema.name="multiclusterhub-operator" \
       org.label-schema.description="Installer operator for Red Hat Advanced Cluster Management" \
       org.label-schema.license="Red Hat Advanced Cluster Management for Kubernetes EULA" \
