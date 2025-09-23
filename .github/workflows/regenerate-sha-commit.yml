@@ -51,8 +51,10 @@ jobs:
       - name: Regenerate Operator SHAs Commits
         env:
           GH_READ_PAT: ${{ secrets.GH_READ_PAT }}
+          BRANCH: ${{ github.event.inputs.branch_arg || 'main' }}
+          ORG: ${{ github.event.inputs.org_arg || 'stolostron' }}
         run: |
-          make regenerate-operator-sha-commits BRANCH=${{ github.event.inputs.branch_arg }} ORG=${{ github.event.inputs.org_arg }}
+          make regenerate-operator-sha-commits
           exit_code=$?
           if [ $exit_code -ne 0 ]; then
             echo "Regenerate Operator SHAs Commit step failed with exit code $exit_code"

@@ -60,8 +60,11 @@ jobs:
       # Runs a set of commands using the runners shell
       - name: Regenerate Charts
         id: generate_charts
+        env:
+          BRANCH: ${{ github.event.inputs.branch_arg || 'main' }}
+          ORG: ${{ github.event.inputs.org_arg || 'stolostron' }}
         run: |
-          make regenerate-charts BRANCH=${{ github.event.inputs.branch_arg }} ORG=${{ github.event.inputs.org_arg }}
+          make regenerate-charts
           exit_code=$?
           if [ $exit_code -ne 0 ]; then
             echo "Regenerate Charts step failed with exit code $exit_code"
