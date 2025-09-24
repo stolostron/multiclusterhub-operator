@@ -1,9 +1,15 @@
 {
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-    "addLabels": ["ok-to-test"],
-    "baseBranches": ["/(^main$)|(^release-2\\.(11|1[2-9]|[2-9][0-9]+)$)/"],
+    "addLabels": [
+        "ok-to-test"
+    ],
+    "baseBranchPatterns": [
+        "/(^main$)|(^release-2\\.(11|1[2-9]|[2-9][0-9]+)$)/"
+    ],
     "rebaseWhen": "behind-base-branch",
     "recreateWhen": "never",
-    "schedule": ["before 8am on tuesday and thursday"],
+    "schedule": [
+        "before 8am on tuesday and thursday"
+    ],
     "timezone": "America/New_York"
 }
