@@ -536,6 +536,24 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 	if err != nil {
 		return ctrl.Result{}, err
 	}
+
+	// Get InstallPlan approval from MCH operator subscription
+	var installPlanApproval subv1alpha1.Approval = subv1alpha1.ApprovalAutomatic
+	mchOperatorSub, err := r.FindMultiClusterHubOperatorSubscription(ctx)
+	if err != nil {
+		r.Log.Info("Unable to find MultiClusterHub operator subscription, defaulting to automatic InstallPlan approval", "error", err)
+	} else {
+		installPlanApproval = r.GetInstallPlanApprovalFromSubscription(mchOperatorSub)
+		r.Log.Info("Using InstallPlan approval from MCH operator subscription", "approval", installPlanApproval)
+	}
+
+	// Apply InstallPlan approval to overrides if not already set
+	if overrides == nil {
+		overrides = &subv1alpha1.SubscriptionSpec{}
+	}
+	if overrides.InstallPlanApproval == "" {
+		overrides.InstallPlanApproval = installPlanApproval
+	}
 	ctlSrc := types.NamespacedName{}
 	// Search for catalogsource if not defined in overrides
 	if overrides == nil || overrides.CatalogSource == "" {
@@ -990,4 +1008,53 @@ func (r *MultiClusterHubReconciler) CheckConsole(ctx context.Context) (bool, err
 		}
 	}
 	return false, nil
+}
+
+// FindMultiClusterHubOperatorSubscription finds the subscription that manages the multiclusterhub-operator
+func (r *MultiClusterHubReconciler) FindMultiClusterHubOperatorSubscription(ctx context.Context) (*subv1alpha1.Subscription, error) {
+	operatorNS, err := utils.OperatorNamespace()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get operator namespace: %w", err)
+	}
+
+	// List all subscriptions in the operator namespace
+	subList := &subv1alpha1.SubscriptionList{}
+	err = r.Client.List(ctx, subList, client.InNamespace(operatorNS))
+	if err != nil {
+		return nil, fmt.Errorf("failed to list subscriptions in namespace %s: %w", operatorNS, err)
+	}
+
+	// Look for subscription that manages the multiclusterhub-operator
+	for _, sub := range subList.Items {
+		// Check if this subscription's CSV manages our operator deployment
+		if sub.Status.CurrentCSV != "" {
+			csv := &subv1alpha1.ClusterServiceVersion{}
+			err = r.Client.Get(ctx, types.NamespacedName{
+				Name:      sub.Status.CurrentCSV,
+				Namespace: operatorNS,
+			}, csv)
+			if err != nil {
+				continue // Skip if CSV not found
+			}
+
+			// Check if this CSV manages the multiclusterhub-operator deployment
+			if csv.Spec.InstallStrategy.StrategyName == "deployment" {
+				for _, deploymentSpec := range csv.Spec.InstallStrategy.StrategySpec.DeploymentSpecs {
+					if deploymentSpec.Name == utils.MCHOperatorName {
+						return &sub, nil
+					}
+				}
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("no subscription found that manages deployment %s in namespace %s", utils.MCHOperatorName, operatorNS)
+}
+
+// GetInstallPlanApprovalFromSubscription returns the InstallPlanApproval setting from a subscription
+func (r *MultiClusterHubReconciler) GetInstallPlanApprovalFromSubscription(sub *subv1alpha1.Subscription) subv1alpha1.Approval {
+	if sub == nil || sub.Spec == nil {
+		return subv1alpha1.ApprovalAutomatic // Default fallback
+	}
+	return sub.Spec.InstallPlanApproval
 }
