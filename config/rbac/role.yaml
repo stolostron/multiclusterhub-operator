@@ -236,15 +236,6 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - persistentvolumeclaims
-  - secrets
-  verbs:
-  - delete
-  - get
-  - list
-- apiGroups:
-  - ""
-  resources:
   - pods
   verbs:
   - get
@@ -1942,9 +1933,6 @@ rules:
   - clusterroles
   verbs:
   - create
-  - delete
-  - get
-  - list
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:
