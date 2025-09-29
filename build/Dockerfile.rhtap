@@ -21,6 +21,9 @@ COPY pkg/ pkg/
 # Copy required files
 COPY pkg/templates/ templates/
 
+# Copy license
+COPY LICENSE LICENSE
+
 # Build
 RUN CGO_ENABLED=1 go build -mod=readonly -o multiclusterhub-operator main.go
 
@@ -42,6 +45,9 @@ LABEL org.label-schema.vendor="Red Hat" \
 WORKDIR /
 COPY --from=builder /workspace/multiclusterhub-operator /usr/local/bin/multiclusterhub-operator
 COPY --from=builder /workspace/templates/ /usr/local/templates/
+
+# Add license
+COPY --from=builder /workspace/LICENSE /licenses/
 
 USER 65532:65532
 

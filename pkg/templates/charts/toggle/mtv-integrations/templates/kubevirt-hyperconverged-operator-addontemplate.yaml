@@ -103,6 +103,7 @@ spec:
           featureGates:
             alignCPUs: false
             autoResourceLimits: false
+            decentralizedLiveMigration: true
             deployKubeSecondaryDNS: false
             deployKubevirtIpamController: false
             deployTektonTaskResources: false
