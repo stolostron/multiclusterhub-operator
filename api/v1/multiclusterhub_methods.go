@@ -25,7 +25,7 @@ const (
 	Console                   string = "console"
 	EdgeManager               string = "edge-manager"
 	EdgeManagerPreview        string = "edge-manager-preview"
-	MTVIntegrationsPreview    string = "mtv-integrations-preview"
+	MTVIntegrationsPreview    string = "cnv-mtv-integrations-preview"
 	FineGrainedRbac           string = "fine-grained-rbac"
 	FineGrainedRbacPreview    string = "fine-grained-rbac-preview"
 	GRC                       string = "grc"
