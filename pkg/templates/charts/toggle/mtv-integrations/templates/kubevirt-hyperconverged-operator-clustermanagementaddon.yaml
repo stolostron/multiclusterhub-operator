@@ -18,3 +18,8 @@ spec:
       name: kubevirt-hyperconverged-operator
     group: addon.open-cluster-management.io
     resource: addontemplates
+  - defaultConfig:
+      name: cnv-config
+      namespace: '{{ .Values.global.namespace }}'
+    group: addon.open-cluster-management.io
+    resource: addondeploymentconfigs

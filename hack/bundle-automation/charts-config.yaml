@@ -63,4 +63,6 @@ components:
           - "CLUSTER_NAME"
           - "HUB_KUBECONFIG"
           - "INSTALL_NAMESPACE"
+          - "LIVE_NETWORK_KEY"
+          - "LIVE_NETWORK_VALUE"
         auto-install-for-all-clusters: true
