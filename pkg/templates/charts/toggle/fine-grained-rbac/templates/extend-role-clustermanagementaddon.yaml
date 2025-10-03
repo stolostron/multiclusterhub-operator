@@ -1,0 +1,20 @@
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: ClusterManagementAddOn
+metadata:
+  name: acm-roles
+  annotations:
+    addon.open-cluster-management.io/lifecycle: "addon-manager"
+spec:
+  addOnMeta:
+    description: ACM Roles
+    displayName: ACM Roles
+  supportedConfigs:
+    - group: addon.open-cluster-management.io
+      resource: addontemplates
+      defaultConfig:
+        name: acm-roles
+  installStrategy:
+    type: Placements
+    placements:
+    - name: acm-roles-placement
+      namespace: {{ .Values.global.namespace }}
