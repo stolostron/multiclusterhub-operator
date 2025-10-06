@@ -1,7 +1,7 @@
 apiVersion: addon.open-cluster-management.io/v1alpha1
 kind: AddOnDeploymentConfig
 metadata:
-  name: cnv-config
+  name: cnv-hco-config
   namespace: '{{ .Values.global.namespace }}'
 spec:
   agentInstallNamespace: openshift-cnv
