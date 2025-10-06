@@ -1,7 +1,6 @@
 global:
   apiUrl: ''
   baseDomain: ''
-  hubSize: Small
   imageOverrides:
     siteconfig_operator: ''
   namespace: default

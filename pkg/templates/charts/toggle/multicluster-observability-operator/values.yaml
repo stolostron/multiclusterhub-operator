@@ -1,7 +1,6 @@
 global:
   apiUrl: ''
   baseDomain: ''
-  hubSize: Small
   imageOverrides:
     multicluster_observability_operator: ''
   namespace: default

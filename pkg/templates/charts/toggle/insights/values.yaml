@@ -5,7 +5,6 @@ org: open-cluster-management
 global:
   pullPolicy: Always
   pullSecret: null
-  hubSize: Small
   namespace: open-cluster-management
   arch:
     - amd64

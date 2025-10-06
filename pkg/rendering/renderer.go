@@ -303,12 +303,6 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 
 	values.Global.StorageClassName = os.Getenv(helpers.DefaultStorageClassName)
 
-	// TODO: put this back later
-	// values.Global.HubSize = mch.Spec.HubSize
-
-	// TODO: remove this when mch.Spec.HubSize is valid again
-	values.Global.HubSize = utils.GetHubSize(mch)
-
 	values.Global.DeployOnOCP = true
 
 	values.HubConfig.ClusterSTSEnabled = isSTSEnabled

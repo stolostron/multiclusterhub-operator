@@ -1,7 +1,6 @@
 global:
   apiUrl: ''
   baseDomain: ''
-  hubSize: Small
   imageOverrides:
     flightctl_alert_exporter: ''
     flightctl_alertmanager_proxy: ''
