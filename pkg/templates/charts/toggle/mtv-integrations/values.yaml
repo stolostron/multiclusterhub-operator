@@ -1,7 +1,6 @@
 global:
   apiUrl: ''
   baseDomain: ''
-  hubSize: Small
   imageOverrides:
     mtv_integrations: ''
   namespace: default

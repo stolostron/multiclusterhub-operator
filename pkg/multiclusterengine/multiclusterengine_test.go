@@ -12,10 +12,8 @@ import (
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
-	mceutils "github.com/stolostron/backplane-operator/pkg/utils"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
-	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -334,48 +332,6 @@ func TestNewMultiClusterEngine(t *testing.T) {
 				},
 			},
 		},
-		// TODO: change this back to spec when needed
-		{
-			name: "Adopt hubSize",
-			args: args{
-				m: &operatorv1.MultiClusterHub{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:        "mch",
-						Namespace:   "mch-ns",
-						Annotations: map[string]string{utils.AnnotationHubSize: string(operatorv1.Large)},
-					},
-				},
-			},
-			want: &mcev1.MultiClusterEngine{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: MulticlusterengineName,
-					Labels: map[string]string{
-						"installer.name":                          "mch",
-						"installer.namespace":                     "mch-ns",
-						multiclusterengineutils.MCEManagedByLabel: "true",
-					},
-					Annotations: map[string]string{mceutils.AnnotationHubSize: string(mcev1.Large)},
-				},
-				Spec: mcev1.MultiClusterEngineSpec{
-					ImagePullSecret: "",
-					Tolerations: []corev1.Toleration{
-						{
-							Effect:   "NoSchedule",
-							Key:      "node-role.kubernetes.io/infra",
-							Operator: "Exists",
-						},
-					},
-					NodeSelector:       nil,
-					AvailabilityConfig: mcev1.HAHigh,
-					TargetNamespace:    OperandNamespace(),
-					Overrides: &mcev1.Overrides{
-						Components: []mcev1.ComponentConfig{
-							{Name: operatorv1.MCELocalCluster, Enabled: true},
-						},
-					},
-				},
-			},
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -388,9 +344,6 @@ func TestNewMultiClusterEngine(t *testing.T) {
 			g.Expect(got.Spec.TargetNamespace).To(gomega.Equal(tt.want.Spec.TargetNamespace))
 			g.Expect(got.Spec.Overrides.Components).To(gomega.Equal(tt.want.Spec.Overrides.Components))
 			g.Expect(got.Spec.Overrides.ImagePullPolicy).To(gomega.Equal(tt.want.Spec.Overrides.ImagePullPolicy))
-
-			// TODO: put this back later
-			// g.Expect(got.Spec.HubSize).To(gomega.Equal(tt.want.Spec.HubSize))
 		})
 	}
 }

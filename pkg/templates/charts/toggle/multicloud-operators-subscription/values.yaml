@@ -1,7 +1,6 @@
 global:
   apiUrl: ''
   baseDomain: ''
-  hubSize: Small
   imageOverrides:
     multicloud_integrations: ''
     multicluster_operators_application: ''

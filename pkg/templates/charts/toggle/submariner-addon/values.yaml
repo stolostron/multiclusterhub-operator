@@ -1,7 +1,7 @@
 global:
   apiUrl: ''
   baseDomain: ''
-  hubSize: Small
+  : Small
   imageOverrides:
     submariner_addon: ''
   namespace: default

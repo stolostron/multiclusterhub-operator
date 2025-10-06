@@ -380,31 +380,6 @@ func IsCommunity() (bool, error) {
 	}
 }
 
-// func (h HubSize) String() string {
-//  return HubSizeStrings[h]
-// }
-
-// func (h *HubSize) UnmarshalJSON(b []byte) error {
-//  fmt.Printf("Unmarshaling JSON is occuring: %v\n", string(b))
-//  var hubsize string
-//  if err := json.Unmarshal(b, &hubsize); err != nil {
-//      return err
-//  }
-
-//  fmt.Printf("HubSize: %v\n", hubsize)
-
-//  var exists bool
-//  hubsizeobj, exists := HubSizeFromString[hubsize]
-
-//  if !exists {
-//      return fmt.Errorf("key %v does not exist in map", hubsize)
-//  }
-
-//  fmt.Printf("Hubsize: %v\n", hubsizeobj)
-//  *h = hubsizeobj
-//  return nil
-// }
-
 // AvailabilityConfigIsValid returns true is the availability type is a recognized value
 func AvailabilityConfigIsValid(config AvailabilityType) bool {
 	switch config {

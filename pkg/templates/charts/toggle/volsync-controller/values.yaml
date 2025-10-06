@@ -4,7 +4,6 @@ global:
   imageOverrides:
     volsync_addon_controller: ""
   templateOverrides: {}
-  hubSize: Small
 pullSecret: null
 hubconfig:
   nodeSelector: null

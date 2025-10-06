@@ -37,7 +37,6 @@ import (
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 
-	// TODO: remove this when .spec.HubSize is back
 	mceutils "github.com/stolostron/backplane-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -286,21 +285,16 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 		return ctrl.Result{}, nil
 	}
 
-	// TODO: remove this when m.Spec.Hubsize is back
 	mceannotations := mce.GetAnnotations()
 	if mceannotations == nil {
 		mceannotations = map[string]string{}
 	}
-	mceannotations[mceutils.AnnotationHubSize] = string(utils.GetHubSize(m))
 
 	if m.Enabled(operatorv1.EdgeManagerPreview) {
 		mceannotations[mceutils.AnnotationEdgeManagerEnabled] = "true"
 	} else {
 		mceannotations[mceutils.AnnotationEdgeManagerEnabled] = "false"
 	}
-
-	// TODO: put this back later
-	// mce.Spec.HubSize = mcev1.HubSize(m.Spec.HubSize)
 
 	// secret should be delivered to targetNamespace
 	if mce.Spec.TargetNamespace == "" {

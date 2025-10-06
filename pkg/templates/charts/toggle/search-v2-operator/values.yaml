@@ -1,7 +1,6 @@
 global:
   apiUrl: ''
   baseDomain: ''
-  hubSize: Small
   imageOverrides:
     kube_rbac_proxy: ''
     postgresql_16: ''

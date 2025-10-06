@@ -3,7 +3,6 @@ package renderer
 
 import (
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-	v1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -27,7 +26,6 @@ type Global struct {
 	InstallPlanApproval  subv1alpha1.Approval `json:"installPlanApproval" structs:"installPlanApproval"`
 	Source               string               `json:"source" structs:"source"`
 	SourceNamespace      string               `json:"sourceNamespace" structs:"sourceNamespace"`
-	HubSize              v1.HubSize           `json:"hubSize" structs:"hubSize" yaml:"hubSize"`
 	APIUrl               string               `json:"apiUrl" structs:"apiUrl"`
 	Target               string               `json:"target" structs:"target"`
 	BaseDomain           string               `json:"baseDomain" structs:"baseDomain"`
