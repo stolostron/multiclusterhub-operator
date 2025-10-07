@@ -127,7 +127,7 @@ This repository typically involves working with forks. When performing git opera
 
 ## Development Notes
 
-- Go version 1.24.4 minimum required
+- Go version 1.24.6 minimum required
 - Uses Ginkgo/Gomega for testing framework
 - Supports both Docker and Podman for container builds
 - Development testing uses mock components to avoid full OCM deployment
