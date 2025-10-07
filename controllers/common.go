@@ -296,6 +296,8 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 		mceannotations[mceutils.AnnotationEdgeManagerEnabled] = "false"
 	}
 
+	mce.SetAnnotations(mceannotations)
+
 	// secret should be delivered to targetNamespace
 	if mce.Spec.TargetNamespace == "" {
 		return ctrl.Result{Requeue: true}, fmt.Errorf("MCE %s does not have a target namespace to apply pullsecret", mce.Name)
