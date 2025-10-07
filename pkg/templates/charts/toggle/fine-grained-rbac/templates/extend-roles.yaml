@@ -173,13 +173,9 @@ spec:
               - update
               - patch
             - apiGroups:
-              - forklift.konveyor.io
+              - template.openshift.io
               resources:
-              - Migration
-              - providers
-              - plans
-              - networkmaps
-              - storagemaps
+              - templates
               verbs:
               - get
               - list
@@ -188,10 +184,22 @@ spec:
               - create
               - update
               - patch
+        - apiVersion: rbac.authorization.k8s.io/v1
+          kind: Role
+          metadata:
+            labels:
+              rbac.open-cluster-management.io/filter: vm-clusterroles
+            namespace: mtv-integration
+            name: kubevirt.io-acm-mtv:admin
+          rules:
             - apiGroups:
-              - template.openshift.io
+              - forklift.konveyor.io
               resources:
-              - templates
+              - migrations
+              - providers
+              - plans
+              - networkmaps
+              - storagemaps
               verbs:
               - get
               - list
@@ -335,21 +343,29 @@ spec:
               - list
               - watch
             - apiGroups:
-              - forklift.konveyor.io
+              - template.openshift.io
               resources:
-              - Migration
-              - providers
-              - plans
-              - networkmaps
-              - storagemaps
+              - templates
               verbs:
               - get
               - list
               - watch
+        - apiVersion: rbac.authorization.k8s.io/v1
+          kind: Role
+          metadata:
+            labels:
+              rbac.open-cluster-management.io/filter: vm-clusterroles
+            namespace: mtv-integration
+            name: kubevirt.io-acm-mtv:view
+          rules:
             - apiGroups:
-              - template.openshift.io
+              - forklift.konveyor.io
               resources:
-              - templates
+              - migrations
+              - providers
+              - plans
+              - networkmaps
+              - storagemaps
               verbs:
               - get
               - list
