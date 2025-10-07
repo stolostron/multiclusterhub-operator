@@ -154,13 +154,13 @@ spec:
             path: /readinessProbe
             port: 3000
             scheme: HTTPS
-          timeoutSeconds: 5
+          timeoutSeconds: 10
         livenessProbe:
           httpGet:
             path: /livenessProbe
             port: 3000
             scheme: HTTPS
-          timeoutSeconds: 5
+          timeoutSeconds: 10
           initialDelaySeconds: 10
       {{- if .Values.global.pullSecret }}
       imagePullSecrets:
