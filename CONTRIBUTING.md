@@ -91,7 +91,7 @@ sub-components).
 1. Confirm the following are installed and configured on your local machine:
 
    - `docker` or `podman`
-   - `go` (version 1.23.4 minimum)
+   - `go` (version 1.23.12 minimum)
    - `python3`
    - `make`
 
