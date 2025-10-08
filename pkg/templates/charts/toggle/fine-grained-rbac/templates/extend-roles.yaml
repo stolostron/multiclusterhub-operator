@@ -12,7 +12,7 @@ spec:
           metadata:
             labels:
               rbac.open-cluster-management.io/filter: vm-clusterroles
-            name: kubevirt.io-acm:admin
+            name: kubevirt.io-acm-managed:admin
           rules:
             - apiGroups:
               - k8s.cni.cncf.io
@@ -88,20 +88,6 @@ spec:
               - update
               - patch
             - apiGroups:
-              - clusterview.open-cluster-management.io
-              resources:
-              - managedclusters
-              verbs:
-              - list
-              - get
-              - watch
-            - apiGroups:
-              - cluster.open-cluster-management.io
-              resources:
-              - managedclusters
-              verbs:
-              - get
-            - apiGroups:
               - metrics.k8s.io
               resources:
               - pods
@@ -118,12 +104,6 @@ spec:
                 - prometheuses/api
               resourceNames:
                 - k8s
-            - apiGroups:
-              - clusterview.open-cluster-management.io
-              resources:
-              - kubevirtprojects
-              verbs:
-              - list
             - apiGroups:
               - hco.kubevirt.io
               resources:
@@ -185,13 +165,34 @@ spec:
               - update
               - patch
         - apiVersion: rbac.authorization.k8s.io/v1
-          kind: Role
+          kind: ClusterRole
           metadata:
             labels:
               rbac.open-cluster-management.io/filter: vm-clusterroles
-            namespace: mtv-integration
-            name: kubevirt.io-acm-mtv:admin
+            name: kubevirt.io-acm-hub:admin
           rules:
+            - apiGroups:
+              - clusterview.open-cluster-management.io
+              resources:
+              - managedclusters
+              verbs:
+              - list
+              - get
+              - watch
+            - apiGroups:
+              - cluster.open-cluster-management.io
+              resources:
+              - managedclusters
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - clusterview.open-cluster-management.io
+              resources:
+              - kubevirtprojects
+              verbs:
+              - list
             - apiGroups:
               - forklift.konveyor.io
               resources:
@@ -213,7 +214,7 @@ spec:
           metadata:
             labels:
               rbac.open-cluster-management.io/filter: vm-clusterroles
-            name: kubevirt.io-acm:view
+            name: kubevirt.io-acm-managed:view
           rules:
             - apiGroups:
               - k8s.cni.cncf.io
@@ -272,28 +273,6 @@ spec:
               - list
               - watch
             - apiGroups:
-              - cluster.open-cluster-management.io
-              resources:
-              - managedclusters
-              verbs:
-              - get
-              - list
-              - watch
-            - apiGroups:
-              - clusterview.open-cluster-management.io
-              resources:
-              - managedclusters
-              verbs:
-              - list
-              - get
-              - watch
-            - apiGroups:
-              - clusterview.open-cluster-management.io
-              resources:
-              - kubevirtprojects
-              verbs:
-              - list
-            - apiGroups:
               - metrics.k8s.io
               resources:
               - pods
@@ -351,13 +330,34 @@ spec:
               - list
               - watch
         - apiVersion: rbac.authorization.k8s.io/v1
-          kind: Role
+          kind: ClusterRole
           metadata:
             labels:
               rbac.open-cluster-management.io/filter: vm-clusterroles
-            namespace: mtv-integration
-            name: kubevirt.io-acm-mtv:view
+            name: kubevirt.io-acm-hub:view
           rules:
+            - apiGroups:
+              - clusterview.open-cluster-management.io
+              resources:
+              - managedclusters
+              verbs:
+              - list
+              - get
+              - watch
+            - apiGroups:
+              - cluster.open-cluster-management.io
+              resources:
+              - managedclusters
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - clusterview.open-cluster-management.io
+              resources:
+              - kubevirtprojects
+              verbs:
+              - list
             - apiGroups:
               - forklift.konveyor.io
               resources:
