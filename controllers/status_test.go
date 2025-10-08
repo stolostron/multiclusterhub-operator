@@ -1036,3 +1036,128 @@ func TestCalculateMCEVersionCompliance(t *testing.T) {
 		})
 	}
 }
+
+func Test_isMinorVersionWithinRange(t *testing.T) {
+	tests := []struct {
+		name       string
+		mceVersion string
+		mchVersion string
+		maxDiff    int
+		want       bool
+	}{
+		{
+			name:       "Exact same version",
+			mceVersion: "2.10.0",
+			mchVersion: "2.10.0",
+			maxDiff:    5,
+			want:       true,
+		},
+		{
+			name:       "MCE one minor version behind",
+			mceVersion: "2.9.0",
+			mchVersion: "2.10.0",
+			maxDiff:    5,
+			want:       true,
+		},
+		{
+			name:       "MCE exactly 5 minor versions behind",
+			mceVersion: "2.5.0",
+			mchVersion: "2.10.0",
+			maxDiff:    5,
+			want:       true,
+		},
+		{
+			name:       "MCE 6 minor versions behind - should fail",
+			mceVersion: "2.4.0",
+			mchVersion: "2.10.0",
+			maxDiff:    5,
+			want:       false,
+		},
+		{
+			name:       "MCE ahead of MCH - should pass",
+			mceVersion: "2.15.0",
+			mchVersion: "2.10.0",
+			maxDiff:    5,
+			want:       true,
+		},
+		{
+			name:       "Empty MCE version",
+			mceVersion: "",
+			mchVersion: "2.10.0",
+			maxDiff:    5,
+			want:       false,
+		},
+		{
+			name:       "Empty MCH version",
+			mceVersion: "2.10.0",
+			mchVersion: "",
+			maxDiff:    5,
+			want:       false,
+		},
+		{
+			name:       "Both empty versions",
+			mceVersion: "",
+			mchVersion: "",
+			maxDiff:    5,
+			want:       false,
+		},
+		{
+			name:       "Invalid MCE version format",
+			mceVersion: "invalid",
+			mchVersion: "2.10.0",
+			maxDiff:    5,
+			want:       false,
+		},
+		{
+			name:       "Invalid MCH version format",
+			mceVersion: "2.10.0",
+			mchVersion: "invalid",
+			maxDiff:    5,
+			want:       false,
+		},
+		{
+			name:       "Different major versions - MCE behind",
+			mceVersion: "1.15.0",
+			mchVersion: "2.10.0",
+			maxDiff:    5,
+			want:       true,
+		},
+		{
+			name:       "Different major versions - MCE ahead",
+			mceVersion: "3.1.0",
+			mchVersion: "2.10.0",
+			maxDiff:    5,
+			want:       true,
+		},
+		{
+			name:       "Zero maxDiff - only exact match",
+			mceVersion: "2.10.0",
+			mchVersion: "2.10.0",
+			maxDiff:    0,
+			want:       true,
+		},
+		{
+			name:       "Zero maxDiff - MCE one behind",
+			mceVersion: "2.9.0",
+			mchVersion: "2.10.0",
+			maxDiff:    0,
+			want:       false,
+		},
+		{
+			name:       "Version with patch differences",
+			mceVersion: "2.10.5",
+			mchVersion: "2.10.0",
+			maxDiff:    5,
+			want:       true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isMinorVersionWithinRange(tt.mceVersion, tt.mchVersion, tt.maxDiff); got != tt.want {
+				t.Errorf("isMinorVersionWithinRange(%s, %s, %d) = %v, want %v",
+					tt.mceVersion, tt.mchVersion, tt.maxDiff, got, tt.want)
+			}
+		})
+	}
+}
