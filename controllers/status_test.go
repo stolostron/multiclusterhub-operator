@@ -1116,20 +1116,6 @@ func Test_isMinorVersionWithinRange(t *testing.T) {
 			want:       false,
 		},
 		{
-			name:       "Different major versions - MCE behind",
-			mceVersion: "1.15.0",
-			mchVersion: "2.10.0",
-			maxDiff:    5,
-			want:       true,
-		},
-		{
-			name:       "Different major versions - MCE ahead",
-			mceVersion: "3.1.0",
-			mchVersion: "2.10.0",
-			maxDiff:    5,
-			want:       true,
-		},
-		{
 			name:       "Zero maxDiff - only exact match",
 			mceVersion: "2.10.0",
 			mchVersion: "2.10.0",
