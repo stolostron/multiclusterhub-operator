@@ -16,7 +16,7 @@ require (
 	github.com/operator-framework/operator-lifecycle-manager v0.22.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.0
-	github.com/stolostron/backplane-operator v0.0.0-20240919204243-44de210f0aa2
+	github.com/stolostron/backplane-operator v0.0.0-20251010184006-ba6cb0fd0221
 	github.com/stolostron/search-v2-operator v0.0.0-20240321201500-bf46e7632ae6
 	go.uber.org/zap v1.27.0
 	helm.sh/helm/v3 v3.18.4
@@ -28,7 +28,7 @@ require (
 	k8s.io/kube-aggregator v0.29.3
 	k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738
 	open-cluster-management.io/api v0.13.0
-	sigs.k8s.io/controller-runtime v0.18.5
+	sigs.k8s.io/controller-runtime v0.19.4
 	sigs.k8s.io/yaml v1.4.0
 )
 
@@ -47,7 +47,6 @@ require (
 	github.com/cyphar/filepath-securejoin v0.4.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emicklei/go-restful/v3 v3.12.1 // indirect
-	github.com/evanphx/json-patch v5.9.11+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
