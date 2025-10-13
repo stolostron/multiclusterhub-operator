@@ -108,7 +108,7 @@ func TestRender(t *testing.T) {
 	templates, errs := RenderCharts(chartsDir, testMCH, testImages, templateOverrides, false)
 	if len(errs) > 0 {
 		for _, err := range errs {
-			t.Logf(err.Error())
+			t.Logf("%s", err.Error())
 		}
 		t.Fatalf("failed to retrieve templates")
 		if len(templates) == 0 {
@@ -121,7 +121,7 @@ func TestRender(t *testing.T) {
 			deployment := &appsv1.Deployment{}
 			err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, deployment)
 			if err != nil {
-				t.Fatalf(err.Error())
+				t.Fatalf("%s", err.Error())
 			}
 
 			selectorEquality := reflect.DeepEqual(deployment.Spec.Template.Spec.NodeSelector, mchNodeSelector)
@@ -183,7 +183,7 @@ func TestRender(t *testing.T) {
 		singleChartTemplates, errs := RenderChart(chartsPath, testMCH, singleChartTestImages, templateOverrides, false)
 		if len(errs) > 0 {
 			for _, err := range errs {
-				t.Logf(err.Error())
+				t.Logf("%s", err.Error())
 			}
 			t.Fatalf("failed to retrieve templates")
 			if len(singleChartTemplates) == 0 {
@@ -195,7 +195,7 @@ func TestRender(t *testing.T) {
 				deployment := &appsv1.Deployment{}
 				err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, deployment)
 				if err != nil {
-					t.Fatalf(err.Error())
+					t.Fatalf("%s", err.Error())
 				}
 
 				selectorEquality := reflect.DeepEqual(deployment.Spec.Template.Spec.NodeSelector, mchNodeSelector)

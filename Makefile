@@ -97,7 +97,7 @@ test-prep: manifests generate fmt vet envtest ## prepare to run tests.
 
 test: manifests generate fmt vet envtest ## Run tests.
 	OPERATOR_VERSION=9.9.9 KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" \
-	  ENV_TEST="true" go test $(shell go list ./... | grep -E -v "test") -coverprofile cover.out
+	  ENV_TEST="true" go test -v $(shell go list ./... | grep -E -v "test") -coverprofile cover.out
 
 ##@ Build
 
@@ -148,7 +148,7 @@ ENVTEST ?= $(LOCALBIN)/setup-envtest
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v3.8.7
-CONTROLLER_TOOLS_VERSION ?= v0.15.0
+CONTROLLER_TOOLS_VERSION ?= v0.19.0
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
