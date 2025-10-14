@@ -135,7 +135,6 @@ func (r *MultiClusterHubReconciler) ensureKlusterletAddonConfig(m *operatorsv1.M
 		return ctrl.Result{}, err
 	}
 
-
 	r.Log.Info("Updated the KlusterletAddonConfig")
 
 	return ctrl.Result{}, nil
