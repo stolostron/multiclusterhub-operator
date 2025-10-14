@@ -651,7 +651,14 @@ func (r *MultiClusterHubReconciler) setOperatorUpgradeableStatus(ctx context.Con
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) (controller.Controller, error) {
+	controllerName := "multiclusterhub"
+	if utils.IsUnitTest() {
+		// Use a unique name per test invocation to avoid controller name conflicts
+		controllerName = fmt.Sprintf("multiclusterhub-%d", time.Now().UnixNano())
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
+		Named(controllerName).
 		For(
 			&operatorv1.MultiClusterHub{},
 			builder.WithPredicates(predicate.GenerationChangedPredicate{}),
@@ -672,7 +679,7 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) (controll
 		Watches(
 			&apiregistrationv1.APIService{},
 			handler.Funcs{
-				DeleteFunc: func(ctx context.Context, e event.DeleteEvent, q workqueue.RateLimitingInterface) {
+				DeleteFunc: func(ctx context.Context, e event.TypedDeleteEvent[client.Object], q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 					labels := e.Object.GetLabels()
 					q.Add(
 						reconcile.Request{
@@ -1190,7 +1197,7 @@ func (r *MultiClusterHubReconciler) ensureOpenShiftNamespaceLabel(ctx context.Co
 		return ctrl.Result{}, err
 	}
 
-	if existingNs.Labels == nil || len(existingNs.Labels) == 0 {
+	if existingNs.Labels == nil {
 		existingNs.Labels = make(map[string]string)
 	}
 
@@ -1423,10 +1430,8 @@ func (r *MultiClusterHubReconciler) createMetricsServiceMonitor(ctx context.Cont
 }
 
 // ingressDomain is discovered from Openshift cluster configuration resources
-func (r *MultiClusterHubReconciler) ingressDomain(
-	ctx context.Context,
-	m *operatorv1.MultiClusterHub,
-) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) ingressDomain(ctx context.Context, m *operatorv1.MultiClusterHub) (
+	ctrl.Result, error) {
 	ingress := &configv1.Ingress{}
 	err := r.Client.Get(ctx, types.NamespacedName{
 		Name: "cluster",
