@@ -699,7 +699,14 @@ func (r *MultiClusterHubReconciler) setOperatorUpgradeableStatus(ctx context.Con
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) (controller.Controller, error) {
+	controllerName := "multiclusterhub"
+	if utils.IsUnitTest() {
+		// Use a unique name per test invocation to avoid controller name conflicts
+		controllerName = fmt.Sprintf("multiclusterhub-%d", time.Now().UnixNano())
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
+		Named(controllerName).
 		For(
 			&operatorv1.MultiClusterHub{},
 			builder.WithPredicates(predicate.GenerationChangedPredicate{}),
