@@ -727,7 +727,8 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) (controll
 		Watches(
 			&apiregistrationv1.APIService{},
 			handler.Funcs{
-				DeleteFunc: func(ctx context.Context, e event.TypedDeleteEvent[client.Object], q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+				DeleteFunc: func(ctx context.Context, e event.TypedDeleteEvent[client.Object],
+					q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 					labels := e.Object.GetLabels()
 					q.Add(
 						reconcile.Request{
