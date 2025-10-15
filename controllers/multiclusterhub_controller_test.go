@@ -67,6 +67,7 @@ const (
 var (
 	ctrlCtx    context.Context
 	ctrlCancel context.CancelFunc
+	ctrlDone   chan struct{}
 	recon      = MultiClusterHubReconciler{
 		Client: fake.NewClientBuilder().Build(),
 		Scheme: scheme.Scheme,
@@ -432,10 +433,12 @@ var _ = Describe("MultiClusterHub controller", func() {
 		Expect(success).ToNot(BeNil())
 		Expect(err).ToNot(HaveOccurred())
 
+		ctrlDone = make(chan struct{})
 		go func() {
 			// For explanation of GinkgoRecover in a go routine, see
 			// https://onsi.github.io/ginkgo/#mental-model-how-ginkgo-handles-failure
 			defer GinkgoRecover()
+			defer close(ctrlDone)
 
 			ctrlCtx, ctrlCancel = context.WithCancel(context.TODO())
 
@@ -1075,6 +1078,10 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 		By("Stopping the controller")
 		ctrlCancel()
+
+		// Wait for the manager goroutine to fully exit before tearing down
+		By("Waiting for controller to stop")
+		Eventually(ctrlDone, timeout).Should(BeClosed())
 
 		// Teardown the test environment once controller is finished.
 		// Otherwise from Kubernetes 1.21+, teardon timeouts waiting on
