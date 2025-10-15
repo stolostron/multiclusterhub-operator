@@ -20,6 +20,8 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/predicate"
@@ -87,7 +89,14 @@ func (r *MultiClusterHubReconciler) setOperatorUpgradeableStatus(ctx context.Con
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) (controller.Controller, error) {
+	controllerName := "multiclusterhub"
+	if utils.IsUnitTest() {
+		// Use a unique name per test invocation to avoid controller name conflicts
+		controllerName = fmt.Sprintf("multiclusterhub-%d", time.Now().UnixNano())
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
+		Named(controllerName).
 		For(
 			&operatorv1.MultiClusterHub{},
 			builder.WithPredicates(predicate.GenerationChangedPredicate{}),
@@ -108,7 +117,7 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) (controll
 		Watches(
 			&apiregistrationv1.APIService{},
 			handler.Funcs{
-				DeleteFunc: func(ctx context.Context, e event.DeleteEvent, q workqueue.RateLimitingInterface) {
+				DeleteFunc: func(ctx context.Context, e event.TypedDeleteEvent[client.Object], q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 					labels := e.Object.GetLabels()
 					q.Add(
 						reconcile.Request{
