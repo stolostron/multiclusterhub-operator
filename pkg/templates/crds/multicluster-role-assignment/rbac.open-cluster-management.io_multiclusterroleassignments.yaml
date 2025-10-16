@@ -17,7 +17,9 @@ spec:
     - name: v1alpha1
       schema:
         openAPIV3Schema:
-          description: MulticlusterRoleAssignment is the Schema for the multiclusterroleassignments API.
+          description:
+            MulticlusterRoleAssignment is the Schema for the multiclusterroleassignments
+            API.
           properties:
             apiVersion:
               description: |-
@@ -40,19 +42,33 @@ spec:
               description: spec defines the desired state of MulticlusterRoleAssignment
               properties:
                 roleAssignments:
-                  description: RoleAssignments defines the list of role assignments for different roles, namespaces, and cluster sets.
+                  description:
+                    RoleAssignments defines the list of role assignments
+                    for different roles, namespaces, and cluster sets.
+                  type: array
+                  x-kubernetes-list-type: map
+                  x-kubernetes-list-map-keys:
+                    - name
                   items:
-                    description: RoleAssignment defines a cluster role assignment to specific namespaces and clusters.
+                    description:
+                      RoleAssignment defines a cluster role assignment to
+                      specific namespaces and clusters.
                     properties:
                       clusterRole:
-                        description: ClusterRole defines the cluster role name to be assigned.
+                        description:
+                          ClusterRole defines the cluster role name to be
+                          assigned.
                         minLength: 1
                         type: string
                       clusterSelection:
-                        description: ClusterSelection defines the type of cluster selection and the clusters to be selected.
+                        description:
+                          ClusterSelection defines the type of cluster selection
+                          and the clusters to be selected.
                         properties:
                           clusterNames:
-                            description: ClusterNames defines the clusters where the role should be applied.
+                            description:
+                              ClusterNames defines the clusters where the
+                              role should be applied.
                             items:
                               type: string
                             minItems: 1
@@ -83,9 +99,10 @@ spec:
                       - name
                     type: object
                   minItems: 1
-                  type: array
                 subject:
-                  description: Subject defines the user, group, or service account for all role assignments.
+                  description:
+                    Subject defines the user, group, or service account for
+                    all role assignments.
                   properties:
                     apiGroup:
                       description: |-
@@ -121,7 +138,9 @@ spec:
                 conditions:
                   description: Conditions is the condition list.
                   items:
-                    description: Condition contains details for one aspect of the current state of this API Resource.
+                    description:
+                      Condition contains details for one aspect of the current
+                      state of this API Resource.
                     properties:
                       lastTransitionTime:
                         description: |-
@@ -177,16 +196,26 @@ spec:
                 roleAssignments:
                   description: RoleAssignments provides the status of each role assignment.
                   items:
-                    description: RoleAssignmentStatus defines the status of a specific role assignment.
+                    description:
+                      RoleAssignmentStatus defines the status of a specific
+                      role assignment.
                     properties:
+                      createdAt:
+                        description: CreatedAt defines the creation time of the roleAssignment.
+                        format: date-time
+                        type: string
                       message:
-                        description: Message provides additional human readable details about the role assignment status.
+                        description:
+                          Message provides additional human readable details
+                          about the role assignment status.
                         type: string
                       name:
                         description: Name defines the name of the role assignment.
                         type: string
                       reason:
-                        description: Reason provides a programmatic identifier for the role assignment status.
+                        description:
+                          Reason provides a programmatic identifier for the
+                          role assignment status.
                         type: string
                       status:
                         description: Status defines the current status of the role assignment.
@@ -196,6 +225,7 @@ spec:
                           - Error
                         type: string
                     required:
+                      - createdAt
                       - name
                       - status
                     type: object
