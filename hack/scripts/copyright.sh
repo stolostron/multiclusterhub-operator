@@ -31,24 +31,23 @@ do
     COMMENT_START="# "
     COMMENT_END=""
 
-    if [[ $FILE  == *".go" ]]; then
-        COMMENT_START="// "
-    fi
-
-    if [[ $FILE  == *".ts" || $FILE  == *".tsx" ]]; then
-        COMMENT_START="/* "
-        COMMENT_END=" */"
-    fi
-
-    if [[ $FILE  == *".md" ]]; then
-        COMMENT_START="[comment]: # ( "
-        COMMENT_END=" )"
-    fi
-
-    if [[ $FILE  == *".html" ]]; then
-        COMMENT_START="<!-- "
-        COMMENT_END=" -->"
-    fi
+    case "$FILE" in
+        *.go)
+            COMMENT_START="// "
+            ;;
+        *.ts|*.tsx)
+            COMMENT_START="/* "
+            COMMENT_END=" */"
+            ;;
+        *.md)
+            COMMENT_START="[comment]: # ( "
+            COMMENT_END=" )"
+            ;;
+        *.html)
+            COMMENT_START="<!-- "
+            COMMENT_END=" -->"
+            ;;
+    esac
 
     if [[ $FILE  == *".go"       \
             || $FILE == *".yaml" \
