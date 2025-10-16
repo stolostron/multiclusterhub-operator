@@ -65,14 +65,12 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	"k8s.io/client-go/util/workqueue"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -335,32 +333,31 @@ func addMultiClusterEngineWatch(ctx context.Context, mgr ctrl.Manager, uncachedC
 		//err := uncachedClient.Get(ctx, crdKey, &mcev1.MultiClusterEngine{})
 		if err == nil {
 			err := mchController.Watch(source.Kind(mgr.GetCache(), &mcev1.MultiClusterEngine{},
-				handler.TypedFuncs[*mcev1.MultiClusterEngine]{
-					UpdateFunc: func(ctx context.Context, e event.TypedUpdateEvent[*mcev1.MultiClusterEngine], q workqueue.RateLimitingInterface) {
-						labels := e.ObjectNew.GetLabels()
-						name := labels["installer.name"]
-						if name == "" {
-							name = labels["multiclusterhub.name"]
-						}
-						namespace := labels["installer.namespace"]
-						if namespace == "" {
-							namespace = labels["multiclusterhub.namespace"]
-						}
-						if name == "" || namespace == "" {
-							l := log.Log.WithName("mce")
-							l.Info(fmt.Sprintf("MCE updated, but did not find required labels: %v", labels))
-							return
-						}
-						q.Add(
-							reconcile.Request{
-								NamespacedName: types.NamespacedName{
-									Name:      name,
-									Namespace: namespace,
-								},
+				handler.TypedEnqueueRequestsFromMapFunc(func(ctx context.Context,
+					obj *mcev1.MultiClusterEngine) []reconcile.Request {
+					labels := obj.GetLabels()
+					name := labels["installer.name"]
+					if name == "" {
+						name = labels["multiclusterhub.name"]
+					}
+					namespace := labels["installer.namespace"]
+					if namespace == "" {
+						namespace = labels["multiclusterhub.namespace"]
+					}
+					if name == "" || namespace == "" {
+						l := log.Log.WithName("mce")
+						l.Info(fmt.Sprintf("MCE updated, but did not find required labels: %v", labels))
+						return nil
+					}
+					return []reconcile.Request{
+						{
+							NamespacedName: types.NamespacedName{
+								Name:      name,
+								Namespace: namespace,
 							},
-						)
-					},
-				}))
+						},
+					}
+				})))
 			if err == nil {
 				setupLog.Info("mce watch added")
 				return
