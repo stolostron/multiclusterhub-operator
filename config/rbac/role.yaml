@@ -1637,7 +1637,6 @@ rules:
   - monitoring.coreos.com
   resources:
   - prometheusrules
-  - scrapeconfigs
   verbs:
   - create
   - delete
@@ -1664,6 +1663,18 @@ rules:
   - monitoring.coreos.com
   resources:
   - servicemonitors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - monitoring.rhobs
+  resources:
+  - scrapeconfigs
   verbs:
   - create
   - delete
