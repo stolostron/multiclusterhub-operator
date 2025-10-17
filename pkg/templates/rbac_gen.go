@@ -215,10 +215,11 @@ package main
 //+kubebuilder:rbac:groups=metal3.io,resources=baremetalhosts;provisionings,verbs=list;watch
 //+kubebuilder:rbac:groups=migration.k8s.io,resources=storageversionmigrations,verbs=create;delete;get;list;update;watch
 //+kubebuilder:rbac:groups=monitor.open-cluster-management.io,resources=*,verbs=create;delete;get;list;patch;update;watch
-//+kubebuilder:rbac:groups=monitoring.coreos.com,resources=prometheusrules;scrapeconfigs,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=monitoring.coreos.com,resources=prometheusrules,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=create;delete;get;list
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=get;create
+//+kubebuilder:rbac:groups=monitoring.rhobs,resources=scrapeconfigs,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=multicluster.openshift.io,resources=multiclusterengines,verbs=get;list
 //+kubebuilder:rbac:groups=multicluster.openshift.io,resources=multiclusterengines,verbs=list;watch
 //+kubebuilder:rbac:groups=multicluster.x-k8s.io,resources=serviceimports,verbs=list;get;update;delete
