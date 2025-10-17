@@ -170,7 +170,7 @@ func (r *MultiClusterHubReconciler) calculateStatus(ctx context.Context, hub *op
 
 	// Set current version
 	successful := allComponentsSuccessful(components)
-	if successful {
+	if successful && isMinorVersionWithinRange(mceVersionCompliance.CurrentVersion, version.Version, 5) {
 		status.CurrentVersion = version.Version
 	}
 
@@ -743,4 +743,30 @@ func (r *MultiClusterHubReconciler) calculateMCEVersionCompliance(ctx context.Co
 		IsCompliant:     isCompliant,
 		Message:         message,
 	}
+}
+
+// isMinorVersionWithinRange checks if the minor version of mceVersion is within maxDiff
+// of the minor version of mchVersion
+func isMinorVersionWithinRange(mceVersion, mchVersion string, maxDiff int) bool {
+	if mceVersion == "" || mchVersion == "" {
+		return false
+	}
+
+	var mceMajor, mceMinor, mcePatch int
+	var mchMajor, mchMinor, mchPatch int
+
+	// Parse MCE version (format: X.Y.Z)
+	_, err := fmt.Sscanf(mceVersion, "%d.%d.%d", &mceMajor, &mceMinor, &mcePatch)
+	if err != nil {
+		return false
+	}
+
+	// Parse MCH version (format: X.Y.Z)
+	_, err = fmt.Sscanf(mchVersion, "%d.%d.%d", &mchMajor, &mchMinor, &mchPatch)
+	if err != nil {
+		return false
+	}
+
+	// Check if MCE minor version is not more than maxDiff less than MCH minor version
+	return mchMinor-mceMinor <= maxDiff
 }
