@@ -1,8 +1,7 @@
 global:
   apiUrl: ''
   baseDomain: ''
-  imageOverrides:
-    mtv_integrations: ''
+  imageOverrides: {}
   namespace: default
   pullSecret: null
   templateOverrides: {}
