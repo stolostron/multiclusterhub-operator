@@ -17,4 +17,4 @@ spec:
     type: Placements
     placements:
     - name: acm-roles-placement
-      namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
+      namespace: open-cluster-management-global-set
