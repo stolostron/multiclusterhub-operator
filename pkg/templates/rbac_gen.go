@@ -112,6 +112,7 @@ package main
 //+kubebuilder:rbac:groups=apps.open-cluster-management.io,resources=placementrules,verbs=get;list;watch
 //+kubebuilder:rbac:groups=apps.open-cluster-management.io,resources=subscriptions,verbs=get;list;watch
 //+kubebuilder:rbac:groups=argoproj.io,resources=applications;applicationsets;argocds,verbs=list;watch
+//+kubebuilder:rbac:groups=argoproj.io,resources=appprojects,verbs=get;list;watch
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
