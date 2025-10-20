@@ -2,71 +2,14 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  creationTimestamp: null
   name: multiclusterhub-role
 rules:
 - apiGroups:
   - ""
   resources:
   - configmaps
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
   - endpoints
   - events
-  - namespaces
-  - nodes
-  - persistentvolumeclaims
-  - pods
-  - secrets
-  - serviceaccounts
-  - services
-  - services/finalizers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  - endpoints
-  - events
-  - persistentvolumeclaims
-  - pods
-  - secrets
-  - services
-  - services/finalizers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  - endpoints
-  - events
-  - secrets
-  - serviceaccounts
-  - services
   - services/proxy
   verbs:
   - create
@@ -80,91 +23,7 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - configmaps
-  - endpoints
-  - persistentvolumeclaims
-  - pods
-  - secrets
-  - serviceaccounts
-  - services
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  - events
-  verbs:
-  - create
-  - delete
-  - deletecollection
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  - events
-  - secrets
-  - serviceaccounts
-  - services
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  - jobs
-  - namespaces
-  - pods
-  - secrets
-  verbs:
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - endpoints
-  - pods
-  - services
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - events
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - groups
-  - secrets
-  - serviceaccounts
-  - services
   - users
   verbs:
   - create
@@ -178,8 +37,18 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - jobs
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - namespaces
-  - serviceaccounts
+  - nodes
+  - persistentvolumeclaims
+  - pods
+  - services/finalizers
   verbs:
   - create
   - delete
@@ -187,43 +56,23 @@ rules:
   - list
   - patch
   - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  verbs:
-  - get
-  - list
   - watch
 - apiGroups:
   - ""
   resources:
   - secrets
+  - serviceaccounts
+  - services
   verbs:
   - create
   - delete
+  - deletecollection
   - get
+  - impersonate
   - list
   - patch
   - update
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - serviceaccounts
-  verbs:
-  - create
-  - delete
-  - get
-  - patch
-  - update
-- apiGroups:
-  - ""
-  resources:
-  - services
-  verbs:
-  - list
 - apiGroups:
   - ""
   - action.open-cluster-management.io
@@ -571,44 +420,10 @@ rules:
   - '*'
   verbs:
   - '*'
-  - get
-  - list
-  - watch
 - apiGroups:
   - addon.open-cluster-management.io
   resources:
   - addondeploymentconfigs
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - addon.open-cluster-management.io
-  resources:
-  - addondeploymentconfigs
-  - clustermanagementaddons
-  - managedclusteraddons
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - update
-- apiGroups:
-  - addon.open-cluster-management.io
-  resources:
-  - clustermanagementaddons
-  verbs:
-  - create
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - addon.open-cluster-management.io
-  resources:
-  - clustermanagementaddons
   - clustermanagementaddons/finalizers
   verbs:
   - create
@@ -622,14 +437,7 @@ rules:
   resources:
   - clustermanagementaddons
   - managedclusteraddons
-  verbs:
-  - list
-  - watch
-- apiGroups:
-  - addon.open-cluster-management.io
-  resources:
-  - clustermanagementaddons
-  - managedclusteraddons
+  - managedclusteraddons/finalizers
   - managedclusteraddons/status
   verbs:
   - create
@@ -639,72 +447,12 @@ rules:
   - patch
   - update
   - watch
-- apiGroups:
-  - addon.open-cluster-management.io
-  resources:
-  - clustermanagementaddons/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - addon.open-cluster-management.io
-  resources:
-  - clustermanagementaddons/finalizers
-  - managedclusteraddons/finalizers
-  verbs:
-  - update
 - apiGroups:
   - addon.open-cluster-management.io
   resources:
   - clustermanagementaddons/status
   verbs:
-  - patch
-  - update
-- apiGroups:
-  - addon.open-cluster-management.io
-  resources:
-  - clustermanagementaddons/status
-  - managedclusteraddons/status
-  verbs:
   - get
-  - patch
-  - update
-- apiGroups:
-  - addon.open-cluster-management.io
-  resources:
-  - managedclusteraddons
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - addon.open-cluster-management.io
-  resources:
-  - managedclusteraddons
-  - managedclusteraddons/finalizers
-  - managedclusteraddons/status
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - addon.open-cluster-management.io
-  resources:
-  - managedclusteraddons/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - addon.open-cluster-management.io
-  resources:
-  - managedclusteraddons/status
-  verbs:
   - patch
   - update
 - apiGroups:
@@ -821,7 +569,6 @@ rules:
   - agent-install.openshift.io
   resources:
   - agents
-  - agentserviceconfigs
   - infraenvs
   - nmstateconfigs
   verbs:
@@ -855,12 +602,9 @@ rules:
   - customresourcedefinitions
   verbs:
   - '*'
-  - list
-  - watch
 - apiGroups:
   - apiextensions.k8s.io
   resources:
-  - customresourcedefinitions
   - customresourcedefinitions/finalizers
   verbs:
   - create
@@ -898,6 +642,7 @@ rules:
   resources:
   - daemonsets
   - deployments
+  - deployments/finalizers
   - replicasets
   - statefulsets
   verbs:
@@ -908,57 +653,6 @@ rules:
   - patch
   - update
   - watch
-- apiGroups:
-  - apps
-  resources:
-  - deployments
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - apps
-  resources:
-  - deployments
-  - deployments/finalizers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - apps
-  resources:
-  - deployments
-  - replicasets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - apps
-  resources:
-  - deployments/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - apps
-  resources:
-  - replicasets
-  verbs:
-  - get
-  - list
 - apiGroups:
   - apps.open-cluster-management.io
   resources:
@@ -972,9 +666,7 @@ rules:
   - gitopsclusters
   - helmreleases
   - multiclusterapplicationsetreports
-  - placementrules
   - subscriptionreports
-  - subscriptions
   verbs:
   - list
   - watch
@@ -982,13 +674,6 @@ rules:
   - apps.open-cluster-management.io
   resources:
   - placementrules
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - apps.open-cluster-management.io
-  resources:
   - subscriptions
   verbs:
   - get
@@ -1050,15 +735,6 @@ rules:
   resources:
   - certificatesigningrequests
   verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - certificates.k8s.io
-  resources:
-  - certificatesigningrequests
-  - certificatesigningrequests/approval
-  verbs:
   - create
   - get
   - list
@@ -1069,15 +745,12 @@ rules:
   resources:
   - certificatesigningrequests/approval
   verbs:
+  - create
+  - get
+  - list
   - patch
   - update
-- apiGroups:
-  - certificates.k8s.io
-  resources:
-  - certificatesigningrequests/approval
-  - certificatesigningrequests/status
-  verbs:
-  - update
+  - watch
 - apiGroups:
   - certificates.k8s.io
   resources:
@@ -1093,6 +766,8 @@ rules:
   - sign
 - apiGroups:
   - certmanager.k8s.io
+  - config.openshift.io
+  - rbac.authorization.k8s.io
   resources:
   - '*'
   verbs:
@@ -1107,11 +782,7 @@ rules:
   - cluster.open-cluster-management.io
   resources:
   - clustercurators
-  - managedclusters
   - managedclustersetbindings
-  - managedclustersets
-  - placementdecisions
-  - placements
   verbs:
   - list
   - watch
@@ -1119,14 +790,8 @@ rules:
   - cluster.open-cluster-management.io
   resources:
   - manageclusters
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - cluster.open-cluster-management.io
-  resources:
-  - managedclusters
+  - placementdecisions
+  - placements
   verbs:
   - get
   - list
@@ -1146,7 +811,6 @@ rules:
 - apiGroups:
   - cluster.open-cluster-management.io
   resources:
-  - managedclusters
   - managedclustersets
   verbs:
   - get
@@ -1155,27 +819,9 @@ rules:
   - update
   - watch
 - apiGroups:
-  - cluster.open-cluster-management.io
-  resources:
-  - managedclusters
-  - placementdecisions
-  - placements
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - config.openshift.io
-  resources:
-  - '*'
-  - infrastructures
-  verbs:
-  - '*'
-- apiGroups:
   - config.openshift.io
   resources:
   - apiservers
-  - infrastructures
   - infrastructures/status
   verbs:
   - get
@@ -1183,14 +829,6 @@ rules:
   - config.openshift.io
   resources:
   - authentications
-  - infrastructures
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - config.openshift.io
-  resources:
   - clusterversions
   verbs:
   - get
@@ -1201,9 +839,7 @@ rules:
   resources:
   - infrastructures
   verbs:
-  - get
-  - list
-  - watch
+  - '*'
 - apiGroups:
   - config.openshift.io
   - console.openshift.io
@@ -1329,14 +965,6 @@ rules:
   - imageregistry.open-cluster-management.io
   resources:
   - managedclusterimageregistries
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - imageregistry.open-cluster-management.io
-  resources:
-  - managedclusterimageregistries
   - managedclusterimageregistries/status
   verbs:
   - get
@@ -1402,35 +1030,11 @@ rules:
   - monitoring.coreos.com
   resources:
   - prometheusrules
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - monitoring.coreos.com
-  resources:
-  - prometheusrules
   - servicemonitors
   verbs:
   - create
   - delete
   - deletecollection
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - monitoring.coreos.com
-  resources:
-  - servicemonitors
-  verbs:
-  - create
-  - delete
   - get
   - list
   - patch
@@ -1546,14 +1150,6 @@ rules:
   - update
   - watch
 - apiGroups:
-  - operators.coreos.com
-  resources:
-  - subscriptions
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
   - packages.operators.coreos.com
   resources:
   - packagemanifests
@@ -1567,6 +1163,8 @@ rules:
   - policy.open-cluster-management.io
   resources:
   - '*'
+  - policies
+  - policysets
   verbs:
   - create
   - delete
@@ -1579,59 +1177,21 @@ rules:
   - policy.open-cluster-management.io
   resources:
   - placementbindings
-  - policies
   - policyautomations
-  - policysets
   verbs:
   - list
-  - watch
-- apiGroups:
-  - policy.open-cluster-management.io
-  resources:
-  - policies
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
   - watch
 - apiGroups:
   - policy.open-cluster-management.io
   resources:
   - policies/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - policy.open-cluster-management.io
-  resources:
-  - policies/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - policy.open-cluster-management.io
-  resources:
-  - policysets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - policy.open-cluster-management.io
-  resources:
   - policysets/finalizers
   verbs:
   - update
 - apiGroups:
   - policy.open-cluster-management.io
   resources:
+  - policies/status
   - policysets/status
   verbs:
   - get
@@ -1646,51 +1206,9 @@ rules:
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:
-  - '*'
-  verbs:
-  - '*'
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
   - clusterrolebindings
   - clusterroles
   - rolebindings
-  - roles
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  verbs:
-  - create
-  - delete
-  - get
-  - patch
-  - update
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - rolebindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -1739,17 +1257,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - route.openshift.io
-  resources:
-  - routes
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - update
-  - watch
 - apiGroups:
   - route.openshift.io
   resources:
@@ -1859,18 +1366,9 @@ rules:
   - manifestworks
   verbs:
   - '*'
-  - create
-  - delete
-  - deletecollection
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - work.open-cluster-management.io
   resources:
-  - manifestworks
   - manifestworks/finalizers
   verbs:
   - create
