@@ -77,7 +77,7 @@ spec:
         displayName: Ingress Management
         path: ingress
         x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: The name of the local-cluster resource
         displayName: Local Cluster Name
         path: localClusterName
