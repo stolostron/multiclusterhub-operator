@@ -10,13 +10,13 @@ require (
 	github.com/go-logr/logr v1.4.3
 	github.com/onsi/ginkgo/v2 v2.25.3
 	github.com/onsi/gomega v1.38.2
-	github.com/openshift/api v0.0.0-20240404200104-96ed2d49b255
+	github.com/openshift/api v0.0.0-20251013165757-fe48e8fd548b
 	github.com/operator-framework/api v0.23.0
 	github.com/operator-framework/operator-lib v0.12.0
 	github.com/operator-framework/operator-lifecycle-manager v0.22.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.0
-	github.com/stolostron/backplane-operator v0.0.0-20251013130957-2ac4834d79a7
+	github.com/stolostron/backplane-operator v0.0.0-20251020132058-56ce33ea08f6
 	github.com/stolostron/search-v2-operator v0.0.0-20250818191351-8d847101bcdd
 	go.uber.org/zap v1.27.0
 	helm.sh/helm/v3 v3.18.4
