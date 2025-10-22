@@ -17,7 +17,7 @@ metadata:
     capabilities: Basic Install
     categories: Integration & Delivery
     certified: "false"
-    createdAt: "2025-10-15T17:44:09Z"
+    createdAt: "2025-10-21T14:45:31Z"
     description: Open management of Openshift and Kubernetes clusters
     operators.operatorframework.io/builder: operator-sdk-v1.41.1
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
@@ -91,7 +91,7 @@ spec:
         displayName: Ingress Management
         path: ingress
         x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: The name of the local-cluster resource
         displayName: Local Cluster Name
         path: localClusterName
@@ -827,6 +827,14 @@ spec:
           - list
           - watch
         - apiGroups:
+          - argoproj.io
+          resources:
+          - appprojects
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
           - authentication.k8s.io
           resources:
           - tokenreviews
@@ -1344,7 +1352,7 @@ spec:
           - update
           - watch
         - apiGroups:
-          - monitoring.coreos.com
+          - monitoring.rhobs
           resources:
           - scrapeconfigs
           verbs:

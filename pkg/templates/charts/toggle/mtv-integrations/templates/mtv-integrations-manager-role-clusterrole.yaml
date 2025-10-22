@@ -69,6 +69,7 @@ rules:
   resources:
   - users
   - groups
+  - uids
   - serviceaccounts
   verbs:
   - impersonate

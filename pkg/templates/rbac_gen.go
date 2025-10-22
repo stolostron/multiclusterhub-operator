@@ -45,7 +45,7 @@ package main
 //+kubebuilder:rbac:groups="",resources=serviceaccounts/token,verbs=create
 //+kubebuilder:rbac:groups="",resources=serviceaccounts/token,verbs=create
 //+kubebuilder:rbac:groups="",resources=services,verbs=list
-//+kubebuilder:rbac:groups="",resources=users;groups;serviceaccounts,verbs=impersonate
+//+kubebuilder:rbac:groups="",resources=users;groups;uids;serviceaccounts,verbs=impersonate
 //+kubebuilder:rbac:groups="";events.k8s.io,resources=events,verbs=create;patch;update
 //+kubebuilder:rbac:groups=*,resources=*,verbs=*
 //+kubebuilder:rbac:groups=*,resources=*,verbs=*

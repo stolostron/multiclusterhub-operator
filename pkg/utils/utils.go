@@ -224,7 +224,7 @@ func CoreToUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) 
 
 // MchIsValid Checks if the optional default parameters need to be set
 func MchIsValid(m *operatorsv1.MultiClusterHub) bool {
-	invalid := len(m.Spec.Ingress.SSLCiphers) == 0 || !operatorsv1.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig)
+	invalid := (m.Spec.Ingress == nil || len(m.Spec.Ingress.SSLCiphers) == 0) || !operatorsv1.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig)
 	return !invalid
 }
 
