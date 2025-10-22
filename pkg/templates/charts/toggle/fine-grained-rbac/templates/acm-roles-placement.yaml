@@ -2,7 +2,7 @@ apiVersion: cluster.open-cluster-management.io/v1beta1
 kind: Placement
 metadata:
   name: acm-roles-placement
-  namespace: {{ .Values.global.namespace }}
+  namespace: open-cluster-management-global-set
 spec:
   predicates:
     - requiredClusterSelector:
