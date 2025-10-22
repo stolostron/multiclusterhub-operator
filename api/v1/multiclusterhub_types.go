@@ -66,8 +66,8 @@ type MultiClusterHubSpec struct {
 	Hive *HiveConfigSpec `json:"hive,omitempty"`
 
 	// (Deprecated) Configuration options for ingress management
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Ingress Management",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
-	Ingress IngressSpec `json:"ingress,omitempty"`
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Ingress Management",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	Ingress *IngressSpec `json:"ingress,omitempty"`
 
 	// Developer Overrides
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Developer Overrides",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
@@ -92,7 +92,7 @@ type MultiClusterHubSpec struct {
 	// (Deprecated) Enable cluster backup
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Cluster Backup",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	// +optional
-	EnableClusterBackup bool `json:"enableClusterBackup"`
+	EnableClusterBackup bool `json:"enableClusterBackup,omitempty"`
 
 	// The name of the local-cluster resource
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Local Cluster Name",xDescriptors={"urn:alm:descriptor:io.kubernetes:text","urn:alm:descriptor:com.tectonic.ui:advanced"}

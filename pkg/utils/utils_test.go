@@ -396,7 +396,7 @@ func TestMchIsValid(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: mchv1.MultiClusterHubSpec{
 			ImagePullSecret: "test",
-			Ingress: mchv1.IngressSpec{
+			Ingress: &mchv1.IngressSpec{
 				SSLCiphers: []string{"foo", "bar", "baz"},
 			},
 			AvailabilityConfig: mchv1.HAHigh,

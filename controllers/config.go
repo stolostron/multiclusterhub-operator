@@ -22,7 +22,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"reflect"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
@@ -155,7 +154,7 @@ func (r *MultiClusterHubReconciler) CheckDeprecatedFieldUsage(m *operatorv1.Mult
 		isPresent bool
 	}{
 		{"hive", m.Spec.Hive != nil},
-		{"ingress", !reflect.DeepEqual(m.Spec.Ingress, operatorv1.IngressSpec{})},
+		{"ingress", m.Spec.Ingress != nil},
 		{"customCAConfigmap", m.Spec.CustomCAConfigmap != ""},
 		{"enableClusterBackup", m.Spec.EnableClusterBackup},
 		{"enableClusterProxyAddon", m.Spec.EnableClusterProxyAddon},

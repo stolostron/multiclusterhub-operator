@@ -499,7 +499,11 @@ func (in *MultiClusterHubSpec) DeepCopyInto(out *MultiClusterHubSpec) {
 		*out = new(HiveConfigSpec)
 		(*in).DeepCopyInto(*out)
 	}
-	in.Ingress.DeepCopyInto(&out.Ingress)
+	if in.Ingress != nil {
+		in, out := &in.Ingress, &out.Ingress
+		*out = new(IngressSpec)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.Overrides != nil {
 		in, out := &in.Overrides, &out.Overrides
 		*out = new(Overrides)
