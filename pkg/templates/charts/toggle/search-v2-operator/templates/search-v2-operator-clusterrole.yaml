@@ -146,6 +146,14 @@ rules:
 - apiGroups:
   - monitoring.coreos.com
   resources:
+  - prometheusrules
+  verbs:
+  - create
+  - get
+  - update
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
   - servicemonitors
   verbs:
   - create
