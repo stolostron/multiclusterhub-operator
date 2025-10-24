@@ -120,6 +120,7 @@ package main
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
+//+kubebuilder:rbac:groups=authentication.k8s.io,resources=uids,verbs=impersonate
 //+kubebuilder:rbac:groups=authentication.k8s.io;authorization.k8s.io,resources=uids;userextras/authentication.kubernetes.io/credential-id;userextras/authentication.kubernetes.io/node-name;userextras/authentication.kubernetes.io/node-uid;userextras/authentication.kubernetes.io/pod-name;userextras/authentication.kubernetes.io/pod-uid,verbs=impersonate
 //+kubebuilder:rbac:groups=authentication.open-cluster-management.io,resources=managedserviceaccounts,verbs=create;delete;get
 //+kubebuilder:rbac:groups=authentication.open-cluster-management.io,resources=managedserviceaccounts,verbs=get;list;watch
@@ -288,6 +289,7 @@ package main
 //+kubebuilder:rbac:groups=submarineraddon.open-cluster-management.io,resources=submarinerconfigs,verbs=list;watch
 //+kubebuilder:rbac:groups=submarineraddon.open-cluster-management.io,resources=submarinerconfigs/status,verbs=update;patch
 //+kubebuilder:rbac:groups=tower.ansible.com,resources=ansiblejobs,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=user.openshift.io,resources=users;groups,verbs=impersonate
 //+kubebuilder:rbac:groups=wgpolicyk8s.io,resources=policyreports,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=wgpolicyk8s.io,resources=policyreports,verbs=list;watch
 //+kubebuilder:rbac:groups=work.open-cluster-management.io,resources=manifestworks,verbs=*
