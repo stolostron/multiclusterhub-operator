@@ -1,6 +1,6 @@
 apiVersion: v1
 data:
-  config.yaml: "database:\n  hostname: flightctl-db.{{ .Values.global.namespace }}.svc.cluster.local\n  migrationUser: flightctl_migrator\n  name: flightctl\n  port: 5432\n  type: pgsql\n  user: flightctl_migrator\nservice: {}\n"
+  config.yaml: "database:\n  hostname: flightctl-db.'{{ .Values.global.namespace }}'.svc.cluster.local\n  migrationUser: flightctl_migrator\n  name: flightctl\n  port: 5432\n  type: pgsql\n  user: flightctl_migrator\nservice: {}\n"
 kind: ConfigMap
 metadata:
   name: flightctl-db-migration-config

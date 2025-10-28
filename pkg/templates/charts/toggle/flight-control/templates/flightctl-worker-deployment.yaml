@@ -2,7 +2,12 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: flightctl
+    app.kubernetes.io/version: latest
     flightctl.service: flightctl-worker
+    helm.sh/chart: flightctl-0.1.0
   name: flightctl-worker
 spec:
   replicas: 1
@@ -14,7 +19,12 @@ spec:
   template:
     metadata:
       labels:
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: flightctl
+        app.kubernetes.io/version: latest
         flightctl.service: flightctl-worker
+        helm.sh/chart: flightctl-0.1.0
         ocm-antiaffinity-selector: flightctl-worker
     spec:
       affinity:
@@ -60,6 +70,10 @@ spec:
         image: '{{ .Values.global.imageOverrides.flightctl_worker }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         name: flightctl-worker
+        ports:
+        - containerPort: 8080
+          name: metrics
+          protocol: TCP
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -73,6 +87,9 @@ spec:
           name: flightctl-worker-config
           readOnly: true
           subPath: config.yaml
+        - mountPath: /etc/flightctl/ssh
+          name: flightctl-ssh-known-hosts
+          readOnly: true
       hostIPC: false
       hostNetwork: false
       hostPID: false
@@ -80,6 +97,52 @@ spec:
       imagePullSecrets:
       - name: {{ .Values.global.pullSecret }}
 {{- end }}
+      initContainers:
+      - command:
+        - /app/deploy/scripts/wait-for-database.sh
+        env:
+{{- if .Values.global.pullSecret }}
+        - name: AGENT_IMAGE_PULL_SECRET
+          value: {{ .Values.global.pullSecret }}
+{{- end }}
+{{- if .Values.hubconfig.proxyConfigs }}
+        - name: HTTP_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+        - name: HTTPS_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+        - name: NO_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+{{- end }}
+        - name: DB_USER_TYPE
+          value: app
+        - name: DB_HOST
+          value: flightctl-db.'{{ .Values.global.namespace }}'.svc.cluster.local
+        - name: DB_PORT
+          value: '5432'
+        - name: DB_NAME
+          value: flightctl
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              key: user
+              name: flightctl-db-app-secret
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: userPassword
+              name: flightctl-db-app-secret
+        image: '{{ .Values.global.imageOverrides.flightctl_db_setup }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+        name: wait-for-database-app
+        volumeMounts: null
+      - args: []
+        command:
+        - /bin/bash
+        - -c
+        - "set -euo pipefail\n\nLABEL_SELECTOR=\"app=flightctl-db-migration,flightctl.io/migration-revision=1\"\nTIMEOUT=600\nNS=\"'{{ .Values.global.namespace }}'\"\n\necho \"Waiting for migration job with labels: $LABEL_SELECTOR (timeout ${TIMEOUT}s)\"\nstart=$(date +%s)\n\nwhile true; do\n  elapsed=$(( $(date +%s) - start ))\n\n  if [ $elapsed -ge $TIMEOUT ]; then\n    echo \"Timeout waiting for migration job after ${TIMEOUT}s\"\n    exit 1\n  fi\n\n  # Find job by label selector\n  JOB=$(kubectl get jobs -n \"$NS\" -l \"$LABEL_SELECTOR\" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)\n  \n  # Check if job exists\n  if [ -n \"$JOB\" ]; then\n    # Check for parallel execution (dangerous even with idempotent migrations)\n    parallelism=$(kubectl get job \"$JOB\" -n \"$NS\" -o jsonpath='{.spec.parallelism}' 2>/dev/null || echo 1)\n    if (( parallelism > 1 )); then\n        echo \"ERROR: Migration job has spec.parallelism=$parallelism (must be 1)\"\n        echo \"Database migrations must not run in parallel due to race condition risks\"\n        exit 1\n    fi\n\n    succeeded=$(kubectl get job \"$JOB\" -n \"$NS\" -o jsonpath='{.status.succeeded}' 2>/dev/null || echo 0)\n    failed=$(kubectl get job \"$JOB\" -n \"$NS\" -o jsonpath='{.status.failed}' 2>/dev/null || echo 0)\n\n    if (( succeeded > 0 )); then\n        # The 'greater than 1' scenario would only occur if the job spec.completions is set to more than 1\n        if (( succeeded > 1 )); then\n            echo \"Warning: Migration job completed $succeeded times (expected 1). Ensure spec.completions is set to 1.\"\n        fi\n        echo \"Migration job $JOB completed successfully\"\n        exit 0\n    elif (( failed > 0 )); then\n        echo \"Migration job $JOB failed\"\n        exit 1\n    else\n        echo \"Migration job $JOB is still running...\"\n    fi\n  else\n    # Job not found - could be not created yet, RBAC issue, or other problem\n    echo \"Migration job not found yet, waiting...\"\n  fi\n\n  sleep 5\ndone\n"
+        image: '{{ .Values.global.imageOverrides.origin_cli }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+        name: wait-for-migration
 {{- with .Values.hubconfig.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
@@ -106,3 +169,9 @@ spec:
       - configMap:
           name: flightctl-worker-config
         name: flightctl-worker-config
+      - configMap:
+          items:
+          - key: known_hosts
+            path: known_hosts
+          name: flightctl-known-hosts
+        name: flightctl-ssh-known-hosts

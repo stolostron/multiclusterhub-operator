@@ -1,13 +1,19 @@
 apiVersion: console.openshift.io/v1
 kind: ConsolePlugin
 metadata:
+  labels:
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: ui
+    app.kubernetes.io/version: latest
+    helm.sh/chart: ui-0.0.1
   name: flightctl-plugin
 spec:
   backend:
     service:
       basePath: /
       name: flightctl-ui
-      namespace: '{{ .Values.global.namespace }}'
+      namespace: '''{{ .Values.global.namespace }}'''
       port: 8080
     type: Service
   displayName: FCTL Plugin
@@ -19,6 +25,6 @@ spec:
     endpoint:
       service:
         name: flightctl-ui
-        namespace: '{{ .Values.global.namespace }}'
+        namespace: '''{{ .Values.global.namespace }}'''
         port: 8080
       type: Service
