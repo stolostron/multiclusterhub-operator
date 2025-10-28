@@ -2,7 +2,7 @@ acm-release-version: '2.15'
 components:
   - repo_name: "flight-control"
     github_ref: "https://github.com/flightctl/flightctl.git"
-    branch: "release-0.9"
+    branch: "release-0.10"
     charts:
       - name: "flight-control"
         chart-path: "deploy/helm/flightctl"
@@ -46,23 +46,3 @@ components:
               - name: flightctl-cli-artifacts
                 readOnlyRootFilesystem: false
         skipRBACOverrides: true
-  - repo_name: "mtv-integrations"
-    github_ref: "https://github.com/stolostron/mtv-integrations.git"
-    branch: "release-2.15"
-    charts:
-      - name: "mtv-integrations"
-        chart-path: "charts"
-        always-or-toggle: "toggle"
-        imageMappings:
-          mtv-integrations: mtv_integrations
-        inclusions:
-          - "pullSecretOverride"
-        skipRBACOverrides: true
-        updateChartVersion: true # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.6 -> 2.6
-        escape-template-variables:
-          - "CLUSTER_NAME"
-          - "HUB_KUBECONFIG"
-          - "INSTALL_NAMESPACE"
-          - "LIVE_NETWORK_KEY"
-          - "LIVE_NETWORK_VALUE"
-        auto-install-for-all-clusters: true

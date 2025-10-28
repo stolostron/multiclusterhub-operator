@@ -5,7 +5,7 @@ metadata:
     app: flightctl-db-migration
     security.level: schema-privilege
   name: flightctl-db-migration-access
-  namespace: '{{ .Values.global.namespace }}'
+  namespace: '{{ default "''{{ .Values.global.namespace }}''" .Values.global.namespace }}'
 rules:
 - apiGroups:
   - ''
