@@ -7,9 +7,9 @@ metadata:
   name: acm-hub-backup
   namespace: open-cluster-management-backup
 placementRef:
-  apiGroup: apps.open-cluster-management.io
-  kind: PlacementRule
   name: acm-hub-backup
+  apiGroup: cluster.open-cluster-management.io
+  kind: Placement
 subjects:
   - name: acm-hub-backup
     apiGroup: policy.open-cluster-management.io
