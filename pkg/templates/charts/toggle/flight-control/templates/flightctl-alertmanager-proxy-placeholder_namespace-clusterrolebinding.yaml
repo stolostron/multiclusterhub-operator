@@ -3,12 +3,12 @@ kind: ClusterRoleBinding
 metadata:
   labels:
     flightctl.service: flightctl-alertmanager-proxy
-  name: flightctl-alertmanager-proxy-'{{ .Values.global.namespace }}'
+  name: flightctl-alertmanager-proxy-{{ .Values.global.namespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: flightctl-alertmanager-proxy-'{{ .Values.global.namespace }}'
+  name: flightctl-alertmanager-proxy-{{ .Values.global.namespace }}
 subjects:
 - kind: ServiceAccount
   name: flightctl-alertmanager-proxy
-  namespace: '{{ default "''{{ .Values.global.namespace }}''" .Values.global.namespace }}'
+  namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'

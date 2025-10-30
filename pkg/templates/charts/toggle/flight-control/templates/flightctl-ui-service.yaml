@@ -11,7 +11,7 @@ metadata:
     app.kubernetes.io/version: latest
     helm.sh/chart: ui-0.0.1
   name: flightctl-ui
-  namespace: '{{ default "''{{ .Values.global.namespace }}''" .Values.global.namespace }}'
+  namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
 spec:
   ports:
   - name: 8080-tcp

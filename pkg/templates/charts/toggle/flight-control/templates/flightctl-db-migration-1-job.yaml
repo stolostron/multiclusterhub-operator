@@ -12,7 +12,7 @@ metadata:
     helm.sh/chart: flightctl-0.1.0
     release: release-name
   name: flightctl-db-migration-1
-  namespace: '{{ default "''{{ .Values.global.namespace }}''" .Values.global.namespace }}'
+  namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
 spec:
   backoffLimit: 2147483647
   completions: 1
@@ -33,7 +33,7 @@ spec:
       - command:
         - /bin/bash
         - -c
-        - "set -eo pipefail\necho \"Running database migrations...\"\n\n# Copy config file to a writable location\nmkdir -p /tmp/.flightctl\ncp /root/.flightctl/config.yaml /tmp/.flightctl/config.yaml\nexport HOME=/tmp\n\n/usr/local/bin/flightctl-db-migrate\necho \"Migrations completed successfully!\"\n# Grant permissions on all existing tables to the application user\necho \"Granting permissions on existing tables to application user...\"# Need to get admin credentials from init container environment\n  DB_HOST=\"flightctl-db.'{{ .Values.global.namespace }}'.svc.cluster.local\"\n  # Get admin credentials from the same secrets used by init container\n  export PGPASSWORD=\"$DB_ADMIN_PASSWORD\"\n  psql -h \"$DB_HOST\" -p 5432 -U \"$DB_ADMIN_USER\" -d \"flightctl\" -c \"SELECT grant_app_permissions_on_existing_tables();\"\necho \"Permission granting completed successfully!\"\n"
+        - "set -eo pipefail\necho \"Running database migrations...\"\n\n# Copy config file to a writable location\nmkdir -p /tmp/.flightctl\ncp /root/.flightctl/config.yaml /tmp/.flightctl/config.yaml\nexport HOME=/tmp\n\n/usr/local/bin/flightctl-db-migrate\necho \"Migrations completed successfully!\"\n# Grant permissions on all existing tables to the application user\necho \"Granting permissions on existing tables to application user...\"# Need to get admin credentials from init container environment\n  DB_HOST=\"flightctl-db.{{ .Values.global.namespace }}.svc.cluster.local\"\n  # Get admin credentials from the same secrets used by init container\n  export PGPASSWORD=\"$DB_ADMIN_PASSWORD\"\n  psql -h \"$DB_HOST\" -p 5432 -U \"$DB_ADMIN_USER\" -d \"flightctl\" -c \"SELECT grant_app_permissions_on_existing_tables();\"\necho \"Permission granting completed successfully!\"\n"
         env:
         - name: HOME
           value: /root
@@ -100,7 +100,7 @@ spec:
         - name: DB_USER_TYPE
           value: admin
         - name: DB_HOST
-          value: flightctl-db.'{{ .Values.global.namespace }}'.svc.cluster.local
+          value: flightctl-db.{{ .Values.global.namespace }}.svc.cluster.local
         - name: DB_PORT
           value: '5432'
         - name: DB_NAME
@@ -157,7 +157,7 @@ spec:
           '
         env:
         - name: DB_HOST
-          value: flightctl-db.'{{ .Values.global.namespace }}'.svc.cluster.local
+          value: flightctl-db.{{ .Values.global.namespace }}.svc.cluster.local
         - name: DB_PORT
           value: '5432'
         - name: DB_NAME

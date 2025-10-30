@@ -7,7 +7,7 @@ data:
   FLIGHTCTL_SERVER: https://flightctl-api:3443/
   FLIGHTCTL_SERVER_INSECURE_SKIP_VERIFY: 'true'
   IS_RHEM: 'false'
-  K8S_RBAC_NS: '''{{ .Values.global.namespace }}'''
+  K8S_RBAC_NS: '{{ .Values.global.namespace }}'
   ORGANIZATIONS_ENABLED: 'false'
 kind: ConfigMap
 metadata:

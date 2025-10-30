@@ -5,7 +5,7 @@ metadata:
     app: flightctl-db-admin
     security.level: superuser-privilege
   name: flightctl-db-admin-access
-  namespace: '{{ default "''{{ .Values.global.namespace }}''" .Values.global.namespace }}'
+  namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
 rules:
 - apiGroups:
   - ''
