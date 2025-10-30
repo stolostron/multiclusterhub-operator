@@ -66,26 +66,37 @@ func (r *MultiClusterHubReconciler) deleteEdgeManagerResources(ctx context.Conte
 		{"Secret", "flightctl-db-secret", m.GetNamespace()},
 		{"Secret", "flightctl-kv-secret", m.GetNamespace()},
 		{"PersistentVolumeClaim", "flightctl-kv-data-flightctl-kv-0", m.GetNamespace()},
+		{"PersistentVolumeClaim", "flightctl-alertmanager-data-flightctl-alertmanager-0", m.GetNamespace()},
 	}
 
-	// Delete Secrets
-	for _, resource := range resources[:2] {
-		err := r.deleteSecret(ctx, m, resource.name, resource.namespace)
-		if err != nil {
-			return ctrl.Result{}, err
+	for _, resource := range resources {
+		switch resource.kind {
+		// Delete Secrets
+		case "Secret":
+			err := r.deleteSecret(ctx, m, resource.name, resource.namespace)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		case "PersistentVolumeClaim":
+			// Delete PersistentVolumeClaim
+			err := r.deletePVC(ctx, m, "flightctl-kv-data-flightctl-kv-0", m.GetNamespace())
+			if err != nil {
+				return ctrl.Result{}, err
+			}
 		}
 	}
 
-	// Delete PersistentVolumeClaim
-	err := r.deletePVC(ctx, m, "flightctl-kv-data-flightctl-kv-0", m.GetNamespace())
-	if err != nil {
-		return ctrl.Result{}, err
+	labels := []client.MatchingLabels{
+		{"flightctl.service": "secrets-job"},
+		{"job-name": "flightctl-db-migration-1"},
 	}
 
-	// Delete Pod with label
-	err = r.deletePodWithLabel(ctx, m, "flightctl.service=secrets-job", m.GetNamespace())
-	if err != nil {
-		return ctrl.Result{}, err
+	for _, label := range labels {
+		// Delete Pod with label
+		err := r.deletePodWithLabel(ctx, m.GetNamespace(), label)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	return ctrl.Result{}, nil
@@ -131,10 +142,10 @@ func (r *MultiClusterHubReconciler) deletePVC(ctx context.Context, m *operatorv1
 	return nil
 }
 
-func (r *MultiClusterHubReconciler) deletePodWithLabel(ctx context.Context, m *operatorv1.MultiClusterHub, labelSelector, namespace string) error {
+func (r *MultiClusterHubReconciler) deletePodWithLabel(ctx context.Context, namespace string, labelSelector client.MatchingLabels) error {
 	podList := &corev1.PodList{}
 
-	err := r.Client.List(ctx, podList, client.InNamespace(namespace), client.MatchingLabels{"flightctl.service": "secrets-job"})
+	err := r.Client.List(ctx, podList, client.InNamespace(namespace), labelSelector)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil
