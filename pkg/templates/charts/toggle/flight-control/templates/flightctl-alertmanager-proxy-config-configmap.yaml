@@ -1,38 +1,7 @@
-
-# Source: flightctl/templates/flightctl-alertmanager-proxy-config.yaml
 apiVersion: v1
+data:
+  config.yaml: "auth:\n  insecureSkipTlsVerify: false\n  k8s:\n    apiUrl: https://kubernetes.default.svc\n    externalOpenShiftApiUrl: '{{ .Values.global.apiUrl }}'\n    rbacNs: '{{ .Values.global.namespace }}'\nca:\n  internalConfig:\n    certStore: /tmp/ca-certs\ndatabase:\n  hostname: 'flightctl-db.{{ .Values.global.namespace }}.svc.cluster.local'\n  name: flightctl\n  port: 5432\n  type: pgsql\norganizations:\n  enabled: false\nservice:\n  certStore: /app/certs\n  rateLimit:\n    authRequests: 10\n    authWindow: 1h\n    requests: 60\n    trustedProxies:\n    - 10.0.0.0/8\n    - 172.16.0.0/12\n    - 192.168.0.0/16\n    window: 1m\n"
 kind: ConfigMap
 metadata:
   name: flightctl-alertmanager-proxy-config
-  namespace: {{ .Values.global.namespace }}
-data:
-  config.yaml: |-
-    database:
-      hostname: flightctl-db.{{ .Values.global.namespace }}.svc.cluster.local
-      type: "pgsql"
-      port: 5432
-      name: flightctl
-    service:
-      certStore: "/app/certs"
-      
-      rateLimit:
-          requests: 60
-          window: 1m
-          authRequests: 10
-          authWindow: 1h
-          trustedProxies:
-              - "10.0.0.0/8"
-              - "172.16.0.0/12"
-              - "192.168.0.0/16"
-      
-    ca:
-      internalConfig:
-        certStore: "/tmp/ca-certs"
-    auth:
-      insecureSkipTlsVerify: false
-      k8s:
-        apiUrl: https://kubernetes.default.svc
-        externalOpenShiftApiUrl: {{ .Values.global.apiUrl }}
-        rbacNs: {{ .Values.global.namespace }}
-    organizations:
-      enabled: false
+  namespace: '{{ .Values.global.namespace  }}'
