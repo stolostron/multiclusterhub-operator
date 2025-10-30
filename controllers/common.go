@@ -79,7 +79,7 @@ func (r *MultiClusterHubReconciler) deleteEdgeManagerResources(ctx context.Conte
 			}
 		case "PersistentVolumeClaim":
 			// Delete PersistentVolumeClaim
-			err := r.deletePVC(ctx, m, "flightctl-kv-data-flightctl-kv-0", m.GetNamespace())
+			err := r.deletePVC(ctx, resource.name, resource.namespace)
 			if err != nil {
 				return ctrl.Result{}, err
 			}
@@ -125,7 +125,7 @@ func (r *MultiClusterHubReconciler) deleteSecret(ctx context.Context, m *operato
 	return nil
 }
 
-func (r *MultiClusterHubReconciler) deletePVC(ctx context.Context, m *operatorv1.MultiClusterHub, name, namespace string) error {
+func (r *MultiClusterHubReconciler) deletePVC(ctx context.Context, name, namespace string) error {
 	pvc := &corev1.PersistentVolumeClaim{}
 	err := r.Client.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, pvc)
 	if err != nil {
