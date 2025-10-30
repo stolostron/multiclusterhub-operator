@@ -4,7 +4,7 @@ metadata:
   labels:
     flightctl.service: flightctl-cli-artifacts
   name: flightctl-cli-artifacts
-  namespace: '{{ default "''{{ .Values.global.namespace }}''" .Values.global.namespace }}'
+  namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
 spec:
   ports:
   - name: flightctl-cli-artifacts

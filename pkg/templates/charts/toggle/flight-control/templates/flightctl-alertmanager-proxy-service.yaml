@@ -9,7 +9,7 @@ metadata:
     flightctl.service: flightctl-alertmanager-proxy
     helm.sh/chart: flightctl-0.1.0
   name: flightctl-alertmanager-proxy
-  namespace: '{{ default "''{{ .Values.global.namespace }}''" .Values.global.namespace }}'
+  namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
 spec:
   ports:
   - name: proxy

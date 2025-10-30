@@ -3,12 +3,12 @@ kind: ClusterRoleBinding
 metadata:
   labels:
     flightctl.service: flightctl-api
-  name: flightctl-api-'{{ .Values.global.namespace }}'
+  name: flightctl-api-{{ .Values.global.namespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: flightctl-api-'{{ .Values.global.namespace }}'
+  name: flightctl-api-{{ .Values.global.namespace }}
 subjects:
 - kind: ServiceAccount
   name: flightctl-api
-  namespace: '{{ default "''{{ .Values.global.namespace }}''" .Values.global.namespace }}'
+  namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'

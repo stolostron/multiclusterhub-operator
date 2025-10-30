@@ -3,7 +3,7 @@ kind: ClusterRole
 metadata:
   labels:
     flightctl.service: flightctl-alertmanager-proxy
-  name: flightctl-alertmanager-proxy-'{{ .Values.global.namespace }}'
+  name: flightctl-alertmanager-proxy-{{ .Values.global.namespace }}
 rules:
 - apiGroups:
   - authentication.k8s.io
