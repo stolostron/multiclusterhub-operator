@@ -419,6 +419,13 @@ rules:
   - patch
 - apiGroups:
   - ""
+  - authentication.k8s.io
+  resources:
+  - uids
+  verbs:
+  - impersonate
+- apiGroups:
+  - ""
   - events.k8s.io
   resources:
   - events
