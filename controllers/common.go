@@ -86,14 +86,17 @@ func (r *MultiClusterHubReconciler) deleteEdgeManagerResources(ctx context.Conte
 		}
 	}
 
-	labels := []client.MatchingLabels{
-		{"flightctl.service": "secrets-job"},
-		{"job-name": "flightctl-db-migration-1"},
+	pods := []struct {
+		namespace string
+		label     client.MatchingLabels
+	}{
+		{m.GetNamespace(), client.MatchingLabels{"flightctl.service": "secrets-job"}},
+		{m.GetNamespace(), client.MatchingLabels{"job-name": "flightctl-db-migration-1"}},
 	}
 
-	for _, label := range labels {
+	for _, pod := range pods {
 		// Delete Pod with label
-		err := r.deletePodWithLabel(ctx, m.GetNamespace(), label)
+		err := r.deletePodWithLabel(ctx, pod.namespace, pod.label)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
