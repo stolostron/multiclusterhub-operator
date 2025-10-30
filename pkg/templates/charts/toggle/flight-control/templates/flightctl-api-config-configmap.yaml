@@ -4,11 +4,11 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: flightctl-api-config
-  namespace: PLACEHOLDER_NAMESPACE
+  namespace: {{ .Values.global.namespace }}
 data:
   config.yaml: |-
     database:
-        hostname: flightctl-db.PLACEHOLDER_NAMESPACE.svc.cluster.local
+        hostname: flightctl-db.{{ .Values.global.namespace }}.svc.cluster.local
         type: "pgsql"
         port: 5432
         name: flightctl
@@ -29,8 +29,8 @@ data:
           - api.{{ .Values.global.baseDomain }}
           - agent-api.{{ .Values.global.baseDomain }}
           - flightctl-api
-          - flightctl-api.PLACEHOLDER_NAMESPACE
-          - flightctl-api.PLACEHOLDER_NAMESPACE.svc.cluster.local
+          - flightctl-api.{{ .Values.global.namespace }}
+          - flightctl-api.{{ .Values.global.namespace }}.svc.cluster.local
         
         rateLimit:
             requests: 60
@@ -43,7 +43,7 @@ data:
                 - "192.168.0.0/16"
         
     kv:
-        hostname: flightctl-kv.PLACEHOLDER_NAMESPACE.svc.cluster.local
+        hostname: flightctl-kv.{{ .Values.global.namespace }}.svc.cluster.local
         port: 6379
     
     auth:
@@ -51,8 +51,8 @@ data:
         caCert: 
         k8s:
             apiUrl: https://kubernetes.default.svc
-            externalOpenShiftApiUrl: placeholder_apiurl
-            rbacNs: PLACEHOLDER_NAMESPACE
+            externalOpenShiftApiUrl: {{ .Values.global.apiUrl }}
+            rbacNs: {{ .Values.global.namespace }}
     
     organizations:
         enabled: false
