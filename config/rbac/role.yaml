@@ -81,12 +81,6 @@ rules:
   - create
 - apiGroups:
   - ""
-  resources:
-  - uids
-  verbs:
-  - impersonate
-- apiGroups:
-  - ""
   - action.open-cluster-management.io
   - addon.open-cluster-management.io
   - agent.open-cluster-management.io
@@ -417,6 +411,13 @@ rules:
   - deletecollection
   - get
   - patch
+- apiGroups:
+  - ""
+  - authentication.k8s.io
+  resources:
+  - uids
+  verbs:
+  - impersonate
 - apiGroups:
   - ""
   - events.k8s.io
@@ -1625,6 +1626,13 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - user.openshift.io
+  resources:
+  - groups
+  - users
+  verbs:
+  - impersonate
 - apiGroups:
   - wgpolicyk8s.io
   resources:
