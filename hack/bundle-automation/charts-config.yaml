@@ -2,7 +2,7 @@ acm-release-version: '2.15'
 components:
   - repo_name: "flight-control"
     github_ref: "https://github.com/flightctl/flightctl.git"
-    branch: "release-0.9"
+    branch: "release-0.10"
     charts:
       - name: "flight-control"
         chart-path: "deploy/helm/flightctl"
@@ -28,6 +28,13 @@ components:
         escape-template-variables: []
         updateChartVersion: false # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.4 -> 2.4
         security-context-constraints:
+          - kind: "Job"
+            name: flightctl-db-migration-1-dryrun
+            containers:
+              - name: setup-database-users
+                readOnlyRootFilesystem: false
+              - name: run-migrations
+                readOnlyRootFilesystem: false
           - kind: "Job"
             name: flightctl-db-migration-1
             containers:

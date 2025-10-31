@@ -2,31 +2,30 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: flightctl-ui
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: ui
+    app.kubernetes.io/name: flightctl
     app.kubernetes.io/version: latest
-    helm.sh/chart: ui-0.0.1
-    role: frontend
-  name: flightctl-ui
+    flightctl.service: flightctl-kv
+    helm.sh/chart: flightctl-0.1.0
+  name: flightctl-kv
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: flightctl-ui
+      flightctl.service: flightctl-kv
+  strategy:
+    type: Recreate
   template:
     metadata:
-      creationTimestamp: null
       labels:
-        app: flightctl-ui
         app.kubernetes.io/instance: release-name
         app.kubernetes.io/managed-by: Helm
-        app.kubernetes.io/name: ui
+        app.kubernetes.io/name: flightctl
         app.kubernetes.io/version: latest
-        helm.sh/chart: ui-0.0.1
-        ocm-antiaffinity-selector: flightctl-ui
-        role: frontend
+        flightctl.service: flightctl-kv
+        helm.sh/chart: flightctl-0.1.0
+        ocm-antiaffinity-selector: flightctl-kv
     spec:
       affinity:
         podAntiAffinity:
@@ -37,7 +36,7 @@ spec:
                 - key: ocm-antiaffinity-selector
                   operator: In
                   values:
-                  - flightctl-ui
+                  - flightctl-kv
               topologyKey: topology.kubernetes.io/zone
             weight: 70
           - podAffinityTerm:
@@ -46,55 +45,51 @@ spec:
                 - key: ocm-antiaffinity-selector
                   operator: In
                   values:
-                  - flightctl-ui
+                  - flightctl-kv
               topologyKey: kubernetes.io/hostname
             weight: 35
       containers:
-      - env:
-        - name: API_PORT
-          value: '8080'
-        - name: FLIGHTCTL_SERVER
+      - command:
+        - redis-server
+        - /etc/redis/redis.conf
+        - --requirepass
+        - $(REDIS_PASSWORD)
+        env:
+{{- if .Values.global.pullSecret }}
+        - name: AGENT_IMAGE_PULL_SECRET
+          value: {{ .Values.global.pullSecret }}
+{{- end }}
+{{- if .Values.hubconfig.proxyConfigs }}
+        - name: HTTP_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+        - name: HTTPS_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+        - name: NO_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+{{- end }}
+        - name: REDIS_PASSWORD
           valueFrom:
-            configMapKeyRef:
-              key: FLIGHTCTL_SERVER
-              name: flightctl-ui
-        - name: FLIGHTCTL_CLI_ARTIFACTS_SERVER
-          valueFrom:
-            configMapKeyRef:
-              key: FLIGHTCTL_CLI_ARTIFACTS_SERVER
-              name: flightctl-ui
-        - name: FLIGHTCTL_ALERTMANAGER_PROXY
-          valueFrom:
-            configMapKeyRef:
-              key: FLIGHTCTL_ALERTMANAGER_PROXY
-              name: flightctl-ui
-        - name: FLIGHTCTL_SERVER_INSECURE_SKIP_VERIFY
-          valueFrom:
-            configMapKeyRef:
-              key: FLIGHTCTL_SERVER_INSECURE_SKIP_VERIFY
-              name: flightctl-ui
-        - name: ORGANIZATIONS_ENABLED
-          valueFrom:
-            configMapKeyRef:
-              key: ORGANIZATIONS_ENABLED
-              name: flightctl-ui
-        - name: TLS_KEY
-          value: /app/serving-cert/tls.key
-        - name: TLS_CERT
-          value: /app/serving-cert/tls.crt
-        - name: IS_OCP_PLUGIN
-          value: 'true'
-        - name: K8S_RBAC_NS
-          valueFrom:
-            configMapKeyRef:
-              key: K8S_RBAC_NS
-              name: flightctl-ui
-        image: '{{ .Values.global.imageOverrides.flightctl_ocp_ui }}'
+            secretKeyRef:
+              key: password
+              name: flightctl-kv-secret
+        image: '{{ .Values.global.imageOverrides.redis_7_c9s }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
-        name: flightctl-ui
+        livenessProbe:
+          periodSeconds: 10
+          tcpSocket:
+            port: 6379
+        name: flightctl-kv
         ports:
-        - containerPort: 8080
-          protocol: TCP
+        - containerPort: 6379
+          name: kv
+        readinessProbe:
+          periodSeconds: 5
+          tcpSocket:
+            port: 6379
+        resources:
+          requests:
+            cpu: 1000m
+            memory: 2Gi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -104,10 +99,9 @@ spec:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
         volumeMounts:
-        - mountPath: /app/certs
-          name: flightctl-ui-certs
-        - mountPath: /app/serving-cert
-          name: flightctl-ui-serving-cert
+        - mountPath: /etc/redis/redis.conf
+          name: flightctl-kv-config
+          subPath: redis.conf
       hostIPC: false
       hostNetwork: false
       hostPID: false
@@ -119,7 +113,6 @@ spec:
       nodeSelector:
 {{ toYaml . | indent 8 }}
 {{- end }}
-      restartPolicy: Always
       securityContext:
         runAsNonRoot: true
 {{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
@@ -137,13 +130,7 @@ spec:
         {{- end }}
 {{- end }}
       volumes:
-      - name: flightctl-ui-certs
-        secret:
-          items:
-          - key: ca.crt
-            path: ca.crt
-          secretName: flightctl-ui-certs
-      - name: flightctl-ui-serving-cert
-        secret:
+      - configMap:
           defaultMode: 420
-          secretName: flightctl-ui-serving-cert
+          name: flightctl-kv-config
+        name: flightctl-kv-config
