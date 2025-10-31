@@ -757,6 +757,13 @@ rules:
   - create
   - get
 - apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - get
+  - list
+- apiGroups:
   - capi-provider.agent-install.openshift.io
   resources:
   - agentmachines
@@ -1034,8 +1041,15 @@ rules:
   - flightctl.io
   resources:
   - devices/console
+  - devices/lastseen
   verbs:
   - get
+- apiGroups:
+  - flightctl.io
+  resources:
+  - devices/resume
+  verbs:
+  - update
 - apiGroups:
   - flightctl.io
   resources:

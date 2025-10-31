@@ -2,16 +2,14 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   labels:
-    app: flightctl-db-migration
-    security.level: schema-privilege
-  name: flightctl-db-migration-access
+    app: flightctl-job-status
+  name: flightctl-job-status-reader
   namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
 rules:
 - apiGroups:
-  - ''
-  resourceNames:
-  - flightctl-db-migration-secret
+  - batch
   resources:
-  - secrets
+  - jobs
   verbs:
   - get
+  - list

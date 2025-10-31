@@ -6,28 +6,23 @@ data:
 
     port 6379
 
-    dir /var/lib/redis/data
-
 
     # Logging
 
     loglevel warning
 
 
-    # Snapshotting configuration
+    # Disable persistence for in-memory Redis
 
-    save 300 1
+    save ""
 
-    dbfilename dump.rdb
+    appendonly no
 
+    # Prevent unbounded memory growth (values can be overridden via values.yaml)
 
-    # AOF configuration
+    maxmemory 1gb
 
-    appendonly yes
-
-    appendfilename "appendonly.aof"
-
-    appendfsync everysec'
+    maxmemory-policy allkeys-lru'
 kind: ConfigMap
 metadata:
   name: flightctl-kv-config

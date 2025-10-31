@@ -132,6 +132,7 @@ package main
 //+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create;get
 //+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create;get
 //+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=get;create
+//+kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list
 //+kubebuilder:rbac:groups=capi-provider.agent-install.openshift.io,resources=agentmachines,verbs=list;watch
 //+kubebuilder:rbac:groups=certificates.k8s.io,resources=certificatesigningrequests,verbs=get;list;watch
 //+kubebuilder:rbac:groups=certificates.k8s.io,resources=certificatesigningrequests,verbs=get;list;watch
@@ -195,7 +196,8 @@ package main
 //+kubebuilder:rbac:groups=extensions.hive.openshift.io,resources=agentclusterinstalls;imageclusterinstalls,verbs=create;delete;get;patch;update
 //+kubebuilder:rbac:groups=flightctl.io,resources=*,verbs=*
 //+kubebuilder:rbac:groups=flightctl.io,resources=certificatesigningrequests,verbs=get;list;create
-//+kubebuilder:rbac:groups=flightctl.io,resources=devices/console,verbs=get
+//+kubebuilder:rbac:groups=flightctl.io,resources=devices/console;devices/lastseen,verbs=get
+//+kubebuilder:rbac:groups=flightctl.io,resources=devices/resume,verbs=update
 //+kubebuilder:rbac:groups=flightctl.io,resources=devices;fleets;resourcesyncs,verbs=get;list
 //+kubebuilder:rbac:groups=flightctl.io,resources=devices;fleets;resourcesyncs,verbs=get;list;create;delete;update;patch
 //+kubebuilder:rbac:groups=flightctl.io,resources=enrollmentrequests,verbs=get;list
