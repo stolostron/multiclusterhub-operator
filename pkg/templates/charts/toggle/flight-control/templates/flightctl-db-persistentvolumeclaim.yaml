@@ -4,7 +4,7 @@ metadata:
   annotations:
     kubernetes.io/reclaimPolicy: Delete
   name: flightctl-db
-  namespace: '{{ .Values.global.namespace }}'
+  namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
 spec:
   accessModes:
   - ReadWriteOnce
