@@ -6,7 +6,7 @@ metadata:
   labels:
     app: flightctl-ui
   name: flightctl-ui
-  namespace: '{{ .Values.global.namespace }}'
+  namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
 spec:
   ports:
   - name: 8080-tcp
