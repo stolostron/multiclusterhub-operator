@@ -9,7 +9,7 @@ metadata:
     app: flightctl-db-migration
     release: release-name
   name: flightctl-db-migration-1
-  namespace: '{{ .Values.global.namespace }}'
+  namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
 spec:
   template:
     metadata:

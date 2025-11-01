@@ -5,7 +5,7 @@ metadata:
     app: flightctl-db-app
     security.level: application
   name: flightctl-db-app-access
-  namespace: '{{ .Values.global.namespace }}'
+  namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -13,10 +13,10 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: flightctl-worker
-  namespace: '{{ default "PLACEHOLDER_NAMESPACE" .Values.global.namespace }}'
+  namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
 - kind: ServiceAccount
   name: flightctl-periodic
-  namespace: '{{ default "PLACEHOLDER_NAMESPACE" .Values.global.namespace }}'
+  namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
 - kind: ServiceAccount
   name: flightctl-alert-exporter
-  namespace: '{{ default "PLACEHOLDER_NAMESPACE" .Values.global.namespace }}'
+  namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
