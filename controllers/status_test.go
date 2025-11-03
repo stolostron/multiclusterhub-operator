@@ -944,7 +944,7 @@ func TestCalculateMCEVersionCompliance(t *testing.T) {
 			name:      "MCE not found",
 			createMCE: false,
 			expectedStatus: &operatorsv1.MCEVersionComplianceStatus{
-				RequiredChannel: "stable-2.10",
+				RequiredChannel: "stable-2.11",
 				CurrentVersion:  "",
 				IsCompliant:     false,
 				Message:         "MCE not yet installed",
@@ -964,7 +964,7 @@ func TestCalculateMCEVersionCompliance(t *testing.T) {
 				Status: mcev1.MultiClusterEngineStatus{},
 			},
 			expectedStatus: &operatorsv1.MCEVersionComplianceStatus{
-				RequiredChannel: "stable-2.10",
+				RequiredChannel: "stable-2.11",
 				CurrentVersion:  "",
 				IsCompliant:     false,
 				Message:         "MCE version not yet available - installation in progress",
@@ -982,14 +982,14 @@ func TestCalculateMCEVersionCompliance(t *testing.T) {
 					},
 				},
 				Status: mcev1.MultiClusterEngineStatus{
-					CurrentVersion: "2.10.0",
+					CurrentVersion: "2.11.0",
 				},
 			},
 			expectedStatus: &operatorsv1.MCEVersionComplianceStatus{
-				RequiredChannel: "stable-2.10",
-				CurrentVersion:  "2.10.0",
+				RequiredChannel: "stable-2.11",
+				CurrentVersion:  "2.11.0",
 				IsCompliant:     true,
-				Message:         "MCE version 2.10.0 meets channel stable-2.10 requirements",
+				Message:         "MCE version 2.11.0 meets channel stable-2.11 requirements",
 			},
 			expectCompliant: true,
 		},
