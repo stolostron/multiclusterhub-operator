@@ -470,12 +470,14 @@ rules:
   - work.open-cluster-management.io
   resources:
   - addondeploymentconfigs
+  - addontemplates
   - channels
   - channels/finalizers
   - channels/status
   - deployables
   - deployables/status
   - gitopsclusters
+  - gitopsclusters/finalizers
   - gitopsclusters/status
   - helmreleases
   - helmreleases/status
