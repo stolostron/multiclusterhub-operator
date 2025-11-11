@@ -33,6 +33,7 @@ spec:
               - ""
               resources:
               - configmaps
+              - events
               - namespaces
               - nodes
               - nodes/proxy
@@ -227,6 +228,7 @@ spec:
               - ""
               resources:
               - configmaps
+              - events
               - namespaces
               - nodes
               - persistentvolumeclaims
