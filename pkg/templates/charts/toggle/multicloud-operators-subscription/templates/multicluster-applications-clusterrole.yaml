@@ -94,6 +94,7 @@ rules:
   - endpoints
   - events
   - namespaces
+  - pods
   - secrets
   - serviceaccounts
   - services
