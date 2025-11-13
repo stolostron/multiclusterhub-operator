@@ -1,4 +1,4 @@
-acm-release-version: '2.15'
+acm-release-version: '2.16'
 components:
   - repo_name: "flight-control"
     github_ref: "https://github.com/flightctl/flightctl.git"
@@ -55,7 +55,7 @@ components:
         skipRBACOverrides: true
   - repo_name: "mtv-integrations"
     github_ref: "https://github.com/stolostron/mtv-integrations.git"
-    branch: "release-2.15"
+    branch: "release-2.16"
     charts:
       - name: "mtv-integrations"
         chart-path: "charts"
