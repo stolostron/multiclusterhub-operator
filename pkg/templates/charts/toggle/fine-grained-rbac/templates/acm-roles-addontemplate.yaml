@@ -165,6 +165,22 @@ spec:
               - create
               - update
               - patch
+            - apiGroups:
+              - config.openshift.io
+              verbs:
+                - get
+                - watch
+                - list
+              resources:
+                - clusterversions
+            - apiGroups:
+                - operators.coreos.com
+              resources:
+                - clusterserviceversions
+              verbs:
+                - get
+                - list
+                - watch
         - apiVersion: rbac.authorization.k8s.io/v1
           kind: ClusterRole
           metadata:
@@ -331,6 +347,22 @@ spec:
               - get
               - list
               - watch
+            - apiGroups:
+              - config.openshift.io
+              verbs:
+                - get
+                - watch
+                - list
+              resources:
+                - clusterversions
+            - apiGroups:
+                - operators.coreos.com
+              resources:
+                - clusterserviceversions
+              verbs:
+                - get
+                - list
+                - watch
         - apiVersion: rbac.authorization.k8s.io/v1
           kind: ClusterRole
           metadata:
