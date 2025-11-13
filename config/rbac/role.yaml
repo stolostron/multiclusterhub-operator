@@ -11,6 +11,7 @@ rules:
   - endpoints
   - events
   - namespaces
+  - pods
   - services/proxy
   verbs:
   - create
@@ -47,7 +48,6 @@ rules:
   resources:
   - nodes
   - persistentvolumeclaims
-  - pods
   - services/finalizers
   verbs:
   - create

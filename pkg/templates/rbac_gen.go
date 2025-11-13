@@ -9,7 +9,7 @@ package main
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;update
-//+kubebuilder:rbac:groups="",resources=configmaps;endpoints;events;namespaces;secrets;serviceaccounts;services;services/proxy,verbs=get;list;watch;create;update;patch;delete;deletecollection
+//+kubebuilder:rbac:groups="",resources=configmaps;endpoints;events;namespaces;pods;secrets;serviceaccounts;services;services/proxy,verbs=get;list;watch;create;update;patch;delete;deletecollection
 //+kubebuilder:rbac:groups="",resources=configmaps;events,verbs=get;list;watch;create;update;delete;deletecollection;patch
 //+kubebuilder:rbac:groups="",resources=configmaps;jobs;namespaces;pods;secrets,verbs=list;watch
 //+kubebuilder:rbac:groups="",resources=configmaps;secrets,verbs=create;delete;get;list;patch;update;watch
@@ -33,7 +33,7 @@ package main
 //+kubebuilder:rbac:groups="",resources=pods;services;services/finalizers;endpoints;persistentvolumeclaims;events;configmaps;secrets,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=pods;services;services/finalizers;endpoints;persistentvolumeclaims;events;configmaps;secrets;serviceaccounts;namespaces;nodes,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=create
-//+kubebuilder:rbac:groups="",resources=secrets,verbs=create;get;list;watch;delete
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=create;get;list;watch;update;delete
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=delete;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get
