@@ -153,12 +153,33 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 			}
 
 			if !utils.IsTemplateAnnotationTrue(template, utils.AnnotationEditable) {
-				// Resource exists; use the original template for patching to avoid issues with managedFields
-				// Apply the object data.
-				force := true
-				if err := r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{
-					Force: &force, FieldManager: "multiclusterhub-operator"}); err != nil {
-					return r.logAndSetCondition(err, "failed to update resource", template, m)
+				// Check if we need to use Update instead of Patch due to container changes
+				useUpdate := false
+				if existing.GetKind() == "Deployment" {
+					containersChanged, err := r.detectContainerChanges(existing, template)
+					if err != nil {
+						log.Error(err, "Failed to detect container changes", "Name", template.GetName())
+
+					} else if containersChanged {
+						log.Info("Container set changed (added/removed) - using Update instead of Patch",
+							"Kind", template.GetKind(), "Name", template.GetName())
+						useUpdate = true
+					}
+				}
+
+				if useUpdate {
+					// Use Update to replace entire spec when containers are added/removed
+					// Server-side apply cannot remove elements from arrays
+					if err := r.Client.Update(ctx, template); err != nil {
+						return r.logAndSetCondition(err, "failed to update resource", template, m)
+					}
+				} else {
+					// Use server-side apply for normal updates
+					force := true
+					if err := r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{
+						Force: &force, FieldManager: "multiclusterhub-operator"}); err != nil {
+						return r.logAndSetCondition(err, "failed to update resource", template, m)
+					}
 				}
 			}
 		}
@@ -231,4 +252,97 @@ func (r *MultiClusterHubReconciler) logAndSetCondition(err error, message string
 		FailedApplyingComponent, wrappedError.Error()))
 
 	return ctrl.Result{}, wrappedError
+}
+
+// detectContainerChanges checks if containers have been added or removed between existing and desired deployments.
+// Returns true if the container set differs (by name or count), indicating Update should be used instead of Patch.
+// Server-side apply cannot remove elements from arrays, so we must use Update when containers are removed.
+func (r *MultiClusterHubReconciler) detectContainerChanges(existing, desired *unstructured.Unstructured) (bool, error) {
+	// Get existing containers
+	existingContainers, found, err := unstructured.NestedSlice(existing.Object,
+		"spec", "template", "spec", "containers")
+	if err != nil {
+		return false, fmt.Errorf("failed to get existing containers: %w", err)
+	}
+	if !found {
+		return false, nil
+	}
+
+	// Get desired containers
+	desiredContainers, found, err := unstructured.NestedSlice(desired.Object,
+		"spec", "template", "spec", "containers")
+	if err != nil {
+		return false, fmt.Errorf("failed to get desired containers: %w", err)
+	}
+	if !found {
+		return false, nil
+	}
+
+	// Different number of containers = containers added or removed
+	if len(existingContainers) != len(desiredContainers) {
+		log.Info("Container count changed",
+			"Name", existing.GetName(),
+			"Existing", len(existingContainers),
+			"Desired", len(desiredContainers))
+		return true, nil
+	}
+
+	// Build set of existing container names
+	existingNames := make(map[string]bool)
+	for _, c := range existingContainers {
+		container, ok := c.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if name, ok := container["name"].(string); ok {
+			existingNames[name] = true
+		}
+	}
+
+	// Check if all desired containers exist in current deployment
+	for _, c := range desiredContainers {
+		container, ok := c.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if name, ok := container["name"].(string); ok {
+			if !existingNames[name] {
+				log.Info("New container detected in desired spec",
+					"Deployment", existing.GetName(),
+					"Container", name)
+				return true, nil
+			}
+		}
+	}
+
+	// Build set of desired container names
+	desiredNames := make(map[string]bool)
+	for _, c := range desiredContainers {
+		container, ok := c.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if name, ok := container["name"].(string); ok {
+			desiredNames[name] = true
+		}
+	}
+
+	// Check if any existing containers are missing from desired (removed containers)
+	for _, c := range existingContainers {
+		container, ok := c.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if name, ok := container["name"].(string); ok {
+			if !desiredNames[name] {
+				log.Info("Container removed in desired spec",
+					"Deployment", existing.GetName(),
+					"Container", name)
+				return true, nil
+			}
+		}
+	}
+
+	// No container changes detected
+	return false, nil
 }
