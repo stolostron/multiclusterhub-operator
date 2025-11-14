@@ -7,7 +7,11 @@ metadata:
   name: acm-hub-backup
   namespace: open-cluster-management-backup
 spec:
-  description: ACM Hub backup and restore. Includes policies to run Hub PVC backup and restore using VolSync with the restic mover feature, leveraging CSI volume snapshot.
+  description: |
+    ACM Hub backup and restore.
+    Includes policies to run Hub PVC backup and restore using VolSync with the restic mover feature, leveraging CSI volume snapshot.
+    This PolicySet is placed on local hub clusters (local-cluster=true), managed clusters where ACM Hub has been installed (is-hub=true),
+    and clusters with the global hub controller addon (feature.open-cluster-management.io/addon-multicluster-global-hub-controller).
   policies:
     - backup-restore-enabled
     - backup-restore-auto-import
