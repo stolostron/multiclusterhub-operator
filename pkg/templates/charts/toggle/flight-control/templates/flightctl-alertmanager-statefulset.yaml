@@ -4,7 +4,7 @@ metadata:
   labels:
     flightctl.service: flightctl-alertmanager
   name: flightctl-alertmanager
-  namespace: '{{ .Values.global.namespace }}'
+  namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
 spec:
   podManagementPolicy: OrderedReady
   replicas: 1

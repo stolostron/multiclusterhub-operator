@@ -15,6 +15,7 @@ rules:
   - policy.open-cluster-management.io
   resources:
   - addondeploymentconfigs
+  - addontemplates
   - channels
   - channels/status
   - channels/finalizers
@@ -22,6 +23,7 @@ rules:
   - deployables/status
   - gitopsclusters
   - gitopsclusters/status
+  - gitopsclusters/finalizers
   - helmreleases
   - helmreleases/status
   - klusterletaddonconfigs
@@ -92,6 +94,7 @@ rules:
   - endpoints
   - events
   - namespaces
+  - pods
   - secrets
   - serviceaccounts
   - services

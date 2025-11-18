@@ -2,7 +2,7 @@ apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
   name: flightctl-alertmanager-proxy-route
-  namespace: '{{ .Values.global.namespace }}'
+  namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
 spec:
   host: alertmanager-proxy.{{ .Values.global.baseDomain }}
   port:

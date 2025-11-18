@@ -5,8 +5,13 @@ metadata:
     service.alpha.openshift.io/serving-cert-secret-name: flightctl-ui-serving-cert
   labels:
     app: flightctl-ui
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: ui
+    app.kubernetes.io/version: latest
+    helm.sh/chart: ui-0.0.1
   name: flightctl-ui
-  namespace: '{{ .Values.global.namespace }}'
+  namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
 spec:
   ports:
   - name: 8080-tcp

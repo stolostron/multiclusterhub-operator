@@ -11,6 +11,7 @@ rules:
   - endpoints
   - events
   - namespaces
+  - pods
   - services/proxy
   verbs:
   - create
@@ -47,7 +48,6 @@ rules:
   resources:
   - nodes
   - persistentvolumeclaims
-  - pods
   - services/finalizers
   verbs:
   - create
@@ -79,12 +79,6 @@ rules:
   - serviceaccounts/token
   verbs:
   - create
-- apiGroups:
-  - ""
-  resources:
-  - uids
-  verbs:
-  - impersonate
 - apiGroups:
   - ""
   - action.open-cluster-management.io
@@ -419,6 +413,13 @@ rules:
   - patch
 - apiGroups:
   - ""
+  - authentication.k8s.io
+  resources:
+  - uids
+  verbs:
+  - impersonate
+- apiGroups:
+  - ""
   - events.k8s.io
   resources:
   - events
@@ -469,12 +470,14 @@ rules:
   - work.open-cluster-management.io
   resources:
   - addondeploymentconfigs
+  - addontemplates
   - channels
   - channels/finalizers
   - channels/status
   - deployables
   - deployables/status
   - gitopsclusters
+  - gitopsclusters/finalizers
   - gitopsclusters/status
   - helmreleases
   - helmreleases/status
@@ -756,6 +759,13 @@ rules:
   - create
   - get
 - apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - get
+  - list
+- apiGroups:
   - capi-provider.agent-install.openshift.io
   resources:
   - agentmachines
@@ -1033,8 +1043,15 @@ rules:
   - flightctl.io
   resources:
   - devices/console
+  - devices/lastseen
   verbs:
   - get
+- apiGroups:
+  - flightctl.io
+  resources:
+  - devices/resume
+  verbs:
+  - update
 - apiGroups:
   - flightctl.io
   resources:
@@ -1625,6 +1642,13 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - user.openshift.io
+  resources:
+  - groups
+  - users
+  verbs:
+  - impersonate
 - apiGroups:
   - wgpolicyk8s.io
   resources:

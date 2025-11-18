@@ -32,6 +32,7 @@ import (
 
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
+	rbacv1 "k8s.io/api/rbac/v1"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
@@ -58,37 +59,106 @@ type CacheSpec struct {
 
 func (r *MultiClusterHubReconciler) deleteEdgeManagerResources(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	// List of resource names and types to delete
-	resources := []struct {
+	namespacedResources := []struct {
 		kind      string
 		name      string
 		namespace string
 	}{
 		{"Secret", "flightctl-db-secret", m.GetNamespace()},
 		{"Secret", "flightctl-kv-secret", m.GetNamespace()},
+		{"Secret", "flightctl-db-admin-secret", m.GetNamespace()},
+		{"Secret", "flightctl-db-app-secret", m.GetNamespace()},
+		{"Secret", "flightctl-db-migration-secret", m.GetNamespace()},
 		{"PersistentVolumeClaim", "flightctl-kv-data-flightctl-kv-0", m.GetNamespace()},
+		{"PersistentVolumeClaim", "flightctl-alertmanager-data-flightctl-alertmanager-0", m.GetNamespace()},
 	}
 
-	// Delete Secrets
-	for _, resource := range resources[:2] {
-		err := r.deleteSecret(ctx, m, resource.name, resource.namespace)
+	for _, resource := range namespacedResources {
+		switch resource.kind {
+		// Delete Secrets
+		case "Secret":
+			err := r.deleteSecret(ctx, m, resource.name, resource.namespace)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		case "PersistentVolumeClaim":
+			// Delete PersistentVolumeClaim
+			err := r.deletePVC(ctx, resource.name, resource.namespace)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	}
+
+	clusterScopedResources := []struct {
+		kind string
+		name string
+	}{
+		{"ClusterRole", "flightctl-client"},
+		{"ClusterRoleBinding", "flightctl-agent-registration"},
+		{"ClusterRoleBinding", "flightctl-client"},
+	}
+
+	for _, resource := range clusterScopedResources {
+		switch resource.kind {
+		case "ClusterRole":
+			if err := r.deleteClusterRole(ctx, resource.name); err != nil {
+				return ctrl.Result{}, err
+			}
+		case "ClusterRoleBinding":
+			if err := r.deleteClusterRoleBinding(ctx, resource.name); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	}
+
+	pods := []struct {
+		namespace string
+		label     client.MatchingLabels
+	}{
+		{m.GetNamespace(), client.MatchingLabels{"flightctl.service": "secrets-job"}},
+		{m.GetNamespace(), client.MatchingLabels{"job-name": "flightctl-db-migration-1"}},
+	}
+
+	for _, pod := range pods {
+		// Delete Pod with label
+		err := r.deletePodWithLabel(ctx, pod.namespace, pod.label)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
-	// Delete PersistentVolumeClaim
-	err := r.deletePVC(ctx, m, "flightctl-kv-data-flightctl-kv-0", m.GetNamespace())
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	// Delete Pod with label
-	err = r.deletePodWithLabel(ctx, m, "flightctl.service=secrets-job", m.GetNamespace())
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
 	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) deleteClusterRole(ctx context.Context, name string) error {
+	clusterRole := &rbacv1.ClusterRole{}
+	if err := r.Client.Get(ctx, client.ObjectKey{Name: name}, clusterRole); err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	if err := r.Client.Delete(ctx, clusterRole); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *MultiClusterHubReconciler) deleteClusterRoleBinding(ctx context.Context, name string) error {
+	clusterRoleBinding := &rbacv1.ClusterRoleBinding{}
+	if err := r.Client.Get(ctx, client.ObjectKey{Name: name}, clusterRoleBinding); err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	if err := r.Client.Delete(ctx, clusterRoleBinding); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *MultiClusterHubReconciler) deleteSecret(ctx context.Context, m *operatorv1.MultiClusterHub, name, namespace string) error {
@@ -111,7 +181,7 @@ func (r *MultiClusterHubReconciler) deleteSecret(ctx context.Context, m *operato
 	return nil
 }
 
-func (r *MultiClusterHubReconciler) deletePVC(ctx context.Context, m *operatorv1.MultiClusterHub, name, namespace string) error {
+func (r *MultiClusterHubReconciler) deletePVC(ctx context.Context, name, namespace string) error {
 	pvc := &corev1.PersistentVolumeClaim{}
 	err := r.Client.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, pvc)
 	if err != nil {
@@ -131,10 +201,10 @@ func (r *MultiClusterHubReconciler) deletePVC(ctx context.Context, m *operatorv1
 	return nil
 }
 
-func (r *MultiClusterHubReconciler) deletePodWithLabel(ctx context.Context, m *operatorv1.MultiClusterHub, labelSelector, namespace string) error {
+func (r *MultiClusterHubReconciler) deletePodWithLabel(ctx context.Context, namespace string, labelSelector client.MatchingLabels) error {
 	podList := &corev1.PodList{}
 
-	err := r.Client.List(ctx, podList, client.InNamespace(namespace), client.MatchingLabels{"flightctl.service": "secrets-job"})
+	err := r.Client.List(ctx, podList, client.InNamespace(namespace), labelSelector)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil
