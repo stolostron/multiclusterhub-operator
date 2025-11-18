@@ -39,12 +39,6 @@ spec:
     value: '[{"type": "gomod", "path": "."}]'
   - name: path-context
     value: .
-  - name: send-slack-notification
-    value: true
-  - name: konflux-application-name
-    value: release-acm-211
-  - name: slack-member-id
-    value: UU77A0LC8 # @dbennett, The slack member id of the current component owner.
   pipelineRef:
     resolver: git
     params:
