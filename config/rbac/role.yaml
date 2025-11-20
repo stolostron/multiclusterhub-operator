@@ -439,6 +439,7 @@ rules:
   - addondeploymentconfigs
   - clustermanagementaddons
   - clustermanagementaddons/finalizers
+  - clustermanagementaddons/status
   - managedclusteraddons
   - managedclusteraddons/finalizers
   - managedclusteraddons/status
@@ -450,14 +451,6 @@ rules:
   - patch
   - update
   - watch
-- apiGroups:
-  - addon.open-cluster-management.io
-  resources:
-  - clustermanagementaddons/status
-  verbs:
-  - get
-  - patch
-  - update
 - apiGroups:
   - addon.open-cluster-management.io
   - agent.open-cluster-management.io
