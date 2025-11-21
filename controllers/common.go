@@ -361,11 +361,7 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 		mceannotations = map[string]string{}
 	}
 
-	if m.Enabled(operatorv1.EdgeManagerPreview) {
-		mceannotations[mceutils.AnnotationEdgeManagerEnabled] = "true"
-	} else {
-		mceannotations[mceutils.AnnotationEdgeManagerEnabled] = "false"
-	}
+
 
 	mce.SetAnnotations(mceannotations)
 
