@@ -284,6 +284,9 @@ func (mch *MultiClusterHub) Enabled(s string) bool {
 	if mch.Spec.Overrides == nil {
 		return false
 	}
+	if s == EdgeManagerPreview {
+          return false
+	}
 	for _, c := range mch.Spec.Overrides.Components {
 		if c.Name == s {
 			return c.Enabled
