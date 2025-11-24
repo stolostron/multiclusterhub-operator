@@ -32,14 +32,14 @@ jobs:
     steps:
       # Checkout the current branch in the matrix
       - name: Checkout target branch
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           token: ${{ secrets.HUB_OPERATOR_TOKEN }}
           ref: ${{ matrix.branch }}
 
       # Checkout the main branch to get the latest OWNERS file
       - name: Checkout main branch to get OWNRES file
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           token: ${{ secrets.HUB_OPERATOR_TOKEN }}
           ref: main
