@@ -15,7 +15,7 @@ jobs:
     name: Generate role permissions
     steps:
     - name: Checkout multiclusterhub
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Set up Go
       uses: actions/setup-go@v6
