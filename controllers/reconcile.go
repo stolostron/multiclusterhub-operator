@@ -399,11 +399,11 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 	}
 
-	result, err := r.ensureNoComponent(ctx, m, operatorv1.EdgeManagerPreview, cachespec, isSTSEnabled)
+	result, err = r.ensureNoComponent(ctx, multiClusterHub, operatorv1.EdgeManagerPreview, r.CacheSpec, stsEnabled)
 	if result != (ctrl.Result{}) || err != nil {
 		return result, err
 	}
-	result, err := r.deleteEdgeManagerResources(ctx, m)
+	result, err = r.deleteEdgeManagerResources(ctx, multiClusterHub)
 	if result != (ctrl.Result{}) || err != nil {
 		return result, err
 	}
