@@ -399,6 +399,15 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 	}
 
+	result, err = r.ensureNoComponent(ctx, multiClusterHub, operatorv1.EdgeManagerPreview, r.CacheSpec, stsEnabled)
+	if result != (ctrl.Result{}) || err != nil {
+		return result, err
+	}
+	result, err = r.deleteEdgeManagerResources(ctx, multiClusterHub)
+	if result != (ctrl.Result{}) || err != nil {
+		return result, err
+	}
+
 	// Cleanup unused resources once components up-to-date
 	if r.ComponentsAreRunning(multiClusterHub, ocpConsole, stsEnabled) {
 		result, err = r.ensureRemovalsGone(multiClusterHub)
