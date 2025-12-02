@@ -12,6 +12,7 @@ spec:
           metadata:
             labels:
               rbac.open-cluster-management.io/filter: vm-clusterroles
+              clusterview.open-cluster-management.io/discoverable: "true"
             name: kubevirt.io-acm-managed:admin
           rules:
             - apiGroups:
@@ -186,6 +187,7 @@ spec:
           metadata:
             labels:
               rbac.open-cluster-management.io/filter: vm-clusterroles
+              clusterview.open-cluster-management.io/discoverable: "true"
             name: kubevirt.io-acm-hub:admin
           rules:
             - apiGroups:
@@ -231,6 +233,7 @@ spec:
           metadata:
             labels:
               rbac.open-cluster-management.io/filter: vm-clusterroles
+              clusterview.open-cluster-management.io/discoverable: "true"
             name: kubevirt.io-acm-managed:view
           rules:
             - apiGroups:
@@ -368,6 +371,7 @@ spec:
           metadata:
             labels:
               rbac.open-cluster-management.io/filter: vm-clusterroles
+              clusterview.open-cluster-management.io/discoverable: "true"
             name: kubevirt.io-acm-hub:view
           rules:
             - apiGroups:
