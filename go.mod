@@ -1,8 +1,6 @@
 module github.com/stolostron/multiclusterhub-operator
 
-go 1.24.4
-
-toolchain go1.24.9
+go 1.24.9
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
@@ -71,7 +69,7 @@ require (
 	github.com/google/cel-go v0.26.1 // indirect
 	github.com/google/gnostic-models v0.7.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/pprof v0.0.0-20251114195745-4902fdda35c8 // indirect
+	github.com/google/pprof v0.0.0-20251208000136-3d256cb9ff16 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/h2non/filetype v1.1.3 // indirect
 	github.com/h2non/go-is-svg v0.0.0-20160927212452-35e8c4b0612c // indirect
