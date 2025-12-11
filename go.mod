@@ -1,6 +1,6 @@
 module github.com/stolostron/multiclusterhub-operator
 
-go 1.21
+go 1.24.0
 
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
@@ -88,7 +88,7 @@ require (
 	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8 // indirect
 	golang.org/x/net v0.33.0 // indirect
-	golang.org/x/oauth2 v0.19.0 // indirect
+	golang.org/x/oauth2 v0.34.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/term v0.27.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
