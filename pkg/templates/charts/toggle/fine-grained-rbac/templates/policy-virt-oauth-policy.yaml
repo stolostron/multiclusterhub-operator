@@ -39,7 +39,7 @@ spec:
                              (ne $key "type") }}` }}
                   - {{ `{{ $key }}` }}:
                       clientID: {{ `{{ $next.clientID }}` }}
-                  {{ `{{- end }} `}}
+                  {{ `{{- end }}` }}
                   {{ `{{- end }}` }}
                   {{ `{{- end }}` }}
         remediationAction: inform
