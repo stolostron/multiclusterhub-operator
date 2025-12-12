@@ -72,7 +72,6 @@ var MCHComponents = []string{
 	ClusterLifecycle,
 	ClusterPermission,
 	Console,
-	EdgeManagerPreview,
 	FineGrainedRbacPreview,
 	MTVIntegrationsPreview,
 	GRC,
@@ -211,7 +210,6 @@ It is expected to be used to get a list of components that are disabled by defau
 func GetDefaultDisabledComponents() ([]string, error) {
 	defaultDisabledComponents := []string{
 		ClusterBackup,
-		EdgeManagerPreview,
 		FineGrainedRbacPreview,
 		SiteConfig,
 		MTVIntegrationsPreview,
@@ -283,6 +281,9 @@ func (mch *MultiClusterHub) ComponentPresent(s string) bool {
 func (mch *MultiClusterHub) Enabled(s string) bool {
 	if mch.Spec.Overrides == nil {
 		return false
+	}
+	if s == EdgeManagerPreview {
+          return false
 	}
 	for _, c := range mch.Spec.Overrides.Components {
 		if c.Name == s {
