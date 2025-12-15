@@ -50,6 +50,8 @@ const (
 
 	trustBundleNameEnvVar  = "TRUSTED_CA_BUNDLE"
 	defaultTrustBundleName = "trusted-ca-bundle"
+
+	edgeManagerCleanupAnnotation = "installer.open-cluster-management.io/edge-manager-cleanup-complete"
 )
 
 var (
