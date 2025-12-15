@@ -71,7 +71,7 @@ jobs:
           }" $SLACK_WEBHOOK_URL
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           signoff: true
           branch: "resync-owner-file-${{ matrix.branch }}"
