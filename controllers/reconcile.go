@@ -399,6 +399,39 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 	}
 
+	// One-time cleanup of edge manager resources (removed in 2.15.1)
+	// Only runs on first reconcile after operator upgrade
+	if multiClusterHub.GetAnnotations()[edgeManagerCleanupAnnotation] != "true" {
+		r.Log.Info("Starting one-time edge manager cleanup")
+
+		result, err = r.ensureNoComponent(ctx, multiClusterHub, operatorv1.EdgeManagerPreview, r.CacheSpec, stsEnabled)
+		if result != (ctrl.Result{}) || err != nil {
+			return result, err
+		}
+		result, err = r.deleteEdgeManagerResources(ctx, multiClusterHub)
+		if result != (ctrl.Result{}) || err != nil {
+			return result, err
+		}
+
+		// Mark cleanup as complete so it never runs again
+		annotations := multiClusterHub.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
+		annotations[edgeManagerCleanupAnnotation] = "true"
+		multiClusterHub.SetAnnotations(annotations)
+
+		err = r.Client.Update(ctx, multiClusterHub)
+		if err != nil {
+			r.Log.Error(err, "Failed to mark edge manager cleanup as complete")
+			return ctrl.Result{}, err
+		}
+
+		r.Log.Info("Edge manager cleanup completed and marked - will not run again")
+		// Requeue to continue with normal reconciliation
+		return ctrl.Result{Requeue: true}, nil
+	}
+
 	// Cleanup unused resources once components up-to-date
 	if r.ComponentsAreRunning(multiClusterHub, ocpConsole, stsEnabled) {
 		result, err = r.ensureRemovalsGone(multiClusterHub)

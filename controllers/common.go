@@ -38,7 +38,6 @@ import (
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 
-	mceutils "github.com/stolostron/backplane-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
@@ -361,11 +360,7 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 		mceannotations = map[string]string{}
 	}
 
-	if m.Enabled(operatorv1.EdgeManagerPreview) {
-		mceannotations[mceutils.AnnotationEdgeManagerEnabled] = "true"
-	} else {
-		mceannotations[mceutils.AnnotationEdgeManagerEnabled] = "false"
-	}
+
 
 	mce.SetAnnotations(mceannotations)
 
