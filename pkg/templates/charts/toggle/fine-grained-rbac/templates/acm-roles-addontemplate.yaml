@@ -2,6 +2,8 @@ apiVersion: addon.open-cluster-management.io/v1alpha1
 kind: AddOnTemplate
 metadata:
   name: acm-roles
+  labels:
+    velero.io/exclude-from-backup: 'true'
 spec:
   addonName: acm-roles
   agentSpec:
