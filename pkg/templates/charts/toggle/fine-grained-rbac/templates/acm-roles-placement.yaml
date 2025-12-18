@@ -3,6 +3,8 @@ kind: Placement
 metadata:
   name: acm-roles-placement
   namespace: open-cluster-management-global-set
+  labels:
+    velero.io/exclude-from-backup: 'true'
 spec:
   predicates:
     - requiredClusterSelector:
