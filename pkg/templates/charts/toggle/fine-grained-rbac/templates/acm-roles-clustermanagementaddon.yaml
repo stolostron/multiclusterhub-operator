@@ -18,5 +18,5 @@ spec:
   installStrategy:
     type: Placements
     placements:
-    - name: acm-roles-placement
+    - name: global
       namespace: open-cluster-management-global-set
