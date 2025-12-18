@@ -1,8 +1,6 @@
 module github.com/stolostron/multiclusterhub-operator
 
-go 1.24.4
-
-toolchain go1.24.9
+go 1.25.0
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
@@ -17,7 +15,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.0
 	github.com/stolostron/backplane-operator v0.0.0-20251125195118-2183147327e4
-	github.com/stolostron/search-v2-operator v0.0.0-20250818191351-8d847101bcdd
+	github.com/stolostron/search-v2-operator v0.0.0-20251217202628-5f94e4846936
 	go.uber.org/zap v1.27.1
 	helm.sh/helm/v3 v3.18.4
 	k8s.io/api v0.33.2
@@ -28,7 +26,7 @@ require (
 	k8s.io/kube-aggregator v0.29.3
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
 	open-cluster-management.io/api v0.16.0
-	sigs.k8s.io/controller-runtime v0.19.4
+	sigs.k8s.io/controller-runtime v0.21.0
 	sigs.k8s.io/yaml v1.4.0
 )
 
@@ -68,6 +66,7 @@ require (
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/google/btree v1.1.3 // indirect
 	github.com/google/cel-go v0.26.1 // indirect
 	github.com/google/gnostic-models v0.7.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
