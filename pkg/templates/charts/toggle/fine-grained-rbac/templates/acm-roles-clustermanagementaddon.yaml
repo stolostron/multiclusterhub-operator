@@ -2,6 +2,8 @@ apiVersion: addon.open-cluster-management.io/v1alpha1
 kind: ClusterManagementAddOn
 metadata:
   name: acm-roles
+  labels:
+    velero.io/exclude-from-backup: 'true'
   annotations:
     addon.open-cluster-management.io/lifecycle: "addon-manager"
 spec:
@@ -16,5 +18,5 @@ spec:
   installStrategy:
     type: Placements
     placements:
-    - name: acm-roles-placement
+    - name: global
       namespace: open-cluster-management-global-set
