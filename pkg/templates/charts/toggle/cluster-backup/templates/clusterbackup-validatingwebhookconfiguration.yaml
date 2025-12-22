@@ -1,0 +1,37 @@
+# Copyright Contributors to the Open Cluster Management project
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: cluster-backup-validating-webhook-configuration
+  annotations:
+    # OpenShift Service CA will inject the CA bundle
+    service.beta.openshift.io/inject-cabundle: "true"
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: cluster-backup-chart-webhook-service
+      namespace: open-cluster-management-backup
+      path: /validate-cluster-open-cluster-management-io-v1beta1-restore
+      port: 443
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: vrestore.kb.io
+  namespaceSelector: {}
+  objectSelector: {}
+  rules:
+  - apiGroups:
+    - cluster.open-cluster-management.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - restores
+    scope: '*'
+  sideEffects: None
+  timeoutSeconds: 10
+

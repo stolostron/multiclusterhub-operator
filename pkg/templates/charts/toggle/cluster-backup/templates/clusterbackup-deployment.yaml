@@ -88,6 +88,10 @@ spec:
       - name: cluster-backup
         image: {{ .Values.global.imageOverrides.cluster_backup_controller }}
         imagePullPolicy: {{ .Values.global.pullPolicy }}
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
         resources:
           requests:
             memory: "256Mi"
@@ -99,6 +103,15 @@ spec:
             - ALL
           privileged: false
           readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: webhook-cert
+          readOnly: true
+      volumes:
+      - name: webhook-cert
+        secret:
+          defaultMode: 420
+          secretName: cluster-backup-webhook-cert
       {{- if .Values.global.pullSecret }}
       imagePullSecrets:
       - name: {{ .Values.global.pullSecret }}
