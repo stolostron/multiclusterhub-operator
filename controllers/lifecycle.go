@@ -67,11 +67,6 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 		}
 	}
 
-	_, err := r.deleteEdgeManagerResources(context.Background(), m)
-	if err != nil {
-		return err
-	}
-
 	reqLogger.Info("Successfully finalized multiClusterHub")
 	return nil
 }

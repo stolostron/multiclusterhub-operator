@@ -99,8 +99,7 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 			}
 
 			/*
-				In ACM 2.13 we are applying a PersistentVolumeClaim (PVC) and StatefulSet (STS) for Edge Manager.
-				When the PVC is created, we cannot patch the resource if there is a new storageClass available.
+				When a PersistentVolumeClaim (PVC) is created, we cannot patch the resource if there is a new storageClass available.
 				The user would need to delete the pre-existing PVC and allow MCH to recreate a new version with the
 				latest default storageClass version.
 			*/

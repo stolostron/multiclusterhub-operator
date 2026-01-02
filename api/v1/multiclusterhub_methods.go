@@ -23,8 +23,6 @@ const (
 	ClusterLifecycle          string = "cluster-lifecycle"
 	ClusterPermission         string = "cluster-permission"
 	Console                   string = "console"
-	EdgeManager               string = "edge-manager"
-	EdgeManagerPreview        string = "edge-manager-preview"
 	MTVIntegrationsPreview    string = "cnv-mtv-integrations-preview"
 	FineGrainedRbac           string = "fine-grained-rbac"
 	FineGrainedRbacPreview    string = "fine-grained-rbac-preview"
@@ -72,7 +70,6 @@ var MCHComponents = []string{
 	ClusterLifecycle,
 	ClusterPermission,
 	Console,
-	EdgeManagerPreview,
 	FineGrainedRbacPreview,
 	MTVIntegrationsPreview,
 	GRC,
@@ -211,7 +208,6 @@ It is expected to be used to get a list of components that are disabled by defau
 func GetDefaultDisabledComponents() ([]string, error) {
 	defaultDisabledComponents := []string{
 		ClusterBackup,
-		EdgeManagerPreview,
 		FineGrainedRbacPreview,
 		SiteConfig,
 		MTVIntegrationsPreview,

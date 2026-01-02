@@ -92,9 +92,6 @@ const (
 	// VolsyncChartLocation is the location of the Volsync Controller chart.
 	VolsyncChartLocation = "/charts/toggle/volsync-controller"
 
-	// EdgeManagerChartLocation is the location of the Edge Manager Controller chart.
-	EdgeManagerChartLocation = "/charts/toggle/flight-control"
-
 	// FineGrainedRbacChartLocation is the location of the Fine Grained RBAC chart.
 	FineGrainedRbacChartLocation = "/charts/toggle/fine-grained-rbac"
 )
@@ -342,10 +339,7 @@ func GetTestImages() []string {
 		"cluster_backup_controller", "console", "volsync_addon_controller", "multicluster_operators_application",
 		"multicloud_integrations", "mtv_integrations", "multicluster_operators_channel", "multicluster_operators_subscription",
 		"multicluster_observability_operator", "cluster_permission", "siteconfig_operator", "submariner_addon", "acm_cli",
-		"flightctl_worker", "flightctl_periodic", "flightctl_api", "flightctl_ui", "flightctl_ocp_ui",
-		"flightctl_cli_artifacts", "postgresql_12_c8s", "postgresql_12", "postgresql_16", "origin_cli", "redis_7_c9s",
-		"alertmanager", "flightctl_alertmanager_proxy", "flightctl_alert_exporter", "prometheus_alertmanager",
-		"flightctl_db_setup", "flightctl_userinfo_proxy", "multicluster_role_assignment",
+		"multicluster_role_assignment",
 	}
 }
 
@@ -469,13 +463,6 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole, isSTSEn
 	}
 	if m.Enabled(operatorsv1.ClusterPermission) {
 		nn = append(nn, types.NamespacedName{Name: "cluster-permission", Namespace: m.Namespace})
-	}
-	if m.Enabled(operatorsv1.EdgeManagerPreview) {
-		nn = append(nn, types.NamespacedName{Name: "flightctl-api", Namespace: m.Namespace})
-		nn = append(nn, types.NamespacedName{Name: "flightctl-db", Namespace: m.Namespace})
-		nn = append(nn, types.NamespacedName{Name: "flightctl-ui", Namespace: m.Namespace})
-		nn = append(nn, types.NamespacedName{Name: "flightctl-periodic", Namespace: m.Namespace})
-		nn = append(nn, types.NamespacedName{Name: "flightctl-worker", Namespace: m.Namespace})
 	}
 	return nn
 }

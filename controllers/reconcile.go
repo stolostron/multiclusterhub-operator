@@ -185,8 +185,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	/*
-		In ACM 2.13, we are required to get the default storage class name for the Edge Manager (aka Flight-Control)
-		component. To ensure that we can pass the default storage class, we will store it as an environment variable.
+		Get the default storage class name and store it as an environment variable for components that need it.
 	*/
 	if result, err = r.SetDefaultStorageClassName(ctx, multiClusterHub); err != nil {
 		r.Log.Error(err, "failed to set the default StorageClass name")

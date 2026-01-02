@@ -1,7 +1,0 @@
-apiVersion: v1
-data:
-  known_hosts: ''
-kind: ConfigMap
-metadata:
-  name: flightctl-known-hosts
-  namespace: '{{ .Values.global.namespace  }}'

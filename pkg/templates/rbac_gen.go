@@ -194,15 +194,6 @@ package main
 //+kubebuilder:rbac:groups=discovery.open-cluster-management.io,resources=discoveryconfigs;discoveredclusters,verbs=list;watch
 //+kubebuilder:rbac:groups=extensions.hive.openshift.io,resources=agentclusterinstalls,verbs=list;watch
 //+kubebuilder:rbac:groups=extensions.hive.openshift.io,resources=agentclusterinstalls;imageclusterinstalls,verbs=create;delete;get;patch;update
-//+kubebuilder:rbac:groups=flightctl.io,resources=*,verbs=*
-//+kubebuilder:rbac:groups=flightctl.io,resources=certificatesigningrequests,verbs=get;list;create
-//+kubebuilder:rbac:groups=flightctl.io,resources=devices/console;devices/lastseen,verbs=get
-//+kubebuilder:rbac:groups=flightctl.io,resources=devices/resume,verbs=update
-//+kubebuilder:rbac:groups=flightctl.io,resources=devices;fleets;resourcesyncs,verbs=get;list
-//+kubebuilder:rbac:groups=flightctl.io,resources=devices;fleets;resourcesyncs,verbs=get;list;create;delete;update;patch
-//+kubebuilder:rbac:groups=flightctl.io,resources=enrollmentrequests,verbs=get;list
-//+kubebuilder:rbac:groups=flightctl.io,resources=enrollmentrequests/approval,verbs=post
-//+kubebuilder:rbac:groups=flightctl.io,resources=repositories;fleets/templateversions,verbs=get;list
 //+kubebuilder:rbac:groups=forklift.konveyor.io,resources=providers,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=hive.openshift.io,resources=clusterclaims;clusterdeployments;clusterpools;clusterimagesets;clusterprovisions;clusterdeprovisions;machinepools,verbs=list;watch
 //+kubebuilder:rbac:groups=hive.openshift.io,resources=clusterdeployments,verbs=create;delete;get;list;patch;update;watch

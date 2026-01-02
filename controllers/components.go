@@ -50,9 +50,6 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(component string) string 
 	case operatorv1.Console:
 		return utils.ConsoleChartLocation
 
-	case operatorv1.EdgeManagerPreview:
-		return utils.EdgeManagerChartLocation
-
 	case operatorv1.FineGrainedRbacPreview:
 		return utils.FineGrainedRbacChartLocation
 
@@ -101,13 +98,6 @@ func (r *MultiClusterHubReconciler) ensureComponentOrNoComponent(ctx context.Con
 				return result, err
 			}
 			return r.ensureNoNamespace(m, BackupNamespaceUnstructured())
-		}
-		if component == operatorv1.EdgeManagerPreview {
-			result, err := r.ensureNoComponent(ctx, m, component, cachespec, isSTSEnabled)
-			if result != (ctrl.Result{}) || err != nil {
-				return result, err
-			}
-			return r.deleteEdgeManagerResources(ctx, m)
 		}
 
 		return r.ensureNoComponent(ctx, m, component, cachespec, isSTSEnabled)
