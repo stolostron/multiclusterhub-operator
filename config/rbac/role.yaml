@@ -905,6 +905,13 @@ rules:
   - '*'
 - apiGroups:
   - config.openshift.io
+  resources:
+  - oauths
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - config.openshift.io
   - console.openshift.io
   - project.openshift.io
   - tower.ansible.com
@@ -917,13 +924,6 @@ rules:
   - projects
   verbs:
   - get
-  - list
-  - watch
-- apiGroups:
-  - config.openshift.io/v1
-  resources:
-  - oauths
-  verbs:
   - list
   - watch
 - apiGroups:
