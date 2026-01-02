@@ -6,7 +6,7 @@ metadata:
   name: open-cluster-management:policy-hub-oauth
 rules:
 - apiGroups:
-  - config.openshift.io/v1
+  - config.openshift.io
   resources:
   - oauths
   verbs:

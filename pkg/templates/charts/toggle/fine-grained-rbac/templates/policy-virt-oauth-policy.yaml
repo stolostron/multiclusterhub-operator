@@ -23,7 +23,6 @@ spec:
         name: configpolicy-virt-oauth
       spec:
         object-templates-raw: |
-          {{ `{{ hub $oauthlist := (lookup "config.openshift.io/v1" "OAuth" "" "cluster") hub }}` }}
           - complianceType: musthave
             objectDefinition:
               apiVersion: config.openshift.io/v1
@@ -32,16 +31,16 @@ spec:
                 name: cluster
               spec:
                 identityProviders:
-                  {{ `{{- range $tol := $oauthlist.spec.identityProviders }}` }}
-                  {{ `{{- range $key, $next := $tol }}` }}
-                  {{ `{{- if and (ne $key "mappingMethod")
+                  {{ `{{hub- range $tol := (lookup "config.openshift.io/v1" "OAuth" "" "cluster").spec.identityProviders hub}}` }}
+                  {{ `{{hub- range $key, $next := $tol hub}}` }}
+                  {{ `{{hub- if and (ne $key "mappingMethod")
                              (ne $key "name")
-                             (ne $key "type") }}` }}
-                  - {{ `{{ $key }}` }}:
-                      clientID: {{ `{{ $next.clientID }}` }}
-                  {{ `{{- end }}` }}
-                  {{ `{{- end }}` }}
-                  {{ `{{- end }}` }}
+                             (ne $key "type") hub}}` }}
+                  - {{ `{{hub $key hub}}` }}:
+                      clientID: {{ `{{hub $next.clientID hub}}` }}
+                  {{ `{{hub- end hub}}` }}
+                  {{ `{{hub- end hub}}` }}
+                  {{ `{{hub- end hub}}` }}
         remediationAction: inform
         severity: medium
   remediationAction: inform
