@@ -70,6 +70,8 @@ func (r *MultiClusterHubReconciler) deleteEdgeManagerResources(ctx context.Conte
 		{"Secret", "flightctl-db-migration-secret", m.GetNamespace()},
 		{"PersistentVolumeClaim", "flightctl-kv-data-flightctl-kv-0", m.GetNamespace()},
 		{"PersistentVolumeClaim", "flightctl-alertmanager-data-flightctl-alertmanager-0", m.GetNamespace()},
+		{"Deployment", "flightctl-kv-0", m.GetNamespace()},
+		{"StatefulSet", "flightctl-kv-0", m.GetNamespace()},
 	}
 
 	for _, resource := range namespacedResources {
@@ -83,6 +85,18 @@ func (r *MultiClusterHubReconciler) deleteEdgeManagerResources(ctx context.Conte
 		case "PersistentVolumeClaim":
 			// Delete PersistentVolumeClaim
 			err := r.deletePVC(ctx, resource.name, resource.namespace)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		case "Deployment":
+			// Delete Deployment
+			err := r.deleteDeployment(ctx, resource.name, resource.namespace)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		case "StatefulSet":
+			// Delete StatefulSet
+			err := r.deleteStatefulSet(ctx, resource.name, resource.namespace)
 			if err != nil {
 				return ctrl.Result{}, err
 			}
@@ -220,6 +234,46 @@ func (r *MultiClusterHubReconciler) deletePodWithLabel(ctx context.Context, name
 			}
 			return err
 		}
+	}
+	return nil
+}
+
+func (r *MultiClusterHubReconciler) deleteDeployment(ctx context.Context, name, namespace string) error {
+	deployment := &appsv1.Deployment{}
+	err := r.Client.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, deployment)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	err = r.Client.Delete(ctx, deployment)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
+func (r *MultiClusterHubReconciler) deleteStatefulSet(ctx context.Context, name, namespace string) error {
+	statefulSet := &appsv1.StatefulSet{}
+	err := r.Client.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, statefulSet)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	err = r.Client.Delete(ctx, statefulSet)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return err
 	}
 	return nil
 }
