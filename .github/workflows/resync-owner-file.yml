@@ -25,7 +25,6 @@ jobs:
             'release-2.13',
             'release-2.12',
             'release-2.11',
-            'release-2.10'
         ]
 
     # Steps represent a sequence of tasks that will be executed as part of the job
