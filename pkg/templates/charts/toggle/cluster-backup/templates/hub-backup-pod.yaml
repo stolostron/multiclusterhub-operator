@@ -26,6 +26,43 @@ spec:
         apiVersion: policy.open-cluster-management.io/v1
         kind: ConfigurationPolicy
         metadata:
+          name: acm-cluster-backup-enabled
+        spec:
+          remediationAction: inform
+          severity: high
+          object-templates-raw: |
+            {{ `{{- range $mch := (lookup "operator.open-cluster-management.io/v1" "MultiClusterHub" "" "").items }}` }}
+              {{ `{{- $backupEnabled := false }}` }}
+              {{ `{{- range $cmp := $mch.spec.overrides.components }}` }}
+                {{ `{{- if and (eq $cmp.name "cluster-backup") (eq $cmp.enabled true) }}` }}
+                  {{ `{{- $backupEnabled = true }}` }}
+                {{ `{{- end }}` }}
+              {{ `{{- end }}` }}
+              {{ `{{- if not $backupEnabled }}` }}
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: operator.open-cluster-management.io/v1
+                kind: MultiClusterHub
+                metadata:
+                  name: {{ `{{ $mch.metadata.name }}` }}
+                  namespace: {{ `{{ $mch.metadata.namespace }}` }}
+                spec:
+                  overrides:
+                    components:
+                      - name: cluster-backup
+                        enabled: true
+              {{ `{{- end }}` }}
+            {{ `{{- end }}` }}
+          customMessage:
+            compliant: "The cluster-backup component is enabled in the MultiClusterHub resource."
+            noncompliant: |-
+              The cluster-backup component is not enabled in the MultiClusterHub resource.
+              To enable cluster-backup, update the MultiClusterHub resource and set the cluster-backup component to enabled: true
+              under spec.overrides.components.
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
           name: auto-import-backup-label
         spec:
           remediationAction: enforce
