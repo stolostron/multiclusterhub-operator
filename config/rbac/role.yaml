@@ -752,13 +752,6 @@ rules:
   - create
   - get
 - apiGroups:
-  - batch
-  resources:
-  - jobs
-  verbs:
-  - get
-  - list
-- apiGroups:
   - capi-provider.agent-install.openshift.io
   resources:
   - agentmachines
