@@ -5,7 +5,7 @@ metadata:
     app: flightctl-db-migration
     security.level: superuser-privilege
   name: flightctl-db-migration-admin-access
-  namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
+  namespace: '{{ .Values.global.namespace }}'
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -13,4 +13,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: flightctl-db-migration
-  namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
+  namespace: '{{ .Values.global.namespace }}'

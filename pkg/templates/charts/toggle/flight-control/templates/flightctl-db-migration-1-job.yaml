@@ -12,7 +12,7 @@ metadata:
     helm.sh/chart: flightctl-0.1.0
     release: release-name
   name: flightctl-db-migration-1
-  namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
+  namespace: '{{ .Values.global.namespace }}'
 spec:
   backoffLimit: 2147483647
   completions: 1
