@@ -32,8 +32,10 @@ jobs:
       fail-fast: false # If one jobs fail, we still want the other jobs to run.
       matrix:
         python-version: [3.9]
+        go-version: ["1.25"] # Default Go version for all branches
         branch: ['main', 'release-2.11', 'release-2.12', 'release-2.13', 'release-2.14', 'release-2.15']
         include:
+          # Override Go version for older release branches
           - branch: release-2.11
             go-version: "1.24"
           - branch: release-2.12
