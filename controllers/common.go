@@ -38,7 +38,6 @@ import (
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 
-	mceutils "github.com/stolostron/backplane-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
@@ -55,95 +54,6 @@ type CacheSpec struct {
 	ManifestVersion     string
 	TemplateOverrides   map[string]string
 	TemplateOverridesCM string
-}
-
-func (r *MultiClusterHubReconciler) deleteEdgeManagerResources(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
-	// List of resource names and types to delete
-	namespacedResources := []struct {
-		kind      string
-		name      string
-		namespace string
-	}{
-		{"Secret", "flightctl-db-secret", m.GetNamespace()},
-		{"Secret", "flightctl-kv-secret", m.GetNamespace()},
-		{"Secret", "flightctl-db-admin-secret", m.GetNamespace()},
-		{"Secret", "flightctl-db-app-secret", m.GetNamespace()},
-		{"Secret", "flightctl-db-migration-secret", m.GetNamespace()},
-		{"PersistentVolumeClaim", "flightctl-kv-data-flightctl-kv-0", m.GetNamespace()},
-		{"PersistentVolumeClaim", "flightctl-alertmanager-data-flightctl-alertmanager-0", m.GetNamespace()},
-	}
-
-	for _, resource := range namespacedResources {
-		switch resource.kind {
-		// Delete Secrets
-		case "Secret":
-			err := r.deleteSecret(ctx, m, resource.name, resource.namespace)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-		case "PersistentVolumeClaim":
-			// Delete PersistentVolumeClaim
-			err := r.deletePVC(ctx, resource.name, resource.namespace)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-		}
-	}
-
-	clusterScopedResources := []struct {
-		kind string
-		name string
-	}{
-		{"ClusterRole", "flightctl-client"},
-		{"ClusterRoleBinding", "flightctl-agent-registration"},
-		{"ClusterRoleBinding", "flightctl-client"},
-	}
-
-	for _, resource := range clusterScopedResources {
-		switch resource.kind {
-		case "ClusterRole":
-			if err := r.deleteClusterRole(ctx, resource.name); err != nil {
-				return ctrl.Result{}, err
-			}
-		case "ClusterRoleBinding":
-			if err := r.deleteClusterRoleBinding(ctx, resource.name); err != nil {
-				return ctrl.Result{}, err
-			}
-		}
-	}
-
-	pods := []struct {
-		namespace string
-		label     client.MatchingLabels
-	}{
-		{m.GetNamespace(), client.MatchingLabels{"flightctl.service": "secrets-job"}},
-		{m.GetNamespace(), client.MatchingLabels{"job-name": "flightctl-db-migration-1"}},
-	}
-
-	for _, pod := range pods {
-		// Delete Pod with label
-		err := r.deletePodWithLabel(ctx, pod.namespace, pod.label)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-	}
-
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterHubReconciler) deleteClusterRole(ctx context.Context, name string) error {
-	clusterRole := &rbacv1.ClusterRole{}
-	if err := r.Client.Get(ctx, client.ObjectKey{Name: name}, clusterRole); err != nil {
-		if errors.IsNotFound(err) {
-			return nil
-		}
-		return err
-	}
-
-	if err := r.Client.Delete(ctx, clusterRole); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (r *MultiClusterHubReconciler) deleteClusterRoleBinding(ctx context.Context, name string) error {
@@ -358,12 +268,6 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 	mceannotations := mce.GetAnnotations()
 	if mceannotations == nil {
 		mceannotations = map[string]string{}
-	}
-
-	if m.Enabled(operatorv1.EdgeManagerPreview) {
-		mceannotations[mceutils.AnnotationEdgeManagerEnabled] = "true"
-	} else {
-		mceannotations[mceutils.AnnotationEdgeManagerEnabled] = "false"
 	}
 
 	mce.SetAnnotations(mceannotations)
