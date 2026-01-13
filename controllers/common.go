@@ -70,8 +70,8 @@ func (r *MultiClusterHubReconciler) deleteEdgeManagerResources(ctx context.Conte
 		{"Secret", "flightctl-db-migration-secret", m.GetNamespace()},
 		{"PersistentVolumeClaim", "flightctl-kv-data-flightctl-kv-0", m.GetNamespace()},
 		{"PersistentVolumeClaim", "flightctl-alertmanager-data-flightctl-alertmanager-0", m.GetNamespace()},
-		{"Deployment", "flightctl-kv-0", m.GetNamespace()},
-		{"StatefulSet", "flightctl-kv-0", m.GetNamespace()},
+		{"Deployment", "flightctl-kv", m.GetNamespace()},
+		{"StatefulSet", "flightctl-kv", m.GetNamespace()},
 	}
 
 	for _, resource := range namespacedResources {
