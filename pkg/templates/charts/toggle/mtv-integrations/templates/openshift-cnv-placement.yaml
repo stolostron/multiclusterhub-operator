@@ -9,3 +9,7 @@ spec:
       labelSelector:
         matchLabels:
           acm/cnv-operator-install: 'true'
+  - requiredClusterSelector:
+      labelSelector:
+        matchLabels:
+          local-cluster: 'true'
