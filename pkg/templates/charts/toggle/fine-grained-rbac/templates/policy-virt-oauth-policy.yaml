@@ -30,17 +30,7 @@ spec:
               metadata:
                 name: cluster
               spec:
-                identityProviders:
-                  {{ `{{hub- range $tol := (lookup "config.openshift.io/v1" "OAuth" "" "cluster").spec.identityProviders hub}}` }}
-                  {{ `{{hub- range $key, $next := $tol hub}}` }}
-                  {{ `{{hub- if and (ne $key "mappingMethod")
-                             (ne $key "name")
-                             (ne $key "type") hub}}` }}
-                  - {{ `{{hub $key hub}}` }}:
-                      clientID: {{ `{{hub $next.clientID hub}}` }}
-                  {{ `{{hub- end hub}}` }}
-                  {{ `{{hub- end hub}}` }}
-                  {{ `{{hub- end hub}}` }}
+                identityProviders: {{ `{{hub (lookup "config.openshift.io/v1" "OAuth" "" "cluster").spec.identityProviders | toJson hub}}` }}
         remediationAction: inform
         severity: medium
   remediationAction: inform
