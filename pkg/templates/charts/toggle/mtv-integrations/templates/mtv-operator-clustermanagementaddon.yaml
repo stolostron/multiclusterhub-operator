@@ -8,13 +8,12 @@ spec:
   addOnMeta:
     description: MTV Operator
     displayName: MTV Operator
+  defaultConfigs:
+  - group: addon.open-cluster-management.io
+    name: mtv-operator
+    resource: addontemplates
   installStrategy:
     placements:
     - name: openshift-mtv
       namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
     type: Placements
-  supportedConfigs:
-  - defaultConfig:
-      name: mtv-operator
-    group: addon.open-cluster-management.io
-    resource: addontemplates
