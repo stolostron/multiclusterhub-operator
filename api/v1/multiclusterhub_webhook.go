@@ -37,7 +37,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -94,19 +93,20 @@ func (r *MultiClusterHub) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).For(r).Complete()
 }
 
-var _ webhook.Defaulter = &MultiClusterHub{}
+var _ admission.CustomDefaulter = &MultiClusterHub{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *MultiClusterHub) Default() {
+// Default implements admission.CustomDefaulter so a webhook will be registered for the type
+func (r *MultiClusterHub) Default(ctx context.Context, obj runtime.Object) error {
 	mchlog.Info("default", "name", r.Name)
+	return nil
 }
 
 //+kubebuilder:webhook:name=multiclusterhub-operator-validating-webhook,path=/validate-operator-open-cluster-management-io-v1-multiclusterhub,mutating=false,failurePolicy=fail,sideEffects=None,groups=operator.open-cluster-management.io,resources=multiclusterhubs,verbs=create;update;delete,versions=v1,name=multiclusterhub.validating-webhook.open-cluster-management.io,admissionReviewVersions={v1,v1beta1}
 
-var _ webhook.Validator = &MultiClusterHub{}
+var _ admission.CustomValidator = &MultiClusterHub{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *MultiClusterHub) ValidateCreate() (admission.Warnings, error) {
+// ValidateCreate implements admission.CustomValidator so a webhook will be registered for the type
+func (r *MultiClusterHub) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	mchlog.Info("validate create", "Name", r.Name, "Namespace", r.Namespace)
 
 	multiClusterHubList := &MultiClusterHubList{}
@@ -161,11 +161,11 @@ func validateLocalClusterNameLength(name string) (err error) {
 	return nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
+// ValidateUpdate implements admission.CustomValidator so a webhook will be registered for the type
+func (r *MultiClusterHub) ValidateUpdate(ctx context.Context, oldObj runtime.Object, newObj runtime.Object) (admission.Warnings, error) {
 	mchlog.Info("validate update", "Name", r.Name, "Namespace", r.Namespace)
 
-	oldMCH := old.(*MultiClusterHub)
+	oldMCH := oldObj.(*MultiClusterHub)
 
 	if oldMCH.Spec.SeparateCertificateManagement != r.Spec.SeparateCertificateManagement {
 		return nil, fmt.Errorf("updating SeparateCertificateManagement is forbidden")
@@ -223,8 +223,8 @@ func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) (admission.Warnings
 
 var cfg *rest.Config
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *MultiClusterHub) ValidateDelete() (admission.Warnings, error) {
+// ValidateDelete implements admission.CustomValidator so a webhook will be registered for the type
+func (r *MultiClusterHub) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	mchlog.Info("validate delete", "Name", r.Name, "Namespace", r.Namespace)
 
 	if val, ok := os.LookupEnv("ENV_TEST"); !ok || val == "false" {
