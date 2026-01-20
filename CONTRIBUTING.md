@@ -7,6 +7,7 @@
    - [Contributing A Patch](#contributing-a-patch)
    - [Issues and Pull Request Management](#issues-and-pull-request-management)
    - [Pull Request Etiquette](#pull-request-etiquette)
+   - [Onboarding New Components](#onboarding-new-components)
    - [Pre-check before submitting a PR](#pre-check-before-submitting-a-pr)
    - [Build images](#build-images)
    - [Development and Testing](#development-and-testing)
@@ -58,6 +59,33 @@ link the associated issue in the PR. To have a pull request merged, it will requ
 [repository owner](OWNERS).
 
 We request that all PRs which contribute new code into the repo also contain their associated unit and function tests.
+
+## Onboarding New Components
+
+If you want to onboard a new OLM or Helm component to the multiclusterhub operator, please follow the [ONBOARDING.md](ONBOARDING.md) guide.
+
+**Quick start:**
+```bash
+# 1. Install prerequisites
+pip3 install -r hack/bundle-automation/requirements.txt
+
+# 2. Create your onboard-request.yaml
+# See ONBOARDING.md for examples
+
+# 3. Generate charts locally (for OLM)
+make regenerate-charts-from-bundles CONFIG=onboard-request.yaml
+
+# OR for Helm
+make regenerate-charts CONFIG=onboard-request.yaml
+
+# 4. Review generated files and submit PR
+git add .
+git commit -sm "Add <component> to multiclusterhub
+
+Signed-off-by: Your Name <your@email.com>"
+```
+
+See [ONBOARDING.md](ONBOARDING.md) for complete instructions and examples.
 
 ## Pre-check before submitting a PR
 
