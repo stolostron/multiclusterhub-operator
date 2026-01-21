@@ -134,11 +134,6 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 	createdMCH.SetAnnotations(annotations)
 	Expect(k8sClient.Update(ctx, createdMCH)).Should(Succeed())
 
-	By("First Enabling Tech Preview Components")
-	createdMCH.Enable(operatorv1.FineGrainedRbacPreview)
-	createdMCH.Enable(operatorv1.MTVIntegrationsPreview)
-	Expect(k8sClient.Update(ctx, createdMCH)).Should(Succeed())
-
 	By("Ensuring Defaults are set")
 	Eventually(func() operatorv1.MultiClusterHub {
 		err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
@@ -785,6 +780,38 @@ var _ = Describe("MultiClusterHub controller", func() {
 				_ = k8sClient.Update(ctx, createdMCH)
 
 				return utils.IsPaused(createdMCH)
+			}, timeout, interval).Should(BeTrue())
+		})
+
+		It("Should migrate preview features to GA features", func() {
+			os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
+			defer os.Unsetenv("OPERATOR_PACKAGE")
+
+			By("Applying prereqs")
+			ctx := context.Background()
+			ApplyPrereqs(k8sClient)
+
+			By("Creating MCH with preview features enabled")
+			mch := resources.EmptyMCH()
+			mch.Spec.DisableHubSelfManagement = true
+			mch.Enable(operatorv1.MTVIntegrationsPreview)
+			mch.Enable(operatorv1.FineGrainedRbacPreview)
+
+			Expect(k8sClient.Create(ctx, &mch)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, mchDeployment)).Should(Succeed())
+
+			By("Ensuring preview features are migrated to GA features")
+			createdMCH := &operatorv1.MultiClusterHub{}
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
+				if err != nil {
+					return false
+				}
+				// Check that GA features are enabled and preview features are removed
+				return createdMCH.Enabled(operatorv1.MTVIntegrations) &&
+					!createdMCH.Enabled(operatorv1.MTVIntegrationsPreview) &&
+					createdMCH.Enabled(operatorv1.FineGrainedRbac) &&
+					!createdMCH.Enabled(operatorv1.FineGrainedRbacPreview)
 			}, timeout, interval).Should(BeTrue())
 		})
 	})

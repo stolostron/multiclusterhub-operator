@@ -745,6 +745,14 @@ rules:
   - update
   - watch
 - apiGroups:
+  - authentication.open-cluster-management.io
+  resources:
+  - managedserviceaccounts/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - authorization.k8s.io
   resources:
   - subjectaccessreviews
@@ -804,6 +812,7 @@ rules:
   - cluster.open-cluster-management.io
   resources:
   - clusterclaims
+  - managedclusters/status
   verbs:
   - get
 - apiGroups:
