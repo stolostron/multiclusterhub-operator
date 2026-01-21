@@ -85,6 +85,18 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 		updateNecessary = true
 	}
 
+	if m.Enabled(operatorv1.MTVIntegrationsPreview) {
+		m.Enable(operatorv1.MTVIntegrations)
+		m.Prune(operatorv1.MTVIntegrationsPreview)
+		updateNecessary = true
+	}
+
+	if m.Enabled(operatorv1.FineGrainedRbacPreview) {
+		m.Enable(operatorv1.FineGrainedRbac)
+		m.Prune(operatorv1.FineGrainedRbacPreview)
+		updateNecessary = true
+	}
+
 	for _, c := range m.Spec.Overrides.Components {
 		if !operatorv1.ValidComponent(c, operatorv1.MCHComponents) {
 			if m.Prune(c.Name) {
