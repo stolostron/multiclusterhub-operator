@@ -134,6 +134,11 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 	createdMCH.SetAnnotations(annotations)
 	Expect(k8sClient.Update(ctx, createdMCH)).Should(Succeed())
 
+	By("First Enabling Tech Preview Components")
+	createdMCH.Enable(operatorv1.FineGrainedRbacPreview)
+	createdMCH.Enable(operatorv1.MTVIntegrationsPreview)
+	Expect(k8sClient.Update(ctx, createdMCH)).Should(Succeed())
+
 	By("Ensuring Defaults are set")
 	Eventually(func() operatorv1.MultiClusterHub {
 		err := k8sClient.Get(ctx, resources.MCHLookupKey, createdMCH)
