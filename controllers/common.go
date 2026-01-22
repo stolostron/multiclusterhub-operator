@@ -834,7 +834,7 @@ func (r *MultiClusterHubReconciler) ensureSearchCR(m *operatorv1.MultiClusterHub
 			Labels:    map[string]string{"cluster.open-cluster-management.io/backup": ""},
 			Annotations: map[string]string{
 				utils.AnnotationFineGrainedRbac: strconv.FormatBool(
-					m.Enabled(operatorv1.FineGrainedRbacPreview)),
+					m.Enabled(operatorv1.FineGrainedRbac)),
 			},
 		},
 		Spec: searchv2v1alpha1.SearchSpec{
