@@ -37,7 +37,8 @@ LABEL org.label-schema.vendor="Red Hat" \
       io.k8s.description="Installer operator for Red Hat Advanced Cluster Management" \
       com.redhat.component="multiclusterhub-operator-container" \
       cpe="cpe:/a:redhat:acm:2.14::el9" \
-      io.openshift.tags="data,images"
+      io.openshift.tags="data,images" \
+      cpe="cpe:/a:redhat:acm:2.14::el9"
 
 WORKDIR /
 COPY --from=builder /workspace/multiclusterhub-operator /usr/local/bin/multiclusterhub-operator
