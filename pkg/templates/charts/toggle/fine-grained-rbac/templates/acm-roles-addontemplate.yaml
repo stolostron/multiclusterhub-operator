@@ -15,7 +15,7 @@ spec:
             labels:
               rbac.open-cluster-management.io/filter: vm-clusterroles
               clusterview.open-cluster-management.io/discoverable: "true"
-            name: kubevirt.io-acm-managed:admin
+            name: acm-vm-extended:view
           rules:
             - apiGroups:
               - k8s.cni.cncf.io
@@ -24,227 +24,7 @@ spec:
               verbs:
               - get
               - list
-            - apiGroups:
-              - ""
-              resources:
-              - secrets
-              verbs:
-              - list
-              - delete
-              - create
-            - apiGroups:
-              - ""
-              resources:
-              - configmaps
-              - events
-              - namespaces
-              - nodes
-              - nodes/proxy
-              - nodes/exec
-              - persistentvolumeclaims
-              - persistentvolumes
-              - pods
-              - pods/exec
-              - pods/log
-              - pods/metrics
-              - services
-              - serviceaccounts
-              verbs:
-              - get
-              - list
               - watch
-              - delete
-              - create
-              - update
-              - patch
-            - apiGroups:
-              - events.k8s.io
-              resources:
-              - events
-              verbs:
-              - get
-              - list
-              - watch
-            - apiGroups:
-              - cdi.kubevirt.io
-              resources:
-              - datavolumes
-              - datasources
-              - dataimportcrons
-              verbs:
-              - get
-              - list
-              - watch
-              - delete
-              - create
-              - update
-              - patch
-            - apiGroups:
-              - migrations.kubevirt.io
-              resources:
-              - migrationpolicies
-              verbs:
-              - get
-              - list
-              - watch
-              - delete
-              - create
-              - update
-              - patch
-            - apiGroups:
-              - metrics.k8s.io
-              resources:
-              - pods
-              verbs:
-              - get
-              - list
-              - watch
-            - verbs:
-                - get
-                - watch
-              apiGroups:
-                - monitoring.coreos.com
-              resources:
-                - prometheuses/api
-              resourceNames:
-                - k8s
-            - apiGroups:
-              - hco.kubevirt.io
-              resources:
-              - hyperconvergeds
-              verbs:
-              - get
-              - list
-              - watch
-              - create
-              - update
-              - patch
-              - delete
-            - apiGroups:
-              - batch
-              resources:
-              - jobs
-              verbs:
-              - get
-              - list
-              - watch
-              - delete
-              - create
-              - update
-              - patch
-            - apiGroups:
-              - snapshot.storage.k8s.io
-              resources:
-              - "*"
-              verbs:
-              - get
-              - list
-              - watch
-              - delete
-              - create
-              - update
-              - patch
-            - apiGroups:
-              - project.openshift.io
-              resources:
-              - projects
-              verbs:
-              - get
-              - list
-              - watch
-              - delete
-              - create
-              - update
-              - patch
-            - apiGroups:
-              - template.openshift.io
-              resources:
-              - templates
-              verbs:
-              - get
-              - list
-              - watch
-              - delete
-              - create
-              - update
-              - patch
-            - apiGroups:
-              - config.openshift.io
-              verbs:
-                - get
-                - watch
-                - list
-              resources:
-                - clusterversions
-            - apiGroups:
-                - operators.coreos.com
-              resources:
-                - clusterserviceversions
-              verbs:
-                - get
-                - list
-                - watch
-        - apiVersion: rbac.authorization.k8s.io/v1
-          kind: ClusterRole
-          metadata:
-            labels:
-              rbac.open-cluster-management.io/filter: vm-clusterroles
-              clusterview.open-cluster-management.io/discoverable: "true"
-            name: kubevirt.io-acm-hub:admin
-          rules:
-            - apiGroups:
-              - clusterview.open-cluster-management.io
-              resources:
-              - managedclusters
-              verbs:
-              - list
-              - get
-              - watch
-            - apiGroups:
-              - cluster.open-cluster-management.io
-              resources:
-              - managedclusters
-              verbs:
-              - get
-              - list
-              - watch
-            - apiGroups:
-              - clusterview.open-cluster-management.io
-              resources:
-              - kubevirtprojects
-              verbs:
-              - list
-            - apiGroups:
-              - forklift.konveyor.io
-              resources:
-              - migrations
-              - providers
-              - plans
-              - networkmaps
-              - storagemaps
-              verbs:
-              - get
-              - list
-              - watch
-              - delete
-              - create
-              - update
-              - patch
-        - apiVersion: rbac.authorization.k8s.io/v1
-          kind: ClusterRole
-          metadata:
-            labels:
-              rbac.open-cluster-management.io/filter: vm-clusterroles
-              clusterview.open-cluster-management.io/discoverable: "true"
-            name: kubevirt.io-acm-managed:view
-          rules:
-            - apiGroups:
-              - k8s.cni.cncf.io
-              resources:
-              - network-attachment-definitions
-              verbs:
-              - get
-              - list
             - apiGroups:
               - ""
               resources:
@@ -264,12 +44,6 @@ spec:
               - list
               - watch
             - apiGroups:
-              - ""
-              resources:
-              - secrets
-              verbs:
-              - list
-            - apiGroups:
               - events.k8s.io
               resources:
               - events
@@ -288,42 +62,26 @@ spec:
               - list
               - watch
             - apiGroups:
-              - migrations.kubevirt.io
-              resources:
-              - migrationpolicies
-              verbs:
-              - get
-              - list
-              - watch
-            - apiGroups:
               - metrics.k8s.io
               resources:
               - pods
-              verbs:
-              - get
-              - list
-              - watch
-            - apiGroups:
-              - hco.kubevirt.io
-              resources:
-              - hyperconvergeds
               verbs:
               - get
               - list
               - watch
             - apiGroups:
               - monitoring.coreos.com
+              resources:
+              - prometheuses/api
+              resourceNames:
+              - k8s
               verbs:
               - get
               - watch
-              resources:
-                - prometheuses/api
-              resourceNames:
-                - k8s
             - apiGroups:
-              - batch
+              - hco.kubevirt.io
               resources:
-              - jobs
+              - hyperconvergeds
               verbs:
               - get
               - list
@@ -331,7 +89,9 @@ spec:
             - apiGroups:
               - snapshot.storage.k8s.io
               resources:
-              - "*"
+              - volumesnapshotclasses
+              - volumesnapshotcontents
+              - volumesnapshots
               verbs:
               - get
               - list
@@ -352,37 +112,147 @@ spec:
               - get
               - list
               - watch
-            - apiGroups:
-              - config.openshift.io
-              verbs:
-                - get
-                - watch
-                - list
-              resources:
-                - clusterversions
-            - apiGroups:
-                - operators.coreos.com
-              resources:
-                - clusterserviceversions
-              verbs:
-                - get
-                - list
-                - watch
         - apiVersion: rbac.authorization.k8s.io/v1
           kind: ClusterRole
           metadata:
             labels:
               rbac.open-cluster-management.io/filter: vm-clusterroles
               clusterview.open-cluster-management.io/discoverable: "true"
-            name: kubevirt.io-acm-hub:view
+            name: acm-vm-extended:admin
+          rules:
+            - apiGroups:
+              - k8s.cni.cncf.io
+              resources:
+              - network-attachment-definitions
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - ""
+              resources:
+              - configmaps
+              - persistentvolumeclaims
+              - pods
+              - services
+              verbs:
+              - get
+              - list
+              - watch
+              - create
+              - update
+              - patch
+              - delete
+            - apiGroups:
+              - ""
+              resources:
+              - events
+              - namespaces
+              - nodes
+              - persistentvolumes
+              - pods/log
+              - pods/metrics
+              - serviceaccounts
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - events.k8s.io
+              resources:
+              - events
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - cdi.kubevirt.io
+              resources:
+              - datavolumes
+              - datasources
+              - dataimportcrons
+              verbs:
+              - get
+              - list
+              - watch
+              - create
+              - update
+              - patch
+              - delete
+            - apiGroups:
+              - metrics.k8s.io
+              resources:
+              - pods
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - monitoring.coreos.com
+              resources:
+              - prometheuses/api
+              resourceNames:
+              - k8s
+              verbs:
+              - get
+              - watch
+            - apiGroups:
+              - hco.kubevirt.io
+              resources:
+              - hyperconvergeds
+              verbs:
+              - get
+              - list
+              - watch
+              - create
+              - update
+              - patch
+              - delete
+            - apiGroups:
+              - snapshot.storage.k8s.io
+              resources:
+              - volumesnapshotclasses
+              - volumesnapshotcontents
+              - volumesnapshots
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - project.openshift.io
+              resources:
+              - projects
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - template.openshift.io
+              resources:
+              - templates
+              verbs:
+              - get
+              - list
+              - watch
+              - create
+              - update
+              - patch
+              - delete
+        - apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRole
+          metadata:
+            labels:
+              rbac.open-cluster-management.io/filter: vm-clusterroles
+              clusterview.open-cluster-management.io/discoverable: "true"
+            name: acm-vm-fleet:view
           rules:
             - apiGroups:
               - clusterview.open-cluster-management.io
               resources:
               - managedclusters
               verbs:
-              - list
               - get
+              - list
               - watch
             - apiGroups:
               - cluster.open-cluster-management.io
@@ -399,6 +269,20 @@ spec:
               verbs:
               - list
             - apiGroups:
+              - clusterview.open-cluster-management.io
+              resources:
+              - userpermissions
+              verbs:
+              - list
+        - apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRole
+          metadata:
+            labels:
+              rbac.open-cluster-management.io/filter: vm-clusterroles
+              clusterview.open-cluster-management.io/discoverable: "true"
+            name: acm-vm-fleet:admin
+          rules:
+            - apiGroups:
               - forklift.konveyor.io
               resources:
               - migrations
@@ -406,6 +290,73 @@ spec:
               - plans
               - networkmaps
               - storagemaps
+              verbs:
+              - get
+              - list
+              - watch
+              - create
+              - update
+              - patch
+              - delete
+            - apiGroups:
+              - clusterview.open-cluster-management.io
+              resources:
+              - managedclusters
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - cluster.open-cluster-management.io
+              resources:
+              - managedclusters
+              verbs:
+              - get
+              - list
+              - watch
+              - update
+              - patch
+            - apiGroups:
+              - clusterview.open-cluster-management.io
+              resources:
+              - kubevirtprojects
+              verbs:
+              - list
+            - apiGroups:
+              - clusterview.open-cluster-management.io
+              resources:
+              - userpermissions
+              verbs:
+              - list
+        - apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRole
+          metadata:
+            labels:
+              rbac.open-cluster-management.io/filter: vm-clusterroles
+              clusterview.open-cluster-management.io/discoverable: "true"
+            name: acm-vm-cluster-migration:view
+          rules:
+            - apiGroups:
+              - config.openshift.io
+              resources:
+              - clusterversions
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - operators.coreos.com
+              resources:
+              - subscriptions
+              - clusterserviceversions
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - ""
+              resources:
+              - nodes
               verbs:
               - get
               - list
