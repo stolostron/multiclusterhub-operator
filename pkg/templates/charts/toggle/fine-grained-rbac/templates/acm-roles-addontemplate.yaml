@@ -251,8 +251,8 @@ spec:
               resources:
               - managedclusters
               verbs:
-              - list
               - get
+              - list
               - watch
             - apiGroups:
               - cluster.open-cluster-management.io
