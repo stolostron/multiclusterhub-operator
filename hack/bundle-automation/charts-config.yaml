@@ -33,4 +33,3 @@ components:
         updateChartVersion: true
         escape-template-variables:
           - "hub"
-          - "CLUSTER_NAME"
