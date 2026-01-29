@@ -3,13 +3,13 @@ kind: ClusterRoleBinding
 metadata:
   labels:
     velero.io/exclude-from-backup: 'true'
-  name: policy-hub-oauth-clusterrolebinding
+  name: '{{ .Values.org }}:{{ .Chart.Name }}:fine-grained-rbac'
   namespace: open-cluster-management-global-set
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: open-cluster-management:policy-hub-oauth
+  name: '{{ .Values.org }}:{{ .Chart.Name }}:fine-grained-rbac'
 subjects:
 - kind: ServiceAccount
   name: policy-hub-oauth
-  namespace: open-cluster-management-global-set
+  namespace: '{{ .Values.global.namespace }}'

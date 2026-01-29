@@ -3,7 +3,7 @@ kind: ClusterRole
 metadata:
   labels:
     velero.io/exclude-from-backup: 'true'
-  name: open-cluster-management:policy-hub-oauth
+  name: '{{ .Values.org }}:{{ .Chart.Name }}:fine-grained-rbac'
 rules:
 - apiGroups:
   - config.openshift.io

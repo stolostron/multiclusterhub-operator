@@ -1,3 +1,5 @@
+
+# Source: fine-grained-rbac/templates/binding-policy-virt-rbac-placementbinding.yaml
 apiVersion: policy.open-cluster-management.io/v1
 kind: PlacementBinding
 metadata:

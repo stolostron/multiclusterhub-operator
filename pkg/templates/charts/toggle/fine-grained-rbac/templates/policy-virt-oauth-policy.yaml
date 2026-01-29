@@ -1,3 +1,5 @@
+
+# Source: fine-grained-rbac/templates/policy-virt-oauth-policy.yaml
 apiVersion: policy.open-cluster-management.io/v1
 kind: Policy
 metadata:
@@ -30,7 +32,7 @@ spec:
               metadata:
                 name: cluster
               spec:
-                identityProviders: {{ `{{hub (lookup "config.openshift.io/v1" "OAuth" "" "cluster").spec.identityProviders | toJson hub}}` }}
+                identityProviders: {{hub (lookup "config.openshift.io/v1" "OAuth" "" "cluster").spec.identityProviders | toJson hub}}
         remediationAction: inform
         severity: medium
   remediationAction: inform
