@@ -32,7 +32,7 @@ spec:
               metadata:
                 name: cluster
               spec:
-                identityProviders: {{hub (lookup "config.openshift.io/v1" "OAuth" "" "cluster").spec.identityProviders | toJson hub}}
+                identityProviders: {{ `{{hub (lookup "config.openshift.io/v1" "OAuth" "" "cluster").spec.identityProviders | toJson hub}}` }}
         remediationAction: inform
         severity: medium
   remediationAction: inform
