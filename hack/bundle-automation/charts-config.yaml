@@ -34,3 +34,11 @@ components:
         updateChartVersion: true
         escape-template-variables: # The full variable *inside* the "{{" "}}" needs to be in here to escape properly
           - 'hub (lookup "config.openshift.io/v1" "OAuth" "" "cluster").spec.identityProviders | toJson hub'
+          - '- $admin := lookup "rbac.authorization.k8s.io/v1" "ClusterRole" "" "kubevirt.io:admin" -'
+          - '- if $admin '
+          - '- end '
+          - '- $edit := lookup "rbac.authorization.k8s.io/v1" "ClusterRole" "" "kubevirt.io:edit" -'
+          - '- if $edit '
+          - '- $view := lookup "rbac.authorization.k8s.io/v1" "ClusterRole" "" "kubevirt.io:view" -'
+          - '- if $view '
+          - ''

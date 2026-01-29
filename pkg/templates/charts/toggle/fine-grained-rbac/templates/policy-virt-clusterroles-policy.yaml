@@ -23,8 +23,8 @@ spec:
         name: policy-virt-clusterroles
       spec:
         object-templates-raw: |
-          {{- $admin := lookup "rbac.authorization.k8s.io/v1" "ClusterRole" "" "kubevirt.io:admin" -}}
-          {{- if $admin }}
+          {{ `{{- $admin := lookup "rbac.authorization.k8s.io/v1" "ClusterRole" "" "kubevirt.io:admin" -}}` }}
+          {{ `{{- if $admin }}` }}
           - complianceType: musthave
             objectDefinition:
               apiVersion: rbac.authorization.k8s.io/v1
@@ -34,9 +34,9 @@ spec:
                 labels:
                   rbac.open-cluster-management.io/filter: vm-clusterroles
                   clusterview.open-cluster-management.io/discoverable: "true"
-          {{- end }}
-          {{- $edit := lookup "rbac.authorization.k8s.io/v1" "ClusterRole" "" "kubevirt.io:edit" -}}
-          {{- if $edit }}
+          {{ `{{- end }}` }}
+          {{ `{{- $edit := lookup "rbac.authorization.k8s.io/v1" "ClusterRole" "" "kubevirt.io:edit" -}}` }}
+          {{ `{{- if $edit }}` }}
           - complianceType: musthave
             objectDefinition:
               apiVersion: rbac.authorization.k8s.io/v1
@@ -46,9 +46,9 @@ spec:
                 labels:
                   rbac.open-cluster-management.io/filter: vm-clusterroles
                   clusterview.open-cluster-management.io/discoverable: "true"
-          {{- end }}
-          {{- $view := lookup "rbac.authorization.k8s.io/v1" "ClusterRole" "" "kubevirt.io:view" -}}
-          {{- if $view }}
+          {{ `{{- end }}` }}
+          {{ `{{- $view := lookup "rbac.authorization.k8s.io/v1" "ClusterRole" "" "kubevirt.io:view" -}}` }}
+          {{ `{{- if $view }}` }}
           - complianceType: musthave
             objectDefinition:
               apiVersion: rbac.authorization.k8s.io/v1
@@ -58,7 +58,7 @@ spec:
                 labels:
                   rbac.open-cluster-management.io/filter: vm-clusterroles
                   clusterview.open-cluster-management.io/discoverable: "true"
-          {{- end }}
+          {{ `{{- end }}` }}
         remediationAction: enforce
         severity: medium
   remediationAction: enforce
