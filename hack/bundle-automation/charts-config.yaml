@@ -22,8 +22,8 @@ components:
         auto-install-for-all-clusters: true
 
   - repo_name: "multicluster-role-assignment"
-    github_ref: "https://github.com/ngraham20/multicluster-role-assignment.git"
-    branch: "playground"
+    github_ref: "https://github.com/stolostron/multicluster-role-assignment.git"
+    branch: "main"
     charts:
       - name: "fine-grained-rbac"
         chart-path: "charts/fine-grained-rbac"
