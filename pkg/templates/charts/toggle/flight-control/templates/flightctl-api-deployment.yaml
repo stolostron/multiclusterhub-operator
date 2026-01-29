@@ -39,7 +39,6 @@ spec:
               topologyKey: kubernetes.io/hostname
             weight: 35
       containers:
-      - args: []
         env:
 {{- if .Values.global.pullSecret }}
         - name: AGENT_IMAGE_PULL_SECRET
