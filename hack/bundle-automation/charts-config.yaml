@@ -30,6 +30,7 @@ components:
         always-or-toggle: "toggle"
         imageMappings:
           multicluster-role-assignment: multicluster_role_assignment
+        skipRBACOverrides: true # adding this prevents the ClusterRole, Role, and Bindings from being templated
         updateChartVersion: true
         escape-template-variables:
           - "hub"

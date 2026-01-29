@@ -5,7 +5,7 @@ metadata:
     app.kubernetes.io/managed-by: multiclusterhub-operator
     app.kubernetes.io/name: multicluster-role-assignment
     velero.io/exclude-from-backup: 'true'
-  name: '{{ .Values.org }}:{{ .Chart.Name }}:fine-grained-rbac'
+  name: multicluster-role-assignment-manager-role
 rules:
 - apiGroups:
   - cluster.open-cluster-management.io
