@@ -1,15 +1,16 @@
-# Copyright (c) 2020 Red Hat, Inc.
-
 global:
-  imageOverrides: {}
-  templateOverrides: {}
+  apiUrl: ''
+  baseDomain: ''
+  imageOverrides:
+    multicluster_role_assignment: ''
   namespace: default
   pullSecret: null
-  pullPolicy: Always
+  templateOverrides: {}
 hubconfig:
+  clusterSTSEnabled: false
   nodeSelector: null
+  ocpVersion: 4.12.0
   proxyConfigs: {}
   replicaCount: 1
   tolerations: []
-  ocpVersion: 4.12.0
 org: open-cluster-management

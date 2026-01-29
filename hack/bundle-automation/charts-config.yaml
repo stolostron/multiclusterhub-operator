@@ -20,3 +20,17 @@ components:
           - "LIVE_NETWORK_KEY"
           - "LIVE_NETWORK_VALUE"
         auto-install-for-all-clusters: true
+
+  - repo_name: "multicluster-role-assignment"
+    github_ref: "https://github.com/ngraham20/multicluster-role-assignment.git"
+    branch: "playground"
+    charts:
+      - name: "fine-grained-rbac"
+        chart-path: "charts/fine-grained-rbac"
+        always-or-toggle: "toggle"
+        imageMappings:
+          multicluster-role-assignment: multicluster_role_assignment
+        updateChartVersion: true
+        escape-template-variables:
+          - "hub"
+          - "CLUSTER_NAME"
