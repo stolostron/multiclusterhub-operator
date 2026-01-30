@@ -1,5 +1,3 @@
-
-# Source: fine-grained-rbac/templates/policy-virt-clusterroles-policy.yaml
 apiVersion: policy.open-cluster-management.io/v1
 kind: Policy
 metadata:

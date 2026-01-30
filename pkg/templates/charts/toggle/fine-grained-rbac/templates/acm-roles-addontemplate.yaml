@@ -1,363 +1,363 @@
 apiVersion: addon.open-cluster-management.io/v1alpha1
 kind: AddOnTemplate
 metadata:
+  name: acm-roles
   labels:
     velero.io/exclude-from-backup: 'true'
-  name: acm-roles
 spec:
   addonName: acm-roles
   agentSpec:
     workload:
       manifests:
-      - apiVersion: rbac.authorization.k8s.io/v1
-        kind: ClusterRole
-        metadata:
-          labels:
-            clusterview.open-cluster-management.io/discoverable: 'true'
-            rbac.open-cluster-management.io/filter: vm-clusterroles
-          name: acm-vm-extended:view
-        rules:
-        - apiGroups:
-          - k8s.cni.cncf.io
-          resources:
-          - network-attachment-definitions
-          verbs:
-          - get
-          - list
-          - watch
-        - apiGroups:
-          - ''
-          resources:
-          - configmaps
-          - events
-          - namespaces
-          - nodes
-          - persistentvolumeclaims
-          - persistentvolumes
-          - pods
-          - pods/metrics
-          - pods/log
-          - services
-          - serviceaccounts
-          verbs:
-          - get
-          - list
-          - watch
-        - apiGroups:
-          - events.k8s.io
-          resources:
-          - events
-          verbs:
-          - get
-          - list
-          - watch
-        - apiGroups:
-          - cdi.kubevirt.io
-          resources:
-          - datavolumes
-          - datasources
-          - dataimportcrons
-          verbs:
-          - get
-          - list
-          - watch
-        - apiGroups:
-          - metrics.k8s.io
-          resources:
-          - pods
-          verbs:
-          - get
-          - list
-          - watch
-        - apiGroups:
-          - monitoring.coreos.com
-          resourceNames:
-          - k8s
-          resources:
-          - prometheuses/api
-          verbs:
-          - get
-          - watch
-        - apiGroups:
-          - hco.kubevirt.io
-          resources:
-          - hyperconvergeds
-          verbs:
-          - get
-          - list
-          - watch
-        - apiGroups:
-          - snapshot.storage.k8s.io
-          resources:
-          - volumesnapshotclasses
-          - volumesnapshotcontents
-          - volumesnapshots
-          verbs:
-          - get
-          - list
-          - watch
-        - apiGroups:
-          - project.openshift.io
-          resources:
-          - projects
-          verbs:
-          - get
-          - list
-          - watch
-        - apiGroups:
-          - template.openshift.io
-          resources:
-          - templates
-          verbs:
-          - get
-          - list
-          - watch
-      - apiVersion: rbac.authorization.k8s.io/v1
-        kind: ClusterRole
-        metadata:
-          labels:
-            clusterview.open-cluster-management.io/discoverable: 'true'
-            rbac.open-cluster-management.io/filter: vm-clusterroles
-          name: acm-vm-extended:admin
-        rules:
-        - apiGroups:
-          - k8s.cni.cncf.io
-          resources:
-          - network-attachment-definitions
-          verbs:
-          - get
-          - list
-          - watch
-        - apiGroups:
-          - ''
-          resources:
-          - configmaps
-          - persistentvolumeclaims
-          - pods
-          - services
-          verbs:
-          - get
-          - list
-          - watch
-          - create
-          - update
-          - patch
-          - delete
-        - apiGroups:
-          - ''
-          resources:
-          - events
-          - namespaces
-          - nodes
-          - persistentvolumes
-          - pods/log
-          - pods/metrics
-          - serviceaccounts
-          verbs:
-          - get
-          - list
-          - watch
-        - apiGroups:
-          - events.k8s.io
-          resources:
-          - events
-          verbs:
-          - get
-          - list
-          - watch
-        - apiGroups:
-          - cdi.kubevirt.io
-          resources:
-          - datavolumes
-          - datasources
-          - dataimportcrons
-          verbs:
-          - get
-          - list
-          - watch
-          - create
-          - update
-          - patch
-          - delete
-        - apiGroups:
-          - metrics.k8s.io
-          resources:
-          - pods
-          verbs:
-          - get
-          - list
-          - watch
-        - apiGroups:
-          - monitoring.coreos.com
-          resourceNames:
-          - k8s
-          resources:
-          - prometheuses/api
-          verbs:
-          - get
-          - watch
-        - apiGroups:
-          - hco.kubevirt.io
-          resources:
-          - hyperconvergeds
-          verbs:
-          - get
-          - list
-          - watch
-          - create
-          - update
-          - patch
-          - delete
-        - apiGroups:
-          - snapshot.storage.k8s.io
-          resources:
-          - volumesnapshotclasses
-          - volumesnapshotcontents
-          - volumesnapshots
-          verbs:
-          - get
-          - list
-          - watch
-        - apiGroups:
-          - project.openshift.io
-          resources:
-          - projects
-          verbs:
-          - get
-          - list
-          - watch
-        - apiGroups:
-          - template.openshift.io
-          resources:
-          - templates
-          verbs:
-          - get
-          - list
-          - watch
-          - create
-          - update
-          - patch
-          - delete
-      - apiVersion: rbac.authorization.k8s.io/v1
-        kind: ClusterRole
-        metadata:
-          labels:
-            clusterview.open-cluster-management.io/discoverable: 'true'
-            rbac.open-cluster-management.io/filter: vm-clusterroles
-          name: acm-vm-fleet:view
-        rules:
-        - apiGroups:
-          - clusterview.open-cluster-management.io
-          resources:
-          - managedclusters
-          verbs:
-          - get
-          - list
-          - watch
-        - apiGroups:
-          - cluster.open-cluster-management.io
-          resources:
-          - managedclusters
-          verbs:
-          - get
-          - list
-          - watch
-        - apiGroups:
-          - clusterview.open-cluster-management.io
-          resources:
-          - kubevirtprojects
-          verbs:
-          - list
-        - apiGroups:
-          - clusterview.open-cluster-management.io
-          resources:
-          - userpermissions
-          verbs:
-          - list
-      - apiVersion: rbac.authorization.k8s.io/v1
-        kind: ClusterRole
-        metadata:
-          labels:
-            clusterview.open-cluster-management.io/discoverable: 'true'
-            rbac.open-cluster-management.io/filter: vm-clusterroles
-          name: acm-vm-fleet:admin
-        rules:
-        - apiGroups:
-          - forklift.konveyor.io
-          resources:
-          - migrations
-          - providers
-          - plans
-          - networkmaps
-          - storagemaps
-          verbs:
-          - get
-          - list
-          - watch
-          - create
-          - update
-          - patch
-          - delete
-        - apiGroups:
-          - clusterview.open-cluster-management.io
-          resources:
-          - managedclusters
-          verbs:
-          - get
-          - list
-          - watch
-        - apiGroups:
-          - cluster.open-cluster-management.io
-          resources:
-          - managedclusters
-          verbs:
-          - get
-          - list
-          - watch
-          - update
-          - patch
-        - apiGroups:
-          - clusterview.open-cluster-management.io
-          resources:
-          - kubevirtprojects
-          verbs:
-          - list
-        - apiGroups:
-          - clusterview.open-cluster-management.io
-          resources:
-          - userpermissions
-          verbs:
-          - list
-      - apiVersion: rbac.authorization.k8s.io/v1
-        kind: ClusterRole
-        metadata:
-          labels:
-            clusterview.open-cluster-management.io/discoverable: 'true'
-            rbac.open-cluster-management.io/filter: vm-clusterroles
-          name: acm-vm-cluster-migration:view
-        rules:
-        - apiGroups:
-          - config.openshift.io
-          resources:
-          - clusterversions
-          verbs:
-          - get
-          - list
-          - watch
-        - apiGroups:
-          - operators.coreos.com
-          resources:
-          - subscriptions
-          - clusterserviceversions
-          verbs:
-          - get
-          - list
-          - watch
-        - apiGroups:
-          - ''
-          resources:
-          - nodes
-          verbs:
-          - get
-          - list
-          - watch
+        - apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRole
+          metadata:
+            labels:
+              rbac.open-cluster-management.io/filter: vm-clusterroles
+              clusterview.open-cluster-management.io/discoverable: "true"
+            name: acm-vm-extended:view
+          rules:
+            - apiGroups:
+              - k8s.cni.cncf.io
+              resources:
+              - network-attachment-definitions
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - ""
+              resources:
+              - configmaps
+              - events
+              - namespaces
+              - nodes
+              - persistentvolumeclaims
+              - persistentvolumes
+              - pods
+              - pods/metrics
+              - pods/log
+              - services
+              - serviceaccounts
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - events.k8s.io
+              resources:
+              - events
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - cdi.kubevirt.io
+              resources:
+              - datavolumes
+              - datasources
+              - dataimportcrons
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - metrics.k8s.io
+              resources:
+              - pods
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - monitoring.coreos.com
+              resources:
+              - prometheuses/api
+              resourceNames:
+              - k8s
+              verbs:
+              - get
+              - watch
+            - apiGroups:
+              - hco.kubevirt.io
+              resources:
+              - hyperconvergeds
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - snapshot.storage.k8s.io
+              resources:
+              - volumesnapshotclasses
+              - volumesnapshotcontents
+              - volumesnapshots
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - project.openshift.io
+              resources:
+              - projects
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - template.openshift.io
+              resources:
+              - templates
+              verbs:
+              - get
+              - list
+              - watch
+        - apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRole
+          metadata:
+            labels:
+              rbac.open-cluster-management.io/filter: vm-clusterroles
+              clusterview.open-cluster-management.io/discoverable: "true"
+            name: acm-vm-extended:admin
+          rules:
+            - apiGroups:
+              - k8s.cni.cncf.io
+              resources:
+              - network-attachment-definitions
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - ""
+              resources:
+              - configmaps
+              - persistentvolumeclaims
+              - pods
+              - services
+              verbs:
+              - get
+              - list
+              - watch
+              - create
+              - update
+              - patch
+              - delete
+            - apiGroups:
+              - ""
+              resources:
+              - events
+              - namespaces
+              - nodes
+              - persistentvolumes
+              - pods/log
+              - pods/metrics
+              - serviceaccounts
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - events.k8s.io
+              resources:
+              - events
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - cdi.kubevirt.io
+              resources:
+              - datavolumes
+              - datasources
+              - dataimportcrons
+              verbs:
+              - get
+              - list
+              - watch
+              - create
+              - update
+              - patch
+              - delete
+            - apiGroups:
+              - metrics.k8s.io
+              resources:
+              - pods
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - monitoring.coreos.com
+              resources:
+              - prometheuses/api
+              resourceNames:
+              - k8s
+              verbs:
+              - get
+              - watch
+            - apiGroups:
+              - hco.kubevirt.io
+              resources:
+              - hyperconvergeds
+              verbs:
+              - get
+              - list
+              - watch
+              - create
+              - update
+              - patch
+              - delete
+            - apiGroups:
+              - snapshot.storage.k8s.io
+              resources:
+              - volumesnapshotclasses
+              - volumesnapshotcontents
+              - volumesnapshots
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - project.openshift.io
+              resources:
+              - projects
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - template.openshift.io
+              resources:
+              - templates
+              verbs:
+              - get
+              - list
+              - watch
+              - create
+              - update
+              - patch
+              - delete
+        - apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRole
+          metadata:
+            labels:
+              rbac.open-cluster-management.io/filter: vm-clusterroles
+              clusterview.open-cluster-management.io/discoverable: "true"
+            name: acm-vm-fleet:view
+          rules:
+            - apiGroups:
+              - clusterview.open-cluster-management.io
+              resources:
+              - managedclusters
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - cluster.open-cluster-management.io
+              resources:
+              - managedclusters
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - clusterview.open-cluster-management.io
+              resources:
+              - kubevirtprojects
+              verbs:
+              - list
+            - apiGroups:
+              - clusterview.open-cluster-management.io
+              resources:
+              - userpermissions
+              verbs:
+              - list
+        - apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRole
+          metadata:
+            labels:
+              rbac.open-cluster-management.io/filter: vm-clusterroles
+              clusterview.open-cluster-management.io/discoverable: "true"
+            name: acm-vm-fleet:admin
+          rules:
+            - apiGroups:
+              - forklift.konveyor.io
+              resources:
+              - migrations
+              - providers
+              - plans
+              - networkmaps
+              - storagemaps
+              verbs:
+              - get
+              - list
+              - watch
+              - create
+              - update
+              - patch
+              - delete
+            - apiGroups:
+              - clusterview.open-cluster-management.io
+              resources:
+              - managedclusters
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - cluster.open-cluster-management.io
+              resources:
+              - managedclusters
+              verbs:
+              - get
+              - list
+              - watch
+              - update
+              - patch
+            - apiGroups:
+              - clusterview.open-cluster-management.io
+              resources:
+              - kubevirtprojects
+              verbs:
+              - list
+            - apiGroups:
+              - clusterview.open-cluster-management.io
+              resources:
+              - userpermissions
+              verbs:
+              - list
+        - apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRole
+          metadata:
+            labels:
+              rbac.open-cluster-management.io/filter: vm-clusterroles
+              clusterview.open-cluster-management.io/discoverable: "true"
+            name: acm-vm-cluster-migration:view
+          rules:
+            - apiGroups:
+              - config.openshift.io
+              resources:
+              - clusterversions
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - operators.coreos.com
+              resources:
+              - subscriptions
+              - clusterserviceversions
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - ""
+              resources:
+              - nodes
+              verbs:
+              - get
+              - list
+              - watch
