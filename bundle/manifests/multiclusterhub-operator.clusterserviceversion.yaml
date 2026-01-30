@@ -17,9 +17,9 @@ metadata:
     capabilities: Basic Install
     categories: Integration & Delivery
     certified: "false"
-    createdAt: "2025-10-21T14:45:31Z"
+    createdAt: "2026-01-29T21:20:16Z"
     description: Open management of Openshift and Kubernetes clusters
-    operators.operatorframework.io/builder: operator-sdk-v1.41.1
+    operators.operatorframework.io/builder: operator-sdk-v1.42.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
     repository: https://github.com/open-cluster-management/multiclusterhub-operator
     support: The Open Cluster Management Project
@@ -133,6 +133,7 @@ spec:
           - endpoints
           - events
           - namespaces
+          - pods
           - services/proxy
           verbs:
           - create
@@ -169,7 +170,6 @@ spec:
           resources:
           - nodes
           - persistentvolumeclaims
-          - pods
           - services/finalizers
           verbs:
           - create
@@ -535,6 +535,13 @@ spec:
           - patch
         - apiGroups:
           - ""
+          - authentication.k8s.io
+          resources:
+          - uids
+          verbs:
+          - impersonate
+        - apiGroups:
+          - ""
           - events.k8s.io
           resources:
           - events
@@ -554,6 +561,7 @@ spec:
           - addondeploymentconfigs
           - clustermanagementaddons
           - clustermanagementaddons/finalizers
+          - clustermanagementaddons/status
           - managedclusteraddons
           - managedclusteraddons/finalizers
           - managedclusteraddons/status
@@ -567,14 +575,6 @@ spec:
           - watch
         - apiGroups:
           - addon.open-cluster-management.io
-          resources:
-          - clustermanagementaddons/status
-          verbs:
-          - get
-          - patch
-          - update
-        - apiGroups:
-          - addon.open-cluster-management.io
           - agent.open-cluster-management.io
           - apps.open-cluster-management.io
           - authentication.open-cluster-management.io
@@ -585,18 +585,22 @@ spec:
           - work.open-cluster-management.io
           resources:
           - addondeploymentconfigs
+          - addontemplates
           - channels
           - channels/finalizers
           - channels/status
           - deployables
           - deployables/status
           - gitopsclusters
+          - gitopsclusters/finalizers
           - gitopsclusters/status
           - helmreleases
           - helmreleases/status
           - klusterletaddonconfigs
           - managedclusteraddons
           - managedclusters
+          - managedclustersetbindings
+          - managedclustersets/bind
           - managedclusterviews
           - managedclusterviews/status
           - managedserviceaccounts
@@ -1017,6 +1021,13 @@ spec:
           - '*'
         - apiGroups:
           - config.openshift.io
+          resources:
+          - oauths
+          verbs:
+          - list
+          - watch
+        - apiGroups:
+          - config.openshift.io
           - console.openshift.io
           - project.openshift.io
           - tower.ansible.com
@@ -1029,13 +1040,6 @@ spec:
           - projects
           verbs:
           - get
-          - list
-          - watch
-        - apiGroups:
-          - config.openshift.io/v1
-          resources:
-          - oauths
-          verbs:
           - list
           - watch
         - apiGroups:
@@ -1698,6 +1702,13 @@ spec:
           - patch
           - update
           - watch
+        - apiGroups:
+          - user.openshift.io
+          resources:
+          - groups
+          - users
+          verbs:
+          - impersonate
         - apiGroups:
           - wgpolicyk8s.io
           resources:

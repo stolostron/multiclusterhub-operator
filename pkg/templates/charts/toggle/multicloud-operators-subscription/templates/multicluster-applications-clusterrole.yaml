@@ -30,6 +30,8 @@ rules:
   - manifestworks
   - manifestworks/status
   - managedclusters
+  - managedclustersetbindings
+  - managedclustersets/bind
   - managedclusterviews
   - managedclusterviews/status
   - managedclusteraddons
@@ -169,3 +171,11 @@ rules:
   - update
   - patch
   - delete
+- apiGroups:
+  - route.openshift.io
+  resources:
+  - routes
+  verbs:
+  - get
+  - list
+  - watch

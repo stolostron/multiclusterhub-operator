@@ -477,6 +477,8 @@ rules:
   - klusterletaddonconfigs
   - managedclusteraddons
   - managedclusters
+  - managedclustersetbindings
+  - managedclustersets/bind
   - managedclusterviews
   - managedclusterviews/status
   - managedserviceaccounts

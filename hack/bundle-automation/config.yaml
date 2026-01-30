@@ -13,16 +13,30 @@ components:
           multicluster-operators-channel: multicluster_operators_channel
         escape-template-variables:
           - ACTION
+          - ARGO_ROLLOUTS_IMAGE
           - ARGOCD_AGENT_ENABLED
           - ARGOCD_AGENT_IMAGE
           - ARGOCD_AGENT_MODE
           - ARGOCD_AGENT_SERVER_ADDRESS
           - ARGOCD_AGENT_SERVER_PORT
           - ARGOCD_AGENT_UNINSTALL
+          - ARGOCD_DEX_IMAGE
+          - ARGOCD_IMAGE
+          - ARGOCD_IMAGE_UPDATER_IMAGE
+          - ARGOCD_EXTENSION_IMAGE
+          - ARGOCD_REDIS_HA_IMAGE
+          - ARGOCD_REDIS_HA_PROXY_IMAGE
+          - ARGOCD_REDIS_IMAGE
+          - ARGOCD_REPOSERVER_IMAGE
+          - BACKEND_IMAGE
+          - GITOPS_CONSOLE_PLUGIN_IMAGE
           - GITOPS_OPERATOR_IMAGE
           - GITOPS_OPERATOR_NAMESPACE
           - GITOPS_IMAGE
           - GITOPS_NAMESPACE
+          - HTTP_PROXY
+          - HTTPS_PROXY
+          - NO_PROXY
           - REDIS_IMAGE
           - RECONCILE_SCOPE
           - UNINSTALL
