@@ -5,7 +5,7 @@ metadata:
     open-cluster-management.io/policy-cnv: virt-rbac
     velero.io/exclude-from-backup: 'true'
   name: placement-policy-virt-rbac
-  namespace: '{{ default "open-cluster-management-global-set" .Values.global.namespace }}'
+  namespace: open-cluster-management-global-set
 spec:
   predicates:
   - requiredClusterSelector:
