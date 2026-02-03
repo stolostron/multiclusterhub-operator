@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false # If one jobs fail, we still want the other jobs to run.
       matrix:
-        python-version: [3.9]
+        python-version: [3.13]
         branch: ['main', 'release-2.11', 'release-2.12', 'release-2.13']
 
     # Steps represent a sequence of tasks that will be executed as part of the job
