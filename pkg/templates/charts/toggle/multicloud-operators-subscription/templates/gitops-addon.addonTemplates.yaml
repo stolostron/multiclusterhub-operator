@@ -29,7 +29,7 @@ spec:
                   value: '{{ `{{GITOPS_OPERATOR_NAMESPACE}}` }}'
                 - name: GITOPS_NAMESPACE
                   value: '{{ `{{GITOPS_NAMESPACE}}` }}'
-                image: quay.io/stolostron/multicloud-integrations:latest
+                image: '{{ .Values.global.imageOverrides.multicloud_integrations }}'
                 imagePullPolicy: IfNotPresent
                 name: cleanup
               restartPolicy: Never
