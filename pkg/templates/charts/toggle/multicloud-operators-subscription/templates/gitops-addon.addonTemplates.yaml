@@ -29,7 +29,7 @@ spec:
                   value: '{{ `{{GITOPS_OPERATOR_IMAGE}}` }}'
                 - name: ARGOCD_IMAGE
                   value: '{{ `{{ARGOCD_IMAGE}}` }}'
-                image: quay.io/stolostron/multicloud-integrations:latest
+                image: '{{ .Values.global.imageOverrides.multicloud_integrations }}'
                 imagePullPolicy: IfNotPresent
                 name: cleanup
               restartPolicy: Never
