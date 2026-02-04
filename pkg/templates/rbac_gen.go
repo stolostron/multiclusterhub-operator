@@ -286,4 +286,5 @@ package main
 //+kubebuilder:rbac:groups=work.open-cluster-management.io,resources=manifestworks,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=work.open-cluster-management.io,resources=manifestworks,verbs=create;get;list;watch;update;patch;delete
 //+kubebuilder:rbac:groups=work.open-cluster-management.io,resources=manifestworks,verbs=create;update;get;list;watch;delete;deletecollection;patch
+//+kubebuilder:rbac:groups=work.open-cluster-management.io,resources=manifestworks,verbs=get;list;watch
 //+kubebuilder:rbac:groups=work.open-cluster-management.io,resources=manifestworks;manifestworks/finalizers,verbs=create;delete;get;list;patch;update;watch
