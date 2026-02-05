@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
@@ -113,14 +112,6 @@ const (
 	MCHOperatorMetricsServiceMonitorName = "multiclusterhub-operator-metrics"
 )
 
-// DefaultSSLCiphers defines the default cipher configuration used by management ingress
-var DefaultSSLCiphers = []string{
-	"ECDHE-ECDSA-AES256-GCM-SHA384",
-	"ECDHE-RSA-AES256-GCM-SHA384",
-	"ECDHE-ECDSA-AES128-GCM-SHA256",
-	"ECDHE-RSA-AES128-GCM-SHA256",
-}
-
 // CertManagerNS returns the namespace to deploy cert manager objects
 func CertManagerNS(m *operatorsv1.MultiClusterHub) string {
 	if m.Spec.SeparateCertificateManagement {
@@ -224,8 +215,7 @@ func CoreToUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) 
 
 // MchIsValid Checks if the optional default parameters need to be set
 func MchIsValid(m *operatorsv1.MultiClusterHub) bool {
-	invalid := (m.Spec.Ingress == nil || len(m.Spec.Ingress.SSLCiphers) == 0) || !operatorsv1.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig)
-	return !invalid
+	return operatorsv1.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig)
 }
 
 // DefaultReplicaCount returns an integer corresponding to the default number of replicas
@@ -347,12 +337,6 @@ func GetTestImages() []string {
 		"alertmanager", "flightctl_alertmanager_proxy", "flightctl_alert_exporter", "prometheus_alertmanager",
 		"flightctl_db_setup", "flightctl_userinfo_proxy", "multicluster_role_assignment",
 	}
-}
-
-// FormatSSLCiphers converts an array of ciphers into a string consumed by the management
-// ingress chart
-func FormatSSLCiphers(ciphers []string) string {
-	return strings.Join(ciphers, ":")
 }
 
 // TrackedNamespaces returns the list of namespaces we deploy components to and should track

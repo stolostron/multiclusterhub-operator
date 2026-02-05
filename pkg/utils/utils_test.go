@@ -395,10 +395,7 @@ func TestMchIsValid(t *testing.T) {
 		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
 		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
 		Spec: mchv1.MultiClusterHubSpec{
-			ImagePullSecret: "test",
-			Ingress: &mchv1.IngressSpec{
-				SSLCiphers: []string{"foo", "bar", "baz"},
-			},
+			ImagePullSecret:    "test",
 			AvailabilityConfig: mchv1.HAHigh,
 		},
 	}
@@ -412,13 +409,31 @@ func TestMchIsValid(t *testing.T) {
 		want bool
 	}{
 		{
-			"Valid MCH",
+			"Valid MCH with HAHigh",
 			args{validMCH},
 			true,
 		},
 		{
-			"Empty object",
+			"Valid MCH with HABasic",
+			args{&mchv1.MultiClusterHub{
+				Spec: mchv1.MultiClusterHubSpec{
+					AvailabilityConfig: mchv1.HABasic,
+				},
+			}},
+			true,
+		},
+		{
+			"Invalid MCH with empty AvailabilityConfig",
 			args{&mchv1.MultiClusterHub{}},
+			false,
+		},
+		{
+			"Invalid MCH with invalid AvailabilityConfig",
+			args{&mchv1.MultiClusterHub{
+				Spec: mchv1.MultiClusterHubSpec{
+					AvailabilityConfig: mchv1.AvailabilityType("invalid"),
+				},
+			}},
 			false,
 		},
 	}
@@ -489,31 +504,6 @@ func TestDefaultReplicaCount(t *testing.T) {
 			t.Errorf("DefaultReplicaCount() = %v, but should return multiple replicas", got)
 		}
 	})
-}
-
-func TestFormatSSLCiphers(t *testing.T) {
-	type args struct {
-		ciphers []string
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{
-			"Default cipher list",
-			args{[]string{"ECDHE-ECDSA-AES256-GCM-SHA384", "ECDHE-RSA-AES256-GCM-SHA384"}},
-			"ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384",
-		},
-		{"Empty slice", args{[]string{}}, ""},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := FormatSSLCiphers(tt.args.ciphers); got != tt.want {
-				t.Errorf("FormatSSLCiphers() = %v, want %v", got, tt.want)
-			}
-		})
-	}
 }
 
 func TestTrackedNamespaces(t *testing.T) {
