@@ -236,9 +236,9 @@ func Test_EdgeManagerCleanup_NoAnnotationBeforeUpgrade(t *testing.T) {
 // Test_EdgeManagerCleanup_AnnotationValue tests that only the exact value "true" prevents cleanup
 func Test_EdgeManagerCleanup_AnnotationValue(t *testing.T) {
 	tests := []struct {
-		name              string
-		annotationValue   string
-		cleanupShouldRun  bool
+		name             string
+		annotationValue  string
+		cleanupShouldRun bool
 	}{
 		{
 			name:             "No annotation",
