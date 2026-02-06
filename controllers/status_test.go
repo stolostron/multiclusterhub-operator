@@ -421,8 +421,8 @@ func TestStaleProgressingConditionRemoval(t *testing.T) {
 		status := &operatorsv1.MultiClusterHubStatus{
 			CurrentVersion: version.Version,
 			Components: map[string]operatorsv1.StatusCondition{
-				"console":    available,
-				"search":     available,
+				"console":       available,
+				"search":        available,
 				"local-cluster": available,
 			},
 			HubConditions: []operatorsv1.HubCondition{
@@ -471,8 +471,8 @@ func TestStaleProgressingConditionRemoval(t *testing.T) {
 		status := operatorsv1.MultiClusterHubStatus{
 			CurrentVersion: version.Version,
 			Components: map[string]operatorsv1.StatusCondition{
-				"console":    available,
-				"search":     available,
+				"console":       available,
+				"search":        available,
 				"local-cluster": available,
 			},
 			HubConditions: []operatorsv1.HubCondition{
