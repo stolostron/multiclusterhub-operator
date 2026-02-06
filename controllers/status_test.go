@@ -409,6 +409,92 @@ func TestRemoveHubCondition(t *testing.T) {
 	}
 }
 
+func TestStaleProgressingConditionRemoval(t *testing.T) {
+	// This test verifies the fix for MCH stuck in Pending state due to stale Progressing condition.
+	// When all components are available and hub reaches Complete status, any Progressing condition
+	// should be removed to allow proper phase transition to Running.
+
+	available := operatorsv1.StatusCondition{Type: "Available", Status: metav1.ConditionTrue, Available: true}
+
+	t.Run("Remove stale Progressing condition when hub becomes Complete", func(t *testing.T) {
+		// Create a status with all components available but a stale Progressing condition
+		status := &operatorsv1.MultiClusterHubStatus{
+			CurrentVersion: version.Version,
+			Components: map[string]operatorsv1.StatusCondition{
+				"console":    available,
+				"search":     available,
+				"local-cluster": available,
+			},
+			HubConditions: []operatorsv1.HubCondition{
+				{
+					Type:    operatorsv1.Progressing,
+					Status:  metav1.ConditionFalse,
+					Reason:  DeployFailedReason,
+					Message: "Previous deployment failure",
+				},
+			},
+		}
+
+		// Verify the stale Progressing condition exists
+		if !HubConditionPresent(*status, operatorsv1.Progressing) {
+			t.Error("Expected Progressing condition to be present initially")
+		}
+
+		// Simulate what calculateStatus does when all components are successful
+		complete := NewHubCondition(operatorsv1.Complete, metav1.ConditionTrue, ComponentsAvailableReason, "All hub components ready.")
+		SetHubCondition(status, *complete)
+		RemoveHubCondition(status, operatorsv1.Progressing)
+
+		// Verify the Progressing condition has been removed
+		if HubConditionPresent(*status, operatorsv1.Progressing) {
+			t.Error("Expected Progressing condition to be removed after hub becomes Complete")
+		}
+
+		// Verify Complete condition is set correctly
+		completeCondition := GetHubCondition(*status, operatorsv1.Complete)
+		if completeCondition == nil {
+			t.Error("Expected Complete condition to be present")
+		}
+		if completeCondition.Status != metav1.ConditionTrue {
+			t.Errorf("Expected Complete condition status to be True, got %v", completeCondition.Status)
+		}
+
+		// Verify the phase is now Running instead of Pending
+		phase := aggregatePhase(*status)
+		if phase != operatorsv1.HubRunning {
+			t.Errorf("Expected phase to be HubRunning after removing stale Progressing condition, got %v", phase)
+		}
+	})
+
+	t.Run("Phase stuck in Pending with stale Progressing condition", func(t *testing.T) {
+		// This demonstrates the bug that existed before the fix
+		status := operatorsv1.MultiClusterHubStatus{
+			CurrentVersion: version.Version,
+			Components: map[string]operatorsv1.StatusCondition{
+				"console":    available,
+				"search":     available,
+				"local-cluster": available,
+			},
+			HubConditions: []operatorsv1.HubCondition{
+				{
+					Type:    operatorsv1.Progressing,
+					Status:  metav1.ConditionFalse,
+					Reason:  DeployFailedReason,
+					Message: "Stale progressing condition from previous failure",
+				},
+			},
+		}
+
+		// Without the fix (not removing the Progressing condition), aggregatePhase
+		// would incorrectly return Pending because hubDeployFailing only checks
+		// the Reason, not the Status
+		phase := aggregatePhase(status)
+		if phase != operatorsv1.HubPending {
+			t.Errorf("Expected phase to be Pending with stale Progressing condition (demonstrating the bug), got %v", phase)
+		}
+	})
+}
+
 func Test_aggregatePhase(t *testing.T) {
 	available := operatorsv1.StatusCondition{Type: "Available", Status: metav1.ConditionTrue, Available: true}
 	unavailable := operatorsv1.StatusCondition{Type: "Available", Status: metav1.ConditionFalse}
@@ -495,6 +581,25 @@ func Test_aggregatePhase(t *testing.T) {
 				},
 			},
 			want: operatorsv1.HubPaused,
+		},
+		{
+			name: "Hub with stale Progressing condition (status=False) should return Pending without fix",
+			status: operatorsv1.MultiClusterHubStatus{
+				CurrentVersion: version.Version,
+				Components: map[string]operatorsv1.StatusCondition{
+					"foo": available,
+					"bar": available,
+				},
+				HubConditions: []operatorsv1.HubCondition{
+					{
+						Type:    operatorsv1.Progressing,
+						Status:  metav1.ConditionFalse,
+						Reason:  DeployFailedReason,
+						Message: "Stale progressing condition",
+					},
+				},
+			},
+			want: operatorsv1.HubPending,
 		},
 	}
 	for _, tt := range tests {
