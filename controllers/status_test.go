@@ -409,6 +409,115 @@ func TestRemoveHubCondition(t *testing.T) {
 	}
 }
 
+func TestCalculateStatus_RemovesStaleProgressingCondition(t *testing.T) {
+	// This test directly calls calculateStatus() to verify the fix at status.go:187
+	// where RemoveHubCondition(&status, operatorsv1.Progressing) is called when
+	// all components are successful and hub is Complete.
+
+	registerScheme()
+	ctx := context.TODO()
+
+	// Create MCE for version compliance check
+	mce := &mcev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "multiclusterengine",
+			Labels: map[string]string{
+				multiclusterengineutils.MCEManagedByLabel: "true",
+			},
+		},
+		Status: mcev1.MultiClusterEngineStatus{
+			CurrentVersion: "2.9.0",
+			Conditions: []mcev1.MultiClusterEngineCondition{
+				{
+					Type:    mcev1.MultiClusterEngineAvailable,
+					Status:  metav1.ConditionTrue,
+					Reason:  "Available",
+					Message: "MCE is available",
+				},
+			},
+		},
+	}
+
+	if err := recon.Client.Create(ctx, mce); err != nil {
+		t.Fatalf("failed to create MCE: %v", err)
+	}
+	defer func() {
+		if err := recon.Client.Delete(ctx, mce); err != nil {
+			t.Errorf("failed to delete MCE: %v", err)
+		}
+	}()
+
+	// Convert MCE to unstructured for allCRs map
+	mceUnstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(mce)
+	if err != nil {
+		t.Fatalf("failed to convert MCE to unstructured: %v", err)
+	}
+	mceUnstructured := &unstructured.Unstructured{Object: mceUnstructuredObj}
+
+	// Create hub with stale Progressing condition and minimal config
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "multiclusterhub",
+			Namespace: "open-cluster-management",
+		},
+		Spec: operatorsv1.MultiClusterHubSpec{
+			DisableHubSelfManagement: true, // Disable local-cluster requirement
+		},
+		Status: operatorsv1.MultiClusterHubStatus{
+			CurrentVersion: version.Version,
+			HubConditions: []operatorsv1.HubCondition{
+				{
+					Type:    operatorsv1.Progressing,
+					Status:  metav1.ConditionFalse,
+					Reason:  DeployFailedReason,
+					Message: "Stale progressing condition from previous failure",
+				},
+			},
+		},
+	}
+
+	// Prepare inputs for calculateStatus
+	// Empty deployments list - with DisableHubSelfManagement, only MCE is required
+	allDeps := []*appsv1.Deployment{}
+	allCRs := map[string]*unstructured.Unstructured{
+		"mce": mceUnstructured,
+	}
+
+	// Call calculateStatus - this should trigger the fix at line 187
+	newStatus := calculateStatus(hub, allDeps, allCRs, false, false)
+
+	// Verify that the stale Progressing condition has been removed
+	if HubConditionPresent(newStatus, operatorsv1.Progressing) {
+		t.Error("Expected calculateStatus to remove stale Progressing condition, but it's still present")
+		for i, cond := range newStatus.HubConditions {
+			t.Logf("Condition[%d]: Type=%s, Status=%s, Reason=%s", i, cond.Type, cond.Status, cond.Reason)
+		}
+	}
+
+	// Verify Complete condition is set
+	completeCondition := GetHubCondition(newStatus, operatorsv1.Complete)
+	if completeCondition == nil {
+		t.Error("Expected Complete condition to be set by calculateStatus")
+		t.Logf("Components: %+v", newStatus.Components)
+		for name, comp := range newStatus.Components {
+			t.Logf("Component %s: Available=%v, Status=%s", name, comp.Available, comp.Status)
+		}
+	} else {
+		if completeCondition.Status != metav1.ConditionTrue {
+			t.Errorf("Expected Complete condition status to be True, got %v", completeCondition.Status)
+		}
+		if completeCondition.Reason != ComponentsAvailableReason {
+			t.Errorf("Expected Complete condition reason to be %s, got %s", ComponentsAvailableReason, completeCondition.Reason)
+		}
+
+		// Verify phase would be Running (not stuck in Pending)
+		phase := aggregatePhase(newStatus)
+		if phase != operatorsv1.HubRunning {
+			t.Errorf("Expected phase to be HubRunning after fix, got %v", phase)
+		}
+	}
+}
+
 func Test_aggregatePhase(t *testing.T) {
 	available := operatorsv1.StatusCondition{Type: "Available", Status: metav1.ConditionTrue, Available: true}
 	unavailable := operatorsv1.StatusCondition{Type: "Available", Status: metav1.ConditionFalse}
@@ -495,6 +604,25 @@ func Test_aggregatePhase(t *testing.T) {
 				},
 			},
 			want: operatorsv1.HubPaused,
+		},
+		{
+			name: "Hub with stale Progressing condition (status=False) should return Pending without fix",
+			status: operatorsv1.MultiClusterHubStatus{
+				CurrentVersion: version.Version,
+				Components: map[string]operatorsv1.StatusCondition{
+					"foo": available,
+					"bar": available,
+				},
+				HubConditions: []operatorsv1.HubCondition{
+					{
+						Type:    operatorsv1.Progressing,
+						Status:  metav1.ConditionFalse,
+						Reason:  DeployFailedReason,
+						Message: "Stale progressing condition",
+					},
+				},
+			},
+			want: operatorsv1.HubPending,
 		},
 	}
 	for _, tt := range tests {
