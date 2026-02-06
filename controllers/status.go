@@ -178,6 +178,7 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 		if !hubPruning(status) && !utils.IsPaused(hub) {
 			available := NewHubCondition(operatorsv1.Complete, metav1.ConditionTrue, ComponentsAvailableReason, "All hub components ready.")
 			SetHubCondition(&status, *available)
+			RemoveHubCondition(&status, operatorsv1.Progressing)
 		} else {
 			// only add unavailable status if complete status already present
 			if HubConditionPresent(status, operatorsv1.Complete) {
