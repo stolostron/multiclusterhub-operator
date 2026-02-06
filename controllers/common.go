@@ -414,8 +414,6 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 		mceannotations = map[string]string{}
 	}
 
-
-
 	mce.SetAnnotations(mceannotations)
 
 	// secret should be delivered to targetNamespace
