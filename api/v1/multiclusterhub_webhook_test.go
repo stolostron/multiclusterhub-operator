@@ -221,6 +221,127 @@ var _ = Describe("Multiclusterhub webhook", func() {
 			Expect(k8sClient.Create(ctx, mch)).To(Succeed())
 		})
 	})
+
+	Context("Deprecated annotation and field warnings", func() {
+		It("Should return warnings for deprecated annotations", func() {
+			mch := &MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-warnings",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"mch-pause":             "true",
+						"mch-imageRepository":   "quay.io/test",
+						"mch-imageOverridesCM":  "test-cm",
+						"ignoreOCPVersion":      "true",
+						"mch-kubeconfig":        "test-kubeconfig",
+						"some-other-annotation": "value",
+					},
+				},
+				Spec: MultiClusterHubSpec{
+					LocalClusterName: "test-cluster",
+				},
+			}
+
+			warnings := checkDeprecatedAnnotations(mch)
+			Expect(len(warnings)).To(Equal(5), "Should have 5 warnings for deprecated annotations")
+
+			// Check that all deprecated annotations are warned about
+			warningText := strings.Join(warnings, " ")
+			Expect(warningText).To(ContainSubstring("mch-pause"))
+			Expect(warningText).To(ContainSubstring("mch-imageRepository"))
+			Expect(warningText).To(ContainSubstring("mch-imageOverridesCM"))
+			Expect(warningText).To(ContainSubstring("ignoreOCPVersion"))
+			Expect(warningText).To(ContainSubstring("mch-kubeconfig"))
+
+			// Check that warnings mention the replacement annotations
+			Expect(warningText).To(ContainSubstring("installer.open-cluster-management.io/pause"))
+			Expect(warningText).To(ContainSubstring("installer.open-cluster-management.io/image-repository"))
+			Expect(warningText).To(ContainSubstring("installer.open-cluster-management.io/image-overrides-configmap"))
+			Expect(warningText).To(ContainSubstring("installer.open-cluster-management.io/ignore-ocp-version"))
+			Expect(warningText).To(ContainSubstring("installer.open-cluster-management.io/kubeconfig"))
+		})
+
+		It("Should return warnings for deprecated spec fields", func() {
+			mch := &MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-spec-warnings",
+					Namespace: "default",
+				},
+				Spec: MultiClusterHubSpec{
+					LocalClusterName:              "test-cluster",
+					Hive:                          &HiveConfigSpec{},
+					CustomCAConfigmap:             "test-ca",
+					EnableClusterBackup:           true,
+					EnableClusterProxyAddon:       true,
+					SeparateCertificateManagement: true,
+				},
+			}
+
+			warnings := checkDeprecatedAnnotations(mch)
+			Expect(len(warnings)).To(Equal(5), "Should have 5 warnings for deprecated spec fields")
+
+			warningText := strings.Join(warnings, " ")
+			Expect(warningText).To(ContainSubstring("spec.hive"))
+			Expect(warningText).To(ContainSubstring("spec.customCAConfigmap"))
+			Expect(warningText).To(ContainSubstring("spec.enableClusterBackup"))
+			Expect(warningText).To(ContainSubstring("spec.enableClusterProxyAddon"))
+			Expect(warningText).To(ContainSubstring("spec.separateCertificateManagement"))
+		})
+
+		It("Should return combined warnings for both annotations and spec fields", func() {
+			mch := &MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-combined-warnings",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"mch-pause": "true",
+					},
+				},
+				Spec: MultiClusterHubSpec{
+					LocalClusterName:    "test-cluster",
+					Hive:                &HiveConfigSpec{},
+					EnableClusterBackup: true,
+				},
+			}
+
+			warnings := checkDeprecatedAnnotations(mch)
+			Expect(len(warnings)).To(Equal(3), "Should have 3 warnings (1 annotation + 2 spec fields)")
+		})
+
+		It("Should return no warnings for resources without deprecated fields", func() {
+			mch := &MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-no-warnings",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"installer.open-cluster-management.io/pause": "true",
+						"some-other-annotation":                      "value",
+					},
+				},
+				Spec: MultiClusterHubSpec{
+					LocalClusterName: "test-cluster",
+				},
+			}
+
+			warnings := checkDeprecatedAnnotations(mch)
+			Expect(len(warnings)).To(Equal(0), "Should have no warnings")
+		})
+
+		It("Should return no warnings when annotations are nil", func() {
+			mch := &MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-nil-annotations",
+					Namespace: "default",
+				},
+				Spec: MultiClusterHubSpec{
+					LocalClusterName: "test-cluster",
+				},
+			}
+
+			warnings := checkDeprecatedAnnotations(mch)
+			Expect(len(warnings)).To(Equal(0), "Should have no warnings when annotations are nil")
+		})
+	})
 })
 
 // re-defining the function here to avoid a import cycle

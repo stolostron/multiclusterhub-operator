@@ -41,6 +41,22 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
+const (
+	// Current annotation keys
+	annotationIgnoreOCPVersion = "installer.open-cluster-management.io/ignore-ocp-version"
+	annotationImageOverridesCM = "installer.open-cluster-management.io/image-overrides-configmap"
+	annotationImageRepo        = "installer.open-cluster-management.io/image-repository"
+	annotationKubeconfig       = "installer.open-cluster-management.io/kubeconfig"
+	annotationMCHPause         = "installer.open-cluster-management.io/pause"
+
+	// Deprecated annotation keys
+	deprecatedAnnotationIgnoreOCPVersion = "ignoreOCPVersion"
+	deprecatedAnnotationImageOverridesCM = "mch-imageOverridesCM"
+	deprecatedAnnotationImageRepo        = "mch-imageRepository"
+	deprecatedAnnotationKubeconfig       = "mch-kubeconfig"
+	deprecatedAnnotationMCHPause         = "mch-pause"
+)
+
 type BlockDeletionResource struct {
 	Name            string
 	GVK             schema.GroupVersionKind
@@ -109,49 +125,52 @@ var _ webhook.Validator = &MultiClusterHub{}
 func (r *MultiClusterHub) ValidateCreate() (admission.Warnings, error) {
 	mchlog.Info("validate create", "Name", r.Name, "Namespace", r.Namespace)
 
+	// Check for deprecated annotations and collect warnings
+	warnings := checkDeprecatedAnnotations(r)
+
 	multiClusterHubList := &MultiClusterHubList{}
 	if err := Client.List(context.Background(), multiClusterHubList); err != nil {
-		return nil, fmt.Errorf("unable to list MultiClusterHubs: %s", err)
+		return warnings, fmt.Errorf("unable to list MultiClusterHubs: %s", err)
 	}
 
 	// Prevent two standalone MCH's
 	if len(multiClusterHubList.Items) > 0 {
 		existingMCH := multiClusterHubList.Items[0]
-		return nil, fmt.Errorf("MultiClusterHub in Standalone mode already exists: `%s`", existingMCH.GetName())
+		return warnings, fmt.Errorf("MultiClusterHub in Standalone mode already exists: `%s`", existingMCH.GetName())
 	}
 
 	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
-		return nil, fmt.Errorf("invalid AvailabilityConfig given")
+		return warnings, fmt.Errorf("invalid AvailabilityConfig given")
 	}
 
 	// Validate components
 	if r.Spec.Overrides != nil {
 		for _, c := range r.Spec.Overrides.Components {
 			if !ValidComponent(c, MCHComponents) {
-				return nil, fmt.Errorf("invalid component config: %s is not a known component", c.Name)
+				return warnings, fmt.Errorf("invalid component config: %s is not a known component", c.Name)
 			}
 		}
 	}
 
 	// validate local-cluster name length
 	if err := validateLocalClusterNameLength(r.Spec.LocalClusterName); err != nil {
-		return nil, err
+		return warnings, err
 	}
 
 	// If MCE CR exists, then spec.localClusterName must match
 	mceList := &mcev1.MultiClusterEngineList{}
 	// If installing ACM standalone, then MCE will fail to list. This is expected
 	if err := Client.List(context.Background(), mceList); errors.Is(err, errors.New("no matches for kind \"MultiClusterEngine\" in version \"multicluster.openshift.io/v1\"")) {
-		return nil, err
+		return warnings, err
 	}
 	if len(mceList.Items) == 1 {
 		mce := mceList.Items[0]
 		if mce.Spec.LocalClusterName != r.Spec.LocalClusterName {
-			return nil, fmt.Errorf("Spec.LocalClusterName does not match MCE Spec.LocalClusterName: %s", mce.Spec.LocalClusterName)
+			return warnings, fmt.Errorf("Spec.LocalClusterName does not match MCE Spec.LocalClusterName: %s", mce.Spec.LocalClusterName)
 		}
 	}
 
-	return nil, nil
+	return warnings, nil
 }
 
 func validateLocalClusterNameLength(name string) (err error) {
@@ -165,25 +184,28 @@ func validateLocalClusterNameLength(name string) (err error) {
 func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 	mchlog.Info("validate update", "Name", r.Name, "Namespace", r.Namespace)
 
+	// Check for deprecated annotations and collect warnings
+	warnings := checkDeprecatedAnnotations(r)
+
 	oldMCH := old.(*MultiClusterHub)
 
 	if oldMCH.Spec.SeparateCertificateManagement != r.Spec.SeparateCertificateManagement {
-		return nil, fmt.Errorf("updating SeparateCertificateManagement is forbidden")
+		return warnings, fmt.Errorf("updating SeparateCertificateManagement is forbidden")
 	}
 
 	if !reflect.DeepEqual(oldMCH.Spec.Hive, r.Spec.Hive) {
-		return nil, fmt.Errorf("hive updates are forbidden")
+		return warnings, fmt.Errorf("hive updates are forbidden")
 	}
 
 	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
-		return nil, fmt.Errorf("invalid AvailabilityConfig given")
+		return warnings, fmt.Errorf("invalid AvailabilityConfig given")
 	}
 
 	// Validate components
 	if r.Spec.Overrides != nil {
 		for _, c := range r.Spec.Overrides.Components {
 			if !ValidComponent(c, MCHComponents) {
-				return nil, fmt.Errorf("invalid componentconfig: %s is not a known component", c.Name)
+				return warnings, fmt.Errorf("invalid componentconfig: %s is not a known component", c.Name)
 			}
 		}
 	}
@@ -192,7 +214,7 @@ func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) (admission.Warnings
 	// if the Spec.LocalClusterName field has changed
 	if oldMCH.Spec.LocalClusterName != r.Spec.LocalClusterName {
 		if err := validateLocalClusterNameLength(r.Spec.LocalClusterName); err != nil {
-			return nil, err
+			return warnings, err
 		}
 
 		ctx := context.Background()
@@ -207,18 +229,18 @@ func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) (admission.Warnings
 		list := &unstructured.UnstructuredList{}
 		list.SetGroupVersionKind(managedClusterGVK)
 		if err := Client.List(ctx, list); err != nil {
-			return nil, fmt.Errorf("unable to list ManagedCluster: %v", err)
+			return warnings, fmt.Errorf("unable to list ManagedCluster: %v", err)
 		}
 
 		// Error if any of the ManagedClusters is the `local-cluster`
 		for _, managedCluster := range list.Items {
 			if managedCluster.GetName() == mcName || managedCluster.GetLabels()["local-cluster"] == "true" {
-				return nil, fmt.Errorf("cannot update Spec.LocalClusterName while local-cluster is enabled")
+				return warnings, fmt.Errorf("cannot update Spec.LocalClusterName while local-cluster is enabled")
 			}
 		}
 	}
 
-	return nil, nil
+	return warnings, nil
 }
 
 var cfg *rest.Config
@@ -348,4 +370,54 @@ func contains(list []string, s string) bool {
 		}
 	}
 	return false
+}
+
+// checkDeprecatedAnnotations examines the MultiClusterHub resource for deprecated annotations
+// and spec fields, returning warnings for any that are found.
+func checkDeprecatedAnnotations(r *MultiClusterHub) admission.Warnings {
+	var warnings admission.Warnings
+
+	// Check for deprecated annotations
+	annotations := r.GetAnnotations()
+	if annotations != nil {
+		// Map of deprecated annotation keys to their current replacements
+		deprecatedAnnotations := map[string]string{
+			deprecatedAnnotationIgnoreOCPVersion: annotationIgnoreOCPVersion,
+			deprecatedAnnotationImageOverridesCM: annotationImageOverridesCM,
+			deprecatedAnnotationImageRepo:        annotationImageRepo,
+			deprecatedAnnotationKubeconfig:       annotationKubeconfig,
+			deprecatedAnnotationMCHPause:         annotationMCHPause,
+		}
+
+		for deprecatedKey, currentKey := range deprecatedAnnotations {
+			if _, exists := annotations[deprecatedKey]; exists {
+				warning := fmt.Sprintf("annotation '%s' is deprecated and will be removed in a future release. Please use '%s' instead",
+					deprecatedKey, currentKey)
+				warnings = append(warnings, warning)
+			}
+		}
+	}
+
+	// Check for deprecated spec fields
+	deprecatedSpecFields := []struct {
+		name      string
+		isPresent bool
+	}{
+		{"spec.hive", r.Spec.Hive != nil},
+		{"spec.ingress", r.Spec.Ingress != nil},
+		{"spec.customCAConfigmap", r.Spec.CustomCAConfigmap != ""},
+		{"spec.enableClusterBackup", r.Spec.EnableClusterBackup},
+		{"spec.enableClusterProxyAddon", r.Spec.EnableClusterProxyAddon},
+		{"spec.separateCertificateManagement", r.Spec.SeparateCertificateManagement},
+	}
+
+	for _, field := range deprecatedSpecFields {
+		if field.isPresent {
+			warning := fmt.Sprintf("field '%s' is deprecated and will be removed in a future release",
+				field.name)
+			warnings = append(warnings, warning)
+		}
+	}
+
+	return warnings
 }
