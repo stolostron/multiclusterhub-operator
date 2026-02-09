@@ -158,24 +158,3 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 	log.Info("No updates to defaults detected")
 	return ctrl.Result{}, nil
 }
-
-func (r *MultiClusterHubReconciler) CheckDeprecatedFieldUsage(m *operatorv1.MultiClusterHub) {
-	// Check for deprecated spec fields only (annotations are now handled by webhook)
-	df := []struct {
-		name      string
-		isPresent bool
-	}{
-		{"hive", m.Spec.Hive != nil},
-		{"ingress", m.Spec.Ingress != nil},
-		{"customCAConfigmap", m.Spec.CustomCAConfigmap != ""},
-		{"enableClusterBackup", m.Spec.EnableClusterBackup},
-		{"enableClusterProxyAddon", m.Spec.EnableClusterProxyAddon},
-		{"separateCertificateManagement", m.Spec.SeparateCertificateManagement},
-	}
-
-	for _, f := range df {
-		if f.isPresent {
-			r.Log.Info(fmt.Sprintf("Warning: %s field usage is deprecated in operator.", f.name))
-		}
-	}
-}
