@@ -160,7 +160,7 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 }
 
 func (r *MultiClusterHubReconciler) CheckDeprecatedFieldUsage(m *operatorv1.MultiClusterHub) {
-	a := m.GetAnnotations()
+	// Check for deprecated spec fields only (annotations are now handled by webhook)
 	df := []struct {
 		name      string
 		isPresent bool
@@ -171,21 +171,11 @@ func (r *MultiClusterHubReconciler) CheckDeprecatedFieldUsage(m *operatorv1.Mult
 		{"enableClusterBackup", m.Spec.EnableClusterBackup},
 		{"enableClusterProxyAddon", m.Spec.EnableClusterProxyAddon},
 		{"separateCertificateManagement", m.Spec.SeparateCertificateManagement},
-		{utils.DeprecatedAnnotationIgnoreOCPVersion, a[utils.DeprecatedAnnotationIgnoreOCPVersion] != ""},
-		{utils.DeprecatedAnnotationImageOverridesCM, a[utils.DeprecatedAnnotationImageOverridesCM] != ""},
-		{utils.DeprecatedAnnotationImageRepo, a[utils.DeprecatedAnnotationImageRepo] != ""},
-		{utils.DeprecatedAnnotationKubeconfig, a[utils.DeprecatedAnnotationKubeconfig] != ""},
-		{utils.DeprecatedAnnotationMCHPause, a[utils.DeprecatedAnnotationMCHPause] != ""},
-	}
-
-	if r.DeprecatedFields == nil {
-		r.DeprecatedFields = make(map[string]bool)
 	}
 
 	for _, f := range df {
-		if f.isPresent && !r.DeprecatedFields[f.name] {
+		if f.isPresent {
 			r.Log.Info(fmt.Sprintf("Warning: %s field usage is deprecated in operator.", f.name))
-			r.DeprecatedFields[f.name] = true
 		}
 	}
 }

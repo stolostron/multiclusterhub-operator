@@ -31,13 +31,12 @@ import (
 
 // MultiClusterHubReconciler reconciles a MultiClusterHub object
 type MultiClusterHubReconciler struct {
-	Client           client.Client
-	UncachedClient   client.Client
-	CacheSpec        CacheSpec
-	Scheme           *runtime.Scheme
-	Log              logr.Logger
-	UpgradeableCond  utils.Condition
-	DeprecatedFields map[string]bool
+	Client          client.Client
+	UncachedClient  client.Client
+	CacheSpec       CacheSpec
+	Scheme          *runtime.Scheme
+	Log             logr.Logger
+	UpgradeableCond utils.Condition
 }
 
 const (
