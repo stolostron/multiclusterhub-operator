@@ -229,12 +229,12 @@ var _ = Describe("Multiclusterhub webhook", func() {
 					Name:      "test-warnings",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"mch-pause":              "true",
-						"mch-imageRepository":    "quay.io/test",
-						"mch-imageOverridesCM":   "test-cm",
-						"ignoreOCPVersion":       "true",
-						"mch-kubeconfig":         "test-kubeconfig",
-						"some-other-annotation":  "value",
+						"mch-pause":             "true",
+						"mch-imageRepository":   "quay.io/test",
+						"mch-imageOverridesCM":  "test-cm",
+						"ignoreOCPVersion":      "true",
+						"mch-kubeconfig":        "test-kubeconfig",
+						"some-other-annotation": "value",
 					},
 				},
 				Spec: MultiClusterHubSpec{
@@ -268,12 +268,12 @@ var _ = Describe("Multiclusterhub webhook", func() {
 					Namespace: "default",
 				},
 				Spec: MultiClusterHubSpec{
-					LocalClusterName:               "test-cluster",
-					Hive:                           &HiveConfigSpec{},
-					CustomCAConfigmap:              "test-ca",
-					EnableClusterBackup:            true,
-					EnableClusterProxyAddon:        true,
-					SeparateCertificateManagement:  true,
+					LocalClusterName:              "test-cluster",
+					Hive:                          &HiveConfigSpec{},
+					CustomCAConfigmap:             "test-ca",
+					EnableClusterBackup:           true,
+					EnableClusterProxyAddon:       true,
+					SeparateCertificateManagement: true,
 				},
 			}
 
