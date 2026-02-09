@@ -322,6 +322,9 @@ spec:
                       - name
                       type: object
                     type: array
+                    x-kubernetes-list-map-keys:
+                    - name
+                    x-kubernetes-list-type: map
                   imagePullPolicy:
                     description: Pull policy of the MultiCluster hub images
                     type: string
