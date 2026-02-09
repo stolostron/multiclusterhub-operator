@@ -754,17 +754,13 @@ var _ = Describe("MultiClusterHub controller", func() {
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
 
-			// Appending to components rather than replacing with `Disable()`
-			createdMCH.Spec.Overrides.Components = append(
-				createdMCH.Spec.Overrides.Components,
-				operatorv1.ComponentConfig{Name: operatorv1.Console, Enabled: false},
-				operatorv1.ComponentConfig{Name: operatorv1.GRC, Enabled: false},
-				operatorv1.ComponentConfig{Name: operatorv1.Insights, Enabled: false},
-				operatorv1.ComponentConfig{Name: operatorv1.Search, Enabled: false},
-				operatorv1.ComponentConfig{Name: operatorv1.ClusterLifecycle, Enabled: false},
-				operatorv1.ComponentConfig{Name: operatorv1.MultiClusterObservability, Enabled: false},
-				operatorv1.ComponentConfig{Name: operatorv1.Volsync, Enabled: false},
-			)
+			createdMCH.Disable(operatorv1.Console)
+			createdMCH.Disable(operatorv1.GRC)
+			createdMCH.Disable(operatorv1.Insights)
+			createdMCH.Disable(operatorv1.Search)
+			createdMCH.Disable(operatorv1.ClusterLifecycle)
+			createdMCH.Disable(operatorv1.MultiClusterObservability)
+			createdMCH.Disable(operatorv1.Volsync)
 
 			Expect(k8sClient.Update(ctx, createdMCH)).Should(Succeed())
 
