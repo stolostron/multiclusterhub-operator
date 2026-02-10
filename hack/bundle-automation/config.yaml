@@ -1,4 +1,4 @@
-acm-release-version: '2.16'
+acm-release-version: '2.17'
 components:
   - repo_name: multicloud-operators-subscription
     github_ref: "https://github.com/stolostron/multicloud-operators-subscription.git"
