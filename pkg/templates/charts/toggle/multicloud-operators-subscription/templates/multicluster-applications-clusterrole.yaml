@@ -179,3 +179,10 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - clusterview.open-cluster-management.io
+  resources:
+  - userpermissions
+  verbs:
+  - get
+  - list
