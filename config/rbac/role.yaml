@@ -876,6 +876,13 @@ rules:
   - update
   - watch
 - apiGroups:
+  - clusterview.open-cluster-management.io
+  resources:
+  - userpermissions
+  verbs:
+  - get
+  - list
+- apiGroups:
   - config.openshift.io
   resources:
   - apiservers
