@@ -6,10 +6,10 @@ metadata:
   name: standalone-subscription-metrics
 spec:
   ports:
-    - name: metrics
-      port: 8389
-      protocol: TCP
-      targetPort: 8389
+  - name: metrics
+    port: 8389
+    protocol: TCP
+    targetPort: 8389
   selector:
     app: multicluster-operators-standalone-subscription
   sessionAffinity: None
