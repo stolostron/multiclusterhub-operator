@@ -161,6 +161,7 @@ package main
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclustersets/join,verbs=create
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=placementdecisions;placements,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=placements,verbs=get;list;create;update;watch;delete
+//+kubebuilder:rbac:groups=clusterview.open-cluster-management.io,resources=userpermissions,verbs=get;list
 //+kubebuilder:rbac:groups=config.openshift.io,resources=*;infrastructures,verbs=*
 //+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers;infrastructures;infrastructures/status,verbs=get
 //+kubebuilder:rbac:groups=config.openshift.io,resources=clusterversions,verbs=list;get;watch
