@@ -12,6 +12,8 @@ spec:
         metadata:
           annotations:
             addon.open-cluster-management.io/addon-pre-delete: ''
+          labels:
+            apps.open-cluster-management.io/gitopsaddon: 'true'
           name: gitops-addon-cleanup
           namespace: open-cluster-management-agent-addon
         spec:
@@ -24,11 +26,6 @@ spec:
                 - -cleanup
                 command:
                 - /usr/local/bin/gitopsaddon
-                env:
-                - name: GITOPS_OPERATOR_IMAGE
-                  value: '{{ `{{GITOPS_OPERATOR_IMAGE}}` }}'
-                - name: ARGOCD_IMAGE
-                  value: '{{ `{{ARGOCD_IMAGE}}` }}'
                 image: '{{ .Values.global.imageOverrides.multicloud_integrations }}'
                 imagePullPolicy: IfNotPresent
                 name: cleanup
@@ -39,6 +36,7 @@ spec:
         metadata:
           labels:
             app: gitops-addon
+            apps.open-cluster-management.io/gitopsaddon: 'true'
           name: gitops-addon
           namespace: open-cluster-management-agent-addon
         spec:
@@ -81,6 +79,8 @@ spec:
                   value: '{{ `{{ARGO_ROLLOUTS_IMAGE}}` }}'
                 - name: ARGOCD_IMAGE_UPDATER_IMAGE
                   value: '{{ `{{ARGOCD_IMAGE_UPDATER_IMAGE}}` }}'
+                - name: ARGOCD_AGENT_IMAGE
+                  value: '{{ `{{ARGOCD_AGENT_IMAGE}}` }}'
                 - name: HTTP_PROXY
                   value: '{{ `{{HTTP_PROXY}}` }}'
                 - name: HTTPS_PROXY
@@ -117,11 +117,15 @@ spec:
         - name: open-cluster-management-image-pull-credentials
         kind: ServiceAccount
         metadata:
+          labels:
+            apps.open-cluster-management.io/gitopsaddon: 'true'
           name: gitops-addon
           namespace: open-cluster-management-agent-addon
       - apiVersion: rbac.authorization.k8s.io/v1
         kind: ClusterRoleBinding
         metadata:
+          labels:
+            apps.open-cluster-management.io/gitopsaddon: 'true'
           name: gitops-addon
         roleRef:
           apiGroup: rbac.authorization.k8s.io
