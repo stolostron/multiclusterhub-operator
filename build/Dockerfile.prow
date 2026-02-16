@@ -8,6 +8,9 @@ COPY hack/scripts hack/scripts
 FROM registry.ci.openshift.org/stolostron/builder:go1.25-linux AS builder
 
 WORKDIR /workspace
+
+# Enable automatic Go toolchain downloads
+ENV GOTOOLCHAIN=auto
 # Copy the Go Modules manifests
 COPY go.mod go.mod
 COPY go.sum go.sum

@@ -8,6 +8,9 @@ COPY hack/scripts hack/scripts
 FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.25 AS builder
 
 WORKDIR /workspace
+
+# Enable automatic Go toolchain downloads
+ENV GOTOOLCHAIN=auto
 # Copy the Go Modules manifests
 COPY go.mod go.mod
 COPY go.sum go.sum
