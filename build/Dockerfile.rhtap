@@ -5,9 +5,12 @@ FROM registry.access.redhat.com/ubi9/ubi-minimal:latest as cloner
 RUN microdnf install -y git findutils
 COPY hack/scripts hack/scripts
 
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.21 AS builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.24 AS builder
 
 WORKDIR /workspace
+
+# Enable automatic Go toolchain downloads
+ENV GOTOOLCHAIN=auto
 # Copy the Go Modules manifests
 COPY go.mod go.mod
 COPY go.sum go.sum
