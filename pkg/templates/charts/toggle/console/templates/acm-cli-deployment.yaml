@@ -69,6 +69,7 @@ spec:
       hostNetwork: false
       hostPID: false
       hostIPC: false
+      serviceAccountName: console-chart
       securityContext:
         runAsNonRoot: true
       {{- with .Values.hubconfig.tolerations }}
