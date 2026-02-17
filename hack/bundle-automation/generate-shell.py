@@ -111,7 +111,7 @@ def cleanup_scripts(script_dependencies):
     """
     for script in script_dependencies:
         # If the script is in a subdirectory like 'utils/', construct the path properly
-        dest = DEST_DIR / script
+        dest = DEST_DIR / Path(script).name
 
         # Check if the destination path is a directory or a file
         if dest.exists():
@@ -135,7 +135,7 @@ def prepare_and_execute(operation, operation_data, args):
     logging.info(f"Executing operator: {operation}")
 
     script = Path(operation_data["script"])
-    script_dependencies = [script, "utils"]
+    script_dependencies = [script, str(script.parent / "utils")]
     copy_scripts(script_dependencies)
 
     operations_args = operation_data.get("args", "").format(
