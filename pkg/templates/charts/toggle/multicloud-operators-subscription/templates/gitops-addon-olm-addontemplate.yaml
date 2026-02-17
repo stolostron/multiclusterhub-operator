@@ -1,0 +1,74 @@
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: AddOnTemplate
+metadata:
+  name: gitops-addon-olm
+spec:
+  addonName: gitops-addon
+  agentSpec:
+    workload:
+      manifests:
+      - apiVersion: batch/v1
+        kind: Job
+        metadata:
+          annotations:
+            addon.open-cluster-management.io/addon-pre-delete: ''
+          labels:
+            apps.open-cluster-management.io/gitopsaddon: 'true'
+          name: gitops-addon-cleanup
+          namespace: open-cluster-management-agent-addon
+        spec:
+          activeDeadlineSeconds: 600
+          backoffLimit: 3
+          template:
+            spec:
+              containers:
+              - args:
+                - -cleanup
+                command:
+                - /usr/local/bin/gitopsaddon
+                image: '{{ .Values.global.imageOverrides.multicloud_integrations }}'
+                imagePullPolicy: IfNotPresent
+                name: cleanup
+              restartPolicy: Never
+              serviceAccountName: gitops-addon
+      - apiVersion: operators.coreos.com/v1alpha1
+        kind: Subscription
+        metadata:
+          labels:
+            app.kubernetes.io/managed-by: multicloud-integrations
+            apps.open-cluster-management.io/gitopsaddon: 'true'
+          name: openshift-gitops-operator
+          namespace: openshift-operators
+        spec:
+          channel: latest
+          config:
+            env:
+            - name: DISABLE_DEFAULT_ARGOCD_INSTANCE
+              value: 'true'
+          installPlanApproval: Automatic
+          name: openshift-gitops-operator
+          source: redhat-operators
+          sourceNamespace: openshift-marketplace
+      - apiVersion: v1
+        imagePullSecrets:
+        - name: open-cluster-management-image-pull-credentials
+        kind: ServiceAccount
+        metadata:
+          labels:
+            apps.open-cluster-management.io/gitopsaddon: 'true'
+          name: gitops-addon
+          namespace: open-cluster-management-agent-addon
+      - apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRoleBinding
+        metadata:
+          labels:
+            apps.open-cluster-management.io/gitopsaddon: 'true'
+          name: gitops-addon
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: ClusterRole
+          name: cluster-admin
+        subjects:
+        - kind: ServiceAccount
+          name: gitops-addon
+          namespace: open-cluster-management-agent-addon

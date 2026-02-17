@@ -31,7 +31,7 @@ jobs:
     strategy:
       fail-fast: false # If one jobs fail, we still want the other jobs to run.
       matrix:
-        python-version: [3.9]
+        python-version: [3.13]
         branch: ['main', 'release-2.13', 'release-2.14', 'release-2.15']
         include:
           # Explicitly set Go version for each branch

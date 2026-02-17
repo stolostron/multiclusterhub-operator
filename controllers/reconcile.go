@@ -68,9 +68,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	multiClusterHub.Status.HubConditions = filterOutConditionWithSubstring(multiClusterHub.Status.HubConditions,
 		string(operatorv1.ComponentFailure))
 
-	// Check if any deprecated fields are present within the multiClusterHub spec.
-	r.CheckDeprecatedFieldUsage(multiClusterHub)
-
 	// Check to see if upgradeable
 	upgrade, err := r.setOperatorUpgradeableStatus(ctx, multiClusterHub)
 	if err != nil {
