@@ -88,7 +88,7 @@ func Test_latestDeployCondition(t *testing.T) {
 	var bs []appsv1.DeploymentCondition
 	err := json.Unmarshal([]byte(b), &bs)
 	if err != nil {
-		t.Error(err.Error())
+		t.Error(err)
 	}
 
 	first := appsv1.DeploymentCondition{
