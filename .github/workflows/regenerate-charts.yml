@@ -38,11 +38,11 @@ jobs:
           - branch: main
             go-version: "1.25"
           - branch: release-2.13
-            go-version: "1.24"
+            go-version: "1.25"
           - branch: release-2.14
-            go-version: "1.24"
+            go-version: "1.25"
           - branch: release-2.15
-            go-version: "1.24"
+            go-version: "1.25"
           - branch: release-2.16
             go-version: "1.25"
 
