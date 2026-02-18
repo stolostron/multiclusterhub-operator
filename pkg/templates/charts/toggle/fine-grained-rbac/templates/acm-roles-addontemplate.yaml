@@ -97,6 +97,22 @@ spec:
               - list
               - watch
             - apiGroups:
+              - storage.k8s.io
+              resources:
+              - storageclasses
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - config.openshift.io
+              resources:
+              - clusteroperators
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
               - project.openshift.io
               resources:
               - projects
@@ -219,6 +235,22 @@ spec:
               - list
               - watch
             - apiGroups:
+              - storage.k8s.io
+              resources:
+              - storageclasses
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - config.openshift.io
+              resources:
+              - clusteroperators
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
               - project.openshift.io
               resources:
               - projects
@@ -266,11 +298,6 @@ spec:
               - clusterview.open-cluster-management.io
               resources:
               - kubevirtprojects
-              verbs:
-              - list
-            - apiGroups:
-              - clusterview.open-cluster-management.io
-              resources:
               - userpermissions
               verbs:
               - list
@@ -320,11 +347,6 @@ spec:
               - clusterview.open-cluster-management.io
               resources:
               - kubevirtprojects
-              verbs:
-              - list
-            - apiGroups:
-              - clusterview.open-cluster-management.io
-              resources:
               - userpermissions
               verbs:
               - list
