@@ -10,7 +10,7 @@
 
 - repo_name: "multicluster-role-assignment"
   github_ref: "https://github.com/stolostron/multicluster-role-assignment.git"
-  branch: "main"
+  branch: "release-2.16"
   charts:
       - name: "fine-grained-rbac"
         chart-path: "charts/fine-grained-rbac"
