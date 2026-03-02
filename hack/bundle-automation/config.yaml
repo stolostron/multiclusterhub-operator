@@ -80,7 +80,7 @@ components:
 
   - repo_name: submariner-addon
     github_ref: "https://github.com/stolostron/submariner-addon.git"
-    branch: "release-2.16"
+    branch: "release-2.17"
     operators:
       - name: submariner-addon
         bundlePath: "deploy/olm-catalog/manifests/"
