@@ -322,33 +322,36 @@ spec:
                 - name
                 x-kubernetes-list-type: map
               subject:
-                description: Subject defines the user, group, or service account for
-                  all role assignments.
+                description: Subject defines the user or group for all role assignments.
                 properties:
                   apiGroup:
-                    description: |-
-                      APIGroup holds the API group of the referenced subject.
-                      Defaults to "" for ServiceAccount subjects.
-                      Defaults to "rbac.authorization.k8s.io" for User and Group subjects.
+                    description: API group of the referenced subject.
+                    enum:
+                    - ""
+                    - rbac.authorization.k8s.io
                     type: string
                   kind:
-                    description: |-
-                      Kind of object being referenced. Values defined by this API group are "User", "Group", and "ServiceAccount".
-                      If the Authorizer does not recognized the kind value, the Authorizer should report an error.
+                    description: Kind of the subject. Accepted values are "User" and
+                      "Group".
+                    enum:
+                    - User
+                    - Group
                     type: string
                   name:
-                    description: Name of the object being referenced.
+                    description: Name of the subject.
                     type: string
                   namespace:
-                    description: |-
-                      Namespace of the referenced object.  If the object kind is non-namespace, such as "User" or "Group", and this value is not empty
-                      the Authorizer should report an error.
+                    description: Namespace of the referenced subject. Must be empty
+                      for "User" or "Group" kinds.
                     type: string
                 required:
                 - kind
                 - name
                 type: object
-                x-kubernetes-map-type: atomic
+                x-kubernetes-validations:
+                - message: namespace must be empty for User and Group kinds
+                  rule: '!(self.kind in [''User'', ''Group'']) || !has(self.namespace)
+                    || size(self.namespace) == 0'
             required:
             - roleAssignments
             - subject
