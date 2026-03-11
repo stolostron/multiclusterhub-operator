@@ -278,12 +278,18 @@ spec:
                               Placement resource
                             properties:
                               name:
-                                description: Name of the Placement resource
+                                description: Name of the Placement resource. Must
+                                  be a valid Kubernetes resource name (DNS subdomain).
+                                maxLength: 253
                                 minLength: 1
+                                pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                                 type: string
                               namespace:
-                                description: Namespace of the Placement resource
+                                description: Namespace of the Placement resource.
+                                  Must be a valid Kubernetes namespace name (DNS label).
+                                maxLength: 63
                                 minLength: 1
+                                pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                 type: string
                             required:
                             - name
@@ -307,8 +313,12 @@ spec:
                     targetNamespaces:
                       description: |-
                         TargetNamespaces defines what namespaces the role should be applied in for all selected clusters in the role
-                        assignment. If TargetNamespaces is not present, the role will be applied to all clusters' namespaces.
+                        assignment. If TargetNamespaces is not present, the role will be applied to all clusters' namespaces. Each
+                        namespace must be a valid Kubernetes namespace name (DNS label).
                       items:
+                        maxLength: 63
+                        minLength: 1
+                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                         type: string
                       type: array
                   required:
@@ -322,7 +332,8 @@ spec:
                 - name
                 x-kubernetes-list-type: map
               subject:
-                description: Subject defines the user or group for all role assignments.
+                description: Subject defines the user, group, or service account for
+                  all role assignments.
                 properties:
                   apiGroup:
                     description: API group of the referenced subject.
@@ -331,27 +342,38 @@ spec:
                     - rbac.authorization.k8s.io
                     type: string
                   kind:
-                    description: Kind of the subject. Accepted values are "User" and
-                      "Group".
+                    description: Kind of the subject. Accepted values are "User",
+                      "Group", and "ServiceAccount".
                     enum:
                     - User
                     - Group
+                    - ServiceAccount
                     type: string
                   name:
                     description: Name of the subject.
+                    minLength: 1
                     type: string
                   namespace:
-                    description: Namespace of the referenced subject. Must be empty
-                      for "User" or "Group" kinds.
+                    description: |-
+                      Namespace of the referenced subject. Must not be set for "User" or "Group" kinds. Must be set for "ServiceAccount"
+                      kind. Must be a valid Kubernetes namespace name (DNS label).
+                    maxLength: 63
+                    minLength: 1
+                    pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                     type: string
                 required:
                 - kind
                 - name
                 type: object
                 x-kubernetes-validations:
-                - message: namespace must be empty for User and Group kinds
-                  rule: '!(self.kind in [''User'', ''Group'']) || !has(self.namespace)
-                    || size(self.namespace) == 0'
+                - message: Subject namespace must not be set for User and Group kinds
+                  rule: '!(self.kind in [''User'', ''Group'']) || !has(self.namespace)'
+                - message: Subject apiGroup must be empty for ServiceAccount kind
+                  rule: self.kind != 'ServiceAccount' || !has(self.apiGroup) || size(self.apiGroup)
+                    == 0
+                - message: A namespace is required when subject kind is ServiceAccount
+                  rule: self.kind != 'ServiceAccount' || (has(self.namespace) && size(self.namespace)
+                    > 0)
             required:
             - roleAssignments
             - subject
