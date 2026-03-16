@@ -371,13 +371,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 	}
 
-	// Cleanup unused resources once components up-to-date
-	if r.ComponentsAreRunning(multiClusterHub, ocpConsole, stsEnabled) {
-		result, err = r.ensureRemovalsGone(multiClusterHub)
-		if result != (ctrl.Result{}) {
-			return result, err
-		}
-	}
 	if upgrade {
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
