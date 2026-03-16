@@ -75,16 +75,6 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 		updateNecessary = true
 	}
 
-	// management-ingress component removed in 2.7.0
-	if m.Prune(operatorv1.ManagementIngress) {
-		updateNecessary = true
-	}
-
-	// helm-repo component removed in 2.7.0
-	if m.Prune(operatorv1.Repo) {
-		updateNecessary = true
-	}
-
 	if m.Enabled(operatorv1.MTVIntegrationsPreview) {
 		m.Enable(operatorv1.MTVIntegrations)
 		m.Prune(operatorv1.MTVIntegrationsPreview)

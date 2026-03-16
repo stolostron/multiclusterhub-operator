@@ -7,7 +7,6 @@ import (
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 
 	configv1 "github.com/openshift/api/config/v1"
-	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 
 	corev1 "k8s.io/api/core/v1"
@@ -259,21 +258,4 @@ func SampleClusterManagementAddOn(component string) *ocmapi.ClusterManagementAdd
 	}
 
 	return addon
-}
-
-func SampleServiceMonitor(component string, namespace string) *promv1.ServiceMonitor {
-	smName, err := operatorsv1.GetLegacyServiceMonitorName(component)
-	if err != nil {
-		smName = "unknown"
-	}
-
-	sm := &promv1.ServiceMonitor{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      smName,
-			Namespace: namespace,
-		},
-		Spec: promv1.ServiceMonitorSpec{},
-	}
-
-	return sm
 }
