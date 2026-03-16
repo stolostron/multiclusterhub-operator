@@ -227,12 +227,6 @@ var _ = Describe("utility functions", func() {
 			d := GetDeploymentsForStatus(&mch, true, false)
 			Expect(len(d)).To(Equal(1))
 		})
-		It("gets deployments for status with cluster-permission enabled", func() {
-			mch := resources.EmptyMCH()
-			mch.Enable(mchv1.ClusterPermission)
-			d := GetDeploymentsForStatus(&mch, true, false)
-			Expect(len(d)).To(Equal(1))
-		})
 		It("Sets Default Component values", func() {
 			mch := resources.EmptyMCH()
 			updated, err := SetDefaultComponents(&mch)

@@ -445,9 +445,7 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole, isSTSEn
 	if m.Enabled(operatorsv1.MultiClusterObservability) {
 		nn = append(nn, types.NamespacedName{Name: "multicluster-observability-operator", Namespace: m.Namespace})
 	}
-	if m.Enabled(operatorsv1.ClusterPermission) {
-		nn = append(nn, types.NamespacedName{Name: "cluster-permission", Namespace: m.Namespace})
-	}
+
 	return nn
 }
 
@@ -573,14 +571,24 @@ func deduplicate(config []operatorsv1.ComponentConfig) []operatorsv1.ComponentCo
 	return newConfig
 }
 
-// getMCEComponents returns mce components that are present in mch
+// GetMCEComponents returns mce components that are present in mch
 func GetMCEComponents(mch *operatorsv1.MultiClusterHub) []mcev1.ComponentConfig {
 	config := []mcev1.ComponentConfig{}
+
 	for _, n := range operatorsv1.MCEComponents {
+		/*
+			In MCE, some components have migrated from ACM to MCE for example, the Cluster Permission component
+			in ACM 2.17. If such a component is present in MCH, it should be added to the MCE config with the same
+			enabled status in order to ensure a smooth transition for users who have been using these components in ACM
+			and are now moving to MCE. By checking if the component is present in MCH and adding it to the MCE config,
+			we can ensure that users can continue to use these components without any disruption, even as they
+			transition to MCE.
+		*/
 		if mch.ComponentPresent(n) {
 			config = append(config, mcev1.ComponentConfig{Name: n, Enabled: mch.Enabled(n)})
 		}
 	}
+
 	if mch.Spec.DisableHubSelfManagement {
 		config = append(config, mcev1.ComponentConfig{Name: operatorsv1.MCELocalCluster, Enabled: false})
 	} else {

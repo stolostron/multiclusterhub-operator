@@ -326,6 +326,13 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, fmt.Errorf("failed to find pullsecret: %s", err)
 	}
 
+	/*
+		In the ACM architectural design, MCH is responsible for deploying or adopting MCE. MCH is the "hub of the hub"
+		and the central point of management for the ACM deployment, while MCE is a critical component that provides
+		multi-cluster management capabilities. By having MCH deploy or adopt MCE, we ensure a streamlined and cohesive
+		deployment process where MCE must be deployed before any other components to ensure the necessary CRDs are
+		present for the other components to deploy successfully.
+	*/
 	result, err = r.ensureMultiClusterEngine(ctx, multiClusterHub)
 	if result != (ctrl.Result{}) {
 		return result, err
@@ -346,6 +353,11 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 
+	/*
+		Create the MCH operator's monitoring infrastructure. These resources enable Prometheus to collect
+		metrics from the operator for observability and alerting. The Service exposes the metrics endpoint,
+		and the ServiceMonitor tells Prometheus how to scrape it.
+	*/
 	result, err = r.createMetricsService(ctx, multiClusterHub)
 	if err != nil {
 		return result, err
@@ -374,16 +386,23 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 
+	/*
+		In ACM 2.17, cluster-permission component is being migrated from MCH to MCE. After MCE is ready,
+		we need to clean up the legacy cluster-permission resources from the MCH namespace and prune the
+		component from the MCH CR to ensure they only exist in the MCE target namespace.
+
+		This is a generic function that handles any components migrated from MCH to MCE.
+	*/
+	result, err = r.ensureMigratedComponentsCleanup(ctx, multiClusterHub, stsEnabled)
+	if result != (ctrl.Result{}) || err != nil {
+		return result, err
+	}
+
 	if !multiClusterHub.Spec.DisableHubSelfManagement {
 		result, err = r.ensureKlusterletAddonConfig(multiClusterHub)
 		if result != (ctrl.Result{}) || err != nil {
 			return result, err
 		}
-	}
-	// iam-policy-controller was removed in 2.11
-	result, err = r.ensureNoClusterManagementAddOn(multiClusterHub, operatorv1.IamPolicyController)
-	if err != nil {
-		return result, err
 	}
 
 	// Install the rest of the subscriptions in no particular order

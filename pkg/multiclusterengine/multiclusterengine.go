@@ -84,6 +84,7 @@ func NewMultiClusterEngine(m *operatorv1.MultiClusterHub) *mcev1.MultiClusterEng
 			Labels:      labels,
 			Annotations: annotations,
 		},
+
 		Spec: mcev1.MultiClusterEngineSpec{
 			LocalClusterName:   m.Spec.LocalClusterName,
 			ImagePullSecret:    m.Spec.ImagePullSecret,

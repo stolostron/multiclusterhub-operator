@@ -1028,3 +1028,48 @@ func (r *MultiClusterHubReconciler) GetInstallPlanApprovalFromSubscription(sub *
 	}
 	return sub.Spec.InstallPlanApproval
 }
+
+/*
+ensureMigratedComponentsCleanup handles cleanup of components that have been migrated from MCH to MCE.
+After MCE is ready and has adopted the component, this function ensures that legacy resources are
+removed from the MCH namespace and the component is pruned from the MCH CR.
+
+This is a generic function that can handle multiple migrated components. Components are added to the
+migratedComponents list when they are deprecated in MCH and moved to MCE in a specific release.
+*/
+func (r *MultiClusterHubReconciler) ensureMigratedComponentsCleanup(ctx context.Context, m *operatorv1.MultiClusterHub, isSTSEnabled bool) (ctrl.Result, error) {
+	// List of components migrated from MCH to MCE (deprecated in MCH)
+	migratedComponents := []string{
+		operatorv1.ClusterPermission, // Migrated to MCE in ACM 2.17
+	}
+
+	updated := false
+	for _, component := range migratedComponents {
+		if m.ComponentPresent(component) {
+			r.Log.Info("Cleaning up migrated component resources", "Component", component)
+
+			// Clean up all legacy resources (including InternalHubComponent, Deployment, ServiceAccount, etc.)
+			result, err := r.ensureNoComponent(ctx, m, component, r.CacheSpec, isSTSEnabled)
+			if result != (ctrl.Result{}) || err != nil {
+				return result, err
+			}
+
+			// Prune from MCH CR after successful cleanup
+			if m.Prune(component) {
+				r.Log.Info("Pruned migrated component from MCH CR", "Component", component)
+				updated = true
+			}
+		}
+	}
+
+	// Update MCH CR if any components were pruned
+	if updated {
+		if err := r.Client.Update(ctx, m); err != nil {
+			r.Log.Error(err, "Failed to update MCH CR after pruning migrated components")
+			return ctrl.Result{}, err
+		}
+		r.Log.Info("Successfully updated MCH CR after pruning migrated components")
+	}
+
+	return ctrl.Result{}, nil
+}
