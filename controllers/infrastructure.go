@@ -126,6 +126,18 @@ func (r *MultiClusterHubReconciler) createTrustBundleConfigmap(ctx context.Conte
 	return ctrl.Result{}, nil
 }
 
+/*
+createMetricsService ensures the MCH operator's metrics service exists in the MCH namespace.
+
+This service exposes the operator's metrics endpoint (port 8383) so that Prometheus can scrape
+operator-specific metrics for monitoring and observability. The service is owned by the MCH CR
+and will be automatically cleaned up when the MCH is deleted.
+
+This is required for:
+  - Monitoring operator health and performance
+  - Alerting on operator issues
+  - Providing visibility into MCH reconciliation metrics
+*/
 func (r *MultiClusterHubReconciler) createMetricsService(ctx context.Context, m *operatorv1.MultiClusterHub) (
 	ctrl.Result, error,
 ) {
@@ -189,6 +201,20 @@ func (r *MultiClusterHubReconciler) createMetricsService(ctx context.Context, m 
 	return ctrl.Result{}, nil
 }
 
+/*
+createMetricsServiceMonitor ensures the MCH operator's ServiceMonitor exists in the MCH namespace.
+
+A ServiceMonitor is a Prometheus Operator CRD that configures Prometheus to scrape metrics from
+the MCH operator service. This enables automatic discovery and collection of operator metrics
+without manual Prometheus configuration.
+
+This is required for:
+  - Automatic metrics collection by the OpenShift monitoring stack
+  - Integration with the cluster-wide Prometheus instance
+  - Consistent monitoring across all ACM components
+
+The ServiceMonitor is owned by the MCH CR and will be automatically cleaned up when the MCH is deleted.
+*/
 func (r *MultiClusterHubReconciler) createMetricsServiceMonitor(ctx context.Context, m *operatorv1.MultiClusterHub) (
 	ctrl.Result, error,
 ) {
@@ -291,7 +317,7 @@ func (r *MultiClusterHubReconciler) ingressDomain(
 	return ctrl.Result{}, nil
 }
 
-// ingressDomain is discovered from Openshift cluster configuration resources
+// openShiftApiUrl is discovered from Openshift cluster configuration resources
 func (r *MultiClusterHubReconciler) openShiftApiUrl(ctx context.Context, m *operatorv1.MultiClusterHub) (
 	ctrl.Result, error) {
 	infrastructure := &configv1.Infrastructure{}

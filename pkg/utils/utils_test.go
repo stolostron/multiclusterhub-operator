@@ -23,19 +23,6 @@ import (
 )
 
 var _ = Describe("utility functions", func() {
-	Context("CertManagerNS function", func() {
-		It("returns the cert manager namespace when provided in the spec", func() {
-			mch := resources.EmptyMCH()
-			mch.Spec.SeparateCertificateManagement = true
-			Expect(CertManagerNS(&mch)).To(Equal(CertManagerNamespace))
-		})
-
-		It("returns the mch namespace when certmanager ns is not provided", func() {
-			mch := resources.EmptyMCH()
-			Expect(CertManagerNS(&mch)).To(Equal(resources.MulticlusterhubNamespace))
-		})
-	})
-
 	Context("using label function", func() {
 		It("adds the installer labels to the object", func() {
 			By("creating an unstructured object with a label")
@@ -510,16 +497,6 @@ func TestTrackedNamespaces(t *testing.T) {
 			name: "Watching only in same namespace",
 			mch:  &mchv1.MultiClusterHub{ObjectMeta: metav1.ObjectMeta{Namespace: "test"}},
 			want: []string{"test"},
-		},
-		{
-			name: "Watching current and cert-manager namespace",
-			mch: &mchv1.MultiClusterHub{
-				ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-				Spec: mchv1.MultiClusterHubSpec{
-					SeparateCertificateManagement: true,
-				},
-			},
-			want: []string{"test", CertManagerNamespace},
 		},
 	}
 	for _, tt := range tests {

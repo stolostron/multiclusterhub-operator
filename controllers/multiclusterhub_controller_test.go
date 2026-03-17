@@ -40,7 +40,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -985,91 +984,6 @@ var _ = Describe("MultiClusterHub controller", func() {
 			result, err = reconciler.ensureOpenShiftNamespaceLabel(ctx, mch2)
 			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(err).NotTo(BeNil())
-		})
-	})
-
-	Context("Legacy clean up tasks", func() {
-		It("Removes the legacy GRC Prometheus configuration", func() {
-			By("Applying prereqs")
-			ApplyPrereqs(k8sClient)
-
-			By("Creating the legacy GRC PrometheusRule and ServiceMonitor")
-			pr := &unstructured.Unstructured{
-				Object: map[string]interface{}{
-					"spec": map[string]interface{}{
-						"groups": []interface{}{
-							map[string]interface{}{
-								"name": "some-group",
-								"rules": []interface{}{
-									map[string]interface{}{
-										"expr": "something else",
-									},
-								},
-							},
-						},
-					},
-				},
-			}
-			pr.SetGroupVersionKind(schema.GroupVersionKind{
-				Group:   "monitoring.coreos.com",
-				Kind:    "PrometheusRule",
-				Version: "v1",
-			})
-			pr.SetName("ocm-grc-policy-propagator-metrics")
-			pr.SetNamespace("openshift-monitoring")
-
-			err := k8sClient.Create(context.TODO(), pr)
-			Expect(err).To(BeNil())
-
-			sm := &unstructured.Unstructured{
-				Object: map[string]interface{}{
-					"spec": map[string]interface{}{
-						"endpoints": []interface{}{
-							map[string]interface{}{
-								"path": "/some/path",
-							},
-						},
-						"selector": map[string]interface{}{
-							"matchLabels": map[string]interface{}{
-								"app": "grc",
-							},
-						},
-					},
-				},
-			}
-			sm.SetGroupVersionKind(schema.GroupVersionKind{
-				Group:   "monitoring.coreos.com",
-				Kind:    "ServiceMonitor",
-				Version: "v1",
-			})
-			sm.SetName("ocm-grc-policy-propagator-metrics")
-			sm.SetNamespace("openshift-monitoring")
-
-			err = k8sClient.Create(context.TODO(), sm)
-			Expect(err).To(BeNil())
-
-			legacyResourceKind := operatorv1.GetLegacyConfigKind()
-			ns := "openshift-monitoring"
-
-			By("Running the cleanup of the legacy configuration kinds")
-			for _, kind := range legacyResourceKind {
-				err = reconciler.removeLegacyConfigurations(context.TODO(), ns, kind)
-				Expect(err).To(BeNil())
-			}
-
-			By("Verifying that the legacy GRC PrometheusRule is deleted")
-			err = k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(pr), pr)
-			Expect(errors.IsNotFound(err)).To(BeTrue())
-
-			By("Verifying that the legacy GRC ServiceMonitor is deleted")
-			err = k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(sm), sm)
-			Expect(errors.IsNotFound(err)).To(BeTrue())
-
-			By("Running the cleanup of the legacy configuration again should do nothing")
-			for _, kind := range legacyResourceKind {
-				err = reconciler.removeLegacyConfigurations(context.TODO(), ns, kind)
-				Expect(err).To(BeNil())
-			}
 		})
 	})
 

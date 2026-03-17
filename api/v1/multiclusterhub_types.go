@@ -53,7 +53,7 @@ type MultiClusterHubSpec struct {
 	// (Deprecated) Install cert-manager into its own namespace
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Separate Certificate Management",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	// +optional
-	SeparateCertificateManagement bool `json:"separateCertificateManagement"`
+	SeparateCertificateManagement bool `json:"separateCertificateManagement,omitempty"`
 
 	// Set the nodeselectors
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`

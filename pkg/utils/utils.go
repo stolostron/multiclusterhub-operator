@@ -109,14 +109,6 @@ const (
 	MCHOperatorMetricsServiceMonitorName = "multiclusterhub-operator-metrics"
 )
 
-// CertManagerNS returns the namespace to deploy cert manager objects
-func CertManagerNS(m *operatorsv1.MultiClusterHub) string {
-	if m.Spec.SeparateCertificateManagement {
-		return CertManagerNamespace
-	}
-	return m.Namespace
-}
-
 // ContainsPullSecret returns whether a list of pullSecrets contains a given pull secret
 func ContainsPullSecret(pullSecrets []corev1.LocalObjectReference, ps corev1.LocalObjectReference) bool {
 	for _, v := range pullSecrets {
@@ -336,9 +328,6 @@ func GetTestImages() []string {
 // TrackedNamespaces returns the list of namespaces we deploy components to and should track
 func TrackedNamespaces(m *operatorsv1.MultiClusterHub) []string {
 	trackedNamespaces := []string{m.Namespace}
-	if m.Spec.SeparateCertificateManagement {
-		trackedNamespaces = append(trackedNamespaces, CertManagerNamespace)
-	}
 	if m.Enabled(operatorsv1.ClusterBackup) {
 		trackedNamespaces = append(trackedNamespaces, ClusterSubscriptionNamespace)
 	}

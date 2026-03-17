@@ -272,15 +272,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	// 2.6 -> 2.7 upgrade logic
-	// There are ClusterManagementAddOns in the GRC appsub that need to be preserved when deleting the helmrelease
-	// To stop helm from removing them we will remove the finalizer on the GRC helmrelease, delete the appsub,
-	// and clean things up ourselves
-	err = r.cleanupGRCAppsub(multiClusterHub)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
 	// Deploy appsub operator component
 	if multiClusterHub.Enabled(operatorv1.Appsub) {
 		result, err = r.ensureComponent(ctx, multiClusterHub, operatorv1.Appsub, r.CacheSpec, stsEnabled)
@@ -289,21 +280,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 	if result != (ctrl.Result{}) {
 		return result, err
-	}
-
-	// Remove existing appsubs and helmreleases if present from upgrade
-	result, err = r.ensureAppsubsGone(multiClusterHub)
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	/*
-	   Remove existing service and servicemonitor configurations, if present from upgrade. In ACM 2.2, operator-sdk
-	   generated configurations for the MCH operator to be collecting metrics. In later releases, these resources are
-	   no longer available; therefore, we need to explicitly remove them from the upgrade configuration.
-	*/
-	for _, kind := range operatorv1.GetLegacyConfigKind() {
-		_ = r.removeLegacyConfigurations(ctx, "openshift-monitoring", kind)
 	}
 
 	if utils.ProxyEnvVarsAreSet() {
@@ -425,13 +401,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 	}
 
-	// Cleanup unused resources once components up-to-date
-	if r.ComponentsAreRunning(multiClusterHub, ocpConsole, stsEnabled) {
-		result, err = r.ensureRemovalsGone(multiClusterHub)
-		if result != (ctrl.Result{}) {
-			return result, err
-		}
-	}
 	if upgrade {
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
