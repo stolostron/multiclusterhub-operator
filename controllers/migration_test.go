@@ -60,6 +60,30 @@ func Test_waitForMigratedComponentsAdopted(t *testing.T) {
 			wantErr:       false,
 		},
 		{
+			name: "component present but disabled in MCH, nothing to check",
+			mch: operatorv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-mch",
+					Namespace: "open-cluster-management",
+				},
+				Spec: operatorv1.MultiClusterHubSpec{
+					Overrides: &operatorv1.Overrides{
+						Components: []operatorv1.ComponentConfig{
+							{Name: operatorv1.ClusterPermission, Enabled: false},
+						},
+					},
+				},
+			},
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multiclusterengine",
+				},
+			},
+			mceComponents: []backplanev1.ComponentCondition{},
+			want:          true,
+			wantErr:       false,
+		},
+		{
 			name: "component present in MCH, deployment not available in MCE",
 			mch: operatorv1.MultiClusterHub{
 				ObjectMeta: metav1.ObjectMeta{

@@ -1054,8 +1054,8 @@ func (r *MultiClusterHubReconciler) waitForMigratedComponentsAdopted(ctx context
 
 	// Check each migrated component to ensure its deployment is available in MCE
 	for mchComponent, mceDeploymentName := range migratedComponents {
-		// Skip if this component isn't present in MCH (nothing to migrate)
-		if !m.ComponentPresent(mchComponent) {
+		// Skip if this component isn't enabled in MCH (nothing to adopt before cleanup)
+		if !m.ComponentPresent(mchComponent) || !m.Enabled(mchComponent) {
 			continue
 		}
 
