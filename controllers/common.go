@@ -56,6 +56,10 @@ type CacheSpec struct {
 	TemplateOverridesCM string
 }
 
+var migratedComponentDeployments = map[string]string{
+	operatorv1.ClusterPermission: "cluster-permission",
+}
+
 func (r *MultiClusterHubReconciler) deleteClusterRoleBinding(ctx context.Context, name string) error {
 	clusterRoleBinding := &rbacv1.ClusterRoleBinding{}
 	if err := r.Client.Get(ctx, client.ObjectKey{Name: name}, clusterRoleBinding); err != nil {
@@ -1027,4 +1031,103 @@ func (r *MultiClusterHubReconciler) GetInstallPlanApprovalFromSubscription(sub *
 		return subv1alpha1.ApprovalAutomatic // Default fallback
 	}
 	return sub.Spec.InstallPlanApproval
+}
+
+/*
+waitForMigratedComponentsAdopted verifies that MCE has successfully adopted and deployed
+all components that have been migrated from MCH to MCE. This prevents a migration gap
+where we delete MCH-owned resources before MCE has finished deploying its version.
+*/
+func (r *MultiClusterHubReconciler) waitForMigratedComponentsAdopted(ctx context.Context,
+	m *operatorv1.MultiClusterHub) (bool, error) {
+
+	// List of components migrated from MCH to MCE
+	migratedComponents := migratedComponentDeployments
+
+	// Get the managed MCE instance
+	mce, err := multiclusterengineutils.GetManagedMCE(ctx, r.Client)
+	if err != nil {
+		return false, fmt.Errorf("failed to get managed MCE: %w", err)
+	}
+	if mce == nil {
+		r.Log.Info("MCE not found, waiting for MCE to be created")
+		return false, nil
+	}
+
+	// Check each migrated component to ensure its deployment is available in MCE
+	for mchComponent, mceDeploymentName := range migratedComponents {
+		// Skip if this component isn't enabled in MCH (nothing to adopt before cleanup)
+		if !m.ComponentPresent(mchComponent) || !m.Enabled(mchComponent) {
+			continue
+		}
+
+		// Look for the deployment in MCE status and verify it's available
+		deploymentAvailable := false
+		for _, comp := range mce.Status.Components {
+			// Check for deployment with matching name, type Available, and status True
+			if comp.Kind == "Deployment" &&
+				comp.Name == mceDeploymentName &&
+				comp.Type == "Available" &&
+				comp.Status == "True" {
+				deploymentAvailable = true
+				r.Log.Info("Migrated component deployment is available in MCE",
+					"MCHComponent", mchComponent,
+					"MCEDeployment", mceDeploymentName,
+					"Reason", comp.Reason)
+				break
+			}
+		}
+
+		if !deploymentAvailable {
+			r.Log.Info("Waiting for migrated component deployment to be available in MCE",
+				"MCHComponent", mchComponent,
+				"MCEDeployment", mceDeploymentName)
+			return false, nil
+		}
+	}
+
+	r.Log.Info("All migrated components are available in MCE")
+	return true, nil
+}
+
+/*
+ensureMigratedComponentsCleanup handles cleanup of components that have been migrated from MCH to MCE.
+After MCE is ready and has adopted the component, this function ensures that legacy resources are
+removed from the MCH namespace and the component is pruned from the MCH CR.
+
+This is a generic function that can handle multiple migrated components. Components are added to the
+migratedComponents list when they are deprecated in MCH and moved to MCE in a specific release.
+*/
+func (r *MultiClusterHubReconciler) ensureMigratedComponentsCleanup(ctx context.Context, m *operatorv1.MultiClusterHub,
+	isSTSEnabled bool) (ctrl.Result, error) {
+
+	updated := false
+	for component := range migratedComponentDeployments {
+		if m.ComponentPresent(component) {
+			r.Log.Info("Cleaning up migrated component resources", "Component", component)
+
+			// Clean up all legacy resources (including InternalHubComponent, Deployment, ServiceAccount, etc.)
+			result, err := r.ensureNoComponent(ctx, m, component, r.CacheSpec, isSTSEnabled)
+			if result != (ctrl.Result{}) || err != nil {
+				return result, err
+			}
+
+			// Prune from MCH CR after successful cleanup
+			if m.Prune(component) {
+				r.Log.Info("Pruned migrated component from MCH CR", "Component", component)
+				updated = true
+			}
+		}
+	}
+
+	// Update MCH CR if any components were pruned
+	if updated {
+		if err := r.Client.Update(ctx, m); err != nil {
+			r.Log.Error(err, "Failed to update MCH CR after pruning migrated components")
+			return ctrl.Result{}, err
+		}
+		r.Log.Info("Successfully updated MCH CR after pruning migrated components")
+	}
+
+	return ctrl.Result{}, nil
 }

@@ -21,7 +21,7 @@ const (
 	Appsub                    string = "app-lifecycle"
 	ClusterBackup             string = "cluster-backup"
 	ClusterLifecycle          string = "cluster-lifecycle"
-	ClusterPermission         string = "cluster-permission"
+	ClusterPermission         string = "cluster-permission" // Deprecated in ACM 2.17, moved to MCE 2.17.
 	Console                   string = "console"
 	MTVIntegrationsPreview    string = "cnv-mtv-integrations-preview"
 	MTVIntegrations           string = "cnv-mtv-integrations"
@@ -48,6 +48,7 @@ const (
 	MCEClusterAPIProviderAWSPreview     string = "cluster-api-provider-aws-preview"
 	MCEClusterLifecycle                 string = "cluster-lifecycle-mce"
 	MCEClusterManager                   string = "cluster-manager"
+	MCEClusterPermission                string = "cluster-permission"
 	MCEClusterProxyAddon                string = "cluster-proxy-addon"
 	MCEConsole                          string = "console-mce"
 	MCEDiscovery                        string = "discovery"
@@ -93,6 +94,7 @@ var MCEComponents = []string{
 	MCEClusterAPIProviderAWSPreview,
 	MCEClusterLifecycle,
 	MCEClusterManager,
+	MCEClusterPermission,
 	MCEClusterProxyAddon,
 	MCEConsole,
 	MCEDiscovery,
@@ -104,7 +106,6 @@ var MCEComponents = []string{
 	MCEImageBasedInstallOperatorPreview,
 	MCEManagedServiceAccount,
 	MCEManagedServiceAccountPreview,
-	MCEManagedServiceAccount,
 	MCEServerFoundation,
 }
 
@@ -182,13 +183,15 @@ var ClusterManagementAddOns = map[string]string{
 /*
 GetDefaultEnabledComponents returns a slice of default enabled component names.
 It is expected to be used to get a list of components that are enabled by default.
+
+Removed components:
+- Repo: Removed in ACM 2.7.0
+- ClusterPermission: Removed in ACM 2.17 (migrated to MCE)
 */
 func GetDefaultEnabledComponents() ([]string, error) {
 	defaultEnabledComponents := []string{
-		// Repo,
 		Appsub,
 		ClusterLifecycle,
-		ClusterPermission,
 		Console,
 		GRC,
 		Insights,

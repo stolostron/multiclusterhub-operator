@@ -227,12 +227,6 @@ var _ = Describe("utility functions", func() {
 			d := GetDeploymentsForStatus(&mch, true, false)
 			Expect(len(d)).To(Equal(1))
 		})
-		It("gets deployments for status with cluster-permission enabled", func() {
-			mch := resources.EmptyMCH()
-			mch.Enable(mchv1.ClusterPermission)
-			d := GetDeploymentsForStatus(&mch, true, false)
-			Expect(len(d)).To(Equal(1))
-		})
 		It("Sets Default Component values", func() {
 			mch := resources.EmptyMCH()
 			updated, err := SetDefaultComponents(&mch)
@@ -688,7 +682,7 @@ func Test_GetDeploymentsForStatus(t *testing.T) {
 			name:       "should get deployment status for MCH components",
 			mch:        resources.EmptyMCH(),
 			stsEnabled: false,
-			want:       19,
+			want:       18,
 		},
 		{
 			name: "should get deployment status for MCH components with STS enabled",
@@ -705,7 +699,7 @@ func Test_GetDeploymentsForStatus(t *testing.T) {
 				},
 			},
 			stsEnabled: true,
-			want:       20,
+			want:       19,
 		},
 		{
 			name: "should get deployment status for MCH components with STS disabled",
@@ -722,7 +716,7 @@ func Test_GetDeploymentsForStatus(t *testing.T) {
 				},
 			},
 			stsEnabled: false,
-			want:       21,
+			want:       20,
 		},
 	}
 
