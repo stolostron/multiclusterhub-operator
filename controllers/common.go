@@ -1030,20 +1030,16 @@ func (r *MultiClusterHubReconciler) GetInstallPlanApprovalFromSubscription(sub *
 }
 
 /*
-ensureMigratedComponentsCleanup handles cleanup of components that have been migrated from MCH to MCE.
-After MCE is ready and has adopted the component, this function ensures that legacy resources are
-removed from the MCH namespace and the component is pruned from the MCH CR.
-
-This is a generic function that can handle multiple migrated components. Components are added to the
-migratedComponents list when they are deprecated in MCH and moved to MCE in a specific release.
+waitForMigratedComponentsAdopted verifies that MCE has successfully adopted and deployed
+all components that have been migrated from MCH to MCE. This prevents a migration gap
+where we delete MCH-owned resources before MCE has finished deploying its version.
 */
-// waitForMigratedComponentsAdopted verifies that MCE has successfully adopted and deployed
-// all components that have been migrated from MCH to MCE. This prevents a migration gap
-// where we delete MCH-owned resources before MCE has finished deploying its version.
-func (r *MultiClusterHubReconciler) waitForMigratedComponentsAdopted(ctx context.Context, m *operatorv1.MultiClusterHub) (bool, error) {
+func (r *MultiClusterHubReconciler) waitForMigratedComponentsAdopted(ctx context.Context,
+	m *operatorv1.MultiClusterHub) (bool, error) {
+
 	// List of components migrated from MCH to MCE
 	migratedComponents := map[string]string{
-		operatorv1.ClusterPermission: "cluster-permission-controller", // MCE deployment name
+		operatorv1.ClusterPermission: "cluster-permission", // MCE deployment name from chart
 	}
 
 	// Get the managed MCE instance
@@ -1056,27 +1052,34 @@ func (r *MultiClusterHubReconciler) waitForMigratedComponentsAdopted(ctx context
 		return false, nil
 	}
 
-	// Check each migrated component to ensure it's available in MCE
-	for mchComponent, mceComponentName := range migratedComponents {
+	// Check each migrated component to ensure its deployment is available in MCE
+	for mchComponent, mceDeploymentName := range migratedComponents {
 		// Skip if this component isn't present in MCH (nothing to migrate)
 		if !m.ComponentPresent(mchComponent) {
 			continue
 		}
 
-		// Check if the component exists and is available in MCE status
-		componentAvailable := false
+		// Look for the deployment in MCE status and verify it's available
+		deploymentAvailable := false
 		for _, comp := range mce.Status.Components {
-			if comp.Name == mceComponentName && comp.Available {
-				componentAvailable = true
-				r.Log.Info("Migrated component is available in MCE", "MCHComponent", mchComponent, "MCEComponent", mceComponentName)
+			// Check for deployment with matching name, type Available, and status True
+			if comp.Kind == "Deployment" &&
+				comp.Name == mceDeploymentName &&
+				comp.Type == "Available" &&
+				comp.Status == "True" {
+				deploymentAvailable = true
+				r.Log.Info("Migrated component deployment is available in MCE",
+					"MCHComponent", mchComponent,
+					"MCEDeployment", mceDeploymentName,
+					"Reason", comp.Reason)
 				break
 			}
 		}
 
-		if !componentAvailable {
-			r.Log.Info("Waiting for migrated component to be available in MCE",
+		if !deploymentAvailable {
+			r.Log.Info("Waiting for migrated component deployment to be available in MCE",
 				"MCHComponent", mchComponent,
-				"MCEComponent", mceComponentName)
+				"MCEDeployment", mceDeploymentName)
 			return false, nil
 		}
 	}
@@ -1085,7 +1088,17 @@ func (r *MultiClusterHubReconciler) waitForMigratedComponentsAdopted(ctx context
 	return true, nil
 }
 
-func (r *MultiClusterHubReconciler) ensureMigratedComponentsCleanup(ctx context.Context, m *operatorv1.MultiClusterHub, isSTSEnabled bool) (ctrl.Result, error) {
+/*
+ensureMigratedComponentsCleanup handles cleanup of components that have been migrated from MCH to MCE.
+After MCE is ready and has adopted the component, this function ensures that legacy resources are
+removed from the MCH namespace and the component is pruned from the MCH CR.
+
+This is a generic function that can handle multiple migrated components. Components are added to the
+migratedComponents list when they are deprecated in MCH and moved to MCE in a specific release.
+*/
+func (r *MultiClusterHubReconciler) ensureMigratedComponentsCleanup(ctx context.Context, m *operatorv1.MultiClusterHub,
+	isSTSEnabled bool) (ctrl.Result, error) {
+
 	// List of components migrated from MCH to MCE (deprecated in MCH)
 	migratedComponents := []string{
 		operatorv1.ClusterPermission, // Migrated to MCE in ACM 2.17
