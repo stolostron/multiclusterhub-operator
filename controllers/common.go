@@ -1037,6 +1037,54 @@ removed from the MCH namespace and the component is pruned from the MCH CR.
 This is a generic function that can handle multiple migrated components. Components are added to the
 migratedComponents list when they are deprecated in MCH and moved to MCE in a specific release.
 */
+// waitForMigratedComponentsAdopted verifies that MCE has successfully adopted and deployed
+// all components that have been migrated from MCH to MCE. This prevents a migration gap
+// where we delete MCH-owned resources before MCE has finished deploying its version.
+func (r *MultiClusterHubReconciler) waitForMigratedComponentsAdopted(ctx context.Context, m *operatorv1.MultiClusterHub) (bool, error) {
+	// List of components migrated from MCH to MCE
+	migratedComponents := map[string]string{
+		operatorv1.ClusterPermission: "cluster-permission-controller", // MCE deployment name
+	}
+
+	// Get the managed MCE instance
+	mce, err := multiclusterengineutils.GetManagedMCE(ctx, r.Client)
+	if err != nil {
+		return false, fmt.Errorf("failed to get managed MCE: %w", err)
+	}
+	if mce == nil {
+		r.Log.Info("MCE not found, waiting for MCE to be created")
+		return false, nil
+	}
+
+	// Check each migrated component to ensure it's available in MCE
+	for mchComponent, mceComponentName := range migratedComponents {
+		// Skip if this component isn't present in MCH (nothing to migrate)
+		if !m.ComponentPresent(mchComponent) {
+			continue
+		}
+
+		// Check if the component exists and is available in MCE status
+		componentAvailable := false
+		for _, comp := range mce.Status.Components {
+			if comp.Name == mceComponentName && comp.Available {
+				componentAvailable = true
+				r.Log.Info("Migrated component is available in MCE", "MCHComponent", mchComponent, "MCEComponent", mceComponentName)
+				break
+			}
+		}
+
+		if !componentAvailable {
+			r.Log.Info("Waiting for migrated component to be available in MCE",
+				"MCHComponent", mchComponent,
+				"MCEComponent", mceComponentName)
+			return false, nil
+		}
+	}
+
+	r.Log.Info("All migrated components are available in MCE")
+	return true, nil
+}
+
 func (r *MultiClusterHubReconciler) ensureMigratedComponentsCleanup(ctx context.Context, m *operatorv1.MultiClusterHub, isSTSEnabled bool) (ctrl.Result, error) {
 	// List of components migrated from MCH to MCE (deprecated in MCH)
 	migratedComponents := []string{

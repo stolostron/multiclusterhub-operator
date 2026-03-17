@@ -387,12 +387,23 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	/*
-		In ACM 2.17, cluster-permission component is being migrated from MCH to MCE. After MCE is ready,
-		we need to clean up the legacy cluster-permission resources from the MCH namespace and prune the
-		component from the MCH CR to ensure they only exist in the MCE target namespace.
+		In ACM 2.17, cluster-permission component is being migrated from MCH to MCE. Before cleaning up
+		the MCH-owned resources, we must verify that MCE has successfully adopted and deployed the
+		migrated components. This prevents a migration gap where the component is unavailable.
 
 		This is a generic function that handles any components migrated from MCH to MCE.
 	*/
+	// Wait for MCE to adopt migrated components before cleaning them up from MCH
+	adopted, err := r.waitForMigratedComponentsAdopted(ctx, multiClusterHub)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if !adopted {
+		r.Log.Info("Waiting for MCE to adopt migrated components before cleanup")
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// MCE has adopted the components, safe to clean up MCH resources
 	result, err = r.ensureMigratedComponentsCleanup(ctx, multiClusterHub, stsEnabled)
 	if result != (ctrl.Result{}) || err != nil {
 		return result, err
