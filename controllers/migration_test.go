@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
@@ -241,20 +242,28 @@ func Test_waitForMigratedComponentsAdopted(t *testing.T) {
 	}
 
 	registerScheme()
-	for _, tt := range tests {
+	for i, tt := range tests {
+		tt := tt // capture range variable
+		i := i   // capture range variable
 		t.Run(tt.name, func(t *testing.T) {
+			// Make MCH name unique per test case to avoid conflicts
+			mch := tt.mch.DeepCopy()
+			if mch.Name == "" || mch.Name == "test-mch" {
+				mch.Name = fmt.Sprintf("test-mch-%d", i)
+			}
+
 			// Setup: Create MCH
-			if err := recon.Client.Create(context.TODO(), &tt.mch); err != nil {
+			if err := recon.Client.Create(context.TODO(), mch); err != nil {
 				t.Errorf("failed to create MCH: %v", err)
 			}
-			defer recon.Client.Delete(context.TODO(), &tt.mch)
+			defer recon.Client.Delete(context.TODO(), mch)
 
 			// Setup: Create MCE if provided
 			if tt.mce != nil {
 				// Add installer labels so GetManagedMCE can find it
 				tt.mce.Labels = map[string]string{
-					"installer.name":                          tt.mch.GetName(),
-					"installer.namespace":                     tt.mch.GetNamespace(),
+					"installer.name":                          mch.GetName(),
+					"installer.namespace":                     mch.GetNamespace(),
 					multiclusterengineutils.MCEManagedByLabel: "true",
 				}
 				tt.mce.Status.Components = tt.mceComponents
@@ -265,7 +274,7 @@ func Test_waitForMigratedComponentsAdopted(t *testing.T) {
 			}
 
 			// Test
-			got, err := recon.waitForMigratedComponentsAdopted(context.TODO(), &tt.mch)
+			got, err := recon.waitForMigratedComponentsAdopted(context.TODO(), mch)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("waitForMigratedComponentsAdopted() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -329,19 +338,27 @@ func Test_ensureMigratedComponentsCleanup(t *testing.T) {
 	}
 
 	registerScheme()
-	for _, tt := range tests {
+	for i, tt := range tests {
+		tt := tt // capture range variable
+		i := i   // capture range variable
 		t.Run(tt.name, func(t *testing.T) {
+			// Make MCH name unique per test case to avoid conflicts
+			mch := tt.mch.DeepCopy()
+			if mch.Name == "" || mch.Name == "test-mch" {
+				mch.Name = fmt.Sprintf("test-mch-%d", i)
+			}
+
 			// Setup: Create MCH
-			if err := recon.Client.Create(context.TODO(), &tt.mch); err != nil {
+			if err := recon.Client.Create(context.TODO(), mch); err != nil {
 				t.Errorf("failed to create MCH: %v", err)
 			}
-			defer recon.Client.Delete(context.TODO(), &tt.mch)
+			defer recon.Client.Delete(context.TODO(), mch)
 
 			// Track if component was present before cleanup
-			hadComponent := tt.mch.ComponentPresent(operatorv1.ClusterPermission)
+			hadComponent := mch.ComponentPresent(operatorv1.ClusterPermission)
 
 			// Test
-			result, err := recon.ensureMigratedComponentsCleanup(context.TODO(), &tt.mch, tt.stsEnabled)
+			result, err := recon.ensureMigratedComponentsCleanup(context.TODO(), mch, tt.stsEnabled)
 
 			// For components not present, should succeed with empty result
 			if !hadComponent {

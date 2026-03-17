@@ -56,6 +56,10 @@ type CacheSpec struct {
 	TemplateOverridesCM string
 }
 
+var migratedComponentDeployments = map[string]string{
+	operatorv1.ClusterPermission: "cluster-permission",
+}
+
 func (r *MultiClusterHubReconciler) deleteClusterRoleBinding(ctx context.Context, name string) error {
 	clusterRoleBinding := &rbacv1.ClusterRoleBinding{}
 	if err := r.Client.Get(ctx, client.ObjectKey{Name: name}, clusterRoleBinding); err != nil {
@@ -1038,9 +1042,7 @@ func (r *MultiClusterHubReconciler) waitForMigratedComponentsAdopted(ctx context
 	m *operatorv1.MultiClusterHub) (bool, error) {
 
 	// List of components migrated from MCH to MCE
-	migratedComponents := map[string]string{
-		operatorv1.ClusterPermission: "cluster-permission", // MCE deployment name from chart
-	}
+	migratedComponents := migratedComponentDeployments
 
 	// Get the managed MCE instance
 	mce, err := multiclusterengineutils.GetManagedMCE(ctx, r.Client)
@@ -1099,13 +1101,8 @@ migratedComponents list when they are deprecated in MCH and moved to MCE in a sp
 func (r *MultiClusterHubReconciler) ensureMigratedComponentsCleanup(ctx context.Context, m *operatorv1.MultiClusterHub,
 	isSTSEnabled bool) (ctrl.Result, error) {
 
-	// List of components migrated from MCH to MCE (deprecated in MCH)
-	migratedComponents := []string{
-		operatorv1.ClusterPermission, // Migrated to MCE in ACM 2.17
-	}
-
 	updated := false
-	for _, component := range migratedComponents {
+	for component := range migratedComponentDeployments {
 		if m.ComponentPresent(component) {
 			r.Log.Info("Cleaning up migrated component resources", "Component", component)
 
