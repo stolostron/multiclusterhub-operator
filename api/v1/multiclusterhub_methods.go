@@ -106,7 +106,6 @@ var MCEComponents = []string{
 	MCEImageBasedInstallOperatorPreview,
 	MCEManagedServiceAccount,
 	MCEManagedServiceAccountPreview,
-	MCEManagedServiceAccount,
 	MCEServerFoundation,
 }
 
