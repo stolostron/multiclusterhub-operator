@@ -21,7 +21,7 @@ const (
 	Appsub                    string = "app-lifecycle"
 	ClusterBackup             string = "cluster-backup"
 	ClusterLifecycle          string = "cluster-lifecycle"
-	ClusterPermission         string = "cluster-permission" // Deprecated in ACM 2.17, moved to MCE 2.17.
+	ClusterPermission         string = "cluster-permission" // Deprecated in ACM 2.17, moved to MCE 2.17. Will be removed from MCHComponents in ACM 2.18.
 	Console                   string = "console"
 	MTVIntegrationsPreview    string = "cnv-mtv-integrations-preview"
 	MTVIntegrations           string = "cnv-mtv-integrations"
@@ -70,7 +70,7 @@ var MCHComponents = []string{
 	Appsub,
 	ClusterBackup,
 	ClusterLifecycle,
-	ClusterPermission,
+	ClusterPermission, // Kept in list for ACM 2.17 to support migration from 2.16. Will be removed in ACM 2.18.
 	Console,
 	FineGrainedRbac,
 	MTVIntegrations,

@@ -75,16 +75,22 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 		updateNecessary = true
 	}
 
-	if m.Enabled(operatorv1.MTVIntegrationsPreview) {
-		m.Enable(operatorv1.MTVIntegrations)
-		m.Prune(operatorv1.MTVIntegrationsPreview)
-		updateNecessary = true
+	// Generic preview to GA component handling
+	// When a preview component is enabled, automatically enable the GA version and prune the preview
+	previewToGAComponents := map[string]string{
+		operatorv1.MTVIntegrationsPreview: operatorv1.MTVIntegrations,
+		operatorv1.FineGrainedRbacPreview: operatorv1.FineGrainedRbac,
 	}
 
-	if m.Enabled(operatorv1.FineGrainedRbacPreview) {
-		m.Enable(operatorv1.FineGrainedRbac)
-		m.Prune(operatorv1.FineGrainedRbacPreview)
-		updateNecessary = true
+	for preview, stable := range previewToGAComponents {
+		if m.Enabled(preview) {
+			log.Info("Stable component version enabled due to preview being enabled", "preview", preview, "stable", stable)
+			m.Enable(stable)
+			if m.Prune(preview) {
+				log.Info("Pruning preview component", "preview", preview)
+			}
+			updateNecessary = true
+		}
 	}
 
 	for _, c := range m.Spec.Overrides.Components {

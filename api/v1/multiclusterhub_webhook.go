@@ -105,6 +105,15 @@ var (
 	Client client.Client
 )
 
+// migratedToMCEComponents lists components that have been migrated from MCH to MCE.
+// These components are rejected when users try to add them to new MCH CRs,
+// but allowed to exist in MCH CRs during upgrade/migration scenarios.
+var migratedToMCEComponents = map[string]string{
+	ClusterPermission: "ACM 2.17", // Migrated in ACM 2.17
+	// Add future migrated components here:
+	// SomeComponent: "ACM 2.18",
+}
+
 func (r *MultiClusterHub) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	Client = mgr.GetClient()
 	return ctrl.NewWebhookManagedBy(mgr).For(r).Complete()
@@ -148,6 +157,12 @@ func (r *MultiClusterHub) ValidateCreate() (admission.Warnings, error) {
 		for _, c := range r.Spec.Overrides.Components {
 			if !ValidComponent(c, MCHComponents) {
 				return warnings, fmt.Errorf("invalid component config: %s is not a known component", c.Name)
+			}
+
+			// Reject components that have been migrated to MCE
+			// New MCH CRs should not include migrated components
+			if migratedVersion, isMigrated := migratedToMCEComponents[c.Name]; isMigrated {
+				return warnings, fmt.Errorf("the %s component has been moved to MultiClusterEngine (MCE) in %s and can no longer be managed through MultiClusterHub. Please configure %s as an MCE component instead", c.Name, migratedVersion, c.Name)
 			}
 		}
 	}
@@ -206,6 +221,24 @@ func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) (admission.Warnings
 		for _, c := range r.Spec.Overrides.Components {
 			if !ValidComponent(c, MCHComponents) {
 				return warnings, fmt.Errorf("invalid componentconfig: %s is not a known component", c.Name)
+			}
+			// Reject components that have been migrated to MCE, but only if user is trying to ADD them
+			// Allow if component was already present in old MCH (for upgrade/migration scenarios)
+			if migratedVersion, isMigrated := migratedToMCEComponents[c.Name]; isMigrated {
+				// Check if component was already present in the old MCH
+				wasComponentPresentBefore := false
+				if oldMCH.Spec.Overrides != nil {
+					for _, oldComp := range oldMCH.Spec.Overrides.Components {
+						if oldComp.Name == c.Name {
+							wasComponentPresentBefore = true
+							break
+						}
+					}
+				}
+				// Only reject if user is trying to add it (wasn't present before)
+				if !wasComponentPresentBefore {
+					return warnings, fmt.Errorf("the %s component has been moved to MultiClusterEngine (MCE) in %s and can no longer be managed through MultiClusterHub. Please configure %s as an MCE component instead", c.Name, migratedVersion, c.Name)
+				}
 			}
 		}
 	}
