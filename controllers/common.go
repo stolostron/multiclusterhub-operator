@@ -1086,7 +1086,6 @@ func (r *MultiClusterHubReconciler) waitForMigratedComponentsAdopted(ctx context
 		}
 	}
 
-	r.Log.Info("All migrated components are available in MCE")
 	return true, nil
 }
 
