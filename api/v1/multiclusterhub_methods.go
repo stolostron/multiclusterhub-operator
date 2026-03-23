@@ -70,7 +70,6 @@ var MCHComponents = []string{
 	Appsub,
 	ClusterBackup,
 	ClusterLifecycle,
-	ClusterPermission,
 	Console,
 	FineGrainedRbac,
 	MTVIntegrations,
