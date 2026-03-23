@@ -6,7 +6,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"reflect"
 
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
@@ -61,26 +60,6 @@ func getKlusterletAddonConfig(m *operatorsv1.MultiClusterHub) *unstructured.Unst
 		},
 	}
 	return klusterletaddonconfig
-}
-
-func equivalentKlusterletAddonConfig(desiredKlusterletaddonconfig, klusterletaddonconfig *unstructured.Unstructured,
-	m *operatorsv1.MultiClusterHub,
-) (bool, map[string]interface{}, error) {
-	newSpec, _, err := unstructured.NestedMap(desiredKlusterletaddonconfig.Object, "spec")
-	if err != nil {
-		return false, nil, err
-	}
-
-	currentSpec, _, err := unstructured.NestedMap(klusterletaddonconfig.Object, "spec")
-	if err != nil {
-		return false, nil, err
-	}
-
-	labels := klusterletaddonconfig.GetLabels()
-
-	hasLabels := labels["installer.name"] == m.Name && labels["installer.namespace"] == m.Namespace
-
-	return reflect.DeepEqual(newSpec, currentSpec) && hasLabels, newSpec, nil
 }
 
 func (r *MultiClusterHubReconciler) ensureKlusterletAddonConfig(m *operatorsv1.MultiClusterHub) (ctrl.Result, error) {

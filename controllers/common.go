@@ -28,11 +28,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
-	rbacv1 "k8s.io/api/rbac/v1"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
@@ -58,84 +56,6 @@ type CacheSpec struct {
 
 var migratedComponentDeployments = map[string]string{
 	operatorv1.ClusterPermission: "cluster-permission",
-}
-
-func (r *MultiClusterHubReconciler) deleteClusterRoleBinding(ctx context.Context, name string) error {
-	clusterRoleBinding := &rbacv1.ClusterRoleBinding{}
-	if err := r.Client.Get(ctx, client.ObjectKey{Name: name}, clusterRoleBinding); err != nil {
-		if errors.IsNotFound(err) {
-			return nil
-		}
-		return err
-	}
-
-	if err := r.Client.Delete(ctx, clusterRoleBinding); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *MultiClusterHubReconciler) deleteSecret(ctx context.Context, m *operatorv1.MultiClusterHub, name, namespace string) error {
-	secret := &corev1.Secret{}
-	err := r.Client.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, secret)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return nil
-		}
-		return err
-	}
-
-	err = r.Client.Delete(ctx, secret)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return nil
-		}
-		return err
-	}
-	return nil
-}
-
-func (r *MultiClusterHubReconciler) deletePVC(ctx context.Context, name, namespace string) error {
-	pvc := &corev1.PersistentVolumeClaim{}
-	err := r.Client.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, pvc)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return nil
-		}
-		return err
-	}
-
-	err = r.Client.Delete(ctx, pvc)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return nil
-		}
-		return err
-	}
-	return nil
-}
-
-func (r *MultiClusterHubReconciler) deletePodWithLabel(ctx context.Context, namespace string, labelSelector client.MatchingLabels) error {
-	podList := &corev1.PodList{}
-
-	err := r.Client.List(ctx, podList, client.InNamespace(namespace), labelSelector)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return nil
-		}
-		return err
-	}
-
-	for _, pod := range podList.Items {
-		err := r.Client.Delete(ctx, &pod)
-		if err != nil {
-			if errors.IsNotFound(err) {
-				return nil
-			}
-			return err
-		}
-	}
-	return nil
 }
 
 func (r *MultiClusterHubReconciler) ensureNoNamespace(m *operatorv1.MultiClusterHub, u *unstructured.Unstructured) (ctrl.Result, error) {
@@ -775,33 +695,6 @@ func (r *MultiClusterHubReconciler) removePluginFromConsole(multiClusterHub *ope
 	}
 
 	return ctrl.Result{}, nil
-}
-
-// AssistedServiceConfigured returns true if assisted service has already been installed
-// and configured in the hub namespace
-func AssistedServiceConfigured(ctx context.Context, client client.Client) (bool, error) {
-	agentServiceCRD := &apixv1.CustomResourceDefinition{}
-	err := client.Get(ctx, types.NamespacedName{Name: "agentserviceconfigs.agent-install.openshift.io"}, agentServiceCRD)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return false, nil
-		}
-		return false, err
-	}
-	// CRD exists, check for instance
-	list := &unstructured.UnstructuredList{}
-	list.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "agent-install.openshift.io",
-		Version: "v1beta1",
-		Kind:    "AgentServiceConfigList",
-	})
-	if err := client.List(ctx, list); err != nil {
-		return false, fmt.Errorf("unable to list AgentServiceConfigs: %s", err)
-	}
-	if len(list.Items) > 0 {
-		return true, nil
-	}
-	return false, nil
 }
 
 // return current OCP version from clusterversion resource
