@@ -9,6 +9,31 @@ CONFIG ?= ""
 PIPELINE_REPO ?= pipeline
 PIPELINE_BRANCH ?= 2.17-integration
 
+# Bundle branch configuration
+# Derive current development version from COMPONENT_VERSION file
+COMPONENT_VERSION := $(shell cat COMPONENT_VERSION)
+BUNDLE_BRANCH_MAIN ?= acm-$(shell echo $(COMPONENT_VERSION) | cut -d. -f1,2)
+
+# Default to current branch for local development
+BUNDLE_BRANCH ?= $(shell git branch --show-current)
+
+# Override for CI: map main to current development version
+ifdef GITHUB_BASE_REF
+  ifeq ($(GITHUB_BASE_REF),main)
+    BUNDLE_BRANCH := $(BUNDLE_BRANCH_MAIN)
+  else
+    BUNDLE_BRANCH := $(GITHUB_BASE_REF)
+  endif
+endif
+
+# For local development on main, also use current development version
+ifeq ($(BUNDLE_BRANCH),main)
+  BUNDLE_BRANCH := $(BUNDLE_BRANCH_MAIN)
+endif
+
+# Bundle repo to validate against
+BUNDLE ?= acm-operator-bundle
+
 .PHONY: update-manifest 
 
 .PHONY: deps
@@ -80,6 +105,22 @@ copy-charts: install-requirements
 .PHONY: onboard-new-component
 onboard-new-component: install-requirements
 	python3 ./hack/bundle-automation/generate-shell.py --onboard-new-component --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component $(COMPONENT)
+
+## Validate that all required image keys exist in the bundle
+.PHONY: validate-image-keys
+validate-image-keys: install-requirements
+	@echo "Cloning $(BUNDLE)..."
+	@if [ -d "$(BUNDLE)" ]; then \
+		echo "Removing existing $(BUNDLE) directory..."; \
+		rm -rf $(BUNDLE); \
+	fi
+	@git clone https://github.com/$(ORG)/$(BUNDLE).git $(BUNDLE)
+	@echo "Checking out bundle branch: $(BUNDLE_BRANCH)"
+	@cd $(BUNDLE) && git checkout $(BUNDLE_BRANCH)
+	@echo "Successfully checked out branch: $$(cd $(BUNDLE) && git branch --show-current)"
+	@python3 ./hack/bundle-automation/generate-shell.py --validate-image-keys --org $(ORG) --repo $(REPO) --branch $(BRANCH) --bundle $(BUNDLE)
+	@echo "Cleaning up cloned bundle..."
+	@rm -rf $(BUNDLE)
 
 # different from `in-cluster-install` (call no secrets, no observability-crd)
 .PHONY: mock-install

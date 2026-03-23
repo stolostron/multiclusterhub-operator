@@ -57,6 +57,11 @@ SUPPORTED_OPERATIONS = {
         "args": "--repo {pipeline_repo} --branch {pipeline_branch}",
         "help": "Synchronize commit SHA values in operator bundles with the latest repository changes",
     },
+    "validate-image-keys": {
+        "script": "bundle-generation/validate-image-keys.py",
+        "args": "--bundle {bundle}",
+        "help": "Validate that all required image keys exist in the bundle extras file",
+    },
 }
 
 def clone_repository(git_url, repo_path, branch):
@@ -140,7 +145,8 @@ def prepare_and_execute(operation, operation_data, args):
 
     operations_args = operation_data.get("args", "").format(
         pipeline_repo=args.pipeline_repo,
-        pipeline_branch=args.pipeline_branch
+        pipeline_branch=args.pipeline_branch,
+        bundle=getattr(args, 'bundle', '../acm-operator-bundle')
     ) if "args" in operation_data else ""
     
     if args.component:
@@ -220,6 +226,7 @@ if __name__ == "__main__":
     parser.add_argument("--config", help="Target Config file")
     parser.add_argument("--pipeline-repo", help="Pipeline Repository name")
     parser.add_argument("--pipeline-branch", help="Pipeline Repository Branch name")
+    parser.add_argument("--bundle", help="Path to bundle repo (acm-operator-bundle or mce-operator-bundle)")
 
     # Set default values for unspecified arguments
     parser.set_defaults(bundle=False, commit=False, lint=False)
