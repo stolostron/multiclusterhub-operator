@@ -70,6 +70,7 @@ var MCHComponents = []string{
 	Appsub,
 	ClusterBackup,
 	ClusterLifecycle,
+	ClusterPermission, // Migrated to MCE in 2.17, but must remain here for webhook validation (ValidateCreate/ValidateUpdate).
 	Console,
 	FineGrainedRbac,
 	MTVIntegrations,
