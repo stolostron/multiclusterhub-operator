@@ -394,6 +394,15 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	// Install the rest of the subscriptions in no particular order
 	for _, c := range operatorv1.MCHComponents {
+		// Skip components that have been migrated to MCE — these are already
+		// handled by ensureMigratedComponentsCleanup above. Without this guard,
+		// ensureNoComponent would delete cluster-scoped resources (ClusterRole,
+		// ClusterRoleBinding) that MCE manages, creating an infinite
+		// delete/recreate loop.
+		if _, migrated := migratedComponentDeployments[c]; migrated {
+			continue
+		}
+
 		result, err = r.ensureComponentOrNoComponent(ctx, multiClusterHub, c, r.CacheSpec, ocpConsole, stsEnabled)
 
 		if result != (ctrl.Result{}) {

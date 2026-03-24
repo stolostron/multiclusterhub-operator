@@ -44,3 +44,4 @@ build/_output/*
 
 # Ignore partial workflow directory
 workflow/
+acm-operator-bundle/

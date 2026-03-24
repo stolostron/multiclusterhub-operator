@@ -1,0 +1,29 @@
+name: Validate Image Keys
+
+on:
+  pull_request:
+    paths:
+      - 'pkg/templates/charts/toggle/**/values.yaml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout multiclusterhub-operator
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          pip3 install -r hack/bundle-automation/requirements.txt
+
+      - name: Validate image keys
+        env:
+          # Pass PR target branch to Makefile, which maps 'main' to current dev version
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+        run: |
+          make -f Makefile.dev validate-image-keys

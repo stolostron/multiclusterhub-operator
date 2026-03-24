@@ -33,6 +33,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
+// previewToGAComponents maps preview component names to their GA equivalents.
+// When a preview component is enabled, it is automatically replaced with the GA version.
+var previewToGAComponents = map[string]string{
+	operatorv1.MTVIntegrationsPreview: operatorv1.MTVIntegrations,
+	operatorv1.FineGrainedRbacPreview: operatorv1.FineGrainedRbac,
+	// Add future preview→GA transitions here
+}
+
 func updatePausedCondition(m *operatorv1.MultiClusterHub) {
 	c := GetHubCondition(m.Status, operatorv1.Progressing)
 
@@ -75,16 +83,21 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 		updateNecessary = true
 	}
 
-	if m.Enabled(operatorv1.MTVIntegrationsPreview) {
-		m.Enable(operatorv1.MTVIntegrations)
-		m.Prune(operatorv1.MTVIntegrationsPreview)
-		updateNecessary = true
-	}
+	// Automatically migrate preview components to their GA equivalents
+	for preview, ga := range previewToGAComponents {
+		if m.Enabled(preview) {
+			log.Info("GA component version enabled due to preview being enabled",
+				"preview", preview,
+				"ga", ga,
+			)
+			m.Enable(ga)
+			updateNecessary = true
+		}
 
-	if m.Enabled(operatorv1.FineGrainedRbacPreview) {
-		m.Enable(operatorv1.FineGrainedRbac)
-		m.Prune(operatorv1.FineGrainedRbacPreview)
-		updateNecessary = true
+		if m.Prune(preview) {
+			log.Info("Pruning preview component", "preview", preview)
+			updateNecessary = true
+		}
 	}
 
 	for _, c := range m.Spec.Overrides.Components {
