@@ -26,7 +26,7 @@ require (
 	k8s.io/client-go v0.29.3
 	k8s.io/klog v1.0.0
 	k8s.io/kube-aggregator v0.29.3
-	k8s.io/utils v0.0.0-20240310230437-4693a0247e57
+	k8s.io/utils v0.0.0-20260319190234-28399d86e0b5
 	open-cluster-management.io/api v0.13.0
 	sigs.k8s.io/controller-runtime v0.17.2
 	sigs.k8s.io/yaml v1.4.0
