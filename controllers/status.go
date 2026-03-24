@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -589,7 +590,14 @@ func SetHubCondition(status *operatorsv1.MultiClusterHubStatus, condition operat
 		condition.LastTransitionTime = currentCond.LastTransitionTime
 	}
 	newConditions := filterOutCondition(status.HubConditions, condition.Type)
-	status.HubConditions = append(newConditions, condition)
+	newConditions = append(newConditions, condition)
+
+	// Sort conditions by lastUpdateTime so the most recently updated is always last
+	sort.Slice(newConditions, func(i, j int) bool {
+		return newConditions[i].LastUpdateTime.Before(&newConditions[j].LastUpdateTime)
+	})
+
+	status.HubConditions = newConditions
 }
 
 // RemoveCRDCondition removes the status condition.
