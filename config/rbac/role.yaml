@@ -886,12 +886,6 @@ rules:
   - config.openshift.io
   resources:
   - apiservers
-  - infrastructures/status
-  verbs:
-  - get
-- apiGroups:
-  - config.openshift.io
-  resources:
   - authentications
   - clusterversions
   verbs:
@@ -904,6 +898,12 @@ rules:
   - infrastructures
   verbs:
   - '*'
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - infrastructures/status
+  verbs:
+  - get
 - apiGroups:
   - config.openshift.io
   resources:
