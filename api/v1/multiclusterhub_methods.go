@@ -1,9 +1,7 @@
 package v1
 
 import (
-	"errors"
 	"fmt"
-	"os"
 )
 
 type ResourceGVK struct {
@@ -303,19 +301,6 @@ func ValidComponent(c ComponentConfig, validComponents []string) bool {
 		}
 	}
 	return false
-}
-
-// IsCommunity checks to see if the operator is running in community mode
-func IsCommunity() (bool, error) {
-	packageName := os.Getenv("OPERATOR_PACKAGE")
-	if packageName == "advanced-cluster-management" {
-		return false, nil
-	} else if (packageName == "stolostron") || (packageName == "") {
-		return true, nil
-	} else {
-		err := errors.New("there is an illegal value set for OPERATOR_PACKAGE")
-		return true, err
-	}
 }
 
 // AvailabilityConfigIsValid returns true is the availability type is a recognized value

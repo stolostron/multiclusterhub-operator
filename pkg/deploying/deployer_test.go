@@ -36,23 +36,6 @@ func TestNewDeployment(t *testing.T) {
 	}
 }
 
-func TestListDeployments(t *testing.T) {
-	fakeclient := fake.NewFakeClient()
-	fakeclient.Create(context.TODO(), newDeployment("multiclusterhub-operator", "ns", 1))
-	fakeclient.Create(context.TODO(), newDeployment("dep1", "ns", 1))
-	fakeclient.Create(context.TODO(), newDeployment("dep2", "ns", 1))
-	fakeclient.Create(context.TODO(), newDeployment("dep3", "ns1", 1))
-	fakeclient.Create(context.TODO(), newDeployment("dep4", "ns2", 1))
-
-	_, list, err := ListDeployments(fakeclient, "ns")
-	if err != nil {
-		t.Fatalf("failed with %v", err)
-	}
-	if len(list) != 2 {
-		t.Fatalf("expect 2, but %d", len(list))
-	}
-}
-
 func newSA() *unstructured.Unstructured {
 	u := &unstructured.Unstructured{}
 	u.SetAPIVersion("v1")

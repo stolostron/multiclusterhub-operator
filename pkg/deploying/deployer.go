@@ -9,7 +9,6 @@ import (
 	"encoding/hex"
 
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
-	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
@@ -56,26 +55,6 @@ func Deploy(c runtimeclient.Client, obj *unstructured.Unstructured) (error, bool
 	// If resources exists, update it with current config
 	obj.SetResourceVersion(found.GetResourceVersion())
 	return c.Update(context.TODO(), obj), false
-}
-
-func ListDeployments(c runtimeclient.Client, namespace string) (bool, []appsv1.Deployment, error) {
-	deployments := []appsv1.Deployment{}
-	deployList := &appsv1.DeploymentList{}
-	if err := c.List(context.TODO(), deployList, runtimeclient.InNamespace(namespace)); err != nil {
-		return false, deployments, err
-	}
-	ready := true
-	for _, deploy := range deployList.Items {
-		if deploy.Name == "multiclusterhub-operator" {
-			continue
-		}
-		if deploy.Status.UnavailableReplicas != 0 {
-			ready = false
-		}
-		deployments = append(deployments, deploy)
-
-	}
-	return ready, deployments, nil
 }
 
 func hash(u *unstructured.Unstructured) (string, error) {

@@ -11,9 +11,6 @@ import (
 	mchv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
 
-	mcev1 "github.com/stolostron/backplane-operator/api/v1"
-
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -46,87 +43,6 @@ var _ = Describe("utility functions", func() {
 			Expect(ok).To(BeTrue())
 			Expect(s).To(Equal("myvalue"))
 		})
-
-		It("adds labels to a deployment", func() {
-			By("creating a deployment with no labels")
-			d := &appsv1.Deployment{}
-
-			By("adding a label to the deployment")
-			l := map[string]string{"mylabel-1": "myvalue-1"}
-			Expect(AddDeploymentLabels(d, l)).To(BeTrue())
-			s, ok := d.Labels["mylabel-1"]
-			Expect(ok).To(BeTrue())
-			Expect(s).To(Equal("myvalue-1"))
-
-			By("adding the same label to the deployment")
-			Expect(AddDeploymentLabels(d, l)).To(BeFalse())
-			s, ok = d.Labels["mylabel-1"]
-			Expect(ok).To(BeTrue())
-			Expect(s).To(Equal("myvalue-1"))
-
-			By("adding a second label to the deployment")
-			l = map[string]string{"mylabel-2": "myvalue-2"}
-			Expect(AddDeploymentLabels(d, l)).To(BeTrue())
-			s, ok = d.Labels["mylabel-2"]
-			Expect(ok).To(BeTrue())
-			Expect(s).To(Equal("myvalue-2"))
-
-			By("updating the second label on the deployment")
-			l = map[string]string{"mylabel-2": "myvalue-2a"}
-			Expect(AddDeploymentLabels(d, l)).To(BeTrue())
-			s, ok = d.Labels["mylabel-2"]
-			Expect(ok).To(BeTrue())
-			Expect(s).To(Equal("myvalue-2a"))
-		})
-
-		It("adds labels to the pods in a deployment", func() {
-			By("creating a deployment with no pod labels")
-			d := &appsv1.Deployment{}
-
-			By("adding a label to the deployment pods")
-			l := map[string]string{"mylabel-1": "myvalue-1"}
-			Expect(AddPodLabels(d, l)).To(BeTrue())
-			s, ok := d.Spec.Template.Labels["mylabel-1"]
-			Expect(ok).To(BeTrue())
-			Expect(s).To(Equal("myvalue-1"))
-
-			By("adding the same label to the deployment pods")
-			Expect(AddPodLabels(d, l)).To(BeFalse())
-			s, ok = d.Spec.Template.Labels["mylabel-1"]
-			Expect(ok).To(BeTrue())
-			Expect(s).To(Equal("myvalue-1"))
-
-			By("adding a second label to the deployment pods")
-			l = map[string]string{"mylabel-2": "myvalue-2"}
-			Expect(AddPodLabels(d, l)).To(BeTrue())
-			s, ok = d.Spec.Template.Labels["mylabel-2"]
-			Expect(ok).To(BeTrue())
-			Expect(s).To(Equal("myvalue-2"))
-
-			By("updating the second label on the deployment pods")
-			l = map[string]string{"mylabel-2": "myvalue-2a"}
-			Expect(AddPodLabels(d, l)).To(BeTrue())
-			s, ok = d.Spec.Template.Labels["mylabel-2"]
-			Expect(ok).To(BeTrue())
-			Expect(s).To(Equal("myvalue-2a"))
-		})
-	})
-
-	Context("CoreToUnstructured function", func() {
-		It("converts a valid object to unstructured", func() {
-			By("creating a valid object")
-			d := &appsv1.Deployment{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "Deployment",
-					APIVersion: "apps/v1",
-				},
-			}
-
-			By("converting the object to unstructured")
-			u, err := CoreToUnstructured(d)
-			Expect(err).To(BeNil())
-			Expect(u).ToNot(BeNil())
-		})
 	})
 
 	Context("AvailabilityConfigIsValid function", func() {
@@ -157,11 +73,6 @@ var _ = Describe("utility functions", func() {
 			mch := resources.EmptyMCH()
 			d := GetDeployments(&mch)
 			Expect(len(d)).To(Equal(0))
-		})
-		It("gets custom resources", func() {
-			mch := resources.EmptyMCH()
-			cr := GetCustomResources(&mch)
-			Expect(len(cr)).To(Equal(3))
 		})
 		It("gets deployments for status with mcho-repo disabled", func() {
 			mch := resources.EmptyMCH()
@@ -261,116 +172,6 @@ var _ = Describe("utility functions", func() {
 	})
 })
 
-func TestContainsPullSecret(t *testing.T) {
-	superset := []corev1.LocalObjectReference{{Name: "foo"}, {Name: "bar"}}
-	type args struct {
-		pullSecrets []corev1.LocalObjectReference
-		ps          corev1.LocalObjectReference
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{
-			"Contains pull secret",
-			args{
-				pullSecrets: superset,
-				ps:          corev1.LocalObjectReference{Name: "foo"},
-			},
-			true,
-		},
-		{
-			"Does not contain pull secret",
-			args{
-				pullSecrets: superset,
-				ps:          corev1.LocalObjectReference{Name: "baz"},
-			},
-			false,
-		},
-		{
-			"Empty list",
-			args{
-				pullSecrets: []corev1.LocalObjectReference{},
-				ps:          corev1.LocalObjectReference{Name: "baz"},
-			},
-			false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := ContainsPullSecret(tt.args.pullSecrets, tt.args.ps); got != tt.want {
-				t.Errorf("ContainsPullSecret() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestContainsMap(t *testing.T) {
-	superset := map[string]string{
-		"hello":     "world",
-		"goodnight": "moon",
-		"yip":       "yip",
-	}
-	type args struct {
-		all      map[string]string
-		expected map[string]string
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{
-			"Superset",
-			args{
-				all:      superset,
-				expected: map[string]string{"hello": "world", "yip": "yip"},
-			},
-			true,
-		},
-		{
-			"Partial overlap",
-			args{
-				all:      superset,
-				expected: map[string]string{"hello": "world", "greetings": "traveler"},
-			},
-			false,
-		},
-		{
-			"Empty superset",
-			args{
-				all:      map[string]string{},
-				expected: map[string]string{"yip": "yip"},
-			},
-			false,
-		},
-		{
-			"Empty subset",
-			args{
-				all:      superset,
-				expected: map[string]string{},
-			},
-			true,
-		},
-		{
-			"Same keys, different values",
-			args{
-				all:      superset,
-				expected: map[string]string{"hello": "moon", "yip": "yip"},
-			},
-			false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := ContainsMap(tt.args.all, tt.args.expected); got != tt.want {
-				t.Errorf("ContainsMap() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestMchIsValid(t *testing.T) {
 	validMCH := &mchv1.MultiClusterHub{
 		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
@@ -425,14 +226,6 @@ func TestMchIsValid(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestDistributePods(t *testing.T) {
-	t.Run("Returns pod affinity", func(t *testing.T) {
-		if got := DistributePods("app", "testapp"); reflect.TypeOf(got) != reflect.TypeOf((*corev1.Affinity)(nil)) {
-			t.Errorf("DistributePods() did not return an affinity type")
-		}
-	})
 }
 
 func TestGetImagePullPolicy(t *testing.T) {
@@ -547,30 +340,6 @@ func Test_deduplicate(t *testing.T) {
 	}
 }
 
-func TestAddInstallerLabels(t *testing.T) {
-	labels := map[string]string{
-		"testlabel": "testvalue",
-	}
-	name := "testname"
-	ns := "testnamespace"
-
-	labels = AddInstallerLabels(labels, name, ns)
-
-	tests := map[string]string{
-		"testlabel":           "testvalue",
-		"installer.name":      name,
-		"installer.namespace": ns,
-	}
-
-	for key, value := range tests {
-		if v, ok := labels[key]; !ok {
-			t.Errorf("AddInstallerLabels() missing label %q", key)
-		} else if v != value {
-			t.Errorf("AddInstallerLabels() label %q not %q, found %q", key, value, v)
-		}
-	}
-}
-
 func TestGetMCEComponents(t *testing.T) {
 	mch := &mchv1.MultiClusterHub{}
 	mch.Spec.DisableHubSelfManagement = false
@@ -606,46 +375,6 @@ func TestGetMCEComponents(t *testing.T) {
 	if !found {
 		t.Errorf("GetMCEComponents() with DisableHubSelfManagement=true, expected 'local-cluster' to be present")
 	}
-}
-
-func TestUpdateMCEOverrides(t *testing.T) {
-	mch := &mchv1.MultiClusterHub{}
-	mch.Spec.DisableHubSelfManagement = false
-	mce := &mcev1.MultiClusterEngine{}
-
-	UpdateMCEOverrides(mce, mch)
-
-	found := false
-	for _, c := range mce.Spec.Overrides.Components {
-		if c.Name != mchv1.MCELocalCluster {
-			continue
-		}
-		found = true
-		if !c.Enabled {
-			t.Errorf("UpdateMCEOverrides() with DisableHubSelfManagement=false, expected 'local-cluster' to be enabled")
-		}
-	}
-	if !found {
-		t.Errorf("UpdateMCEOverrides() with DisableHubSelfManagement=false, expected 'local-cluster' to be present")
-	}
-
-	mch = &mchv1.MultiClusterHub{}
-	mch.Spec.DisableHubSelfManagement = true
-	mce = &mcev1.MultiClusterEngine{}
-
-	if mce.Spec.Overrides == nil {
-		// Overrides.Components is empty, so local-cluster is disabled
-		return
-	}
-	for _, c := range mce.Spec.Overrides.Components {
-		if c.Name != mchv1.MCELocalCluster {
-			continue
-		}
-		if c.Enabled {
-			t.Errorf("UpdateMCEOverrides() with DisableHubSelfManagement=true, expected 'local-cluster' to be disabled")
-		}
-	}
-	// Ok if local-cluster not found
 }
 
 func Test_GetDeploymentsForStatus(t *testing.T) {

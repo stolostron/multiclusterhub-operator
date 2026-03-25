@@ -4,17 +4,13 @@
 package utils
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -109,28 +105,6 @@ const (
 	MCHOperatorMetricsServiceMonitorName = "multiclusterhub-operator-metrics"
 )
 
-// ContainsPullSecret returns whether a list of pullSecrets contains a given pull secret
-func ContainsPullSecret(pullSecrets []corev1.LocalObjectReference, ps corev1.LocalObjectReference) bool {
-	for _, v := range pullSecrets {
-		if v == ps {
-			return true
-		}
-	}
-	return false
-}
-
-// ContainsMap returns whether the expected map entries are included in the map
-func ContainsMap(all map[string]string, expected map[string]string) bool {
-	for key, exval := range expected {
-		allval, ok := all[key]
-		if !ok || allval != exval {
-			return false
-		}
-
-	}
-	return true
-}
-
 // AddInstallerLabel adds Installer Labels ...
 func AddInstallerLabel(u *unstructured.Unstructured, name string, ns string) {
 	labels := make(map[string]string)
@@ -141,65 +115,6 @@ func AddInstallerLabel(u *unstructured.Unstructured, name string, ns string) {
 	labels["installer.namespace"] = ns
 
 	u.SetLabels(labels)
-}
-
-// AddInstallerLabel adds Installer Labels ...
-func AddInstallerLabels(l map[string]string, name string, ns string) map[string]string {
-	labels := make(map[string]string)
-	for key, value := range l {
-		labels[key] = value
-	}
-	labels["installer.name"] = name
-	labels["installer.namespace"] = ns
-
-	return labels
-}
-
-// AddDeploymentLabels ...
-func AddDeploymentLabels(d *appsv1.Deployment, labels map[string]string) bool {
-	updated := false
-	if d.Labels == nil {
-		d.Labels = labels
-		return true
-	}
-
-	for k, v := range labels {
-		if d.Labels[k] != v {
-			d.Labels[k] = v
-			updated = true
-		}
-	}
-
-	return updated
-}
-
-// AddPodLabels ...
-func AddPodLabels(d *appsv1.Deployment, labels map[string]string) bool {
-	updated := false
-	if d.Spec.Template.Labels == nil {
-		d.Spec.Template.Labels = labels
-		return true
-	}
-
-	for k, v := range labels {
-		if d.Spec.Template.Labels[k] != v {
-			d.Spec.Template.Labels[k] = v
-			updated = true
-		}
-	}
-
-	return updated
-}
-
-// CoreToUnstructured converts a Core Kube resource to unstructured
-func CoreToUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) {
-	content, err := json.Marshal(obj)
-	if err != nil {
-		return nil, err
-	}
-	u := &unstructured.Unstructured{}
-	err = u.UnmarshalJSON(content)
-	return u, err
 }
 
 // MchIsValid Checks if the optional default parameters need to be set
@@ -216,78 +131,12 @@ func DefaultReplicaCount(mch *operatorsv1.MultiClusterHub) int {
 	return 2
 }
 
-// DistributePods returns a anti-affinity rule that specifies a preference for pod replicas with
-// the matching key-value label to run across different nodes and zones
-func DistributePods(key string, value string) *corev1.Affinity {
-	return &corev1.Affinity{
-		PodAntiAffinity: &corev1.PodAntiAffinity{
-			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
-				{
-					PodAffinityTerm: corev1.PodAffinityTerm{
-						TopologyKey: "kubernetes.io/hostname",
-						LabelSelector: &metav1.LabelSelector{
-							MatchExpressions: []metav1.LabelSelectorRequirement{
-								{
-									Key:      key,
-									Operator: metav1.LabelSelectorOpIn,
-									Values:   []string{value},
-								},
-							},
-						},
-					},
-					Weight: 35,
-				},
-				{
-					PodAffinityTerm: corev1.PodAffinityTerm{
-						TopologyKey: "failure-domain.beta.kubernetes.io/zone",
-						LabelSelector: &metav1.LabelSelector{
-							MatchExpressions: []metav1.LabelSelectorRequirement{
-								{
-									Key:      key,
-									Operator: metav1.LabelSelectorOpIn,
-									Values:   []string{value},
-								},
-							},
-						},
-					},
-					Weight: 70,
-				},
-			},
-		},
-	}
-}
-
 // GetImagePullPolicy returns either pull policy from CR overrides or default of Always
 func GetImagePullPolicy(m *operatorsv1.MultiClusterHub) corev1.PullPolicy {
 	if m.Spec.Overrides == nil || m.Spec.Overrides.ImagePullPolicy == "" {
 		return corev1.PullIfNotPresent
 	}
 	return m.Spec.Overrides.ImagePullPolicy
-}
-
-// GetContainerArgs return arguments forfirst container in deployment
-func GetContainerArgs(dep *appsv1.Deployment) []string {
-	return dep.Spec.Template.Spec.Containers[0].Args
-}
-
-// GetContainerEnvVars returns environment variables for first container in deployment
-func GetContainerEnvVars(dep *appsv1.Deployment) []corev1.EnvVar {
-	return dep.Spec.Template.Spec.Containers[0].Env
-}
-
-// GetContainerVolumeMounts returns volume mount for first container in deployment
-func GetContainerVolumeMounts(dep *appsv1.Deployment) []corev1.VolumeMount {
-	return dep.Spec.Template.Spec.Containers[0].VolumeMounts
-}
-
-// GetDeploymentVolumes returns volumes in deployment
-func GetContainerVolumes(dep *appsv1.Deployment) []corev1.Volume {
-	return dep.Spec.Template.Spec.Volumes
-}
-
-// GetContainerRequestResources returns Request Requirements for first container in deployment
-func GetContainerRequestResources(dep *appsv1.Deployment) corev1.ResourceList {
-	return dep.Spec.Template.Spec.Containers[0].Resources.Requests
 }
 
 func IsUnitTest() bool {
@@ -378,14 +227,6 @@ func GetDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 		nn = append(nn, types.NamespacedName{Name: "openshift-adp-controller-manager", Namespace: ClusterSubscriptionNamespace})
 	}
 	return nn
-}
-
-func GetCustomResources(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
-	return []types.NamespacedName{
-		{Name: "multicluster-engine-sub", Namespace: MCESubscriptionNamespace},
-		{Name: "multicluster-engine-csv", Namespace: MCESubscriptionNamespace},
-		{Name: "multicluster-engine"},
-	}
 }
 
 func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole, isSTSEnabled bool) []types.NamespacedName {
@@ -480,23 +321,6 @@ func Contains(s []string, e string) bool {
 	return false
 }
 
-func AppendProxyVariables(existing []corev1.EnvVar, added []corev1.EnvVar) []corev1.EnvVar {
-	for i := 0; i < len(added); i++ {
-		existing = appendIfMissing(existing, added[i])
-	}
-	return existing
-}
-
-func appendIfMissing(slice []corev1.EnvVar, s corev1.EnvVar) []corev1.EnvVar {
-	for i := 0; i < len(slice); i++ {
-		if slice[i].Name == s.Name {
-			slice[i].Value = s.Value
-			return slice
-		}
-	}
-	return append(slice, s)
-}
-
 // SetDefaultComponents returns true if changes are made
 func SetDefaultComponents(m *operatorsv1.MultiClusterHub) (bool, error) {
 	updated := false
@@ -584,24 +408,6 @@ func GetMCEComponents(mch *operatorsv1.MultiClusterHub) []mcev1.ComponentConfig 
 		config = append(config, mcev1.ComponentConfig{Name: operatorsv1.MCELocalCluster, Enabled: true})
 	}
 	return config
-}
-
-// UpdateMCEOverrides adds MCE componenets that are present in mch
-func UpdateMCEOverrides(mce *mcev1.MultiClusterEngine, mch *operatorsv1.MultiClusterHub) {
-	mceComponents := GetMCEComponents(mch)
-	for _, c := range mceComponents {
-		if c.Enabled {
-			mce.Enable(c.Name)
-		} else {
-			mce.Disable(c.Name)
-		}
-	}
-	if mch.Spec.DisableHubSelfManagement {
-		mce.Disable(operatorsv1.MCELocalCluster)
-
-	} else {
-		mce.Enable(operatorsv1.MCELocalCluster)
-	}
 }
 
 // IsCommunityMode returns true if operator is running in community mode
