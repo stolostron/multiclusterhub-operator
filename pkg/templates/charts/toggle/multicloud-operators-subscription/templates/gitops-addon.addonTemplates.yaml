@@ -26,6 +26,23 @@ spec:
                 - -cleanup
                 command:
                 - /usr/local/bin/gitopsaddon
+                env:
+                - name: ARGOCD_NAMESPACE
+                  value: '{{ `{{ARGOCD_NAMESPACE}}` }}'
+                - name: OLM_SUBSCRIPTION_ENABLED
+                  value: '{{ `{{OLM_SUBSCRIPTION_ENABLED}}` }}'
+                - name: OLM_SUBSCRIPTION_NAME
+                  value: '{{ `{{OLM_SUBSCRIPTION_NAME}}` }}'
+                - name: OLM_SUBSCRIPTION_NAMESPACE
+                  value: '{{ `{{OLM_SUBSCRIPTION_NAMESPACE}}` }}'
+                - name: OLM_SUBSCRIPTION_CHANNEL
+                  value: '{{ `{{OLM_SUBSCRIPTION_CHANNEL}}` }}'
+                - name: OLM_SUBSCRIPTION_SOURCE
+                  value: '{{ `{{OLM_SUBSCRIPTION_SOURCE}}` }}'
+                - name: OLM_SUBSCRIPTION_SOURCE_NAMESPACE
+                  value: '{{ `{{OLM_SUBSCRIPTION_SOURCE_NAMESPACE}}` }}'
+                - name: OLM_SUBSCRIPTION_INSTALL_PLAN_APPROVAL
+                  value: '{{ `{{OLM_SUBSCRIPTION_INSTALL_PLAN_APPROVAL}}` }}'
                 image: '{{ .Values.global.imageOverrides.multicloud_integrations }}'
                 imagePullPolicy: IfNotPresent
                 name: cleanup
@@ -95,6 +112,22 @@ spec:
                   value: '{{ `{{ARGOCD_AGENT_SERVER_PORT}}` }}'
                 - name: ARGOCD_AGENT_MODE
                   value: '{{ `{{ARGOCD_AGENT_MODE}}` }}'
+                - name: ARGOCD_NAMESPACE
+                  value: '{{ `{{ARGOCD_NAMESPACE}}` }}'
+                - name: OLM_SUBSCRIPTION_ENABLED
+                  value: '{{ `{{OLM_SUBSCRIPTION_ENABLED}}` }}'
+                - name: OLM_SUBSCRIPTION_NAME
+                  value: '{{ `{{OLM_SUBSCRIPTION_NAME}}` }}'
+                - name: OLM_SUBSCRIPTION_NAMESPACE
+                  value: '{{ `{{OLM_SUBSCRIPTION_NAMESPACE}}` }}'
+                - name: OLM_SUBSCRIPTION_CHANNEL
+                  value: '{{ `{{OLM_SUBSCRIPTION_CHANNEL}}` }}'
+                - name: OLM_SUBSCRIPTION_SOURCE
+                  value: '{{ `{{OLM_SUBSCRIPTION_SOURCE}}` }}'
+                - name: OLM_SUBSCRIPTION_SOURCE_NAMESPACE
+                  value: '{{ `{{OLM_SUBSCRIPTION_SOURCE_NAMESPACE}}` }}'
+                - name: OLM_SUBSCRIPTION_INSTALL_PLAN_APPROVAL
+                  value: '{{ `{{OLM_SUBSCRIPTION_INSTALL_PLAN_APPROVAL}}` }}'
                 image: '{{ .Values.global.imageOverrides.multicloud_integrations }}'
                 imagePullPolicy: IfNotPresent
                 name: gitops-addon

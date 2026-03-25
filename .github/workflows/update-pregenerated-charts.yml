@@ -53,16 +53,29 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }} # Specify the Go version from the matrix
 
-      # Runs a set of commands using the runners shell
-      - name: Copy Charts for Operator Bundles
+      # Install yq dependency for template variable sync
+      - name: Install yq for template variable sync
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      # Copy charts AND sync template variables
+      # The sync step will run copy-charts, detect any new variables,
+      # add them to config.yaml, then re-run copy-charts to apply proper escaping
+      - name: Copy Charts for Operator Bundles with Variable Sync
         env:
           BRANCH: ${{ github.event.inputs.branch_arg || 'main' }}
           ORG: ${{ github.event.inputs.org_arg || 'stolostron' }}
         run: |
+          # First copy charts to pull latest upstream changes
           make copy-charts
+
+          # Then sync variables (will re-run 'make copy-charts' if new variables found)
+          make -f Makefile.dev sync-template-vars-copy
+
           exit_code=$?
           if [ $exit_code -ne 0 ]; then
-            echo "Copy Charts for Operator Bundles step failed with exit code $exit_code"
+            echo "Copy Charts step failed with exit code $exit_code"
             exit $exit_code
           fi
 

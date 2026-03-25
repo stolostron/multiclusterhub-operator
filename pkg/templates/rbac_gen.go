@@ -25,6 +25,7 @@ package main
 //+kubebuilder:rbac:groups="",resources=groups;secrets;serviceaccounts;services;users,verbs=create;delete;get;impersonate;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=create;delete;get;list;patch;update
 //+kubebuilder:rbac:groups="",resources=namespaces;serviceaccounts,verbs=create;get;list;watch;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=pods,verbs=get
 //+kubebuilder:rbac:groups="",resources=pods,verbs=get
 //+kubebuilder:rbac:groups="",resources=pods,verbs=get;list
