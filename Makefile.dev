@@ -86,6 +86,26 @@ refresh-image-aliases: install-requirements
 regenerate-charts-from-bundles: install-requirements
 	python3 ./hack/bundle-automation/generate-shell.py --update-charts-from-bundles --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component $(COMPONENT) --config $(CONFIG)
 
+## Validates that all template variables are declared in config.yaml
+.PHONY: validate-template-vars
+validate-template-vars:
+	./hack/validate-template-vars.sh
+
+## Syncs template variables to config.yaml and regenerates charts from bundles
+.PHONY: sync-template-vars
+sync-template-vars:
+	./hack/sync-template-vars.sh regenerate-charts-from-bundles
+
+## Syncs template variables to config.yaml and regenerates charts
+.PHONY: sync-template-vars-charts
+sync-template-vars-charts:
+	./hack/sync-template-vars.sh regenerate-charts
+
+## Syncs template variables to config.yaml and copies charts
+.PHONY: sync-template-vars-copy
+sync-template-vars-copy:
+	./hack/sync-template-vars.sh copy-charts
+
 ## Regenerates the operator bundles
 .PHONY: regenerate-operator-sha-commits
 regenerate-operator-sha-commits: install-requirements
