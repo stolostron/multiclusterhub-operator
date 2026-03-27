@@ -592,9 +592,9 @@ func SetHubCondition(status *operatorsv1.MultiClusterHubStatus, condition operat
 	newConditions := filterOutCondition(status.HubConditions, condition.Type)
 	newConditions = append(newConditions, condition)
 
-	// Sort conditions by lastUpdateTime so the most recently updated is always last
+	// Sort conditions by lastTransitionTime so the most recently transitioned is always last
 	sort.Slice(newConditions, func(i, j int) bool {
-		return newConditions[i].LastUpdateTime.Before(&newConditions[j].LastUpdateTime)
+		return newConditions[i].LastTransitionTime.Before(&newConditions[j].LastTransitionTime)
 	})
 
 	status.HubConditions = newConditions
