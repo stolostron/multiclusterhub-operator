@@ -174,13 +174,43 @@ func AnnotationsMatch(old, new map[string]string) bool {
 		return false
 	}
 
-	// Also check if any annotation was added or removed (allows manual triggering)
+	// Track which keys we've already checked semantically to avoid double-counting
+	checkedKeys := map[string]bool{
+		AnnotationMCHPause:                   true,
+		DeprecatedAnnotationMCHPause:         true,
+		AnnotationImageRepo:                  true,
+		DeprecatedAnnotationImageRepo:        true,
+		AnnotationImageOverridesCM:           true,
+		DeprecatedAnnotationImageOverridesCM: true,
+		AnnotationKubeconfig:                 true,
+		DeprecatedAnnotationKubeconfig:       true,
+		AnnotationTemplateOverridesCM:        true,
+		AnnotationMCESubscriptionSpec:        true,
+		AnnotationOADPSubscriptionSpec:       true,
+		AnnotationResourceAdoptionPolicy:     true,
+	}
+
+	// Filter to only unchecked annotations
+	oldUnchecked := make(map[string]string)
+	for k, v := range old {
+		if !checkedKeys[k] {
+			oldUnchecked[k] = v
+		}
+	}
+	newUnchecked := make(map[string]string)
+	for k, v := range new {
+		if !checkedKeys[k] {
+			newUnchecked[k] = v
+		}
+	}
+
+	// Check if any unchecked annotation was added or removed (allows manual triggering)
 	// Don't check values, just keys - value changes to non-important annotations are ignored
-	if len(old) != len(new) {
+	if len(oldUnchecked) != len(newUnchecked) {
 		return false
 	}
-	for k := range old {
-		if _, exists := new[k]; !exists {
+	for k := range oldUnchecked {
+		if _, exists := newUnchecked[k]; !exists {
 			return false
 		}
 	}
