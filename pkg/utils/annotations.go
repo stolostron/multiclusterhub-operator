@@ -142,15 +142,50 @@ func IsTemplateAnnotationTrue(instance *unstructured.Unstructured, annotationKey
 /*
 AnnotationsMatch checks if all specified annotations in the 'old' map match the corresponding ones in the 'new' map.
 It returns true if all annotations match, otherwise false.
+This function:
+1. Checks if specific important annotations changed (explicit tracking)
+2. Checks if any annotation was added or removed (allows manual triggering)
+3. Ignores value changes to non-important annotations (reduces unnecessary reconciles)
 */
 func AnnotationsMatch(old, new map[string]string) bool {
-	return getAnnotationOrDefaultForMap(old, new, AnnotationMCHPause, DeprecatedAnnotationMCHPause) &&
-		getAnnotationOrDefaultForMap(old, new, AnnotationImageRepo, DeprecatedAnnotationImageRepo) &&
-		getAnnotationOrDefaultForMap(old, new, AnnotationImageOverridesCM, DeprecatedAnnotationImageOverridesCM) &&
-		getAnnotationOrDefaultForMap(old, new, AnnotationKubeconfig, DeprecatedAnnotationKubeconfig) &&
-		getAnnotationOrDefaultForMap(old, new, AnnotationTemplateOverridesCM, "") &&
-		getAnnotationOrDefaultForMap(old, new, AnnotationMCESubscriptionSpec, "") &&
-		getAnnotationOrDefaultForMap(old, new, AnnotationOADPSubscriptionSpec, "")
+	// First check if specific important annotations changed
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationMCHPause, DeprecatedAnnotationMCHPause) {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationImageRepo, DeprecatedAnnotationImageRepo) {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationImageOverridesCM, DeprecatedAnnotationImageOverridesCM) {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationKubeconfig, DeprecatedAnnotationKubeconfig) {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationTemplateOverridesCM, "") {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationMCESubscriptionSpec, "") {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationOADPSubscriptionSpec, "") {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationResourceAdoptionPolicy, "") {
+		return false
+	}
+
+	// Also check if any annotation was added or removed (allows manual triggering)
+	// Don't check values, just keys - value changes to non-important annotations are ignored
+	if len(old) != len(new) {
+		return false
+	}
+	for k := range old {
+		if _, exists := new[k]; !exists {
+			return false
+		}
+	}
+
+	return true
 }
 
 /*
