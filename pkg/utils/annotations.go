@@ -96,6 +96,13 @@ var (
 		to be ended by customer without being overridden.
 	*/
 	AnnotationEditable = "installer.open-cluster-management.io/is-editable"
+
+	/*
+		AnnotationResourceAdoptionPolicy is an annotation used in multiclusterhub to control how the operator
+		handles existing resources without installer labels.
+		Valid values: "Strict" (default) - only manage labeled resources, "Adopt" - adopt unlabeled resources.
+	*/
+	AnnotationResourceAdoptionPolicy = "installer.open-cluster-management.io/resource-adoption-policy"
 )
 
 /*
