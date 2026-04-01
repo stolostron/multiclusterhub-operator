@@ -31,7 +31,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
+
+var configLog = logf.Log.WithName("config")
 
 // previewToGAComponents maps preview component names to their GA equivalents.
 // When a preview component is enabled, it is automatically replaced with the GA version.
@@ -39,6 +42,37 @@ var previewToGAComponents = map[string]string{
 	operatorv1.MTVIntegrationsPreview: operatorv1.MTVIntegrations,
 	operatorv1.FineGrainedRbacPreview: operatorv1.FineGrainedRbac,
 	// Add future preview→GA transitions here
+}
+
+// defaultAnnotations defines annotations that should be set on all MCH instances
+// if not already present. Add new default annotations here.
+var defaultAnnotations = map[string]string{
+	utils.AnnotationResourceAdoptionPolicy: "Strict",
+	// Future default annotations can be added here
+}
+
+// setDefaultAnnotations applies default values for any missing annotations
+// Returns true if any annotations were added
+func setDefaultAnnotations(m *operatorv1.MultiClusterHub) bool {
+	updated := false
+	annotations := m.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+
+	for key, defaultValue := range defaultAnnotations {
+		if _, exists := annotations[key]; !exists {
+			annotations[key] = defaultValue
+			updated = true
+			configLog.Info("Setting default annotation", "annotation", key, "value", defaultValue)
+		}
+	}
+
+	if updated {
+		m.SetAnnotations(annotations)
+	}
+
+	return updated
 }
 
 func updatePausedCondition(m *operatorv1.MultiClusterHub) {
@@ -80,6 +114,11 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 	}
 
 	if utils.DeduplicateComponents(m) {
+		updateNecessary = true
+	}
+
+	// Set default annotations if not specified
+	if setDefaultAnnotations(m) {
 		updateNecessary = true
 	}
 
