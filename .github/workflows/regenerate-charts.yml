@@ -40,7 +40,7 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v6
         with:
-          token: ${{ secrets.HUB_OPERATOR_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ matrix.branch }}
 
       - name: Set up Python ${{ matrix.python-version }}
