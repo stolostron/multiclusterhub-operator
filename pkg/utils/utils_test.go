@@ -17,6 +17,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/types"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -214,6 +215,8 @@ var _ = Describe("utility functions", func() {
 			mch.Enable(mchv1.Console)
 			d := GetDeploymentsForStatus(&mch, true, false)
 			Expect(len(d)).To(Equal(2))
+			Expect(containsDeployment(d, "console-chart-console-v2", resources.MulticlusterhubNamespace)).To(BeTrue())
+			Expect(containsDeployment(d, "acm-cli-downloads", resources.MulticlusterhubNamespace)).To(BeTrue())
 		})
 		It("gets deployments for status with observability enabled", func() {
 			mch := resources.EmptyMCH()
@@ -232,6 +235,20 @@ var _ = Describe("utility functions", func() {
 			mch.Enable(mchv1.ClusterPermission)
 			d := GetDeploymentsForStatus(&mch, true, false)
 			Expect(len(d)).To(Equal(1))
+		})
+		It("gets deployments for status with fine-grained-rbac-preview enabled", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable(mchv1.FineGrainedRbacPreview)
+			d := GetDeploymentsForStatus(&mch, true, false)
+			Expect(len(d)).To(Equal(1))
+			Expect(containsDeployment(d, "multicluster-role-assignment-controller", resources.MulticlusterhubNamespace)).To(BeTrue())
+		})
+		It("gets deployments for status with MTV integrations preview enabled", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable(mchv1.MTVIntegrationsPreview)
+			d := GetDeploymentsForStatus(&mch, true, false)
+			Expect(len(d)).To(Equal(1))
+			Expect(containsDeployment(d, "mtv-integrations-controller", resources.MulticlusterhubNamespace)).To(BeTrue())
 		})
 		It("Sets Default Component values", func() {
 			mch := resources.EmptyMCH()
@@ -737,4 +754,14 @@ func Test_GetDeploymentsForStatus(t *testing.T) {
 			}
 		})
 	}
+}
+
+// containsDeployment checks if a deployment with the given name and namespace exists in the list
+func containsDeployment(deployments []types.NamespacedName, name, namespace string) bool {
+	for _, d := range deployments {
+		if d.Name == name && d.Namespace == namespace {
+			return true
+		}
+	}
+	return false
 }
