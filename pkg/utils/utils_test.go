@@ -396,10 +396,12 @@ func TestGetMCEComponents(t *testing.T) {
 
 func Test_GetDeploymentsForStatus(t *testing.T) {
 	tests := []struct {
-		name       string
-		mch        mchv1.MultiClusterHub
-		stsEnabled bool
-		want       int
+		name           string
+		mch            mchv1.MultiClusterHub
+		stsEnabled     bool
+		want           int
+		mustContain    []types.NamespacedName
+		mustNotContain []types.NamespacedName
 	}{
 		{
 			name:       "should get deployment status for MCH components",
@@ -423,6 +425,9 @@ func Test_GetDeploymentsForStatus(t *testing.T) {
 			},
 			stsEnabled: true,
 			want:       20,
+			mustNotContain: []types.NamespacedName{
+				{Name: "openshift-adp-controller-manager", Namespace: ClusterSubscriptionNamespace},
+			},
 		},
 		{
 			name: "should get deployment status for MCH components with STS disabled",
@@ -440,6 +445,9 @@ func Test_GetDeploymentsForStatus(t *testing.T) {
 			},
 			stsEnabled: false,
 			want:       21,
+			mustContain: []types.NamespacedName{
+				{Name: "openshift-adp-controller-manager", Namespace: ClusterSubscriptionNamespace},
+			},
 		},
 	}
 
@@ -449,8 +457,25 @@ func Test_GetDeploymentsForStatus(t *testing.T) {
 				t.Errorf("failed to set default components: %v", err)
 			}
 
-			if deployments := GetDeploymentsForStatus(&tt.mch, true, tt.stsEnabled); len(deployments) != tt.want {
-				t.Errorf("expected %v, got %v", len(deployments), tt.want)
+			deployments := GetDeploymentsForStatus(&tt.mch, true, tt.stsEnabled)
+
+			// Check total count
+			if len(deployments) != tt.want {
+				t.Errorf("expected %v deployments, got %v", tt.want, len(deployments))
+			}
+
+			// Verify deployments that must be present
+			for _, d := range tt.mustContain {
+				if !containsDeployment(deployments, d.Name, d.Namespace) {
+					t.Errorf("missing deployment: %s/%s", d.Namespace, d.Name)
+				}
+			}
+
+			// Verify deployments that must not be present
+			for _, d := range tt.mustNotContain {
+				if containsDeployment(deployments, d.Name, d.Namespace) {
+					t.Errorf("unexpected deployment: %s/%s", d.Namespace, d.Name)
+				}
 			}
 		})
 	}
