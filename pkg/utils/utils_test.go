@@ -111,7 +111,7 @@ var _ = Describe("utility functions", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(mchv1.Console)
 			d := GetDeploymentsForStatus(&mch, true, false)
-			Expect(len(d)).To(Equal(1))
+			Expect(len(d)).To(Equal(2))
 		})
 		It("gets deployments for status with observability enabled", func() {
 			mch := resources.EmptyMCH()
@@ -388,7 +388,7 @@ func Test_GetDeploymentsForStatus(t *testing.T) {
 			name:       "should get deployment status for MCH components",
 			mch:        resources.EmptyMCH(),
 			stsEnabled: false,
-			want:       18,
+			want:       19,
 		},
 		{
 			name: "should get deployment status for MCH components with STS enabled",
@@ -405,7 +405,7 @@ func Test_GetDeploymentsForStatus(t *testing.T) {
 				},
 			},
 			stsEnabled: true,
-			want:       19,
+			want:       20,
 		},
 		{
 			name: "should get deployment status for MCH components with STS disabled",
@@ -422,7 +422,7 @@ func Test_GetDeploymentsForStatus(t *testing.T) {
 				},
 			},
 			stsEnabled: false,
-			want:       20,
+			want:       21,
 		},
 	}
 

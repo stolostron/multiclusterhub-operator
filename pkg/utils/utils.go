@@ -268,12 +268,19 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole, isSTSEn
 	}
 	if m.Enabled(operatorsv1.Console) && ocpConsole {
 		nn = append(nn, types.NamespacedName{Name: "console-chart-console-v2", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "acm-cli-downloads", Namespace: m.Namespace})
 	}
 	if m.Enabled(operatorsv1.Volsync) {
 		nn = append(nn, types.NamespacedName{Name: "volsync-addon-controller", Namespace: m.Namespace})
 	}
 	if m.Enabled(operatorsv1.MultiClusterObservability) {
 		nn = append(nn, types.NamespacedName{Name: "multicluster-observability-operator", Namespace: m.Namespace})
+	}
+	if m.Enabled(operatorsv1.FineGrainedRbac) {
+		nn = append(nn, types.NamespacedName{Name: "multicluster-role-assignment-controller", Namespace: m.Namespace})
+	}
+	if m.Enabled(operatorsv1.MTVIntegrations) {
+		nn = append(nn, types.NamespacedName{Name: "mtv-integrations-controller", Namespace: m.Namespace})
 	}
 
 	return nn
