@@ -17,6 +17,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/types"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -213,7 +214,9 @@ var _ = Describe("utility functions", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(mchv1.Console)
 			d := GetDeploymentsForStatus(&mch, true, false)
-			Expect(len(d)).To(Equal(1))
+			Expect(len(d)).To(Equal(2))
+			Expect(containsDeployment(d, "console-chart-console-v2", resources.MulticlusterhubNamespace)).To(BeTrue())
+			Expect(containsDeployment(d, "acm-cli-downloads", resources.MulticlusterhubNamespace)).To(BeTrue())
 		})
 		It("gets deployments for status with observability enabled", func() {
 			mch := resources.EmptyMCH()
@@ -232,6 +235,20 @@ var _ = Describe("utility functions", func() {
 			mch.Enable(mchv1.ClusterPermission)
 			d := GetDeploymentsForStatus(&mch, true, false)
 			Expect(len(d)).To(Equal(1))
+		})
+		It("gets deployments for status with fine-grained-rbac enabled", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable(mchv1.FineGrainedRbac)
+			d := GetDeploymentsForStatus(&mch, true, false)
+			Expect(len(d)).To(Equal(1))
+			Expect(containsDeployment(d, "multicluster-role-assignment-controller", resources.MulticlusterhubNamespace)).To(BeTrue())
+		})
+		It("gets deployments for status with MTV integrations enabled", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable(mchv1.MTVIntegrations)
+			d := GetDeploymentsForStatus(&mch, true, false)
+			Expect(len(d)).To(Equal(1))
+			Expect(containsDeployment(d, "mtv-integrations-controller", resources.MulticlusterhubNamespace)).To(BeTrue())
 		})
 		It("Sets Default Component values", func() {
 			mch := resources.EmptyMCH()
@@ -679,16 +696,18 @@ func TestUpdateMCEOverrides(t *testing.T) {
 
 func Test_GetDeploymentsForStatus(t *testing.T) {
 	tests := []struct {
-		name       string
-		mch        mchv1.MultiClusterHub
-		stsEnabled bool
-		want       int
+		name           string
+		mch            mchv1.MultiClusterHub
+		stsEnabled     bool
+		want           int
+		mustContain    []types.NamespacedName
+		mustNotContain []types.NamespacedName
 	}{
 		{
 			name:       "should get deployment status for MCH components",
 			mch:        resources.EmptyMCH(),
 			stsEnabled: false,
-			want:       19,
+			want:       20,
 		},
 		{
 			name: "should get deployment status for MCH components with STS enabled",
@@ -705,7 +724,10 @@ func Test_GetDeploymentsForStatus(t *testing.T) {
 				},
 			},
 			stsEnabled: true,
-			want:       20,
+			want:       21,
+			mustNotContain: []types.NamespacedName{
+				{Name: "openshift-adp-controller-manager", Namespace: ClusterSubscriptionNamespace},
+			},
 		},
 		{
 			name: "should get deployment status for MCH components with STS disabled",
@@ -722,7 +744,10 @@ func Test_GetDeploymentsForStatus(t *testing.T) {
 				},
 			},
 			stsEnabled: false,
-			want:       21,
+			want:       22,
+			mustContain: []types.NamespacedName{
+				{Name: "openshift-adp-controller-manager", Namespace: ClusterSubscriptionNamespace},
+			},
 		},
 	}
 
@@ -732,9 +757,36 @@ func Test_GetDeploymentsForStatus(t *testing.T) {
 				t.Errorf("failed to set default components: %v", err)
 			}
 
-			if deployments := GetDeploymentsForStatus(&tt.mch, true, tt.stsEnabled); len(deployments) != tt.want {
-				t.Errorf("expected %v, got %v", len(deployments), tt.want)
+			deployments := GetDeploymentsForStatus(&tt.mch, true, tt.stsEnabled)
+
+			// Check total count
+			if len(deployments) != tt.want {
+				t.Errorf("expected %v deployments, got %v", tt.want, len(deployments))
+			}
+
+			// Verify deployments that must be present
+			for _, d := range tt.mustContain {
+				if !containsDeployment(deployments, d.Name, d.Namespace) {
+					t.Errorf("missing deployment: %s/%s", d.Namespace, d.Name)
+				}
+			}
+
+			// Verify deployments that must not be present
+			for _, d := range tt.mustNotContain {
+				if containsDeployment(deployments, d.Name, d.Namespace) {
+					t.Errorf("unexpected deployment: %s/%s", d.Namespace, d.Name)
+				}
 			}
 		})
 	}
+}
+
+// containsDeployment checks if a deployment with the given name and namespace exists in the list
+func containsDeployment(deployments []types.NamespacedName, name, namespace string) bool {
+	for _, d := range deployments {
+		if d.Name == name && d.Namespace == namespace {
+			return true
+		}
+	}
+	return false
 }
