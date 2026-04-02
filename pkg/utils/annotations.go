@@ -96,6 +96,13 @@ var (
 		to be ended by customer without being overridden.
 	*/
 	AnnotationEditable = "installer.open-cluster-management.io/is-editable"
+
+	/*
+		AnnotationResourceAdoptionPolicy is an annotation used in multiclusterhub to control how the operator
+		handles existing resources without installer labels.
+		Valid values: "Strict" (default) - only manage labeled resources, "Adopt" - adopt unlabeled resources.
+	*/
+	AnnotationResourceAdoptionPolicy = "installer.open-cluster-management.io/resource-adoption-policy"
 )
 
 /*
@@ -135,15 +142,80 @@ func IsTemplateAnnotationTrue(instance *unstructured.Unstructured, annotationKey
 /*
 AnnotationsMatch checks if all specified annotations in the 'old' map match the corresponding ones in the 'new' map.
 It returns true if all annotations match, otherwise false.
+This function:
+1. Checks if specific important annotations changed (explicit tracking)
+2. Checks if any annotation was added or removed (allows manual triggering)
+3. Ignores value changes to non-important annotations (reduces unnecessary reconciles)
 */
 func AnnotationsMatch(old, new map[string]string) bool {
-	return getAnnotationOrDefaultForMap(old, new, AnnotationMCHPause, DeprecatedAnnotationMCHPause) &&
-		getAnnotationOrDefaultForMap(old, new, AnnotationImageRepo, DeprecatedAnnotationImageRepo) &&
-		getAnnotationOrDefaultForMap(old, new, AnnotationImageOverridesCM, DeprecatedAnnotationImageOverridesCM) &&
-		getAnnotationOrDefaultForMap(old, new, AnnotationKubeconfig, DeprecatedAnnotationKubeconfig) &&
-		getAnnotationOrDefaultForMap(old, new, AnnotationTemplateOverridesCM, "") &&
-		getAnnotationOrDefaultForMap(old, new, AnnotationMCESubscriptionSpec, "") &&
-		getAnnotationOrDefaultForMap(old, new, AnnotationOADPSubscriptionSpec, "")
+	// First check if specific important annotations changed
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationMCHPause, DeprecatedAnnotationMCHPause) {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationImageRepo, DeprecatedAnnotationImageRepo) {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationImageOverridesCM, DeprecatedAnnotationImageOverridesCM) {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationKubeconfig, DeprecatedAnnotationKubeconfig) {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationTemplateOverridesCM, "") {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationMCESubscriptionSpec, "") {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationOADPSubscriptionSpec, "") {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationResourceAdoptionPolicy, "") {
+		return false
+	}
+
+	// Track which keys we've already checked semantically to avoid double-counting
+	checkedKeys := map[string]bool{
+		AnnotationMCHPause:                   true,
+		DeprecatedAnnotationMCHPause:         true,
+		AnnotationImageRepo:                  true,
+		DeprecatedAnnotationImageRepo:        true,
+		AnnotationImageOverridesCM:           true,
+		DeprecatedAnnotationImageOverridesCM: true,
+		AnnotationKubeconfig:                 true,
+		DeprecatedAnnotationKubeconfig:       true,
+		AnnotationTemplateOverridesCM:        true,
+		AnnotationMCESubscriptionSpec:        true,
+		AnnotationOADPSubscriptionSpec:       true,
+		AnnotationResourceAdoptionPolicy:     true,
+	}
+
+	// Filter to only unchecked annotations
+	oldUnchecked := make(map[string]string)
+	for k, v := range old {
+		if !checkedKeys[k] {
+			oldUnchecked[k] = v
+		}
+	}
+	newUnchecked := make(map[string]string)
+	for k, v := range new {
+		if !checkedKeys[k] {
+			newUnchecked[k] = v
+		}
+	}
+
+	// Check if any unchecked annotation was added or removed (allows manual triggering)
+	// Don't check values, just keys - value changes to non-important annotations are ignored
+	if len(oldUnchecked) != len(newUnchecked) {
+		return false
+	}
+	for k := range oldUnchecked {
+		if _, exists := newUnchecked[k]; !exists {
+			return false
+		}
+	}
+
+	return true
 }
 
 /*

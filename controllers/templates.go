@@ -84,6 +84,15 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 				return r.logAndSetCondition(err, "failed to get resource", existing, m)
 			}
 		} else {
+			// Resource exists - ensure we should manage it (adds labels to template if adopting)
+			if !r.ensureResourceOwnership(existing, template, m) {
+				r.Log.Info("Skipping update of resource not managed by this operator",
+					"Kind", existing.GetKind(),
+					"Name", existing.GetName(),
+					"Namespace", existing.GetNamespace())
+				return ctrl.Result{}, nil
+			}
+
 			desiredVersion := os.Getenv("OPERATOR_VERSION")
 			if desiredVersion == "" {
 				log.Info("Warning: OPERATOR_VERSION environment variable is not set")
@@ -202,6 +211,16 @@ func (r *MultiClusterHubReconciler) deleteTemplate(ctx context.Context, m *opera
 		return ctrl.Result{}, err
 	}
 
+	// Only delete resources managed by this MCH instance
+	// In deleteTemplate, template is both existing and desired state
+	if !r.ensureResourceOwnership(template, template, m) {
+		r.Log.Info("Skipping deletion of resource not managed by this operator",
+			"Kind", template.GetKind(),
+			"Name", template.GetName(),
+			"Namespace", template.GetNamespace())
+		return ctrl.Result{}, nil
+	}
+
 	err = r.Client.Delete(ctx, template)
 	if err != nil {
 		log.Error(err, "Failed to delete template")
@@ -210,6 +229,89 @@ func (r *MultiClusterHubReconciler) deleteTemplate(ctx context.Context, m *opera
 		r.Log.Info("Finalizing template... Deleting resource", "Kind", template.GetKind(), "Name", template.GetName())
 	}
 	return ctrl.Result{}, nil
+}
+
+// ensureResourceOwnership checks if a resource should be managed by MCH and adds
+// installer labels to the template if adopting based on the resource adoption policy annotation.
+// existing: the current state in cluster (checked for labels)
+// template: the desired state (labels added here if adopting)
+// Returns true if the resource should be managed, false otherwise.
+func (r *MultiClusterHubReconciler) ensureResourceOwnership(existing, template *unstructured.Unstructured, m *operatorv1.MultiClusterHub) bool {
+	existingLabels := existing.GetLabels()
+	if existingLabels == nil {
+		existingLabels = make(map[string]string)
+	}
+
+	// Check if existing resource already has installer labels
+	_, hasInstallerName := existingLabels["installer.name"]
+	_, hasInstallerNamespace := existingLabels["installer.namespace"]
+
+	if hasInstallerName && hasInstallerNamespace {
+		// Already labeled - manage it
+		return true
+	}
+
+	// Partial labels indicate corrupted/ambiguous state - don't manage
+	if hasInstallerName != hasInstallerNamespace {
+		r.Log.Info("Resource has partial installer labels - skipping",
+			"Kind", existing.GetKind(),
+			"Name", existing.GetName(),
+			"hasName", hasInstallerName,
+			"hasNamespace", hasInstallerNamespace)
+		return false
+	}
+
+	// No installer labels on existing resource - check adoption policy from MCH annotation
+	adoptionPolicy := r.getAdoptionPolicy(m)
+
+	if adoptionPolicy == "Adopt" {
+		// Adopt the resource by adding installer labels to template (desired state)
+		templateLabels := template.GetLabels()
+		if templateLabels == nil {
+			templateLabels = make(map[string]string)
+		}
+		templateLabels["installer.name"] = m.GetName()
+		templateLabels["installer.namespace"] = m.GetNamespace()
+		template.SetLabels(templateLabels)
+
+		r.Log.Info("Adopting resource by adding installer labels to desired state",
+			"Kind", existing.GetKind(),
+			"Name", existing.GetName(),
+			"Namespace", existing.GetNamespace(),
+			"Policy", adoptionPolicy)
+
+		return true
+	}
+
+	// Strict mode (default) - only manage resources with installer labels
+	return false
+}
+
+// getAdoptionPolicy retrieves the resource adoption policy from MCH annotations.
+// Valid values: "Strict" (default), "Adopt"
+func (r *MultiClusterHubReconciler) getAdoptionPolicy(m *operatorv1.MultiClusterHub) string {
+	annotations := m.GetAnnotations()
+	if annotations == nil {
+		return "Strict" // Default to strict mode
+	}
+
+	policy, exists := annotations[utils.AnnotationResourceAdoptionPolicy]
+	if !exists || policy == "" {
+		return "Strict" // Default to strict mode
+	}
+
+	// Validate policy value
+	switch policy {
+	case "Strict":
+		return "Strict"
+	case "Adopt":
+		return "Adopt"
+	default:
+		r.Log.Info("Invalid resource adoption policy, defaulting to Strict",
+			"ProvidedValue", policy,
+			"ValidValues", "Strict, Adopt")
+		return "Strict"
+	}
 }
 
 func (r *MultiClusterHubReconciler) ensureResourceVersionAlignment(template *unstructured.Unstructured,

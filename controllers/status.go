@@ -186,6 +186,12 @@ func (r *MultiClusterHubReconciler) calculateStatus(ctx context.Context, hub *op
 			available := NewHubCondition(operatorsv1.Complete, metav1.ConditionTrue, ComponentsAvailableReason, "All hub components ready.")
 			SetHubCondition(&status, *available)
 			RemoveHubCondition(&status, operatorsv1.Progressing)
+		} else if hubPruning(status) && !utils.IsPaused(hub) {
+			// All components successful but pruning condition exists - pruning must be complete
+			// Set AllOldComponentsRemovedReason so hubPruning() returns false on next reconcile
+			complete := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, AllOldComponentsRemovedReason, "All old resources pruned")
+			SetHubCondition(&status, *complete)
+			log.Info("Component pruning complete - all resources successfully removed")
 		} else {
 			// only add unavailable status if complete status already present
 			if HubConditionPresent(status, operatorsv1.Complete) {
