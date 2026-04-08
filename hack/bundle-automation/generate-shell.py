@@ -81,48 +81,51 @@ def clone_repository(git_url, repo_path, branch):
         logging.error(f"Failed to clone repository: {git_url} (branch={branch}): {e}")
         raise
 
-def copy_scripts(script_dependencies):
-    """Copies necessary scripts from the temporary directory.
+def copy_script_dependencies(script_path):
+    """Copies all Python files from the script's directory to DEST_DIR, preserving directory structure.
 
     Args:
-        script_dependencies (_type_): _description_
+        script_path: Path to the script (e.g., "bundle-generation/generate-charts.py" or "release/onboard-new-components.py")
+
+    Returns:
+        List of copied file paths (relative to DEST_DIR) for cleanup
     """
-    for dependency in script_dependencies:
-        src = SCRIPTS_DIR / dependency
-        dest = DEST_DIR / Path(dependency).name
+    # Get the parent directory (e.g., "bundle-generation" or "release")
+    script_parent = Path(script_path).parent
+    source_dir = SCRIPTS_DIR / script_parent
 
-        if not src.exists():
-            logging.error(f"Required script or directory {src} not found.")
-            sys.exit(1)
+    copied_files = []
+    # Recursively copy all .py files, preserving directory structure
+    for py_file in source_dir.rglob("*.py"):
+        relative_path = py_file.relative_to(source_dir)
+        dest_file = DEST_DIR / relative_path
 
-        if src.is_dir():
-            shutil.copytree(src, dest, dirs_exist_ok=True)
-            logging.debug(f"Copied directory {src} to {dest}")
+        # Create parent directories if needed
+        dest_file.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(py_file, dest_file)
+        copied_files.append(relative_path)
+        logging.debug(f"Copied {relative_path}")
 
-        else:
-            shutil.copy(src, dest)
-            logging.debug(f"Copied file {src} to {dest}")
+    return copied_files
 
-def cleanup_scripts(script_dependencies):
-    """Cleans up copied scripts from the destination directory.
+def cleanup_script_dependencies(copied_files):
+    """Cleans up copied Python files and directories.
 
     Args:
-        script_dependencies (_type_): _description_
+        copied_files: List of file paths (relative to DEST_DIR) to clean up
     """
-    for script in script_dependencies:
-        # If the script is in a subdirectory like 'utils/', construct the path properly
-        dest = DEST_DIR / Path(script).name
+    # Clean up all copied Python files
+    for relative_path in copied_files:
+        copied_file = DEST_DIR / relative_path
+        if copied_file.exists():
+            copied_file.unlink()
+            logging.debug(f"Removed {relative_path}")
 
-        # Check if the destination path is a directory or a file
-        if dest.exists():
-            if dest.is_dir():
-                # If the destination is a directory (e.g., utils/), remove it and its contents
-                shutil.rmtree(dest)
-                logging.debug(f"Removed directory {dest}")
-            else:
-                # If the destination is a file, unlink it
-                dest.unlink(missing_ok=True)
-                logging.debug(f"Removed file {dest}")
+    # Clean up empty directories (like utils/)
+    utils_dest = DEST_DIR / "utils"
+    if utils_dest.exists():
+        shutil.rmtree(utils_dest)
+        logging.debug(f"Removed utils directory")
 
 def prepare_and_execute(operation, operation_data, args):
     """Prepares and executes the operation based on the provided operation data.
@@ -134,15 +137,18 @@ def prepare_and_execute(operation, operation_data, args):
     """
     logging.info(f"Executing operator: {operation}")
 
-    script = Path(operation_data["script"])
-    script_dependencies = [script, str(script.parent / "utils")]
-    copy_scripts(script_dependencies)
+    script_path = operation_data["script"]
+    copied_files = copy_script_dependencies(script_path)
+
+    # Get the script name from the operation data (e.g., "bundle-generation/generate-charts.py")
+    script_name = Path(script_path).name
+    script_file = DEST_DIR / script_name
 
     operations_args = operation_data.get("args", "").format(
         pipeline_repo=args.pipeline_repo,
         pipeline_branch=args.pipeline_branch
     ) if "args" in operation_data else ""
-    
+
     if args.component:
         operations_args += " --component {}".format(args.component)
 
@@ -150,32 +156,31 @@ def prepare_and_execute(operation, operation_data, args):
         operations_args += " --config {}".format(args.config)
 
     # Execute the script
-    execute_script(script, operations_args)
+    execute_script(script_file, operations_args)
 
-    # Clean up the copied scripts
-    cleanup_scripts(script_dependencies)
+    cleanup_script_dependencies(copied_files)
 
-def execute_script(script, args):
+def execute_script(script_path, args):
     """Executes a Python script with arguments.
 
     Args:
-        script (_type_): _description_
-        args (_type_): _description_
+        script_path (Path): Path to the script to execute
+        args (str): Command-line arguments for the script
     """
-    script_path = DEST_DIR / Path(script).name
-
     if not script_path.exists():
         logging.error(f"Script {script_path} not found.")
         sys.exit(1)
 
+    # Set PYTHONPATH to include the bundle-automation directory so imports work
+    env = os.environ.copy()
+    env['PYTHONPATH'] = str(DEST_DIR) + os.pathsep + env.get('PYTHONPATH', '')
+
     command = ["python3", str(script_path)] + args.split()
     try:
-        subprocess.run(command, check=True)
+        subprocess.run(command, check=True, env=env)
     except subprocess.CalledProcessError as e:
-        logging.error(f"Script {script} failed with exit code {e.returncode}")
+        logging.error(f"Script {script_path.name} failed with exit code {e.returncode}")
         sys.exit(e.returncode)
-    finally:
-        script_path.unlink(missing_ok=True)  # Clean up after execution
 
 def main(args):
     """_summary_
