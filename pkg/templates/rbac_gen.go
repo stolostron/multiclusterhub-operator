@@ -30,7 +30,6 @@ package main
 //+kubebuilder:rbac:groups="",resources=pods,verbs=get
 //+kubebuilder:rbac:groups="",resources=pods,verbs=get;list
 //+kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch
-//+kubebuilder:rbac:groups="",resources=pods;services;endpoints,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=pods;services;services/finalizers;endpoints;persistentvolumeclaims;events;configmaps;secrets,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=pods;services;services/finalizers;endpoints;persistentvolumeclaims;events;configmaps;secrets;serviceaccounts;namespaces;nodes,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=create
@@ -164,6 +163,7 @@ package main
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=placements,verbs=get;list;create;update;watch;delete
 //+kubebuilder:rbac:groups=clusterview.open-cluster-management.io,resources=userpermissions,verbs=get;list
 //+kubebuilder:rbac:groups=config.openshift.io,resources=*;infrastructures,verbs=*
+//+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers,verbs=get;list;watch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers,verbs=list;get;watch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers;infrastructures;infrastructures/status,verbs=get
 //+kubebuilder:rbac:groups=config.openshift.io,resources=clusterversions,verbs=list;get;watch
