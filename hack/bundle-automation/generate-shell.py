@@ -81,13 +81,19 @@ def clone_repository(git_url, repo_path, branch):
         logging.error(f"Failed to clone repository: {git_url} (branch={branch}): {e}")
         raise
 
-def copy_bundle_generation_files():
-    """Copies all Python files from bundle-generation to DEST_DIR, preserving directory structure."""
-    bundle_gen_src = SCRIPTS_DIR / "bundle-generation"
+def copy_script_dependencies(script_path):
+    """Copies all Python files from the script's directory to DEST_DIR, preserving directory structure.
+
+    Args:
+        script_path: Path to the script (e.g., "bundle-generation/generate-charts.py" or "release/onboard-new-components.py")
+    """
+    # Get the parent directory (e.g., "bundle-generation" or "release")
+    script_parent = Path(script_path).parent
+    source_dir = SCRIPTS_DIR / script_parent
 
     # Recursively copy all .py files, preserving directory structure
-    for py_file in bundle_gen_src.rglob("*.py"):
-        relative_path = py_file.relative_to(bundle_gen_src)
+    for py_file in source_dir.rglob("*.py"):
+        relative_path = py_file.relative_to(source_dir)
         dest_file = DEST_DIR / relative_path
 
         # Create parent directories if needed
@@ -95,13 +101,18 @@ def copy_bundle_generation_files():
         shutil.copy(py_file, dest_file)
         logging.debug(f"Copied {relative_path}")
 
-def cleanup_bundle_generation_files():
-    """Cleans up copied Python files and directories."""
-    bundle_gen_src = SCRIPTS_DIR / "bundle-generation"
+def cleanup_script_dependencies(script_path):
+    """Cleans up copied Python files and directories.
+
+    Args:
+        script_path: Path to the script (e.g., "bundle-generation/generate-charts.py" or "release/onboard-new-components.py")
+    """
+    script_parent = Path(script_path).parent
+    source_dir = SCRIPTS_DIR / script_parent
 
     # Clean up all copied Python files
-    for py_file in bundle_gen_src.rglob("*.py"):
-        relative_path = py_file.relative_to(bundle_gen_src)
+    for py_file in source_dir.rglob("*.py"):
+        relative_path = py_file.relative_to(source_dir)
         copied_file = DEST_DIR / relative_path
         if copied_file.exists():
             copied_file.unlink()
@@ -123,11 +134,12 @@ def prepare_and_execute(operation, operation_data, args):
     """
     logging.info(f"Executing operator: {operation}")
 
-    copy_bundle_generation_files()
+    script_path = operation_data["script"]
+    copy_script_dependencies(script_path)
 
     # Get the script name from the operation data (e.g., "bundle-generation/generate-charts.py")
-    script_name = Path(operation_data["script"]).name
-    script_path = DEST_DIR / script_name
+    script_name = Path(script_path).name
+    script_file = DEST_DIR / script_name
 
     operations_args = operation_data.get("args", "").format(
         pipeline_repo=args.pipeline_repo,
@@ -141,9 +153,9 @@ def prepare_and_execute(operation, operation_data, args):
         operations_args += " --config {}".format(args.config)
 
     # Execute the script
-    execute_script(script_path, operations_args)
+    execute_script(script_file, operations_args)
 
-    cleanup_bundle_generation_files()
+    cleanup_script_dependencies(script_path)
 
 def execute_script(script_path, args):
     """Executes a Python script with arguments.
