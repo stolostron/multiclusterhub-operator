@@ -86,6 +86,38 @@ def clone_repository(git_url, repo_path, branch):
         logging.error(f"Failed to clone repository: {git_url} (branch={branch}): {e}")
         raise
 
+def copy_bundle_generation_files():
+    """Copies all Python files from bundle-generation to DEST_DIR, preserving directory structure."""
+    bundle_gen_src = SCRIPTS_DIR / "bundle-generation"
+
+    # Recursively copy all .py files, preserving directory structure
+    for py_file in bundle_gen_src.rglob("*.py"):
+        relative_path = py_file.relative_to(bundle_gen_src)
+        dest_file = DEST_DIR / relative_path
+
+        # Create parent directories if needed
+        dest_file.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(py_file, dest_file)
+        logging.debug(f"Copied {relative_path}")
+
+def cleanup_bundle_generation_files():
+    """Cleans up copied Python files and directories."""
+    bundle_gen_src = SCRIPTS_DIR / "bundle-generation"
+
+    # Clean up all copied Python files
+    for py_file in bundle_gen_src.rglob("*.py"):
+        relative_path = py_file.relative_to(bundle_gen_src)
+        copied_file = DEST_DIR / relative_path
+        if copied_file.exists():
+            copied_file.unlink()
+            logging.debug(f"Removed {relative_path}")
+
+    # Clean up empty directories (like utils/)
+    utils_dest = DEST_DIR / "utils"
+    if utils_dest.exists():
+        shutil.rmtree(utils_dest)
+        logging.debug(f"Removed utils directory")
+
 def prepare_and_execute(operation, operation_data, args):
     """Prepares and executes the operation based on the provided operation data.
 
@@ -96,22 +128,7 @@ def prepare_and_execute(operation, operation_data, args):
     """
     logging.info(f"Executing operator: {operation}")
 
-    # Copy all Python files and utils directory from bundle-generation to DEST_DIR
-    bundle_gen_src = SCRIPTS_DIR / "bundle-generation"
-
-    # Copy all .py files from bundle-generation (automatically includes helper.py and any other dependencies)
-    for py_file in bundle_gen_src.glob("*.py"):
-        shutil.copy(py_file, DEST_DIR / py_file.name)
-        logging.debug(f"Copied {py_file.name}")
-
-    # Copy utils directory if it exists
-    utils_src = bundle_gen_src / "utils"
-    utils_dest = DEST_DIR / "utils"
-    if utils_src.exists():
-        if utils_dest.exists():
-            shutil.rmtree(utils_dest)
-        shutil.copytree(utils_src, utils_dest)
-        logging.debug(f"Copied utils directory")
+    copy_bundle_generation_files()
 
     # Get the script name from the operation data (e.g., "bundle-generation/generate-charts.py")
     script_name = Path(operation_data["script"]).name
@@ -132,16 +149,7 @@ def prepare_and_execute(operation, operation_data, args):
     # Execute the script
     execute_script(script_path, operations_args)
 
-    # Clean up all copied Python files and utils directory
-    for py_file in bundle_gen_src.glob("*.py"):
-        copied_file = DEST_DIR / py_file.name
-        if copied_file.exists():
-            copied_file.unlink()
-
-    if utils_dest.exists():
-        shutil.rmtree(utils_dest)
-
-    logging.debug(f"Cleaned up copied files")
+    cleanup_bundle_generation_files()
 
 def execute_script(script_path, args):
     """Executes a Python script with arguments.
