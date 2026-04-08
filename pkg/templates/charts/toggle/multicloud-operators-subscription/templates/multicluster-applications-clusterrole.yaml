@@ -194,3 +194,11 @@ rules:
   verbs:
   - get
   - list
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - apiservers
+  verbs:
+  - get
+  - list
+  - watch
