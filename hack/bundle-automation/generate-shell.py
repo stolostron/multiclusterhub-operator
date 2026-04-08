@@ -86,11 +86,15 @@ def copy_script_dependencies(script_path):
 
     Args:
         script_path: Path to the script (e.g., "bundle-generation/generate-charts.py" or "release/onboard-new-components.py")
+
+    Returns:
+        List of copied file paths (relative to DEST_DIR) for cleanup
     """
     # Get the parent directory (e.g., "bundle-generation" or "release")
     script_parent = Path(script_path).parent
     source_dir = SCRIPTS_DIR / script_parent
 
+    copied_files = []
     # Recursively copy all .py files, preserving directory structure
     for py_file in source_dir.rglob("*.py"):
         relative_path = py_file.relative_to(source_dir)
@@ -99,20 +103,19 @@ def copy_script_dependencies(script_path):
         # Create parent directories if needed
         dest_file.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(py_file, dest_file)
+        copied_files.append(relative_path)
         logging.debug(f"Copied {relative_path}")
 
-def cleanup_script_dependencies(script_path):
+    return copied_files
+
+def cleanup_script_dependencies(copied_files):
     """Cleans up copied Python files and directories.
 
     Args:
-        script_path: Path to the script (e.g., "bundle-generation/generate-charts.py" or "release/onboard-new-components.py")
+        copied_files: List of file paths (relative to DEST_DIR) to clean up
     """
-    script_parent = Path(script_path).parent
-    source_dir = SCRIPTS_DIR / script_parent
-
     # Clean up all copied Python files
-    for py_file in source_dir.rglob("*.py"):
-        relative_path = py_file.relative_to(source_dir)
+    for relative_path in copied_files:
         copied_file = DEST_DIR / relative_path
         if copied_file.exists():
             copied_file.unlink()
@@ -135,7 +138,7 @@ def prepare_and_execute(operation, operation_data, args):
     logging.info(f"Executing operator: {operation}")
 
     script_path = operation_data["script"]
-    copy_script_dependencies(script_path)
+    copied_files = copy_script_dependencies(script_path)
 
     # Get the script name from the operation data (e.g., "bundle-generation/generate-charts.py")
     script_name = Path(script_path).name
@@ -155,7 +158,7 @@ def prepare_and_execute(operation, operation_data, args):
     # Execute the script
     execute_script(script_file, operations_args)
 
-    cleanup_script_dependencies(script_path)
+    cleanup_script_dependencies(copied_files)
 
 def execute_script(script_path, args):
     """Executes a Python script with arguments.
