@@ -30,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
+	renderer "github.com/stolostron/multiclusterhub-operator/pkg/rendering"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
@@ -982,10 +983,112 @@ func (r *MultiClusterHubReconciler) waitForMigratedComponentsAdopted(ctx context
 	return true, nil
 }
 
+// deleteClusterScopedResources deletes cluster-scoped RBAC resources (ClusterRole, ClusterRoleBinding) for a component
+// so that MCE can recreate them with proper ownership labels, annotations, and owner references.
+func (r *MultiClusterHubReconciler) deleteClusterScopedResources(ctx context.Context, m *operatorv1.MultiClusterHub,
+	component string, cachespec CacheSpec, isSTSEnabled bool) (ctrl.Result, error) {
+
+	return r.deleteResourcesByScope(ctx, m, component, cachespec, isSTSEnabled, true)
+}
+
+// deleteNamespaceScopedResources deletes namespace-scoped resources (Deployment, ServiceAccount, etc.) for a component.
+// This is used after MCE has adopted cluster-scoped RBAC resources, to clean up remaining MCH resources.
+func (r *MultiClusterHubReconciler) deleteNamespaceScopedResources(ctx context.Context, m *operatorv1.MultiClusterHub,
+	component string, cachespec CacheSpec, isSTSEnabled bool) (ctrl.Result, error) {
+
+	return r.deleteResourcesByScope(ctx, m, component, cachespec, isSTSEnabled, false)
+}
+
+// deleteResourcesByScope deletes resources for a component based on scope.
+// If deleteClusterScoped is true, deletes only cluster-scoped RBAC resources (ClusterRole, ClusterRoleBinding).
+// If deleteClusterScoped is false, deletes only namespace-scoped resources (Deployment, ServiceAccount, etc.).
+func (r *MultiClusterHubReconciler) deleteResourcesByScope(ctx context.Context, m *operatorv1.MultiClusterHub,
+	component string, cachespec CacheSpec, isSTSEnabled bool, deleteClusterScoped bool) (ctrl.Result, error) {
+
+	// Get chart location for this component
+	chartLocation := r.fetchChartLocation(component)
+
+	// Render templates to get all resources for this component
+	templates, errs := renderer.RenderChart(chartLocation, m, cachespec.ImageOverrides, cachespec.TemplateOverrides, isSTSEnabled)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			r.Log.Info(fmt.Sprintf("Error rendering chart for resource deletion: %s", err.Error()), "Component", component)
+		}
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// Delete resources based on scope
+	for _, template := range templates {
+		isNamespaceScoped := template.GetNamespace() != ""
+
+		// Skip based on what we're deleting
+		if deleteClusterScoped && isNamespaceScoped {
+			continue // We want cluster-scoped, skip namespace-scoped
+		}
+		if !deleteClusterScoped && !isNamespaceScoped {
+			continue // We want namespace-scoped, skip cluster-scoped
+		}
+
+		// If deleting cluster-scoped, only delete RBAC resources
+		if deleteClusterScoped {
+			kind := template.GetKind()
+			if kind != "ClusterRole" && kind != "ClusterRoleBinding" {
+				continue
+			}
+		}
+
+		// Try to get existing resource
+		existing := template.DeepCopy()
+		err := r.Client.Get(ctx, types.NamespacedName{Name: existing.GetName(), Namespace: existing.GetNamespace()}, existing)
+		if err != nil {
+			if errors.IsNotFound(err) {
+				r.Log.V(1).Info("Resource already deleted",
+					"Kind", template.GetKind(),
+					"Name", template.GetName(),
+					"Namespace", template.GetNamespace())
+				continue
+			}
+			return ctrl.Result{}, fmt.Errorf("failed to get resource %s/%s: %w", template.GetKind(), template.GetName(), err)
+		}
+
+		// Skip if MCE has already adopted this resource (has MCE ownership labels)
+		// This prevents deleting resources that MCE just created while we're waiting for it to be Available
+		if deleteClusterScoped {
+			labels := existing.GetLabels()
+			if labels != nil && labels["backplaneconfig.name"] != "" {
+				r.Log.Info("Resource already adopted by MCE, skipping deletion",
+					"Kind", existing.GetKind(),
+					"Name", existing.GetName(),
+					"MCEName", labels["backplaneconfig.name"])
+				continue
+			}
+		}
+
+		r.Log.Info("Deleting resource",
+			"Kind", existing.GetKind(),
+			"Name", existing.GetName(),
+			"Namespace", existing.GetNamespace(),
+			"Component", component)
+
+		// Delete the resource
+		if err := r.Client.Delete(ctx, existing); err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to delete resource %s/%s: %w",
+				existing.GetKind(), existing.GetName(), err)
+		}
+	}
+
+	return ctrl.Result{}, nil
+}
+
 /*
-ensureMigratedComponentsCleanup handles cleanup of components that have been migrated from MCH to MCE.
-After MCE is ready and has adopted the component, this function ensures that legacy resources are
-removed from the MCH namespace and the component is pruned from the MCH CR.
+ensureMigratedComponentsCleanup handles cleanup of namespace-scoped resources for components that have been
+migrated from MCH to MCE. This runs AFTER:
+1. Cluster-scoped RBAC resources (ClusterRole, ClusterRoleBinding) have been deleted
+2. MCE has recreated those RBAC resources with proper ownership
+3. MCE shows the component as Available
+
+This function deletes namespace-scoped resources (Deployment, ServiceAccount, etc.) from the MCH namespace
+and prunes the component from the MCH CR.
 
 This is a generic function that can handle multiple migrated components. Components are added to the
 migratedComponents list when they are deprecated in MCH and moved to MCE in a specific release.
@@ -996,10 +1099,11 @@ func (r *MultiClusterHubReconciler) ensureMigratedComponentsCleanup(ctx context.
 	updated := false
 	for component := range migratedComponentDeployments {
 		if m.ComponentPresent(component) {
-			r.Log.Info("Cleaning up migrated component resources", "Component", component)
+			r.Log.Info("Cleaning up migrated component namespace-scoped resources", "Component", component)
 
-			// Clean up all legacy resources (including InternalHubComponent, Deployment, ServiceAccount, etc.)
-			result, err := r.ensureNoComponent(ctx, m, component, r.CacheSpec, isSTSEnabled)
+			// Delete namespace-scoped resources (Deployment, ServiceAccount, etc.)
+			// Note: Cluster-scoped RBAC resources were already deleted earlier and recreated by MCE
+			result, err := r.deleteNamespaceScopedResources(ctx, m, component, r.CacheSpec, isSTSEnabled)
 			if result != (ctrl.Result{}) || err != nil {
 				return result, err
 			}
