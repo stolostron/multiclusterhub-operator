@@ -363,13 +363,27 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	/*
-		In ACM 2.17, cluster-permission component is being migrated from MCH to MCE. Before cleaning up
-		the MCH-owned resources, we must verify that MCE has successfully adopted and deployed the
-		migrated components. This prevents a migration gap where the component is unavailable.
+		In ACM 2.17, cluster-permission component is being migrated from MCH to MCE. The migration flow:
+		1. Delete cluster-scoped RBAC resources (ClusterRole, ClusterRoleBinding) so MCE can recreate them
+		2. Wait for MCE to adopt migrated components and show Available status
+		3. Clean up remaining MCH-owned namespace-scoped resources
+		4. Prune migrated components from MCH CR
 
 		This is a generic function that handles any components migrated from MCH to MCE.
 	*/
-	// Wait for MCE to adopt migrated components before cleaning them up from MCH
+	// Step 1: Delete cluster-scoped RBAC resources for migrated components so MCE can recreate them
+	// Note: We delete RBAC resources regardless of whether the component is in the MCH spec,
+	// because it may have been implicitly enabled in a previous version (e.g., cluster-permission
+	// was enabled by default in 2.16 but removed from defaults in 2.17). If the resources don't
+	// exist, deletion is a no-op.
+	for component := range migratedComponentDeployments {
+		result, err = r.deleteClusterScopedResources(ctx, multiClusterHub, component, r.CacheSpec, stsEnabled)
+		if result != (ctrl.Result{}) || err != nil {
+			return result, err
+		}
+	}
+
+	// Step 2: Wait for MCE to adopt migrated components and show Available
 	adopted, err := r.waitForMigratedComponentsAdopted(ctx, multiClusterHub)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -379,7 +393,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
 
-	// MCE has adopted the components, safe to clean up MCH resources
+	// Step 3 & 4: MCE has adopted the components, safe to clean up remaining MCH namespace-scoped resources and prune from CR
 	result, err = r.ensureMigratedComponentsCleanup(ctx, multiClusterHub, stsEnabled)
 	if result != (ctrl.Result{}) || err != nil {
 		return result, err

@@ -290,6 +290,7 @@ func Test_ensureMigratedComponentsCleanup(t *testing.T) {
 	tests := []struct {
 		name          string
 		mch           operatorv1.MultiClusterHub
+		mce           *backplanev1.MultiClusterEngine
 		stsEnabled    bool
 		expectNoError bool
 	}{
@@ -302,6 +303,11 @@ func Test_ensureMigratedComponentsCleanup(t *testing.T) {
 				},
 				Spec: operatorv1.MultiClusterHubSpec{},
 			},
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "engine",
+				},
+			},
 			stsEnabled:    false,
 			expectNoError: true,
 		},
@@ -313,6 +319,11 @@ func Test_ensureMigratedComponentsCleanup(t *testing.T) {
 					Namespace: "open-cluster-management",
 				},
 				Spec: operatorv1.MultiClusterHubSpec{},
+			},
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "engine",
+				},
 			},
 			stsEnabled:    true,
 			expectNoError: true,
@@ -332,8 +343,32 @@ func Test_ensureMigratedComponentsCleanup(t *testing.T) {
 					},
 				},
 			},
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "engine",
+				},
+			},
 			stsEnabled:    false,
 			expectNoError: false, // ensureNoComponent will return error/requeue with fake client
+		},
+		{
+			name: "MCE not found, should requeue",
+			mch: operatorv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-mch",
+					Namespace: "open-cluster-management",
+				},
+				Spec: operatorv1.MultiClusterHubSpec{
+					Overrides: &operatorv1.Overrides{
+						Components: []operatorv1.ComponentConfig{
+							{Name: operatorv1.ClusterPermission, Enabled: true},
+						},
+					},
+				},
+			},
+			mce:           nil, // No MCE
+			stsEnabled:    false,
+			expectNoError: false, // Should requeue
 		},
 	}
 
@@ -354,6 +389,20 @@ func Test_ensureMigratedComponentsCleanup(t *testing.T) {
 			}
 			defer recon.Client.Delete(context.TODO(), mch)
 
+			// Setup: Create MCE if provided
+			if tt.mce != nil {
+				// Add installer labels so GetManagedMCE can find it
+				tt.mce.Labels = map[string]string{
+					"installer.name":                          mch.GetName(),
+					"installer.namespace":                     mch.GetNamespace(),
+					multiclusterengineutils.MCEManagedByLabel: "true",
+				}
+				if err := recon.Client.Create(context.TODO(), tt.mce); err != nil {
+					t.Errorf("failed to create MCE: %v", err)
+				}
+				defer recon.Client.Delete(context.TODO(), tt.mce)
+			}
+
 			// Track if component was present before cleanup
 			hadComponent := mch.ComponentPresent(operatorv1.ClusterPermission)
 
@@ -369,11 +418,17 @@ func Test_ensureMigratedComponentsCleanup(t *testing.T) {
 					t.Errorf("ensureMigratedComponentsCleanup() returned non-empty result when component not present: %v", result)
 				}
 			} else {
-				// For components present, ensureNoComponent will be called
-				// With fake client, this typically returns a requeue result or error
-				// We just verify the function doesn't panic and handles the case
-				if tt.expectNoError && err != nil {
-					t.Errorf("ensureMigratedComponentsCleanup() unexpected error: %v", err)
+				// For components present, verify expected error/requeue behavior
+				if tt.expectNoError {
+					// Should succeed with no error
+					if err != nil {
+						t.Errorf("ensureMigratedComponentsCleanup() unexpected error: %v", err)
+					}
+				} else {
+					// Should either error or requeue
+					if err == nil && result == (ctrl.Result{}) {
+						t.Errorf("ensureMigratedComponentsCleanup() expected error or requeue, got success")
+					}
 				}
 			}
 		})
