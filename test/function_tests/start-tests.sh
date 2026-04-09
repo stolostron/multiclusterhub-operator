@@ -1,7 +1,7 @@
+```bash
 #!/bin/bash
 # Copyright (c) 2020 Red Hat, Inc.
 # Copyright Contributors to the Open Cluster Management project
-
 
 echo "Starting Installer Functional Tests ..."
 echo ""
@@ -15,7 +15,7 @@ if [[ "$TEST_MODE" == "install" ]]; then
 elif [[ "$TEST_MODE" == "uninstall" ]]; then
     echo "Beginning Uninstall Tests ..."
     echo ""
-    ginkgo -tags functional -v --slow-spec-threshold=300s test/multiclusterhub_uninstall_test
+    ginkgo -tags functional -v --slowspec-threshold=300s test/multiclusterhub_uninstall_test
 elif [[ "$TEST_MODE" == "update" ]]; then
     echo "Beginning Update Tests ..."
     echo ""
@@ -25,3 +25,4 @@ else
     echo ""
     exit 1
 fi
+```

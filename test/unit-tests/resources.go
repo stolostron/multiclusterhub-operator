@@ -1,9 +1,10 @@
-// Copyright (c) 2021 Red Hat, Inc.
+// Copyright  (c) 2021 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
 package resources
 
 import (
+	"open-cluster-management.io/api/addon/v1alpha1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 
 	configv1 "github.com/openshift/api/config/v1"
@@ -12,9 +13,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ocmapi "open-cluster-management.io/api/addon/v1alpha1"
-
-	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -22,7 +20,7 @@ import (
 const (
 	MulticlusterhubName      = "test-mch"
 	MulticlusterhubNamespace = "open-cluster-management"
-	JobName                  = "test-job"
+	JobName                  = "testjob"
 	MultiClusterEngineName   = "multiclusterengine-sample"
 )
 
@@ -31,13 +29,13 @@ var (
 	MCELookupKey = types.NamespacedName{Name: MultiClusterEngineName}
 )
 
-func MCECatalogSource() *subv1alpha1.CatalogSource {
-	return &subv1alpha1.CatalogSource{
+func MCECatalogSource() *v1alpha1.CatalogSource {
+	return &v1alpha1.CatalogSource{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "multiclusterengine-catalog",
 			Namespace: "openshift-marketplace",
 		},
-		Spec: subv1alpha1.CatalogSourceSpec{
+		Spec: v1alpha1.CatalogSourceSpec{
 			Priority: 0,
 		},
 	}
@@ -240,18 +238,18 @@ func SampleService(m *operatorsv1.MultiClusterHub) *corev1.Service {
 	return s
 }
 
-func SampleClusterManagementAddOn(component string) *ocmapi.ClusterManagementAddOn {
+func SampleClusterManagementAddOn(component string) *v1alpha1.ClusterManagementAddOn {
 	addonName, err := operatorsv1.GetClusterManagementAddonName(component)
 	if err != nil {
 		addonName = "unknown"
 	}
 
-	addon := &ocmapi.ClusterManagementAddOn{
+	addon := &v1alpha1.ClusterManagementAddOn{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: addonName,
 		},
-		Spec: ocmapi.ClusterManagementAddOnSpec{
-			AddOnMeta: ocmapi.AddOnMeta{
+		Spec: v1alpha1.ClusterManagementAddOnSpec{
+			AddOnMeta: v1alpha1.AddOnMeta{
 				Description: "Sample addon description",
 				DisplayName: component,
 			},
