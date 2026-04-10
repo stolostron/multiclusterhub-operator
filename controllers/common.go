@@ -19,6 +19,7 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
@@ -985,28 +986,10 @@ func (r *MultiClusterHubReconciler) waitForMigratedComponentsAdopted(ctx context
 	return true, nil
 }
 
-// transferClusterResourcesToMCE relabels all cluster-scoped resources from MCH to MCE ownership.
-// MCE will then update the resources to match its desired state.
-func (r *MultiClusterHubReconciler) transferClusterResourcesToMCE(ctx context.Context, m *operatorv1.MultiClusterHub,
-	component string, cachespec CacheSpec, isSTSEnabled bool) (ctrl.Result, error) {
-
-	mce, err := multiclusterengineutils.GetManagedMCE(ctx, r.Client)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	if mce == nil {
-		r.Log.Info("MCE not found, cannot transfer cluster resources", "Component", component)
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	chartLocation := r.fetchChartLocation(component)
-	templates, errs := renderer.RenderChart(chartLocation, m, cachespec.ImageOverrides, cachespec.TemplateOverrides, isSTSEnabled)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			r.Log.Info(fmt.Sprintf("Error rendering chart for resource transfer: %s", err.Error()), "Component", component)
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
+// relabelClusterResourcesForMCE is a helper that performs the core logic of relabeling cluster-scoped
+// resources from MCH to MCE ownership. Extracted for testability.
+func (r *MultiClusterHubReconciler) relabelClusterResourcesForMCE(ctx context.Context, m *operatorv1.MultiClusterHub,
+	mce *mcev1.MultiClusterEngine, templates []*unstructured.Unstructured) error {
 
 	for _, template := range templates {
 		// Only process cluster-scoped resources (no namespace)
@@ -1023,7 +1006,7 @@ func (r *MultiClusterHubReconciler) transferClusterResourcesToMCE(ctx context.Co
 				r.Log.Info("Resource not found, skipping transfer", "Kind", kind, "Name", name)
 				continue
 			}
-			return ctrl.Result{}, err
+			return err
 		}
 
 		// Skip if already transferred to the current MCE
@@ -1072,10 +1055,40 @@ func (r *MultiClusterHubReconciler) transferClusterResourcesToMCE(ctx context.Co
 
 		if err := r.Client.Update(ctx, existing); err != nil {
 			r.Log.Info("Failed to transfer resource to MCE", "Kind", kind, "Name", name, "Error", err)
-			return ctrl.Result{}, err
+			return err
 		}
 
 		r.Log.Info("Transferred resource to MCE ownership", "Kind", kind, "Name", name)
+	}
+
+	return nil
+}
+
+// transferClusterResourcesToMCE relabels all cluster-scoped resources from MCH to MCE ownership.
+// MCE will then update the resources to match its desired state.
+func (r *MultiClusterHubReconciler) transferClusterResourcesToMCE(ctx context.Context, m *operatorv1.MultiClusterHub,
+	component string, cachespec CacheSpec, isSTSEnabled bool) (ctrl.Result, error) {
+
+	mce, err := multiclusterengineutils.GetManagedMCE(ctx, r.Client)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if mce == nil {
+		r.Log.Info("MCE not found, cannot transfer cluster resources", "Component", component)
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	chartLocation := r.fetchChartLocation(component)
+	templates, errs := renderer.RenderChart(chartLocation, m, cachespec.ImageOverrides, cachespec.TemplateOverrides, isSTSEnabled)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			r.Log.Info(fmt.Sprintf("Error rendering chart for resource transfer: %s", err.Error()), "Component", component)
+		}
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	if err := r.relabelClusterResourcesForMCE(ctx, m, mce, templates); err != nil {
+		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
@@ -1089,25 +1102,11 @@ func (r *MultiClusterHubReconciler) deleteNamespaceScopedResources(ctx context.C
 	return r.deleteResourcesByScope(ctx, m, component, cachespec, isSTSEnabled, false)
 }
 
-// deleteResourcesByScope deletes resources for a component based on scope.
-// If deleteClusterScoped is true, deletes only cluster-scoped RBAC resources (ClusterRole, ClusterRoleBinding).
-// If deleteClusterScoped is false, deletes only namespace-scoped resources (Deployment, ServiceAccount, etc.).
-// Note: For migrated components, cluster-scoped resources are now transferred (not deleted) via
-// transferClusterResourcesToMCE, so this function is primarily used for namespace-scoped cleanup.
-func (r *MultiClusterHubReconciler) deleteResourcesByScope(ctx context.Context, m *operatorv1.MultiClusterHub,
-	component string, cachespec CacheSpec, isSTSEnabled bool, deleteClusterScoped bool) (ctrl.Result, error) {
-
-	// Get chart location for this component
-	chartLocation := r.fetchChartLocation(component)
-
-	// Render templates to get all resources for this component
-	templates, errs := renderer.RenderChart(chartLocation, m, cachespec.ImageOverrides, cachespec.TemplateOverrides, isSTSEnabled)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			r.Log.Info(fmt.Sprintf("Error rendering chart for resource deletion: %s", err.Error()), "Component", component)
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
+// deleteTemplateResourcesByScope is a helper that performs the core logic of deleting resources
+// from a template list based on scope. Extracted for testability. Returns true if resources
+// are remaining (still present or terminating).
+func (r *MultiClusterHubReconciler) deleteTemplateResourcesByScope(ctx context.Context, component string,
+	templates []*unstructured.Unstructured, deleteClusterScoped bool) (bool, error) {
 
 	// Track if any resources are still present or terminating
 	resourcesRemaining := false
@@ -1143,7 +1142,19 @@ func (r *MultiClusterHubReconciler) deleteResourcesByScope(ctx context.Context, 
 					"Namespace", template.GetNamespace())
 				continue
 			}
-			return ctrl.Result{}, fmt.Errorf("failed to get resource %s/%s: %w", template.GetKind(), template.GetName(), err)
+			return false, fmt.Errorf("failed to get resource %s/%s: %w", template.GetKind(), template.GetName(), err)
+		}
+
+		// Skip cluster-scoped resources that have been transferred to MCE ownership
+		if deleteClusterScoped {
+			labels := existing.GetLabels()
+			if labels != nil && labels["backplaneconfig.name"] != "" {
+				r.Log.Info("Skipping resource with MCE ownership",
+					"Kind", existing.GetKind(),
+					"Name", existing.GetName(),
+					"MCEName", labels["backplaneconfig.name"])
+				continue
+			}
 		}
 
 		// Check if resource is already being deleted
@@ -1168,10 +1179,38 @@ func (r *MultiClusterHubReconciler) deleteResourcesByScope(ctx context.Context, 
 				// Already deleted between Get and Delete
 				continue
 			}
-			return ctrl.Result{}, fmt.Errorf("failed to delete resource %s/%s: %w",
+			return false, fmt.Errorf("failed to delete resource %s/%s: %w",
 				existing.GetKind(), existing.GetName(), err)
 		}
 		resourcesRemaining = true
+	}
+
+	return resourcesRemaining, nil
+}
+
+// deleteResourcesByScope deletes resources for a component based on scope.
+// If deleteClusterScoped is true, deletes only cluster-scoped RBAC resources (ClusterRole, ClusterRoleBinding).
+// If deleteClusterScoped is false, deletes only namespace-scoped resources (Deployment, ServiceAccount, etc.).
+// Note: For migrated components, cluster-scoped resources are now transferred (not deleted) via
+// transferClusterResourcesToMCE, so this function is primarily used for namespace-scoped cleanup.
+func (r *MultiClusterHubReconciler) deleteResourcesByScope(ctx context.Context, m *operatorv1.MultiClusterHub,
+	component string, cachespec CacheSpec, isSTSEnabled bool, deleteClusterScoped bool) (ctrl.Result, error) {
+
+	// Get chart location for this component
+	chartLocation := r.fetchChartLocation(component)
+
+	// Render templates to get all resources for this component
+	templates, errs := renderer.RenderChart(chartLocation, m, cachespec.ImageOverrides, cachespec.TemplateOverrides, isSTSEnabled)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			r.Log.Info(fmt.Sprintf("Error rendering chart for resource deletion: %s", err.Error()), "Component", component)
+		}
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	resourcesRemaining, err := r.deleteTemplateResourcesByScope(ctx, component, templates, deleteClusterScoped)
+	if err != nil {
+		return ctrl.Result{}, err
 	}
 
 	// Requeue if resources are still present or terminating
