@@ -1036,10 +1036,24 @@ func (r *MultiClusterHubReconciler) transferClusterResourcesToMCE(ctx context.Co
 			continue
 		}
 
-		// Relabel: remove MCH labels, add MCE labels
+		// Only relabel resources owned by this MCH or with stale MCE labels
 		if labels == nil {
 			labels = make(map[string]string)
 		}
+		mchOwned := labels["installer.name"] == m.GetName() && labels["installer.namespace"] == m.GetNamespace()
+		staleMCELabel := labels["backplaneconfig.name"] != "" && labels["backplaneconfig.name"] != mce.GetName()
+
+		if !mchOwned && !staleMCELabel {
+			r.Log.Info("Resource not owned by this MCH, skipping transfer",
+				"Kind", kind,
+				"Name", name,
+				"InstallerName", labels["installer.name"],
+				"InstallerNamespace", labels["installer.namespace"],
+				"BackplaneconfigName", labels["backplaneconfig.name"])
+			continue
+		}
+
+		// Relabel: remove MCH labels, add MCE labels
 		delete(labels, "installer.name")
 		delete(labels, "installer.namespace")
 		labels["backplaneconfig.name"] = mce.GetName()
@@ -1130,20 +1144,6 @@ func (r *MultiClusterHubReconciler) deleteResourcesByScope(ctx context.Context, 
 				continue
 			}
 			return ctrl.Result{}, fmt.Errorf("failed to get resource %s/%s: %w", template.GetKind(), template.GetName(), err)
-		}
-
-		// Skip if MCE has already adopted this resource (has MCE ownership labels)
-		// This prevents deleting resources that MCE just created while we're waiting for it to be Available
-		// TODO(test-coverage): This code path requires integration testing (see migration_test.go:290-293)
-		if deleteClusterScoped {
-			labels := existing.GetLabels()
-			if labels != nil && labels["backplaneconfig.name"] != "" {
-				r.Log.Info("Resource already adopted by MCE, skipping deletion",
-					"Kind", existing.GetKind(),
-					"Name", existing.GetName(),
-					"MCEName", labels["backplaneconfig.name"])
-				continue
-			}
 		}
 
 		// Check if resource is already being deleted
