@@ -543,8 +543,10 @@ func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context) (ctrl.R
 		err = version.ValidMCEVersion(existingMCE.Status.CurrentVersion)
 	}
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("MCE version requirement not met: %w", err)
+		r.Log.Info("Waiting for MCE upgrade to complete", "CurrentVersion", existingMCE.Status.CurrentVersion, "Reason", err.Error())
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
+	r.Log.Info("MCE is ready", "Version", existingMCE.Status.CurrentVersion)
 	return ctrl.Result{}, nil
 }
 
@@ -983,12 +985,86 @@ func (r *MultiClusterHubReconciler) waitForMigratedComponentsAdopted(ctx context
 	return true, nil
 }
 
-// deleteClusterScopedResources deletes cluster-scoped RBAC resources (ClusterRole, ClusterRoleBinding) for a component
-// so that MCE can recreate them with proper ownership labels, annotations, and owner references.
-func (r *MultiClusterHubReconciler) deleteClusterScopedResources(ctx context.Context, m *operatorv1.MultiClusterHub,
+// transferClusterResourcesToMCE relabels all cluster-scoped resources from MCH to MCE ownership.
+// MCE will then update the resources to match its desired state.
+func (r *MultiClusterHubReconciler) transferClusterResourcesToMCE(ctx context.Context, m *operatorv1.MultiClusterHub,
 	component string, cachespec CacheSpec, isSTSEnabled bool) (ctrl.Result, error) {
 
-	return r.deleteResourcesByScope(ctx, m, component, cachespec, isSTSEnabled, true)
+	mce, err := multiclusterengineutils.GetManagedMCE(ctx, r.Client)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if mce == nil {
+		r.Log.Info("MCE not found, cannot transfer cluster resources", "Component", component)
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	chartLocation := r.fetchChartLocation(component)
+	templates, errs := renderer.RenderChart(chartLocation, m, cachespec.ImageOverrides, cachespec.TemplateOverrides, isSTSEnabled)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			r.Log.Info(fmt.Sprintf("Error rendering chart for resource transfer: %s", err.Error()), "Component", component)
+		}
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	for _, template := range templates {
+		// Only process cluster-scoped resources (no namespace)
+		if template.GetNamespace() != "" {
+			continue
+		}
+
+		kind := template.GetKind()
+		name := template.GetName()
+		existing := template.DeepCopy()
+		err := r.Client.Get(ctx, types.NamespacedName{Name: name}, existing)
+		if err != nil {
+			if errors.IsNotFound(err) {
+				r.Log.Info("Resource not found, skipping transfer", "Kind", kind, "Name", name)
+				continue
+			}
+			return ctrl.Result{}, err
+		}
+
+		// Skip if already transferred to the current MCE
+		labels := existing.GetLabels()
+		if labels != nil && labels["backplaneconfig.name"] == mce.GetName() {
+			r.Log.Info("Resource already transferred to current MCE, skipping",
+				"Kind", kind,
+				"Name", name,
+				"MCEName", mce.GetName())
+			continue
+		}
+
+		// Relabel: remove MCH labels, add MCE labels
+		if labels == nil {
+			labels = make(map[string]string)
+		}
+		delete(labels, "installer.name")
+		delete(labels, "installer.namespace")
+		labels["backplaneconfig.name"] = mce.GetName()
+		existing.SetLabels(labels)
+
+		// Remove MCH annotations
+		annotations := existing.GetAnnotations()
+		if annotations != nil {
+			for key := range annotations {
+				if strings.HasPrefix(key, "installer.open-cluster-management.io/") {
+					delete(annotations, key)
+				}
+			}
+			existing.SetAnnotations(annotations)
+		}
+
+		if err := r.Client.Update(ctx, existing); err != nil {
+			r.Log.Info("Failed to transfer resource to MCE", "Kind", kind, "Name", name, "Error", err)
+			return ctrl.Result{}, err
+		}
+
+		r.Log.Info("Transferred resource to MCE ownership", "Kind", kind, "Name", name)
+	}
+
+	return ctrl.Result{}, nil
 }
 
 // deleteNamespaceScopedResources deletes namespace-scoped resources (Deployment, ServiceAccount, etc.) for a component.
@@ -1002,6 +1078,8 @@ func (r *MultiClusterHubReconciler) deleteNamespaceScopedResources(ctx context.C
 // deleteResourcesByScope deletes resources for a component based on scope.
 // If deleteClusterScoped is true, deletes only cluster-scoped RBAC resources (ClusterRole, ClusterRoleBinding).
 // If deleteClusterScoped is false, deletes only namespace-scoped resources (Deployment, ServiceAccount, etc.).
+// Note: For migrated components, cluster-scoped resources are now transferred (not deleted) via
+// transferClusterResourcesToMCE, so this function is primarily used for namespace-scoped cleanup.
 func (r *MultiClusterHubReconciler) deleteResourcesByScope(ctx context.Context, m *operatorv1.MultiClusterHub,
 	component string, cachespec CacheSpec, isSTSEnabled bool, deleteClusterScoped bool) (ctrl.Result, error) {
 
@@ -1016,6 +1094,9 @@ func (r *MultiClusterHubReconciler) deleteResourcesByScope(ctx context.Context, 
 		}
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
+
+	// Track if any resources are still present or terminating
+	resourcesRemaining := false
 
 	// Delete resources based on scope
 	for _, template := range templates {
@@ -1065,6 +1146,16 @@ func (r *MultiClusterHubReconciler) deleteResourcesByScope(ctx context.Context, 
 			}
 		}
 
+		// Check if resource is already being deleted
+		if existing.GetDeletionTimestamp() != nil {
+			r.Log.Info("Resource is terminating",
+				"Kind", existing.GetKind(),
+				"Name", existing.GetName(),
+				"Namespace", existing.GetNamespace())
+			resourcesRemaining = true
+			continue
+		}
+
 		r.Log.Info("Deleting resource",
 			"Kind", existing.GetKind(),
 			"Name", existing.GetName(),
@@ -1073,26 +1164,33 @@ func (r *MultiClusterHubReconciler) deleteResourcesByScope(ctx context.Context, 
 
 		// Delete the resource
 		if err := r.Client.Delete(ctx, existing); err != nil {
+			if errors.IsNotFound(err) {
+				// Already deleted between Get and Delete
+				continue
+			}
 			return ctrl.Result{}, fmt.Errorf("failed to delete resource %s/%s: %w",
 				existing.GetKind(), existing.GetName(), err)
 		}
+		resourcesRemaining = true
+	}
+
+	// Requeue if resources are still present or terminating
+	if resourcesRemaining {
+		r.Log.Info("Waiting for resources to finish deleting", "Component", component)
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
 
 	return ctrl.Result{}, nil
 }
 
 /*
-ensureMigratedComponentsCleanup handles cleanup of namespace-scoped resources for components that have been
-migrated from MCH to MCE. This runs AFTER:
-1. Cluster-scoped RBAC resources (ClusterRole, ClusterRoleBinding) have been deleted
-2. MCE has recreated those RBAC resources with proper ownership
-3. MCE shows the component as Available
+ensureMigratedComponentsCleanup handles cleanup of namespace-scoped resources for components migrated
+from MCH to MCE. This runs AFTER:
+1. Cluster-scoped resources have been relabeled with MCE ownership
+2. MCE has adopted those resources and shows the component as Available
 
 This function deletes namespace-scoped resources (Deployment, ServiceAccount, etc.) from the MCH namespace
 and prunes the component from the MCH CR.
-
-This is a generic function that can handle multiple migrated components. Components are added to the
-migratedComponents list when they are deprecated in MCH and moved to MCE in a specific release.
 */
 func (r *MultiClusterHubReconciler) ensureMigratedComponentsCleanup(ctx context.Context, m *operatorv1.MultiClusterHub,
 	isSTSEnabled bool) (ctrl.Result, error) {
@@ -1103,7 +1201,7 @@ func (r *MultiClusterHubReconciler) ensureMigratedComponentsCleanup(ctx context.
 			r.Log.Info("Cleaning up migrated component namespace-scoped resources", "Component", component)
 
 			// Delete namespace-scoped resources (Deployment, ServiceAccount, etc.)
-			// Note: Cluster-scoped RBAC resources were already deleted earlier and recreated by MCE
+			// Note: Cluster-scoped resources were relabeled earlier and adopted by MCE
 			result, err := r.deleteNamespaceScopedResources(ctx, m, component, r.CacheSpec, isSTSEnabled)
 			if result != (ctrl.Result{}) || err != nil {
 				return result, err
