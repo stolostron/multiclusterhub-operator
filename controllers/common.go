@@ -546,7 +546,6 @@ func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context) (ctrl.R
 		r.Log.Info("Waiting for MCE upgrade to complete", "CurrentVersion", existingMCE.Status.CurrentVersion, "Reason", err.Error())
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
-	r.Log.Info("MCE is ready", "Version", existingMCE.Status.CurrentVersion)
 	return ctrl.Result{}, nil
 }
 
