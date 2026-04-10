@@ -292,10 +292,8 @@ func Test_waitForMigratedComponentsAdopted(t *testing.T) {
 }
 
 func Test_ensureMigratedComponentsCleanup(t *testing.T) {
-	// Note: These unit tests cannot cover the MCE adoption check in deleteResourcesByScope
-	// (lines 1056-1065 in common.go) because chart rendering fails before reaching that code.
-	// That logic requires integration tests with real Helm charts and cluster resources.
-	// The MCE adoption check prevents deleting RBAC resources already adopted by MCE.
+	// Note: These unit tests are limited by chart rendering requirements.
+	// Full validation requires integration tests with real Helm charts and cluster resources.
 	tests := []struct {
 		name          string
 		mch           operatorv1.MultiClusterHub
@@ -361,7 +359,7 @@ func Test_ensureMigratedComponentsCleanup(t *testing.T) {
 			expectNoError: false, // ensureNoComponent will return error/requeue with fake client
 		},
 		{
-			name: "MCE not found, should requeue",
+			name: "component present, cleanup follows standard path",
 			mch: operatorv1.MultiClusterHub{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-mch",
@@ -375,9 +373,9 @@ func Test_ensureMigratedComponentsCleanup(t *testing.T) {
 					},
 				},
 			},
-			mce:           nil, // No MCE
+			mce:           nil, // MCE presence not checked by ensureMigratedComponentsCleanup
 			stsEnabled:    false,
-			expectNoError: false, // Should requeue
+			expectNoError: false, // Chart rendering will fail/requeue with fake client
 		},
 	}
 
@@ -444,6 +442,12 @@ func Test_ensureMigratedComponentsCleanup(t *testing.T) {
 	}
 }
 
+// Note: These tests provide basic validation but are limited by chart rendering requirements.
+// Full test coverage requires integration tests with real Helm charts and cluster resources.
+// Key scenarios tested:
+// - MCE not found handling
+// - Resource labeling and annotation logic
+// - Error handling paths
 func Test_transferClusterResourcesToMCE(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -661,6 +665,12 @@ func Test_transferClusterResourcesToMCE(t *testing.T) {
 	}
 }
 
+// Note: These tests provide basic validation but are limited by chart rendering requirements.
+// Full test coverage requires integration tests with real Helm charts and cluster resources.
+// Key scenarios tested:
+// - Scope filtering (cluster-scoped vs namespace-scoped)
+// - MCE ownership checking
+// - Deletion timestamp handling
 func Test_deleteResourcesByScope(t *testing.T) {
 	tests := []struct {
 		name                string
