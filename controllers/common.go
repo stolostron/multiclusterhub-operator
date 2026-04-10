@@ -1053,6 +1053,7 @@ func (r *MultiClusterHubReconciler) deleteResourcesByScope(ctx context.Context, 
 
 		// Skip if MCE has already adopted this resource (has MCE ownership labels)
 		// This prevents deleting resources that MCE just created while we're waiting for it to be Available
+		// TODO(test-coverage): This code path requires integration testing (see migration_test.go:290-293)
 		if deleteClusterScoped {
 			labels := existing.GetLabels()
 			if labels != nil && labels["backplaneconfig.name"] != "" {

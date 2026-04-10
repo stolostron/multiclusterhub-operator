@@ -287,6 +287,10 @@ func Test_waitForMigratedComponentsAdopted(t *testing.T) {
 }
 
 func Test_ensureMigratedComponentsCleanup(t *testing.T) {
+	// Note: These unit tests cannot cover the MCE adoption check in deleteResourcesByScope
+	// (lines 1056-1065 in common.go) because chart rendering fails before reaching that code.
+	// That logic requires integration tests with real Helm charts and cluster resources.
+	// The MCE adoption check prevents deleting RBAC resources already adopted by MCE.
 	tests := []struct {
 		name          string
 		mch           operatorv1.MultiClusterHub
