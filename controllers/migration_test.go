@@ -13,7 +13,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -443,18 +442,31 @@ func Test_ensureMigratedComponentsCleanup(t *testing.T) {
 	}
 }
 
-// These tests verify the core migration logic by calling helper functions directly,
-// bypassing chart rendering which is not available in unit tests.
-func Test_relabelClusterResourcesForMCE(t *testing.T) {
+// Note: These tests provide basic validation but are limited by chart rendering requirements.
+// Full test coverage requires integration tests with real Helm charts and cluster resources.
+// Key scenarios tested:
+// - MCE not found handling
+// - Resource labeling and annotation logic
+// - Error handling paths
+func Test_transferClusterResourcesToMCE(t *testing.T) {
 	tests := []struct {
 		name           string
 		mch            operatorv1.MultiClusterHub
 		mce            *backplanev1.MultiClusterEngine
 		existingRes    []client.Object
-		templates      []*unstructured.Unstructured
+		component      string
+		expectRequeue  bool
 		expectError    bool
 		validateLabels func(*testing.T, client.Client)
 	}{
+		{
+			name:          "MCE not found, should requeue",
+			mch:           operatorv1.MultiClusterHub{},
+			mce:           nil,
+			component:     operatorv1.ClusterPermission,
+			expectRequeue: true,
+			expectError:   false,
+		},
 		{
 			name: "resource already transferred to current MCE, skip",
 			mch: operatorv1.MultiClusterHub{
@@ -478,18 +490,9 @@ func Test_relabelClusterResourcesForMCE(t *testing.T) {
 					},
 				},
 			},
-			templates: []*unstructured.Unstructured{
-				{
-					Object: map[string]interface{}{
-						"apiVersion": "rbac.authorization.k8s.io/v1",
-						"kind":       "ClusterRole",
-						"metadata": map[string]interface{}{
-							"name": "cluster-permission-clusterrole",
-						},
-					},
-				},
-			},
-			expectError: false,
+			component:     operatorv1.ClusterPermission,
+			expectRequeue: false,
+			expectError:   false,
 			validateLabels: func(t *testing.T, c client.Client) {
 				cr := &rbacv1.ClusterRole{}
 				err := c.Get(context.TODO(), types.NamespacedName{Name: "cluster-permission-clusterrole"}, cr)
@@ -528,18 +531,9 @@ func Test_relabelClusterResourcesForMCE(t *testing.T) {
 					},
 				},
 			},
-			templates: []*unstructured.Unstructured{
-				{
-					Object: map[string]interface{}{
-						"apiVersion": "rbac.authorization.k8s.io/v1",
-						"kind":       "ClusterRole",
-						"metadata": map[string]interface{}{
-							"name": "cluster-permission-clusterrole",
-						},
-					},
-				},
-			},
-			expectError: false,
+			component:     operatorv1.ClusterPermission,
+			expectRequeue: false,
+			expectError:   false,
 			validateLabels: func(t *testing.T, c client.Client) {
 				cr := &rbacv1.ClusterRole{}
 				err := c.Get(context.TODO(), types.NamespacedName{Name: "cluster-permission-clusterrole"}, cr)
@@ -586,18 +580,9 @@ func Test_relabelClusterResourcesForMCE(t *testing.T) {
 					},
 				},
 			},
-			templates: []*unstructured.Unstructured{
-				{
-					Object: map[string]interface{}{
-						"apiVersion": "rbac.authorization.k8s.io/v1",
-						"kind":       "ClusterRole",
-						"metadata": map[string]interface{}{
-							"name": "cluster-permission-clusterrole",
-						},
-					},
-				},
-			},
-			expectError: false,
+			component:     operatorv1.ClusterPermission,
+			expectRequeue: false,
+			expectError:   false,
 			validateLabels: func(t *testing.T, c client.Client) {
 				cr := &rbacv1.ClusterRole{}
 				err := c.Get(context.TODO(), types.NamespacedName{Name: "cluster-permission-clusterrole"}, cr)
@@ -644,32 +629,32 @@ func Test_relabelClusterResourcesForMCE(t *testing.T) {
 				defer recon.Client.Delete(context.TODO(), tt.mce)
 			}
 
-			// Setup: Create existing resources, updating labels to match actual MCH name
+			// Setup: Create existing resources
 			for _, res := range tt.existingRes {
-				// Update installer labels to match the actual MCH name
-				labels := res.GetLabels()
-				if labels != nil {
-					if labels["installer.name"] == "test-mch" {
-						labels["installer.name"] = mch.GetName()
-					}
-					if labels["installer.namespace"] == "open-cluster-management" {
-						labels["installer.namespace"] = mch.GetNamespace()
-					}
-					res.SetLabels(labels)
-				}
 				if err := recon.Client.Create(context.TODO(), res); err != nil {
 					t.Errorf("failed to create resource: %v", err)
 				}
 				defer recon.Client.Delete(context.TODO(), res)
 			}
 
-			// Test: Call helper function directly with templates
-			err := recon.relabelClusterResourcesForMCE(context.TODO(), mch, tt.mce, tt.templates)
+			// Test
+			result, err := recon.transferClusterResourcesToMCE(context.TODO(), mch, tt.component, recon.CacheSpec, false)
 
 			// Validate error
 			if (err != nil) != tt.expectError {
-				t.Errorf("relabelClusterResourcesForMCE() error = %v, expectError %v", err, tt.expectError)
+				t.Errorf("transferClusterResourcesToMCE() error = %v, expectError %v", err, tt.expectError)
 				return
+			}
+
+			// Validate requeue
+			if tt.expectRequeue {
+				if result == (ctrl.Result{}) {
+					t.Errorf("transferClusterResourcesToMCE() expected requeue, got empty result")
+				}
+			} else {
+				if result != (ctrl.Result{}) && err == nil {
+					t.Errorf("transferClusterResourcesToMCE() expected no requeue, got %v", result)
+				}
 			}
 
 			// Validate labels if function provided
@@ -680,18 +665,21 @@ func Test_relabelClusterResourcesForMCE(t *testing.T) {
 	}
 }
 
-// These tests verify the core deletion logic by calling helper functions directly,
-// bypassing chart rendering which is not available in unit tests.
-func Test_deleteTemplateResourcesByScope(t *testing.T) {
+// Note: These tests provide basic validation but are limited by chart rendering requirements.
+// Full test coverage requires integration tests with real Helm charts and cluster resources.
+// Key scenarios tested:
+// - Scope filtering (cluster-scoped vs namespace-scoped)
+// - MCE ownership checking
+// - Deletion timestamp handling
+func Test_deleteResourcesByScope(t *testing.T) {
 	tests := []struct {
 		name                string
 		mch                 operatorv1.MultiClusterHub
 		mce                 *backplanev1.MultiClusterEngine
 		existingRes         []client.Object
-		templates           []*unstructured.Unstructured
 		component           string
 		deleteClusterScoped bool
-		expectRemaining     bool
+		expectRequeue       bool
 		expectError         bool
 		validateDeleted     func(*testing.T, client.Client)
 	}{
@@ -731,21 +719,9 @@ func Test_deleteTemplateResourcesByScope(t *testing.T) {
 					},
 				},
 			},
-			templates: []*unstructured.Unstructured{
-				{
-					Object: map[string]interface{}{
-						"apiVersion": "apps/v1",
-						"kind":       "Deployment",
-						"metadata": map[string]interface{}{
-							"name":      "cluster-permission-deployment",
-							"namespace": "open-cluster-management",
-						},
-					},
-				},
-			},
 			component:           operatorv1.ClusterPermission,
 			deleteClusterScoped: false,
-			expectRemaining:     true, // Will have remaining resources after delete
+			expectRequeue:       true, // Will requeue after delete
 			expectError:         false,
 			validateDeleted: func(t *testing.T, c client.Client) {
 				dep := &appsv1.Deployment{}
@@ -782,20 +758,9 @@ func Test_deleteTemplateResourcesByScope(t *testing.T) {
 					},
 				},
 			},
-			templates: []*unstructured.Unstructured{
-				{
-					Object: map[string]interface{}{
-						"apiVersion": "rbac.authorization.k8s.io/v1",
-						"kind":       "ClusterRole",
-						"metadata": map[string]interface{}{
-							"name": "cluster-permission-clusterrole",
-						},
-					},
-				},
-			},
 			component:           operatorv1.ClusterPermission,
 			deleteClusterScoped: true,
-			expectRemaining:     false, // No remaining since MCE owns the resource
+			expectRequeue:       false,
 			expectError:         false,
 			validateDeleted: func(t *testing.T, c client.Client) {
 				cr := &rbacv1.ClusterRole{}
@@ -807,7 +772,7 @@ func Test_deleteTemplateResourcesByScope(t *testing.T) {
 			},
 		},
 		{
-			name: "resource with deletionTimestamp should have remaining",
+			name: "resource with deletionTimestamp should requeue",
 			mch: operatorv1.MultiClusterHub{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-mch",
@@ -844,21 +809,9 @@ func Test_deleteTemplateResourcesByScope(t *testing.T) {
 					},
 				},
 			},
-			templates: []*unstructured.Unstructured{
-				{
-					Object: map[string]interface{}{
-						"apiVersion": "apps/v1",
-						"kind":       "Deployment",
-						"metadata": map[string]interface{}{
-							"name":      "cluster-permission-deployment",
-							"namespace": "open-cluster-management",
-						},
-					},
-				},
-			},
 			component:           operatorv1.ClusterPermission,
 			deleteClusterScoped: false,
-			expectRemaining:     true, // Will have remaining since resource is terminating
+			expectRequeue:       true,
 			expectError:         false,
 		},
 	}
@@ -893,37 +846,32 @@ func Test_deleteTemplateResourcesByScope(t *testing.T) {
 				defer recon.Client.Delete(context.TODO(), tt.mce)
 			}
 
-			// Setup: Create existing resources, updating labels to match actual MCH name
+			// Setup: Create existing resources
 			for _, res := range tt.existingRes {
-				// Update installer labels to match the actual MCH name
-				labels := res.GetLabels()
-				if labels != nil {
-					if labels["installer.name"] == "test-mch" {
-						labels["installer.name"] = mch.GetName()
-					}
-					if labels["installer.namespace"] == "open-cluster-management" {
-						labels["installer.namespace"] = mch.GetNamespace()
-					}
-					res.SetLabels(labels)
-				}
 				if err := recon.Client.Create(context.TODO(), res); err != nil {
 					t.Errorf("failed to create resource: %v", err)
 				}
 				defer recon.Client.Delete(context.TODO(), res)
 			}
 
-			// Test: Call helper function directly with templates
-			remaining, err := recon.deleteTemplateResourcesByScope(context.TODO(), tt.component, tt.templates, tt.deleteClusterScoped)
+			// Test
+			result, err := recon.deleteResourcesByScope(context.TODO(), mch, tt.component, recon.CacheSpec, false, tt.deleteClusterScoped)
 
 			// Validate error
 			if (err != nil) != tt.expectError {
-				t.Errorf("deleteTemplateResourcesByScope() error = %v, expectError %v", err, tt.expectError)
+				t.Errorf("deleteResourcesByScope() error = %v, expectError %v", err, tt.expectError)
 				return
 			}
 
-			// Validate remaining resources
-			if remaining != tt.expectRemaining {
-				t.Errorf("deleteTemplateResourcesByScope() remaining = %v, expectRemaining %v", remaining, tt.expectRemaining)
+			// Validate requeue
+			if tt.expectRequeue {
+				if result == (ctrl.Result{}) {
+					t.Errorf("deleteResourcesByScope() expected requeue, got empty result")
+				}
+			} else {
+				if result != (ctrl.Result{}) && err == nil {
+					t.Errorf("deleteResourcesByScope() expected no requeue, got %v", result)
+				}
 			}
 
 			// Validate deletion if function provided
