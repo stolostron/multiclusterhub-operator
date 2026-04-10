@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
@@ -17,6 +18,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+func init() {
+	// Set TEMPLATES_PATH so chart rendering works in these tests
+	os.Setenv("TEMPLATES_PATH", "../pkg/templates")
+}
 
 func Test_waitForMigratedComponentsAdopted(t *testing.T) {
 	tests := []struct {
@@ -483,7 +489,7 @@ func Test_transferClusterResourcesToMCE(t *testing.T) {
 			existingRes: []client.Object{
 				&rbacv1.ClusterRole{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "cluster-permission-clusterrole",
+						Name: "open-cluster-management:cluster-permission:cluster-permission",
 						Labels: map[string]string{
 							"backplaneconfig.name": "multiclusterengine",
 						},
@@ -495,7 +501,7 @@ func Test_transferClusterResourcesToMCE(t *testing.T) {
 			expectError:   false,
 			validateLabels: func(t *testing.T, c client.Client) {
 				cr := &rbacv1.ClusterRole{}
-				err := c.Get(context.TODO(), types.NamespacedName{Name: "cluster-permission-clusterrole"}, cr)
+				err := c.Get(context.TODO(), types.NamespacedName{Name: "open-cluster-management:cluster-permission:cluster-permission"}, cr)
 				if err != nil {
 					t.Errorf("failed to get ClusterRole: %v", err)
 				}
@@ -520,7 +526,7 @@ func Test_transferClusterResourcesToMCE(t *testing.T) {
 			existingRes: []client.Object{
 				&rbacv1.ClusterRole{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "cluster-permission-clusterrole",
+						Name: "open-cluster-management:cluster-permission:cluster-permission",
 						Labels: map[string]string{
 							"installer.name":      "test-mch",
 							"installer.namespace": "open-cluster-management",
@@ -536,7 +542,7 @@ func Test_transferClusterResourcesToMCE(t *testing.T) {
 			expectError:   false,
 			validateLabels: func(t *testing.T, c client.Client) {
 				cr := &rbacv1.ClusterRole{}
-				err := c.Get(context.TODO(), types.NamespacedName{Name: "cluster-permission-clusterrole"}, cr)
+				err := c.Get(context.TODO(), types.NamespacedName{Name: "open-cluster-management:cluster-permission:cluster-permission"}, cr)
 				if err != nil {
 					t.Errorf("failed to get ClusterRole: %v", err)
 				}
@@ -573,7 +579,7 @@ func Test_transferClusterResourcesToMCE(t *testing.T) {
 			existingRes: []client.Object{
 				&rbacv1.ClusterRole{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "cluster-permission-clusterrole",
+						Name: "open-cluster-management:cluster-permission:cluster-permission",
 						Labels: map[string]string{
 							"backplaneconfig.name": "old-mce",
 						},
@@ -585,7 +591,7 @@ func Test_transferClusterResourcesToMCE(t *testing.T) {
 			expectError:   false,
 			validateLabels: func(t *testing.T, c client.Client) {
 				cr := &rbacv1.ClusterRole{}
-				err := c.Get(context.TODO(), types.NamespacedName{Name: "cluster-permission-clusterrole"}, cr)
+				err := c.Get(context.TODO(), types.NamespacedName{Name: "open-cluster-management:cluster-permission:cluster-permission"}, cr)
 				if err != nil {
 					t.Errorf("failed to get ClusterRole: %v", err)
 				}
@@ -629,8 +635,19 @@ func Test_transferClusterResourcesToMCE(t *testing.T) {
 				defer recon.Client.Delete(context.TODO(), tt.mce)
 			}
 
-			// Setup: Create existing resources
+			// Setup: Create existing resources, updating labels to match actual MCH name
 			for _, res := range tt.existingRes {
+				// Update installer labels to match the actual MCH name
+				labels := res.GetLabels()
+				if labels != nil {
+					if labels["installer.name"] == "test-mch" {
+						labels["installer.name"] = mch.GetName()
+					}
+					if labels["installer.namespace"] == "open-cluster-management" {
+						labels["installer.namespace"] = mch.GetNamespace()
+					}
+					res.SetLabels(labels)
+				}
 				if err := recon.Client.Create(context.TODO(), res); err != nil {
 					t.Errorf("failed to create resource: %v", err)
 				}
@@ -699,7 +716,7 @@ func Test_deleteResourcesByScope(t *testing.T) {
 			existingRes: []client.Object{
 				&appsv1.Deployment{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "cluster-permission-deployment",
+						Name:      "cluster-permission",
 						Namespace: "open-cluster-management",
 					},
 					Spec: appsv1.DeploymentSpec{
@@ -726,7 +743,7 @@ func Test_deleteResourcesByScope(t *testing.T) {
 			validateDeleted: func(t *testing.T, c client.Client) {
 				dep := &appsv1.Deployment{}
 				err := c.Get(context.TODO(), types.NamespacedName{
-					Name:      "cluster-permission-deployment",
+					Name:      "cluster-permission",
 					Namespace: "open-cluster-management",
 				}, dep)
 				// Resource should be deleted or have deletionTimestamp
@@ -751,7 +768,7 @@ func Test_deleteResourcesByScope(t *testing.T) {
 			existingRes: []client.Object{
 				&rbacv1.ClusterRole{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "cluster-permission-clusterrole",
+						Name: "open-cluster-management:cluster-permission:cluster-permission",
 						Labels: map[string]string{
 							"backplaneconfig.name": "multiclusterengine",
 						},
@@ -764,7 +781,7 @@ func Test_deleteResourcesByScope(t *testing.T) {
 			expectError:         false,
 			validateDeleted: func(t *testing.T, c client.Client) {
 				cr := &rbacv1.ClusterRole{}
-				err := c.Get(context.TODO(), types.NamespacedName{Name: "cluster-permission-clusterrole"}, cr)
+				err := c.Get(context.TODO(), types.NamespacedName{Name: "open-cluster-management:cluster-permission:cluster-permission"}, cr)
 				// Resource should NOT be deleted (MCE owns it)
 				if err != nil {
 					t.Errorf("ClusterRole should not be deleted, MCE owns it")
@@ -787,7 +804,7 @@ func Test_deleteResourcesByScope(t *testing.T) {
 			existingRes: []client.Object{
 				&appsv1.Deployment{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:              "cluster-permission-deployment",
+						Name:              "cluster-permission",
 						Namespace:         "open-cluster-management",
 						DeletionTimestamp: &metav1.Time{Time: metav1.Now().Time},
 						Finalizers:        []string{"test-finalizer"},
@@ -846,8 +863,19 @@ func Test_deleteResourcesByScope(t *testing.T) {
 				defer recon.Client.Delete(context.TODO(), tt.mce)
 			}
 
-			// Setup: Create existing resources
+			// Setup: Create existing resources, updating labels to match actual MCH name
 			for _, res := range tt.existingRes {
+				// Update installer labels to match the actual MCH name
+				labels := res.GetLabels()
+				if labels != nil {
+					if labels["installer.name"] == "test-mch" {
+						labels["installer.name"] = mch.GetName()
+					}
+					if labels["installer.namespace"] == "open-cluster-management" {
+						labels["installer.namespace"] = mch.GetNamespace()
+					}
+					res.SetLabels(labels)
+				}
 				if err := recon.Client.Create(context.TODO(), res); err != nil {
 					t.Errorf("failed to create resource: %v", err)
 				}

@@ -1146,6 +1146,18 @@ func (r *MultiClusterHubReconciler) deleteResourcesByScope(ctx context.Context, 
 			return ctrl.Result{}, fmt.Errorf("failed to get resource %s/%s: %w", template.GetKind(), template.GetName(), err)
 		}
 
+		// Skip cluster-scoped resources that have been transferred to MCE ownership
+		if deleteClusterScoped {
+			labels := existing.GetLabels()
+			if labels != nil && labels["backplaneconfig.name"] != "" {
+				r.Log.Info("Skipping resource with MCE ownership",
+					"Kind", existing.GetKind(),
+					"Name", existing.GetName(),
+					"MCEName", labels["backplaneconfig.name"])
+				continue
+			}
+		}
+
 		// Check if resource is already being deleted
 		if existing.GetDeletionTimestamp() != nil {
 			r.Log.Info("Resource is terminating",

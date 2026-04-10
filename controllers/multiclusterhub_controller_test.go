@@ -69,8 +69,21 @@ var (
 	recon      = MultiClusterHubReconciler{
 		Client: fake.NewClientBuilder().Build(),
 		Scheme: scheme.Scheme,
+		CacheSpec: CacheSpec{
+			ImageOverrides:    getTestImageOverrides(),
+			TemplateOverrides: map[string]string{},
+		},
 	}
 )
+
+// getTestImageOverrides returns a map of test image overrides for all components
+func getTestImageOverrides() map[string]string {
+	testImages := map[string]string{}
+	for _, v := range utils.GetTestImages() {
+		testImages[v] = "quay.io/test/test:Test"
+	}
+	return testImages
+}
 
 func ApplyPrereqs(k8sClient client.Client) {
 	ctx := context.Background()
