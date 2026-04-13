@@ -68,7 +68,7 @@ var (
 //+kubebuilder:rbac:groups="multicluster.openshift.io",resources=multiclusterengines,verbs=create;get;list;patch;update;delete;watch
 //+kubebuilder:rbac:groups=console.openshift.io;search.open-cluster-management.io,resources=consoleplugins;consolelinks;searches,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=operator.openshift.io,resources=cloudcredentials;consoles,verbs=get;list;watch;update;patch
-//+kubebuilder:rbac:groups=config.openshift.io,resources=authentications;infrastructures,verbs=get;list;watch
+//+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers;authentications;infrastructures,verbs=get;list;watch
 //+kubebuilder:rbac:groups="";"apps",resources=deployments;services;serviceaccounts,verbs=patch;delete;get;deletecollection
 //+kubebuilder:rbac:groups=packages.operators.coreos.com,resources=packagemanifests,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=prometheusrules;servicemonitors,verbs=create;delete;get;list;watch;update;patch;deletecollection
