@@ -40,6 +40,12 @@ rules:
   - patch
   - delete
 - apiGroups:
+  - clusterview.open-cluster-management.io
+  resources:
+  - userpermissions
+  verbs:
+  - get
+- apiGroups:
   - ''
   resources:
   - secrets
