@@ -198,9 +198,9 @@ func main() {
 		Metrics: metricsserver.Options{
 			BindAddress: metricsAddr,
 		},
-		HealthProbeBindAddress: probeAddr,
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "multicloudhub-operator-lock",
+		HealthProbeBindAddress:  probeAddr,
+		LeaderElection:          enableLeaderElection,
+		LeaderElectionID:        "multicloudhub-operator-lock",
 		LeaderElectionNamespace: ns,
 		LeaseDuration:           &leaseDuration,
 		RenewDeadline:           &renewDeadline,
