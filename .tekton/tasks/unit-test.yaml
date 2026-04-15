@@ -17,6 +17,7 @@ spec:
   results:
     - name: TEST_OUTPUT
       description: Test output in Konflux-compliant JSON format
+      type: string
   stepTemplate:
     env:
       - name: SOURCE_ARTIFACT
@@ -87,4 +88,3 @@ spec:
         if [ "${TEST_FAILED:-false}" = "true" ]; then
           exit 1
         fi
-  retries: 3
