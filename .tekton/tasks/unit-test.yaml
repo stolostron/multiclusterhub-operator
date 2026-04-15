@@ -23,13 +23,13 @@ spec:
         value: $(params.SOURCE_ARTIFACT)
   steps:
     - name: use-trusted-artifact
-      image: quay.io/redhat-appstudio/build-trusted-artifacts:latest@sha256:4e39fb97f4444c2946944482df47b39c5bbc195603d6d91caad38d17f2f5e5e8
+      image: quay.io/redhat-appstudio/build-trusted-artifacts:latest
       args:
         - use
         - $(params.SOURCE_ARTIFACT)=/var/workdir/source
 
     - name: run-unit-tests
-      image: registry.redhat.io/ubi9/go-toolset:1.25@sha256:latest
+      image: registry.redhat.io/ubi9/go-toolset:1.25
       workingDir: /var/workdir/source
       env:
         - name: GOCACHE
