@@ -18,10 +18,16 @@ spec:
     - name: TEST_OUTPUT
       description: Test output in Konflux-compliant JSON format
       type: string
+  volumes:
+    - name: workdir
+      emptyDir: {}
   stepTemplate:
     env:
       - name: SOURCE_ARTIFACT
         value: $(params.SOURCE_ARTIFACT)
+    volumeMounts:
+      - name: workdir
+        mountPath: /var/workdir
   steps:
     - name: use-trusted-artifact
       image: quay.io/redhat-appstudio/build-trusted-artifacts:latest
