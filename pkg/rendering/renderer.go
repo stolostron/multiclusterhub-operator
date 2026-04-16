@@ -78,7 +78,12 @@ func parseProbeConfigFromAnnotations(mch *v1.MultiClusterHub) *ProbeConfig {
 	hasAny := false
 
 	if val, ok := mch.Annotations["installer.open-cluster-management.io/probe-timeout-seconds"]; ok {
-		if timeout, err := strconv.ParseInt(val, 10, 32); err == nil && timeout > 0 {
+		timeout, err := strconv.ParseInt(val, 10, 32)
+		if err != nil {
+			log.Info(fmt.Sprintf("Invalid probe-timeout-seconds annotation value %q: %v", val, err))
+		} else if timeout <= 0 {
+			log.Info(fmt.Sprintf("Invalid probe-timeout-seconds annotation value %q: must be positive", val))
+		} else {
 			timeout32 := int32(timeout)
 			config.TimeoutSeconds = &timeout32
 			hasAny = true
@@ -86,7 +91,12 @@ func parseProbeConfigFromAnnotations(mch *v1.MultiClusterHub) *ProbeConfig {
 	}
 
 	if val, ok := mch.Annotations["installer.open-cluster-management.io/probe-failure-threshold"]; ok {
-		if threshold, err := strconv.ParseInt(val, 10, 32); err == nil && threshold > 0 {
+		threshold, err := strconv.ParseInt(val, 10, 32)
+		if err != nil {
+			log.Info(fmt.Sprintf("Invalid probe-failure-threshold annotation value %q: %v", val, err))
+		} else if threshold <= 0 {
+			log.Info(fmt.Sprintf("Invalid probe-failure-threshold annotation value %q: must be positive", val))
+		} else {
 			threshold32 := int32(threshold)
 			config.FailureThreshold = &threshold32
 			hasAny = true
@@ -94,7 +104,12 @@ func parseProbeConfigFromAnnotations(mch *v1.MultiClusterHub) *ProbeConfig {
 	}
 
 	if val, ok := mch.Annotations["installer.open-cluster-management.io/probe-success-threshold"]; ok {
-		if threshold, err := strconv.ParseInt(val, 10, 32); err == nil && threshold > 0 {
+		threshold, err := strconv.ParseInt(val, 10, 32)
+		if err != nil {
+			log.Info(fmt.Sprintf("Invalid probe-success-threshold annotation value %q: %v", val, err))
+		} else if threshold <= 0 {
+			log.Info(fmt.Sprintf("Invalid probe-success-threshold annotation value %q: must be positive", val))
+		} else {
 			threshold32 := int32(threshold)
 			config.SuccessThreshold = &threshold32
 			hasAny = true
