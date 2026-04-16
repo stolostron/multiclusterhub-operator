@@ -68,6 +68,46 @@ func convertTolerations(tols []corev1.Toleration) []Toleration {
 	return tolerations
 }
 
+// parseProbeConfigFromAnnotations reads probe config from MCH annotations
+func parseProbeConfigFromAnnotations(mch *v1.MultiClusterHub) *ProbeConfig {
+	if mch.Annotations == nil {
+		return nil
+	}
+
+	var config ProbeConfig
+	hasAny := false
+
+	if val, ok := mch.Annotations["installer.open-cluster-management.io/probe-timeout-seconds"]; ok {
+		if timeout, err := strconv.ParseInt(val, 10, 32); err == nil && timeout > 0 {
+			timeout32 := int32(timeout)
+			config.TimeoutSeconds = &timeout32
+			hasAny = true
+		}
+	}
+
+	if val, ok := mch.Annotations["installer.open-cluster-management.io/probe-failure-threshold"]; ok {
+		if threshold, err := strconv.ParseInt(val, 10, 32); err == nil && threshold > 0 {
+			threshold32 := int32(threshold)
+			config.FailureThreshold = &threshold32
+			hasAny = true
+		}
+	}
+
+	if val, ok := mch.Annotations["installer.open-cluster-management.io/probe-success-threshold"]; ok {
+		if threshold, err := strconv.ParseInt(val, 10, 32); err == nil && threshold > 0 {
+			threshold32 := int32(threshold)
+			config.SuccessThreshold = &threshold32
+			hasAny = true
+		}
+	}
+
+	if !hasAny {
+		return nil
+	}
+
+	return &config
+}
+
 func (u *Toleration) MarshalJSON() ([]byte, error) {
 
 	v := reflect.ValueOf(u)
@@ -312,6 +352,8 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 	values.HubConfig.NodeSelector = mch.Spec.NodeSelector
 
 	values.HubConfig.Tolerations = convertTolerations(utils.GetTolerations(mch))
+
+	values.HubConfig.ProbeConfig = parseProbeConfigFromAnnotations(mch)
 
 	values.HubConfig.OCPVersion = os.Getenv("ACM_HUB_OCP_VERSION")
 

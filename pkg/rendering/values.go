@@ -40,10 +40,17 @@ type HubConfig struct {
 	ProxyConfigs      map[string]string `json:"proxyConfigs" structs:"proxyConfigs"`
 	ReplicaCount      int               `json:"replicaCount" structs:"replicaCount"`
 	Tolerations       []Toleration      `json:"tolerations" structs:"tolerations"`
+	ProbeConfig       *ProbeConfig      `json:"probeConfig" structs:"probeConfig"`
 	OCPVersion        string            `json:"ocpVersion" structs:"ocpVersion"`
 	HubVersion        string            `json:"hubVersion" structs:"hubVersion"`
 	OCPIngress        string            `json:"ocpIngress" structs:"ocpIngress"`
 	SubscriptionPause string            `json:"subscriptionPause" structs:"subscriptionPause"`
+}
+
+type ProbeConfig struct {
+	TimeoutSeconds   *int32 `json:"timeoutSeconds,omitempty"`
+	FailureThreshold *int32 `json:"failureThreshold,omitempty"`
+	SuccessThreshold *int32 `json:"successThreshold,omitempty"`
 }
 
 type Toleration struct {
