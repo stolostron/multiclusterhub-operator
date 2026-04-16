@@ -420,9 +420,9 @@ func TestParseProbeConfigFromAnnotations(t *testing.T) {
 				Name:      "test-mch",
 				Namespace: "default",
 				Annotations: map[string]string{
-					"installer.open-cluster-management.io/probe-timeout-seconds":    "10",
-					"installer.open-cluster-management.io/probe-failure-threshold":  "5",
-					"installer.open-cluster-management.io/probe-success-threshold":  "2",
+					"installer.open-cluster-management.io/probe-timeout-seconds":   "10",
+					"installer.open-cluster-management.io/probe-failure-threshold": "5",
+					"installer.open-cluster-management.io/probe-success-threshold": "2",
 				},
 			},
 		}
@@ -501,9 +501,9 @@ func TestParseProbeConfigFromAnnotations(t *testing.T) {
 				Name:      "test-mch",
 				Namespace: "default",
 				Annotations: map[string]string{
-					"installer.open-cluster-management.io/probe-timeout-seconds":    "0",
-					"installer.open-cluster-management.io/probe-failure-threshold":  "-5",
-					"installer.open-cluster-management.io/probe-success-threshold":  "3",
+					"installer.open-cluster-management.io/probe-timeout-seconds":   "0",
+					"installer.open-cluster-management.io/probe-failure-threshold": "-5",
+					"installer.open-cluster-management.io/probe-success-threshold": "3",
 				},
 			},
 		}
@@ -530,9 +530,9 @@ func TestParseProbeConfigFromAnnotations(t *testing.T) {
 				Name:      "test-mch",
 				Namespace: "default",
 				Annotations: map[string]string{
-					"installer.open-cluster-management.io/pause":                  "true",
-					"installer.open-cluster-management.io/probe-timeout-seconds":  "20",
-					"some-other-annotation":                                       "value",
+					"installer.open-cluster-management.io/pause":                 "true",
+					"installer.open-cluster-management.io/probe-timeout-seconds": "20",
+					"some-other-annotation":                                      "value",
 				},
 			},
 		}
