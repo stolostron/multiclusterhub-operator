@@ -135,6 +135,14 @@ spec:
                       description: '[NOT IMPLEMENTED] Specifies to collect status
                         conditions for the resource.'
                       type: boolean
+                    fieldSuffix:
+                      default: ""
+                      description: |-
+                        FieldSuffix appended to custom field names in this rule to avoid collisions with built-in fields.
+                        For example, if fieldSuffix is "grc", a field named "status" becomes "status.grc".
+                        Defaults to "" (no suffix). If a collision is detected, the built-in field takes precedence.
+                        This allows different extensions (GRC, Virt, etc.) to use different suffixes in the same config.
+                      type: string
                     fields:
                       description: Specifies the additional fields on the resource
                         to index by Search Collectors.
