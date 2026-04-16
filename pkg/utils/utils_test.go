@@ -4,6 +4,7 @@
 package utils
 
 import (
+	"crypto/tls"
 	"os"
 	"reflect"
 	"testing"
@@ -489,4 +490,85 @@ func containsDeployment(deployments []types.NamespacedName, name, namespace stri
 		}
 	}
 	return false
+}
+
+func TestConvertCipherSuites(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  []string
+		want   []uint16
+		wantOk bool
+	}{
+		{
+			name:   "TLS 1.2 ECDHE-RSA ciphers",
+			input:  []string{"ECDHE-RSA-AES128-GCM-SHA256", "ECDHE-RSA-AES256-GCM-SHA384"},
+			want:   []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384},
+			wantOk: true,
+		},
+		{
+			name:   "TLS 1.2 ECDHE-ECDSA ciphers",
+			input:  []string{"ECDHE-ECDSA-AES128-GCM-SHA256", "ECDHE-ECDSA-CHACHA20-POLY1305"},
+			want:   []uint16{tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256},
+			wantOk: true,
+		},
+		{
+			name:   "TLS 1.3 ciphers are filtered out",
+			input:  []string{"TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384", "ECDHE-RSA-AES128-GCM-SHA256"},
+			want:   []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256},
+			wantOk: true,
+		},
+		{
+			name:   "All TLS 1.3 ciphers filtered",
+			input:  []string{"TLS_AES_128_GCM_SHA256", "TLS_CHACHA20_POLY1305_SHA256"},
+			want:   []uint16{},
+			wantOk: true,
+		},
+		{
+			name:   "Unknown cipher silently ignored",
+			input:  []string{"UNKNOWN-CIPHER", "ECDHE-RSA-AES128-GCM-SHA256"},
+			want:   []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256},
+			wantOk: true,
+		},
+		{
+			name:   "Empty input",
+			input:  []string{},
+			want:   []uint16{},
+			wantOk: true,
+		},
+		{
+			name:   "CBC ciphers",
+			input:  []string{"ECDHE-RSA-AES128-SHA256", "AES128-SHA"},
+			want:   []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256, tls.TLS_RSA_WITH_AES_128_CBC_SHA},
+			wantOk: true,
+		},
+		{
+			name:   "DHE ciphers not supported (silently ignored)",
+			input:  []string{"DHE-RSA-AES128-GCM-SHA256", "ECDHE-RSA-AES128-GCM-SHA256"},
+			want:   []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256},
+			wantOk: true,
+		},
+		{
+			name:   "3DES cipher",
+			input:  []string{"DES-CBC3-SHA"},
+			want:   []uint16{tls.TLS_RSA_WITH_3DES_EDE_CBC_SHA},
+			wantOk: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ConvertCipherSuites(tt.input)
+
+			if len(got) != len(tt.want) {
+				t.Errorf("ConvertCipherSuites() returned %d ciphers, want %d", len(got), len(tt.want))
+				return
+			}
+
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Errorf("ConvertCipherSuites()[%d] = %v, want %v", i, got[i], tt.want[i])
+				}
+			}
+		})
+	}
 }
