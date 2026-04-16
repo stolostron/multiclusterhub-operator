@@ -4,18 +4,22 @@
 package utils
 
 import (
+	"context"
 	"crypto/tls"
 	"os"
 	"reflect"
 	"testing"
 
+	configv1 "github.com/openshift/api/config/v1"
 	mchv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -567,6 +571,145 @@ func TestConvertCipherSuites(t *testing.T) {
 			for i := range got {
 				if got[i] != tt.want[i] {
 					t.Errorf("ConvertCipherSuites()[%d] = %v, want %v", i, got[i], tt.want[i])
+				}
+			}
+		})
+	}
+}
+
+func TestGetAPIServerTLSProfile(t *testing.T) {
+	// Create scheme with necessary types
+	scheme := runtime.NewScheme()
+	_ = configv1.AddToScheme(scheme)
+
+	tests := []struct {
+		name        string
+		apiServer   *configv1.APIServer
+		unitTest    bool
+		expectError bool
+		wantProfile *configv1.TLSProfileSpec
+	}{
+		{
+			name:        "unit test mode returns intermediate",
+			unitTest:    true,
+			expectError: false,
+			wantProfile: configv1.TLSProfiles[configv1.TLSProfileIntermediateType],
+		},
+		{
+			name: "nil TLS profile returns intermediate",
+			apiServer: &configv1.APIServer{
+				ObjectMeta: metav1.ObjectMeta{Name: "cluster"},
+				Spec:       configv1.APIServerSpec{},
+			},
+			expectError: false,
+			wantProfile: configv1.TLSProfiles[configv1.TLSProfileIntermediateType],
+		},
+		{
+			name: "old profile type",
+			apiServer: &configv1.APIServer{
+				ObjectMeta: metav1.ObjectMeta{Name: "cluster"},
+				Spec: configv1.APIServerSpec{
+					TLSSecurityProfile: &configv1.TLSSecurityProfile{
+						Type: configv1.TLSProfileOldType,
+					},
+				},
+			},
+			expectError: false,
+			wantProfile: configv1.TLSProfiles[configv1.TLSProfileOldType],
+		},
+		{
+			name: "intermediate profile type",
+			apiServer: &configv1.APIServer{
+				ObjectMeta: metav1.ObjectMeta{Name: "cluster"},
+				Spec: configv1.APIServerSpec{
+					TLSSecurityProfile: &configv1.TLSSecurityProfile{
+						Type: configv1.TLSProfileIntermediateType,
+					},
+				},
+			},
+			expectError: false,
+			wantProfile: configv1.TLSProfiles[configv1.TLSProfileIntermediateType],
+		},
+		{
+			name: "modern profile type",
+			apiServer: &configv1.APIServer{
+				ObjectMeta: metav1.ObjectMeta{Name: "cluster"},
+				Spec: configv1.APIServerSpec{
+					TLSSecurityProfile: &configv1.TLSSecurityProfile{
+						Type: configv1.TLSProfileModernType,
+					},
+				},
+			},
+			expectError: false,
+			wantProfile: configv1.TLSProfiles[configv1.TLSProfileModernType],
+		},
+		{
+			name: "custom profile type",
+			apiServer: &configv1.APIServer{
+				ObjectMeta: metav1.ObjectMeta{Name: "cluster"},
+				Spec: configv1.APIServerSpec{
+					TLSSecurityProfile: &configv1.TLSSecurityProfile{
+						Type: configv1.TLSProfileCustomType,
+						Custom: &configv1.CustomTLSProfile{
+							TLSProfileSpec: configv1.TLSProfileSpec{
+								Ciphers:       []string{"TLS_AES_128_GCM_SHA256"},
+								MinTLSVersion: configv1.VersionTLS13,
+							},
+						},
+					},
+				},
+			},
+			expectError: false,
+			wantProfile: &configv1.TLSProfileSpec{
+				Ciphers:       []string{"TLS_AES_128_GCM_SHA256"},
+				MinTLSVersion: configv1.VersionTLS13,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Set up environment for unit test mode
+			if tt.unitTest {
+				os.Setenv(UnitTestEnvVar, "true")
+				defer os.Unsetenv(UnitTestEnvVar)
+			} else {
+				os.Unsetenv(UnitTestEnvVar)
+			}
+
+			// Create fake client
+			var objs []runtime.Object
+			if tt.apiServer != nil {
+				objs = append(objs, tt.apiServer)
+			}
+			cl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(objs...).Build()
+
+			// Call function
+			got, err := GetAPIServerTLSProfile(context.Background(), cl)
+
+			// Check error expectation
+			if tt.expectError && err == nil {
+				t.Errorf("GetAPIServerTLSProfile() expected error but got none")
+				return
+			}
+			if !tt.expectError && err != nil {
+				t.Errorf("GetAPIServerTLSProfile() unexpected error: %v", err)
+				return
+			}
+
+			// Compare profiles
+			if !tt.expectError {
+				if got == nil {
+					t.Errorf("GetAPIServerTLSProfile() returned nil profile")
+					return
+				}
+				if got.MinTLSVersion != tt.wantProfile.MinTLSVersion {
+					t.Errorf("GetAPIServerTLSProfile() MinTLSVersion = %v, want %v",
+						got.MinTLSVersion, tt.wantProfile.MinTLSVersion)
+				}
+				if !reflect.DeepEqual(got.Ciphers, tt.wantProfile.Ciphers) {
+					t.Errorf("GetAPIServerTLSProfile() Ciphers = %v, want %v",
+						got.Ciphers, tt.wantProfile.Ciphers)
 				}
 			}
 		})
