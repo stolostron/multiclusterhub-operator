@@ -422,7 +422,10 @@ You should see a directory with a name similar to `manifests-redhat-operator-ind
 Save a reference to this directory for later use:
 
 ```bash
-export MANIFESTS=$(ls -dt $HOME/manifests-redhat-operator-index-* | head -1)
+MANIFESTS=$(find "$HOME" -maxdepth 1 -type d -name 'manifests-redhat-operator-index-*' -printf '%T@ %p\n' \
+  | sort -nr | head -1 | cut -d' ' -f2-)
+[ -n "$MANIFESTS" ] || { echo "No manifests-redhat-operator-index-* directory found"; exit 1; }
+export MANIFESTS
 echo export MANIFESTS=$MANIFESTS >> $HOME/.bash_profile
 ```
 
