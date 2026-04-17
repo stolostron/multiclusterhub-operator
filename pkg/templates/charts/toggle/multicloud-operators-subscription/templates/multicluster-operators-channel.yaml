@@ -73,6 +73,21 @@ spec:
             - ls
           initialDelaySeconds: 15
           periodSeconds: 15
+{{- if .Values.hubconfig.probeConfig }}
+{{- if .Values.hubconfig.probeConfig.timeoutSeconds }}
+          timeoutSeconds: {{ .Values.hubconfig.probeConfig.timeoutSeconds }}
+{{- end }}
+{{- end }}
+{{- if .Values.hubconfig.probeConfig }}
+{{- if .Values.hubconfig.probeConfig.failureThreshold }}
+          failureThreshold: {{ .Values.hubconfig.probeConfig.failureThreshold }}
+{{- end }}
+{{- end }}
+{{- if .Values.hubconfig.probeConfig }}
+{{- if .Values.hubconfig.probeConfig.successThreshold }}
+          successThreshold: {{ .Values.hubconfig.probeConfig.successThreshold }}
+{{- end }}
+{{- end }}
         name: multicluster-operators-channel
         ports:
         - containerPort: 9443
@@ -84,6 +99,21 @@ spec:
             - ls
           initialDelaySeconds: 15
           periodSeconds: 15
+{{- if .Values.hubconfig.probeConfig }}
+{{- if .Values.hubconfig.probeConfig.timeoutSeconds }}
+          timeoutSeconds: {{ .Values.hubconfig.probeConfig.timeoutSeconds }}
+{{- end }}
+{{- end }}
+{{- if .Values.hubconfig.probeConfig }}
+{{- if .Values.hubconfig.probeConfig.failureThreshold }}
+          failureThreshold: {{ .Values.hubconfig.probeConfig.failureThreshold }}
+{{- end }}
+{{- end }}
+{{- if .Values.hubconfig.probeConfig }}
+{{- if .Values.hubconfig.probeConfig.successThreshold }}
+          successThreshold: {{ .Values.hubconfig.probeConfig.successThreshold }}
+{{- end }}
+{{- end }}
         resources:
           requests:
             cpu: 25m
