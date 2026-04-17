@@ -6,11 +6,11 @@ The below guidelines will explain how to build and install the operator on a rem
 
 ## Prerequisites
 
-- [go][go_tool] version v1.17+
-- [operator SDK][osdk] v1.9.0+
-- [opm][opm] v1.12.5+
+- [go][go_tool] version v1.25+
+- [operator SDK][osdk] v1.9.0+ (Note: This version may need updating for current OCP versions)
+- [opm][opm] - Latest version supporting file-based catalogs (required for OCP 4.18+)
 - yq
-- docker
+- docker or podman
 - quay credentials
 - Add your valid quay pull-secret.yaml file in `hack/prereqs/pull-secret.yaml`
 
@@ -34,21 +34,24 @@ There are 3 ways to install the operator:
 #### 1. Run as a Deployment inside the cluster
 
 ```bash
-make prereqs manifests update-manifest update-crds subscriptions docker-build docker-push deploy
+make -f Makefile.dev prereqs subscriptions
+make manifests generate
+make docker-build docker-push deploy
 
-OR 
+OR
 
-make full-dev-install
+make -f Makefile.dev full-dev-install
 ```
 
 This will
 
 1. Apply necessary prereqs. (Namespace, operatorgroup)
 2. Update manifests via kubebuilder
-3. Updates CRDs and retrieves latest image manifests
-4. Applies community operator subscriptions for Hive, AppSub, and ClusterManager
-5. Builds and pushes MCH Operator dev image
-6. Deploys operator via kustomize from `config/manager`
+3. Applies community operator subscriptions for dependencies
+4. Builds and pushes MCH Operator dev image
+5. Deploys operator via kustomize from `config/manager`
+
+**Note:** For podman users, use `make -f Makefile.dev podman-full-dev-install` instead.
 
 #### 2. Run locally outside the cluster
 
@@ -67,11 +70,12 @@ This will
 OLM will manage creation of most resources required to run the operator. This method builds and pushes an actual index image.
 
 ```bash
-make manifests generate bundle bundle-build bundle-push catalog-build catalog-push prereqs subscriptions catalog
+make manifests generate bundle bundle-build bundle-push catalog-build catalog-push
+make -f Makefile.dev prereqs subscriptions catalog
 
 OR
 
-make full-catalog-install
+make -f Makefile.dev full-catalog-install
 ```
 
 This will
@@ -81,15 +85,17 @@ This will
 3. Build and push the bundle image
 4. Build and push the catalog image
 5. Apply prereqs (Namespace, operatorgroup)
-6. Applies community operator subscriptions for Hive, AppSub, and ClusterManager
+6. Applies community operator subscriptions for dependencies
 7. Deploys Operator by deploying Catalogsource and subscription
+
+**Note:** For podman users, use `podman-bundle-build`, `podman-bundle-push` instead of the docker equivalents.
 
 ### Deploy MultiClusterHub instance
 
 Once the operator is installed in the cluster, initiate an installation by creating an instance of MultiClusterHub. To create a default instance of MultiClusterHub:
 
 ```bash
-make cr
+make -f Makefile.dev cr
 ```
 
 > To customize the instance, first modify the spec in `config/samples/operator_v1_multiclusterhub.yaml`.
