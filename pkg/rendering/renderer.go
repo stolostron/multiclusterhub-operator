@@ -68,6 +68,61 @@ func convertTolerations(tols []corev1.Toleration) []Toleration {
 	return tolerations
 }
 
+// parseProbeConfigFromAnnotations reads probe config from MCH annotations
+func parseProbeConfigFromAnnotations(mch *v1.MultiClusterHub) *ProbeConfig {
+	if mch.Annotations == nil {
+		return nil
+	}
+
+	var config ProbeConfig
+	hasAny := false
+
+	if val, ok := mch.Annotations["installer.open-cluster-management.io/probe-timeout-seconds"]; ok {
+		timeout, err := strconv.ParseInt(val, 10, 32)
+		if err != nil {
+			log.Info(fmt.Sprintf("Invalid probe-timeout-seconds annotation value %q: %v", val, err))
+		} else if timeout <= 0 {
+			log.Info(fmt.Sprintf("Invalid probe-timeout-seconds annotation value %q: must be positive", val))
+		} else {
+			timeout32 := int32(timeout)
+			config.TimeoutSeconds = &timeout32
+			hasAny = true
+		}
+	}
+
+	if val, ok := mch.Annotations["installer.open-cluster-management.io/probe-failure-threshold"]; ok {
+		threshold, err := strconv.ParseInt(val, 10, 32)
+		if err != nil {
+			log.Info(fmt.Sprintf("Invalid probe-failure-threshold annotation value %q: %v", val, err))
+		} else if threshold <= 0 {
+			log.Info(fmt.Sprintf("Invalid probe-failure-threshold annotation value %q: must be positive", val))
+		} else {
+			threshold32 := int32(threshold)
+			config.FailureThreshold = &threshold32
+			hasAny = true
+		}
+	}
+
+	if val, ok := mch.Annotations["installer.open-cluster-management.io/probe-success-threshold"]; ok {
+		threshold, err := strconv.ParseInt(val, 10, 32)
+		if err != nil {
+			log.Info(fmt.Sprintf("Invalid probe-success-threshold annotation value %q: %v", val, err))
+		} else if threshold <= 0 {
+			log.Info(fmt.Sprintf("Invalid probe-success-threshold annotation value %q: must be positive", val))
+		} else {
+			threshold32 := int32(threshold)
+			config.SuccessThreshold = &threshold32
+			hasAny = true
+		}
+	}
+
+	if !hasAny {
+		return nil
+	}
+
+	return &config
+}
+
 func (u *Toleration) MarshalJSON() ([]byte, error) {
 
 	v := reflect.ValueOf(u)
@@ -312,6 +367,8 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 	values.HubConfig.NodeSelector = mch.Spec.NodeSelector
 
 	values.HubConfig.Tolerations = convertTolerations(utils.GetTolerations(mch))
+
+	values.HubConfig.ProbeConfig = parseProbeConfigFromAnnotations(mch)
 
 	values.HubConfig.OCPVersion = os.Getenv("ACM_HUB_OCP_VERSION")
 
