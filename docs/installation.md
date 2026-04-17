@@ -8,7 +8,7 @@ The below guidelines will explain how to build and install the operator on a rem
 
 - [go][go_tool] version v1.25+
 - [operator SDK][osdk] v1.9.0+ (Note: This version may need updating for current OCP versions)
-- [opm][opm] - Latest version supporting file-based catalogs (required for OCP 4.18+)
+- [opm][opm] v1.15.1+
 - yq
 - docker or podman
 - quay credentials
