@@ -52,7 +52,7 @@ spec:
 
 ```yaml
 spec:
-  overrides: true
+  overrides:
     imagePullPolicy: "IfNotPresent"
 ```
 

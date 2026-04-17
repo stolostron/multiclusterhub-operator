@@ -1,5 +1,9 @@
 # Disconnected Install on AWS
 
+> **Version Compatibility:** This guide is designed for currently supported OpenShift Container Platform (OCP) versions (4.18+), which use file-based catalogs. OCP 4.17 and earlier have reached end-of-life and are no longer supported by this guide.
+>
+> For current OCP version lifecycle information, see: https://access.redhat.com/support/policy/updates/openshift
+
 ## Create AWS Environment
 
 ### Create VPC
@@ -342,12 +346,12 @@ Go to this site to pick your version and architecture of OCP:
 
 - [https://quay.io/repository/openshift-release-dev/ocp-release?tab=tags](https://quay.io/repository/openshift-release-dev/ocp-release?tab=tags)
 
-For this example, we'll use `4.9.23-x86_64`.
+For this example, we'll use `4.18.0-x86_64`. Choose a currently supported version that matches your target cluster version.
 
 Run:
 
 ```bash
-export OCP_TAG=4.9.23-x86_64
+export OCP_TAG=4.18.0-x86_64
 export OCP_REPO=quay.io/openshift-release-dev/ocp-release
 export LOCAL_REPO=$HOSTNAME:8443/ocp4/openshift4
 
@@ -365,10 +369,16 @@ oc adm release mirror -a auth.json \
 
 ### Prune and Mirror the Operator Catalog
 
-Run
+**Note:** Starting with OCP 4.11, Red Hat switched from sqlite-based catalogs to file-based catalogs (FBC). The `opm index prune` command is deprecated and only works with OCP 4.10 and earlier. Since OCP 4.17 and earlier are now end-of-life (April 2026), all currently supported versions use file-based catalogs.
+
+Use the file-based catalog workflow below for OCP 4.18+.
+
+#### Set up environment variables
+
+Match the INDEX_IMAGE version to your OCP version (e.g., v4.18 for OCP 4.18.x):
 
 ```bash
-export INDEX_IMAGE=redhat-operator-index:v4.9
+export INDEX_IMAGE=redhat-operator-index:v4.18
 export INDEX_REPO=registry.redhat.io/redhat/$INDEX_IMAGE
 export LOCAL_INDEX_REPO=$HOSTNAME:8443/ocp4/$INDEX_IMAGE
 export LOCAL_OLM_REPO=$HOSTNAME:8443/ocp4/openshift4/olm-mirror
@@ -379,23 +389,43 @@ export INDEX_REPO=$INDEX_REPO
 export LOCAL_INDEX_REPO=$LOCAL_INDEX_REPO
 export LOCAL_OLM_REPO=$LOCAL_OLM_REPO
 EOF
-
-opm index prune --from-index $INDEX_REPO --tag $LOCAL_INDEX_REPO \
-    --packages advanced-cluster-management,multicluster-engine
-
-podman push $LOCAL_INDEX_REPO
-
-oc adm catalog mirror -a auth.json $LOCAL_INDEX_REPO $LOCAL_OLM_REPO
-
-sudo rm -rf index_tmp_*
 ```
 
-You should see a directory with a name similar to `manifests-redhat-operator-index-1646254114`.
+#### Prune catalog using file-based approach
+
+```bash
+# Create directory structure for file-based catalog
+mkdir -p pruned-catalog/configs
+
+# Render the catalog index and filter for ACM/MCE packages only
+# This filters all objects (packages, bundles, channels) belonging to these packages
+opm render $INDEX_REPO | jq 'select((.package == "advanced-cluster-management") or (.package == "multicluster-engine") or (.name == "advanced-cluster-management") or (.name == "multicluster-engine"))' > pruned-catalog/configs/index.json
+
+# Generate Dockerfile for the pruned catalog
+opm generate dockerfile pruned-catalog/configs
+
+# Build and push the pruned catalog image
+cd pruned-catalog
+podman build -t $LOCAL_INDEX_REPO -f configs.Dockerfile .
+podman push $LOCAL_INDEX_REPO
+cd ..
+
+# Mirror the catalog to your local registry
+oc adm catalog mirror -a auth.json $LOCAL_INDEX_REPO $LOCAL_OLM_REPO
+
+# Clean up temporary files
+sudo rm -rf index_tmp_* pruned-catalog
+```
+
+You should see a directory with a name similar to `manifests-redhat-operator-index-<timestamp>`.
 
 Save a reference to this directory for later use:
 
 ```bash
-export MANIFESTS=$HOME/manifests-redhat-operator-index-1646254114
+MANIFESTS=$(find "$HOME" -maxdepth 1 -type d -name 'manifests-redhat-operator-index-*' -printf '%T@ %p\n' \
+  | sort -nr | head -1 | cut -d' ' -f2-)
+[ -n "$MANIFESTS" ] || { echo "No manifests-redhat-operator-index-* directory found"; exit 1; }
+export MANIFESTS
 echo export MANIFESTS=$MANIFESTS >> $HOME/.bash_profile
 ```
 
