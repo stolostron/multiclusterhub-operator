@@ -64,8 +64,7 @@ spec:
           value: multicluster-operators-placementrule
         - name: OPERATOR_NAME
           value: multicluster-operators-application
-        image: '{{ .Values.global.imageOverrides.multicluster_operators_subscription
-          }}'
+        image: '{{ .Values.global.imageOverrides.multicluster_operators_subscription }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         livenessProbe:
           exec:
@@ -187,8 +186,7 @@ spec:
           value: multicluster-operators-application
         - name: OPERATOR_NAME
           value: multicluster-operators-application
-        image: '{{ .Values.global.imageOverrides.multicluster_operators_application
-          }}'
+        image: '{{ .Values.global.imageOverrides.multicluster_operators_application }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         livenessProbe:
           exec:
