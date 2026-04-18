@@ -67,8 +67,7 @@ spec:
           value: /usr/local/manifests
         - name: SPOKE_NAMESPACE
           value: open-cluster-management-addon-observability
-        image: '{{ .Values.global.imageOverrides.multicluster_observability_operator
-          }}'
+        image: '{{ .Values.global.imageOverrides.multicluster_observability_operator }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         lifecycle:
           preStop:
