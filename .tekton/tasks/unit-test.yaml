@@ -1,0 +1,110 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: unit-test
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.12.1"
+    tekton.dev/tags: test, unit-test, golang
+spec:
+  description: >-
+    Runs unit tests for the multiclusterhub-operator using make test
+  params:
+    - name: SOURCE_ARTIFACT
+      description: The Trusted Artifact URI pointing to the artifact with the application source code.
+      type: string
+  results:
+    - name: TEST_OUTPUT
+      description: Test output in Konflux-compliant JSON format
+      type: string
+  volumes:
+    - name: workdir
+      emptyDir: {}
+  stepTemplate:
+    env:
+      - name: SOURCE_ARTIFACT
+        value: $(params.SOURCE_ARTIFACT)
+    volumeMounts:
+      - name: workdir
+        mountPath: /var/workdir
+  steps:
+    - name: use-trusted-artifact
+      image: quay.io/redhat-appstudio/build-trusted-artifacts:latest
+      args:
+        - use
+        - $(params.SOURCE_ARTIFACT)=/var/workdir/source
+
+    - name: run-unit-tests
+      image: registry.redhat.io/ubi9/ubi:latest
+      workingDir: /var/workdir/source
+      securityContext:
+        runAsUser: 0
+      env:
+        - name: GOVERSION
+          value: "1.25.5"
+        - name: GOCACHE
+          value: /tmp/go-cache
+        - name: GOPATH
+          value: /tmp/go
+      script: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+
+        echo "===== Installing Dependencies ====="
+        dnf install -y jq git make tar gzip
+
+        echo "===== Installing Go ${GOVERSION} ====="
+        curl -L -o go.tar.gz "https://dl.google.com/go/go${GOVERSION}.linux-amd64.tar.gz"
+        tar -C /usr/local -xzf go.tar.gz
+        export PATH=$PATH:/usr/local/go/bin:${GOPATH}/bin
+
+        echo "===== Installing Go Test Tools ====="
+        go install github.com/onsi/ginkgo/ginkgo@latest
+        go install gotest.tools/gotestsum@latest
+
+        echo "===== Running Unit Tests ====="
+        test_output_file="/tmp/test_output.json"
+
+        # Run tests with JSON output using gotestsum
+        # Disable VCS stamping since git metadata may not be available
+        OPERATOR_VERSION=9.9.9 \
+        ENV_TEST="true" \
+        GOFLAGS="-buildvcs=false" \
+        gotestsum --jsonfile="$test_output_file" --format=testname -- \
+          $(go list ./... | grep -E -v "test") -coverprofile cover.out || TEST_FAILED=true
+
+        echo "===== Processing Test Results ====="
+        # Read, process, and write output in Konflux-accepted format
+        # Formatting docs: https://redhat-appstudio.github.io/book/ADR/0030-tekton-results-naming-convention.html#test_output-schema-validation
+
+        if [ -f "$test_output_file" ]; then
+          FAILURES=$(jq 'select(.Action == "fail")' "$test_output_file" | jq -r --slurp 'length')
+          SUCCESSES=$(jq 'select(.Action == "pass")' "$test_output_file" | jq -r --slurp 'length')
+        else
+          # If test output file doesn't exist, assume failure
+          FAILURES=1
+          SUCCESSES=0
+        fi
+
+        WARNINGS=0
+        RESULT="$(if [[ $FAILURES == 0 ]]; then echo "SUCCESS"; else echo "FAILURE"; fi)"
+        TIMESTAMP="$(date +%s)"
+
+        TEST_OUTPUT=$(jq -r --null-input \
+          --arg failures "$FAILURES" \
+          --arg successes "$SUCCESSES" \
+          --arg warnings "$WARNINGS" \
+          --arg result "$RESULT" \
+          --arg timestamp "$TIMESTAMP" \
+          '{"result": $result, "successes": ($successes|tonumber), "failures": ($failures|tonumber), "warnings": ($warnings|tonumber), "timestamp": $timestamp}' \
+        )
+
+        echo "===== Test Summary ====="
+        echo "$TEST_OUTPUT" | jq .
+        echo -n "$TEST_OUTPUT" | tee $(results.TEST_OUTPUT.path)
+
+        # Exit with failure if tests failed
+        if [ "${TEST_FAILED:-false}" = "true" ]; then
+          exit 1
+        fi

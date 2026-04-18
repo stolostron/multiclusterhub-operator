@@ -1,0 +1,83 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  annotations:
+    build.appstudio.openshift.io/repo: https://github.com/stolostron/multiclusterhub-operator?rev={{revision}}
+    build.appstudio.redhat.com/commit_sha: '{{revision}}'
+    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
+    build.appstudio.redhat.com/target_branch: '{{target_branch}}'
+    pipelinesascode.tekton.dev/cancel-in-progress: "true"
+    pipelinesascode.tekton.dev/max-keep-runs: "3"
+    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && (target_branch == "main" || target_branch == "release-2.17")
+  creationTimestamp: null
+  labels:
+    appstudio.openshift.io/application: release-acm-217
+    appstudio.openshift.io/component: multiclusterhub-operator-acm-217
+    pipelines.appstudio.openshift.io/type: test
+  name: multiclusterhub-operator-acm-217-unit-tests
+  namespace: crt-redhat-acm-tenant
+spec:
+  params:
+  - name: git-url
+    value: '{{source_url}}'
+  - name: revision
+    value: '{{revision}}'
+  - name: output-image
+    value: quay.io/redhat-user-workloads/crt-redhat-acm-tenant/multiclusterhub-operator-acm-217:test-{{revision}}
+  - name: image-expires-after
+    value: 2h
+  pipelineSpec:
+    params:
+      - name: git-url
+        type: string
+      - name: revision
+        type: string
+      - name: output-image
+        type: string
+      - name: image-expires-after
+        type: string
+    results:
+      - name: TEST_OUTPUT
+        value: $(tasks.unit-test.results.TEST_OUTPUT)
+    workspaces:
+      - name: git-auth
+        optional: true
+    tasks:
+      - name: clone-repository
+        params:
+          - name: url
+            value: $(params.git-url)
+          - name: revision
+            value: $(params.revision)
+          - name: ociStorage
+            value: $(params.output-image).git
+          - name: ociArtifactExpiresAfter
+            value: $(params.image-expires-after)
+        taskRef:
+          params:
+            - name: name
+              value: git-clone-oci-ta
+            - name: bundle
+              value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:2c388d28651457db60bb90287e7d8c3680303197196e4476878d98d81e8b6dc9
+            - name: kind
+              value: task
+          resolver: bundles
+        workspaces:
+          - name: basic-auth
+            workspace: git-auth
+
+      - name: unit-test
+        params:
+          - name: SOURCE_ARTIFACT
+            value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
+        runAfter:
+          - clone-repository
+        taskRef:
+          name: unit-test
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-multiclusterhub-operator-acm-217
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'
+status: {}
