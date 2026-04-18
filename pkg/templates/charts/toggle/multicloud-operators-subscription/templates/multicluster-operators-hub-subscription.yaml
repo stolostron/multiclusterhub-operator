@@ -64,8 +64,7 @@ spec:
           value: multicluster-operators-hub-subscription
         - name: OPERATOR_NAME
           value: multicluster-operators-hub-subscription
-        image: '{{ .Values.global.imageOverrides.multicluster_operators_subscription
-          }}'
+        image: '{{ .Values.global.imageOverrides.multicluster_operators_subscription }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         livenessProbe:
           exec:
