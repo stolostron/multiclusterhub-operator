@@ -59,17 +59,17 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 15
 {{- if .Values.hubconfig.probeConfig }}
-{{- if .Values.hubconfig.probeConfig.timeoutSeconds }}
+{{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "timeoutSeconds") }}
           timeoutSeconds: {{ .Values.hubconfig.probeConfig.timeoutSeconds }}
 {{- end }}
 {{- end }}
 {{- if .Values.hubconfig.probeConfig }}
-{{- if .Values.hubconfig.probeConfig.failureThreshold }}
+{{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "failureThreshold") }}
           failureThreshold: {{ .Values.hubconfig.probeConfig.failureThreshold }}
 {{- end }}
 {{- end }}
 {{- if .Values.hubconfig.probeConfig }}
-{{- if .Values.hubconfig.probeConfig.successThreshold }}
+{{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "successThreshold") }}
           successThreshold: {{ .Values.hubconfig.probeConfig.successThreshold }}
 {{- end }}
 {{- end }}
@@ -81,17 +81,17 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 15
 {{- if .Values.hubconfig.probeConfig }}
-{{- if .Values.hubconfig.probeConfig.timeoutSeconds }}
+{{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "timeoutSeconds") }}
           timeoutSeconds: {{ .Values.hubconfig.probeConfig.timeoutSeconds }}
 {{- end }}
 {{- end }}
 {{- if .Values.hubconfig.probeConfig }}
-{{- if .Values.hubconfig.probeConfig.failureThreshold }}
+{{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "failureThreshold") }}
           failureThreshold: {{ .Values.hubconfig.probeConfig.failureThreshold }}
 {{- end }}
 {{- end }}
 {{- if .Values.hubconfig.probeConfig }}
-{{- if .Values.hubconfig.probeConfig.successThreshold }}
+{{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "successThreshold") }}
           successThreshold: {{ .Values.hubconfig.probeConfig.successThreshold }}
 {{- end }}
 {{- end }}
@@ -147,17 +147,17 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 15
 {{- if .Values.hubconfig.probeConfig }}
-{{- if .Values.hubconfig.probeConfig.timeoutSeconds }}
+{{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "timeoutSeconds") }}
           timeoutSeconds: {{ .Values.hubconfig.probeConfig.timeoutSeconds }}
 {{- end }}
 {{- end }}
 {{- if .Values.hubconfig.probeConfig }}
-{{- if .Values.hubconfig.probeConfig.failureThreshold }}
+{{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "failureThreshold") }}
           failureThreshold: {{ .Values.hubconfig.probeConfig.failureThreshold }}
 {{- end }}
 {{- end }}
 {{- if .Values.hubconfig.probeConfig }}
-{{- if .Values.hubconfig.probeConfig.successThreshold }}
+{{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "successThreshold") }}
           successThreshold: {{ .Values.hubconfig.probeConfig.successThreshold }}
 {{- end }}
 {{- end }}
@@ -169,17 +169,17 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 15
 {{- if .Values.hubconfig.probeConfig }}
-{{- if .Values.hubconfig.probeConfig.timeoutSeconds }}
+{{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "timeoutSeconds") }}
           timeoutSeconds: {{ .Values.hubconfig.probeConfig.timeoutSeconds }}
 {{- end }}
 {{- end }}
 {{- if .Values.hubconfig.probeConfig }}
-{{- if .Values.hubconfig.probeConfig.failureThreshold }}
+{{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "failureThreshold") }}
           failureThreshold: {{ .Values.hubconfig.probeConfig.failureThreshold }}
 {{- end }}
 {{- end }}
 {{- if .Values.hubconfig.probeConfig }}
-{{- if .Values.hubconfig.probeConfig.successThreshold }}
+{{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "successThreshold") }}
           successThreshold: {{ .Values.hubconfig.probeConfig.successThreshold }}
 {{- end }}
 {{- end }}
@@ -237,17 +237,17 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 15
 {{- if .Values.hubconfig.probeConfig }}
-{{- if .Values.hubconfig.probeConfig.timeoutSeconds }}
+{{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "timeoutSeconds") }}
           timeoutSeconds: {{ .Values.hubconfig.probeConfig.timeoutSeconds }}
 {{- end }}
 {{- end }}
 {{- if .Values.hubconfig.probeConfig }}
-{{- if .Values.hubconfig.probeConfig.failureThreshold }}
+{{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "failureThreshold") }}
           failureThreshold: {{ .Values.hubconfig.probeConfig.failureThreshold }}
 {{- end }}
 {{- end }}
 {{- if .Values.hubconfig.probeConfig }}
-{{- if .Values.hubconfig.probeConfig.successThreshold }}
+{{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "successThreshold") }}
           successThreshold: {{ .Values.hubconfig.probeConfig.successThreshold }}
 {{- end }}
 {{- end }}
@@ -259,17 +259,17 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 15
 {{- if .Values.hubconfig.probeConfig }}
-{{- if .Values.hubconfig.probeConfig.timeoutSeconds }}
+{{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "timeoutSeconds") }}
           timeoutSeconds: {{ .Values.hubconfig.probeConfig.timeoutSeconds }}
 {{- end }}
 {{- end }}
 {{- if .Values.hubconfig.probeConfig }}
-{{- if .Values.hubconfig.probeConfig.failureThreshold }}
+{{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "failureThreshold") }}
           failureThreshold: {{ .Values.hubconfig.probeConfig.failureThreshold }}
 {{- end }}
 {{- end }}
 {{- if .Values.hubconfig.probeConfig }}
-{{- if .Values.hubconfig.probeConfig.successThreshold }}
+{{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "successThreshold") }}
           successThreshold: {{ .Values.hubconfig.probeConfig.successThreshold }}
 {{- end }}
 {{- end }}
