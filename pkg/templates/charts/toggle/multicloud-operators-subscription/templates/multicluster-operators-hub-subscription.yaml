@@ -79,9 +79,6 @@ spec:
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "failureThreshold") }}
           failureThreshold: {{ .Values.hubconfig.probeConfig.failureThreshold }}
 {{- end }}
-{{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "successThreshold") }}
-          successThreshold: {{ .Values.hubconfig.probeConfig.successThreshold }}
-{{- end }}
         name: multicluster-operators-hub-subscription
         ports:
         - containerPort: 8443

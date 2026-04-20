@@ -64,9 +64,6 @@ spec:
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "failureThreshold") }}
           failureThreshold: {{ .Values.hubconfig.probeConfig.failureThreshold }}
 {{- end }}
-{{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "successThreshold") }}
-          successThreshold: {{ .Values.hubconfig.probeConfig.successThreshold }}
-{{- end }}
         name: argocd-pull-integration-controller-manager
         readinessProbe:
           exec:
@@ -139,9 +136,6 @@ spec:
 {{- end }}
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "failureThreshold") }}
           failureThreshold: {{ .Values.hubconfig.probeConfig.failureThreshold }}
-{{- end }}
-{{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "successThreshold") }}
-          successThreshold: {{ .Values.hubconfig.probeConfig.successThreshold }}
 {{- end }}
         name: multicluster-integrations-syncresource
         readinessProbe:
@@ -217,9 +211,6 @@ spec:
 {{- end }}
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "failureThreshold") }}
           failureThreshold: {{ .Values.hubconfig.probeConfig.failureThreshold }}
-{{- end }}
-{{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "successThreshold") }}
-          successThreshold: {{ .Values.hubconfig.probeConfig.successThreshold }}
 {{- end }}
         name: multicluster-integrations-aggregation
         readinessProbe:
