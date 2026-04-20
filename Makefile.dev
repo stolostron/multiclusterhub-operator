@@ -15,7 +15,7 @@ COMPONENT_VERSION := $(shell cat COMPONENT_VERSION)
 BUNDLE_BRANCH_MAIN ?= acm-$(shell echo $(COMPONENT_VERSION) | cut -d. -f1,2)
 
 # Default to current branch for local development
-BUNDLE_BRANCH ?= $(shell git branch --show-current)
+BUNDLE_BRANCH ?= release-2.17
 
 # Override for CI: map main to current development version
 ifdef GITHUB_BASE_REF

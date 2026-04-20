@@ -77,7 +77,7 @@ func parseProbeConfigFromAnnotations(mch *v1.MultiClusterHub) *ProbeConfig {
 	var config ProbeConfig
 	hasAny := false
 
-	if val, ok := mch.Annotations["installer.open-cluster-management.io/probe-timeout-seconds"]; ok {
+	if val, ok := mch.Annotations[utils.AnnotationProbeTimeoutSeconds]; ok {
 		timeout, err := strconv.ParseInt(val, 10, 32)
 		if err != nil {
 			log.Info(fmt.Sprintf("Invalid probe-timeout-seconds annotation value %q: %v", val, err))
@@ -90,7 +90,7 @@ func parseProbeConfigFromAnnotations(mch *v1.MultiClusterHub) *ProbeConfig {
 		}
 	}
 
-	if val, ok := mch.Annotations["installer.open-cluster-management.io/probe-failure-threshold"]; ok {
+	if val, ok := mch.Annotations[utils.AnnotationProbeFailureThreshold]; ok {
 		threshold, err := strconv.ParseInt(val, 10, 32)
 		if err != nil {
 			log.Info(fmt.Sprintf("Invalid probe-failure-threshold annotation value %q: %v", val, err))
@@ -103,7 +103,7 @@ func parseProbeConfigFromAnnotations(mch *v1.MultiClusterHub) *ProbeConfig {
 		}
 	}
 
-	if val, ok := mch.Annotations["installer.open-cluster-management.io/probe-success-threshold"]; ok {
+	if val, ok := mch.Annotations[utils.AnnotationProbeSuccessThreshold]; ok {
 		threshold, err := strconv.ParseInt(val, 10, 32)
 		if err != nil {
 			log.Info(fmt.Sprintf("Invalid probe-success-threshold annotation value %q: %v", val, err))
@@ -286,6 +286,7 @@ func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]st
 		}
 		return nil, errs
 	}
+
 	return chartTemplates, nil
 
 }

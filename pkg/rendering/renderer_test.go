@@ -420,9 +420,9 @@ func TestParseProbeConfigFromAnnotations(t *testing.T) {
 				Name:      "test-mch",
 				Namespace: "default",
 				Annotations: map[string]string{
-					"installer.open-cluster-management.io/probe-timeout-seconds":   "10",
-					"installer.open-cluster-management.io/probe-failure-threshold": "5",
-					"installer.open-cluster-management.io/probe-success-threshold": "2",
+					utils.AnnotationProbeTimeoutSeconds:   "10",
+					utils.AnnotationProbeFailureThreshold: "5",
+					utils.AnnotationProbeSuccessThreshold: "2",
 				},
 			},
 		}
@@ -449,7 +449,7 @@ func TestParseProbeConfigFromAnnotations(t *testing.T) {
 				Name:      "test-mch",
 				Namespace: "default",
 				Annotations: map[string]string{
-					"installer.open-cluster-management.io/probe-timeout-seconds": "15",
+					utils.AnnotationProbeTimeoutSeconds: "15",
 				},
 			},
 		}
@@ -476,8 +476,8 @@ func TestParseProbeConfigFromAnnotations(t *testing.T) {
 				Name:      "test-mch",
 				Namespace: "default",
 				Annotations: map[string]string{
-					"installer.open-cluster-management.io/probe-timeout-seconds":   "not-a-number",
-					"installer.open-cluster-management.io/probe-failure-threshold": "10",
+					utils.AnnotationProbeTimeoutSeconds:   "not-a-number",
+					utils.AnnotationProbeFailureThreshold: "10",
 				},
 			},
 		}
@@ -501,9 +501,9 @@ func TestParseProbeConfigFromAnnotations(t *testing.T) {
 				Name:      "test-mch",
 				Namespace: "default",
 				Annotations: map[string]string{
-					"installer.open-cluster-management.io/probe-timeout-seconds":   "0",
-					"installer.open-cluster-management.io/probe-failure-threshold": "-5",
-					"installer.open-cluster-management.io/probe-success-threshold": "3",
+					utils.AnnotationProbeTimeoutSeconds:   "0",
+					utils.AnnotationProbeFailureThreshold: "-5",
+					utils.AnnotationProbeSuccessThreshold: "3",
 				},
 			},
 		}
@@ -530,9 +530,9 @@ func TestParseProbeConfigFromAnnotations(t *testing.T) {
 				Name:      "test-mch",
 				Namespace: "default",
 				Annotations: map[string]string{
-					"installer.open-cluster-management.io/pause":                 "true",
-					"installer.open-cluster-management.io/probe-timeout-seconds": "20",
-					"some-other-annotation":                                      "value",
+					"installer.open-cluster-management.io/pause": "true",
+					utils.AnnotationProbeTimeoutSeconds:          "20",
+					"some-other-annotation":                      "value",
 				},
 			},
 		}

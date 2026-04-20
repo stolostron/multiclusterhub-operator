@@ -103,6 +103,24 @@ var (
 		Valid values: "Strict" (default) - only manage labeled resources, "Adopt" - adopt unlabeled resources.
 	*/
 	AnnotationResourceAdoptionPolicy = "installer.open-cluster-management.io/resource-adoption-policy"
+
+	/*
+		AnnotationProbeTimeoutSeconds is an annotation used to configure probe timeout in seconds for exec probes
+		in components deployed by multiclusterhub.
+	*/
+	AnnotationProbeTimeoutSeconds = "installer.open-cluster-management.io/probe-timeout-seconds"
+
+	/*
+		AnnotationProbeFailureThreshold is an annotation used to configure probe failure threshold for exec probes
+		in components deployed by multiclusterhub.
+	*/
+	AnnotationProbeFailureThreshold = "installer.open-cluster-management.io/probe-failure-threshold"
+
+	/*
+		AnnotationProbeSuccessThreshold is an annotation used to configure probe success threshold for exec probes
+		in components deployed by multiclusterhub.
+	*/
+	AnnotationProbeSuccessThreshold = "installer.open-cluster-management.io/probe-success-threshold"
 )
 
 /*
@@ -173,21 +191,33 @@ func AnnotationsMatch(old, new map[string]string) bool {
 	if !getAnnotationOrDefaultForMap(old, new, AnnotationResourceAdoptionPolicy, "") {
 		return false
 	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationProbeTimeoutSeconds, "") {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationProbeFailureThreshold, "") {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationProbeSuccessThreshold, "") {
+		return false
+	}
 
 	// Track which keys we've already checked semantically to avoid double-counting
 	checkedKeys := map[string]bool{
 		AnnotationMCHPause:                   true,
-		DeprecatedAnnotationMCHPause:         true,
 		AnnotationImageRepo:                  true,
-		DeprecatedAnnotationImageRepo:        true,
 		AnnotationImageOverridesCM:           true,
-		DeprecatedAnnotationImageOverridesCM: true,
 		AnnotationKubeconfig:                 true,
-		DeprecatedAnnotationKubeconfig:       true,
 		AnnotationTemplateOverridesCM:        true,
 		AnnotationMCESubscriptionSpec:        true,
 		AnnotationOADPSubscriptionSpec:       true,
 		AnnotationResourceAdoptionPolicy:     true,
+		AnnotationProbeTimeoutSeconds:        true,
+		AnnotationProbeFailureThreshold:      true,
+		AnnotationProbeSuccessThreshold:      true,
+		DeprecatedAnnotationMCHPause:         true,
+		DeprecatedAnnotationImageRepo:        true,
+		DeprecatedAnnotationImageOverridesCM: true,
+		DeprecatedAnnotationKubeconfig:       true,
 	}
 
 	// Filter to only unchecked annotations
