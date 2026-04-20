@@ -58,20 +58,14 @@ spec:
             - ls
           initialDelaySeconds: 15
           periodSeconds: 15
-{{- if .Values.hubconfig.probeConfig }}
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "timeoutSeconds") }}
           timeoutSeconds: {{ .Values.hubconfig.probeConfig.timeoutSeconds }}
 {{- end }}
-{{- end }}
-{{- if .Values.hubconfig.probeConfig }}
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "failureThreshold") }}
           failureThreshold: {{ .Values.hubconfig.probeConfig.failureThreshold }}
 {{- end }}
-{{- end }}
-{{- if .Values.hubconfig.probeConfig }}
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "successThreshold") }}
           successThreshold: {{ .Values.hubconfig.probeConfig.successThreshold }}
-{{- end }}
 {{- end }}
         name: argocd-pull-integration-controller-manager
         readinessProbe:
@@ -80,20 +74,14 @@ spec:
             - ls
           initialDelaySeconds: 15
           periodSeconds: 15
-{{- if .Values.hubconfig.probeConfig }}
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "timeoutSeconds") }}
           timeoutSeconds: {{ .Values.hubconfig.probeConfig.timeoutSeconds }}
 {{- end }}
-{{- end }}
-{{- if .Values.hubconfig.probeConfig }}
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "failureThreshold") }}
           failureThreshold: {{ .Values.hubconfig.probeConfig.failureThreshold }}
 {{- end }}
-{{- end }}
-{{- if .Values.hubconfig.probeConfig }}
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "successThreshold") }}
           successThreshold: {{ .Values.hubconfig.probeConfig.successThreshold }}
-{{- end }}
 {{- end }}
         resources:
           requests:
@@ -146,20 +134,14 @@ spec:
             - ls
           initialDelaySeconds: 15
           periodSeconds: 15
-{{- if .Values.hubconfig.probeConfig }}
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "timeoutSeconds") }}
           timeoutSeconds: {{ .Values.hubconfig.probeConfig.timeoutSeconds }}
 {{- end }}
-{{- end }}
-{{- if .Values.hubconfig.probeConfig }}
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "failureThreshold") }}
           failureThreshold: {{ .Values.hubconfig.probeConfig.failureThreshold }}
 {{- end }}
-{{- end }}
-{{- if .Values.hubconfig.probeConfig }}
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "successThreshold") }}
           successThreshold: {{ .Values.hubconfig.probeConfig.successThreshold }}
-{{- end }}
 {{- end }}
         name: multicluster-integrations-syncresource
         readinessProbe:
@@ -168,20 +150,14 @@ spec:
             - ls
           initialDelaySeconds: 15
           periodSeconds: 15
-{{- if .Values.hubconfig.probeConfig }}
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "timeoutSeconds") }}
           timeoutSeconds: {{ .Values.hubconfig.probeConfig.timeoutSeconds }}
 {{- end }}
-{{- end }}
-{{- if .Values.hubconfig.probeConfig }}
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "failureThreshold") }}
           failureThreshold: {{ .Values.hubconfig.probeConfig.failureThreshold }}
 {{- end }}
-{{- end }}
-{{- if .Values.hubconfig.probeConfig }}
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "successThreshold") }}
           successThreshold: {{ .Values.hubconfig.probeConfig.successThreshold }}
-{{- end }}
 {{- end }}
         resources:
           requests:
@@ -236,20 +212,14 @@ spec:
             - ls
           initialDelaySeconds: 15
           periodSeconds: 15
-{{- if .Values.hubconfig.probeConfig }}
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "timeoutSeconds") }}
           timeoutSeconds: {{ .Values.hubconfig.probeConfig.timeoutSeconds }}
 {{- end }}
-{{- end }}
-{{- if .Values.hubconfig.probeConfig }}
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "failureThreshold") }}
           failureThreshold: {{ .Values.hubconfig.probeConfig.failureThreshold }}
 {{- end }}
-{{- end }}
-{{- if .Values.hubconfig.probeConfig }}
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "successThreshold") }}
           successThreshold: {{ .Values.hubconfig.probeConfig.successThreshold }}
-{{- end }}
 {{- end }}
         name: multicluster-integrations-aggregation
         readinessProbe:
@@ -258,20 +228,14 @@ spec:
             - ls
           initialDelaySeconds: 15
           periodSeconds: 15
-{{- if .Values.hubconfig.probeConfig }}
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "timeoutSeconds") }}
           timeoutSeconds: {{ .Values.hubconfig.probeConfig.timeoutSeconds }}
 {{- end }}
-{{- end }}
-{{- if .Values.hubconfig.probeConfig }}
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "failureThreshold") }}
           failureThreshold: {{ .Values.hubconfig.probeConfig.failureThreshold }}
 {{- end }}
-{{- end }}
-{{- if .Values.hubconfig.probeConfig }}
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "successThreshold") }}
           successThreshold: {{ .Values.hubconfig.probeConfig.successThreshold }}
-{{- end }}
 {{- end }}
         resources:
           requests:
