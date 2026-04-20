@@ -25,6 +25,5 @@ jobs:
         env:
           # Pass PR target branch to Makefile, which maps 'main' to current dev version
           GITHUB_BASE_REF: ${{ github.base_ref }}
-          BUNDLE_BRANCH: release-2.17
         run: |
           make -f Makefile.dev validate-image-keys
