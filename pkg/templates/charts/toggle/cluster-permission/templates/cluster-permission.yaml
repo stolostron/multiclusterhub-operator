@@ -63,9 +63,6 @@ spec:
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "failureThreshold") }}
           failureThreshold: {{ .Values.hubconfig.probeConfig.failureThreshold }}
 {{- end }}
-{{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "successThreshold") }}
-          successThreshold: {{ .Values.hubconfig.probeConfig.successThreshold }}
-{{- end }}
         name: cluster-permission
         readinessProbe:
           exec:
