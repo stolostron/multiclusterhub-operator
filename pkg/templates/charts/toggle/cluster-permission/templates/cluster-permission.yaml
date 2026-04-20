@@ -57,7 +57,6 @@ spec:
             - ls
           initialDelaySeconds: 15
           periodSeconds: 15
-{{- if .Values.hubconfig.probeConfig }}
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "timeoutSeconds") }}
           timeoutSeconds: {{ .Values.hubconfig.probeConfig.timeoutSeconds }}
 {{- end }}
@@ -66,7 +65,6 @@ spec:
 {{- end }}
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "successThreshold") }}
           successThreshold: {{ .Values.hubconfig.probeConfig.successThreshold }}
-{{- end }}
 {{- end }}
         name: cluster-permission
         readinessProbe:
@@ -75,7 +73,6 @@ spec:
             - ls
           initialDelaySeconds: 15
           periodSeconds: 15
-{{- if .Values.hubconfig.probeConfig }}
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "timeoutSeconds") }}
           timeoutSeconds: {{ .Values.hubconfig.probeConfig.timeoutSeconds }}
 {{- end }}
@@ -84,7 +81,6 @@ spec:
 {{- end }}
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "successThreshold") }}
           successThreshold: {{ .Values.hubconfig.probeConfig.successThreshold }}
-{{- end }}
 {{- end }}
         resources:
           requests:
