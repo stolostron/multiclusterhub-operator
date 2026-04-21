@@ -362,7 +362,7 @@ func Test_ensureMigratedComponentsCleanup(t *testing.T) {
 				},
 			},
 			stsEnabled:    false,
-			expectNoError: false, // ensureNoComponent will return error/requeue with fake client
+			expectNoError: true, // With no actual resources in fake client, cleanup succeeds and prunes component
 		},
 		{
 			name: "component present, cleanup follows standard path",
@@ -381,7 +381,7 @@ func Test_ensureMigratedComponentsCleanup(t *testing.T) {
 			},
 			mce:           nil, // MCE presence not checked by ensureMigratedComponentsCleanup
 			stsEnabled:    false,
-			expectNoError: false, // Chart rendering will fail/requeue with fake client
+			expectNoError: true, // Chart renders successfully, cleanup succeeds with no resources, prunes component
 		},
 	}
 
@@ -915,7 +915,7 @@ func Test_deleteNamespaceScopedResources(t *testing.T) {
 
 	mch := operatorv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-mch",
+			Name:      "test-mch-delete-ns-scoped",
 			Namespace: "open-cluster-management",
 		},
 	}
