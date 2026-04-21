@@ -100,7 +100,6 @@ spec:
           failureThreshold: 3
           initialDelaySeconds: 20
           periodSeconds: 60
-          successThreshold: 1
           timeoutSeconds: 10
         readinessProbe:
           exec:

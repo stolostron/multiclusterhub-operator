@@ -22,6 +22,7 @@ hubconfig:
   clusterSTSEnabled: false
   nodeSelector: null
   replicaCount: 1
+  probeConfig: null
   proxyConfigs: {}
   ocpVersion: 4.12.0
   tolerations:

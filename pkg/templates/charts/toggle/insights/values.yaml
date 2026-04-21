@@ -25,6 +25,7 @@ hubconfig:
   replicaCount: 1
   tolerations: []
   ocpVersion: 4.12.0
+  probeConfig: null
 client:
   affinity:
     podAntiAffinity:

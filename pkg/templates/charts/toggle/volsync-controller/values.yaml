@@ -8,6 +8,7 @@ pullSecret: null
 hubconfig:
   nodeSelector: null
   replicaCount: 1
+  probeConfig: null
   proxyConfigs: {}
   tolerations: []
   ocpVersion: 4.12.0
