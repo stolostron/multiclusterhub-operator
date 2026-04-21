@@ -79,8 +79,8 @@ spec:
         # Formatting docs: https://redhat-appstudio.github.io/book/ADR/0030-tekton-results-naming-convention.html#test_output-schema-validation
 
         if [ -f "$test_output_file" ]; then
-          FAILURES=$(jq 'select(.Action == "fail")' "$test_output_file" | jq -r --slurp 'length')
-          SUCCESSES=$(jq 'select(.Action == "pass")' "$test_output_file" | jq -r --slurp 'length')
+          FAILURES=$(jq 'select(.Test != null and .Action == "fail")' "$test_output_file" | jq -r --slurp 'length')
+          SUCCESSES=$(jq 'select(.Test != null and .Action == "pass")' "$test_output_file" | jq -r --slurp 'length')
         else
           # If test output file doesn't exist, assume failure
           FAILURES=1
@@ -88,7 +88,7 @@ spec:
         fi
 
         WARNINGS=0
-        RESULT="$(if [[ $FAILURES == 0 ]]; then echo "SUCCESS"; else echo "FAILURE"; fi)"
+        RESULT="$(if [[ "${TEST_FAILED:-false}" == "true" ]]; then echo "FAILURE"; else echo "SUCCESS"; fi)"
         TIMESTAMP="$(date +%s)"
 
         TEST_OUTPUT=$(jq -r --null-input \
