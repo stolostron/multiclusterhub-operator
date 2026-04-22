@@ -963,4 +963,3 @@ func (r *MultiClusterHubReconciler) GetInstallPlanApprovalFromSubscription(sub *
 	}
 	return sub.Spec.InstallPlanApproval
 }
-
