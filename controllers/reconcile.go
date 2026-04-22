@@ -361,7 +361,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	// This must happen BEFORE waitForMCEReady to avoid deadlock: if MCE tries to create
 	// cluster-permission while MCH resources still exist, MCE will fail and never become ready.
 	// After pruning, the reconcile loop will delete MCH resources, allowing MCE to create fresh.
-	result, err = r.pruneMigratedComponents(ctx, multiClusterHub)
+	result, err = r.pruneMigratedComponents(ctx, multiClusterHub, stsEnabled)
 	if result != (ctrl.Result{}) || err != nil {
 		return result, err
 	}

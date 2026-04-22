@@ -68,7 +68,7 @@ For each migrated component:
 
 This ensures MCE can create the component fresh without conflicts.
 */
-func (r *MultiClusterHubReconciler) pruneMigratedComponents(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) pruneMigratedComponents(ctx context.Context, m *operatorv1.MultiClusterHub, isSTSEnabled bool) (ctrl.Result, error) {
 	// Process each migrated component
 	for component := range migratedComponentDeployments {
 		if !m.ComponentPresent(component) {
@@ -78,7 +78,7 @@ func (r *MultiClusterHubReconciler) pruneMigratedComponents(ctx context.Context,
 
 		// Component still in spec, delete all resources before pruning
 		r.Log.Info("Deleting resources for component migrating to MCE", "Component", component)
-		result, err := r.ensureNoComponent(ctx, m, component, r.CacheSpec, false)
+		result, err := r.ensureNoComponent(ctx, m, component, r.CacheSpec, isSTSEnabled)
 		if result != (ctrl.Result{}) || err != nil {
 			return result, err
 		}
