@@ -59,6 +59,43 @@ var migratedComponentDeployments = map[string]string{
 	operatorv1.ClusterPermission: "cluster-permission",
 }
 
+/*
+pruneMigratedComponents handles one-time migration of components from MCH to MCE.
+
+For each migrated component:
+- If present in MCH spec: delete all resources, then prune from spec
+- If already pruned: skip (migration already complete)
+
+This ensures MCE can create the component fresh without conflicts.
+*/
+func (r *MultiClusterHubReconciler) pruneMigratedComponents(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+	// Process each migrated component
+	for component := range migratedComponentDeployments {
+		if !m.ComponentPresent(component) {
+			// Already pruned, skip
+			continue
+		}
+
+		// Component still in spec, delete all resources before pruning
+		r.Log.Info("Deleting resources for component migrating to MCE", "Component", component)
+		result, err := r.ensureNoComponent(ctx, m, component, r.CacheSpec, false)
+		if result != (ctrl.Result{}) || err != nil {
+			return result, err
+		}
+
+		// Resources deleted, now prune from spec
+		if m.Prune(component) {
+			r.Log.Info("Pruned migrated component from MCH CR", "Component", component)
+			if err := r.Client.Update(ctx, m); err != nil {
+				r.Log.Error(err, "Failed to update MCH CR after pruning migrated component")
+				return ctrl.Result{}, err
+			}
+		}
+	}
+
+	return ctrl.Result{}, nil
+}
+
 func (r *MultiClusterHubReconciler) ensureNoNamespace(m *operatorv1.MultiClusterHub, u *unstructured.Unstructured) (ctrl.Result, error) {
 	subLog := r.Log.WithValues("Kind", u.GetKind(), "Name", u.GetName())
 	gone, err := r.uninstall(m, u)
