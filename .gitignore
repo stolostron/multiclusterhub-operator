@@ -45,3 +45,7 @@ build/_output/*
 # Ignore partial workflow directory
 workflow/
 acm-operator-bundle/
+
+# Scanner and security analysis artifacts
+.scannerwork/
+gosec.json
