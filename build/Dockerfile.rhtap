@@ -1,11 +1,11 @@
 # Copyright Contributors to the Open Cluster Management project
 
-FROM registry.access.redhat.com/ubi9/ubi-minimal:latest as cloner
+FROM registry.access.redhat.com/ubi10/ubi-minimal:latest as cloner
 
 RUN microdnf install -y git findutils
 COPY hack/scripts hack/scripts
 
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.25 AS builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_10_1.25 AS builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -27,21 +27,21 @@ COPY LICENSE LICENSE
 # Build
 RUN CGO_ENABLED=1 go build -mod=readonly -o multiclusterhub-operator main.go
 
-FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
+FROM registry.access.redhat.com/ubi10/ubi-minimal:latest
 
 LABEL org.label-schema.vendor="Red Hat" \
       url="https://github.com/stolostron/multiclusterhub-operator" \
       org.label-schema.name="multiclusterhub-operator" \
       org.label-schema.description="Installer operator for Red Hat Advanced Cluster Management" \
       org.label-schema.license="Red Hat Advanced Cluster Management for Kubernetes EULA" \
-      name="rhacm2/multiclusterhub-rhel9" \
+      name="rhacm2/multiclusterhub-rhel10" \
       summary="MultiClusterHub installer for Red Hat Advanced Cluster Management" \
       description="Installer operator for Red Hat Advanced Cluster Management" \
       io.k8s.display-name="MultiClusterHub operator" \
       io.k8s.description="Installer operator for Red Hat Advanced Cluster Management" \
       com.redhat.component="multiclusterhub-operator-container" \
       io.openshift.tags="data,images" \
-      cpe="cpe:/a:redhat:acm:2.17::el9"
+      cpe="cpe:/a:redhat:acm:2.17::el10"
 
 WORKDIR /
 COPY --from=builder /workspace/multiclusterhub-operator /usr/local/bin/multiclusterhub-operator
