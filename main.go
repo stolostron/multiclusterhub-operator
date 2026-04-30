@@ -383,7 +383,7 @@ func addMultiClusterEngineWatch(ctx context.Context, mgr ctrl.Manager, uncachedC
 						}
 						if name == "" || namespace == "" {
 							l := log.Log.WithName("mce")
-							l.Info(fmt.Sprintf("MCE updated, but did not find required labels: %v", labels))
+							l.Info(fmt.Sprintf("MCE updated but missing installer.name or installer.namespace labels. Current labels: %v", labels))
 							return
 						}
 						q.Add(

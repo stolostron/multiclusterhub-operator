@@ -281,8 +281,10 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 	// Deletes all templates
 	for _, template := range templates {
 		result, err := r.deleteTemplate(ctx, m, template)
-		if err != nil {
-			logf.Log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+		if result != (ctrl.Result{}) || err != nil {
+			if err != nil {
+				logf.Log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+			}
 			return result, err
 		}
 	}

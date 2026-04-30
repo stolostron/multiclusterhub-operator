@@ -357,36 +357,16 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	result, err = r.waitForMCEReady(ctx)
+	// Prune components that have migrated from MCH to MCE (e.g., cluster-permission in 2.17).
+	// This must happen BEFORE waitForMCEReady to avoid deadlock: if MCE tries to create
+	// cluster-permission while MCH resources still exist, MCE will fail and never become ready.
+	// After pruning, the reconcile loop will delete MCH resources, allowing MCE to create fresh.
+	result, err = r.pruneMigratedComponents(ctx, multiClusterHub, stsEnabled)
 	if result != (ctrl.Result{}) || err != nil {
 		return result, err
 	}
 
-	// Migrate components from MCH to MCE (e.g., cluster-permission in 2.17). Transfer cluster-scoped
-	// resources to MCE ownership, wait for MCE to adopt them, then clean up namespace-scoped resources.
-	for component := range migratedComponentDeployments {
-		if !multiClusterHub.ComponentPresent(component) || !multiClusterHub.Enabled(component) {
-			continue
-		}
-		// Relabel cluster-scoped resources with MCE ownership
-		result, err = r.transferClusterResourcesToMCE(ctx, multiClusterHub, component, r.CacheSpec, stsEnabled)
-		if result != (ctrl.Result{}) || err != nil {
-			return result, err
-		}
-	}
-
-	// Wait for MCE to adopt components (show as Available in MCE status)
-	adopted, err := r.waitForMigratedComponentsAdopted(ctx, multiClusterHub)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	if !adopted {
-		r.Log.Info("Waiting for MCE to adopt migrated components before cleanup")
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
-	}
-
-	// Clean up namespace-scoped resources and prune from MCH CR
-	result, err = r.ensureMigratedComponentsCleanup(ctx, multiClusterHub, stsEnabled)
+	result, err = r.waitForMCEReady(ctx)
 	if result != (ctrl.Result{}) || err != nil {
 		return result, err
 	}
@@ -400,12 +380,10 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	// Install the rest of the subscriptions in no particular order
 	for _, c := range operatorv1.MCHComponents {
-		// Skip components that have been migrated to MCE — these are already
-		// handled by ensureMigratedComponentsCleanup above. Without this guard,
-		// ensureNoComponent would delete cluster-scoped resources (ClusterRole,
-		// ClusterRoleBinding) that MCE manages, creating an infinite
-		// delete/recreate loop.
-		if _, migrated := migratedComponentDeployments[c]; migrated {
+		// Skip components that have been migrated to MCE and pruned from MCH spec.
+		// These components must remain in MCHComponents for webhook validation but
+		// should not be reconciled once migrated.
+		if _, migrated := migratedComponentDeployments[c]; migrated && !multiClusterHub.ComponentPresent(c) {
 			continue
 		}
 
