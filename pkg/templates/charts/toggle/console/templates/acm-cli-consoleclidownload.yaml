@@ -23,7 +23,7 @@ spec:
           manifest YAML files, which are provided through a `PolicyGenerator` 
           manifest YAML file that is used to configure it. The Policy 
           Generator is implemented as a Kustomize generator plug-in, allowing 
-          integration with GitOps. See the [Policy Generator documentation](https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_management_for_kubernetes/{{ $v := semver .Values.hubconfig.hubVersion }}{{ printf "%d.%d" $v.Major $v.Minor }}/html/governance/integrate-third-party-policy-controllers#policy-generator)
+          integration with GitOps. See the [Policy Generator documentation](https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_management_for_kubernetes/{{ $v := semver .Values.hubconfig.hubVersion }}{{ printf "%d.%d" $v.Major $v.Minor }}/html/governance/policy-deployment#integrate-policy-generator)
           for details.
   displayName: "Advanced Cluster Management - {{ .Values.hubconfig.hubVersion }}"
   links:
