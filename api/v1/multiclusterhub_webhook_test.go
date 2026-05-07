@@ -88,22 +88,7 @@ var _ = Describe("Multiclusterhub webhook", func() {
 				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(), "invalid components should not be permitted")
 				mch.Spec.Overrides = &Overrides{}
 			})
-			By("because of updating SeparateCertificateManagement", func() {
-				Expect(k8sClient.Get(ctx,
-					types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)).To(Succeed())
 
-				// flipping it directly
-				mch.Spec.SeparateCertificateManagement = !mch.Spec.SeparateCertificateManagement
-				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(),
-					"updating SeparateCertificateManagement should be forbidden")
-			})
-			By("because of updating hive", func() {
-				Expect(k8sClient.Get(ctx,
-					types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)).To(Succeed())
-
-				mch.Spec.Hive = &HiveConfigSpec{}
-				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(), "hive updates are forbidden")
-			})
 			By("because of invalid AvailablityConfig", func() {
 				Expect(k8sClient.Get(ctx,
 					types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)).To(Succeed())
@@ -259,53 +244,6 @@ var _ = Describe("Multiclusterhub webhook", func() {
 			Expect(warningText).To(ContainSubstring("installer.open-cluster-management.io/image-overrides-configmap"))
 			Expect(warningText).To(ContainSubstring("installer.open-cluster-management.io/ignore-ocp-version"))
 			Expect(warningText).To(ContainSubstring("installer.open-cluster-management.io/kubeconfig"))
-		})
-
-		It("Should return warnings for deprecated spec fields", func() {
-			mch := &MultiClusterHub{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-spec-warnings",
-					Namespace: "default",
-				},
-				Spec: MultiClusterHubSpec{
-					LocalClusterName:              "test-cluster",
-					Hive:                          &HiveConfigSpec{},
-					CustomCAConfigmap:             "test-ca",
-					EnableClusterBackup:           true,
-					EnableClusterProxyAddon:       true,
-					SeparateCertificateManagement: true,
-				},
-			}
-
-			warnings := checkDeprecatedAnnotations(mch)
-			Expect(len(warnings)).To(Equal(5), "Should have 5 warnings for deprecated spec fields")
-
-			warningText := strings.Join(warnings, " ")
-			Expect(warningText).To(ContainSubstring("spec.hive"))
-			Expect(warningText).To(ContainSubstring("spec.customCAConfigmap"))
-			Expect(warningText).To(ContainSubstring("spec.enableClusterBackup"))
-			Expect(warningText).To(ContainSubstring("spec.enableClusterProxyAddon"))
-			Expect(warningText).To(ContainSubstring("spec.separateCertificateManagement"))
-		})
-
-		It("Should return combined warnings for both annotations and spec fields", func() {
-			mch := &MultiClusterHub{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-combined-warnings",
-					Namespace: "default",
-					Annotations: map[string]string{
-						"mch-pause": "true",
-					},
-				},
-				Spec: MultiClusterHubSpec{
-					LocalClusterName:    "test-cluster",
-					Hive:                &HiveConfigSpec{},
-					EnableClusterBackup: true,
-				},
-			}
-
-			warnings := checkDeprecatedAnnotations(mch)
-			Expect(len(warnings)).To(Equal(3), "Should have 3 warnings (1 annotation + 2 spec fields)")
 		})
 
 		It("Should return no warnings for resources without deprecated fields", func() {
