@@ -5,7 +5,11 @@ go 1.25.0
 toolchain go1.25.2
 
 require (
+<<<<<<< konflux/mintmaker/release-2.12-release-2.12/helm.sh-helm-v3-3.x
 	github.com/Masterminds/semver/v3 v3.4.0
+=======
+	github.com/Masterminds/semver/v3 v3.5.0
+>>>>>>> release-2.12
 	github.com/blang/semver/v4 v4.0.0
 	github.com/go-logr/logr v1.4.3
 	github.com/onsi/ginkgo/v2 v2.27.2
