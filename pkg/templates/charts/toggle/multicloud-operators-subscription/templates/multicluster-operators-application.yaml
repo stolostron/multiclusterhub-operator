@@ -70,7 +70,9 @@ spec:
         livenessProbe:
           exec:
             command:
-            - ls
+            - /bin/sh
+            - -c
+            - grep -q ":01BB 01" /proc/net/tcp
           initialDelaySeconds: 30
           periodSeconds: 30
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "timeoutSeconds") }}
@@ -83,7 +85,9 @@ spec:
         readinessProbe:
           exec:
             command:
-            - ls
+            - /bin/sh
+            - -c
+            - grep -q ":01BB 01" /proc/net/tcp
           initialDelaySeconds: 15
           periodSeconds: 15
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "timeoutSeconds") }}
@@ -143,7 +147,9 @@ spec:
         livenessProbe:
           exec:
             command:
-            - ls
+            - /bin/sh
+            - -c
+            - grep -q ":01BB 01" /proc/net/tcp
           initialDelaySeconds: 15
           periodSeconds: 15
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "timeoutSeconds") }}
@@ -156,7 +162,9 @@ spec:
         readinessProbe:
           exec:
             command:
-            - ls
+            - /bin/sh
+            - -c
+            - grep -q ":01BB 01" /proc/net/tcp
           initialDelaySeconds: 15
           periodSeconds: 15
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "timeoutSeconds") }}
@@ -216,7 +224,9 @@ spec:
         livenessProbe:
           exec:
             command:
-            - ls
+            - /bin/sh
+            - -c
+            - grep -q ":01BB 01" /proc/net/tcp
           initialDelaySeconds: 15
           periodSeconds: 15
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "timeoutSeconds") }}
@@ -233,7 +243,9 @@ spec:
         readinessProbe:
           exec:
             command:
-            - ls
+            - /bin/sh
+            - -c
+            - grep -q ":01BB 01" /proc/net/tcp
           initialDelaySeconds: 15
           periodSeconds: 15
 {{- if and .Values.hubconfig.probeConfig (hasKey .Values.hubconfig.probeConfig "timeoutSeconds") }}
