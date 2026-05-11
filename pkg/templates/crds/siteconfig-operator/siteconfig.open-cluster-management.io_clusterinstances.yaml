@@ -30,7 +30,12 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: ClusterInstance is the Schema for the clusterinstances API
+        description: |-
+          ClusterInstance defines the desired configuration for provisioning an
+          OpenShift cluster. Based on the selected templateRefs and clusterType,
+          the controller renders and applies the Kubernetes resources needed for
+          cluster installation (e.g., ClusterDeployment, ManagedCluster,
+          BareMetalHost, or HostedCluster depending on the installation flow).
         properties:
           apiVersion:
             description: |-
@@ -50,7 +55,9 @@ spec:
           metadata:
             type: object
           spec:
-            description: ClusterInstanceSpec defines the desired state of ClusterInstance
+            description: |-
+              ClusterInstanceSpec defines the desired state for a cluster, including
+              topology, networking, platform, node roles, and installation settings.
             properties:
               additionalNTPSources:
                 description: |-
@@ -65,6 +72,7 @@ spec:
                   Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at
                   most one IP address per IP stack used). The order of stacks should be the same as order
                   of subnets in Cluster Networks, Service Networks, and Machine Networks.
+                  Not applicable to Single Node OpenShift (SNO) clusters.
                 items:
                   type: string
                 maxItems: 2
@@ -74,8 +82,11 @@ spec:
                   cluster.
                 type: string
               caBundleRef:
-                description: CABundle is a reference to a config map containing the
-                  new bundle of trusted certificates for the host.
+                description: |-
+                  caBundleRef is a reference to a ConfigMap containing a bundle of
+                  trusted CA certificates. The controller passes this reference to
+                  the downstream resource (HostedCluster or ImageClusterInstall). Not
+                  applicable to the Assisted Installer flow.
                 properties:
                   name:
                     default: ""
@@ -94,7 +105,12 @@ spec:
                   OpenShift version to deploy.
                 type: string
               clusterName:
-                description: ClusterName is the name of the cluster.
+                description: |-
+                  clusterName is the name of the cluster. It is used as the base name
+                  for generated resources and their namespace. Must be a valid
+                  Kubernetes namespace name: lowercase alphanumeric characters or
+                  hyphens, must start and end with an alphanumeric character, and at
+                  most 63 characters long.
                 type: string
               clusterNetwork:
                 description: ClusterNetwork is the list of IP address pools for pods.
@@ -118,7 +134,15 @@ spec:
                   type: object
                 type: array
               clusterType:
-                description: ClusterType is a string representing the cluster type
+                description: |-
+                  clusterType specifies the topology of the cluster.
+                  One of: SNO (Single Node OpenShift — exactly 1 control-plane node; worker nodes
+                  may also be specified and are provisioned independently of the initial installation),
+                  HighlyAvailable (multiple control-plane and worker nodes),
+                  HostedControlPlane (control plane hosted externally via HyperShift, no control-plane
+                  nodes in this spec),
+                  HighlyAvailableArbiter (at least 2 control-plane nodes with at least 1 arbiter node
+                  for stretched clusters).
                 enum:
                 - SNO
                 - HighlyAvailable
@@ -147,20 +171,38 @@ spec:
                 - AllNodes
                 type: string
               diskEncryption:
-                description: DiskEncryption is the configuration to enable/disable
-                  disk encryption for cluster nodes.
+                description: |-
+                  diskEncryption configures disk encryption for cluster nodes. Use the
+                  type sub-field to select the encryption mode and tang to provide
+                  Tang server details when using network-bound disk encryption.
+                  These fields are not consumed by the default provided templates
+                  and require custom templates (via templateRefs) to take effect.
                 properties:
                   tang:
+                    description: |-
+                      tang is a list of Tang server configurations used for network-bound
+                      disk encryption (NBDE). Each entry specifies a Tang server URL and
+                      its thumbprint.
                     items:
+                      description: |-
+                        TangConfig holds the configuration for a single Tang server used for
+                        network-bound disk encryption (NBDE).
                       properties:
                         thumbprint:
+                          description: thumbprint is the thumbprint of the Tang server's
+                            signing key.
                           type: string
                         url:
+                          description: url is the URL of the Tang server.
                           type: string
                       type: object
                     type: array
                   type:
                     default: none
+                    description: |-
+                      type specifies the disk encryption mode. The default "none" disables
+                      encryption. Use "tpmv2" for TPM 2.0 or "tang" for network-bound disk
+                      encryption via Tang servers (requires the tang field).
                     type: string
                 type: object
               extraAnnotations:
@@ -168,16 +210,24 @@ spec:
                   additionalProperties:
                     type: string
                   type: object
-                description: Additional cluster-wide annotations to be applied to
-                  the rendered templates
+                description: |-
+                  extraAnnotations specifies additional cluster-level annotations keyed by
+                  resource Kind (e.g., "ManagedCluster": {"key": "value"}). For each Kind,
+                  the annotations are merged into the matching rendered manifest's metadata.
+                  Annotations already defined in the template take precedence and are not
+                  overwritten by extraAnnotations.
                 type: object
               extraLabels:
                 additionalProperties:
                   additionalProperties:
                     type: string
                   type: object
-                description: Additional cluster-wide labels to be applied to the rendered
-                  templates
+                description: |-
+                  extraLabels specifies additional cluster-level labels keyed by resource
+                  Kind (e.g., "ManagedCluster": {"key": "value"}). For each Kind, the
+                  labels are merged into the matching rendered manifest's metadata.
+                  Labels already defined in the template take precedence and are not
+                  overwritten by extraLabels.
                 type: object
               extraManifestsRefs:
                 description: ExtraManifestsRefs is list of config map references containing
@@ -202,13 +252,17 @@ spec:
               holdInstallation:
                 default: false
                 description: |-
-                  HoldInstallation will prevent installation from happening when true.
-                  Inspection and validation will proceed as usual, but once the RequirementsMet condition is true,
-                  installation will not begin until this field is set to false.
+                  holdInstallation prevents the Assisted Installer from starting the
+                  installation when set to true. Inspection and validation proceed
+                  normally, but installation is held until this field is set to false.
+                  Can only be enabled at creation time. Defaults to false.
                 type: boolean
               ignitionConfigOverride:
-                description: Json formatted string containing the user overrides for
-                  the initial ignition config
+                description: |-
+                  ignitionConfigOverride is a JSON-formatted string containing overrides
+                  for the discovery-phase Ignition config. Rendered into
+                  InfraEnv.spec.ignitionConfigOverride. Applies to Assisted Installer
+                  and Hosted Control Plane flows.
                 type: string
               ingressVIPs:
                 description: |-
@@ -216,14 +270,18 @@ spec:
                   Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at
                   most one IP address per IP stack used). The order of stacks should be the same as order
                   of subnets in Cluster Networks, Service Networks, and Machine Networks.
+                  Not applicable to Single Node OpenShift (SNO) clusters.
                 items:
                   type: string
                 maxItems: 2
                 type: array
               installConfigOverrides:
                 description: |-
-                  InstallConfigOverrides is a Json formatted string that provides a generic way of passing
-                  install-config parameters.
+                  installConfigOverrides is a JSON-formatted string of install-config
+                  parameters. The controller automatically merges networkType and
+                  cpuPartitioningMode into this value. Rendered as the
+                  agent-install.openshift.io/install-config-overrides annotation on
+                  AgentClusterInstall. Applies to the Assisted Installer flow only.
                 type: string
               machineNetwork:
                 description: MachineNetwork is the list of IP address pools for machines.
@@ -242,16 +300,21 @@ spec:
               networkType:
                 default: OVNKubernetes
                 description: |-
-                  NetworkType is the Container Network Interface (CNI) plug-in to install
-                  The default value is OpenShiftSDN for IPv4, and OVNKubernetes for IPv6 or SNO
+                  networkType specifies the Container Network Interface (CNI) plugin
+                  to install. Defaults to OVNKubernetes.
                 enum:
                 - OpenShiftSDN
                 - OVNKubernetes
                 type: string
               nodes:
-                description: List of node objects
+                description: |-
+                  nodes is the list of nodes to provision for this cluster. The number
+                  and roles of nodes must be compatible with the selected clusterType.
                 items:
-                  description: NodeSpec
+                  description: |-
+                    NodeSpec defines the desired configuration for a single node (host) in
+                    a ClusterInstance, including bare-metal host details, network settings,
+                    and node-level template overrides.
                   properties:
                     automatedCleaningMode:
                       default: disabled
@@ -273,6 +336,9 @@ spec:
                         and "password").
                       properties:
                         name:
+                          description: |-
+                            name is the name of the Secret containing the BMC credentials
+                            (requires keys "username" and "password").
                           type: string
                       required:
                       - name
@@ -281,12 +347,16 @@ spec:
                       description: |-
                         Which MAC address will PXE boot? This is optional for some
                         types, but required for libvirt VMs driven by vbmc.
+                        This MAC address should correspond to one of the interfaces
+                        defined in nodeNetwork so that the host can be provisioned
+                        on the correct network.
                       pattern: '[0-9a-fA-F]{2}(:[0-9a-fA-F]{2}){5}'
                       type: string
                     bootMode:
                       default: UEFI
-                      description: Provide guidance about how to choose the device
-                        for the image being provisioned.
+                      description: |-
+                        bootMode selects the method of initializing the hardware during boot.
+                        Defaults to UEFI.
                       enum:
                       - UEFI
                       - UEFISecureBoot
@@ -295,7 +365,7 @@ spec:
                     cpuArchitecture:
                       description: |-
                         CPUArchitecture is the software architecture of the node.
-                        If it is not defined here then it is inheirited from the ClusterInstanceSpec.
+                        If it is not defined here then it is inherited from the ClusterInstanceSpec.
                       enum:
                       - x86_64
                       - aarch64
@@ -305,16 +375,30 @@ spec:
                         additionalProperties:
                           type: string
                         type: object
-                      description: Additional node-level annotations to be applied
-                        to the rendered templates
+                      description: |-
+                        extraAnnotations specifies additional node-level annotations keyed by
+                        the Kubernetes resource Kind (e.g., "BareMetalHost", "NMStateConfig").
+                        The key is matched against the kind field of each rendered manifest.
+                        If a Kind is present in the node-level map, those annotations are
+                        used for this node instead of any cluster-level annotations for the
+                        same Kind. Kinds not defined at node level fall back to cluster-level
+                        extraAnnotations. Annotations already defined in the template take
+                        precedence and are not overwritten.
                       type: object
                     extraLabels:
                       additionalProperties:
                         additionalProperties:
                           type: string
                         type: object
-                      description: Additional node-level labels to be applied to the
-                        rendered templates
+                      description: |-
+                        extraLabels specifies additional node-level labels keyed by the
+                        Kubernetes resource Kind (e.g., "BareMetalHost", "NMStateConfig").
+                        The key is matched against the kind field of each rendered manifest.
+                        If a Kind is present in the node-level map, those labels are used
+                        for this node instead of any cluster-level labels for the same Kind.
+                        Kinds not defined at node level fall back to cluster-level
+                        extraLabels. Labels already defined in the template take precedence
+                        and are not overwritten.
                       type: object
                     hostName:
                       description: Hostname is the desired hostname for the host
@@ -338,19 +422,24 @@ spec:
                       type: object
                     ignitionConfigOverride:
                       description: |-
-                        Json formatted string containing the user overrides for the host's ignition config
-                        IgnitionConfigOverride enables the assignment of partitions for persistent storage.
-                        Adjust disk ID and size to the specific hardware.
+                        ignitionConfigOverride is a JSON-formatted string containing
+                        host-specific Ignition config overrides. Rendered as the
+                        bmac.agent-install.openshift.io/ignition-config-overrides annotation
+                        on the BareMetalHost resource. Must be valid JSON when provided.
                       type: string
                     installerArgs:
-                      description: Json formatted string containing the user overrides
-                        for the host's coreos installer args
+                      description: |-
+                        installerArgs is a JSON-formatted string of arguments passed to the
+                        coreos-installer via the bare metal agent controller. Rendered as the
+                        bmac.agent-install.openshift.io/installer-args annotation on the
+                        BareMetalHost resource. Must be valid JSON when provided.
                       type: string
                     ironicInspect:
                       default: ""
                       description: |-
-                        IronicInspect is used to specify if automatic introspection carried out during registration of BMH is enabled or
-                        disabled
+                        ironicInspect controls automatic hardware introspection performed by
+                        Ironic during BareMetalHost registration. The default empty string
+                        enables inspection. Set to "disabled" to skip hardware inspection.
                       enum:
                       - ""
                       - disabled
@@ -405,8 +494,10 @@ spec:
                       type: object
                     pruneManifests:
                       description: |-
-                        PruneManifests represents a list of Kubernetes resource references that indicates which "node-level" manifests
-                        should be pruned (removed).
+                        pruneManifests is a list of resource references (apiVersion + kind)
+                        identifying node-level manifests that should be skipped during
+                        rendering and deleted from the cluster if previously applied.
+                        Combined with cluster-level pruneManifests.
                       items:
                         description: ResourceRef represents the API version and kind
                           of a Kubernetes resource
@@ -428,6 +519,8 @@ spec:
                       type: array
                     role:
                       default: master
+                      description: role specifies the role of this node in the cluster.
+                        Defaults to "master".
                       enum:
                       - master
                       - worker
@@ -490,8 +583,12 @@ spec:
                           type: string
                       type: object
                     suppressedManifests:
-                      description: SuppressedManifests is a list of node-level manifest
-                        names to be excluded from the template rendering process
+                      description: |-
+                        suppressedManifests is a list of Kubernetes resource Kinds to exclude
+                        from rendering for this node. Combined with cluster-level
+                        suppressedManifests. Matching manifests are not applied and are
+                        recorded as "suppressed" in status. Previously applied resources
+                        are not deleted; use pruneManifests to remove them.
                       items:
                         type: string
                       type: array
@@ -529,8 +626,11 @@ spec:
                   type: object
                 type: array
               platformType:
-                description: PlatformType is the name for the specific platform upon
-                  which to perform the installation.
+                description: |-
+                  platformType specifies the infrastructure platform for installation.
+                  Only applicable to the Assisted Installer flow. When empty, the field
+                  is omitted from the rendered AgentClusterInstall, allowing the installer
+                  to select a default.
                 enum:
                 - ""
                 - BareMetal
@@ -557,8 +657,11 @@ spec:
                 type: object
               pruneManifests:
                 description: |-
-                  PruneManifests represents a list of Kubernetes resource references that indicates which manifests should be
-                  pruned (removed).
+                  pruneManifests is a list of resource references (apiVersion + kind)
+                  identifying manifests that should be skipped during rendering and
+                  deleted from the cluster if they were previously applied. Unlike
+                  suppressedManifests, pruning actively removes existing resources.
+                  Cluster-level prune entries also apply to node-level manifests.
                 items:
                   description: ResourceRef represents the API version and kind of
                     a Kubernetes resource
@@ -593,7 +696,12 @@ spec:
                 type: object
                 x-kubernetes-map-type: atomic
               reinstall:
-                description: Reinstall specifications
+                description: |-
+                  reinstall triggers a cluster reinstallation workflow when populated.
+                  This is a destructive operation: all rendered resources (except
+                  ManagedCluster) are deleted and reprovisioned. Requires the controller
+                  to be configured with allowReinstalls enabled. Each reinstall must use
+                  a unique generation value.
                 properties:
                   generation:
                     description: |-
@@ -640,8 +748,13 @@ spec:
                   This key will be added to the host to allow ssh access
                 type: string
               suppressedManifests:
-                description: SuppressedManifests is a list of manifest names to be
-                  excluded from the template rendering process
+                description: |-
+                  suppressedManifests is a list of Kubernetes resource Kinds to exclude
+                  from rendering. Manifests whose rendered Kind matches an entry in this
+                  list are not applied to the cluster and are recorded as "suppressed" in
+                  status. Cluster-level suppression also applies to node-level manifests.
+                  Previously applied resources are not deleted; use pruneManifests to
+                  remove them.
                 items:
                   type: string
                 type: array

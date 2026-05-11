@@ -115,7 +115,7 @@ func Test_ValidMCEVersion(t *testing.T) {
 	}{
 		{
 			name:       "above min",
-			mceVersion: "4.99.99",
+			mceVersion: "5.99.99",
 			wantErr:    false,
 		},
 		{

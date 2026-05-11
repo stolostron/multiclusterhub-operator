@@ -23,7 +23,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"reflect"
 
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	admissionregistration "k8s.io/api/admissionregistration/v1"
@@ -189,13 +188,9 @@ func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) (admission.Warnings
 
 	oldMCH := old.(*MultiClusterHub)
 
-	if oldMCH.Spec.SeparateCertificateManagement != r.Spec.SeparateCertificateManagement {
-		return warnings, fmt.Errorf("updating SeparateCertificateManagement is forbidden")
-	}
-
-	if !reflect.DeepEqual(oldMCH.Spec.Hive, r.Spec.Hive) {
-		return warnings, fmt.Errorf("hive updates are forbidden")
-	}
+	// Note: SeparateCertificateManagement and Hive are deprecated fields.
+	// Validation blocks were removed to allow users to clear these fields during migration.
+	// Deprecation warnings are still shown via checkDeprecatedAnnotations().
 
 	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
 		return warnings, fmt.Errorf("invalid AvailabilityConfig given")
@@ -395,27 +390,6 @@ func checkDeprecatedAnnotations(r *MultiClusterHub) admission.Warnings {
 					deprecatedKey, currentKey)
 				warnings = append(warnings, warning)
 			}
-		}
-	}
-
-	// Check for deprecated spec fields
-	deprecatedSpecFields := []struct {
-		name      string
-		isPresent bool
-	}{
-		{"spec.hive", r.Spec.Hive != nil},
-		{"spec.ingress", r.Spec.Ingress != nil},
-		{"spec.customCAConfigmap", r.Spec.CustomCAConfigmap != ""},
-		{"spec.enableClusterBackup", r.Spec.EnableClusterBackup},
-		{"spec.enableClusterProxyAddon", r.Spec.EnableClusterProxyAddon},
-		{"spec.separateCertificateManagement", r.Spec.SeparateCertificateManagement},
-	}
-
-	for _, field := range deprecatedSpecFields {
-		if field.isPresent {
-			warning := fmt.Sprintf("field '%s' is deprecated and will be removed in a future release",
-				field.name)
-			warnings = append(warnings, warning)
 		}
 	}
 

@@ -33,7 +33,7 @@ jobs:
       matrix:
         python-version: [3.13]
         go-version: ["1.25"]
-        branch: ['main', 'release-2.11', 'release-2.12', 'release-2.13', 'release-2.14', 'release-2.15', 'release-2.16']
+        branch: ['main', 'release-2.11', 'release-2.12', 'release-2.13', 'release-2.14', 'release-2.15', 'release-2.16', 'release-2.17']
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:

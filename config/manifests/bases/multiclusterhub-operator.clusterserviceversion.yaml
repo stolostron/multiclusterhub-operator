@@ -32,13 +32,6 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:select:High
         - urn:alm:descriptor:com.tectonic.ui:select:Basic
-      - description: (Deprecated) Provide the customized OpenShift default ingress
-          CA certificate to RHACM
-        displayName: Custom CA Configmap
-        path: customCAConfigmap
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:io.kubernetes:ConfigMap
       - description: Disable automatic import of the hub cluster as a managed cluster
         displayName: Disable Hub Self Management
         path: disableHubSelfManagement
@@ -51,21 +44,6 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: (Deprecated) Enable cluster backup
-        displayName: Enable Cluster Backup
-        path: enableClusterBackup
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: (Deprecated) Enable cluster proxy addon
-        displayName: Enable Cluster Proxy Addon
-        path: enableClusterProxyAddon
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: (Deprecated) Overrides for the default HiveConfig spec
-        displayName: Hive Config
-        path: hive
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Override pull secret for accessing MultiClusterHub operand and
           endpoint images
         displayName: Image Pull Secret
@@ -73,11 +51,6 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: (Deprecated) Configuration options for ingress management
-        displayName: Ingress Management
-        path: ingress
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: The name of the local-cluster resource
         displayName: Local Cluster Name
         path: localClusterName
@@ -93,11 +66,6 @@ spec:
           which can be found here: https://github.com/stolostron/multiclusterhub-operator/tree/main/docs/available-components.md'
         displayName: Component Configuration
         path: overrides.components
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: (Deprecated) Install cert-manager into its own namespace
-        displayName: Separate Certificate Management
-        path: separateCertificateManagement
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
       version: v1
