@@ -21,9 +21,11 @@ spec:
             - openshift-mtv
           remediationAction: enforce
           subscription:
-            channel: release-v2.11
+            channel: dev-preview
             name: mtv-operator
             namespace: openshift-mtv
+            source: mtv-extra-catalog-source
+            sourceNamespace: openshift-marketplace
           upgradeApproval: Automatic
       - apiVersion: forklift.konveyor.io/v1beta1
         kind: ForkliftController
