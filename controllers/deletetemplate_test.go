@@ -288,8 +288,8 @@ func TestPruneMigratedComponents_RespectsDeleteRequeue(t *testing.T) {
 		Build()
 
 	r := &MultiClusterHubReconciler{
-		Client:    cl,
-		Log:       ctrl.Log.WithName("test"),
+		Client: cl,
+		Log:    ctrl.Log.WithName("test"),
 		CacheSpec: CacheSpec{
 			ImageOverrides:    map[string]string{},
 			TemplateOverrides: map[string]string{},
