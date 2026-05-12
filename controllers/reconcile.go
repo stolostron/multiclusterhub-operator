@@ -371,6 +371,35 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 
+	// Migrate components from MCH to MCE (e.g., cluster-permission in 2.17). Transfer cluster-scoped
+	// resources to MCE ownership, wait for MCE to adopt them, then clean up namespace-scoped resources.
+	for component := range MCHMigratedComponents {
+		if !multiClusterHub.ComponentPresent(component) || !multiClusterHub.Enabled(component) {
+			continue
+		}
+		// Relabel cluster-scoped resources with MCE ownership
+		result, err = r.transferClusterResourcesToMCE(ctx, multiClusterHub, component, r.CacheSpec, stsEnabled)
+		if result != (ctrl.Result{}) || err != nil {
+			return result, err
+		}
+	}
+
+	// Wait for MCE to adopt components (show as Available in MCE status)
+	adopted, err := r.waitForMigratedComponentsAdopted(ctx, multiClusterHub)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if !adopted {
+		r.Log.Info("Waiting for MCE to adopt migrated components before cleanup")
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// Clean up namespace-scoped resources and prune from MCH CR
+	result, err = r.ensureMigratedComponentsCleanup(ctx, multiClusterHub, stsEnabled)
+	if result != (ctrl.Result{}) || err != nil {
+		return result, err
+	}
+
 	if !multiClusterHub.Spec.DisableHubSelfManagement {
 		result, err = r.ensureKlusterletAddonConfig(multiClusterHub)
 		if result != (ctrl.Result{}) || err != nil {
@@ -379,14 +408,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	// Install the rest of the subscriptions in no particular order
-	for _, c := range operatorv1.MCHComponents {
-		// Skip components that have been migrated to MCE and pruned from MCH spec.
-		// These components must remain in MCHComponents for webhook validation but
-		// should not be reconciled once migrated.
-		if _, migrated := migratedComponentDeployments[c]; migrated && !multiClusterHub.ComponentPresent(c) {
-			continue
-		}
-
+	for _, c := range operatorv1.MCHActiveComponents {
 		result, err = r.ensureComponentOrNoComponent(ctx, multiClusterHub, c, r.CacheSpec, ocpConsole, stsEnabled)
 
 		if result != (ctrl.Result{}) {

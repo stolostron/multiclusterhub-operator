@@ -45,14 +45,7 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 		return err
 	}
 
-	for _, c := range operatorv1.MCHComponents {
-		// Skip components that have been migrated to MCE - MCE owns their lifecycle now.
-		// This prevents attempting to render templates that may be missing image overrides
-		// in newer ACM versions where the component has been removed from MCH.
-		if _, migrated := migratedComponentDeployments[c]; migrated {
-			continue
-		}
-
+	for _, c := range operatorv1.MCHActiveComponents {
 		result, err := r.ensureNoComponent(context.TODO(), m, c, r.CacheSpec, isSTSEnabled)
 		if err != nil {
 			return err

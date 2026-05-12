@@ -146,7 +146,7 @@ func (r *MultiClusterHub) ValidateCreate() (admission.Warnings, error) {
 	if r.Spec.Overrides != nil {
 		for _, c := range r.Spec.Overrides.Components {
 			if !ValidComponent(c, MCHComponents) {
-				return warnings, fmt.Errorf("invalid component config: %s is not a known component", c.Name)
+				return warnings, fmt.Errorf("invalid componentconfig: %s is not a known component", c.Name)
 			}
 		}
 	}

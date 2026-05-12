@@ -63,12 +63,12 @@ const (
 	IamPolicyController                 string = "iam-policy-controller"
 )
 
-// MCHComponents is a slice containing component names specific to the "MCH" category.
-var MCHComponents = []string{
+// MCHActiveComponents contains components actively managed by the MCH operator.
+// Use this list for reconcile and finalize loops.
+var MCHActiveComponents = []string{
 	Appsub,
 	ClusterBackup,
 	ClusterLifecycle,
-	ClusterPermission, // Migrated to MCE in 2.17, but must remain here for webhook validation (ValidateCreate/ValidateUpdate).
 	Console,
 	FineGrainedRbac,
 	MTVIntegrations,
@@ -82,6 +82,16 @@ var MCHComponents = []string{
 	SubmarinerAddon,
 	Volsync,
 }
+
+// MCHInactiveComponents contains components no longer managed by MCH operator.
+// Kept for backward compatibility with CRs that still reference these components.
+var MCHInactiveComponents = []string{
+	ClusterPermission, // Migrated to MCE in 2.17
+}
+
+// MCHComponents is all valid component names (active + inactive).
+// Used for webhook validation to accept CRs with legacy component references.
+var MCHComponents = append(MCHActiveComponents, MCHInactiveComponents...)
 
 // MCEComponents is a slice containing component names specific to the "MCE" category.
 var MCEComponents = []string{
