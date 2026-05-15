@@ -71,6 +71,8 @@ components:
           search-indexer: search_indexer
           search-collector: search_collector
           search-v2-api: search_v2_api
+        webhook_paths:
+          - config/webhook/manifests.yaml
   - repo_name: siteconfig
     github_ref: "https://github.com/stolostron/siteconfig.git"
     branch: "release-5.0"
