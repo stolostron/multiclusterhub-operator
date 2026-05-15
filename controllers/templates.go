@@ -225,9 +225,28 @@ func (r *MultiClusterHubReconciler) deleteTemplate(ctx context.Context, m *opera
 	if err != nil {
 		log.Error(err, "Failed to delete template")
 		return ctrl.Result{}, err
-	} else {
-		r.Log.Info("Finalizing template... Deleting resource", "Kind", template.GetKind(), "Name", template.GetName())
 	}
+
+	r.Log.Info("Finalizing template... Deleting resource", "Kind", template.GetKind(), "Name", template.GetName())
+
+	// Check if deletion is still in progress (resource still exists with deletion timestamp)
+	existing := template.DeepCopy()
+	err = r.Client.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()}, existing)
+	switch {
+	case err == nil && existing.GetDeletionTimestamp() != nil:
+		// Resource still finalizing, requeue to check again
+		r.Log.Info("Resource is terminating, requeueing",
+			"Kind", template.GetKind(),
+			"Name", template.GetName(),
+			"Namespace", template.GetNamespace())
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	case err != nil && !errors.IsNotFound(err) && !apimeta.IsNoMatchError(err):
+		// Can't confirm deletion completed; requeue rather than report success
+		r.Log.Error(err, "Failed to verify resource deletion; will requeue",
+			"Kind", template.GetKind(), "Name", template.GetName())
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
 	return ctrl.Result{}, nil
 }
 
