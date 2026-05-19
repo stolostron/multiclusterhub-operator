@@ -338,7 +338,7 @@ func mapDeployment(ds *appsv1.Deployment) operatorsv1.StatusCondition {
 
 func mapSubscription(sub *unstructured.Unstructured) operatorsv1.StatusCondition {
 	if sub == nil {
-		return unknownStatus(sub.GetName(), "Subscription")
+		return unknownStatus("", "Subscription")
 	}
 
 	spec, ok := sub.Object["spec"].(map[string]interface{})
@@ -461,7 +461,7 @@ func mapClusterExtension(ce *unstructured.Unstructured) operatorsv1.StatusCondit
 
 func mapMultiClusterEngine(mce *unstructured.Unstructured) operatorsv1.StatusCondition {
 	if mce == nil {
-		return unknownStatus(mce.GetName(), "MultiClusterEngine")
+		return unknownStatus("", "MultiClusterEngine")
 	}
 
 	status, ok := mce.Object["status"].(map[string]interface{})
@@ -511,7 +511,7 @@ func mapMultiClusterEngine(mce *unstructured.Unstructured) operatorsv1.StatusCon
 
 func mapCSV(csv *unstructured.Unstructured) operatorsv1.StatusCondition {
 	if csv == nil {
-		return unknownStatus(csv.GetName(), "ClusterServiceVersion")
+		return unknownStatus("", "ClusterServiceVersion")
 	}
 
 	status, ok := csv.Object["status"].(map[string]interface{})
