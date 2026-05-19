@@ -94,6 +94,10 @@ spec:
       - name: console-chart-console-config
         configMap:
           name: console-config
+      - name: placement-debug-ca
+        configMap:
+          name: placement-debug-ca-bundle
+          optional: true
       containers:
       - name: console
         volumeMounts:
@@ -101,6 +105,9 @@ spec:
           name: console-chart-console-certs
         - mountPath: /app/config
           name: console-chart-console-config
+        - mountPath: /var/run/secrets/placement-debug-ca
+          name: placement-debug-ca
+          readOnly: true
         image: {{ .Values.global.imageOverrides.console }}
         imagePullPolicy: {{ .Values.global.pullPolicy }}
         resources:
@@ -136,6 +143,8 @@ spec:
           value: "3000"
         - name: CLUSTER_API_URL
           value: https://kubernetes.default.svc:443
+        - name: PLACEMENT_CA_BUNDLE_PATH
+          value: /var/run/secrets/placement-debug-ca/ca-bundle.crt
         - name: DISABLE_EVENTS
           value: "true"
         {{- if .Values.hubconfig.proxyConfigs }}

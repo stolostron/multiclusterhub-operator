@@ -28,7 +28,10 @@ import (
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -205,6 +208,9 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 
 	switch component {
 	case operatorv1.Console:
+		if err := r.ensurePlacementDebugCABundle(ctx, m); err != nil {
+			log.Error(err, "Failed to sync placement debug CA bundle")
+		}
 		return r.addPluginToConsole(m)
 
 	case operatorv1.Search:
@@ -289,6 +295,56 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 		}
 	}
 	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) ensurePlacementDebugCABundle(
+	ctx context.Context, m *operatorv1.MultiClusterHub,
+) error {
+	sourceNS := "open-cluster-management-hub"
+	sourceName := "ca-bundle-configmap"
+	source := &corev1.ConfigMap{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: sourceName, Namespace: sourceNS}, source)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to get OCM CA bundle ConfigMap: %w", err)
+	}
+
+	caBundle, ok := source.Data["ca-bundle.crt"]
+	if !ok || caBundle == "" {
+		return nil
+	}
+
+	targetName := "placement-debug-ca-bundle"
+	target := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      targetName,
+			Namespace: m.GetNamespace(),
+		},
+		Data: map[string]string{
+			"ca-bundle.crt": caBundle,
+		},
+	}
+
+	if err := ctrl.SetControllerReference(m, target, r.Scheme); err != nil {
+		return fmt.Errorf("failed to set controller reference on placement debug CA ConfigMap: %w", err)
+	}
+
+	existing := &corev1.ConfigMap{}
+	err = r.Client.Get(ctx, types.NamespacedName{Name: targetName, Namespace: m.GetNamespace()}, existing)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return r.Client.Create(ctx, target)
+		}
+		return fmt.Errorf("failed to get placement debug CA ConfigMap: %w", err)
+	}
+
+	if existing.Data["ca-bundle.crt"] != caBundle {
+		existing.Data = target.Data
+		return r.Client.Update(ctx, existing)
+	}
+	return nil
 }
 
 /*
