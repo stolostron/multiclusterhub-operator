@@ -217,7 +217,7 @@ func GetAnnotationOverrides(m *operatorv1.MultiClusterHub) (*ClusterExtensionOve
 	overrides := &ClusterExtensionOverrides{}
 	err := json.Unmarshal([]byte(mceAnnotationOverrides), overrides)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal MCE ClusterExtension annotation '%s': %w", mceAnnotationOverrides, err)
+		return nil, fmt.Errorf("failed to unmarshal annotation %q: %w", utils.AnnotationMCEClusterExtensionSpec, err)
 	}
 	return overrides, nil
 }
