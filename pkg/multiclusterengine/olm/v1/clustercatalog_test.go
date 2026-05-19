@@ -41,7 +41,31 @@ func Test_GetClusterCatalog(t *testing.T) {
 			},
 			desiredPackage: "multicluster-engine",
 			wantErr:        true,
-			errContains:    "no available ClusterCatalogs found",
+			errContains:    "no serving ClusterCatalogs found",
+		},
+		{
+			name: "Catalog available but not serving",
+			catalogs: []ocv1.ClusterCatalog{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "not-serving"},
+					Spec: ocv1.ClusterCatalogSpec{
+						Priority:         0,
+						AvailabilityMode: "Available",
+					},
+					Status: ocv1.ClusterCatalogStatus{
+						Conditions: []metav1.Condition{
+							{
+								Type:   "Serving",
+								Status: "False",
+								Reason: "Unpacking",
+							},
+						},
+					},
+				},
+			},
+			desiredPackage: "multicluster-engine",
+			wantErr:        true,
+			errContains:    "no serving ClusterCatalogs found",
 		},
 		{
 			name: "Single available catalog",
@@ -51,6 +75,14 @@ func Test_GetClusterCatalog(t *testing.T) {
 					Spec: ocv1.ClusterCatalogSpec{
 						Priority:         0,
 						AvailabilityMode: "Available",
+					},
+					Status: ocv1.ClusterCatalogStatus{
+						Conditions: []metav1.Condition{
+							{
+								Type:   "Serving",
+								Status: "True",
+							},
+						},
 					},
 				},
 			},
@@ -67,6 +99,9 @@ func Test_GetClusterCatalog(t *testing.T) {
 						Priority:         0,
 						AvailabilityMode: "Available",
 					},
+					Status: ocv1.ClusterCatalogStatus{
+						Conditions: []metav1.Condition{{Type: "Serving", Status: "True"}},
+					},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: "high-priority"},
@@ -74,12 +109,18 @@ func Test_GetClusterCatalog(t *testing.T) {
 						Priority:         100,
 						AvailabilityMode: "Available",
 					},
+					Status: ocv1.ClusterCatalogStatus{
+						Conditions: []metav1.Condition{{Type: "Serving", Status: "True"}},
+					},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: "medium-priority"},
 					Spec: ocv1.ClusterCatalogSpec{
 						Priority:         50,
 						AvailabilityMode: "Available",
+					},
+					Status: ocv1.ClusterCatalogStatus{
+						Conditions: []metav1.Condition{{Type: "Serving", Status: "True"}},
 					},
 				},
 			},
@@ -96,12 +137,18 @@ func Test_GetClusterCatalog(t *testing.T) {
 						Priority:         100,
 						AvailabilityMode: "Available",
 					},
+					Status: ocv1.ClusterCatalogStatus{
+						Conditions: []metav1.Condition{{Type: "Serving", Status: "True"}},
+					},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: "catalog-2"},
 					Spec: ocv1.ClusterCatalogSpec{
 						Priority:         100,
 						AvailabilityMode: "Available",
+					},
+					Status: ocv1.ClusterCatalogStatus{
+						Conditions: []metav1.Condition{{Type: "Serving", Status: "True"}},
 					},
 				},
 			},
@@ -125,10 +172,41 @@ func Test_GetClusterCatalog(t *testing.T) {
 						Priority:         100,
 						AvailabilityMode: "Available",
 					},
+					Status: ocv1.ClusterCatalogStatus{
+						Conditions: []metav1.Condition{{Type: "Serving", Status: "True"}},
+					},
 				},
 			},
 			desiredPackage: "multicluster-engine",
 			wantName:       "available-medium",
+			wantErr:        false,
+		},
+		{
+			name: "Skip non-serving catalogs - prefer lower priority serving catalog",
+			catalogs: []ocv1.ClusterCatalog{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "high-but-not-serving"},
+					Spec: ocv1.ClusterCatalogSpec{
+						Priority:         200,
+						AvailabilityMode: "Available",
+					},
+					Status: ocv1.ClusterCatalogStatus{
+						Conditions: []metav1.Condition{{Type: "Serving", Status: "False"}},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "medium-and-serving"},
+					Spec: ocv1.ClusterCatalogSpec{
+						Priority:         100,
+						AvailabilityMode: "Available",
+					},
+					Status: ocv1.ClusterCatalogStatus{
+						Conditions: []metav1.Condition{{Type: "Serving", Status: "True"}},
+					},
+				},
+			},
+			desiredPackage: "multicluster-engine",
+			wantName:       "medium-and-serving",
 			wantErr:        false,
 		},
 	}

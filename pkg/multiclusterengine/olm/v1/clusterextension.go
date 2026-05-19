@@ -28,7 +28,7 @@ const (
 )
 
 // NewClusterExtension returns an MCE ClusterExtension configured from a MultiClusterHub
-func NewClusterExtension(m *operatorv1.MultiClusterHub, catalogName string) *ocv1.ClusterExtension {
+func NewClusterExtension(m *operatorv1.MultiClusterHub) *ocv1.ClusterExtension {
 	labels := map[string]string{
 		"installer.name":                          m.GetName(),
 		"installer.namespace":                     m.GetNamespace(),
@@ -67,7 +67,7 @@ func NewClusterExtension(m *operatorv1.MultiClusterHub, catalogName string) *ocv
 }
 
 // RenderClusterExtension updates an existing ClusterExtension based on MCH spec
-func RenderClusterExtension(existing *ocv1.ClusterExtension, m *operatorv1.MultiClusterHub, catalogName string) *ocv1.ClusterExtension {
+func RenderClusterExtension(existing *ocv1.ClusterExtension, m *operatorv1.MultiClusterHub) *ocv1.ClusterExtension {
 	copy := existing.DeepCopy()
 
 	// Update channels based on current desired channel

@@ -703,7 +703,7 @@ func (r *MultiClusterHubReconciler) ensureMCEClusterExtension(ctx context.Contex
 			return result, err
 		}
 
-		mceCE = v1.NewClusterExtension(multiClusterHub, catalogName)
+		mceCE = v1.NewClusterExtension(multiClusterHub)
 		createCE = true
 	}
 
@@ -726,7 +726,7 @@ func (r *MultiClusterHubReconciler) ensureMCEClusterExtension(ctx context.Contex
 	}
 
 	// Render ClusterExtension with current config
-	calcCE := v1.RenderClusterExtension(mceCE, multiClusterHub, catalogName)
+	calcCE := v1.RenderClusterExtension(mceCE, multiClusterHub)
 
 	// Apply annotation overrides if present
 	v1.ApplyAnnotationOverrides(calcCE, overrides)

@@ -26,9 +26,7 @@ func Test_NewClusterExtension(t *testing.T) {
 		},
 	}
 
-	catalogName := "test-catalog"
-
-	ce := NewClusterExtension(mch, catalogName)
+	ce := NewClusterExtension(mch)
 
 	// Verify basic structure
 	if ce.Name != multiclusterengine.MCEDefaultName {
@@ -99,7 +97,7 @@ func Test_RenderClusterExtension(t *testing.T) {
 		},
 	}
 
-	rendered := RenderClusterExtension(existing, mch, "test-catalog")
+	rendered := RenderClusterExtension(existing, mch)
 
 	// Verify channels were updated
 	expectedChannels := []string{multiclusterengine.DesiredChannel()}

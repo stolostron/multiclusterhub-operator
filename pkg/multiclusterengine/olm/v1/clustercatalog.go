@@ -35,22 +35,38 @@ func GetClusterCatalog(ctx context.Context, k8sClient client.Client, desiredPack
 		return "", fmt.Errorf("no ClusterCatalogs found")
 	}
 
-	// Filter to available catalogs only
+	// Filter to available and serving catalogs only
 	var availableCatalogs []ocv1.ClusterCatalog
 	for _, cc := range ccList.Items {
 		// Skip unavailable catalogs
 		if cc.Spec.AvailabilityMode == "Unavailable" {
 			continue
 		}
+
+		// Skip catalogs not actively serving content
+		// Check status conditions for Serving=True
+		serving := false
+		for _, cond := range cc.Status.Conditions {
+			if cond.Type == "Serving" && cond.Status == "True" {
+				serving = true
+				break
+			}
+		}
+		if !serving {
+			log.V(2).Info("Skipping ClusterCatalog not in Serving state", "catalog", cc.Name)
+			continue
+		}
+
 		availableCatalogs = append(availableCatalogs, cc)
 	}
 
 	if len(availableCatalogs) == 0 {
-		return "", fmt.Errorf("no available ClusterCatalogs found")
+		return "", fmt.Errorf("no serving ClusterCatalogs found for package %s", desiredPackage)
 	}
 
 	// Find catalog with highest priority
-	// TODO: In the future, query catalog content to verify package exists
+	// Note: Package presence validation happens via ClusterExtension installation
+	// OLM v1 will report package-not-found errors in ClusterExtension status
 	highestPriority := availableCatalogs[0].Spec.Priority
 	var highestPriorityCatalogs []ocv1.ClusterCatalog
 
