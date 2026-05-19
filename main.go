@@ -52,6 +52,7 @@ import (
 	ocmapi "open-cluster-management.io/api/addon/v1alpha1"
 
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
+	ocv1 "github.com/operator-framework/operator-controller/api/v1"
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 
 	admissionregistration "k8s.io/api/admissionregistration/v1"
@@ -126,6 +127,8 @@ func init() {
 	utilruntime.Must(consolev1.AddToScheme(scheme))
 
 	utilruntime.Must(olmapi.AddToScheme(scheme))
+
+	utilruntime.Must(ocv1.AddToScheme(scheme))
 
 	utilruntime.Must(networking.AddToScheme(scheme))
 
@@ -267,54 +270,77 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Force OperatorCondition Upgradeable to False
-	//
-	// We have to at least default the condition to False or
-	// OLM will use the Readiness condition via our readiness probe instead:
-	// https://olm.operatorframework.io/docs/advanced-tasks/communicating-operator-conditions-to-olm/#setting-defaults
-	setupLog.Info("Setting OperatorCondition.")
-	upgradeableCondition, err := utils.NewOperatorCondition(uncachedClient, operatorsapiv2.Upgradeable)
+	// Detect OLM version (v0, v1, or none)
+	// OpenShift 5.0+ is expected to support both OLM v0 and v1, so we must detect
+	// which version is present to handle MCE installation appropriately
+	olmVersion, err := detectOLMVersion(ctx, uncachedClient)
 	if err != nil {
-		setupLog.Error(err, "Cannot create the Upgradeable Operator Condition")
+		setupLog.Error(err, "failed to detect OLM version")
 		os.Exit(1)
 	}
-
-	mchList := &operatorv1.MultiClusterHubList{}
-	err = uncachedClient.List(context.TODO(), mchList)
-	if err != nil {
-		setupLog.Error(err, "Could not set List multiclusterhubs")
-		os.Exit(1)
+	if olmVersion == "" {
+		setupLog.Info("No OLM detected - MCE subscription management will be skipped")
+	} else {
+		setupLog.Info("OLM version detected", "version", olmVersion)
 	}
 
-	if len(mchList.Items) == 0 {
-		// If there is no MCH then no upgrade logic is needed.
-		err = upgradeableCondition.Set(ctx, metav1.ConditionTrue, utils.UpgradeableAllowReason, utils.UpgradeableAllowMessage)
+	// OperatorCondition is only used by OLM v0
+	// OLM v1 and non-OLM deployments don't use this mechanism
+	var upgradeableCondition utils.Condition
+	if olmVersion == "v0" {
+		// Force OperatorCondition Upgradeable to False
+		//
+		// We have to at least default the condition to False or
+		// OLM will use the Readiness condition via our readiness probe instead:
+		// https://olm.operatorframework.io/docs/advanced-tasks/communicating-operator-conditions-to-olm/#setting-defaults
+		setupLog.Info("Setting OperatorCondition.")
+		upgradeableCondition, err = utils.NewOperatorCondition(uncachedClient, operatorsapiv2.Upgradeable)
 		if err != nil {
-			setupLog.Error(err, "Could not set Operator Condition")
+			setupLog.Error(err, "Cannot create the Upgradeable Operator Condition")
+			os.Exit(1)
+		}
+
+		mchList := &operatorv1.MultiClusterHubList{}
+		err = uncachedClient.List(context.TODO(), mchList)
+		if err != nil {
+			setupLog.Error(err, "Could not set List multiclusterhubs")
+			os.Exit(1)
+		}
+
+		if len(mchList.Items) == 0 {
+			// If there is no MCH then no upgrade logic is needed.
+			err = upgradeableCondition.Set(ctx, metav1.ConditionTrue, utils.UpgradeableAllowReason, utils.UpgradeableAllowMessage)
+			if err != nil {
+				setupLog.Error(err, "Could not set Operator Condition")
+				os.Exit(1)
+			}
+		} else {
+			// We want to force it to False to ensure that the final decision about whether
+			// the operator can be upgraded stays within the controller.
+			err = upgradeableCondition.Set(ctx, metav1.ConditionFalse, utils.UpgradeableInitReason, utils.UpgradeableInitMessage)
+			if err != nil {
+				setupLog.Error(err, "unable to set operator condition")
+				os.Exit(1)
+			}
+		}
+
+		// re-create the condition, this time with the final client
+		upgradeableCondition, err = utils.NewOperatorCondition(mgr.GetClient(), operatorsapiv2.Upgradeable)
+		if err != nil {
+			setupLog.Error(err, "unable to create operator condition")
 			os.Exit(1)
 		}
 	} else {
-		// We want to force it to False to ensure that the final decision about whether
-		// the operator can be upgraded stays within the controller.
-		err = upgradeableCondition.Set(ctx, metav1.ConditionFalse, utils.UpgradeableInitReason, utils.UpgradeableInitMessage)
-		if err != nil {
-			setupLog.Error(err, "unable to create uncached client")
-			os.Exit(1)
-		}
+		setupLog.Info("Skipping OperatorCondition (OLM v0 only)")
 	}
 
-	// re-create the condition, this time with the final client
-	upgradeableCondition, err = utils.NewOperatorCondition(mgr.GetClient(), operatorsapiv2.Upgradeable)
-	if err != nil {
-		setupLog.Error(err, "unable to create uncached client")
-		os.Exit(1)
-	}
 	mchReconciler := &controllers.MultiClusterHubReconciler{
 		Client:          mgr.GetClient(),
 		Scheme:          mgr.GetScheme(),
 		UncachedClient:  uncachedClient,
 		Log:             ctrl.Log.WithName("Controller").WithName("Multiclusterhub"),
 		UpgradeableCond: upgradeableCondition,
+		OLMVersion:      olmVersion,
 	}
 
 	mchController, err = mchReconciler.SetupWithManager(mgr)
@@ -423,6 +449,41 @@ func getOperatorNamespace() (string, error) {
 	}
 	ns := strings.TrimSpace(string(nsBytes))
 	return ns, nil
+}
+
+// detectOLMVersion determines which version of OLM (Operator Lifecycle Manager) is running on the cluster.
+// OLM is the OpenShift mechanism for installing and managing operators. OpenShift uses different OLM versions:
+//   - OLM v0: Uses Subscription, CSV, and OperatorGroup resources (OpenShift 4.x)
+//   - OLM v1: Uses ClusterExtension resources (OpenShift 5.0+)
+//   - No OLM: Operator installed manually (bare Kubernetes, pre-installed MCE)
+func detectOLMVersion(ctx context.Context, cl client.Client) (string, error) {
+	// Check for OLM v0 via environment variable (fastest check)
+	// OLM v0 injects OPERATOR_CONDITION_NAME into operator pods at deployment time
+	if os.Getenv("OPERATOR_CONDITION_NAME") != "" {
+		return "v0", nil
+	}
+
+	// Check for OLM v1 by looking for ClusterExtension CRD
+	// If this CRD exists, the cluster is running OLM v1
+	crd := &apixv1.CustomResourceDefinition{}
+	err := cl.Get(ctx, types.NamespacedName{
+		Name: "clusterextensions.olm.operatorframework.io",
+	}, crd)
+
+	switch {
+	case err == nil:
+		// ClusterExtension CRD exists - OLM v1 present
+		return "v1", nil
+
+	case errors.IsNotFound(err):
+		// CRD not found - no OLM on cluster (legitimate case for bare Kubernetes)
+		return "", nil
+
+	default:
+		// API error (timeout, permission, etc) - fail fast and let Kubernetes retry
+		// Kubernetes will restart the pod with exponential backoff
+		return "", fmt.Errorf("failed to check for OLM v1 CRD: %w", err)
+	}
 }
 
 func ensureWebhooks(k8sClient client.Client) error {

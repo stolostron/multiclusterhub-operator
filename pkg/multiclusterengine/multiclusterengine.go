@@ -6,11 +6,7 @@ package multiclusterengine
 import (
 	"context"
 	"fmt"
-	"math"
 
-	"github.com/Masterminds/semver/v3"
-	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
-	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
@@ -18,29 +14,23 @@ import (
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-var (
-	// prod MCE variables
-	channel                = "stable-5.0"
-	installPlanApproval    = subv1alpha1.ApprovalAutomatic
-	packageName            = "multicluster-engine"
-	catalogSourceName      = "redhat-operators"
-	catalogSourceNamespace = "openshift-marketplace" // https://olm.operatorframework.io/docs/tasks/troubleshooting/subscription/#a-subscription-in-namespace-x-cant-install-operators-from-a-catalogsource-in-namespace-y
-	operandNamespace       = "multicluster-engine"
+const (
+	// Production MCE variables
+	MCEProdChannel          = "stable-5.0"
+	MCEProdPackageName      = "multicluster-engine"
+	MCEProdOperandNamespace = "multicluster-engine"
 
-	// community MCE variables
-	communityChannel           = "community-0.10"
-	communityPackageName       = "stolostron-engine"
-	communityCatalogSourceName = "community-operators"
-	communityOperandNamepace   = "stolostron-engine"
+	// Community MCE variables
+	MCECommunityChannel          = "community-0.10"
+	MCECommunityPackageName      = "stolostron-engine"
+	MCECommunityOperandNamespace = "stolostron-engine"
 
-	// default names
-	MulticlusterengineName = "multiclusterengine"
-	operatorGroupName      = "default"
+	// Default names
+	MCEDefaultName = "multiclusterengine"
 )
 
 // mocks returning a single manifest
@@ -66,7 +56,7 @@ var mockPackageManifests = func() *olmapi.PackageManifestList {
 }
 
 // NewMultiClusterEngine returns an MCE configured from a Multiclusterhub
-func NewMultiClusterEngine(m *operatorv1.MultiClusterHub) *mcev1.MultiClusterEngine {
+func NewMultiClusterEngine(m *operatorv1.MultiClusterHub, targetNamespace string) *mcev1.MultiClusterEngine {
 	labels := map[string]string{
 		"installer.name":                          m.GetName(),
 		"installer.namespace":                     m.GetNamespace(),
@@ -80,7 +70,7 @@ func NewMultiClusterEngine(m *operatorv1.MultiClusterHub) *mcev1.MultiClusterEng
 
 	mce := &mcev1.MultiClusterEngine{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        MulticlusterengineName,
+			Name:        MCEDefaultName,
 			Labels:      labels,
 			Annotations: annotations,
 		},
@@ -91,7 +81,7 @@ func NewMultiClusterEngine(m *operatorv1.MultiClusterHub) *mcev1.MultiClusterEng
 			Tolerations:        utils.GetTolerations(m),
 			NodeSelector:       m.Spec.NodeSelector,
 			AvailabilityConfig: availConfig,
-			TargetNamespace:    OperandNamespace(),
+			TargetNamespace:    targetNamespace,
 			Overrides: &mcev1.Overrides{
 				Components: utils.GetMCEComponents(m),
 			},
@@ -192,205 +182,28 @@ func Namespace() *corev1.Namespace {
 	}
 }
 
-func OperatorGroup() *olmv1.OperatorGroup {
-	namespace := OperandNamespace()
-	return &olmv1.OperatorGroup{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: olmv1.GroupVersion.String(),
-			Kind:       olmv1.OperatorGroupKind,
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      operatorGroupName,
-			Namespace: namespace,
-		},
-		Spec: olmv1.OperatorGroupSpec{
-			TargetNamespaces: []string{namespace},
-		},
-	}
-}
-
-// GetCatalogSource returns the name and namespace of an MCE catalogSource with the required channel.
-// Returns error if two or more catalogsources satsify criteria.
-func GetCatalogSource(k8sClient client.Client) (types.NamespacedName, error) {
-	nn := types.NamespacedName{}
-
-	pkgs, err := GetMCEPackageManifests(k8sClient)
-	if err != nil {
-		return nn, err
-	}
-
-	// Return an error if there are no package manifests found with the desired MCE package name.
-	if len(pkgs) == 0 {
-		return nn, fmt.Errorf("no %s packageManifests found", DesiredPackage())
-	}
-
-	filtered := filterPackageManifests(pkgs, DesiredChannel())
-	// Return an error if there are no package manifests found with the desired MCE channel name.
-	if len(filtered) == 0 {
-		return nn, fmt.Errorf("no %s packageManifests found with desired channel %s", DesiredPackage(), DesiredChannel())
-	}
-
-	/*
-		Catalog sources managed by the Operator Lifecycle Manager (OLM) include a 'priority' option in their
-		specifications. By default, this value is set to 0 for most catalog sources. However, for the 'redhat-operator'
-		catalog source, it is assigned a default priority of -100. Leveraging the priority value, we can determine the
-		preferred catalog source to utilize when assembling the Multicluster Engine operator.
-	*/
-	catalogSource, err := findHighestPriorityCatalogSource(k8sClient, filtered)
-	if err != nil {
-		return nn, err
-	}
-
-	nn.Name = catalogSource.Name
-	nn.Namespace = catalogSource.Namespace
-	return nn, nil
-}
-
-// extractCatalogSource extracts namespaced name from the given PackageManifest.
-func extractCatalogSource(pm olmapi.PackageManifest) types.NamespacedName {
-	return types.NamespacedName{
-		Name:      pm.Status.CatalogSource,
-		Namespace: pm.Status.CatalogSourceNamespace,
-	}
-}
-
-// findHighestPriorityCatalogSource finds the catalog source with the highest priority among the given list.
-func findHighestPriorityCatalogSource(k8sClient client.Client, pkgs []olmapi.PackageManifest) (
-	*subv1alpha1.CatalogSource, error) {
-	var (
-		highestPriorityCatalogSources []*subv1alpha1.CatalogSource
-		maxPriority                   = math.MinInt64
-		log                           = log.Log.WithName("reconcile")
-	)
-
-	for _, pm := range pkgs {
-		cs := &subv1alpha1.CatalogSource{}
-		nn := extractCatalogSource(pm)
-
-		if err := k8sClient.Get(context.TODO(), nn, cs); err != nil {
-			// Log the error and continue to the next iteration
-			log.Error(err, fmt.Sprintf("failed to retrieve catalog source %s/%s", nn.Namespace, nn.Name))
-			continue
-		}
-
-		if cs.Spec.Priority > maxPriority {
-			// Found a new highest priority, reset the slice and update the maxPriority
-			maxPriority = cs.Spec.Priority
-			highestPriorityCatalogSources = []*subv1alpha1.CatalogSource{cs}
-
-		} else if cs.Spec.Priority == maxPriority {
-			// Found another catalog source with the same highest priority, append it to the slice
-			highestPriorityCatalogSources = append(highestPriorityCatalogSources, cs)
-		}
-	}
-
-	switch len(highestPriorityCatalogSources) {
-	case 0:
-		return nil, fmt.Errorf("no catalog sources found with a positive priority")
-
-	case 1:
-		catalogSource := highestPriorityCatalogSources[0]
-		log.V(2).Info(fmt.Sprintf("Using catalog source %v/%v with the highest priority: %v",
-			catalogSource.Namespace, catalogSource.Name, catalogSource.Spec.Priority))
-		return catalogSource, nil
-
-	default:
-		// Multiple catalog sources found with the same highest priority
-		var catalogNames []string
-		for _, cs := range highestPriorityCatalogSources {
-			catalogNames = append(catalogNames, fmt.Sprintf("%s/%s", cs.Namespace, cs.Name))
-		}
-
-		return nil, fmt.Errorf(
-			"found more than one %s catalogSource with expected channel %s with the highest priority:%v",
-			DesiredPackage(), DesiredChannel(), catalogNames)
-	}
-}
-
-// filterPackageManifests returns a list of packagemanifests containing the desired channel
-// at the latest available version. Returns an empty list if no packagemanifests include the
-// channel. If more than one packagemanifest have the same latest version available it will
-// return them all.
-func filterPackageManifests(pkgManifests []olmapi.PackageManifest, desiredChannel string) []olmapi.PackageManifest {
-	filtered := []olmapi.PackageManifest{}
-	latestVersion := &semver.Version{}
-	for _, p := range pkgManifests {
-		for _, c := range p.Status.Channels {
-			if c.Name == desiredChannel {
-				versionString := c.CurrentCSVDesc.Version.String()
-				v, err := semver.NewVersion(versionString)
-				if err != nil {
-					log.Log.WithName("reconcile").Info("failed to parse version from packagemanifest", "catalogsource", p.Status.CatalogSource)
-					continue
-				}
-				if len(filtered) == 0 {
-					filtered = append(filtered, p)
-					latestVersion = v
-					continue
-				}
-				if v.Equal(latestVersion) {
-					filtered = append(filtered, p)
-				} else if v.GreaterThan(latestVersion) {
-					filtered = []olmapi.PackageManifest{p}
-					latestVersion = v
-				}
-			}
-		}
-	}
-	return filtered
-}
-
 // DesiredChannel is determined by whether operator is running in community mode or production mode
 func DesiredChannel() string {
 	if utils.IsCommunityMode() {
-		return communityChannel
-	} else {
-		return channel
+		return MCECommunityChannel
 	}
+	return MCEProdChannel
 }
 
 // DesiredPackage is determined by whether operator is running in community mode or production mode
 func DesiredPackage() string {
 	if utils.IsCommunityMode() {
-		return communityPackageName
-	} else {
-		return packageName
+		return MCECommunityPackageName
 	}
+	return MCEProdPackageName
 }
 
 // OperandNamespace is determined by whether operator is running in community mode or production mode
 func OperandNamespace() string {
 	if utils.IsCommunityMode() {
-		return communityOperandNamepace
-	} else {
-		return operandNamespace
+		return MCECommunityOperandNamespace
 	}
-}
-
-// returns packagemanifests with the name multicluster-engine
-func GetMCEPackageManifests(k8sClient client.Client) ([]olmapi.PackageManifest, error) {
-	ctx := context.Background()
-	log := log.Log.WithName("reconcile")
-	packageManifests := &olmapi.PackageManifestList{}
-	var err error
-	if utils.IsUnitTest() {
-		packageManifests = mockPackageManifests()
-	} else {
-		err = k8sClient.List(ctx, packageManifests)
-	}
-	if err != nil {
-		log.Error(err, "failed to list package manifests")
-		return nil, err
-	}
-
-	pkgList := []olmapi.PackageManifest{}
-	packageName := DesiredPackage()
-	for _, p := range packageManifests.Items {
-		if p.Name == packageName {
-			pkgList = append(pkgList, p)
-		}
-	}
-	return pkgList, nil
+	return MCEProdOperandNamespace
 }
 
 // find MCE. label it for future. return nil if no mce found.

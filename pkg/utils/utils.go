@@ -290,13 +290,28 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole, isSTSEn
 	return nn
 }
 
-func GetCustomResourcesForStatus(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
+func GetCustomResourcesForStatus(m *operatorsv1.MultiClusterHub, olmVersion string) []types.NamespacedName {
 	if m.Enabled(operatorsv1.MultiClusterEngine) {
-		return []types.NamespacedName{
-			{Name: "multicluster-engine-sub", Namespace: MCESubscriptionNamespace},
-			{Name: "multicluster-engine-csv", Namespace: MCESubscriptionNamespace},
+		components := []types.NamespacedName{
+			// MCE CR (present in all scenarios)
 			{Name: "multicluster-engine"},
 		}
+
+		// Add OLM-specific components based on detected version
+		switch olmVersion {
+		case "v0":
+			components = append(components,
+				types.NamespacedName{Name: "multicluster-engine-sub", Namespace: MCESubscriptionNamespace},
+				types.NamespacedName{Name: "multicluster-engine-csv", Namespace: MCESubscriptionNamespace},
+			)
+		case "v1":
+			components = append(components,
+				types.NamespacedName{Name: "multicluster-engine-clusterextension"},
+			)
+			// case "": no OLM components, only MCE CR
+		}
+
+		return components
 	}
 	return []types.NamespacedName{}
 }

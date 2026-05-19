@@ -161,14 +161,26 @@ var _ = Describe("utility functions", func() {
 		})
 		It("gets custom resources for status with MCE disabled", func() {
 			mch := resources.EmptyMCH()
-			cr := GetCustomResourcesForStatus(&mch)
+			cr := GetCustomResourcesForStatus(&mch, "v0")
 			Expect(len(cr)).To(Equal(0))
 		})
-		It("gets custom resources for status with MCE enabled", func() {
+		It("gets custom resources for status with MCE enabled (OLM v0)", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(mchv1.MultiClusterEngine)
-			cr := GetCustomResourcesForStatus(&mch)
-			Expect(len(cr)).To(Equal(3))
+			cr := GetCustomResourcesForStatus(&mch, "v0")
+			Expect(len(cr)).To(Equal(3)) // mce-sub, mce-csv, mce
+		})
+		It("gets custom resources for status with MCE enabled (OLM v1)", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable(mchv1.MultiClusterEngine)
+			cr := GetCustomResourcesForStatus(&mch, "v1")
+			Expect(len(cr)).To(Equal(2)) // mce-clusterextension, mce
+		})
+		It("gets custom resources for status with MCE enabled (no OLM)", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable(mchv1.MultiClusterEngine)
+			cr := GetCustomResourcesForStatus(&mch, "")
+			Expect(len(cr)).To(Equal(1)) // mce only
 		})
 		It("gets the default toleration", func() {
 			mch := resources.EmptyMCH()

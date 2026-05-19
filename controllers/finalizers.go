@@ -12,6 +12,8 @@ import (
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
+	v0 "github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine/olm/v0"
+	v1 "github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine/olm/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -90,48 +92,88 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 		return nil
 	}
 
-	mceSub, err := multiclusterengine.GetManagedMCESubscription(ctx, r.Client)
-	if err != nil {
-		return err
-	}
-	if mceSub != nil && !multiclusterengine.CreatedByMCH(mceSub, m) {
-		r.Log.Info("Preexisting MCE subscription exists, skipping MCE subscription finalization")
-		return nil
-	}
+	// Clean up OLM resources based on detected OLM version
+	operandNs := multiclusterengine.OperandNamespace()
+	if r.OLMVersion == "v1" {
+		// OLM v1 cleanup path (ClusterExtension + ServiceAccount)
+		mceCE, err := v1.GetManagedMCEClusterExtension(ctx, r.Client)
+		if err != nil {
+			return err
+		}
 
-	if mceSub != nil {
-		csv, err := r.GetCSVFromSubscription(mceSub)
-		namespace := multiclusterengine.OperandNamespace()
-		if err == nil { // CSV Exists
-			err = r.Client.Delete(ctx, csv)
+		if mceCE != nil && !v1.CreatedByMCH(mceCE, m) {
+			r.Log.Info("Preexisting MCE ClusterExtension exists, skipping finalization")
+			return nil
+		}
+
+		if mceCE != nil {
+			r.Log.Info("Deleting MCE ClusterExtension")
+			err = r.Client.Delete(ctx, mceCE)
 			if err != nil && !errors.IsNotFound(err) {
 				return err
 			}
-			err = r.Client.Get(ctx,
-				types.NamespacedName{Name: csv.GetName(), Namespace: namespace},
-				csv)
+			// Check if still exists
+			err = r.Client.Get(ctx, types.NamespacedName{Name: mceCE.Name}, mceCE)
 			if err == nil {
-				return fmt.Errorf("CSV has not yet been terminated")
+				return fmt.Errorf("ClusterExtension has not yet been terminated")
 			}
 		}
 
-		err = r.Client.Get(ctx,
-			types.NamespacedName{Name: mceSub.Name, Namespace: namespace},
-			&subv1alpha1.Subscription{})
-		if err == nil {
+		// Delete ServiceAccount
+		sa := v1.ServiceAccount(operandNs)
+		err = r.Client.Delete(ctx, sa)
+		if err != nil && !errors.IsNotFound(err) {
+			return err
+		}
 
-			err = r.Client.Delete(ctx, mceSub)
-			if err != nil && !errors.IsNotFound(err) {
-				return err
+	} else if r.OLMVersion == "v0" {
+		// OLM v0 cleanup path (Subscription + CSV + OperatorGroup)
+		mceSub, err := v0.GetManagedMCESubscription(ctx, r.Client)
+		if err != nil {
+			return err
+		}
+
+		if mceSub != nil && !v0.CreatedByMCH(mceSub, m) {
+			r.Log.Info("Preexisting MCE subscription exists, skipping MCE subscription finalization")
+			return nil
+		}
+
+		if mceSub != nil {
+			csv, err := r.GetCSVFromSubscription(mceSub)
+			namespace := multiclusterengine.OperandNamespace()
+			if err == nil { // CSV Exists
+				err = r.Client.Delete(ctx, csv)
+				if err != nil && !errors.IsNotFound(err) {
+					return err
+				}
+				err = r.Client.Get(ctx,
+					types.NamespacedName{Name: csv.GetName(), Namespace: namespace},
+					csv)
+				if err == nil {
+					return fmt.Errorf("CSV has not yet been terminated")
+				}
 			}
-			return fmt.Errorf("subscription has not yet been terminated")
+
+			err = r.Client.Get(ctx,
+				types.NamespacedName{Name: mceSub.Name, Namespace: namespace},
+				&subv1alpha1.Subscription{})
+			if err == nil {
+
+				err = r.Client.Delete(ctx, mceSub)
+				if err != nil && !errors.IsNotFound(err) {
+					return err
+				}
+				return fmt.Errorf("subscription has not yet been terminated")
+			}
+		}
+
+		// Delete OperatorGroup (v0 only)
+		err = r.Client.Delete(ctx, v0.OperatorGroup(operandNs))
+		if err != nil && !errors.IsNotFound(err) {
+			return err
 		}
 	}
-
-	err = r.Client.Delete(ctx, multiclusterengine.OperatorGroup())
-	if err != nil && !errors.IsNotFound(err) {
-		return err
-	}
+	// If OLMVersion is "", skip OLM resource cleanup (MCE managed externally)
 
 	mceNamespace := &corev1.Namespace{}
 	err = r.Client.Get(ctx, types.NamespacedName{Name: multiclusterengine.Namespace().Name}, mceNamespace)

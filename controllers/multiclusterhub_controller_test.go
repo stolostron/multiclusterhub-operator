@@ -172,7 +172,7 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 	Eventually(func() bool {
 		mce := &mcev1.MultiClusterEngine{}
 		result := true
-		err := k8sClient.Get(ctx, types.NamespacedName{Name: multiclusterengine.MulticlusterengineName}, mce)
+		err := k8sClient.Get(ctx, types.NamespacedName{Name: multiclusterengine.MCEDefaultName}, mce)
 		if err != nil {
 			fmt.Println(err.Error())
 			result = false
