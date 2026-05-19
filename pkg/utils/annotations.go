@@ -191,6 +191,9 @@ func AnnotationsMatch(old, new map[string]string) bool {
 	if !getAnnotationOrDefaultForMap(old, new, AnnotationMCESubscriptionSpec, "") {
 		return false
 	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationMCEClusterExtensionSpec, "") {
+		return false
+	}
 	if !getAnnotationOrDefaultForMap(old, new, AnnotationOADPSubscriptionSpec, "") {
 		return false
 	}
@@ -215,6 +218,7 @@ func AnnotationsMatch(old, new map[string]string) bool {
 		AnnotationKubeconfig:                 true,
 		AnnotationTemplateOverridesCM:        true,
 		AnnotationMCESubscriptionSpec:        true,
+		AnnotationMCEClusterExtensionSpec:    true,
 		AnnotationOADPSubscriptionSpec:       true,
 		AnnotationResourceAdoptionPolicy:     true,
 		AnnotationProbeTimeoutSeconds:        true,
