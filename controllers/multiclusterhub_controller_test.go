@@ -1323,9 +1323,15 @@ func Test_ensureNamespaceAndPullSecret(t *testing.T) {
 				t.Errorf("failed to create mch secret: %v", err)
 			}
 
-			// Fake clients does not allow for apply patching; therefore we will accept the error.
-			if _, err := recon.ensureNamespaceAndPullSecret(tt.mch, tt.mceNS); err == nil {
+			// Apply patch should now succeed (controller-runtime v0.23+ fake client supports it)
+			if _, err := recon.ensureNamespaceAndPullSecret(tt.mch, tt.mceNS); err != nil {
 				t.Errorf("ensureNamespaceAndPullSecret(tt.mch, tt.ns) = %v, want = %v", err, tt.want)
+			}
+
+			// Verify secret was created in MCE namespace
+			mceSecretCopy := &corev1.Secret{}
+			if err := recon.Client.Get(context.TODO(), types.NamespacedName{Name: tt.mchSecret.Name, Namespace: tt.mceNS.Name}, mceSecretCopy); err != nil {
+				t.Errorf("failed to get MCE secret: %v", err)
 			}
 		})
 	}
