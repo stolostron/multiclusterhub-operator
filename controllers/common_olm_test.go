@@ -21,8 +21,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	clog "sigs.k8s.io/controller-runtime/pkg/log"
 
-	ocv1 "github.com/operator-framework/operator-controller/api/v1"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	ocv1 "github.com/operator-framework/operator-controller/api/v1"
 )
 
 func TestEnsureServiceAccount(t *testing.T) {
@@ -30,13 +30,13 @@ func TestEnsureServiceAccount(t *testing.T) {
 	saName := "test-sa"
 
 	tests := []struct {
-		name           string
-		existingSA     *corev1.ServiceAccount
-		newSA          *corev1.ServiceAccount
-		mch            *operatorsv1.MultiClusterHub
-		wantRequeue    bool
-		wantCondition  bool
-		setupClient    func(*testing.T) client.Client
+		name          string
+		existingSA    *corev1.ServiceAccount
+		newSA         *corev1.ServiceAccount
+		mch           *operatorsv1.MultiClusterHub
+		wantRequeue   bool
+		wantCondition bool
+		setupClient   func(*testing.T) client.Client
 	}{
 		{
 			name: "ServiceAccount already exists - no action needed",
@@ -65,6 +65,10 @@ func TestEnsureServiceAccount(t *testing.T) {
 			name:       "ServiceAccount doesn't exist - create it",
 			existingSA: nil,
 			newSA: &corev1.ServiceAccount{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ServiceAccount",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      saName,
 					Namespace: testNamespace,
@@ -179,13 +183,13 @@ func TestEnsureClusterRoleBinding(t *testing.T) {
 	crbName := "test-crb"
 
 	tests := []struct {
-		name           string
-		existingCRB    *rbacv1.ClusterRoleBinding
-		newCRB         *rbacv1.ClusterRoleBinding
-		mch            *operatorsv1.MultiClusterHub
-		wantRequeue    bool
-		wantCondition  bool
-		setupClient    func(*testing.T) client.Client
+		name          string
+		existingCRB   *rbacv1.ClusterRoleBinding
+		newCRB        *rbacv1.ClusterRoleBinding
+		mch           *operatorsv1.MultiClusterHub
+		wantRequeue   bool
+		wantCondition bool
+		setupClient   func(*testing.T) client.Client
 	}{
 		{
 			name: "ClusterRoleBinding already exists - no action needed",
@@ -212,6 +216,10 @@ func TestEnsureClusterRoleBinding(t *testing.T) {
 			name:        "ClusterRoleBinding doesn't exist - create it",
 			existingCRB: nil,
 			newCRB: &rbacv1.ClusterRoleBinding{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "rbac.authorization.k8s.io/v1",
+					Kind:       "ClusterRoleBinding",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name: crbName,
 				},
@@ -327,14 +335,14 @@ func TestEnsureMultiClusterEngineCR(t *testing.T) {
 	mceName := "test-mce"
 
 	tests := []struct {
-		name         string
-		existingMCE  *mcev1.MultiClusterEngine
-		mch          *operatorsv1.MultiClusterHub
-		olmVersion   string
-		objects      []client.Object
-		wantError    bool
-		wantRequeue  bool
-		wantCreate   bool
+		name        string
+		existingMCE *mcev1.MultiClusterEngine
+		mch         *operatorsv1.MultiClusterHub
+		olmVersion  string
+		objects     []client.Object
+		wantError   bool
+		wantRequeue bool
+		wantCreate  bool
 	}{
 		{
 			name: "MCE already exists - update it",
