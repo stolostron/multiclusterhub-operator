@@ -34,6 +34,7 @@ import (
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
+	renderer "github.com/stolostron/multiclusterhub-operator/pkg/rendering"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -71,7 +72,7 @@ This ensures MCE can create the component fresh without conflicts.
 */
 func (r *MultiClusterHubReconciler) pruneMigratedComponents(ctx context.Context, m *operatorv1.MultiClusterHub, isSTSEnabled bool) (ctrl.Result, error) {
 	// Process each migrated component
-	for component := range migratedComponentDeployments {
+	for component := range MCHMigratedComponents {
 		if !m.ComponentPresent(component) {
 			// Already pruned, skip
 			continue
