@@ -707,7 +707,7 @@ func Test_GetDeploymentsForStatus(t *testing.T) {
 			name:       "should get deployment status for MCH components",
 			mch:        resources.EmptyMCH(),
 			stsEnabled: false,
-			want:       20,
+			want:       21,
 		},
 		{
 			name: "should get deployment status for MCH components with STS enabled",
@@ -724,7 +724,7 @@ func Test_GetDeploymentsForStatus(t *testing.T) {
 				},
 			},
 			stsEnabled: true,
-			want:       21,
+			want:       22,
 			mustNotContain: []types.NamespacedName{
 				{Name: "openshift-adp-controller-manager", Namespace: ClusterSubscriptionNamespace},
 			},
@@ -744,7 +744,7 @@ func Test_GetDeploymentsForStatus(t *testing.T) {
 				},
 			},
 			stsEnabled: false,
-			want:       22,
+			want:       23,
 			mustContain: []types.NamespacedName{
 				{Name: "openshift-adp-controller-manager", Namespace: ClusterSubscriptionNamespace},
 			},
