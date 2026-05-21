@@ -443,6 +443,9 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole, isSTSEn
 	if m.Enabled(operatorsv1.Volsync) {
 		nn = append(nn, types.NamespacedName{Name: "volsync-addon-controller", Namespace: m.Namespace})
 	}
+	if m.Enabled(operatorsv1.SubmarinerAddon) {
+		nn = append(nn, types.NamespacedName{Name: "submariner-addon", Namespace: m.Namespace})
+	}
 	if m.Enabled(operatorsv1.MultiClusterObservability) {
 		nn = append(nn, types.NamespacedName{Name: "multicluster-observability-operator", Namespace: m.Namespace})
 	}
