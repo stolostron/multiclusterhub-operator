@@ -26,7 +26,7 @@ require (
 	k8s.io/client-go v0.33.2
 	k8s.io/klog/v2 v2.140.0
 	k8s.io/kube-aggregator v0.29.3
-	k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738
+	k8s.io/utils v0.0.0-20260507154919-ff6756f316d2
 	open-cluster-management.io/api v0.16.2
 	sigs.k8s.io/controller-runtime v0.19.4
 	sigs.k8s.io/yaml v1.6.0
@@ -104,7 +104,7 @@ require (
 	golang.org/x/tools v0.44.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260519071638-aa98bba5eb94 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260511170946-3700d4141b60 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260519071638-aa98bba5eb94 // indirect
 	google.golang.org/grpc v1.79.3 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
