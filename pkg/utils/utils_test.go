@@ -698,7 +698,7 @@ func Test_GetDeploymentsForStatus(t *testing.T) {
 			name:       "should get deployment status for MCH components",
 			mch:        resources.EmptyMCH(),
 			stsEnabled: false,
-			want:       19,
+			want:       20,
 		},
 		{
 			name: "should get deployment status for MCH components with STS enabled",
@@ -715,7 +715,7 @@ func Test_GetDeploymentsForStatus(t *testing.T) {
 				},
 			},
 			stsEnabled: true,
-			want:       20,
+			want:       21,
 		},
 		{
 			name: "should get deployment status for MCH components with STS disabled",
@@ -732,7 +732,7 @@ func Test_GetDeploymentsForStatus(t *testing.T) {
 				},
 			},
 			stsEnabled: false,
-			want:       21,
+			want:       22,
 		},
 	}
 
