@@ -7,6 +7,161 @@ spec:
   agentSpec:
     workload:
       manifests:
+      - apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRole
+        metadata:
+          annotations:
+            addon.open-cluster-management.io/addon-pre-delete: ''
+          labels:
+            apps.open-cluster-management.io/gitopsaddon: 'true'
+          name: gitops-addon-cleanup
+        rules:
+        - apiGroups:
+          - ''
+          resources:
+          - namespaces
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - ''
+          resources:
+          - serviceaccounts
+          verbs:
+          - get
+          - list
+          - watch
+          - delete
+        - apiGroups:
+          - ''
+          resources:
+          - pods
+          verbs:
+          - get
+          - list
+          - watch
+          - delete
+        - apiGroups:
+          - ''
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - delete
+        - apiGroups:
+          - ''
+          resources:
+          - services
+          verbs:
+          - get
+          - list
+          - watch
+          - delete
+        - apiGroups:
+          - ''
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          verbs:
+          - get
+          - list
+          - watch
+          - delete
+        - apiGroups:
+          - apps
+          resources:
+          - statefulsets
+          verbs:
+          - get
+          - list
+          - watch
+          - delete
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - roles
+          - rolebindings
+          verbs:
+          - get
+          - list
+          - delete
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - clusterroles
+          - clusterrolebindings
+          verbs:
+          - get
+          - list
+          - delete
+        - apiGroups:
+          - argoproj.io
+          resources:
+          - argocds
+          verbs:
+          - get
+          - list
+          - watch
+          - delete
+          - patch
+        - apiGroups:
+          - operators.coreos.com
+          resources:
+          - subscriptions
+          verbs:
+          - get
+          - list
+          - delete
+        - apiGroups:
+          - operators.coreos.com
+          resources:
+          - clusterserviceversions
+          verbs:
+          - get
+          - list
+          - delete
+        - apiGroups:
+          - operators.coreos.com
+          resources:
+          - installplans
+          verbs:
+          - get
+          - list
+          - delete
+        - apiGroups:
+          - pipelines.openshift.io
+          resources:
+          - gitopsservices
+          verbs:
+          - get
+          - delete
+      - apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRoleBinding
+        metadata:
+          annotations:
+            addon.open-cluster-management.io/addon-pre-delete: ''
+          labels:
+            apps.open-cluster-management.io/gitopsaddon: 'true'
+          name: gitops-addon-cleanup
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: ClusterRole
+          name: gitops-addon-cleanup
+        subjects:
+        - kind: ServiceAccount
+          name: gitops-addon
+          namespace: open-cluster-management-agent-addon
       - apiVersion: batch/v1
         kind: Job
         metadata:
@@ -19,7 +174,14 @@ spec:
         spec:
           activeDeadlineSeconds: 600
           backoffLimit: 3
+          manualSelector: true
+          selector:
+            matchLabels:
+              job-name: gitops-addon-cleanup
           template:
+            metadata:
+              labels:
+                job-name: gitops-addon-cleanup
             spec:
               containers:
               - args:
@@ -195,6 +357,7 @@ spec:
           - create
           - update
           - patch
+          - delete
         - apiGroups:
           - ''
           resources:
@@ -226,6 +389,7 @@ spec:
           - create
           - update
           - patch
+          - delete
         - apiGroups:
           - ''
           resources:
