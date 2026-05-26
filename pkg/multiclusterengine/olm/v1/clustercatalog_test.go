@@ -4,6 +4,8 @@ package v1
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"testing"
 
 	ocv1 "github.com/operator-framework/operator-controller/api/v1"
@@ -13,6 +15,33 @@ import (
 )
 
 func Test_GetClusterCatalog(t *testing.T) {
+	// Save original catalogQueryFunc and restore after tests
+	originalCatalogQueryFunc := catalogQueryFunc
+	defer func() {
+		catalogQueryFunc = originalCatalogQueryFunc
+	}()
+
+	// Mock catalogQueryFunc for testing
+	// Simulates catalog content based on naming conventions:
+	// - catalogs with "mce" in name contain "multicluster-engine"
+	// - catalogs with "acm" in name contain "advanced-cluster-management"
+	// - "redhat-operators" and similar contain both packages
+	catalogQueryFunc = func(catalogName, packageName string) (bool, error) {
+		// Simulate catalog content based on catalog name
+		switch {
+		case strings.Contains(catalogName, "mce"):
+			return packageName == "multicluster-engine", nil
+		case strings.Contains(catalogName, "acm"):
+			return packageName == "advanced-cluster-management", nil
+		case strings.Contains(catalogName, "redhat") || strings.Contains(catalogName, "community"):
+			// Default catalogs contain both packages
+			return true, nil
+		default:
+			// Other catalogs contain the requested package by default (for backward compat with tests)
+			return true, nil
+		}
+	}
+
 	tests := []struct {
 		name           string
 		catalogs       []ocv1.ClusterCatalog
@@ -208,6 +237,81 @@ func Test_GetClusterCatalog(t *testing.T) {
 			desiredPackage: "multicluster-engine",
 			wantName:       "medium-and-serving",
 			wantErr:        false,
+		},
+		{
+			name: "Filter by package - MCE package selects mce catalog",
+			catalogs: []ocv1.ClusterCatalog{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "acm-dev-catalog"},
+					Spec: ocv1.ClusterCatalogSpec{
+						Priority:         0,
+						AvailabilityMode: "Available",
+					},
+					Status: ocv1.ClusterCatalogStatus{
+						Conditions: []metav1.Condition{{Type: "Serving", Status: "True"}},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "mce-dev-catalog"},
+					Spec: ocv1.ClusterCatalogSpec{
+						Priority:         0,
+						AvailabilityMode: "Available",
+					},
+					Status: ocv1.ClusterCatalogStatus{
+						Conditions: []metav1.Condition{{Type: "Serving", Status: "True"}},
+					},
+				},
+			},
+			desiredPackage: "multicluster-engine",
+			wantName:       "mce-dev-catalog",
+			wantErr:        false,
+		},
+		{
+			name: "Filter by package - ACM package selects acm catalog",
+			catalogs: []ocv1.ClusterCatalog{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "acm-dev-catalog"},
+					Spec: ocv1.ClusterCatalogSpec{
+						Priority:         0,
+						AvailabilityMode: "Available",
+					},
+					Status: ocv1.ClusterCatalogStatus{
+						Conditions: []metav1.Condition{{Type: "Serving", Status: "True"}},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "mce-dev-catalog"},
+					Spec: ocv1.ClusterCatalogSpec{
+						Priority:         0,
+						AvailabilityMode: "Available",
+					},
+					Status: ocv1.ClusterCatalogStatus{
+						Conditions: []metav1.Condition{{Type: "Serving", Status: "True"}},
+					},
+				},
+			},
+			desiredPackage: "advanced-cluster-management",
+			wantName:       "acm-dev-catalog",
+			wantErr:        false,
+		},
+		{
+			name: "No catalog contains requested package",
+			catalogs: []ocv1.ClusterCatalog{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "mce-dev-catalog"},
+					Spec: ocv1.ClusterCatalogSpec{
+						Priority:         0,
+						AvailabilityMode: "Available",
+					},
+					Status: ocv1.ClusterCatalogStatus{
+						Conditions: []metav1.Condition{{Type: "Serving", Status: "True"}},
+					},
+				},
+			},
+			desiredPackage: "advanced-cluster-management",
+			wantName:       "",
+			wantErr:        true,
+			errContains:    "no ClusterCatalog found containing package",
 		},
 	}
 
