@@ -520,3 +520,398 @@ func FindCondition(conditions []operatorsv1.HubCondition, condType operatorsv1.H
 	}
 	return nil
 }
+
+func TestListCustomResources(t *testing.T) {
+	tests := []struct {
+		name       string
+		olmVersion string
+		objects    []client.Object
+		wantKeys   []string
+	}{
+		{
+			name:       "OLM v1 - ClusterExtension present",
+			olmVersion: "v1",
+			objects: []client.Object{
+				&ocv1.ClusterExtension{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "multicluster-engine",
+						Labels: map[string]string{
+							"multiclusterhubs.operator.open-cluster-management.io/managed-by": "true",
+						},
+					},
+				},
+				&mcev1.MultiClusterEngine{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "multiclusterengine",
+					},
+				},
+			},
+			wantKeys: []string{"mce-clusterextension", "mce"},
+		},
+		{
+			name:       "OLM v0 - Subscription and CSV present",
+			olmVersion: "v0",
+			objects: []client.Object{
+				&subv1alpha1.Subscription{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "multicluster-engine",
+						Namespace: "multicluster-engine",
+						Labels: map[string]string{
+							"multiclusterhubs.operator.open-cluster-management.io/managed-by": "true",
+						},
+					},
+					Spec: &subv1alpha1.SubscriptionSpec{
+						Package: "multicluster-engine",
+					},
+					Status: subv1alpha1.SubscriptionStatus{
+						CurrentCSV:   "multicluster-engine.v2.0.0",
+						InstalledCSV: "multicluster-engine.v2.0.0",
+					},
+				},
+				&subv1alpha1.ClusterServiceVersion{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "multicluster-engine.v2.0.0",
+						Namespace: "multicluster-engine",
+					},
+				},
+				&mcev1.MultiClusterEngine{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "multiclusterengine",
+					},
+				},
+			},
+			wantKeys: []string{"mce-sub", "mce-csv", "mce"},
+		},
+		{
+			name:       "No OLM - only MCE CR",
+			olmVersion: "",
+			objects: []client.Object{
+				&mcev1.MultiClusterEngine{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "multiclusterengine",
+					},
+				},
+			},
+			wantKeys: []string{"mce"},
+		},
+		{
+			name:       "OLM v1 - no resources present",
+			olmVersion: "v1",
+			objects:    []client.Object{},
+			wantKeys:   []string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := scheme.Scheme
+			_ = mcev1.AddToScheme(s)
+			_ = operatorsv1.AddToScheme(s)
+			_ = ocv1.AddToScheme(s)
+			_ = subv1alpha1.AddToScheme(s)
+
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(s).
+				WithObjects(tt.objects...).
+				Build()
+
+			reconciler := &MultiClusterHubReconciler{
+				Client:     fakeClient,
+				Scheme:     s,
+				Log:        clog.Log.WithName("test"),
+				OLMVersion: tt.olmVersion,
+			}
+
+			mch := &operatorsv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-mch",
+					Namespace: "test-ns",
+				},
+			}
+
+			result, err := reconciler.listCustomResources(mch)
+			if err != nil {
+				t.Errorf("listCustomResources() unexpected error: %v", err)
+				return
+			}
+
+			// Check expected keys present
+			for _, key := range tt.wantKeys {
+				if _, exists := result[key]; !exists {
+					t.Errorf("listCustomResources() missing expected key: %s", key)
+				}
+			}
+
+			// For OLM scenarios, verify correct number of keys
+			if tt.olmVersion != "" && len(tt.objects) > 0 {
+				// Account for mce key which is always present
+				if len(result) != len(tt.wantKeys) {
+					t.Errorf("listCustomResources() got %d keys, want %d", len(result), len(tt.wantKeys))
+				}
+			}
+		})
+	}
+}
+
+func TestAddInstallerLabelSecret(t *testing.T) {
+	tests := []struct {
+		name          string
+		secret        *corev1.Secret
+		installerName string
+		installerNS   string
+		wantUpdated   bool
+		wantLabels    map[string]string
+	}{
+		{
+			name: "No labels exist - add both",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-secret",
+				},
+			},
+			installerName: "test-installer",
+			installerNS:   "test-ns",
+			wantUpdated:   true,
+			wantLabels: map[string]string{
+				"installer.name":      "test-installer",
+				"installer.namespace": "test-ns",
+			},
+		},
+		{
+			name: "Labels already correct - no update",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-secret",
+					Labels: map[string]string{
+						"installer.name":      "test-installer",
+						"installer.namespace": "test-ns",
+					},
+				},
+			},
+			installerName: "test-installer",
+			installerNS:   "test-ns",
+			wantUpdated:   false,
+			wantLabels: map[string]string{
+				"installer.name":      "test-installer",
+				"installer.namespace": "test-ns",
+			},
+		},
+		{
+			name: "Name label wrong - update",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-secret",
+					Labels: map[string]string{
+						"installer.name":      "wrong-name",
+						"installer.namespace": "test-ns",
+					},
+				},
+			},
+			installerName: "test-installer",
+			installerNS:   "test-ns",
+			wantUpdated:   true,
+			wantLabels: map[string]string{
+				"installer.name":      "test-installer",
+				"installer.namespace": "test-ns",
+			},
+		},
+		{
+			name: "Namespace label wrong - update",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-secret",
+					Labels: map[string]string{
+						"installer.name":      "test-installer",
+						"installer.namespace": "wrong-ns",
+					},
+				},
+			},
+			installerName: "test-installer",
+			installerNS:   "test-ns",
+			wantUpdated:   true,
+			wantLabels: map[string]string{
+				"installer.name":      "test-installer",
+				"installer.namespace": "test-ns",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			updated := addInstallerLabelSecret(tt.secret, tt.installerName, tt.installerNS)
+
+			if updated != tt.wantUpdated {
+				t.Errorf("addInstallerLabelSecret() updated = %v, want %v", updated, tt.wantUpdated)
+			}
+
+			for key, want := range tt.wantLabels {
+				if got := tt.secret.Labels[key]; got != want {
+					t.Errorf("addInstallerLabelSecret() label[%s] = %v, want %v", key, got, want)
+				}
+			}
+		})
+	}
+}
+
+func TestEnsureMCESubscription(t *testing.T) {
+	// Set POD_NAMESPACE for tests
+	t.Setenv("POD_NAMESPACE", "test-ns")
+
+	tests := []struct {
+		name        string
+		olmVersion  string
+		mch         *operatorsv1.MultiClusterHub
+		wantError   bool
+		wantRequeue bool
+	}{
+		{
+			name:       "No OLM - skip subscription management",
+			olmVersion: "",
+			mch: &operatorsv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-mch",
+					Namespace: "test-ns",
+				},
+			},
+			wantError:   false,
+			wantRequeue: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := scheme.Scheme
+			_ = mcev1.AddToScheme(s)
+			_ = operatorsv1.AddToScheme(s)
+			_ = subv1alpha1.AddToScheme(s)
+			_ = corev1.AddToScheme(s)
+
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(s).
+				Build()
+
+			reconciler := &MultiClusterHubReconciler{
+				Client:     fakeClient,
+				Scheme:     s,
+				Log:        clog.Log.WithName("test"),
+				OLMVersion: tt.olmVersion,
+			}
+
+			ctx := context.Background()
+			result, err := reconciler.ensureMCESubscription(ctx, tt.mch)
+
+			if tt.wantError {
+				if err == nil {
+					t.Errorf("ensureMCESubscription() expected error but got none")
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("ensureMCESubscription() unexpected error: %v", err)
+				return
+			}
+
+			if tt.wantRequeue && result.Requeue == false {
+				t.Errorf("ensureMCESubscription() expected requeue but got none")
+			}
+		})
+	}
+}
+
+func TestEnsureMCEClusterExtension(t *testing.T) {
+	tests := []struct {
+		name        string
+		objects     []client.Object
+		mch         *operatorsv1.MultiClusterHub
+		wantError   bool
+		wantRequeue bool
+	}{
+		{
+			name: "No ClusterCatalog found - error",
+			objects: []client.Object{
+				&corev1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "multicluster-engine",
+					},
+				},
+			},
+			mch: &operatorsv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-mch",
+					Namespace: "test-ns",
+				},
+			},
+			wantError:   true,
+			wantRequeue: false,
+		},
+		{
+			name: "No serving ClusterCatalog - error",
+			objects: []client.Object{
+				&ocv1.ClusterCatalog{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-catalog",
+					},
+					Status: ocv1.ClusterCatalogStatus{
+						Conditions: []metav1.Condition{
+							{
+								Type:   "Serving",
+								Status: metav1.ConditionFalse,
+							},
+						},
+					},
+				},
+			},
+			mch: &operatorsv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-mch",
+					Namespace: "test-ns",
+				},
+			},
+			wantError:   true,
+			wantRequeue: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := scheme.Scheme
+			_ = mcev1.AddToScheme(s)
+			_ = operatorsv1.AddToScheme(s)
+			_ = ocv1.AddToScheme(s)
+			_ = corev1.AddToScheme(s)
+			_ = rbacv1.AddToScheme(s)
+
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(s).
+				WithObjects(tt.objects...).
+				Build()
+
+			reconciler := &MultiClusterHubReconciler{
+				Client:     fakeClient,
+				Scheme:     s,
+				Log:        clog.Log.WithName("test"),
+				OLMVersion: "v1",
+			}
+
+			ctx := context.Background()
+			result, err := reconciler.ensureMCEClusterExtension(ctx, tt.mch)
+
+			if tt.wantError {
+				if err == nil {
+					t.Errorf("ensureMCEClusterExtension() expected error but got none")
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("ensureMCEClusterExtension() unexpected error: %v", err)
+				return
+			}
+
+			if tt.wantRequeue && result.Requeue == false {
+				t.Errorf("ensureMCEClusterExtension() expected requeue but got none")
+			}
+		})
+	}
+}
