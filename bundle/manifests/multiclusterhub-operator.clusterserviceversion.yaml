@@ -17,7 +17,7 @@ metadata:
     capabilities: Basic Install
     categories: Integration & Delivery
     certified: "false"
-    createdAt: "2026-05-06T15:23:36Z"
+    createdAt: "2026-05-27T18:28:10Z"
     description: Open management of Openshift and Kubernetes clusters
     operators.operatorframework.io/builder: operator-sdk-v1.42.2
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
@@ -1360,6 +1360,28 @@ spec:
           - update
           - watch
         - apiGroups:
+          - olm.operatorframework.io
+          resources:
+          - clustercatalogs
+          - clusterextensions
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - olm.operatorframework.io
+          resources:
+          - clustercatalogs/status
+          - clusterextensions/status
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
           - operator.open-cluster-management.io
           resources:
           - internalhubcomponents
@@ -1574,6 +1596,13 @@ spec:
           - list
           - update
           - watch
+        - apiGroups:
+          - search.open-cluster-management.io
+          resources:
+          - collectorconfigs/status
+          verbs:
+          - patch
+          - update
         - apiGroups:
           - search.open-cluster-management.io
           resources:
@@ -1852,7 +1881,7 @@ spec:
     type: SingleNamespace
   - supported: false
     type: MultiNamespace
-  - supported: false
+  - supported: true
     type: AllNamespaces
   keywords:
   - multiclusterhub
