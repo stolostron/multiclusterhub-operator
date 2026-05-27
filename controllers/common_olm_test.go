@@ -760,6 +760,7 @@ func TestEnsureMCESubscription(t *testing.T) {
 	tests := []struct {
 		name        string
 		olmVersion  string
+		objects     []client.Object
 		mch         *operatorsv1.MultiClusterHub
 		wantError   bool
 		wantRequeue bool
@@ -776,6 +777,25 @@ func TestEnsureMCESubscription(t *testing.T) {
 			wantError:   false,
 			wantRequeue: false,
 		},
+		{
+			name:       "OLM v1 - delegates to ensureMCEClusterExtension",
+			olmVersion: "v1",
+			objects: []client.Object{
+				&corev1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "multicluster-engine",
+					},
+				},
+			},
+			mch: &operatorsv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-mch",
+					Namespace: "test-ns",
+				},
+			},
+			wantError:   true, // Will error due to no ClusterCatalog
+			wantRequeue: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -785,9 +805,11 @@ func TestEnsureMCESubscription(t *testing.T) {
 			_ = operatorsv1.AddToScheme(s)
 			_ = subv1alpha1.AddToScheme(s)
 			_ = corev1.AddToScheme(s)
+			_ = ocv1.AddToScheme(s)
 
 			fakeClient := fake.NewClientBuilder().
 				WithScheme(s).
+				WithObjects(tt.objects...).
 				Build()
 
 			reconciler := &MultiClusterHubReconciler{
