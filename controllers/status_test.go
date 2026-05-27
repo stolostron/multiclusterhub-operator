@@ -912,7 +912,7 @@ func Test_getComponentStatuses(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getComponentStatuses(tt.args.hub, tt.args.allDeps, tt.args.allCRs, true, false); len(got) == 0 {
+			if got := getComponentStatuses(tt.args.hub, tt.args.allDeps, tt.args.allCRs, true, false, ""); len(got) == 0 {
 				t.Errorf("getComponentStatuses() = %v, want %v", got, tt.want)
 			}
 		})
@@ -1271,6 +1271,218 @@ func Test_isMinorVersionWithinRange(t *testing.T) {
 			if got := isMinorVersionWithinRange(tt.mceVersion, tt.mchVersion, tt.maxDiff); got != tt.want {
 				t.Errorf("isMinorVersionWithinRange(%s, %s, %d) = %v, want %v",
 					tt.mceVersion, tt.mchVersion, tt.maxDiff, got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_mapClusterExtension(t *testing.T) {
+	tests := []struct {
+		name string
+		ce   *unstructured.Unstructured
+		want operatorsv1.StatusCondition
+	}{
+		{
+			name: "Nil ClusterExtension",
+			ce:   nil,
+			want: operatorsv1.StatusCondition{
+				Name:      "",
+				Kind:      "ClusterExtension",
+				Status:    metav1.ConditionUnknown,
+				Reason:    "No conditions available",
+				Message:   "No conditions available",
+				Type:      "Unknown",
+				Available: false,
+			},
+		},
+		{
+			name: "ClusterExtension with no status",
+			ce: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"metadata": map[string]interface{}{
+						"name": "test-ce",
+					},
+				},
+			},
+			want: operatorsv1.StatusCondition{
+				Name:      "test-ce",
+				Kind:      "ClusterExtension",
+				Status:    metav1.ConditionUnknown,
+				Reason:    "No conditions available",
+				Message:   "No conditions available",
+				Type:      "Unknown",
+				Available: false,
+			},
+		},
+		{
+			name: "ClusterExtension with empty conditions",
+			ce: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"metadata": map[string]interface{}{
+						"name": "test-ce",
+					},
+					"status": map[string]interface{}{
+						"conditions": []interface{}{},
+					},
+				},
+			},
+			want: operatorsv1.StatusCondition{
+				Name:      "test-ce",
+				Kind:      "ClusterExtension",
+				Status:    metav1.ConditionUnknown,
+				Reason:    "No conditions available",
+				Message:   "No conditions available",
+				Type:      "Unknown",
+				Available: false,
+			},
+		},
+		{
+			name: "ClusterExtension with Installed=True condition",
+			ce: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"metadata": map[string]interface{}{
+						"name": "multicluster-engine",
+					},
+					"status": map[string]interface{}{
+						"conditions": []interface{}{
+							map[string]interface{}{
+								"type":    "Installed",
+								"status":  "True",
+								"reason":  "InstallationSucceeded",
+								"message": "Successfully installed",
+							},
+						},
+					},
+				},
+			},
+			want: operatorsv1.StatusCondition{
+				Name:      "multicluster-engine",
+				Kind:      "ClusterExtension",
+				Status:    metav1.ConditionTrue,
+				Reason:    "InstallationSucceeded",
+				Message:   "Successfully installed",
+				Type:      "Available",
+				Available: true,
+			},
+		},
+		{
+			name: "ClusterExtension with Installed=False condition",
+			ce: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"metadata": map[string]interface{}{
+						"name": "multicluster-engine",
+					},
+					"status": map[string]interface{}{
+						"conditions": []interface{}{
+							map[string]interface{}{
+								"type":    "Installed",
+								"status":  "False",
+								"reason":  "InstallationFailed",
+								"message": "Installation failed: dependency error",
+							},
+						},
+					},
+				},
+			},
+			want: operatorsv1.StatusCondition{
+				Name:      "multicluster-engine",
+				Kind:      "ClusterExtension",
+				Status:    metav1.ConditionFalse,
+				Reason:    "InstallationFailed",
+				Message:   "Installation failed: dependency error",
+				Type:      "Available",
+				Available: false,
+			},
+		},
+		{
+			name: "ClusterExtension with bundle info",
+			ce: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"metadata": map[string]interface{}{
+						"name": "multicluster-engine",
+					},
+					"status": map[string]interface{}{
+						"conditions": []interface{}{
+							map[string]interface{}{
+								"type":    "Installed",
+								"status":  "True",
+								"reason":  "InstallationSucceeded",
+								"message": "Operator running",
+							},
+						},
+						"installedBundle": map[string]interface{}{
+							"name":    "multicluster-engine.v2.15.0",
+							"version": "2.15.0",
+						},
+					},
+				},
+			},
+			want: operatorsv1.StatusCondition{
+				Name:      "multicluster-engine",
+				Kind:      "ClusterExtension",
+				Status:    metav1.ConditionTrue,
+				Reason:    "InstallationSucceeded",
+				Message:   "Bundle: multicluster-engine.v2.15.0 (version: 2.15.0). Operator running",
+				Type:      "Available",
+				Available: true,
+			},
+		},
+		{
+			name: "ClusterExtension with no Installed condition - uses first condition",
+			ce: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"metadata": map[string]interface{}{
+						"name": "test-ce",
+					},
+					"status": map[string]interface{}{
+						"conditions": []interface{}{
+							map[string]interface{}{
+								"type":    "Progressing",
+								"status":  "True",
+								"reason":  "Installing",
+								"message": "Installation in progress",
+							},
+						},
+					},
+				},
+			},
+			want: operatorsv1.StatusCondition{
+				Name:      "test-ce",
+				Kind:      "ClusterExtension",
+				Status:    metav1.ConditionTrue,
+				Reason:    "Installing",
+				Message:   "Installation in progress",
+				Type:      "Available",
+				Available: true,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := mapClusterExtension(tt.ce)
+
+			// Compare fields (ignore timestamps)
+			if got.Name != tt.want.Name {
+				t.Errorf("mapClusterExtension() Name = %v, want %v", got.Name, tt.want.Name)
+			}
+			if got.Kind != tt.want.Kind {
+				t.Errorf("mapClusterExtension() Kind = %v, want %v", got.Kind, tt.want.Kind)
+			}
+			if got.Status != tt.want.Status {
+				t.Errorf("mapClusterExtension() Status = %v, want %v", got.Status, tt.want.Status)
+			}
+			if got.Reason != tt.want.Reason {
+				t.Errorf("mapClusterExtension() Reason = %v, want %v", got.Reason, tt.want.Reason)
+			}
+			if got.Message != tt.want.Message {
+				t.Errorf("mapClusterExtension() Message = %v, want %v", got.Message, tt.want.Message)
+			}
+			if got.Type != tt.want.Type {
+				t.Errorf("mapClusterExtension() Type = %v, want %v", got.Type, tt.want.Type)
+			}
+			if got.Available != tt.want.Available {
+				t.Errorf("mapClusterExtension() Available = %v, want %v", got.Available, tt.want.Available)
 			}
 		})
 	}

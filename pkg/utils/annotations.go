@@ -53,9 +53,15 @@ var (
 
 	/*
 		AnnotationMCESubscriptionSpec is an annotation used in multiclusterhub to identify the subscription spec
-		last used to create the multiclustengine.
+		last used to create the multiclustengine (OLM v0).
 	*/
 	AnnotationMCESubscriptionSpec = "installer.open-cluster-management.io/mce-subscription-spec"
+
+	/*
+		AnnotationMCEClusterExtensionSpec is an annotation used in multiclusterhub to identify the clusterextension spec
+		last used to create the multiclustengine (OLM v1).
+	*/
+	AnnotationMCEClusterExtensionSpec = "installer.open-cluster-management.io/mce-clusterextension-spec"
 
 	/*
 		AnnotationOADPSubscriptionSpec is an annotation used to override the OADP subscription used in cluster-backup.
@@ -185,6 +191,9 @@ func AnnotationsMatch(old, new map[string]string) bool {
 	if !getAnnotationOrDefaultForMap(old, new, AnnotationMCESubscriptionSpec, "") {
 		return false
 	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationMCEClusterExtensionSpec, "") {
+		return false
+	}
 	if !getAnnotationOrDefaultForMap(old, new, AnnotationOADPSubscriptionSpec, "") {
 		return false
 	}
@@ -209,6 +218,7 @@ func AnnotationsMatch(old, new map[string]string) bool {
 		AnnotationKubeconfig:                 true,
 		AnnotationTemplateOverridesCM:        true,
 		AnnotationMCESubscriptionSpec:        true,
+		AnnotationMCEClusterExtensionSpec:    true,
 		AnnotationOADPSubscriptionSpec:       true,
 		AnnotationResourceAdoptionPolicy:     true,
 		AnnotationProbeTimeoutSeconds:        true,
@@ -323,6 +333,14 @@ or an empty string if not set.
 */
 func GetMCEAnnotationOverrides(instance *operatorsv1.MultiClusterHub) string {
 	return getAnnotation(instance, AnnotationMCESubscriptionSpec)
+}
+
+/*
+GetMCEClusterExtensionAnnotationOverrides returns the MCE ClusterExtension spec annotation value (OLM v1),
+or an empty string if not set.
+*/
+func GetMCEClusterExtensionAnnotationOverrides(instance *operatorsv1.MultiClusterHub) string {
+	return getAnnotation(instance, AnnotationMCEClusterExtensionSpec)
 }
 
 /*

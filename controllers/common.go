@@ -26,6 +26,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -34,6 +35,8 @@ import (
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
+	v0 "github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine/olm/v0"
+	v1 "github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine/olm/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -211,6 +214,79 @@ func (r *MultiClusterHubReconciler) ensureOperatorGroup(m *operatorv1.MultiClust
 	return ctrl.Result{}, nil
 }
 
+func (r *MultiClusterHubReconciler) ensureServiceAccount(m *operatorv1.MultiClusterHub, sa *corev1.ServiceAccount) (ctrl.Result, error) {
+	ctx := context.Background()
+
+	// Check if ServiceAccount already exists
+	existingSA := &corev1.ServiceAccount{}
+	err := r.Client.Get(ctx, types.NamespacedName{
+		Name:      sa.GetName(),
+		Namespace: sa.GetNamespace(),
+	}, existingSA)
+
+	if err == nil {
+		// ServiceAccount exists, nothing to do
+		return ctrl.Result{}, nil
+	}
+
+	if !errors.IsNotFound(err) {
+		// Unexpected error
+		r.Log.Info(fmt.Sprintf("error getting ServiceAccount in ns: %s. Error: %s", sa.GetNamespace(), err.Error()))
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	// ServiceAccount doesn't exist, create it
+	r.Log.Info(fmt.Sprintf("Ensuring ServiceAccount exists in ns: %s", sa.GetNamespace()))
+
+	force := true
+	err = r.Client.Patch(ctx, sa, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
+	if err != nil {
+		r.Log.Info(fmt.Sprintf("Error creating ServiceAccount: %s", err.Error()))
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+	SetHubCondition(&m.Status, *condition)
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterHubReconciler) ensureClusterRoleBinding(m *operatorv1.MultiClusterHub, crb *rbacv1.ClusterRoleBinding) (ctrl.Result, error) {
+	ctx := context.Background()
+
+	// Check if ClusterRoleBinding already exists
+	existingCRB := &rbacv1.ClusterRoleBinding{}
+	err := r.Client.Get(ctx, types.NamespacedName{
+		Name: crb.GetName(),
+	}, existingCRB)
+
+	if err == nil {
+		// ClusterRoleBinding exists, nothing to do
+		return ctrl.Result{}, nil
+	}
+
+	if !errors.IsNotFound(err) {
+		// Unexpected error
+		r.Log.Info(fmt.Sprintf("error getting ClusterRoleBinding %s. Error: %s", crb.GetName(), err.Error()))
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	// ClusterRoleBinding doesn't exist, create it
+	r.Log.Info(fmt.Sprintf("Ensuring ClusterRoleBinding exists: %s", crb.GetName()))
+
+	force := true
+	err = r.Client.Patch(ctx, crb, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
+	if err != nil {
+		r.Log.Info(fmt.Sprintf("Error creating ClusterRoleBinding: %s", err.Error()))
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+	SetHubCondition(&m.Status, *condition)
+
+	return ctrl.Result{}, nil
+}
+
 func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	mce, err := multiclusterengine.FindAndManageMCE(ctx, r.Client)
 	if err != nil {
@@ -218,7 +294,30 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 	}
 
 	if mce == nil {
-		mce = multiclusterengine.NewMultiClusterEngine(m)
+		// Determine target namespace from OLM resource if it exists
+		targetNS := multiclusterengine.OperandNamespace() // default
+
+		if r.OLMVersion == "v1" {
+			// Check if ClusterExtension exists to get its namespace
+			ce, err := v1.GetManagedMCEClusterExtension(ctx, r.Client)
+			if err != nil {
+				return ctrl.Result{}, fmt.Errorf("error finding MCE ClusterExtension: %w", err)
+			}
+			if ce != nil {
+				targetNS = ce.Spec.Namespace
+			}
+		} else if r.OLMVersion == "v0" {
+			// Check if Subscription exists to get its namespace
+			sub, err := v0.GetManagedMCESubscription(ctx, r.Client)
+			if err != nil {
+				return ctrl.Result{}, fmt.Errorf("error finding MCE Subscription: %w", err)
+			}
+			if sub != nil {
+				targetNS = sub.GetNamespace()
+			}
+		}
+
+		mce = multiclusterengine.NewMultiClusterEngine(m, targetNS)
 		err = r.Client.Create(ctx, mce)
 		if err != nil {
 			return ctrl.Result{Requeue: true}, fmt.Errorf("error creating new MCE: %w", err)
@@ -393,27 +492,45 @@ func (r *MultiClusterHubReconciler) listDeployments(namespaces []string) ([]*app
 func (r *MultiClusterHubReconciler) listCustomResources(m *operatorv1.MultiClusterHub) (map[string]*unstructured.Unstructured, error) {
 	ret := make(map[string]*unstructured.Unstructured)
 
-	var mceSub *unstructured.Unstructured
-	gotSub, err := multiclusterengine.GetManagedMCESubscription(context.Background(), r.Client)
-	if err != nil || gotSub == nil {
-		mceSub = nil
-	} else {
-		unstructuredSub, err := runtime.DefaultUnstructuredConverter.ToUnstructured(gotSub)
+	// List OLM resources based on detected version
+	// Use different keys for v0 vs v1 to enable proper status mapping
+	if r.OLMVersion == "v1" {
+		// OLM v1 path - get ClusterExtension
+		gotCE, err := v1.GetManagedMCEClusterExtension(context.Background(), r.Client)
 		if err != nil {
-			r.Log.Error(err, "Failed to unmarshal subscription")
+			r.Log.V(2).Info("Failed to get MCE ClusterExtension", "error", err)
+		} else if gotCE != nil {
+			unstructuredCE, err := runtime.DefaultUnstructuredConverter.ToUnstructured(gotCE)
+			if err != nil {
+				r.Log.Error(err, "Failed to unmarshal ClusterExtension")
+			} else {
+				ret["mce-clusterextension"] = &unstructured.Unstructured{Object: unstructuredCE}
+			}
 		}
-		mceSub = &unstructured.Unstructured{Object: unstructuredSub}
-	}
 
-	var mceCSV *unstructured.Unstructured
-	if gotSub == nil {
-		mceCSV = nil
-	} else {
-		mceCSV, err = r.GetCSVFromSubscription(gotSub)
-		if err != nil {
-			mceCSV = nil
+	} else if r.OLMVersion == "v0" {
+		// OLM v0 path - get Subscription and CSV
+		gotSub, subErr := v0.GetManagedMCESubscription(context.Background(), r.Client)
+		if subErr != nil {
+			r.Log.V(2).Info("Failed to get MCE subscription", "error", subErr)
+		}
+		if gotSub != nil {
+			unstructuredSub, err := runtime.DefaultUnstructuredConverter.ToUnstructured(gotSub)
+			if err != nil {
+				r.Log.Error(err, "Failed to unmarshal subscription")
+			} else {
+				ret["mce-sub"] = &unstructured.Unstructured{Object: unstructuredSub}
+			}
+
+			mceCSV, err := r.GetCSVFromSubscription(gotSub)
+			if err != nil {
+				r.Log.V(2).Info("Failed to get CSV from subscription", "error", err)
+			} else if mceCSV != nil {
+				ret["mce-csv"] = mceCSV
+			}
 		}
 	}
+	// If OLMVersion is "", no OLM resources to list
 
 	var mce *unstructured.Unstructured
 	gotMCE, err := multiclusterengineutils.GetManagedMCE(context.Background(), r.Client)
@@ -427,8 +544,6 @@ func (r *MultiClusterHubReconciler) listCustomResources(m *operatorv1.MultiClust
 		mce = &unstructured.Unstructured{Object: unstructuredMCE}
 	}
 
-	ret["mce-sub"] = mceSub
-	ret["mce-csv"] = mceCSV
 	ret["mce"] = mce
 	return ret, nil
 }
@@ -453,7 +568,21 @@ func addInstallerLabelSecret(d *corev1.Secret, name string, ns string) bool {
 
 // ensureMCESubscription verifies resources needed for MCE are created
 func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
-	mceSub, err := multiclusterengine.FindAndManageMCESubscription(ctx, r.Client)
+	// If no OLM detected, skip subscription management
+	// MCE is expected to be pre-installed or managed externally
+	if r.OLMVersion == "" {
+		r.Log.Info("No OLM detected - skipping MCE subscription management")
+		return ctrl.Result{}, nil
+	}
+
+	// Handle OLM v1 (ClusterExtension-based)
+	if r.OLMVersion == "v1" {
+		return r.ensureMCEClusterExtension(ctx, multiClusterHub)
+	}
+
+	// OLM v0 path (existing Subscription-based logic)
+	desiredPackage := multiclusterengine.DesiredPackage()
+	mceSub, err := v0.FindAndManageMCESubscription(ctx, r.Client, desiredPackage)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -463,7 +592,7 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	overrides, err := multiclusterengine.GetAnnotationOverrides(multiClusterHub)
+	overrides, err := v0.GetAnnotationOverrides(multiClusterHub)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -488,7 +617,8 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 	ctlSrc := types.NamespacedName{}
 	// Search for catalogsource if not defined in overrides
 	if overrides == nil || overrides.CatalogSource == "" {
-		ctlSrc, err = multiclusterengine.GetCatalogSource(r.Client)
+		desiredChannel := multiclusterengine.DesiredChannel()
+		ctlSrc, err = v0.GetCatalogSource(r.Client, desiredChannel, desiredPackage)
 		if err != nil {
 			r.Log.Info("Failed to find a suitable catalogsource.", "error", err)
 			return ctrl.Result{}, err
@@ -496,35 +626,37 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 	}
 
 	createSub := false
+	namespace := multiclusterengine.Namespace()
+	operandNs := multiclusterengine.OperandNamespace()
 	if mceSub == nil {
-		result, err := r.ensureNamespace(multiClusterHub, multiclusterengine.Namespace())
+		result, err := r.ensureNamespace(multiClusterHub, namespace)
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
-		result, err = r.ensurePullSecret(multiClusterHub, multiclusterengine.Namespace().Name)
+		result, err = r.ensurePullSecret(multiClusterHub, namespace.Name)
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
-		result, err = r.ensureOperatorGroup(multiClusterHub, multiclusterengine.OperatorGroup())
+		result, err = r.ensureOperatorGroup(multiClusterHub, v0.OperatorGroup(operandNs))
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
 		// Sub is nil so create a new one
-		mceSub = multiclusterengine.NewSubscription(multiClusterHub, subConfig, overrides, utils.IsCommunityMode())
+		mceSub = v0.NewSubscription(multiClusterHub, subConfig, overrides)
 		createSub = true
-	} else if multiclusterengine.CreatedByMCH(mceSub, multiClusterHub) {
-		result, err := r.ensurePullSecret(multiClusterHub, multiclusterengine.Namespace().Name)
+	} else if v0.CreatedByMCH(mceSub, multiClusterHub) {
+		result, err := r.ensurePullSecret(multiClusterHub, namespace.Name)
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
-		result, err = r.ensureOperatorGroup(multiClusterHub, multiclusterengine.OperatorGroup())
+		result, err = r.ensureOperatorGroup(multiClusterHub, v0.OperatorGroup(operandNs))
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
 	}
 
 	// Apply MCE sub
-	calcSub := multiclusterengine.RenderSubscription(mceSub, subConfig, overrides, ctlSrc, utils.IsCommunityMode())
+	calcSub := v0.RenderSubscription(mceSub, subConfig, overrides, ctlSrc)
 	if createSub {
 		err = r.Client.Create(ctx, calcSub)
 	} else {
@@ -532,6 +664,86 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 	}
 	if err != nil {
 		return ctrl.Result{Requeue: true}, fmt.Errorf("error updating subscription %s: %w", calcSub.Name, err)
+	}
+
+	return ctrl.Result{}, nil
+}
+
+// ensureMCEClusterExtension verifies resources needed for MCE are created (OLM v1 path)
+func (r *MultiClusterHubReconciler) ensureMCEClusterExtension(ctx context.Context, multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+	desiredPackage := multiclusterengine.DesiredPackage()
+
+	// Find or manage existing ClusterExtension
+	mceCE, err := v1.FindAndManageMCEClusterExtension(ctx, r.Client, desiredPackage)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// Get ClusterCatalog containing MCE package
+	catalogName, err := v1.GetClusterCatalog(ctx, r.Client, desiredPackage)
+	if err != nil {
+		r.Log.Info("Failed to find a suitable ClusterCatalog", "error", err)
+		return ctrl.Result{}, err
+	}
+
+	// Get annotation overrides for ClusterExtension
+	overrides, err := v1.GetAnnotationOverrides(multiClusterHub)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	createCE := false
+	namespace := multiclusterengine.Namespace()
+	operandNs := multiclusterengine.OperandNamespace()
+
+	if mceCE == nil {
+		// ClusterExtension doesn't exist - ensure namespace and mark for creation
+		result, err := r.ensureNamespace(multiClusterHub, namespace)
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+
+		mceCE = v1.NewClusterExtension(multiClusterHub)
+		createCE = true
+	}
+
+	// Ensure prerequisites for MCH-managed ClusterExtension (new or existing)
+	if createCE || v1.CreatedByMCH(mceCE, multiClusterHub) {
+		result, err := r.ensurePullSecret(multiClusterHub, namespace.Name)
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+
+		result, err = r.ensureServiceAccount(multiClusterHub, v1.ServiceAccount(operandNs))
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+
+		result, err = r.ensureClusterRoleBinding(multiClusterHub, v1.ClusterRoleBinding(operandNs))
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+	}
+
+	// Render ClusterExtension with current config
+	calcCE := v1.RenderClusterExtension(mceCE, multiClusterHub)
+
+	// Apply annotation overrides if present
+	v1.ApplyAnnotationOverrides(calcCE, overrides)
+
+	// Create or update ClusterExtension
+	if createCE {
+		r.Log.Info("Creating MCE ClusterExtension", "name", calcCE.Name, "catalog", catalogName)
+		err = r.Client.Create(ctx, calcCE)
+		if err == nil {
+			r.Log.Info("MCE ClusterExtension created successfully", "name", calcCE.Name)
+		}
+	} else {
+		r.Log.Info("Updating MCE ClusterExtension", "name", calcCE.Name)
+		err = r.Client.Update(ctx, calcCE)
+	}
+	if err != nil {
+		return ctrl.Result{Requeue: true}, fmt.Errorf("error updating ClusterExtension %s: %w", calcCE.Name, err)
 	}
 
 	return ctrl.Result{}, nil

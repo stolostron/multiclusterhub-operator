@@ -30,6 +30,7 @@ import (
 	ocopv1 "github.com/openshift/api/operator/v1"
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	ocv1 "github.com/operator-framework/operator-controller/api/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -172,7 +173,7 @@ func RunningState(k8sClient client.Client, reconciler *MultiClusterHubReconciler
 	Eventually(func() bool {
 		mce := &mcev1.MultiClusterEngine{}
 		result := true
-		err := k8sClient.Get(ctx, types.NamespacedName{Name: multiclusterengine.MulticlusterengineName}, mce)
+		err := k8sClient.Get(ctx, types.NamespacedName{Name: multiclusterengine.MCEDefaultName}, mce)
 		if err != nil {
 			fmt.Println(err.Error())
 			result = false
@@ -1053,6 +1054,7 @@ func registerScheme() {
 	subv1alpha1.AddToScheme(scheme.Scheme)
 	olmv1.AddToScheme(scheme.Scheme)
 	storagev1.AddToScheme(scheme.Scheme)
+	ocv1.AddToScheme(scheme.Scheme)
 }
 
 func Test_ensureAuthenticationIssuerNotEmpty(t *testing.T) {
@@ -1323,9 +1325,15 @@ func Test_ensureNamespaceAndPullSecret(t *testing.T) {
 				t.Errorf("failed to create mch secret: %v", err)
 			}
 
-			// Fake clients does not allow for apply patching; therefore we will accept the error.
-			if _, err := recon.ensureNamespaceAndPullSecret(tt.mch, tt.mceNS); err == nil {
+			// Apply patch should now succeed (controller-runtime v0.23+ fake client supports it)
+			if _, err := recon.ensureNamespaceAndPullSecret(tt.mch, tt.mceNS); err != nil {
 				t.Errorf("ensureNamespaceAndPullSecret(tt.mch, tt.ns) = %v, want = %v", err, tt.want)
+			}
+
+			// Verify secret was created in MCE namespace
+			mceSecretCopy := &corev1.Secret{}
+			if err := recon.Client.Get(context.TODO(), types.NamespacedName{Name: tt.mchSecret.Name, Namespace: tt.mceNS.Name}, mceSecretCopy); err != nil {
+				t.Errorf("failed to get MCE secret: %v", err)
 			}
 		})
 	}

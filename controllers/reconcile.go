@@ -68,11 +68,15 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	multiClusterHub.Status.HubConditions = filterOutConditionWithSubstring(multiClusterHub.Status.HubConditions,
 		string(operatorv1.ComponentFailure))
 
-	// Check to see if upgradeable
-	upgrade, err := r.setOperatorUpgradeableStatus(ctx, multiClusterHub)
-	if err != nil {
-		r.Log.Error(err, "Unable to set operator condition")
-		return ctrl.Result{}, err
+	// Check to see if upgradeable (OLM v0 only)
+	var upgrade bool
+	if r.OLMVersion == "v0" {
+		var err error
+		upgrade, err = r.setOperatorUpgradeableStatus(ctx, multiClusterHub)
+		if err != nil {
+			r.Log.Error(err, "Unable to set operator condition")
+			return ctrl.Result{}, err
+		}
 	}
 
 	trackedNamespaces := utils.TrackedNamespaces(multiClusterHub)

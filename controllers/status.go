@@ -85,13 +85,13 @@ var (
 	prevAvailability = make(map[string]bool)
 )
 
-func newComponentList(m *operatorsv1.MultiClusterHub, ocpConsole, isSTSEnabled bool) map[string]operatorsv1.StatusCondition {
+func newComponentList(m *operatorsv1.MultiClusterHub, ocpConsole, isSTSEnabled bool, olmVersion string) map[string]operatorsv1.StatusCondition {
 	components := make(map[string]operatorsv1.StatusCondition)
 	for _, d := range utils.GetDeploymentsForStatus(m, ocpConsole, isSTSEnabled) {
 		components[d.Name] = unknownStatus(d.Name, "Deployment")
 	}
 
-	for _, cr := range utils.GetCustomResourcesForStatus(m) {
+	for _, cr := range utils.GetCustomResourcesForStatus(m, olmVersion) {
 		components[cr.Name] = unknownStatus(cr.Name, "Component")
 	}
 	return components
@@ -113,7 +113,7 @@ func (r *MultiClusterHubReconciler) ComponentsAreRunning(m *operatorsv1.MultiClu
 
 	deployList, _ := r.listDeployments(trackedNamespaces)
 	crList, _ := r.listCustomResources(m)
-	componentStatuses := getComponentStatuses(m, deployList, crList, ocpConsole, isSTSEnabled)
+	componentStatuses := getComponentStatuses(m, deployList, crList, ocpConsole, isSTSEnabled, r.OLMVersion)
 
 	delete(componentStatuses, m.Spec.LocalClusterName)
 	return allComponentsSuccessful(componentStatuses)
@@ -156,7 +156,7 @@ func (r *MultiClusterHubReconciler) calculateStatus(ctx context.Context, hub *op
 
 	components := map[string]operatorsv1.StatusCondition{}
 	if paused := utils.IsPaused(hub); !paused {
-		components = getComponentStatuses(hub, allDeps, allCRs, ocpConsole, isSTSEnabled)
+		components = getComponentStatuses(hub, allDeps, allCRs, ocpConsole, isSTSEnabled, r.OLMVersion)
 	}
 
 	// Calculate MCE version compliance
@@ -230,8 +230,8 @@ func (r *MultiClusterHubReconciler) calculateStatus(ctx context.Context, hub *op
 
 // getComponentStatuses populates a complete list of the hub component statuses
 func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deployment,
-	allCRs map[string]*unstructured.Unstructured, ocpConsole, isSTSEnabled bool) map[string]operatorsv1.StatusCondition {
-	components := newComponentList(hub, ocpConsole, isSTSEnabled)
+	allCRs map[string]*unstructured.Unstructured, ocpConsole, isSTSEnabled bool, olmVersion string) map[string]operatorsv1.StatusCondition {
+	components := newComponentList(hub, ocpConsole, isSTSEnabled, olmVersion)
 
 	for _, d := range allDeps {
 		if _, ok := components[d.Name]; ok {
@@ -248,6 +248,8 @@ func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.De
 			components["multicluster-engine-sub"] = mapSubscription(cr)
 		case "mce-csv":
 			components["multicluster-engine-csv"] = mapCSV(cr)
+		case "mce-clusterextension":
+			components["multicluster-engine-clusterextension"] = mapClusterExtension(cr)
 		case "mce":
 			components["multicluster-engine"] = mapMultiClusterEngine(cr)
 		}
@@ -336,7 +338,7 @@ func mapDeployment(ds *appsv1.Deployment) operatorsv1.StatusCondition {
 
 func mapSubscription(sub *unstructured.Unstructured) operatorsv1.StatusCondition {
 	if sub == nil {
-		return unknownStatus(sub.GetName(), "Subscription")
+		return unknownStatus("", "Subscription")
 	}
 
 	spec, ok := sub.Object["spec"].(map[string]interface{})
@@ -387,9 +389,79 @@ func mapSubscription(sub *unstructured.Unstructured) operatorsv1.StatusCondition
 	}
 }
 
+func mapClusterExtension(ce *unstructured.Unstructured) operatorsv1.StatusCondition {
+	if ce == nil {
+		return unknownStatus("", "ClusterExtension")
+	}
+
+	status, ok := ce.Object["status"].(map[string]interface{})
+	if !ok {
+		return unknownStatus(ce.GetName(), "ClusterExtension")
+	}
+
+	// OLM v1 ClusterExtension uses conditions array
+	conditions, ok := status["conditions"].([]interface{})
+	if !ok || len(conditions) == 0 {
+		return unknownStatus(ce.GetName(), "ClusterExtension")
+	}
+
+	// Find "Installed" condition (primary indicator of success)
+	var installedCondition map[string]interface{}
+	for _, cond := range conditions {
+		condMap, ok := cond.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		condType, _ := condMap["type"].(string)
+		if condType == "Installed" {
+			installedCondition = condMap
+			break
+		}
+	}
+
+	if installedCondition == nil {
+		// Fallback to first condition if no "Installed" found
+		installedCondition, _ = conditions[0].(map[string]interface{})
+	}
+
+	componentStatus := "True"
+	reason, _ := installedCondition["reason"].(string)
+	message, _ := installedCondition["message"].(string)
+	condStatus, _ := installedCondition["status"].(string)
+
+	if condStatus != "True" {
+		componentStatus = condStatus
+	}
+
+	// Extract installed bundle info for additional context
+	installedBundle, _ := status["installedBundle"].(map[string]interface{})
+	bundleName, _ := installedBundle["name"].(string)
+	bundleVersion, _ := installedBundle["version"].(string)
+
+	if bundleName != "" {
+		if bundleVersion != "" {
+			message = fmt.Sprintf("Bundle: %s (version: %s). %s", bundleName, bundleVersion, message)
+		} else {
+			message = fmt.Sprintf("Bundle: %s. %s", bundleName, message)
+		}
+	}
+
+	return operatorsv1.StatusCondition{
+		Name:               ce.GetName(),
+		Kind:               "ClusterExtension",
+		Status:             metav1.ConditionStatus(componentStatus),
+		LastUpdateTime:     metav1.Now(),
+		LastTransitionTime: metav1.Now(),
+		Reason:             reason,
+		Message:            message,
+		Type:               "Available",
+		Available:          componentStatus == "True",
+	}
+}
+
 func mapMultiClusterEngine(mce *unstructured.Unstructured) operatorsv1.StatusCondition {
 	if mce == nil {
-		return unknownStatus(mce.GetName(), "MultiClusterEngine")
+		return unknownStatus("", "MultiClusterEngine")
 	}
 
 	status, ok := mce.Object["status"].(map[string]interface{})
@@ -439,7 +511,7 @@ func mapMultiClusterEngine(mce *unstructured.Unstructured) operatorsv1.StatusCon
 
 func mapCSV(csv *unstructured.Unstructured) operatorsv1.StatusCondition {
 	if csv == nil {
-		return unknownStatus(csv.GetName(), "ClusterServiceVersion")
+		return unknownStatus("", "ClusterServiceVersion")
 	}
 
 	status, ok := csv.Object["status"].(map[string]interface{})

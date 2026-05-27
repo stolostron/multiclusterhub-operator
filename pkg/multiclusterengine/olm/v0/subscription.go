@@ -1,15 +1,16 @@
-// Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-package multiclusterengine
+package v0
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 
+	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,20 +19,29 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+const (
+	// OLM v0 subscription constants
+	installPlanApproval = subv1alpha1.ApprovalAutomatic
+	operatorGroupName   = "default"
+)
+
 // NewSubscription returns an MCE subscription with desired default values
-func NewSubscription(m *operatorv1.MultiClusterHub, c *subv1alpha1.SubscriptionConfig, subOverrides *subv1alpha1.SubscriptionSpec, community bool) *subv1alpha1.Subscription {
-	chName, pkgName, catSourceName := channel, packageName, catalogSourceName
-	if community {
-		chName = communityChannel
-		pkgName = communityPackageName
-		catSourceName = communityCatalogSourceName
+func NewSubscription(m *operatorv1.MultiClusterHub, c *subv1alpha1.SubscriptionConfig,
+	subOverrides *subv1alpha1.SubscriptionSpec) *subv1alpha1.Subscription {
+	chName, pkgName, catSourceName :=
+		multiclusterengine.MCEProdChannel, multiclusterengine.MCEProdPackageName, CatalogSourceName
+	if utils.IsCommunityMode() {
+		chName = multiclusterengine.MCECommunityChannel
+		pkgName = multiclusterengine.MCECommunityPackageName
+		catSourceName = CommunityCatalogSourceName
 	}
 	labels := map[string]string{
 		"installer.name":                          m.GetName(),
 		"installer.namespace":                     m.GetNamespace(),
 		multiclusterengineutils.MCEManagedByLabel: "true",
 	}
-	namespace := OperandNamespace()
+	namespace := multiclusterengine.OperandNamespace()
+
 	sub := &subv1alpha1.Subscription{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: subv1alpha1.SubscriptionCRDAPIVersion,
@@ -47,7 +57,7 @@ func NewSubscription(m *operatorv1.MultiClusterHub, c *subv1alpha1.SubscriptionC
 			InstallPlanApproval:    installPlanApproval,
 			Package:                pkgName,
 			CatalogSource:          catSourceName,
-			CatalogSourceNamespace: catalogSourceNamespace,
+			CatalogSourceNamespace: CatalogSourceNamespace,
 			Config:                 c,
 		},
 	}
@@ -58,7 +68,8 @@ func NewSubscription(m *operatorv1.MultiClusterHub, c *subv1alpha1.SubscriptionC
 }
 
 // RenderSubscription returns a subscription by modifying the spec of an existing subscription based on overrides
-func RenderSubscription(existingSubscription *subv1alpha1.Subscription, config *subv1alpha1.SubscriptionConfig, overrides *subv1alpha1.SubscriptionSpec, ctlSrc types.NamespacedName, community bool) *subv1alpha1.Subscription {
+func RenderSubscription(existingSubscription *subv1alpha1.Subscription, config *subv1alpha1.SubscriptionConfig,
+	overrides *subv1alpha1.SubscriptionSpec, ctlSrc types.NamespacedName) *subv1alpha1.Subscription {
 	copy := existingSubscription.DeepCopy()
 	copy.ManagedFields = nil
 	copy.TypeMeta = metav1.TypeMeta{
@@ -66,11 +77,11 @@ func RenderSubscription(existingSubscription *subv1alpha1.Subscription, config *
 		Kind:       subv1alpha1.SubscriptionKind,
 	}
 
-	chName, pkgName, catSourceName := channel, packageName, catalogSourceName
-	if community {
-		chName = communityChannel
-		pkgName = communityPackageName
-		catSourceName = communityCatalogSourceName
+	chName, pkgName, catSourceName := multiclusterengine.MCEProdChannel, multiclusterengine.MCEProdPackageName, CatalogSourceName
+	if utils.IsCommunityMode() {
+		chName = multiclusterengine.MCECommunityChannel
+		pkgName = multiclusterengine.MCECommunityPackageName
+		catSourceName = CommunityCatalogSourceName
 	}
 
 	copy.Spec = &subv1alpha1.SubscriptionSpec{
@@ -78,7 +89,7 @@ func RenderSubscription(existingSubscription *subv1alpha1.Subscription, config *
 		InstallPlanApproval:    installPlanApproval,
 		Package:                pkgName,
 		CatalogSource:          catSourceName,
-		CatalogSourceNamespace: catalogSourceNamespace,
+		CatalogSourceNamespace: CatalogSourceNamespace,
 		Config:                 config,
 	}
 
@@ -138,7 +149,7 @@ func ApplyAnnotationOverrides(sub *subv1alpha1.Subscription, subspec *subv1alpha
 	}
 }
 
-// Finds MCE subscription by managed label. Returns nil if none found.
+// GetManagedMCESubscription finds MCE subscription by managed label. Returns nil if none found.
 func GetManagedMCESubscription(ctx context.Context, k8sClient client.Client) (*subv1alpha1.Subscription, error) {
 	subList := &subv1alpha1.SubscriptionList{}
 	if err := k8sClient.List(ctx, subList, &client.MatchingLabels{multiclusterengineutils.MCEManagedByLabel: "true"}); err != nil {
@@ -155,8 +166,8 @@ func GetManagedMCESubscription(ctx context.Context, k8sClient client.Client) (*s
 	return nil, nil
 }
 
-// find MCE subscription. label it for future. return nil if no sub found.
-func FindAndManageMCESubscription(ctx context.Context, k8sClient client.Client) (*subv1alpha1.Subscription, error) {
+// FindAndManageMCESubscription finds MCE subscription. label it for future. return nil if no sub found.
+func FindAndManageMCESubscription(ctx context.Context, k8sClient client.Client, desiredPackage string) (*subv1alpha1.Subscription, error) {
 	// first find subscription via managed-by label
 	sub, err := GetManagedMCESubscription(ctx, k8sClient)
 	if err != nil {
@@ -178,7 +189,7 @@ func FindAndManageMCESubscription(ctx context.Context, k8sClient client.Client) 
 		if wholeList.Items[i].Spec == nil {
 			continue
 		}
-		if wholeList.Items[i].Spec.Package == DesiredPackage() {
+		if wholeList.Items[i].Spec.Package == desiredPackage {
 			// adding label so it can be found in the future
 			labels := wholeList.Items[i].GetLabels()
 			if labels == nil {
@@ -195,7 +206,6 @@ func FindAndManageMCESubscription(ctx context.Context, k8sClient client.Client) 
 		}
 	}
 	return nil, nil
-
 }
 
 // CreatedByMCH returns true if the provided sub was created by the multiclusterhub-operator (as indicated by installer labels)
@@ -205,4 +215,21 @@ func CreatedByMCH(sub *subv1alpha1.Subscription, m *operatorv1.MultiClusterHub) 
 		return false
 	}
 	return l["installer.name"] == m.GetName() && l["installer.namespace"] == m.GetNamespace()
+}
+
+// OperatorGroup returns an OperatorGroup for MCE
+func OperatorGroup(operandNs string) *olmv1.OperatorGroup {
+	return &olmv1.OperatorGroup{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: olmv1.GroupVersion.String(),
+			Kind:       olmv1.OperatorGroupKind,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      operatorGroupName,
+			Namespace: operandNs,
+		},
+		Spec: olmv1.OperatorGroupSpec{
+			TargetNamespaces: []string{operandNs},
+		},
+	}
 }

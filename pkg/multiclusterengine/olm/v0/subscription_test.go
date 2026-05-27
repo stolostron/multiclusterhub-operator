@@ -1,7 +1,7 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-package multiclusterengine
+package v0
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 	"github.com/onsi/gomega"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -39,14 +40,16 @@ func TestNewSubscription(t *testing.T) {
 		InstallPlanApproval:    subv1alpha1.ApprovalManual,
 	}
 
-	got := NewSubscription(mch, config, nil, false)
+	got := NewSubscription(mch, config, nil)
 	g.Expect(got.Labels["installer.name"]).To(gomega.Not(gomega.Equal("")), "New MCE subscription should have installer labels")
 	g.Expect(got.Labels["installer.namespace"]).To(gomega.Not(gomega.Equal("")), "New MCE subscription should have installer labels")
 
-	got = NewSubscription(mch, config, nil, true)
-	g.Expect(got.Spec.Channel).To(gomega.Equal(communityChannel), "Use community values when in community mode")
+	t.Setenv("COMMUNITY_MODE", "true")
+	got = NewSubscription(mch, config, nil)
+	g.Expect(got.Spec.Channel).To(gomega.Equal(multiclusterengine.MCECommunityChannel), "Use community values when in community mode")
+	t.Setenv("COMMUNITY_MODE", "")
 
-	got = NewSubscription(mch, config, overrides, false)
+	got = NewSubscription(mch, config, overrides)
 	g.Expect(got.Spec.CatalogSource).To(gomega.Equal("custom"), "Overrides values should take priority")
 	g.Expect(got.Spec.CatalogSourceNamespace).To(gomega.Equal("custom"), "Overrides values should take priority")
 	g.Expect(got.Spec.Package).To(gomega.Equal("custom"), "Overrides values should take priority")
@@ -76,19 +79,23 @@ func TestRenderSubscription(t *testing.T) {
 		InstallPlanApproval:    subv1alpha1.ApprovalManual,
 	}
 
-	existing := NewSubscription(mch, config, nil, false)
+	existing := NewSubscription(mch, config, nil)
 	existing.Spec.StartingCSV = "0.0.1"
 
-	got := RenderSubscription(existing, config, nil, types.NamespacedName{}, true)
+	got := RenderSubscription(existing, config, nil, types.NamespacedName{})
 	g.Expect(existing.Labels).To(gomega.Equal(got.Labels), "RenderSubscription should not change metadata of subscription")
-	g.Expect(got.Spec.Channel).To(gomega.Equal(communityChannel), "Community values replace existing ones")
-	g.Expect(got.Spec.StartingCSV).To(gomega.Equal(""), "Changing the channel should scrub the startingCSV")
 
-	got = RenderSubscription(existing, config, nil, types.NamespacedName{Name: "test", Namespace: "test"}, true)
+	t.Setenv("COMMUNITY_MODE", "true")
+	got = RenderSubscription(existing, config, nil, types.NamespacedName{})
+	g.Expect(got.Spec.Channel).To(gomega.Equal(multiclusterengine.MCECommunityChannel), "Community values replace existing ones")
+	g.Expect(got.Spec.StartingCSV).To(gomega.Equal(""), "Changing the channel should scrub the startingCSV")
+	t.Setenv("COMMUNITY_MODE", "")
+
+	got = RenderSubscription(existing, config, nil, types.NamespacedName{Name: "test", Namespace: "test"})
 	g.Expect(got.Spec.CatalogSource).To(gomega.Equal("test"), "catalogSource values are set")
 	g.Expect(got.Spec.CatalogSourceNamespace).To(gomega.Equal("test"), "catalogSource values are set")
 
-	got = RenderSubscription(existing, config, overrides, types.NamespacedName{Name: "test", Namespace: "test"}, true)
+	got = RenderSubscription(existing, config, overrides, types.NamespacedName{Name: "test", Namespace: "test"})
 	g.Expect(got.Spec.CatalogSource).To(gomega.Equal("custom"), "Overrides values should take priority")
 	g.Expect(got.Spec.CatalogSourceNamespace).To(gomega.Equal("custom"), "Overrides values should take priority")
 	g.Expect(got.Spec.Package).To(gomega.Equal("custom"), "Overrides values should take priority")
@@ -185,7 +192,7 @@ func TestFindAndManageMCESubscription(t *testing.T) {
 			Namespace: "unmce",
 		},
 		Spec: &subv1alpha1.SubscriptionSpec{
-			Package: communityPackageName,
+			Package: multiclusterengine.MCECommunityPackageName,
 		},
 	}
 
@@ -201,7 +208,7 @@ func TestFindAndManageMCESubscription(t *testing.T) {
 		WithLists(&subv1alpha1.SubscriptionList{Items: []subv1alpha1.Subscription{*managedSub1}}).
 		Build()
 
-	got, err := FindAndManageMCESubscription(context.Background(), cl)
+	got, err := FindAndManageMCESubscription(context.Background(), cl, multiclusterengine.MCECommunityPackageName)
 	if err != nil {
 		t.Errorf("FindAndManageMCESubscription() should have found subscription by label. Got %v", err)
 	}
@@ -215,7 +222,7 @@ func TestFindAndManageMCESubscription(t *testing.T) {
 		WithLists(&subv1alpha1.SubscriptionList{Items: []subv1alpha1.Subscription{*managedSub1, *managedSub2}}).
 		Build()
 
-	_, err = FindAndManageMCESubscription(context.Background(), cl)
+	_, err = FindAndManageMCESubscription(context.Background(), cl, multiclusterengine.MCECommunityPackageName)
 	if err == nil {
 		t.Errorf("FindAndManageMCESubscription() should have errored due to multiple subscriptions")
 	}
@@ -226,7 +233,7 @@ func TestFindAndManageMCESubscription(t *testing.T) {
 		WithLists(&subv1alpha1.SubscriptionList{Items: []subv1alpha1.Subscription{*unmanagedSub1}}).
 		Build()
 
-	got, err = FindAndManageMCESubscription(context.Background(), cl)
+	got, err = FindAndManageMCESubscription(context.Background(), cl, multiclusterengine.MCECommunityPackageName)
 	if err != nil {
 		t.Errorf("FindAndManageMCESubscription() should have found subscription and labeled it. Got error %v", err)
 	}
