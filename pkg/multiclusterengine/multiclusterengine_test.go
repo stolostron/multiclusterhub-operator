@@ -6,8 +6,6 @@ import (
 	"testing"
 
 	"github.com/onsi/gomega"
-	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
@@ -15,16 +13,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
-
-var mockClient = fake.NewClientBuilder().Build()
-
-func registerScheme() {
-	olmapi.AddToScheme(scheme.Scheme)
-	subv1alpha1.AddToScheme(scheme.Scheme)
-}
 
 func TestDesiredPackage(t *testing.T) {
 	os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
@@ -59,10 +49,6 @@ func TestNameSpace(t *testing.T) {
 	}
 }
 
-// TestOperatorGroup - TODO: move to v0 package tests
-func TestOperatorGroup(t *testing.T) {
-	t.Skip("v0-specific test - needs to be in olm/v0 package")
-}
 func TestFindAndManageMCE(t *testing.T) {
 
 	managedmce1 := &mcev1.MultiClusterEngine{
@@ -406,24 +392,4 @@ func TestRenderMultiClusterEngine(t *testing.T) {
 		g.Expect(got.Annotations["imageRepository"]).To(gomega.Equal(""), "Override annotation should be be emptied")
 	})
 
-}
-
-// Test_filterPackageManifests - TODO: move to v0 package tests
-func Test_filterPackageManifests(t *testing.T) {
-	t.Skip("v0-specific test - needs to be in olm/v0 package")
-}
-
-// Test_GetCatalogSource - TODO: move to v0 package tests
-func Test_GetCatalogSource(t *testing.T) {
-	t.Skip("v0-specific test - needs to be in olm/v0 package")
-}
-
-// Test_extractCatalogSource - TODO: move to v0 package tests
-func Test_extractCatalogSource(t *testing.T) {
-	t.Skip("v0-specific test - needs to be in olm/v0 package")
-}
-
-// Test_findHighestPriorityCatalogSource - TODO: move to v0 package tests
-func Test_findHighestPriorityCatalogSource(t *testing.T) {
-	t.Skip("v0-specific test - needs to be in olm/v0 package")
 }
