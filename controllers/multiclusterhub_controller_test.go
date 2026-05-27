@@ -30,6 +30,7 @@ import (
 	ocopv1 "github.com/openshift/api/operator/v1"
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	ocv1 "github.com/operator-framework/operator-controller/api/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -1053,6 +1054,7 @@ func registerScheme() {
 	subv1alpha1.AddToScheme(scheme.Scheme)
 	olmv1.AddToScheme(scheme.Scheme)
 	storagev1.AddToScheme(scheme.Scheme)
+	ocv1.AddToScheme(scheme.Scheme)
 }
 
 func Test_ensureAuthenticationIssuerNotEmpty(t *testing.T) {

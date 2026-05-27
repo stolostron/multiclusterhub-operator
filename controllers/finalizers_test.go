@@ -112,3 +112,83 @@ func Test_cleanupMultiClusterEngine(t *testing.T) {
 		})
 	}
 }
+
+func Test_cleanupMultiClusterEngine_OLMv1(t *testing.T) {
+	registerScheme()
+
+	mch := resources.EmptyMCH()
+	mch.Name = "test-mch-olmv1"
+	mce := resources.EmptyMCE()
+	mce.Name = "test-mce-olmv1"
+	mce.Labels = map[string]string{
+		"installer.name":                          mch.GetName(),
+		"installer.namespace":                     mch.GetNamespace(),
+		multiclusterengineutils.MCEManagedByLabel: "true",
+	}
+
+	// Setup client with MCE
+	if err := recon.Client.Create(context.TODO(), &mch); err != nil {
+		t.Fatalf("failed to create MultiClusterHub: %v", err)
+	}
+	if err := recon.Client.Create(context.TODO(), &mce); err != nil {
+		t.Fatalf("failed to create MultiClusterEngine: %v", err)
+	}
+
+	// Set OLM v1 mode
+	recon.OLMVersion = "v1"
+
+	// First call should return error (MCE still exists)
+	err := recon.cleanupMultiClusterEngine(log, &mch)
+	if err == nil {
+		t.Error("expected error on first cleanup call, got nil")
+	}
+
+	// Second call should succeed (MCE deleted)
+	err = recon.cleanupMultiClusterEngine(log, &mch)
+	if err != nil {
+		t.Errorf("expected no error on second cleanup call, got: %v", err)
+	}
+
+	// Reset OLM version
+	recon.OLMVersion = ""
+}
+
+func Test_cleanupMultiClusterEngine_OLMv0(t *testing.T) {
+	registerScheme()
+
+	mch := resources.EmptyMCH()
+	mch.Name = "test-mch-olmv0"
+	mce := resources.EmptyMCE()
+	mce.Name = "test-mce-olmv0"
+	mce.Labels = map[string]string{
+		"installer.name":                          mch.GetName(),
+		"installer.namespace":                     mch.GetNamespace(),
+		multiclusterengineutils.MCEManagedByLabel: "true",
+	}
+
+	// Setup client with MCE
+	if err := recon.Client.Create(context.TODO(), &mch); err != nil {
+		t.Fatalf("failed to create MultiClusterHub: %v", err)
+	}
+	if err := recon.Client.Create(context.TODO(), &mce); err != nil {
+		t.Fatalf("failed to create MultiClusterEngine: %v", err)
+	}
+
+	// Set OLM v0 mode
+	recon.OLMVersion = "v0"
+
+	// First call should return error (MCE still exists)
+	err := recon.cleanupMultiClusterEngine(log, &mch)
+	if err == nil {
+		t.Error("expected error on first cleanup call, got nil")
+	}
+
+	// Second call should succeed (MCE deleted)
+	err = recon.cleanupMultiClusterEngine(log, &mch)
+	if err != nil {
+		t.Errorf("expected no error on second cleanup call, got: %v", err)
+	}
+
+	// Reset OLM version
+	recon.OLMVersion = ""
+}
