@@ -127,6 +127,7 @@ func catalogContainsPackage(catalogName, packageName string) (bool, error) {
 	url := fmt.Sprintf("https://catalogd-service.openshift-catalogd.svc/catalogs/%s/api/v1/all", catalogName)
 
 	// Skip TLS verification for in-cluster service communication
+	// #nosec G402 -- catalogd service uses self-signed cert for in-cluster communication
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
