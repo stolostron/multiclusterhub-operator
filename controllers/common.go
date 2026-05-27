@@ -497,7 +497,9 @@ func (r *MultiClusterHubReconciler) listCustomResources(m *operatorv1.MultiClust
 	if r.OLMVersion == "v1" {
 		// OLM v1 path - get ClusterExtension
 		gotCE, err := v1.GetManagedMCEClusterExtension(context.Background(), r.Client)
-		if gotCE != nil {
+		if err != nil {
+			r.Log.V(2).Info("Failed to get MCE ClusterExtension", "error", err)
+		} else if gotCE != nil {
 			unstructuredCE, err := runtime.DefaultUnstructuredConverter.ToUnstructured(gotCE)
 			if err != nil {
 				r.Log.Error(err, "Failed to unmarshal ClusterExtension")
@@ -505,8 +507,6 @@ func (r *MultiClusterHubReconciler) listCustomResources(m *operatorv1.MultiClust
 				ret["mce-clusterextension"] = &unstructured.Unstructured{Object: unstructuredCE}
 			}
 		}
-		// No CSV in OLM v1, no backward-compat keys needed
-		_ = err // Silence unused var
 
 	} else if r.OLMVersion == "v0" {
 		// OLM v0 path - get Subscription and CSV

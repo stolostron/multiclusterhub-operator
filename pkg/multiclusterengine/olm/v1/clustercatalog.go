@@ -23,7 +23,9 @@ const (
 )
 
 // catalogQueryFunc queries a catalog for package presence. Variable allows mocking in tests.
-var catalogQueryFunc = catalogContainsPackage
+var catalogQueryFunc = func(ctx context.Context, catalogName, packageName string) (bool, error) {
+	return catalogContainsPackage(ctx, catalogName, packageName)
+}
 
 // GetClusterCatalog returns the name of a ClusterCatalog containing the desired package.
 // Unlike v0 CatalogSource (namespaced), ClusterCatalog is cluster-scoped so returns only name.
@@ -74,7 +76,7 @@ func GetClusterCatalog(ctx context.Context, k8sClient client.Client, desiredPack
 	// Filter catalogs by package presence via catalogd API
 	var catalogsWithPackage []ocv1.ClusterCatalog
 	for _, cc := range availableCatalogs {
-		containsPackage, err := catalogQueryFunc(cc.Name, desiredPackage)
+		containsPackage, err := catalogQueryFunc(ctx, cc.Name, desiredPackage)
 		if err != nil {
 			log.V(1).Info("Failed to query ClusterCatalog for package", "catalog", cc.Name, "error", err)
 			continue
@@ -123,21 +125,29 @@ func GetClusterCatalog(ctx context.Context, k8sClient client.Client, desiredPack
 // catalogContainsPackage queries catalogd API to check if a catalog contains a package.
 // Uses the FBC (File-Based Catalog) v1 API: /catalogs/{catalog-name}/api/v1/all
 // Response is newline-delimited JSON where each entry is a bundle with a "package" field.
-func catalogContainsPackage(catalogName, packageName string) (bool, error) {
+func catalogContainsPackage(ctx context.Context, catalogName, packageName string) (bool, error) {
 	url := fmt.Sprintf("https://catalogd-service.openshift-catalogd.svc/catalogs/%s/api/v1/all", catalogName)
 
 	// Skip TLS verification for in-cluster service communication
 	// #nosec G402 -- catalogd service uses self-signed cert for in-cluster communication
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+			MinVersion:         tls.VersionTLS12,
+		},
 	}
 	client := &http.Client{Transport: tr}
 
-	resp, err := client.Get(url)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return false, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return false, fmt.Errorf("failed to query catalogd API: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return false, fmt.Errorf("catalogd API returned status %d", resp.StatusCode)

@@ -25,7 +25,7 @@ func Test_GetClusterCatalog(t *testing.T) {
 	// - catalogs with "mce" in name contain "multicluster-engine"
 	// - catalogs with "acm" in name contain "advanced-cluster-management"
 	// - "redhat-operators" and similar contain both packages
-	catalogQueryFunc = func(catalogName, packageName string) (bool, error) {
+	catalogQueryFunc = func(ctx context.Context, catalogName, packageName string) (bool, error) {
 		// Simulate catalog content based on catalog name
 		switch {
 		case strings.Contains(catalogName, "mce"):
