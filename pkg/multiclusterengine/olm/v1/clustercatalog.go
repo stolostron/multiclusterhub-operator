@@ -10,7 +10,9 @@ import (
 	"io"
 	"net/http"
 
+	configv1 "github.com/openshift/api/config/v1"
 	ocv1 "github.com/operator-framework/operator-controller/api/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -23,8 +25,8 @@ const (
 )
 
 // catalogQueryFunc queries a catalog for package presence. Variable allows mocking in tests.
-var catalogQueryFunc = func(ctx context.Context, catalogName, packageName string) (bool, error) {
-	return catalogContainsPackage(ctx, catalogName, packageName)
+var catalogQueryFunc = func(ctx context.Context, cl client.Client, catalogName, packageName string) (bool, error) {
+	return catalogContainsPackage(ctx, cl, catalogName, packageName)
 }
 
 // GetClusterCatalog returns the name of a ClusterCatalog containing the desired package.
@@ -76,7 +78,7 @@ func GetClusterCatalog(ctx context.Context, k8sClient client.Client, desiredPack
 	// Filter catalogs by package presence via catalogd API
 	var catalogsWithPackage []ocv1.ClusterCatalog
 	for _, cc := range availableCatalogs {
-		containsPackage, err := catalogQueryFunc(ctx, cc.Name, desiredPackage)
+		containsPackage, err := catalogQueryFunc(ctx, k8sClient, cc.Name, desiredPackage)
 		if err != nil {
 			log.V(1).Info("Failed to query ClusterCatalog for package", "catalog", cc.Name, "error", err)
 			continue
@@ -125,15 +127,25 @@ func GetClusterCatalog(ctx context.Context, k8sClient client.Client, desiredPack
 // catalogContainsPackage queries catalogd API to check if a catalog contains a package.
 // Uses the FBC (File-Based Catalog) v1 API: /catalogs/{catalog-name}/api/v1/all
 // Response is newline-delimited JSON where each entry is a bundle with a "package" field.
-func catalogContainsPackage(ctx context.Context, catalogName, packageName string) (bool, error) {
+func catalogContainsPackage(ctx context.Context, cl client.Client, catalogName, packageName string) (bool, error) {
 	url := fmt.Sprintf("https://catalogd-service.openshift-catalogd.svc/catalogs/%s/api/v1/all", catalogName)
+
+	// Get TLS configuration from cluster APIServer profile
+	tlsProfile, err := utils.GetAPIServerTLSProfile(ctx, cl)
+	if err != nil {
+		// Fallback to TLS 1.2 if profile unavailable
+		tlsProfile = &configv1.TLSProfileSpec{MinTLSVersion: configv1.VersionTLS12}
+	}
+
+	// Convert configv1.TLSProtocolVersion to tls version constant
+	minTLSVersion := tlsVersionToUint16(tlsProfile.MinTLSVersion)
 
 	// Skip TLS verification for in-cluster service communication
 	// #nosec G402 -- catalogd service uses self-signed cert for in-cluster communication
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
-			MinVersion:         tls.VersionTLS12,
+			MinVersion:         minTLSVersion,
 		},
 	}
 	client := &http.Client{Transport: tr}
@@ -175,4 +187,20 @@ func catalogContainsPackage(ctx context.Context, catalogName, packageName string
 	}
 
 	return false, nil
+}
+
+// tlsVersionToUint16 converts configv1.TLSProtocolVersion to crypto/tls version constant
+func tlsVersionToUint16(version configv1.TLSProtocolVersion) uint16 {
+	switch version {
+	case configv1.VersionTLS10:
+		return tls.VersionTLS10
+	case configv1.VersionTLS11:
+		return tls.VersionTLS11
+	case configv1.VersionTLS12:
+		return tls.VersionTLS12
+	case configv1.VersionTLS13:
+		return tls.VersionTLS13
+	default:
+		return tls.VersionTLS12 // Default to TLS 1.2
+	}
 }

@@ -10,6 +10,7 @@ import (
 	ocv1 "github.com/operator-framework/operator-controller/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -25,7 +26,7 @@ func Test_GetClusterCatalog(t *testing.T) {
 	// - catalogs with "mce" in name contain "multicluster-engine"
 	// - catalogs with "acm" in name contain "advanced-cluster-management"
 	// - "redhat-operators" and similar contain both packages
-	catalogQueryFunc = func(ctx context.Context, catalogName, packageName string) (bool, error) {
+	catalogQueryFunc = func(ctx context.Context, cl client.Client, catalogName, packageName string) (bool, error) {
 		// Simulate catalog content based on catalog name
 		switch {
 		case strings.Contains(catalogName, "mce"):
