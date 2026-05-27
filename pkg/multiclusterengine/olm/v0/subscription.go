@@ -26,8 +26,10 @@ const (
 )
 
 // NewSubscription returns an MCE subscription with desired default values
-func NewSubscription(m *operatorv1.MultiClusterHub, c *subv1alpha1.SubscriptionConfig, subOverrides *subv1alpha1.SubscriptionSpec) *subv1alpha1.Subscription {
-	chName, pkgName, catSourceName := multiclusterengine.MCEProdChannel, multiclusterengine.MCEProdPackageName, CatalogSourceName
+func NewSubscription(m *operatorv1.MultiClusterHub, c *subv1alpha1.SubscriptionConfig,
+	subOverrides *subv1alpha1.SubscriptionSpec) *subv1alpha1.Subscription {
+	chName, pkgName, catSourceName :=
+		multiclusterengine.MCEProdChannel, multiclusterengine.MCEProdPackageName, CatalogSourceName
 	if utils.IsCommunityMode() {
 		chName = multiclusterengine.MCECommunityChannel
 		pkgName = multiclusterengine.MCECommunityPackageName
@@ -66,7 +68,8 @@ func NewSubscription(m *operatorv1.MultiClusterHub, c *subv1alpha1.SubscriptionC
 }
 
 // RenderSubscription returns a subscription by modifying the spec of an existing subscription based on overrides
-func RenderSubscription(existingSubscription *subv1alpha1.Subscription, config *subv1alpha1.SubscriptionConfig, overrides *subv1alpha1.SubscriptionSpec, ctlSrc types.NamespacedName) *subv1alpha1.Subscription {
+func RenderSubscription(existingSubscription *subv1alpha1.Subscription, config *subv1alpha1.SubscriptionConfig,
+	overrides *subv1alpha1.SubscriptionSpec, ctlSrc types.NamespacedName) *subv1alpha1.Subscription {
 	copy := existingSubscription.DeepCopy()
 	copy.ManagedFields = nil
 	copy.TypeMeta = metav1.TypeMeta{

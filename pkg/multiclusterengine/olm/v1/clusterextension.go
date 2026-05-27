@@ -104,7 +104,8 @@ func GetManagedMCEClusterExtension(ctx context.Context, k8sClient client.Client)
 }
 
 // FindAndManageMCEClusterExtension finds MCE ClusterExtension, labels it for future. Returns nil if not found.
-func FindAndManageMCEClusterExtension(ctx context.Context, k8sClient client.Client, desiredPackage string) (*ocv1.ClusterExtension, error) {
+func FindAndManageMCEClusterExtension(ctx context.Context, k8sClient client.Client,
+	desiredPackage string) (*ocv1.ClusterExtension, error) {
 	log := log.Log.WithName("reconcile")
 
 	// First try via managed label
@@ -133,7 +134,8 @@ func FindAndManageMCEClusterExtension(ctx context.Context, k8sClient client.Clie
 		if ceList.Items[i].Spec.Source.Catalog != nil &&
 			ceList.Items[i].Spec.Source.Catalog.PackageName == desiredPackage {
 			if matchingCE != nil {
-				return nil, fmt.Errorf("multiple MCE ClusterExtensions found with package %s. Only one is supported", desiredPackage)
+				return nil, fmt.Errorf("multiple MCE ClusterExtensions found with package %s. Only one is supported",
+					desiredPackage)
 			}
 			matchingCE = &ceList.Items[i]
 		}
