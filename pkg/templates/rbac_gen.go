@@ -265,6 +265,7 @@ package main
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=create
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=delete;get;list;update;watch
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;list;watch
+//+kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;list;watch
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes;routes/custom-host;routes/status,verbs=get;list;create;update;delete;deletecollection;watch;create
 //+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=collectorconfigs/status,verbs=patch;update
 //+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=searches,verbs=get;list;patch;update;watch
@@ -283,6 +284,7 @@ package main
 //+kubebuilder:rbac:groups=submarineraddon.open-cluster-management.io,resources=submarinerconfigs/status,verbs=update;patch
 //+kubebuilder:rbac:groups=tower.ansible.com,resources=ansiblejobs,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=user.openshift.io,resources=users;groups,verbs=impersonate
+//+kubebuilder:rbac:groups=view.open-cluster-management.io,resources=managedclusterviews,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=wgpolicyk8s.io,resources=policyreports,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=wgpolicyk8s.io,resources=policyreports,verbs=list;watch
 //+kubebuilder:rbac:groups=work.open-cluster-management.io,resources=manifestworks,verbs=*

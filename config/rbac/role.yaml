@@ -1624,6 +1624,18 @@ rules:
   verbs:
   - impersonate
 - apiGroups:
+  - view.open-cluster-management.io
+  resources:
+  - managedclusterviews
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - wgpolicyk8s.io
   resources:
   - policyreports
