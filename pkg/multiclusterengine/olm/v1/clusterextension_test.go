@@ -115,6 +115,131 @@ func Test_RenderClusterExtension(t *testing.T) {
 	}
 }
 
+func Test_RenderClusterExtension_ClearsVersionOnChannelChange(t *testing.T) {
+	tests := []struct {
+		name            string
+		existingChannel string
+		existingVersion string
+		wantVersion     string
+	}{
+		{
+			name:            "Channel change clears version",
+			existingChannel: "stable-2.6",
+			existingVersion: "2.6.0",
+			wantVersion:     "",
+		},
+		{
+			name:            "Same channel preserves version",
+			existingChannel: multiclusterengine.DesiredChannel(),
+			existingVersion: "2.7.0",
+			wantVersion:     "2.7.0",
+		},
+		{
+			name:            "Channel change clears empty version",
+			existingChannel: "stable-2.6",
+			existingVersion: "",
+			wantVersion:     "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			existing := &ocv1.ClusterExtension{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-ce",
+				},
+				Spec: ocv1.ClusterExtensionSpec{
+					Namespace: "multicluster-engine",
+					ServiceAccount: ocv1.ServiceAccountReference{
+						Name: MCEInstallerServiceAccountName,
+					},
+					Source: ocv1.SourceConfig{
+						SourceType: "Catalog",
+						Catalog: &ocv1.CatalogFilter{
+							PackageName: "multicluster-engine",
+							Channels:    []string{tt.existingChannel},
+							Version:     tt.existingVersion,
+						},
+					},
+				},
+			}
+
+			mch := &operatorv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-mch",
+					Namespace: "open-cluster-management",
+				},
+			}
+
+			rendered := RenderClusterExtension(existing, mch)
+
+			if rendered.Spec.Source.Catalog.Version != tt.wantVersion {
+				t.Errorf("RenderClusterExtension() Version = %v, want %v", rendered.Spec.Source.Catalog.Version, tt.wantVersion)
+			}
+		})
+	}
+}
+
+func Test_channelsEqual(t *testing.T) {
+	tests := []struct {
+		name string
+		a    []string
+		b    []string
+		want bool
+	}{
+		{
+			name: "Equal single channel",
+			a:    []string{"stable-2.6"},
+			b:    []string{"stable-2.6"},
+			want: true,
+		},
+		{
+			name: "Equal multiple channels",
+			a:    []string{"stable-2.6", "fast"},
+			b:    []string{"stable-2.6", "fast"},
+			want: true,
+		},
+		{
+			name: "Different channels",
+			a:    []string{"stable-2.6"},
+			b:    []string{"stable-2.7"},
+			want: false,
+		},
+		{
+			name: "Different lengths",
+			a:    []string{"stable-2.6"},
+			b:    []string{"stable-2.6", "fast"},
+			want: false,
+		},
+		{
+			name: "Empty slices",
+			a:    []string{},
+			b:    []string{},
+			want: true,
+		},
+		{
+			name: "Nil vs empty",
+			a:    nil,
+			b:    []string{},
+			want: false,
+		},
+		{
+			name: "Both nil",
+			a:    nil,
+			b:    nil,
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := channelsEqual(tt.a, tt.b); got != tt.want {
+				t.Errorf("channelsEqual() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func Test_GetManagedMCEClusterExtension(t *testing.T) {
 	tests := []struct {
 		name        string
