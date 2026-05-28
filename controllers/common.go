@@ -597,6 +597,26 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 		return ctrl.Result{}, err
 	}
 
+	// Warn if annotation overrides conflict with desired state
+	if overrides != nil {
+		desiredChannel := multiclusterengine.DesiredChannel()
+
+		// Check if annotation channel differs from desired channel
+		if overrides.Channel != "" && overrides.Channel != desiredChannel {
+			r.Log.Info("WARNING: MCE Subscription annotation overrides channel, may block ACM-managed upgrades",
+				"annotation-channel", overrides.Channel,
+				"desired-channel", desiredChannel,
+				"annotation-key", utils.AnnotationMCESubscriptionSpec)
+		}
+
+		// Check if startingCSV pin is set (may prevent upgrades)
+		if overrides.StartingCSV != "" {
+			r.Log.Info("WARNING: MCE Subscription annotation pins startingCSV, may prevent upgrades",
+				"annotation-startingCSV", overrides.StartingCSV,
+				"annotation-key", utils.AnnotationMCESubscriptionSpec)
+		}
+	}
+
 	// Get InstallPlan approval from MCH operator subscription
 	var installPlanApproval subv1alpha1.Approval = subv1alpha1.ApprovalAutomatic
 	mchOperatorSub, err := r.FindMultiClusterHubOperatorSubscription(ctx)
@@ -690,6 +710,35 @@ func (r *MultiClusterHubReconciler) ensureMCEClusterExtension(ctx context.Contex
 	overrides, err := v1.GetAnnotationOverrides(multiClusterHub)
 	if err != nil {
 		return ctrl.Result{}, err
+	}
+
+	// Warn if annotation overrides conflict with desired state
+	if overrides != nil {
+		desiredChannel := multiclusterengine.DesiredChannel()
+
+		// Check if annotation channels differ from desired channel
+		if len(overrides.Channels) > 0 {
+			channelConflict := true
+			for _, ch := range overrides.Channels {
+				if ch == desiredChannel {
+					channelConflict = false
+					break
+				}
+			}
+			if channelConflict {
+				r.Log.Info("WARNING: MCE ClusterExtension annotation overrides channel, may block ACM-managed upgrades",
+					"annotation-channels", overrides.Channels,
+					"desired-channel", desiredChannel,
+					"annotation-key", utils.AnnotationMCEClusterExtensionSpec)
+			}
+		}
+
+		// Check if version pin is set (may prevent upgrades)
+		if overrides.Version != "" {
+			r.Log.Info("WARNING: MCE ClusterExtension annotation pins version, may prevent upgrades",
+				"annotation-version", overrides.Version,
+				"annotation-key", utils.AnnotationMCEClusterExtensionSpec)
+		}
 	}
 
 	createCE := false
