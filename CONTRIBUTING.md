@@ -122,6 +122,13 @@ sub-components).
    - `make`
 
 2. `oc login` into an OCP cluster. See [Requirements and recommendations](https://access.redhat.com/documentation/en-us/red_hat_advanced_cluster_management_for_kubernetes/2.2/html/install/installing#requirements-and-recommendations) for supported cluster sizes.
+   
+   **Note:** The operator automatically detects which OLM version (v0 or v1) is available on your cluster:
+   - **OLM v0** (OpenShift 4.x): Installs MCE via Subscription + CSV
+   - **OLM v1** (OpenShift 5.x+): Installs MCE via ClusterExtension
+   
+   No additional configuration is needed - the operator handles version detection automatically.
+
 3. Fork the `multiclusterhub-operator` GitHub repository
 4. Export the following environment variables:
 
