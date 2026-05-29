@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 
 	ocv1 "github.com/operator-framework/operator-controller/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
@@ -97,15 +98,7 @@ func channelsEqual(a, b []string) bool {
 	if (a == nil) != (b == nil) {
 		return false
 	}
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
+	return slices.Equal(a, b)
 }
 
 // GetManagedMCEClusterExtension finds MCE ClusterExtension by managed label. Returns nil if none found.
