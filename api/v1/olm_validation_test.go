@@ -63,7 +63,7 @@ func TestValidateOLMAnnotations(t *testing.T) {
 			annotations: map[string]string{
 				annotationMCEClusterExtensionSpec: `{"channels": ["stable-2.6"]}`,
 			},
-			olmVersion:  "v0",
+			olmVersion: "v0",
 			setupEnv: func() {
 				os.Setenv("OPERATOR_CONDITION_NAME", "multiclusterhub-operator")
 			},
