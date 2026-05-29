@@ -65,8 +65,8 @@ kubectl delete pod multiclusterhub-operator-xxxxx-xxxxx
 
 The multicluster engine is installed automatically as part of a standard MCH installation. The operator detects which OLM version is available and uses the appropriate method:
 
-- **OLM v0** (OpenShift 4.x): Uses Subscription + CSV
-- **OLM v1** (OpenShift 5.x+): Uses ClusterExtension
+- **OLM v0** (OpenShift 4.x - 4.15): Uses Subscription + CSV
+- **OLM v1** (OpenShift 4.16+): Uses ClusterExtension
 
 The installation spec can be overridden using version-specific annotations:
 
