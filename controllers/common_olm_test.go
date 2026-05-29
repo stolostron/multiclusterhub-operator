@@ -8,8 +8,11 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/go-logr/logr"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
+	v1 "github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine/olm/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -938,46 +941,170 @@ func TestEnsureMCEClusterExtension(t *testing.T) {
 	}
 }
 
-// TestAnnotationConflictWarnings verifies the warning logic added in PR
-// Tests compile and code paths execute for annotation override scenarios
-func TestAnnotationConflictWarnings(t *testing.T) {
-	// This test verifies that the warning code paths added in this PR
-	// compile correctly and don't introduce runtime errors.
-	// The actual warning log output requires integration testing.
+func TestCheckSubscriptionAnnotationConflicts(t *testing.T) {
+	// Get actual desired channel from multiclusterengine package
+	desiredChannel := multiclusterengine.DesiredChannel()
+	differentChannel := "different-channel"
 
-	t.Run("Subscription annotation warning code compiles", func(t *testing.T) {
-		// Verify warning logic for channel mismatch compiles
-		if true {
-			_ = "stable-2.5"
-			_ = "stable-2.6"
-			// Code from common.go:605-610 verified to compile
-		}
+	tests := []struct {
+		name      string
+		overrides *subv1alpha1.SubscriptionSpec
+		wantLogs  int // number of warning logs expected
+	}{
+		{
+			name:      "No overrides - no warnings",
+			overrides: nil,
+			wantLogs:  0,
+		},
+		{
+			name:      "Empty overrides - no warnings",
+			overrides: &subv1alpha1.SubscriptionSpec{},
+			wantLogs:  0,
+		},
+		{
+			name: "Channel matches desired - no channel warning",
+			overrides: &subv1alpha1.SubscriptionSpec{
+				Channel: desiredChannel,
+			},
+			wantLogs: 0,
+		},
+		{
+			name: "Channel differs from desired - warning",
+			overrides: &subv1alpha1.SubscriptionSpec{
+				Channel: differentChannel,
+			},
+			wantLogs: 1,
+		},
+		{
+			name: "StartingCSV set - warning",
+			overrides: &subv1alpha1.SubscriptionSpec{
+				StartingCSV: "multicluster-engine.v2.6.0",
+			},
+			wantLogs: 1,
+		},
+		{
+			name: "Both channel conflict and startingCSV - two warnings",
+			overrides: &subv1alpha1.SubscriptionSpec{
+				Channel:     differentChannel,
+				StartingCSV: "multicluster-engine.v2.5.0",
+			},
+			wantLogs: 2,
+		},
+	}
 
-		// Verify warning logic for startingCSV pin compiles
-		if true {
-			_ = "multicluster-engine.v2.6.0"
-			// Code from common.go:613-617 verified to compile
-		}
-	})
-
-	t.Run("ClusterExtension annotation warning code compiles", func(t *testing.T) {
-		// Verify warning logic for channel conflict compiles
-		channels := []string{"stable-2.5"}
-		desiredChannel := "stable-2.6"
-		channelConflict := true
-		for _, ch := range channels {
-			if ch == desiredChannel {
-				channelConflict = false
-				break
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Use test logger that counts log calls
+			logCount := 0
+			testSink := &testLogger{
+				onInfo: func(msg string, keysAndValues ...interface{}) {
+					if len(msg) > 0 && msg[0:7] == "WARNING" {
+						logCount++
+					}
+				},
 			}
-		}
-		if channelConflict {
-			// Code from common.go:720-733 verified to compile
-		}
+			testLog := logr.New(testSink)
 
-		// Verify warning logic for version pin compiles
-		if version := ">=2.6.0 <2.7.0"; version != "" {
-			// Code from common.go:737-740 verified to compile
-		}
-	})
+			checkSubscriptionAnnotationConflicts(testLog, tt.overrides)
+
+			if logCount != tt.wantLogs {
+				t.Errorf("checkSubscriptionAnnotationConflicts() logged %d warnings, want %d", logCount, tt.wantLogs)
+			}
+		})
+	}
+}
+
+func TestCheckClusterExtensionAnnotationConflicts(t *testing.T) {
+	// Get actual desired channel from multiclusterengine package
+	desiredChannel := multiclusterengine.DesiredChannel()
+	differentChannel := "different-channel"
+
+	tests := []struct {
+		name      string
+		overrides *v1.ClusterExtensionOverrides
+		wantLogs  int
+	}{
+		{
+			name:      "No overrides - no warnings",
+			overrides: nil,
+			wantLogs:  0,
+		},
+		{
+			name:      "Empty overrides - no warnings",
+			overrides: &v1.ClusterExtensionOverrides{},
+			wantLogs:  0,
+		},
+		{
+			name: "Channels include desired - no channel warning",
+			overrides: &v1.ClusterExtensionOverrides{
+				Channels: []string{desiredChannel},
+			},
+			wantLogs: 0,
+		},
+		{
+			name: "Channels exclude desired - warning",
+			overrides: &v1.ClusterExtensionOverrides{
+				Channels: []string{differentChannel},
+			},
+			wantLogs: 1,
+		},
+		{
+			name: "Version set - warning",
+			overrides: &v1.ClusterExtensionOverrides{
+				Version: ">=2.6.0 <2.7.0",
+			},
+			wantLogs: 1,
+		},
+		{
+			name: "Both channel conflict and version - two warnings",
+			overrides: &v1.ClusterExtensionOverrides{
+				Channels: []string{differentChannel},
+				Version:  ">=2.5.0 <2.6.0",
+			},
+			wantLogs: 2,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			logCount := 0
+			testSink := &testLogger{
+				onInfo: func(msg string, keysAndValues ...interface{}) {
+					if len(msg) > 0 && msg[0:7] == "WARNING" {
+						logCount++
+					}
+				},
+			}
+			testLog := logr.New(testSink)
+
+			checkClusterExtensionAnnotationConflicts(testLog, tt.overrides)
+
+			if logCount != tt.wantLogs {
+				t.Errorf("checkClusterExtensionAnnotationConflicts() logged %d warnings, want %d", logCount, tt.wantLogs)
+			}
+		})
+	}
+}
+
+// testLogger is a simple logger for testing that counts log calls
+type testLogger struct {
+	onInfo func(msg string, keysAndValues ...interface{})
+}
+
+func (l *testLogger) Info(level int, msg string, keysAndValues ...interface{}) {
+	if l.onInfo != nil {
+		l.onInfo(msg, keysAndValues...)
+	}
+}
+
+func (l *testLogger) Enabled(level int) bool { return true }
+func (l *testLogger) Error(err error, msg string, keysAndValues ...interface{}) {
+}
+func (l *testLogger) WithValues(keysAndValues ...interface{}) logr.LogSink {
+	return l
+}
+func (l *testLogger) WithName(name string) logr.LogSink {
+	return l
+}
+func (l *testLogger) Init(info logr.RuntimeInfo) {
 }

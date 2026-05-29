@@ -15,6 +15,7 @@ import (
 	consolev1 "github.com/openshift/api/operator/v1"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/go-logr/logr"
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 
 	configv1 "github.com/openshift/api/config/v1"
@@ -598,24 +599,7 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 	}
 
 	// Warn if annotation overrides conflict with desired state
-	if overrides != nil {
-		desiredChannel := multiclusterengine.DesiredChannel()
-
-		// Check if annotation channel differs from desired channel
-		if overrides.Channel != "" && overrides.Channel != desiredChannel {
-			r.Log.Info("WARNING: MCE Subscription annotation overrides channel, may block ACM-managed upgrades",
-				"annotation-channel", overrides.Channel,
-				"desired-channel", desiredChannel,
-				"annotation-key", utils.AnnotationMCESubscriptionSpec)
-		}
-
-		// Check if startingCSV pin is set (may prevent upgrades)
-		if overrides.StartingCSV != "" {
-			r.Log.Info("WARNING: MCE Subscription annotation pins startingCSV, may prevent upgrades",
-				"annotation-startingCSV", overrides.StartingCSV,
-				"annotation-key", utils.AnnotationMCESubscriptionSpec)
-		}
-	}
+	checkSubscriptionAnnotationConflicts(r.Log, overrides)
 
 	// Get InstallPlan approval from MCH operator subscription
 	var installPlanApproval subv1alpha1.Approval = subv1alpha1.ApprovalAutomatic
@@ -713,33 +697,7 @@ func (r *MultiClusterHubReconciler) ensureMCEClusterExtension(ctx context.Contex
 	}
 
 	// Warn if annotation overrides conflict with desired state
-	if overrides != nil {
-		desiredChannel := multiclusterengine.DesiredChannel()
-
-		// Check if annotation channels differ from desired channel
-		if len(overrides.Channels) > 0 {
-			channelConflict := true
-			for _, ch := range overrides.Channels {
-				if ch == desiredChannel {
-					channelConflict = false
-					break
-				}
-			}
-			if channelConflict {
-				r.Log.Info("WARNING: MCE ClusterExtension annotation overrides channel, may block ACM-managed upgrades",
-					"annotation-channels", overrides.Channels,
-					"desired-channel", desiredChannel,
-					"annotation-key", utils.AnnotationMCEClusterExtensionSpec)
-			}
-		}
-
-		// Check if version pin is set (may prevent upgrades)
-		if overrides.Version != "" {
-			r.Log.Info("WARNING: MCE ClusterExtension annotation pins version, may prevent upgrades",
-				"annotation-version", overrides.Version,
-				"annotation-key", utils.AnnotationMCEClusterExtensionSpec)
-		}
-	}
+	checkClusterExtensionAnnotationConflicts(r.Log, overrides)
 
 	createCE := false
 	namespace := multiclusterengine.Namespace()
@@ -1223,4 +1181,61 @@ func (r *MultiClusterHubReconciler) GetInstallPlanApprovalFromSubscription(sub *
 		return subv1alpha1.ApprovalAutomatic // Default fallback
 	}
 	return sub.Spec.InstallPlanApproval
+}
+
+// checkSubscriptionAnnotationConflicts logs warnings if MCE Subscription annotation overrides conflict with desired state
+func checkSubscriptionAnnotationConflicts(log logr.Logger, overrides *subv1alpha1.SubscriptionSpec) {
+	if overrides == nil {
+		return
+	}
+
+	desiredChannel := multiclusterengine.DesiredChannel()
+
+	// Check if annotation channel differs from desired channel
+	if overrides.Channel != "" && overrides.Channel != desiredChannel {
+		log.Info("WARNING: MCE Subscription annotation overrides channel, may block ACM-managed upgrades",
+			"annotation-channel", overrides.Channel,
+			"desired-channel", desiredChannel,
+			"annotation-key", utils.AnnotationMCESubscriptionSpec)
+	}
+
+	// Check if startingCSV pin is set (may prevent upgrades)
+	if overrides.StartingCSV != "" {
+		log.Info("WARNING: MCE Subscription annotation pins startingCSV, may prevent upgrades",
+			"annotation-startingCSV", overrides.StartingCSV,
+			"annotation-key", utils.AnnotationMCESubscriptionSpec)
+	}
+}
+
+// checkClusterExtensionAnnotationConflicts logs warnings if MCE ClusterExtension annotation overrides conflict with desired state
+func checkClusterExtensionAnnotationConflicts(log logr.Logger, overrides *v1.ClusterExtensionOverrides) {
+	if overrides == nil {
+		return
+	}
+
+	desiredChannel := multiclusterengine.DesiredChannel()
+
+	// Check if annotation channels differ from desired channel
+	if len(overrides.Channels) > 0 {
+		channelConflict := true
+		for _, ch := range overrides.Channels {
+			if ch == desiredChannel {
+				channelConflict = false
+				break
+			}
+		}
+		if channelConflict {
+			log.Info("WARNING: MCE ClusterExtension annotation overrides channel, may block ACM-managed upgrades",
+				"annotation-channels", overrides.Channels,
+				"desired-channel", desiredChannel,
+				"annotation-key", utils.AnnotationMCEClusterExtensionSpec)
+		}
+	}
+
+	// Check if version pin is set (may prevent upgrades)
+	if overrides.Version != "" {
+		log.Info("WARNING: MCE ClusterExtension annotation pins version, may prevent upgrades",
+			"annotation-version", overrides.Version,
+			"annotation-key", utils.AnnotationMCEClusterExtensionSpec)
+	}
 }
