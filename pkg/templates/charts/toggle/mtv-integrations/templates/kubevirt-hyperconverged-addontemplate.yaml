@@ -13,6 +13,13 @@ spec:
         resource: hyperconvergeds
       updateStrategy:
         type: CreateOnly
+    - resourceIdentifier:
+        group: policy.open-cluster-management.io
+        name: kubevirt-hyperconverged-operator
+        namespace: open-cluster-management-policies
+        resource: operatorpolicies
+      updateStrategy:
+        type: CreateOnly
     workload:
       manifests:
       - apiVersion: rbac.authorization.k8s.io/v1
