@@ -981,4 +981,3 @@ func TestAnnotationConflictWarnings(t *testing.T) {
 		}
 	})
 }
-
