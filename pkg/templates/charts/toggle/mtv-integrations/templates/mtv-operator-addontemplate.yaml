@@ -5,6 +5,14 @@ metadata:
 spec:
   addonName: mtv-operator
   agentSpec:
+    manifestConfigs:
+    - resourceIdentifier:
+        group: policy.open-cluster-management.io
+        name: mtv-operator
+        namespace: open-cluster-management-policies
+        resource: operatorpolicies
+      updateStrategy:
+        type: CreateOnly
     workload:
       manifests:
       - apiVersion: policy.open-cluster-management.io/v1beta1
@@ -21,11 +29,9 @@ spec:
             - openshift-mtv
           remediationAction: enforce
           subscription:
-            channel: dev-preview
+            channel: release-v2.12
             name: mtv-operator
             namespace: openshift-mtv
-            source: mtv-extra-catalog-source
-            sourceNamespace: openshift-marketplace
           upgradeApproval: Automatic
       - apiVersion: forklift.konveyor.io/v1beta1
         kind: ForkliftController
