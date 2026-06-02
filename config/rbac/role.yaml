@@ -1015,6 +1015,25 @@ rules:
 - apiGroups:
   - forklift.konveyor.io
   resources:
+  - networkmaps
+  - storagemaps
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - forklift.konveyor.io
+  resources:
+  - plans
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - forklift.konveyor.io
+  resources:
   - providers
   verbs:
   - create
