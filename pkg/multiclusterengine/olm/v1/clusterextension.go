@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 
 	ocv1 "github.com/operator-framework/operator-controller/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
@@ -71,14 +72,33 @@ func RenderClusterExtension(existing *ocv1.ClusterExtension, m *operatorv1.Multi
 	copy := existing.DeepCopy()
 
 	// Update channels based on current desired channel
-	channels := []string{multiclusterengine.DesiredChannel()}
+	newChannels := []string{multiclusterengine.DesiredChannel()}
 	if copy.Spec.Source.Catalog != nil {
-		copy.Spec.Source.Catalog.Channels = channels
+		oldChannels := copy.Spec.Source.Catalog.Channels
+
+		// Update channels
+		copy.Spec.Source.Catalog.Channels = newChannels
+
+		// Clear version constraint when channel changes to allow bundle resolution
+		// to select the latest version in the new channel
+		if !channelsEqual(oldChannels, newChannels) {
+			copy.Spec.Source.Catalog.Version = ""
+		}
 	}
 
 	// Namespace and ServiceAccount are immutable, so we don't update them
 
 	return copy
+}
+
+// channelsEqual compares two channel lists for equality
+func channelsEqual(a, b []string) bool {
+	// Treat nil and empty slices as different to ensure version clearing
+	// when transitioning from uninitialized to initialized state
+	if (a == nil) != (b == nil) {
+		return false
+	}
+	return slices.Equal(a, b)
 }
 
 // GetManagedMCEClusterExtension finds MCE ClusterExtension by managed label. Returns nil if none found.
