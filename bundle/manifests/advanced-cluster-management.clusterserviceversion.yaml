@@ -1,0 +1,2213 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[{"apiVersion": "operator.open-cluster-management.io/v1", "kind": "MultiClusterHub",
+      "metadata": {"name": "multiclusterhub", "namespace": "open-cluster-management"}, "spec": {}}]'
+    capabilities: Seamless Upgrades
+    categories: Integration & Delivery
+    certified: 'true'
+    support: Red Hat
+    createdAt: '2026-05-12T16:43:56Z'
+    description: Advanced provisioning and management of OpenShift and Kubernetes clusters
+    operatorframework.io/suggested-namespace: open-cluster-management
+    operatorframework.io/initialization-resource: '{"apiVersion":"operator.open-cluster-management.io/v1",
+      "kind":"MultiClusterHub","metadata":{"name":"multiclusterhub","namespace":"open-cluster-management"},
+      "spec": {}}'
+    operators.openshift.io/valid-subscription: '["OpenShift Platform Plus", "Red Hat Advanced Cluster
+      Management for Kubernetes"]'
+    operators.openshift.io/infrastructure-features: '["disconnected", "proxy-aware", "fips"]'
+    repository: https://github.com/open-cluster-management/multiclusterhub-operator
+    features.operators.openshift.io/cnf: 'false'
+    features.operators.openshift.io/cni: 'false'
+    features.operators.openshift.io/csi: 'false'
+    features.operators.openshift.io/disconnected: 'true'
+    features.operators.openshift.io/proxy-aware: 'true'
+    features.operators.openshift.io/fips-compliant: 'true'
+    features.operators.openshift.io/tls-profiles: 'false'
+    features.operators.openshift.io/token-auth-aws: 'false'
+    features.operators.openshift.io/token-auth-azure: 'false'
+    features.operators.openshift.io/token-auth-gcp: 'false'
+    olm.properties: '[{"type": "olm.maxOpenShiftVersion", "value": "4.22"}]'
+    olm.skipRange: '>=2.15.0 <2.16.0'
+    operators.openshift.io/must-gather-image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/must-gather-rhel9:latest
+  name: advanced-cluster-management.v2.16.0
+  namespace: placeholder
+  labels:
+    operatorframework.io/arch.amd64: supported
+    operatorframework.io/arch.ppc64le: supported
+    operatorframework.io/arch.s390x: supported
+    operatorframework.io/arch.arm64: supported
+    operatorframework.io/os.linux: supported
+spec:
+  displayName: Advanced Cluster Management for Kubernetes
+  version: 2.16.0
+  provider:
+    name: Red Hat
+  maintainers:
+  - email: acm-contact@redhat.com
+    name: Red Hat
+  maturity: stable
+  description: "Red Hat Advanced Cluster Management for Kubernetes provides the multicluster hub, a central\
+    \ management console for managing multiple Kubernetes-based clusters across data centers, public clouds,\
+    \ and private clouds. You can use the hub to create Red Hat OpenShift Container Platform clusters\
+    \ on selected providers, or import existing Kubernetes-based clusters. After the clusters are managed,\
+    \ you can set compliance requirements to ensure that the clusters maintain the specified security\
+    \ requirements. You can also deploy business applications across your clusters.\n\n## How to install\n\
+    Use of this Red Hat product requires a licensing and subscription agreement.\n\nInstall the Red Hat\
+    \ Advanced Cluster Management for Kubernetes operator by following instructions presented when you\
+    \ click the `Install` button. After installing the operator, create an instance of the `MultiClusterHub`\
+    \ resource to install the hub.\n\nNote that if you will be using the hub to manage non-OpenShift 4.x\
+    \ clusters, you will need to create a Kubernetes `Secret` resource containing your OpenShift pull\
+    \ secret and specify this `Secret` in the `MultiClusterHub` resource, as described in the install\
+    \ documentation.\n### Special considerations for disconnected network environments\nIf you are installing\
+    \ Red Hat Advanced Cluster Management for Kubernetes in a disconnected network environment, there\
+    \ are some special install and upgrade requirements.\n#### Include multicluster engine for Kubernetes\
+    \ in mirrored catalog\nInstalling an OLM operator in a disconnected network environment involves the\
+    \ use of a local mirrored operator catalog and image registry. Red Hat Advanced Cluster Management\
+    \ for Kubernetes requires (and automatically installs) the multicluster engine for Kuberenetes operator\
+    \ so this operator package is needed in your local mirrored operator catalog in addition to the one\
+    \ for Red Hat Advanced Cluster Management for Kubernetes.\n\nif you are using a full mirror of the\
+    \ Red Hat operators catalog, no special action is needed when creating the mirror catalog.\n\nIf you\
+    \ are using a filtered (rather than full) mirror of the OLM catalog, be sure to include both the `advanced-cluster-management`\
+    \ **and** `multicluster-engine` packages in your mirrored catalog when creating it.\n#### Add annotation\
+    \ to MultiClusterHub resource\nIf you are installing or upgrading to a Red Hat Advanced Cluster Management\
+    \ for Kubernetes release prior to release 2.7, an `mce-subscription-spec` annotation is required in\
+    \ the instance of the `MultiClusterHub` resource you create to set up your hub. This annotation identifies\
+    \ the catalog source for your local mirrored operator catalog and is required when installing releases\
+    \ prior to release 2.7 regardless of whether your local mirrored operator catalog is a full mirror\
+    \ or a filtered one.\n\nThe `mce-subscription-spec` annotation is not usually needed, and thus can\
+    \ usually be omitted, when installing or upgrading to release 2.7 or a later release. Starting with\
+    \ release 2.7, the Red Hat Advanced Cluster Management for Kubernetes operator is able to automatically\
+    \ determine the catalog source to use in typical scenarios.\n\nThe following is an example of the\
+    \ `mce-subscription-spec` annotation:\n\n```\n apiVersion: operator.open-cluster-management.io/v1\n\
+    \ kind: MultiClusterHub\n metadata:\n \tannotations:\n \t\tinstaller.open-cluster-management.io/mce-subscription-spec:\
+    \ '{\"source\": \"my-catalog-source\"}'\n spec: {}\n\n```\n\nReplace `my-catalog-source` with the\
+    \ name of your catalog source.\n\nIf you are creating the `MultiClusterHub` resource using the OperatorHub\
+    \ UI, switch to the YAML view for the resource in order to insert the annotation.\n### Where to find\
+    \ more installation information\nYou can find additional installation guidance in the [install documentation](https://access.redhat.com/documentation/en-us/red_hat_advanced_cluster_management_for_kubernetes/2.16/html/install/installing). "
+  icon:
+  - base64data: PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJ1dWlkLWFiOGQwMDJmLWM2NGYtNDQ3ZC05MzVhLTI0ZDc0YTNiNjUxZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMzggMzgiPjx0aXRsZT5SZWQgSGF0IEFkdmFuY2VkIENsdXN0ZXIgTWFuYWdlbWVudCBmb3IgS3ViZXJuZXRlcyBpY29uPC90aXRsZT4KPGRlc2M+UkhBQ00sIG1hbmFnZW1lbnQsIGVkZ2U8L2Rlc2M+CjxtZXRhZGF0YT48P3hwYWNrZXQgYmVnaW49Iu+7vyIgaWQ9Ilc1TTBNcENlaGlIenJlU3pOVGN6a2M5ZCI/Pgo8eDp4bXBtZXRhIHhtbG5zOng9ImFkb2JlOm5zOm1ldGEvIiB4OnhtcHRrPSJBZG9iZSBYTVAgQ29yZSA4LjAtYzAwMSAxLjAwMDAwMCwgMDAwMC8wMC8wMC0wMDowMDowMCAgICAgICAgIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIgogICAgICAgICAgICB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iCiAgICAgICAgICAgIHhtbG5zOmNxPSJodHRwOi8vd3d3LmRheS5jb20vamNyL2NxLzEuMCIKICAgICAgICAgICAgeG1sbnM6eG1wUmlnaHRzPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvcmlnaHRzLyI+CiAgICAgICAgIDx4bXA6cmhjYy1lZmZlY3RpdmUtb24+MjAyNC0wMy0wMVQxNToyNjozMC4yMDhaPC94bXA6cmhjYy1lZmZlY3RpdmUtb24+CiAgICAgICAgIDx4bXA6cmhjYy1tZXRhZGF0YS1jb21wbGV0ZS1tb2RlcmF0b3I+cGVuZGluZzwveG1wOnJoY2MtbWV0YWRhdGEtY29tcGxldGUtbW9kZXJhdG9yPgogICAgICAgICA8eG1wOnJoY2MtdHJhbnNsYXRpb24taWQ+VFJBNjZlYzAzNzktYjJmYi00Y2JkLTllMzctYzhhOTk3ZjBmN2QwPC94bXA6cmhjYy10cmFuc2xhdGlvbi1pZD4KICAgICAgICAgPHhtcDpicmFuZC1jb250ZW50LXR5cGU+SWNvbjwveG1wOmJyYW5kLWNvbnRlbnQtdHlwZT4KICAgICAgICAgPHhtcDpDcmVhdGVEYXRlPjIwMjQtMDMtMDFUMTU6MjY6MzAuMjA4WjwveG1wOkNyZWF0ZURhdGU+CiAgICAgICAgIDx4bXA6cmhjYy1lZmZlY3RpdmUtb24tc2V0LW9uLXVwbG9hZD50cnVlPC94bXA6cmhjYy1lZmZlY3RpdmUtb24tc2V0LW9uLXVwbG9hZD4KICAgICAgICAgPHhtcDpyaGNjLW1ldGFkYXRhLWNvbXBsZXRlLXVwbG9hZGVyPnBlbmRpbmc8L3htcDpyaGNjLW1ldGFkYXRhLWNvbXBsZXRlLXVwbG9hZGVyPgogICAgICAgICA8eG1wOnJoY2MtZmlsZS1sYXN0LW1vZGlmaWVkPjIwMjQtMDMtMjFUMDA6NDA6MjkuNjI5WjwveG1wOnJoY2MtZmlsZS1sYXN0LW1vZGlmaWVkPgogICAgICAgICA8eG1wOnJoY2MtYXVkaWVuY2U+cmhjYy1hdWRpZW5jZTppbnRlcm5hbDwveG1wOnJoY2MtYXVkaWVuY2U+CiAgICAgICAgIDx4bXA6cmhjYy1yaWdodHMtcmVzdHJpY3RlZD5ubzwveG1wOnJoY2MtcmlnaHRzLXJlc3RyaWN0ZWQ+CiAgICAgICAgIDx4bXA6YnJhbmQtY29udGVudC1zdWJ0eXBlPlRlY2hub2xvZ3kgaWNvbjwveG1wOmJyYW5kLWNvbnRlbnQtc3VidHlwZT4KICAgICAgICAgPHhtcDpyaGNjLWRlcml2YXRpdmUtaWQ+REVSNjZlYzAzNzktYjJmYi00Y2JkLTllMzctYzhhOTk3ZjBmN2QwPC94bXA6cmhjYy1kZXJpdmF0aXZlLWlkPgogICAgICAgICA8eG1wOmJyYW5kLWxvZ28tY29sb3I+U3RhbmRhcmQ8L3htcDpicmFuZC1sb2dvLWNvbG9yPgogICAgICAgICA8eG1wOnJoY2Mtbm90aWZ5LXBvcnRhbC1zdWJzY3JpYmVycy1vbi1jaGFuZ2U+eWVzPC94bXA6cmhjYy1ub3RpZnktcG9ydGFsLXN1YnNjcmliZXJzLW9uLWNoYW5nZT4KICAgICAgICAgPHhtcDpyaGNjLXByb2R1Y3Q+CiAgICAgICAgICAgIDxyZGY6QmFnPgogICAgICAgICAgICAgICA8cmRmOmxpPnJoY2MtcHJvZHVjdDpyZWQtaGF0LWFkdmFuY2VkLWNsdXN0ZXItbWFuYWdlbWVudC1mb3Ita3ViZXJuZXRlczwvcmRmOmxpPgogICAgICAgICAgICA8L3JkZjpCYWc+CiAgICAgICAgIDwveG1wOnJoY2MtcHJvZHVjdD4KICAgICAgICAgPHhtcDpicmFuZC1zdWJ0eXBlPgogICAgICAgICAgICA8cmRmOkJhZz4KICAgICAgICAgICAgICAgPHJkZjpsaT5UZWNobm9sb2d5IGljb248L3JkZjpsaT4KICAgICAgICAgICAgPC9yZGY6QmFnPgogICAgICAgICA8L3htcDpicmFuZC1zdWJ0eXBlPgogICAgICAgICA8ZGM6Zm9ybWF0PmltYWdlL3N2Zyt4bWw8L2RjOmZvcm1hdD4KICAgICAgICAgPGRjOm1vZGlmaWVkPjIwMjQtMDUtMTBUMTQ6MDE6MTIuNjc3WjwvZGM6bW9kaWZpZWQ+CiAgICAgICAgIDxkYzp0aXRsZT4KICAgICAgICAgICAgPHJkZjpBbHQ+CiAgICAgICAgICAgICAgIDxyZGY6bGkgeG1sOmxhbmc9IngtZGVmYXVsdCI+UmVkIEhhdCBBZHZhbmNlZCBDbHVzdGVyIE1hbmFnZW1lbnQgZm9yIEt1YmVybmV0ZXMgaWNvbjwvcmRmOmxpPgogICAgICAgICAgICA8L3JkZjpBbHQ+CiAgICAgICAgIDwvZGM6dGl0bGU+CiAgICAgICAgIDxkYzpkZXNjcmlwdGlvbj4KICAgICAgICAgICAgPHJkZjpBbHQ+CiAgICAgICAgICAgICAgIDxyZGY6bGkgeG1sOmxhbmc9IngtZGVmYXVsdCI+UkhBQ00sIG1hbmFnZW1lbnQsIGVkZ2U8L3JkZjpsaT4KICAgICAgICAgICAgPC9yZGY6QWx0PgogICAgICAgICA8L2RjOmRlc2NyaXB0aW9uPgogICAgICAgICA8Y3E6bGFzdFJlcGxpY2F0aW9uQWN0aW9uX3NjZW5lNz5BY3RpdmF0ZTwvY3E6bGFzdFJlcGxpY2F0aW9uQWN0aW9uX3NjZW5lNz4KICAgICAgICAgPGNxOmxhc3RSZXBsaWNhdGlvbkFjdGlvbl9wdWJsaXNoPkFjdGl2YXRlPC9jcTpsYXN0UmVwbGljYXRpb25BY3Rpb25fcHVibGlzaD4KICAgICAgICAgPGNxOmxhc3RSZXBsaWNhdGVkX3B1Ymxpc2g+MjAyNC0wNS0xMFQxNDowMToxNC4xMDBaPC9jcTpsYXN0UmVwbGljYXRlZF9wdWJsaXNoPgogICAgICAgICA8Y3E6bGFzdFJlcGxpY2F0ZWRCeT53b3JrZmxvdy1wcm9jZXNzLXNlcnZpY2U8L2NxOmxhc3RSZXBsaWNhdGVkQnk+CiAgICAgICAgIDxjcTpsYXN0UmVwbGljYXRpb25BY3Rpb24+QWN0aXZhdGU8L2NxOmxhc3RSZXBsaWNhdGlvbkFjdGlvbj4KICAgICAgICAgPGNxOmxhc3RSZXBsaWNhdGVkQnlfcHVibGlzaD53b3JrZmxvdy1wcm9jZXNzLXNlcnZpY2U8L2NxOmxhc3RSZXBsaWNhdGVkQnlfcHVibGlzaD4KICAgICAgICAgPGNxOmlzRGVsaXZlcmVkPmZhbHNlPC9jcTppc0RlbGl2ZXJlZD4KICAgICAgICAgPGNxOmxhc3RSZXBsaWNhdGVkPjIwMjQtMDUtMTBUMTQ6MDE6MTQuMTAwWjwvY3E6bGFzdFJlcGxpY2F0ZWQ+CiAgICAgICAgIDxjcTpsYXN0UmVwbGljYXRlZEJ5X3NjZW5lNz53b3JrZmxvdy1wcm9jZXNzLXNlcnZpY2U8L2NxOmxhc3RSZXBsaWNhdGVkQnlfc2NlbmU3PgogICAgICAgICA8Y3E6bGFzdFJlcGxpY2F0ZWRfc2NlbmU3PjIwMjQtMDUtMTBUMTQ6MDE6MTQuMTAwWjwvY3E6bGFzdFJlcGxpY2F0ZWRfc2NlbmU3PgogICAgICAgICA8eG1wUmlnaHRzOlVzYWdlVGVybXM+CiAgICAgICAgICAgIDxyZGY6QWx0PgogICAgICAgICAgICAgICA8cmRmOmxpIHhtbDpsYW5nPSJ4LWRlZmF1bHQiPlVzZSB0ZWNobm9sb2d5IGljb25zIHRvIHJlcHJlc2VudCBSZWQgSGF0IHByb2R1Y3RzIGFuZCBjb21wb25lbnRzLiBEbyBub3QgcmVtb3ZlIHRoZSBpY29uIGZyb20gdGhlIGJvdW5kaW5nIHNoYXBlLjwvcmRmOmxpPgogICAgICAgICAgICA8L3JkZjpBbHQ+CiAgICAgICAgIDwveG1wUmlnaHRzOlVzYWdlVGVybXM+CiAgICAgIDwvcmRmOkRlc2NyaXB0aW9uPgogICA8L3JkZjpSREY+CjwveDp4bXBtZXRhPgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgCjw/eHBhY2tldCBlbmQ9InciPz48L21ldGFkYXRhPgo8ZGVmcz48c3R5bGU+LnV1aWQtZDM1NmQ4ZGItMWE5ZC00MjA1LWEyMmEtYmRkMmRlMGQyMDFke2ZpbGw6I2UwMDt9LnV1aWQtNjVmNTcxZmUtNmJiNC00YTFjLTlkMGEtMGNhNDcyMjI5NDFhe2ZpbGw6I2ZmZjt9LnV1aWQtNDAwMGY4YzctM2NjZS00ZDdhLWEwZTUtYzIyNDExYjliYzQze2ZpbGw6IzRkNGQ0ZDt9PC9zdHlsZT48L2RlZnM+PHJlY3QgeD0iMSIgeT0iMSIgd2lkdGg9IjM2IiBoZWlnaHQ9IjM2IiByeD0iOSIgcnk9IjkiLz48cGF0aCBjbGFzcz0idXVpZC00MDAwZjhjNy0zY2NlLTRkN2EtYTBlNS1jMjI0MTFiOWJjNDMiIGQ9Im0yOCwyLjI1YzQuMjczMzgsMCw3Ljc1LDMuNDc2NjQsNy43NSw3Ljc1djE4YzAsNC4yNzMzNi0zLjQ3NjYyLDcuNzUtNy43NSw3Ljc1SDEwYy00LjI3MzM4LDAtNy43NS0zLjQ3NjY0LTcuNzUtNy43NVYxMGMwLTQuMjczMzYsMy40NzY2Mi03Ljc1LDcuNzUtNy43NWgxOG0wLTEuMjVIMTBDNS4wMjk0MiwxLDEsNS4wMjk0MywxLDEwdjE4YzAsNC45NzA1Niw0LjAyOTQyLDksOSw5aDE4YzQuOTcwNTgsMCw5LTQuMDI5NDQsOS05VjEwYzAtNC45NzA1Ny00LjAyOTQyLTktOS05aDBaIi8+PHBhdGggY2xhc3M9InV1aWQtZDM1NmQ4ZGItMWE5ZC00MjA1LWEyMmEtYmRkMmRlMGQyMDFkIiBkPSJtMjEuMzQ4NjMsMTguMzM2OTFjLTIuNzUyOTMsMC00Ljk5MjE5LTIuMjM5MjYtNC45OTIxOS00Ljk5MjE5LDAtMS41ODQ5Ni43Mjc1NC0zLjA0MDUzLDEuOTk2MDktMy45OTMxNi4xMjMwNS0uMDkzMjYuMjU0ODgtLjE4MjYyLjM5MDYyLS4yNjU2Mi4xMzM3OS0uMDgyNTIuMjczNDQtLjE1OTE4LjQxNjk5LS4yMjkuNjg1NTUtLjMzNDk2LDEuNDIxODgtLjUwNDM5LDIuMTg4NDgtLjUwNDM5LDIuNzUyOTMsMCw0Ljk5MjE5LDIuMjM5MjYsNC45OTIxOSw0Ljk5MjE5cy0yLjIzOTI2LDQuOTkyMTktNC45OTIxOSw0Ljk5MjE5Wm0wLTguNzM0MzhjLS41NzUyLDAtMS4xMjY5NS4xMjY5NS0xLjYzOTY1LjM3NzQ0LS4xMDY0NS4wNTIyNS0uMjEwOTQuMTA5MzgtLjMxMTUyLjE3MTM5LS4xMDI1NC4wNjI1LS4xOTkyMi4xMjc0NC0uMjkxOTkuMTk4MjQtLjk1MzEyLjcxNTgyLTEuNDk5MDIsMS44MDcxMy0xLjQ5OTAyLDIuOTk1MTIsMCwyLjA2MzQ4LDEuNjc4NzEsMy43NDIxOSwzLjc0MjE5LDMuNzQyMTlzMy43NDIxOS0xLjY3ODcxLDMuNzQyMTktMy43NDIxOS0xLjY3ODcxLTMuNzQyMTktMy43NDIxOS0zLjc0MjE5WiIvPjxwYXRoIGNsYXNzPSJ1dWlkLWQzNTZkOGRiLTFhOWQtNDIwNS1hMjJhLWJkZDJkZTBkMjAxZCIgZD0ibTEyLjUxMjcsMjQuNzYwNzRjLTIuNzUyOTMsMC00Ljk5MjE5LTIuMjM5MjYtNC45OTIxOS00Ljk5MjE5LDAtMS41ODQ5Ni43Mjc1NC0zLjA0MDUzLDEuOTk2MDktMy45OTMxNi4xMjU5OC0uMDk0NzMuMjU1ODYtLjE4MjYyLjM5MDYyLS4yNjU2Mi4xMzM3OS0uMDgyNTIuMjczNDQtLjE1OTE4LjQxNjk5LS4yMjkuNjg1NTUtLjMzNDk2LDEuNDIxODgtLjUwNDM5LDIuMTg4NDgtLjUwNDM5LDIuNzUyOTMsMCw0Ljk5MjE5LDIuMjM5MjYsNC45OTIxOSw0Ljk5MjE5cy0yLjIzOTI2LDQuOTkyMTktNC45OTIxOSw0Ljk5MjE5Wm0wLTguNzM0MzhjLS41NzUyMiwwLTEuMTI2OTUuMTI2OTUtMS42Mzk2NS4zNzc0NC0uMTA2NDUuMDUyMjUtLjIxMDk0LjEwOTM4LS4zMTE1Mi4xNzEzOS0uMTAzNTIuMDYyNS0uMjAwMi4xMjg5MS0uMjkzOTUuMTk5NzEtLjk1MTE3LjcxNDM2LTEuNDk3MDcsMS44MDU2Ni0xLjQ5NzA3LDIuOTkzNjUsMCwyLjA2MzQ4LDEuNjc4NzEsMy43NDIxOSwzLjc0MjE5LDMuNzQyMTlzMy43NDIxOS0xLjY3ODcxLDMuNzQyMTktMy43NDIxOS0xLjY3ODcxLTMuNzQyMTktMy43NDIxOS0zLjc0MjE5WiIvPjxwYXRoIGNsYXNzPSJ1dWlkLWQzNTZkOGRiLTFhOWQtNDIwNS1hMjJhLWJkZDJkZTBkMjAxZCIgZD0ibTIyLjQ4NzMsMjkuMjAxNjZjLTIuNzUyOTMsMC00Ljk5MjE5LTIuMjM5MjYtNC45OTIxOS00Ljk5MjE5LDAtMS41ODQ5Ni43Mjc1NC0zLjA0MDUzLDEuOTk2MDktMy45OTMxNi4xMjQwMi0uMDk0MjQuMjU0ODgtLjE4MzExLjM4OTY1LS4yNjU2MnMuMjc1MzktLjE1OTY3LjQxOTkyLS4yMjk5OGMuNjgwNjYtLjMzMzUsMS40MTc5Ny0uNTAzNDIsMi4xODY1Mi0uNTAzNDIsMi43NTI5MywwLDQuOTkyMTksMi4yMzkyNiw0Ljk5MjE5LDQuOTkyMTlzLTIuMjM5MjYsNC45OTIxOS00Ljk5MjE5LDQuOTkyMTlabTAtOC43MzQzOGMtLjU3NzE1LDAtMS4xMjc5My4xMjY5NS0xLjYzODY3LjM3NzQ0LS4xMTAzNS4wNTI3My0uMjEzODcuMTA5MzgtLjMxMzQ4LjE3MTM5LS4xMDE1Ni4wNjIwMS0uMTk5MjIuMTI4NDItLjI5Mjk3LjE5ODczLS45NTExNy43MTUzMy0xLjQ5NzA3LDEuODA2NjQtMS40OTcwNywyLjk5NDYzLDAsMi4wNjM0OCwxLjY3ODcxLDMuNzQyMTksMy43NDIxOSwzLjc0MjE5czMuNzQyMTktMS42Nzg3MSwzLjc0MjE5LTMuNzQyMTktMS42Nzg3MS0zLjc0MjE5LTMuNzQyMTktMy43NDIxOVoiLz48cGF0aCBjbGFzcz0idXVpZC02NWY1NzFmZS02YmI0LTRhMWMtOWQwYS0wY2E0NzIyMjk0MWEiIGQ9Im0xOC4yMjk0OSwyOS45Nzk5OGMwLS4zNTAxLjI4MDI3LS42MzAzNy42MjAxMi0uNjMwMzdoMGMuMzUwNTksMCwuNjI5ODguMjgwMjcuNjI5ODguNjMwMzdoMGMwLC4zMzk4NC0uMjc5My42MTk2My0uNjI5ODguNjE5NjNoMGMtLjMzOTg0LDAtLjYyMDEyLS4yNzk3OS0uNjIwMTItLjYxOTYzWm0tMS40Nzk0OS40Mjk2OWMtLjMzOTg0LS4wNjAwNi0uNTYwNTUtLjM3OTg4LS41LS43MTk3M2gwYy4wNTk1Ny0uMzQwMzMuMzg5NjUtLjU3MDMxLjcyOTQ5LS41MTAyNWgwYy4zMzk4NC4wNzAzMS41NjA1NS4zOTAxNC41LjcyOTk4aDBjLS4wNDk4LjMwMDI5LS4zMTkzNC41MTAyNS0uNjA5MzguNTEwMjVoMGMtLjA0MDA0LDAtLjA4MDA4LDAtLjEyMDEyLS4wMTAyNVptLTIuMDMwMjctLjU2OTgyYy0uMzIwMzEtLjEyMDEyLS40Nzk0OS0uNDc5OTgtLjM2MDM1LS43OTk4aDBjLjEyMDEyLS4zMjAzMS40ODA0Ny0uNDc5OTguODAwNzgtLjM2MDM1aDBjLjMzMDA4LjEyMDEyLjQ4OTI2LjQ3OTk4LjM3MDEyLjgwMDI5aDBjLS4xMDA1OS4yNS0uMzQwODIuNDA5NjctLjU5MDgyLjQwOTY3aDBjLS4wNjkzNCwwLS4xNDk0MS0uMDIwMDItLjIxOTczLS4wNDk4Wm0tMS45MDAzOS0uOTE5OTJjLS4yODkwNi0uMTgwMTgtLjM3OTg4LS41NzAzMS0uMjA5OTYtLjg1OTg2aDBjLjE4MDY2LS4yOTAwNC41NzAzMS0uMzkwMTQuODYwMzUtLjIxMDQ1aDBjLjI5OTguMTgwMTguMzg5NjUuNTYwMDYuMjA5OTYuODYwMzVoMGMtLjEyMDEyLjE4OTk0LS4zMjAzMS4yOTk4LS41MzAyNy4yOTk4aDBjLS4xMDkzOCwwLS4yMjk0OS0uMDI5NzktLjMzMDA4LS4wODk4NFptLTEuNjg5NDUtMS4yNjAyNWgwYy0uMjU5NzctLjIyOTk4LS4yODAyNy0uNjE5NjMtLjA0OTgtLjg3OTg4aDBjLjIyOTQ5LS4yNTk3Ny42MjAxMi0uMjc5NzkuODc5ODgtLjA0OThoMGMuMjU5NzcuMjI5OTguMjgwMjcuNjE5NjMuMDQ5OC44Nzk4OGgwYy0uMTIwMTIuMTQwMTQtLjI5OTguMjA5OTYtLjQ2OTczLjIwOTk2aDBjLS4xNTAzOSwwLS4yOTk4LS4wNDk4LS40MTAxNi0uMTYwMTZaIi8+PHBhdGggY2xhc3M9InV1aWQtNjVmNTcxZmUtNmJiNC00YTFjLTlkMGEtMGNhNDcyMjI5NDFhIiBkPSJtMjkuNjM5NjUsMjEuMjM5NzVjLS4zMzk4NC0uMDQ5OC0uNTgwMDgtLjM3MDEyLS41MzAyNy0uNzA5OTZoLjAxMDc0Yy4wNDk4LS4zMzk4NC4zNTkzOC0uNTY5ODIuNzA5OTYtLjUyMDAyaDBjLjMzOTg0LjA1MDI5LjU2OTM0LjM3MDEyLjUxOTUzLjcwOTk2aDBjLS4wNDk4LjMxMDA2LS4zMDk1Ny41MzAyNy0uNjA5MzguNTMwMjdoMGMtLjA0MDA0LDAtLjA3MDMxLDAtLjEwMDU5LS4wMTAyNVptLS40MTk5Mi0yLjU4OTg0Yy0uMDA5NzctLjM1MDEuMjU5NzctLjYyOTg4LjYxMDM1LS42NDk5aDBjLjM0OTYxLDAsLjYyOTg4LjI3MDAyLjYzOTY1LjYwOTg2aDBjLjAwOTc3LjM1MDEtLjI1OTc3LjY0MDE0LS41OTk2MS42NDAxNGgtLjAyMDUxYy0uMzM5ODQsMC0uNjIwMTItLjI2MDI1LS42Mjk4OC0uNjAwMVptLS4yMTk3My0xLjg3MDEyaDBjLS4wODAwOC0uMzM5ODQuMTM5NjUtLjY2OTkyLjQ3OTQ5LS43Mzk3NWgwYy4zMzAwOC0uMDgwMDguNjY5OTIuMTM5NjUuNzQwMjMuNDc5OThoMGMuMDcwMzEuMzI5NTktLjEzOTY1LjY2OTkyLS40Nzk0OS43Mzk3NWgwYy0uMDUwNzguMDEwMjUtLjA5MDgyLjAxMDI1LS4xMzA4Ni4wMTAyNWgwYy0uMjkwMDQsMC0uNTQ5OC0uMjAwMi0uNjA5MzgtLjQ5MDIzWm0tLjU3MDMxLTEuNzk5OGguMDA5NzdjLS4xMzk2NS0uMzIwMzEuMDEwNzQtLjY4MDE4LjMzMDA4LS44MTAwNmgwYy4zMjAzMS0uMTQwMTQuNjgwNjYuMDA5NzcuODIwMzEuMzMwMDhoMGMuMTI5ODguMzE5ODItLjAyMDUxLjY4OTk0LS4zMzk4NC44MTk4MmgwYy0uMDgwMDguMDI5NzktLjE2MDE2LjA0OTgtLjI0MDIzLjA0OThoMGMtLjI0MDIzLDAtLjQ3OTQ5LS4xNDk5LS41ODAwOC0uMzg5NjVabS0uODc5ODgtMS42NjAxNmMtLjE5MDQzLS4yOTAwNC0uMTEwMzUtLjY4MDE4LjE3OTY5LS44NzAxMmgwYy4yOTAwNC0uMTc5NjkuNjgwNjYtLjEwMDEuODcwMTIuMTg5OTRoMGMuMTkwNDMuMjkwMDQuMTEwMzUuNjcwNDEtLjE3OTY5Ljg2MDM1aDBjLS4xMTAzNS4wNjk4Mi0uMjMwNDcuMDk5NjEtLjMzOTg0LjA5OTYxaDBjLS4yMDk5NiwwLS40MTAxNi0uMDk5NjEtLjUzMDI3LS4yNzk3OVoiLz48cGF0aCBjbGFzcz0idXVpZC02NWY1NzFmZS02YmI0LTRhMWMtOWQwYS0wY2E0NzIyMjk0MWEiIGQ9Im05LjI5MDA0LDEzLjVjLS4yOTAwNC0uMTg5OTQtLjM3MDEyLS41ODAwOC0uMTgwNjYtLjg2MDM1aDBjLjE5MDQzLS4yOTAwNC41NzAzMS0uMzY5NjMuODYwMzUtLjE4OTk0aDBjLjI5MDA0LjE4OTk0LjM3MDEyLjU4MDA4LjE5MDQzLjg3MDEyaDBjLS4xMjAxMi4xODAxOC0uMzIwMzEuMjc5NzktLjUzMDI3LjI3OTc5aDBjLS4xMTAzNSwwLS4yMzA0Ny0uMDI5NzktLjMzOTg0LS4wOTk2MVptMS4xNDk0MS0xLjY0MDE0Yy0uMjUtLjIyOTk4LS4yNTk3Ny0uNjI5ODgtLjAxOTUzLS44Nzk4OGgwYy4yMjk0OS0uMjUuNjI5ODgtLjI2MDI1Ljg3OTg4LS4wMjAwMmgwYy4yNS4yMzk3NS4yNTk3Ny42Mjk4OC4wMTk1My44Nzk4OGguMDEwNzRjLS4xMjk4OC4xMjk4OC0uMjkwMDQuMjAwMi0uNDU5OTYuMjAwMmgwYy0uMTUwMzksMC0uMzEwNTUtLjA2MDA2LS40MzA2Ni0uMTgwMThabTEuNDMwNjYtMS4zOTk5Yy0uMjA5OTYtLjI4MDI3LS4xNTAzOS0uNjY5OTIuMTI5ODgtLjg3MDEyaDBjLjI4MDI3LS4yMDk5Ni42Njk5Mi0uMTQ5OS44Nzk4OC4xMjk4OGgwYy4yMDAyLjI4MDI3LjEzOTY1LjY2OTkyLS4xMzk2NS44Nzk4OHYtLjAwOTc3Yy0uMTEwMzUuMDg5ODQtLjI0MDIzLjEyOTg4LS4zNzAxMi4xMjk4OGgwYy0uMTkwNDMsMC0uMzc5ODgtLjA4OTg0LS41LS4yNTk3N1ptMS42NDk0MS0xLjEyMDEyYy0uMTQ5NDEtLjMxMDA2LS4wMTk1My0uNjg5OTQuMjkwMDQtLjgzOTg0aDBjLjMxMDU1LS4xNTAzOS42OTA0My0uMDIwMDIuODM5ODQuMjkwMDRoMGMuMTQwNjIuMzA5NTcuMDEwNzQuNjg5OTQtLjI5OTguODM5ODRoMGMtLjA4MDA4LjA0MDA0LS4xNzk2OS4wNjAwNi0uMjY5NTMuMDYwMDZoMGMtLjIzMDQ3LDAtLjQ1MDItLjEyOTg4LS41NjA1NS0uMzUwMVptMS44MzAwOC0uODEwMDZjLS4wODk4NC0uMzMwMDguMTAwNTktLjY4MDE4LjQ0MDQzLS43NzAwMmgwYy4zMzAwOC0uMDg5ODQuNjY5OTIuMTA5ODYuNzY5NTMuNDM5OTRoMGMuMDg5ODQuMzMwMDgtLjEwOTM4LjY4MDE4LS40Mzk0NS43NzAwMmgwYy0uMDYwNTUuMDEwMjUtLjExMDM1LjAyMDAyLS4xNjk5Mi4wMjAwMmgwYy0uMjcwNTEsMC0uNTIwNTEtLjE3OTY5LS42MDA1OS0uNDU5OTZaIi8+PC9zdmc+
+    mediatype: image/svg+xml
+  keywords:
+  - acm
+  - advanced-cluster-management
+  - install
+  - multiclusterhub
+  - rhacm
+  labels:
+    app: advanced-cluster-management
+  links:
+  - name: Documentation
+    url: https://access.redhat.com/documentation/en-us/red_hat_advanced_cluster_management_for_kubernetes/2.16/
+  selector:
+    matchLabels:
+      app: advanced-cluster-management
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  customresourcedefinitions:
+    owned:
+    - description: 'MulticlusterHub defines the configuration
+
+        for an instance of a multicluster hub, a central point for managing multiple
+
+        Kubernetes-based clusters. The deployment of multicluster hub components
+
+        is determined based on the configuration that is defined in this resource.'
+      displayName: MultiClusterHub
+      kind: MultiClusterHub
+      name: multiclusterhubs.operator.open-cluster-management.io
+      specDescriptors:
+      - description: 'Specifies deployment replication for improved availability. Options are: Basic and
+          High (default)'
+        displayName: Availability Configuration
+        path: availabilityConfig
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:select:High
+        - urn:alm:descriptor:com.tectonic.ui:select:Basic
+      - description: (Deprecated) Provide the customized OpenShift default ingress CA certificate to RHACM
+        displayName: Custom CA Configmap
+        path: customCAConfigmap
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:ConfigMap
+      - description: Disable automatic import of the hub cluster as a managed cluster
+        displayName: Disable Hub Self Management
+        path: disableHubSelfManagement
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: Disable automatic update of ClusterImageSets
+        displayName: Disable Update ClusterImageSets
+        path: disableUpdateClusterImageSets
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: (Deprecated) Enable cluster backup
+        displayName: Enable Cluster Backup
+        path: enableClusterBackup
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: (Deprecated) Enable cluster proxy addon
+        displayName: Enable Cluster Proxy Addon
+        path: enableClusterProxyAddon
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: (Deprecated) Overrides for the default HiveConfig spec
+        displayName: Hive Config
+        path: hive
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Override pull secret for accessing MultiClusterHub operand and endpoint images
+        displayName: Image Pull Secret
+        path: imagePullSecret
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:Secret
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: (Deprecated) Configuration options for ingress management
+        displayName: Ingress Management
+        path: ingress
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: The name of the local-cluster resource
+        displayName: Local Cluster Name
+        path: localClusterName
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:text
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Developer Overrides
+        displayName: Developer Overrides
+        path: overrides
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: 'Provides optional configuration for components, the list of which can be found here:
+          https://github.com/stolostron/multiclusterhub-operator/tree/main/docs/available-components.md'
+        displayName: Component Configuration
+        path: overrides.components
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: (Deprecated) Install cert-manager into its own namespace
+        displayName: Separate Certificate Management
+        path: separateCertificateManagement
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      version: v1
+  install:
+    strategy: deployment
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ''
+          resources:
+          - configmaps
+          - endpoints
+          - events
+          - namespaces
+          - pods
+          - services/proxy
+          verbs:
+          - create
+          - delete
+          - deletecollection
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ''
+          resources:
+          - groups
+          - users
+          verbs:
+          - create
+          - delete
+          - get
+          - impersonate
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ''
+          resources:
+          - jobs
+          verbs:
+          - list
+          - watch
+        - apiGroups:
+          - ''
+          resources:
+          - nodes
+          - persistentvolumeclaims
+          - services/finalizers
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ''
+          resources:
+          - secrets
+          - serviceaccounts
+          - services
+          verbs:
+          - create
+          - delete
+          - deletecollection
+          - get
+          - impersonate
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ''
+          resources:
+          - serviceaccounts/token
+          verbs:
+          - create
+        - apiGroups:
+          - ''
+          - action.open-cluster-management.io
+          - addon.open-cluster-management.io
+          - agent.open-cluster-management.io
+          - app.k8s.io
+          - apps.open-cluster-management.io
+          - argoproj.io
+          - authorization.k8s.io
+          - certificates.k8s.io
+          - cluster.open-cluster-management.io
+          - clusterregistry.k8s.io
+          - compliance.mcm.ibm.com
+          - config.openshift.io
+          - coordination.k8s.io
+          - discovery.open-cluster-management.io
+          - hive.openshift.io
+          - hiveinternal.openshift.io
+          - imageregistry.open-cluster-management.io
+          - internal.open-cluster-management.io
+          - inventory.open-cluster-management.io
+          - mcm.ibm.com
+          - multicloud.ibm.com
+          - operator.open-cluster-management.io
+          - policy.open-cluster-management.io
+          - proxy.open-cluster-management.io
+          - rbac.authorization.k8s.io
+          - register.open-cluster-management.io
+          - search.open-cluster-management.io
+          - submarineraddon.open-cluster-management.io
+          - view.open-cluster-management.io
+          - work.open-cluster-management.io
+          resources:
+          - applicationrelationships
+          - applicationrelationships/status
+          - applications
+          - applications/status
+          - certificatesigningrequests
+          - certificatesigningrequests/approval
+          - channels
+          - channels/status
+          - clusterclaims
+          - clustercurators
+          - clusterdeployments
+          - clustermanagementaddons
+          - clustermanagers
+          - clusterpools
+          - clusterrolebindings
+          - clusterroles
+          - clusterstatuses/aggregator
+          - clustersyncs
+          - clusterversions
+          - compliances
+          - configmaps
+          - deployableoverrides
+          - deployableoverrides/status
+          - deployables
+          - deployables/status
+          - discoveredclusters
+          - discoveryconfigs
+          - endpointconfigs
+          - endpoints
+          - events
+          - helmrepos
+          - helmrepos/status
+          - klusterletaddonconfigs
+          - leases
+          - machinepools
+          - managedclusteractions
+          - managedclusteractions/status
+          - managedclusteraddons
+          - managedclusteraddons/status
+          - managedclusterimageregistries
+          - managedclusterimageregistries/status
+          - managedclusterinfos
+          - managedclusterinfos/status
+          - managedclusters
+          - managedclusters/accept
+          - managedclusters/status
+          - managedclustersetbindings
+          - managedclustersets
+          - managedclustersets/bind
+          - managedclustersets/join
+          - managedclustersets/status
+          - managedclusterviews
+          - managedclusterviews/status
+          - manifestworks
+          - manifestworks/status
+          - namespaces
+          - placementbindings
+          - placementdecisions
+          - placementdecisions/status
+          - placementrules
+          - placementrules/status
+          - placements
+          - pods
+          - pods/log
+          - policies
+          - policies/status
+          - policyautomations
+          - policysets
+          - policysets/status
+          - rolebindings
+          - roles
+          - searchcustomizations
+          - secrets
+          - signers
+          - subjectaccessreviews
+          - submarinerconfigs
+          - submarinerconfigs/status
+          - subscriptions
+          - subscriptions/status
+          - syncsets
+          verbs:
+          - approve
+          - bind
+          - create
+          - delete
+          - deletecollection
+          - escalate
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ''
+          - admissionregistration.k8s.io
+          - apiextensions.k8s.io
+          - apiregistration.k8s.io
+          - apps
+          - apps.open-cluster-management.io
+          - authorization.k8s.io
+          - clusterview.open-cluster-management.io
+          - discovery.open-cluster-management.io
+          - hive.openshift.io
+          - mcm.ibm.com
+          - proxy.open-cluster-management.io
+          - rbac.authorization.k8s.io
+          - security.openshift.io
+          - wgpolicyk8s.io
+          resources:
+          - apiservices
+          - channels
+          - clusterjoinrequests
+          - clusterrolebindings
+          - clusterstatuses/log
+          - configmaps
+          - customresourcedefinitions
+          - deployments
+          - discoveryconfigs
+          - helmreleases
+          - hiveconfigs
+          - managedclusters
+          - managedclustersets
+          - mutatingwebhookconfigurations
+          - namespaces
+          - pods
+          - policyreports
+          - replicasets
+          - rolebindings
+          - secrets
+          - serviceaccounts
+          - services
+          - subjectaccessreviews
+          - subscriptions
+          - validatingwebhookconfigurations
+          verbs:
+          - get
+        - apiGroups:
+          - ''
+          - admissionregistration.k8s.io
+          - apiextensions.k8s.io
+          - apiregistration.k8s.io
+          - apps
+          - apps.open-cluster-management.io
+          - authorization.k8s.io
+          - hive.openshift.io
+          - mcm.ibm.com
+          - monitoring.coreos.com
+          - rbac.authorization.k8s.io
+          - security.openshift.io
+          resources:
+          - apiservices
+          - channels
+          - clusterjoinrequests
+          - clusterrolebindings
+          - clusterroles
+          - configmaps
+          - customresourcedefinitions
+          - deployments
+          - hiveconfigs
+          - mutatingwebhookconfigurations
+          - namespaces
+          - rolebindings
+          - secrets
+          - serviceaccounts
+          - servicemonitors
+          - services
+          - subjectaccessreviews
+          - subscriptions
+          - validatingwebhookconfigurations
+          verbs:
+          - create
+          - update
+        - apiGroups:
+          - ''
+          - admissionregistration.k8s.io
+          - apiregistration.k8s.io
+          - apps
+          - apps.open-cluster-management.io
+          - authorization.k8s.io
+          - clusterview.open-cluster-management.io
+          - config.openshift.io
+          - discovery.open-cluster-management.io
+          - hive.openshift.io
+          - inventory.open-cluster-management.io
+          - mcm.ibm.com
+          - observability.open-cluster-management.io
+          - operator.open-cluster-management.io
+          - rbac.authorization.k8s.io
+          - wgpolicyk8s.io
+          resources:
+          - apiservices
+          - clusterjoinrequests
+          - configmaps
+          - deployments
+          - discoveryconfigs
+          - helmreleases
+          - hiveconfigs
+          - ingresses
+          - managedclusters
+          - managedclustersets
+          - multiclusterhubs
+          - multiclusterobservabilities
+          - namespaces
+          - pods
+          - policyreports
+          - rolebindings
+          - secrets
+          - servicemonitors
+          - services
+          - subjectaccessreviews
+          - subscriptions
+          - validatingwebhookconfigurations
+          verbs:
+          - list
+        - apiGroups:
+          - ''
+          - admissionregistration.k8s.io
+          - apiregistration.k8s.io
+          - apps
+          - apps.open-cluster-management.io
+          - authorization.k8s.io
+          - clusterview.open-cluster-management.io
+          - config.openshift.io
+          - hive.openshift.io
+          - mcm.ibm.com
+          - operator.open-cluster-management.io
+          - rbac.authorization.k8s.io
+          - storage.k8s.io
+          - wgpolicyk8s.io
+          resources:
+          - apiservices
+          - clusterjoinrequests
+          - configmaps
+          - deployments
+          - helmreleases
+          - hiveconfigs
+          - ingresses
+          - managedclusters
+          - managedclustersets
+          - multiclusterhubs
+          - namespaces
+          - pods
+          - policyreports
+          - rolebindings
+          - secrets
+          - services
+          - subjectaccessreviews
+          - validatingwebhookconfigurations
+          verbs:
+          - list
+          - watch
+        - apiGroups:
+          - ''
+          - admissionregistration.k8s.io
+          - apps
+          - apps.open-cluster-management.io
+          - mcm.ibm.com
+          - monitoring.coreos.com
+          - operator.open-cluster-management.io
+          resources:
+          - deployments
+          - deployments/finalizers
+          - helmreleases
+          - multiclusterhubs
+          - multiclusterhubs/finalizers
+          - multiclusterhubs/status
+          - servicemonitors
+          - servicemonitors/finalizers
+          - services
+          - services/finalizers
+          - validatingwebhookconfigurations
+          verbs:
+          - update
+        - apiGroups:
+          - ''
+          - apiextensions.k8s.io
+          - apiregistration.k8s.io
+          - apps
+          - apps.open-cluster-management.io
+          resources:
+          - apiservices
+          - channels
+          - customresourcedefinitions
+          - deployments
+          - services
+          verbs:
+          - delete
+        - apiGroups:
+          - ''
+          - apps
+          resources:
+          - deployments
+          - serviceaccounts
+          - services
+          verbs:
+          - delete
+          - deletecollection
+          - get
+          - patch
+        - apiGroups:
+          - ''
+          - authentication.k8s.io
+          resources:
+          - uids
+          verbs:
+          - impersonate
+        - apiGroups:
+          - ''
+          - events.k8s.io
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+          - update
+        - apiGroups:
+          - '*'
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - addon.open-cluster-management.io
+          resources:
+          - addondeploymentconfigs
+          - clustermanagementaddons
+          - clustermanagementaddons/finalizers
+          - clustermanagementaddons/status
+          - managedclusteraddons
+          - managedclusteraddons/finalizers
+          - managedclusteraddons/status
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - addon.open-cluster-management.io
+          - agent.open-cluster-management.io
+          - apps.open-cluster-management.io
+          - authentication.open-cluster-management.io
+          - cluster.open-cluster-management.io
+          - operator.open-cluster-management.io
+          - policy.open-cluster-management.io
+          - view.open-cluster-management.io
+          - work.open-cluster-management.io
+          resources:
+          - addondeploymentconfigs
+          - addontemplates
+          - channels
+          - channels/finalizers
+          - channels/status
+          - deployables
+          - deployables/status
+          - gitopsclusters
+          - gitopsclusters/finalizers
+          - gitopsclusters/status
+          - helmreleases
+          - helmreleases/status
+          - klusterletaddonconfigs
+          - managedclusteraddons
+          - managedclusters
+          - managedclustersetbindings
+          - managedclustersets/bind
+          - managedclusterviews
+          - managedclusterviews/status
+          - managedserviceaccounts
+          - manifestworks
+          - manifestworks/status
+          - multiclusterapplicationsetreports
+          - multiclusterapplicationsetreports/status
+          - multiclusterhubs
+          - placement/finalizers
+          - placementbindings
+          - placementbindings/finalizers
+          - placementdecisions
+          - placementdecisions/finalizers
+          - placementdecisions/status
+          - placementrules
+          - placementrules/finalizers
+          - placementrules/status
+          - placements
+          - placements/status
+          - policies
+          - subscriptionreports
+          - subscriptions
+          - subscriptions/finalizers
+          - subscriptions/status
+          - subscriptionstatuses
+          verbs:
+          - create
+          - delete
+          - deletecollection
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - admissionregistration.k8s.io
+          resources:
+          - mutatingwebhookconfigurations
+          - validatingwebhookconfigurations
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - admissionregistration.k8s.io
+          - apiextensions.k8s.io
+          - apiregistration.k8s.io
+          - hive.openshift.io
+          - mcm.ibm.com
+          - rbac.authorization.k8s.io
+          resources:
+          - apiservices
+          - clusterrolebindings
+          - clusterroles
+          - customresourcedefinitions
+          - hiveconfigs
+          - mutatingwebhookconfigurations
+          - validatingwebhookconfigurations
+          verbs:
+          - delete
+          - deletecollection
+          - list
+          - patch
+          - watch
+        - apiGroups:
+          - admissionregistration.k8s.io
+          - apiextensions.k8s.io
+          - certificates.k8s.io
+          - coordination.k8s.io
+          resources:
+          - certificatesigningrequests
+          - customresourcedefinitions
+          - leases
+          - mutatingwebhookconfigurations
+          - validatingwebhookconfigurations
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - agent-install.openshift.io
+          resources:
+          - agents
+          verbs:
+          - list
+          - watch
+        - apiGroups:
+          - agent-install.openshift.io
+          resources:
+          - agentserviceconfigs
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - agent-install.openshift.io
+          resources:
+          - infraenvs
+          - nmstateconfigs
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - agent.open-cluster-management.io
+          resources:
+          - klusterletaddonconfigs
+          - klusterletaddonconfigs/finalizers
+          - klusterletaddonconfigs/status
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apiextensions.k8s.io
+          resources:
+          - customresourcedefinitions
+          verbs:
+          - '*'
+        - apiGroups:
+          - apiextensions.k8s.io
+          resources:
+          - customresourcedefinitions/finalizers
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apiextensions.k8s.io
+          resources:
+          - customresourcedefinitions/status
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - app.k8s.io
+          resources:
+          - applications
+          verbs:
+          - list
+          - watch
+        - apiGroups:
+          - app.k8s.io
+          - argoproj.io
+          resources:
+          - applications
+          - applications/status
+          - applicationsets
+          - applicationsets/status
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - daemonsets
+          - deployments
+          - deployments/finalizers
+          - replicasets
+          - statefulsets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apps.open-cluster-management.io
+          resources:
+          - '*'
+          verbs:
+          - update
+        - apiGroups:
+          - apps.open-cluster-management.io
+          resources:
+          - channels
+          - gitopsclusters
+          - helmreleases
+          - multiclusterapplicationsetreports
+          - subscriptionreports
+          verbs:
+          - list
+          - watch
+        - apiGroups:
+          - apps.open-cluster-management.io
+          resources:
+          - placementrules
+          - subscriptions
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - argoproj.io
+          resources:
+          - applications
+          - applicationsets
+          - argocds
+          verbs:
+          - list
+          - watch
+        - apiGroups:
+          - argoproj.io
+          resources:
+          - appprojects
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authentication.k8s.io
+          - authorization.k8s.io
+          resources:
+          - uids
+          - userextras/authentication.kubernetes.io/credential-id
+          - userextras/authentication.kubernetes.io/node-name
+          - userextras/authentication.kubernetes.io/node-uid
+          - userextras/authentication.kubernetes.io/pod-name
+          - userextras/authentication.kubernetes.io/pod-uid
+          verbs:
+          - impersonate
+        - apiGroups:
+          - authentication.open-cluster-management.io
+          resources:
+          - managedserviceaccounts
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+          - get
+        - apiGroups:
+          - capi-provider.agent-install.openshift.io
+          resources:
+          - agentmachines
+          verbs:
+          - list
+          - watch
+        - apiGroups:
+          - certificates.k8s.io
+          resources:
+          - certificatesigningrequests
+          verbs:
+          - create
+          - get
+          - list
+          - update
+          - watch
+        - apiGroups:
+          - certificates.k8s.io
+          resources:
+          - certificatesigningrequests/approval
+          verbs:
+          - create
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - certificates.k8s.io
+          resources:
+          - certificatesigningrequests/status
+          verbs:
+          - update
+        - apiGroups:
+          - certificates.k8s.io
+          resources:
+          - signers
+          verbs:
+          - approve
+          - sign
+        - apiGroups:
+          - certmanager.k8s.io
+          - config.openshift.io
+          - rbac.authorization.k8s.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
+          - clusterclaims
+          verbs:
+          - get
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
+          - clustercurators
+          - managedclustersetbindings
+          verbs:
+          - list
+          - watch
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
+          - manageclusters
+          - placementdecisions
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
+          - managedclusters
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
+          - managedclusters/finalizers
+          verbs:
+          - create
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
+          - managedclustersets
+          verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
+          - managedclustersets/join
+          verbs:
+          - create
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
+          - placements
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - update
+          - watch
+        - apiGroups:
+          - config.openshift.io
+          resources:
+          - apiservers
+          - infrastructures/status
+          verbs:
+          - get
+        - apiGroups:
+          - config.openshift.io
+          resources:
+          - authentications
+          - clusterversions
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - config.openshift.io
+          resources:
+          - infrastructures
+          verbs:
+          - '*'
+        - apiGroups:
+          - config.openshift.io
+          resources:
+          - oauths
+          verbs:
+          - list
+          - watch
+        - apiGroups:
+          - config.openshift.io
+          - console.openshift.io
+          - project.openshift.io
+          - tower.ansible.com
+          resources:
+          - ansiblejobs
+          - clusterversions
+          - consolelinks
+          - featuregates
+          - infrastructures
+          - projects
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - console.open-cluster-management.io
+          resources:
+          - userpreferences
+          verbs:
+          - create
+          - get
+          - list
+          - patch
+          - watch
+        - apiGroups:
+          - console.openshift.io
+          - search.open-cluster-management.io
+          resources:
+          - consolelinks
+          - consoleplugins
+          - searches
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - coordination.k8s.io
+          resources:
+          - leases
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - core.observatorium.io
+          resources:
+          - observatoria
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - discovery.k8s.io
+          resources:
+          - endpointslices
+          verbs:
+          - deletecollection
+        - apiGroups:
+          - discovery.open-cluster-management.io
+          resources:
+          - discoveredclusters
+          - discoveryconfigs
+          verbs:
+          - list
+          - watch
+        - apiGroups:
+          - extensions.hive.openshift.io
+          resources:
+          - agentclusterinstalls
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - extensions.hive.openshift.io
+          resources:
+          - imageclusterinstalls
+          verbs:
+          - create
+          - delete
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - forklift.konveyor.io
+          resources:
+          - providers
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - hive.openshift.io
+          resources:
+          - clusterclaims
+          - clusterdeprovisions
+          - clusterpools
+          - clusterprovisions
+          - machinepools
+          verbs:
+          - list
+          - watch
+        - apiGroups:
+          - hive.openshift.io
+          resources:
+          - clusterdeployments
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - hive.openshift.io
+          resources:
+          - clusterdeployments/status
+          verbs:
+          - get
+          - watch
+        - apiGroups:
+          - hive.openshift.io
+          resources:
+          - clusterimagesets
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - hive.openshift.io
+          - multicluster.openshift.io
+          resources:
+          - clusterimagesets
+          - multiclusterengines
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - hypershift.openshift.io
+          resources:
+          - hostedclusters
+          - nodepools
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - image.openshift.io
+          resources:
+          - imagestreams
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - imageregistry.open-cluster-management.io
+          resources:
+          - managedclusterimageregistries
+          - managedclusterimageregistries/status
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - integreatly.org
+          resources:
+          - grafanadashboards
+          - grafanadashboards/status
+          - grafanadatasources
+          - grafanadatasources/status
+          - grafanas
+          - grafanas/finalizers
+          - grafanas/status
+          verbs:
+          - create
+          - delete
+          - deletecollection
+          - get
+          - list
+          - update
+          - watch
+        - apiGroups:
+          - internal.open-cluster-management.io
+          resources:
+          - managedclusterinfos
+          verbs:
+          - list
+          - watch
+        - apiGroups:
+          - metal3.io
+          resources:
+          - baremetalhosts
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - metal3.io
+          resources:
+          - hostfirmwaresettings
+          verbs:
+          - create
+          - delete
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - metal3.io
+          resources:
+          - provisionings
+          verbs:
+          - list
+          - watch
+        - apiGroups:
+          - migration.k8s.io
+          resources:
+          - storageversionmigrations
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - update
+          - watch
+        - apiGroups:
+          - monitor.open-cluster-management.io
+          resources:
+          - '*'
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - prometheusrules
+          - servicemonitors
+          verbs:
+          - create
+          - delete
+          - deletecollection
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - monitoring.rhobs
+          resources:
+          - scrapeconfigs
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - multicluster.openshift.io
+          resources:
+          - multiclusterengines
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - multicluster.x-k8s.io
+          resources:
+          - serviceimports
+          verbs:
+          - delete
+          - get
+          - list
+          - update
+        - apiGroups:
+          - networking.k8s.io
+          resources:
+          - ingresses
+          verbs:
+          - create
+          - delete
+          - deletecollection
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - oauth.openshift.io
+          resources:
+          - oauthclients
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - observability.open-cluster-management.io
+          resources:
+          - '*'
+          - endpointmonitorings
+          - multiclusterobservabilities
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - operator.open-cluster-management.io
+          resources:
+          - internalhubcomponents
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - operator.open-cluster-management.io
+          resources:
+          - internalhubcomponents/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - operator.open-cluster-management.io
+          resources:
+          - multiclusterglobalhubs
+          verbs:
+          - get
+          - list
+        - apiGroups:
+          - operator.open-cluster-management.io
+          resources:
+          - multiclusterhubs
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - operator.openshift.io
+          resources:
+          - cloudcredentials
+          - consoles
+          verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - operator.openshift.io
+          resources:
+          - ingresscontrollers
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - operators.coreos.com
+          resources:
+          - catalogsources
+          - clusterserviceversions
+          - operatorconditions
+          - operatorgroups
+          - subscriptions
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - packages.operators.coreos.com
+          resources:
+          - packagemanifests
+          verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - policy.open-cluster-management.io
+          resources:
+          - '*'
+          - policies
+          - policysets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - policy.open-cluster-management.io
+          resources:
+          - placementbindings
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - update
+          - watch
+        - apiGroups:
+          - policy.open-cluster-management.io
+          resources:
+          - policies/finalizers
+          - policysets/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - policy.open-cluster-management.io
+          resources:
+          - policies/status
+          - policysets/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - policy.open-cluster-management.io
+          resources:
+          - policyautomations
+          verbs:
+          - list
+          - watch
+        - apiGroups:
+          - proxy.open-cluster-management.io
+          resources:
+          - clusterstatuses/aggregator
+          verbs:
+          - create
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - clusterrolebindings
+          - clusterroles
+          - rolebindings
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - roles
+          verbs:
+          - bind
+          - create
+          - delete
+          - escalate
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - rbac.open-cluster-management.io
+          resources:
+          - clusterpermissions
+          - multiclusterroleassignments
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - rbac.open-cluster-management.io
+          resources:
+          - clusterpermissions/finalizers
+          - multiclusterroleassignments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - rbac.open-cluster-management.io
+          resources:
+          - clusterpermissions/status
+          - multiclusterroleassignments/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - register.open-cluster-management.io
+          resources:
+          - managedclusters/accept
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - route.openshift.io
+          resources:
+          - routes
+          - routes/custom-host
+          - routes/status
+          verbs:
+          - create
+          - delete
+          - deletecollection
+          - get
+          - list
+          - update
+          - watch
+        - apiGroups:
+          - search.open-cluster-management.io
+          resources:
+          - searches
+          verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - search.open-cluster-management.io
+          resources:
+          - searches/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - search.open-cluster-management.io
+          resources:
+          - searches/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - siteconfig.open-cluster-management.io
+          resources:
+          - clusterinstances
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - siteconfig.open-cluster-management.io
+          resources:
+          - clusterinstances/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - siteconfig.open-cluster-management.io
+          resources:
+          - clusterinstances/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - storage.k8s.io
+          resources:
+          - storageclasses
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - submariner.io
+          resources:
+          - brokers
+          verbs:
+          - create
+          - delete
+          - get
+          - update
+        - apiGroups:
+          - submariner.io
+          resources:
+          - clusters
+          - endpoints
+          verbs:
+          - deletecollection
+        - apiGroups:
+          - submarineraddon.open-cluster-management.io
+          resources:
+          - submarinerconfigs
+          verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - submarineraddon.open-cluster-management.io
+          resources:
+          - submarinerconfigs/status
+          verbs:
+          - patch
+          - update
+        - apiGroups:
+          - tower.ansible.com
+          resources:
+          - ansiblejobs
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - user.openshift.io
+          resources:
+          - groups
+          - users
+          verbs:
+          - impersonate
+        - apiGroups:
+          - wgpolicyk8s.io
+          resources:
+          - policyreports
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - work.open-cluster-management.io
+          resources:
+          - manifestworks
+          verbs:
+          - '*'
+        - apiGroups:
+          - work.open-cluster-management.io
+          resources:
+          - manifestworks/finalizers
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        serviceAccountName: multiclusterhub-operator
+      permissions:
+      - rules:
+        - apiGroups:
+          - ''
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - coordination.k8s.io
+          resources:
+          - leases
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ''
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        serviceAccountName: multiclusterhub-operator
+      deployments:
+      - label:
+          control-plane: multiclusterhub-operator
+        name: multiclusterhub-operator
+        spec:
+          replicas: 2
+          selector:
+            matchLabels:
+              name: multiclusterhub-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: multiclusterhub-operator
+                ocm-antiaffinity-selector: multiclusterhub-operator
+            spec:
+              affinity:
+                podAntiAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                  - podAffinityTerm:
+                      labelSelector:
+                        matchExpressions:
+                        - key: ocm-antiaffinity-selector
+                          operator: In
+                          values:
+                          - multiclusterhub-operator
+                      topologyKey: topology.kubernetes.io/zone
+                    weight: 70
+                  - podAffinityTerm:
+                      labelSelector:
+                        matchExpressions:
+                        - key: ocm-antiaffinity-selector
+                          operator: In
+                          values:
+                          - multiclusterhub-operator
+                      topologyKey: kubernetes.io/hostname
+                    weight: 35
+              containers:
+              - args:
+                - --leader-elect
+                command:
+                - multiclusterhub-operator
+                env:
+                - name: CRDS_PATH
+                  value: /usr/local/templates/crds
+                - name: TEMPLATES_PATH
+                  value: /usr/local/templates
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: OPERAND_IMAGE_ACM_CLI
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-cli-rhel9:latest
+                - name: OPERAND_IMAGE_ACM_MUST_GATHER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/must-gather-rhel9:latest
+                - name: OPERAND_IMAGE_CERT_POLICY_CONTROLLER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/cert-policy-controller-rhel9:latest
+                - name: OPERAND_IMAGE_CLUSTER_BACKUP_CONTROLLER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/cluster-backup-controller-rhel9:latest
+                - name: OPERAND_IMAGE_CLUSTER_PERMISSION
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/cluster-permission-rhel9:latest
+                - name: OPERAND_IMAGE_CONFIG_POLICY_CONTROLLER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/config-policy-controller-rhel9:latest
+                - name: OPERAND_IMAGE_CONSOLE
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/console-rhel9:latest
+                - name: OPERAND_IMAGE_ENDPOINT_MONITORING_OPERATOR
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/endpoint-monitoring-operator-rhel9:latest
+                - name: OPERAND_IMAGE_GOVERNANCE_POLICY_ADDON_CONTROLLER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/governance-policy-addon-controller-rhel9:latest
+                - name: OPERAND_IMAGE_GOVERNANCE_POLICY_FRAMEWORK_ADDON
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/governance-policy-framework-addon-rhel9:latest
+                - name: OPERAND_IMAGE_GOVERNANCE_POLICY_PROPAGATOR
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/governance-policy-propagator-rhel9:latest
+                - name: OPERAND_IMAGE_GRAFANA
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/grafana-rhel9:latest
+                - name: OPERAND_IMAGE_GRAFANA_DASHBOARD_LOADER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/grafana-dashboard-loader-rhel9:latest
+                - name: OPERAND_IMAGE_INSIGHTS_CLIENT
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/insights-client-rhel9:latest
+                - name: OPERAND_IMAGE_INSIGHTS_METRICS
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/insights-metrics-rhel9:latest
+                - name: OPERAND_IMAGE_KLUSTERLET_ADDON_CONTROLLER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/klusterlet-addon-controller-rhel9:latest
+                - name: OPERAND_IMAGE_KUBE_RBAC_PROXY
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/kube-rbac-proxy-rhel9:latest
+                - name: OPERAND_IMAGE_KUBE_STATE_METRICS
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/kube-state-metrics-rhel9:latest
+                - name: OPERAND_IMAGE_MEMCACHED_EXPORTER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/memcached-exporter-rhel9:latest
+                - name: OPERAND_IMAGE_METRICS_COLLECTOR
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/metrics-collector-rhel9:latest
+                - name: OPERAND_IMAGE_MTV_INTEGRATIONS
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/mtv-integrations-rhel9:latest
+                - name: OPERAND_IMAGE_MULTICLOUD_INTEGRATIONS
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicloud-integrations-rhel9:latest
+                - name: OPERAND_IMAGE_MULTICLUSTER_OBSERVABILITY_ADDON
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-observability-addon-rhel9:latest
+                - name: OPERAND_IMAGE_MULTICLUSTER_OBSERVABILITY_OPERATOR
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-observability-operator-rhel9:latest
+                - name: OPERAND_IMAGE_MULTICLUSTER_OPERATORS_APPLICATION
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-operators-application-rhel9:latest
+                - name: OPERAND_IMAGE_MULTICLUSTER_OPERATORS_CHANNEL
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-operators-channel-rhel9:latest
+                - name: OPERAND_IMAGE_MULTICLUSTER_OPERATORS_SUBSCRIPTION
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-operators-subscription-rhel9:latest
+                - name: OPERAND_IMAGE_MULTICLUSTER_ROLE_ASSIGNMENT
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-role-assignment-rhel9:latest
+                - name: OPERAND_IMAGE_MULTICLUSTERHUB_OPERATOR
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multiclusterhub-operator-rhel9:latest
+                - name: OPERAND_IMAGE_NODE_EXPORTER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/node-exporter-rhel9:latest
+                - name: OPERAND_IMAGE_OBO_PROMETHEUS_RHEL9_OPERATOR
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/obo-prometheus-rhel9-operator:latest
+                - name: OPERAND_IMAGE_OBSERVATORIUM
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/observatorium-rhel9:latest
+                - name: OPERAND_IMAGE_OBSERVATORIUM_OPERATOR
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/observatorium-operator-rhel9:latest
+                - name: OPERAND_IMAGE_PROMETHEUS
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/prometheus-rhel9:latest
+                - name: OPERAND_IMAGE_PROMETHEUS_ALERTMANAGER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/prometheus-alertmanager-rhel9:latest
+                - name: OPERAND_IMAGE_PROMETHEUS_CONFIG_RELOADER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/prometheus-config-reloader-rhel9:latest
+                - name: OPERAND_IMAGE_PROMETHEUS_OPERATOR
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/prometheus-operator-rhel9:latest
+                - name: OPERAND_IMAGE_RBAC_QUERY_PROXY
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/rbac-query-proxy-rhel9:latest
+                - name: OPERAND_IMAGE_SEARCH_COLLECTOR
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/search-collector-rhel9:latest
+                - name: OPERAND_IMAGE_SEARCH_INDEXER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/search-indexer-rhel9:latest
+                - name: OPERAND_IMAGE_SEARCH_V2_API
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/search-v2-api-rhel9:latest
+                - name: OPERAND_IMAGE_SEARCH_V2_OPERATOR
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/search-v2-operator-rhel9:latest
+                - name: OPERAND_IMAGE_SITECONFIG_OPERATOR
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/siteconfig-rhel9:latest
+                - name: OPERAND_IMAGE_SUBMARINER_ADDON
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/submariner-addon-rhel9:latest
+                - name: OPERAND_IMAGE_THANOS
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/thanos-rhel9:latest
+                - name: OPERAND_IMAGE_THANOS_RECEIVE_CONTROLLER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/thanos-receive-controller-rhel9:latest
+                - name: OPERAND_IMAGE_VOLSYNC_ADDON_CONTROLLER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/volsync-addon-controller-rhel9:latest
+                - name: OPERAND_IMAGE_CONFIGMAP_RELOADER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/configmap_reloader:latest
+                - name: OPERAND_IMAGE_FLIGHTCTL_API
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_api:latest
+                - name: OPERAND_IMAGE_FLIGHTCTL_OCP_UI
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_ocp_ui:latest
+                - name: OPERAND_IMAGE_FLIGHTCTL_PERIODIC
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_periodic:latest
+                - name: OPERAND_IMAGE_FLIGHTCTL_UI
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_ui:latest
+                - name: OPERAND_IMAGE_FLIGHTCTL_WORKER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_worker:latest
+                - name: OPERAND_IMAGE_FLIGHTCTL_CLI_ARTIFACTS
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_cli_artifacts:latest
+                - name: OPERAND_IMAGE_FLIGHTCTL_ALERT_EXPORTER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_alert_exporter:latest
+                - name: OPERAND_IMAGE_FLIGHTCTL_ALERTMANAGER_PROXY
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_alertmanager_proxy:latest
+                - name: OPERAND_IMAGE_FLIGHTCTL_DB_SETUP
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_db_setup:latest
+                - name: OPERAND_IMAGE_FLIGHTCTL_USERINFO_PROXY
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_userinfo_proxy:latest
+                - name: OPERAND_IMAGE_UBI_MINIMAL
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/ubi_minimal:latest
+                - name: OPERAND_IMAGE_ORIGIN_CLI
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/origin_cli:latest
+                - name: OPERAND_IMAGE_REDIS_7_C9S
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/redis_7_c9s:latest
+                - name: OPERAND_IMAGE_POSTGRESQL_16
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/postgresql_16:latest
+                - name: OPERAND_IMAGE_MEMCACHED
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/memcached:latest
+                - name: OPERAND_IMAGE_OSE_KUBE_RBAC_PROXY
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/ose_kube_rbac_proxy:latest
+                - name: OPERAND_IMAGE_VOLSYNC
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/volsync:latest
+                - name: OPERATOR_VERSION
+                  value: 2.16.2
+                - name: OPERATOR_PACKAGE
+                  value: advanced-cluster-management
+                image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multiclusterhub-operator-rhel9:latest
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8081
+                  initialDelaySeconds: 15
+                  periodSeconds: 20
+                name: multiclusterhub-operator
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: 8081
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 4Gi
+                  requests:
+                    cpu: 100m
+                    memory: 256Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                    - ALL
+                  privileged: false
+                  readOnlyRootFilesystem: true
+                volumeMounts:
+                - mountPath: /tmp/k8s-webhook-server/serving-certs
+                  name: cert
+                  readOnly: true
+              securityContext:
+                runAsNonRoot: true
+                seccompProfile:
+                  type: RuntimeDefault
+              serviceAccountName: multiclusterhub-operator
+              terminationGracePeriodSeconds: 10
+              volumes:
+              - name: cert
+                secret:
+                  defaultMode: 420
+                  secretName: multiclusterhub-operator-webhook
+  replaces: advanced-cluster-management.v2.16.1
+  relatedImages:
+  - name: acm_cli
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-cli-rhel9:latest
+  - name: acm_must_gather
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/must-gather-rhel9:latest
+  - name: cert_policy_controller
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/cert-policy-controller-rhel9:latest
+  - name: cluster_backup_controller
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/cluster-backup-controller-rhel9:latest
+  - name: cluster_permission
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/cluster-permission-rhel9:latest
+  - name: config_policy_controller
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/config-policy-controller-rhel9:latest
+  - name: console
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/console-rhel9:latest
+  - name: endpoint_monitoring_operator
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/endpoint-monitoring-operator-rhel9:latest
+  - name: governance_policy_addon_controller
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/governance-policy-addon-controller-rhel9:latest
+  - name: governance_policy_framework_addon
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/governance-policy-framework-addon-rhel9:latest
+  - name: governance_policy_propagator
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/governance-policy-propagator-rhel9:latest
+  - name: grafana
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/grafana-rhel9:latest
+  - name: grafana_dashboard_loader
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/grafana-dashboard-loader-rhel9:latest
+  - name: insights_client
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/insights-client-rhel9:latest
+  - name: insights_metrics
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/insights-metrics-rhel9:latest
+  - name: klusterlet_addon_controller
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/klusterlet-addon-controller-rhel9:latest
+  - name: kube_rbac_proxy
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/kube-rbac-proxy-rhel9:latest
+  - name: kube_state_metrics
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/kube-state-metrics-rhel9:latest
+  - name: memcached_exporter
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/memcached-exporter-rhel9:latest
+  - name: metrics_collector
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/metrics-collector-rhel9:latest
+  - name: mtv_integrations
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/mtv-integrations-rhel9:latest
+  - name: multicloud_integrations
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicloud-integrations-rhel9:latest
+  - name: multicluster_observability_addon
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-observability-addon-rhel9:latest
+  - name: multicluster_observability_operator
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-observability-operator-rhel9:latest
+  - name: multicluster_operators_application
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-operators-application-rhel9:latest
+  - name: multicluster_operators_channel
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-operators-channel-rhel9:latest
+  - name: multicluster_operators_subscription
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-operators-subscription-rhel9:latest
+  - name: multicluster_role_assignment
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-role-assignment-rhel9:latest
+  - name: node_exporter
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/node-exporter-rhel9:latest
+  - name: obo_prometheus_rhel9_operator
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/obo-prometheus-rhel9-operator:latest
+  - name: observatorium
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/observatorium-rhel9:latest
+  - name: observatorium_operator
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/observatorium-operator-rhel9:latest
+  - name: prometheus
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/prometheus-rhel9:latest
+  - name: prometheus_alertmanager
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/prometheus-alertmanager-rhel9:latest
+  - name: prometheus_config_reloader
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/prometheus-config-reloader-rhel9:latest
+  - name: prometheus_operator
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/prometheus-operator-rhel9:latest
+  - name: rbac_query_proxy
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/rbac-query-proxy-rhel9:latest
+  - name: search_collector
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/search-collector-rhel9:latest
+  - name: search_indexer
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/search-indexer-rhel9:latest
+  - name: search_v2_api
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/search-v2-api-rhel9:latest
+  - name: search_v2_operator
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/search-v2-operator-rhel9:latest
+  - name: siteconfig_operator
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/siteconfig-rhel9:latest
+  - name: submariner_addon
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/submariner-addon-rhel9:latest
+  - name: thanos
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/thanos-rhel9:latest
+  - name: thanos_receive_controller
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/thanos-receive-controller-rhel9:latest
+  - name: volsync_addon_controller
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/volsync-addon-controller-rhel9:latest
+  - name: configmap_reloader
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/configmap_reloader:latest
+  - name: flightctl_api
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_api:latest
+  - name: flightctl_ocp_ui
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_ocp_ui:latest
+  - name: flightctl_periodic
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_periodic:latest
+  - name: flightctl_ui
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_ui:latest
+  - name: flightctl_worker
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_worker:latest
+  - name: flightctl_cli_artifacts
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_cli_artifacts:latest
+  - name: flightctl_alert_exporter
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_alert_exporter:latest
+  - name: flightctl_alertmanager_proxy
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_alertmanager_proxy:latest
+  - name: flightctl_db_setup
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_db_setup:latest
+  - name: flightctl_userinfo_proxy
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_userinfo_proxy:latest
+  - name: ubi_minimal
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/ubi_minimal:latest
+  - name: origin_cli
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/origin_cli:latest
+  - name: redis_7_c9s
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/redis_7_c9s:latest
+  - name: postgresql_16
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/postgresql_16:latest
+  - name: memcached
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/memcached:latest
+  - name: ose_kube_rbac_proxy
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/ose_kube_rbac_proxy:latest
+  - name: volsync
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/volsync:latest
