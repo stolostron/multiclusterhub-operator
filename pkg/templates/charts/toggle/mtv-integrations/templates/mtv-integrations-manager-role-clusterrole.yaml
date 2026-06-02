@@ -91,6 +91,25 @@ rules:
   - patch
   - delete
 - apiGroups:
+  - forklift.konveyor.io
+  resources:
+  - plans
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - forklift.konveyor.io
+  resources:
+  - networkmaps
+  - storagemaps
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - patch
+- apiGroups:
   - ''
   resources:
   - users
