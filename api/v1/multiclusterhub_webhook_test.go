@@ -37,6 +37,29 @@ var _ = Describe("Multiclusterhub webhook", func() {
 			})
 		})
 
+		It("Should fail to create multiclusterhub with MTV enabled and local-cluster disabled", func() {
+			mch := &MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      fmt.Sprintf("%s-mtv-no-local", multiClusterHubName),
+					Namespace: "default",
+				},
+				Spec: MultiClusterHubSpec{
+					DisableHubSelfManagement: true,
+					Overrides: &Overrides{
+						Components: []ComponentConfig{
+							{
+								Name:    MTVIntegrations,
+								Enabled: true,
+							},
+						},
+					},
+				},
+			}
+			err := k8sClient.Create(ctx, mch)
+			Expect(err).To(HaveOccurred(), "MTV should not be enabled when disableHubSelfManagement is true")
+			Expect(err.Error()).To(ContainSubstring(MTVIntegrations))
+		})
+
 		It("Should fail to create multiclusterhub", func() {
 			By("because of invalid AvailabilityConfig", func() {
 				mch := &MultiClusterHub{
@@ -69,6 +92,25 @@ var _ = Describe("Multiclusterhub webhook", func() {
 				}
 				Expect(k8sClient.Create(ctx, mch)).NotTo(BeNil(), "Invalid components not allowed in config")
 			})
+		})
+
+		It("Should fail to update multiclusterhub to disable local-cluster when MTV is enabled", func() {
+			mch := &MultiClusterHub{}
+			Expect(k8sClient.Get(ctx,
+				types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)).To(Succeed())
+
+			mch.Spec.DisableHubSelfManagement = true
+			mch.Spec.Overrides = &Overrides{
+				Components: []ComponentConfig{
+					{
+						Name:    MTVIntegrations,
+						Enabled: true,
+					},
+				},
+			}
+			err := k8sClient.Update(ctx, mch)
+			Expect(err).To(HaveOccurred(), "disabling local-cluster should be blocked when MTV is enabled")
+			Expect(err.Error()).To(ContainSubstring(MTVIntegrations))
 		})
 
 		It("Should fail to update multiclusterhub", func() {
