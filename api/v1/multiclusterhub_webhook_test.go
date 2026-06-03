@@ -378,6 +378,78 @@ var _ = Describe("Multiclusterhub webhook", func() {
 			Expect(validateOLMAnnotations(ctx, mch)).To(Succeed())
 		})
 	})
+
+	Context("MTV and self-management validation", func() {
+		It("Should return error when MTV is enabled and disableHubSelfManagement is true", func() {
+			mch := &MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-mtv-selfmgmt",
+					Namespace: "default",
+				},
+				Spec: MultiClusterHubSpec{
+					DisableHubSelfManagement: true,
+					Overrides: &Overrides{
+						Components: []ComponentConfig{
+							{Name: MTVIntegrations, Enabled: true},
+						},
+					},
+				},
+			}
+			err := validateMTVAndSelfManagement(mch)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(MTVIntegrations))
+			Expect(err.Error()).To(ContainSubstring("disableHubSelfManagement"))
+		})
+
+		It("Should return nil when MTV is enabled and disableHubSelfManagement is false", func() {
+			mch := &MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-mtv-ok",
+					Namespace: "default",
+				},
+				Spec: MultiClusterHubSpec{
+					DisableHubSelfManagement: false,
+					Overrides: &Overrides{
+						Components: []ComponentConfig{
+							{Name: MTVIntegrations, Enabled: true},
+						},
+					},
+				},
+			}
+			Expect(validateMTVAndSelfManagement(mch)).To(Succeed())
+		})
+
+		It("Should return nil when disableHubSelfManagement is true but MTV is not enabled", func() {
+			mch := &MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-selfmgmt-no-mtv",
+					Namespace: "default",
+				},
+				Spec: MultiClusterHubSpec{
+					DisableHubSelfManagement: true,
+				},
+			}
+			Expect(validateMTVAndSelfManagement(mch)).To(Succeed())
+		})
+
+		It("Should return nil when MTV is explicitly disabled and disableHubSelfManagement is true", func() {
+			mch := &MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-mtv-disabled-selfmgmt",
+					Namespace: "default",
+				},
+				Spec: MultiClusterHubSpec{
+					DisableHubSelfManagement: true,
+					Overrides: &Overrides{
+						Components: []ComponentConfig{
+							{Name: MTVIntegrations, Enabled: false},
+						},
+					},
+				},
+			}
+			Expect(validateMTVAndSelfManagement(mch)).To(Succeed())
+		})
+	})
 })
 
 // re-defining the function here to avoid a import cycle

@@ -143,7 +143,7 @@ func (r *MultiClusterHub) ValidateCreate(ctx context.Context, obj *MultiClusterH
 	}
 
 	// Validate that cnv-mtv-integrations is not enabled when disableHubSelfManagement is true
-	if err := validateMTVAndSelfManagement(r); err != nil {
+	if err := validateMTVAndSelfManagement(obj); err != nil {
 		return warnings, err
 	}
 
@@ -234,7 +234,7 @@ func (r *MultiClusterHub) ValidateUpdate(ctx context.Context, oldObj, newObj *Mu
 	}
 
 	// Validate that cnv-mtv-integrations is not enabled when disableHubSelfManagement is true
-	if err := validateMTVAndSelfManagement(r); err != nil {
+	if err := validateMTVAndSelfManagement(newObj); err != nil {
 		return warnings, err
 	}
 
