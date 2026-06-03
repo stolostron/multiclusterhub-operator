@@ -377,6 +377,7 @@ spec:
           - watch
           - create
           - update
+          - patch
           - delete
         - apiGroups:
           - ''
@@ -428,6 +429,8 @@ spec:
           - update
           - patch
           - delete
+          - escalate
+          - bind
         - apiGroups:
           - rbac.authorization.k8s.io
           resources:
@@ -527,6 +530,8 @@ spec:
           - watch
           - create
           - update
+          - patch
+          - delete
       - apiVersion: rbac.authorization.k8s.io/v1
         kind: ClusterRoleBinding
         metadata:
