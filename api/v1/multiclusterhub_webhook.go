@@ -25,11 +25,13 @@ import (
 
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	admissionregistration "k8s.io/api/admissionregistration/v1"
+	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -47,6 +49,10 @@ const (
 	annotationImageRepo        = "installer.open-cluster-management.io/image-repository"
 	annotationKubeconfig       = "installer.open-cluster-management.io/kubeconfig"
 	annotationMCHPause         = "installer.open-cluster-management.io/pause"
+
+	// OLM version-specific annotations
+	annotationMCESubscriptionSpec     = "installer.open-cluster-management.io/mce-subscription-spec"
+	annotationMCEClusterExtensionSpec = "installer.open-cluster-management.io/mce-clusterextension-spec"
 
 	// Deprecated annotation keys
 	deprecatedAnnotationIgnoreOCPVersion = "ignoreOCPVersion"
@@ -131,6 +137,11 @@ func (r *MultiClusterHub) ValidateCreate(ctx context.Context, obj *MultiClusterH
 	// Check for deprecated annotations and collect warnings
 	warnings := checkDeprecatedAnnotations(obj)
 
+	// Validate OLM version-specific annotations
+	if err := validateOLMAnnotations(ctx, obj); err != nil {
+		return warnings, err
+	}
+
 	multiClusterHubList := &MultiClusterHubList{}
 	if err := Client.List(context.Background(), multiClusterHubList); err != nil {
 		return warnings, fmt.Errorf("unable to list MultiClusterHubs: %s", err)
@@ -192,6 +203,11 @@ func (r *MultiClusterHub) ValidateUpdate(ctx context.Context, oldObj, newObj *Mu
 
 	// Check for deprecated annotations and collect warnings
 	warnings := checkDeprecatedAnnotations(newObj)
+
+	// Validate OLM version-specific annotations
+	if err := validateOLMAnnotations(ctx, newObj); err != nil {
+		return warnings, err
+	}
 
 	oldMCH := oldObj
 
@@ -370,6 +386,73 @@ func contains(list []string, s string) bool {
 		}
 	}
 	return false
+}
+
+// validateOLMAnnotations validates that MCE annotations match the detected OLM version
+func validateOLMAnnotations(ctx context.Context, mch *MultiClusterHub) error {
+	annotations := mch.GetAnnotations()
+	if annotations == nil {
+		return nil
+	}
+
+	// Detect OLM version using same logic as main.go
+	olmVersion, err := detectOLMVersion(ctx)
+	if err != nil {
+		mchlog.Error(err, "Failed to detect OLM version for annotation validation")
+		// Don't block on detection failure - let operator handle it
+		return nil
+	}
+
+	hasV0Annotation := annotations[annotationMCESubscriptionSpec] != ""
+	hasV1Annotation := annotations[annotationMCEClusterExtensionSpec] != ""
+
+	// No annotations set - valid
+	if !hasV0Annotation && !hasV1Annotation {
+		return nil
+	}
+
+	// Reject v0 annotation on v1 cluster
+	if olmVersion == "v1" && hasV0Annotation {
+		return fmt.Errorf("annotation %q is only valid for OLM v0 clusters. This cluster uses OLM v1. Use %q instead",
+			annotationMCESubscriptionSpec, annotationMCEClusterExtensionSpec)
+	}
+
+	// Reject v1 annotation on v0 cluster
+	if olmVersion == "v0" && hasV1Annotation {
+		return fmt.Errorf("annotation %q is only valid for OLM v1 clusters. This cluster uses OLM v0. Use %q instead",
+			annotationMCEClusterExtensionSpec, annotationMCESubscriptionSpec)
+	}
+
+	// Reject v1 annotation when no OLM detected
+	if olmVersion == "" && hasV1Annotation {
+		return fmt.Errorf("annotation %q requires OLM v1, but no OLM detected on this cluster",
+			annotationMCEClusterExtensionSpec)
+	}
+
+	return nil
+}
+
+// detectOLMVersion detects which OLM version is present on the cluster
+// Returns "v0", "v1", or "" (no OLM)
+func detectOLMVersion(ctx context.Context) (string, error) {
+	// Check for OLM v0 via environment variable
+	if os.Getenv("OPERATOR_CONDITION_NAME") != "" {
+		return "v0", nil
+	}
+
+	// Check for OLM v1 by looking for ClusterExtension CRD
+	crd := &apixv1.CustomResourceDefinition{}
+	err := Client.Get(ctx, types.NamespacedName{
+		Name: "clusterextensions.olm.operatorframework.io",
+	}, crd)
+
+	if err == nil {
+		return "v1", nil
+	} else if apierrors.IsNotFound(err) {
+		return "", nil
+	}
+
+	return "", fmt.Errorf("failed to check for OLM v1 CRD: %w", err)
 }
 
 // checkDeprecatedAnnotations examines the MultiClusterHub resource for deprecated annotations
