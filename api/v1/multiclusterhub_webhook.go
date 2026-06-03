@@ -142,6 +142,11 @@ func (r *MultiClusterHub) ValidateCreate(ctx context.Context, obj *MultiClusterH
 		return warnings, err
 	}
 
+	// Validate that cnv-mtv-integrations is not enabled when disableHubSelfManagement is true
+	if err := validateMTVAndSelfManagement(obj); err != nil {
+		return warnings, err
+	}
+
 	multiClusterHubList := &MultiClusterHubList{}
 	if err := Client.List(context.Background(), multiClusterHubList); err != nil {
 		return warnings, fmt.Errorf("unable to list MultiClusterHubs: %s", err)
@@ -226,6 +231,11 @@ func (r *MultiClusterHub) ValidateUpdate(ctx context.Context, oldObj, newObj *Mu
 				return warnings, fmt.Errorf("invalid componentconfig: %s is not a known component", c.Name)
 			}
 		}
+	}
+
+	// Validate that cnv-mtv-integrations is not enabled when disableHubSelfManagement is true
+	if err := validateMTVAndSelfManagement(newObj); err != nil {
+		return warnings, err
 	}
 
 	// Block changing localClusterName if ManagdCluster with label `local-cluster = true` exists
@@ -377,6 +387,20 @@ func ValidatingWebhook(namespace string) *admissionregistration.ValidatingWebhoo
 			},
 		},
 	}
+}
+
+// validateMTVAndSelfManagement returns an error if cnv-mtv-integrations is enabled
+// while disableHubSelfManagement is true, as this combination is unsupported
+// and will cause the MCH to be stuck in Pending.
+func validateMTVAndSelfManagement(r *MultiClusterHub) error {
+	if r.Spec.DisableHubSelfManagement && r.Enabled(MTVIntegrations) {
+		return fmt.Errorf(
+			"cannot enable %s while disableHubSelfManagement is true; "+
+				"the local-cluster must be enabled for MTV integrations to function",
+			MTVIntegrations,
+		)
+	}
+	return nil
 }
 
 func contains(list []string, s string) bool {
