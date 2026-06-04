@@ -327,8 +327,8 @@ github.com/stefanberger/go-pkcs11uri v0.0.0-20230803200340-78284954bff6 h1:pnnLy
 github.com/stefanberger/go-pkcs11uri v0.0.0-20230803200340-78284954bff6/go.mod h1:39R/xuhNgVhi+K0/zst4TLrJrVmbm6LVgl4A0+ZFS5M=
 github.com/stolostron/backplane-operator v0.0.0-20260529150050-5fcc5e63f377 h1:KwZPn2T2EXJsLN+Llu7ZmId3yZGg2Fp5rQhUc0d46fI=
 github.com/stolostron/backplane-operator v0.0.0-20260529150050-5fcc5e63f377/go.mod h1:gRVQzDZhzB2Vn5f6GE2LE0EYnDyIs5UsReMKY65DB7I=
-github.com/stolostron/search-v2-operator v0.0.0-20250818191351-8d847101bcdd h1:Sysi5HiDRPToIdMbFRQjtIOl1jU+hePx6nvWukK39nw=
-github.com/stolostron/search-v2-operator v0.0.0-20250818191351-8d847101bcdd/go.mod h1:lDJ8V5fTmBnC+ghtmp2ERi6+64PNpug6NwgHb+apG9U=
+github.com/stolostron/search-v2-operator v0.0.0-20260602195539-7e0a557da7fa h1:bD05s+a+dXy6XF5gyrQdAIyM6FZYGpx8goo7vScwuUs=
+github.com/stolostron/search-v2-operator v0.0.0-20260602195539-7e0a557da7fa/go.mod h1:qroKXjU0Em7HL0wuXM7DtBaAw59vKo2oBQYPtuuUxdM=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.5.3 h1:jmXUvGomnU1o3W/V5h2VEradbpJDwGrzugQQvL0POH4=
 github.com/stretchr/objx v0.5.3/go.mod h1:rDQraq+vQZU7Fde9LOZLr8Tax6zZvy4kuNKF+QYS+U0=
