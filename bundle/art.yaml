@@ -1,0 +1,64 @@
+---
+updates:
+- file: "manifests/advanced-cluster-management.clusterserviceversion.yaml"
+  update_list:
+  - search: "advanced-cluster-management.v2.16.0"
+    replacement: "advanced-cluster-management.v{version}"
+  - search: "version: 2.16.0"
+    replacement: "version: {version}"
+
+external-images:
+- name: configmap_reloader
+  search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/configmap_reloader:latest"
+  replace: "registry.redhat.io/openshift4/ose-configmap-reloader-rhel9:v4.20.0-202603272224.p2.g2438d7c.assembly.stream.el9"
+- name: flightctl_api
+  search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_api:latest"
+  replace: "registry.redhat.io/rhem/flightctl-api-rhel9:v0.10.0"
+- name: flightctl_ocp_ui
+  search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_ocp_ui:latest"
+  replace: "registry.redhat.io/rhem/flightctl-ui-ocp-rhel9:v0.10.0"
+- name: flightctl_periodic
+  search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_periodic:latest"
+  replace: "registry.redhat.io/rhem/flightctl-periodic-rhel9:v0.10.0"
+- name: flightctl_ui
+  search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_ui:latest"
+  replace: "registry.redhat.io/rhem/flightctl-ui-rhel9:v0.10.0"
+- name: flightctl_worker
+  search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_worker:latest"
+  replace: "registry.redhat.io/rhem/flightctl-worker-rhel9:v0.10.0"
+- name: flightctl_cli_artifacts
+  search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_cli_artifacts:latest"
+  replace: "registry.redhat.io/rhem/flightctl-cli-artifacts-rhel9:v0.10.0"
+- name: flightctl_alert_exporter
+  search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_alert_exporter:latest"
+  replace: "registry.redhat.io/rhem/flightctl-alert-exporter-rhel9:0.10.0"
+- name: flightctl_alertmanager_proxy
+  search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_alertmanager_proxy:latest"
+  replace: "registry.redhat.io/rhem/flightctl-alertmanager-proxy-rhel9:0.10.0"
+- name: flightctl_db_setup
+  search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_db_setup:latest"
+  replace: "registry.redhat.io/rhem/flightctl-db-setup-rhel9:0.10.0"
+- name: flightctl_userinfo_proxy
+  search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_userinfo_proxy:latest"
+  replace: "registry.redhat.io/rhem/flightctl-userinfo-proxy-rhel9:0.10.0"
+- name: ubi_minimal
+  search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/ubi_minimal:latest"
+  replace: "registry.redhat.io/ubi9/ubi-minimal:9.7-1776104705"
+- name: origin_cli
+  search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/origin_cli:latest"
+  replace: "registry.redhat.io/openshift4/ose-cli-rhel9:v4.18.0-202603262350.p2.g3a48fc2.assembly.stream.el9"
+- name: redis_7_c9s
+  search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/redis_7_c9s:latest"
+  replace: "registry.redhat.io/rhel9/redis-7:9.7-1776341987"
+- name: postgresql_16
+  search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/postgresql_16:latest"
+  replace: "registry.redhat.io/rhel8/postgresql-16:1-1776314494"
+- name: memcached
+  search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/memcached:latest"
+  replace: "registry.redhat.io/rhel9/memcached:9.7-1776355978"
+- name: ose_kube_rbac_proxy
+  search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/ose_kube_rbac_proxy:latest"
+  replace: "registry.redhat.io/openshift4/ose-kube-rbac-proxy-rhel9:v4.18.0-202603262350.p2.g5a14ea9.assembly.stream.el9"
+- name: volsync
+  search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/volsync:latest"
+  replace: "registry.redhat.io/rhacm2/volsync-rhel9:v0.15"
