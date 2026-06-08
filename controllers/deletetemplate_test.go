@@ -274,10 +274,14 @@ func TestPruneMigratedComponents_RespectsDeleteRequeue(t *testing.T) {
 	// Create a deployment that will be stuck terminating
 	deploy := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:              "cluster-permission-deploy",
+			Name:              "cluster-permission",
 			Namespace:         "open-cluster-management",
 			DeletionTimestamp: &metav1.Time{Time: time.Now()},
 			Finalizers:        []string{"stuck-finalizer"},
+			Labels: map[string]string{
+				"installer.name":      "test-mch",
+				"installer.namespace": "open-cluster-management",
+			},
 		},
 	}
 
@@ -291,7 +295,9 @@ func TestPruneMigratedComponents_RespectsDeleteRequeue(t *testing.T) {
 		Client: cl,
 		Log:    ctrl.Log.WithName("test"),
 		CacheSpec: CacheSpec{
-			ImageOverrides:    map[string]string{},
+			ImageOverrides: map[string]string{
+				"cluster_permission": "quay.io/stolostron/cluster-permission:test",
+			},
 			TemplateOverrides: map[string]string{},
 		},
 	}
