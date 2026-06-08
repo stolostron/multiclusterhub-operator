@@ -58,8 +58,16 @@ type CacheSpec struct {
 	TemplateOverridesCM string
 }
 
-var migratedComponentDeployments = map[string]string{
-	operatorv1.ClusterPermission: "cluster-permission",
+type MigratedComponentInfo struct {
+	DeploymentName string
+	ImageKey       string
+}
+
+var migratedComponentDeployments = map[string]MigratedComponentInfo{
+	operatorv1.ClusterPermission: {
+		DeploymentName: "cluster-permission",
+		ImageKey:       "cluster_permission",
+	},
 }
 
 /*

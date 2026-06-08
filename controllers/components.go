@@ -267,8 +267,21 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 		}
 	}
 
+	// For migrated components, inject dummy image to allow template rendering for deletion
+	imageOverrides := cachespec.ImageOverrides
+	if migratedInfo, isMigrated := migratedComponentDeployments[component]; isMigrated {
+		// Create a copy to avoid modifying the original cache
+		imageOverrides = make(map[string]string)
+		for k, v := range cachespec.ImageOverrides {
+			imageOverrides[k] = v
+		}
+		// Inject dummy image for render (actual image doesn't matter since we're deleting)
+		imageOverrides[migratedInfo.ImageKey] = "quay.io/stolostron/placeholder:deletion"
+		r.Log.Info("Injected dummy image for migrated component deletion", "Component", component, "ImageKey", migratedInfo.ImageKey)
+	}
+
 	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(chartLocation, m, cachespec.ImageOverrides, cachespec.TemplateOverrides,
+	templates, errs := renderer.RenderChart(chartLocation, m, imageOverrides, cachespec.TemplateOverrides,
 		isSTSEnabled)
 
 	if len(errs) > 0 {
