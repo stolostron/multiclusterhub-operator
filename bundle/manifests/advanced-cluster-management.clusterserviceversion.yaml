@@ -1960,8 +1960,6 @@ spec:
                   value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-operators-subscription-rhel9:latest
                 - name: OPERAND_IMAGE_MULTICLUSTER_ROLE_ASSIGNMENT
                   value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-role-assignment-rhel9:latest
-                - name: OPERAND_IMAGE_MULTICLUSTERHUB_OPERATOR
-                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multiclusterhub-operator-rhel9:latest
                 - name: OPERAND_IMAGE_NODE_EXPORTER
                   value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/node-exporter-rhel9:latest
                 - name: OPERAND_IMAGE_OBO_PROMETHEUS_RHEL9_OPERATOR
