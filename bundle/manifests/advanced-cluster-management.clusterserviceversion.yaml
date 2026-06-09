@@ -2032,10 +2032,6 @@ spec:
                   value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/ose_kube_rbac_proxy:latest
                 - name: OPERAND_IMAGE_VOLSYNC
                   value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/volsync:latest
-                - name: OPERATOR_VERSION
-                  value: 2.16.2
-                - name: OPERATOR_PACKAGE
-                  value: advanced-cluster-management
                 image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multiclusterhub-operator:latest
                 livenessProbe:
                   httpGet:
