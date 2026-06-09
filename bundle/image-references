@@ -115,10 +115,6 @@ spec:
     from:
       kind: DockerImage
       name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-role-assignment-rhel9:latest
-  - name: multiclusterhub-operator-rhel9
-    from:
-      kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multiclusterhub-operator-rhel9:latest
   - name: node-exporter-rhel9
     from:
       kind: DockerImage
