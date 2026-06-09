@@ -2036,7 +2036,7 @@ spec:
                   value: 2.16.2
                 - name: OPERATOR_PACKAGE
                   value: advanced-cluster-management
-                image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multiclusterhub-operator-rhel9:latest
+                image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multiclusterhub-operator:latest
                 livenessProbe:
                   httpGet:
                     path: /healthz
