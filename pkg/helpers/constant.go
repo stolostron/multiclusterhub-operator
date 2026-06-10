@@ -21,8 +21,6 @@ limitations under the License.
 // This package contains shared utilities and constants used across controllers.
 package helpers
 
-package helpers
-
 const (
 	DefaultStorageClassName = "DEFAULT_STORAGE_CLASS_NAME"
 )

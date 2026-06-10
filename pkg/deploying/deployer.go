@@ -4,8 +4,6 @@
 // Package deploying handles component deployment operations.
 //
 // This package provides deployment orchestration for ACM components.
-package deploying
-package deploying
 
 import (
 	"context"

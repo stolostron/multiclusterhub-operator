@@ -7,8 +7,6 @@
 //   - Resource naming helpers
 //   - Condition management utilities
 //   - Image reference parsing
-package utils
-package utils
 
 import (
 	"time"

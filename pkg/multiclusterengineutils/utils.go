@@ -4,8 +4,6 @@
 // Package multiclusterengineutils provides utilities for MCE integration.
 //
 // This package handles ACM-to-MCE communication and configuration.
-package multiclusterengineutils
-package multiclusterengineutils
 
 import (
 	"context"
