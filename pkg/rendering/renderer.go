@@ -1,4 +1,17 @@
 // Copyright Contributors to the Open Cluster Management project
+
+// Package renderer provides Helm chart rendering functionality for
+// MultiClusterHub components.
+//
+// This package handles template rendering, value injection, and chart version
+// management for all ACM components deployed by the operator. It supports:
+//   - Rendering Helm charts with custom values
+//   - Injecting image overrides
+//   - Managing chart dependencies
+//   - CRD discovery and installation
+//
+// The main entry point is the RenderChart function, which takes a chart path
+// and configuration and returns rendered Kubernetes manifests.
 package renderer
 
 import (

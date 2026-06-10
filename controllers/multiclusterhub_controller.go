@@ -1,7 +1,7 @@
 // Copyright Contributors to the Open Cluster Management project
 
 /*
-Copyright 2021.
+Copyright 2026.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,6 +16,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package controllers implements the MultiClusterHub operator reconciliation logic.
+//
+// This package orchestrates component deployment, status tracking, and lifecycle
+// management for Advanced Cluster Management (ACM). It contains controllers for:
+//   - MultiClusterHub CR (main operator logic)
+//   - Component installation and upgrade management
+//   - Status aggregation across all ACM components
+//   - Integration with MultiClusterEngine
+//
+// Controllers in this package follow the Kubernetes operator pattern using
+// controller-runtime. Each controller implements reconciliation logic to
+// ensure desired state matches actual state.
 package controllers
 
 import (

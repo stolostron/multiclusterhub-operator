@@ -1,6 +1,10 @@
-// Copyright (c) 2020 Red Hat, Inc.
+// Copyright (c) 2026 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
+// Package deploying handles component deployment operations.
+//
+// This package provides deployment orchestration for ACM components.
+package deploying
 package deploying
 
 import (
