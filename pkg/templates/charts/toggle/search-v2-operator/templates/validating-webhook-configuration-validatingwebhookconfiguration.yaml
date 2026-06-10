@@ -20,6 +20,7 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - collectorconfigs
   sideEffects: None
