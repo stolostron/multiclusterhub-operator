@@ -8,7 +8,6 @@
 //   - Applying image overrides to component deployments
 //   - Managing image pull policies and registry settings
 package overrides
-package overrides
 
 import (
 	"context"

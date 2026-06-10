@@ -4,7 +4,6 @@
 //
 // This package exposes the operator version set at build time.
 package version
-package version
 
 import (
 	"fmt"

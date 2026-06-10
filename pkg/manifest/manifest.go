@@ -8,7 +8,6 @@
 //   - Resource application and updates
 //   - Manifest templating
 package manifest
-package manifest
 
 import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
