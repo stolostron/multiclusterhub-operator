@@ -5,6 +5,7 @@
 //
 // This package handles MultiClusterEngine resource creation, updates,
 // and integration with the ACM operator.
+package multiclusterengine
 
 import (
 	"context"
