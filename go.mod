@@ -18,7 +18,7 @@ require (
 	github.com/stolostron/backplane-operator v0.0.0-20260602200800-a829af985d7b
 	github.com/stolostron/search-v2-operator v0.0.0-20250818191351-8d847101bcdd
 	go.uber.org/zap v1.27.1
-	helm.sh/helm/v3 v3.20.0
+	helm.sh/helm/v3 v3.20.2
 	k8s.io/api v0.35.4
 	k8s.io/apiextensions-apiserver v0.35.4
 	k8s.io/apimachinery v0.35.4
