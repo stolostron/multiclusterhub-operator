@@ -27,15 +27,14 @@ import (
 	admissionregistration "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -96,26 +95,30 @@ var (
 
 func (r *MultiClusterHub) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	Client = mgr.GetClient()
-	return ctrl.NewWebhookManagedBy(mgr).For(r).Complete()
+	return builder.WebhookManagedBy(mgr, r).
+		WithDefaulter(r).
+		WithValidator(r).
+		Complete()
 }
 
-var _ webhook.Defaulter = &MultiClusterHub{}
+var _ admission.Defaulter[*MultiClusterHub] = &MultiClusterHub{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *MultiClusterHub) Default() {
-	mchlog.Info("default", "name", r.Name)
+// Default implements admission.Defaulter so a webhook will be registered for the type
+func (r *MultiClusterHub) Default(ctx context.Context, obj *MultiClusterHub) error {
+	mchlog.Info("default", "name", obj.Name)
+	return nil
 }
 
 //+kubebuilder:webhook:name=multiclusterhub-operator-validating-webhook,path=/validate-operator-open-cluster-management-io-v1-multiclusterhub,mutating=false,failurePolicy=fail,sideEffects=None,groups=operator.open-cluster-management.io,resources=multiclusterhubs,verbs=create;update;delete,versions=v1,name=multiclusterhub.validating-webhook.open-cluster-management.io,admissionReviewVersions={v1,v1beta1}
 
-var _ webhook.Validator = &MultiClusterHub{}
+var _ admission.Validator[*MultiClusterHub] = &MultiClusterHub{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *MultiClusterHub) ValidateCreate() (admission.Warnings, error) {
-	mchlog.Info("validate create", "Name", r.Name, "Namespace", r.Namespace)
+// ValidateCreate implements admission.Validator so a webhook will be registered for the type
+func (r *MultiClusterHub) ValidateCreate(ctx context.Context, obj *MultiClusterHub) (admission.Warnings, error) {
+	mchlog.Info("validate create", "Name", obj.Name, "Namespace", obj.Namespace)
 
 	multiClusterHubList := &MultiClusterHubList{}
-	if err := Client.List(context.Background(), multiClusterHubList); err != nil {
+	if err := Client.List(ctx, multiClusterHubList); err != nil {
 		return nil, fmt.Errorf("unable to list MultiClusterHubs: %s", err)
 	}
 
@@ -125,13 +128,13 @@ func (r *MultiClusterHub) ValidateCreate() (admission.Warnings, error) {
 		return nil, fmt.Errorf("MultiClusterHub in Standalone mode already exists: `%s`", existingMCH.GetName())
 	}
 
-	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
+	if (obj.Spec.AvailabilityConfig != HABasic) && (obj.Spec.AvailabilityConfig != HAHigh) && (obj.Spec.AvailabilityConfig != "") {
 		return nil, fmt.Errorf("invalid AvailabilityConfig given")
 	}
 
 	// Validate components
-	if r.Spec.Overrides != nil {
-		for _, c := range r.Spec.Overrides.Components {
+	if obj.Spec.Overrides != nil {
+		for _, c := range obj.Spec.Overrides.Components {
 			if !ValidComponent(c, MCHComponents) {
 				return nil, fmt.Errorf("invalid component config: %s is not a known component", c.Name)
 			}
@@ -141,27 +144,25 @@ func (r *MultiClusterHub) ValidateCreate() (admission.Warnings, error) {
 	return nil, nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
-	mchlog.Info("validate update", "Name", r.Name, "Namespace", r.Namespace)
+// ValidateUpdate implements admission.Validator so a webhook will be registered for the type
+func (r *MultiClusterHub) ValidateUpdate(ctx context.Context, oldObj, newObj *MultiClusterHub) (admission.Warnings, error) {
+	mchlog.Info("validate update", "Name", newObj.Name, "Namespace", newObj.Namespace)
 
-	oldMCH := old.(*MultiClusterHub)
-
-	if oldMCH.Spec.SeparateCertificateManagement != r.Spec.SeparateCertificateManagement {
+	if oldObj.Spec.SeparateCertificateManagement != newObj.Spec.SeparateCertificateManagement {
 		return nil, fmt.Errorf("updating SeparateCertificateManagement is forbidden")
 	}
 
-	if !reflect.DeepEqual(oldMCH.Spec.Hive, r.Spec.Hive) {
+	if !reflect.DeepEqual(oldObj.Spec.Hive, newObj.Spec.Hive) {
 		return nil, fmt.Errorf("hive updates are forbidden")
 	}
 
-	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
+	if (newObj.Spec.AvailabilityConfig != HABasic) && (newObj.Spec.AvailabilityConfig != HAHigh) && (newObj.Spec.AvailabilityConfig != "") {
 		return nil, fmt.Errorf("invalid AvailabilityConfig given")
 	}
 
 	// Validate components
-	if r.Spec.Overrides != nil {
-		for _, c := range r.Spec.Overrides.Components {
+	if newObj.Spec.Overrides != nil {
+		for _, c := range newObj.Spec.Overrides.Components {
 			if !ValidComponent(c, MCHComponents) {
 				return nil, fmt.Errorf("invalid componentconfig: %s is not a known component", c.Name)
 			}
@@ -173,9 +174,9 @@ func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) (admission.Warnings
 
 var cfg *rest.Config
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *MultiClusterHub) ValidateDelete() (admission.Warnings, error) {
-	mchlog.Info("validate delete", "Name", r.Name, "Namespace", r.Namespace)
+// ValidateDelete implements admission.Validator so a webhook will be registered for the type
+func (r *MultiClusterHub) ValidateDelete(ctx context.Context, obj *MultiClusterHub) (admission.Warnings, error) {
+	mchlog.Info("validate delete", "Name", obj.Name, "Namespace", obj.Namespace)
 
 	if val, ok := os.LookupEnv("ENV_TEST"); !ok || val == "false" {
 		var err error
