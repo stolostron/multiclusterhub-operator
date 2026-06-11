@@ -1,13 +1,13 @@
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
-  name: validating-webhook-configuration
+  name: search-v2-operator-validating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
   - v1
   clientConfig:
     service:
-      name: webhook-service
+      name: search-v2-operator-webhook-service
       namespace: '{{ default "system" .Values.global.namespace }}'
       path: /validate-search-open-cluster-management-io-v1alpha1-collectorconfig
   failurePolicy: Fail
