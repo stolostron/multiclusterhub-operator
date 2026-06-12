@@ -273,7 +273,7 @@ func (r *MultiClusterHub) ValidateDelete(ctx context.Context, obj *MultiClusterH
 			Kind:    "ManagedClusterList",
 		},
 		ExceptionTotal:  1,
-		NameExceptions:  []string{r.Spec.LocalClusterName},
+		NameExceptions:  []string{obj.Spec.LocalClusterName},
 		LabelExceptions: map[string]string{"local-cluster": "true"},
 	})
 	for _, resource := range tmpBlockDeletionResources {
