@@ -1018,7 +1018,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 			// Force-remove finalizers from stuck InternalHubComponents
 			ihcList := &operatorv1.InternalHubComponentList{}
-			if err := k8sClient.List(ctx, ihcList, client.InNamespace(resources.MCHNamespace)); err == nil {
+			if err := k8sClient.List(ctx, ihcList, client.InNamespace(mchNamespace)); err == nil {
 				for i := range ihcList.Items {
 					ihc := &ihcList.Items[i]
 					if len(ihc.Finalizers) > 0 {
