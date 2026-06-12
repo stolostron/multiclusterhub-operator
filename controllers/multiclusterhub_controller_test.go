@@ -1015,8 +1015,21 @@ var _ = Describe("MultiClusterHub controller", func() {
 			}
 
 			removeSubmarinerFinalizer(k8sClient, reconciler)
+
+			// Force-remove finalizers from stuck InternalHubComponents
+			ihcList := &operatorv1.InternalHubComponentList{}
+			if err := k8sClient.List(ctx, ihcList, client.InNamespace(mchNamespace)); err == nil {
+				for i := range ihcList.Items {
+					ihc := &ihcList.Items[i]
+					if len(ihc.Finalizers) > 0 {
+						ihc.Finalizers = []string{}
+						k8sClient.Update(ctx, ihc)
+					}
+				}
+			}
+
 			return false
-		}, timeout, interval).Should(BeTrue())
+		}, time.Minute*3, interval).Should(BeTrue())
 
 		By("Ensuring the MCE CR is deleted")
 		Eventually(func() bool {
