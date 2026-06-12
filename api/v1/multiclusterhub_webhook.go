@@ -190,6 +190,8 @@ func (r *MultiClusterHub) ValidateUpdate(ctx context.Context, oldObj, newObj *Mu
 	// Check for deprecated annotations and collect warnings
 	warnings := checkDeprecatedAnnotations(newObj)
 
+	oldMCH := oldObj
+
 	if oldObj.Spec.SeparateCertificateManagement != newObj.Spec.SeparateCertificateManagement {
 		return warnings, fmt.Errorf("updating SeparateCertificateManagement is forbidden")
 	}
@@ -198,13 +200,13 @@ func (r *MultiClusterHub) ValidateUpdate(ctx context.Context, oldObj, newObj *Mu
 		return warnings, fmt.Errorf("hive updates are forbidden")
 	}
 
-	if (obj.Spec.AvailabilityConfig != HABasic) && (obj.Spec.AvailabilityConfig != HAHigh) && (obj.Spec.AvailabilityConfig != "") {
+	if (newObj.Spec.AvailabilityConfig != HABasic) && (newObj.Spec.AvailabilityConfig != HAHigh) && (newObj.Spec.AvailabilityConfig != "") {
 		return warnings, fmt.Errorf("invalid AvailabilityConfig given")
 	}
 
 	// Validate components
-	if obj.Spec.Overrides != nil {
-		for _, c := range obj.Spec.Overrides.Components {
+	if newObj.Spec.Overrides != nil {
+		for _, c := range newObj.Spec.Overrides.Components {
 			if !ValidComponent(c, MCHComponents) {
 				return warnings, fmt.Errorf("invalid componentconfig: %s is not a known component", c.Name)
 			}
@@ -213,8 +215,8 @@ func (r *MultiClusterHub) ValidateUpdate(ctx context.Context, oldObj, newObj *Mu
 
 	// Block changing localClusterName if ManagdCluster with label `local-cluster = true` exists
 	// if the Spec.LocalClusterName field has changed
-	if oldMCH.Spec.LocalClusterName != r.Spec.LocalClusterName {
-		if err := validateLocalClusterNameLength(obj.Spec.LocalClusterName); err != nil {
+	if oldMCH.Spec.LocalClusterName != newObj.Spec.LocalClusterName {
+		if err := validateLocalClusterNameLength(newObj.Spec.LocalClusterName); err != nil {
 			return warnings, err
 		}
 
