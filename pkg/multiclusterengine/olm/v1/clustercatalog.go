@@ -1,5 +1,9 @@
 // Copyright Contributors to the Open Cluster Management project
 
+// Package v1 manages MCE installation via OLM v1 APIs.
+//
+// This package handles creating ClusterCatalog and ClusterExtension resources
+// to install the MultiClusterEngine operator via OLM v1 (future OpenShift versions).
 package v1
 
 import (

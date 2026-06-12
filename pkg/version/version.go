@@ -1,5 +1,8 @@
 // Copyright Contributors to the Open Cluster Management project
 
+// Package version provides ACM operator version information.
+//
+// This package exposes the operator version set at build time.
 package version
 
 import (

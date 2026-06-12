@@ -1,6 +1,12 @@
-// Copyright (c) 2024 Red Hat, Inc.
+// Copyright (c) 2026 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
+// Package overrides manages image override configuration for ACM components.
+//
+// This package handles:
+//   - Parsing image override annotations from CSV
+//   - Applying image overrides to component deployments
+//   - Managing image pull policies and registry settings
 package overrides
 
 import (

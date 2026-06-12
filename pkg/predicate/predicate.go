@@ -1,7 +1,10 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-// Package predicate defines custom predicates used to filter event triggers
+// Package predicate provides controller-runtime event filters for ACM.
+//
+// This package contains custom predicate functions used to filter
+// reconciliation events in the MultiClusterHub controller.
 package predicate
 
 import (

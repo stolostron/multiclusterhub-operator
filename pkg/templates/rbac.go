@@ -1,6 +1,10 @@
 // go:build ignore
 // Copyright Contributors to the Open Cluster Management project
 
+// Package main generates RBAC manifests from embedded templates.
+//
+// This is a build-time tool that processes CRD files to generate
+// ClusterRole and ClusterRoleBinding manifests for the operator.
 package main
 
 import (
