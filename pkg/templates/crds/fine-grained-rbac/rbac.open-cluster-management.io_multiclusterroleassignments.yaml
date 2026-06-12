@@ -369,9 +369,11 @@ spec:
                 - message: Subject namespace must not be set for User and Group kinds
                   rule: '!(self.kind in ["User", "Group"]) || !has(self.__namespace__)'
                 - message: Subject apiGroup must be empty for ServiceAccount kind
-                  rule: 'self.kind != "ServiceAccount" || !has(self.apiGroup) || size(self.apiGroup) == 0'
+                  rule: self.kind != "ServiceAccount" || !has(self.apiGroup) || size(self.apiGroup)
+                    == 0
                 - message: A namespace is required when subject kind is ServiceAccount
-                  rule: 'self.kind != "ServiceAccount" || (has(self.__namespace__) && size(self.__namespace__) > 0)'
+                  rule: self.kind != "ServiceAccount" || (has(self.__namespace__)
+                    && size(self.__namespace__) > 0)
             required:
             - roleAssignments
             - subject
