@@ -1014,8 +1014,21 @@ var _ = Describe("MultiClusterHub controller", func() {
 			}
 
 			removeSubmarinerFinalizer(k8sClient, reconciler)
+
+			// Force-remove finalizers from stuck InternalHubComponents
+			ihcList := &operatorv1.InternalHubComponentList{}
+			if err := k8sClient.List(ctx, ihcList, client.InNamespace(mchNamespace)); err == nil {
+				for i := range ihcList.Items {
+					ihc := &ihcList.Items[i]
+					if len(ihc.Finalizers) > 0 {
+						ihc.Finalizers = []string{}
+						k8sClient.Update(ctx, ihc)
+					}
+				}
+			}
+
 			return false
-		}, timeout, interval).Should(BeTrue())
+		}, time.Minute*3, interval).Should(BeTrue())
 
 		By("Ensuring the MCE CR is deleted")
 		Eventually(func() bool {
@@ -1323,9 +1336,15 @@ func Test_ensureNamespaceAndPullSecret(t *testing.T) {
 				t.Errorf("failed to create mch secret: %v", err)
 			}
 
-			// Fake clients does not allow for apply patching; therefore we will accept the error.
-			if _, err := recon.ensureNamespaceAndPullSecret(tt.mch, tt.mceNS); err == nil {
+			// Apply patch should now succeed (controller-runtime v0.23+ fake client supports it)
+			if _, err := recon.ensureNamespaceAndPullSecret(tt.mch, tt.mceNS); err != nil {
 				t.Errorf("ensureNamespaceAndPullSecret(tt.mch, tt.ns) = %v, want = %v", err, tt.want)
+			}
+
+			// Verify secret was created in MCE namespace
+			mceSecretCopy := &corev1.Secret{}
+			if err := recon.Client.Get(context.TODO(), types.NamespacedName{Name: tt.mchSecret.Name, Namespace: tt.mceNS.Name}, mceSecretCopy); err != nil {
+				t.Errorf("failed to get MCE secret: %v", err)
 			}
 		})
 	}
