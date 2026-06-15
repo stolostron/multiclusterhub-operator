@@ -4,7 +4,7 @@
 
 `go generate ./...` fails with panic:
 
-```
+```text
 panic: resource rbac.open-cluster-management.io/<ResourceName> not accounted for in RBAC generation
 ```
 

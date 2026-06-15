@@ -23,12 +23,12 @@ apiVersion: rbac.open-cluster-management.io/v1beta1
 kind: MulticlusterRoleAssignment
 metadata:
   name: mtv-advisor-storageclasses
-  namespace: open-cluster-management
+  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
 spec:
   subject:
     kind: ServiceAccount
     name: mtv-integrations-manager
-    namespace: open-cluster-management
+    namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
   roleAssignments:
   - name: acm-vm-extended-admin
     clusterRole: acm-vm-extended:admin
@@ -36,4 +36,4 @@ spec:
       type: placements
       placements:
       - name: openshift-cnv
-        namespace: open-cluster-management
+        namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
