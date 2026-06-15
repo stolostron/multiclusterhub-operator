@@ -41,6 +41,7 @@ var resources = []string{
 	"ManagedClusterSetBinding",
 	"ManagedProxyConfiguration",
 	"ManagedProxyServiceResolver",
+	"MulticlusterRoleAssignment",
 	"MutatingWebhookConfiguration",
 	"PersistentVolumeClaim",
 	"PlacementBinding",
