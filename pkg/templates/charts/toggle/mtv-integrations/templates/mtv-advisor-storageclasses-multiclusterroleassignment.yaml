@@ -1,0 +1,39 @@
+
+# Source: mtv-integrations-mtv/templates/mtv-advisor-multicluster-role-assignment.yaml
+# MulticlusterRoleAssignment: binds the mtv-integrations-manager hub SA to
+# acm-vm-extended:admin on every CNV-enabled managed cluster (selected by the
+# openshift-cnv Placement).
+#
+# The ACM Search API uses RBAC impersonation to filter cross-cluster results:
+# it only returns resources on a spoke if the calling SA is authorized to access
+# them there.  Binding the SA to acm-vm-extended:admin on each spoke grants the
+# necessary spoke-level access (StorageClasses, PVCs, nodes, CDI, HCO, etc.)
+# so the migration advisor can query StorageClass inventory across clusters.
+#
+# The hub-side clusterview.open-cluster-management.io/managedclusters permission
+# (in the manager ClusterRole) unlocks the cross-cluster Search API gate.
+#
+# Flow:
+#   MulticlusterRoleAssignment
+#     └─► ClusterPermission (per spoke, hub namespace = spoke name)
+#           └─► ClusterRoleBinding on the spoke (propagated by ACM ManifestWork)
+#                 subject: SA mtv-integrations-manager (open-cluster-management)
+#                 roleRef:  ClusterRole acm-vm-extended:admin
+apiVersion: rbac.open-cluster-management.io/v1beta1
+kind: MulticlusterRoleAssignment
+metadata:
+  name: mtv-advisor-storageclasses
+  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
+spec:
+  subject:
+    kind: ServiceAccount
+    name: mtv-integrations-manager
+    namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
+  roleAssignments:
+  - name: acm-vm-extended-admin
+    clusterRole: acm-vm-extended:admin
+    clusterSelection:
+      type: placements
+      placements:
+      - name: openshift-cnv
+        namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'

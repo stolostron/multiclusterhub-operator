@@ -878,10 +878,13 @@ rules:
 - apiGroups:
   - clusterview.open-cluster-management.io
   resources:
+  - kubevirtprojects
+  - managedclusters
   - userpermissions
   verbs:
   - get
   - list
+  - watch
 - apiGroups:
   - config.openshift.io
   resources:
@@ -1015,26 +1018,11 @@ rules:
 - apiGroups:
   - forklift.konveyor.io
   resources:
+  - migrations
   - networkmaps
-  - storagemaps
-  verbs:
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - forklift.konveyor.io
-  resources:
   - plans
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - forklift.konveyor.io
-  resources:
   - providers
+  - storagemaps
   verbs:
   - create
   - delete
@@ -1202,6 +1190,14 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - prometheuses/api
+  verbs:
+  - create
+  - get
+  - update
 - apiGroups:
   - monitoring.coreos.com
   resources:
