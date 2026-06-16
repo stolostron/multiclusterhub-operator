@@ -1963,7 +1963,7 @@ spec:
                 - name: OPERAND_IMAGE_NODE_EXPORTER
                   value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/node-exporter-rhel9:latest
                 - name: OPERAND_IMAGE_OBO_PROMETHEUS_RHEL9_OPERATOR
-                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/obo-prometheus-rhel9-operator:latest
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/prometheus-operator-rhel9:latest
                 - name: OPERAND_IMAGE_OBSERVATORIUM
                   value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/observatorium-rhel9:latest
                 - name: OPERAND_IMAGE_OBSERVATORIUM_OPERATOR
@@ -2136,7 +2136,7 @@ spec:
   - name: node_exporter
     image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/node-exporter-rhel9:latest
   - name: obo_prometheus_rhel9_operator
-    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/obo-prometheus-rhel9-operator:latest
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/prometheus-operator-rhel9:latest
   - name: observatorium
     image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/observatorium-rhel9:latest
   - name: observatorium_operator
