@@ -1,6 +1,12 @@
-// Copyright (c) 2020 Red Hat, Inc.
+// Copyright (c) 2026 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
+// Package manifest provides utilities for managing Kubernetes manifests.
+//
+// This package handles:
+//   - Manifest parsing and validation
+//   - Resource application and updates
+//   - Manifest templating
 package manifest
 
 import (

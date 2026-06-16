@@ -1,6 +1,9 @@
-// Copyright (c) 2025 Red Hat, Inc.
+// Copyright (c) 2026 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
+// Package multiclusterengineutils provides utilities for MCE integration.
+//
+// This package handles ACM-to-MCE communication and configuration.
 package multiclusterengineutils
 
 import (

@@ -1,5 +1,12 @@
 // Copyright Contributors to the Open Cluster Management project
 
+// Package utils provides common utility functions for the ACM operator.
+//
+// This package contains:
+//   - Configuration defaults and constants
+//   - Resource naming helpers
+//   - Condition management utilities
+//   - Image reference parsing
 package utils
 
 import (
