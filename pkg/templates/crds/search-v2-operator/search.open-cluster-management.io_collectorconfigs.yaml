@@ -128,8 +128,9 @@ spec:
                         from the CRD with the specified priority or higher.'
                       type: integer
                     collectAnnotations:
-                      description: '[NOT IMPLEMENTED] Specifies to collect annotations
-                        for the resource.'
+                      description: |-
+                        Specifies to collect annotations for the resource.
+                        Annotations with values over 64 characters aren't included in collection.
                       type: boolean
                     collectConditions:
                       description: Enable collection of status conditions for the
