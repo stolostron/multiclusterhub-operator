@@ -1,12 +1,4 @@
 ---
-updates:
-- file: "manifests/advanced-cluster-management.clusterserviceversion.yaml"
-  update_list:
-  - search: "advanced-cluster-management.v2.16.0"
-    replacement: "advanced-cluster-management.v{version}"
-  - search: "version: 2.16.0"
-    replacement: "version: {version}"
-
 external-images:
 - name: configmap_reloader
   search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/configmap_reloader:latest"
