@@ -36,7 +36,7 @@ jobs:
       - name: Set up Go 1.23.6
         uses: actions/setup-go@v5
         with:
-          go-version: 1.23.6
+          go-version: 1.26.4
 
       # Runs a set of commands using the runners shell
       - name: Regenerate Operator Bundles
