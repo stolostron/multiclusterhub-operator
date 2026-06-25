@@ -2,7 +2,7 @@ module github.com/stolostron/multiclusterhub-operator
 
 go 1.25.0
 
-toolchain go1.25.2
+toolchain go1.26.4
 
 require (
 	github.com/Masterminds/semver/v3 v3.5.0
