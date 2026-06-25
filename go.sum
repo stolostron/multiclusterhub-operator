@@ -258,8 +258,8 @@ github.com/opencontainers/image-spec v1.1.1 h1:y0fUlFfIZhPF1W537XOLg0/fcx6zcHCJw
 github.com/opencontainers/image-spec v1.1.1/go.mod h1:qpqAh3Dmcf36wStyyWU+kCeDgrGnAve2nCC8+7h8Q0M=
 github.com/opencontainers/runtime-spec v1.3.0 h1:YZupQUdctfhpZy3TM39nN9Ika5CBWT5diQ8ibYCRkxg=
 github.com/opencontainers/runtime-spec v1.3.0/go.mod h1:jwyrGlmzljRJv/Fgzds9SsS/C5hL+LL3ko9hs6T5lQ0=
-github.com/openshift/api v0.0.0-20260615110019-261e3a0546f3 h1:ywnB6YgTcJlxYpnZ5xMWcvJoiC8eeCJrrolr06KlzeQ=
-github.com/openshift/api v0.0.0-20260615110019-261e3a0546f3/go.mod h1:pyVjK0nZ4sRs4fuQVQ4rubsJdahI1PB94LnQ8sGdvxo=
+github.com/openshift/api v0.0.0-20260624175654-50c3975e874f h1:bvtfTEAQWbp7FJnmVinyJqEcaWVOdetZza6A2mo74TA=
+github.com/openshift/api v0.0.0-20260624175654-50c3975e874f/go.mod h1:Jm45pE7O6/G0tYYhiLzNyZykTjmf9BfhsKYuGfLLwTE=
 github.com/operator-framework/api v0.42.0 h1:rkc5V3zW8RxZMjePAe12jdL7Co/hwsYo1pLnkkhuR7s=
 github.com/operator-framework/api v0.42.0/go.mod h1:bMEj+wl/8tGqcGNtxt38cLUYagu9chNsbYzb/5HQaUQ=
 github.com/operator-framework/operator-controller v1.8.0 h1:xoM/T/9cO/2VvJJc1OaQROOyXl8wYc+q7Fq6bI1ln0o=
