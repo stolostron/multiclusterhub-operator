@@ -1,0 +1,232 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: '{{ .Values.org }}:{{ .Chart.Name }}:search-v2-operator'
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - ''
+  resources:
+  - groups
+  - secrets
+  - serviceaccounts
+  - services
+  - users
+  verbs:
+  - create
+  - delete
+  - get
+  - impersonate
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - addon.open-cluster-management.io
+  resources:
+  - addondeploymentconfigs
+  - clustermanagementaddons
+  - managedclusteraddons
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+- apiGroups:
+  - addon.open-cluster-management.io
+  resources:
+  - clustermanagementaddons/finalizers
+  - managedclusteraddons/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - addon.open-cluster-management.io
+  resources:
+  - clustermanagementaddons/status
+  - managedclusteraddons/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authentication.k8s.io
+  - authorization.k8s.io
+  resources:
+  - uids
+  - userextras/authentication.kubernetes.io/credential-id
+  - userextras/authentication.kubernetes.io/node-name
+  - userextras/authentication.kubernetes.io/node-uid
+  - userextras/authentication.kubernetes.io/pod-name
+  - userextras/authentication.kubernetes.io/pod-uid
+  verbs:
+  - impersonate
+- apiGroups:
+  - authentication.open-cluster-management.io
+  resources:
+  - managedserviceaccounts
+  verbs:
+  - create
+  - delete
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+  - get
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests
+  - certificatesigningrequests/approval
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - signers
+  verbs:
+  - approve
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - managedclusters
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+- apiGroups:
+  - multicluster.openshift.io
+  resources:
+  - multiclusterengines
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - operator.open-cluster-management.io
+  resources:
+  - multiclusterglobalhubs
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - proxy.open-cluster-management.io
+  resources:
+  - clusterstatuses/aggregator
+  verbs:
+  - create
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  - clusterroles
+  - rolebindings
+  - roles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+- apiGroups:
+  - search.open-cluster-management.io
+  resources:
+  - searches
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - search.open-cluster-management.io
+  resources:
+  - searches/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - search.open-cluster-management.io
+  resources:
+  - searches/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - work.open-cluster-management.io
+  resources:
+  - manifestworks
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create

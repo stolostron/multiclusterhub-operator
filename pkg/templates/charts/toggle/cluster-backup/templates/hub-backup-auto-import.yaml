@@ -1,0 +1,76 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  labels:
+    app: cluster-backup-chart
+    chart: cluster-backup-chart
+    release: cluster-backup-chart
+    heritage: Helm
+    app.kubernetes.io/instance: cluster-backup-chart
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: cluster-backup-chart
+    helm.sh/chart: cluster-backup-chart
+    velero.io/exclude-from-backup: "true"
+    component: policy
+  annotations:
+    policy.open-cluster-management.io/categories: PR.IP Information Protection Processes and Procedures
+    policy.open-cluster-management.io/controls: PR.IP-4 Backups of information are conducted maintained and tested
+    policy.open-cluster-management.io/standards: NIST-CSF
+    policy.open-cluster-management.io/source: system
+  name: backup-restore-auto-import
+  namespace: open-cluster-management-backup
+spec:
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: auto-import-backup-label
+        spec:
+          remediationAction: enforce
+          severity: medium
+          object-templates-raw: |
+            {{ `{{- range $ns := (lookup "v1" "Namespace" "" "" "cluster.open-cluster-management.io/managedCluster, cluster.open-cluster-management.io/managedCluster notin (local-cluster)").items }}` }}
+              {{ `{{- range $ss := (lookup "v1" "Secret" $ns.metadata.name "").items }}` }} 
+                {{ `{{- if or (eq $ss.metadata.name "auto-import-account") (eq $ss.metadata.name "auto-import-account-pair") }}` }}    
+            - complianceType: musthave
+              objectDefinition:
+                kind: Secret
+                apiVersion: v1
+                metadata:
+                  name: {{ `{{ $ss.metadata.name }}` }}
+                  namespace: {{ `{{ $ns.metadata.name }}` }}
+                  labels:
+                    cluster.open-cluster-management.io/backup: msa
+                {{ `{{- end }}` }}
+              {{ `{{- end }}` }}
+            {{ `{{- end }}` }}
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: auto-import-account-secret
+        spec:
+          remediationAction: inform
+          severity: medium
+          object-templates-raw: |
+            {{ `{{- range $mce := (lookup "multicluster.openshift.io/v1" "MultiClusterEngine" "" "").items }}` }}
+              {{ `{{- range $cmp := $mce.spec.overrides.components }}` }}
+                {{ `{{- if and (or (eq $cmp.name "managedserviceaccount-preview") (eq $cmp.name "managedserviceaccount")) (eq $cmp.enabled true) }}` }}
+                  {{ `{{- range $ns := (lookup "v1" "Namespace" "" "" "cluster.open-cluster-management.io/managedCluster, cluster.open-cluster-management.io/managedCluster notin (local-cluster)").items }}` }}
+                    {{ `{{- range $ms := (lookup "authentication.open-cluster-management.io/v1beta1" "ManagedServiceAccount" $ns.metadata.name "").items }}` }} 
+                      {{ `{{- if or (eq $ms.metadata.name "auto-import-account") (eq $ms.metadata.name "auto-import-account-pair") }}` }}   
+            - complianceType: musthave
+              objectDefinition:
+                kind: Secret
+                apiVersion: v1
+                metadata:
+                  name: {{ `{{ $ms.metadata.name }}` }}
+                  namespace: {{ `{{ $ns.metadata.name }}` }}
+                      {{ `{{- end }}` }}
+                    {{ `{{- end }}` }}
+                  {{ `{{- end }}` }}
+                {{ `{{- end }}` }}
+              {{ `{{- end }}` }}
+            {{ `{{- end }}` }}

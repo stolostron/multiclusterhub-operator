@@ -1,0 +1,519 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: subscriptions.apps.open-cluster-management.io
+spec:
+  group: apps.open-cluster-management.io
+  names:
+    kind: Subscription
+    listKind: SubscriptionList
+    plural: subscriptions
+    shortNames:
+    - appsub
+    singular: subscription
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: subscription state
+      jsonPath: .status.phase
+      name: SubscriptionState
+      type: string
+    - description: subscription status reference
+      jsonPath: .status.appstatusReference
+      name: AppstatusReference
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    - jsonPath: .status.lastUpdateTime
+      name: Updated
+      type: date
+    - jsonPath: .spec.placement.local
+      name: Local placement
+      type: boolean
+    - jsonPath: .spec.timewindow.windowtype
+      name: Time window
+      type: string
+    name: v1
+    schema:
+      openAPIV3Schema:
+        description: Subscription is the Schema for the subscriptions API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: SubscriptionSpec defines the desired state of Subscription
+            properties:
+              allow:
+                description: Specify a list of resources allowed for deployment
+                items:
+                  description: AllowDenyItem defines a group of resources allowed
+                    or denied for deployment
+                  properties:
+                    apiVersion:
+                      description: APIVersion specifies the API version for the group
+                        of resources
+                      type: string
+                    kinds:
+                      description: Kinds specifies a list of kinds under the same
+                        API version for the group of resources
+                      items:
+                        type: string
+                      type: array
+                  type: object
+                type: array
+              channel:
+                description: The primary channel namespaced name used by the subscription.
+                  Its format is "<channel NameSpace>/<channel Name>"
+                type: string
+              deny:
+                description: Specify a list of resources denied for deployment
+                items:
+                  description: AllowDenyItem defines a group of resources allowed
+                    or denied for deployment
+                  properties:
+                    apiVersion:
+                      description: APIVersion specifies the API version for the group
+                        of resources
+                      type: string
+                    kinds:
+                      description: Kinds specifies a list of kinds under the same
+                        API version for the group of resources
+                      items:
+                        type: string
+                      type: array
+                  type: object
+                type: array
+              hooksecretref:
+                description: Specify a secret reference used in Ansible job integration
+                  authentication
+                properties:
+                  apiVersion:
+                    description: API version of the referent.
+                    type: string
+                  fieldPath:
+                    description: |-
+                      If referring to a piece of an object instead of an entire object, this string
+                      should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
+                      For example, if the object reference is to a container within a pod, this would take on a value like:
+                      "spec.containers{name}" (where "name" refers to the name of the container that triggered
+                      the event) or if no container name is specified "spec.containers[2]" (container with
+                      index 2 in this pod). This syntax is chosen only to have some well-defined way of
+                      referencing a part of an object.
+                      TODO: this design is not final and this field is subject to change in the future.
+                    type: string
+                  kind:
+                    description: |-
+                      Kind of the referent.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+                    type: string
+                  name:
+                    description: |-
+                      Name of the referent.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    type: string
+                  namespace:
+                    description: |-
+                      Namespace of the referent.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
+                    type: string
+                  resourceVersion:
+                    description: |-
+                      Specific resourceVersion to which this reference is made, if any.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+                    type: string
+                  uid:
+                    description: |-
+                      UID of the referent.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              name:
+                description: Subscribe a package by its package name
+                type: string
+              overrides:
+                description: Specify overrides when applied to clusters. Hub use only
+                items:
+                  description: ClusterOverrides defines a list of contents that will
+                    be overridden to a given cluster
+                  properties:
+                    clusterName:
+                      description: Cluster name
+                      type: string
+                    clusterOverrides:
+                      description: ClusterOverrides defines a list of content for
+                        override
+                      items:
+                        description: ClusterOverride defines the contents for override
+                          rules
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      minItems: 1
+                      type: array
+                  required:
+                  - clusterName
+                  - clusterOverrides
+                  type: object
+                type: array
+              packageFilter:
+                description: Subscribe packages by a package filter
+                properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations defines a type of filter for selecting
+                      resources by annotations
+                    type: object
+                  filterRef:
+                    description: FilterRef defines a type of filter for selecting
+                      resources by another resource reference
+                    properties:
+                      name:
+                        description: |-
+                          Name of the referent.
+                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          TODO: Add other useful fields. apiVersion, kind, uid?
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  labelSelector:
+                    description: LabelSelector defines a type of filter for selecting
+                      resources by label selector
+                    properties:
+                      matchExpressions:
+                        description: matchExpressions is a list of label selector
+                          requirements. The requirements are ANDed.
+                        items:
+                          description: |-
+                            A label selector requirement is a selector that contains values, a key, and an operator that
+                            relates the key and values.
+                          properties:
+                            key:
+                              description: key is the label key that the selector
+                                applies to.
+                              type: string
+                            operator:
+                              description: |-
+                                operator represents a key's relationship to a set of values.
+                                Valid operators are In, NotIn, Exists and DoesNotExist.
+                              type: string
+                            values:
+                              description: |-
+                                values is an array of string values. If the operator is In or NotIn,
+                                the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                the values array must be empty. This array is replaced during a strategic
+                                merge patch.
+                              items:
+                                type: string
+                              type: array
+                          required:
+                          - key
+                          - operator
+                          type: object
+                        type: array
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: |-
+                          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                          map is equivalent to an element of matchExpressions, whose key field is "key", the
+                          operator is "In", and the values array contains only "value". The requirements are ANDed.
+                        type: object
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  version:
+                    description: Version defines a type of filter for selecting resources
+                      by version
+                    type: string
+                type: object
+              packageOverrides:
+                description: Override packages
+                items:
+                  description: Overrides defines a list of contents that will be overridden
+                    to a given resource
+                  properties:
+                    packageAlias:
+                      description: PackageAlias defines the alias of the package name
+                        that will be onverriden
+                      type: string
+                    packageName:
+                      description: PackageName defines the package name that will
+                        be onverriden
+                      type: string
+                    packageOverrides:
+                      description: PackageOverrides defines a list of content for
+                        override
+                      items:
+                        description: PackageOverride provides the contents for overriding
+                          a package
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      type: array
+                  required:
+                  - packageName
+                  type: object
+                type: array
+              placement:
+                description: Specify a placement reference for selecting clusters.
+                  Hub use only
+                properties:
+                  clusterSelector:
+                    description: |-
+                      A label selector is a label query over a set of resources. The result of matchLabels and
+                      matchExpressions are ANDed. An empty label selector matches all objects. A null
+                      label selector matches no objects.
+                    properties:
+                      matchExpressions:
+                        description: matchExpressions is a list of label selector
+                          requirements. The requirements are ANDed.
+                        items:
+                          description: |-
+                            A label selector requirement is a selector that contains values, a key, and an operator that
+                            relates the key and values.
+                          properties:
+                            key:
+                              description: key is the label key that the selector
+                                applies to.
+                              type: string
+                            operator:
+                              description: |-
+                                operator represents a key's relationship to a set of values.
+                                Valid operators are In, NotIn, Exists and DoesNotExist.
+                              type: string
+                            values:
+                              description: |-
+                                values is an array of string values. If the operator is In or NotIn,
+                                the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                the values array must be empty. This array is replaced during a strategic
+                                merge patch.
+                              items:
+                                type: string
+                              type: array
+                          required:
+                          - key
+                          - operator
+                          type: object
+                        type: array
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: |-
+                          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                          map is equivalent to an element of matchExpressions, whose key field is "key", the
+                          operator is "In", and the values array contains only "value". The requirements are ANDed.
+                        type: object
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  clusters:
+                    items:
+                      description: GenericClusterReference - in alignment with kubefed
+                      properties:
+                        name:
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                  local:
+                    description: It indicates a standalone subscription if the Local
+                      pointer is set to be true
+                    type: boolean
+                  placementRef:
+                    description: Specify a placement reference for selecting clusters
+                    properties:
+                      apiVersion:
+                        description: API version of the referent.
+                        type: string
+                      fieldPath:
+                        description: |-
+                          If referring to a piece of an object instead of an entire object, this string
+                          should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
+                          For example, if the object reference is to a container within a pod, this would take on a value like:
+                          "spec.containers{name}" (where "name" refers to the name of the container that triggered
+                          the event) or if no container name is specified "spec.containers[2]" (container with
+                          index 2 in this pod). This syntax is chosen only to have some well-defined way of
+                          referencing a part of an object.
+                          TODO: this design is not final and this field is subject to change in the future.
+                        type: string
+                      kind:
+                        description: |-
+                          Kind of the referent.
+                          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+                        type: string
+                      name:
+                        description: |-
+                          Name of the referent.
+                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        type: string
+                      namespace:
+                        description: |-
+                          Namespace of the referent.
+                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
+                        type: string
+                      resourceVersion:
+                        description: |-
+                          Specific resourceVersion to which this reference is made, if any.
+                          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+                        type: string
+                      uid:
+                        description: |-
+                          UID of the referent.
+                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
+                type: object
+              secondaryChannel:
+                description: The secondary channel will be applied if the primary
+                  channel fails to connect
+                type: string
+              timewindow:
+                description: Specify a time window to indicate when the subscription
+                  is handled
+                properties:
+                  daysofweek:
+                    description: 'A list of days of a week, valid values include:
+                      Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday'
+                    items:
+                      type: string
+                    type: array
+                  hours:
+                    description: A list of hour ranges
+                    items:
+                      description: HourRange defines the time format, refer to https://golang.org/pkg/time/#pkg-constants
+                      properties:
+                        end:
+                          description: End time of the hour range
+                          type: string
+                        start:
+                          description: Start time of the hour range
+                          type: string
+                      type: object
+                    type: array
+                  location:
+                    description: time zone location, refer to TZ identifier in https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+                    type: string
+                  windowtype:
+                    description: |-
+                      Activiate time window or not. The subscription deployment will only be handled during these active windows
+                      Valid values include: active,blocked,Active,Blocked
+                    enum:
+                    - active
+                    - blocked
+                    - Active
+                    - Blocked
+                    type: string
+                type: object
+              watchHelmNamespaceScopedResources:
+                description: WatchHelmNamespaceScopedResources is used to enable watching
+                  namespace scope Helm chart resources
+                type: boolean
+            required:
+            - channel
+            type: object
+          status:
+            description: SubscriptionStatus defines the observed status of a subscription
+            properties:
+              ansiblejobs:
+                description: AnsibleJobsStatus defines status of ansible jobs propagated
+                  by the subscription
+                properties:
+                  lastposthookjob:
+                    description: The lastly propagated posthook job
+                    type: string
+                  lastprehookjob:
+                    description: The lastly propagated prehook job
+                    type: string
+                  posthookjobshistory:
+                    description: reserved for backward compatibility
+                    items:
+                      type: string
+                    type: array
+                  prehookjobshistory:
+                    description: reserved for backward compatibility
+                    items:
+                      type: string
+                    type: array
+                type: object
+              appstatusReference:
+                description: The CLI reference for getting the subscription status
+                  output
+                type: string
+              lastUpdateTime:
+                description: Timestamp of when the subscription status was last updated.
+                format: date-time
+                type: string
+              message:
+                description: Informational message of the subscription deployment
+                type: string
+              phase:
+                description: Phase of the subscription deployment
+                type: string
+              reason:
+                description: additional error output of the subscription deployment
+                type: string
+              statuses:
+                additionalProperties:
+                  description: SubscriptionPerClusterStatus defines status of each
+                    subscription in a cluster, key is package name
+                  properties:
+                    packages:
+                      additionalProperties:
+                        description: SubscriptionUnitStatus defines status of each
+                          package in a subscription
+                        properties:
+                          lastUpdateTime:
+                            description: Timestamp of when the deployment package
+                              was last updated.
+                            format: date-time
+                            type: string
+                          message:
+                            description: Informational message from the deployment
+                              of the package.
+                            type: string
+                          phase:
+                            description: Phase of the deployment package (Propagated/Subscribed/Failed/PropagationFailed/PreHookSucessful).
+                            type: string
+                          reason:
+                            description: additional error output from the deployment
+                              of the package.
+                            type: string
+                          resourceStatus:
+                            description: reserved for backward compatibility
+                            type: object
+                            x-kubernetes-preserve-unknown-fields: true
+                        required:
+                        - lastUpdateTime
+                        type: object
+                      type: object
+                  type: object
+                description: SubscriptionClusterStatusMap defines status of each subscription
+                  per cluster, key is cluster name
+                type: object
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

@@ -1,0 +1,166 @@
+# Copyright (c) 2020 Red Hat, Inc.
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: grc-policy-propagator
+  labels:
+    app: grc
+    chart: grc-chart-{{ .Values.hubconfig.hubVersion }}
+    component: "ocm-policy-propagator"
+    release: grc
+    app.kubernetes.io/instance: grc
+    app.kubernetes.io/name: grc
+spec:
+  replicas: {{ .Values.hubconfig.replicaCount }}
+  selector:
+    matchLabels:
+      app: grc
+      component: "ocm-policy-propagator"
+      release: grc
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: governance-policy-propagator
+      labels:
+        app: grc
+        ocm-antiaffinity-selector: "grcpolicypropagator"
+        component: "ocm-policy-propagator"
+        name: governance-policy-propagator
+        release: grc
+        chart: grc-chart-{{ .Values.hubconfig.hubVersion }}
+        app.kubernetes.io/instance: grc
+        app.kubernetes.io/name: grc
+    spec:
+      serviceAccountName: grc-sa
+      hostNetwork: false
+      hostPID: false
+      hostIPC: false
+      securityContext:
+        runAsNonRoot: true
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+                - ppc64le
+                - s390x
+                - arm64
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 70
+            podAffinityTerm:
+              topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - grcpolicypropagator
+          - weight: 35
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - grcpolicypropagator
+      {{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+      {{- end }}
+      containers:
+      - name: governance-policy-propagator
+        image: {{ .Values.global.imageOverrides.governance_policy_propagator}}
+        imagePullPolicy: "{{ .Values.global.pullPolicy }}"
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "25m"
+        ports:
+        - containerPort: 8443
+          name: metrics-https
+          protocol: TCP
+        - containerPort: 9443
+          name: webhook-http
+          protocol: TCP
+        securityContext:
+          privileged: false
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          capabilities:
+            drop:
+            - ALL
+        command:
+        - governance-policy-propagator
+        args:
+        - "--compliance-history-api-host=0.0.0.0"
+        - "--compliance-history-api-cert=/var/run/compliance-history-api-cert/tls.crt"
+        - "--compliance-history-api-key=/var/run/compliance-history-api-cert/tls.key"
+        - "--secure-metrics=true"
+        - "--metrics-bind-address=0.0.0.0:8443"
+        env:
+          - name: WATCH_NAMESPACE
+            value: ""
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: OPERATOR_NAME
+            value: "governance-policy-propagator"
+        livenessProbe:
+          exec:
+            command:
+            - ls
+          initialDelaySeconds: 15
+          periodSeconds: 15
+        readinessProbe:
+          exec:
+            command:
+            - ls
+          initialDelaySeconds: 15
+          periodSeconds: 15
+        volumeMounts:
+        - mountPath: "/var/run/metrics-cert"
+          name: metrics-cert
+          readOnly: true
+        - name: tmp
+          mountPath: "/tmp"
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
+        - mountPath: "/var/run/compliance-history-api-cert"
+          name: compliance-history-api-cert
+          readOnly: true
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: metrics-cert
+        secret:
+          secretName: grc-grc-metrics-cert
+      - name: compliance-history-api-cert
+        secret:
+          secretName: governance-policy-compliance-history-api-cert
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: propagator-webhook-server-cert
+      {{- if .Values.global.pullSecret  }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret  }}
+      {{- end }}
+      {{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}

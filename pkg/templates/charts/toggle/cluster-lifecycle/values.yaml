@@ -1,0 +1,16 @@
+global:
+  imageOverrides:
+    klusterlet_addon_controller: ''
+  templateOverrides: {}
+  namespace: default
+  pullSecret: null
+  imageRepository: "" # utils.GetImageRepository(m)
+  hubSize: Small
+hubconfig:
+  nodeSelector: null
+  proxyConfigs: {}
+  replicaCount: 1
+  tolerations: []
+  hubVersion: ""
+  ocpVersion: 4.12.0
+org: open-cluster-management

@@ -1,0 +1,33 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+  name: open-cluster-management:edit-aggregate
+rules:
+- apiGroups: ["apps.open-cluster-management.io"]
+  resources: [ "deployables", "deployables/status", "placementrules", "placementrules/status", "channels", "channels/status", "subscriptions", "subscriptions/status",  "subscriptionstatuses", "subscriptionreports", "multiclusterapplicationsetreports", "multiclusterapplicationsetreports/status"]
+  verbs: ["get", "list", "watch", "update", "patch"]
+- apiGroups: ["app.k8s.io"]
+  resources: [ "applications", "applications/status"]
+  verbs: ["get", "list", "watch", "update", "patch"]
+- apiGroups: ["argoproj.io"]
+  resources: [ "applications", "applications/status", "argocds"]
+  verbs: ["get", "list", "watch", "update", "patch"]
+- apiGroups: ["policy.open-cluster-management.io"]
+  resources: ["configurationpolicies", "certificatepolicies", "operatorpolicies", "policies","policies/status","placementbindings","policyautomations", "policysets"]
+  verbs: ["get", "list", "watch", "update", "patch"]
+- apiGroups: ["constraints.gatekeeper.sh"]
+  resources: ["*"]
+  verbs: ["get", "list", "watch", "update", "patch"]
+- apiGroups: ["agent.open-cluster-management.io"]
+  resources: ["klusterletaddonconfigs"]
+  verbs: ["get", "list", "watch", "update", "patch"]
+- apiGroups: ["wgpolicyk8s.io"]
+  resources: ["policyreports"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["submarineraddon.open-cluster-management.io"]
+  resources: ["submarinerconfigs", "submarinerconfigs/status"]
+  verbs: ["get", "list", "watch", "update", "patch"]

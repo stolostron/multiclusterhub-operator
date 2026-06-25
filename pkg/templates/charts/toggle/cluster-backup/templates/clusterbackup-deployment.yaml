@@ -1,0 +1,109 @@
+# Copyright Contributors to the Open Cluster Management project
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cluster-backup-chart-clusterbackup
+  namespace: open-cluster-management-backup
+  labels:
+    app: cluster-backup-chart   
+    chart: cluster-backup-chart
+    component: "clusterbackup"
+    release: cluster-backup-chart
+    heritage: Helm
+    app.kubernetes.io/instance: cluster-backup-chart
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: cluster-backup-chart
+    helm.sh/chart: cluster-backup-chart
+spec:
+  replicas: {{ .Values.hubconfig.replicaCount }}
+  selector:
+    matchLabels:
+      app: cluster-backup-chart
+      component: "clusterbackup"
+      release: cluster-backup-chart
+  template:
+    metadata:
+      labels:
+        app: cluster-backup-chart
+        ocm-antiaffinity-selector: "clusterbackup"
+        component: "clusterbackup"
+        release: cluster-backup-chart
+        chart: cluster-backup-chart
+        heritage: Helm
+        app.kubernetes.io/instance: cluster-backup-chart
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: cluster-backup-chart
+        helm.sh/chart: cluster-backup-chart
+    spec:
+      hostNetwork: false
+      hostPID: false
+      hostIPC: false
+      serviceAccountName: cluster-backup-chart
+      securityContext:
+        runAsNonRoot: true
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+                - ppc64le
+                - s390x
+                - arm64
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 70
+            podAffinityTerm:
+              topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - clusterbackup
+          - weight: 35
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - clusterbackup
+{{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+{{- end }}
+      containers:
+      - name: cluster-backup
+        image: {{ .Values.global.imageOverrides.cluster_backup_controller }}
+        imagePullPolicy: {{ .Values.global.pullPolicy }}
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "50m"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+      {{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
+      {{- end }}
+      {{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}

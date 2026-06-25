@@ -1,0 +1,377 @@
+// Copyright (c) 2021 Red Hat, Inc.
+// Copyright Contributors to the Open Cluster Management project
+
+package renderer
+
+import (
+
+	// "reflect"
+
+	"os"
+	"reflect"
+	"testing"
+
+	v1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
+
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+)
+
+const (
+	chartsDir = "/charts/toggle"
+	crdsDir   = "/crds"
+)
+
+var chartPaths = []string{
+	utils.InsightsChartLocation,
+	utils.SearchV2ChartLocation,
+	utils.CLCChartLocation,
+	utils.GRCChartLocation,
+	utils.ConsoleChartLocation,
+	utils.VolsyncChartLocation,
+}
+
+func TestRender(t *testing.T) {
+
+	proxyList := []string{"insights-client"}
+	mchNodeSelector := map[string]string{
+		"select":  "test",
+		"select2": "test2",
+	}
+	mchImagePullSecret := "test"
+	mchNamespace := "default"
+	mchTolerations := []corev1.Toleration{
+		{
+			Key:      "dedicated",
+			Operator: "Exists",
+			Effect:   "NoSchedule",
+			Value:    "test",
+		},
+		{
+			Key:      "node.ocs.openshift.io/storage",
+			Operator: "Equal",
+			Value:    "true",
+			Effect:   "NoSchedule",
+		},
+		{
+			Key:      "false",
+			Operator: "false",
+			Value:    "true",
+			Effect:   "true",
+		},
+		{
+			Key:      "22",
+			Operator: "23",
+			Value:    "24",
+			Effect:   "25",
+		},
+		{
+			Key:      "22.0",
+			Operator: "23.1",
+			Value:    "24.2",
+			Effect:   "25.3",
+		},
+	}
+	testMCH := &v1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "testmch",
+			Namespace: mchNamespace,
+		},
+		Spec: v1.MultiClusterHubSpec{
+			NodeSelector:    mchNodeSelector,
+			ImagePullSecret: mchImagePullSecret,
+			Tolerations:     mchTolerations,
+		},
+	}
+	containsHTTP := false
+	containsHTTPS := false
+	containsNO := false
+	os.Setenv("POD_NAMESPACE", "default")
+	os.Setenv("HTTP_PROXY", "test1")
+	os.Setenv("HTTPS_PROXY", "test2")
+	os.Setenv("NO_PROXY", "test3")
+	os.Setenv("DIRECTORY_OVERRIDE", "../templates")
+	os.Setenv("ACM_HUB_OCP_VERSION", "4.10.0")
+
+	testImages := map[string]string{}
+	for _, v := range utils.GetTestImages() {
+		testImages[v] = "quay.io/test/test:Test"
+	}
+	templateOverrides := map[string]string{}
+
+	// multiple charts
+	chartsDir := chartsDir
+	templates, errs := RenderCharts(chartsDir, testMCH, testImages, templateOverrides, false)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			t.Log(err)
+		}
+		t.Fatal("failed to retrieve templates")
+		if len(templates) == 0 {
+			t.Fatalf("Unable to render templates")
+		}
+	}
+
+	for _, template := range templates {
+		if template.GetKind() == "Deployment" {
+			deployment := &appsv1.Deployment{}
+			err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, deployment)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			selectorEquality := reflect.DeepEqual(deployment.Spec.Template.Spec.NodeSelector, mchNodeSelector)
+			if !selectorEquality {
+				t.Fatalf("Node Selector did not propagate to the deployments use")
+			}
+			secretEquality := reflect.DeepEqual(deployment.Spec.Template.Spec.ImagePullSecrets[0].Name, mchImagePullSecret)
+			if !secretEquality {
+				t.Fatalf("Image Pull Secret did not propagate to the deployments use")
+			}
+			tolerationEquality := reflect.DeepEqual(deployment.Spec.Template.Spec.Tolerations, mchTolerations)
+			if !tolerationEquality {
+				t.Fatalf("Toleration did not propagate to the deployments use")
+			}
+			if deployment.ObjectMeta.Namespace != mchNamespace && deployment.ObjectMeta.Name != "cluster-backup-chart-clusterbackup" {
+				t.Fatalf("Namespace did not propagate to the deployments use")
+			}
+			if utils.Contains(proxyList, deployment.ObjectMeta.Name) {
+				for _, proxyVar := range deployment.Spec.Template.Spec.Containers[0].Env {
+					switch proxyVar.Name {
+					case "HTTP_PROXY":
+						containsHTTP = true
+						if proxyVar.Value != "test1" {
+							t.Fatalf("HTTP_PROXY not propagated")
+						}
+					case "HTTPS_PROXY":
+						containsHTTPS = true
+						if proxyVar.Value != "test2" {
+							t.Fatalf("HTTPS_PROXY not propagated")
+						}
+					case "NO_PROXY":
+						containsNO = true
+						if proxyVar.Value != "test3" {
+							t.Fatalf("NO_PROXY not propagated")
+						}
+					}
+
+				}
+
+				if !containsHTTP || !containsHTTPS || !containsNO {
+					t.Fatalf("proxy variables not set in %s", deployment.ObjectMeta.Name)
+				}
+			}
+			containsHTTP = false
+			containsHTTPS = false
+			containsNO = false
+		}
+
+	}
+
+	// single chart
+	singleChartTestImages := map[string]string{}
+	for _, v := range utils.GetTestImages() {
+		singleChartTestImages[v] = "quay.io/test/test:Test"
+	}
+
+	for _, chartsPath := range chartPaths {
+		chartsPath := chartsPath
+		singleChartTemplates, errs := RenderChart(chartsPath, testMCH, singleChartTestImages, templateOverrides, false)
+		if len(errs) > 0 {
+			for _, err := range errs {
+				t.Log(err)
+			}
+			t.Fatal("failed to retrieve templates")
+			if len(singleChartTemplates) == 0 {
+				t.Fatalf("Unable to render templates")
+			}
+		}
+		for _, template := range singleChartTemplates {
+			if template.GetKind() == "Deployment" {
+				deployment := &appsv1.Deployment{}
+				err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, deployment)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				selectorEquality := reflect.DeepEqual(deployment.Spec.Template.Spec.NodeSelector, mchNodeSelector)
+				if !selectorEquality {
+					t.Fatalf("Node Selector did not propagate to the deployments use")
+				}
+				secretEquality := reflect.DeepEqual(deployment.Spec.Template.Spec.ImagePullSecrets[0].Name, mchImagePullSecret)
+				if !secretEquality {
+					t.Fatalf("Image Pull Secret did not propagate to the deployments use")
+				}
+				tolerationEquality := reflect.DeepEqual(deployment.Spec.Template.Spec.Tolerations, mchTolerations)
+				if !tolerationEquality {
+					t.Fatalf("Toleration did not propagate to the deployments use")
+				}
+				if deployment.ObjectMeta.Namespace != mchNamespace && deployment.ObjectMeta.Name != "cluster-backup-chart-clusterbackup" {
+					t.Fatalf("Namespace did not propagate to the deployments use")
+				}
+
+				if utils.Contains(proxyList, deployment.ObjectMeta.Name) {
+					for _, proxyVar := range deployment.Spec.Template.Spec.Containers[0].Env {
+						switch proxyVar.Name {
+						case "HTTP_PROXY":
+							containsHTTP = true
+							if proxyVar.Value != "test1" {
+								t.Fatalf("HTTP_PROXY not propagated")
+							}
+						case "HTTPS_PROXY":
+							containsHTTPS = true
+							if proxyVar.Value != "test2" {
+								t.Fatalf("HTTPS_PROXY not propagated")
+							}
+						case "NO_PROXY":
+							containsNO = true
+							if proxyVar.Value != "test3" {
+								t.Fatalf("NO_PROXY not propagated")
+							}
+						}
+					}
+
+					if !containsHTTP || !containsHTTPS || !containsNO {
+						t.Fatalf("proxy variables not set")
+					}
+				}
+				containsHTTP = false
+				containsHTTPS = false
+				containsNO = false
+			}
+
+		}
+	}
+
+	os.Unsetenv("HTTP_PROXY")
+	os.Unsetenv("HTTPS_PROXY")
+	os.Unsetenv("NO_PROXY")
+	os.Unsetenv("POD_NAMESPACE")
+	os.Unsetenv("DIRECTORY_OVERRIDE")
+	os.Unsetenv("ACM_HUB_OCP_VERSION")
+
+}
+
+func TestRenderCRDs(t *testing.T) {
+	os.Setenv("DIRECTORY_OVERRIDE", "../templates")
+	tests := []struct {
+		name   string
+		crdDir string
+		want   []error
+	}{
+		{
+			name:   "Render CRDs directory",
+			crdDir: crdsDir,
+		},
+	}
+	mchNamespace := "default"
+	testMCH := &v1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "testmch",
+			Namespace: mchNamespace,
+		},
+		Spec: v1.MultiClusterHubSpec{},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, errs := RenderCRDs(tt.crdDir, testMCH)
+			if len(errs) > 1 {
+				t.Errorf("RenderCRDs() got = %v, want %v", errs, nil)
+			}
+
+			for _, u := range got {
+				kind := "CustomResourceDefinition"
+				apiVersion := "apiextensions.k8s.io/v1"
+				if u.GetKind() != kind {
+					t.Errorf("RenderCRDs() got Kind = %v, want Kind %v", errs, kind)
+				}
+
+				if u.GetAPIVersion() != apiVersion {
+					t.Errorf("RenderCRDs() got apiversion = %v, want apiversion %v", errs, apiVersion)
+				}
+			}
+		})
+	}
+
+	os.Setenv("CRD_OVERRIDE", "pkg/doesnotexist")
+	_, errs := RenderCRDs(crdsDir, testMCH)
+	if errs == nil {
+		t.Fatalf("Should have received an error")
+	}
+	os.Unsetenv("CRD_OVERRIDE")
+
+}
+
+func TestOADPAnnotation(t *testing.T) {
+	oadp := `{"channel": "stable-1.0", "installPlanApproval": "Manual", "name": "redhat-oadp-operator2", "source": "redhat-operators2", "sourceNamespace": "openshift-marketplace2", "startingCSV": "test-csv"}`
+	mch := &v1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "test",
+			Annotations: map[string]string{
+				"installer.open-cluster-management.io/oadp-subscription-spec": oadp,
+			},
+		},
+	}
+
+	test1, test2, test3, test4, test5, test6 := GetOADPConfig(mch)
+
+	if test1 != "redhat-oadp-operator2" {
+		t.Error("Cluster Backup missing OADP overrides for name")
+	}
+
+	if test2 != "stable-1.0" {
+		t.Error("Cluster Backup missing OADP overrides for channel")
+	}
+
+	if test3 != "Manual" {
+		t.Error("Cluster Backup missing OADP overrides for install plan")
+	}
+
+	if test4 != "redhat-operators2" {
+		t.Error("Cluster Backup missing OADP overrides for source")
+	}
+
+	if test5 != "openshift-marketplace2" {
+		t.Error("Cluster Backup missing OADP overrides for source namespace")
+	}
+
+	if test6 != "test-csv" {
+		t.Error("Cluster Backup missing startingCSV overrides for source")
+	}
+
+	mch = &v1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "test",
+		},
+	}
+
+	// These should all be the defaults (no overrides)
+	test1, test2, test3, test4, test5, test6 = GetOADPConfig(mch)
+
+	if test1 != defaultOADPName {
+		t.Error("Cluster Backup missing OADP overrides for name")
+	}
+
+	if test2 != defaultOADPChannel {
+		t.Error("Cluster Backup missing OADP overrides for channel")
+	}
+
+	if test3 != defaultOADPInstallPlan {
+		t.Error("Cluster Backup missing OADP overrides for install plan")
+	}
+
+	if test4 != defaultOADPSource {
+		t.Error("Cluster Backup missing OADP overrides for source")
+	}
+
+	if test5 != defaultOADPSourceNamespace {
+		t.Error("Cluster Backup missing OADP overrides for source namespace")
+	}
+
+	if test6 != "" {
+		t.Error("Cluster Backup Defaulted to something other than \"\"")
+	}
+}

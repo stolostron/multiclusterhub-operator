@@ -1,0 +1,22 @@
+# Copyright (c) 2020 Red Hat, Inc.
+# Copyright Contributors to the Open Cluster Management project
+
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: open-cluster-management:console:clusterrolebinding
+  labels:
+    app: console-chart
+    chart: console-chart-{{ .Values.hubconfig.hubVersion }}
+    release: console
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/name: console-chart
+    component: clusterrolebinding
+subjects:
+- kind: ServiceAccount
+  name: console-chart
+  namespace: {{ .Values.global.namespace }}
+roleRef:
+  kind: ClusterRole
+  name: open-cluster-management:console:clusterrole
+  apiGroup: rbac.authorization.k8s.io

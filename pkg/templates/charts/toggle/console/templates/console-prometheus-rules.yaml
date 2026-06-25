@@ -1,0 +1,14 @@
+# Copyright (c) 2023 Red Hat, Inc.
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: acm-console-prometheus-rules
+  namespace: {{ .Values.global.namespace }}
+spec:
+  groups:
+    - name: acm-console.rules
+      rules:
+        - expr: sum by (page) (acm_console_page_count)
+          record: 'acm_console_page_count:sum'

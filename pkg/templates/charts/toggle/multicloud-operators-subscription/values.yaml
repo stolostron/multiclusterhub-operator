@@ -1,0 +1,18 @@
+global:
+  hubSize: Small
+  imageOverrides:
+    multicloud_integrations: ''
+    multicluster_operators_application: ''
+    multicluster_operators_channel: ''
+    multicluster_operators_subscription: ''
+  namespace: default
+  pullSecret: null
+  templateOverrides: {}
+hubconfig:
+  clusterSTSEnabled: false
+  nodeSelector: null
+  ocpVersion: 4.12.0
+  proxyConfigs: {}
+  replicaCount: 1
+  tolerations: []
+org: open-cluster-management

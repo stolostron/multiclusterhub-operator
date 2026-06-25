@@ -1,0 +1,46 @@
+name: RBAC validation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  rbac-check:
+    runs-on: ubuntu-latest
+    name: Generate role permissions
+    steps:
+    - name: Checkout multiclusterhub
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+
+    - name: Verify modules
+      run: |
+        go mod verify
+        
+    - name: Verify format
+      run: |
+        make fmt
+        git diff --exit-code
+
+    - name: Generate RBAC file
+      run: |
+        go generate
+        
+    - name: Regenerate role
+      run: |
+        make manifests
+      
+    - name: Check if files have changed
+      run:  |
+        git diff
+        FILES_CHANGED=$(git diff --name-only | wc -l)
+        if [ "$FILES_CHANGED" != "0" ]; then echo "Remember to run go generate to update rbac"; exit 1; fi;

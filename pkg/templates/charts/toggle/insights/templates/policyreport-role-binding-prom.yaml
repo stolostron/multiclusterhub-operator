@@ -1,0 +1,24 @@
+# Copyright (c) 2021 Red Hat, Inc.
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Values.org }}:{{ .Chart.Name }}:insights-client-prometheus
+  labels:
+    app: insights
+    chart: '{{.Chart.Name}}-{{.Chart.Version}}'
+    component: insights-client
+    release: {{ .Chart.Name }}
+    heritage: release-service
+    app.kubernetes.io/instance: {{ .Chart.Name }}
+    app.kubernetes.io/managed-by: release-service
+    app.kubernetes.io/name: insights
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Values.org }}:{{ .Chart.Name }}:insights-client
+subjects:
+  - kind: ServiceAccount
+    name: prometheus-k8s
+    namespace: openshift-monitoring

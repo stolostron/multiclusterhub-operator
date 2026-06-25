@@ -1,0 +1,34 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-admin: "true"
+    rbac.authorization.k8s.io/aggregate-to-ocm-cluster-manager-admin: "true"
+  name: open-cluster-management:admin-aggregate
+rules:
+- apiGroups: ["apps.open-cluster-management.io"]
+  resources: [ "deployables", "deployables/status", "placementrules", "placementrules/status", "channels", "channels/status", "subscriptions", "subscriptions/status", "subscriptionstatuses", "subscriptionreports", "multiclusterapplicationsetreports", "multiclusterapplicationsetreports/status"]
+  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+- apiGroups: ["app.k8s.io"]
+  resources: [ "applications", "applications/status"]
+  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+- apiGroups: ["argoproj.io"]
+  resources: [ "applications", "applications/status", "argocds"]
+  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+- apiGroups: ["policy.open-cluster-management.io"]
+  resources: ["configurationpolicies", "certificatepolicies", "operatorpolicies", "policies","policies/status","placementbindings","policyautomations", "policysets"]
+  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+- apiGroups: ["constraints.gatekeeper.sh"]
+  resources: ["*"]
+  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+- apiGroups: ["agent.open-cluster-management.io"]
+  resources: ["klusterletaddonconfigs"]
+  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+- apiGroups: ["wgpolicyk8s.io"]
+  resources: ["policyreports"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["submarineraddon.open-cluster-management.io"]
+  resources: ["submarinerconfigs", "submarinerconfigs/status"]
+  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]

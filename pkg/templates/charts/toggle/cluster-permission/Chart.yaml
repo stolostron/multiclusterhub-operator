@@ -1,0 +1,6 @@
+apiVersion: v2
+appVersion: 1.16.0
+description: A controller for managing RBAC resources to the managed clusters.
+name: cluster-permission
+type: application
+version: 2.3.0

@@ -1,0 +1,43 @@
+# Copyright Contributors to the Open Cluster Management project
+
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.tap
+testbin/*
+vendor/
+
+.DS_Store
+
+bundle/manifests/multiclusterhub-operator_v1_serviceaccount.yaml
+
+hack/prereqs/pull-secret.yaml
+hack/bundle-automation/tmp/
+
+test/function_tests/results
+hack/bundle-automation/__pycache__
+
+bin/*
+!bin/image-manifests
+build/_output/*
+.vscode
+
+# Test binary, build with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Kubernetes Generated files - skip generated files, except for vendored files
+
+!vendor/**/zz_generated.*
+
+# editor and IDE paraphernalia
+.idea
+*.swp
+*.swo
+*~

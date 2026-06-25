@@ -1,0 +1,175 @@
+# Copyright Contributors to the Open Cluster Management project
+
+ORG ?= stolostron
+REPO ?= installer-dev-tools
+BRANCH ?= main
+COMPONENT ?= ""
+CONFIG ?= ""
+
+PIPELINE_REPO ?= pipeline
+PIPELINE_BRANCH ?= 2.12-integration
+
+# Bundle branch configuration
+# Derive current development version from COMPONENT_VERSION file
+COMPONENT_VERSION := $(shell cat COMPONENT_VERSION)
+BUNDLE_BRANCH_MAIN ?= acm-$(shell echo $(COMPONENT_VERSION) | cut -d. -f1,2)
+
+# Default to current branch for local development
+BUNDLE_BRANCH ?= $(shell git branch --show-current)
+
+# Override for CI: map main to current development version
+ifdef GITHUB_BASE_REF
+  ifeq ($(GITHUB_BASE_REF),main)
+    BUNDLE_BRANCH := $(BUNDLE_BRANCH_MAIN)
+  else
+    BUNDLE_BRANCH := $(GITHUB_BASE_REF)
+  endif
+endif
+
+# For local development on main, also use current development version
+ifeq ($(BUNDLE_BRANCH),main)
+  BUNDLE_BRANCH := $(BUNDLE_BRANCH_MAIN)
+endif
+
+# Bundle repo to validate against
+BUNDLE ?= acm-operator-bundle
+
+.PHONY: update-manifest 
+
+.PHONY: deps
+deps:
+	curl -sL https://github.com/operator-framework/operator-sdk/releases/download/v1.9.0/operator-sdk_darwin_amd64 -o bin/operator-sdk
+	chmod +x bin/operator-sdk
+
+.PHONY: subscriptions
+subscriptions:
+	oc apply -k hack/subscriptions
+
+.PHONY: catalog
+catalog:
+	oc apply -k hack/catalog
+
+.PHONY: prereqs
+prereqs:
+	oc apply -k hack/prereqs
+
+.PHONY: copyright
+copyright:
+	bash ./hack/scripts/copyright.sh
+
+.PHONY: update-version
+update-version:
+	./hack/scripts/update-version.sh <START_VERSION> <UPDATE_VERSION>
+
+.PHONY: prep-mock-install
+prep-mock-install:
+	export PRODUCT_VERSION=$(shell cat COMPONENT_VERSION); \
+	make mock-build-image PRODUCT_VERSION=$(VERSION) MOCK_IMAGE_REGISTRY=$(REGISTRY) MOCK_IMAGE_SHA="sha256:test"
+	echo "mock install prepped!"
+
+.PHONY: install-requirements
+install-requirements:
+	pip3 install -r hack/bundle-automation/requirements.txt
+
+## Lints the operator bundles
+.PHONY: lint-operator-bundles
+lint-operator-bundles: install-requirements
+	python3 ./hack/bundle-automation/generate-shell.py --lint-bundles --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component $(COMPONENT) --config $(CONFIG)
+
+## Regenerates the operator bundles
+.PHONY: refresh-image-aliases
+refresh-image-aliases: install-requirements
+	python3 ./hack/bundle-automation/generate-shell.py --refresh-image-aliases --org $(ORG) --repo $(REPO) --branch $(BRANCH) --pipeline-repo $(PIPELINE_REPO) --pipeline-branch $(PIPELINE_BRANCH) --component $(COMPONENT)
+
+## Regenerates the operator charts from bundles
+.PHONY: regenerate-charts-from-bundles
+regenerate-charts-from-bundles: install-requirements
+	python3 ./hack/bundle-automation/generate-shell.py --update-charts-from-bundles --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component $(COMPONENT) --config $(CONFIG)
+
+## Validates that all template variables are declared in config.yaml
+.PHONY: validate-template-vars
+validate-template-vars:
+	./hack/validate-template-vars.sh
+
+## Syncs template variables to config.yaml and regenerates charts from bundles
+.PHONY: sync-template-vars
+sync-template-vars:
+	./hack/sync-template-vars.sh regenerate-charts-from-bundles
+
+## Syncs template variables to config.yaml and regenerates charts
+.PHONY: sync-template-vars-charts
+sync-template-vars-charts:
+	./hack/sync-template-vars.sh regenerate-charts
+
+## Syncs template variables to config.yaml and copies charts
+.PHONY: sync-template-vars-copy
+sync-template-vars-copy:
+	./hack/sync-template-vars.sh copy-charts
+
+## Regenerates the operator bundles
+.PHONY: regenerate-operator-sha-commits
+regenerate-operator-sha-commits: install-requirements
+	python3 ./hack/bundle-automation/generate-shell.py --update-commits --org $(ORG) --repo $(REPO) --branch $(BRANCH) --pipeline-repo $(PIPELINE_REPO) --pipeline-branch $(PIPELINE_BRANCH) --component $(COMPONENT) --config $(CONFIG)
+
+## Regenerates the charts
+.PHONY: regenerate-charts
+regenerate-charts: install-requirements
+	python3 ./hack/bundle-automation/generate-shell.py --update-charts --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component $(COMPONENT) --config $(CONFIG)
+
+## Regenerates the operator bundles
+.PHONY: copy-charts
+copy-charts: install-requirements
+	python3 ./hack/bundle-automation/generate-shell.py --copy-charts --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component $(COMPONENT) --config $(CONFIG)
+
+## Onboard new OLM/Chart component
+.PHONY: onboard-new-component
+onboard-new-component: install-requirements
+	python3 ./hack/bundle-automation/generate-shell.py --onboard-new-component --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component $(COMPONENT)
+
+## Validate that all required image keys exist in the bundle
+.PHONY: validate-image-keys
+validate-image-keys: install-requirements
+	@echo "Cloning $(BUNDLE)..."
+	@if [ -d "$(BUNDLE)" ]; then \
+		echo "Removing existing $(BUNDLE) directory..."; \
+		rm -rf $(BUNDLE); \
+	fi
+	@git clone https://github.com/$(ORG)/$(BUNDLE).git $(BUNDLE)
+	@echo "Checking out bundle branch: $(BUNDLE_BRANCH)"
+	@cd $(BUNDLE) && git checkout $(BUNDLE_BRANCH)
+	@echo "Successfully checked out branch: $$(cd $(BUNDLE) && git branch --show-current)"
+	@python3 ./hack/bundle-automation/generate-shell.py --validate-image-keys --org $(ORG) --repo $(REPO) --branch $(BRANCH) --bundle $(BUNDLE)
+	@echo "Cleaning up cloned bundle..."
+	@rm -rf $(BUNDLE)
+
+# different from `in-cluster-install` (call no secrets, no observability-crd)
+.PHONY: mock-install
+mock-install: prereqs subscriptions docker-build docker-push deploy
+
+# different from `in-cluster-install` (call no secrets, no observability-crd)
+.PHONY: podman-mock-install
+podman-mock-install: prereqs subscriptions podman-build podman-push deploy
+
+.PHONY: cr
+cr: 
+	oc apply -k config/samples
+
+## Ensure the quay repos are open or pull secrets are configured
+.PHONY: full-catalog-install
+full-catalog-install: manifests generate bundle bundle-build bundle-push catalog-build catalog-push prereqs subscriptions catalog
+
+.PHONY: full-dev-install
+full-dev-install: prereqs manifests generate update-manifest subscriptions docker-build docker-push deploy
+
+.PHONY: podman-full-dev-install
+podman-full-dev-install: prereqs manifests generate update-manifest subscriptions podman-build podman-push deploy
+
+## Retrieves latest manifest and injects image definitions directly into the deployment template
+.PHONY: add-images
+add-images: install-requirements
+	python3 ./hack/scripts/dev-update-image-references.py
+
+## Generates a local image manifest. Source this file to define necessary environment variables to run the operator locally
+.PHONY: add-images-local
+add-images-local: install-requirements
+	python3 ./hack/scripts/dev-update-image-references.py --local

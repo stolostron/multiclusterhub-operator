@@ -1,0 +1,9 @@
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "addLabels": ["ok-to-test"],
+    "baseBranches": ["/(^main$)|(^release-2\\.(10|11)$)/"],
+    "rebaseWhen": "behind-base-branch",
+    "recreateWhen": "never",
+    "schedule": ["before 8am on tuesday and thursday"],
+    "timezone": "America/New_York"
+}

@@ -1,0 +1,21 @@
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 70
+      podAffinityTerm:
+        topologyKey: topology.kubernetes.io/zone
+        labelSelector:
+          matchExpressions:
+          - key: ocm-antiaffinity-selector
+            operator: In
+            values:
+            - ""
+    - weight: 35
+      podAffinityTerm:
+        topologyKey: kubernetes.io/hostname
+        labelSelector:
+          matchExpressions:
+          - key: ocm-antiaffinity-selector
+            operator: In
+            values:
+            - ""

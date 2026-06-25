@@ -1,0 +1,131 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  labels:
+    app: console-chart-v2
+    chart: "console-chart-{{ .Values.hubconfig.hubVersion }}"
+    component: console
+    subcomponent: acm-cli-downloads
+    release: console
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/name: console-chart
+  name: acm-cli-downloads
+spec:
+  replicas: {{ .Values.hubconfig.replicaCount }}
+  selector:
+    matchLabels:
+      subcomponent: acm-cli-downloads
+  template:
+    metadata:
+      labels:
+        subcomponent: acm-cli-downloads
+    spec:
+      containers:
+        - name: acm-cli-downloads
+          args:
+            - --secure=true
+          image: "{{ .Values.global.imageOverrides.acm_cli }}"
+          imagePullPolicy: "{{ .Values.global.pullPolicy }}"
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "10m"
+            limits:
+              memory: "128Mi"
+              cpu: "50m"
+          ports:
+            - containerPort: 8443
+              name: downloads
+              protocol: TCP
+          volumeMounts:
+            - mountPath: "/var/run/acm-cli-cert"
+              name: acm-cli-cert
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              port: downloads
+              scheme: HTTPS
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              port: downloads
+              scheme: HTTPS
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          securityContext:
+            privileged: false
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities:
+              drop:
+              - ALL
+      volumes:
+        - name: acm-cli-cert
+          secret:
+            secretName: acm-cli-cert
+      automountServiceAccountToken: false
+      hostNetwork: false
+      hostPID: false
+      hostIPC: false
+      securityContext:
+        runAsNonRoot: true
+      {{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+      {{- end }}
+      {{- end }}
+      {{- if .Values.global.pullSecret  }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret  }}
+      {{- end }}
+      {{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+                - ppc64le
+                - s390x
+                - arm64
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 70
+            podAffinityTerm:
+              topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - console
+                - key: component
+                  operator: In
+                  values:
+                  - console
+          - weight: 35
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - console
+                - key: component
+                  operator: In
+                  values:
+                  - console

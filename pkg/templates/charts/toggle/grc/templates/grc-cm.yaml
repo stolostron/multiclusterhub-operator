@@ -1,0 +1,16 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grc-ca-bundle
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: grc
+    chart: grc-chart-{{ .Values.hubconfig.hubVersion }}
+    component: "ocm-grc-sa"
+    release: grc
+    app.kubernetes.io/instance: grc
+    app.kubernetes.io/name: grc
+  annotations:
+    service.beta.openshift.io/inject-cabundle: "true"
