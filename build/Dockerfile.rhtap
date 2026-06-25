@@ -1,6 +1,6 @@
 # Copyright Contributors to the Open Cluster Management project
 
-FROM registry.access.redhat.com/ubi9/ubi-minimal:latest as cloner
+FROM registry.access.redhat.com/hi/core-runtime:latest-openssl-fips as cloner
 
 RUN microdnf install -y git findutils
 COPY hack/scripts hack/scripts
@@ -27,7 +27,7 @@ COPY pkg/templates/ templates/
 # Build
 RUN CGO_ENABLED=1 go build -mod=readonly -o multiclusterhub-operator main.go
 
-FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
+FROM registry.access.redhat.com/hi/core-runtime:latest-openssl-fips
 
 LABEL org.label-schema.vendor="Red Hat" \
       org.label-schema.name="multiclusterhub-operator" \
