@@ -1471,9 +1471,9 @@ func Test_ensureNamespaceAndPullSecret(t *testing.T) {
 				t.Errorf("failed to create mch secret: %v", err)
 			}
 
-			// Fake clients does not allow for apply patching; therefore we will accept the error.
-			if _, err := recon.ensureNamespaceAndPullSecret(tt.mch, tt.mceNS); err == nil {
-				t.Errorf("ensureNamespaceAndPullSecret(tt.mch, tt.ns) = %v, want = %v", err, tt.want)
+			// Fake client now supports apply patching in controller-runtime 0.23+
+			if _, err := recon.ensureNamespaceAndPullSecret(tt.mch, tt.mceNS); err != nil {
+				t.Errorf("ensureNamespaceAndPullSecret(tt.mch, tt.ns) = %v, want = nil", err)
 			}
 		})
 	}
