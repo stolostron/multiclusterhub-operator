@@ -91,6 +91,10 @@ spec:
     from:
       kind: DockerImage
       name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicloud-integrations-rhel9:latest
+  - name: multiclusterhub-operator
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multiclusterhub-operator:latest
   - name: multicluster-observability-addon-rhel9
     from:
       kind: DockerImage
