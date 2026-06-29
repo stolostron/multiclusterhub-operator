@@ -446,7 +446,7 @@ func TestOADPAnnotation(t *testing.T) {
 			Name:      "testmch",
 			Namespace: "default",
 			Annotations: map[string]string{
-				"installer.open-cluster-management.io/oadp-subscription-spec":         oadp,
+				"installer.open-cluster-management.io/oadp-subscription-spec":     oadp,
 				"installer.open-cluster-management.io/oadp-clusterextension-spec": oadpV1,
 			},
 		},
