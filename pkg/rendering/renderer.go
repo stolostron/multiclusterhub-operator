@@ -435,7 +435,47 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 	values.Global.MinOADPChannel = defaultOADPChannel
 	values.Global.MinOADPStableChannel = defaultOADPStableChannel
 
+	// Apply OADP ClusterExtension overrides (OLM v1) if annotation present
+	if overrides := GetOADPClusterExtensionOverrides(mch); overrides != nil {
+		// Override catalog settings for OLM v1
+		if len(overrides.Channels) > 0 {
+			// Use first channel from override
+			values.Global.Channel = overrides.Channels[0]
+		}
+		if overrides.Version != "" {
+			values.Global.StartingCSV = overrides.Version
+		}
+		if overrides.Source != "" {
+			values.Global.Source = overrides.Source
+		}
+	}
+
 	// TODO: Define all overrides
+}
+
+// OADPClusterExtensionOverrides contains mutable fields that can be overridden via annotation for OADP (OLM v1).
+type OADPClusterExtensionOverrides struct {
+	// Channels is an optional list of channels to constrain upgrades
+	Channels []string `json:"channels,omitempty"`
+	// Version is an optional semver constraint for version selection
+	Version string `json:"version,omitempty"`
+	// Source is the catalog source name
+	Source string `json:"source,omitempty"`
+}
+
+// GetOADPClusterExtensionOverrides returns OADP ClusterExtension overrides based on annotation in MultiClusterHub (OLM v1)
+func GetOADPClusterExtensionOverrides(m *v1.MultiClusterHub) *OADPClusterExtensionOverrides {
+	oadpAnnotationOverrides := utils.GetOADPClusterExtensionAnnotationOverrides(m)
+	if oadpAnnotationOverrides == "" {
+		return nil
+	}
+	overrides := &OADPClusterExtensionOverrides{}
+	err := json.Unmarshal([]byte(oadpAnnotationOverrides), overrides)
+	if err != nil {
+		log.Info(fmt.Sprintf("Failed to unmarshal OADP ClusterExtension annotation: %s. Error: %v", oadpAnnotationOverrides, err))
+		return nil
+	}
+	return overrides
 }
 
 func GetOADPConfig(m *v1.MultiClusterHub) (string, string, subv1alpha1.Approval, string, string, string) {

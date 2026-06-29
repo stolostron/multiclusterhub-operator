@@ -397,6 +397,43 @@ func TestOADPAnnotation(t *testing.T) {
 		t.Error("Cluster Backup missing OADP overrides for stable channel on ocp 5.1.0")
 	}
 
+	// Test OADP ClusterExtension overrides (OLM v1)
+	oadpV1 := `{"channels": ["stable-1.5"], "version": ">=1.5.0", "source": "custom-catalog"}`
+	mchV1 := &v1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "test",
+			Annotations: map[string]string{
+				"installer.open-cluster-management.io/oadp-clusterextension-spec": oadpV1,
+			},
+		},
+	}
+
+	overrides := GetOADPClusterExtensionOverrides(mchV1)
+	if overrides == nil {
+		t.Error("Expected OADP ClusterExtension overrides, got nil")
+	} else {
+		if len(overrides.Channels) != 1 || overrides.Channels[0] != "stable-1.5" {
+			t.Errorf("Expected channels [stable-1.5], got %v", overrides.Channels)
+		}
+		if overrides.Version != ">=1.5.0" {
+			t.Errorf("Expected version >=1.5.0, got %s", overrides.Version)
+		}
+		if overrides.Source != "custom-catalog" {
+			t.Errorf("Expected source custom-catalog, got %s", overrides.Source)
+		}
+	}
+
+	// Test with no annotation
+	mchNoAnnotation := &v1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "test",
+		},
+	}
+	overridesNil := GetOADPClusterExtensionOverrides(mchNoAnnotation)
+	if overridesNil != nil {
+		t.Error("Expected nil for no annotation, got overrides")
+	}
+
 }
 
 func TestRenderChartOLMv1(t *testing.T) {
