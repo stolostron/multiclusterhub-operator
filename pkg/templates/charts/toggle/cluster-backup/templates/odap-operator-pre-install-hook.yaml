@@ -30,7 +30,7 @@ data:
   {{- end }}
 
 {{- else if eq .Values.global.olmVersion "v1" }}
-{{- /* OLM v1: ClusterExtension + ServiceAccount */ -}}
+{{- /* OLM v1: ClusterExtension + ServiceAccount + ClusterRoleBinding */ -}}
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -40,6 +40,22 @@ metadata:
   annotations:
     "helm.sh/hook": pre-install
     "helm.sh/hook-weight": "-2"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: oadp-installer-admin
+  annotations:
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-2"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: oadp-installer
+  namespace: open-cluster-management-backup
 ---
 apiVersion: olm.operatorframework.io/v1
 kind: ClusterExtension
