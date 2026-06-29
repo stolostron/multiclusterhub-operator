@@ -342,20 +342,34 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 	}
 
 	for fileName, templateFile := range rawTemplates {
-		unstructured := &unstructured.Unstructured{}
-		if err = yaml.Unmarshal([]byte(templateFile), unstructured); err != nil {
-			return nil, append(errs, fmt.Errorf("error converting file %s to unstructured: %v", fileName, err))
-		}
-
-		// Add namespace to namespaced resources
-		switch unstructured.GetKind() {
-		case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service", "ConfigMap", "Ingress", "Channel", "Subscription":
-			if unstructured.GetNamespace() == "" {
-				unstructured.SetNamespace(mch.Namespace)
+		// Split multi-doc YAML (documents separated by ---)
+		docs := strings.Split(templateFile, "\n---\n")
+		for _, doc := range docs {
+			doc = strings.TrimSpace(doc)
+			if doc == "" {
+				continue
 			}
+
+			unstructured := &unstructured.Unstructured{}
+			if err = yaml.Unmarshal([]byte(doc), unstructured); err != nil {
+				return nil, append(errs, fmt.Errorf("error converting file %s to unstructured: %v", fileName, err))
+			}
+
+			// Skip empty documents (helm comments/whitespace only)
+			if unstructured.GetKind() == "" {
+				continue
+			}
+
+			// Add namespace to namespaced resources
+			switch unstructured.GetKind() {
+			case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service", "ConfigMap", "Ingress", "Channel", "Subscription":
+				if unstructured.GetNamespace() == "" {
+					unstructured.SetNamespace(mch.Namespace)
+				}
+			}
+			utils.AddInstallerLabel(unstructured, mch.Name, mch.Namespace)
+			templates = append(templates, unstructured)
 		}
-		utils.AddInstallerLabel(unstructured, mch.Name, mch.Namespace)
-		templates = append(templates, unstructured)
 	}
 
 	return templates, errs

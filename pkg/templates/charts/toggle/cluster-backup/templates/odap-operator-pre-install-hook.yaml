@@ -41,6 +41,19 @@ metadata:
     "helm.sh/hook": pre-install
     "helm.sh/hook-weight": "-2"
 ---
+# ClusterRoleBinding grants oadp-installer ServiceAccount permissions for operator bundle installation
+#
+# FIXME: This currently uses cluster-admin which is overly broad. The minimal required permissions
+# for ClusterExtension installation need to be determined and documented. This follows the current
+# MCE ClusterExtension pattern (pkg/multiclusterengine/olm/v1/clusterextension.go:292-314) which
+# also uses cluster-admin, but both should be scoped down to the minimum verbs/resources needed.
+#
+# Required permissions likely include:
+# - CRD create/update/delete
+# - ClusterRole/ClusterRoleBinding create/update/delete
+# - Various operator-specific cluster-scoped resources
+#
+# See: https://github.com/stolostron/multiclusterhub-operator/pull/4323#pullrequestreview-4593866717
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:

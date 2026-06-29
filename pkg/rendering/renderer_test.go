@@ -399,6 +399,82 @@ func TestOADPAnnotation(t *testing.T) {
 
 }
 
+func TestRenderChartOLMv1(t *testing.T) {
+	os.Setenv("DIRECTORY_OVERRIDE", "../templates")
+	os.Setenv("ACM_HUB_OCP_VERSION", "4.20.0")
+	defer os.Unsetenv("DIRECTORY_OVERRIDE")
+	defer os.Unsetenv("ACM_HUB_OCP_VERSION")
+
+	testMCH := &v1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "testmch",
+			Namespace: "default",
+		},
+		Spec: v1.MultiClusterHubSpec{},
+	}
+	testImages := map[string]string{
+		"cluster_backup_controller": "quay.io/test/cluster-backup:test",
+	}
+	templateOverrides := map[string]string{}
+
+	// Render cluster-backup chart with OLM v1
+	chartPath := utils.ClusterBackupChartLocation
+	templates, errs := RenderChart(chartPath, testMCH, testImages, templateOverrides, false, "v1")
+	if len(errs) > 0 {
+		for _, err := range errs {
+			t.Log(err.Error())
+		}
+		t.Fatalf("failed to render cluster-backup with OLM v1")
+	}
+
+	// Verify v1 resources present and v0 resources absent
+	foundClusterExtension := false
+	foundServiceAccount := false
+	foundClusterRoleBinding := false
+	foundSubscription := false
+	foundOperatorGroup := false
+
+	for _, template := range templates {
+		kind := template.GetKind()
+		apiVersion := template.GetAPIVersion()
+
+		if kind == "ClusterExtension" && apiVersion == "olm.operatorframework.io/v1" {
+			foundClusterExtension = true
+		}
+		if kind == "ServiceAccount" && template.GetName() == "oadp-installer" {
+			foundServiceAccount = true
+		}
+		if kind == "ClusterRoleBinding" && template.GetName() == "oadp-installer-admin" {
+			foundClusterRoleBinding = true
+		}
+		if kind == "Subscription" && apiVersion == "operators.coreos.com/v1alpha1" {
+			foundSubscription = true
+		}
+		if kind == "OperatorGroup" {
+			foundOperatorGroup = true
+		}
+	}
+
+	// v1 resources should be present
+	if !foundClusterExtension {
+		t.Error("Expected ClusterExtension for OLM v1, not found")
+	}
+	if !foundServiceAccount {
+		t.Error("Expected ServiceAccount (oadp-installer) for OLM v1, not found")
+	}
+	if !foundClusterRoleBinding {
+		t.Error("Expected ClusterRoleBinding (oadp-installer-admin) for OLM v1, not found")
+	}
+
+	// v0 resources should be absent
+	if foundSubscription {
+		t.Error("Found Subscription resource in OLM v1 render, should not be present")
+	}
+	if foundOperatorGroup {
+		t.Error("Found OperatorGroup resource in OLM v1 render, should not be present")
+	}
+}
+
 func TestParseProbeConfigFromAnnotations(t *testing.T) {
 	t.Run("No annotations returns nil", func(t *testing.T) {
 		mch := &v1.MultiClusterHub{
