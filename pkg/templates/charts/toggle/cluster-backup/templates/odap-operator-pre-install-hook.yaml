@@ -4,7 +4,6 @@
 # Creates the OADP Operator Subscription (OLM v0), ClusterExtension (OLM v1), or ConfigMap (STS enabled)
 
 {{- if .Values.hubconfig.clusterSTSEnabled }}
-{{- /* STS-enabled clusters: store config in ConfigMap regardless of OLM version */ -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -30,7 +29,6 @@ data:
   {{- end }}
 
 {{- else if eq .Values.global.olmVersion "v1" }}
-{{- /* OLM v1: ClusterExtension + ServiceAccount + ClusterRoleBinding */ -}}
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -91,7 +89,6 @@ spec:
       catalogName: {{ .Values.global.source }}
 
 {{- else }}
-{{- /* OLM v0: Subscription (default/fallback) */ -}}
 ---
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
