@@ -408,7 +408,7 @@ func TestOADPAnnotation(t *testing.T) {
 		},
 	}
 
-	overrides := GetOADPClusterExtensionOverrides(mchV1)
+	overrides := parseOADPClusterExtensionAnnotation(mchV1)
 	if overrides == nil {
 		t.Error("Expected OADP ClusterExtension overrides, got nil")
 	} else {
@@ -429,7 +429,7 @@ func TestOADPAnnotation(t *testing.T) {
 			Namespace: "test",
 		},
 	}
-	overridesNil := GetOADPClusterExtensionOverrides(mchNoAnnotation)
+	overridesNil := parseOADPClusterExtensionAnnotation(mchNoAnnotation)
 	if overridesNil != nil {
 		t.Error("Expected nil for no annotation, got overrides")
 	}

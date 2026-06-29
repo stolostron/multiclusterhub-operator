@@ -436,7 +436,7 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 	values.Global.MinOADPStableChannel = defaultOADPStableChannel
 
 	// Apply OADP ClusterExtension overrides (OLM v1) if annotation present
-	if overrides := GetOADPClusterExtensionOverrides(mch); overrides != nil {
+	if overrides := parseOADPClusterExtensionAnnotation(mch); overrides != nil {
 		// Override catalog settings for OLM v1
 		if len(overrides.Channels) > 0 {
 			// Use first channel from override
@@ -463,8 +463,10 @@ type OADPClusterExtensionOverrides struct {
 	Source string `json:"source,omitempty"`
 }
 
-// GetOADPClusterExtensionOverrides returns OADP ClusterExtension overrides based on annotation in MultiClusterHub (OLM v1)
-func GetOADPClusterExtensionOverrides(m *v1.MultiClusterHub) *OADPClusterExtensionOverrides {
+// parseOADPClusterExtensionAnnotation unmarshals the OADP ClusterExtension annotation from a MultiClusterHub.
+// Returns nil if no annotation is present or if unmarshaling fails.
+// The annotation key is installer.open-cluster-management.io/oadp-clusterextension-spec (OLM v1).
+func parseOADPClusterExtensionAnnotation(m *v1.MultiClusterHub) *OADPClusterExtensionOverrides {
 	oadpAnnotationOverrides := utils.GetOADPClusterExtensionAnnotationOverrides(m)
 	if oadpAnnotationOverrides == "" {
 		return nil
