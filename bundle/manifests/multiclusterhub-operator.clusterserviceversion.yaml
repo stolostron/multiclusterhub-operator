@@ -17,7 +17,7 @@ metadata:
     capabilities: Basic Install
     categories: Integration & Delivery
     certified: "false"
-    createdAt: "2026-05-27T18:28:10Z"
+    createdAt: "2026-06-29T19:41:36Z"
     description: Open management of Openshift and Kubernetes clusters
     operators.operatorframework.io/builder: operator-sdk-v1.42.2
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
@@ -968,10 +968,13 @@ spec:
         - apiGroups:
           - clusterview.open-cluster-management.io
           resources:
+          - kubevirtprojects
+          - managedclusters
           - userpermissions
           verbs:
           - get
           - list
+          - watch
         - apiGroups:
           - config.openshift.io
           resources:
@@ -1105,7 +1108,11 @@ spec:
         - apiGroups:
           - forklift.konveyor.io
           resources:
+          - migrations
+          - networkmaps
+          - plans
           - providers
+          - storagemaps
           verbs:
           - create
           - delete
@@ -1273,6 +1280,14 @@ spec:
           - patch
           - update
           - watch
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - prometheuses/api
+          verbs:
+          - create
+          - get
+          - update
         - apiGroups:
           - monitoring.coreos.com
           resources:
@@ -1557,14 +1572,12 @@ spec:
         - apiGroups:
           - rbac.open-cluster-management.io
           resources:
-          - clusterpermissions/finalizers
           - multiclusterroleassignments/finalizers
           verbs:
           - update
         - apiGroups:
           - rbac.open-cluster-management.io
           resources:
-          - clusterpermissions/status
           - multiclusterroleassignments/status
           verbs:
           - get
@@ -1599,8 +1612,21 @@ spec:
         - apiGroups:
           - search.open-cluster-management.io
           resources:
-          - collectorconfigs/status
+          - collectorconfigs
           verbs:
+          - create
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - search.open-cluster-management.io
+          resources:
+          - collectorconfigs/status
+          - searches/status
+          verbs:
+          - get
           - patch
           - update
         - apiGroups:
@@ -1618,14 +1644,6 @@ spec:
           resources:
           - searches/finalizers
           verbs:
-          - update
-        - apiGroups:
-          - search.open-cluster-management.io
-          resources:
-          - searches/status
-          verbs:
-          - get
-          - patch
           - update
         - apiGroups:
           - siteconfig.open-cluster-management.io
@@ -1713,6 +1731,18 @@ spec:
           - users
           verbs:
           - impersonate
+        - apiGroups:
+          - view.open-cluster-management.io
+          resources:
+          - managedclusterviews
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
         - apiGroups:
           - wgpolicyk8s.io
           resources:

@@ -1485,14 +1485,12 @@ rules:
 - apiGroups:
   - rbac.open-cluster-management.io
   resources:
-  - clusterpermissions/finalizers
   - multiclusterroleassignments/finalizers
   verbs:
   - update
 - apiGroups:
   - rbac.open-cluster-management.io
   resources:
-  - clusterpermissions/status
   - multiclusterroleassignments/status
   verbs:
   - get
