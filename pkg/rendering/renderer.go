@@ -478,7 +478,9 @@ func GetOADPClusterExtensionOverrides(m *v1.MultiClusterHub) *OADPClusterExtensi
 	return overrides
 }
 
-// parseOADPAnnotation unmarshals OADP annotation or returns empty spec on error
+// parseOADPAnnotation unmarshals the OADP subscription annotation from a MultiClusterHub.
+// Returns an empty SubscriptionSpec if no annotation is present or if unmarshaling fails.
+// The annotation key is installer.open-cluster-management.io/oadp-subscription-spec (OLM v0).
 func parseOADPAnnotation(m *v1.MultiClusterHub) *subv1alpha1.SubscriptionSpec {
 	sub := &subv1alpha1.SubscriptionSpec{}
 	oadpSpec := utils.GetOADPAnnotationOverrides(m)
@@ -492,7 +494,10 @@ func parseOADPAnnotation(m *v1.MultiClusterHub) *subv1alpha1.SubscriptionSpec {
 	return sub
 }
 
-// getOADPChannel returns channel based on override or OCP version
+// getOADPChannel determines the OADP operator channel based on annotation override or OCP version.
+// If override is provided (from annotation), it takes precedence.
+// Otherwise, returns stable channel for OCP 4.19+ or unknown versions, and stable-1.4 for OCP 4.18 and earlier.
+// The ACM_HUB_OCP_VERSION environment variable is used to detect the OpenShift version.
 func getOADPChannel(override string) string {
 	if override != "" {
 		return override
@@ -508,7 +513,8 @@ func getOADPChannel(override string) string {
 	return defaultOADPChannel
 }
 
-// valueOrDefault returns value if non-empty, else default
+// valueOrDefault returns value if it is non-empty, otherwise returns defaultValue.
+// Helper function to reduce boilerplate for conditional default assignment.
 func valueOrDefault(value, defaultValue string) string {
 	if value != "" {
 		return value
