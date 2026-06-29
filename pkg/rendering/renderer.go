@@ -478,63 +478,57 @@ func GetOADPClusterExtensionOverrides(m *v1.MultiClusterHub) *OADPClusterExtensi
 	return overrides
 }
 
-func GetOADPConfig(m *v1.MultiClusterHub) (string, string, subv1alpha1.Approval, string, string, string) {
+// parseOADPAnnotation unmarshals OADP annotation or returns empty spec on error
+func parseOADPAnnotation(m *v1.MultiClusterHub) *subv1alpha1.SubscriptionSpec {
 	sub := &subv1alpha1.SubscriptionSpec{}
-	var name, channel, source, sourceNamespace, startingCSV string
-	var installPlan subv1alpha1.Approval
-
-	if oadpSpec := utils.GetOADPAnnotationOverrides(m); oadpSpec != "" {
-
-		err := json.Unmarshal([]byte(oadpSpec), sub)
-		if err != nil {
-			log.Info(fmt.Sprintf("Failed to unmarshal OADP annotation: %s.", oadpSpec))
-			return "", "", "", "", "", ""
-		}
+	oadpSpec := utils.GetOADPAnnotationOverrides(m)
+	if oadpSpec == "" {
+		return sub
 	}
 
-	if sub.Package != "" {
-		name = sub.Package
-	} else {
-		name = defaultOADPName
+	if err := json.Unmarshal([]byte(oadpSpec), sub); err != nil {
+		log.Info(fmt.Sprintf("Failed to unmarshal OADP annotation: %s.", oadpSpec))
+	}
+	return sub
+}
+
+// getOADPChannel returns channel based on override or OCP version
+func getOADPChannel(override string) string {
+	if override != "" {
+		return override
 	}
 
-	if sub.Channel != "" {
-		channel = sub.Channel
-	} else {
+	ocpVersion := os.Getenv("ACM_HUB_OCP_VERSION")
+	isOCP419orNewer := ocpVersion == "" || strings.HasPrefix(ocpVersion, "4.19") ||
+		!strings.HasPrefix(ocpVersion, "4.1")
 
-		ocpVersion := os.Getenv("ACM_HUB_OCP_VERSION")
-		isOCP419orNewer := ocpVersion == "" || strings.HasPrefix(ocpVersion, "4.19") ||
-			!strings.HasPrefix(ocpVersion, "4.1")
-
-		if isOCP419orNewer {
-			// use stable channel for OCP 4.19 or newer, or unknown ocp version
-			channel = defaultOADPStableChannel
-		} else {
-			channel = defaultOADPChannel
-		}
-
+	if isOCP419orNewer {
+		return defaultOADPStableChannel
 	}
+	return defaultOADPChannel
+}
 
+// valueOrDefault returns value if non-empty, else default
+func valueOrDefault(value, defaultValue string) string {
+	if value != "" {
+		return value
+	}
+	return defaultValue
+}
+
+func GetOADPConfig(m *v1.MultiClusterHub) (string, string, subv1alpha1.Approval, string, string, string) {
+	sub := parseOADPAnnotation(m)
+
+	name := valueOrDefault(sub.Package, defaultOADPName)
+	channel := getOADPChannel(sub.Channel)
+	source := valueOrDefault(sub.CatalogSource, defaultOADPCatalogSource)
+	sourceNamespace := valueOrDefault(sub.CatalogSourceNamespace, defaultOADPCatalogSourceNamespace)
+	startingCSV := sub.StartingCSV
+
+	installPlan := subv1alpha1.Approval(defaultOADPInstallPlan)
 	if sub.InstallPlanApproval != "" {
 		installPlan = sub.InstallPlanApproval
-	} else {
-		installPlan = defaultOADPInstallPlan
 	}
 
-	if sub.CatalogSource != "" {
-		source = sub.CatalogSource
-	} else {
-		source = defaultOADPCatalogSource
-	}
-
-	if sub.CatalogSourceNamespace != "" {
-		sourceNamespace = sub.CatalogSourceNamespace
-	} else {
-		sourceNamespace = defaultOADPCatalogSourceNamespace
-	}
-
-	if sub.StartingCSV != "" {
-		startingCSV = sub.StartingCSV
-	}
 	return name, channel, installPlan, source, sourceNamespace, startingCSV
 }
