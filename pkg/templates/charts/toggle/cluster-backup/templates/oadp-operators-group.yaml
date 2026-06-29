@@ -18,8 +18,7 @@ data:
   targetNamespaces: open-cluster-management-backup
   olmVersion: {{ .Values.global.olmVersion }}
 
-{{- else if eq .Values.global.olmVersion "v0" }}
-{{- /* OLM v0: OperatorGroup required */ -}}
+{{- else if ne .Values.global.olmVersion "v1" }}
 apiVersion: operators.coreos.com/v1
 kind: OperatorGroup
 metadata:
@@ -32,6 +31,4 @@ spec:
   targetNamespaces:
   - open-cluster-management-backup
 
-{{- else }}
-{{- /* OLM v1: no OperatorGroup needed, ClusterExtension handles namespace scoping */ -}}
 {{- end }}

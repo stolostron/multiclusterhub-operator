@@ -400,7 +400,12 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 
 	values.Global.DeployOnOCP = true
 
-	values.Global.OLMVersion = olmVersion
+	// Default to v0 if olmVersion not specified to maintain fallback compatibility
+	if olmVersion == "" {
+		values.Global.OLMVersion = "v0"
+	} else {
+		values.Global.OLMVersion = olmVersion
+	}
 
 	values.HubConfig.ClusterSTSEnabled = isSTSEnabled
 

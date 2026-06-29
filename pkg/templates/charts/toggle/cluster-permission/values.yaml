@@ -1,7 +1,8 @@
 global:
   hubSize: Small
   templateOverrides: {}
-  imageOverrides: {}
+  imageOverrides:
+    cluster_permission: ''
   namespace: open-cluster-management
   pullSecret: null
 hubconfig:
