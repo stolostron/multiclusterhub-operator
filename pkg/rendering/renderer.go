@@ -342,11 +342,17 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 	}
 
 	for fileName, templateFile := range rawTemplates {
-		// Split multi-doc YAML (documents separated by ---)
-		docs := strings.Split(templateFile, "\n---\n")
-		for _, doc := range docs {
+		// Split multi-doc YAML (documents separated by --- with optional whitespace)
+		// Helm may output "---\n" or "\n---\n" or even "---" at start of file
+		docs := strings.Split(templateFile, "\n---")
+		for i, doc := range docs {
+			// First doc may not have leading ---, rest will have it stripped by split
+			if i > 0 {
+				// Remove leading newline if present after split point
+				doc = strings.TrimPrefix(doc, "\n")
+			}
 			doc = strings.TrimSpace(doc)
-			if doc == "" {
+			if doc == "" || doc == "---" {
 				continue
 			}
 
@@ -435,18 +441,20 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 	values.Global.MinOADPChannel = defaultOADPChannel
 	values.Global.MinOADPStableChannel = defaultOADPStableChannel
 
-	// Apply OADP ClusterExtension overrides (OLM v1) if annotation present
-	if overrides := parseOADPClusterExtensionAnnotation(mch); overrides != nil {
-		// Override catalog settings for OLM v1
-		if len(overrides.Channels) > 0 {
-			// Use first channel from override
-			values.Global.Channel = overrides.Channels[0]
-		}
-		if overrides.Version != "" {
-			values.Global.StartingCSV = overrides.Version
-		}
-		if overrides.Source != "" {
-			values.Global.Source = overrides.Source
+	// Apply OADP ClusterExtension overrides (OLM v1) if annotation present and olmVersion is v1
+	if olmVersion == "v1" {
+		if overrides := parseOADPClusterExtensionAnnotation(mch); overrides != nil {
+			// Override catalog settings for OLM v1
+			if len(overrides.Channels) > 0 {
+				// Use first channel from override
+				values.Global.Channel = overrides.Channels[0]
+			}
+			if overrides.Version != "" {
+				values.Global.StartingCSV = overrides.Version
+			}
+			if overrides.Source != "" {
+				values.Global.Source = overrides.Source
+			}
 		}
 	}
 

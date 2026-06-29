@@ -17,6 +17,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -432,6 +433,54 @@ func TestOADPAnnotation(t *testing.T) {
 	overridesNil := parseOADPClusterExtensionAnnotation(mchNoAnnotation)
 	if overridesNil != nil {
 		t.Error("Expected nil for no annotation, got overrides")
+	}
+
+	// Test that v1 annotation does NOT apply to v0 rendering
+	os.Setenv("DIRECTORY_OVERRIDE", "../templates")
+	os.Setenv("ACM_HUB_OCP_VERSION", "4.18.0")
+	defer os.Unsetenv("DIRECTORY_OVERRIDE")
+	defer os.Unsetenv("ACM_HUB_OCP_VERSION")
+
+	mchBothAnnotations := &v1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "testmch",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"installer.open-cluster-management.io/oadp-subscription-spec":         oadp,
+				"installer.open-cluster-management.io/oadp-clusterextension-spec": oadpV1,
+			},
+		},
+	}
+
+	// Render with v0 - should use v0 annotation (stable-1.0), NOT v1 annotation (stable-1.5)
+	templatesV0, errsV0 := RenderChart(utils.ClusterBackupChartLocation, mchBothAnnotations,
+		map[string]string{"cluster_backup_controller": "quay.io/test:test"},
+		map[string]string{}, false, "v0")
+	if len(errsV0) > 0 {
+		t.Fatalf("Failed to render v0: %v", errsV0)
+	}
+
+	// Find Subscription and verify channel is from v0 annotation
+	foundV0Subscription := false
+	for _, tmpl := range templatesV0 {
+		if tmpl.GetKind() == "Subscription" && tmpl.GetAPIVersion() == "operators.coreos.com/v1alpha1" {
+			spec, found, _ := unstructured.NestedMap(tmpl.Object, "spec")
+			if !found {
+				continue
+			}
+			channel, ok := spec["channel"].(string)
+			if !ok {
+				continue
+			}
+			if channel != "stable-1.0" {
+				t.Errorf("v0 render should use v0 annotation channel (stable-1.0), got %s", channel)
+			}
+			foundV0Subscription = true
+			break
+		}
+	}
+	if !foundV0Subscription {
+		t.Error("v0 render did not produce Subscription")
 	}
 
 }
