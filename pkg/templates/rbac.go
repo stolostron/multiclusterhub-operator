@@ -68,6 +68,7 @@ var resources = []string{
 	"AddOnTemplate",
 	"Subscription",
 	"OperatorGroup",
+	"ClusterExtension",
 	"ConfigMap",
 }
 
