@@ -32,6 +32,7 @@ type Global struct {
 	DeployOnOCP          bool                 `json:"deployOnOCP" structs:"deployOnOCP"`
 	StorageClassName     string               `json:"storageClassName" structs:"storageClassName"`
 	StartingCSV          string               `json:"startingCSV" structs:"startingCSV"`
+	OLMVersion           string               `json:"olmVersion" structs:"olmVersion"` // "v0", "v1", or "" (no OLM)
 }
 
 type HubConfig struct {

@@ -1,4 +1,5 @@
 global:
+  olmVersion: v0
   imageOverrides:
     klusterlet_addon_controller: ''
   templateOverrides: {}

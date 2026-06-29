@@ -92,7 +92,7 @@ func main() {
 	testTemplateOverrides := map[string]string{}
 	chartsDir := chartsDir
 
-	templates, errs := renderer.RenderCharts(chartsDir, testMCH, testImages, testTemplateOverrides, false)
+	templates, errs := renderer.RenderCharts(chartsDir, testMCH, testImages, testTemplateOverrides, false, "v0")
 	if len(errs) > 0 {
 		panic(errs)
 	}

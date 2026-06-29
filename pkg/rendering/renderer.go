@@ -249,8 +249,11 @@ func RenderCRDs(crdDir string, mch *v1.MultiClusterHub) ([]*unstructured.Unstruc
 	return crds, errs
 }
 
+// RenderCharts renders all Helm charts in the specified directory.
+// olmVersion: OLM version detected at runtime ("v0", "v1", or "" for no OLM).
+// Passed to chart templates as .Values.global.olmVersion for conditional rendering.
 func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]string, tpl map[string]string,
-	isSTSEnabled bool) ([]*unstructured.Unstructured, []error) {
+	isSTSEnabled bool, olmVersion string) ([]*unstructured.Unstructured, []error) {
 
 	var templates []*unstructured.Unstructured
 	errs := []error{}
@@ -269,7 +272,7 @@ func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]st
 
 	for _, chart := range charts {
 		chartPath := filepath.Join(chartDir, chart.Name())
-		chartTemplates, errs := renderTemplates(chartPath, mch, images, tpl, isSTSEnabled)
+		chartTemplates, errs := renderTemplates(chartPath, mch, images, tpl, isSTSEnabled, olmVersion)
 		if len(errs) > 0 {
 			for _, err := range errs {
 				log.Info(err.Error())
@@ -281,8 +284,11 @@ func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]st
 	return templates, nil
 }
 
+// RenderChart renders a single Helm chart from the specified path.
+// olmVersion: OLM version detected at runtime ("v0", "v1", or "" for no OLM).
+// Passed to chart templates as .Values.global.olmVersion for conditional rendering.
 func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]string, templates map[string]string,
-	isSTSEnabled bool) ([]*unstructured.Unstructured, []error) {
+	isSTSEnabled bool, olmVersion string) ([]*unstructured.Unstructured, []error) {
 
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
 		chartPath = path.Join(val, chartPath)
@@ -292,7 +298,7 @@ func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]st
 
 	}
 
-	chartTemplates, errs := renderTemplates(chartPath, mch, images, templates, isSTSEnabled)
+	chartTemplates, errs := renderTemplates(chartPath, mch, images, templates, isSTSEnabled, olmVersion)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -305,7 +311,7 @@ func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]st
 }
 
 func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[string]string, tpl map[string]string,
-	isSTSEnabled bool) ([]*unstructured.Unstructured, []error) {
+	isSTSEnabled bool, olmVersion string) ([]*unstructured.Unstructured, []error) {
 
 	var templates []*unstructured.Unstructured
 	errs := []error{}
@@ -317,7 +323,7 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 	}
 
 	valuesYaml := &Values{}
-	injectValuesOverrides(valuesYaml, mch, images, tpl, isSTSEnabled)
+	injectValuesOverrides(valuesYaml, mch, images, tpl, isSTSEnabled, olmVersion)
 	helmEngine := engine.Engine{
 		Strict:   true,
 		LintMode: false,
@@ -356,7 +362,7 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 }
 
 func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[string]string,
-	templates map[string]string, isSTSEnabled bool) {
+	templates map[string]string, isSTSEnabled bool, olmVersion string) {
 
 	values.Global.ImageOverrides = images
 
@@ -373,6 +379,8 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 	values.Global.StorageClassName = os.Getenv(helpers.DefaultStorageClassName)
 
 	values.Global.DeployOnOCP = true
+
+	values.Global.OLMVersion = olmVersion
 
 	values.HubConfig.ClusterSTSEnabled = isSTSEnabled
 

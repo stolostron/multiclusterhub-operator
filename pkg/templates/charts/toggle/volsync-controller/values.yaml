@@ -1,5 +1,6 @@
 org: stolostron
 global:
+  olmVersion: v0
   pullPolicy: Always
   imageOverrides:
     volsync_addon_controller: ""

@@ -1,9 +1,11 @@
 # Copyright Contributors to the Open Cluster Management project
 
-# Creates the OADP Operator namespace group, if the cluster is not STS enabled
-# For an STS enabled cluster, the chart creates a ConfigMap storing OADP settings
+# Creates the OADP Operator OperatorGroup (OLM v0 only, not needed for OLM v1)
+# For STS enabled clusters, creates a ConfigMap storing OADP OperatorGroup settings
 # All resources will be installed under the open-cluster-management-backup namespace
+
 {{- if .Values.hubconfig.clusterSTSEnabled }}
+{{- /* STS-enabled clusters: store config in ConfigMap */ -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -14,7 +16,10 @@ metadata:
     "helm.sh/hook-weight": "-2"
 data:
   targetNamespaces: open-cluster-management-backup
-{{- else }}
+  olmVersion: {{ .Values.global.olmVersion }}
+
+{{- else if eq .Values.global.olmVersion "v0" }}
+{{- /* OLM v0: OperatorGroup required */ -}}
 apiVersion: operators.coreos.com/v1
 kind: OperatorGroup
 metadata:
@@ -26,4 +31,7 @@ metadata:
 spec:
   targetNamespaces:
   - open-cluster-management-backup
+
+{{- else }}
+{{- /* OLM v1: no OperatorGroup needed, ClusterExtension handles namespace scoping */ -}}
 {{- end }}

@@ -10,6 +10,7 @@ global:
   namespace: default
   baseDomain: ''
   apiUrl: ''
+  olmVersion: v0
 hubconfig:
   clusterSTSEnabled: false
   nodeSelector: null

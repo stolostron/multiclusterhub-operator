@@ -1,9 +1,10 @@
 # Copyright Contributors to the Open Cluster Management project
 
-# pre hook used to install the OADP Operator, using the open-cluster-management-backup namespace
-# Creates the OADP Operator subscription group, if the cluster is not STS enabled
-# For an STS enabled cluster, the chart creates a ConfigMap storing OADP subscription settings
+# Pre-install hook to install the OADP Operator, using the open-cluster-management-backup namespace
+# Creates the OADP Operator Subscription (OLM v0), ClusterExtension (OLM v1), or ConfigMap (STS enabled)
+
 {{- if .Values.hubconfig.clusterSTSEnabled }}
+{{- /* STS-enabled clusters: store config in ConfigMap regardless of OLM version */ -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -21,12 +22,47 @@ data:
   name: {{ .Values.global.name }}
   source: {{ .Values.global.source }}
   sourceNamespace: {{ .Values.global.sourceNamespace }}
+  olmVersion: {{ .Values.global.olmVersion }}
   {{- if .Values.hubconfig.proxyConfigs }}
   env_HTTP_PROXY: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
   env_HTTPS_PROXY: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
   env_NO_PROXY: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
   {{- end }}
+
+{{- else if eq .Values.global.olmVersion "v1" }}
+{{- /* OLM v1: ClusterExtension + ServiceAccount */ -}}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: oadp-installer
+  namespace: open-cluster-management-backup
+  annotations:
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-2"
+---
+apiVersion: olm.operatorframework.io/v1
+kind: ClusterExtension
+metadata:
+  name: redhat-oadp-operator
+  annotations:
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/resource-policy": delete
+spec:
+  installNamespace: open-cluster-management-backup
+  packageName: {{ .Values.global.name }}
+  version: ">=1.4.0"
+  serviceAccount:
+    name: oadp-installer
+  source:
+    sourceType: Catalog
+    catalog:
+      packageName: {{ .Values.global.name }}
+      catalogName: {{ .Values.global.source }}
+
 {{- else }}
+{{- /* OLM v0: Subscription (default/fallback) */ -}}
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
