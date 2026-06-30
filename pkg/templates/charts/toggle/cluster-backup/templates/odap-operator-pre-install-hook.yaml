@@ -85,6 +85,10 @@ spec:
     catalog:
       packageName: {{ .Values.global.name }}
       version: ">=1.4.0"
+  config:
+    configType: Inline
+    inline:
+      watchNamespace: open-cluster-management-backup
 
 {{- else }}
 ---
