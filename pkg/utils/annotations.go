@@ -202,6 +202,9 @@ func AnnotationsMatch(old, new map[string]string) bool {
 	if !getAnnotationOrDefaultForMap(old, new, AnnotationOADPSubscriptionSpec, "") {
 		return false
 	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationOADPClusterExtensionSpec, "") {
+		return false
+	}
 	if !getAnnotationOrDefaultForMap(old, new, AnnotationResourceAdoptionPolicy, "") {
 		return false
 	}
@@ -225,6 +228,7 @@ func AnnotationsMatch(old, new map[string]string) bool {
 		AnnotationMCESubscriptionSpec:        true,
 		AnnotationMCEClusterExtensionSpec:    true,
 		AnnotationOADPSubscriptionSpec:       true,
+		AnnotationOADPClusterExtensionSpec:   true,
 		AnnotationResourceAdoptionPolicy:     true,
 		AnnotationProbeTimeoutSeconds:        true,
 		AnnotationProbeFailureThreshold:      true,
