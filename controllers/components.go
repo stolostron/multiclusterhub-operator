@@ -44,9 +44,6 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(component string) string 
 	case operatorv1.ClusterLifecycle:
 		return utils.CLCChartLocation
 
-	case operatorv1.ClusterPermission:
-		return utils.ClusterPermissionChartLocation
-
 	case operatorv1.Console:
 		return utils.ConsoleChartLocation
 
