@@ -77,16 +77,14 @@ metadata:
     "helm.sh/hook-weight": "-1"
     "helm.sh/resource-policy": delete
 spec:
-  installNamespace: open-cluster-management-backup
-  packageName: {{ .Values.global.name }}
-  version: ">=1.4.0"
+  namespace: open-cluster-management-backup
   serviceAccount:
     name: oadp-installer
   source:
     sourceType: Catalog
     catalog:
       packageName: {{ .Values.global.name }}
-      catalogName: {{ .Values.global.source }}
+      version: ">=1.4.0"
 
 {{- else }}
 ---
