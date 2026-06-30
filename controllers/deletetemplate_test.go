@@ -251,4 +251,3 @@ func (c *noMatchErrorClient) Delete(ctx context.Context, obj client.Object, opts
 	// Simulate successful delete even though CRD doesn't exist
 	return nil
 }
-
