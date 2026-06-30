@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -250,77 +249,4 @@ func (c *noMatchErrorClient) Get(ctx context.Context, key types.NamespacedName, 
 func (c *noMatchErrorClient) Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
 	// Simulate successful delete even though CRD doesn't exist
 	return nil
-}
-
-// Test that pruneMigratedComponents respects requeue from deleteTemplate
-func TestPruneMigratedComponents_RespectsDeleteRequeue(t *testing.T) {
-	registerScheme()
-
-	// Create MCH with cluster-permission component
-	mch := &operatorv1.MultiClusterHub{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-mch",
-			Namespace: "open-cluster-management",
-		},
-		Spec: operatorv1.MultiClusterHubSpec{
-			Overrides: &operatorv1.Overrides{
-				Components: []operatorv1.ComponentConfig{
-					{Name: operatorv1.ClusterPermission, Enabled: true},
-				},
-			},
-		},
-	}
-
-	// Create a deployment that will be stuck terminating
-	deploy := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:              "cluster-permission",
-			Namespace:         "open-cluster-management",
-			DeletionTimestamp: &metav1.Time{Time: time.Now()},
-			Finalizers:        []string{"stuck-finalizer"},
-			Labels: map[string]string{
-				"installer.name":      "test-mch",
-				"installer.namespace": "open-cluster-management",
-			},
-		},
-	}
-
-	// Setup client with stuck resource
-	cl := fake.NewClientBuilder().
-		WithScheme(scheme.Scheme).
-		WithObjects(mch, deploy).
-		Build()
-
-	r := &MultiClusterHubReconciler{
-		Client: cl,
-		Log:    ctrl.Log.WithName("test"),
-		CacheSpec: CacheSpec{
-			ImageOverrides: map[string]string{
-				"cluster_permission": "quay.io/stolostron/cluster-permission:test",
-			},
-			TemplateOverrides: map[string]string{},
-		},
-	}
-
-	// Execute
-	result, err := r.pruneMigratedComponents(context.TODO(), mch, false)
-
-	// Should requeue because resource is still terminating
-	if err != nil {
-		t.Errorf("pruneMigratedComponents() unexpected error: %v", err)
-	}
-	if result == (ctrl.Result{}) {
-		t.Errorf("pruneMigratedComponents() should requeue when resource terminating, got empty result")
-	}
-
-	// Verify component was NOT pruned (deletion incomplete)
-	updatedMCH := &operatorv1.MultiClusterHub{}
-	if err := cl.Get(context.TODO(), types.NamespacedName{
-		Name:      mch.Name,
-		Namespace: mch.Namespace,
-	}, updatedMCH); err != nil {
-		t.Errorf("failed to get updated MCH: %v", err)
-	} else if !updatedMCH.ComponentPresent(operatorv1.ClusterPermission) {
-		t.Errorf("pruneMigratedComponents() should NOT prune component when deletion incomplete")
-	}
 }

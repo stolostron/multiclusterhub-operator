@@ -63,12 +63,11 @@ type MigratedComponentInfo struct {
 	ImageKey       string
 }
 
-var migratedComponentDeployments = map[string]MigratedComponentInfo{
-	operatorv1.ClusterPermission: {
-		DeploymentName: "cluster-permission",
-		ImageKey:       "cluster_permission",
-	},
-}
+// migratedComponentDeployments tracks components that have been migrated from MCH to MCE.
+// The cluster-permission component was migrated in ACM 2.17 and its chart has been removed.
+// This map is now empty, but the pruneMigratedComponents function remains to handle
+// cleanup for any existing MCH CRs that still reference the migrated component.
+var migratedComponentDeployments = map[string]MigratedComponentInfo{}
 
 /*
 pruneMigratedComponents handles one-time migration of components from MCH to MCE.

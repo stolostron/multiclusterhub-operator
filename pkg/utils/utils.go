@@ -61,9 +61,6 @@ const (
 	// ClusterBackupChartLocation is the location of the Cluster Backup chart.
 	ClusterBackupChartLocation = "/charts/toggle/cluster-backup"
 
-	// ClusterPermissionChartLocation is the location of the Cluster Permission chart.
-	ClusterPermissionChartLocation = "/charts/toggle/cluster-permission"
-
 	// ConsoleChartLocation is the location of the Console chart.
 	ConsoleChartLocation = "/charts/toggle/console"
 

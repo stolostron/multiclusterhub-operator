@@ -64,9 +64,14 @@ var (
 	AnnotationMCEClusterExtensionSpec = "installer.open-cluster-management.io/mce-clusterextension-spec"
 
 	/*
-		AnnotationOADPSubscriptionSpec is an annotation used to override the OADP subscription used in cluster-backup.
+		AnnotationOADPSubscriptionSpec is an annotation used to override the OADP subscription used in cluster-backup (OLM v0).
 	*/
 	AnnotationOADPSubscriptionSpec = "installer.open-cluster-management.io/oadp-subscription-spec"
+
+	/*
+		AnnotationOADPClusterExtensionSpec is an annotation used to override the OADP ClusterExtension spec used in cluster-backup (OLM v1).
+	*/
+	AnnotationOADPClusterExtensionSpec = "installer.open-cluster-management.io/oadp-clusterextension-spec"
 
 	/*
 		AnnotationReleaseVersion is an annotation used to indicate the release version that should be applied to all
@@ -197,6 +202,9 @@ func AnnotationsMatch(old, new map[string]string) bool {
 	if !getAnnotationOrDefaultForMap(old, new, AnnotationOADPSubscriptionSpec, "") {
 		return false
 	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationOADPClusterExtensionSpec, "") {
+		return false
+	}
 	if !getAnnotationOrDefaultForMap(old, new, AnnotationResourceAdoptionPolicy, "") {
 		return false
 	}
@@ -220,6 +228,7 @@ func AnnotationsMatch(old, new map[string]string) bool {
 		AnnotationMCESubscriptionSpec:        true,
 		AnnotationMCEClusterExtensionSpec:    true,
 		AnnotationOADPSubscriptionSpec:       true,
+		AnnotationOADPClusterExtensionSpec:   true,
 		AnnotationResourceAdoptionPolicy:     true,
 		AnnotationProbeTimeoutSeconds:        true,
 		AnnotationProbeFailureThreshold:      true,
@@ -344,11 +353,19 @@ func GetMCEClusterExtensionAnnotationOverrides(instance *operatorsv1.MultiCluste
 }
 
 /*
-GetOADPAnnotationOverrides returns the OADP subscription spec annotation value,
+GetOADPAnnotationOverrides returns the OADP subscription spec annotation value (OLM v0),
 or an empty string if not set.
 */
 func GetOADPAnnotationOverrides(instance *operatorsv1.MultiClusterHub) string {
 	return getAnnotation(instance, AnnotationOADPSubscriptionSpec)
+}
+
+/*
+GetOADPClusterExtensionAnnotationOverrides returns the OADP ClusterExtension spec annotation value (OLM v1),
+or an empty string if not set.
+*/
+func GetOADPClusterExtensionAnnotationOverrides(instance *operatorsv1.MultiClusterHub) string {
+	return getAnnotation(instance, AnnotationOADPClusterExtensionSpec)
 }
 
 /*

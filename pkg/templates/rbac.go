@@ -19,6 +19,7 @@ import (
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -67,6 +68,7 @@ var resources = []string{
 	"AddOnTemplate",
 	"Subscription",
 	"OperatorGroup",
+	"ClusterExtension",
 	"ConfigMap",
 }
 
@@ -92,16 +94,21 @@ func main() {
 	testTemplateOverrides := map[string]string{}
 	chartsDir := chartsDir
 
-	templates, errs := renderer.RenderCharts(chartsDir, testMCH, testImages, testTemplateOverrides, false)
-	if len(errs) > 0 {
-		panic(errs)
+	// Render charts for both OLM v0 and v1 to generate complete RBAC markers
+	var allTemplates []*unstructured.Unstructured
+	for _, olmVersion := range []string{"v0", "v1"} {
+		templates, errs := renderer.RenderCharts(chartsDir, testMCH, testImages, testTemplateOverrides, false, olmVersion)
+		if len(errs) > 0 {
+			panic(errs)
+		}
+		allTemplates = append(allTemplates, templates...)
 	}
 
-	if len(templates) == 0 {
+	if len(allTemplates) == 0 {
 		panic("No templates rendered")
 	}
 
-	for _, template := range templates {
+	for _, template := range allTemplates {
 		if template.GetKind() == "ClusterRole" {
 			clusterrole := &rbacv1.ClusterRole{}
 			err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, clusterrole)
@@ -123,7 +130,7 @@ func main() {
 	}()
 
 	lines := []string{}
-	for _, template := range templates {
+	for _, template := range allTemplates {
 		if template.GetKind() == "ClusterRole" {
 			// Copy all permission defined in Clusterroles
 			// Duplicate permissions will be deduplicated by controller gen

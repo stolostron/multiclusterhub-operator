@@ -19,7 +19,6 @@ const (
 	Appsub                    string = "app-lifecycle"
 	ClusterBackup             string = "cluster-backup"
 	ClusterLifecycle          string = "cluster-lifecycle"
-	ClusterPermission         string = "cluster-permission" // Deprecated in ACM 2.17, moved to MCE 2.17.
 	Console                   string = "console"
 	MTVIntegrationsPreview    string = "cnv-mtv-integrations-preview"
 	MTVIntegrations           string = "cnv-mtv-integrations"
@@ -68,7 +67,6 @@ var MCHComponents = []string{
 	Appsub,
 	ClusterBackup,
 	ClusterLifecycle,
-	ClusterPermission, // Migrated to MCE in 2.17, but must remain here for webhook validation (ValidateCreate/ValidateUpdate).
 	Console,
 	FineGrainedRbac,
 	MTVIntegrations,

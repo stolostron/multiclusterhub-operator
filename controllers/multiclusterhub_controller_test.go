@@ -945,17 +945,6 @@ var _ = Describe("MultiClusterHub controller", func() {
 				return (err == nil && result == ctrl.Result{})
 			}, timeout, interval).Should(BeTrue())
 
-			By("Ensuring ClusterPermission")
-			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.ClusterPermission, testCacheSpec, false)
-			Expect(result).To(Equal(ctrl.Result{}))
-			Expect(err).To(BeNil())
-
-			By("Ensuring No ClusterPermission")
-			Eventually(func() bool {
-				result, err = reconciler.ensureNoComponent(ctx, mch, operatorv1.ClusterPermission, testCacheSpec, false)
-				return (err == nil && result == ctrl.Result{})
-			}, timeout, interval).Should(BeTrue())
-
 			By("Ensuring SubmarinerAddon")
 			result, err = reconciler.ensureComponent(ctx, mch, operatorv1.SubmarinerAddon, testCacheSpec, false)
 			Expect(result).To(Equal(ctrl.Result{}))

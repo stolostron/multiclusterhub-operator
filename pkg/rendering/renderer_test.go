@@ -17,6 +17,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -104,7 +105,7 @@ func TestRender(t *testing.T) {
 
 	// multiple charts
 	chartsDir := chartsDir
-	templates, errs := RenderCharts(chartsDir, testMCH, testImages, templateOverrides, false)
+	templates, errs := RenderCharts(chartsDir, testMCH, testImages, templateOverrides, false, "v0")
 	if len(errs) > 0 {
 		for _, err := range errs {
 			t.Log(err.Error())
@@ -179,7 +180,7 @@ func TestRender(t *testing.T) {
 
 	for _, chartsPath := range chartPaths {
 		chartsPath := chartsPath
-		singleChartTemplates, errs := RenderChart(chartsPath, testMCH, singleChartTestImages, templateOverrides, false)
+		singleChartTemplates, errs := RenderChart(chartsPath, testMCH, singleChartTestImages, templateOverrides, false, "v0")
 		if len(errs) > 0 {
 			for _, err := range errs {
 				t.Log(err.Error())
@@ -397,6 +398,167 @@ func TestOADPAnnotation(t *testing.T) {
 		t.Error("Cluster Backup missing OADP overrides for stable channel on ocp 5.1.0")
 	}
 
+	// Test OADP ClusterExtension overrides (OLM v1)
+	oadpV1 := `{"channels": ["stable-1.5"], "version": ">=1.5.0", "source": "custom-catalog"}`
+	mchV1 := &v1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "test",
+			Annotations: map[string]string{
+				"installer.open-cluster-management.io/oadp-clusterextension-spec": oadpV1,
+			},
+		},
+	}
+
+	overrides := parseOADPClusterExtensionAnnotation(mchV1)
+	if overrides == nil {
+		t.Error("Expected OADP ClusterExtension overrides, got nil")
+	} else {
+		if len(overrides.Channels) != 1 || overrides.Channels[0] != "stable-1.5" {
+			t.Errorf("Expected channels [stable-1.5], got %v", overrides.Channels)
+		}
+		if overrides.Version != ">=1.5.0" {
+			t.Errorf("Expected version >=1.5.0, got %s", overrides.Version)
+		}
+		if overrides.Source != "custom-catalog" {
+			t.Errorf("Expected source custom-catalog, got %s", overrides.Source)
+		}
+	}
+
+	// Test with no annotation
+	mchNoAnnotation := &v1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "test",
+		},
+	}
+	overridesNil := parseOADPClusterExtensionAnnotation(mchNoAnnotation)
+	if overridesNil != nil {
+		t.Error("Expected nil for no annotation, got overrides")
+	}
+
+	// Test that v1 annotation does NOT apply to v0 rendering
+	os.Setenv("DIRECTORY_OVERRIDE", "../templates")
+	os.Setenv("ACM_HUB_OCP_VERSION", "4.18.0")
+	defer os.Unsetenv("DIRECTORY_OVERRIDE")
+	defer os.Unsetenv("ACM_HUB_OCP_VERSION")
+
+	mchBothAnnotations := &v1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "testmch",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"installer.open-cluster-management.io/oadp-subscription-spec":     oadp,
+				"installer.open-cluster-management.io/oadp-clusterextension-spec": oadpV1,
+			},
+		},
+	}
+
+	// Render with v0 - should use v0 annotation (stable-1.0), NOT v1 annotation (stable-1.5)
+	templatesV0, errsV0 := RenderChart(utils.ClusterBackupChartLocation, mchBothAnnotations,
+		map[string]string{"cluster_backup_controller": "quay.io/test:test"},
+		map[string]string{}, false, "v0")
+	if len(errsV0) > 0 {
+		t.Fatalf("Failed to render v0: %v", errsV0)
+	}
+
+	// Find Subscription and verify channel is from v0 annotation
+	foundV0Subscription := false
+	for _, tmpl := range templatesV0 {
+		if tmpl.GetKind() == "Subscription" && tmpl.GetAPIVersion() == "operators.coreos.com/v1alpha1" {
+			spec, found, _ := unstructured.NestedMap(tmpl.Object, "spec")
+			if !found {
+				continue
+			}
+			channel, ok := spec["channel"].(string)
+			if !ok {
+				continue
+			}
+			if channel != "stable-1.0" {
+				t.Errorf("v0 render should use v0 annotation channel (stable-1.0), got %s", channel)
+			}
+			foundV0Subscription = true
+			break
+		}
+	}
+	if !foundV0Subscription {
+		t.Error("v0 render did not produce Subscription")
+	}
+
+}
+
+func TestRenderChartOLMv1(t *testing.T) {
+	os.Setenv("DIRECTORY_OVERRIDE", "../templates")
+	os.Setenv("ACM_HUB_OCP_VERSION", "4.20.0")
+	defer os.Unsetenv("DIRECTORY_OVERRIDE")
+	defer os.Unsetenv("ACM_HUB_OCP_VERSION")
+
+	testMCH := &v1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "testmch",
+			Namespace: "default",
+		},
+		Spec: v1.MultiClusterHubSpec{},
+	}
+	testImages := map[string]string{
+		"cluster_backup_controller": "quay.io/test/cluster-backup:test",
+	}
+	templateOverrides := map[string]string{}
+
+	// Render cluster-backup chart with OLM v1
+	chartPath := utils.ClusterBackupChartLocation
+	templates, errs := RenderChart(chartPath, testMCH, testImages, templateOverrides, false, "v1")
+	if len(errs) > 0 {
+		for _, err := range errs {
+			t.Log(err.Error())
+		}
+		t.Fatalf("failed to render cluster-backup with OLM v1")
+	}
+
+	// Verify v1 resources present and v0 resources absent
+	foundClusterExtension := false
+	foundServiceAccount := false
+	foundClusterRoleBinding := false
+	foundSubscription := false
+	foundOperatorGroup := false
+
+	for _, template := range templates {
+		kind := template.GetKind()
+		apiVersion := template.GetAPIVersion()
+
+		if kind == "ClusterExtension" && apiVersion == "olm.operatorframework.io/v1" {
+			foundClusterExtension = true
+		}
+		if kind == "ServiceAccount" && template.GetName() == "oadp-installer" {
+			foundServiceAccount = true
+		}
+		if kind == "ClusterRoleBinding" && template.GetName() == "oadp-installer-admin" {
+			foundClusterRoleBinding = true
+		}
+		if kind == "Subscription" && apiVersion == "operators.coreos.com/v1alpha1" {
+			foundSubscription = true
+		}
+		if kind == "OperatorGroup" {
+			foundOperatorGroup = true
+		}
+	}
+
+	// v1 resources should be present
+	if !foundClusterExtension {
+		t.Error("Expected ClusterExtension for OLM v1, not found")
+	}
+	if !foundServiceAccount {
+		t.Error("Expected ServiceAccount (oadp-installer) for OLM v1, not found")
+	}
+	if !foundClusterRoleBinding {
+		t.Error("Expected ClusterRoleBinding (oadp-installer-admin) for OLM v1, not found")
+	}
+
+	// v0 resources should be absent
+	if foundSubscription {
+		t.Error("Found Subscription resource in OLM v1 render, should not be present")
+	}
+	if foundOperatorGroup {
+		t.Error("Found OperatorGroup resource in OLM v1 render, should not be present")
+	}
 }
 
 func TestParseProbeConfigFromAnnotations(t *testing.T) {

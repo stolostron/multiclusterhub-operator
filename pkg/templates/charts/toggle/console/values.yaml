@@ -4,6 +4,7 @@
 
 org: open-cluster-management
 global:
+  olmVersion: v0
   imageOverrides:
     console: ""
   templateOverrides: {}

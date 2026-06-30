@@ -249,8 +249,11 @@ func RenderCRDs(crdDir string, mch *v1.MultiClusterHub) ([]*unstructured.Unstruc
 	return crds, errs
 }
 
+// RenderCharts renders all Helm charts in the specified directory.
+// olmVersion: OLM version detected at runtime ("v0", "v1", or "" for no OLM).
+// Passed to chart templates as .Values.global.olmVersion for conditional rendering.
 func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]string, tpl map[string]string,
-	isSTSEnabled bool) ([]*unstructured.Unstructured, []error) {
+	isSTSEnabled bool, olmVersion string) ([]*unstructured.Unstructured, []error) {
 
 	var templates []*unstructured.Unstructured
 	errs := []error{}
@@ -269,7 +272,7 @@ func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]st
 
 	for _, chart := range charts {
 		chartPath := filepath.Join(chartDir, chart.Name())
-		chartTemplates, errs := renderTemplates(chartPath, mch, images, tpl, isSTSEnabled)
+		chartTemplates, errs := renderTemplates(chartPath, mch, images, tpl, isSTSEnabled, olmVersion)
 		if len(errs) > 0 {
 			for _, err := range errs {
 				log.Info(err.Error())
@@ -281,8 +284,11 @@ func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]st
 	return templates, nil
 }
 
+// RenderChart renders a single Helm chart from the specified path.
+// olmVersion: OLM version detected at runtime ("v0", "v1", or "" for no OLM).
+// Passed to chart templates as .Values.global.olmVersion for conditional rendering.
 func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]string, templates map[string]string,
-	isSTSEnabled bool) ([]*unstructured.Unstructured, []error) {
+	isSTSEnabled bool, olmVersion string) ([]*unstructured.Unstructured, []error) {
 
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
 		chartPath = path.Join(val, chartPath)
@@ -292,7 +298,7 @@ func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]st
 
 	}
 
-	chartTemplates, errs := renderTemplates(chartPath, mch, images, templates, isSTSEnabled)
+	chartTemplates, errs := renderTemplates(chartPath, mch, images, templates, isSTSEnabled, olmVersion)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -305,7 +311,7 @@ func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]st
 }
 
 func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[string]string, tpl map[string]string,
-	isSTSEnabled bool) ([]*unstructured.Unstructured, []error) {
+	isSTSEnabled bool, olmVersion string) ([]*unstructured.Unstructured, []error) {
 
 	var templates []*unstructured.Unstructured
 	errs := []error{}
@@ -317,7 +323,7 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 	}
 
 	valuesYaml := &Values{}
-	injectValuesOverrides(valuesYaml, mch, images, tpl, isSTSEnabled)
+	injectValuesOverrides(valuesYaml, mch, images, tpl, isSTSEnabled, olmVersion)
 	helmEngine := engine.Engine{
 		Strict:   true,
 		LintMode: false,
@@ -336,27 +342,47 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 	}
 
 	for fileName, templateFile := range rawTemplates {
-		unstructured := &unstructured.Unstructured{}
-		if err = yaml.Unmarshal([]byte(templateFile), unstructured); err != nil {
-			return nil, append(errs, fmt.Errorf("error converting file %s to unstructured: %v", fileName, err))
-		}
-
-		// Add namespace to namespaced resources
-		switch unstructured.GetKind() {
-		case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service", "ConfigMap", "Ingress", "Channel", "Subscription":
-			if unstructured.GetNamespace() == "" {
-				unstructured.SetNamespace(mch.Namespace)
+		// Split multi-doc YAML (documents separated by --- with optional whitespace)
+		// Helm may output "---\n" or "\n---\n" or even "---" at start of file
+		docs := strings.Split(templateFile, "\n---")
+		for i, doc := range docs {
+			// First doc may not have leading ---, rest will have it stripped by split
+			if i > 0 {
+				// Remove leading newline if present after split point
+				doc = strings.TrimPrefix(doc, "\n")
 			}
+			doc = strings.TrimSpace(doc)
+			if doc == "" || doc == "---" {
+				continue
+			}
+
+			unstructured := &unstructured.Unstructured{}
+			if err = yaml.Unmarshal([]byte(doc), unstructured); err != nil {
+				return nil, append(errs, fmt.Errorf("error converting file %s to unstructured: %v", fileName, err))
+			}
+
+			// Skip empty documents (helm comments/whitespace only)
+			if unstructured.GetKind() == "" {
+				continue
+			}
+
+			// Add namespace to namespaced resources
+			switch unstructured.GetKind() {
+			case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service", "ConfigMap", "Ingress", "Channel", "Subscription":
+				if unstructured.GetNamespace() == "" {
+					unstructured.SetNamespace(mch.Namespace)
+				}
+			}
+			utils.AddInstallerLabel(unstructured, mch.Name, mch.Namespace)
+			templates = append(templates, unstructured)
 		}
-		utils.AddInstallerLabel(unstructured, mch.Name, mch.Namespace)
-		templates = append(templates, unstructured)
 	}
 
 	return templates, errs
 }
 
 func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[string]string,
-	templates map[string]string, isSTSEnabled bool) {
+	templates map[string]string, isSTSEnabled bool, olmVersion string) {
 
 	values.Global.ImageOverrides = images
 
@@ -373,6 +399,13 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 	values.Global.StorageClassName = os.Getenv(helpers.DefaultStorageClassName)
 
 	values.Global.DeployOnOCP = true
+
+	// Default to v0 if olmVersion not specified to maintain fallback compatibility
+	if olmVersion == "" {
+		values.Global.OLMVersion = "v0"
+	} else {
+		values.Global.OLMVersion = olmVersion
+	}
 
 	values.HubConfig.ClusterSTSEnabled = isSTSEnabled
 
@@ -413,66 +446,110 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 	values.Global.MinOADPChannel = defaultOADPChannel
 	values.Global.MinOADPStableChannel = defaultOADPStableChannel
 
+	// Apply OADP ClusterExtension overrides (OLM v1) if annotation present and olmVersion is v1
+	if olmVersion == "v1" {
+		if overrides := parseOADPClusterExtensionAnnotation(mch); overrides != nil {
+			// Override catalog settings for OLM v1
+			if len(overrides.Channels) > 0 {
+				// Use first channel from override
+				values.Global.Channel = overrides.Channels[0]
+			}
+			if overrides.Version != "" {
+				values.Global.StartingCSV = overrides.Version
+			}
+			if overrides.Source != "" {
+				values.Global.Source = overrides.Source
+			}
+		}
+	}
+
 	// TODO: Define all overrides
 }
 
-func GetOADPConfig(m *v1.MultiClusterHub) (string, string, subv1alpha1.Approval, string, string, string) {
+// OADPClusterExtensionOverrides contains mutable fields that can be overridden via annotation for OADP (OLM v1).
+type OADPClusterExtensionOverrides struct {
+	// Channels is an optional list of channels to constrain upgrades
+	Channels []string `json:"channels,omitempty"`
+	// Version is an optional semver constraint for version selection
+	Version string `json:"version,omitempty"`
+	// Source is the catalog source name
+	Source string `json:"source,omitempty"`
+}
+
+// parseOADPClusterExtensionAnnotation unmarshals the OADP ClusterExtension annotation from a MultiClusterHub.
+// Returns nil if no annotation is present or if unmarshaling fails.
+// The annotation key is installer.open-cluster-management.io/oadp-clusterextension-spec (OLM v1).
+func parseOADPClusterExtensionAnnotation(m *v1.MultiClusterHub) *OADPClusterExtensionOverrides {
+	oadpAnnotationOverrides := utils.GetOADPClusterExtensionAnnotationOverrides(m)
+	if oadpAnnotationOverrides == "" {
+		return nil
+	}
+	overrides := &OADPClusterExtensionOverrides{}
+	err := json.Unmarshal([]byte(oadpAnnotationOverrides), overrides)
+	if err != nil {
+		log.Info(fmt.Sprintf("Failed to unmarshal OADP ClusterExtension annotation: %s. Error: %v", oadpAnnotationOverrides, err))
+		return nil
+	}
+	return overrides
+}
+
+// parseOADPAnnotation unmarshals the OADP subscription annotation from a MultiClusterHub.
+// Returns an empty SubscriptionSpec if no annotation is present or if unmarshaling fails.
+// The annotation key is installer.open-cluster-management.io/oadp-subscription-spec (OLM v0).
+func parseOADPAnnotation(m *v1.MultiClusterHub) *subv1alpha1.SubscriptionSpec {
 	sub := &subv1alpha1.SubscriptionSpec{}
-	var name, channel, source, sourceNamespace, startingCSV string
-	var installPlan subv1alpha1.Approval
-
-	if oadpSpec := utils.GetOADPAnnotationOverrides(m); oadpSpec != "" {
-
-		err := json.Unmarshal([]byte(oadpSpec), sub)
-		if err != nil {
-			log.Info(fmt.Sprintf("Failed to unmarshal OADP annotation: %s.", oadpSpec))
-			return "", "", "", "", "", ""
-		}
+	oadpSpec := utils.GetOADPAnnotationOverrides(m)
+	if oadpSpec == "" {
+		return sub
 	}
 
-	if sub.Package != "" {
-		name = sub.Package
-	} else {
-		name = defaultOADPName
+	if err := json.Unmarshal([]byte(oadpSpec), sub); err != nil {
+		log.Info(fmt.Sprintf("Failed to unmarshal OADP annotation: %s.", oadpSpec))
+	}
+	return sub
+}
+
+// getOADPChannel determines the OADP operator channel based on annotation override or OCP version.
+// If override is provided (from annotation), it takes precedence.
+// Otherwise, returns stable channel for OCP 4.19+ or unknown versions, and stable-1.4 for OCP 4.18 and earlier.
+// The ACM_HUB_OCP_VERSION environment variable is used to detect the OpenShift version.
+func getOADPChannel(override string) string {
+	if override != "" {
+		return override
 	}
 
-	if sub.Channel != "" {
-		channel = sub.Channel
-	} else {
+	ocpVersion := os.Getenv("ACM_HUB_OCP_VERSION")
+	isOCP419orNewer := ocpVersion == "" || strings.HasPrefix(ocpVersion, "4.19") ||
+		!strings.HasPrefix(ocpVersion, "4.1")
 
-		ocpVersion := os.Getenv("ACM_HUB_OCP_VERSION")
-		isOCP419orNewer := ocpVersion == "" || strings.HasPrefix(ocpVersion, "4.19") ||
-			!strings.HasPrefix(ocpVersion, "4.1")
-
-		if isOCP419orNewer {
-			// use stable channel for OCP 4.19 or newer, or unknown ocp version
-			channel = defaultOADPStableChannel
-		} else {
-			channel = defaultOADPChannel
-		}
-
+	if isOCP419orNewer {
+		return defaultOADPStableChannel
 	}
+	return defaultOADPChannel
+}
 
+// valueOrDefault returns value if it is non-empty, otherwise returns defaultValue.
+// Helper function to reduce boilerplate for conditional default assignment.
+func valueOrDefault(value, defaultValue string) string {
+	if value != "" {
+		return value
+	}
+	return defaultValue
+}
+
+func GetOADPConfig(m *v1.MultiClusterHub) (string, string, subv1alpha1.Approval, string, string, string) {
+	sub := parseOADPAnnotation(m)
+
+	name := valueOrDefault(sub.Package, defaultOADPName)
+	channel := getOADPChannel(sub.Channel)
+	source := valueOrDefault(sub.CatalogSource, defaultOADPCatalogSource)
+	sourceNamespace := valueOrDefault(sub.CatalogSourceNamespace, defaultOADPCatalogSourceNamespace)
+	startingCSV := sub.StartingCSV
+
+	installPlan := subv1alpha1.Approval(defaultOADPInstallPlan)
 	if sub.InstallPlanApproval != "" {
 		installPlan = sub.InstallPlanApproval
-	} else {
-		installPlan = defaultOADPInstallPlan
 	}
 
-	if sub.CatalogSource != "" {
-		source = sub.CatalogSource
-	} else {
-		source = defaultOADPCatalogSource
-	}
-
-	if sub.CatalogSourceNamespace != "" {
-		sourceNamespace = sub.CatalogSourceNamespace
-	} else {
-		sourceNamespace = defaultOADPCatalogSourceNamespace
-	}
-
-	if sub.StartingCSV != "" {
-		startingCSV = sub.StartingCSV
-	}
 	return name, channel, installPlan, source, sourceNamespace, startingCSV
 }

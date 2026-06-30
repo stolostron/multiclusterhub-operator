@@ -44,9 +44,6 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(component string) string 
 	case operatorv1.ClusterLifecycle:
 		return utils.CLCChartLocation
 
-	case operatorv1.ClusterPermission:
-		return utils.ClusterPermissionChartLocation
-
 	case operatorv1.Console:
 		return utils.ConsoleChartLocation
 
@@ -157,7 +154,7 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 
 	// Renders all templates from charts
 	templates, errs := renderer.RenderChart(chartLocation, m, cachespec.ImageOverrides, cachespec.TemplateOverrides,
-		isSTSEnabled)
+		isSTSEnabled, r.OLMVersion)
 
 	if len(errs) > 0 {
 		for _, err := range errs {
@@ -282,7 +279,7 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 
 	// Renders all templates from charts
 	templates, errs := renderer.RenderChart(chartLocation, m, imageOverrides, cachespec.TemplateOverrides,
-		isSTSEnabled)
+		isSTSEnabled, r.OLMVersion)
 
 	if len(errs) > 0 {
 		for _, err := range errs {

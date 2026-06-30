@@ -18,6 +18,7 @@ global:
   source: redhat-operators
   sourceNamespace: openshift-marketplace
   startingCSV: ""
+  olmVersion: v0
 hubconfig:
   clusterSTSEnabled: false
   nodeSelector: null

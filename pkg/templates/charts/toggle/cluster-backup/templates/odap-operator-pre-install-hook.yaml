@@ -1,8 +1,8 @@
 # Copyright Contributors to the Open Cluster Management project
 
-# pre hook used to install the OADP Operator, using the open-cluster-management-backup namespace
-# Creates the OADP Operator subscription group, if the cluster is not STS enabled
-# For an STS enabled cluster, the chart creates a ConfigMap storing OADP subscription settings
+# Pre-install hook to install the OADP Operator, using the open-cluster-management-backup namespace
+# Creates the OADP Operator Subscription (OLM v0), ClusterExtension (OLM v1), or ConfigMap (STS enabled)
+
 {{- if .Values.hubconfig.clusterSTSEnabled }}
 apiVersion: v1
 kind: ConfigMap
@@ -21,12 +21,77 @@ data:
   name: {{ .Values.global.name }}
   source: {{ .Values.global.source }}
   sourceNamespace: {{ .Values.global.sourceNamespace }}
+  olmVersion: {{ .Values.global.olmVersion }}
   {{- if .Values.hubconfig.proxyConfigs }}
   env_HTTP_PROXY: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
   env_HTTPS_PROXY: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
   env_NO_PROXY: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
   {{- end }}
+
+{{- else if eq .Values.global.olmVersion "v1" }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: oadp-installer
+  namespace: open-cluster-management-backup
+  annotations:
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-2"
+---
+# ClusterRoleBinding grants oadp-installer ServiceAccount permissions for operator bundle installation
+#
+# FIXME: This currently uses cluster-admin which is overly broad. The minimal required permissions
+# for ClusterExtension installation need to be determined and documented. This follows the current
+# MCE ClusterExtension pattern (pkg/multiclusterengine/olm/v1/clusterextension.go:292-314) which
+# also uses cluster-admin, but both should be scoped down to the minimum verbs/resources needed.
+#
+# Required permissions likely include:
+# - CRD create/update/delete
+# - ClusterRole/ClusterRoleBinding create/update/delete
+# - Various operator-specific cluster-scoped resources
+#
+# See: https://github.com/stolostron/multiclusterhub-operator/pull/4323#pullrequestreview-4593866717
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: oadp-installer-admin
+  annotations:
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-2"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: oadp-installer
+  namespace: open-cluster-management-backup
+---
+apiVersion: olm.operatorframework.io/v1
+kind: ClusterExtension
+metadata:
+  name: redhat-oadp-operator
+  annotations:
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/resource-policy": delete
+spec:
+  namespace: open-cluster-management-backup
+  serviceAccount:
+    name: oadp-installer
+  source:
+    sourceType: Catalog
+    catalog:
+      packageName: {{ .Values.global.name }}
+      version: ">=1.4.0"
+  config:
+    configType: Inline
+    inline:
+      watchNamespace: open-cluster-management-backup
+
 {{- else }}
+---
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
