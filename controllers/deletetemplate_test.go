@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	appsv1 "k8s.io/api/apps/v1"
