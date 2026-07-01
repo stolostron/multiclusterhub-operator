@@ -1,5 +1,4 @@
 global:
-  olmVersion: v0
   apiUrl: ''
   baseDomain: ''
   imageOverrides:
@@ -10,6 +9,7 @@ global:
     search_v2_api: ''
     search_v2_operator: ''
   namespace: default
+  olmVersion: v0
   pullSecret: null
   templateOverrides: {}
 hubconfig:

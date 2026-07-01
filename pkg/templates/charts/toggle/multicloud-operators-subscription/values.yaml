@@ -1,5 +1,4 @@
 global:
-  olmVersion: v0
   apiUrl: ''
   baseDomain: ''
   imageOverrides:
@@ -8,6 +7,7 @@ global:
     multicluster_operators_channel: ''
     multicluster_operators_subscription: ''
   namespace: default
+  olmVersion: v0
   pullSecret: null
   templateOverrides: {}
 hubconfig:
