@@ -72,6 +72,11 @@ type MultiClusterHubSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Local Cluster Name",xDescriptors={"urn:alm:descriptor:io.kubernetes:text","urn:alm:descriptor:com.tectonic.ui:advanced"}
 	//+kubebuilder:default="local-cluster"
 	LocalClusterName string `json:"localClusterName,omitempty"`
+
+	// NetworkPolicies configures NetworkPolicy deployment for ACM components
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="NetworkPolicies Configuration",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	// +optional
+	NetworkPolicies *NetworkPoliciesConfig `json:"networkPolicies,omitempty"`
 }
 
 // Overrides provides developer overrides for MCH installation
@@ -130,6 +135,14 @@ type EnvConfig struct {
 
 	// Value specifies the value of the environment variable.
 	Value string `json:"value,omitempty"`
+}
+
+// NetworkPoliciesConfig provides configuration for NetworkPolicy deployment
+type NetworkPoliciesConfig struct {
+	// Enabled controls whether NetworkPolicies are deployed for ACM components
+	// Default: true in ACM 5.0+
+	//+kubebuilder:default=true
+	Enabled bool `json:"enabled"`
 }
 
 type HubPhaseType string

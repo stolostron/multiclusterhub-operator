@@ -33,6 +33,11 @@ type Global struct {
 	StorageClassName     string               `json:"storageClassName" structs:"storageClassName"`
 	StartingCSV          string               `json:"startingCSV" structs:"startingCSV"`
 	OLMVersion           string               `json:"olmVersion" structs:"olmVersion"` // "v0" or "v1" - detected at runtime by main.go detectOLMVersion
+	NetworkPolicies      NetworkPoliciesValue `json:"networkPolicies" structs:"networkPolicies"`
+}
+
+type NetworkPoliciesValue struct {
+	Enabled bool `json:"enabled" structs:"enabled"`
 }
 
 type HubConfig struct {
