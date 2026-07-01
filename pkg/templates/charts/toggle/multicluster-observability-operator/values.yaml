@@ -1,10 +1,10 @@
 global:
-  olmVersion: v0
   apiUrl: ''
   baseDomain: ''
   imageOverrides:
     multicluster_observability_operator: ''
   namespace: default
+  olmVersion: v0
   pullSecret: null
   templateOverrides: {}
 hubconfig:
