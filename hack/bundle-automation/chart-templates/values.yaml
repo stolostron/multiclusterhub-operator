@@ -11,6 +11,8 @@ global:
   baseDomain: ''
   apiUrl: ''
   olmVersion: v0
+  networkPolicies:
+    enabled: true
 hubconfig:
   clusterSTSEnabled: false
   nodeSelector: null

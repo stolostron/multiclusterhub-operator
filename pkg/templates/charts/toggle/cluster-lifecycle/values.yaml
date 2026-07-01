@@ -6,6 +6,8 @@ global:
   namespace: default
   pullSecret: null
   imageRepository: "" # utils.GetImageRepository(m)
+  networkPolicies:
+    enabled: true
 hubconfig:
   nodeSelector: null
   probeConfig: null

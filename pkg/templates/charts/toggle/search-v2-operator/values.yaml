@@ -12,6 +12,8 @@ global:
   namespace: default
   pullSecret: null
   templateOverrides: {}
+  networkPolicies:
+    enabled: true
 hubconfig:
   clusterSTSEnabled: false
   nodeSelector: null

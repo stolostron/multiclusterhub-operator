@@ -1,9 +1,8 @@
 global:
-  olmVersion: v0
   apiUrl: ''
   baseDomain: ''
   imageOverrides:
-    submariner_addon: ''
+    mtv_integrations: ''
   namespace: default
   pullSecret: null
   templateOverrides: {}

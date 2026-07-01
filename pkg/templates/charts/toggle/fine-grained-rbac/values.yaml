@@ -8,6 +8,8 @@ global:
   namespace: default
   pullSecret: null
   pullPolicy: Always
+  networkPolicies:
+    enabled: true
 hubconfig:
   nodeSelector: null
   proxyConfigs: {}
