@@ -334,6 +334,17 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	/*
+		Ensure NetworkPolicies for ACM components. This implements a create-once pattern where
+		MCH creates initial NetworkPolicy resources with delegation annotations. Operand teams
+		then adopt and manage these policies. MCH does not continuously reconcile after creation.
+	*/
+	result, err = r.ensureNetworkPolicies(ctx, multiClusterHub, r.CacheSpec)
+	if err != nil {
+		r.Log.Error(err, "Failed to ensure NetworkPolicies")
+		return result, err
+	}
+
+	/*
 		Create the MCH operator's monitoring infrastructure. These resources enable Prometheus to collect
 		metrics from the operator for observability and alerting. The Service exposes the metrics endpoint,
 		and the ServiceMonitor tells Prometheus how to scrape it.

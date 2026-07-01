@@ -368,7 +368,7 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 
 			// Add namespace to namespaced resources
 			switch unstructured.GetKind() {
-			case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service", "ConfigMap", "Ingress", "Channel", "Subscription":
+			case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service", "ConfigMap", "Ingress", "Channel", "Subscription", "NetworkPolicy":
 				if unstructured.GetNamespace() == "" {
 					unstructured.SetNamespace(mch.Namespace)
 				}
@@ -445,6 +445,15 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 
 	values.Global.MinOADPChannel = defaultOADPChannel
 	values.Global.MinOADPStableChannel = defaultOADPStableChannel
+
+	// NetworkPolicies configuration - default enabled to true
+	networkPoliciesEnabled := true
+	if mch.Spec.NetworkPolicies != nil {
+		networkPoliciesEnabled = mch.Spec.NetworkPolicies.Enabled
+	}
+	values.Global.NetworkPolicies = NetworkPoliciesValue{
+		Enabled: networkPoliciesEnabled,
+	}
 
 	// Apply OADP ClusterExtension overrides (OLM v1) if annotation present and olmVersion is v1
 	if olmVersion == "v1" {
