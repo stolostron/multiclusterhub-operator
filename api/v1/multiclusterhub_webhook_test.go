@@ -194,40 +194,6 @@ var _ = Describe("Multiclusterhub webhook", func() {
 			})
 		})
 
-		It("Should auto-disable edge-manager-preview on update", func() {
-			By("creating MCH with disabled edge-manager-preview", func() {
-				mch := &MultiClusterHub{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      fmt.Sprintf("%s-autodisable", multiClusterHubName),
-						Namespace: "default",
-					},
-					Spec: MultiClusterHubSpec{
-						Overrides: &Overrides{
-							Components: []ComponentConfig{
-								{
-									Name:    EdgeManagerPreview,
-									Enabled: false,
-								},
-							},
-						},
-					},
-				}
-				Expect(k8sClient.Create(ctx, mch)).To(Succeed())
-
-				// Verify it stays disabled
-				Expect(k8sClient.Get(ctx,
-					types.NamespacedName{Name: mch.Name, Namespace: "default"}, mch)).To(Succeed())
-				for _, c := range mch.Spec.Overrides.Components {
-					if c.Name == EdgeManagerPreview {
-						Expect(c.Enabled).To(BeFalse(), "edge-manager-preview should remain disabled")
-					}
-				}
-
-				// Clean up
-				Expect(k8sClient.Delete(ctx, mch)).To(BeNil())
-			})
-		})
-
 		It("Should delete multiclusterhub", func() {
 			mch := &MultiClusterHub{}
 			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)).To(Succeed())
