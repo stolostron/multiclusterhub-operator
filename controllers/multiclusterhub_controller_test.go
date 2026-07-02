@@ -2555,7 +2555,7 @@ func Test_AutoDisableEdgeManagerPreview(t *testing.T) {
 	r := &MultiClusterHubReconciler{
 		Client: client,
 		Scheme: scheme,
-		Log:    log.Log.WithName("test"),
+		Log:    ctrl.Log.WithName("test"),
 	}
 
 	result, err := r.Reconcile(ctx, reconcile.Request{
