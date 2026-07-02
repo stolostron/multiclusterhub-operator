@@ -22,6 +22,28 @@ var (
 var _ = Describe("Multiclusterhub webhook", func() {
 
 	Context("Creating a Multiclusterhub", func() {
+		It("Should block edge-manager-preview on create", func() {
+			By("because edge-manager-preview is not supported", func() {
+				mch := &MultiClusterHub{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-edge-manager-block",
+						Namespace: "default",
+					},
+					Spec: MultiClusterHubSpec{
+						Overrides: &Overrides{
+							Components: []ComponentConfig{
+								{
+									Name:    EdgeManagerPreview,
+									Enabled: true,
+								},
+							},
+						},
+					},
+				}
+				Expect(k8sClient.Create(ctx, mch)).NotTo(BeNil(), "edge-manager-preview component should be blocked")
+			})
+		})
+
 		It("Should successfully create multiclusterhub", func() {
 			By("by creating a new standalone Multiclusterhub resource", func() {
 				mch := &MultiClusterHub{
