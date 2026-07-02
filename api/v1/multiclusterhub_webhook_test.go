@@ -69,6 +69,25 @@ var _ = Describe("Multiclusterhub webhook", func() {
 				}
 				Expect(k8sClient.Create(ctx, mch)).NotTo(BeNil(), "Invalid components not allowed in config")
 			})
+			By("because edge-manager-preview is not supported", func() {
+				mch := &MultiClusterHub{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      fmt.Sprintf("%s-edge", multiClusterHubName),
+						Namespace: "default",
+					},
+					Spec: MultiClusterHubSpec{
+						Overrides: &Overrides{
+							Components: []ComponentConfig{
+								{
+									Name:    EdgeManagerPreview,
+									Enabled: true,
+								},
+							},
+						},
+					},
+				}
+				Expect(k8sClient.Create(ctx, mch)).NotTo(BeNil(), "edge-manager-preview component should be blocked")
+			})
 		})
 
 		It("Should fail to update multiclusterhub", func() {
