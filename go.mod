@@ -10,7 +10,7 @@ require (
 	github.com/onsi/gomega v1.42.1
 	github.com/openshift/api v0.0.0-20260624175654-50c3975e874f
 	github.com/operator-framework/api v0.42.0
-	github.com/operator-framework/operator-controller v1.8.0
+	github.com/operator-framework/operator-controller v1.10.0
 	github.com/operator-framework/operator-lib v0.19.0
 	github.com/operator-framework/operator-lifecycle-manager v0.43.0
 	github.com/pkg/errors v0.9.1
