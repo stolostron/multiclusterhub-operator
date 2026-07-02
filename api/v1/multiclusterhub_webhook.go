@@ -132,9 +132,8 @@ func (r *MultiClusterHub) ValidateCreate() (admission.Warnings, error) {
 			}
 			// Block edge-manager-preview component
 			if c.Name == EdgeManagerPreview {
-				return nil, fmt.Errorf("the Edge Manager tech preview component is no longer supported as of ACM 2.13. " +
-					"It is disabled in ACM 2.14, remains available for installation only in ACM 2.15.0, " +
-					"and has been removed from ACM 2.15.1, ACM 2.16.0, and later releases")
+				return nil, fmt.Errorf("Red Hat Edge Manager can now be installed directly from the OpenShift operator hub. " +
+					"The tech preview versions included with ACM are no longer supported and cannot be enabled")
 			}
 		}
 	}
@@ -193,9 +192,8 @@ func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) (admission.Warnings
 			}
 			// Block enabling edge-manager-preview component (allow if already enabled)
 			if c.Name == EdgeManagerPreview && c.Enabled && !oldObj.Enabled(EdgeManagerPreview) {
-				return nil, fmt.Errorf("the Edge Manager tech preview component is no longer supported as of ACM 2.13. " +
-					"It is disabled in ACM 2.14, remains available for installation only in ACM 2.15.0, " +
-					"and has been removed from ACM 2.15.1, ACM 2.16.0, and later releases")
+				return nil, fmt.Errorf("Red Hat Edge Manager can now be installed directly from the OpenShift operator hub. " +
+					"The tech preview versions included with ACM are no longer supported and cannot be enabled")
 			}
 		}
 	}
