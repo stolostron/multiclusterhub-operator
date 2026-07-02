@@ -106,17 +106,6 @@ var _ admission.Defaulter[*MultiClusterHub] = &MultiClusterHub{}
 // Default implements admission.Defaulter so a webhook will be registered for the type
 func (r *MultiClusterHub) Default(ctx context.Context, obj *MultiClusterHub) error {
 	mchlog.Info("default", "name", obj.Name)
-
-	// Auto-disable edge-manager-preview if present and enabled
-	if obj.Spec.Overrides != nil {
-		for i, c := range obj.Spec.Overrides.Components {
-			if c.Name == EdgeManagerPreview && c.Enabled {
-				mchlog.Info("auto-disabling edge-manager-preview component", "name", obj.Name)
-				obj.Spec.Overrides.Components[i].Enabled = false
-			}
-		}
-	}
-
 	return nil
 }
 
