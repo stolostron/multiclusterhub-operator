@@ -138,6 +138,12 @@ func (r *MultiClusterHub) ValidateCreate(ctx context.Context, obj *MultiClusterH
 			if !ValidComponent(c, MCHComponents) {
 				return nil, fmt.Errorf("invalid component config: %s is not a known component", c.Name)
 			}
+			// Block edge-manager-preview component
+			if c.Name == EdgeManagerPreview {
+				return nil, fmt.Errorf("the Edge Manager tech preview component is no longer supported as of ACM 2.13. " +
+					"It is disabled in ACM 2.14, remains available for installation only in ACM 2.15.0, " +
+					"and has been removed from ACM 2.15.1, ACM 2.16.0, and later releases")
+			}
 		}
 	}
 
@@ -165,6 +171,12 @@ func (r *MultiClusterHub) ValidateUpdate(ctx context.Context, oldObj, newObj *Mu
 		for _, c := range newObj.Spec.Overrides.Components {
 			if !ValidComponent(c, MCHComponents) {
 				return nil, fmt.Errorf("invalid componentconfig: %s is not a known component", c.Name)
+			}
+			// Block enabling edge-manager-preview component
+			if c.Name == EdgeManagerPreview && c.Enabled {
+				return nil, fmt.Errorf("the Edge Manager tech preview component is no longer supported as of ACM 2.13. " +
+					"It is disabled in ACM 2.14, remains available for installation only in ACM 2.15.0, " +
+					"and has been removed from ACM 2.15.1, ACM 2.16.0, and later releases")
 			}
 		}
 	}
