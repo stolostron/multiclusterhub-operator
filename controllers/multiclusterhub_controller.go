@@ -159,6 +159,18 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	// Check if any deprecated fields are present within the multiClusterHub spec.
 	r.CheckDeprecatedFieldUsage(multiClusterHub)
 
+	// Auto-disable edge-manager-preview if enabled
+	if multiClusterHub.Enabled(operatorv1.EdgeManagerPreview) {
+		r.Log.Info("Auto-disabling edge-manager-preview component")
+		multiClusterHub.Disable(operatorv1.EdgeManagerPreview)
+		if err := r.Client.Update(ctx, multiClusterHub); err != nil {
+			r.Log.Error(err, "Failed to disable edge-manager-preview")
+			return ctrl.Result{}, err
+		}
+		// Requeue to process the updated spec
+		return ctrl.Result{Requeue: true}, nil
+	}
+
 	// Check to see if upgradeable
 	upgrade, err := r.setOperatorUpgradeableStatus(ctx, multiClusterHub)
 	if err != nil {

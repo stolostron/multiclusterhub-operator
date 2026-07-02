@@ -130,6 +130,11 @@ func (r *MultiClusterHub) ValidateCreate() (admission.Warnings, error) {
 			if !ValidComponent(c, MCHComponents) {
 				return nil, fmt.Errorf("invalid component config: %s is not a known component", c.Name)
 			}
+			// Block edge-manager-preview component
+			if c.Name == EdgeManagerPreview {
+				return nil, fmt.Errorf("Red Hat Edge Manager can now be installed directly from the OpenShift operator hub. " +
+					"The tech preview versions included with ACM are no longer supported and cannot be enabled")
+			}
 		}
 	}
 
@@ -184,6 +189,11 @@ func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) (admission.Warnings
 		for _, c := range r.Spec.Overrides.Components {
 			if !ValidComponent(c, MCHComponents) {
 				return nil, fmt.Errorf("invalid componentconfig: %s is not a known component", c.Name)
+			}
+			// Block enabling edge-manager-preview component (allow if already enabled)
+			if c.Name == EdgeManagerPreview && c.Enabled && !oldMCH.Enabled(EdgeManagerPreview) {
+				return nil, fmt.Errorf("Red Hat Edge Manager can now be installed directly from the OpenShift operator hub. " +
+					"The tech preview versions included with ACM are no longer supported and cannot be enabled")
 			}
 		}
 	}

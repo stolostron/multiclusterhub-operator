@@ -51,6 +51,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -2525,5 +2526,61 @@ func Test_detectContainerChanges(t *testing.T) {
 				t.Errorf("detectContainerChanges() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func Test_AutoDisableEdgeManagerPreview(t *testing.T) {
+	ctx := context.Background()
+	mch := &operatorv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-mch",
+			Namespace: "test-ns",
+		},
+		Spec: operatorv1.MultiClusterHubSpec{
+			Overrides: &operatorv1.Overrides{
+				Components: []operatorv1.ComponentConfig{
+					{
+						Name:    operatorv1.EdgeManagerPreview,
+						Enabled: true,
+					},
+				},
+			},
+		},
+	}
+
+	scheme := runtime.NewScheme()
+	_ = operatorv1.AddToScheme(scheme)
+
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(mch).Build()
+
+	r := &MultiClusterHubReconciler{
+		Client: client,
+		Scheme: scheme,
+		Log:    ctrl.Log.WithName("test"),
+	}
+
+	result, err := r.Reconcile(ctx, reconcile.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      mch.Name,
+			Namespace: mch.Namespace,
+		},
+	})
+
+	if err != nil {
+		t.Errorf("Reconcile returned error: %v", err)
+	}
+
+	if !result.Requeue {
+		t.Errorf("Expected Requeue=true, got Requeue=false")
+	}
+
+	// Verify edge-manager-preview was disabled
+	updatedMCH := &operatorv1.MultiClusterHub{}
+	if err := client.Get(ctx, types.NamespacedName{Name: mch.Name, Namespace: mch.Namespace}, updatedMCH); err != nil {
+		t.Fatalf("Failed to get updated MCH: %v", err)
+	}
+
+	if updatedMCH.Enabled(operatorv1.EdgeManagerPreview) {
+		t.Errorf("Expected edge-manager-preview to be disabled, but it is still enabled")
 	}
 }
