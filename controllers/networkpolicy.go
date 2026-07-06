@@ -68,7 +68,38 @@ func (r *MultiClusterHubReconciler) ensureNetworkPolicies(ctx context.Context, m
 
 		componentEnabled := mch.Enabled(component)
 		if !componentEnabled {
-			// Component disabled - nothing to create or delete (rely on global deletion above if needed)
+			// Component disabled - delete its NetworkPolicy if MCH-created
+			chartLocation := r.fetchChartLocation(component)
+			templates, errs := renderer.RenderChart(chartLocation, mch, cacheSpec.ImageOverrides, cacheSpec.TemplateOverrides,
+				isSTSEnabled, r.OLMVersion)
+
+			if len(errs) > 0 {
+				// Skip deletion if chart rendering fails - component may have been removed
+				continue
+			}
+
+			// Find and delete NetworkPolicy templates
+			for _, template := range templates {
+				if template.GetKind() == "NetworkPolicy" {
+					np := &networkingv1.NetworkPolicy{}
+					err := r.Client.Get(ctx, types.NamespacedName{
+						Name:      template.GetName(),
+						Namespace: template.GetNamespace(),
+					}, np)
+
+					if err == nil {
+						// Check if MCH-created via installer labels
+						if np.Labels["installer.name"] == mch.Name && np.Labels["installer.namespace"] == mch.Namespace {
+							if err := r.Client.Delete(ctx, np); err != nil && !errors.IsNotFound(err) {
+								return ctrl.Result{}, fmt.Errorf("failed to delete NetworkPolicy %s/%s: %w", np.Namespace, np.Name, err)
+							}
+							log.Info("Deleted NetworkPolicy for disabled component", "name", np.Name, "namespace", np.Namespace, "component", component)
+						}
+					} else if !errors.IsNotFound(err) {
+						return ctrl.Result{}, fmt.Errorf("failed to get NetworkPolicy %s: %w", template.GetName(), err)
+					}
+				}
+			}
 			continue
 		}
 
@@ -78,9 +109,11 @@ func (r *MultiClusterHubReconciler) ensureNetworkPolicies(ctx context.Context, m
 			isSTSEnabled, r.OLMVersion)
 
 		if len(errs) > 0 {
-			// Rendering errors are non-fatal - component may not have NetworkPolicy template yet
-			log.V(2).Info("Chart rendering had errors", "component", component, "errors", len(errs))
-			continue
+			// Rendering errors indicate real chart failures - log and requeue
+			for _, err := range errs {
+				log.Info(err.Error())
+			}
+			return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 		}
 
 		// Filter for NetworkPolicy resources only
