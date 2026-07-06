@@ -1,10 +1,10 @@
 global:
-  olmVersion: v0
   apiUrl: ''
   baseDomain: ''
   imageOverrides:
     submariner_addon: ''
   namespace: default
+  olmVersion: v0
   pullSecret: null
   templateOverrides: {}
   networkPolicies:
