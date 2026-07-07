@@ -17,7 +17,7 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.0
 	github.com/stolostron/backplane-operator v0.0.0-20260612175916-f525ef3337e4
 	github.com/stolostron/search-v2-operator v0.0.0-20250818191351-8d847101bcdd
-	go.uber.org/zap v1.27.1
+	go.uber.org/zap v1.28.0
 	helm.sh/helm/v3 v3.20.2
 	k8s.io/api v0.35.4
 	k8s.io/apiextensions-apiserver v0.35.4
