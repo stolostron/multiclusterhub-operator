@@ -1,0 +1,11 @@
+apiVersion: v2
+name: dynamic-scoring-framework
+description: A Helm chart for Open Cluster Management Dynamic Scoring Framework Addon
+category: "Development"
+keywords:
+  - acm
+  - addon-scoring
+type: application
+version: 5.0.0
+appVersion: 5.0.0
+verified: "RHACM"

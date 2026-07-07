@@ -1,0 +1,60 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: dynamic-scoring-framework
+  name: '{{ .Values.org }}:{{ .Chart.Name }}:dynamic-scoring-framework'
+rules:
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - managedclusters
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - dynamic-scoring.open-cluster-management.io
+  resources:
+  - dynamicscorers
+  - dynamicscoringconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - dynamic-scoring.open-cluster-management.io
+  resources:
+  - dynamicscorers/finalizers
+  - dynamicscoringconfigs/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - dynamic-scoring.open-cluster-management.io
+  resources:
+  - dynamicscorers/status
+  - dynamicscoringconfigs/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - work.open-cluster-management.io
+  resources:
+  - manifestworks
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch

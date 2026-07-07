@@ -1,0 +1,21 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: dynamic-scoring-framework
+  name: '{{ .Values.org }}:{{ .Chart.Name }}:dynamic-scoring-framework'
+rules:
+- apiGroups:
+  - dynamic-scoring.open-cluster-management.io
+  resources:
+  - dynamicscoringconfigs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - dynamic-scoring.open-cluster-management.io
+  resources:
+  - dynamicscoringconfigs/status
+  verbs:
+  - get
