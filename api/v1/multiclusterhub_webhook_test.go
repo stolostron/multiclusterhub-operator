@@ -18,18 +18,6 @@ var (
 var _ = Describe("Multiclusterhub webhook", func() {
 
 	Context("Creating a Multiclusterhub", func() {
-		It("Should successfully create multiclusterhub", func() {
-			By("by creating a new standalone Multiclusterhub resource", func() {
-				mch := &MultiClusterHub{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      multiClusterHubName,
-						Namespace: "default",
-					},
-				}
-				Expect(k8sClient.Create(ctx, mch)).Should(Succeed())
-			})
-		})
-
 		It("Should fail to create multiclusterhub", func() {
 			By("because of invalid AvailabilityConfig", func() {
 				mch := &MultiClusterHub{
@@ -61,6 +49,37 @@ var _ = Describe("Multiclusterhub webhook", func() {
 					},
 				}
 				Expect(k8sClient.Create(ctx, mch)).NotTo(BeNil(), "Invalid components not allowed in config")
+			})
+			By("because edge-manager-preview is not supported", func() {
+				mch := &MultiClusterHub{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      fmt.Sprintf("%s-edge", multiClusterHubName),
+						Namespace: "default",
+					},
+					Spec: MultiClusterHubSpec{
+						Overrides: &Overrides{
+							Components: []ComponentConfig{
+								{
+									Name:    EdgeManagerPreview,
+									Enabled: true,
+								},
+							},
+						},
+					},
+				}
+				Expect(k8sClient.Create(ctx, mch)).NotTo(BeNil(), "edge-manager-preview component should be blocked")
+			})
+		})
+
+		It("Should successfully create multiclusterhub", func() {
+			By("by creating a new standalone Multiclusterhub resource", func() {
+				mch := &MultiClusterHub{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      multiClusterHubName,
+						Namespace: "default",
+					},
+				}
+				Expect(k8sClient.Create(ctx, mch)).Should(Succeed())
 			})
 		})
 
@@ -113,6 +132,24 @@ var _ = Describe("Multiclusterhub webhook", func() {
 				Expect(k8sClient.Get(ctx,
 					types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)).To(Succeed())
 				Expect(k8sClient.Update(ctx, mch)).To(BeNil(), "Changing nothing should not throw an error")
+			})
+		})
+
+		It("Should block enabling edge-manager-preview on update", func() {
+			mch := &MultiClusterHub{}
+			By("rejecting attempts to enable edge-manager-preview", func() {
+				Expect(k8sClient.Get(ctx,
+					types.NamespacedName{Name: multiClusterHubName, Namespace: "default"}, mch)).To(Succeed())
+
+				mch.Spec.Overrides = &Overrides{
+					Components: []ComponentConfig{
+						{
+							Name:    EdgeManagerPreview,
+							Enabled: true,
+						},
+					},
+				}
+				Expect(k8sClient.Update(ctx, mch)).NotTo(BeNil(), "edge-manager-preview cannot be enabled")
 			})
 		})
 
