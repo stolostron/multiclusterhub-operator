@@ -1,0 +1,43 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    helm.sh/hook: pre-delete
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    helm.sh/hook-weight: '-5'
+  labels:
+    app.kubernetes.io/name: mtv-integrations
+  name: mtv-advisor-mra-cleanup
+  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
+spec:
+  activeDeadlineSeconds: 120
+  backoffLimit: 4
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mtv-integrations
+    spec:
+      containers:
+      - command:
+        - /manager
+        - cleanup
+        - --namespace=open-cluster-management
+        env: []
+        image: '{{ .Values.global.imageOverrides.mtv_integrations }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+        name: cleanup
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+      restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: mtv-advisor-mra-cleanup
+  ttlSecondsAfterFinished: 300
