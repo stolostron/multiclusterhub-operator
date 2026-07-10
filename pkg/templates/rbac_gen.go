@@ -500,6 +500,8 @@ package main
 //+kubebuilder:rbac:groups=rbac.open-cluster-management.io,resources=clusterpermissions,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=rbac.open-cluster-management.io,resources=clusterpermissions;multiclusterroleassignments,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=rbac.open-cluster-management.io,resources=clusterpermissions;multiclusterroleassignments,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=rbac.open-cluster-management.io,resources=multiclusterroleassignments,verbs=get;update;delete
+//+kubebuilder:rbac:groups=rbac.open-cluster-management.io,resources=multiclusterroleassignments,verbs=get;update;delete
 //+kubebuilder:rbac:groups=rbac.open-cluster-management.io,resources=multiclusterroleassignments/finalizers,verbs=update
 //+kubebuilder:rbac:groups=rbac.open-cluster-management.io,resources=multiclusterroleassignments/finalizers,verbs=update
 //+kubebuilder:rbac:groups=rbac.open-cluster-management.io,resources=multiclusterroleassignments/status,verbs=get;patch;update
