@@ -419,6 +419,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 		Expect(ocmapi.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(networking.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(operatorsapiv2.AddToScheme(clientScheme)).Should(Succeed())
+		Expect(openshift_consolev1.AddToScheme(clientScheme)).Should(Succeed())
 		k8sManager, err := ctrl.NewManager(clientConfig, ctrl.Options{
 			Scheme: clientScheme,
 			Metrics: metricsserver.Options{
