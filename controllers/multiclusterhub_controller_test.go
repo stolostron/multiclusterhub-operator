@@ -27,6 +27,7 @@ import (
 	ocmapi "open-cluster-management.io/api/addon/v1alpha1"
 
 	configv1 "github.com/openshift/api/config/v1"
+	openshift_consolev1 "github.com/openshift/api/console/v1"
 	ocopv1 "github.com/openshift/api/operator/v1"
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
@@ -1050,6 +1051,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 func registerScheme() {
 	configv1.AddToScheme(scheme.Scheme)
+	openshift_consolev1.AddToScheme(scheme.Scheme)
 	ocopv1.AddToScheme(scheme.Scheme)
 	operatorv1.AddToScheme(scheme.Scheme)
 	mcev1.AddToScheme(scheme.Scheme)
