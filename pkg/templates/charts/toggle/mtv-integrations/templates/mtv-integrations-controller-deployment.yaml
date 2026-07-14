@@ -65,6 +65,10 @@ spec:
         - name: NO_PROXY
           value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
 {{- end }}
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: '{{ .Values.global.imageOverrides.mtv_integrations }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         livenessProbe:
