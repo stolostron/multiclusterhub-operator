@@ -146,11 +146,15 @@ func main() {
 	var leaseDuration time.Duration
 	var renewDeadline time.Duration
 	var retryPeriod time.Duration
+	var teardownMode bool
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8383", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", true,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+	flag.BoolVar(&teardownMode, "teardown-mode", false,
+		"Run in teardown-only mode. Only the HubTeardown controller is started "+
+			"with no leader election and no webhooks. Used by the resilient teardown Job.")
 	flag.DurationVar(&leaseDuration, "leader-election-lease-duration", 137*time.Second, ""+
 		"The duration that non-leader candidates will wait after observing a leadership "+
 		"renewal until attempting to acquire leadership of a led but unrenewed leader "+
@@ -174,6 +178,11 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	ctrl.Log.WithName("MultiClusterHub Operator version").Info(fmt.Sprintf("%#v", version.Get()))
+
+	if teardownMode {
+		runTeardownMode()
+		return
+	}
 
 	ns, err := getOperatorNamespace()
 	if err != nil {
@@ -349,6 +358,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	teardownReconciler := &controllers.HubTeardownReconciler{
+		Client:         mgr.GetClient(),
+		UncachedClient: uncachedClient,
+		Scheme:         mgr.GetScheme(),
+		Log:            ctrl.Log.WithName("Controller").WithName("HubTeardown"),
+	}
+	if err = teardownReconciler.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "HubTeardown")
+		os.Exit(1)
+	}
+
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		// https://book.kubebuilder.io/cronjob-tutorial/running.html#running-webhooks-locally, https://book.kubebuilder.io/multiversion-tutorial/webhooks.html#and-maingo
 		if err = ensureWebhooks(uncachedClient); err != nil {
@@ -386,6 +406,57 @@ const (
 	ForceRunModeEnv = "OSDK_FORCE_RUN_MODE"
 	LocalRunMode    = "local"
 )
+
+// runTeardownMode starts a minimal manager that only runs the HubTeardown controller.
+// Used by the resilient teardown Job to continue cleanup if the operator pod is removed.
+func runTeardownMode() {
+	setupLog.Info("Starting in teardown-only mode")
+
+	tdName := os.Getenv("TEARDOWN_NAME")
+	tdNamespace := os.Getenv("TEARDOWN_NAMESPACE")
+	if tdName == "" || tdNamespace == "" {
+		setupLog.Error(fmt.Errorf("TEARDOWN_NAME and TEARDOWN_NAMESPACE must be set"), "missing required env vars")
+		os.Exit(1)
+	}
+
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+		Scheme: scheme,
+		Metrics: metricsserver.Options{
+			BindAddress: "0",
+		},
+		HealthProbeBindAddress: "0",
+		LeaderElection:         false,
+	})
+	if err != nil {
+		setupLog.Error(err, "unable to start teardown manager")
+		os.Exit(1)
+	}
+
+	uncachedClient, err := client.New(ctrl.GetConfigOrDie(), client.Options{
+		Scheme: scheme,
+	})
+	if err != nil {
+		setupLog.Error(err, "unable to create uncached client for teardown mode")
+		os.Exit(1)
+	}
+
+	teardownReconciler := &controllers.HubTeardownReconciler{
+		Client:         mgr.GetClient(),
+		UncachedClient: uncachedClient,
+		Scheme:         mgr.GetScheme(),
+		Log:            ctrl.Log.WithName("Controller").WithName("HubTeardown"),
+	}
+	if err = teardownReconciler.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "HubTeardown")
+		os.Exit(1)
+	}
+
+	setupLog.Info("Starting teardown manager", "teardownName", tdName, "teardownNamespace", tdNamespace)
+	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+		setupLog.Error(err, "problem running teardown manager")
+		os.Exit(1)
+	}
+}
 
 func addMultiClusterEngineWatch(ctx context.Context, mgr ctrl.Manager, uncachedClient client.Client) {
 	for {
