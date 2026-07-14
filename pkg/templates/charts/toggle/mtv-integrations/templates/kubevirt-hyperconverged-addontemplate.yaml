@@ -92,53 +92,54 @@ spec:
           name: kubevirt-hyperconverged
           namespace: openshift-cnv
         spec:
-          applicationAwareConfig:
-            allowApplicationAwareClusterResourceQuota: false
-            vmiCalcConfigName: DedicatedVirtualResources
-          certConfig:
-            ca:
-              duration: 48h0m0s
-              renewBefore: 24h0m0s
-            server:
-              duration: 24h0m0s
-              renewBefore: 12h0m0s
-          featureGates:
-            alignCPUs: false
-            autoResourceLimits: false
-            decentralizedLiveMigration: true
-            deployKubeSecondaryDNS: false
-            deployKubevirtIpamController: false
-            deployTektonTaskResources: false
+          deployment:
+            applicationAwareConfig:
+              enable: false
+              vmiCalcConfigName: DedicatedVirtualResources
             deployVmConsoleProxy: false
-            disableMDevConfiguration: false
-            downwardMetrics: false
-            enableApplicationAwareQuota: false
-            enableCommonBootImageImport: true
-            enableManagedTenantQuota: false
-            nonRoot: true
-            persistentReservation: false
-            primaryUserDefinedNetworkBinding: false
-            withHostPassthroughCPU: false
-          higherWorkloadDensity:
-            memoryOvercommitPercentage: 100
-          liveMigrationConfig:
-            allowAutoConverge: false
-            allowPostCopy: false
-            completionTimeoutPerGiB: 800
-            parallelMigrationsPerCluster: 5
-            parallelOutboundMigrationsPerNode: 2
-            progressTimeout: 150
-          resourceRequirements:
+            uninstallStrategy: BlockUninstallIfWorkloadsExist
+          featureGates:
+          - name: decentralizedLiveMigration
+            state: Enabled
+          - name: downwardMetrics
+            state: Disabled
+          - name: disableMDevConfiguration
+            state: Disabled
+          - name: deployKubeSecondaryDNS
+            state: Disabled
+          - name: alignCPUs
+            state: Disabled
+          - name: persistentReservation
+            state: Disabled
+          security:
+            certConfig:
+              ca:
+                duration: 48h0m0s
+                renewBefore: 24h0m0s
+              server:
+                duration: 24h0m0s
+                renewBefore: 12h0m0s
+          virtualization:
+            higherWorkloadDensity:
+              memoryOvercommitPercentage: 100
+            liveMigrationConfig:
+              allowAutoConverge: false
+              allowPostCopy: false
+              completionTimeoutPerGiB: 800
+              parallelMigrationsPerCluster: 5
+              parallelOutboundMigrationsPerNode: 2
+              progressTimeout: 150
+            virtualMachineOptions:
+              disableFreePageReporting: false
+              disableSerialConsoleLog: true
             vmiCPUAllocationRatio: 10
-          uninstallStrategy: BlockUninstallIfWorkloadsExist
-          virtualMachineOptions:
-            disableFreePageReporting: false
-            disableSerialConsoleLog: true
-          workloadUpdateStrategy:
-            batchEvictionInterval: 1m0s
-            batchEvictionSize: 10
-            workloadUpdateMethods:
-            - LiveMigrate
+            workloadUpdateStrategy:
+              batchEvictionInterval: 1m0s
+              batchEvictionSize: 10
+              workloadUpdateMethods:
+              - LiveMigrate
+          workloadSources:
+            enableCommonBootImageImport: true
   registration:
   - customSigner:
       signerName: open-cluster-management.io/kubevirt-hyperconverged-addon
