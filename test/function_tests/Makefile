@@ -59,6 +59,19 @@ podman-ft-downstream-install:
 		--volume ~/.kube/config:/opt/.kube/config \
 		$(REGISTRY)/$(IMG)-tests:$(VERSION)
 
+## Run the HubTeardown functional tests (downstream)
+ft-downstream-hubteardown:
+	docker run --network host \
+		--env pullSecret=$(PULL_SECRET_NAME) \
+		--env source=$(SOURCE_NAME) \
+		--env channel=$(CHANNEL) \
+		--env sourceNamespace=$(SOURCE_NAMESPACE) \
+		--env name=$(SUBSCRIPTION_NAME) \
+		--env TEST_MODE="hubteardown" \
+		--env skipSubscription="true" \
+		--volume ~/.kube/config:/opt/.kube/config \
+		$(REGISTRY)/$(IMG)-tests:$(VERSION)
+
 ## Run the uninstall functional tests
 podman-ft-downstream-uninstall:
 	podman run --network host \
@@ -93,6 +106,10 @@ ft-install:
 ## Run the uninstall functional tests directly
 ft-uninstall:
 	export skipSubscription="true"; ginkgo -tags functional -v --slow-spec-threshold=100s test/function_tests/multiclusterhub_uninstall_test
+
+## Run the HubTeardown functional tests directly
+ft-hubteardown:
+	export skipSubscription="true"; ginkgo -tags functional -v --slow-spec-threshold=300s test/function_tests/hubteardown_test
 
 ## Run the update functional tests directly
 ft-update:

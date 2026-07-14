@@ -1,0 +1,40 @@
+# Copyright Contributors to the Open Cluster Management project
+#
+# Example HubTeardown CR for orchestrated RHACM uninstallation.
+#
+# Usage:
+#   1. Apply this CR to start a dry-run scan:
+#      oc apply -f operator_v1_hubteardown.yaml
+#
+#   2. Review the scan results (pick any):
+#      oc get hubteardown teardown -n open-cluster-management -o yaml
+#      oc describe hubteardown teardown -n open-cluster-management
+#
+#   3. Check cloud resource warnings:
+#      oc get hubteardown teardown -n open-cluster-management -o jsonpath='{range .status.cloudResourceWarnings[*]}{.resource.kind}/{.resource.namespace}/{.resource.name}: {.riskSummary}{"\n"}{end}'
+#
+#   4. Check events emitted by the controller:
+#      oc get events -n open-cluster-management --field-selector reason!=LeaderElection --sort-by='.lastTimestamp' | grep -i teardown
+#
+#   5. Check operator logs for dry-run details:
+#      oc logs -n open-cluster-management deployment/multiclusterhub-operator --tail=100 | grep -i hubteardown
+#
+#   6. Disable dry-run to begin teardown (non-destructive phases):
+#      oc patch hubteardown teardown -n open-cluster-management --type=merge -p '{"spec":{"dryRun":false}}'
+#
+#   7. If stuck resources need Tier 2 (non-cloud) finalizer patching:
+#      oc patch hubteardown teardown -n open-cluster-management --type=merge -p '{"spec":{"approvedDestructiveActions":true}}'
+#
+#   8. If cloud-protecting finalizers need patching (CAUTION: orphans cloud resources):
+#      oc patch hubteardown teardown -n open-cluster-management --type=merge -p '{"spec":{"acknowledgeCloudResourceRisk":true}}'
+#
+#   9. Pause at any time to re-scan:
+#      oc patch hubteardown teardown -n open-cluster-management --type=merge -p '{"spec":{"dryRun":true}}'
+
+apiVersion: operator.open-cluster-management.io/v1
+kind: HubTeardown
+metadata:
+  name: teardown
+  namespace: open-cluster-management
+spec:
+  dryRun: true

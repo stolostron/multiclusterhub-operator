@@ -20,8 +20,12 @@ elif [[ "$TEST_MODE" == "update" ]]; then
     echo "Beginning Update Tests ..."
     echo ""
     ginkgo -tags functional -v --slow-spec-threshold=900s test/multiclusterhub_update_test
+elif [[ "$TEST_MODE" == "hubteardown" ]]; then
+    echo "Beginning HubTeardown Tests ..."
+    echo ""
+    ginkgo -tags functional -v --slow-spec-threshold=300s test/hubteardown_test
 else
-    echo "TEST_MODE not exported. Must be of type 'install', 'uninstall', or 'update'"
+    echo "TEST_MODE not exported. Must be of type 'install', 'uninstall', 'update', or 'hubteardown'"
     echo ""
     exit 1
 fi

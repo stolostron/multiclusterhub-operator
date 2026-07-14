@@ -677,6 +677,14 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apps
+  resources:
+  - deployments/scale
+  verbs:
+  - get
+  - list
+  - patch
+- apiGroups:
   - apps.open-cluster-management.io
   resources:
   - '*'
@@ -756,6 +764,18 @@ rules:
   verbs:
   - create
   - get
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - capi-provider.agent-install.openshift.io
   resources:
@@ -1039,7 +1059,6 @@ rules:
   resources:
   - clusterclaims
   - clusterdeprovisions
-  - clusterpools
   - clusterprovisions
   - machinepools
   verbs:
@@ -1071,6 +1090,16 @@ rules:
   verbs:
   - get
   - list
+  - watch
+- apiGroups:
+  - hive.openshift.io
+  resources:
+  - clusterpools
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
   - watch
 - apiGroups:
   - hive.openshift.io
@@ -1312,6 +1341,7 @@ rules:
 - apiGroups:
   - operator.open-cluster-management.io
   resources:
+  - hubteardowns
   - internalhubcomponents
   verbs:
   - create
@@ -1324,8 +1354,17 @@ rules:
 - apiGroups:
   - operator.open-cluster-management.io
   resources:
+  - hubteardowns/finalizers
   - internalhubcomponents/finalizers
   verbs:
+  - update
+- apiGroups:
+  - operator.open-cluster-management.io
+  resources:
+  - hubteardowns/status
+  verbs:
+  - get
+  - patch
   - update
 - apiGroups:
   - operator.open-cluster-management.io
@@ -1371,6 +1410,17 @@ rules:
   - subscriptions
   verbs:
   - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - operators.coreos.com
+  resources:
+  - subscriptions/finalizers
+  verbs:
   - delete
   - get
   - list
