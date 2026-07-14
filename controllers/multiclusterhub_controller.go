@@ -81,7 +81,7 @@ var (
 //+kubebuilder:rbac:groups="olm.operatorframework.io",resources=clusterextensions;clustercatalogs,verbs=create;get;list;patch;update;delete;watch
 //+kubebuilder:rbac:groups="olm.operatorframework.io",resources=clusterextensions/status;clustercatalogs/status,verbs=get;list;watch
 //+kubebuilder:rbac:groups="multicluster.openshift.io",resources=multiclusterengines,verbs=create;get;list;patch;update;delete;watch
-//+kubebuilder:rbac:groups=console.openshift.io;search.open-cluster-management.io,resources=consoleplugins;consolelinks;searches,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=console.openshift.io;search.open-cluster-management.io,resources=consoleplugins;consolelinks;consolenotifications;searches,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=operator.openshift.io,resources=cloudcredentials;consoles,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers;authentications;infrastructures,verbs=get;list;watch
 //+kubebuilder:rbac:groups="";"apps",resources=deployments;services;serviceaccounts,verbs=patch;delete;get;deletecollection
