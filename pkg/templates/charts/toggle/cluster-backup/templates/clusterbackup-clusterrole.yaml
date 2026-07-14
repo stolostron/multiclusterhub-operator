@@ -16,13 +16,129 @@ metadata:
     component: clusterrole
 
 rules:
-- apiGroups:
-  - '*'
+# Core Kubernetes resources
+- apiGroups: [""]
   resources:
-  - '*'
-  verbs:
-  - '*'
-- nonResourceURLs:
-  - '*'
-  verbs:
-  - '*'
+  - secrets
+  verbs: [get, list, watch, create, update, delete, patch]
+- apiGroups: [""]
+  resources:
+  - configmaps
+  verbs: [get, list, watch, update, delete]
+- apiGroups: [""]
+  resources:
+  - namespaces
+  verbs: [get, list, watch]
+- apiGroups: [""]
+  resources:
+  - events
+  verbs: [create, patch]
+
+# ACM Backup/Restore CRDs
+- apiGroups: [cluster.open-cluster-management.io]
+  resources:
+  - backupschedules
+  - backupschedules/status
+  - backupschedules/finalizers
+  - restores
+  - restores/status
+  - restores/finalizers
+  verbs: [get, list, watch, create, update, patch, delete]
+- apiGroups: [cluster.open-cluster-management.io]
+  resources:
+  - managedclusters
+  verbs: [get, list, watch, update, patch]
+
+# Velero / OADP resources
+- apiGroups: [velero.io]
+  resources:
+  - backups
+  - restores
+  - schedules
+  - deletebackuprequests
+  verbs: [get, list, watch, create, update, patch, delete]
+- apiGroups: [velero.io]
+  resources:
+  - backupstoragelocations
+  verbs: [get, list, watch]
+- apiGroups: [oadp.openshift.io]
+  resources:
+  - dataprotectionapplications
+  verbs: [get, list, watch]
+
+# Managed Service Account (pre-backup auto-import setup)
+- apiGroups: [authentication.open-cluster-management.io]
+  resources:
+  - managedserviceaccounts
+  verbs: [get, list, create, delete, patch]
+
+# Addon framework (MSA addon creation)
+- apiGroups: [addon.open-cluster-management.io]
+  resources:
+  - managedclusteraddons
+  verbs: [get, list, watch, create, delete]
+- apiGroups: [addon.open-cluster-management.io]
+  resources:
+  - clustermanagementaddons
+  verbs: [get, list]
+
+# ManifestWork (push RoleBinding to managed clusters for MSA)
+- apiGroups: [work.open-cluster-management.io]
+  resources:
+  - manifestworks
+  verbs: [get, list, watch, create, delete]
+
+# Hive resources
+- apiGroups: [hive.openshift.io]
+  resources:
+  - clusterdeployments
+  verbs: [get, list, watch, patch]
+- apiGroups: [hive.openshift.io]
+  resources:
+  - clusterpools
+  verbs: [get, list, watch]
+
+# ACM Channels (exclude channel namespaces from backup)
+- apiGroups: [apps.open-cluster-management.io]
+  resources:
+  - channels
+  verbs: [get, list, watch]
+
+# MCH / MCE operator resources
+- apiGroups: [operator.open-cluster-management.io]
+  resources:
+  - multiclusterhubs
+  verbs: [get, list, watch]
+- apiGroups: [operator.open-cluster-management.io]
+  resources:
+  - internalhubcomponents
+  verbs: [get, list, update, patch]
+- apiGroups: [multicluster.openshift.io]
+  resources:
+  - multiclusterengines
+  verbs: [get, list]
+
+# Cluster version and APIServer (hub identification + TLS profile)
+- apiGroups: [config.openshift.io]
+  resources:
+  - clusterversions
+  - apiservers
+  verbs: [get, list, watch]
+
+# Leader election
+- apiGroups: [coordination.k8s.io]
+  resources:
+  - leases
+  verbs: [get, list, watch, create, update, patch, delete]
+
+# Discovery API access
+- nonResourceURLs: ["/api", "/api/*", "/apis", "/apis/*"]
+  verbs: [get]
+
+# Dynamic: read + delete + patch for cleanup of ANY resource type.
+# Cannot be narrowed further — the cleanup path discovers CRDs at runtime
+# and lists/deletes/patches-finalizers on arbitrary resource types that have
+# the backup label. "create" and "update" are NOT included.
+- apiGroups: ["*"]
+  resources: ["*"]
+  verbs: [get, list, watch, delete, patch]
