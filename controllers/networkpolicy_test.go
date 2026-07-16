@@ -300,7 +300,7 @@ func Test_ensureNetworkPolicies_Enabled_GetError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error from Get, got nil")
 	}
-	if expected := "failed to get NetworkPolicy mtv-integrations-controller: simulated get error"; err.Error() != expected {
+	if expected := "failed to get NetworkPolicy deny-all: simulated get error"; err.Error() != expected {
 		t.Errorf("error = %q, want %q", err.Error(), expected)
 	}
 }
@@ -419,7 +419,7 @@ func Test_ensureNetworkPolicies_DisabledComponent_GetError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error from Get, got nil")
 	}
-	if expected := "failed to get NetworkPolicy mtv-integrations-controller: simulated get error"; err.Error() != expected {
+	if expected := "failed to get NetworkPolicy deny-all: simulated get error"; err.Error() != expected {
 		t.Errorf("error = %q, want %q", err.Error(), expected)
 	}
 }
