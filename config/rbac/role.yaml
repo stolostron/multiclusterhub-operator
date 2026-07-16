@@ -686,20 +686,20 @@ rules:
   - apps.open-cluster-management.io
   resources:
   - channels
-  - gitopsclusters
-  - helmreleases
-  - multiclusterapplicationsetreports
-  - subscriptionreports
+  - placementrules
+  - subscriptions
   verbs:
+  - get
   - list
   - watch
 - apiGroups:
   - apps.open-cluster-management.io
   resources:
-  - placementrules
-  - subscriptions
+  - gitopsclusters
+  - helmreleases
+  - multiclusterapplicationsetreports
+  - subscriptionreports
   verbs:
-  - get
   - list
   - watch
 - apiGroups:
@@ -808,6 +808,24 @@ rules:
 - apiGroups:
   - cluster.open-cluster-management.io
   resources:
+  - backupschedules
+  - backupschedules/finalizers
+  - backupschedules/status
+  - managedclusters
+  - restores
+  - restores/finalizers
+  - restores/status
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
   - clusterclaims
   verbs:
   - get
@@ -827,18 +845,6 @@ rules:
   verbs:
   - get
   - list
-  - watch
-- apiGroups:
-  - cluster.open-cluster-management.io
-  resources:
-  - managedclusters
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
   - watch
 - apiGroups:
   - cluster.open-cluster-management.io
@@ -948,6 +954,7 @@ rules:
   - search.open-cluster-management.io
   resources:
   - consolelinks
+  - consolenotifications
   - consoleplugins
   - searches
   verbs:
@@ -1039,7 +1046,6 @@ rules:
   resources:
   - clusterclaims
   - clusterdeprovisions
-  - clusterpools
   - clusterprovisions
   - machinepools
   verbs:
@@ -1068,6 +1074,7 @@ rules:
   - hive.openshift.io
   resources:
   - clusterimagesets
+  - clusterpools
   verbs:
   - get
   - list
@@ -1260,6 +1267,14 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - oadp.openshift.io
+  resources:
+  - dataprotectionapplications
+  verbs:
+  - get
+  - list
   - watch
 - apiGroups:
   - oauth.openshift.io
@@ -1644,6 +1659,29 @@ rules:
   - users
   verbs:
   - impersonate
+- apiGroups:
+  - velero.io
+  resources:
+  - backups
+  - deletebackuprequests
+  - restores
+  - schedules
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - velero.io
+  resources:
+  - backupstoragelocations
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - view.open-cluster-management.io
   resources:
