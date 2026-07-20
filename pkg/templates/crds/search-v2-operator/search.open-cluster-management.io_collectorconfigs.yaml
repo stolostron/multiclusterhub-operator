@@ -170,10 +170,10 @@ spec:
                               by Search Collectors. Default is a string.
                             enum:
                             - bytes
-                            - slice
                             - string
-                            - number
-                            - mapString
+                            - integer
+                            - float
+                            - boolean
                             type: string
                         required:
                         - jsonPath
