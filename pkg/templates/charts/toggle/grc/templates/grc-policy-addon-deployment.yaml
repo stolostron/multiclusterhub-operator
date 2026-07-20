@@ -81,9 +81,7 @@ spec:
         {{- end }}
       {{- end }}  
       containers:
-      - args:
-        - controller
-        command:
+      - command:
         - governance-policy-addon-controller
         env:
         - name: POD_NAME
