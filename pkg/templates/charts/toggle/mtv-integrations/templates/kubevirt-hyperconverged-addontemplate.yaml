@@ -94,23 +94,11 @@ spec:
         spec:
           deployment:
             applicationAwareConfig:
+              allowApplicationAwareClusterResourceQuota: false
               enable: false
               vmiCalcConfigName: DedicatedVirtualResources
             deployVmConsoleProxy: false
             uninstallStrategy: BlockUninstallIfWorkloadsExist
-          featureGates:
-          - name: decentralizedLiveMigration
-            state: Enabled
-          - name: downwardMetrics
-            state: Disabled
-          - name: disableMDevConfiguration
-            state: Disabled
-          - name: deployKubeSecondaryDNS
-            state: Disabled
-          - name: alignCPUs
-            state: Disabled
-          - name: persistentReservation
-            state: Disabled
           security:
             certConfig:
               ca:
