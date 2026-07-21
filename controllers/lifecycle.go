@@ -75,6 +75,7 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 	cleanupFunctions := []func(reqLogger logr.Logger, m *operatorv1.MultiClusterHub) error{
 		r.cleanupNamespaces, r.cleanupClusterRoles, r.cleanupClusterRoleBindings,
 		r.cleanupMultiClusterEngine, r.orphanOwnedMultiClusterEngine,
+		r.cleanupConsoleNotifications,
 	}
 
 	for _, cleanupFn := range cleanupFunctions {
