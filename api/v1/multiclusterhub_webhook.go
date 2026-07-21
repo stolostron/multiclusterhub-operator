@@ -51,8 +51,10 @@ const (
 	annotationMCHPause         = "installer.open-cluster-management.io/pause"
 
 	// OLM version-specific annotations
-	annotationMCESubscriptionSpec     = "installer.open-cluster-management.io/mce-subscription-spec"
-	annotationMCEClusterExtensionSpec = "installer.open-cluster-management.io/mce-clusterextension-spec"
+	annotationMCESubscriptionSpec      = "installer.open-cluster-management.io/mce-subscription-spec"
+	annotationMCEClusterExtensionSpec  = "installer.open-cluster-management.io/mce-clusterextension-spec"
+	annotationOADPSubscriptionSpec     = "installer.open-cluster-management.io/oadp-subscription-spec"
+	annotationOADPClusterExtensionSpec = "installer.open-cluster-management.io/oadp-clusterextension-spec"
 
 	// Deprecated annotation keys
 	deprecatedAnnotationIgnoreOCPVersion = "ignoreOCPVersion"
@@ -412,7 +414,7 @@ func contains(list []string, s string) bool {
 	return false
 }
 
-// validateOLMAnnotations validates that MCE annotations match the detected OLM version
+// validateOLMAnnotations validates that MCE and OADP annotations match the detected OLM version
 func validateOLMAnnotations(ctx context.Context, mch *MultiClusterHub) error {
 	annotations := mch.GetAnnotations()
 	if annotations == nil {
@@ -427,30 +429,43 @@ func validateOLMAnnotations(ctx context.Context, mch *MultiClusterHub) error {
 		return nil
 	}
 
-	hasV0Annotation := annotations[annotationMCESubscriptionSpec] != ""
-	hasV1Annotation := annotations[annotationMCEClusterExtensionSpec] != ""
+	// Validate MCE annotations
+	if err := validateOLMAnnotationPair(olmVersion, annotations,
+		annotationMCESubscriptionSpec, annotationMCEClusterExtensionSpec); err != nil {
+		return err
+	}
 
-	// No annotations set - valid
-	if !hasV0Annotation && !hasV1Annotation {
+	// Validate OADP annotations
+	if err := validateOLMAnnotationPair(olmVersion, annotations,
+		annotationOADPSubscriptionSpec, annotationOADPClusterExtensionSpec); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// validateOLMAnnotationPair validates that a v0/v1 annotation pair matches the detected OLM version
+func validateOLMAnnotationPair(olmVersion string, annotations map[string]string, v0Annotation, v1Annotation string) error {
+	hasV0 := annotations[v0Annotation] != ""
+	hasV1 := annotations[v1Annotation] != ""
+
+	if !hasV0 && !hasV1 {
 		return nil
 	}
 
-	// Reject v0 annotation on v1 cluster
-	if olmVersion == "v1" && hasV0Annotation {
+	if olmVersion == "v1" && hasV0 {
 		return fmt.Errorf("annotation %q is only valid for OLM v0 clusters. This cluster uses OLM v1. Use %q instead",
-			annotationMCESubscriptionSpec, annotationMCEClusterExtensionSpec)
+			v0Annotation, v1Annotation)
 	}
 
-	// Reject v1 annotation on v0 cluster
-	if olmVersion == "v0" && hasV1Annotation {
+	if olmVersion == "v0" && hasV1 {
 		return fmt.Errorf("annotation %q is only valid for OLM v1 clusters. This cluster uses OLM v0. Use %q instead",
-			annotationMCEClusterExtensionSpec, annotationMCESubscriptionSpec)
+			v1Annotation, v0Annotation)
 	}
 
-	// Reject v1 annotation when no OLM detected
-	if olmVersion == "" && hasV1Annotation {
+	if olmVersion == "" && hasV1 {
 		return fmt.Errorf("annotation %q requires OLM v1, but no OLM detected on this cluster",
-			annotationMCEClusterExtensionSpec)
+			v1Annotation)
 	}
 
 	return nil
