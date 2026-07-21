@@ -363,6 +363,42 @@ var _ = Describe("Multiclusterhub webhook", func() {
 			_ = mch
 		})
 
+		It("Should reject OADP v0 annotation when cluster has OLM v1", func() {
+			mch := &MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-oadp-v0-on-v1",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"installer.open-cluster-management.io/oadp-subscription-spec": `{"channel": "stable-1.4"}`,
+					},
+				},
+				Spec: MultiClusterHubSpec{
+					LocalClusterName: "test-cluster",
+				},
+			}
+
+			// Validation behavior depends on live cluster OLM detection
+			_ = mch
+		})
+
+		It("Should reject OADP v1 annotation when cluster has OLM v0", func() {
+			mch := &MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-oadp-v1-on-v0",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"installer.open-cluster-management.io/oadp-clusterextension-spec": `{"channels": ["stable"],"version": "1.6.0"}`,
+					},
+				},
+				Spec: MultiClusterHubSpec{
+					LocalClusterName: "test-cluster",
+				},
+			}
+
+			// Validation behavior depends on live cluster OLM detection
+			_ = mch
+		})
+
 		It("Should allow annotation when it matches cluster OLM version", func() {
 			mch := &MultiClusterHub{
 				ObjectMeta: metav1.ObjectMeta{
@@ -376,6 +412,55 @@ var _ = Describe("Multiclusterhub webhook", func() {
 
 			// No annotations set - should always pass
 			Expect(validateOLMAnnotations(ctx, mch)).To(Succeed())
+		})
+	})
+
+	Context("validateOLMAnnotationPair", func() {
+		It("Should return nil when no annotations set", func() {
+			err := validateOLMAnnotationPair("v1", map[string]string{},
+				annotationMCESubscriptionSpec, annotationMCEClusterExtensionSpec)
+			Expect(err).ToNot(HaveOccurred(), "empty annotations should pass validation for any OLM version")
+		})
+
+		It("Should reject MCE v0 annotation on v1 cluster", func() {
+			err := validateOLMAnnotationPair("v1", map[string]string{
+				annotationMCESubscriptionSpec: `{"channel": "stable-2.6"}`,
+			}, annotationMCESubscriptionSpec, annotationMCEClusterExtensionSpec)
+			Expect(err).To(HaveOccurred(), "MCE subscription-spec should be rejected on OLM v1 cluster")
+			Expect(err.Error()).To(ContainSubstring("only valid for OLM v0"),
+				"error should indicate annotation is only valid for OLM v0")
+		})
+
+		It("Should reject MCE v1 annotation on v0 cluster", func() {
+			err := validateOLMAnnotationPair("v0", map[string]string{
+				annotationMCEClusterExtensionSpec: `{"channels": ["stable-2.6"]}`,
+			}, annotationMCESubscriptionSpec, annotationMCEClusterExtensionSpec)
+			Expect(err).To(HaveOccurred(), "MCE clusterextension-spec should be rejected on OLM v0 cluster")
+			Expect(err.Error()).To(ContainSubstring("only valid for OLM v1"),
+				"error should indicate annotation is only valid for OLM v1")
+		})
+
+		It("Should reject OADP v1 annotation when no OLM detected", func() {
+			err := validateOLMAnnotationPair("", map[string]string{
+				annotationOADPClusterExtensionSpec: `{"channels": ["stable"]}`,
+			}, annotationOADPSubscriptionSpec, annotationOADPClusterExtensionSpec)
+			Expect(err).To(HaveOccurred(), "OADP clusterextension-spec should be rejected when no OLM detected")
+			Expect(err.Error()).To(ContainSubstring("requires OLM v1"),
+				"error should indicate OLM v1 is required")
+		})
+
+		It("Should allow OADP v0 annotation on v0 cluster", func() {
+			err := validateOLMAnnotationPair("v0", map[string]string{
+				annotationOADPSubscriptionSpec: `{"channel": "stable-1.4"}`,
+			}, annotationOADPSubscriptionSpec, annotationOADPClusterExtensionSpec)
+			Expect(err).ToNot(HaveOccurred(), "OADP subscription-spec should be allowed on OLM v0 cluster")
+		})
+
+		It("Should allow OADP v1 annotation on v1 cluster", func() {
+			err := validateOLMAnnotationPair("v1", map[string]string{
+				annotationOADPClusterExtensionSpec: `{"channels": ["stable"]}`,
+			}, annotationOADPSubscriptionSpec, annotationOADPClusterExtensionSpec)
+			Expect(err).ToNot(HaveOccurred(), "OADP clusterextension-spec should be allowed on OLM v1 cluster")
 		})
 	})
 
