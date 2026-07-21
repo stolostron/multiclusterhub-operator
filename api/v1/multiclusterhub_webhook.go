@@ -432,13 +432,13 @@ func validateOLMAnnotations(ctx context.Context, mch *MultiClusterHub) error {
 	// Validate MCE annotations
 	if err := validateOLMAnnotationPair(olmVersion, annotations,
 		annotationMCESubscriptionSpec, annotationMCEClusterExtensionSpec); err != nil {
-		return err
+		return fmt.Errorf("validating MCE OLM annotations: %w", err)
 	}
 
 	// Validate OADP annotations
 	if err := validateOLMAnnotationPair(olmVersion, annotations,
 		annotationOADPSubscriptionSpec, annotationOADPClusterExtensionSpec); err != nil {
-		return err
+		return fmt.Errorf("validating OADP OLM annotations: %w", err)
 	}
 
 	return nil

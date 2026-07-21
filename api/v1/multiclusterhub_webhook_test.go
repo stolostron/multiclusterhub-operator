@@ -419,45 +419,48 @@ var _ = Describe("Multiclusterhub webhook", func() {
 		It("Should return nil when no annotations set", func() {
 			err := validateOLMAnnotationPair("v1", map[string]string{},
 				annotationMCESubscriptionSpec, annotationMCEClusterExtensionSpec)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred(), "empty annotations should pass validation for any OLM version")
 		})
 
-		It("Should reject v0 annotation on v1 cluster", func() {
+		It("Should reject MCE v0 annotation on v1 cluster", func() {
 			err := validateOLMAnnotationPair("v1", map[string]string{
 				annotationMCESubscriptionSpec: `{"channel": "stable-2.6"}`,
 			}, annotationMCESubscriptionSpec, annotationMCEClusterExtensionSpec)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("only valid for OLM v0"))
+			Expect(err).To(HaveOccurred(), "MCE subscription-spec should be rejected on OLM v1 cluster")
+			Expect(err.Error()).To(ContainSubstring("only valid for OLM v0"),
+				"error should indicate annotation is only valid for OLM v0")
 		})
 
-		It("Should reject v1 annotation on v0 cluster", func() {
+		It("Should reject MCE v1 annotation on v0 cluster", func() {
 			err := validateOLMAnnotationPair("v0", map[string]string{
 				annotationMCEClusterExtensionSpec: `{"channels": ["stable-2.6"]}`,
 			}, annotationMCESubscriptionSpec, annotationMCEClusterExtensionSpec)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("only valid for OLM v1"))
+			Expect(err).To(HaveOccurred(), "MCE clusterextension-spec should be rejected on OLM v0 cluster")
+			Expect(err.Error()).To(ContainSubstring("only valid for OLM v1"),
+				"error should indicate annotation is only valid for OLM v1")
 		})
 
-		It("Should reject v1 annotation when no OLM detected", func() {
+		It("Should reject OADP v1 annotation when no OLM detected", func() {
 			err := validateOLMAnnotationPair("", map[string]string{
 				annotationOADPClusterExtensionSpec: `{"channels": ["stable"]}`,
 			}, annotationOADPSubscriptionSpec, annotationOADPClusterExtensionSpec)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("requires OLM v1"))
+			Expect(err).To(HaveOccurred(), "OADP clusterextension-spec should be rejected when no OLM detected")
+			Expect(err.Error()).To(ContainSubstring("requires OLM v1"),
+				"error should indicate OLM v1 is required")
 		})
 
-		It("Should allow v0 annotation on v0 cluster", func() {
+		It("Should allow OADP v0 annotation on v0 cluster", func() {
 			err := validateOLMAnnotationPair("v0", map[string]string{
 				annotationOADPSubscriptionSpec: `{"channel": "stable-1.4"}`,
 			}, annotationOADPSubscriptionSpec, annotationOADPClusterExtensionSpec)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred(), "OADP subscription-spec should be allowed on OLM v0 cluster")
 		})
 
-		It("Should allow v1 annotation on v1 cluster", func() {
+		It("Should allow OADP v1 annotation on v1 cluster", func() {
 			err := validateOLMAnnotationPair("v1", map[string]string{
 				annotationOADPClusterExtensionSpec: `{"channels": ["stable"]}`,
 			}, annotationOADPSubscriptionSpec, annotationOADPClusterExtensionSpec)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred(), "OADP clusterextension-spec should be allowed on OLM v1 cluster")
 		})
 	})
 
