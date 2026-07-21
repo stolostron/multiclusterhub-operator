@@ -303,7 +303,7 @@ func TestMigrateDeprecatedAnnotations(t *testing.T) {
 		{
 			name: "Deprecated annotation migrated to current",
 			annotations: map[string]string{
-				DeprecatedAnnotationMCHPause: "true",
+				DeprecatedAnnotationMCHPause:  "true",
 				DeprecatedAnnotationImageRepo: "quay.io/foo",
 			},
 			wantModified: true,
