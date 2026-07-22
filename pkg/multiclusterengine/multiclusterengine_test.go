@@ -232,6 +232,7 @@ func TestNewMultiClusterEngine(t *testing.T) {
 					NodeSelector:       nil,
 					AvailabilityConfig: mcev1.HAHigh,
 					TargetNamespace:    OperandNamespace(),
+					NetworkPolicies:    mcev1.NetworkPoliciesConfig{Enabled: true},
 					Overrides: &mcev1.Overrides{
 						Components: []mcev1.ComponentConfig{
 							{Name: operatorv1.MCELocalCluster, Enabled: true},
@@ -293,6 +294,7 @@ func TestNewMultiClusterEngine(t *testing.T) {
 					},
 					AvailabilityConfig: mcev1.HABasic,
 					TargetNamespace:    OperandNamespace(),
+					NetworkPolicies:    mcev1.NetworkPoliciesConfig{Enabled: true},
 					Overrides: &mcev1.Overrides{
 						ImagePullPolicy: corev1.PullNever,
 						Components: []mcev1.ComponentConfig{
@@ -316,6 +318,7 @@ func TestNewMultiClusterEngine(t *testing.T) {
 			g.Expect(got.Spec.TargetNamespace).To(gomega.Equal(tt.want.Spec.TargetNamespace))
 			g.Expect(got.Spec.Overrides.Components).To(gomega.Equal(tt.want.Spec.Overrides.Components))
 			g.Expect(got.Spec.Overrides.ImagePullPolicy).To(gomega.Equal(tt.want.Spec.Overrides.ImagePullPolicy))
+			g.Expect(got.Spec.NetworkPolicies).To(gomega.Equal(tt.want.Spec.NetworkPolicies))
 		})
 	}
 }
