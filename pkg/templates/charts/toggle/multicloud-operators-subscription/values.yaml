@@ -7,11 +7,11 @@ global:
     multicluster_operators_channel: ''
     multicluster_operators_subscription: ''
   namespace: default
+  networkPolicies:
+    enabled: true
   olmVersion: v0
   pullSecret: null
   templateOverrides: {}
-  networkPolicies:
-    enabled: true
 hubconfig:
   clusterSTSEnabled: false
   nodeSelector: null
