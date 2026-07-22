@@ -65,6 +65,16 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
+	// Migrate deprecated annotations to current equivalents
+	if utils.MigrateDeprecatedAnnotations(multiClusterHub) {
+		r.Log.Info("Migrating deprecated annotations to current equivalents")
+		if err := r.Client.Update(ctx, multiClusterHub); err != nil {
+			r.Log.Error(err, "Failed to update MCH after annotation migration")
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{Requeue: true}, nil
+	}
+
 	multiClusterHub.Status.HubConditions = filterOutConditionWithSubstring(multiClusterHub.Status.HubConditions,
 		string(operatorv1.ComponentFailure))
 
@@ -330,6 +340,19 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	result, err = r.createTrustBundleConfigmap(ctx, multiClusterHub)
 	if err != nil {
+		return result, err
+	}
+
+	/*
+		Ensure NetworkPolicies for ACM components. This implements a create-once pattern where
+		MCH creates initial NetworkPolicy resources with delegation annotations. Operand teams
+		then adopt and manage these policies. MCH does not continuously reconcile after creation.
+	*/
+	result, err = r.ensureNetworkPolicies(ctx, multiClusterHub, r.CacheSpec, stsEnabled)
+	if result != (ctrl.Result{}) || err != nil {
+		if err != nil {
+			r.Log.Error(err, "Failed to ensure NetworkPolicies")
+		}
 		return result, err
 	}
 

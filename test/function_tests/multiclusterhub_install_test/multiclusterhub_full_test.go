@@ -453,8 +453,9 @@ var testSanityChecks = func() func() {
 
 		totalAttempts := 2
 		for i := 1; i <= totalAttempts; i++ {
-			ok := It(fmt.Sprintf("Installing MCH - Attempt %d of %d", i, totalAttempts), func() {
-				By("Creating MultiClusterHub")
+			attemptNum := i
+			ok := It("Installing MCH", func() {
+				By(fmt.Sprintf("Creating MultiClusterHub - Attempt %d of %d", attemptNum, totalAttempts))
 				utils.CreateMCHNotManaged()
 				if err := utils.ValidateStatusesExist(); err != nil {
 					fmt.Printf("Error: %s\n", err.Error())

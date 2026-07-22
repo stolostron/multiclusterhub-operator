@@ -20,6 +20,8 @@ global:
     insights_metrics: ""
     kube_rbac_proxy: ""
   templateOverrides: {}
+  networkPolicies:
+    enabled: true
 ocpingress: ""
 hubconfig:
   nodeSelector: null

@@ -57,6 +57,42 @@ spec:
                   rbac.open-cluster-management.io/filter: vm-clusterroles
                   clusterview.open-cluster-management.io/discoverable: "true"
           {{ `{{- end }}` }}
+          {{ `{{- $migrationsView := lookup "rbac.authorization.k8s.io/v1" "ClusterRole" "" "migrations.kubevirt.io:view" -}}` }}
+          {{ `{{- if $migrationsView }}` }}
+          - complianceType: musthave
+            objectDefinition:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRole
+              metadata:
+                name: migrations.kubevirt.io:view
+                labels:
+                  rbac.open-cluster-management.io/filter: vm-clusterroles
+                  clusterview.open-cluster-management.io/discoverable: "true"
+          {{ `{{- end }}` }}
+          {{ `{{- $storagemigrate := lookup "rbac.authorization.k8s.io/v1" "ClusterRole" "" "migrations.kubevirt.io:storagemigrate" -}}` }}
+          {{ `{{- if $storagemigrate }}` }}
+          - complianceType: musthave
+            objectDefinition:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRole
+              metadata:
+                name: migrations.kubevirt.io:storagemigrate
+                labels:
+                  rbac.open-cluster-management.io/filter: vm-clusterroles
+                  clusterview.open-cluster-management.io/discoverable: "true"
+          {{ `{{- end }}` }}
+          {{ `{{- $storagemigrateMultins := lookup "rbac.authorization.k8s.io/v1" "ClusterRole" "" "migrations.kubevirt.io:storagemigrate-multins" -}}` }}
+          {{ `{{- if $storagemigrateMultins }}` }}
+          - complianceType: musthave
+            objectDefinition:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRole
+              metadata:
+                name: migrations.kubevirt.io:storagemigrate-multins
+                labels:
+                  rbac.open-cluster-management.io/filter: vm-clusterroles
+                  clusterview.open-cluster-management.io/discoverable: "true"
+          {{ `{{- end }}` }}
         remediationAction: enforce
         severity: medium
   remediationAction: enforce

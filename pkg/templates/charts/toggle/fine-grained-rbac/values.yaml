@@ -1,13 +1,15 @@
 # Copyright (c) 2020 Red Hat, Inc.
 
 global:
-  olmVersion: v0
   imageOverrides:
     multicluster_role_assignment: quay.io/stolostron/multicluster-role-assignment:latest
   templateOverrides: {}
   namespace: default
+  olmVersion: v0
   pullSecret: null
   pullPolicy: Always
+  networkPolicies:
+    enabled: true
 hubconfig:
   nodeSelector: null
   proxyConfigs: {}

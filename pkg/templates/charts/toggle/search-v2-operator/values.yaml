@@ -12,6 +12,8 @@ global:
   olmVersion: v0
   pullSecret: null
   templateOverrides: {}
+  networkPolicies:
+    enabled: true
 hubconfig:
   clusterSTSEnabled: false
   nodeSelector: null
