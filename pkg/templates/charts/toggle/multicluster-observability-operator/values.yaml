@@ -4,11 +4,11 @@ global:
   imageOverrides:
     multicluster_observability_operator: ''
   namespace: default
+  networkPolicies:
+    enabled: true
   olmVersion: v0
   pullSecret: null
   templateOverrides: {}
-  networkPolicies:
-    enabled: true
 hubconfig:
   clusterSTSEnabled: false
   nodeSelector: null
