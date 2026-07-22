@@ -5,6 +5,7 @@ global:
     multicluster_role_assignment: quay.io/stolostron/multicluster-role-assignment:latest
   templateOverrides: {}
   namespace: default
+  olmVersion: v0
   pullSecret: null
   pullPolicy: Always
   networkPolicies:
