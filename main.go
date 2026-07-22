@@ -38,6 +38,7 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	configv1 "github.com/openshift/api/config/v1"
+	openshift_consolev1 "github.com/openshift/api/console/v1"
 	consolev1 "github.com/openshift/api/operator/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
@@ -124,6 +125,8 @@ func init() {
 	utilruntime.Must(configv1.AddToScheme(scheme))
 
 	utilruntime.Must(consolev1.AddToScheme(scheme))
+
+	utilruntime.Must(openshift_consolev1.AddToScheme(scheme))
 
 	utilruntime.Must(olmapi.AddToScheme(scheme))
 
