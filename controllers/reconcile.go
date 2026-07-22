@@ -65,6 +65,16 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
+	// Migrate deprecated annotations to current equivalents
+	if utils.MigrateDeprecatedAnnotations(multiClusterHub) {
+		r.Log.Info("Migrating deprecated annotations to current equivalents")
+		if err := r.Client.Update(ctx, multiClusterHub); err != nil {
+			r.Log.Error(err, "Failed to update MCH after annotation migration")
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{Requeue: true}, nil
+	}
+
 	multiClusterHub.Status.HubConditions = filterOutConditionWithSubstring(multiClusterHub.Status.HubConditions,
 		string(operatorv1.ComponentFailure))
 
