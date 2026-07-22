@@ -5,6 +5,8 @@ global:
   imageOverrides:
     volsync_addon_controller: ""
   templateOverrides: {}
+  networkPolicies:
+    enabled: true
 pullSecret: null
 hubconfig:
   nodeSelector: null

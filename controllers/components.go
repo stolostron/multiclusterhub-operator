@@ -188,6 +188,11 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 
 	// Applies all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		annotations := template.GetAnnotations()
 		if annotations == nil {
 			annotations = make(map[string]string)
@@ -290,6 +295,11 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 
 	// Deletes all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		result, err := r.deleteTemplate(ctx, m, template)
 		if result != (ctrl.Result{}) || err != nil {
 			if err != nil {

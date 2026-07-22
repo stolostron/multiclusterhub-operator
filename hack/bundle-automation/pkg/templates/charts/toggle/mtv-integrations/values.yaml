@@ -1,19 +1,19 @@
 global:
-  olmVersion: v0
+  apiUrl: ''
+  baseDomain: ''
   imageOverrides:
-    klusterlet_addon_controller: ''
-  templateOverrides: {}
+    mtv_integrations: ''
   namespace: default
   pullSecret: null
-  imageRepository: "" # utils.GetImageRepository(m)
+  templateOverrides: {}
   networkPolicies:
     enabled: true
 hubconfig:
+  clusterSTSEnabled: false
   nodeSelector: null
+  ocpVersion: 4.12.0
   probeConfig: null
   proxyConfigs: {}
   replicaCount: 1
   tolerations: []
-  hubVersion: ""
-  ocpVersion: 4.12.0
 org: open-cluster-management
