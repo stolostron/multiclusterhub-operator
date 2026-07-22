@@ -942,6 +942,7 @@ rules:
   - search.open-cluster-management.io
   resources:
   - consolelinks
+  - consolenotifications
   - consoleplugins
   - searches
   verbs:

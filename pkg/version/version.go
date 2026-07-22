@@ -15,7 +15,7 @@ var Version string
 
 // MinimumOCPVersion is the minimum version of OCP this operator supports.
 // Can be overridden by setting the env variable DISABLE_OCP_MIN_VERSION
-var MinimumOCPVersion string = "4.10.0"
+var MinimumOCPVersion string = "4.19.0"
 
 // RequiredMCEVersion is the minimum version of MCE this operator expects.
 // The reconciler will wait until MCE has installed to at least this version
@@ -63,7 +63,7 @@ func ValidMCEVersion(mceVersion string) error {
 	if _, exists := os.LookupEnv("DISABLE_MCE_MIN_VERSION"); exists {
 		return nil
 	}
-	return validVersion(mceVersion, RequiredMCEVersion)
+	return validPatchVersion(mceVersion, RequiredMCEVersion)
 }
 
 // ValidCommunityMCEVersion returns an error if MCE does not satisfy the minimum version requirement
@@ -72,7 +72,7 @@ func ValidCommunityMCEVersion(mceVersion string) error {
 	if _, exists := os.LookupEnv("DISABLE_MCE_MIN_VERSION"); exists {
 		return nil
 	}
-	return validVersion(mceVersion, RequiredCommunityMCEVersion)
+	return validPatchVersion(mceVersion, RequiredCommunityMCEVersion)
 }
 
 // ValidOCPVersion returns an error if ocpVersion does not satisfy the minimum OCP version requirement
@@ -94,6 +94,27 @@ func validVersion(have, required string) error {
 		return err
 	}
 	if !aboveMinVersion.Check(currentVersion) {
+		return fmt.Errorf("version %s did not meet minimum version requirement of %s", have, required)
+	}
+	return nil
+}
+
+// validPatchVersion checks that "have" matches the major.minor of "required" and has an equal or higher patch version.
+// This is stricter than validVersion: it rejects versions where the minor version differs from the required version.
+func validPatchVersion(have, required string) error {
+	requiredVersion, err := semver.NewVersion(required)
+	if err != nil {
+		return err
+	}
+	currentVersion, err := semver.NewVersion(have)
+	if err != nil {
+		return err
+	}
+	if currentVersion.Major() != requiredVersion.Major() || currentVersion.Minor() != requiredVersion.Minor() {
+		return fmt.Errorf("version %s does not match required major.minor %d.%d",
+			have, requiredVersion.Major(), requiredVersion.Minor())
+	}
+	if currentVersion.LessThan(requiredVersion) {
 		return fmt.Errorf("version %s did not meet minimum version requirement of %s", have, required)
 	}
 	return nil
