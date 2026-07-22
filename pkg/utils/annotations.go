@@ -134,6 +134,45 @@ var (
 	AnnotationProbeSuccessThreshold = "installer.open-cluster-management.io/probe-success-threshold"
 )
 
+// DeprecatedAnnotationMap maps deprecated annotation keys to their current replacements.
+var DeprecatedAnnotationMap = map[string]string{
+	DeprecatedAnnotationMCHPause:         AnnotationMCHPause,
+	DeprecatedAnnotationImageOverridesCM: AnnotationImageOverridesCM,
+	DeprecatedAnnotationImageRepo:        AnnotationImageRepo,
+	DeprecatedAnnotationKubeconfig:       AnnotationKubeconfig,
+	DeprecatedAnnotationIgnoreOCPVersion: AnnotationIgnoreOCPVersion,
+}
+
+// MigrateDeprecatedAnnotations replaces deprecated annotation keys with their current equivalents.
+// If a deprecated key exists and the current key does not, the value is copied to the current key.
+// If both exist, the deprecated key is removed and the current key is preserved.
+// Returns true if any annotations were modified.
+func MigrateDeprecatedAnnotations(instance *operatorsv1.MultiClusterHub) bool {
+	annotations := instance.GetAnnotations()
+	if annotations == nil {
+		return false
+	}
+
+	modified := false
+	for deprecatedKey, currentKey := range DeprecatedAnnotationMap {
+		deprecatedVal, hasDeprecated := annotations[deprecatedKey]
+		if !hasDeprecated {
+			continue
+		}
+
+		if _, hasCurrent := annotations[currentKey]; !hasCurrent {
+			annotations[currentKey] = deprecatedVal
+		}
+		delete(annotations, deprecatedKey)
+		modified = true
+	}
+
+	if modified {
+		instance.SetAnnotations(annotations)
+	}
+	return modified
+}
+
 /*
 IsPaused checks if the MultiClusterHub instance is labeled as paused.
 It returns true if the instance is paused, otherwise false.

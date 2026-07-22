@@ -275,6 +275,88 @@ func Test_GetDefaultStorageClassOverride(t *testing.T) {
 	})
 }
 
+func TestMigrateDeprecatedAnnotations(t *testing.T) {
+	tests := []struct {
+		name            string
+		annotations     map[string]string
+		wantModified    bool
+		wantAnnotations map[string]string
+	}{
+		{
+			name:            "No annotations",
+			annotations:     nil,
+			wantModified:    false,
+			wantAnnotations: nil,
+		},
+		{
+			name: "Only current annotations",
+			annotations: map[string]string{
+				AnnotationMCHPause:  "true",
+				AnnotationImageRepo: "quay.io/foo",
+			},
+			wantModified: false,
+			wantAnnotations: map[string]string{
+				AnnotationMCHPause:  "true",
+				AnnotationImageRepo: "quay.io/foo",
+			},
+		},
+		{
+			name: "Deprecated annotation migrated to current",
+			annotations: map[string]string{
+				DeprecatedAnnotationMCHPause:  "true",
+				DeprecatedAnnotationImageRepo: "quay.io/foo",
+			},
+			wantModified: true,
+			wantAnnotations: map[string]string{
+				AnnotationMCHPause:  "true",
+				AnnotationImageRepo: "quay.io/foo",
+			},
+		},
+		{
+			name: "Both exist - current preserved, deprecated removed",
+			annotations: map[string]string{
+				DeprecatedAnnotationMCHPause: "false",
+				AnnotationMCHPause:           "true",
+			},
+			wantModified: true,
+			wantAnnotations: map[string]string{
+				AnnotationMCHPause: "true",
+			},
+		},
+		{
+			name: "Mixed - some deprecated, some current",
+			annotations: map[string]string{
+				DeprecatedAnnotationKubeconfig: "my-secret",
+				AnnotationImageRepo:            "quay.io/foo",
+			},
+			wantModified: true,
+			wantAnnotations: map[string]string{
+				AnnotationKubeconfig: "my-secret",
+				AnnotationImageRepo:  "quay.io/foo",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mch := &operatorsv1.MultiClusterHub{}
+			if tt.annotations != nil {
+				mch.SetAnnotations(tt.annotations)
+			}
+
+			got := MigrateDeprecatedAnnotations(mch)
+			if got != tt.wantModified {
+				t.Errorf("MigrateDeprecatedAnnotations() = %v, want %v", got, tt.wantModified)
+			}
+
+			gotAnnotations := mch.GetAnnotations()
+			if !reflect.DeepEqual(gotAnnotations, tt.wantAnnotations) {
+				t.Errorf("annotations = %v, want %v", gotAnnotations, tt.wantAnnotations)
+			}
+		})
+	}
+}
+
 func TestShouldIgnoreOCPVersion(t *testing.T) {
 	tests := []struct {
 		name     string
