@@ -1072,10 +1072,7 @@ func TestCalculateMCEVersionCompliance(t *testing.T) {
 			name:      "MCE not found",
 			createMCE: false,
 			expectedStatus: &operatorsv1.MCEVersionComplianceStatus{
-				RequiredChannel: "stable-5.0",
-				CurrentVersion:  "",
-				IsCompliant:     false,
-				Message:         "MCE not yet installed",
+				RequiredChannel: "community-0.10",
 			},
 			expectCompliant: false,
 		},
@@ -1092,15 +1089,12 @@ func TestCalculateMCEVersionCompliance(t *testing.T) {
 				Status: mcev1.MultiClusterEngineStatus{},
 			},
 			expectedStatus: &operatorsv1.MCEVersionComplianceStatus{
-				RequiredChannel: "stable-5.0",
-				CurrentVersion:  "",
-				IsCompliant:     false,
-				Message:         "MCE version not yet available - installation in progress",
+				RequiredChannel: "community-0.10",
 			},
 			expectCompliant: false,
 		},
 		{
-			name:      "MCE with valid version",
+			name:      "MCE with exact required version",
 			createMCE: true,
 			mce: &mcev1.MultiClusterEngine{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1110,16 +1104,104 @@ func TestCalculateMCEVersionCompliance(t *testing.T) {
 					},
 				},
 				Status: mcev1.MultiClusterEngineStatus{
-					CurrentVersion: "5.0.0",
+					CurrentVersion: "0.10.0",
 				},
 			},
 			expectedStatus: &operatorsv1.MCEVersionComplianceStatus{
-				RequiredChannel: "stable-5.0",
-				CurrentVersion:  "5.0.0",
+				RequiredChannel: "community-0.10",
+				CurrentVersion:  "0.10.0",
 				IsCompliant:     true,
-				Message:         "MCE version 5.0.0 meets channel stable-5.0 requirements",
+				Message:         "MCE version 0.10.0 meets channel community-0.10 requirements",
 			},
 			expectCompliant: true,
+		},
+		{
+			name:      "MCE with higher patch version is compliant",
+			createMCE: true,
+			mce: &mcev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multiclusterengine",
+					Labels: map[string]string{
+						multiclusterengineutils.MCEManagedByLabel: "true",
+					},
+				},
+				Status: mcev1.MultiClusterEngineStatus{
+					CurrentVersion: "0.10.3",
+				},
+			},
+			expectedStatus: &operatorsv1.MCEVersionComplianceStatus{
+				RequiredChannel: "community-0.10",
+				CurrentVersion:  "0.10.3",
+				IsCompliant:     true,
+				Message:         "MCE version 0.10.3 meets channel community-0.10 requirements",
+			},
+			expectCompliant: true,
+		},
+		{
+			name:      "MCE with higher minor version is not compliant",
+			createMCE: true,
+			mce: &mcev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multiclusterengine",
+					Labels: map[string]string{
+						multiclusterengineutils.MCEManagedByLabel: "true",
+					},
+				},
+				Status: mcev1.MultiClusterEngineStatus{
+					CurrentVersion: "0.11.0",
+				},
+			},
+			expectedStatus: &operatorsv1.MCEVersionComplianceStatus{
+				RequiredChannel: "community-0.10",
+				CurrentVersion:  "0.11.0",
+				IsCompliant:     false,
+				Message:         "MCE version 0.11.0 does not meet channel community-0.10 requirements",
+			},
+			expectCompliant: false,
+		},
+		{
+			name:      "MCE with higher major version is not compliant",
+			createMCE: true,
+			mce: &mcev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multiclusterengine",
+					Labels: map[string]string{
+						multiclusterengineutils.MCEManagedByLabel: "true",
+					},
+				},
+				Status: mcev1.MultiClusterEngineStatus{
+					CurrentVersion: "1.0.0",
+				},
+			},
+			expectedStatus: &operatorsv1.MCEVersionComplianceStatus{
+				RequiredChannel: "community-0.10",
+				CurrentVersion:  "1.0.0",
+				IsCompliant:     false,
+				Message:         "MCE version 1.0.0 does not meet channel community-0.10 requirements",
+			},
+			expectCompliant: false,
+		},
+		{
+			name:      "MCE with lower version is not compliant",
+			createMCE: true,
+			mce: &mcev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multiclusterengine",
+					Labels: map[string]string{
+						multiclusterengineutils.MCEManagedByLabel: "true",
+					},
+				},
+				Status: mcev1.MultiClusterEngineStatus{
+					CurrentVersion: "0.9.0",
+				},
+			},
+			expectedStatus: &operatorsv1.MCEVersionComplianceStatus{
+				RequiredChannel: "community-0.10",
+				CurrentVersion:  "0.9.0",
+				IsCompliant:     false,
+				Message:         "MCE version 0.9.0 does not meet channel community-0.10 requirements",
+			},
+			expectCompliant: false,
 		},
 	}
 
@@ -1130,13 +1212,13 @@ func TestCalculateMCEVersionCompliance(t *testing.T) {
 			// Create MCE if specified
 			if tt.createMCE && tt.mce != nil {
 				if err := recon.Client.Create(ctx, tt.mce); err != nil {
-					t.Errorf("failed to create MCE: %v", err)
+					t.Fatalf("failed to create MCE: %v", err)
 				}
-				defer func() {
+				t.Cleanup(func() {
 					if err := recon.Client.Delete(ctx, tt.mce); err != nil {
-						t.Errorf("failed to delete MCE: %v", err)
+						t.Logf("cleanup: failed to delete MCE: %v", err)
 					}
-				}()
+				})
 			}
 
 			// Test the function
