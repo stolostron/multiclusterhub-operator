@@ -31,6 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -256,6 +257,32 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if utils.IsPaused(multiClusterHub) {
 		r.Log.Info("MultiClusterHub reconciliation is paused. Nothing more to do.")
 		return ctrl.Result{}, nil
+	}
+
+	// Do not deploy components while HubTeardown is actively running.
+	// The teardown controller manages resource lifecycle during teardown;
+	// re-creating components here would fight teardown phase 3 (DisableAddons).
+	// Only the oldest non-deleting CR counts (same singleton rule as the teardown controller).
+	var teardownList operatorv1.HubTeardownList
+	if err := r.Client.List(ctx, &teardownList, client.InNamespace(multiClusterHub.GetNamespace())); err == nil {
+		var oldest *operatorv1.HubTeardown
+		for i := range teardownList.Items {
+			td := &teardownList.Items[i]
+			if td.GetDeletionTimestamp() != nil {
+				continue
+			}
+			if oldest == nil || td.CreationTimestamp.Before(&oldest.CreationTimestamp) {
+				oldest = td
+			}
+		}
+		if oldest != nil && !oldest.Spec.DryRun {
+			r.Log.Info("HubTeardown is active — skipping component reconciliation",
+				"teardown", oldest.Name, "phase", oldest.Status.Phase)
+			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, "TeardownInProgress",
+				"Component reconciliation suspended — HubTeardown is actively running.")
+			SetHubCondition(&multiClusterHub.Status, *condition)
+			return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+		}
 	}
 
 	if !utils.ShouldIgnoreOCPVersion(multiClusterHub) {

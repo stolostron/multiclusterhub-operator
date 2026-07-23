@@ -5,4 +5,5 @@ namespace: open-cluster-management
 
 resources:
 - operator_v1_multiclusterhub.yaml
+- operator_v1_hubteardown.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

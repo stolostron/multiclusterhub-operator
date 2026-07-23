@@ -41,6 +41,8 @@ import (
 
 func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operatorv1.MultiClusterHub, ocpConsole,
 	isSTSEnabled bool) error {
+	RecordFinalizeProgress(m, FinalizePhaseStartingReason, "MultiClusterHub finalization sequence started.")
+
 	if err := r.cleanupAppSubscriptions(reqLogger, m); err != nil {
 		return err
 	}
@@ -53,12 +55,19 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 			continue
 		}
 
+		RecordFinalizeProgress(m, FinalizePhaseHubComponentsReason,
+			fmt.Sprintf("Removing hub component %q (Helm template resources and related cleanup).", c))
+
 		result, err := r.ensureNoComponent(context.TODO(), m, c, r.CacheSpec, isSTSEnabled)
 		if err != nil {
+			RecordFinalizeProgress(m, FinalizePhaseHubComponentsReason,
+				fmt.Sprintf("Removing hub component %q reported an error: %v.", c, err))
 			return err
 		}
 
 		if result != (ctrl.Result{}) {
+			RecordFinalizeProgress(m, FinalizePhaseHubComponentsReason,
+				fmt.Sprintf("Removing hub component %q incomplete; reconciler will retry (blocked resources may still terminate).", c))
 			return errors.NewBadRequest(fmt.Sprintf("Requeue needed for component: %v", c))
 		}
 	}
@@ -75,6 +84,7 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 		}
 	}
 
+	RemoveHubCondition(&m.Status, operatorv1.FinalizeProgress)
 	reqLogger.Info("Successfully finalized multiClusterHub")
 	return nil
 }
