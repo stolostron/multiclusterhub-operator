@@ -148,7 +148,7 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 		}
 	}
 
-	if utils.MchIsValid(m) && os.Getenv("ACM_HUB_OCP_VERSION") != "" && !updateNecessary {
+	if operatorv1.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) && os.Getenv("ACM_HUB_OCP_VERSION") != "" && !updateNecessary {
 		return ctrl.Result{}, nil
 	}
 

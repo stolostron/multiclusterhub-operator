@@ -118,10 +118,6 @@ func AddInstallerLabel(u *unstructured.Unstructured, name string, ns string) {
 	u.SetLabels(labels)
 }
 
-// MchIsValid Checks if the optional default parameters need to be set
-func MchIsValid(m *operatorsv1.MultiClusterHub) bool {
-	return operatorsv1.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig)
-}
 
 // DefaultReplicaCount returns an integer corresponding to the default number of replicas
 // for HA or non-HA modes

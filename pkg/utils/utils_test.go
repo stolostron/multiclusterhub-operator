@@ -213,61 +213,6 @@ var _ = Describe("utility functions", func() {
 	})
 })
 
-func TestMchIsValid(t *testing.T) {
-	validMCH := &mchv1.MultiClusterHub{
-		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
-		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
-		Spec: mchv1.MultiClusterHubSpec{
-			ImagePullSecret:    "test",
-			AvailabilityConfig: mchv1.HAHigh,
-		},
-	}
-
-	type args struct {
-		m *mchv1.MultiClusterHub
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{
-			"Valid MCH with HAHigh",
-			args{validMCH},
-			true,
-		},
-		{
-			"Valid MCH with HABasic",
-			args{&mchv1.MultiClusterHub{
-				Spec: mchv1.MultiClusterHubSpec{
-					AvailabilityConfig: mchv1.HABasic,
-				},
-			}},
-			true,
-		},
-		{
-			"Invalid MCH with empty AvailabilityConfig",
-			args{&mchv1.MultiClusterHub{}},
-			false,
-		},
-		{
-			"Invalid MCH with invalid AvailabilityConfig",
-			args{&mchv1.MultiClusterHub{
-				Spec: mchv1.MultiClusterHubSpec{
-					AvailabilityConfig: mchv1.AvailabilityType("invalid"),
-				},
-			}},
-			false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := MchIsValid(tt.args.m); got != tt.want {
-				t.Errorf("MchIsValid() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
 
 func TestGetImagePullPolicy(t *testing.T) {
 	noPullPolicyMCH := &mchv1.MultiClusterHub{}
