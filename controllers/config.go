@@ -157,6 +157,11 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 		updateNecessary = true
 	}
 
+	if m.Spec.NetworkPolicies == nil {
+		m.Spec.NetworkPolicies = &operatorv1.NetworkPoliciesConfig{Enabled: true}
+		updateNecessary = true
+	}
+
 	// If OCP 4.10+ then set then enable the MCE console. Else ensure it is disabled
 	clusterVersion := &configv1.ClusterVersion{}
 	err = r.Client.Get(ctx, types.NamespacedName{Name: "version"}, clusterVersion)
