@@ -148,13 +148,18 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 		}
 	}
 
-	if utils.MchIsValid(m) && os.Getenv("ACM_HUB_OCP_VERSION") != "" && !updateNecessary {
-		return ctrl.Result{}, nil
-	}
-
 	if !operatorv1.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {
 		m.Spec.AvailabilityConfig = operatorv1.HAHigh
 		updateNecessary = true
+	}
+
+	if m.Spec.NetworkPolicies == nil {
+		m.Spec.NetworkPolicies = &operatorv1.NetworkPoliciesConfig{Enabled: true}
+		updateNecessary = true
+	}
+
+	if utils.MchIsValid(m) && os.Getenv("ACM_HUB_OCP_VERSION") != "" && !updateNecessary {
+		return ctrl.Result{}, nil
 	}
 
 	// If OCP 4.10+ then set then enable the MCE console. Else ensure it is disabled
