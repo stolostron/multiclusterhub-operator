@@ -75,6 +75,15 @@ func TestEnsureMCEComplianceBanner_NonCompliant(t *testing.T) {
 	if notification.Spec.Color != bannerTextColor {
 		t.Errorf("banner color = %q, want %q", notification.Spec.Color, bannerTextColor)
 	}
+	if notification.Spec.Link == nil {
+		t.Fatal("banner link is nil, expected support link")
+	}
+	if notification.Spec.Link.Href != bannerSupportLinkHref {
+		t.Errorf("banner link href = %q, want %q", notification.Spec.Link.Href, bannerSupportLinkHref)
+	}
+	if notification.Spec.Link.Text != bannerSupportLinkText {
+		t.Errorf("banner link text = %q, want %q", notification.Spec.Link.Text, bannerSupportLinkText)
+	}
 	if notification.Labels["installer.name"] != "multiclusterhub" {
 		t.Errorf("label installer.name = %q, want %q", notification.Labels["installer.name"], "multiclusterhub")
 	}
