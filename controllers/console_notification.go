@@ -23,6 +23,8 @@ const (
 	ocpComplianceBannerName = "acm-ocp-version-compliance"
 	bannerBackgroundColor   = "#880808"
 	bannerTextColor         = "#ffffff"
+	bannerSupportLinkHref   = "https://access.redhat.com/support"
+	bannerSupportLinkText   = "Contact Red Hat Support"
 )
 
 func mceComplianceBannerText(currentVersion, requiredChannel string) string {
@@ -74,6 +76,10 @@ func (r *MultiClusterHubReconciler) ensureMCEComplianceBanner(ctx context.Contex
 			Location:        consolev1.BannerTop,
 			BackgroundColor: bannerBackgroundColor,
 			Color:           bannerTextColor,
+			Link: &consolev1.Link{
+				Text: bannerSupportLinkText,
+				Href: bannerSupportLinkHref,
+			},
 		},
 	}
 
