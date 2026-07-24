@@ -20,8 +20,8 @@ import (
 
 const (
 	mceComplianceBannerName = "acm-mce-version-compliance"
-	bannerBackgroundColor   = "#880808"
-	bannerTextColor         = "#ffffff"
+	bannerBackgroundColor   = "var(--pf-v6-c-banner--m-danger--BackgroundColor, var(--pf-v5-c-banner--m-red--BackgroundColor))"
+	bannerTextColor         = "var(--pf-v6-c-banner--m-danger--Color, var(--pf-v5-global--Color--100))"
 	bannerSupportLinkHref   = "https://access.redhat.com/support"
 	bannerSupportLinkText   = "Contact Red Hat Support"
 )
