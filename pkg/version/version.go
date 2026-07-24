@@ -104,6 +104,8 @@ func validVersion(have, required string) error {
 
 // validPatchVersion checks that "have" matches the major.minor of "required" and has an equal or higher patch version.
 // This is stricter than validVersion: it rejects versions where the minor version differs from the required version.
+// Pre-release versions of the same patch (e.g. 5.0.0-123) are treated as compliant because operator builds are
+// frequently tagged with numeric build suffixes that semver ranks below the release version.
 func validPatchVersion(have, required string) error {
 	requiredVersion, err := semver.NewVersion(required)
 	if err != nil {
@@ -117,7 +119,15 @@ func validPatchVersion(have, required string) error {
 		return fmt.Errorf("version %s does not match required major.minor %d.%d",
 			have, requiredVersion.Major(), requiredVersion.Minor())
 	}
-	if currentVersion.LessThan(requiredVersion) {
+	// Use ">= x.y.z-0" so that pre-release builds of the same patch (e.g. 5.0.0-123) satisfy the constraint.
+	// By semver spec, 5.0.0-123 < 5.0.0, but operator builds are routinely shipped with numeric pre-release
+	// suffixes and must be treated as equivalent to the release version for compliance purposes.
+	aboveMinPatch, err := semver.NewConstraint(fmt.Sprintf(">= %d.%d.%d-0",
+		requiredVersion.Major(), requiredVersion.Minor(), requiredVersion.Patch()))
+	if err != nil {
+		return err
+	}
+	if !aboveMinPatch.Check(currentVersion) {
 		return fmt.Errorf("version %s did not meet minimum version requirement of %s", have, required)
 	}
 	return nil
