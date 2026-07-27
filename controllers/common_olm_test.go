@@ -435,7 +435,7 @@ func TestEnsureMultiClusterEngineCR(t *testing.T) {
 			},
 			olmVersion:  "v0",
 			wantError:   true,
-			wantRequeue: true,
+			wantRequeue: false,
 			wantCreate:  false,
 		},
 	}
