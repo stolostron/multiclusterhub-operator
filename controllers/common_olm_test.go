@@ -540,10 +540,11 @@ func TestEnsureMultiClusterEngineCR_NoMatchError(t *testing.T) {
 
 func TestEnsureMultiClusterEngine(t *testing.T) {
 	tests := []struct {
-		name       string
-		olmVersion string
-		client     client.Client
-		wantError  bool
+		name           string
+		olmVersion     string
+		client         client.Client
+		wantError      bool
+		wantResult     ctrl.Result
 	}{
 		{
 			name:       "subscription error propagates",
@@ -552,7 +553,8 @@ func TestEnsureMultiClusterEngine(t *testing.T) {
 				Client: fake.NewClientBuilder().WithScheme(scheme.Scheme).Build(),
 				getErr: fmt.Errorf("simulated subscription error"),
 			},
-			wantError: true,
+			wantError:  true,
+			wantResult: ctrl.Result{},
 		},
 		{
 			name:       "no OLM - MCE CR NoMatchError propagates as requeue",
@@ -563,7 +565,8 @@ func TestEnsureMultiClusterEngine(t *testing.T) {
 					GroupKind: schema.GroupKind{Group: "multicluster.openshift.io", Kind: "MultiClusterEngine"},
 				},
 			},
-			wantError: false,
+			wantError:  false,
+			wantResult: ctrl.Result{RequeueAfter: resyncPeriod},
 		},
 	}
 
@@ -590,13 +593,13 @@ func TestEnsureMultiClusterEngine(t *testing.T) {
 				if err == nil {
 					t.Errorf("ensureMultiClusterEngine() expected error but got none")
 				}
-				if result != (ctrl.Result{}) {
-					t.Errorf("ensureMultiClusterEngine() expected empty result on error, got %v", result)
-				}
 			} else {
 				if err != nil {
 					t.Errorf("ensureMultiClusterEngine() unexpected error: %v", err)
 				}
+			}
+			if result != tt.wantResult {
+				t.Errorf("ensureMultiClusterEngine() result = %v, want %v", result, tt.wantResult)
 			}
 		})
 	}
