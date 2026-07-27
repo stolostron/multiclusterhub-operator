@@ -128,12 +128,12 @@ func (r *MultiClusterHubReconciler) ensureNamespaceAndPullSecret(m *operatorv1.M
 	var err error
 
 	result, err = r.ensureNamespace(m, ns)
-	if result != (ctrl.Result{}) {
+	if result != (ctrl.Result{}) || err != nil {
 		return result, err
 	}
 
 	result, err = r.ensurePullSecret(m, ns.Name)
-	if result != (ctrl.Result{}) {
+	if result != (ctrl.Result{}) || err != nil {
 		return result, err
 	}
 
