@@ -343,6 +343,11 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 
+	result, err = r.ensureComponentNamespaces(multiClusterHub)
+	if result != (ctrl.Result{}) || err != nil {
+		return result, err
+	}
+
 	/*
 		Ensure NetworkPolicies for ACM components. This implements a create-once pattern where
 		MCH creates initial NetworkPolicy resources with delegation annotations. Operand teams
