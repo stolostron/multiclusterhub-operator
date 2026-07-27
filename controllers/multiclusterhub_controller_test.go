@@ -1396,6 +1396,12 @@ func Test_ensureComponentNamespaces(t *testing.T) {
 	}
 
 	registerScheme()
+
+	// Pre-create backup namespace as Active so ensureNamespace doesn't return RequeueAfter
+	backupNS := BackupNamespace()
+	backupNS.Status.Phase = corev1.NamespaceActive
+	_ = recon.Client.Create(context.TODO(), backupNS)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := recon.ensureComponentNamespaces(tt.mch)
