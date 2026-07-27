@@ -1,0 +1,48 @@
+# Copyright Contributors to the Open Cluster Management project
+#
+# NetworkPolicy for console-chart-console-v2 pods in the
+# open-cluster-management namespace.
+#
+# Ingress:
+#   - OpenShift Console (openshift-console namespace) on port 3000
+#     The OCP console reverse-proxies plugin requests to this backend.
+#
+# Egress (allow-all):
+#   The backend proxies requests to the Kubernetes API server (port 443),
+#   search-api (port 4010), observability rbac-query-proxy (port 8443),
+#   Prometheus (port 9091), cluster-proxy-addon (port 9092),
+#   placement-debug (port 9443), and external HTTPS services
+#   (Red Hat SSO, OpenShift Cluster Manager API, Red Hat Insights,
+#   Ansible Automation Platform).
+#   Because targets span many namespaces and include user-configured
+#   external URLs, egress is left unrestricted.
+{{- if .Values.global.networkPolicies.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: console-acm-network-policy
+  labels:
+    app: console-chart-v2
+    component: console
+spec:
+  podSelector:
+    matchLabels:
+      app: console-chart-v2
+      component: console
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              network.openshift.io/policy-group: console
+          podSelector:
+            matchLabels:
+              app: console
+      ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    - {}
+{{- end }}
