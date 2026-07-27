@@ -540,11 +540,11 @@ func TestEnsureMultiClusterEngineCR_NoMatchError(t *testing.T) {
 
 func TestEnsureMultiClusterEngine(t *testing.T) {
 	tests := []struct {
-		name           string
-		olmVersion     string
-		client         client.Client
-		wantError      bool
-		wantResult     ctrl.Result
+		name       string
+		olmVersion string
+		client     client.Client
+		wantError  bool
+		wantResult ctrl.Result
 	}{
 		{
 			name:       "subscription error propagates",
