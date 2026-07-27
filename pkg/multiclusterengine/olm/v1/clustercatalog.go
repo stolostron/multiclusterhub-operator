@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	configv1 "github.com/openshift/api/config/v1"
 	ocv1 "github.com/operator-framework/operator-controller/api/v1"
@@ -152,7 +153,10 @@ func catalogContainsPackage(ctx context.Context, cl client.Client, catalogName, 
 			MinVersion:         minTLSVersion,
 		},
 	}
-	client := &http.Client{Transport: tr}
+	client := &http.Client{
+		Transport: tr,
+		Timeout:   30 * time.Second,
+	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
