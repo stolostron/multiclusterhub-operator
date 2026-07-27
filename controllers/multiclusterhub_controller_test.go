@@ -1344,6 +1344,84 @@ func Test_ensureNamespaceAndPullSecret(t *testing.T) {
 	}
 }
 
+func Test_ensureComponentNamespaces(t *testing.T) {
+	tests := []struct {
+		name       string
+		mch        *operatorv1.MultiClusterHub
+		wantResult ctrl.Result
+		wantErr    bool
+	}{
+		{
+			name: "should create backup namespace when cluster-backup enabled",
+			mch: &operatorv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{Name: "mch", Namespace: "ocm"},
+				Spec: operatorv1.MultiClusterHubSpec{
+					Overrides: &operatorv1.Overrides{
+						Components: []operatorv1.ComponentConfig{
+							{
+								Enabled: true,
+								Name:    operatorv1.ClusterBackup,
+							},
+						},
+					},
+				},
+			},
+			wantResult: ctrl.Result{},
+			wantErr:    false,
+		},
+		{
+			name: "should skip namespace creation when cluster-backup disabled",
+			mch: &operatorv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{Name: "mch", Namespace: "ocm"},
+				Spec: operatorv1.MultiClusterHubSpec{
+					Overrides: &operatorv1.Overrides{
+						Components: []operatorv1.ComponentConfig{
+							{
+								Enabled: false,
+								Name:    operatorv1.ClusterBackup,
+							},
+						},
+					},
+				},
+			},
+			wantResult: ctrl.Result{},
+			wantErr:    false,
+		},
+		{
+			name:       "should skip namespace creation when no overrides",
+			mch:        &operatorv1.MultiClusterHub{ObjectMeta: metav1.ObjectMeta{Name: "mch", Namespace: "ocm"}},
+			wantResult: ctrl.Result{},
+			wantErr:    false,
+		},
+	}
+
+	registerScheme()
+
+	// Pre-create backup namespace as Active so ensureNamespace doesn't return RequeueAfter
+	backupNS := BackupNamespace()
+	backupNS.Status.Phase = corev1.NamespaceActive
+	_ = recon.Client.Create(context.TODO(), backupNS)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := recon.ensureComponentNamespaces(tt.mch)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ensureComponentNamespaces() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if result != tt.wantResult {
+				t.Errorf("ensureComponentNamespaces() result = %v, want %v", result, tt.wantResult)
+			}
+
+			if tt.mch.Enabled(operatorv1.ClusterBackup) {
+				ns := &corev1.Namespace{}
+				if err := recon.Client.Get(context.TODO(), types.NamespacedName{Name: BackupNamespace().Name}, ns); err != nil {
+					t.Errorf("expected backup namespace to be created, got error: %v", err)
+				}
+			}
+		})
+	}
+}
+
 func Test_ensureInternalHubComponent(t *testing.T) {
 	tests := []struct {
 		name string

@@ -83,6 +83,18 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(component string) string 
 	}
 }
 
+// ensureComponentNamespaces creates namespaces for components that deploy to a separate namespace.
+// Must run before ensureNetworkPolicies so policies can target these namespaces.
+func (r *MultiClusterHubReconciler) ensureComponentNamespaces(m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+	if m.Enabled(operatorv1.ClusterBackup) {
+		result, err := r.ensureNamespaceAndPullSecret(m, BackupNamespace())
+		if result != (ctrl.Result{}) || err != nil {
+			return result, err
+		}
+	}
+	return ctrl.Result{}, nil
+}
+
 func (r *MultiClusterHubReconciler) ensureComponentOrNoComponent(ctx context.Context, m *operatorv1.MultiClusterHub,
 	component string, cachespec CacheSpec, ocpConsole, isSTSEnabled bool) (ctrl.Result, error) {
 	var result ctrl.Result
@@ -100,13 +112,6 @@ func (r *MultiClusterHubReconciler) ensureComponentOrNoComponent(ctx context.Con
 		return r.ensureNoComponent(ctx, m, component, cachespec, isSTSEnabled)
 
 	} else {
-		if component == operatorv1.ClusterBackup {
-			result, err = r.ensureNamespaceAndPullSecret(m, BackupNamespace())
-			if result != (ctrl.Result{}) || err != nil {
-				return result, err
-			}
-		}
-
 		if component == operatorv1.Console && !ocpConsole {
 			log.Info("OCP console is not enabled")
 			return r.ensureNoComponent(ctx, m, component, cachespec, isSTSEnabled)
@@ -123,12 +128,12 @@ func (r *MultiClusterHubReconciler) ensureNamespaceAndPullSecret(m *operatorv1.M
 	var err error
 
 	result, err = r.ensureNamespace(m, ns)
-	if result != (ctrl.Result{}) {
+	if result != (ctrl.Result{}) || err != nil {
 		return result, err
 	}
 
 	result, err = r.ensurePullSecret(m, ns.Name)
-	if result != (ctrl.Result{}) {
+	if result != (ctrl.Result{}) || err != nil {
 		return result, err
 	}
 
