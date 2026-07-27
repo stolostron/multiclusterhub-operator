@@ -24,7 +24,6 @@ import (
 	"reflect"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
-	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 
 	configv1 "github.com/openshift/api/config/v1"
 	ocopv1 "github.com/openshift/api/operator/v1"
@@ -44,7 +43,7 @@ func (r *MultiClusterHubReconciler) ensureAuthenticationIssuerNotEmpty(ctx conte
 	exists, err := r.ensureObjectExistsAndNotDeleted(ctx, auth, "cluster")
 
 	if err != nil || !exists {
-		return ctrl.Result{RequeueAfter: utils.WarningRefreshInterval}, false, err
+		return ctrl.Result{}, false, err
 	}
 
 	stsEnabled := auth.Spec.ServiceAccountIssuer != "" // Determine STS enabled status
@@ -66,7 +65,7 @@ func (r *MultiClusterHubReconciler) ensureCloudCredentialModeManual(ctx context.
 	exists, err := r.ensureObjectExistsAndNotDeleted(ctx, cloudCred, "cluster")
 
 	if err != nil || !exists {
-		return ctrl.Result{RequeueAfter: utils.WarningRefreshInterval}, false, err
+		return ctrl.Result{}, false, err
 	}
 
 	stsEnabled := cloudCred.Spec.CredentialsMode == "Manual" // Determine STS enabled status
@@ -88,7 +87,7 @@ func (r *MultiClusterHubReconciler) ensureInfrastructureAWS(ctx context.Context)
 	exists, err := r.ensureObjectExistsAndNotDeleted(ctx, infra, "cluster")
 
 	if err != nil || !exists {
-		return ctrl.Result{RequeueAfter: utils.WarningRefreshInterval}, false, err
+		return ctrl.Result{}, false, err
 	}
 
 	stsEnabled := infra.Spec.PlatformSpec.Type == "AWS"

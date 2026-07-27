@@ -1104,6 +1104,27 @@ func Test_ensureAuthenticationIssuerNotEmpty(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("should return empty result on error", func(t *testing.T) {
+		errReconciler := &MultiClusterHubReconciler{
+			Client: &errorClient{
+				Client: fake.NewClientBuilder().WithScheme(scheme.Scheme).Build(),
+				getErr: fmt.Errorf("simulated get error"),
+			},
+			Scheme: scheme.Scheme,
+		}
+
+		result, authOk, err := errReconciler.ensureAuthenticationIssuerNotEmpty(context.TODO())
+		if err == nil {
+			t.Errorf("expected error but got none")
+		}
+		if authOk {
+			t.Errorf("expected false but got true")
+		}
+		if result != (ctrl.Result{}) {
+			t.Errorf("expected empty result but got %v", result)
+		}
+	})
 }
 
 func Test_ensureCloudCredentialModeManual(t *testing.T) {
@@ -1148,6 +1169,27 @@ func Test_ensureCloudCredentialModeManual(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("should return empty result on error", func(t *testing.T) {
+		errReconciler := &MultiClusterHubReconciler{
+			Client: &errorClient{
+				Client: fake.NewClientBuilder().WithScheme(scheme.Scheme).Build(),
+				getErr: fmt.Errorf("simulated get error"),
+			},
+			Scheme: scheme.Scheme,
+		}
+
+		result, cloudCredOK, err := errReconciler.ensureCloudCredentialModeManual(context.TODO())
+		if err == nil {
+			t.Errorf("expected error but got none")
+		}
+		if cloudCredOK {
+			t.Errorf("expected false but got true")
+		}
+		if result != (ctrl.Result{}) {
+			t.Errorf("expected empty result but got %v", result)
+		}
+	})
 }
 
 func Test_ensureInfrastructureAWS(t *testing.T) {
@@ -1192,6 +1234,27 @@ func Test_ensureInfrastructureAWS(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("should return empty result on error", func(t *testing.T) {
+		errReconciler := &MultiClusterHubReconciler{
+			Client: &errorClient{
+				Client: fake.NewClientBuilder().WithScheme(scheme.Scheme).Build(),
+				getErr: fmt.Errorf("simulated get error"),
+			},
+			Scheme: scheme.Scheme,
+		}
+
+		result, infraOk, err := errReconciler.ensureInfrastructureAWS(context.TODO())
+		if err == nil {
+			t.Errorf("expected error but got none")
+		}
+		if infraOk {
+			t.Errorf("expected false but got true")
+		}
+		if result != (ctrl.Result{}) {
+			t.Errorf("expected empty result but got %v", result)
+		}
+	})
 }
 
 func Test_verifyCRDExists(t *testing.T) {

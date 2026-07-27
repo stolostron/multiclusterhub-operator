@@ -324,7 +324,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		present for the other components to deploy successfully.
 	*/
 	result, err = r.ensureMultiClusterEngine(ctx, multiClusterHub)
-	if result != (ctrl.Result{}) {
+	if result != (ctrl.Result{}) || err != nil {
 		return result, err
 	}
 

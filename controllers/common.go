@@ -41,6 +41,7 @@ import (
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 
 	"k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -298,6 +299,10 @@ func (r *MultiClusterHubReconciler) ensureClusterRoleBinding(m *operatorv1.Multi
 func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	mce, err := multiclusterengine.FindAndManageMCE(ctx, r.Client)
 	if err != nil {
+		if apimeta.IsNoMatchError(err) {
+			r.Log.WithName("WARNING").Info("MCE CRD not yet available, requeueing")
+			return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+		}
 		return ctrl.Result{}, err
 	}
 
@@ -328,7 +333,7 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 		mce = multiclusterengine.NewMultiClusterEngine(m, targetNS)
 		err = r.Client.Create(ctx, mce)
 		if err != nil {
-			return ctrl.Result{Requeue: true}, fmt.Errorf("error creating new MCE: %w", err)
+			return ctrl.Result{}, fmt.Errorf("error creating new MCE: %w", err)
 		}
 		return ctrl.Result{}, nil
 	}
@@ -342,7 +347,7 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 
 	// secret should be delivered to targetNamespace
 	if mce.Spec.TargetNamespace == "" {
-		return ctrl.Result{Requeue: true}, fmt.Errorf("MCE %s does not have a target namespace to apply pullsecret", mce.Name)
+		return ctrl.Result{}, fmt.Errorf("MCE %s does not have a target namespace to apply pullsecret", mce.Name)
 	}
 	result, err := r.ensurePullSecret(m, mce.Spec.TargetNamespace)
 	if result != (ctrl.Result{}) {
@@ -352,7 +357,7 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 	calcMCE := multiclusterengine.RenderMultiClusterEngine(mce, m)
 	err = r.Client.Update(ctx, calcMCE)
 	if err != nil {
-		return ctrl.Result{Requeue: true}, fmt.Errorf("error updating MCE %s: %w", mce.Name, err)
+		return ctrl.Result{}, fmt.Errorf("error updating MCE %s: %w", mce.Name, err)
 	}
 	return ctrl.Result{}, nil
 }
@@ -674,7 +679,7 @@ func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, m
 		err = r.Client.Update(ctx, calcSub)
 	}
 	if err != nil {
-		return ctrl.Result{Requeue: true}, fmt.Errorf("error updating subscription %s: %w", calcSub.Name, err)
+		return ctrl.Result{}, fmt.Errorf("error updating subscription %s: %w", calcSub.Name, err)
 	}
 
 	return ctrl.Result{}, nil
@@ -757,7 +762,7 @@ func (r *MultiClusterHubReconciler) ensureMCEClusterExtension(ctx context.Contex
 		err = r.Client.Update(ctx, calcCE)
 	}
 	if err != nil {
-		return ctrl.Result{Requeue: true}, fmt.Errorf("error updating ClusterExtension %s: %w", calcCE.Name, err)
+		return ctrl.Result{}, fmt.Errorf("error updating ClusterExtension %s: %w", calcCE.Name, err)
 	}
 
 	return ctrl.Result{}, nil
@@ -766,12 +771,12 @@ func (r *MultiClusterHubReconciler) ensureMCEClusterExtension(ctx context.Contex
 func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(ctx context.Context, multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	// confirm subscription and reqs exist and are configured correctly
 	result, err := r.ensureMCESubscription(ctx, multiClusterHub)
-	if result != (ctrl.Result{}) {
+	if result != (ctrl.Result{}) || err != nil {
 		return result, err
 	}
 
 	result, err = r.ensureMultiClusterEngineCR(ctx, multiClusterHub)
-	if result != (ctrl.Result{}) {
+	if result != (ctrl.Result{}) || err != nil {
 		return result, err
 	}
 

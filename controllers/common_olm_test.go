@@ -6,6 +6,7 @@ package controllers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -16,7 +17,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -435,7 +438,7 @@ func TestEnsureMultiClusterEngineCR(t *testing.T) {
 			},
 			olmVersion:  "v0",
 			wantError:   true,
-			wantRequeue: true,
+			wantRequeue: false,
 			wantCreate:  false,
 		},
 	}
@@ -501,6 +504,107 @@ func TestEnsureMultiClusterEngineCR(t *testing.T) {
 	}
 }
 
+func TestEnsureMultiClusterEngineCR_NoMatchError(t *testing.T) {
+	noMatchErr := &apimeta.NoKindMatchError{
+		GroupKind: schema.GroupKind{Group: "multicluster.openshift.io", Kind: "MultiClusterEngine"},
+	}
+
+	noMatchClient := &listErrorClient{
+		Client:  fake.NewClientBuilder().WithScheme(scheme.Scheme).Build(),
+		listErr: noMatchErr,
+	}
+
+	reconciler := &MultiClusterHubReconciler{
+		Client: noMatchClient,
+		Scheme: scheme.Scheme,
+		Log:    clog.Log.WithName("test"),
+	}
+
+	mch := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-mch",
+			Namespace: "test-namespace",
+		},
+	}
+
+	ctx := context.Background()
+	result, err := reconciler.ensureMultiClusterEngineCR(ctx, mch)
+
+	if err != nil {
+		t.Errorf("ensureMultiClusterEngineCR() expected nil error for NoMatchError, got: %v", err)
+	}
+	if result.RequeueAfter != resyncPeriod {
+		t.Errorf("ensureMultiClusterEngineCR() expected RequeueAfter=%v, got %v", resyncPeriod, result.RequeueAfter)
+	}
+}
+
+func TestEnsureMultiClusterEngine(t *testing.T) {
+	tests := []struct {
+		name       string
+		olmVersion string
+		client     client.Client
+		wantError  bool
+		wantResult ctrl.Result
+	}{
+		{
+			name:       "subscription error propagates",
+			olmVersion: "v1",
+			client: &errorClient{
+				Client: fake.NewClientBuilder().WithScheme(scheme.Scheme).Build(),
+				getErr: fmt.Errorf("simulated subscription error"),
+			},
+			wantError:  true,
+			wantResult: ctrl.Result{},
+		},
+		{
+			name:       "no OLM - MCE CR NoMatchError propagates as requeue",
+			olmVersion: "",
+			client: &listErrorClient{
+				Client: fake.NewClientBuilder().WithScheme(scheme.Scheme).Build(),
+				listErr: &apimeta.NoKindMatchError{
+					GroupKind: schema.GroupKind{Group: "multicluster.openshift.io", Kind: "MultiClusterEngine"},
+				},
+			},
+			wantError:  false,
+			wantResult: ctrl.Result{RequeueAfter: resyncPeriod},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			reconciler := &MultiClusterHubReconciler{
+				Client:     tt.client,
+				Scheme:     scheme.Scheme,
+				Log:        clog.Log.WithName("test"),
+				OLMVersion: tt.olmVersion,
+			}
+
+			mch := &operatorsv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-mch",
+					Namespace: "test-namespace",
+				},
+			}
+
+			ctx := context.Background()
+			result, err := reconciler.ensureMultiClusterEngine(ctx, mch)
+
+			if tt.wantError {
+				if err == nil {
+					t.Errorf("ensureMultiClusterEngine() expected error but got none")
+				}
+			} else {
+				if err != nil {
+					t.Errorf("ensureMultiClusterEngine() unexpected error: %v", err)
+				}
+			}
+			if result != tt.wantResult {
+				t.Errorf("ensureMultiClusterEngine() result = %v, want %v", result, tt.wantResult)
+			}
+		})
+	}
+}
+
 // errorClient wraps a fake client and returns errors for Get operations
 type errorClient struct {
 	client.Client
@@ -512,6 +616,19 @@ func (e *errorClient) Get(ctx context.Context, key types.NamespacedName, obj cli
 		return e.getErr
 	}
 	return e.Client.Get(ctx, key, obj, opts...)
+}
+
+// listErrorClient wraps a fake client and returns errors for List operations
+type listErrorClient struct {
+	client.Client
+	listErr error
+}
+
+func (e *listErrorClient) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
+	if e.listErr != nil {
+		return e.listErr
+	}
+	return e.Client.List(ctx, list, opts...)
 }
 
 // Helper to find condition in status
