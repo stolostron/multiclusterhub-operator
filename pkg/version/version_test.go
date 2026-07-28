@@ -114,9 +114,14 @@ func Test_ValidMCEVersion(t *testing.T) {
 		wantErr    bool
 	}{
 		{
-			name:       "above min",
-			mceVersion: "4.99.99",
+			name:       "above min patch",
+			mceVersion: "2.11.99",
 			wantErr:    false,
+		},
+		{
+			name:       "above min minor",
+			mceVersion: "2.17.0",
+			wantErr:    true,
 		},
 		{
 			name:       "below min",
@@ -136,7 +141,7 @@ func Test_ValidMCEVersion(t *testing.T) {
 		},
 		{
 			name:       "dev version passing",
-			mceVersion: fmt.Sprintf("%s-dev", RequiredMCEVersion),
+			mceVersion: "2.11.1-dev",
 			wantErr:    false,
 		},
 		{
@@ -166,9 +171,14 @@ func Test_ValidCommunityMCEVersion(t *testing.T) {
 		wantErr    bool
 	}{
 		{
-			name:       "above min",
-			mceVersion: "4.99.99",
+			name:       "above min patch",
+			mceVersion: "0.9.99",
 			wantErr:    false,
+		},
+		{
+			name:       "above min minor",
+			mceVersion: "0.10.0",
+			wantErr:    true,
 		},
 		{
 			name:       "below min",
@@ -188,7 +198,7 @@ func Test_ValidCommunityMCEVersion(t *testing.T) {
 		},
 		{
 			name:       "dev version passing",
-			mceVersion: fmt.Sprintf("%s-dev", RequiredCommunityMCEVersion),
+			mceVersion: "0.9.1-dev",
 			wantErr:    false,
 		},
 		{
