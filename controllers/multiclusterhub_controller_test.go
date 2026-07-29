@@ -402,6 +402,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 		Expect(mcev1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(configv1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(ocopv1.AddToScheme(clientScheme)).Should(Succeed())
+		Expect(openshift_consolev1.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(olmapi.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(ocmapi.AddToScheme(clientScheme)).Should(Succeed())
 		Expect(networking.AddToScheme(clientScheme)).Should(Succeed())
