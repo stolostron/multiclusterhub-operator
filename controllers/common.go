@@ -310,7 +310,8 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 		// Determine target namespace from OLM resource if it exists
 		targetNS := multiclusterengine.OperandNamespace() // default
 
-		if r.OLMVersion == "v1" {
+		switch r.OLMVersion {
+		case "v1":
 			// Check if ClusterExtension exists to get its namespace
 			ce, err := v1.GetManagedMCEClusterExtension(ctx, r.Client)
 			if err != nil {
@@ -319,7 +320,7 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 			if ce != nil {
 				targetNS = ce.Spec.Namespace
 			}
-		} else if r.OLMVersion == "v0" {
+		case "v0":
 			// Check if Subscription exists to get its namespace
 			sub, err := v0.GetManagedMCESubscription(ctx, r.Client)
 			if err != nil {
@@ -579,8 +580,8 @@ func addInstallerLabelSecret(d *corev1.Secret, name string, ns string) bool {
 	return updated
 }
 
-// ensureMCESubscription verifies resources needed for MCE are created
-func (r *MultiClusterHubReconciler) ensureMCESubscription(ctx context.Context, multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+// ensureMCEInstallation verifies OLM resources needed for MCE are created (Subscription for v0, ClusterExtension for v1)
+func (r *MultiClusterHubReconciler) ensureMCEInstallation(ctx context.Context, multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	// If no OLM detected, skip subscription management
 	// MCE is expected to be pre-installed or managed externally
 	if r.OLMVersion == "" {
@@ -695,13 +696,6 @@ func (r *MultiClusterHubReconciler) ensureMCEClusterExtension(ctx context.Contex
 		return ctrl.Result{}, err
 	}
 
-	// Get ClusterCatalog containing MCE package
-	catalogName, err := v1.GetClusterCatalog(ctx, r.Client, desiredPackage)
-	if err != nil {
-		r.Log.Info("Failed to find a suitable ClusterCatalog", "error", err)
-		return ctrl.Result{}, err
-	}
-
 	// Get annotation overrides for ClusterExtension
 	overrides, err := v1.GetAnnotationOverrides(multiClusterHub)
 	if err != nil {
@@ -716,6 +710,16 @@ func (r *MultiClusterHubReconciler) ensureMCEClusterExtension(ctx context.Contex
 	operandNs := multiclusterengine.OperandNamespace()
 
 	if mceCE == nil {
+		// Pre-flight: check if a catalog contains the MCE package.
+		// Non-fatal because OLM v1 resolves catalogs automatically via SourceType+PackageName.
+		catalogName, catErr := v1.GetClusterCatalog(ctx, r.Client, desiredPackage)
+		if catErr != nil {
+			r.Log.Info("No ClusterCatalog found containing package, OLM v1 will resolve automatically",
+				"package", desiredPackage, "error", catErr)
+		} else {
+			r.Log.Info("Found ClusterCatalog for package", "catalog", catalogName, "package", desiredPackage)
+		}
+
 		// ClusterExtension doesn't exist - ensure namespace and mark for creation
 		result, err := r.ensureNamespace(multiClusterHub, namespace)
 		if result != (ctrl.Result{}) {
@@ -752,7 +756,7 @@ func (r *MultiClusterHubReconciler) ensureMCEClusterExtension(ctx context.Contex
 
 	// Create or update ClusterExtension
 	if createCE {
-		r.Log.Info("Creating MCE ClusterExtension", "name", calcCE.Name, "catalog", catalogName)
+		r.Log.Info("Creating MCE ClusterExtension", "name", calcCE.Name)
 		err = r.Client.Create(ctx, calcCE)
 		if err == nil {
 			r.Log.Info("MCE ClusterExtension created successfully", "name", calcCE.Name)
@@ -770,7 +774,7 @@ func (r *MultiClusterHubReconciler) ensureMCEClusterExtension(ctx context.Contex
 
 func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(ctx context.Context, multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	// confirm subscription and reqs exist and are configured correctly
-	result, err := r.ensureMCESubscription(ctx, multiClusterHub)
+	result, err := r.ensureMCEInstallation(ctx, multiClusterHub)
 	if result != (ctrl.Result{}) || err != nil {
 		return result, err
 	}
