@@ -32,7 +32,8 @@ type Global struct {
 	DeployOnOCP          bool                 `json:"deployOnOCP" structs:"deployOnOCP"`
 	StorageClassName     string               `json:"storageClassName" structs:"storageClassName"`
 	StartingCSV          string               `json:"startingCSV" structs:"startingCSV"`
-	OLMVersion           string               `json:"olmVersion" structs:"olmVersion"` // "v0" or "v1" - detected at runtime by main.go detectOLMVersion
+	OLMVersion           string               `json:"olmVersion" structs:"olmVersion"`         // "v0" or "v1" - detected at runtime by main.go detectOLMVersion
+	OADPOLMVersion       string               `json:"oadpOlmVersion" structs:"oadpOlmVersion"` // effective OLM version for OADP (v0 on OCP <5.0 even if cluster is OLM v1)
 	NetworkPolicies      NetworkPoliciesValue `json:"networkPolicies" structs:"networkPolicies"`
 }
 

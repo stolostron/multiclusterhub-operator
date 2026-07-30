@@ -28,7 +28,7 @@ data:
   env_NO_PROXY: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
   {{- end }}
 
-{{- else if eq .Values.global.olmVersion "v1" }}
+{{- else if eq .Values.global.oadpOlmVersion "v1" }}
 ---
 apiVersion: v1
 kind: ServiceAccount
