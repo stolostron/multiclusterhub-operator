@@ -6,6 +6,7 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -20,6 +21,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 var replicas int32 = 1
@@ -1061,6 +1064,13 @@ func Test_ComponentsAreRunning(t *testing.T) {
 func TestCalculateMCEVersionCompliance(t *testing.T) {
 	registerScheme()
 
+	// This test exercises production (non-community) MCE version compliance
+	// (channel stable-2.11 / MCE 2.11.0). IsCommunityMode() defaults to true
+	// when OPERATOR_PACKAGE is unset, which would otherwise route through
+	// RequiredCommunityMCEVersion (0.9.0) and fail the major.minor match.
+	os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
+	defer os.Unsetenv("OPERATOR_PACKAGE")
+
 	tests := []struct {
 		name            string
 		mce             *mcev1.MultiClusterEngine
@@ -1127,20 +1137,31 @@ func TestCalculateMCEVersionCompliance(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.TODO()
 
+			// Use a dedicated fake client (with MCE status subresource support)
+			// rather than the shared package-level `recon` client. The default
+			// fake client strips subresources like .Status on Create, so a
+			// plain Create would silently drop CurrentVersion.
+			testClient := fake.NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithStatusSubresource(&mcev1.MultiClusterEngine{}).
+				Build()
+			testRecon := MultiClusterHubReconciler{
+				Client: testClient,
+				Scheme: scheme.Scheme,
+			}
+
 			// Create MCE if specified
 			if tt.createMCE && tt.mce != nil {
-				if err := recon.Client.Create(ctx, tt.mce); err != nil {
+				if err := testClient.Create(ctx, tt.mce); err != nil {
 					t.Errorf("failed to create MCE: %v", err)
 				}
-				defer func() {
-					if err := recon.Client.Delete(ctx, tt.mce); err != nil {
-						t.Errorf("failed to delete MCE: %v", err)
-					}
-				}()
+				if err := testClient.Status().Update(ctx, tt.mce); err != nil {
+					t.Errorf("failed to update MCE status: %v", err)
+				}
 			}
 
 			// Test the function
-			result := recon.calculateMCEVersionCompliance(ctx)
+			result := testRecon.calculateMCEVersionCompliance(ctx)
 
 			// Verify required channel (this comes from the system)
 			if result.RequiredChannel == "" {
