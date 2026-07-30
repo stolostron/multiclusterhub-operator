@@ -1,0 +1,20 @@
+{{- if .Values.global.networkPolicies.enabled }}
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: insights-client-network-policy
+  labels:
+    app: {{ .Chart.Name }}
+    chart: '{{ .Chart.Name }}-{{ .Chart.Version }}'
+    component: insights-client
+    release: {{ .Chart.Name }}
+    heritage: release-service
+spec:
+  podSelector:
+    matchLabels:
+      name: insights-client
+  policyTypes:
+  - Ingress
+{{- end }}
