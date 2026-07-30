@@ -22,8 +22,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strconv"
-	"strings"
 
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	admissionregistration "k8s.io/api/admissionregistration/v1"
@@ -437,35 +435,13 @@ func validateOLMAnnotations(ctx context.Context, mch *MultiClusterHub) error {
 		return fmt.Errorf("validating MCE OLM annotations: %w", err)
 	}
 
-	// OADP doesn't support AllNamespaces install mode required by OLM v1 on OCP <5.0.
-	// Validate OADP annotations against the effective OADP OLM version.
-	oadpOLMVersion := olmVersion
-	if olmVersion == "v1" && !isOCP5OrNewer(os.Getenv("ACM_HUB_OCP_VERSION")) {
-		oadpOLMVersion = "v0"
-	}
-
-	if err := validateOLMAnnotationPair(oadpOLMVersion, annotations,
+	// OADP always uses v0 Subscription until OADP team ships OLM v1-ready bundles.
+	if err := validateOLMAnnotationPair("v0", annotations,
 		annotationOADPSubscriptionSpec, annotationOADPClusterExtensionSpec); err != nil {
 		return fmt.Errorf("validating OADP OLM annotations: %w", err)
 	}
 
 	return nil
-}
-
-// isOCP5OrNewer returns true if the OCP version is 5.0 or later.
-func isOCP5OrNewer(ocpVersion string) bool {
-	if ocpVersion == "" {
-		return false
-	}
-	major, _, found := strings.Cut(ocpVersion, ".")
-	if !found {
-		return false
-	}
-	majorInt, err := strconv.Atoi(major)
-	if err != nil {
-		return false
-	}
-	return majorInt >= 5
 }
 
 // validateOLMAnnotationPair validates that a v0/v1 annotation pair matches the detected OLM version
