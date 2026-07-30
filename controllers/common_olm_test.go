@@ -547,14 +547,14 @@ func TestEnsureMultiClusterEngine(t *testing.T) {
 		wantResult ctrl.Result
 	}{
 		{
-			name:       "subscription error propagates",
+			name:       "v1 get error causes requeue",
 			olmVersion: "v1",
 			client: &errorClient{
 				Client: fake.NewClientBuilder().WithScheme(scheme.Scheme).Build(),
-				getErr: fmt.Errorf("simulated subscription error"),
+				getErr: fmt.Errorf("simulated get error"),
 			},
-			wantError:  true,
-			wantResult: ctrl.Result{},
+			wantError:  false,
+			wantResult: ctrl.Result{Requeue: true},
 		},
 		{
 			name:       "no OLM - MCE CR NoMatchError propagates as requeue",
@@ -913,7 +913,7 @@ func TestEnsureMCESubscription(t *testing.T) {
 					Namespace: "test-ns",
 				},
 			},
-			wantError:   true, // Will error due to no ClusterCatalog
+			wantError:   false,
 			wantRequeue: false,
 		},
 	}
@@ -940,22 +940,22 @@ func TestEnsureMCESubscription(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			result, err := reconciler.ensureMCESubscription(ctx, tt.mch)
+			result, err := reconciler.ensureMCEInstallation(ctx, tt.mch)
 
 			if tt.wantError {
 				if err == nil {
-					t.Errorf("ensureMCESubscription() expected error but got none")
+					t.Errorf("ensureMCEInstallation() expected error but got none")
 				}
 				return
 			}
 
 			if err != nil {
-				t.Errorf("ensureMCESubscription() unexpected error: %v", err)
+				t.Errorf("ensureMCEInstallation() unexpected error: %v", err)
 				return
 			}
 
 			if tt.wantRequeue && result.Requeue == false {
-				t.Errorf("ensureMCESubscription() expected requeue but got none")
+				t.Errorf("ensureMCEInstallation() expected requeue but got none")
 			}
 		})
 	}
@@ -970,7 +970,7 @@ func TestEnsureMCEClusterExtension(t *testing.T) {
 		wantRequeue bool
 	}{
 		{
-			name: "No ClusterCatalog found - error",
+			name: "No ClusterCatalog found - proceeds with CE creation",
 			objects: []client.Object{
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
@@ -984,11 +984,11 @@ func TestEnsureMCEClusterExtension(t *testing.T) {
 					Namespace: "test-ns",
 				},
 			},
-			wantError:   true,
+			wantError:   false,
 			wantRequeue: false,
 		},
 		{
-			name: "No serving ClusterCatalog - error",
+			name: "No serving ClusterCatalog - proceeds with CE creation",
 			objects: []client.Object{
 				&ocv1.ClusterCatalog{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1010,7 +1010,7 @@ func TestEnsureMCEClusterExtension(t *testing.T) {
 					Namespace: "test-ns",
 				},
 			},
-			wantError:   true,
+			wantError:   false,
 			wantRequeue: false,
 		},
 	}
