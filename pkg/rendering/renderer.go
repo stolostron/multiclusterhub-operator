@@ -407,6 +407,12 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 		values.Global.OLMVersion = olmVersion
 	}
 
+	// OADP doesn't yet publish OLM v1-compatible bundles (AllNamespaces install mode
+	// not declared, and package missing from some OCP 5.0 EC catalog indexes).
+	// Force v0 Subscription for OADP until OADP team ships v1-ready bundles.
+	// TODO: set to values.Global.OLMVersion once OADP bundles are v1-ready
+	values.Global.OADPOLMVersion = "v0"
+
 	values.HubConfig.ClusterSTSEnabled = isSTSEnabled
 
 	values.HubConfig.ReplicaCount = utils.DefaultReplicaCount(mch)
@@ -455,8 +461,8 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 		Enabled: networkPoliciesEnabled,
 	}
 
-	// Apply OADP ClusterExtension overrides (OLM v1) if annotation present and olmVersion is v1
-	if olmVersion == "v1" {
+	// Apply OADP ClusterExtension overrides (OLM v1) if annotation present and effective OADP OLM version is v1
+	if values.Global.OADPOLMVersion == "v1" {
 		if overrides := parseOADPClusterExtensionAnnotation(mch); overrides != nil {
 			// Override catalog settings for OLM v1
 			if len(overrides.Channels) > 0 {
@@ -521,6 +527,7 @@ func parseOADPAnnotation(m *v1.MultiClusterHub) *subv1alpha1.SubscriptionSpec {
 // getOADPChannel determines the OADP operator channel based on annotation override or OCP version.
 // If override is provided (from annotation), it takes precedence.
 // Otherwise, returns stable channel for OCP 4.19+ or unknown versions, and stable-1.4 for OCP 4.18 and earlier.
+
 // The ACM_HUB_OCP_VERSION environment variable is used to detect the OpenShift version.
 func getOADPChannel(override string) string {
 	if override != "" {

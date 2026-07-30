@@ -21,14 +21,14 @@ data:
   name: {{ .Values.global.name }}
   source: {{ .Values.global.source }}
   sourceNamespace: {{ .Values.global.sourceNamespace }}
-  olmVersion: {{ .Values.global.olmVersion }}
+  olmVersion: {{ .Values.global.oadpOlmVersion }}
   {{- if .Values.hubconfig.proxyConfigs }}
   env_HTTP_PROXY: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
   env_HTTPS_PROXY: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
   env_NO_PROXY: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
   {{- end }}
 
-{{- else if eq .Values.global.olmVersion "v1" }}
+{{- else if eq .Values.global.oadpOlmVersion "v1" }}
 ---
 apiVersion: v1
 kind: ServiceAccount

@@ -435,8 +435,8 @@ func validateOLMAnnotations(ctx context.Context, mch *MultiClusterHub) error {
 		return fmt.Errorf("validating MCE OLM annotations: %w", err)
 	}
 
-	// Validate OADP annotations
-	if err := validateOLMAnnotationPair(olmVersion, annotations,
+	// OADP always uses v0 Subscription until OADP team ships OLM v1-ready bundles.
+	if err := validateOLMAnnotationPair("v0", annotations,
 		annotationOADPSubscriptionSpec, annotationOADPClusterExtensionSpec); err != nil {
 		return fmt.Errorf("validating OADP OLM annotations: %w", err)
 	}

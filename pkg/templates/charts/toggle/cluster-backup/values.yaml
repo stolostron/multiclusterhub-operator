@@ -19,6 +19,7 @@ global:
   sourceNamespace: openshift-marketplace
   startingCSV: ""
   olmVersion: v0
+  oadpOlmVersion: v0
   networkPolicies:
     enabled: true
 hubconfig:
