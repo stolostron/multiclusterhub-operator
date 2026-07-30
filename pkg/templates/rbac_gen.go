@@ -462,6 +462,8 @@ package main
 //+kubebuilder:rbac:groups=multicluster.x-k8s.io,resources=serviceimports,verbs=list;get;update;delete
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;create;update;delete;deletecollection;watch
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;create;update;delete;deletecollection;watch
+//+kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=oadp.openshift.io,resources=dataprotectionapplications,verbs=get;list;watch
 //+kubebuilder:rbac:groups=oadp.openshift.io,resources=dataprotectionapplications,verbs=get;list;watch
 //+kubebuilder:rbac:groups=oauth.openshift.io,resources=oauthclients,verbs=create;delete;get;list;patch;update;watch
