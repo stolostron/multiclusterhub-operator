@@ -31,6 +31,15 @@ rules:
   - watch
 
 - apiGroups:
+  - olm.operatorframework.io
+  resources:
+  - clusterextensions
+  verbs:
+  - get
+  - list
+  - watch
+
+- apiGroups:
   - operator.open-cluster-management.io
   resources:
   - multiclusterhubs
