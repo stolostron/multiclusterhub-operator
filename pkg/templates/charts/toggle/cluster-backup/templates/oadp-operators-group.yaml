@@ -16,7 +16,7 @@ metadata:
     "helm.sh/hook-weight": "-2"
 data:
   targetNamespaces: open-cluster-management-backup
-  olmVersion: {{ .Values.global.olmVersion }}
+  olmVersion: {{ .Values.global.oadpOlmVersion }}
 
 {{- else if ne .Values.global.oadpOlmVersion "v1" }}
 apiVersion: operators.coreos.com/v1

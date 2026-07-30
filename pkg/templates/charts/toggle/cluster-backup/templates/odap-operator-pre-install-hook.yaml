@@ -21,7 +21,7 @@ data:
   name: {{ .Values.global.name }}
   source: {{ .Values.global.source }}
   sourceNamespace: {{ .Values.global.sourceNamespace }}
-  olmVersion: {{ .Values.global.olmVersion }}
+  olmVersion: {{ .Values.global.oadpOlmVersion }}
   {{- if .Values.hubconfig.proxyConfigs }}
   env_HTTP_PROXY: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
   env_HTTPS_PROXY: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
