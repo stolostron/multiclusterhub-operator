@@ -487,7 +487,7 @@ func TestOADPAnnotation(t *testing.T) {
 
 func TestRenderChartOLMv1(t *testing.T) {
 	os.Setenv("DIRECTORY_OVERRIDE", "../templates")
-	os.Setenv("ACM_HUB_OCP_VERSION", "4.20.0")
+	os.Setenv("ACM_HUB_OCP_VERSION", "5.0.0")
 	defer os.Unsetenv("DIRECTORY_OVERRIDE")
 	defer os.Unsetenv("ACM_HUB_OCP_VERSION")
 
@@ -503,7 +503,8 @@ func TestRenderChartOLMv1(t *testing.T) {
 	}
 	templateOverrides := map[string]string{}
 
-	// Render cluster-backup chart with OLM v1
+	// Render cluster-backup chart with OLM v1 — OADP should still use v0 Subscription
+	// because OADP bundles don't yet support OLM v1
 	chartPath := utils.ClusterBackupChartLocation
 	templates, errs := RenderChart(chartPath, testMCH, testImages, templateOverrides, false, "v1")
 	if len(errs) > 0 {
@@ -513,10 +514,8 @@ func TestRenderChartOLMv1(t *testing.T) {
 		t.Fatalf("failed to render cluster-backup with OLM v1")
 	}
 
-	// Verify v1 resources present and v0 resources absent
+	// OADP forced to v0: expect Subscription and OperatorGroup, not ClusterExtension
 	foundClusterExtension := false
-	foundServiceAccount := false
-	foundClusterRoleBinding := false
 	foundSubscription := false
 	foundOperatorGroup := false
 
@@ -527,12 +526,6 @@ func TestRenderChartOLMv1(t *testing.T) {
 		if kind == "ClusterExtension" && apiVersion == "olm.operatorframework.io/v1" {
 			foundClusterExtension = true
 		}
-		if kind == "ServiceAccount" && template.GetName() == "oadp-installer" {
-			foundServiceAccount = true
-		}
-		if kind == "ClusterRoleBinding" && template.GetName() == "oadp-installer-admin" {
-			foundClusterRoleBinding = true
-		}
 		if kind == "Subscription" && apiVersion == "operators.coreos.com/v1alpha1" {
 			foundSubscription = true
 		}
@@ -541,23 +534,17 @@ func TestRenderChartOLMv1(t *testing.T) {
 		}
 	}
 
-	// v1 resources should be present
-	if !foundClusterExtension {
-		t.Error("Expected ClusterExtension for OLM v1, not found")
+	// v0 resources should be present (OADP forced to v0)
+	if !foundSubscription {
+		t.Error("Expected Subscription for OADP (forced v0), not found")
 	}
-	if !foundServiceAccount {
-		t.Error("Expected ServiceAccount (oadp-installer) for OLM v1, not found")
-	}
-	if !foundClusterRoleBinding {
-		t.Error("Expected ClusterRoleBinding (oadp-installer-admin) for OLM v1, not found")
+	if !foundOperatorGroup {
+		t.Error("Expected OperatorGroup for OADP (forced v0), not found")
 	}
 
-	// v0 resources should be absent
-	if foundSubscription {
-		t.Error("Found Subscription resource in OLM v1 render, should not be present")
-	}
-	if foundOperatorGroup {
-		t.Error("Found OperatorGroup resource in OLM v1 render, should not be present")
+	// v1 resources should be absent
+	if foundClusterExtension {
+		t.Error("Found ClusterExtension in render, OADP should use v0 Subscription")
 	}
 }
 

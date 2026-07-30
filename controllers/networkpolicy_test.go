@@ -237,6 +237,47 @@ func Test_ensureNetworkPolicies_Enabled_CreatesNP(t *testing.T) {
 	}
 }
 
+func Test_ensureNetworkPolicies_Enabled_CreatesKlusterletAddonControllerNP(t *testing.T) {
+	setChartEnv(t)
+
+	registerScheme()
+	r := newTestReconciler()
+	mch := newTestMCH("mch", "open-cluster-management", boolPtr(true),
+		operatorv1.ComponentConfig{Name: operatorv1.ClusterLifecycle, Enabled: true},
+	)
+
+	result, err := r.ensureNetworkPolicies(context.TODO(), mch, r.CacheSpec, false)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	if result != (ctrl.Result{}) {
+		t.Fatalf("expected empty result, got: %v", result)
+	}
+
+	np := &networkingv1.NetworkPolicy{}
+	if err := r.Client.Get(context.TODO(), client.ObjectKey{
+		Name:      "klusterlet-addon-controller-network-policy",
+		Namespace: "open-cluster-management",
+	}, np); err != nil {
+		t.Fatalf("expected klusterlet-addon-controller-network-policy to be created: %v", err)
+	}
+	if np.Spec.PodSelector.MatchLabels["app"] != "klusterlet-addon-controller-v2" {
+		t.Errorf("unexpected podSelector: %v", np.Spec.PodSelector.MatchLabels)
+	}
+	hasIngress, hasEgress := false, false
+	for _, pt := range np.Spec.PolicyTypes {
+		if pt == networkingv1.PolicyTypeIngress {
+			hasIngress = true
+		}
+		if pt == networkingv1.PolicyTypeEgress {
+			hasEgress = true
+		}
+	}
+	if !hasIngress || !hasEgress {
+		t.Errorf("expected Ingress and Egress policyTypes, got: %v", np.Spec.PolicyTypes)
+	}
+}
+
 func Test_ensureNetworkPolicies_Enabled_SkipsExisting(t *testing.T) {
 	setChartEnv(t)
 
