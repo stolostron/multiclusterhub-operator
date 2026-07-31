@@ -878,11 +878,9 @@ rules:
   resources:
   - placements
   verbs:
-  - create
   - delete
   - get
   - list
-  - update
   - watch
 - apiGroups:
   - clusterview.open-cluster-management.io
@@ -1433,11 +1431,8 @@ rules:
   resources:
   - placementbindings
   verbs:
-  - create
   - delete
-  - get
   - list
-  - update
   - watch
 - apiGroups:
   - policy.open-cluster-management.io
