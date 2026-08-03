@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/onsi/gomega"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
@@ -15,6 +16,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
+
+var testLog = logr.Discard()
 
 func TestDesiredPackage(t *testing.T) {
 	os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
@@ -85,7 +88,7 @@ func TestFindAndManageMCE(t *testing.T) {
 		WithLists(&mcev1.MultiClusterEngineList{Items: []mcev1.MultiClusterEngine{*managedmce1}}).
 		Build()
 
-	got, err := FindAndManageMCE(context.Background(), cl)
+	got, err := FindAndManageMCE(testLog, context.Background(), cl)
 	if err != nil {
 		t.Errorf("FindAndManageMCE() should have found mce by label. Got %v", err)
 	}
@@ -99,7 +102,7 @@ func TestFindAndManageMCE(t *testing.T) {
 		WithLists(&mcev1.MultiClusterEngineList{Items: []mcev1.MultiClusterEngine{*managedmce1, *managedmce2}}).
 		Build()
 
-	_, err = FindAndManageMCE(context.Background(), cl)
+	_, err = FindAndManageMCE(testLog, context.Background(), cl)
 	if err == nil {
 		t.Errorf("FindAndManageMCE() should have errored due to multiple mces")
 	}
@@ -110,7 +113,7 @@ func TestFindAndManageMCE(t *testing.T) {
 		WithLists(&mcev1.MultiClusterEngineList{Items: []mcev1.MultiClusterEngine{*unmanagedmce1}}).
 		Build()
 
-	got, err = FindAndManageMCE(context.Background(), cl)
+	got, err = FindAndManageMCE(testLog, context.Background(), cl)
 	if err != nil {
 		t.Errorf("FindAndManageMCE() should have found mce and labeled it. Got error %v", err)
 	}

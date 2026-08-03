@@ -49,7 +49,7 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 	if template.GetKind() == "APIService" {
 		result, err := r.ensureUnstructuredResource(m, template)
 		if err != nil {
-			log.Info(err.Error())
+			r.Log.Info(err.Error())
 			return result, err
 		}
 	} else {
@@ -60,12 +60,12 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 				crd := &apixv1.CustomResourceDefinition{}
 
 				if err := r.Client.Get(ctx, types.NamespacedName{Name: gvk.Name}, crd); errors.IsNotFound(err) {
-					log.Info("CustomResourceDefinition does not exist. Skipping resource creation",
+					r.Log.Info("CustomResourceDefinition does not exist. Skipping resource creation",
 						"Group", gvk.Group, "Version", gvk.Version, "Kind", gvk.Kind, "Name", template.GetName())
 					return ctrl.Result{RequeueAfter: utils.WarningRefreshInterval}, nil
 
 				} else if err != nil {
-					log.Error(err, "failed to get CustomResourceDefinition", "Resource", gvk)
+					r.Log.Error(err, "failed to get CustomResourceDefinition", "Resource", gvk)
 					return ctrl.Result{}, err
 				}
 			}
@@ -79,7 +79,7 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 				if err := r.Client.Create(ctx, template, &client.CreateOptions{}); err != nil {
 					return r.logAndSetCondition(err, "failed to create resource", template, m)
 				}
-				log.Info("Creating resource", "Kind", template.GetKind(), "Name", template.GetName())
+				r.Log.Info("Creating resource", "Kind", template.GetKind(), "Name", template.GetName())
 			} else {
 				return r.logAndSetCondition(err, "failed to get resource", existing, m)
 			}
@@ -95,7 +95,7 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 
 			desiredVersion := os.Getenv("OPERATOR_VERSION")
 			if desiredVersion == "" {
-				log.Info("Warning: OPERATOR_VERSION environment variable is not set")
+				r.Log.Info("Warning: OPERATOR_VERSION environment variable is not set")
 			}
 
 			if !r.ensureResourceVersionAlignment(existing, desiredVersion) {
@@ -115,12 +115,12 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 			if existing.GetKind() == "PersistentVolumeClaim" {
 				storageClassName, found, err := unstructured.NestedString(existing.Object, "spec", "storageClassName")
 				if err != nil {
-					log.Error(err, "failed to retrieve storageClassName from PVC", "Name", existing.GetName())
+					r.Log.Error(err, "failed to retrieve storageClassName from PVC", "Name", existing.GetName())
 					return ctrl.Result{}, err
 				}
 
 				if found && storageClassName != os.Getenv(helpers.DefaultStorageClassName) {
-					log.Info(
+					r.Log.Info(
 						"To update the PVC with a new StorageClass, delete the existing PVC to allow it to be recreated.",
 						"Name", existing.GetName(), "CurrentStorageClass", storageClassName,
 						"NewStorageClass", os.Getenv(helpers.DefaultStorageClassName))
@@ -131,7 +131,7 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 					"volumeClaimTemplates")
 
 				if err != nil {
-					log.Error(err, "failed to retrieve volumeClaimTemplates from StatefulSet", "Name",
+					r.Log.Error(err, "failed to retrieve volumeClaimTemplates from StatefulSet", "Name",
 						existing.GetName())
 					return ctrl.Result{}, err
 				}
@@ -144,13 +144,13 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 							volumeClaimTemplate.(map[string]interface{}), "spec", "storageClassName")
 
 						if err != nil {
-							log.Error(err, "failed to retrieve storageClassName from volumeClaimTemplate", "Index", i,
+							r.Log.Error(err, "failed to retrieve storageClassName from volumeClaimTemplate", "Index", i,
 								"Name", existing.GetName())
 							return ctrl.Result{}, err
 						}
 
 						if found && storageClassName != os.Getenv(helpers.DefaultStorageClassName) {
-							log.Info(
+							r.Log.Info(
 								"To update the STS with a new StorageClass, delete the existing STS to allow it to be recreated.",
 								"Name", existing.GetName(), "CurrentStorageClass", storageClassName,
 								"NewStorageClass", os.Getenv(helpers.DefaultStorageClassName))
@@ -166,10 +166,10 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 				if existing.GetKind() == "Deployment" {
 					containersChanged, err := r.detectContainerChanges(existing, template)
 					if err != nil {
-						log.Error(err, "Failed to detect container changes", "Name", template.GetName())
+						r.Log.Error(err, "Failed to detect container changes", "Name", template.GetName())
 
 					} else if containersChanged {
-						log.Info("Container set changed (added/removed) - using Update instead of Patch",
+						r.Log.Info("Container set changed (added/removed) - using Update instead of Patch",
 							"Kind", template.GetKind(), "Name", template.GetName())
 						useUpdate = true
 					}
@@ -207,7 +207,7 @@ func (r *MultiClusterHubReconciler) deleteTemplate(ctx context.Context, m *opera
 
 	// set status progressing condition
 	if err != nil {
-		log.Error(err, "Odd error delete template")
+		r.Log.Error(err, "Odd error delete template")
 		return ctrl.Result{}, err
 	}
 
@@ -223,7 +223,7 @@ func (r *MultiClusterHubReconciler) deleteTemplate(ctx context.Context, m *opera
 
 	err = r.Client.Delete(ctx, template)
 	if err != nil {
-		log.Error(err, "Failed to delete template")
+		r.Log.Error(err, "Failed to delete template")
 		return ctrl.Result{}, err
 	}
 
@@ -343,13 +343,13 @@ func (r *MultiClusterHubReconciler) ensureResourceVersionAlignment(template *uns
 	annotations := template.GetAnnotations()
 	currentVersion, ok := annotations[utils.AnnotationReleaseVersion]
 	if !ok {
-		log.Info(fmt.Sprintf("Annotation '%v' not found on resource", utils.AnnotationReleaseVersion),
+		r.Log.Info("Annotation not found on resource", "annotation", utils.AnnotationReleaseVersion,
 			"Kind", template.GetKind(), "Name", template.GetName())
 		return false
 	}
 
 	if currentVersion != desiredVersion {
-		log.Info("Resource version mismatch detected; attempting to update resource",
+		r.Log.Info("Resource version mismatch detected; attempting to update resource",
 			"Kind", template.GetKind(), "Name", template.GetName(),
 			"CurrentVersion", currentVersion, "DesiredVersion", desiredVersion)
 
@@ -362,7 +362,7 @@ func (r *MultiClusterHubReconciler) ensureResourceVersionAlignment(template *uns
 func (r *MultiClusterHubReconciler) logAndSetCondition(err error, message string,
 	template *unstructured.Unstructured, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 
-	log.Error(err, message, "Kind", template.GetKind(), "Name", template.GetName())
+	r.Log.Error(err, message, "Kind", template.GetKind(), "Name", template.GetName())
 	wrappedError := pkgerrors.Wrapf(err, "%s Kind: %s Name: %s", message, template.GetKind(), template.GetName())
 
 	condType := fmt.Sprintf("%v: %v (Kind:%v)", operatorv1.ComponentFailure, template.GetName(),
@@ -400,7 +400,7 @@ func (r *MultiClusterHubReconciler) detectContainerChanges(existing, desired *un
 
 	// Different number of containers = containers added or removed
 	if len(existingContainers) != len(desiredContainers) {
-		log.Info("Container count changed",
+		r.Log.Info("Container count changed",
 			"Name", existing.GetName(),
 			"Existing", len(existingContainers),
 			"Desired", len(desiredContainers))
@@ -427,7 +427,7 @@ func (r *MultiClusterHubReconciler) detectContainerChanges(existing, desired *un
 		}
 		if name, ok := container["name"].(string); ok {
 			if !existingNames[name] {
-				log.Info("New container detected in desired spec",
+				r.Log.Info("New container detected in desired spec",
 					"Deployment", existing.GetName(),
 					"Container", name)
 				return true, nil
@@ -455,7 +455,7 @@ func (r *MultiClusterHubReconciler) detectContainerChanges(existing, desired *un
 		}
 		if name, ok := container["name"].(string); ok {
 			if !desiredNames[name] {
-				log.Info("Container removed in desired spec",
+				r.Log.Info("Container removed in desired spec",
 					"Deployment", existing.GetName(),
 					"Container", name)
 				return true, nil

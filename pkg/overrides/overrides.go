@@ -17,15 +17,13 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-logr/logr"
 	"github.com/stolostron/multiclusterhub-operator/pkg/manifest"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
-
-var logf = log.Log.WithName("overrides")
 
 const (
 	// OSBSImagePrefix ...
@@ -106,7 +104,7 @@ GetOverridesFromConfigmap reads and formats image or template overrides from a C
 ConfigMap, parses the data, and returns overrides. If the ConfigMap is not found or has unexpected data, it returns
 an error.
 */
-func GetOverridesFromConfigmap(k8sClient client.Client, overrides map[string]string, namespace, configmapName string,
+func GetOverridesFromConfigmap(log logr.Logger, k8sClient client.Client, overrides map[string]string, namespace, configmapName string,
 	isTemplate bool) (map[string]string, error) {
 
 	objectType := "image"
@@ -114,7 +112,7 @@ func GetOverridesFromConfigmap(k8sClient client.Client, overrides map[string]str
 		objectType = "template"
 	}
 
-	logf.Info(fmt.Sprintf("Overriding %s from configmap: %s/%s", objectType, namespace, configmapName))
+	log.Info("Overriding from configmap", "type", objectType, "namespace", namespace, "configmap", configmapName)
 
 	configmap := &corev1.ConfigMap{}
 	err := k8sClient.Get(context.TODO(), types.NamespacedName{
@@ -160,10 +158,9 @@ func GetOverridesFromConfigmap(k8sClient client.Client, overrides map[string]str
 /*
 GetOverridesFromEnv reads and formats full image or template reference from environment variables.
 */
-func GetOverridesFromEnv(prefix string) map[string]string {
+func GetOverridesFromEnv(log logr.Logger, prefix string) map[string]string {
 	overrides := make(map[string]string)
 
-	// Iterate through environment variables
 	for _, e := range os.Environ() {
 		key, value := parseEnvVarByPrefix(e, prefix)
 		if key != "" && value != "" {
@@ -172,7 +169,7 @@ func GetOverridesFromEnv(prefix string) map[string]string {
 	}
 
 	if len(overrides) > 0 {
-		logf.Info(fmt.Sprintf("Found overrides from environment variables set by %s prefix", prefix))
+		log.Info("Found overrides from environment variables", "prefix", prefix)
 	}
 
 	return overrides

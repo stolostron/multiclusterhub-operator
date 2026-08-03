@@ -30,7 +30,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	ctrl "sigs.k8s.io/controller-runtime"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func (r *MultiClusterHubReconciler) fetchChartLocation(component string) string {
@@ -78,7 +77,7 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(component string) string 
 		return utils.VolsyncChartLocation
 
 	default:
-		log.Info(fmt.Sprintf("Unregistered component detected: %v", component))
+		r.Log.Info("Unregistered component detected", "component", component)
 		return fmt.Sprintf("/chart/toggle/%v", component)
 	}
 }
@@ -113,7 +112,7 @@ func (r *MultiClusterHubReconciler) ensureComponentOrNoComponent(ctx context.Con
 
 	} else {
 		if component == operatorv1.Console && !ocpConsole {
-			log.Info("OCP console is not enabled")
+			r.Log.Info("OCP console is not enabled")
 			return r.ensureNoComponent(ctx, m, component, cachespec, isSTSEnabled)
 		}
 
@@ -158,12 +157,12 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 	}
 
 	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(chartLocation, m, cachespec.ImageOverrides, cachespec.TemplateOverrides,
+	templates, errs := renderer.RenderChart(r.Log.WithName("renderer"), chartLocation, m, cachespec.ImageOverrides, cachespec.TemplateOverrides,
 		isSTSEnabled, r.OLMVersion)
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			log.Info(err.Error())
+			r.Log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
@@ -175,7 +174,7 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 				if deploymentConfig, found := r.getDeploymentConfig(componentConfig.ConfigOverrides.Deployments,
 					template.GetName()); found {
 
-					log.V(2).Info("Applying deployment overrides for template", "Name", template.GetName())
+					r.Log.V(2).Info("Applying deployment overrides for template", "Name", template.GetName())
 					for _, container := range deploymentConfig.Containers {
 						if err := r.applyEnvConfig(template, container.Name, container.Env); err != nil {
 							return ctrl.Result{}, err
@@ -183,12 +182,12 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 					}
 
 				} else {
-					log.V(2).Info("No deployment config found for deployment", "Name", template.GetName())
+					r.Log.V(2).Info("No deployment config found for deployment", "Name", template.GetName())
 				}
 			}
 		}
 	} else {
-		log.V(2).Info("No component config found", "Component", component)
+		r.Log.V(2).Info("No component config found", "Component", component)
 	}
 
 	// Applies all templates
@@ -288,12 +287,12 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 	}
 
 	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(chartLocation, m, imageOverrides, cachespec.TemplateOverrides,
+	templates, errs := renderer.RenderChart(r.Log.WithName("renderer"), chartLocation, m, imageOverrides, cachespec.TemplateOverrides,
 		isSTSEnabled, r.OLMVersion)
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			log.Info(err.Error())
+			r.Log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
@@ -308,7 +307,7 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 		result, err := r.deleteTemplate(ctx, m, template)
 		if result != (ctrl.Result{}) || err != nil {
 			if err != nil {
-				logf.Log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+				r.Log.Error(err, "Failed to delete template", "name", template.GetName())
 			}
 			return result, err
 		}
@@ -354,7 +353,7 @@ func (r *MultiClusterHubReconciler) applyEnvConfig(template *unstructured.Unstru
 
 	containers, found, err := unstructured.NestedSlice(template.Object, "spec", "template", "spec", "containers")
 	if err != nil || !found {
-		log.Error(err, "Failed to get containers from template", "Kind", template.GetKind(), "Name", template.GetName())
+		r.Log.Error(err, "Failed to get containers from template", "Kind", template.GetKind(), "Name", template.GetName())
 		return err
 	}
 
@@ -373,7 +372,7 @@ func (r *MultiClusterHubReconciler) applyEnvConfig(template *unstructured.Unstru
 			}
 
 			if err := unstructured.SetNestedSlice(containerMap, existingEnv, "env"); err != nil {
-				log.Error(err, "Failed to set environment variable", "Container", containerName)
+				r.Log.Error(err, "Failed to set environment variable", "Container", containerName)
 				return err
 
 			} else {
@@ -384,7 +383,7 @@ func (r *MultiClusterHubReconciler) applyEnvConfig(template *unstructured.Unstru
 	}
 
 	if err = unstructured.SetNestedSlice(template.Object, containers, "spec", "template", "spec", "containers"); err != nil {
-		log.Error(err, "Failed to set containers in template", "Template", template.GetName())
+		r.Log.Error(err, "Failed to set containers in template", "Template", template.GetName())
 		return err
 	}
 

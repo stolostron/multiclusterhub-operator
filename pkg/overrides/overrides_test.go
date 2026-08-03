@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stolostron/multiclusterhub-operator/pkg/manifest"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,46 +18,48 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
+var testLog = logr.Discard()
+
 func Test_GetOverridesFromEnv(t *testing.T) {
 	os.Setenv("OPERAND_IMAGE_APPLICATION_UI", "quay.io/stolostron/application-ui:test-image")
 	os.Setenv("OPERAND_IMAGE_CERT_POLICY_CONTROLLER", "quay.io/stolostron/cert-policy-controller:test-image")
 
-	if len(GetOverridesFromEnv(OperandImagePrefix)) != 2 {
+	if len(GetOverridesFromEnv(testLog, OperandImagePrefix)) != 2 {
 		t.Fatal("Expected image overrides")
 	}
 
 	os.Unsetenv("OPERAND_IMAGE_APPLICATION_UI")
 	os.Unsetenv("OPERAND_IMAGE_CERT_POLICY_CONTROLLER")
 
-	if len(GetOverridesFromEnv(OperandImagePrefix)) != 0 {
+	if len(GetOverridesFromEnv(testLog, OperandImagePrefix)) != 0 {
 		t.Fatal("Expected no image overrides")
 	}
 
 	os.Setenv("RELATED_IMAGE_APPLICATION_UI", "quay.io/stolostron/application-ui:test-image")
 	os.Setenv("RELATED_IMAGE_CERT_POLICY_CONTROLLER", "quay.io/stolostron/cert-policy-controller:test-image")
 
-	if len(GetOverridesFromEnv(OSBSImagePrefix)) != 2 {
+	if len(GetOverridesFromEnv(testLog, OSBSImagePrefix)) != 2 {
 		t.Fatal("Expected related image overrides")
 	}
 
 	os.Unsetenv("RELATED_IMAGE_APPLICATION_UI")
 	os.Unsetenv("RELATED_IMAGE_CERT_POLICY_CONTROLLER")
 
-	if len(GetOverridesFromEnv(OSBSImagePrefix)) != 0 {
+	if len(GetOverridesFromEnv(testLog, OSBSImagePrefix)) != 0 {
 		t.Fatal("Expected no related image overrides")
 	}
 
 	os.Setenv("TEMPLATE_OVERRIDE_FOO_LIMIT_CPU", "3m")
 	os.Setenv("TEMPLATE_OVERRIDE_FOO_LIMIT_MEMORY", "40Mi")
 
-	if len(GetOverridesFromEnv(TemplateOverridePrefix)) != 2 {
+	if len(GetOverridesFromEnv(testLog, TemplateOverridePrefix)) != 2 {
 		t.Fatal("Expected template overrides")
 	}
 
 	os.Unsetenv("TEMPLATE_OVERRIDE_FOO_LIMIT_CPU")
 	os.Unsetenv("TEMPLATE_OVERRIDE_FOO_LIMIT_MEMORY")
 
-	if len(GetOverridesFromEnv(TemplateOverridePrefix)) != 0 {
+	if len(GetOverridesFromEnv(testLog, TemplateOverridePrefix)) != 0 {
 		t.Fatal("Expected no template overrides")
 	}
 }
@@ -243,7 +246,7 @@ func Test_GetOverridesFromConfigmap(t *testing.T) {
 		}
 
 		overrides := map[string]string{}
-		overrides, err = GetOverridesFromConfigmap(fakeclient, overrides, "namespace", "configmapName", true)
+		overrides, err = GetOverridesFromConfigmap(testLog, fakeclient, overrides, "namespace", "configmapName", true)
 		if err != nil {
 			t.Errorf("Failed to get overrides from configmap: %v", err)
 		}
@@ -281,7 +284,7 @@ func Test_GetOverridesFromConfigmap(t *testing.T) {
 		}
 
 		overrides := map[string]string{}
-		overrides, err = GetOverridesFromConfigmap(fakeclient, overrides, "namespace", "configmapName", false)
+		overrides, err = GetOverridesFromConfigmap(testLog, fakeclient, overrides, "namespace", "configmapName", false)
 		if err != nil {
 			t.Errorf("Failed to get overrides from configmap: %v", err)
 		}

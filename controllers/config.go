@@ -20,21 +20,18 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 
+	"github.com/go-logr/logr"
 	configv1 "github.com/openshift/api/config/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
-
-var configLog = logf.Log.WithName("config")
 
 // previewToGAComponents maps preview component names to their GA equivalents.
 // When a preview component is enabled, it is automatically replaced with the GA version.
@@ -53,7 +50,7 @@ var defaultAnnotations = map[string]string{
 
 // setDefaultAnnotations applies default values for any missing annotations
 // Returns true if any annotations were added
-func setDefaultAnnotations(m *operatorv1.MultiClusterHub) bool {
+func setDefaultAnnotations(log logr.Logger, m *operatorv1.MultiClusterHub) bool {
 	updated := false
 	annotations := m.GetAnnotations()
 	if annotations == nil {
@@ -64,7 +61,7 @@ func setDefaultAnnotations(m *operatorv1.MultiClusterHub) bool {
 		if _, exists := annotations[key]; !exists {
 			annotations[key] = defaultValue
 			updated = true
-			configLog.Info("Setting default annotation", "annotation", key, "value", defaultValue)
+			log.Info("Setting default annotation", "annotation", key, "value", defaultValue)
 		}
 	}
 
@@ -118,7 +115,7 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 	}
 
 	// Set default annotations if not specified
-	if setDefaultAnnotations(m) {
+	if setDefaultAnnotations(log, m) {
 		updateNecessary = true
 	}
 
@@ -142,7 +139,7 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 	for _, c := range m.Spec.Overrides.Components {
 		if !operatorv1.ValidComponent(c, operatorv1.MCHComponents) {
 			if m.Prune(c.Name) {
-				log.Info(fmt.Sprintf("Removing invalid component: %v from existing MultiClusterHub", c.Name))
+				log.Info("Removing invalid component from existing MultiClusterHub", "component", c.Name)
 				updateNecessary = true
 			}
 		}

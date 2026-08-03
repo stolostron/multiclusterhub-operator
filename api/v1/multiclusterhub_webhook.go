@@ -108,7 +108,7 @@ var (
 )
 
 var (
-	mchlog = log.Log.WithName("multiclusterhub-resource")
+	mchlog = log.Log.WithName("mch-webhook")
 	Client client.Client
 )
 

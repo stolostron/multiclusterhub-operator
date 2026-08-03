@@ -9,12 +9,6 @@
 //   - Manifest templating
 package manifest
 
-import (
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-)
-
-var log = logf.Log.WithName("manifest")
-
 const ManifestsPathEnvVar = "MANIFESTS_PATH"
 
 // ManifestImage contains details for a specific image version

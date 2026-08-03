@@ -77,7 +77,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -176,7 +175,7 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
-	ctrl.Log.WithName("MultiClusterHub Operator version").Info(fmt.Sprintf("%#v", version.Get()))
+	setupLog.Info("Operator version", "details", version.Get())
 
 	ns, err := getOperatorNamespace()
 	if err != nil {
@@ -341,7 +340,7 @@ func main() {
 		Client:          mgr.GetClient(),
 		Scheme:          mgr.GetScheme(),
 		UncachedClient:  uncachedClient,
-		Log:             ctrl.Log.WithName("Controller").WithName("Multiclusterhub"),
+		Log:             ctrl.Log.WithName("mch-controller"),
 		UpgradeableCond: upgradeableCondition,
 		OLMVersion:      olmVersion,
 	}
@@ -411,8 +410,8 @@ func addMultiClusterEngineWatch(ctx context.Context, mgr ctrl.Manager, uncachedC
 							namespace = labels["multiclusterhub.namespace"]
 						}
 						if name == "" || namespace == "" {
-							l := log.Log.WithName("mce")
-							l.Info(fmt.Sprintf("MCE updated but missing installer.name or installer.namespace labels. Current labels: %v", labels))
+							l := setupLog.WithName("mce")
+							l.Info("MCE updated but missing installer labels", "labels", labels)
 							return
 						}
 						q.Add(

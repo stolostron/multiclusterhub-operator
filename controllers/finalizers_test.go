@@ -4,11 +4,19 @@ import (
 	"context"
 	"testing"
 
+	"github.com/go-logr/logr"
+	"github.com/go-logr/logr/testr"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
 	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
 )
+
+var testLog = logr.Discard()
+
+func newTestLog(t *testing.T) logr.Logger {
+	return testr.New(t)
+}
 
 func TestBackupNamespace(t *testing.T) {
 	tests := []struct {
@@ -102,11 +110,11 @@ func Test_cleanupMultiClusterEngine(t *testing.T) {
 			}
 
 			// If MCE exists the first time it will return an error.
-			if err := recon.cleanupMultiClusterEngine(log, &tt.mch); err == nil {
+			if err := recon.cleanupMultiClusterEngine(newTestLog(t), &tt.mch); err == nil {
 				t.Errorf("failed to cleanup MultiClusterEngine: %v", err)
 			}
 
-			if err := recon.cleanupMultiClusterEngine(log, &tt.mch); err != nil {
+			if err := recon.cleanupMultiClusterEngine(newTestLog(t), &tt.mch); err != nil {
 				t.Errorf("failed to cleanup MultiClusterEngine: %v", err)
 			}
 		})
@@ -138,13 +146,13 @@ func Test_cleanupMultiClusterEngine_OLMv1(t *testing.T) {
 	recon.OLMVersion = "v1"
 
 	// First call should return error (MCE still exists)
-	err := recon.cleanupMultiClusterEngine(log, &mch)
+	err := recon.cleanupMultiClusterEngine(newTestLog(t), &mch)
 	if err == nil {
 		t.Error("expected error on first cleanup call, got nil")
 	}
 
 	// Second call should succeed (MCE deleted)
-	err = recon.cleanupMultiClusterEngine(log, &mch)
+	err = recon.cleanupMultiClusterEngine(newTestLog(t), &mch)
 	if err != nil {
 		t.Errorf("expected no error on second cleanup call, got: %v", err)
 	}
@@ -178,13 +186,13 @@ func Test_cleanupMultiClusterEngine_OLMv0(t *testing.T) {
 	recon.OLMVersion = "v0"
 
 	// First call should return error (MCE still exists)
-	err := recon.cleanupMultiClusterEngine(log, &mch)
+	err := recon.cleanupMultiClusterEngine(newTestLog(t), &mch)
 	if err == nil {
 		t.Error("expected error on first cleanup call, got nil")
 	}
 
 	// Second call should succeed (MCE deleted)
-	err = recon.cleanupMultiClusterEngine(log, &mch)
+	err = recon.cleanupMultiClusterEngine(newTestLog(t), &mch)
 	if err != nil {
 		t.Errorf("expected no error on second cleanup call, got: %v", err)
 	}

@@ -59,7 +59,7 @@ func Test_allComponentsSuccessful(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := allComponentsSuccessful(tt.args.components); !reflect.DeepEqual(got, tt.want) {
+			if got := allComponentsSuccessful(newTestLog(t), tt.args.components); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("allComponentsSuccessful() = %v, want %v", got, tt.want)
 			}
 		})
@@ -511,7 +511,7 @@ func TestCalculateStatus_RemovesStaleProgressingCondition(t *testing.T) {
 		}
 
 		// Verify phase would be Running (not stuck in Pending)
-		phase := aggregatePhase(newStatus)
+		phase := aggregatePhase(newTestLog(t), newStatus)
 		if phase != operatorsv1.HubRunning {
 			t.Errorf("Expected phase to be HubRunning after fix, got %v", phase)
 		}
@@ -627,7 +627,7 @@ func Test_aggregatePhase(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := aggregatePhase(tt.status); !reflect.DeepEqual(got, tt.want) {
+			if got := aggregatePhase(newTestLog(t), tt.status); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("aggregatePhase() = %v, want %v", got, tt.want)
 			}
 		})

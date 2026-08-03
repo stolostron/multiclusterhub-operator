@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
@@ -116,7 +117,7 @@ func (r *MultiClusterHubReconciler) ComponentsAreRunning(m *operatorsv1.MultiClu
 	componentStatuses := getComponentStatuses(m, deployList, crList, ocpConsole, isSTSEnabled, r.OLMVersion)
 
 	delete(componentStatuses, m.Spec.LocalClusterName)
-	return allComponentsSuccessful(componentStatuses)
+	return allComponentsSuccessful(r.Log, componentStatuses)
 }
 
 // syncHubStatus checks if the status is up-to-date and sync it if necessary
@@ -145,7 +146,7 @@ func (r *MultiClusterHubReconciler) syncHubStatus(ctx context.Context, m *operat
 			return reconcile.Result{RequeueAfter: resyncPeriod}, nil
 		}
 
-		r.Log.Error(err, fmt.Sprintf("Failed to update %s/%s status ", m.Namespace, m.Name))
+		r.Log.Error(err, "Failed to update status", "namespace", m.Namespace, "name", m.Name)
 		return reconcile.Result{}, err
 	}
 
@@ -175,7 +176,7 @@ func (r *MultiClusterHubReconciler) calculateStatus(ctx context.Context, hub *op
 	}
 
 	// Set current version
-	successful := allComponentsSuccessful(components)
+	successful := allComponentsSuccessful(r.Log, components)
 	if successful && isMinorVersionWithinRange(mceVersionCompliance.CurrentVersion, version.Version, 5) {
 		status.CurrentVersion = version.Version
 	}
@@ -196,7 +197,7 @@ func (r *MultiClusterHubReconciler) calculateStatus(ctx context.Context, hub *op
 			// Set AllOldComponentsRemovedReason so hubPruning() returns false on next reconcile
 			complete := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, AllOldComponentsRemovedReason, "All old resources pruned")
 			SetHubCondition(&status, *complete)
-			log.Info("Component pruning complete - all resources successfully removed")
+			r.Log.Info("Component pruning complete - all resources successfully removed")
 		} else {
 			// only add unavailable status if complete status already present
 			if HubConditionPresent(status, operatorsv1.Complete) {
@@ -227,7 +228,7 @@ func (r *MultiClusterHubReconciler) calculateStatus(ctx context.Context, hub *op
 	} else if hasComponentFailure {
 		status.Phase = operatorsv1.HubError
 	} else {
-		status.Phase = aggregatePhase(status)
+		status.Phase = aggregatePhase(r.Log, status)
 	}
 
 	return status
@@ -570,7 +571,7 @@ func mapCSV(csv *unstructured.Unstructured) operatorsv1.StatusCondition {
 }
 
 // allComponentsSuccessful returns true if all components are successful, otherwise false
-func allComponentsSuccessful(components map[string]operatorsv1.StatusCondition) bool {
+func allComponentsSuccessful(log logr.Logger, components map[string]operatorsv1.StatusCondition) bool {
 	if len(components) == 0 {
 		return false
 	}
@@ -607,7 +608,7 @@ func allComponentsSuccessful(components map[string]operatorsv1.StatusCondition) 
 
 // aggregatePhase calculates overall HubPhaseType based on hub status. This does NOT account for
 // a hub in the process of deletion.
-func aggregatePhase(status operatorsv1.MultiClusterHubStatus) operatorsv1.HubPhaseType {
+func aggregatePhase(log logr.Logger, status operatorsv1.MultiClusterHubStatus) operatorsv1.HubPhaseType {
 	if utils.IsUnitTest() {
 		return operatorsv1.HubRunning
 	}
@@ -637,7 +638,7 @@ func aggregatePhase(status operatorsv1.MultiClusterHubStatus) operatorsv1.HubPha
 		return phase
 	}
 
-	if successful := allComponentsSuccessful(status.Components); successful {
+	if successful := allComponentsSuccessful(log, status.Components); successful {
 		if hubPruning(status) {
 			// hub is in pruning phase
 			return operatorsv1.HubPending

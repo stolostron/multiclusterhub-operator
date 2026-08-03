@@ -70,8 +70,7 @@ func (r *MultiClusterHubReconciler) ensureNetworkPolicies(ctx context.Context, m
 		if !componentEnabled {
 			// Component disabled - delete its NetworkPolicy if MCH-created
 			chartLocation := r.fetchChartLocation(component)
-			templates, errs := renderer.RenderChart(chartLocation, mch, cacheSpec.ImageOverrides, cacheSpec.TemplateOverrides,
-				isSTSEnabled, r.OLMVersion)
+			templates, errs := renderer.RenderChart(r.Log.WithName("renderer"), chartLocation, mch, cacheSpec.ImageOverrides, cacheSpec.TemplateOverrides, isSTSEnabled, r.OLMVersion)
 
 			if len(errs) > 0 {
 				// Skip deletion if chart rendering fails - component may have been removed
@@ -105,8 +104,7 @@ func (r *MultiClusterHubReconciler) ensureNetworkPolicies(ctx context.Context, m
 
 		// Render NetworkPolicy from Helm template
 		chartLocation := r.fetchChartLocation(component)
-		templates, errs := renderer.RenderChart(chartLocation, mch, cacheSpec.ImageOverrides, cacheSpec.TemplateOverrides,
-			isSTSEnabled, r.OLMVersion)
+		templates, errs := renderer.RenderChart(r.Log.WithName("renderer"), chartLocation, mch, cacheSpec.ImageOverrides, cacheSpec.TemplateOverrides, isSTSEnabled, r.OLMVersion)
 
 		if len(errs) > 0 {
 			// Rendering errors indicate real chart failures - log and requeue

@@ -97,11 +97,13 @@ func (r *MultiClusterHubReconciler) installCRDs(reqLogger logr.Logger, m *operat
 
 	for _, crd := range crds {
 		utils.AddInstallerLabel(crd, m.GetName(), m.GetNamespace())
-		err, ok := deploying.Deploy(r.Client, crd)
+		err, ok := deploying.Deploy(r.Log.WithName("deployer"), r.Client, crd)
+
 		if err != nil {
 			reqLogger.Error(err, "failed to deploy", "Kind", crd.GetKind(), "Name", crd.GetName())
 			return DeployFailedReason, err
 		}
+
 		if ok {
 			message := fmt.Sprintf("created new resource: %s %s", crd.GetKind(), crd.GetName())
 			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, message)
@@ -162,16 +164,15 @@ func (r *MultiClusterHubReconciler) deployResources(reqLogger logr.Logger, m *op
 		if res.GetNamespace() == m.Namespace {
 			err := controllerutil.SetControllerReference(m, res, r.Scheme)
 			if err != nil {
-				r.Log.Error(
-					err,
-					fmt.Sprintf(
-						"Failed to set controller reference on %s %s/%s",
-						res.GetKind(), m.Namespace, res.GetName(),
-					),
+				r.Log.Error(err, "Failed to set controller reference",
+					"Kind", res.GetKind(),
+					"namespace", m.Namespace,
+					"name", res.GetName(),
 				)
 			}
 		}
-		err, ok := deploying.Deploy(r.Client, res)
+		err, ok := deploying.Deploy(r.Log.WithName("deployer"), r.Client, res)
+
 		if err != nil {
 			reqLogger.Error(err, "failed to deploy resource", "Kind", res.GetKind(), "Name", res.GetName())
 			return DeployFailedReason, err

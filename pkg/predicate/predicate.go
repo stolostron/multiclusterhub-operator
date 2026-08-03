@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-var log = logf.Log.WithName("predicate")
+var log = logf.Log.WithName("mch-controller").WithName("predicate")
 
 // GenerationChangedPredicate will skip update events that have no change in the object's metadata.generation field.
 // The metadata.generation field of an object is incremented by the API server when writes are made to the spec field of an object.

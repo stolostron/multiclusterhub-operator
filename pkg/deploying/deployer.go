@@ -11,21 +11,20 @@ import (
 	"crypto/sha1" // #nosec G505 (not using sha for private encryption)
 	"encoding/hex"
 
+	"github.com/go-logr/logr"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/yaml"
 )
 
-var log = logf.Log.WithName("deployer")
 var hashAnnotation = utils.AnnotationConfiguration
 
 // Deploy attempts to create or update the obj resource depending on whether it exists.
 // Returns true if deploy does try to create a new resource
-func Deploy(c runtimeclient.Client, obj *unstructured.Unstructured) (error, bool) {
+func Deploy(log logr.Logger, c runtimeclient.Client, obj *unstructured.Unstructured) (error, bool) {
 	found := &unstructured.Unstructured{}
 	found.SetGroupVersionKind(obj.GroupVersionKind())
 	err := c.Get(context.TODO(), types.NamespacedName{Name: obj.GetName(), Namespace: obj.GetNamespace()}, found)
@@ -33,7 +32,7 @@ func Deploy(c runtimeclient.Client, obj *unstructured.Unstructured) (error, bool
 		if errors.IsNotFound(err) {
 			log.Info("Creating resource", "Kind", obj.GetKind(), "Name", obj.GetName())
 			if kind := found.GetKind(); kind == "ServiceAccount" || kind == "CustomResourceDefinition" {
-				annotate(obj)
+				annotate(log, obj)
 			}
 			return c.Create(context.TODO(), obj), true
 		}
@@ -49,10 +48,10 @@ func Deploy(c runtimeclient.Client, obj *unstructured.Unstructured) (error, bool
 	}
 	// Update if hash doesn't match
 	if kind := found.GetKind(); kind == "ServiceAccount" || kind == "CustomResourceDefinition" {
-		if shasMatch(found, obj) {
+		if shasMatch(log, found, obj) {
 			return nil, false
 		}
-		annotate(obj)
+		annotate(log, obj)
 	}
 
 	// If resources exists, update it with current config
@@ -74,9 +73,8 @@ func hash(u *unstructured.Unstructured) (string, error) {
 	return hex.EncodeToString(bs), nil
 }
 
-// annotated modifies a deployment and sets an annotation with the hash of the deployment spec
-func annotate(u *unstructured.Unstructured) {
-	var log = logf.Log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName())
+func annotate(log logr.Logger, u *unstructured.Unstructured) {
+	log = log.WithValues("Namespace", u.GetNamespace(), "Name", u.GetName())
 
 	hx, err := hash(u)
 	if err != nil {
@@ -91,7 +89,7 @@ func annotate(u *unstructured.Unstructured) {
 	}
 }
 
-func shasMatch(found, want *unstructured.Unstructured) bool {
+func shasMatch(log logr.Logger, found, want *unstructured.Unstructured) bool {
 	hx, err := hash(want)
 	if err != nil {
 		log.Error(err, "Couldn't marshal object spec.", "Name", found.GetName())

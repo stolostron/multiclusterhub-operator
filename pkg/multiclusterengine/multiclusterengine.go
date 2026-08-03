@@ -11,6 +11,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-logr/logr"
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
@@ -19,7 +20,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -212,8 +212,7 @@ func OperandNamespace() string {
 }
 
 // find MCE. label it for future. return nil if no mce found.
-func FindAndManageMCE(ctx context.Context, k8sClient client.Client) (*mcev1.MultiClusterEngine, error) {
-	// first find subscription via managed-by label
+func FindAndManageMCE(log logr.Logger, ctx context.Context, k8sClient client.Client) (*mcev1.MultiClusterEngine, error) {
 	mce, err := multiclusterengineutils.GetManagedMCE(ctx, k8sClient)
 	if err != nil {
 		return nil, err
@@ -222,8 +221,7 @@ func FindAndManageMCE(ctx context.Context, k8sClient client.Client) (*mcev1.Mult
 		return mce, nil
 	}
 
-	// if label doesn't work find it via list
-	log.Log.WithName("reconcile").Info("Failed to find subscription via label")
+	log.Info("Failed to find MCE via label, listing all")
 	wholeList := &mcev1.MultiClusterEngineList{}
 	err = k8sClient.List(ctx, wholeList)
 	if err != nil {
@@ -243,10 +241,10 @@ func FindAndManageMCE(ctx context.Context, k8sClient client.Client) (*mcev1.Mult
 	}
 	labels[multiclusterengineutils.MCEManagedByLabel] = "true"
 	wholeList.Items[0].SetLabels(labels)
-	log.Log.WithName("reconcile").Info("Adding label to MCE")
+	log.Info("Adding label to MCE")
 
 	if err := k8sClient.Update(ctx, &wholeList.Items[0]); err != nil {
-		log.Log.WithName("reconcile").Error(err, "Failed to add managedBy label to preexisting MCE")
+		log.Error(err, "Failed to add managedBy label to preexisting MCE")
 		return &wholeList.Items[0], err
 	}
 	return &wholeList.Items[0], nil

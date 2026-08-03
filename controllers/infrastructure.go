@@ -35,7 +35,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func (r *MultiClusterHubReconciler) ensureOpenShiftNamespaceLabel(ctx context.Context, m *operatorv1.MultiClusterHub) (
@@ -45,7 +44,7 @@ func (r *MultiClusterHubReconciler) ensureOpenShiftNamespaceLabel(ctx context.Co
 
 	err := r.Client.Get(ctx, types.NamespacedName{Name: m.GetNamespace()}, existingNs)
 	if err != nil || errors.IsNotFound(err) {
-		log.Error(err, fmt.Sprintf("Failed to find namespace for MultiClusterHub: %s", m.GetNamespace()))
+		r.Log.Error(err, "Failed to find namespace for MultiClusterHub", "namespace", m.GetNamespace())
 		return ctrl.Result{}, err
 	}
 
@@ -54,14 +53,12 @@ func (r *MultiClusterHubReconciler) ensureOpenShiftNamespaceLabel(ctx context.Co
 	}
 
 	if _, ok := existingNs.Labels[utils.OpenShiftClusterMonitoringLabel]; !ok {
-		r.Log.Info(fmt.Sprintf("Adding label: %s to namespace: %s", utils.OpenShiftClusterMonitoringLabel,
-			m.GetNamespace()))
+		r.Log.Info("Adding label to namespace", "label", utils.OpenShiftClusterMonitoringLabel, "namespace", m.GetNamespace())
 		existingNs.Labels[utils.OpenShiftClusterMonitoringLabel] = "true"
 
 		err = r.Client.Update(ctx, existingNs)
 		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to update namespace for MultiClusterHub: %s with the label: %s",
-				m.GetNamespace(), utils.OpenShiftClusterMonitoringLabel))
+			r.Log.Error(err, "Failed to update namespace for MultiClusterHub with label", "namespace", m.GetNamespace(), "label", utils.OpenShiftClusterMonitoringLabel)
 			return ctrl.Result{}, err
 		}
 	}
@@ -84,7 +81,7 @@ func (r *MultiClusterHubReconciler) createTrustBundleConfigmap(ctx context.Conte
 		Name:      trustBundleName,
 		Namespace: trustBundleNamespace,
 	}
-	log.Info(fmt.Sprintf("using trust bundle configmap %s/%s", trustBundleNamespace, trustBundleName))
+	r.Log.Info("using trust bundle configmap", "namespace", trustBundleNamespace, "name", trustBundleName)
 
 	// Check if configmap exists
 	cm := &corev1.ConfigMap{}
@@ -92,7 +89,7 @@ func (r *MultiClusterHubReconciler) createTrustBundleConfigmap(ctx context.Conte
 	if err != nil && !errors.IsNotFound(err) {
 		// Unknown error. Requeue
 		msg := fmt.Sprintf("error while getting trust bundle configmap %s/%s", trustBundleNamespace, trustBundleName)
-		log.Error(err, msg)
+		r.Log.Error(err, msg)
 		return ctrl.Result{}, err
 	} else if err == nil {
 		// configmap exists
@@ -119,7 +116,7 @@ func (r *MultiClusterHubReconciler) createTrustBundleConfigmap(ctx context.Conte
 	err = r.Client.Create(ctx, cm)
 	if err != nil {
 		// Error creating configmap
-		log.Info(fmt.Sprintf("error creating trust bundle configmap %s: %s", trustBundleName, err))
+		r.Log.Info("error creating trust bundle configmap", "name", trustBundleName, "error", err)
 		return ctrl.Result{}, err
 	}
 	// Configmap created successfully
@@ -155,7 +152,7 @@ func (r *MultiClusterHubReconciler) createMetricsService(ctx context.Context, m 
 	if err := r.Client.Get(ctx, namespacedName, &corev1.Service{}); err != nil {
 		if !errors.IsNotFound(err) {
 			// Unknown error. Requeue
-			log.Error(err, fmt.Sprintf("error while getting multiclusterhub metrics service: %s/%s", sNamespace, sName))
+			r.Log.Error(err, "error while getting multiclusterhub metrics service", "namespace", sNamespace, "name", sName)
 			return ctrl.Result{}, err
 		}
 
@@ -191,11 +188,11 @@ func (r *MultiClusterHubReconciler) createMetricsService(ctx context.Context, m 
 
 		if err = r.Client.Create(ctx, s); err != nil {
 			// Error creating metrics service
-			log.Error(err, fmt.Sprintf("error creating multiclusterhub metrics service: %s", sName))
+			r.Log.Error(err, "error creating multiclusterhub metrics service", "name", sName)
 			return ctrl.Result{}, err
 		}
 
-		log.Info(fmt.Sprintf("Created multiclusterhub metrics service: %s", sName))
+		r.Log.Info("Created multiclusterhub metrics service", "name", sName)
 	}
 
 	return ctrl.Result{}, nil
@@ -230,7 +227,7 @@ func (r *MultiClusterHubReconciler) createMetricsServiceMonitor(ctx context.Cont
 	if err := r.Client.Get(ctx, namespacedName, &promv1.ServiceMonitor{}); err != nil {
 		if !errors.IsNotFound(err) {
 			// Unknown error. Requeue
-			log.Error(err, fmt.Sprintf("error while getting multiclusterhub metrics service: %s/%s", smNamespace, smName))
+			r.Log.Error(err, "error while getting multiclusterhub metrics servicemonitor", "namespace", smNamespace, "name", smName)
 			return ctrl.Result{}, err
 		}
 
@@ -273,11 +270,11 @@ func (r *MultiClusterHubReconciler) createMetricsServiceMonitor(ctx context.Cont
 
 		if err = r.Client.Create(ctx, sm); err != nil {
 			// Error creating metrics servicemonitor
-			log.Error(err, fmt.Sprintf("error creating metrics servicemonitor: %s", smName))
+			r.Log.Error(err, "error creating metrics servicemonitor", "name", smName)
 			return ctrl.Result{}, err
 		}
 
-		logf.Log.Info(fmt.Sprintf("Created multiclusterhub metrics servicemonitor: %s", smName))
+		r.Log.Info("Created multiclusterhub metrics servicemonitor", "name", smName)
 	}
 
 	return ctrl.Result{}, nil

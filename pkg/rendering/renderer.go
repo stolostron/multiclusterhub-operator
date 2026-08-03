@@ -27,6 +27,7 @@ import (
 	loader "helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
 
+	"github.com/go-logr/logr"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	v1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/helpers"
@@ -35,7 +36,6 @@ import (
 	"helm.sh/helm/v3/pkg/engine"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/yaml"
 )
 
@@ -65,8 +65,6 @@ const (
 	defaultOADPCatalogSourceNamespace = "openshift-marketplace"
 )
 
-var log = logf.Log.WithName("reconcile")
-
 func convertTolerations(tols []corev1.Toleration) []Toleration {
 	var tolerations []Toleration
 	for _, t := range tols {
@@ -82,7 +80,7 @@ func convertTolerations(tols []corev1.Toleration) []Toleration {
 }
 
 // parseProbeConfigFromAnnotations reads probe config from MCH annotations
-func parseProbeConfigFromAnnotations(mch *v1.MultiClusterHub) *ProbeConfig {
+func parseProbeConfigFromAnnotations(log logr.Logger, mch *v1.MultiClusterHub) *ProbeConfig {
 	if mch.Annotations == nil {
 		return nil
 	}
@@ -93,9 +91,9 @@ func parseProbeConfigFromAnnotations(mch *v1.MultiClusterHub) *ProbeConfig {
 	if val, ok := mch.Annotations[utils.AnnotationProbeTimeoutSeconds]; ok {
 		timeout, err := strconv.ParseInt(val, 10, 32)
 		if err != nil {
-			log.Info(fmt.Sprintf("Invalid probe-timeout-seconds annotation value %q: %v", val, err))
+			log.Info("Invalid probe-timeout-seconds annotation value", "value", val, "error", err)
 		} else if timeout <= 0 {
-			log.Info(fmt.Sprintf("Invalid probe-timeout-seconds annotation value %q: must be positive", val))
+			log.Info("Invalid probe-timeout-seconds annotation value: must be positive", "value", val)
 		} else {
 			timeout32 := int32(timeout)
 			config.TimeoutSeconds = &timeout32
@@ -106,9 +104,9 @@ func parseProbeConfigFromAnnotations(mch *v1.MultiClusterHub) *ProbeConfig {
 	if val, ok := mch.Annotations[utils.AnnotationProbeFailureThreshold]; ok {
 		threshold, err := strconv.ParseInt(val, 10, 32)
 		if err != nil {
-			log.Info(fmt.Sprintf("Invalid probe-failure-threshold annotation value %q: %v", val, err))
+			log.Info("Invalid probe-failure-threshold annotation value", "value", val, "error", err)
 		} else if threshold <= 0 {
-			log.Info(fmt.Sprintf("Invalid probe-failure-threshold annotation value %q: must be positive", val))
+			log.Info("Invalid probe-failure-threshold annotation value: must be positive", "value", val)
 		} else {
 			threshold32 := int32(threshold)
 			config.FailureThreshold = &threshold32
@@ -119,9 +117,9 @@ func parseProbeConfigFromAnnotations(mch *v1.MultiClusterHub) *ProbeConfig {
 	if val, ok := mch.Annotations[utils.AnnotationProbeSuccessThreshold]; ok {
 		threshold, err := strconv.ParseInt(val, 10, 32)
 		if err != nil {
-			log.Info(fmt.Sprintf("Invalid probe-success-threshold annotation value %q: %v", val, err))
+			log.Info("Invalid probe-success-threshold annotation value", "value", val, "error", err)
 		} else if threshold <= 0 {
-			log.Info(fmt.Sprintf("Invalid probe-success-threshold annotation value %q: must be positive", val))
+			log.Info("Invalid probe-success-threshold annotation value: must be positive", "value", val)
 		} else {
 			threshold32 := int32(threshold)
 			config.SuccessThreshold = &threshold32
@@ -252,7 +250,7 @@ func RenderCRDs(crdDir string, mch *v1.MultiClusterHub) ([]*unstructured.Unstruc
 // RenderCharts renders all Helm charts in the specified directory.
 // olmVersion: OLM version detected at runtime ("v0", "v1", or "" for no OLM).
 // Passed to chart templates as .Values.global.olmVersion for conditional rendering.
-func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]string, tpl map[string]string,
+func RenderCharts(log logr.Logger, chartDir string, mch *v1.MultiClusterHub, images map[string]string, tpl map[string]string,
 	isSTSEnabled bool, olmVersion string) ([]*unstructured.Unstructured, []error) {
 
 	var templates []*unstructured.Unstructured
@@ -272,10 +270,10 @@ func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]st
 
 	for _, chart := range charts {
 		chartPath := filepath.Join(chartDir, chart.Name())
-		chartTemplates, errs := renderTemplates(chartPath, mch, images, tpl, isSTSEnabled, olmVersion)
+		chartTemplates, errs := renderTemplates(log, chartPath, mch, images, tpl, isSTSEnabled, olmVersion)
 		if len(errs) > 0 {
 			for _, err := range errs {
-				log.Info(err.Error())
+				log.Info("Chart rendering error", "error", err)
 			}
 			return nil, errs
 		}
@@ -287,7 +285,7 @@ func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]st
 // RenderChart renders a single Helm chart from the specified path.
 // olmVersion: OLM version detected at runtime ("v0", "v1", or "" for no OLM).
 // Passed to chart templates as .Values.global.olmVersion for conditional rendering.
-func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]string, templates map[string]string,
+func RenderChart(log logr.Logger, chartPath string, mch *v1.MultiClusterHub, images map[string]string, templates map[string]string,
 	isSTSEnabled bool, olmVersion string) ([]*unstructured.Unstructured, []error) {
 
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
@@ -298,10 +296,10 @@ func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]st
 
 	}
 
-	chartTemplates, errs := renderTemplates(chartPath, mch, images, templates, isSTSEnabled, olmVersion)
+	chartTemplates, errs := renderTemplates(log, chartPath, mch, images, templates, isSTSEnabled, olmVersion)
 	if len(errs) > 0 {
 		for _, err := range errs {
-			log.Info(err.Error())
+			log.Info("Chart rendering error", "error", err)
 		}
 		return nil, errs
 	}
@@ -310,7 +308,7 @@ func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]st
 
 }
 
-func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[string]string, tpl map[string]string,
+func renderTemplates(log logr.Logger, chartPath string, mch *v1.MultiClusterHub, images map[string]string, tpl map[string]string,
 	isSTSEnabled bool, olmVersion string) ([]*unstructured.Unstructured, []error) {
 
 	var templates []*unstructured.Unstructured
@@ -318,12 +316,12 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 
 	chart, err := loader.Load(chartPath)
 	if err != nil {
-		log.Info("error loading chart")
+		log.Info("Error loading chart", "path", chartPath)
 		return nil, append(errs, err)
 	}
 
 	valuesYaml := &Values{}
-	injectValuesOverrides(valuesYaml, mch, images, tpl, isSTSEnabled, olmVersion)
+	injectValuesOverrides(log, valuesYaml, mch, images, tpl, isSTSEnabled, olmVersion)
 	helmEngine := engine.Engine{
 		Strict:   true,
 		LintMode: false,
@@ -331,13 +329,13 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 
 	vals, err := valuesYaml.ToValues()
 	if err != nil {
-		log.Info(fmt.Sprintf("error rendering chart: %s", chart.Name()))
+		log.Info("Error rendering chart", "chart", chart.Name())
 		return nil, append(errs, err)
 	}
 
 	rawTemplates, err := helmEngine.Render(chart, chartutil.Values{"Values": vals.AsMap()})
 	if err != nil {
-		log.Info(fmt.Sprintf("error rendering chart: %s", chart.Name()))
+		log.Info("Error rendering chart", "chart", chart.Name())
 		return nil, append(errs, err)
 	}
 
@@ -381,7 +379,7 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 	return templates, errs
 }
 
-func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[string]string,
+func injectValuesOverrides(log logr.Logger, values *Values, mch *v1.MultiClusterHub, images map[string]string,
 	templates map[string]string, isSTSEnabled bool, olmVersion string) {
 
 	values.Global.ImageOverrides = images
@@ -421,7 +419,7 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 
 	values.HubConfig.Tolerations = convertTolerations(utils.GetTolerations(mch))
 
-	values.HubConfig.ProbeConfig = parseProbeConfigFromAnnotations(mch)
+	values.HubConfig.ProbeConfig = parseProbeConfigFromAnnotations(log, mch)
 
 	values.HubConfig.OCPVersion = os.Getenv("ACM_HUB_OCP_VERSION")
 
@@ -447,7 +445,7 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 		values.HubConfig.ProxyConfigs = proxyVar
 	}
 
-	values.Global.Name, values.Global.Channel, values.Global.InstallPlanApproval, values.Global.Source, values.Global.SourceNamespace, values.Global.StartingCSV = GetOADPConfig(mch)
+	values.Global.Name, values.Global.Channel, values.Global.InstallPlanApproval, values.Global.Source, values.Global.SourceNamespace, values.Global.StartingCSV = GetOADPConfig(log, mch)
 
 	values.Global.MinOADPChannel = defaultOADPChannel
 	values.Global.MinOADPStableChannel = defaultOADPStableChannel
@@ -463,7 +461,7 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 
 	// Apply OADP ClusterExtension overrides (OLM v1) if annotation present and effective OADP OLM version is v1
 	if values.Global.OADPOLMVersion == "v1" {
-		if overrides := parseOADPClusterExtensionAnnotation(mch); overrides != nil {
+		if overrides := parseOADPClusterExtensionAnnotation(log, mch); overrides != nil {
 			// Override catalog settings for OLM v1
 			if len(overrides.Channels) > 0 {
 				// Use first channel from override
@@ -494,7 +492,7 @@ type OADPClusterExtensionOverrides struct {
 // parseOADPClusterExtensionAnnotation unmarshals the OADP ClusterExtension annotation from a MultiClusterHub.
 // Returns nil if no annotation is present or if unmarshaling fails.
 // The annotation key is installer.open-cluster-management.io/oadp-clusterextension-spec (OLM v1).
-func parseOADPClusterExtensionAnnotation(m *v1.MultiClusterHub) *OADPClusterExtensionOverrides {
+func parseOADPClusterExtensionAnnotation(log logr.Logger, m *v1.MultiClusterHub) *OADPClusterExtensionOverrides {
 	oadpAnnotationOverrides := utils.GetOADPClusterExtensionAnnotationOverrides(m)
 	if oadpAnnotationOverrides == "" {
 		return nil
@@ -502,7 +500,7 @@ func parseOADPClusterExtensionAnnotation(m *v1.MultiClusterHub) *OADPClusterExte
 	overrides := &OADPClusterExtensionOverrides{}
 	err := json.Unmarshal([]byte(oadpAnnotationOverrides), overrides)
 	if err != nil {
-		log.Info(fmt.Sprintf("Failed to unmarshal OADP ClusterExtension annotation: %s. Error: %v", oadpAnnotationOverrides, err))
+		log.Info("Failed to unmarshal OADP ClusterExtension annotation", "annotation", oadpAnnotationOverrides, "error", err)
 		return nil
 	}
 	return overrides
@@ -511,7 +509,7 @@ func parseOADPClusterExtensionAnnotation(m *v1.MultiClusterHub) *OADPClusterExte
 // parseOADPAnnotation unmarshals the OADP subscription annotation from a MultiClusterHub.
 // Returns an empty SubscriptionSpec if no annotation is present or if unmarshaling fails.
 // The annotation key is installer.open-cluster-management.io/oadp-subscription-spec (OLM v0).
-func parseOADPAnnotation(m *v1.MultiClusterHub) *subv1alpha1.SubscriptionSpec {
+func parseOADPAnnotation(log logr.Logger, m *v1.MultiClusterHub) *subv1alpha1.SubscriptionSpec {
 	sub := &subv1alpha1.SubscriptionSpec{}
 	oadpSpec := utils.GetOADPAnnotationOverrides(m)
 	if oadpSpec == "" {
@@ -519,7 +517,7 @@ func parseOADPAnnotation(m *v1.MultiClusterHub) *subv1alpha1.SubscriptionSpec {
 	}
 
 	if err := json.Unmarshal([]byte(oadpSpec), sub); err != nil {
-		log.Info(fmt.Sprintf("Failed to unmarshal OADP annotation: %s.", oadpSpec))
+		log.Info("Failed to unmarshal OADP annotation", "annotation", oadpSpec, "error", err)
 	}
 	return sub
 }
@@ -553,8 +551,8 @@ func valueOrDefault(value, defaultValue string) string {
 	return defaultValue
 }
 
-func GetOADPConfig(m *v1.MultiClusterHub) (string, string, subv1alpha1.Approval, string, string, string) {
-	sub := parseOADPAnnotation(m)
+func GetOADPConfig(log logr.Logger, m *v1.MultiClusterHub) (string, string, subv1alpha1.Approval, string, string, string) {
+	sub := parseOADPAnnotation(log, m)
 
 	name := valueOrDefault(sub.Package, defaultOADPName)
 	channel := getOADPChannel(sub.Channel)

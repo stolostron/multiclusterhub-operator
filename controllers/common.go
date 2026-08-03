@@ -163,11 +163,11 @@ func (r *MultiClusterHubReconciler) ensureNamespace(m *operatorv1.MultiClusterHu
 	if err := r.Client.Get(ctx, types.NamespacedName{Name: ns.GetName()}, existingNS); err != nil {
 		if errors.IsNotFound(err) {
 			if err = r.Client.Create(ctx, ns); err != nil {
-				r.Log.Info(fmt.Sprintf("Error creating namespace: %s", err.Error()))
+				r.Log.Info("Error creating namespace", "error", err)
 				return ctrl.Result{Requeue: true}, nil
 			}
 		} else {
-			r.Log.Info(fmt.Sprintf("error locating namespace: %s. Error: %s", ns.GetName(), err.Error()))
+			r.Log.Info("error locating namespace", "namespace", ns.GetName(), "error", err)
 			return ctrl.Result{Requeue: true}, nil
 		}
 	}
@@ -179,7 +179,7 @@ func (r *MultiClusterHubReconciler) ensureNamespace(m *operatorv1.MultiClusterHu
 		return ctrl.Result{}, nil
 	}
 
-	r.Log.Info(fmt.Sprintf("namespace '%s' is not in an active state", ns.GetName()))
+	r.Log.Info("namespace is not in an active state", "namespace", ns.GetName())
 	return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 }
 
@@ -189,7 +189,7 @@ func (r *MultiClusterHubReconciler) ensureOperatorGroup(m *operatorv1.MultiClust
 	operatorGroupList := &olmv1.OperatorGroupList{}
 	err := r.Client.List(ctx, operatorGroupList, client.InNamespace(og.GetNamespace()))
 	if err != nil {
-		r.Log.Info(fmt.Sprintf("error listing operatorgroups in ns: %s. Error: %s", og.GetNamespace(), err.Error()))
+		r.Log.Info("error listing operatorgroups in ns", "namespace", og.GetNamespace(), "error", err)
 		return ctrl.Result{Requeue: true}, nil
 	}
 
@@ -200,12 +200,12 @@ func (r *MultiClusterHubReconciler) ensureOperatorGroup(m *operatorv1.MultiClust
 		return ctrl.Result{}, nil
 	}
 
-	r.Log.Info(fmt.Sprintf("Ensuring operator group exists in ns: %s", og.GetNamespace()))
+	r.Log.Info("Ensuring operator group exists in ns", "namespace", og.GetNamespace())
 
 	force := true
 	err = r.Client.Patch(ctx, og, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
 	if err != nil {
-		r.Log.Info(fmt.Sprintf("Error: %s", err.Error()))
+		r.Log.Info("Error patching operator group", "error", err)
 		return ctrl.Result{Requeue: true}, nil
 	}
 	condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
@@ -216,7 +216,7 @@ func (r *MultiClusterHubReconciler) ensureOperatorGroup(m *operatorv1.MultiClust
 		Name: og.GetName(),
 	}, existingOperatorGroup)
 	if err != nil {
-		r.Log.Info(fmt.Sprintf("error locating operatorgroup: %s/%s. Error: %s", og.GetNamespace(), og.GetName(), err.Error()))
+		r.Log.Info("error locating operatorgroup", "namespace", og.GetNamespace(), "name", og.GetName(), "error", err)
 		return ctrl.Result{Requeue: true}, nil
 	}
 
@@ -240,17 +240,17 @@ func (r *MultiClusterHubReconciler) ensureServiceAccount(m *operatorv1.MultiClus
 
 	if !errors.IsNotFound(err) {
 		// Unexpected error
-		r.Log.Info(fmt.Sprintf("error getting ServiceAccount in ns: %s. Error: %s", sa.GetNamespace(), err.Error()))
+		r.Log.Info("error getting ServiceAccount in ns", "namespace", sa.GetNamespace(), "error", err)
 		return ctrl.Result{Requeue: true}, nil
 	}
 
 	// ServiceAccount doesn't exist, create it
-	r.Log.Info(fmt.Sprintf("Ensuring ServiceAccount exists in ns: %s", sa.GetNamespace()))
+	r.Log.Info("Ensuring ServiceAccount exists in ns", "namespace", sa.GetNamespace())
 
 	force := true
 	err = r.Client.Patch(ctx, sa, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
 	if err != nil {
-		r.Log.Info(fmt.Sprintf("Error creating ServiceAccount: %s", err.Error()))
+		r.Log.Info("Error creating ServiceAccount", "error", err)
 		return ctrl.Result{Requeue: true}, nil
 	}
 
@@ -276,17 +276,17 @@ func (r *MultiClusterHubReconciler) ensureClusterRoleBinding(m *operatorv1.Multi
 
 	if !errors.IsNotFound(err) {
 		// Unexpected error
-		r.Log.Info(fmt.Sprintf("error getting ClusterRoleBinding %s. Error: %s", crb.GetName(), err.Error()))
+		r.Log.Info("error getting ClusterRoleBinding", "name", crb.GetName(), "error", err)
 		return ctrl.Result{Requeue: true}, nil
 	}
 
 	// ClusterRoleBinding doesn't exist, create it
-	r.Log.Info(fmt.Sprintf("Ensuring ClusterRoleBinding exists: %s", crb.GetName()))
+	r.Log.Info("Ensuring ClusterRoleBinding exists", "name", crb.GetName())
 
 	force := true
 	err = r.Client.Patch(ctx, crb, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
 	if err != nil {
-		r.Log.Info(fmt.Sprintf("Error creating ClusterRoleBinding: %s", err.Error()))
+		r.Log.Info("Error creating ClusterRoleBinding", "error", err)
 		return ctrl.Result{Requeue: true}, nil
 	}
 
@@ -297,10 +297,10 @@ func (r *MultiClusterHubReconciler) ensureClusterRoleBinding(m *operatorv1.Multi
 }
 
 func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
-	mce, err := multiclusterengine.FindAndManageMCE(ctx, r.Client)
+	mce, err := multiclusterengine.FindAndManageMCE(r.Log.WithName("mce"), ctx, r.Client)
 	if err != nil {
 		if apimeta.IsNoMatchError(err) {
-			r.Log.WithName("WARNING").Info("MCE CRD not yet available, requeueing")
+			r.Log.Info("MCE CRD not yet available, requeueing")
 			return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 		}
 		return ctrl.Result{}, err
@@ -377,7 +377,7 @@ func (r *MultiClusterHubReconciler) ensurePullSecret(m *operatorv1.MultiClusterH
 		for i, secret := range secretList.Items {
 			r.Log.Info("Deleting imagePullSecret", "Name", secret.Name, "Namespace", secret.Namespace)
 			if err := r.Client.Delete(context.TODO(), &secretList.Items[i]); err != nil {
-				r.Log.Error(err, fmt.Sprintf("Error deleting imagepullsecret: %s", secret.GetName()))
+				r.Log.Error(err, "Error deleting imagepullsecret", "name", secret.GetName())
 				return ctrl.Result{}, err
 			}
 		}
@@ -409,7 +409,7 @@ func (r *MultiClusterHubReconciler) ensurePullSecret(m *operatorv1.MultiClusterH
 	force := true
 	if err := r.Client.Patch(context.TODO(), mceSecret, client.Apply,
 		&client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"}); err != nil {
-		r.Log.Info(fmt.Sprintf("Error applying pullSecret to mce namespace: %s", err.Error()))
+		r.Log.Info("Error applying pullSecret to mce namespace", "error", err)
 		return ctrl.Result{}, err
 	}
 
@@ -596,7 +596,7 @@ func (r *MultiClusterHubReconciler) ensureMCEInstallation(ctx context.Context, m
 
 	// OLM v0 path (existing Subscription-based logic)
 	desiredPackage := multiclusterengine.DesiredPackage()
-	mceSub, err := v0.FindAndManageMCESubscription(ctx, r.Client, desiredPackage)
+	mceSub, err := v0.FindAndManageMCESubscription(r.Log.WithName("mce").WithName("olm"), ctx, r.Client, desiredPackage)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -635,7 +635,7 @@ func (r *MultiClusterHubReconciler) ensureMCEInstallation(ctx context.Context, m
 	// Search for catalogsource if not defined in overrides
 	if overrides == nil || overrides.CatalogSource == "" {
 		desiredChannel := multiclusterengine.DesiredChannel()
-		ctlSrc, err = v0.GetCatalogSource(r.Client, desiredChannel, desiredPackage)
+		ctlSrc, err = v0.GetCatalogSource(r.Log.WithName("mce").WithName("olm"), r.Client, desiredChannel, desiredPackage)
 		if err != nil {
 			r.Log.Info("Failed to find a suitable catalogsource.", "error", err)
 			return ctrl.Result{}, err
@@ -691,7 +691,7 @@ func (r *MultiClusterHubReconciler) ensureMCEClusterExtension(ctx context.Contex
 	desiredPackage := multiclusterengine.DesiredPackage()
 
 	// Find or manage existing ClusterExtension
-	mceCE, err := v1.FindAndManageMCEClusterExtension(ctx, r.Client, desiredPackage)
+	mceCE, err := v1.FindAndManageMCEClusterExtension(r.Log.WithName("mce").WithName("olm"), ctx, r.Client, desiredPackage)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -712,7 +712,7 @@ func (r *MultiClusterHubReconciler) ensureMCEClusterExtension(ctx context.Contex
 	if mceCE == nil {
 		// Pre-flight: check if a catalog contains the MCE package.
 		// Non-fatal because OLM v1 resolves catalogs automatically via SourceType+PackageName.
-		catalogName, catErr := v1.GetClusterCatalog(ctx, r.Client, desiredPackage)
+		catalogName, catErr := v1.GetClusterCatalog(r.Log.WithName("mce").WithName("olm"), ctx, r.Client, desiredPackage)
 		if catErr != nil {
 			r.Log.Info("No ClusterCatalog found containing package, OLM v1 will resolve automatically",
 				"package", desiredPackage, "error", catErr)
@@ -803,7 +803,7 @@ func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context) (ctrl.R
 	}
 
 	if existingMCE.Status.CurrentVersion == "" {
-		r.Log.Info(fmt.Sprintf("Multiclusterengine: %s is not yet available", existingMCE.GetName()))
+		r.Log.Info("Multiclusterengine is not yet available", "name", existingMCE.GetName())
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
 
@@ -1016,7 +1016,7 @@ func (r *MultiClusterHubReconciler) ensureSearchCR(m *operatorv1.MultiClusterHub
 	force := true
 	err := r.Client.Patch(ctx, searchCR, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "multiclusterhub-operator"})
 	if err != nil {
-		r.Log.Info(fmt.Sprintf("error applying Search CR. Error: %s", err.Error()))
+		r.Log.Info("error applying Search CR", "error", err)
 		return ctrl.Result{}, err
 	}
 
@@ -1030,7 +1030,7 @@ func (r *MultiClusterHubReconciler) ensureNoClusterManagementAddOn(m *operatorv1
 
 	addonName, err := operatorv1.GetClusterManagementAddonName(component)
 	if err != nil {
-		r.Log.Info(fmt.Sprintf("Detected unregistered ClusterManagementAddon component: %s", err.Error()))
+		r.Log.Info("Detected unregistered ClusterManagementAddon component", "error", err)
 		return ctrl.Result{}, err
 	}
 
@@ -1086,7 +1086,7 @@ func (r *MultiClusterHubReconciler) ensureNoSearchCR(m *operatorv1.MultiClusterH
 	searchList := &searchv2v1alpha1.SearchList{}
 	err := r.Client.List(ctx, searchList, client.InNamespace(m.GetNamespace()))
 	if err != nil {
-		r.Log.Info(fmt.Sprintf("error locating Search CR. Error: %s", err.Error()))
+		r.Log.Info("Error locating Search CR", "error", err)
 		return ctrl.Result{}, err
 	}
 
@@ -1100,7 +1100,7 @@ func (r *MultiClusterHubReconciler) ensureNoSearchCR(m *operatorv1.MultiClusterH
 	}
 	err = r.Client.List(ctx, searchList, client.InNamespace(m.GetNamespace()))
 	if err != nil {
-		r.Log.Info(fmt.Sprintf("error locating Search CR. Error: %s", err.Error()))
+		r.Log.Info("error locating Search CR", "error", err)
 		return ctrl.Result{}, err
 	}
 	if len(searchList.Items) != 0 {
