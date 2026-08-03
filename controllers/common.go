@@ -637,7 +637,7 @@ func (r *MultiClusterHubReconciler) ensureMCEInstallation(ctx context.Context, m
 		desiredChannel := multiclusterengine.DesiredChannel()
 		ctlSrc, err = v0.GetCatalogSource(r.Client, desiredChannel, desiredPackage)
 		if err != nil {
-			r.Log.Info("Failed to find a suitable catalogsource.", "error", err)
+			r.Log.Error(err, "Failed to find a suitable CatalogSource")
 			return ctrl.Result{}, err
 		}
 	}
