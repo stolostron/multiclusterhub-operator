@@ -131,7 +131,8 @@ func filterPackageManifests(pkgManifests []olmapi.PackageManifest, desiredChanne
 				versionString := c.CurrentCSVDesc.Version.String()
 				v, err := semver.NewVersion(versionString)
 				if err != nil {
-					log.Log.WithName("reconcile").Info("Failed to parse version from PackageManifest", "catalogSource", p.Status.CatalogSource)
+					log.Log.WithName("reconcile").Info("Failed to parse version from PackageManifest",
+						"catalogSource", p.Status.CatalogSource, "version", versionString, "error", err)
 					continue
 				}
 				if len(filtered) == 0 {
