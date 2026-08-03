@@ -217,7 +217,7 @@ func RenderCRDs(crdDir string, mch *v1.MultiClusterHub) ([]*unstructured.Unstruc
 	// Read CRD files
 	err := filepath.Walk(crdDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			fmt.Println(err.Error())
+			log.Error(err, "Failed to walk CRD directory", "path", path)
 			return err
 		}
 		crd := &unstructured.Unstructured{}
@@ -231,7 +231,7 @@ func RenderCRDs(crdDir string, mch *v1.MultiClusterHub) ([]*unstructured.Unstruc
 		}
 
 		if err = yaml.Unmarshal(bytesFile, crd); err != nil {
-			errs = append(errs, fmt.Errorf("%s - error unmarshalling file to unstructured: %v", info.Name(), err.Error()))
+			errs = append(errs, fmt.Errorf("%s - error unmarshalling file to unstructured: %w", info.Name(), err))
 		}
 		if mch != nil {
 			_, conversion, _ := unstructured.NestedMap(crd.Object, "spec", "conversion", "webhook", "clientConfig", "service")

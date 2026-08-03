@@ -165,13 +165,13 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 	clusterVersion := &configv1.ClusterVersion{}
 	err = r.Client.Get(ctx, types.NamespacedName{Name: "version"}, clusterVersion)
 	if err != nil {
-		log.Error(err, "Failed to detect clusterversion")
+		log.Error(err, "Failed to detect ClusterVersion")
 		return ctrl.Result{}, err
 	}
 	currentClusterVersion := ""
 	if len(clusterVersion.Status.History) == 0 {
 		if !utils.IsUnitTest() {
-			log.Error(err, "Failed to detect status in clusterversion.status.history")
+			log.Error(err, "Failed to detect status in ClusterVersion.status.history")
 			return ctrl.Result{}, err
 		}
 	}

@@ -38,14 +38,14 @@ func (r *MultiClusterHubReconciler) cleanupClusterRoles(reqLogger logr.Logger, m
 
 	if err != nil {
 		if errors.IsNotFound(err) {
-			reqLogger.Info("No matching clusterroles to finalize. Continuing.")
+			reqLogger.Info("No matching ClusterRoles to finalize")
 			return nil
 		}
-		reqLogger.Error(err, "Error while deleting clusterroles")
+		reqLogger.Error(err, "Failed to delete ClusterRoles")
 		return err
 	}
 
-	reqLogger.Info("Clusterroles finalized")
+	reqLogger.Info("ClusterRoles finalized")
 	return nil
 }
 
@@ -56,14 +56,14 @@ func (r *MultiClusterHubReconciler) cleanupClusterRoleBindings(reqLogger logr.Lo
 	})
 	if err != nil {
 		if errors.IsNotFound(err) {
-			reqLogger.Info("No matching clusterrolebindings to finalize. Continuing.")
+			reqLogger.Info("No matching ClusterRoleBindings to finalize")
 			return nil
 		}
-		reqLogger.Error(err, "Error while deleting clusterrolebindings")
+		reqLogger.Error(err, "Failed to delete ClusterRoleBindings")
 		return err
 	}
 
-	reqLogger.Info("Clusterrolebindings finalized")
+	reqLogger.Info("ClusterRoleBindings finalized")
 	return nil
 }
 
@@ -228,13 +228,13 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 
 	err := r.Client.List(context.TODO(), appSubList, installerLabels)
 	if err != nil && !errors.IsNotFound(err) {
-		reqLogger.Error(err, "Error while listing appsubs")
+		reqLogger.Error(err, "Failed to list Subscriptions", "labels", installerLabels)
 		return err
 	}
 
 	err = r.Client.List(context.TODO(), helmReleaseList, installerLabels)
 	if err != nil && !errors.IsNotFound(err) {
-		reqLogger.Error(err, "Error while listing helmreleases")
+		reqLogger.Error(err, "Failed to list HelmReleases", "labels", installerLabels)
 		return err
 	}
 
@@ -284,13 +284,15 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 	}
 
 	if len(appSubList.Items) != 0 || len(helmReleaseList.Items) != 0 {
-		reqLogger.Info("Waiting for helmreleases to be terminated")
+		reqLogger.Info("Waiting for sub-components to terminate before finalization",
+			"subscriptionCount", len(appSubList.Items),
+			"helmReleaseCount", len(helmReleaseList.Items))
 		waiting := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, HelmReleaseTerminatingReason, "Waiting for helmreleases to terminate.")
 		SetHubCondition(&m.Status, *waiting)
 		return fmt.Errorf("waiting for helmreleases to be terminated")
 	}
 
-	reqLogger.Info("All helmreleases have been terminated")
+	reqLogger.Info("All HelmReleases have been terminated")
 	return nil
 }
 

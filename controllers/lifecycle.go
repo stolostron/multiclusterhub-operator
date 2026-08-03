@@ -99,7 +99,7 @@ func (r *MultiClusterHubReconciler) installCRDs(reqLogger logr.Logger, m *operat
 		utils.AddInstallerLabel(crd, m.GetName(), m.GetNamespace())
 		err, ok := deploying.Deploy(r.Client, crd)
 		if err != nil {
-			reqLogger.Error(err, "failed to deploy", "Kind", crd.GetKind(), "Name", crd.GetName())
+			reqLogger.Error(err, "Failed to deploy CRD", "kind", crd.GetKind(), "name", crd.GetName())
 			return DeployFailedReason, err
 		}
 		if ok {
@@ -173,7 +173,7 @@ func (r *MultiClusterHubReconciler) deployResources(reqLogger logr.Logger, m *op
 		}
 		err, ok := deploying.Deploy(r.Client, res)
 		if err != nil {
-			reqLogger.Error(err, "failed to deploy resource", "Kind", res.GetKind(), "Name", res.GetName())
+			reqLogger.Error(err, "Failed to deploy resource", "kind", res.GetKind(), "name", res.GetName())
 			return DeployFailedReason, err
 		}
 

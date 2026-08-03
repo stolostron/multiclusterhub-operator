@@ -306,7 +306,7 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 	mce, err := multiclusterengine.FindAndManageMCE(ctx, r.Client)
 	if err != nil {
 		if apimeta.IsNoMatchError(err) {
-			r.Log.WithName("WARNING").Info("MCE CRD not yet available, requeueing")
+			r.Log.Info("MCE CRD not yet available, requeueing")
 			return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 		}
 		return ctrl.Result{}, err
@@ -381,7 +381,7 @@ func (r *MultiClusterHubReconciler) ensurePullSecret(m *operatorv1.MultiClusterH
 		}
 
 		for i, secret := range secretList.Items {
-			r.Log.Info("Deleting imagePullSecret", "Name", secret.Name, "Namespace", secret.Namespace)
+			r.Log.Info("Deleting imagePullSecret", "name", secret.Name, "namespace", secret.Namespace)
 			if err := r.Client.Delete(context.TODO(), &secretList.Items[i]); err != nil {
 				r.Log.Error(err, "Failed to delete image pull secret", "name", secret.GetName(), "namespace", secret.GetNamespace())
 				return ctrl.Result{}, err
@@ -804,7 +804,7 @@ func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context) (ctrl.R
 		return ctrl.Result{}, err
 	}
 	if existingMCE == nil {
-		r.Log.Info("Multiclusterengine is not yet present")
+		r.Log.Info("MultiClusterEngine is not yet present")
 		return ctrl.Result{Requeue: true}, nil
 	}
 	if utils.IsUnitTest() {
@@ -1071,7 +1071,7 @@ func (r *MultiClusterHubReconciler) ensureNoClusterManagementAddOn(m *operatorv1
 	}
 
 	if err != nil {
-		r.Log.Error(err, "Error deleting ClusterManagementAddOn CR")
+		r.Log.Error(err, "Failed to delete ClusterManagementAddOn CR")
 
 		return ctrl.Result{}, err
 	}
@@ -1107,7 +1107,7 @@ func (r *MultiClusterHubReconciler) ensureNoSearchCR(m *operatorv1.MultiClusterH
 	if len(searchList.Items) != 0 {
 		err = r.Client.Delete(context.TODO(), &searchList.Items[0])
 		if err != nil {
-			r.Log.Error(err, "Error deleting Search CR")
+			r.Log.Error(err, "Failed to delete Search CR")
 			return ctrl.Result{}, err
 		}
 

@@ -65,7 +65,7 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 					return ctrl.Result{RequeueAfter: utils.WarningRefreshInterval}, nil
 
 				} else if err != nil {
-					log.Error(err, "failed to get CustomResourceDefinition", "Resource", gvk)
+					log.Error(err, "Failed to get CustomResourceDefinition", "resource", gvk)
 					return ctrl.Result{}, err
 				}
 			}
@@ -95,7 +95,7 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 
 			desiredVersion := os.Getenv("OPERATOR_VERSION")
 			if desiredVersion == "" {
-				log.Info("Warning: OPERATOR_VERSION environment variable is not set")
+				log.Info("OPERATOR_VERSION environment variable is not set")
 			}
 
 			if !r.ensureResourceVersionAlignment(existing, desiredVersion) {
@@ -115,7 +115,7 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 			if existing.GetKind() == "PersistentVolumeClaim" {
 				storageClassName, found, err := unstructured.NestedString(existing.Object, "spec", "storageClassName")
 				if err != nil {
-					log.Error(err, "failed to retrieve storageClassName from PVC", "Name", existing.GetName())
+					log.Error(err, "Failed to retrieve storageClassName from PVC", "name", existing.GetName())
 					return ctrl.Result{}, err
 				}
 
@@ -131,7 +131,7 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 					"volumeClaimTemplates")
 
 				if err != nil {
-					log.Error(err, "failed to retrieve volumeClaimTemplates from StatefulSet", "Name",
+					log.Error(err, "Failed to retrieve volumeClaimTemplates from StatefulSet", "name",
 						existing.GetName())
 					return ctrl.Result{}, err
 				}
@@ -144,8 +144,8 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 							volumeClaimTemplate.(map[string]interface{}), "spec", "storageClassName")
 
 						if err != nil {
-							log.Error(err, "failed to retrieve storageClassName from volumeClaimTemplate", "Index", i,
-								"Name", existing.GetName())
+							log.Error(err, "Failed to retrieve storageClassName from volumeClaimTemplate", "index", i,
+								"name", existing.GetName())
 							return ctrl.Result{}, err
 						}
 
@@ -205,9 +205,9 @@ func (r *MultiClusterHubReconciler) deleteTemplate(ctx context.Context, m *opera
 		return ctrl.Result{}, nil
 	}
 
-	// set status progressing condition
 	if err != nil {
-		log.Error(err, "Odd error delete template")
+		log.Error(err, "Failed to get resource for deletion",
+			"kind", template.GetKind(), "name", template.GetName(), "namespace", template.GetNamespace())
 		return ctrl.Result{}, err
 	}
 

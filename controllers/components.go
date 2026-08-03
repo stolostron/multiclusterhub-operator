@@ -243,7 +243,7 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 	case operatorv1.Console:
 		ocpConsole, err := r.CheckConsole(ctx)
 		if err != nil {
-			r.Log.Error(err, "error finding OCP Console")
+			r.Log.Error(err, "Failed to get OCP console")
 			return ctrl.Result{}, err
 		}
 		if !ocpConsole {
