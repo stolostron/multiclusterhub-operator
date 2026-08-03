@@ -223,7 +223,7 @@ func FindAndManageMCE(ctx context.Context, k8sClient client.Client) (*mcev1.Mult
 	}
 
 	// if label doesn't work find it via list
-	log.Log.WithName("reconcile").Info("Failed to find subscription via label")
+	log.Log.WithName("reconcile").Info("MCE not found by label, falling back to list")
 	wholeList := &mcev1.MultiClusterEngineList{}
 	err = k8sClient.List(ctx, wholeList)
 	if err != nil {
