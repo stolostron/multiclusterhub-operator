@@ -195,7 +195,9 @@ func (r *MultiClusterHubReconciler) ensureOperatorGroup(m *operatorv1.MultiClust
 
 	if len(operatorGroupList.Items) > 1 {
 		msg := fmt.Sprintf("Found more than one OperatorGroup in namespace %s", og.GetNamespace())
-		r.Log.Error(fmt.Errorf("%s", msg), "Cannot proceed with multiple OperatorGroups")
+		r.Log.Error(fmt.Errorf("multiple OperatorGroups found"),
+			"Cannot proceed with multiple OperatorGroups",
+			"namespace", og.GetNamespace())
 		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason, msg)
 		SetHubCondition(&m.Status, *condition)
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
@@ -798,7 +800,7 @@ func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context, m *oper
 	// Wait for MCE to be ready
 	existingMCE, err := multiclusterengineutils.GetManagedMCE(ctx, r.Client)
 	if err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{}, fmt.Errorf("failed to get managed MCE: %w", err)
 	}
 	if existingMCE == nil {
 		r.Log.Info("MultiClusterEngine is not yet present")

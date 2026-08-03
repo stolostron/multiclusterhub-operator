@@ -31,6 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -227,12 +228,13 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			// Run finalization logic. If the finalization
 			// logic fails, don't remove the finalizer so
 			// that we can retry during the next reconciliation.
+			beforeFinalization := multiClusterHub.DeepCopy()
 			if err := r.finalizeHub(r.Log, multiClusterHub, ocpConsole, stsEnabled); err != nil {
 				r.Log.Info("Hub finalization incomplete, will retry",
 					"reason", err.Error(),
 					"requeueAfter", resyncPeriod.String())
 
-				if statusErr := r.Client.Status().Update(ctx, multiClusterHub); statusErr != nil {
+				if statusErr := r.Client.Status().Patch(ctx, multiClusterHub, client.MergeFrom(beforeFinalization)); statusErr != nil {
 					r.Log.Error(statusErr, "Failed to update MCH status during finalization")
 				}
 
