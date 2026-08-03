@@ -85,6 +85,10 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 		if err != nil && (!errors.IsNotFound(err) || !errors.IsGone(err)) {
 			return err
 		}
+		log.Info("Waiting for MultiClusterEngine to terminate", "name", mce.GetName())
+		condition := NewHubCondition(operatorsv1.Terminating, metav1.ConditionTrue, DeleteTimestampReason,
+			fmt.Sprintf("Waiting for MultiClusterEngine %s to terminate", mce.GetName()))
+		SetHubCondition(&m.Status, *condition)
 		return fmt.Errorf("MCE has not yet been terminated")
 	}
 
@@ -115,6 +119,10 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 			// Check if still exists
 			err = r.Client.Get(ctx, types.NamespacedName{Name: mceCE.Name}, mceCE)
 			if err == nil {
+				log.Info("Waiting for ClusterExtension to terminate", "name", mceCE.Name)
+				condition := NewHubCondition(operatorsv1.Terminating, metav1.ConditionTrue, DeleteTimestampReason,
+					fmt.Sprintf("Waiting for ClusterExtension %s to terminate", mceCE.Name))
+				SetHubCondition(&m.Status, *condition)
 				return fmt.Errorf("ClusterExtension has not yet been terminated")
 			}
 		}
@@ -150,6 +158,10 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 					types.NamespacedName{Name: csv.GetName(), Namespace: namespace},
 					csv)
 				if err == nil {
+					log.Info("Waiting for CSV to terminate", "name", csv.GetName(), "namespace", namespace)
+					condition := NewHubCondition(operatorsv1.Terminating, metav1.ConditionTrue, DeleteTimestampReason,
+						fmt.Sprintf("Waiting for CSV %s to terminate", csv.GetName()))
+					SetHubCondition(&m.Status, *condition)
 					return fmt.Errorf("CSV has not yet been terminated")
 				}
 			}
@@ -163,6 +175,10 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 				if err != nil && !errors.IsNotFound(err) {
 					return err
 				}
+				log.Info("Waiting for Subscription to terminate", "name", mceSub.Name, "namespace", namespace)
+				condition := NewHubCondition(operatorsv1.Terminating, metav1.ConditionTrue, DeleteTimestampReason,
+					fmt.Sprintf("Waiting for Subscription %s to terminate", mceSub.Name))
+				SetHubCondition(&m.Status, *condition)
 				return fmt.Errorf("subscription has not yet been terminated")
 			}
 		}
@@ -179,10 +195,15 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 	err = r.Client.Get(ctx, types.NamespacedName{Name: multiclusterengine.Namespace().Name}, mceNamespace)
 	if m.Namespace != multiclusterengine.Namespace().Name {
 		if err == nil {
+			nsName := multiclusterengine.Namespace().Name
 			err = r.Client.Delete(ctx, multiclusterengine.Namespace())
 			if err != nil && !errors.IsNotFound(err) {
 				return err
 			}
+			log.Info("Waiting for MCE namespace to terminate", "namespace", nsName)
+			condition := NewHubCondition(operatorsv1.Terminating, metav1.ConditionTrue, DeleteTimestampReason,
+				fmt.Sprintf("Waiting for namespace %s to terminate", nsName))
+			SetHubCondition(&m.Status, *condition)
 			return fmt.Errorf("namespace has not yet been terminated")
 		}
 	} else {
@@ -201,6 +222,24 @@ func (r *MultiClusterHubReconciler) cleanupNamespaces(reqLogger logr.Logger, m *
 		if err != nil && !errors.IsNotFound(err) {
 			return err
 		}
+
+		msg := fmt.Sprintf("Waiting for namespace %s to terminate", utils.ClusterSubscriptionNamespace)
+		if clusterBackupNamespace.Status.Phase == corev1.NamespaceTerminating {
+			for _, c := range clusterBackupNamespace.Status.Conditions {
+				if c.Type == corev1.NamespaceDeletionContentFailure && c.Status == corev1.ConditionTrue {
+					msg = fmt.Sprintf("Namespace %s stuck terminating: %s",
+						utils.ClusterSubscriptionNamespace, c.Message)
+					break
+				}
+			}
+		}
+
+		reqLogger.Info("Waiting for namespace to terminate",
+			"namespace", utils.ClusterSubscriptionNamespace,
+			"phase", clusterBackupNamespace.Status.Phase)
+		condition := NewHubCondition(operatorsv1.Terminating, metav1.ConditionTrue, DeleteTimestampReason, msg)
+		SetHubCondition(&m.Status, *condition)
+
 		return fmt.Errorf("namespace has not yet been terminated")
 	}
 

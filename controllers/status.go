@@ -29,56 +29,66 @@ import (
 )
 
 const (
-	// AwaitingCRDCreationReason is added in a hub when a desired CRD has not been installed yet
-	AwaitingCRDCreationReason = "AwaitingCRDCreation"
 	// ComponentsAvailableReason is added in a hub when all desired components are
 	// installed successfully
 	ComponentsAvailableReason = "ComponentsAvailable"
+
 	// ComponentsUnavailableReason is added in a hub when one or more components are
 	// in an unready state
 	ComponentsUnavailableReason = "ComponentsUnavailable"
-	// ComponentUpdatingReason is added when the hub is actively updating a component resource
+
+	// ComponentsUpdatingReason is added when the hub is actively updating a component resource
 	ComponentsUpdatingReason = "UpdatingComponentResource"
+
 	// NewComponentReason is added when the hub creates a new install resource successfully
 	NewComponentReason = "NewResourceCreated"
+
 	// DeployFailedReason is added when the hub fails to deploy a resource
 	DeployFailedReason = "FailedDeployingComponent"
-	//ResourceBlockReason is added when there is an existing resource that prevents an upgrade from progressing
-	ResourceBlockReason = "BlockingUpgrade"
+
 	// OldComponentRemovedReason is added when the hub calls delete on an old resource
 	OldComponentRemovedReason = "OldResourceDeleted"
+
 	// OldComponentNotRemovedReason is added when a component the hub is trying to delete has not been removed successfully
 	OldComponentNotRemovedReason = "OldResourceDeleteFailed"
+
 	// AllOldComponentsRemovedReason is added when the hub successfully prunes all old resources
 	AllOldComponentsRemovedReason = "AllOldResourcesDeleted"
-	// CertManagerReason is added when the hub is waiting for cert manager CRDs to come up
-	CertManagerReason = "CertManagerInitializing"
+
 	// DeleteTimestampReason is added when the multiclusterhub has been targeted for delete
 	DeleteTimestampReason = "DeletionTimestampPresent"
+
 	// PausedReason is added when the multiclusterhub is paused
 	PausedReason = "MCHPaused"
+
 	// ResumedReason is added when the multiclusterhub is resumed
 	ResumedReason = "MCHResumed"
+
 	// ReconcileReason is added when the multiclusterhub is actively reconciling
 	ReconcileReason = "MCHReconciling"
+
 	// HelmReleaseTerminatingReason is added when the multiclusterhub is waiting for the removal
 	// of helm releases
 	HelmReleaseTerminatingReason = "HelmReleaseTerminating"
-	// ManagedClusterTerminatingReason is added when a managed cluster has been deleted and
-	// is waiting to be finalized
-	ManagedClusterTerminatingReason = "ManagedClusterTerminating"
-	// NamespaceTerminatingReason is added when a managed cluster's namespace has been deleted and
-	// is waiting to be finalized
-	NamespaceTerminatingReason = "ManagedClusterNamespaceTerminating"
+
 	// ResourceRenderReason is added when an error occurs while rendering a deployable resource
 	ResourceRenderReason = "FailedRenderingResource"
+
 	// CRDRenderReason is added when an error occurs while rendering a CRD
 	CRDRenderReason = "FailedRenderingCRD"
+
 	// RequirementsNotMetReason is when there is something missing or misconfigured
 	// that is preventing progress
 	RequirementsNotMetReason = "RequirementsNotMet"
 
+	// FailedApplyingComponent is added when a component template fails to apply
 	FailedApplyingComponent = "FailedApplyingComponent"
+
+	// WaitingForMCEReason is added when the hub is waiting for MultiClusterEngine to be ready
+	WaitingForMCEReason = "WaitingForMCE"
+
+	// ComponentNotReadyReason is added when a prerequisite component is not yet available
+	ComponentNotReadyReason = "ComponentNotReady"
 )
 
 var (

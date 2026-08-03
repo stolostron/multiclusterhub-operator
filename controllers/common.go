@@ -194,7 +194,10 @@ func (r *MultiClusterHubReconciler) ensureOperatorGroup(m *operatorv1.MultiClust
 	}
 
 	if len(operatorGroupList.Items) > 1 {
-		r.Log.Error(fmt.Errorf("found more than one operator group in namespace %s", og.GetNamespace()), "fatal error")
+		msg := fmt.Sprintf("Found more than one OperatorGroup in namespace %s", og.GetNamespace())
+		r.Log.Error(fmt.Errorf(msg), "Cannot proceed with multiple OperatorGroups")
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason, msg)
+		SetHubCondition(&m.Status, *condition)
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	} else if len(operatorGroupList.Items) == 1 {
 		return ctrl.Result{}, nil
@@ -300,7 +303,10 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 	mce, err := multiclusterengine.FindAndManageMCE(ctx, r.Client)
 	if err != nil {
 		if apimeta.IsNoMatchError(err) {
-			r.Log.WithName("WARNING").Info("MCE CRD not yet available, requeueing")
+			r.Log.Info("MCE CRD not yet available, requeueing")
+			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, WaitingForMCEReason,
+				"Waiting for MultiClusterEngine CRD to become available")
+			SetHubCondition(&m.Status, *condition)
 			return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 		}
 		return ctrl.Result{}, err
@@ -788,14 +794,17 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(ctx context.Context
 }
 
 // waitForMCE checks that MCE is in a running state and at the expected version.
-func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	// Wait for MCE to be ready
 	existingMCE, err := multiclusterengineutils.GetManagedMCE(ctx, r.Client)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 	if existingMCE == nil {
-		r.Log.Info("Multiclusterengine is not yet present")
+		r.Log.Info("MultiClusterEngine is not yet present")
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, WaitingForMCEReason,
+			"Waiting for MultiClusterEngine to be created")
+		SetHubCondition(&m.Status, *condition)
 		return ctrl.Result{Requeue: true}, nil
 	}
 	if utils.IsUnitTest() {
@@ -803,7 +812,12 @@ func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context) (ctrl.R
 	}
 
 	if existingMCE.Status.CurrentVersion == "" {
-		r.Log.Info(fmt.Sprintf("Multiclusterengine: %s is not yet available", existingMCE.GetName()))
+		r.Log.Info("MultiClusterEngine is not yet available",
+			"name", existingMCE.GetName(),
+			"requeueAfter", resyncPeriod.String())
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, WaitingForMCEReason,
+			fmt.Sprintf("Waiting for MultiClusterEngine %s to report version", existingMCE.GetName()))
+		SetHubCondition(&m.Status, *condition)
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
 
@@ -814,7 +828,12 @@ func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context) (ctrl.R
 		err = version.ValidMCEVersion(existingMCE.Status.CurrentVersion)
 	}
 	if err != nil {
-		r.Log.Info("Waiting for MCE upgrade to complete", "CurrentVersion", existingMCE.Status.CurrentVersion, "Reason", err.Error())
+		r.Log.Info("Waiting for MCE upgrade to complete",
+			"currentVersion", existingMCE.Status.CurrentVersion,
+			"reason", err.Error())
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, WaitingForMCEReason,
+			fmt.Sprintf("Waiting for MultiClusterEngine upgrade: %s", err.Error()))
+		SetHubCondition(&m.Status, *condition)
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
 	return ctrl.Result{}, nil

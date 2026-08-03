@@ -139,8 +139,11 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	// Check if no image overrides were found using either prefix.
 	if len(imageOverrides) == 0 {
-		r.Log.Error(err, "Could not get map of image overrides")
-		return ctrl.Result{}, nil
+		r.Log.Error(fmt.Errorf("no image overrides found from environment"), "Could not get map of image overrides")
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason,
+			"No image overrides found from environment variables")
+		SetHubCondition(&multiClusterHub.Status, *condition)
+		return ctrl.Result{}, fmt.Errorf("no image overrides found from environment")
 	}
 
 	// Apply image repository override from annotation if present.
@@ -154,9 +157,11 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		imageOverrides, err = overrides.GetOverridesFromConfigmap(r.Client, imageOverrides,
 			multiClusterHub.GetNamespace(), ioConfigmapName, false)
 		if err != nil {
-			r.Log.Error(err, fmt.Sprintf("Failed to find image override configmap: %s/%s",
-				multiClusterHub.GetNamespace(), ioConfigmapName))
-
+			r.Log.Error(err, "Failed to find image override configmap",
+				"namespace", multiClusterHub.GetNamespace(), "configmap", ioConfigmapName)
+			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason,
+				fmt.Sprintf("Image override configmap %s/%s not found", multiClusterHub.GetNamespace(), ioConfigmapName))
+			SetHubCondition(&multiClusterHub.Status, *condition)
 			return ctrl.Result{}, err
 		}
 	}
@@ -175,9 +180,11 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		templateOverrides, err = overrides.GetOverridesFromConfigmap(r.Client, templateOverrides,
 			multiClusterHub.GetNamespace(), toConfigmapName, true)
 		if err != nil {
-			r.Log.Error(err, fmt.Sprintf("Failed to find template override configmap: %s/%s",
-				multiClusterHub.GetNamespace(), toConfigmapName))
-
+			r.Log.Error(err, "Failed to find template override configmap",
+				"namespace", multiClusterHub.GetNamespace(), "configmap", toConfigmapName)
+			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason,
+				fmt.Sprintf("Template override configmap %s/%s not found", multiClusterHub.GetNamespace(), toConfigmapName))
+			SetHubCondition(&multiClusterHub.Status, *condition)
 			return ctrl.Result{}, err
 		}
 	}
@@ -192,6 +199,9 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 	if err != nil {
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason,
+			fmt.Sprintf("Failed to set defaults: %s", err))
+		SetHubCondition(&multiClusterHub.Status, *condition)
 		return ctrl.Result{}, err
 	}
 
@@ -199,7 +209,10 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		Get the default storage class name and store it as an environment variable for components that need it.
 	*/
 	if result, err = r.SetDefaultStorageClassName(ctx, multiClusterHub); err != nil {
-		r.Log.Error(err, "failed to set the default StorageClass name")
+		r.Log.Error(err, "Failed to set default StorageClass name")
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason,
+			fmt.Sprintf("Failed to set default StorageClass name: %s", err))
+		SetHubCondition(&multiClusterHub.Status, *condition)
 		return ctrl.Result{}, err
 	}
 
@@ -215,8 +228,14 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			// logic fails, don't remove the finalizer so
 			// that we can retry during the next reconciliation.
 			if err := r.finalizeHub(r.Log, multiClusterHub, ocpConsole, stsEnabled); err != nil {
-				// Logging err and returning nil to ensure 45 second wait
-				r.Log.Info(fmt.Sprintf("Finalizing: %s", err.Error()))
+				r.Log.Info("Hub finalization incomplete, will retry",
+					"reason", err.Error(),
+					"requeueAfter", resyncPeriod.String())
+
+				if statusErr := r.Client.Status().Update(ctx, multiClusterHub); statusErr != nil {
+					r.Log.Error(statusErr, "Failed to update MCH status during finalization")
+				}
+
 				return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 			}
 
@@ -240,14 +259,21 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	*/
 	_, err = r.ensureOpenShiftNamespaceLabel(ctx, multiClusterHub)
 	if err != nil {
-		r.Log.Error(err, "Failed to add to %s label to namespace: %s", utils.OpenShiftClusterMonitoringLabel,
-			multiClusterHub.GetNamespace())
+		r.Log.Error(err, "Failed to add label to namespace",
+			"label", utils.OpenShiftClusterMonitoringLabel,
+			"namespace", multiClusterHub.GetNamespace())
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason,
+			fmt.Sprintf("Failed to add %s label to namespace %s", utils.OpenShiftClusterMonitoringLabel, multiClusterHub.GetNamespace()))
+		SetHubCondition(&multiClusterHub.Status, *condition)
 		return ctrl.Result{}, err
 	}
 
 	err = r.maintainImageManifestConfigmap(multiClusterHub)
 	if err != nil {
-		r.Log.Error(err, "Error storing image manifests in configmap")
+		r.Log.Error(err, "Failed to store image manifests in configmap")
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason,
+			fmt.Sprintf("Failed to maintain image manifest configmap: %s", err))
+		SetHubCondition(&multiClusterHub.Status, *condition)
 		return ctrl.Result{}, err
 	}
 
@@ -376,7 +402,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 
-	// Install CRDs
+	// Deploy base resources (ClusterRoles)
 	reason, err = r.deployResources(r.Log, multiClusterHub)
 	if err != nil {
 		condition := NewHubCondition(
@@ -398,7 +424,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 
-	result, err = r.waitForMCEReady(ctx)
+	result, err = r.waitForMCEReady(ctx, multiClusterHub)
 	if result != (ctrl.Result{}) || err != nil {
 		return result, err
 	}
