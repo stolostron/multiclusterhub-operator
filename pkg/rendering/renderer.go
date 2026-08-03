@@ -274,9 +274,6 @@ func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]st
 		chartPath := filepath.Join(chartDir, chart.Name())
 		chartTemplates, errs := renderTemplates(chartPath, mch, images, tpl, isSTSEnabled, olmVersion)
 		if len(errs) > 0 {
-			for _, err := range errs {
-				log.Error(err, "Chart rendering error")
-			}
 			return nil, errs
 		}
 		templates = append(templates, chartTemplates...)
@@ -300,9 +297,6 @@ func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]st
 
 	chartTemplates, errs := renderTemplates(chartPath, mch, images, templates, isSTSEnabled, olmVersion)
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Error(err, "Chart rendering error")
-		}
 		return nil, errs
 	}
 

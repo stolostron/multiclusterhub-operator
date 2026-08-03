@@ -133,7 +133,7 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 		}
 
 		if m.Prune(preview) {
-			log.Info("Removing preview component, GA version enabled", "preview", preview)
+			log.Info("Removed preview component configuration", "preview", preview)
 			updateNecessary = true
 		}
 	}
