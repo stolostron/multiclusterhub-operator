@@ -91,7 +91,7 @@ func (r *MultiClusterHubReconciler) installCRDs(reqLogger logr.Logger, m *operat
 	if len(errs) > 0 {
 		message := mergeErrors(errs)
 		err := fmt.Errorf("failed to render CRD templates: %s", message)
-		reqLogger.Error(err, "Failed to render CRD templates")
+		reqLogger.Error(err, "Failed to render CRD templates", "path", crdDir)
 		return CRDRenderReason, err
 	}
 
@@ -154,7 +154,7 @@ func (r *MultiClusterHubReconciler) deployResources(reqLogger logr.Logger, m *op
 	if len(errs) > 0 {
 		message := mergeErrors(errs)
 		err := fmt.Errorf("failed to render resources: %s", message)
-		reqLogger.Error(err, "Failed to render resources")
+		reqLogger.Error(err, "Failed to render resources", "path", resourceDir)
 		return CRDRenderReason, err
 	}
 

@@ -75,7 +75,9 @@ func (r *MultiClusterHubReconciler) ensureKlusterletAddonConfig(m *operatorsv1.M
 	err := r.Client.Get(ctx, types.NamespacedName{Name: m.Spec.LocalClusterName}, ns)
 
 	if err != nil && errors.IsNotFound(err) {
-		r.Log.Info("Waiting for ManagedCluster namespace to be created", "namespace", m.Spec.LocalClusterName)
+		r.Log.Info("Waiting for ManagedCluster namespace to be created",
+			"namespace", m.Spec.LocalClusterName,
+			"requeueAfter", resyncPeriod.String())
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	} else if err != nil {
 		r.Log.Error(err, "Failed to get ManagedCluster namespace", "namespace", m.Spec.LocalClusterName)

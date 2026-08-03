@@ -222,7 +222,8 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			// that we can retry during the next reconciliation.
 			if err := r.finalizeHub(r.Log, multiClusterHub, ocpConsole, stsEnabled); err != nil {
 				// Logging err and returning nil to ensure 45 second wait
-				r.Log.Error(err, "Finalization in progress, will retry")
+				r.Log.Error(err, "Hub finalization incomplete, will retry",
+					"requeueAfter", resyncPeriod.String())
 				return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 			}
 
@@ -261,7 +262,8 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	// Do not reconcile objects if this instance of mch is labeled "paused"
 	updatePausedCondition(multiClusterHub)
 	if utils.IsPaused(multiClusterHub) {
-		r.Log.Info("MultiClusterHub reconciliation is paused; no changes will be applied until unpaused")
+		r.Log.Info("Reconciliation paused, remove the mch-pause label to resume",
+			"name", multiClusterHub.GetName())
 		return ctrl.Result{}, nil
 	}
 

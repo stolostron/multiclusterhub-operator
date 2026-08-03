@@ -179,7 +179,10 @@ func (r *MultiClusterHubReconciler) ensureNamespace(m *operatorv1.MultiClusterHu
 		return ctrl.Result{}, nil
 	}
 
-	r.Log.Info("Namespace is not in an active state", "namespace", ns.GetName())
+	r.Log.Info("Namespace is not in an active state, requeuing",
+		"namespace", ns.GetName(),
+		"currentPhase", existingNS.Status.Phase,
+		"requeueAfter", resyncPeriod.String())
 	return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 }
 
@@ -194,7 +197,10 @@ func (r *MultiClusterHubReconciler) ensureOperatorGroup(m *operatorv1.MultiClust
 	}
 
 	if len(operatorGroupList.Items) > 1 {
-		r.Log.Error(fmt.Errorf("found more than one OperatorGroup in namespace"), "Multiple OperatorGroups found", "namespace", og.GetNamespace())
+		r.Log.Error(fmt.Errorf("found more than one OperatorGroup in namespace"),
+			"Multiple OperatorGroups found, only one is allowed per namespace",
+			"namespace", og.GetNamespace(),
+			"count", len(operatorGroupList.Items))
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	} else if len(operatorGroupList.Items) == 1 {
 		return ctrl.Result{}, nil
@@ -637,7 +643,9 @@ func (r *MultiClusterHubReconciler) ensureMCEInstallation(ctx context.Context, m
 		desiredChannel := multiclusterengine.DesiredChannel()
 		ctlSrc, err = v0.GetCatalogSource(r.Client, desiredChannel, desiredPackage)
 		if err != nil {
-			r.Log.Error(err, "Failed to find a suitable CatalogSource")
+			r.Log.Error(err, "Failed to find a suitable CatalogSource, MCE Subscription cannot be created",
+				"desiredChannel", desiredChannel,
+				"package", desiredPackage)
 			return ctrl.Result{}, err
 		}
 	}
@@ -804,7 +812,9 @@ func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context) (ctrl.R
 	}
 
 	if existingMCE.Status.CurrentVersion == "" {
-		r.Log.Info("MultiClusterEngine is not yet available", "name", existingMCE.GetName())
+		r.Log.Info("MultiClusterEngine is not yet available, waiting for version to be reported",
+			"name", existingMCE.GetName(),
+			"requeueAfter", resyncPeriod.String())
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
 
@@ -815,7 +825,10 @@ func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context) (ctrl.R
 		err = version.ValidMCEVersion(existingMCE.Status.CurrentVersion)
 	}
 	if err != nil {
-		r.Log.Info("Waiting for MCE upgrade to complete", "currentVersion", existingMCE.Status.CurrentVersion, "reason", err)
+		r.Log.Info("Waiting for MCE upgrade to complete",
+			"currentVersion", existingMCE.Status.CurrentVersion,
+			"reason", err,
+			"requeueAfter", resyncPeriod.String())
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
 	return ctrl.Result{}, nil

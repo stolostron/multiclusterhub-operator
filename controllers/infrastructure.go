@@ -304,7 +304,9 @@ func (r *MultiClusterHubReconciler) ingressDomain(ctx context.Context, m *operat
 	domain := ingress.Spec.Domain
 	if r.CacheSpec.IngressDomain != domain {
 		if r.CacheSpec.IngressDomain != "" {
-			r.Log.Info("Ingress domain mismatch detected", "currentDomain", r.CacheSpec.IngressDomain)
+			r.Log.Info("Ingress domain changed, updating cached value",
+				"previousDomain", r.CacheSpec.IngressDomain,
+				"newDomain", domain)
 		}
 
 		r.Log.Info("Setting ingress domain", "domain", domain)
