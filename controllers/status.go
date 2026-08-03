@@ -145,7 +145,7 @@ func (r *MultiClusterHubReconciler) syncHubStatus(ctx context.Context, m *operat
 			return reconcile.Result{RequeueAfter: resyncPeriod}, nil
 		}
 
-		r.Log.Error(err, fmt.Sprintf("Failed to update %s/%s status ", m.Namespace, m.Name))
+		r.Log.Error(err, "Failed to update MultiClusterHub status", "name", m.Name, "namespace", m.Namespace)
 		return reconcile.Result{}, err
 	}
 

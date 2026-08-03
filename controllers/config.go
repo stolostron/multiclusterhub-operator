@@ -20,7 +20,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
@@ -125,7 +124,7 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 	// Automatically migrate preview components to their GA equivalents
 	for preview, ga := range previewToGAComponents {
 		if m.Enabled(preview) {
-			log.Info("GA component version enabled due to preview being enabled",
+			log.Info("Migrating preview component to GA version",
 				"preview", preview,
 				"ga", ga,
 			)
@@ -134,7 +133,7 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 		}
 
 		if m.Prune(preview) {
-			log.Info("Pruning preview component", "preview", preview)
+			log.Info("Removing preview component, GA version enabled", "preview", preview)
 			updateNecessary = true
 		}
 	}
@@ -142,7 +141,7 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 	for _, c := range m.Spec.Overrides.Components {
 		if !operatorv1.ValidComponent(c, operatorv1.MCHComponents) {
 			if m.Prune(c.Name) {
-				log.Info(fmt.Sprintf("Removing invalid component: %v from existing MultiClusterHub", c.Name))
+				log.Info("Removing invalid component from MultiClusterHub", "component", c.Name)
 				updateNecessary = true
 			}
 		}
@@ -202,6 +201,5 @@ func (r *MultiClusterHubReconciler) setDefaults(m *operatorv1.MultiClusterHub, o
 		return ctrl.Result{Requeue: true}, nil
 
 	}
-	log.Info("No updates to defaults detected")
 	return ctrl.Result{}, nil
 }

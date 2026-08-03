@@ -78,7 +78,7 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(component string) string 
 		return utils.VolsyncChartLocation
 
 	default:
-		log.Info(fmt.Sprintf("Unregistered component detected: %v", component))
+		log.Info("Unregistered component detected", "component", component)
 		return fmt.Sprintf("/chart/toggle/%v", component)
 	}
 }
@@ -163,7 +163,7 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			log.Info(err.Error())
+			log.Error(err, "Failed to render chart templates", "component", component)
 		}
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
@@ -284,7 +284,7 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 		}
 		// Inject dummy image for render (actual image doesn't matter since we're deleting)
 		imageOverrides[migratedInfo.ImageKey] = "quay.io/stolostron/placeholder:deletion"
-		r.Log.Info("Injected dummy image for migrated component deletion", "Component", component, "ImageKey", migratedInfo.ImageKey)
+		r.Log.Info("Using placeholder image to remove migrated component", "component", component, "imageKey", migratedInfo.ImageKey)
 	}
 
 	// Renders all templates from charts
@@ -293,7 +293,7 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			log.Info(err.Error())
+			log.Error(err, "Failed to render chart templates for deletion", "component", component)
 		}
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
@@ -308,7 +308,7 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 		result, err := r.deleteTemplate(ctx, m, template)
 		if result != (ctrl.Result{}) || err != nil {
 			if err != nil {
-				logf.Log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+				logf.Log.Error(err, "Failed to delete template", "name", template.GetName())
 			}
 			return result, err
 		}

@@ -256,17 +256,17 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 			}, helmRelease)
 			if err != nil {
 				if errors.IsNotFound(err) {
-					reqLogger.Info(fmt.Sprintf("Unable to locate helmrelease: %s", helmReleaseName))
+					reqLogger.Info("Unable to locate HelmRelease", "name", helmReleaseName)
 					continue
 				}
-				reqLogger.Error(err, fmt.Sprintf("Error getting helmrelease: %s", helmReleaseName))
+				reqLogger.Error(err, "Failed to get HelmRelease", "name", helmReleaseName)
 				return err
 			}
 
 			utils.AddInstallerLabel(helmRelease, m.GetName(), m.GetNamespace())
 			err = r.Client.Update(context.TODO(), helmRelease)
 			if err != nil {
-				reqLogger.Error(err, fmt.Sprintf("Error updating helmrelease: %s", helmReleaseName))
+				reqLogger.Error(err, "Failed to update HelmRelease", "name", helmReleaseName)
 				return err
 			}
 		}
@@ -277,7 +277,7 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 		for i, appsub := range appSubList.Items {
 			err = r.Client.Delete(context.TODO(), &appSubList.Items[i])
 			if err != nil {
-				reqLogger.Error(err, fmt.Sprintf("Error terminating sub: %s", appsub.GetName()))
+				reqLogger.Error(err, "Failed to terminate Subscription", "name", appsub.GetName())
 				return err
 			}
 		}

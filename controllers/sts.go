@@ -20,7 +20,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
@@ -129,13 +128,12 @@ func (r *MultiClusterHubReconciler) ensureObjectExistsAndNotDeleted(ctx context.
 ) (bool, error) {
 	if err := r.Client.Get(ctx, types.NamespacedName{Name: name}, obj); err != nil {
 		if errors.IsNotFound(err) {
-			r.Log.Info(
-				fmt.Sprintf("%s was not found. Ignoring since object must be deleted",
-					reflect.TypeOf(obj).Elem().Name()), "Name", name)
+			r.Log.Info("Resource not found, already deleted",
+				"kind", reflect.TypeOf(obj).Elem().Name(), "name", name)
 			return false, nil
 		}
 
-		r.Log.Error(err, fmt.Sprintf("failed to get %s", reflect.TypeOf(obj).Elem().Name()), "Name", name)
+		r.Log.Error(err, "Failed to get resource", "kind", reflect.TypeOf(obj).Elem().Name(), "name", name)
 		return false, err
 	}
 

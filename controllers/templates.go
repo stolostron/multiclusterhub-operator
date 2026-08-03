@@ -49,7 +49,7 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 	if template.GetKind() == "APIService" {
 		result, err := r.ensureUnstructuredResource(m, template)
 		if err != nil {
-			log.Info(err.Error())
+			log.Error(err, "Failed to ensure APIService resource")
 			return result, err
 		}
 	} else {
@@ -343,8 +343,8 @@ func (r *MultiClusterHubReconciler) ensureResourceVersionAlignment(template *uns
 	annotations := template.GetAnnotations()
 	currentVersion, ok := annotations[utils.AnnotationReleaseVersion]
 	if !ok {
-		log.Info(fmt.Sprintf("Annotation '%v' not found on resource", utils.AnnotationReleaseVersion),
-			"Kind", template.GetKind(), "Name", template.GetName())
+		log.Info("Release version annotation not found on resource",
+			"annotation", utils.AnnotationReleaseVersion, "kind", template.GetKind(), "name", template.GetName())
 		return false
 	}
 

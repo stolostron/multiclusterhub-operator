@@ -83,7 +83,7 @@ func (r *MultiClusterHubReconciler) installCRDs(reqLogger logr.Logger, m *operat
 	crdDir, ok := os.LookupEnv(crdPathEnvVar)
 	if !ok {
 		err := fmt.Errorf("%s environment variable is required", crdPathEnvVar)
-		reqLogger.Error(err, err.Error())
+		reqLogger.Error(err, "Required environment variable not set", "var", crdPathEnvVar)
 		return CRDRenderReason, err
 	}
 
@@ -91,7 +91,7 @@ func (r *MultiClusterHubReconciler) installCRDs(reqLogger logr.Logger, m *operat
 	if len(errs) > 0 {
 		message := mergeErrors(errs)
 		err := fmt.Errorf("failed to render CRD templates: %s", message)
-		reqLogger.Error(err, err.Error())
+		reqLogger.Error(err, "Failed to render CRD templates")
 		return CRDRenderReason, err
 	}
 
@@ -115,7 +115,7 @@ func (r *MultiClusterHubReconciler) deployResources(reqLogger logr.Logger, m *op
 	resourceDir, ok := os.LookupEnv(templatesPathEnvVar)
 	if !ok {
 		err := fmt.Errorf("%s environment variable is required", templatesPathEnvVar)
-		reqLogger.Error(err, err.Error())
+		reqLogger.Error(err, "Required environment variable not set", "var", templatesPathEnvVar)
 		return ResourceRenderReason, err
 	}
 
@@ -123,7 +123,7 @@ func (r *MultiClusterHubReconciler) deployResources(reqLogger logr.Logger, m *op
 	files, err := os.ReadDir(resourceDir)
 	if err != nil {
 		err := fmt.Errorf("unable to read resource files from %s : %s", resourceDir, err)
-		reqLogger.Error(err, err.Error())
+		reqLogger.Error(err, "Failed to read resource directory", "path", resourceDir)
 		return ResourceRenderReason, err
 	}
 
@@ -154,7 +154,7 @@ func (r *MultiClusterHubReconciler) deployResources(reqLogger logr.Logger, m *op
 	if len(errs) > 0 {
 		message := mergeErrors(errs)
 		err := fmt.Errorf("failed to render resources: %s", message)
-		reqLogger.Error(err, err.Error())
+		reqLogger.Error(err, "Failed to render resources")
 		return CRDRenderReason, err
 	}
 
