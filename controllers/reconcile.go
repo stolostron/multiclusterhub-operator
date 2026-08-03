@@ -48,7 +48,9 @@ import (
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Request) (retQueue ctrl.Result, retError error) {
 	r.Log = log
-	r.Log.Info("Reconciling MultiClusterHub")
+	r.Log.Info("Reconciling MultiClusterHub",
+		"name", req.Name,
+		"namespace", req.Namespace)
 
 	// Fetch the MultiClusterHub instance
 	multiClusterHub := &operatorv1.MultiClusterHub{}
@@ -104,7 +106,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	ocpConsole, err := r.CheckConsole(ctx)
 	if err != nil {
-		r.Log.Error(err, "error finding OCP Console")
+		r.Log.Error(err, "Failed to check OCP console status")
 		return ctrl.Result{}, err
 	}
 
@@ -120,7 +122,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	defer func() {
 		statusQueue, statusError := r.syncHubStatus(ctx, multiClusterHub, originalStatus, allDeploys, allCRs, ocpConsole, stsEnabled)
 		if statusError != nil {
-			r.Log.Error(retError, "Error updating status")
+			r.Log.Error(statusError, "Failed to update MultiClusterHub status")
 		}
 		if empty := (reconcile.Result{}); retQueue == empty {
 			retQueue = statusQueue
@@ -140,7 +142,10 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	// Check if no image overrides were found using either prefix.
 	if len(imageOverrides) == 0 {
-		r.Log.Error(err, "Could not get map of image overrides")
+		r.Log.Error(fmt.Errorf("no image overrides found from environment"),
+			"Image overrides unavailable, operator cannot determine component images",
+			"operandPrefix", overrides.OperandImagePrefix,
+			"osbsPrefix", overrides.OSBSImagePrefix)
 		return ctrl.Result{}, nil
 	}
 
@@ -205,7 +210,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		Get the default storage class name and store it as an environment variable for components that need it.
 	*/
 	if result, err = r.SetDefaultStorageClassName(ctx, multiClusterHub); err != nil {
-		r.Log.Error(err, "failed to set the default StorageClass name")
+		r.Log.Error(err, "Failed to set default StorageClass name")
 		return ctrl.Result{}, err
 	}
 
@@ -255,7 +260,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	err = r.maintainImageManifestConfigmap(multiClusterHub)
 	if err != nil {
-		r.Log.Error(err, "Error storing image manifests in configmap")
+		r.Log.Error(err, "Failed to store image manifests in configmap")
 		return ctrl.Result{}, err
 	}
 
@@ -306,11 +311,10 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	if utils.ProxyEnvVarsAreSet() {
-		r.Log.Info(
-			fmt.Sprintf("Proxy configuration environment variables are set. HTTP_PROXY: %s, HTTPS_PROXY: %s, NO_PROXY: %s",
-				os.Getenv("HTTP_PROXY"), os.Getenv("HTTPS_PROXY"), os.Getenv("NO_PROXY"),
-			),
-		)
+		r.Log.Info("Proxy configuration detected",
+			"httpProxy", os.Getenv("HTTP_PROXY"),
+			"httpsProxy", os.Getenv("HTTPS_PROXY"),
+			"noProxy", os.Getenv("NO_PROXY"))
 	}
 
 	result, err = r.ensurePullSecretCreated(multiClusterHub, multiClusterHub.GetNamespace())
