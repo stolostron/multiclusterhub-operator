@@ -195,7 +195,7 @@ func (r *MultiClusterHubReconciler) ensureOperatorGroup(m *operatorv1.MultiClust
 
 	if len(operatorGroupList.Items) > 1 {
 		msg := fmt.Sprintf("Found more than one OperatorGroup in namespace %s", og.GetNamespace())
-		r.Log.Error(fmt.Errorf(msg), "Cannot proceed with multiple OperatorGroups")
+		r.Log.Error(fmt.Errorf("%s", msg), "Cannot proceed with multiple OperatorGroups")
 		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason, msg)
 		SetHubCondition(&m.Status, *condition)
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
