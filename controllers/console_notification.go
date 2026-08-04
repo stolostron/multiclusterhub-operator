@@ -160,9 +160,13 @@ func (r *MultiClusterHubReconciler) removeBanner(ctx context.Context, name strin
 	return r.Client.Delete(ctx, notification)
 }
 
-func (r *MultiClusterHubReconciler) cleanupConsoleNotifications(_ logr.Logger, m *operatorsv1.MultiClusterHub) error {
-	return r.Client.DeleteAllOf(context.TODO(), &consolev1.ConsoleNotification{}, client.MatchingLabels{
-		"installer.name":      m.GetName(),
-		"installer.namespace": m.GetNamespace(),
-	})
+func (r *MultiClusterHubReconciler) cleanupConsoleNotifications(_ logr.Logger, _ *operatorsv1.MultiClusterHub) error {
+	// Only two ConsoleNotifications are ever created by this operator (the MCE
+	// and OCP compliance banners), so remove them directly by name instead of
+	// using DeleteAllOf, which requires the cluster-scoped "deletecollection"
+	// verb.
+	if err := r.removeBanner(context.TODO(), mceComplianceBannerName); err != nil {
+		return err
+	}
+	return r.removeBanner(context.TODO(), ocpComplianceBannerName)
 }
