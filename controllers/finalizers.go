@@ -85,7 +85,7 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 		if err != nil && (!errors.IsNotFound(err) || !errors.IsGone(err)) {
 			return err
 		}
-		return fmt.Errorf("MCE has not yet been terminated")
+		return fmt.Errorf("MultiClusterEngine %s has not yet been terminated", mce.GetName())
 	}
 
 	if utils.IsUnitTest() {
@@ -115,7 +115,7 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 			// Check if still exists
 			err = r.Client.Get(ctx, types.NamespacedName{Name: mceCE.Name}, mceCE)
 			if err == nil {
-				return fmt.Errorf("ClusterExtension has not yet been terminated")
+				return fmt.Errorf("ClusterExtension %s has not yet been terminated", mceCE.Name)
 			}
 		}
 
@@ -150,7 +150,7 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 					types.NamespacedName{Name: csv.GetName(), Namespace: namespace},
 					csv)
 				if err == nil {
-					return fmt.Errorf("CSV has not yet been terminated")
+					return fmt.Errorf("CSV %s has not yet been terminated", csv.GetName())
 				}
 			}
 
@@ -163,7 +163,7 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 				if err != nil && !errors.IsNotFound(err) {
 					return err
 				}
-				return fmt.Errorf("subscription has not yet been terminated")
+				return fmt.Errorf("Subscription %s has not yet been terminated", mceSub.Name)
 			}
 		}
 
@@ -183,7 +183,7 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 			if err != nil && !errors.IsNotFound(err) {
 				return err
 			}
-			return fmt.Errorf("namespace has not yet been terminated")
+			return fmt.Errorf("namespace %s has not yet been terminated", multiclusterengine.Namespace().Name)
 		}
 	} else {
 		r.Log.Info("MCE shares namespace with MCH; skipping namespace termination")
@@ -201,7 +201,7 @@ func (r *MultiClusterHubReconciler) cleanupNamespaces(reqLogger logr.Logger, m *
 		if err != nil && !errors.IsNotFound(err) {
 			return err
 		}
-		return fmt.Errorf("namespace has not yet been terminated")
+		return fmt.Errorf("namespace %s has not yet been terminated", utils.ClusterSubscriptionNamespace)
 	}
 
 	return nil
