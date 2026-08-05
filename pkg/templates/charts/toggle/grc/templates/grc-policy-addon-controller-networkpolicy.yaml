@@ -1,0 +1,56 @@
+{{- if .Values.global.networkPolicies.enabled }}
+# Copyright Contributors to the Open Cluster Management project
+# NetworkPolicy for governance-policy-addon-controller.
+#
+# Ingress:
+#   - None
+#
+# Egress:
+#   - DNS for name resolution (port 53 and 5353)
+#   - Kubernetes API server communication (port 443 and 6443)
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: grc-policy-addon-controller-network-policy
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: grc
+    chart: grc-chart-{{ .Values.hubconfig.hubVersion }}
+    component: "ocm-policy-addon-ctrl"
+    release: grc
+    app.kubernetes.io/instance: grc
+    app.kubernetes.io/name: grc
+spec:
+  podSelector:
+    matchLabels:
+      app: grc
+      component: "ocm-policy-addon-ctrl"
+      release: grc
+  policyTypes:
+  - Ingress
+  - Egress
+  egress:
+  # DNS egress for name resolution
+  # Port 5353 is needed because OVN-Kubernetes evaluates NetworkPolicy post-DNAT
+  # and CoreDNS pods listen on 5353 while the DNS service exposes port 53
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 5353
+    - protocol: TCP
+      port: 5353
+  # Kubernetes API server egress for cluster and addon management operations
+  - ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 6443
+{{- end }}
