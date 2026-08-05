@@ -250,7 +250,7 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 			return ctrl.Result{}, nil
 		}
 
-		result, err := r.removePluginFromConsole(m)
+		result, err := r.removePluginFromConsole()
 		if result != (ctrl.Result{}) {
 			return result, err
 		}

@@ -57,6 +57,11 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:text
         - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: NetworkPolicies configures NetworkPolicy deployment for ACM components
+        displayName: NetworkPolicies Configuration
+        path: networkPolicies
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Developer Overrides
         displayName: Developer Overrides
         path: overrides

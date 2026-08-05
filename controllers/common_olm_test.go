@@ -742,14 +742,7 @@ func TestListCustomResources(t *testing.T) {
 				OLMVersion: tt.olmVersion,
 			}
 
-			mch := &operatorsv1.MultiClusterHub{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-mch",
-					Namespace: "test-ns",
-				},
-			}
-
-			result, err := reconciler.listCustomResources(mch)
+			result, err := reconciler.listCustomResources()
 			if err != nil {
 				t.Errorf("listCustomResources() unexpected error: %v", err)
 				return

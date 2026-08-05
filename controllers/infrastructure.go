@@ -281,10 +281,7 @@ func (r *MultiClusterHubReconciler) createMetricsServiceMonitor(ctx context.Cont
 }
 
 // ingressDomain is discovered from Openshift cluster configuration resources
-func (r *MultiClusterHubReconciler) ingressDomain(
-	ctx context.Context,
-	m *operatorv1.MultiClusterHub,
-) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) ingressDomain(ctx context.Context) (ctrl.Result, error) {
 	ingress := &configv1.Ingress{}
 	err := r.Client.Get(ctx, types.NamespacedName{
 		Name: "cluster",
@@ -315,8 +312,7 @@ func (r *MultiClusterHubReconciler) ingressDomain(
 }
 
 // openShiftApiUrl is discovered from Openshift cluster configuration resources
-func (r *MultiClusterHubReconciler) openShiftApiUrl(ctx context.Context, m *operatorv1.MultiClusterHub) (
-	ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) openShiftApiUrl(ctx context.Context) (ctrl.Result, error) {
 	infrastructure := &configv1.Infrastructure{}
 	err := r.Client.Get(ctx, types.NamespacedName{
 		Name: "cluster",

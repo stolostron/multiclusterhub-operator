@@ -17,7 +17,7 @@ metadata:
     capabilities: Basic Install
     categories: Integration & Delivery
     certified: "false"
-    createdAt: "2026-06-29T19:41:36Z"
+    createdAt: "2026-08-04T21:19:06Z"
     description: Open management of Openshift and Kubernetes clusters
     operators.operatorframework.io/builder: operator-sdk-v1.42.2
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
@@ -70,6 +70,11 @@ spec:
         path: localClusterName
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:text
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: NetworkPolicies configures NetworkPolicy deployment for ACM components
+        displayName: NetworkPolicies Configuration
+        path: networkPolicies
+        x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Developer Overrides
         displayName: Developer Overrides
@@ -515,8 +520,11 @@ spec:
           - events
           verbs:
           - create
+          - get
+          - list
           - patch
           - update
+          - watch
         - apiGroups:
           - '*'
           resources:
@@ -773,20 +781,20 @@ spec:
           - apps.open-cluster-management.io
           resources:
           - channels
-          - gitopsclusters
-          - helmreleases
-          - multiclusterapplicationsetreports
-          - subscriptionreports
+          - placementrules
+          - subscriptions
           verbs:
+          - get
           - list
           - watch
         - apiGroups:
           - apps.open-cluster-management.io
           resources:
-          - placementrules
-          - subscriptions
+          - gitopsclusters
+          - helmreleases
+          - multiclusterapplicationsetreports
+          - subscriptionreports
           verbs:
-          - get
           - list
           - watch
         - apiGroups:
@@ -895,6 +903,24 @@ spec:
         - apiGroups:
           - cluster.open-cluster-management.io
           resources:
+          - backupschedules
+          - backupschedules/finalizers
+          - backupschedules/status
+          - managedclusters
+          - restores
+          - restores/finalizers
+          - restores/status
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
           - clusterclaims
           verbs:
           - get
@@ -914,18 +940,6 @@ spec:
           verbs:
           - get
           - list
-          - watch
-        - apiGroups:
-          - cluster.open-cluster-management.io
-          resources:
-          - managedclusters
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
           - watch
         - apiGroups:
           - cluster.open-cluster-management.io
@@ -959,11 +973,9 @@ spec:
           resources:
           - placements
           verbs:
-          - create
           - delete
           - get
           - list
-          - update
           - watch
         - apiGroups:
           - clusterview.open-cluster-management.io
@@ -1035,6 +1047,7 @@ spec:
           - search.open-cluster-management.io
           resources:
           - consolelinks
+          - consolenotifications
           - consoleplugins
           - searches
           verbs:
@@ -1126,7 +1139,6 @@ spec:
           resources:
           - clusterclaims
           - clusterdeprovisions
-          - clusterpools
           - clusterprovisions
           - machinepools
           verbs:
@@ -1155,6 +1167,7 @@ spec:
           - hive.openshift.io
           resources:
           - clusterimagesets
+          - clusterpools
           verbs:
           - get
           - list
@@ -1349,6 +1362,26 @@ spec:
           - update
           - watch
         - apiGroups:
+          - networking.k8s.io
+          resources:
+          - networkpolicies
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - oadp.openshift.io
+          resources:
+          - dataprotectionapplications
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
           - oauth.openshift.io
           resources:
           - oauthclients
@@ -1493,11 +1526,8 @@ spec:
           resources:
           - placementbindings
           verbs:
-          - create
           - delete
-          - get
           - list
-          - update
           - watch
         - apiGroups:
           - policy.open-cluster-management.io
@@ -1731,6 +1761,29 @@ spec:
           - users
           verbs:
           - impersonate
+        - apiGroups:
+          - velero.io
+          resources:
+          - backups
+          - deletebackuprequests
+          - restores
+          - schedules
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - velero.io
+          resources:
+          - backupstoragelocations
+          verbs:
+          - get
+          - list
+          - watch
         - apiGroups:
           - view.open-cluster-management.io
           resources:
