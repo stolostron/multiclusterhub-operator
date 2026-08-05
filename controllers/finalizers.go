@@ -30,7 +30,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func (r *MultiClusterHubReconciler) cleanupClusterRoles(ctx context.Context, reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+func (r *MultiClusterHubReconciler) cleanupClusterRoles(ctx context.Context, reqLogger logr.Logger,
+	m *operatorsv1.MultiClusterHub) error {
 	err := r.Client.DeleteAllOf(ctx, &rbacv1.ClusterRole{}, client.MatchingLabels{
 		"installer.name":      m.GetName(),
 		"installer.namespace": m.GetNamespace(),
@@ -49,7 +50,8 @@ func (r *MultiClusterHubReconciler) cleanupClusterRoles(ctx context.Context, req
 	return nil
 }
 
-func (r *MultiClusterHubReconciler) cleanupClusterRoleBindings(ctx context.Context, reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+func (r *MultiClusterHubReconciler) cleanupClusterRoleBindings(ctx context.Context, reqLogger logr.Logger,
+	m *operatorsv1.MultiClusterHub) error {
 	err := r.Client.DeleteAllOf(ctx, &rbacv1.ClusterRoleBinding{}, client.MatchingLabels{
 		"installer.name":      m.GetName(),
 		"installer.namespace": m.GetNamespace(),
@@ -67,7 +69,8 @@ func (r *MultiClusterHubReconciler) cleanupClusterRoleBindings(ctx context.Conte
 	return nil
 }
 
-func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(ctx context.Context, log logr.Logger, m *operatorsv1.MultiClusterHub) error {
+func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(ctx context.Context, log logr.Logger,
+	m *operatorsv1.MultiClusterHub) error {
 	mce, err := multiclusterengineutils.GetManagedMCE(ctx, r.Client)
 	if err != nil && !apimeta.IsNoMatchError(err) {
 		return err
@@ -96,7 +99,8 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(ctx context.Contex
 
 	// Clean up OLM resources based on detected OLM version
 	operandNs := multiclusterengine.OperandNamespace()
-	if r.OLMVersion == "v1" {
+	switch r.OLMVersion {
+	case "v1":
 		// OLM v1 cleanup path (ClusterExtension + ServiceAccount)
 		mceCE, err := v1.GetManagedMCEClusterExtension(ctx, r.Client)
 		if err != nil {
@@ -132,7 +136,7 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(ctx context.Contex
 			return err
 		}
 
-	} else if r.OLMVersion == "v0" {
+	case "v0":
 		// OLM v0 cleanup path (Subscription + CSV + OperatorGroup)
 		mceSub, err := v0.GetManagedMCESubscription(ctx, r.Client)
 		if err != nil {
@@ -211,7 +215,8 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(ctx context.Contex
 	log.Info("MultiClusterEngine finalized")
 	return nil
 }
-func (r *MultiClusterHubReconciler) cleanupNamespaces(ctx context.Context, reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+func (r *MultiClusterHubReconciler) cleanupNamespaces(ctx context.Context, reqLogger logr.Logger,
+	m *operatorsv1.MultiClusterHub) error {
 	clusterBackupNamespace := &corev1.Namespace{}
 	err := r.Client.Get(ctx, types.NamespacedName{Name: utils.ClusterSubscriptionNamespace}, clusterBackupNamespace)
 	if err == nil {
@@ -247,7 +252,8 @@ func (r *MultiClusterHubReconciler) cleanupNamespaces(ctx context.Context, reqLo
 
 	return nil
 }
-func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(ctx context.Context, reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(ctx context.Context, reqLogger logr.Logger,
+	m *operatorsv1.MultiClusterHub) error {
 	installerLabels := client.MatchingLabels{
 		"installer.name":      m.GetName(),
 		"installer.namespace": m.GetNamespace(),
@@ -335,7 +341,8 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(ctx context.Context,
 	return nil
 }
 
-func (r *MultiClusterHubReconciler) orphanOwnedMultiClusterEngine(ctx context.Context, reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+func (r *MultiClusterHubReconciler) orphanOwnedMultiClusterEngine(ctx context.Context, reqLogger logr.Logger,
+	m *operatorsv1.MultiClusterHub) error {
 	mce, err := multiclusterengineutils.GetManagedMCE(ctx, r.Client)
 	if mce == nil {
 		// MCE does not exist

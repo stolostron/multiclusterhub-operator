@@ -686,7 +686,8 @@ func Test_finalizeHub_SetsTerminatingCondition_ComponentError(t *testing.T) {
 	mch.Name = "test-mch-finalize-component-error"
 
 	r := newTestReconcilerWithInterceptor(interceptor.Funcs{
-		Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+		Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object,
+			opts ...client.GetOption) error {
 			if _, ok := obj.(*operatorv1.InternalHubComponent); ok && key.Name == operatorv1.Appsub {
 				return apierrors.NewInternalError(fmt.Errorf("simulated get failure"))
 			}

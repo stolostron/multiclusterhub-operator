@@ -31,7 +31,8 @@ func LocalClusterNamespace(name string) *corev1.Namespace {
 	}
 }
 
-func newTestMCHForManagedCluster(localClusterName string, components ...operatorsv1.ComponentConfig) *operatorsv1.MultiClusterHub {
+func newTestMCHForManagedCluster(localClusterName string,
+	components ...operatorsv1.ComponentConfig) *operatorsv1.MultiClusterHub {
 	mch := &operatorsv1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "mch",
@@ -195,7 +196,8 @@ func Test_ensureKlusterletAddonConfig_ClearsStaleNamespaceCondition(t *testing.T
 // (using an interceptor to force a transient error, e.g. API server hiccup).
 func Test_ensureKlusterletAddonConfig_NamespaceGetError(t *testing.T) {
 	r := newTestReconcilerWithInterceptor(interceptor.Funcs{
-		Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+		Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object,
+			opts ...client.GetOption) error {
 			if _, ok := obj.(*corev1.Namespace); ok {
 				return fmt.Errorf("simulated get error")
 			}
@@ -249,7 +251,8 @@ func Test_ensureKlusterletAddonConfig_CreatesNew(t *testing.T) {
 func Test_ensureKlusterletAddonConfig_GetErrorOtherThanNotFound(t *testing.T) {
 	ns := LocalClusterNamespace("local-cluster")
 	r := newTestReconcilerWithInterceptor(interceptor.Funcs{
-		Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+		Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object,
+			opts ...client.GetOption) error {
 			if u, ok := obj.(*unstructured.Unstructured); ok && u.GetKind() == "KlusterletAddonConfig" {
 				return fmt.Errorf("simulated get error")
 			}

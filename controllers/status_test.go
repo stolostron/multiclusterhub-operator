@@ -586,7 +586,8 @@ func Test_calculateStatus_PreservesSpecificProgressingReason(t *testing.T) {
 
 	// ocpConsole=true so no components are tracked (DisableHubSelfManagement leaves the
 	// component list otherwise empty), guaranteeing allComponentsSuccessful() is false here.
-	newStatus := recon.calculateStatus(ctx, hub, []*appsv1.Deployment{}, map[string]*unstructured.Unstructured{}, true, false)
+	newStatus := recon.calculateStatus(ctx, hub, []*appsv1.Deployment{},
+		map[string]*unstructured.Unstructured{}, true, false)
 
 	condition := GetHubCondition(newStatus, operatorsv1.Progressing)
 	if condition == nil {
@@ -622,7 +623,8 @@ func Test_calculateStatus_SetsCompleteFalse_OnFreshInstall(t *testing.T) {
 
 	// ocpConsole=true so no components are tracked (DisableHubSelfManagement leaves the
 	// component list otherwise empty), guaranteeing allComponentsSuccessful() is false here.
-	newStatus := recon.calculateStatus(ctx, hub, []*appsv1.Deployment{}, map[string]*unstructured.Unstructured{}, true, false)
+	newStatus := recon.calculateStatus(ctx, hub, []*appsv1.Deployment{},
+		map[string]*unstructured.Unstructured{}, true, false)
 
 	condition := GetHubCondition(newStatus, operatorsv1.Complete)
 	if condition == nil {
@@ -656,7 +658,8 @@ func Test_calculateStatus_NoCompleteCondition_WhenPaused(t *testing.T) {
 		},
 	}
 
-	newStatus := recon.calculateStatus(ctx, hub, []*appsv1.Deployment{}, map[string]*unstructured.Unstructured{}, true, false)
+	newStatus := recon.calculateStatus(ctx, hub, []*appsv1.Deployment{},
+		map[string]*unstructured.Unstructured{}, true, false)
 
 	if condition := GetHubCondition(newStatus, operatorsv1.Complete); condition != nil {
 		t.Errorf("expected no Complete condition while paused, got: %+v", condition)
@@ -707,7 +710,8 @@ func Test_calculateStatus_SkipsComponentTracking_WhenBeingDeleted(t *testing.T) 
 		},
 	}
 
-	newStatus := recon.calculateStatus(ctx, hub, []*appsv1.Deployment{}, map[string]*unstructured.Unstructured{}, true, false)
+	newStatus := recon.calculateStatus(ctx, hub, []*appsv1.Deployment{},
+		map[string]*unstructured.Unstructured{}, true, false)
 
 	if newStatus.Phase != operatorsv1.HubUninstalling {
 		t.Errorf("expected phase %q, got %q", operatorsv1.HubUninstalling, newStatus.Phase)

@@ -860,7 +860,8 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngine(ctx context.Context
 }
 
 // waitForMCE checks that MCE is in a running state and at the expected version.
-func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context, m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context,
+	m *operatorv1.MultiClusterHub) (ctrl.Result, error) {
 	// Wait for MCE to be ready
 	existingMCE, err := multiclusterengineutils.GetManagedMCE(ctx, r.Client)
 	if err != nil {

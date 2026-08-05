@@ -189,7 +189,8 @@ func TestEnsureServiceAccount(t *testing.T) {
 				if condition == nil {
 					t.Errorf("ensureServiceAccount() expected Progressing condition but not found")
 				} else if !strings.Contains(condition.Message, "ServiceAccount") || !strings.Contains(condition.Message, saName) {
-					t.Errorf("ensureServiceAccount() expected condition message to name the ServiceAccount %q, got %q", saName, condition.Message)
+					t.Errorf("ensureServiceAccount() expected condition message to name the ServiceAccount %q, got %q",
+						saName, condition.Message)
 				}
 			}
 		})
@@ -341,8 +342,10 @@ func TestEnsureClusterRoleBinding(t *testing.T) {
 				condition := FindCondition(tt.mch.Status.HubConditions, operatorsv1.Progressing)
 				if condition == nil {
 					t.Errorf("ensureClusterRoleBinding() expected Progressing condition but not found")
-				} else if !strings.Contains(condition.Message, "ClusterRoleBinding") || !strings.Contains(condition.Message, crbName) {
-					t.Errorf("ensureClusterRoleBinding() expected condition message to name the ClusterRoleBinding %q, got %q", crbName, condition.Message)
+				} else if !strings.Contains(condition.Message, "ClusterRoleBinding") ||
+					!strings.Contains(condition.Message, crbName) {
+					t.Errorf("ensureClusterRoleBinding() expected condition message to name the ClusterRoleBinding %q, got %q",
+						crbName, condition.Message)
 				}
 			}
 		})
@@ -566,7 +569,8 @@ func Test_ensureMultiClusterEngineCR_SetsWaitingCondition_OnCreateError(t *testi
 	r := newTestReconcilerWithInterceptor(interceptor.Funcs{
 		Create: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
 			if _, ok := obj.(*mcev1.MultiClusterEngine); ok {
-				return apierrors.NewInternalError(fmt.Errorf(`failed calling webhook "multiclusterengines.multicluster.openshift.io"`))
+				return apierrors.NewInternalError(
+					fmt.Errorf(`failed calling webhook "multiclusterengines.multicluster.openshift.io"`))
 			}
 			return c.Create(ctx, obj, opts...)
 		},
@@ -747,8 +751,8 @@ func Test_ensureMCEClusterExtension_HandlesUpdateConflict(t *testing.T) {
 	r := newTestReconcilerWithInterceptor(interceptor.Funcs{
 		Update: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
 			if _, ok := obj.(*ocv1.ClusterExtension); ok {
-				return apierrors.NewConflict(schema.GroupResource{Group: "operator-controller.operator-framework.io", Resource: "clusterextensions"},
-					obj.GetName(), fmt.Errorf("the object has been modified"))
+				gr := schema.GroupResource{Group: "operator-controller.operator-framework.io", Resource: "clusterextensions"}
+				return apierrors.NewConflict(gr, obj.GetName(), fmt.Errorf("the object has been modified"))
 			}
 			return c.Update(ctx, obj, opts...)
 		},
@@ -1760,7 +1764,9 @@ func Test_waitForMCEReady_EnrichesVersionWaitMessageWithMCECondition(t *testing.
 	if condition == nil {
 		t.Fatal("expected Progressing condition to be set")
 	}
-	if !strings.Contains(condition.Message, "ComponentsUnavailable") || !strings.Contains(condition.Message, "Not all components available") {
+	hasReason := strings.Contains(condition.Message, "ComponentsUnavailable")
+	hasDetail := strings.Contains(condition.Message, "Not all components available")
+	if !hasReason || !hasDetail {
 		t.Errorf("expected message to include MCE's own condition detail, got %q", condition.Message)
 	}
 }
@@ -1773,8 +1779,14 @@ func Test_resourceIdentifier(t *testing.T) {
 		resName   string
 		want      string
 	}{
-		{"namespaced resource", "ServiceAccount", "open-cluster-management", "console-chart", "ServiceAccount open-cluster-management/console-chart"},
-		{"cluster-scoped resource", "ClusterRoleBinding", "", "open-cluster-management:console:clusterrolebinding", "ClusterRoleBinding open-cluster-management:console:clusterrolebinding"},
+		{
+			"namespaced resource", "ServiceAccount", "open-cluster-management", "console-chart",
+			"ServiceAccount open-cluster-management/console-chart",
+		},
+		{
+			"cluster-scoped resource", "ClusterRoleBinding", "", "open-cluster-management:console:clusterrolebinding",
+			"ClusterRoleBinding open-cluster-management:console:clusterrolebinding",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1870,7 +1882,8 @@ func Test_ensureOperatorGroup_NamesResourceInCondition_WhenCreated(t *testing.T)
 
 	ogNamespace := "test-namespace-create-og"
 	r := newTestReconcilerWithInterceptor(interceptor.Funcs{
-		Patch: func(ctx context.Context, c client.WithWatch, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
+		Patch: func(ctx context.Context, c client.WithWatch, obj client.Object, patch client.Patch,
+			opts ...client.PatchOption) error {
 			if og, ok := obj.(*olmv1.OperatorGroup); ok {
 				return c.Create(ctx, og)
 			}

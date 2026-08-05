@@ -39,8 +39,8 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func (r *MultiClusterHubReconciler) finalizeHub(ctx context.Context, reqLogger logr.Logger, m *operatorv1.MultiClusterHub, ocpConsole,
-	isSTSEnabled bool) error {
+func (r *MultiClusterHubReconciler) finalizeHub(ctx context.Context, reqLogger logr.Logger,
+	m *operatorv1.MultiClusterHub, ocpConsole, isSTSEnabled bool) error {
 	if err := r.cleanupAppSubscriptions(ctx, reqLogger, m); err != nil {
 		return err
 	}

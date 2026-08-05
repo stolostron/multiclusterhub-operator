@@ -82,7 +82,8 @@ func (r *MultiClusterHubReconciler) ensureKlusterletAddonConfig(m *operatorsv1.M
 	}
 
 	// Namespace exists — clear any stale "waiting for namespace" condition
-	if cond := GetHubCondition(m.Status, operatorsv1.Progressing); cond != nil && cond.Reason == WaitingForNamespaceReason {
+	cond := GetHubCondition(m.Status, operatorsv1.Progressing)
+	if cond != nil && cond.Reason == WaitingForNamespaceReason {
 		RemoveHubCondition(&m.Status, operatorsv1.Progressing)
 	}
 

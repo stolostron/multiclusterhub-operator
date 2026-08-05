@@ -240,7 +240,8 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 					"reason", err.Error(),
 					"requeueAfter", resyncPeriod.String())
 
-				if statusErr := r.Client.Status().Patch(ctx, multiClusterHub, client.MergeFrom(beforeFinalization)); statusErr != nil {
+				statusErr := r.Client.Status().Patch(ctx, multiClusterHub, client.MergeFrom(beforeFinalization))
+				if statusErr != nil {
 					r.Log.Error(statusErr, "Failed to update MCH status during finalization")
 				}
 
@@ -270,8 +271,9 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		r.Log.Error(err, "Failed to add label to namespace",
 			"label", utils.OpenShiftClusterMonitoringLabel,
 			"namespace", multiClusterHub.GetNamespace())
-		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason,
-			fmt.Sprintf("Failed to add %s label to namespace %s", utils.OpenShiftClusterMonitoringLabel, multiClusterHub.GetNamespace()))
+		msg := fmt.Sprintf("Failed to add %s label to namespace %s",
+			utils.OpenShiftClusterMonitoringLabel, multiClusterHub.GetNamespace())
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason, msg)
 		SetHubCondition(&multiClusterHub.Status, *condition)
 		return ctrl.Result{}, err
 	}
