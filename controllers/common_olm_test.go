@@ -7,13 +7,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/go-logr/logr"
+	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	v1 "github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine/olm/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
+	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
+	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -1217,4 +1222,279 @@ func (l *testLogger) WithName(name string) logr.LogSink {
 	return l
 }
 func (l *testLogger) Init(info logr.RuntimeInfo) {
+}
+
+// --- HubCondition tests ---
+//
+// The following tests cover the status condition updates added so that
+// `kubectl get mch` surfaces what is blocking OperatorGroup reconciliation
+// and MultiClusterEngine readiness/creation.
+
+// Test_ensureOperatorGroup_SetsRequirementsNotMetCondition_MultipleGroups
+// verifies that finding more than one OperatorGroup in a namespace records a
+// Progressing/RequirementsNotMetReason condition naming the namespace,
+// instead of only logging the conflict.
+func Test_ensureOperatorGroup_SetsRequirementsNotMetCondition_MultipleGroups(t *testing.T) {
+	s := scheme.Scheme
+	_ = olmv1.AddToScheme(s)
+	_ = operatorsv1.AddToScheme(s)
+
+	ogNamespace := "test-namespace-multiple-og"
+	og1 := &olmv1.OperatorGroup{ObjectMeta: metav1.ObjectMeta{Name: "og-one", Namespace: ogNamespace}}
+	og2 := &olmv1.OperatorGroup{ObjectMeta: metav1.ObjectMeta{Name: "og-two", Namespace: ogNamespace}}
+
+	fakeClient := fake.NewClientBuilder().WithScheme(s).WithObjects(og1, og2).Build()
+	reconciler := &MultiClusterHubReconciler{
+		Client: fakeClient,
+		Scheme: s,
+		Log:    clog.Log.WithName("test"),
+	}
+
+	mch := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-mch", Namespace: ogNamespace},
+	}
+	desiredOG := &olmv1.OperatorGroup{ObjectMeta: metav1.ObjectMeta{Name: "desired-og", Namespace: ogNamespace}}
+
+	result, err := reconciler.ensureOperatorGroup(mch, desiredOG)
+	if err != nil {
+		t.Fatalf("ensureOperatorGroup() unexpected error: %v", err)
+	}
+	if result.RequeueAfter != resyncPeriod {
+		t.Errorf("ensureOperatorGroup() expected RequeueAfter=%v, got %+v", resyncPeriod, result)
+	}
+
+	condition := GetHubCondition(mch.Status, operatorsv1.Progressing)
+	if condition == nil {
+		t.Fatal("expected Progressing condition to be set")
+	}
+	if condition.Reason != RequirementsNotMetReason {
+		t.Errorf("expected reason %q, got %q", RequirementsNotMetReason, condition.Reason)
+	}
+	if condition.Status != metav1.ConditionFalse {
+		t.Errorf("expected status %q, got %q", metav1.ConditionFalse, condition.Status)
+	}
+	if !strings.Contains(condition.Message, ogNamespace) {
+		t.Errorf("expected message to mention namespace %q, got %q", ogNamespace, condition.Message)
+	}
+}
+
+// Test_ensureOperatorGroup_NoCondition_WhenSingleGroupExists verifies that no
+// condition is added when exactly one OperatorGroup already exists (the
+// no-op path).
+func Test_ensureOperatorGroup_NoCondition_WhenSingleGroupExists(t *testing.T) {
+	s := scheme.Scheme
+	_ = olmv1.AddToScheme(s)
+	_ = operatorsv1.AddToScheme(s)
+
+	ogNamespace := "test-namespace-single-og"
+	existingOG := &olmv1.OperatorGroup{ObjectMeta: metav1.ObjectMeta{Name: "og-existing", Namespace: ogNamespace}}
+
+	fakeClient := fake.NewClientBuilder().WithScheme(s).WithObjects(existingOG).Build()
+	reconciler := &MultiClusterHubReconciler{
+		Client: fakeClient,
+		Scheme: s,
+		Log:    clog.Log.WithName("test"),
+	}
+
+	mch := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-mch", Namespace: ogNamespace},
+	}
+	desiredOG := &olmv1.OperatorGroup{ObjectMeta: metav1.ObjectMeta{Name: "desired-og", Namespace: ogNamespace}}
+
+	result, err := reconciler.ensureOperatorGroup(mch, desiredOG)
+	if err != nil {
+		t.Fatalf("ensureOperatorGroup() unexpected error: %v", err)
+	}
+	if result != (ctrl.Result{}) {
+		t.Fatalf("ensureOperatorGroup() expected empty result, got: %+v", result)
+	}
+
+	if condition := GetHubCondition(mch.Status, operatorsv1.Progressing); condition != nil {
+		t.Errorf("expected no Progressing condition, got: %+v", condition)
+	}
+}
+
+// Test_ensureMultiClusterEngineCR_NoMatchError_SetsWaitingCondition verifies
+// that when the MultiClusterEngine CRD isn't yet registered (NoKindMatchError),
+// a Progressing/WaitingForMCEReason condition is recorded instead of only
+// being logged as a WARNING.
+func Test_ensureMultiClusterEngineCR_NoMatchError_SetsWaitingCondition(t *testing.T) {
+	noMatchErr := &apimeta.NoKindMatchError{
+		GroupKind: schema.GroupKind{Group: "multicluster.openshift.io", Kind: "MultiClusterEngine"},
+	}
+
+	noMatchClient := &listErrorClient{
+		Client:  fake.NewClientBuilder().WithScheme(scheme.Scheme).Build(),
+		listErr: noMatchErr,
+	}
+
+	reconciler := &MultiClusterHubReconciler{
+		Client: noMatchClient,
+		Scheme: scheme.Scheme,
+		Log:    clog.Log.WithName("test"),
+	}
+
+	mch := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-mch-nomatch-condition",
+			Namespace: "test-namespace",
+		},
+	}
+
+	_, err := reconciler.ensureMultiClusterEngineCR(context.Background(), mch)
+	if err != nil {
+		t.Fatalf("ensureMultiClusterEngineCR() expected nil error for NoMatchError, got: %v", err)
+	}
+
+	condition := GetHubCondition(mch.Status, operatorsv1.Progressing)
+	if condition == nil {
+		t.Fatal("expected Progressing condition to be set")
+	}
+	if condition.Reason != WaitingForMCEReason {
+		t.Errorf("expected reason %q, got %q", WaitingForMCEReason, condition.Reason)
+	}
+	if condition.Message != "Waiting for MultiClusterEngine CRD to become available" {
+		t.Errorf("unexpected condition message: %q", condition.Message)
+	}
+}
+
+// Test_waitForMCEReady_SetsWaitingCondition_NoMCE verifies that when no
+// managed MultiClusterEngine exists yet, a Progressing/WaitingForMCEReason
+// condition is recorded and the request is requeued.
+func Test_waitForMCEReady_SetsWaitingCondition_NoMCE(t *testing.T) {
+	registerScheme()
+	r := newTestReconciler()
+	mch := resources.EmptyMCH()
+	mch.Name = "test-mch-mce-not-present"
+
+	result, err := r.waitForMCEReady(context.Background(), &mch)
+	if err != nil {
+		t.Fatalf("waitForMCEReady() unexpected error: %v", err)
+	}
+	if !result.Requeue {
+		t.Errorf("expected Requeue=true, got %+v", result)
+	}
+
+	condition := GetHubCondition(mch.Status, operatorsv1.Progressing)
+	if condition == nil {
+		t.Fatal("expected Progressing condition to be set")
+	}
+	if condition.Reason != WaitingForMCEReason {
+		t.Errorf("expected reason %q, got %q", WaitingForMCEReason, condition.Reason)
+	}
+	if condition.Message != "Waiting for MultiClusterEngine to be created" {
+		t.Errorf("unexpected condition message: %q", condition.Message)
+	}
+}
+
+// Test_waitForMCEReady_SetsWaitingCondition_NoVersion verifies that once MCE
+// exists but hasn't reported a CurrentVersion yet, a
+// Progressing/WaitingForMCEReason condition naming the MCE is recorded.
+func Test_waitForMCEReady_SetsWaitingCondition_NoVersion(t *testing.T) {
+	registerScheme()
+
+	mce := resources.EmptyMCE()
+	mce.Name = "test-mce-no-version"
+	mce.Labels = map[string]string{multiclusterengineutils.MCEManagedByLabel: "true"}
+	// Status.CurrentVersion intentionally left empty.
+
+	r := newTestReconciler(&mce)
+	// waitForMCEReady short-circuits past this point under UNIT_TEST=true;
+	// pin it explicitly so this path is exercised deterministically.
+	t.Setenv(utils.UnitTestEnvVar, "false")
+
+	mch := resources.EmptyMCH()
+	mch.Name = "test-mch-mce-no-version"
+
+	result, err := r.waitForMCEReady(context.Background(), &mch)
+	if err != nil {
+		t.Fatalf("waitForMCEReady() unexpected error: %v", err)
+	}
+	if result.RequeueAfter != resyncPeriod {
+		t.Errorf("expected RequeueAfter=%v, got %+v", resyncPeriod, result)
+	}
+
+	condition := GetHubCondition(mch.Status, operatorsv1.Progressing)
+	if condition == nil {
+		t.Fatal("expected Progressing condition to be set")
+	}
+	if condition.Reason != WaitingForMCEReason {
+		t.Errorf("expected reason %q, got %q", WaitingForMCEReason, condition.Reason)
+	}
+	if !strings.Contains(condition.Message, mce.GetName()) {
+		t.Errorf("expected message to mention MCE name %q, got %q", mce.GetName(), condition.Message)
+	}
+}
+
+// Test_waitForMCEReady_SetsWaitingCondition_VersionTooLow verifies that when
+// MCE reports a version that doesn't satisfy the minimum requirement, a
+// Progressing/WaitingForMCEReason condition mentioning the upgrade wait is
+// recorded.
+func Test_waitForMCEReady_SetsWaitingCondition_VersionTooLow(t *testing.T) {
+	registerScheme()
+
+	mce := resources.EmptyMCE()
+	mce.Name = "test-mce-low-version"
+	mce.Labels = map[string]string{multiclusterengineutils.MCEManagedByLabel: "true"}
+	mce.Status.CurrentVersion = "1.0.0"
+
+	r := newTestReconciler(&mce)
+	t.Setenv(utils.UnitTestEnvVar, "false")
+	// Pin the non-community version requirement (5.0.0) explicitly so this
+	// test doesn't depend on utils.IsCommunityMode()'s default.
+	t.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
+
+	mch := resources.EmptyMCH()
+	mch.Name = "test-mch-mce-low-version"
+
+	result, err := r.waitForMCEReady(context.Background(), &mch)
+	if err != nil {
+		t.Fatalf("waitForMCEReady() unexpected error: %v", err)
+	}
+	if result.RequeueAfter != resyncPeriod {
+		t.Errorf("expected RequeueAfter=%v, got %+v", resyncPeriod, result)
+	}
+
+	condition := GetHubCondition(mch.Status, operatorsv1.Progressing)
+	if condition == nil {
+		t.Fatal("expected Progressing condition to be set")
+	}
+	if condition.Reason != WaitingForMCEReason {
+		t.Errorf("expected reason %q, got %q", WaitingForMCEReason, condition.Reason)
+	}
+	if !strings.Contains(condition.Message, "Waiting for MultiClusterEngine upgrade") {
+		t.Errorf("expected message to mention upgrade wait, got %q", condition.Message)
+	}
+}
+
+// Test_waitForMCEReady_NoCondition_WhenReady verifies that no condition is
+// added once MCE reports a version satisfying the minimum requirement.
+func Test_waitForMCEReady_NoCondition_WhenReady(t *testing.T) {
+	registerScheme()
+
+	mce := resources.EmptyMCE()
+	mce.Name = "test-mce-ready"
+	mce.Labels = map[string]string{multiclusterengineutils.MCEManagedByLabel: "true"}
+	mce.Status.CurrentVersion = "5.0.0"
+
+	r := newTestReconciler(&mce)
+	t.Setenv(utils.UnitTestEnvVar, "false")
+	// Pin the non-community version requirement (5.0.0) explicitly so this
+	// test doesn't depend on utils.IsCommunityMode()'s default.
+	t.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
+
+	mch := resources.EmptyMCH()
+	mch.Name = "test-mch-mce-ready"
+
+	result, err := r.waitForMCEReady(context.Background(), &mch)
+	if err != nil {
+		t.Fatalf("waitForMCEReady() unexpected error: %v", err)
+	}
+	if result != (ctrl.Result{}) {
+		t.Fatalf("expected empty result, got: %+v", result)
+	}
+
+	if condition := GetHubCondition(mch.Status, operatorsv1.Progressing); condition != nil {
+		t.Errorf("expected no Progressing condition, got: %+v", condition)
+	}
 }

@@ -314,6 +314,11 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 		return ctrl.Result{}, err
 	}
 
+	// CRD is available — clear any stale "waiting for CRD" condition
+	if cond := GetHubCondition(m.Status, operatorv1.Progressing); cond != nil && cond.Reason == WaitingForMCEReason {
+		RemoveHubCondition(&m.Status, operatorv1.Progressing)
+	}
+
 	if mce == nil {
 		// Determine target namespace from OLM resource if it exists
 		targetNS := multiclusterengine.OperandNamespace() // default
@@ -838,6 +843,12 @@ func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context, m *oper
 		SetHubCondition(&m.Status, *condition)
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
+
+	// MCE is ready — clear any stale WaitingForMCE condition
+	if cond := GetHubCondition(m.Status, operatorv1.Progressing); cond != nil && cond.Reason == WaitingForMCEReason {
+		RemoveHubCondition(&m.Status, operatorv1.Progressing)
+	}
+
 	return ctrl.Result{}, nil
 }
 

@@ -221,6 +221,13 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	// indicated by the deletion timestamp being set.
 	isHubMarkedToBeDeleted := multiClusterHub.GetDeletionTimestamp() != nil
 	if isHubMarkedToBeDeleted {
+		// Snapshot the object BEFORE mutating its status below. This is used to compute a
+		// merge patch if finalization doesn't complete this reconcile. Capturing it after
+		// setting the Terminating condition would make the condition's addition invisible to
+		// the diff (both "before" and "after" would already have it), so the patch would never
+		// actually persist it to the API server.
+		beforeFinalization := multiClusterHub.DeepCopy()
+
 		terminating := NewHubCondition(operatorv1.Terminating, metav1.ConditionTrue, DeleteTimestampReason, "Multiclusterhub is being cleaned up.")
 		SetHubCondition(&multiClusterHub.Status, *terminating)
 
@@ -228,7 +235,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			// Run finalization logic. If the finalization
 			// logic fails, don't remove the finalizer so
 			// that we can retry during the next reconciliation.
-			beforeFinalization := multiClusterHub.DeepCopy()
 			if err := r.finalizeHub(r.Log, multiClusterHub, ocpConsole, stsEnabled); err != nil {
 				r.Log.Info("Hub finalization incomplete, will retry",
 					"reason", err.Error(),

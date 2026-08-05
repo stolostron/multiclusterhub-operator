@@ -61,6 +61,9 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 
 		if result != (ctrl.Result{}) {
 			reqLogger.Info("Component removal requires requeue", "component", c)
+			condition := NewHubCondition(operatorv1.Terminating, metav1.ConditionTrue, DeleteTimestampReason,
+				fmt.Sprintf("Waiting for component %s to terminate", c))
+			SetHubCondition(&m.Status, *condition)
 			return errors.NewBadRequest(fmt.Sprintf("Requeue needed for component: %v", c))
 		}
 	}

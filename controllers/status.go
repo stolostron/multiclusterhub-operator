@@ -87,6 +87,9 @@ const (
 	// WaitingForMCEReason is added when the hub is waiting for MultiClusterEngine to be ready
 	WaitingForMCEReason = "WaitingForMCE"
 
+	// WaitingForNamespaceReason is added when the hub is waiting for a namespace to be created
+	WaitingForNamespaceReason = "WaitingForNamespace"
+
 	// ComponentNotReadyReason is added when a prerequisite component is not yet available
 	ComponentNotReadyReason = "ComponentNotReady"
 )
@@ -155,6 +158,14 @@ func (r *MultiClusterHubReconciler) syncHubStatus(ctx context.Context, m *operat
 			return reconcile.Result{RequeueAfter: resyncPeriod}, nil
 		}
 
+		if errors.IsNotFound(err) {
+			// The object was deleted (e.g. its last finalizer was just removed by this same
+			// reconcile, which triggers immediate garbage collection). There's nothing left to
+			// update, and this isn't a real error.
+			r.Log.Info("Skipping status update, MultiClusterHub no longer exists", "name", m.Name, "namespace", m.Namespace)
+			return reconcile.Result{}, nil
+		}
+
 		r.Log.Error(err, fmt.Sprintf("Failed to update %s/%s status ", m.Namespace, m.Name))
 		return reconcile.Result{}, err
 	}
@@ -221,8 +232,11 @@ func (r *MultiClusterHubReconciler) calculateStatus(ctx context.Context, hub *op
 			SetHubCondition(&status, *progressing)
 		}
 
-		// only add unavailable status if complete status already present
-		if HubConditionPresent(status, operatorsv1.Complete) {
+		// Always surface a Complete condition while not yet successful (and not paused), not
+		// just when one already existed. This gives consumers a stable, always-present
+		// Complete condition from the first reconcile (False while installing/updating, True
+		// once done) instead of an absence they have to interpret themselves.
+		if !utils.IsPaused(hub) {
 			unavailable := NewHubCondition(operatorsv1.Complete, metav1.ConditionFalse, ComponentsUnavailableReason, "Not all hub components ready.")
 			SetHubCondition(&status, *unavailable)
 		}

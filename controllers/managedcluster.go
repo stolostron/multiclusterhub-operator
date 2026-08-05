@@ -71,20 +71,29 @@ func (r *MultiClusterHubReconciler) ensureKlusterletAddonConfig(m *operatorsv1.M
 	err := r.Client.Get(ctx, types.NamespacedName{Name: m.Spec.LocalClusterName}, ns)
 	if err != nil && errors.IsNotFound(err) {
 		r.Log.Info("Waiting for namespace to be created", "namespace", m.Spec.LocalClusterName)
-		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, WaitingForMCEReason,
+		condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, WaitingForNamespaceReason,
 			fmt.Sprintf("Waiting for ManagedCluster namespace %s to be created", m.Spec.LocalClusterName))
 		SetHubCondition(&m.Status, *condition)
+
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	} else if err != nil {
 		r.Log.Error(err, "Failed to check for ManagedCluster namespace", "namespace", m.Spec.LocalClusterName)
 		return ctrl.Result{}, err
 	}
 
+	// Namespace exists — clear any stale "waiting for namespace" condition
+	if cond := GetHubCondition(m.Status, operatorsv1.Progressing); cond != nil && cond.Reason == WaitingForNamespaceReason {
+		RemoveHubCondition(&m.Status, operatorsv1.Progressing)
+	}
+
+	// Ensure the KlusterletAddonConfig resource exists in the ManagedCluster namespace
+	// and reflects the desired state, creating or updating it as needed.
 	klusterletaddonconfig := getKlusterletAddonConfig(m)
 	nsn := types.NamespacedName{
 		Name:      m.Spec.LocalClusterName,
 		Namespace: m.Spec.LocalClusterName,
 	}
+
 	err = r.Client.Get(ctx, nsn, klusterletaddonconfig)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -96,6 +105,7 @@ func (r *MultiClusterHubReconciler) ensureKlusterletAddonConfig(m *operatorsv1.M
 				r.Log.Error(err, "Failed to create klusterletaddonconfig resource")
 				return ctrl.Result{}, err
 			}
+
 			// KlusterletAddonConfig was successful
 			r.Log.Info("Created a new KlusterletAddonConfig")
 			return ctrl.Result{}, nil
