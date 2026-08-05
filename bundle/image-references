@@ -7,22 +7,22 @@ spec:
     from:
       kind: DockerImage
       name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-cli-rhel9:latest
-  - name: must-gather-rhel9
+  - name: acm-must-gather-rhel9
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/must-gather-rhel9:latest
+      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-must-gather-rhel9:latest
   - name: cert-policy-controller-rhel9
     from:
       kind: DockerImage
       name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/cert-policy-controller-rhel9:latest
-  - name: cluster-backup-controller-rhel9
+  - name: cluster-backup-rhel9-operator
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/cluster-backup-controller-rhel9:latest
-  - name: cluster-permission-rhel9
+      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/cluster-backup-rhel9-operator:latest
+  - name: acm-cluster-permission-rhel9
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/cluster-permission-rhel9:latest
+      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-cluster-permission-rhel9:latest
   - name: config-policy-controller-rhel9
     from:
       kind: DockerImage
@@ -31,26 +31,26 @@ spec:
     from:
       kind: DockerImage
       name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/console-rhel9:latest
-  - name: endpoint-monitoring-operator-rhel9
+  - name: endpoint-monitoring-rhel9-operator
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/endpoint-monitoring-operator-rhel9:latest
-  - name: governance-policy-addon-controller-rhel9
+      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/endpoint-monitoring-rhel9-operator:latest
+  - name: acm-governance-policy-addon-controller-rhel9
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/governance-policy-addon-controller-rhel9:latest
-  - name: governance-policy-framework-addon-rhel9
+      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-governance-policy-addon-controller-rhel9:latest
+  - name: acm-governance-policy-framework-addon-rhel9
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/governance-policy-framework-addon-rhel9:latest
+      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-governance-policy-framework-addon-rhel9:latest
   - name: governance-policy-propagator-rhel9
     from:
       kind: DockerImage
       name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/governance-policy-propagator-rhel9:latest
-  - name: grafana-rhel9
+  - name: acm-grafana-rhel9
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/grafana-rhel9:latest
+      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-grafana-rhel9:latest
   - name: grafana-dashboard-loader-rhel9
     from:
       kind: DockerImage
@@ -91,18 +91,18 @@ spec:
     from:
       kind: DockerImage
       name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicloud-integrations-rhel9:latest
-  - name: multiclusterhub-operator
+  - name: multiclusterhub-rhel9
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multiclusterhub-operator:latest
-  - name: multicluster-observability-addon-rhel9
+      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multiclusterhub-rhel9:latest
+  - name: acm-multicluster-observability-addon-rhel9
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-observability-addon-rhel9:latest
-  - name: multicluster-observability-operator-rhel9
+      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-multicluster-observability-addon-rhel9:latest
+  - name: multicluster-observability-rhel9-operator
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-observability-operator-rhel9:latest
+      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-observability-rhel9-operator:latest
   - name: multicluster-operators-application-rhel9
     from:
       kind: DockerImage
@@ -131,10 +131,10 @@ spec:
     from:
       kind: DockerImage
       name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/observatorium-rhel9:latest
-  - name: observatorium-operator-rhel9
+  - name: observatorium-rhel9-operator
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/observatorium-operator-rhel9:latest
+      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/observatorium-rhel9-operator:latest
   - name: prometheus-rhel9
     from:
       kind: DockerImage
@@ -143,14 +143,14 @@ spec:
     from:
       kind: DockerImage
       name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/prometheus-alertmanager-rhel9:latest
-  - name: prometheus-config-reloader-rhel9
+  - name: acm-prometheus-config-reloader-rhel9
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/prometheus-config-reloader-rhel9:latest
-  - name: prometheus-operator-rhel9
+      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-prometheus-config-reloader-rhel9:latest
+  - name: acm-prometheus-rhel9
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/prometheus-operator-rhel9:latest
+      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-prometheus-rhel9:latest
   - name: rbac-query-proxy-rhel9
     from:
       kind: DockerImage
@@ -159,22 +159,22 @@ spec:
     from:
       kind: DockerImage
       name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/search-collector-rhel9:latest
-  - name: search-indexer-rhel9
+  - name: acm-search-indexer-rhel9
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/search-indexer-rhel9:latest
-  - name: search-v2-api-rhel9
+      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-search-indexer-rhel9:latest
+  - name: acm-search-v2-api-rhel9
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/search-v2-api-rhel9:latest
-  - name: search-v2-operator-rhel9
+      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-search-v2-api-rhel9:latest
+  - name: acm-search-v2-rhel9
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/search-v2-operator-rhel9:latest
-  - name: siteconfig-rhel9
+      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-search-v2-rhel9:latest
+  - name: acm-siteconfig-rhel9
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/siteconfig-rhel9:latest
+      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-siteconfig-rhel9:latest
   - name: submariner-addon-rhel9
     from:
       kind: DockerImage
@@ -187,10 +187,10 @@ spec:
     from:
       kind: DockerImage
       name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/thanos-receive-controller-rhel9:latest
-  - name: volsync-addon-controller-rhel9
+  - name: acm-volsync-addon-controller-rhel9
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/volsync-addon-controller-rhel9:latest
+      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-volsync-addon-controller-rhel9:latest
   - name: configmap_reloader
     from:
       kind: DockerImage
