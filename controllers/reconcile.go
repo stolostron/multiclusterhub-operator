@@ -235,7 +235,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			// Run finalization logic. If the finalization
 			// logic fails, don't remove the finalizer so
 			// that we can retry during the next reconciliation.
-			if err := r.finalizeHub(r.Log, multiClusterHub, ocpConsole, stsEnabled); err != nil {
+			if err := r.finalizeHub(ctx, r.Log, multiClusterHub, ocpConsole, stsEnabled); err != nil {
 				r.Log.Info("Hub finalization incomplete, will retry",
 					"reason", err.Error(),
 					"requeueAfter", resyncPeriod.String())

@@ -116,11 +116,11 @@ func Test_cleanupMultiClusterEngine(t *testing.T) {
 			}
 
 			// If MCE exists the first time it will return an error.
-			if err := recon.cleanupMultiClusterEngine(log, &tt.mch); err == nil {
+			if err := recon.cleanupMultiClusterEngine(context.TODO(), log, &tt.mch); err == nil {
 				t.Errorf("failed to cleanup MultiClusterEngine: %v", err)
 			}
 
-			if err := recon.cleanupMultiClusterEngine(log, &tt.mch); err != nil {
+			if err := recon.cleanupMultiClusterEngine(context.TODO(), log, &tt.mch); err != nil {
 				t.Errorf("failed to cleanup MultiClusterEngine: %v", err)
 			}
 		})
@@ -152,13 +152,13 @@ func Test_cleanupMultiClusterEngine_OLMv1(t *testing.T) {
 	recon.OLMVersion = "v1"
 
 	// First call should return error (MCE still exists)
-	err := recon.cleanupMultiClusterEngine(log, &mch)
+	err := recon.cleanupMultiClusterEngine(context.TODO(), log, &mch)
 	if err == nil {
 		t.Error("expected error on first cleanup call, got nil")
 	}
 
 	// Second call should succeed (MCE deleted)
-	err = recon.cleanupMultiClusterEngine(log, &mch)
+	err = recon.cleanupMultiClusterEngine(context.TODO(), log, &mch)
 	if err != nil {
 		t.Errorf("expected no error on second cleanup call, got: %v", err)
 	}
@@ -192,13 +192,13 @@ func Test_cleanupMultiClusterEngine_OLMv0(t *testing.T) {
 	recon.OLMVersion = "v0"
 
 	// First call should return error (MCE still exists)
-	err := recon.cleanupMultiClusterEngine(log, &mch)
+	err := recon.cleanupMultiClusterEngine(context.TODO(), log, &mch)
 	if err == nil {
 		t.Error("expected error on first cleanup call, got nil")
 	}
 
 	// Second call should succeed (MCE deleted)
-	err = recon.cleanupMultiClusterEngine(log, &mch)
+	err = recon.cleanupMultiClusterEngine(context.TODO(), log, &mch)
 	if err != nil {
 		t.Errorf("expected no error on second cleanup call, got: %v", err)
 	}
@@ -235,7 +235,7 @@ func Test_cleanupMultiClusterEngine_SetsTerminatingCondition_MCE(t *testing.T) {
 
 	// First call finds the MCE still present, deletes it, and should report
 	// that it is waiting for termination.
-	err := r.cleanupMultiClusterEngine(log, &mch)
+	err := r.cleanupMultiClusterEngine(context.TODO(), log, &mch)
 	if err == nil {
 		t.Fatal("expected error while MCE is still terminating, got nil")
 	}
@@ -274,7 +274,7 @@ func Test_cleanupMultiClusterEngine_SetsTerminatingCondition_Namespace(t *testin
 	t.Setenv(utils.UnitTestEnvVar, "false")
 	r.OLMVersion = "" // skip OLM-specific cleanup, go straight to namespace check
 
-	err := r.cleanupMultiClusterEngine(log, &mch)
+	err := r.cleanupMultiClusterEngine(context.TODO(), log, &mch)
 	if err == nil {
 		t.Fatal("expected error while MCE namespace is still terminating, got nil")
 	}
@@ -313,7 +313,7 @@ func Test_cleanupMultiClusterEngine_NoNamespaceCondition_WhenSharedNamespace(t *
 	t.Setenv(utils.UnitTestEnvVar, "false")
 	r.OLMVersion = ""
 
-	err := r.cleanupMultiClusterEngine(log, &mch)
+	err := r.cleanupMultiClusterEngine(context.TODO(), log, &mch)
 	if err != nil {
 		t.Fatalf("expected no error when MCH shares namespace with MCE, got: %v", err)
 	}
@@ -342,7 +342,7 @@ func Test_cleanupMultiClusterEngine_OLMv1_SetsTerminatingCondition_ClusterExtens
 	t.Setenv(utils.UnitTestEnvVar, "false")
 	r.OLMVersion = "v1"
 
-	err := r.cleanupMultiClusterEngine(log, &mch)
+	err := r.cleanupMultiClusterEngine(context.TODO(), log, &mch)
 	if err == nil {
 		t.Fatal("expected error while ClusterExtension is still terminating, got nil")
 	}
@@ -383,7 +383,7 @@ func Test_cleanupMultiClusterEngine_OLMv0_SetsTerminatingCondition_CSV(t *testin
 	t.Setenv(utils.UnitTestEnvVar, "false")
 	r.OLMVersion = "v0"
 
-	err := r.cleanupMultiClusterEngine(log, &mch)
+	err := r.cleanupMultiClusterEngine(context.TODO(), log, &mch)
 	if err == nil {
 		t.Fatal("expected error while CSV is still terminating, got nil")
 	}
@@ -419,7 +419,7 @@ func Test_cleanupMultiClusterEngine_OLMv0_SetsTerminatingCondition_Subscription(
 	t.Setenv(utils.UnitTestEnvVar, "false")
 	r.OLMVersion = "v0"
 
-	err := r.cleanupMultiClusterEngine(log, &mch)
+	err := r.cleanupMultiClusterEngine(context.TODO(), log, &mch)
 	if err == nil {
 		t.Fatal("expected error while Subscription is still terminating, got nil")
 	}
@@ -445,7 +445,7 @@ func Test_cleanupNamespaces_SetsTerminatingCondition(t *testing.T) {
 	mch := resources.EmptyMCH()
 	mch.Name = "test-mch-backup-ns"
 
-	err := r.cleanupNamespaces(log, &mch)
+	err := r.cleanupNamespaces(context.TODO(), log, &mch)
 	if err == nil {
 		t.Fatal("expected error while backup namespace is still terminating, got nil")
 	}
@@ -490,7 +490,7 @@ func Test_cleanupNamespaces_SetsTerminatingCondition_StuckMessage(t *testing.T) 
 	mch := resources.EmptyMCH()
 	mch.Name = "test-mch-backup-ns-stuck"
 
-	err := r.cleanupNamespaces(log, &mch)
+	err := r.cleanupNamespaces(context.TODO(), log, &mch)
 	if err == nil {
 		t.Fatal("expected error while backup namespace is stuck terminating, got nil")
 	}
@@ -515,7 +515,7 @@ func Test_cleanupNamespaces_NoCondition_WhenNamespaceAbsent(t *testing.T) {
 	mch := resources.EmptyMCH()
 	mch.Name = "test-mch-backup-ns-absent"
 
-	if err := r.cleanupNamespaces(log, &mch); err != nil {
+	if err := r.cleanupNamespaces(context.TODO(), log, &mch); err != nil {
 		t.Fatalf("expected no error when backup namespace is absent, got: %v", err)
 	}
 
@@ -543,7 +543,7 @@ func Test_cleanupNamespaces_NoError_WhenDeleteRacesToNotFound(t *testing.T) {
 	mch := resources.EmptyMCH()
 	mch.Name = "test-mch-backup-ns-delete-race"
 
-	if err := r.cleanupNamespaces(log, &mch); err != nil {
+	if err := r.cleanupNamespaces(context.TODO(), log, &mch); err != nil {
 		t.Fatalf("expected no error when Delete races to NotFound, got: %v", err)
 	}
 
@@ -580,7 +580,7 @@ func Test_cleanupAppSubscriptions_SetsProgressingCondition(t *testing.T) {
 	appSub := mchLabeledAppSubscription("test-appsub", mch.GetNamespace(), mch.GetName(), mch.GetNamespace())
 	r := newTestReconciler(appSub)
 
-	err := r.cleanupAppSubscriptions(log, &mch)
+	err := r.cleanupAppSubscriptions(context.TODO(), log, &mch)
 	if err == nil {
 		t.Fatal("expected error while waiting for helmreleases to terminate, got nil")
 	}
@@ -619,7 +619,7 @@ func Test_cleanupAppSubscriptions_NoCondition_WhenNoneOwned(t *testing.T) {
 	mch := resources.EmptyMCH()
 	mch.Name = "test-mch-appsub-none"
 
-	if err := r.cleanupAppSubscriptions(log, &mch); err != nil {
+	if err := r.cleanupAppSubscriptions(context.TODO(), log, &mch); err != nil {
 		t.Fatalf("expected no error when no app subscriptions exist, got: %v", err)
 	}
 
@@ -655,7 +655,7 @@ func Test_finalizeHub_SetsTerminatingCondition_ComponentName(t *testing.T) {
 
 	r := newTestReconciler(ihc)
 
-	err := r.finalizeHub(log, &mch, false, false)
+	err := r.finalizeHub(context.TODO(), log, &mch, false, false)
 	if err == nil {
 		t.Fatal("expected error while component is still terminating, got nil")
 	}

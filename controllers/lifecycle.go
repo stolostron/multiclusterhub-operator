@@ -39,9 +39,9 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operatorv1.MultiClusterHub, ocpConsole,
+func (r *MultiClusterHubReconciler) finalizeHub(ctx context.Context, reqLogger logr.Logger, m *operatorv1.MultiClusterHub, ocpConsole,
 	isSTSEnabled bool) error {
-	if err := r.cleanupAppSubscriptions(reqLogger, m); err != nil {
+	if err := r.cleanupAppSubscriptions(ctx, reqLogger, m); err != nil {
 		return err
 	}
 
@@ -53,7 +53,7 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 			continue
 		}
 
-		result, err := r.ensureNoComponent(context.TODO(), m, c, r.CacheSpec, isSTSEnabled)
+		result, err := r.ensureNoComponent(ctx, m, c, r.CacheSpec, isSTSEnabled)
 		if err != nil {
 			reqLogger.Info("Component removal incomplete", "component", c, "reason", err.Error())
 			return err
@@ -70,7 +70,7 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 
 	type cleanupStep struct {
 		name string
-		fn   func(logr.Logger, *operatorv1.MultiClusterHub) error
+		fn   func(context.Context, logr.Logger, *operatorv1.MultiClusterHub) error
 	}
 
 	steps := []cleanupStep{
@@ -83,7 +83,7 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 	}
 
 	for _, step := range steps {
-		if err := step.fn(reqLogger, m); err != nil {
+		if err := step.fn(ctx, reqLogger, m); err != nil {
 			reqLogger.Info("Finalization step incomplete", "step", step.name, "reason", err.Error())
 			return err
 		}

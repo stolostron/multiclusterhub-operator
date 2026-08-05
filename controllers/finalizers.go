@@ -30,8 +30,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func (r *MultiClusterHubReconciler) cleanupClusterRoles(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
-	err := r.Client.DeleteAllOf(context.TODO(), &rbacv1.ClusterRole{}, client.MatchingLabels{
+func (r *MultiClusterHubReconciler) cleanupClusterRoles(ctx context.Context, reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+	err := r.Client.DeleteAllOf(ctx, &rbacv1.ClusterRole{}, client.MatchingLabels{
 		"installer.name":      m.GetName(),
 		"installer.namespace": m.GetNamespace(),
 	})
@@ -49,8 +49,8 @@ func (r *MultiClusterHubReconciler) cleanupClusterRoles(reqLogger logr.Logger, m
 	return nil
 }
 
-func (r *MultiClusterHubReconciler) cleanupClusterRoleBindings(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
-	err := r.Client.DeleteAllOf(context.TODO(), &rbacv1.ClusterRoleBinding{}, client.MatchingLabels{
+func (r *MultiClusterHubReconciler) cleanupClusterRoleBindings(ctx context.Context, reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+	err := r.Client.DeleteAllOf(ctx, &rbacv1.ClusterRoleBinding{}, client.MatchingLabels{
 		"installer.name":      m.GetName(),
 		"installer.namespace": m.GetNamespace(),
 	})
@@ -67,9 +67,7 @@ func (r *MultiClusterHubReconciler) cleanupClusterRoleBindings(reqLogger logr.Lo
 	return nil
 }
 
-func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m *operatorsv1.MultiClusterHub) error {
-	ctx := context.Background()
-
+func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(ctx context.Context, log logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	mce, err := multiclusterengineutils.GetManagedMCE(ctx, r.Client)
 	if err != nil && !apimeta.IsNoMatchError(err) {
 		return err
@@ -213,8 +211,7 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 	log.Info("MultiClusterEngine finalized")
 	return nil
 }
-func (r *MultiClusterHubReconciler) cleanupNamespaces(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
-	ctx := context.Background()
+func (r *MultiClusterHubReconciler) cleanupNamespaces(ctx context.Context, reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	clusterBackupNamespace := &corev1.Namespace{}
 	err := r.Client.Get(ctx, types.NamespacedName{Name: utils.ClusterSubscriptionNamespace}, clusterBackupNamespace)
 	if err == nil {
@@ -250,7 +247,7 @@ func (r *MultiClusterHubReconciler) cleanupNamespaces(reqLogger logr.Logger, m *
 
 	return nil
 }
-func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(ctx context.Context, reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	installerLabels := client.MatchingLabels{
 		"installer.name":      m.GetName(),
 		"installer.namespace": m.GetNamespace(),
@@ -270,13 +267,13 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 		Version: "v1",
 	})
 
-	err := r.Client.List(context.TODO(), appSubList, installerLabels)
+	err := r.Client.List(ctx, appSubList, installerLabels)
 	if err != nil && !errors.IsNotFound(err) {
 		reqLogger.Error(err, "Error while listing appsubs")
 		return err
 	}
 
-	err = r.Client.List(context.TODO(), helmReleaseList, installerLabels)
+	err = r.Client.List(ctx, helmReleaseList, installerLabels)
 	if err != nil && !errors.IsNotFound(err) {
 		reqLogger.Error(err, "Error while listing helmreleases")
 		return err
@@ -294,7 +291,7 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 				Version: "v1",
 			})
 
-			err = r.Client.Get(context.TODO(), types.NamespacedName{
+			err = r.Client.Get(ctx, types.NamespacedName{
 				Name:      helmReleaseName,
 				Namespace: appsub.GetNamespace(),
 			}, helmRelease)
@@ -308,7 +305,7 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 			}
 
 			utils.AddInstallerLabel(helmRelease, m.GetName(), m.GetNamespace())
-			err = r.Client.Update(context.TODO(), helmRelease)
+			err = r.Client.Update(ctx, helmRelease)
 			if err != nil {
 				reqLogger.Error(err, fmt.Sprintf("Error updating helmrelease: %s", helmReleaseName))
 				return err
@@ -319,7 +316,7 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 	if len(appSubList.Items) > 0 {
 		reqLogger.Info("Terminating App Subscriptions")
 		for i, appsub := range appSubList.Items {
-			err = r.Client.Delete(context.TODO(), &appSubList.Items[i])
+			err = r.Client.Delete(ctx, &appSubList.Items[i])
 			if err != nil {
 				reqLogger.Error(err, fmt.Sprintf("Error terminating sub: %s", appsub.GetName()))
 				return err
@@ -338,9 +335,7 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 	return nil
 }
 
-func (r *MultiClusterHubReconciler) orphanOwnedMultiClusterEngine(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
-	ctx := context.Background()
-
+func (r *MultiClusterHubReconciler) orphanOwnedMultiClusterEngine(ctx context.Context, reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	mce, err := multiclusterengineutils.GetManagedMCE(ctx, r.Client)
 	if mce == nil {
 		// MCE does not exist
