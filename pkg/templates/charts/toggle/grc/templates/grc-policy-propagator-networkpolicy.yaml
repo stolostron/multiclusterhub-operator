@@ -1,0 +1,69 @@
+{{- if .Values.global.networkPolicies.enabled }}
+# Copyright Contributors to the Open Cluster Management project
+#
+# NetworkPolicy for governance-policy-propagator pods in the
+# open-cluster-management namespace.
+#
+# Ingress:
+#   - Metrics collection on port 8383 from monitoring namespace (Prometheus)
+#   - Webhook validation on port 9443 (from Kubernetes API server)
+#
+# Egress:
+#   - DNS for name resolution (port 53 and 5353)
+#   - Kubernetes API server communication (port 443 and 6443)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: grc-policy-propagator-network-policy
+  labels:
+    app: governance-policy-propagator
+    component: propagator
+    app.kubernetes.io/name: governance-policy-propagator
+spec:
+  podSelector:
+    matchLabels:
+      name: governance-policy-propagator
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Metrics ingress from monitoring namespace on port 8383
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          network.openshift.io/policy-group: monitoring
+    ports:
+    - protocol: TCP
+      port: 8383
+  # Webhook ingress from Kubernetes API server on port 9443
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          policy-group.network.openshift.io/host-network: ""
+    ports:
+    - protocol: TCP
+      port: 9443
+  egress:
+  # DNS egress for all pods (required for name resolution)
+  # Port 5353 is needed because OVN-Kubernetes evaluates NetworkPolicy post-DNAT
+  # and CoreDNS pods listen on 5353 while the DNS service exposes port 53
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 5353
+    - protocol: TCP
+      port: 5353
+  # Kubernetes API server egress
+  - ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 6443
+{{- end }}

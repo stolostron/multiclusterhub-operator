@@ -94,6 +94,8 @@ spec:
           value: {{ .Values.global.imageOverrides.config_policy_controller }}
         - name: GOVERNANCE_POLICY_FRAMEWORK_ADDON_IMAGE
           value: {{ .Values.global.imageOverrides.governance_policy_framework_addon }}
+        - name: NETWORK_POLICIES_ENABLED
+          value: "{{ .Values.global.networkPolicies.enabled }}"
         image: {{ .Values.global.imageOverrides.governance_policy_addon_controller }}
         imagePullPolicy: "{{ .Values.global.pullPolicy }}"
         name: manager
