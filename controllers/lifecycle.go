@@ -54,16 +54,19 @@ func (r *MultiClusterHubReconciler) finalizeHub(ctx context.Context, reqLogger l
 		}
 
 		result, err := r.ensureNoComponent(ctx, m, c, r.CacheSpec, isSTSEnabled)
-		if err != nil {
-			reqLogger.Info("Component removal incomplete", "component", c, "reason", err.Error())
-			return err
-		}
-
-		if result != (ctrl.Result{}) {
-			reqLogger.Info("Component removal requires requeue", "component", c)
-			condition := NewHubCondition(operatorv1.Terminating, metav1.ConditionTrue, DeleteTimestampReason,
-				fmt.Sprintf("Waiting for component %s to terminate", c))
+		if err != nil || result != (ctrl.Result{}) {
+			msg := fmt.Sprintf("Waiting for component %s to terminate", c)
+			if err != nil {
+				msg = fmt.Sprintf("%s: %s", msg, err.Error())
+			}
+			condition := NewHubCondition(operatorv1.Terminating, metav1.ConditionTrue, DeleteTimestampReason, msg)
 			SetHubCondition(&m.Status, *condition)
+
+			if err != nil {
+				reqLogger.Info("Component removal incomplete", "component", c, "reason", err.Error())
+				return err
+			}
+			reqLogger.Info("Component removal requires requeue", "component", c)
 			return errors.NewBadRequest(fmt.Sprintf("Requeue needed for component: %v", c))
 		}
 	}

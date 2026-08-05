@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -669,5 +670,46 @@ func Test_finalizeHub_SetsTerminatingCondition_ComponentName(t *testing.T) {
 	}
 	if !strings.Contains(condition.Message, operatorv1.Appsub) {
 		t.Errorf("expected message to mention component %q, got %q", operatorv1.Appsub, condition.Message)
+	}
+}
+
+// Test_finalizeHub_SetsTerminatingCondition_ComponentError verifies that when
+// a component's teardown fails with a genuine error (not just "still
+// terminating, needs requeue"), finalizeHub also records a Terminating
+// condition naming the component and the underlying error, matching its
+// sibling "needs requeue" branch instead of leaving this path with no
+// condition at all.
+func Test_finalizeHub_SetsTerminatingCondition_ComponentError(t *testing.T) {
+	registerScheme()
+
+	mch := resources.EmptyMCH()
+	mch.Name = "test-mch-finalize-component-error"
+
+	r := newTestReconcilerWithInterceptor(interceptor.Funcs{
+		Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+			if _, ok := obj.(*operatorv1.InternalHubComponent); ok && key.Name == operatorv1.Appsub {
+				return apierrors.NewInternalError(fmt.Errorf("simulated get failure"))
+			}
+			return c.Get(ctx, key, obj, opts...)
+		},
+	})
+
+	err := r.finalizeHub(context.TODO(), log, &mch, false, false)
+	if err == nil {
+		t.Fatal("expected error while component removal fails, got nil")
+	}
+
+	condition := GetHubCondition(mch.Status, operatorv1.Terminating)
+	if condition == nil {
+		t.Fatal("expected Terminating condition to be set")
+	}
+	if condition.Reason != DeleteTimestampReason {
+		t.Errorf("expected reason %q, got %q", DeleteTimestampReason, condition.Reason)
+	}
+	if !strings.Contains(condition.Message, operatorv1.Appsub) {
+		t.Errorf("expected message to mention component %q, got %q", operatorv1.Appsub, condition.Message)
+	}
+	if !strings.Contains(condition.Message, "simulated get failure") {
+		t.Errorf("expected message to include the underlying error detail, got %q", condition.Message)
 	}
 }

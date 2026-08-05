@@ -121,6 +121,17 @@ func (r *MultiClusterHubReconciler) ensureNoNamespace(m *operatorv1.MultiCluster
 	}
 }
 
+// resourceIdentifier formats a kind/namespace/name into a short, human-readable
+// identifier for use in HubCondition messages, e.g. "ServiceAccount
+// open-cluster-management/console-chart" or "ClusterRoleBinding
+// open-cluster-management:console:clusterrolebinding" for cluster-scoped resources.
+func resourceIdentifier(kind, namespace, name string) string {
+	if namespace != "" {
+		return fmt.Sprintf("%s %s/%s", kind, namespace, name)
+	}
+	return fmt.Sprintf("%s %s", kind, name)
+}
+
 func (r *MultiClusterHubReconciler) ensureUnstructuredResource(m *operatorv1.MultiClusterHub, u *unstructured.Unstructured) (ctrl.Result, error) {
 	obLog := r.Log.WithValues("Namespace", u.GetNamespace(), "Kind", u.GetKind(), "Name", u.GetName())
 
@@ -142,7 +153,8 @@ func (r *MultiClusterHubReconciler) ensureUnstructuredResource(m *operatorv1.Mul
 		}
 		// Creation was successful
 		obLog.Info("Created new resource")
-		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+		msg := fmt.Sprintf("Created new resource: %s", resourceIdentifier(u.GetKind(), u.GetNamespace(), u.GetName()))
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, msg)
 		SetHubCondition(&m.Status, *condition)
 		return ctrl.Result{}, nil
 
@@ -160,20 +172,25 @@ func (r *MultiClusterHubReconciler) ensureNamespace(m *operatorv1.MultiClusterHu
 	ctx := context.Background()
 
 	existingNS := &corev1.Namespace{}
+	created := false
 	if err := r.Client.Get(ctx, types.NamespacedName{Name: ns.GetName()}, existingNS); err != nil {
 		if errors.IsNotFound(err) {
 			if err = r.Client.Create(ctx, ns); err != nil {
 				r.Log.Info(fmt.Sprintf("Error creating namespace: %s", err.Error()))
 				return ctrl.Result{Requeue: true}, nil
 			}
+			created = true
 		} else {
 			r.Log.Info(fmt.Sprintf("error locating namespace: %s. Error: %s", ns.GetName(), err.Error()))
 			return ctrl.Result{Requeue: true}, nil
 		}
 	}
 
-	condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
-	SetHubCondition(&m.Status, *condition)
+	if created {
+		msg := fmt.Sprintf("Created new resource: %s", resourceIdentifier("Namespace", "", ns.GetName()))
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, msg)
+		SetHubCondition(&m.Status, *condition)
+	}
 
 	if existingNS.Status.Phase == corev1.NamespaceActive {
 		return ctrl.Result{}, nil
@@ -216,7 +233,8 @@ func (r *MultiClusterHubReconciler) ensureOperatorGroup(m *operatorv1.MultiClust
 		r.Log.Info(fmt.Sprintf("Error: %s", err.Error()))
 		return ctrl.Result{Requeue: true}, nil
 	}
-	condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+	msg := fmt.Sprintf("Created new resource: %s", resourceIdentifier("OperatorGroup", og.GetNamespace(), og.GetName()))
+	condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, msg)
 	SetHubCondition(&m.Status, *condition)
 
 	existingOperatorGroup := &olmv1.OperatorGroup{}
@@ -262,7 +280,8 @@ func (r *MultiClusterHubReconciler) ensureServiceAccount(m *operatorv1.MultiClus
 		return ctrl.Result{Requeue: true}, nil
 	}
 
-	condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+	msg := fmt.Sprintf("Created new resource: %s", resourceIdentifier("ServiceAccount", sa.GetNamespace(), sa.GetName()))
+	condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, msg)
 	SetHubCondition(&m.Status, *condition)
 
 	return ctrl.Result{}, nil
@@ -298,7 +317,8 @@ func (r *MultiClusterHubReconciler) ensureClusterRoleBinding(m *operatorv1.Multi
 		return ctrl.Result{Requeue: true}, nil
 	}
 
-	condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+	msg := fmt.Sprintf("Created new resource: %s", resourceIdentifier("ClusterRoleBinding", "", crb.GetName()))
+	condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, msg)
 	SetHubCondition(&m.Status, *condition)
 
 	return ctrl.Result{}, nil
@@ -350,6 +370,11 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 		mce = multiclusterengine.NewMultiClusterEngine(m, targetNS)
 		err = r.Client.Create(ctx, mce)
 		if err != nil {
+			// Commonly transient early in install (e.g. MCE's own admission webhook service
+			// isn't up yet), so surface it as a waiting condition rather than only an error.
+			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, WaitingForMCEReason,
+				fmt.Sprintf("Waiting to create MultiClusterEngine: %s", err.Error()))
+			SetHubCondition(&m.Status, *condition)
 			return ctrl.Result{}, fmt.Errorf("error creating new MCE: %w", err)
 		}
 		return ctrl.Result{}, nil
@@ -624,6 +649,12 @@ func (r *MultiClusterHubReconciler) ensureMCEInstallation(ctx context.Context, m
 	}
 	overrides, err := v0.GetAnnotationOverrides(multiClusterHub)
 	if err != nil {
+		// A malformed override annotation is a user misconfiguration that needs to be
+		// noticed and fixed, not a transient condition — surface it on the hub instead of
+		// only logging it.
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason,
+			fmt.Sprintf("Invalid MCE subscription override annotation: %s", err.Error()))
+		SetHubCondition(&multiClusterHub.Status, *condition)
 		return ctrl.Result{}, err
 	}
 
@@ -696,6 +727,15 @@ func (r *MultiClusterHubReconciler) ensureMCEInstallation(ctx context.Context, m
 		err = r.Client.Update(ctx, calcSub)
 	}
 	if err != nil {
+		if errors.IsConflict(err) {
+			// Transient: OLM concurrently updates the Subscription's status (e.g. during CSV
+			// install/upgrade), racing our spec update. This is normal and self-resolves on
+			// the next attempt once the resourceVersion catches up — retry quietly instead of
+			// surfacing it as a reconciler error, matching how syncHubStatus already treats
+			// this same class of conflict.
+			r.Log.Info("Subscription was concurrently modified, retrying", "name", calcSub.Name)
+			return ctrl.Result{Requeue: true}, nil
+		}
 		return ctrl.Result{}, fmt.Errorf("error updating subscription %s: %w", calcSub.Name, err)
 	}
 
@@ -715,6 +755,12 @@ func (r *MultiClusterHubReconciler) ensureMCEClusterExtension(ctx context.Contex
 	// Get annotation overrides for ClusterExtension
 	overrides, err := v1.GetAnnotationOverrides(multiClusterHub)
 	if err != nil {
+		// A malformed override annotation is a user misconfiguration that needs to be
+		// noticed and fixed, not a transient condition — surface it on the hub instead of
+		// only logging it.
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason,
+			fmt.Sprintf("Invalid MCE ClusterExtension override annotation: %s", err.Error()))
+		SetHubCondition(&multiClusterHub.Status, *condition)
 		return ctrl.Result{}, err
 	}
 
@@ -782,6 +828,16 @@ func (r *MultiClusterHubReconciler) ensureMCEClusterExtension(ctx context.Contex
 		err = r.Client.Update(ctx, calcCE)
 	}
 	if err != nil {
+		if errors.IsConflict(err) {
+			// Transient: OLM v1's own controller concurrently updates the ClusterExtension's
+			// status (e.g. while resolving/installing the bundle), racing our spec update.
+			// This is normal and self-resolves on the next attempt once the resourceVersion
+			// catches up — retry quietly instead of surfacing it as a reconciler error,
+			// matching how syncHubStatus (and the OLM v0 Subscription path) already treat
+			// this same class of conflict.
+			r.Log.Info("ClusterExtension was concurrently modified, retrying", "name", calcCE.Name)
+			return ctrl.Result{Requeue: true}, nil
+		}
 		return ctrl.Result{}, fmt.Errorf("error updating ClusterExtension %s: %w", calcCE.Name, err)
 	}
 
@@ -825,8 +881,13 @@ func (r *MultiClusterHubReconciler) waitForMCEReady(ctx context.Context, m *oper
 		r.Log.Info("MultiClusterEngine is not yet available",
 			"name", existingMCE.GetName(),
 			"requeueAfter", resyncPeriod.String())
-		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, WaitingForMCEReason,
-			fmt.Sprintf("Waiting for MultiClusterEngine %s to report version", existingMCE.GetName()))
+		msg := fmt.Sprintf("Waiting for MultiClusterEngine %s to report version", existingMCE.GetName())
+		// Surface MCE's own latest condition (e.g. "Not all components available") so the
+		// long window between MCE's CSV finishing and MCE reporting a version isn't opaque.
+		if mceCond := latestMCECondition(existingMCE); mceCond != nil && mceCond.Message != "" {
+			msg = fmt.Sprintf("%s (%s: %s)", msg, mceCond.Reason, mceCond.Message)
+		}
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, WaitingForMCEReason, msg)
 		SetHubCondition(&m.Status, *condition)
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}

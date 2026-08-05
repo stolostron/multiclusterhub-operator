@@ -180,6 +180,27 @@ func (r *MultiClusterHubReconciler) syncHubStatus(ctx context.Context, m *operat
 func (r *MultiClusterHubReconciler) calculateStatus(ctx context.Context, hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deployment,
 	allCRs map[string]*unstructured.Unstructured, ocpConsole, isSTSEnabled bool) operatorsv1.MultiClusterHubStatus {
 
+	// While the hub is being deleted, the install-oriented component/version tracking below
+	// doesn't apply: components are intentionally being torn down, not rolled out, so
+	// re-evaluating "is this available" against them is actively misleading (e.g. logging
+	// "The component is now available" for a Subscription mid-termination, right before it
+	// disappears) and computing Progressing/Complete from it produces contradictory messages
+	// alongside the accurate Terminating condition finalization already sets. Preserve
+	// existing status as-is and just report the phase.
+	//
+	// Progressing/Complete are also removed rather than left stale: Terminating + Phase
+	// already fully describe the deletion state, so there's no information lost, and a
+	// leftover "Complete: True, All hub components ready." while actively tearing down would
+	// be actively wrong rather than merely uninformative. This mirrors the existing pattern
+	// of removing Progressing once Complete:True is set in the successful branch below.
+	if hub.GetDeletionTimestamp() != nil {
+		status := hub.Status.DeepCopy()
+		status.Phase = operatorsv1.HubUninstalling
+		RemoveHubCondition(status, operatorsv1.Progressing)
+		RemoveHubCondition(status, operatorsv1.Complete)
+		return *status
+	}
+
 	components := map[string]operatorsv1.StatusCondition{}
 	if paused := utils.IsPaused(hub); !paused {
 		components = getComponentStatuses(hub, allDeps, allCRs, ocpConsole, isSTSEnabled, r.OLMVersion)
@@ -312,6 +333,23 @@ func latestDeployCondition(conditions []appsv1.DeploymentCondition) appsv1.Deplo
 		}
 	}
 	return latest
+}
+
+// latestMCECondition returns the most recently transitioned condition on the given
+// MultiClusterEngine, or nil if it has none. Used to surface MCE's own progress detail
+// (e.g. "Not all components available") while MCH is waiting on MCE to report a version,
+// instead of leaving that whole window opaque from the MCH's own status.
+func latestMCECondition(mce *mcev1.MultiClusterEngine) *mcev1.MultiClusterEngineCondition {
+	if mce == nil || len(mce.Status.Conditions) == 0 {
+		return nil
+	}
+	latest := mce.Status.Conditions[0]
+	for i := range mce.Status.Conditions {
+		if mce.Status.Conditions[i].LastTransitionTime.Time.After(latest.LastTransitionTime.Time) {
+			latest = mce.Status.Conditions[i]
+		}
+	}
+	return &latest
 }
 
 func progressingDeployCondition(conditions []appsv1.DeploymentCondition) appsv1.DeploymentCondition {
@@ -689,7 +727,14 @@ func NewHubCondition(condType operatorsv1.HubConditionType, status metav1.Condit
 // SetHubCondition sets the status condition. It either overwrites the existing one or creates a new one.
 func SetHubCondition(status *operatorsv1.MultiClusterHubStatus, condition operatorsv1.HubCondition) {
 	currentCond := GetHubCondition(*status, condition.Type)
-	if currentCond != nil && currentCond.Status == condition.Status && currentCond.Reason == condition.Reason {
+	// Reason alone is not a reliable "nothing changed" signal — many call sites reuse the
+	// same Reason (e.g. DeleteTimestampReason) across an evolving sequence of increasingly
+	// specific Messages as finalization progresses (e.g. "Multiclusterhub is being cleaned
+	// up." -> "Waiting for MultiClusterEngine %s to terminate"). Bailing out on Status+Reason
+	// alone would silently drop those refinements, freezing the message at whatever was set
+	// first. Compare Message too so a genuinely different message is never dropped.
+	if currentCond != nil && currentCond.Status == condition.Status &&
+		currentCond.Reason == condition.Reason && currentCond.Message == condition.Message {
 		return
 	}
 	// Do not update lastTransitionTime if the status of the condition doesn't change.

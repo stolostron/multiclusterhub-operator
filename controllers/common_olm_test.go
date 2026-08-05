@@ -15,21 +15,25 @@ import (
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
+	v0 "github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine/olm/v0"
 	v1 "github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine/olm/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 	clog "sigs.k8s.io/controller-runtime/pkg/log"
 
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
@@ -184,6 +188,8 @@ func TestEnsureServiceAccount(t *testing.T) {
 				condition := FindCondition(tt.mch.Status.HubConditions, operatorsv1.Progressing)
 				if condition == nil {
 					t.Errorf("ensureServiceAccount() expected Progressing condition but not found")
+				} else if !strings.Contains(condition.Message, "ServiceAccount") || !strings.Contains(condition.Message, saName) {
+					t.Errorf("ensureServiceAccount() expected condition message to name the ServiceAccount %q, got %q", saName, condition.Message)
 				}
 			}
 		})
@@ -335,6 +341,8 @@ func TestEnsureClusterRoleBinding(t *testing.T) {
 				condition := FindCondition(tt.mch.Status.HubConditions, operatorsv1.Progressing)
 				if condition == nil {
 					t.Errorf("ensureClusterRoleBinding() expected Progressing condition but not found")
+				} else if !strings.Contains(condition.Message, "ClusterRoleBinding") || !strings.Contains(condition.Message, crbName) {
+					t.Errorf("ensureClusterRoleBinding() expected condition message to name the ClusterRoleBinding %q, got %q", crbName, condition.Message)
 				}
 			}
 		})
@@ -540,6 +548,221 @@ func TestEnsureMultiClusterEngineCR_NoMatchError(t *testing.T) {
 	}
 	if result.RequeueAfter != resyncPeriod {
 		t.Errorf("ensureMultiClusterEngineCR() expected RequeueAfter=%v, got %v", resyncPeriod, result.RequeueAfter)
+	}
+}
+
+// Test_ensureMultiClusterEngineCR_SetsWaitingCondition_OnCreateError verifies
+// that when creating the MultiClusterEngine CR fails (e.g. MCE's own
+// admission webhook service isn't up yet — common early in a fresh install),
+// a Progressing/WaitingForMCEReason condition including the underlying error
+// is recorded, instead of only returning a bare error with no status
+// visibility.
+func Test_ensureMultiClusterEngineCR_SetsWaitingCondition_OnCreateError(t *testing.T) {
+	registerScheme()
+
+	mch := resources.EmptyMCH()
+	mch.Name = "test-mch-mce-create-error"
+
+	r := newTestReconcilerWithInterceptor(interceptor.Funcs{
+		Create: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
+			if _, ok := obj.(*mcev1.MultiClusterEngine); ok {
+				return apierrors.NewInternalError(fmt.Errorf(`failed calling webhook "multiclusterengines.multicluster.openshift.io"`))
+			}
+			return c.Create(ctx, obj, opts...)
+		},
+	})
+
+	_, err := r.ensureMultiClusterEngineCR(context.Background(), &mch)
+	if err == nil {
+		t.Fatal("expected error when MCE creation fails, got nil")
+	}
+
+	condition := GetHubCondition(mch.Status, operatorsv1.Progressing)
+	if condition == nil {
+		t.Fatal("expected Progressing condition to be set")
+	}
+	if condition.Reason != WaitingForMCEReason {
+		t.Errorf("expected reason %q, got %q", WaitingForMCEReason, condition.Reason)
+	}
+	if !strings.Contains(condition.Message, "webhook") {
+		t.Errorf("expected message to include the underlying error detail, got %q", condition.Message)
+	}
+}
+
+// Test_ensureMCEInstallation_SetsCondition_OnInvalidAnnotation_V0 verifies
+// that a malformed MCE subscription override annotation (a user
+// misconfiguration, not a transient error) is surfaced as a
+// Progressing/RequirementsNotMetReason condition instead of only being
+// logged/returned as a bare error.
+func Test_ensureMCEInstallation_SetsCondition_OnInvalidAnnotation_V0(t *testing.T) {
+	registerScheme()
+	t.Setenv("POD_NAMESPACE", "test-ns")
+
+	mchOperatorDeployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      utils.MCHOperatorName,
+			Namespace: "test-ns",
+		},
+		Spec: appsv1.DeploymentSpec{
+			Selector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": "test"}},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"app": "test"}},
+				Spec:       corev1.PodSpec{Containers: []corev1.Container{{Name: "operator", Image: "test"}}},
+			},
+		},
+	}
+
+	mch := resources.EmptyMCH()
+	mch.Name = "test-mch-invalid-annotation-v0"
+	mch.Namespace = "test-ns"
+	mch.Annotations = map[string]string{
+		utils.AnnotationMCESubscriptionSpec: "{not valid json",
+	}
+
+	r := newTestReconciler(mchOperatorDeployment)
+	r.OLMVersion = "v0"
+
+	_, err := r.ensureMCEInstallation(context.Background(), &mch)
+	if err == nil {
+		t.Fatal("expected error for invalid annotation, got nil")
+	}
+
+	condition := GetHubCondition(mch.Status, operatorsv1.Progressing)
+	if condition == nil {
+		t.Fatal("expected Progressing condition to be set")
+	}
+	if condition.Reason != RequirementsNotMetReason {
+		t.Errorf("expected reason %q, got %q", RequirementsNotMetReason, condition.Reason)
+	}
+	if !strings.Contains(condition.Message, "annotation") {
+		t.Errorf("expected message to mention the annotation, got %q", condition.Message)
+	}
+}
+
+// Test_ensureMCEInstallation_HandlesSubscriptionUpdateConflict_V0 verifies
+// that a resourceVersion conflict on the Subscription Update (e.g. racing
+// OLM's own controller writing status during CSV install) is retried
+// quietly instead of surfacing as a reconciler error.
+func Test_ensureMCEInstallation_HandlesSubscriptionUpdateConflict_V0(t *testing.T) {
+	registerScheme()
+	t.Setenv("POD_NAMESPACE", "test-ns")
+
+	mchOperatorDeployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      utils.MCHOperatorName,
+			Namespace: "test-ns",
+		},
+		Spec: appsv1.DeploymentSpec{
+			Selector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": "test"}},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"app": "test"}},
+				Spec:       corev1.PodSpec{Containers: []corev1.Container{{Name: "operator", Image: "test"}}},
+			},
+		},
+	}
+
+	// Owned by a different MCH so CreatedByMCH() is false, skipping the
+	// pull-secret/operator-group prerequisites and going straight to the
+	// render+Update path being tested.
+	otherMCH := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{Name: "other-mch", Namespace: "other-ns"},
+	}
+	existingSub := v0.NewSubscription(otherMCH, nil, nil)
+
+	r := newTestReconcilerWithInterceptor(interceptor.Funcs{
+		Update: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+			if _, ok := obj.(*subv1alpha1.Subscription); ok {
+				return apierrors.NewConflict(schema.GroupResource{Group: "operators.coreos.com", Resource: "subscriptions"},
+					obj.GetName(), fmt.Errorf("the object has been modified"))
+			}
+			return c.Update(ctx, obj, opts...)
+		},
+	}, mchOperatorDeployment, existingSub)
+	r.OLMVersion = "v0"
+
+	mch := resources.EmptyMCH()
+	mch.Name = "test-mch-sub-conflict"
+	mch.Namespace = "test-ns"
+	// Skip the ClusterSource package-manifest lookup entirely by supplying it via override.
+	mch.Annotations = map[string]string{
+		utils.AnnotationMCESubscriptionSpec: `{"source":"redhat-operators"}`,
+	}
+
+	result, err := r.ensureMCEInstallation(context.Background(), &mch)
+	if err != nil {
+		t.Fatalf("expected no error on conflict (should retry quietly), got: %v", err)
+	}
+	if !result.Requeue {
+		t.Errorf("expected Requeue=true, got %+v", result)
+	}
+}
+
+// Test_ensureMCEClusterExtension_SetsCondition_OnInvalidAnnotation is the
+// OLM v1 counterpart: a malformed MCE ClusterExtension override annotation
+// should be surfaced the same way as the v0 Subscription case.
+func Test_ensureMCEClusterExtension_SetsCondition_OnInvalidAnnotation(t *testing.T) {
+	registerScheme()
+
+	mch := resources.EmptyMCH()
+	mch.Name = "test-mch-invalid-annotation-v1"
+	mch.Annotations = map[string]string{
+		utils.AnnotationMCEClusterExtensionSpec: "{not valid json",
+	}
+
+	r := newTestReconciler()
+
+	_, err := r.ensureMCEClusterExtension(context.Background(), &mch)
+	if err == nil {
+		t.Fatal("expected error for invalid annotation, got nil")
+	}
+
+	condition := GetHubCondition(mch.Status, operatorsv1.Progressing)
+	if condition == nil {
+		t.Fatal("expected Progressing condition to be set")
+	}
+	if condition.Reason != RequirementsNotMetReason {
+		t.Errorf("expected reason %q, got %q", RequirementsNotMetReason, condition.Reason)
+	}
+	if !strings.Contains(condition.Message, "annotation") {
+		t.Errorf("expected message to mention the annotation, got %q", condition.Message)
+	}
+}
+
+// Test_ensureMCEClusterExtension_HandlesUpdateConflict verifies that a
+// resourceVersion conflict on the ClusterExtension Update (e.g. racing OLM
+// v1's own controller writing status during bundle resolution) is retried
+// quietly instead of surfacing as a reconciler error, mirroring how the OLM
+// v0 Subscription path already handles this same class of conflict.
+func Test_ensureMCEClusterExtension_HandlesUpdateConflict(t *testing.T) {
+	registerScheme()
+
+	// Owned by a different MCH so CreatedByMCH() is false, skipping the
+	// pull-secret/service-account/cluster-role-binding prerequisites and going
+	// straight to the render+Update path being tested.
+	otherMCH := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{Name: "other-mch", Namespace: "other-ns"},
+	}
+	existingCE := v1.NewClusterExtension(otherMCH)
+
+	r := newTestReconcilerWithInterceptor(interceptor.Funcs{
+		Update: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+			if _, ok := obj.(*ocv1.ClusterExtension); ok {
+				return apierrors.NewConflict(schema.GroupResource{Group: "operator-controller.operator-framework.io", Resource: "clusterextensions"},
+					obj.GetName(), fmt.Errorf("the object has been modified"))
+			}
+			return c.Update(ctx, obj, opts...)
+		},
+	}, existingCE)
+
+	mch := resources.EmptyMCH()
+	mch.Name = "test-mch-ce-conflict"
+
+	result, err := r.ensureMCEClusterExtension(context.Background(), &mch)
+	if err != nil {
+		t.Fatalf("expected no error on conflict (should retry quietly), got: %v", err)
+	}
+	if !result.Requeue {
+		t.Errorf("expected Requeue=true, got %+v", result)
 	}
 }
 
@@ -1497,5 +1720,177 @@ func Test_waitForMCEReady_NoCondition_WhenReady(t *testing.T) {
 
 	if condition := GetHubCondition(mch.Status, operatorsv1.Progressing); condition != nil {
 		t.Errorf("expected no Progressing condition, got: %+v", condition)
+	}
+}
+
+// Test_waitForMCEReady_EnrichesVersionWaitMessageWithMCECondition verifies
+// that while waiting for MCE to report a version, the Progressing message
+// incorporates MCE's own latest condition (e.g. "Not all components
+// available") instead of leaving that whole window opaque from MCH's status
+// alone.
+func Test_waitForMCEReady_EnrichesVersionWaitMessageWithMCECondition(t *testing.T) {
+	registerScheme()
+
+	mce := resources.EmptyMCE()
+	mce.Name = "test-mce-with-condition"
+	mce.Labels = map[string]string{multiclusterengineutils.MCEManagedByLabel: "true"}
+	// Status.CurrentVersion intentionally left empty.
+	mce.Status.Conditions = []mcev1.MultiClusterEngineCondition{
+		{
+			Type:               mcev1.MultiClusterEngineAvailable,
+			Status:             metav1.ConditionFalse,
+			Reason:             "ComponentsUnavailable",
+			Message:            "Not all components available",
+			LastTransitionTime: metav1.Now(),
+		},
+	}
+
+	r := newTestReconciler(&mce)
+	t.Setenv(utils.UnitTestEnvVar, "false")
+
+	mch := resources.EmptyMCH()
+	mch.Name = "test-mch-mce-condition-detail"
+
+	_, err := r.waitForMCEReady(context.Background(), &mch)
+	if err != nil {
+		t.Fatalf("waitForMCEReady() unexpected error: %v", err)
+	}
+
+	condition := GetHubCondition(mch.Status, operatorsv1.Progressing)
+	if condition == nil {
+		t.Fatal("expected Progressing condition to be set")
+	}
+	if !strings.Contains(condition.Message, "ComponentsUnavailable") || !strings.Contains(condition.Message, "Not all components available") {
+		t.Errorf("expected message to include MCE's own condition detail, got %q", condition.Message)
+	}
+}
+
+func Test_resourceIdentifier(t *testing.T) {
+	tests := []struct {
+		name      string
+		kind      string
+		namespace string
+		resName   string
+		want      string
+	}{
+		{"namespaced resource", "ServiceAccount", "open-cluster-management", "console-chart", "ServiceAccount open-cluster-management/console-chart"},
+		{"cluster-scoped resource", "ClusterRoleBinding", "", "open-cluster-management:console:clusterrolebinding", "ClusterRoleBinding open-cluster-management:console:clusterrolebinding"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := resourceIdentifier(tt.kind, tt.namespace, tt.resName); got != tt.want {
+				t.Errorf("resourceIdentifier() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+// Test_ensureUnstructuredResource_NamesResourceInCondition verifies that the
+// Progressing condition set on resource creation names the specific
+// kind/namespace/name created, instead of the generic, unattributable
+// "Created new resource" message.
+func Test_ensureUnstructuredResource_NamesResourceInCondition(t *testing.T) {
+	r := newTestReconciler()
+	mch := resources.EmptyMCH()
+	mch.Name = "test-mch-unstructured-create"
+
+	u := &unstructured.Unstructured{}
+	u.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "ConfigMap"})
+	u.SetName("my-configmap")
+	u.SetNamespace("open-cluster-management")
+
+	result, err := r.ensureUnstructuredResource(&mch, u)
+	if err != nil {
+		t.Fatalf("ensureUnstructuredResource() unexpected error: %v", err)
+	}
+	if result != (ctrl.Result{}) {
+		t.Fatalf("expected empty result, got: %+v", result)
+	}
+
+	condition := GetHubCondition(mch.Status, operatorsv1.Progressing)
+	if condition == nil {
+		t.Fatal("expected Progressing condition to be set")
+	}
+	if !strings.Contains(condition.Message, "ConfigMap") || !strings.Contains(condition.Message, "my-configmap") {
+		t.Errorf("expected message to name the created resource, got %q", condition.Message)
+	}
+}
+
+// Test_ensureNamespace_NamesResourceInCondition_WhenCreated verifies the
+// created-namespace condition names the namespace, and is only set when the
+// namespace is actually newly created.
+func Test_ensureNamespace_NamesResourceInCondition_WhenCreated(t *testing.T) {
+	r := newTestReconciler()
+	mch := resources.EmptyMCH()
+	mch.Name = "test-mch-namespace-create"
+
+	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "new-namespace"}}
+
+	if _, err := r.ensureNamespace(&mch, ns); err != nil {
+		t.Fatalf("ensureNamespace() unexpected error: %v", err)
+	}
+
+	condition := GetHubCondition(mch.Status, operatorsv1.Progressing)
+	if condition == nil {
+		t.Fatal("expected Progressing condition to be set")
+	}
+	if !strings.Contains(condition.Message, "Namespace") || !strings.Contains(condition.Message, "new-namespace") {
+		t.Errorf("expected message to name the created namespace, got %q", condition.Message)
+	}
+}
+
+// Test_ensureNamespace_NoCondition_WhenAlreadyExists verifies that no
+// "created" condition is set when the namespace already existed (regression
+// guard: previously this condition was set unconditionally on every call).
+func Test_ensureNamespace_NoCondition_WhenAlreadyExists(t *testing.T) {
+	existingNs := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: "existing-namespace"},
+		Status:     corev1.NamespaceStatus{Phase: corev1.NamespaceActive},
+	}
+	r := newTestReconciler(existingNs)
+	mch := resources.EmptyMCH()
+	mch.Name = "test-mch-namespace-exists"
+
+	if _, err := r.ensureNamespace(&mch, existingNs); err != nil {
+		t.Fatalf("ensureNamespace() unexpected error: %v", err)
+	}
+
+	if condition := GetHubCondition(mch.Status, operatorsv1.Progressing); condition != nil {
+		t.Errorf("expected no Progressing condition for a pre-existing namespace, got: %+v", condition)
+	}
+}
+
+// Test_ensureOperatorGroup_NamesResourceInCondition_WhenCreated verifies that
+// creating a new OperatorGroup (the zero-existing-groups path) names the
+// specific OperatorGroup in its condition message. The fake client doesn't
+// support the Server-Side Apply patch used by the real create path, so an
+// interceptor substitutes a plain Create to reach the condition-setting code.
+func Test_ensureOperatorGroup_NamesResourceInCondition_WhenCreated(t *testing.T) {
+	registerScheme()
+
+	ogNamespace := "test-namespace-create-og"
+	r := newTestReconcilerWithInterceptor(interceptor.Funcs{
+		Patch: func(ctx context.Context, c client.WithWatch, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
+			if og, ok := obj.(*olmv1.OperatorGroup); ok {
+				return c.Create(ctx, og)
+			}
+			return c.Patch(ctx, obj, patch, opts...)
+		},
+	})
+	mch := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-mch", Namespace: ogNamespace},
+	}
+	desiredOG := &olmv1.OperatorGroup{ObjectMeta: metav1.ObjectMeta{Name: "desired-og", Namespace: ogNamespace}}
+
+	if _, err := r.ensureOperatorGroup(mch, desiredOG); err != nil {
+		t.Fatalf("ensureOperatorGroup() unexpected error: %v", err)
+	}
+
+	condition := GetHubCondition(mch.Status, operatorsv1.Progressing)
+	if condition == nil {
+		t.Fatal("expected Progressing condition to be set")
+	}
+	if !strings.Contains(condition.Message, "OperatorGroup") || !strings.Contains(condition.Message, "desired-og") {
+		t.Errorf("expected message to name the created OperatorGroup, got %q", condition.Message)
 	}
 }

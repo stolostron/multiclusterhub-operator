@@ -194,6 +194,39 @@ func TestSetHubCondition(t *testing.T) {
 			t.Errorf("AddCondition() expected lastTransitionTime of %v, got %v", old2.LastTransitionTime, ltt)
 		}
 	})
+
+	// Regression test: many call sites (e.g. every stage of finalization) reuse the same
+	// Reason across an evolving sequence of more specific Messages, e.g.
+	// reconcile.go sets Terminating/DeletionTimestampPresent with a generic message the
+	// moment deletion starts, and cleanupMultiClusterEngine later tries to refine it to name
+	// MCE specifically, using the SAME reason. Bailing out on Status+Reason alone (without
+	// also checking Message) would silently drop that refinement, freezing the condition at
+	// whatever message was set first.
+	t.Run("Refines message when only Message differs (same Status and Reason)", func(t *testing.T) {
+		m := &operatorsv1.MultiClusterHub{}
+		generic := operatorsv1.HubCondition{
+			Type:    operatorsv1.Terminating,
+			Status:  metav1.ConditionTrue,
+			Reason:  DeleteTimestampReason,
+			Message: "Multiclusterhub is being cleaned up.",
+		}
+		specific := operatorsv1.HubCondition{
+			Type:    operatorsv1.Terminating,
+			Status:  metav1.ConditionTrue,
+			Reason:  DeleteTimestampReason,
+			Message: "Waiting for MultiClusterEngine multiclusterengine to terminate",
+		}
+
+		SetHubCondition(&m.Status, generic)
+		SetHubCondition(&m.Status, specific)
+
+		if len(m.Status.HubConditions) != 1 {
+			t.Fatalf("expected exactly 1 condition, got %d", len(m.Status.HubConditions))
+		}
+		if got := m.Status.HubConditions[0].Message; got != specific.Message {
+			t.Errorf("expected message to refine to %q, got %q (message got silently dropped)", specific.Message, got)
+		}
+	})
 }
 
 func TestGetHubCondition(t *testing.T) {
@@ -627,6 +660,73 @@ func Test_calculateStatus_NoCompleteCondition_WhenPaused(t *testing.T) {
 
 	if condition := GetHubCondition(newStatus, operatorsv1.Complete); condition != nil {
 		t.Errorf("expected no Complete condition while paused, got: %+v", condition)
+	}
+}
+
+// Test_calculateStatus_SkipsComponentTracking_WhenBeingDeleted verifies that
+// while the hub is marked for deletion, calculateStatus doesn't recompute
+// install-oriented component tracking or Progressing/Complete conditions
+// (which would otherwise produce misleading messages like "component is now
+// available" for something mid-termination, or a contradictory
+// "Not all hub components ready." alongside the accurate Terminating
+// condition finalization already set) — it just reports the phase and
+// otherwise leaves the existing status untouched. It also verifies that any
+// stale Progressing/Complete conditions left over from before deletion
+// started (e.g. "Complete: True, All hub components ready." from when the
+// hub was last Running) are stripped, rather than left sitting there
+// actively wrong during active teardown.
+func Test_calculateStatus_SkipsComponentTracking_WhenBeingDeleted(t *testing.T) {
+	registerScheme()
+	ctx := context.TODO()
+
+	now := metav1.Now()
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              "test-mch-deleting",
+			Namespace:         "open-cluster-management",
+			DeletionTimestamp: &now,
+			Finalizers:        []string{"test.io/keep-alive"},
+		},
+		Status: operatorsv1.MultiClusterHubStatus{
+			CurrentVersion: "5.0.0",
+			HubConditions: []operatorsv1.HubCondition{
+				// Stale, left over from before deletion started.
+				{
+					Type:    operatorsv1.Complete,
+					Status:  metav1.ConditionTrue,
+					Reason:  ComponentsAvailableReason,
+					Message: "All hub components ready.",
+				},
+				{
+					Type:    operatorsv1.Terminating,
+					Status:  metav1.ConditionTrue,
+					Reason:  DeleteTimestampReason,
+					Message: "Waiting for MultiClusterEngine multiclusterengine to terminate",
+				},
+			},
+		},
+	}
+
+	newStatus := recon.calculateStatus(ctx, hub, []*appsv1.Deployment{}, map[string]*unstructured.Unstructured{}, true, false)
+
+	if newStatus.Phase != operatorsv1.HubUninstalling {
+		t.Errorf("expected phase %q, got %q", operatorsv1.HubUninstalling, newStatus.Phase)
+	}
+	if len(newStatus.Components) != 0 {
+		t.Errorf("expected no component tracking during deletion, got %d components", len(newStatus.Components))
+	}
+	if condition := GetHubCondition(newStatus, operatorsv1.Progressing); condition != nil {
+		t.Errorf("expected no Progressing condition to be computed during deletion, got: %+v", condition)
+	}
+	if condition := GetHubCondition(newStatus, operatorsv1.Complete); condition != nil {
+		t.Errorf("expected no Complete condition to be computed during deletion, got: %+v", condition)
+	}
+	terminating := GetHubCondition(newStatus, operatorsv1.Terminating)
+	if terminating == nil {
+		t.Fatal("expected the existing Terminating condition to be preserved")
+	}
+	if terminating.Message != "Waiting for MultiClusterEngine multiclusterengine to terminate" {
+		t.Errorf("expected existing Terminating message to be preserved unchanged, got %q", terminating.Message)
 	}
 }
 
