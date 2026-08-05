@@ -99,7 +99,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	allCRs, err := r.listCustomResources(multiClusterHub)
+	allCRs, err := r.listCustomResources()
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -341,12 +341,12 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 
-	result, err = r.ingressDomain(ctx, multiClusterHub)
+	result, err = r.ingressDomain(ctx)
 	if result != (ctrl.Result{}) {
 		return result, err
 	}
 
-	result, err = r.openShiftApiUrl(ctx, multiClusterHub)
+	result, err = r.openShiftApiUrl(ctx)
 	if err != nil {
 		return result, err
 	}

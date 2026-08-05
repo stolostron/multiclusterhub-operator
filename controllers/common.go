@@ -509,7 +509,7 @@ func (r *MultiClusterHubReconciler) listDeployments(namespaces []string) ([]*app
 }
 
 // listCustomResources gets custom resources the installer observes
-func (r *MultiClusterHubReconciler) listCustomResources(m *operatorv1.MultiClusterHub) (map[string]*unstructured.Unstructured, error) {
+func (r *MultiClusterHubReconciler) listCustomResources() (map[string]*unstructured.Unstructured, error) {
 	ret := make(map[string]*unstructured.Unstructured)
 
 	// List OLM resources based on detected version
@@ -952,7 +952,7 @@ func (r *MultiClusterHubReconciler) addPluginToConsole(multiClusterHub *operator
 }
 
 // removePluginFromConsoleResource ...
-func (r *MultiClusterHubReconciler) removePluginFromConsole(multiClusterHub *operatorv1.MultiClusterHub) (ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) removePluginFromConsole() (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log
 	console := &consolev1.Console{}

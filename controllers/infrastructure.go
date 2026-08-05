@@ -290,8 +290,7 @@ func (r *MultiClusterHubReconciler) createMetricsServiceMonitor(ctx context.Cont
 // ingressDomain discovers the cluster's ingress domain from the OpenShift Ingress config
 // and caches it in CacheSpec. Sets the INGRESS_DOMAIN environment variable so Helm charts
 // can reference the domain during rendering.
-func (r *MultiClusterHubReconciler) ingressDomain(ctx context.Context, m *operatorv1.MultiClusterHub) (
-	ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) ingressDomain(ctx context.Context) (ctrl.Result, error) {
 	ingress := &configv1.Ingress{}
 
 	err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster"}, ingress)
@@ -326,8 +325,7 @@ func (r *MultiClusterHubReconciler) ingressDomain(ctx context.Context, m *operat
 
 // openShiftApiUrl discovers the API server URL from the OpenShift Infrastructure config
 // and sets it as the API_URL environment variable for chart rendering.
-func (r *MultiClusterHubReconciler) openShiftApiUrl(ctx context.Context, m *operatorv1.MultiClusterHub) (
-	ctrl.Result, error) {
+func (r *MultiClusterHubReconciler) openShiftApiUrl(ctx context.Context) (ctrl.Result, error) {
 	infrastructure := &configv1.Infrastructure{}
 	err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster"}, infrastructure)
 	if err != nil {
