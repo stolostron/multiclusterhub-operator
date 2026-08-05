@@ -15,11 +15,13 @@ import (
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 func TestBackupNamespace(t *testing.T) {
@@ -515,6 +517,34 @@ func Test_cleanupNamespaces_NoCondition_WhenNamespaceAbsent(t *testing.T) {
 
 	if err := r.cleanupNamespaces(log, &mch); err != nil {
 		t.Fatalf("expected no error when backup namespace is absent, got: %v", err)
+	}
+
+	if condition := GetHubCondition(mch.Status, operatorv1.Terminating); condition != nil {
+		t.Errorf("expected no Terminating condition, got: %+v", condition)
+	}
+}
+
+// Test_cleanupNamespaces_NoError_WhenDeleteRacesToNotFound verifies that if
+// the backup namespace is deleted concurrently between the initial Get and
+// the Delete call, cleanupNamespaces recognizes it's already gone and
+// returns nil immediately, instead of reporting "waiting to terminate" and
+// returning a retry error for a namespace that's no longer there.
+func Test_cleanupNamespaces_NoError_WhenDeleteRacesToNotFound(t *testing.T) {
+	backupNs := BackupNamespace()
+	r := newTestReconcilerWithInterceptor(interceptor.Funcs{
+		Delete: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
+			if _, ok := obj.(*corev1.Namespace); ok {
+				return apierrors.NewNotFound(corev1.Resource("namespaces"), obj.GetName())
+			}
+			return c.Delete(ctx, obj, opts...)
+		},
+	}, backupNs)
+
+	mch := resources.EmptyMCH()
+	mch.Name = "test-mch-backup-ns-delete-race"
+
+	if err := r.cleanupNamespaces(log, &mch); err != nil {
+		t.Fatalf("expected no error when Delete races to NotFound, got: %v", err)
 	}
 
 	if condition := GetHubCondition(mch.Status, operatorv1.Terminating); condition != nil {

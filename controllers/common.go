@@ -200,7 +200,10 @@ func (r *MultiClusterHubReconciler) ensureOperatorGroup(m *operatorv1.MultiClust
 			"namespace", og.GetNamespace())
 		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason, msg)
 		SetHubCondition(&m.Status, *condition)
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+		// This is a terminal misconfiguration requiring manual intervention (not something
+		// that resolves by waiting), so don't requeue on a timer. A watch on OperatorGroup
+		// objects (or the periodic resync) will pick it up if/when it's fixed.
+		return ctrl.Result{}, nil
 	} else if len(operatorGroupList.Items) == 1 {
 		return ctrl.Result{}, nil
 	}

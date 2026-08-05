@@ -219,7 +219,12 @@ func (r *MultiClusterHubReconciler) cleanupNamespaces(reqLogger logr.Logger, m *
 	err := r.Client.Get(ctx, types.NamespacedName{Name: utils.ClusterSubscriptionNamespace}, clusterBackupNamespace)
 	if err == nil {
 		err = r.Client.Delete(ctx, clusterBackupNamespace)
-		if err != nil && !errors.IsNotFound(err) {
+		if errors.IsNotFound(err) {
+			// Already gone (e.g. deleted concurrently between the Get above and this
+			// Delete) — nothing left to wait for.
+			return nil
+		}
+		if err != nil {
 			return err
 		}
 

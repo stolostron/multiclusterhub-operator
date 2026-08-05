@@ -1233,7 +1233,8 @@ func (l *testLogger) Init(info logr.RuntimeInfo) {
 // Test_ensureOperatorGroup_SetsRequirementsNotMetCondition_MultipleGroups
 // verifies that finding more than one OperatorGroup in a namespace records a
 // Progressing/RequirementsNotMetReason condition naming the namespace,
-// instead of only logging the conflict.
+// instead of only logging the conflict. This is a terminal misconfiguration
+// requiring manual intervention, so it should not requeue on a timer.
 func Test_ensureOperatorGroup_SetsRequirementsNotMetCondition_MultipleGroups(t *testing.T) {
 	s := scheme.Scheme
 	_ = olmv1.AddToScheme(s)
@@ -1259,8 +1260,8 @@ func Test_ensureOperatorGroup_SetsRequirementsNotMetCondition_MultipleGroups(t *
 	if err != nil {
 		t.Fatalf("ensureOperatorGroup() unexpected error: %v", err)
 	}
-	if result.RequeueAfter != resyncPeriod {
-		t.Errorf("ensureOperatorGroup() expected RequeueAfter=%v, got %+v", resyncPeriod, result)
+	if result != (ctrl.Result{}) {
+		t.Errorf("ensureOperatorGroup() expected empty result (no requeue for a terminal misconfiguration), got %+v", result)
 	}
 
 	condition := GetHubCondition(mch.Status, operatorsv1.Progressing)
