@@ -553,6 +553,33 @@ func Test_cleanupNamespaces_NoError_WhenDeleteRacesToNotFound(t *testing.T) {
 	}
 }
 
+// Test_cleanupNamespaces_ReturnsError_OnGetFailure verifies that a real
+// lookup failure (not NotFound) on the initial namespace Get is returned as
+// an error, instead of being silently treated the same as "namespace
+// doesn't exist" — which would let finalization proceed as if the backup
+// namespace were already gone.
+func Test_cleanupNamespaces_ReturnsError_OnGetFailure(t *testing.T) {
+	r := newTestReconcilerWithInterceptor(interceptor.Funcs{
+		Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object,
+			opts ...client.GetOption) error {
+			if _, ok := obj.(*corev1.Namespace); ok && key.Name == utils.ClusterSubscriptionNamespace {
+				return apierrors.NewInternalError(fmt.Errorf("simulated get failure"))
+			}
+			return c.Get(ctx, key, obj, opts...)
+		},
+	})
+	mch := resources.EmptyMCH()
+	mch.Name = "test-mch-backup-ns-get-error"
+
+	err := r.cleanupNamespaces(context.TODO(), log, &mch)
+	if err == nil {
+		t.Fatal("expected the Get error to be returned, got nil")
+	}
+	if !strings.Contains(err.Error(), "simulated get failure") {
+		t.Errorf("expected the underlying Get error to propagate, got: %v", err)
+	}
+}
+
 func mchLabeledAppSubscription(name, namespace, mchName, mchNamespace string) *unstructured.Unstructured {
 	u := &unstructured.Unstructured{}
 	u.SetGroupVersionKind(schema.GroupVersionKind{

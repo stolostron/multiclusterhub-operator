@@ -21,6 +21,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -768,6 +770,53 @@ func Test_syncHubStatus_HandlesNotFound(t *testing.T) {
 	}
 	if result != (reconcile.Result{}) {
 		t.Errorf("expected empty result, got: %+v", result)
+	}
+}
+
+// Test_syncHubStatus_SkipsUpdate_WhenStatusUnchanged is a regression test for
+// a bug where the "status hasn't changed" shortcut compared m.Status (a
+// MultiClusterHubStatus value) against original (a *MultiClusterHubStatus
+// pointer) via reflect.DeepEqual. Because the two arguments had different
+// types, DeepEqual always returned false regardless of content, so every
+// single reconcile performed a full Status().Update() even when nothing had
+// changed. This verifies the shortcut now actually triggers (no Update call)
+// when the freshly computed status matches what's already there.
+func Test_syncHubStatus_SkipsUpdate_WhenStatusUnchanged(t *testing.T) {
+	registerScheme()
+
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-mch-unchanged",
+			Namespace: "open-cluster-management",
+		},
+		Spec: operatorsv1.MultiClusterHubSpec{
+			DisableHubSelfManagement: true,
+		},
+	}
+
+	// Seed hub.Status with exactly what calculateStatus() would compute for it, so the
+	// upcoming syncHubStatus call's freshly recomputed status matches what's already there.
+	seedReconciler := newTestReconciler()
+	hub.Status = seedReconciler.calculateStatus(context.TODO(), hub, []*appsv1.Deployment{},
+		map[string]*unstructured.Unstructured{}, true, false)
+	original := hub.Status.DeepCopy()
+
+	updateCalled := false
+	r := newTestReconcilerWithInterceptor(interceptor.Funcs{
+		SubResourceUpdate: func(ctx context.Context, c client.Client, subResourceName string, obj client.Object,
+			opts ...client.SubResourceUpdateOption) error {
+			updateCalled = true
+			return c.SubResource(subResourceName).Update(ctx, obj, opts...)
+		},
+	})
+
+	_, err := r.syncHubStatus(context.TODO(), hub, original, []*appsv1.Deployment{},
+		map[string]*unstructured.Unstructured{}, true, false)
+	if err != nil {
+		t.Fatalf("syncHubStatus() unexpected error: %v", err)
+	}
+	if updateCalled {
+		t.Error("expected Status().Update() to be skipped since nothing changed, but it was called")
 	}
 }
 

@@ -219,38 +219,44 @@ func (r *MultiClusterHubReconciler) cleanupNamespaces(ctx context.Context, reqLo
 	m *operatorsv1.MultiClusterHub) error {
 	clusterBackupNamespace := &corev1.Namespace{}
 	err := r.Client.Get(ctx, types.NamespacedName{Name: utils.ClusterSubscriptionNamespace}, clusterBackupNamespace)
-	if err == nil {
-		err = r.Client.Delete(ctx, clusterBackupNamespace)
-		if errors.IsNotFound(err) {
-			// Already gone (e.g. deleted concurrently between the Get above and this
-			// Delete) — nothing left to wait for.
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-
-		msg := fmt.Sprintf("Waiting for namespace %s to terminate", utils.ClusterSubscriptionNamespace)
-		if clusterBackupNamespace.Status.Phase == corev1.NamespaceTerminating {
-			for _, c := range clusterBackupNamespace.Status.Conditions {
-				if c.Type == corev1.NamespaceDeletionContentFailure && c.Status == corev1.ConditionTrue {
-					msg = fmt.Sprintf("Namespace %s stuck terminating: %s",
-						utils.ClusterSubscriptionNamespace, c.Message)
-					break
-				}
-			}
-		}
-
-		reqLogger.Info("Waiting for namespace to terminate",
-			"namespace", utils.ClusterSubscriptionNamespace,
-			"phase", clusterBackupNamespace.Status.Phase)
-		condition := NewHubCondition(operatorsv1.Terminating, metav1.ConditionTrue, DeleteTimestampReason, msg)
-		SetHubCondition(&m.Status, *condition)
-
-		return fmt.Errorf("namespace has not yet been terminated")
+	if errors.IsNotFound(err) {
+		return nil
+	}
+	if err != nil {
+		// A real lookup failure (e.g. API server hiccup, RBAC issue) is not the same as
+		// "namespace doesn't exist" — return it instead of silently treating it as success,
+		// which would let finalization proceed as if the backup namespace were gone.
+		return err
 	}
 
-	return nil
+	err = r.Client.Delete(ctx, clusterBackupNamespace)
+	if errors.IsNotFound(err) {
+		// Already gone (e.g. deleted concurrently between the Get above and this
+		// Delete) — nothing left to wait for.
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	msg := fmt.Sprintf("Waiting for namespace %s to terminate", utils.ClusterSubscriptionNamespace)
+	if clusterBackupNamespace.Status.Phase == corev1.NamespaceTerminating {
+		for _, c := range clusterBackupNamespace.Status.Conditions {
+			if c.Type == corev1.NamespaceDeletionContentFailure && c.Status == corev1.ConditionTrue {
+				msg = fmt.Sprintf("Namespace %s stuck terminating: %s",
+					utils.ClusterSubscriptionNamespace, c.Message)
+				break
+			}
+		}
+	}
+
+	reqLogger.Info("Waiting for namespace to terminate",
+		"namespace", utils.ClusterSubscriptionNamespace,
+		"phase", clusterBackupNamespace.Status.Phase)
+	condition := NewHubCondition(operatorsv1.Terminating, metav1.ConditionTrue, DeleteTimestampReason, msg)
+	SetHubCondition(&m.Status, *condition)
+
+	return fmt.Errorf("namespace has not yet been terminated")
 }
 func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(ctx context.Context, reqLogger logr.Logger,
 	m *operatorsv1.MultiClusterHub) error {

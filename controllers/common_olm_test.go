@@ -1713,6 +1713,12 @@ func Test_waitForMCEReady_NoCondition_WhenReady(t *testing.T) {
 
 	mch := resources.EmptyMCH()
 	mch.Name = "test-mch-mce-ready"
+	// Seed a stale waiting condition so this test actually exercises the
+	// RemoveHubCondition clearing branch, rather than trivially passing because no
+	// condition was ever present to begin with.
+	stale := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, WaitingForMCEReason,
+		"Waiting for MultiClusterEngine test-mce-ready to report version")
+	SetHubCondition(&mch.Status, *stale)
 
 	result, err := r.waitForMCEReady(context.Background(), &mch)
 	if err != nil {
@@ -1723,7 +1729,7 @@ func Test_waitForMCEReady_NoCondition_WhenReady(t *testing.T) {
 	}
 
 	if condition := GetHubCondition(mch.Status, operatorsv1.Progressing); condition != nil {
-		t.Errorf("expected no Progressing condition, got: %+v", condition)
+		t.Errorf("expected stale Progressing condition to be cleared, got: %+v", condition)
 	}
 }
 
