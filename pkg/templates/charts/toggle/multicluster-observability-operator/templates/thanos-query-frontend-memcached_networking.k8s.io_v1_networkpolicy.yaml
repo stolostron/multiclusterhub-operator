@@ -1,0 +1,39 @@
+{{- if .Values.global.networkPolicies.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: thanos-query-frontend-memcached
+  namespace: '{{ default "open-cluster-management-observability" .Values.global.namespace }}'
+spec:
+  egress: []
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-monitoring
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: prometheus
+          app.kubernetes.io/part-of: openshift-monitoring
+    ports:
+    - port: 9150
+      protocol: TCP
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: observability
+          app.kubernetes.io/name: thanos-query-frontend
+          app.kubernetes.io/part-of: observatorium
+    ports:
+    - port: 11211
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: query-frontend-cache
+      app.kubernetes.io/instance: observability
+      app.kubernetes.io/name: memcached
+      app.kubernetes.io/part-of: observatorium
+  policyTypes:
+  - Ingress
+  - Egress
+{{- end }}
