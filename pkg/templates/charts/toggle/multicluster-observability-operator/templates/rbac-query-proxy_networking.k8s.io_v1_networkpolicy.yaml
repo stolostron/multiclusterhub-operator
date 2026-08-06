@@ -1,0 +1,28 @@
+{{- if .Values.global.networkPolicies.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: rbac-query-proxy
+  namespace: '{{ default "open-cluster-management-observability" .Values.global.namespace }}'
+spec:
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-cluster-observability-operator
+    - podSelector:
+        matchLabels:
+          app: multicluster-observability-grafana
+    ports:
+    - port: 8080
+      protocol: TCP
+  - ports:
+    - port: 8443
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app: rbac-query-proxy
+      observability.open-cluster-management.io/name: observability
+  policyTypes:
+  - Ingress
+{{- end }}
