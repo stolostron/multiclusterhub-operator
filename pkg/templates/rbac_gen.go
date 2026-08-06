@@ -558,8 +558,8 @@ package main
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;list;watch
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes;routes/custom-host;routes/status,verbs=get;list;create;update;delete;deletecollection;watch;create
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes;routes/custom-host;routes/status,verbs=get;list;create;update;delete;deletecollection;watch;create
-//+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=collectorconfigs,verbs=create;get;list;patch;update;watch
-//+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=collectorconfigs,verbs=create;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=collectorconfigs,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=collectorconfigs,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=collectorconfigs/status;searches/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=collectorconfigs/status;searches/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=searches,verbs=get;list;patch;update;watch

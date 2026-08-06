@@ -1550,6 +1550,7 @@ rules:
   - collectorconfigs
   verbs:
   - create
+  - delete
   - get
   - list
   - patch
