@@ -722,19 +722,28 @@ func (r *MultiClusterHubReconciler) ensureMCEInstallation(ctx context.Context, m
 	// Apply MCE sub
 	calcSub := v0.RenderSubscription(mceSub, subConfig, overrides, ctlSrc)
 	if createSub {
+		r.Log.Info("Creating MCE Subscription", "name", calcSub.Name, "namespace", calcSub.Namespace)
 		err = r.Client.Create(ctx, calcSub)
+		if err == nil {
+			r.Log.Info("MCE Subscription created successfully", "name", calcSub.Name, "namespace", calcSub.Namespace)
+		}
 	} else {
+		r.Log.Info("Updating MCE Subscription", "name", calcSub.Name, "namespace", calcSub.Namespace)
 		err = r.Client.Update(ctx, calcSub)
 	}
 	if err != nil {
 		if errors.IsConflict(err) {
 			// Transient: OLM concurrently updates the Subscription's status (e.g. during CSV
-			// install/upgrade), racing our spec update. This is normal and self-resolves on
-			// the next attempt once the resourceVersion catches up — retry quietly instead of
-			// surfacing it as a reconciler error, matching how syncHubStatus already treats
-			// this same class of conflict.
-			r.Log.Info("Subscription was concurrently modified, retrying", "name", calcSub.Name)
-			return ctrl.Result{Requeue: true}, nil
+			// install/upgrade), racing our spec update. This is normal and self-resolves on a
+			// later reconcile once the resourceVersion catches up — log it and move on with an
+			// empty result instead of an explicit Requeue. Callers (ensureMultiClusterEngine)
+			// treat any non-empty result as "stop here", so requesting a requeue here would
+			// block ensureMultiClusterEngineCR from running this cycle — starving MCE CR
+			// creation for as long as the Subscription keeps conflicting, which in practice can
+			// be most/every reconcile while OLM is actively installing the CSV.
+			r.Log.Info("Subscription was concurrently modified, will retry the update on a later reconcile",
+				"name", calcSub.Name)
+			return ctrl.Result{}, nil
 		}
 		return ctrl.Result{}, fmt.Errorf("error updating subscription %s: %w", calcSub.Name, err)
 	}
@@ -831,12 +840,16 @@ func (r *MultiClusterHubReconciler) ensureMCEClusterExtension(ctx context.Contex
 		if errors.IsConflict(err) {
 			// Transient: OLM v1's own controller concurrently updates the ClusterExtension's
 			// status (e.g. while resolving/installing the bundle), racing our spec update.
-			// This is normal and self-resolves on the next attempt once the resourceVersion
-			// catches up — retry quietly instead of surfacing it as a reconciler error,
-			// matching how syncHubStatus (and the OLM v0 Subscription path) already treat
-			// this same class of conflict.
-			r.Log.Info("ClusterExtension was concurrently modified, retrying", "name", calcCE.Name)
-			return ctrl.Result{Requeue: true}, nil
+			// This is normal and self-resolves on a later reconcile once the resourceVersion
+			// catches up — log it and move on with an empty result instead of an explicit
+			// Requeue. Callers (ensureMultiClusterEngine) treat any non-empty result as "stop
+			// here", so requesting a requeue here would block ensureMultiClusterEngineCR from
+			// running this cycle — starving MCE CR creation for as long as the ClusterExtension
+			// keeps conflicting, which in practice can be most/every reconcile while OLM v1 is
+			// actively resolving/installing the bundle.
+			r.Log.Info("ClusterExtension was concurrently modified, will retry the update on a later reconcile",
+				"name", calcCE.Name)
+			return ctrl.Result{}, nil
 		}
 		return ctrl.Result{}, fmt.Errorf("error updating ClusterExtension %s: %w", calcCE.Name, err)
 	}
