@@ -242,6 +242,11 @@ const (
 	// Terminating means that the multiclusterhub has been deleted and is cleaning up.
 	Terminating HubConditionType = "Terminating"
 
+	// FinalizeProgress reports which finalization phase the hub is executing or waiting on while the
+	// MultiClusterHub deletion timestamp is set. Use this condition to diagnose stalled uninstall when
+	// the hub finalizer has not completed.
+	FinalizeProgress HubConditionType = "FinalizeProgress"
+
 	// Bocked means there is something preventing an update from occurring
 	Blocked HubConditionType = "Blocked"
 

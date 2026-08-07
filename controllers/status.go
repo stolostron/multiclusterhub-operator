@@ -79,7 +79,28 @@ const (
 	RequirementsNotMetReason = "RequirementsNotMet"
 
 	FailedApplyingComponent = "FailedApplyingComponent"
+
+	// Reasons for HubCondition FinalizeProgress (MultiClusterHub deletion / uninstall visibility)
+	FinalizePhaseStartingReason                 = "FinalizeStarting"
+	FinalizePhaseApplicationSubscriptionsReason = "FinalizeApplicationSubscriptions"
+	FinalizePhaseHubComponentsReason            = "FinalizeHubComponents"
+	FinalizePhaseClusterBackupNamespaceReason   = "FinalizeClusterBackupNamespace"
+	FinalizePhaseClusterRolesReason             = "FinalizeClusterRoles"
+	FinalizePhaseClusterRoleBindingsReason      = "FinalizeClusterRoleBindings"
+	FinalizePhaseMultiClusterEngineReason       = "FinalizeMultiClusterEngine"
+	FinalizePhaseOrphanMultiClusterEngineReason = "FinalizeOrphanMultiClusterEngine"
+
+	maxFinalizeProgressMessageLen = 4096
 )
+
+// RecordFinalizeProgress sets status.conditions FinalizeProgress for visibility while the hub finalizer runs.
+func RecordFinalizeProgress(m *operatorsv1.MultiClusterHub, phaseReason string, detail string) {
+	msg := detail
+	if len(msg) > maxFinalizeProgressMessageLen {
+		msg = msg[:maxFinalizeProgressMessageLen] + "… (truncated)"
+	}
+	SetHubCondition(&m.Status, *NewHubCondition(operatorsv1.FinalizeProgress, metav1.ConditionTrue, phaseReason, msg))
+}
 
 var (
 	prevAvailability = make(map[string]bool)

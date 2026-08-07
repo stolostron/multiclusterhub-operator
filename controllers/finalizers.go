@@ -31,6 +31,7 @@ import (
 )
 
 func (r *MultiClusterHubReconciler) cleanupClusterRoles(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+	RecordFinalizeProgress(m, FinalizePhaseClusterRolesReason, "Deleting ClusterRoles labeled by this MultiClusterHub install.")
 	err := r.Client.DeleteAllOf(context.TODO(), &rbacv1.ClusterRole{}, client.MatchingLabels{
 		"installer.name":      m.GetName(),
 		"installer.namespace": m.GetNamespace(),
@@ -50,6 +51,7 @@ func (r *MultiClusterHubReconciler) cleanupClusterRoles(reqLogger logr.Logger, m
 }
 
 func (r *MultiClusterHubReconciler) cleanupClusterRoleBindings(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+	RecordFinalizeProgress(m, FinalizePhaseClusterRoleBindingsReason, "Deleting ClusterRoleBindings labeled by this MultiClusterHub install.")
 	err := r.Client.DeleteAllOf(context.TODO(), &rbacv1.ClusterRoleBinding{}, client.MatchingLabels{
 		"installer.name":      m.GetName(),
 		"installer.namespace": m.GetNamespace(),
@@ -70,8 +72,13 @@ func (r *MultiClusterHubReconciler) cleanupClusterRoleBindings(reqLogger logr.Lo
 func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	ctx := context.Background()
 
+	RecordFinalizeProgress(m, FinalizePhaseMultiClusterEngineReason,
+		"Removing MultiClusterEngine and related Subscription, CSV, OperatorGroup (when owned by this hub).")
+
 	mce, err := multiclusterengineutils.GetManagedMCE(ctx, r.Client)
 	if err != nil && !apimeta.IsNoMatchError(err) {
+		RecordFinalizeProgress(m, FinalizePhaseMultiClusterEngineReason,
+			fmt.Sprintf("Failed to list/get MultiClusterEngine: %v", err))
 		return err
 	}
 	if mce != nil && !multiclusterengine.MCECreatedByMCH(mce, m) {
@@ -83,8 +90,12 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 		r.Log.Info("Deleting MultiClusterEngine resource")
 		err = r.Client.Delete(ctx, mce)
 		if err != nil && (!errors.IsNotFound(err) || !errors.IsGone(err)) {
+			RecordFinalizeProgress(m, FinalizePhaseMultiClusterEngineReason,
+				fmt.Sprintf("Deleting MultiClusterEngine failed: %v", err))
 			return err
 		}
+		RecordFinalizeProgress(m, FinalizePhaseMultiClusterEngineReason,
+			"MultiClusterEngine delete requested; waiting for the resource and its dependents to finalize.")
 		return fmt.Errorf("MCE has not yet been terminated")
 	}
 
@@ -183,6 +194,8 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 			if err != nil && !errors.IsNotFound(err) {
 				return err
 			}
+			RecordFinalizeProgress(m, FinalizePhaseMultiClusterEngineReason,
+				"Waiting for multicluster-engine namespace to terminate.")
 			return fmt.Errorf("namespace has not yet been terminated")
 		}
 	} else {
@@ -194,19 +207,27 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 }
 func (r *MultiClusterHubReconciler) cleanupNamespaces(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	ctx := context.Background()
+	RecordFinalizeProgress(m, FinalizePhaseClusterBackupNamespaceReason,
+		"Cleaning up hub-managed namespaces (cluster backup subscription namespace when present).")
 	clusterBackupNamespace := &corev1.Namespace{}
 	err := r.Client.Get(ctx, types.NamespacedName{Name: utils.ClusterSubscriptionNamespace}, clusterBackupNamespace)
 	if err == nil {
 		err = r.Client.Delete(ctx, clusterBackupNamespace)
 		if err != nil && !errors.IsNotFound(err) {
+			RecordFinalizeProgress(m, FinalizePhaseClusterBackupNamespaceReason,
+				fmt.Sprintf("Deleting cluster backup namespace failed: %v", err))
 			return err
 		}
+		RecordFinalizeProgress(m, FinalizePhaseClusterBackupNamespaceReason,
+			"Waiting for cluster backup subscription namespace to terminate.")
 		return fmt.Errorf("namespace has not yet been terminated")
 	}
 
 	return nil
 }
 func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+	RecordFinalizeProgress(m, FinalizePhaseApplicationSubscriptionsReason,
+		"Listing and removing openshift-multicluster Application Subscription and HelmRelease resources for this hub.")
 	installerLabels := client.MatchingLabels{
 		"installer.name":      m.GetName(),
 		"installer.namespace": m.GetNamespace(),
@@ -229,12 +250,16 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 	err := r.Client.List(context.TODO(), appSubList, installerLabels)
 	if err != nil && !errors.IsNotFound(err) {
 		reqLogger.Error(err, "Error while listing appsubs")
+		RecordFinalizeProgress(m, FinalizePhaseApplicationSubscriptionsReason,
+			fmt.Sprintf("Failed to list Application Subscriptions for uninstall: %v", err))
 		return err
 	}
 
 	err = r.Client.List(context.TODO(), helmReleaseList, installerLabels)
 	if err != nil && !errors.IsNotFound(err) {
 		reqLogger.Error(err, "Error while listing helmreleases")
+		RecordFinalizeProgress(m, FinalizePhaseApplicationSubscriptionsReason,
+			fmt.Sprintf("Failed to list HelmRelease resources for uninstall: %v", err))
 		return err
 	}
 
@@ -260,6 +285,8 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 					continue
 				}
 				reqLogger.Error(err, fmt.Sprintf("Error getting helmrelease: %s", helmReleaseName))
+				RecordFinalizeProgress(m, FinalizePhaseApplicationSubscriptionsReason,
+					fmt.Sprintf("Preparing HelmRelease %s failed: %v", helmReleaseName, err))
 				return err
 			}
 
@@ -267,6 +294,8 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 			err = r.Client.Update(context.TODO(), helmRelease)
 			if err != nil {
 				reqLogger.Error(err, fmt.Sprintf("Error updating helmrelease: %s", helmReleaseName))
+				RecordFinalizeProgress(m, FinalizePhaseApplicationSubscriptionsReason,
+					fmt.Sprintf("Labeling HelmRelease %s failed: %v", helmReleaseName, err))
 				return err
 			}
 		}
@@ -278,6 +307,8 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 			err = r.Client.Delete(context.TODO(), &appSubList.Items[i])
 			if err != nil {
 				reqLogger.Error(err, fmt.Sprintf("Error terminating sub: %s", appsub.GetName()))
+				RecordFinalizeProgress(m, FinalizePhaseApplicationSubscriptionsReason,
+					fmt.Sprintf("Deleting Application Subscription %s failed: %v", appsub.GetName(), err))
 				return err
 			}
 		}
@@ -285,6 +316,9 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 
 	if len(appSubList.Items) != 0 || len(helmReleaseList.Items) != 0 {
 		reqLogger.Info("Waiting for helmreleases to be terminated")
+		waitDetail := fmt.Sprintf("Waiting for %d Application Subscription(s) and %d HelmRelease resource(s) to finish terminating.",
+			len(appSubList.Items), len(helmReleaseList.Items))
+		RecordFinalizeProgress(m, FinalizePhaseApplicationSubscriptionsReason, waitDetail)
 		waiting := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, HelmReleaseTerminatingReason, "Waiting for helmreleases to terminate.")
 		SetHubCondition(&m.Status, *waiting)
 		return fmt.Errorf("waiting for helmreleases to be terminated")
@@ -296,6 +330,9 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 
 func (r *MultiClusterHubReconciler) orphanOwnedMultiClusterEngine(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
 	ctx := context.Background()
+
+	RecordFinalizeProgress(m, FinalizePhaseOrphanMultiClusterEngineReason,
+		"If a pre-existing MultiClusterEngine is present, remove MCH ownership finalizer and managed-by labels.")
 
 	mce, err := multiclusterengineutils.GetManagedMCE(ctx, r.Client)
 	if mce == nil {
@@ -316,6 +353,8 @@ func (r *MultiClusterHubReconciler) orphanOwnedMultiClusterEngine(reqLogger logr
 	delete(labels, multiclusterengineutils.MCEManagedByLabel)
 	mce.SetLabels(labels)
 	if err = r.Client.Update(ctx, mce); err != nil {
+		RecordFinalizeProgress(m, FinalizePhaseOrphanMultiClusterEngineReason,
+			fmt.Sprintf("Updating pre-existing MultiClusterEngine to orphan from MCH failed: %v", err))
 		return err
 	}
 	r.Log.Info("MCE orphaned")
