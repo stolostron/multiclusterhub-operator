@@ -19,6 +19,29 @@ spec:
           properties:
             spec:
               type: object
+              properties:
+                managedResources:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                    - kind
+                    - name
+                    - scope
+                    - version
+                    properties:
+                      group:
+                        type: string
+                      version:
+                        type: string
+                      kind:
+                        type: string
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                      scope:
+                        type: string
   # either Namespaced or Cluster
   scope: Namespaced
   names:

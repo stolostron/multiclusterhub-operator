@@ -21,6 +21,7 @@ package v1
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // AvailabilityType ...
@@ -320,7 +321,33 @@ type InternalHubComponentList struct {
 	Items           []InternalHubComponent `json:"items"`
 }
 
-type InternalHubComponentSpec struct{}
+type InternalHubComponentSpec struct {
+	ManagedResources []ManagedResource `json:"managedResources,omitempty"`
+}
+
+type ResourceScope string
+
+const (
+	ClusterScoped   ResourceScope = "Cluster"
+	NamespaceScoped ResourceScope = "Namespaced"
+)
+
+type ManagedResource struct {
+	Group     string        `json:"group,omitempty"`
+	Version   string        `json:"version"`
+	Kind      string        `json:"kind"`
+	Name      string        `json:"name"`
+	Namespace string        `json:"namespace,omitempty"`
+	Scope     ResourceScope `json:"scope"`
+}
+
+func (r ManagedResource) GroupVersionKind() schema.GroupVersionKind {
+	return schema.GroupVersionKind{
+		Group:   r.Group,
+		Version: r.Version,
+		Kind:    r.Kind,
+	}
+}
 
 func init() {
 	SchemeBuilder.Register(&MultiClusterHub{}, &MultiClusterHubList{})
