@@ -27,11 +27,11 @@ type GenerationChangedPredicate struct {
 // Update implements default UpdateEvent filter for validating generation change
 func (GenerationChangedPredicate) Update(e event.UpdateEvent) bool {
 	if e.ObjectOld == nil {
-		log.Error(nil, "Update event has no old runtime object to update", "event", e)
+		log.Info("Update event has no old runtime object")
 		return false
 	}
 	if e.ObjectNew == nil {
-		log.Error(nil, "Update event has no new runtime object for update", "event", e)
+		log.Info("Update event has no new runtime object")
 		return false
 	}
 

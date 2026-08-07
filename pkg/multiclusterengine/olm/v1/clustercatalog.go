@@ -124,8 +124,8 @@ func GetClusterCatalog(ctx context.Context, k8sClient client.Client, desiredPack
 	}
 
 	catalog := highestPriorityCatalogs[0]
-	log.Info(fmt.Sprintf("Using ClusterCatalog %s (priority: %d) for package %s",
-		catalog.Name, catalog.Spec.Priority, desiredPackage))
+	log.Info("Using ClusterCatalog for package",
+		"catalog", catalog.Name, "priority", catalog.Spec.Priority, "package", desiredPackage)
 	return catalog.Name, nil
 }
 

@@ -62,7 +62,7 @@ func (r *MultiClusterHubReconciler) SetDefaultStorageClassName(ctx context.Conte
 		overrideStorageClass != envStorageClass {
 
 		if err := os.Setenv(helpers.DefaultStorageClassName, overrideStorageClass); err != nil {
-			log.Error(err, "unable to set the default StorageClass environment variable from annotation",
+			log.Error(err, "Unable to set default StorageClass environment variable from annotation",
 				helpers.DefaultStorageClassName, overrideStorageClass)
 
 			return ctrl.Result{}, err
@@ -81,7 +81,7 @@ func (r *MultiClusterHubReconciler) SetDefaultStorageClassName(ctx context.Conte
 			return ctrl.Result{}, nil
 		}
 
-		r.Log.Error(err, "failed to list StorageClass resources")
+		r.Log.Error(err, "Failed to list StorageClass resources")
 		return ctrl.Result{}, err
 	}
 
