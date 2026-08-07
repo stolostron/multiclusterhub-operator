@@ -94,7 +94,7 @@ var (
 //+kubebuilder:rbac:groups=agent-install.openshift.io,resources=agentserviceconfigs,verbs=get;list;watch
 
 // InternalHubComponent
-// +kubebuilder:rbac:groups="operator.open-cluster-management.io",resources="internalhubcomponents",verbs=create;get;delete;patch;list;watch
+// +kubebuilder:rbac:groups="operator.open-cluster-management.io",resources="internalhubcomponents",verbs=create;get;update;delete;patch;list;watch
 
 // Note: The Reconcile function has been moved to reconcile.go
 // Note: STS-related functions have been moved to sts.go
