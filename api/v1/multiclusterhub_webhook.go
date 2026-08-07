@@ -430,22 +430,24 @@ func validateOLMAnnotations(ctx context.Context, mch *MultiClusterHub) error {
 	}
 
 	// Validate MCE annotations
-	if err := validateOLMAnnotationPair(olmVersion, annotations,
+	if err := validateOLMAnnotationPair(olmVersion, "", annotations,
 		annotationMCESubscriptionSpec, annotationMCEClusterExtensionSpec); err != nil {
 		return fmt.Errorf("validating MCE OLM annotations: %w", err)
 	}
 
 	// OADP always uses v0 Subscription until OADP team ships OLM v1-ready bundles.
-	if err := validateOLMAnnotationPair("v0", annotations,
-		annotationOADPSubscriptionSpec, annotationOADPClusterExtensionSpec); err != nil {
+	if err := validateOLMAnnotationPair("v0",
+		"OADP requires a v0 Subscription and does not yet support OLM v1",
+		annotations, annotationOADPSubscriptionSpec, annotationOADPClusterExtensionSpec); err != nil {
 		return fmt.Errorf("validating OADP OLM annotations: %w", err)
 	}
 
 	return nil
 }
 
-// validateOLMAnnotationPair validates that a v0/v1 annotation pair matches the detected OLM version
-func validateOLMAnnotationPair(olmVersion string, annotations map[string]string, v0Annotation, v1Annotation string) error {
+// validateOLMAnnotationPair validates that a v0/v1 annotation pair matches the expected OLM version.
+// When reason is non-empty it replaces the default cluster-version explanation in error messages.
+func validateOLMAnnotationPair(olmVersion, reason string, annotations map[string]string, v0Annotation, v1Annotation string) error {
 	hasV0 := annotations[v0Annotation] != ""
 	hasV1 := annotations[v1Annotation] != ""
 
@@ -453,14 +455,26 @@ func validateOLMAnnotationPair(olmVersion string, annotations map[string]string,
 		return nil
 	}
 
+	var explanation string
+	if reason != "" {
+		explanation = reason
+	} else {
+		switch olmVersion {
+		case "v1":
+			explanation = "This cluster uses OLM v1"
+		case "v0":
+			explanation = "This cluster uses OLM v0"
+		}
+	}
+
 	if olmVersion == "v1" && hasV0 {
-		return fmt.Errorf("annotation %q is only valid for OLM v0 clusters. This cluster uses OLM v1. Use %q instead",
-			v0Annotation, v1Annotation)
+		return fmt.Errorf("annotation %q is only valid for OLM v0 clusters. %s. Use %q instead",
+			v0Annotation, explanation, v1Annotation)
 	}
 
 	if olmVersion == "v0" && hasV1 {
-		return fmt.Errorf("annotation %q is only valid for OLM v1 clusters. This cluster uses OLM v0. Use %q instead",
-			v1Annotation, v0Annotation)
+		return fmt.Errorf("annotation %q is only valid for OLM v1 clusters. %s. Use %q instead",
+			v1Annotation, explanation, v0Annotation)
 	}
 
 	if olmVersion == "" && hasV1 {
