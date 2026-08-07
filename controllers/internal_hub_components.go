@@ -28,7 +28,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func (r *MultiClusterHubReconciler) ensureInternalHubComponent(ctx context.Context, m *operatorv1.MultiClusterHub,
@@ -77,13 +76,13 @@ func (r *MultiClusterHubReconciler) ensureNoInternalHubComponent(ctx context.Con
 
 	// Check if it has a deletion timestamp (indicating it's in the process of being deleted)
 	if ihc.GetDeletionTimestamp() != nil {
-		log.Info("InternalHubComponent deletion in progress", "Name", ihc.GetName(), "Namespace", ihc.GetNamespace(),
+		r.Log.Info("InternalHubComponent deletion in progress", "Name", ihc.GetName(), "Namespace", ihc.GetNamespace(),
 			"DeletionTimestamp", ihc.GetDeletionTimestamp())
 
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
 
-	log.Info("Deleting InternalHubComponent", "Name", ihc.GetName(), "Namespace", ihc.GetNamespace())
+	r.Log.Info("Deleting InternalHubComponent", "Name", ihc.GetName(), "Namespace", ihc.GetNamespace())
 	if err := r.Client.Delete(ctx, ihc); err != nil {
 		if !errors.IsNotFound(err) {
 			return ctrl.Result{}, fmt.Errorf("failed to delete InternalHubComponent CR: %s/%s: %v",
@@ -95,7 +94,7 @@ func (r *MultiClusterHubReconciler) ensureNoInternalHubComponent(ctx context.Con
 	if err := r.Client.Get(ctx,
 		types.NamespacedName{Name: ihc.GetName(), Namespace: ihc.GetNamespace()}, ihc); err != nil {
 		if errors.IsNotFound(err) {
-			logf.Log.Info("InternalHubComponent successfully deleted", "Name", ihc.GetName(), "Namespace", ihc.GetNamespace())
+			r.Log.Info("InternalHubComponent successfully deleted", "Name", ihc.GetName(), "Namespace", ihc.GetNamespace())
 			return ctrl.Result{}, nil
 		}
 

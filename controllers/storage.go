@@ -30,7 +30,6 @@ import (
 	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func (r *MultiClusterHubReconciler) GetDefaultStorageClassName(storageClasses storagev1.StorageClassList) string {
@@ -43,7 +42,7 @@ func (r *MultiClusterHubReconciler) GetDefaultStorageClassName(storageClasses st
 	}
 
 	if len(storageClasses.Items) > 1 {
-		log.Info("Warning: Multiple non-default storage classes found. A default storage class needs to be declared.")
+		r.Log.Info("Warning: Multiple non-default storage classes found. A default storage class needs to be declared.")
 	}
 	return ""
 }
@@ -62,13 +61,13 @@ func (r *MultiClusterHubReconciler) SetDefaultStorageClassName(ctx context.Conte
 		overrideStorageClass != envStorageClass {
 
 		if err := os.Setenv(helpers.DefaultStorageClassName, overrideStorageClass); err != nil {
-			log.Error(err, "unable to set the default StorageClass environment variable from annotation",
+			r.Log.Error(err, "unable to set the default StorageClass environment variable from annotation",
 				helpers.DefaultStorageClassName, overrideStorageClass)
 
 			return ctrl.Result{}, err
 		}
 
-		log.Info("Applied default StorageClass annotation override",
+		r.Log.Info("Applied default StorageClass annotation override",
 			"StorageClassName", overrideStorageClass)
 		return ctrl.Result{}, nil
 	}
@@ -92,7 +91,7 @@ func (r *MultiClusterHubReconciler) SetDefaultStorageClassName(ctx context.Conte
 			return ctrl.Result{}, err
 		}
 
-		logf.Log.Info("Default StorageClassName set from cluster resources",
+		r.Log.Info("Default StorageClassName set from cluster resources",
 			"Name", defaultStorageClass)
 	}
 	return ctrl.Result{}, nil

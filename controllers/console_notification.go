@@ -78,7 +78,7 @@ func (r *MultiClusterHubReconciler) ensureMCEComplianceBanner(ctx context.Contex
 	existing := &consolev1.ConsoleNotification{}
 	err := r.Client.Get(ctx, types.NamespacedName{Name: mceComplianceBannerName}, existing)
 	if errors.IsNotFound(err) {
-		log.Info("Creating MCE compliance ConsoleNotification banner")
+		r.Log.Info("Creating MCE compliance ConsoleNotification banner")
 		if err := r.Client.Create(ctx, desired); err != nil {
 			return fmt.Errorf("failed to create ConsoleNotification %s: %w", mceComplianceBannerName, err)
 		}
@@ -95,7 +95,7 @@ func (r *MultiClusterHubReconciler) ensureMCEComplianceBanner(ctx context.Contex
 		patch := client.MergeFrom(existing.DeepCopy())
 		existing.Spec = desired.Spec
 		existing.Labels = desired.Labels
-		log.Info("Updating MCE compliance ConsoleNotification banner")
+		r.Log.Info("Updating MCE compliance ConsoleNotification banner")
 		if err := r.Client.Patch(ctx, existing, patch); err != nil {
 			return fmt.Errorf("failed to patch ConsoleNotification %s: %w", mceComplianceBannerName, err)
 		}
@@ -114,7 +114,7 @@ func (r *MultiClusterHubReconciler) removeMCEComplianceBanner(ctx context.Contex
 		return fmt.Errorf("failed to get ConsoleNotification %s: %w", mceComplianceBannerName, err)
 	}
 
-	log.Info("Removing MCE compliance ConsoleNotification banner")
+	r.Log.Info("Removing MCE compliance ConsoleNotification banner")
 	return r.Client.Delete(ctx, notification)
 }
 

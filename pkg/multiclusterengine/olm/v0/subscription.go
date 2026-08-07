@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/go-logr/logr"
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
@@ -16,7 +17,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -167,8 +167,7 @@ func GetManagedMCESubscription(ctx context.Context, k8sClient client.Client) (*s
 }
 
 // FindAndManageMCESubscription finds MCE subscription. label it for future. return nil if no sub found.
-func FindAndManageMCESubscription(ctx context.Context, k8sClient client.Client, desiredPackage string) (*subv1alpha1.Subscription, error) {
-	// first find subscription via managed-by label
+func FindAndManageMCESubscription(log logr.Logger, ctx context.Context, k8sClient client.Client, desiredPackage string) (*subv1alpha1.Subscription, error) {
 	sub, err := GetManagedMCESubscription(ctx, k8sClient)
 	if err != nil {
 		return nil, err
@@ -177,9 +176,7 @@ func FindAndManageMCESubscription(ctx context.Context, k8sClient client.Client, 
 		return sub, nil
 	}
 
-	// if label doesn't work find it via .spec.name (it's package)
-	// we can't assume it's name or namespace
-	log.Log.WithName("reconcile").Info("Failed to find subscription via label")
+	log.Info("Failed to find subscription via label, listing all")
 	wholeList := &subv1alpha1.SubscriptionList{}
 	err = k8sClient.List(ctx, wholeList)
 	if err != nil {
@@ -190,16 +187,15 @@ func FindAndManageMCESubscription(ctx context.Context, k8sClient client.Client, 
 			continue
 		}
 		if wholeList.Items[i].Spec.Package == desiredPackage {
-			// adding label so it can be found in the future
 			labels := wholeList.Items[i].GetLabels()
 			if labels == nil {
 				labels = map[string]string{}
 			}
 			labels[multiclusterengineutils.MCEManagedByLabel] = "true"
 			wholeList.Items[i].SetLabels(labels)
-			log.Log.WithName("reconcile").Info("Adding label to subscription")
+			log.Info("Adding label to subscription")
 			if err := k8sClient.Update(ctx, &wholeList.Items[i]); err != nil {
-				log.Log.WithName("reconcile").Error(err, "Failed to add managedBy label to preexisting MCE with MCH spec")
+				log.Error(err, "Failed to add managedBy label to preexisting MCE subscription")
 				return &wholeList.Items[i], err
 			}
 			return &wholeList.Items[i], nil

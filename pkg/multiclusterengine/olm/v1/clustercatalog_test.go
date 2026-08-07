@@ -7,12 +7,15 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-logr/logr"
 	ocv1 "github.com/operator-framework/operator-controller/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
+
+var testLog = logr.Discard()
 
 func Test_GetClusterCatalog(t *testing.T) {
 	// Save original catalogQueryFunc and restore after tests
@@ -332,7 +335,7 @@ func Test_GetClusterCatalog(t *testing.T) {
 				Build()
 
 			// Run test
-			gotName, err := GetClusterCatalog(context.TODO(), client, tt.desiredPackage)
+			gotName, err := GetClusterCatalog(testLog, context.TODO(), client, tt.desiredPackage)
 
 			// Verify error expectations
 			if (err != nil) != tt.wantErr {

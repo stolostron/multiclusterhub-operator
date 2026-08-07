@@ -208,7 +208,7 @@ func TestFindAndManageMCESubscription(t *testing.T) {
 		WithLists(&subv1alpha1.SubscriptionList{Items: []subv1alpha1.Subscription{*managedSub1}}).
 		Build()
 
-	got, err := FindAndManageMCESubscription(context.Background(), cl, multiclusterengine.MCECommunityPackageName)
+	got, err := FindAndManageMCESubscription(testLog, context.Background(), cl, multiclusterengine.MCECommunityPackageName)
 	if err != nil {
 		t.Errorf("FindAndManageMCESubscription() should have found subscription by label. Got %v", err)
 	}
@@ -222,7 +222,7 @@ func TestFindAndManageMCESubscription(t *testing.T) {
 		WithLists(&subv1alpha1.SubscriptionList{Items: []subv1alpha1.Subscription{*managedSub1, *managedSub2}}).
 		Build()
 
-	_, err = FindAndManageMCESubscription(context.Background(), cl, multiclusterengine.MCECommunityPackageName)
+	_, err = FindAndManageMCESubscription(testLog, context.Background(), cl, multiclusterengine.MCECommunityPackageName)
 	if err == nil {
 		t.Errorf("FindAndManageMCESubscription() should have errored due to multiple subscriptions")
 	}
@@ -233,7 +233,7 @@ func TestFindAndManageMCESubscription(t *testing.T) {
 		WithLists(&subv1alpha1.SubscriptionList{Items: []subv1alpha1.Subscription{*unmanagedSub1}}).
 		Build()
 
-	got, err = FindAndManageMCESubscription(context.Background(), cl, multiclusterengine.MCECommunityPackageName)
+	got, err = FindAndManageMCESubscription(testLog, context.Background(), cl, multiclusterengine.MCECommunityPackageName)
 	if err != nil {
 		t.Errorf("FindAndManageMCESubscription() should have found subscription and labeled it. Got error %v", err)
 	}

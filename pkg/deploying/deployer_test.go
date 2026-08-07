@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,13 +19,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
+var testLog = logr.Discard()
+
 func TestNewDeployment(t *testing.T) {
 	fakeclient := fake.NewFakeClient()
 	dep, err := toUnstructuredObj(newDeployment("dep", "ns", 1))
 	if err != nil {
 		t.Fatalf("failed to generate deployment %v", err)
 	}
-	err, _ = Deploy(fakeclient, dep)
+	err, _ = Deploy(testLog, fakeclient, dep)
 	if err != nil {
 		t.Fatalf("failed to deploy deployment %v", err)
 	}
@@ -49,7 +52,7 @@ func newSA() *unstructured.Unstructured {
 func TestRepeatedDeploy(t *testing.T) {
 	fakeclient := fake.NewFakeClient()
 
-	err, new := Deploy(fakeclient, newSA())
+	err, new := Deploy(testLog, fakeclient, newSA())
 	if err != nil {
 		t.Fatalf("failed to deploy service account: %v", err)
 	}
@@ -57,7 +60,7 @@ func TestRepeatedDeploy(t *testing.T) {
 		t.Fatalf("Deploy() didn't create service account")
 	}
 
-	err, new = Deploy(fakeclient, newSA())
+	err, new = Deploy(testLog, fakeclient, newSA())
 	if err != nil {
 		t.Fatalf("failed to deploy service account: %v", err)
 	}
@@ -83,7 +86,7 @@ func TestRepeatedDeploy(t *testing.T) {
 	// Change resource and deploy again
 	annotatedSA := newSA()
 	annotatedSA.SetAnnotations(map[string]string{"foo": "bar"})
-	err, new = Deploy(fakeclient, annotatedSA)
+	err, new = Deploy(testLog, fakeclient, annotatedSA)
 	if err != nil {
 		t.Fatalf("failed to deploy service account: %v", err)
 	}
@@ -166,7 +169,7 @@ func Test_shasMatch(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := shasMatch(tt.found, tt.want); got != tt.expected {
+			if got := shasMatch(testLog, tt.found, tt.want); got != tt.expected {
 				t.Errorf("shasMatch() = %v, want %v", got, tt.expected)
 			}
 		})
@@ -178,7 +181,7 @@ func Test_annotate(t *testing.T) {
 	pod.SetAnnotations(map[string]string{"foo": "bar"})
 
 	t.Run("Keep existing annotations", func(t *testing.T) {
-		annotate(pod)
+		annotate(testLog, pod)
 		if got := pod.GetAnnotations()["foo"]; got != "bar" {
 			t.Errorf("Expected annotation to equal %s; got %s", "bar", got)
 		}

@@ -14,6 +14,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/go-logr/logr"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	renderer "github.com/stolostron/multiclusterhub-operator/pkg/rendering"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
@@ -97,7 +98,7 @@ func main() {
 	// Render charts for both OLM v0 and v1 to generate complete RBAC markers
 	var allTemplates []*unstructured.Unstructured
 	for _, olmVersion := range []string{"v0", "v1"} {
-		templates, errs := renderer.RenderCharts(chartsDir, testMCH, testImages, testTemplateOverrides, false, olmVersion)
+		templates, errs := renderer.RenderCharts(logr.Discard(), chartsDir, testMCH, testImages, testTemplateOverrides, false, olmVersion)
 		if len(errs) > 0 {
 			panic(errs)
 		}

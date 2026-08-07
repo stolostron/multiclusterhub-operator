@@ -4,13 +4,11 @@
 package renderer
 
 import (
-
-	// "reflect"
-
 	"os"
 	"reflect"
 	"testing"
 
+	"github.com/go-logr/logr"
 	v1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 
@@ -20,6 +18,8 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
+
+var testLog = logr.Discard()
 
 const (
 	chartsDir = "/charts/toggle"
@@ -105,7 +105,7 @@ func TestRender(t *testing.T) {
 
 	// multiple charts
 	chartsDir := chartsDir
-	templates, errs := RenderCharts(chartsDir, testMCH, testImages, templateOverrides, false, "v0")
+	templates, errs := RenderCharts(testLog, chartsDir, testMCH, testImages, templateOverrides, false, "v0")
 	if len(errs) > 0 {
 		for _, err := range errs {
 			t.Log(err.Error())
@@ -180,7 +180,7 @@ func TestRender(t *testing.T) {
 
 	for _, chartsPath := range chartPaths {
 		chartsPath := chartsPath
-		singleChartTemplates, errs := RenderChart(chartsPath, testMCH, singleChartTestImages, templateOverrides, false, "v0")
+		singleChartTemplates, errs := RenderChart(testLog, chartsPath, testMCH, singleChartTestImages, templateOverrides, false, "v0")
 		if len(errs) > 0 {
 			for _, err := range errs {
 				t.Log(err.Error())
@@ -317,7 +317,7 @@ func TestOADPAnnotation(t *testing.T) {
 		},
 	}
 
-	test1, test2, test3, test4, test5, test6 := GetOADPConfig(mch)
+	test1, test2, test3, test4, test5, test6 := GetOADPConfig(testLog, mch)
 
 	if test1 != "redhat-oadp-operator2" {
 		t.Error("Cluster Backup missing OADP overrides for name")
@@ -351,14 +351,14 @@ func TestOADPAnnotation(t *testing.T) {
 
 	// These should all be the defaults (no overrides)
 	// no ACM_HUB_OCP_VERSION set, should return stable channel
-	test1, test2, test3, test4, test5, test6 = GetOADPConfig(mch)
+	test1, test2, test3, test4, test5, test6 = GetOADPConfig(testLog, mch)
 	if test2 != defaultOADPStableChannel {
 		t.Error("Cluster Backup missing OADP overrides for 1.4 channel on unknown version of ocp")
 	}
 
 	// fake the ocp version to 4.18.0, it should result in stable-1.4 channel
 	os.Setenv("ACM_HUB_OCP_VERSION", "4.18.0")
-	test1, test2, test3, test4, test5, test6 = GetOADPConfig(mch)
+	test1, test2, test3, test4, test5, test6 = GetOADPConfig(testLog, mch)
 
 	if test1 != defaultOADPName {
 		t.Error("Cluster Backup missing OADP overrides for name")
@@ -386,14 +386,14 @@ func TestOADPAnnotation(t *testing.T) {
 
 	// fake the ocp version to 4.30.0, it should result in stable channel
 	os.Setenv("ACM_HUB_OCP_VERSION", "4.30.0")
-	test1, test2, test3, test4, test5, test6 = GetOADPConfig(mch)
+	test1, test2, test3, test4, test5, test6 = GetOADPConfig(testLog, mch)
 	if test2 != defaultOADPStableChannel {
 		t.Error("Cluster Backup missing OADP overrides for stable channel on ocp 4.30")
 	}
 
 	// fake the ocp version to something starting with anything other than 1.4, it should result in stable channel
 	os.Setenv("ACM_HUB_OCP_VERSION", "5.1.0")
-	test1, test2, test3, test4, test5, test6 = GetOADPConfig(mch)
+	test1, test2, test3, test4, test5, test6 = GetOADPConfig(testLog, mch)
 	if test2 != defaultOADPStableChannel {
 		t.Error("Cluster Backup missing OADP overrides for stable channel on ocp 5.1.0")
 	}
@@ -409,7 +409,7 @@ func TestOADPAnnotation(t *testing.T) {
 		},
 	}
 
-	overrides := parseOADPClusterExtensionAnnotation(mchV1)
+	overrides := parseOADPClusterExtensionAnnotation(testLog, mchV1)
 	if overrides == nil {
 		t.Error("Expected OADP ClusterExtension overrides, got nil")
 	} else {
@@ -430,7 +430,7 @@ func TestOADPAnnotation(t *testing.T) {
 			Namespace: "test",
 		},
 	}
-	overridesNil := parseOADPClusterExtensionAnnotation(mchNoAnnotation)
+	overridesNil := parseOADPClusterExtensionAnnotation(testLog, mchNoAnnotation)
 	if overridesNil != nil {
 		t.Error("Expected nil for no annotation, got overrides")
 	}
@@ -453,7 +453,7 @@ func TestOADPAnnotation(t *testing.T) {
 	}
 
 	// Render with v0 - should use v0 annotation (stable-1.0), NOT v1 annotation (stable-1.5)
-	templatesV0, errsV0 := RenderChart(utils.ClusterBackupChartLocation, mchBothAnnotations,
+	templatesV0, errsV0 := RenderChart(testLog, utils.ClusterBackupChartLocation, mchBothAnnotations,
 		map[string]string{"cluster_backup_controller": "quay.io/test:test"},
 		map[string]string{}, false, "v0")
 	if len(errsV0) > 0 {
@@ -506,7 +506,7 @@ func TestRenderChartOLMv1(t *testing.T) {
 	// Render cluster-backup chart with OLM v1 — OADP should still use v0 Subscription
 	// because OADP bundles don't yet support OLM v1
 	chartPath := utils.ClusterBackupChartLocation
-	templates, errs := RenderChart(chartPath, testMCH, testImages, templateOverrides, false, "v1")
+	templates, errs := RenderChart(testLog, chartPath, testMCH, testImages, templateOverrides, false, "v1")
 	if len(errs) > 0 {
 		for _, err := range errs {
 			t.Log(err.Error())
@@ -557,7 +557,7 @@ func TestParseProbeConfigFromAnnotations(t *testing.T) {
 			},
 		}
 
-		result := parseProbeConfigFromAnnotations(mch)
+		result := parseProbeConfigFromAnnotations(testLog, mch)
 		if result != nil {
 			t.Error("Expected nil when no annotations present")
 		}
@@ -576,7 +576,7 @@ func TestParseProbeConfigFromAnnotations(t *testing.T) {
 			},
 		}
 
-		result := parseProbeConfigFromAnnotations(mch)
+		result := parseProbeConfigFromAnnotations(testLog, mch)
 		if result == nil {
 			t.Fatal("Expected ProbeConfig, got nil")
 		}
@@ -603,7 +603,7 @@ func TestParseProbeConfigFromAnnotations(t *testing.T) {
 			},
 		}
 
-		result := parseProbeConfigFromAnnotations(mch)
+		result := parseProbeConfigFromAnnotations(testLog, mch)
 		if result == nil {
 			t.Fatal("Expected ProbeConfig, got nil")
 		}
@@ -631,7 +631,7 @@ func TestParseProbeConfigFromAnnotations(t *testing.T) {
 			},
 		}
 
-		result := parseProbeConfigFromAnnotations(mch)
+		result := parseProbeConfigFromAnnotations(testLog, mch)
 		if result == nil {
 			t.Fatal("Expected ProbeConfig, got nil")
 		}
@@ -657,7 +657,7 @@ func TestParseProbeConfigFromAnnotations(t *testing.T) {
 			},
 		}
 
-		result := parseProbeConfigFromAnnotations(mch)
+		result := parseProbeConfigFromAnnotations(testLog, mch)
 		if result == nil {
 			t.Fatal("Expected ProbeConfig, got nil")
 		}
@@ -686,7 +686,7 @@ func TestParseProbeConfigFromAnnotations(t *testing.T) {
 			},
 		}
 
-		result := parseProbeConfigFromAnnotations(mch)
+		result := parseProbeConfigFromAnnotations(testLog, mch)
 		if result == nil {
 			t.Fatal("Expected ProbeConfig, got nil")
 		}

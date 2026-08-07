@@ -12,12 +12,12 @@ import (
 	"math"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/go-logr/logr"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -29,26 +29,24 @@ const (
 
 // GetCatalogSource returns the name and namespace of an MCE catalogSource with the required channel.
 // Returns error if two or more catalogsources satisfy criteria.
-func GetCatalogSource(k8sClient client.Client, desiredChannel, desiredPackage string) (types.NamespacedName, error) {
+func GetCatalogSource(log logr.Logger, k8sClient client.Client, desiredChannel, desiredPackage string) (types.NamespacedName, error) {
 	nn := types.NamespacedName{}
 
-	pkgs, err := GetMCEPackageManifests(k8sClient, desiredPackage)
+	pkgs, err := GetMCEPackageManifests(log, k8sClient, desiredPackage)
 	if err != nil {
 		return nn, err
 	}
 
-	// Return an error if there are no package manifests found with the desired MCE package name.
 	if len(pkgs) == 0 {
 		return nn, fmt.Errorf("no %s packageManifests found", desiredPackage)
 	}
 
-	filtered := filterPackageManifests(pkgs, desiredChannel)
-	// Return an error if there are no package manifests found with the desired MCE channel name.
+	filtered := filterPackageManifests(log, pkgs, desiredChannel)
 	if len(filtered) == 0 {
 		return nn, fmt.Errorf("no %s packageManifests found with desired channel %s", desiredPackage, desiredChannel)
 	}
 
-	catalogSource, err := findHighestPriorityCatalogSource(k8sClient, filtered)
+	catalogSource, err := findHighestPriorityCatalogSource(log, k8sClient, filtered)
 	if err != nil {
 		return nn, err
 	}
@@ -67,11 +65,10 @@ func extractCatalogSource(pm olmapi.PackageManifest) types.NamespacedName {
 }
 
 // findHighestPriorityCatalogSource finds the catalog source with the highest priority among the given list.
-func findHighestPriorityCatalogSource(k8sClient client.Client, pkgs []olmapi.PackageManifest) (*subv1alpha1.CatalogSource, error) {
+func findHighestPriorityCatalogSource(log logr.Logger, k8sClient client.Client, pkgs []olmapi.PackageManifest) (*subv1alpha1.CatalogSource, error) {
 	var (
 		highestPriorityCatalogSources []*subv1alpha1.CatalogSource
 		maxPriority                   = math.MinInt64
-		log                           = log.Log.WithName("reconcile")
 	)
 
 	for _, pm := range pkgs {
@@ -79,18 +76,15 @@ func findHighestPriorityCatalogSource(k8sClient client.Client, pkgs []olmapi.Pac
 		nn := extractCatalogSource(pm)
 
 		if err := k8sClient.Get(context.TODO(), nn, cs); err != nil {
-			// Log the error and continue to the next iteration
-			log.Error(err, fmt.Sprintf("failed to retrieve catalog source %s/%s", nn.Namespace, nn.Name))
+			log.Error(err, "Failed to retrieve catalog source", "namespace", nn.Namespace, "name", nn.Name)
 			continue
 		}
 
 		if cs.Spec.Priority > maxPriority {
-			// Found a new highest priority, reset the slice and update the maxPriority
 			maxPriority = cs.Spec.Priority
 			highestPriorityCatalogSources = []*subv1alpha1.CatalogSource{cs}
 
 		} else if cs.Spec.Priority == maxPriority {
-			// Found another catalog source with the same highest priority, append it to the slice
 			highestPriorityCatalogSources = append(highestPriorityCatalogSources, cs)
 		}
 	}
@@ -101,12 +95,11 @@ func findHighestPriorityCatalogSource(k8sClient client.Client, pkgs []olmapi.Pac
 
 	case 1:
 		catalogSource := highestPriorityCatalogSources[0]
-		log.V(2).Info(fmt.Sprintf("Using catalog source %v/%v with the highest priority: %v",
-			catalogSource.Namespace, catalogSource.Name, catalogSource.Spec.Priority))
+		log.V(2).Info("Using catalog source with highest priority",
+			"namespace", catalogSource.Namespace, "name", catalogSource.Name, "priority", catalogSource.Spec.Priority)
 		return catalogSource, nil
 
 	default:
-		// Multiple catalog sources found with the same highest priority
 		var catalogNames []string
 		for _, cs := range highestPriorityCatalogSources {
 			catalogNames = append(catalogNames, fmt.Sprintf("%s/%s", cs.Namespace, cs.Name))
@@ -122,7 +115,7 @@ func findHighestPriorityCatalogSource(k8sClient client.Client, pkgs []olmapi.Pac
 // at the latest available version. Returns an empty list if no packagemanifests include the
 // channel. If more than one packagemanifest have the same latest version available it will
 // return them all.
-func filterPackageManifests(pkgManifests []olmapi.PackageManifest, desiredChannel string) []olmapi.PackageManifest {
+func filterPackageManifests(log logr.Logger, pkgManifests []olmapi.PackageManifest, desiredChannel string) []olmapi.PackageManifest {
 	filtered := []olmapi.PackageManifest{}
 	latestVersion := &semver.Version{}
 	for _, p := range pkgManifests {
@@ -131,7 +124,7 @@ func filterPackageManifests(pkgManifests []olmapi.PackageManifest, desiredChanne
 				versionString := c.CurrentCSVDesc.Version.String()
 				v, err := semver.NewVersion(versionString)
 				if err != nil {
-					log.Log.WithName("reconcile").Info("failed to parse version from packagemanifest", "catalogsource", p.Status.CatalogSource)
+					log.Info("Failed to parse version from packagemanifest", "catalogsource", p.Status.CatalogSource)
 					continue
 				}
 				if len(filtered) == 0 {
@@ -152,9 +145,8 @@ func filterPackageManifests(pkgManifests []olmapi.PackageManifest, desiredChanne
 }
 
 // GetMCEPackageManifests returns packagemanifests with the name multicluster-engine
-func GetMCEPackageManifests(k8sClient client.Client, packageName string) ([]olmapi.PackageManifest, error) {
+func GetMCEPackageManifests(log logr.Logger, k8sClient client.Client, packageName string) ([]olmapi.PackageManifest, error) {
 	ctx := context.Background()
-	log := log.Log.WithName("reconcile")
 	packageManifests := &olmapi.PackageManifestList{}
 	var err error
 	if utils.IsUnitTest() {

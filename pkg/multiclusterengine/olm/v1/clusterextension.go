@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/go-logr/logr"
 	ocv1 "github.com/operator-framework/operator-controller/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
@@ -18,7 +19,6 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -124,11 +124,8 @@ func GetManagedMCEClusterExtension(ctx context.Context, k8sClient client.Client)
 }
 
 // FindAndManageMCEClusterExtension finds MCE ClusterExtension, labels it for future. Returns nil if not found.
-func FindAndManageMCEClusterExtension(ctx context.Context, k8sClient client.Client,
+func FindAndManageMCEClusterExtension(log logr.Logger, ctx context.Context, k8sClient client.Client,
 	desiredPackage string) (*ocv1.ClusterExtension, error) {
-	log := log.Log.WithName("reconcile")
-
-	// First try via managed label
 	ce, err := GetManagedMCEClusterExtension(ctx, k8sClient)
 	if err != nil {
 		return nil, err

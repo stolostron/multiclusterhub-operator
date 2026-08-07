@@ -5,7 +5,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
@@ -65,14 +64,14 @@ func getKlusterletAddonConfig(m *operatorsv1.MultiClusterHub) *unstructured.Unst
 func (r *MultiClusterHubReconciler) ensureKlusterletAddonConfig(m *operatorsv1.MultiClusterHub) (ctrl.Result, error) {
 	ctx := context.Background()
 
-	r.Log.Info(fmt.Sprintf("Checking for ManagedCluster %v namespace", m.Spec.LocalClusterName))
+	r.Log.Info("Checking for ManagedCluster namespace", "namespace", m.Spec.LocalClusterName)
 	ns := &corev1.Namespace{}
 	err := r.Client.Get(ctx, types.NamespacedName{Name: m.Spec.LocalClusterName}, ns)
 	if err != nil && errors.IsNotFound(err) {
-		r.Log.Info(fmt.Sprintf("Waiting for %v namespace to be created", m.Spec.LocalClusterName))
+		r.Log.Info("Waiting for namespace to be created", "namespace", m.Spec.LocalClusterName)
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	} else if err != nil {
-		r.Log.Error(err, fmt.Sprintf("Failed to check for %v namespace", m.Spec.LocalClusterName))
+		r.Log.Error(err, "Failed to check for namespace", "namespace", m.Spec.LocalClusterName)
 		return ctrl.Result{}, err
 	}
 

@@ -90,7 +90,7 @@ func getTestImageOverrides() map[string]string {
 func ApplyPrereqs(k8sClient client.Client) {
 	ctx := context.Background()
 	if err := os.Setenv(helpers.DefaultStorageClassName, "gp3-csi"); err != nil {
-		log.Error(err, "failed to set default storage class")
+		testLog.Error(err, "failed to set default storage class")
 	}
 
 	By("Creating Ingress")

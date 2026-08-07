@@ -15,11 +15,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-logr/logr"
 	configv1 "github.com/openshift/api/config/v1"
 	ocv1 "github.com/operator-framework/operator-controller/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -38,8 +38,7 @@ var catalogQueryFunc = func(ctx context.Context, cl client.Client, catalogName, 
 // Unlike v0 CatalogSource (namespaced), ClusterCatalog is cluster-scoped so returns only name.
 // Selects catalog based on priority (highest priority wins).
 // Returns error if multiple catalogs with same highest priority exist.
-func GetClusterCatalog(ctx context.Context, k8sClient client.Client, desiredPackage string) (string, error) {
-	log := log.Log.WithName("reconcile")
+func GetClusterCatalog(log logr.Logger, ctx context.Context, k8sClient client.Client, desiredPackage string) (string, error) {
 
 	// List all ClusterCatalogs
 	ccList := &ocv1.ClusterCatalogList{}
@@ -124,8 +123,7 @@ func GetClusterCatalog(ctx context.Context, k8sClient client.Client, desiredPack
 	}
 
 	catalog := highestPriorityCatalogs[0]
-	log.Info(fmt.Sprintf("Using ClusterCatalog %s (priority: %d) for package %s",
-		catalog.Name, catalog.Spec.Priority, desiredPackage))
+	log.Info("Using ClusterCatalog for package", "catalog", catalog.Name, "priority", catalog.Spec.Priority, "package", desiredPackage)
 	return catalog.Name, nil
 }
 

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/blang/semver/v4"
+	"github.com/go-logr/logr"
 	olmversion "github.com/operator-framework/api/pkg/lib/version"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
@@ -18,6 +19,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
+
+var testLog = logr.Discard()
 
 func Test_filterPackageManifests(t *testing.T) {
 	type args struct {
@@ -293,7 +296,7 @@ func Test_filterPackageManifests(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := filterPackageManifests(tt.args.pkgManifests, tt.args.channel); !reflect.DeepEqual(got, tt.want) {
+			if got := filterPackageManifests(testLog, tt.args.pkgManifests, tt.args.channel); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("filterPackageManifests() = %v, want %v", got, tt.want)
 			}
 		})
@@ -396,7 +399,7 @@ func Test_GetCatalogSource(t *testing.T) {
 				t.Errorf("failed to create manifest: %v", err)
 			}
 
-			got, err := GetCatalogSource(mockClient, tt.channel, tt.packageName)
+			got, err := GetCatalogSource(testLog, mockClient, tt.channel, tt.packageName)
 			if err != nil {
 				t.Errorf("GetCatalogSource(mockClient) error = %v", err)
 			}
@@ -546,9 +549,9 @@ func Test_findHighestPriorityCatalogSource(t *testing.T) {
 				}
 			}
 
-			_, err := findHighestPriorityCatalogSource(mockClient, tt.pkgs)
+			_, err := findHighestPriorityCatalogSource(testLog, mockClient, tt.pkgs)
 			if got := err != nil; got != tt.want {
-				t.Errorf("findHighestPriorityCatalogSource(mockClient, tt.pkgs) = got: %v, want: %v", got, tt.want)
+				t.Errorf("findHighestPriorityCatalogSource(testLog, mockClient, tt.pkgs) = got: %v, want: %v", got, tt.want)
 			}
 		})
 	}
