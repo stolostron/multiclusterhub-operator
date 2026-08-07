@@ -1,0 +1,37 @@
+# NetworkPolicy for multicluster-role-assignment-controller pods.
+#
+# Ingress:
+#   - Metrics endpoint (port 8443) from Prometheus/monitoring
+#   - Health probes (port 8081) for liveness/readiness checks
+#
+# Egress (allow-all):
+#   The controller talks to the Kubernetes API server to manage
+#   ClusterPermissions, MultiClusterRoleAssignments, and PlacementDecisions.
+#   Because the API server endpoint IP and port are not statically known,
+#   egress is left unrestricted.
+{{- if .Values.global.networkPolicies.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: multicluster-role-assignment-controller
+  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
+  labels:
+    app.kubernetes.io/name: multicluster-role-assignment
+    app.kubernetes.io/managed-by: multiclusterhub-operator
+spec:
+  podSelector:
+    matchLabels:
+      control-plane: multicluster-role-assignment-controller
+      app.kubernetes.io/name: multicluster-role-assignment
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - ports:
+    - port: 8443
+      protocol: TCP
+    - port: 8081
+      protocol: TCP
+  egress:
+  - {}
+{{- end }}
