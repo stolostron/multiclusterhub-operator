@@ -45,6 +45,17 @@ IMG ?= $(REGISTRY)/multiclusterhub-operator:$(VERSION)
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:crdVersions=v1"
 
+# Version information for ldflags
+VERSION_PKG = github.com/stolostron/multiclusterhub-operator/pkg/version
+GIT_VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "v0.0.1-alpha.0")
+GIT_COMMIT ?= $(shell git rev-parse HEAD 2>/dev/null || echo "unknown")
+GIT_TREE_STATE ?= $(shell if [ -z "$$(git status --porcelain 2>/dev/null)" ]; then echo "clean"; else echo "dirty"; fi)
+BUILD_DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
+LDFLAGS = -X $(VERSION_PKG).gitVersion=$(GIT_VERSION) \
+          -X $(VERSION_PKG).gitCommit=$(GIT_COMMIT) \
+          -X $(VERSION_PKG).gitTreeState=$(GIT_TREE_STATE) \
+          -X $(VERSION_PKG).buildDate=$(BUILD_DATE)
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -100,19 +111,24 @@ test: manifests generate fmt vet envtest ## Run tests.
 ##@ Build
 
 build: generate fmt vet ## Build manager binary.
-	go build -o bin/multiclusterhub-operator main.go
+	go build -ldflags "$(LDFLAGS)" -o bin/multiclusterhub-operator main.go
 
 run: manifests generate fmt vet ## Run a controller from your host.
 	CRDS_PATH="bin/crds" POD_NAMESPACE="open-cluster-management" go run ./main.go
 
+DOCKER_BUILD_ARGS = --build-arg GIT_VERSION=$(GIT_VERSION) \
+                    --build-arg GIT_COMMIT=$(GIT_COMMIT) \
+                    --build-arg GIT_TREE_STATE=$(GIT_TREE_STATE) \
+                    --build-arg BUILD_DATE=$(BUILD_DATE)
+
 docker-build: ## test ## Build docker image with the manager.
-	docker build --no-cache -t ${IMG} .
+	docker build --no-cache $(DOCKER_BUILD_ARGS) -t ${IMG} .
 
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
 
 podman-build: ## test ## Build podman image with the manager.
-	podman build --no-cache -t ${IMG} .
+	podman build --no-cache $(DOCKER_BUILD_ARGS) -t ${IMG} .
 
 podman-push: ## Push podman image with the manager.
 	podman push ${IMG}
