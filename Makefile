@@ -49,7 +49,10 @@ CRD_OPTIONS ?= "crd:crdVersions=v1"
 VERSION_PKG = github.com/stolostron/multiclusterhub-operator/pkg/version
 GIT_VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "v0.0.1-alpha.0")
 GIT_COMMIT ?= $(shell git rev-parse HEAD 2>/dev/null || echo "unknown")
-GIT_TREE_STATE ?= $(shell if [ -z "$$(git status --porcelain 2>/dev/null)" ]; then echo "clean"; else echo "dirty"; fi)
+GIT_TREE_STATE ?= $(shell \
+	status="$$(git status --porcelain 2>/dev/null)"; rc=$$?; \
+	if [ $$rc -ne 0 ]; then echo "unknown"; \
+	elif [ -z "$$status" ]; then echo "clean"; else echo "dirty"; fi)
 BUILD_DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 LDFLAGS = -X $(VERSION_PKG).gitVersion=$(GIT_VERSION) \
           -X $(VERSION_PKG).gitCommit=$(GIT_COMMIT) \
