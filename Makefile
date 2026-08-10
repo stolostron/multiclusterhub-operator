@@ -117,7 +117,7 @@ build: generate fmt vet ## Build manager binary.
 	go build -ldflags "$(LDFLAGS)" -o bin/multiclusterhub-operator main.go
 
 run: manifests generate fmt vet ## Run a controller from your host.
-	CRDS_PATH="bin/crds" POD_NAMESPACE="open-cluster-management" go run ./main.go
+	CRDS_PATH="bin/crds" POD_NAMESPACE="open-cluster-management" go run -ldflags "$(LDFLAGS)" ./main.go
 
 DOCKER_BUILD_ARGS = --build-arg GIT_VERSION=$(GIT_VERSION) \
                     --build-arg GIT_COMMIT=$(GIT_COMMIT) \
