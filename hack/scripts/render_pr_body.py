@@ -79,12 +79,12 @@ def collect_values(args):
     return values
 
 
-def render(template_text, values):
+def render(template_text, values, fallback):
     def replace(match):
         name = match.group(1)
         if name not in values:
-            sys.stderr.write(f"warning: no value provided for marker '{name}', leaving it blank.\n")
-            return ""
+            sys.stderr.write(f"warning: no value provided for marker '{name}', using fallback.\n")
+            return fallback
         return values[name]
 
     return MARKER_PATTERN.sub(replace, template_text)
@@ -97,7 +97,7 @@ def main():
     with open(args.template, "r", encoding="utf-8") as f:
         template_text = f.read()
 
-    rendered = render(template_text, values)
+    rendered = render(template_text, values, args.fallback)
 
     with open(args.output, "w", encoding="utf-8") as f:
         f.write(rendered)
