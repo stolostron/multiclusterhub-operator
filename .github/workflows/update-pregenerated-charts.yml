@@ -21,6 +21,11 @@ on:
         required: false
         default: 'stolostron'
         type: string
+      component_arg:
+        description: 'COMPONENT to regenerate (e.g. submariner-addon). Leave empty for all.'
+        required: false
+        default: ''
+        type: string
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -66,9 +71,10 @@ jobs:
         env:
           BRANCH: ${{ github.event.inputs.branch_arg || 'main' }}
           ORG: ${{ github.event.inputs.org_arg || 'stolostron' }}
+          COMPONENT: ${{ github.event.inputs.component_arg || '' }}
         run: |
           # First copy charts to pull latest upstream changes
-          make copy-charts
+          make copy-charts COMPONENT="${COMPONENT}"
 
           # Then sync variables (will re-run 'make copy-charts' if new variables found)
           make -f Makefile.dev sync-template-vars-copy
