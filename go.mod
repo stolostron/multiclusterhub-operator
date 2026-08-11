@@ -1,6 +1,6 @@
 module github.com/stolostron/multiclusterhub-operator
 
-go 1.25.11
+go 1.26.0
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
@@ -8,14 +8,14 @@ require (
 	github.com/go-logr/logr v1.4.3
 	github.com/onsi/ginkgo/v2 v2.27.2
 	github.com/onsi/gomega v1.38.2
-	github.com/openshift/api v0.0.0-20240404200104-96ed2d49b255
+	github.com/openshift/api v0.0.0-20260213155647-8fe9fe363807
 	github.com/operator-framework/api v0.23.0
 	github.com/operator-framework/operator-lib v0.12.0
 	github.com/operator-framework/operator-lifecycle-manager v0.22.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.0
 	github.com/stolostron/backplane-operator v0.0.0-20260626122050-c2fe078d16d8
-	github.com/stolostron/search-v2-operator v0.0.0-20250205132200-b81bc61baccd
+	github.com/stolostron/search-v2-operator v0.0.0-20260806210727-b00ba0f798c6
 	go.uber.org/zap v1.27.0
 	helm.sh/helm/v3 v3.20.2
 	k8s.io/api v0.35.1
@@ -25,7 +25,7 @@ require (
 	k8s.io/klog v1.0.0
 	k8s.io/kube-aggregator v0.29.3
 	k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3
-	open-cluster-management.io/api v0.13.0
+	open-cluster-management.io/api v0.16.0
 	sigs.k8s.io/controller-runtime v0.23.1
 	sigs.k8s.io/yaml v1.6.0
 )
