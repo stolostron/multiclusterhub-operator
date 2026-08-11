@@ -68,17 +68,14 @@ jobs:
           BRANCH: ${{ github.event.inputs.branch_arg || 'main' }}
           ORG: ${{ github.event.inputs.org_arg || 'stolostron' }}
         run: |
+          set -o pipefail
+
           # First regenerate to pull latest upstream changes
-          make regenerate-charts
-
           # Then sync variables (will re-run 'make regenerate-charts' if new variables found)
-          make -f Makefile.dev sync-template-vars-charts
-
-          exit_code=$?
-          if [ $exit_code -ne 0 ]; then
-            echo "Regenerate Charts step failed with exit code $exit_code"
-            exit $exit_code
-          fi
+          {
+            make regenerate-charts
+            make -f Makefile.dev sync-template-vars-charts
+          } 2>&1 | tee /tmp/regenerate.log
 
       - name: Generate code
         run: |
@@ -89,6 +86,41 @@ jobs:
         run: |
           echo "Generating manifests..."
           make manifests
+
+      - name: Render Pull Request body
+        run: |
+          {
+            echo "- **Workflow run:** [${GITHUB_RUN_ID}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})"
+            echo "- **Event:** ${GITHUB_EVENT_NAME}"
+            echo "- **Branch:** ${{ matrix.branch }}"
+          } > /tmp/trigger.txt
+
+          {
+            echo '```'
+            git diff --stat || echo "No changes detected"
+            echo '```'
+          } > /tmp/diffstat.txt
+
+          # Only surface the specific "a manifest could not be parsed and was
+          # skipped" condition here, not every routine WARNING the tooling
+          # logs on a normal run (there are dozens of those and they aren't
+          # actionable).
+          if grep -q "UNPARSEABLE_MANIFEST" /tmp/regenerate.log; then
+            {
+              echo '```'
+              grep "UNPARSEABLE_MANIFEST" /tmp/regenerate.log
+              echo '```'
+            } > /tmp/warnings.txt
+          else
+            : > /tmp/warnings.txt
+          fi
+
+          python3 hack/scripts/render_pr_body.py \
+            --template .github/PULL_REQUEST_TEMPLATE/automated-bundle-update.md \
+            --output /tmp/pr-body.md \
+            --set-file TRIGGER=/tmp/trigger.txt \
+            --set-file DIFFSTAT=/tmp/diffstat.txt \
+            --set-file WARNINGS=/tmp/warnings.txt
 
       - name: Send Slack Message on Failure
         if: ${{ failure() }}
@@ -113,6 +145,7 @@ jobs:
           title: "Chart Update [${{ matrix.branch }}]"
           committer: GitHub <noreply@github.com>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+          body-path: /tmp/pr-body.md
           labels: |
             do-not-merge/hold
             ok-to-test
