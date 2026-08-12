@@ -22,6 +22,9 @@ spec:
     - namespaceSelector:
         matchLabels:
           kubernetes.io/metadata.name: openshift-monitoring
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-ingress
     ports:
     - port: 8443
       protocol: TCP

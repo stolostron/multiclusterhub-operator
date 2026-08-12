@@ -274,3 +274,14 @@ rules:
   - create
   - update
   - delete
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - delete
