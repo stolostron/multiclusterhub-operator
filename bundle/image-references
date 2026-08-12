@@ -94,7 +94,7 @@ spec:
   - name: multiclusterhub-rhel9
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multiclusterhub-rhel9:latest
+      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multiclusterhub-operator:latest
   - name: acm-multicluster-observability-addon-rhel9
     from:
       kind: DockerImage
