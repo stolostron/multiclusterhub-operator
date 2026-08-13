@@ -513,6 +513,13 @@ var _ = Describe("MultiClusterHub controller", func() {
 				},
 			},
 		})).To(Succeed())
+
+		// Create openshift-config namespace for insights-client pull-secret Role/RoleBinding
+		Expect(k8sClient.Create(context.Background(), &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "openshift-config",
+			},
+		})).To(Succeed())
 	})
 
 	os.Setenv("DIRECTORY_OVERRIDE", "../pkg/templates")
