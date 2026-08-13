@@ -332,7 +332,9 @@ spec:
               - kubevirtprojects
               - userpermissions
               verbs:
+              - get
               - list
+              - watch
             - apiGroups:
               - ""
               resources:
@@ -448,7 +450,9 @@ spec:
               - kubevirtprojects
               - userpermissions
               verbs:
+              - get
               - list
+              - watch
             - apiGroups:
               - ""
               resources:
