@@ -1116,10 +1116,13 @@ rules:
   - imageregistry.open-cluster-management.io
   resources:
   - managedclusterimageregistries
+  - managedclusterimageregistries/finalizers
   - managedclusterimageregistries/status
   verbs:
   - get
   - list
+  - patch
+  - update
   - watch
 - apiGroups:
   - integreatly.org

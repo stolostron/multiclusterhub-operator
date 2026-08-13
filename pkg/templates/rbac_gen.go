@@ -426,6 +426,8 @@ package main
 //+kubebuilder:rbac:groups=imageregistry.open-cluster-management.io,resources=managedclusterimageregistries,verbs=get;list;watch
 //+kubebuilder:rbac:groups=imageregistry.open-cluster-management.io,resources=managedclusterimageregistries;managedclusterimageregistries/status,verbs=get;list;watch
 //+kubebuilder:rbac:groups=imageregistry.open-cluster-management.io,resources=managedclusterimageregistries;managedclusterimageregistries/status,verbs=get;list;watch
+//+kubebuilder:rbac:groups=imageregistry.open-cluster-management.io,resources=managedclusterimageregistries;managedclusterimageregistries/status;managedclusterimageregistries/finalizers,verbs=get;list;watch;update;patch
+//+kubebuilder:rbac:groups=imageregistry.open-cluster-management.io,resources=managedclusterimageregistries;managedclusterimageregistries/status;managedclusterimageregistries/finalizers,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups=integreatly.org,resources=grafanas;grafanas/status;grafanas/finalizers;grafanadashboards;grafanadashboards/status;grafanadatasources;grafanadatasources/status,verbs=get;list;create;update;delete;deletecollection;watch
 //+kubebuilder:rbac:groups=integreatly.org,resources=grafanas;grafanas/status;grafanas/finalizers;grafanadashboards;grafanadashboards/status;grafanadatasources;grafanadatasources/status,verbs=get;list;create;update;delete;deletecollection;watch
 //+kubebuilder:rbac:groups=internal.open-cluster-management.io,resources=managedclusterinfos,verbs=list;watch
