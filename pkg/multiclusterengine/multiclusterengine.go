@@ -29,7 +29,7 @@ const (
 	MCEProdOperandNamespace = "multicluster-engine"
 
 	// Community MCE variables
-	MCECommunityChannel          = "community-0.10"
+	MCECommunityChannel          = "community-1.0"
 	MCECommunityPackageName      = "stolostron-engine"
 	MCECommunityOperandNamespace = "stolostron-engine"
 
