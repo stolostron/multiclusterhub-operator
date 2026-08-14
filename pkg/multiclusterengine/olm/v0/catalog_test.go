@@ -331,7 +331,7 @@ func Test_GetCatalogSource(t *testing.T) {
 					CatalogSourceNamespace:   "openshift-marketplace",
 					Channels: []olmapi.PackageChannel{
 						{
-							Name: "stable-5.0",
+							Name: "stable-5.1",
 						},
 					},
 				},
@@ -364,7 +364,7 @@ func Test_GetCatalogSource(t *testing.T) {
 					CatalogSourceNamespace: "openshift-marketplace",
 					Channels: []olmapi.PackageChannel{
 						{
-							Name: "community-1.0",
+							Name: "community-1.1",
 						},
 					},
 				},

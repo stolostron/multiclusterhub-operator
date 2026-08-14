@@ -115,12 +115,12 @@ func Test_ValidMCEVersion(t *testing.T) {
 	}{
 		{
 			name:       "higher patch version",
-			mceVersion: "5.0.5",
+			mceVersion: "5.1.5",
 			wantErr:    false,
 		},
 		{
 			name:       "higher minor version rejected",
-			mceVersion: "5.1.0",
+			mceVersion: "5.2.0",
 			wantErr:    true,
 		},
 		{
@@ -182,12 +182,12 @@ func Test_ValidCommunityMCEVersion(t *testing.T) {
 	}{
 		{
 			name:       "higher patch version",
-			mceVersion: "1.0.5",
+			mceVersion: "1.1.5",
 			wantErr:    false,
 		},
 		{
 			name:       "higher minor version rejected",
-			mceVersion: "1.1.0",
+			mceVersion: "1.2.0",
 			wantErr:    true,
 		},
 		{
