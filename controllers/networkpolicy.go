@@ -8,6 +8,8 @@ import (
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	renderer "github.com/stolostron/multiclusterhub-operator/pkg/rendering"
+	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
+	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -27,6 +29,33 @@ import (
 //
 // These are sufficient to identify MCH-created NetworkPolicies for deletion when disabled.
 
+// networkPolicyNamespaceOverrides maps components whose NetworkPolicies must be deployed outside
+// the MCH namespace (chart rendering otherwise always targets mch.Namespace). Observability's
+// operand NetworkPolicies live in open-cluster-management-observability, created by the
+// multicluster-observability-operator rather than MCH.
+var networkPolicyNamespaceOverrides = map[string]string{
+	operatorv1.MultiClusterObservability: utils.ObservabilityNamespace,
+}
+
+func networkPolicyNamespaceOverride(component string) (string, bool) {
+	ns, ok := networkPolicyNamespaceOverrides[component]
+	return ns, ok
+}
+
+// namespaceExists checks whether an override namespace (see networkPolicyNamespaceOverrides)
+// already exists, since MCH doesn't create it and creating a NetworkPolicy there before it does
+// would fail.
+func (r *MultiClusterHubReconciler) namespaceExists(ctx context.Context, name string) (bool, error) {
+	ns := &corev1.Namespace{}
+	if err := r.Client.Get(ctx, types.NamespacedName{Name: name}, ns); err != nil {
+		if errors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to get namespace %s: %w", name, err)
+	}
+	return true, nil
+}
+
 // ensureNetworkPolicies implements the create-once NetworkPolicy pattern:
 // - component enabled + networkPolicies enabled → CREATE (if missing), SKIP (if exists)
 // - component disabled OR networkPolicies disabled → DELETE (if MCH-created)
@@ -40,10 +69,11 @@ func (r *MultiClusterHubReconciler) ensureNetworkPolicies(ctx context.Context, m
 		networkPoliciesEnabled = mch.Spec.NetworkPolicies.Enabled
 	}
 
-	// If globally disabled, delete all MCH-created NetworkPolicies
+	// If globally disabled, delete all MCH-created NetworkPolicies cluster-wide (not scoped to
+	// mch.Namespace, since overridden components deploy elsewhere).
 	if !networkPoliciesEnabled {
 		npList := &networkingv1.NetworkPolicyList{}
-		if err := r.Client.List(ctx, npList, client.InNamespace(mch.Namespace), client.MatchingLabels{
+		if err := r.Client.List(ctx, npList, client.MatchingLabels{
 			"installer.name":      mch.Name,
 			"installer.namespace": mch.Namespace,
 		}); err != nil {
@@ -66,6 +96,8 @@ func (r *MultiClusterHubReconciler) ensureNetworkPolicies(ctx context.Context, m
 			continue
 		}
 
+		namespaceOverride, hasNamespaceOverride := networkPolicyNamespaceOverride(component)
+
 		componentEnabled := mch.Enabled(component)
 		if !componentEnabled {
 			// Component disabled - delete its NetworkPolicy if MCH-created
@@ -81,10 +113,15 @@ func (r *MultiClusterHubReconciler) ensureNetworkPolicies(ctx context.Context, m
 			// Find and delete NetworkPolicy templates
 			for _, template := range templates {
 				if template.GetKind() == "NetworkPolicy" {
+					npNamespace := template.GetNamespace()
+					if hasNamespaceOverride {
+						npNamespace = namespaceOverride
+					}
+
 					np := &networkingv1.NetworkPolicy{}
 					err := r.Client.Get(ctx, types.NamespacedName{
 						Name:      template.GetName(),
-						Namespace: template.GetNamespace(),
+						Namespace: npNamespace,
 					}, np)
 
 					if err == nil {
@@ -101,6 +138,19 @@ func (r *MultiClusterHubReconciler) ensureNetworkPolicies(ctx context.Context, m
 				}
 			}
 			continue
+		}
+
+		// Skip until the override namespace exists; MCH's periodic reconcile will retry.
+		if hasNamespaceOverride {
+			exists, err := r.namespaceExists(ctx, namespaceOverride)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			if !exists {
+				log.Info("Namespace override target does not exist yet, skipping NetworkPolicy deployment",
+					"component", component, "namespace", namespaceOverride)
+				continue
+			}
 		}
 
 		// Render NetworkPolicy from Helm template
@@ -127,6 +177,14 @@ func (r *MultiClusterHubReconciler) ensureNetworkPolicies(ctx context.Context, m
 		// No NetworkPolicy template for this component - skip
 		if len(networkPolicies) == 0 {
 			continue
+		}
+
+		// Only the NetworkPolicies move to the override namespace; other rendered resources
+		// (Deployments, Services, etc.) keep deploying to the MCH namespace.
+		if hasNamespaceOverride {
+			for _, np := range networkPolicies {
+				np.SetNamespace(namespaceOverride)
+			}
 		}
 
 		// Handle each NetworkPolicy (usually just one per component)
