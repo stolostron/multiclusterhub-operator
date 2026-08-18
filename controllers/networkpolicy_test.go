@@ -664,3 +664,18 @@ func Test_networkPolicyNamespaceOverride(t *testing.T) {
 		t.Errorf("expected no override for %s, got %q", operatorv1.MTVIntegrations, ns)
 	}
 }
+
+func Test_isNetworkPolicyOverrideNamespace(t *testing.T) {
+	if !isNetworkPolicyOverrideNamespace(utils.ObservabilityNamespace) {
+		t.Errorf("expected %q to be recognized as a NetworkPolicy override namespace", utils.ObservabilityNamespace)
+	}
+
+	if isNetworkPolicyOverrideNamespace("some-unrelated-namespace") {
+		t.Error("expected unrelated namespace to not be recognized as a NetworkPolicy override namespace")
+	}
+
+	// The component key itself must not be mistaken for a namespace value.
+	if isNetworkPolicyOverrideNamespace(operatorv1.MultiClusterObservability) {
+		t.Errorf("expected component key %q to not match as a namespace value", operatorv1.MultiClusterObservability)
+	}
+}

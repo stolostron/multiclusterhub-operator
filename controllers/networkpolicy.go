@@ -42,6 +42,20 @@ func networkPolicyNamespaceOverride(component string) (string, bool) {
 	return ns, ok
 }
 
+// isNetworkPolicyOverrideNamespace reports whether the given namespace name is one of the
+// override targets in networkPolicyNamespaceOverrides (i.e. a namespace value, not a component
+// key). Used to filter Namespace watch events down to just the namespaces MCH needs to know about
+// in order to deploy NetworkPolicies into them as soon as they exist, instead of waiting for the
+// next periodic reconcile.
+func isNetworkPolicyOverrideNamespace(name string) bool {
+	for _, ns := range networkPolicyNamespaceOverrides {
+		if ns == name {
+			return true
+		}
+	}
+	return false
+}
+
 // namespaceExists checks whether an override namespace (see networkPolicyNamespaceOverrides)
 // already exists, since MCH doesn't create it and creating a NetworkPolicy there before it does
 // would fail.
