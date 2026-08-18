@@ -133,13 +133,16 @@ def cleanup_script_dependencies(copied_files):
         shutil.rmtree(utils_dest)
         logging.debug(f"Removed utils directory")
 
-def prepare_and_execute(operation, operation_data, args):
+def prepare_and_execute(operation, operation_data, args, extra_args):
     """Prepares and executes the operation based on the provided operation data.
 
     Args:
         operation (_type_): _description_
         operation_data (_type_): _description_
         args (_type_): _description_
+        extra_args (list[str]): Unrecognized command-line arguments (e.g.
+            --component-branch, --component-fork) that should be forwarded
+            as-is to the underlying operation script.
     """
     logging.info(f"Executing operator: {operation}")
 
@@ -172,6 +175,11 @@ def prepare_and_execute(operation, operation_data, args):
     if args.config:
         operations_args += ["--config", args.config]
 
+    # Forward any pass-through args (e.g. --component-branch, --component-fork)
+    # as individual list elements so values with whitespace survive intact.
+    if extra_args:
+        operations_args += extra_args
+
     # Execute the script
     execute_script(script_file, operations_args)
 
@@ -201,11 +209,13 @@ def execute_script(script_path, args):
         logging.error(f"Script {script_path.name} failed with exit code {e.returncode}")
         sys.exit(e.returncode)
 
-def main(args):
+def main(args, extra_args):
     """_summary_
 
     Args:
         args (_type_): _description_
+        extra_args (list[str]): Unrecognized command-line arguments to
+            forward to the underlying operation script.
     """
     logging.basicConfig(level=logging.INFO)
 
@@ -218,7 +228,7 @@ def main(args):
 
     for operation, operation_data in SUPPORTED_OPERATIONS.items():
         if getattr(args, operation.replace('-', '_'), False):
-            prepare_and_execute(operation, operation_data, args)
+            prepare_and_execute(operation, operation_data, args, extra_args)
             break
 
     end_time = time.time() # Record the end time and log the duration of the script execution
@@ -249,6 +259,8 @@ if __name__ == "__main__":
     # Set default values for unspecified arguments
     parser.set_defaults(bundle=False, commit=False, lint=False)
 
-    # Parse command-line arguments and call the main function
-    args = parser.parse_args()
-    main(args)
+    # Parse command-line arguments, capturing any unrecognized arguments
+    # (e.g. --component-branch, --component-fork) so they can be forwarded
+    # to the underlying operation script.
+    args, extra_args = parser.parse_known_args()
+    main(args, extra_args)
