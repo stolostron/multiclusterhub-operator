@@ -6,6 +6,7 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -417,7 +418,9 @@ func TestCalculateStatus_RemovesStaleProgressingCondition(t *testing.T) {
 	registerScheme()
 	ctx := context.TODO()
 
-	// Create MCE for version compliance check
+	// Create MCE for version compliance check. This test suite defaults to community mode
+	// (no OPERATOR_PACKAGE env var set), so the version must satisfy RequiredCommunityMCEVersion
+	// (see TestCalculateMCEVersionCompliance) for calculateStatus to consider MCE compliant.
 	mce := &mcev1.MultiClusterEngine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "multiclusterengine",
@@ -426,7 +429,7 @@ func TestCalculateStatus_RemovesStaleProgressingCondition(t *testing.T) {
 			},
 		},
 		Status: mcev1.MultiClusterEngineStatus{
-			CurrentVersion: "5.0.0",
+			CurrentVersion: "0.10.0",
 			Conditions: []mcev1.MultiClusterEngineCondition{
 				{
 					Type:    mcev1.MultiClusterEngineAvailable,
@@ -515,6 +518,160 @@ func TestCalculateStatus_RemovesStaleProgressingCondition(t *testing.T) {
 		if phase != operatorsv1.HubRunning {
 			t.Errorf("Expected phase to be HubRunning after fix, got %v", phase)
 		}
+	}
+}
+
+// TestCalculateStatus_WaitingForMCEUpgrade verifies the fix for ACM-8659: when MCH's own
+// components are healthy but MultiClusterEngine has not reached the required version, `oc get
+// mch` should report a distinct Waiting phase and an actionable message instead of Running with
+// a generic "All hub components ready" message.
+func TestCalculateStatus_WaitingForMCEUpgrade(t *testing.T) {
+	registerScheme()
+	ctx := context.TODO()
+
+	// This test suite defaults to community mode (no OPERATOR_PACKAGE env var set), so use a
+	// version that satisfies neither RequiredCommunityMCEVersion nor RequiredMCEVersion.
+	mce := &mcev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "multiclusterengine",
+			Labels: map[string]string{
+				multiclusterengineutils.MCEManagedByLabel: "true",
+			},
+		},
+		Status: mcev1.MultiClusterEngineStatus{
+			CurrentVersion: "0.9.0",
+			Conditions: []mcev1.MultiClusterEngineCondition{
+				{
+					Type:    mcev1.MultiClusterEngineAvailable,
+					Status:  metav1.ConditionTrue,
+					Reason:  "Available",
+					Message: "MCE is available",
+				},
+			},
+		},
+	}
+
+	if err := recon.Client.Create(ctx, mce); err != nil {
+		t.Fatalf("failed to create MCE: %v", err)
+	}
+	defer func() {
+		if err := recon.Client.Delete(ctx, mce); err != nil {
+			t.Errorf("failed to delete MCE: %v", err)
+		}
+	}()
+
+	mceUnstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(mce)
+	if err != nil {
+		t.Fatalf("failed to convert MCE to unstructured: %v", err)
+	}
+	mceUnstructured := &unstructured.Unstructured{Object: mceUnstructuredObj}
+
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "multiclusterhub",
+			Namespace: "open-cluster-management",
+		},
+		Spec: operatorsv1.MultiClusterHubSpec{
+			DisableHubSelfManagement: true, // Disable local-cluster requirement
+		},
+		Status: operatorsv1.MultiClusterHubStatus{
+			CurrentVersion: version.Version,
+		},
+	}
+
+	allDeps := []*appsv1.Deployment{}
+	allCRs := map[string]*unstructured.Unstructured{
+		"mce": mceUnstructured,
+	}
+
+	newStatus := recon.calculateStatus(ctx, hub, allDeps, allCRs, false, false)
+
+	if newStatus.Phase != operatorsv1.HubWaitingForMCE {
+		t.Errorf("Expected phase to be %s, got %s", operatorsv1.HubWaitingForMCE, newStatus.Phase)
+	}
+
+	waitingCondition := GetHubCondition(newStatus, operatorsv1.Progressing)
+	if waitingCondition == nil {
+		t.Fatal("Expected a Progressing condition describing the MCE wait, got none")
+	}
+	if waitingCondition.Reason != WaitingForMCEUpgradeReason {
+		t.Errorf("Expected condition reason %s, got %s", WaitingForMCEUpgradeReason, waitingCondition.Reason)
+	}
+	wantMessage := "Waiting for MultiClusterEngine to upgrade to 0.10.0 (current: 0.9.0)"
+	if waitingCondition.Message != wantMessage {
+		t.Errorf("Expected condition message %q, got %q", wantMessage, waitingCondition.Message)
+	}
+
+	if completeCondition := GetHubCondition(newStatus, operatorsv1.Complete); completeCondition != nil {
+		t.Errorf("Expected no Complete condition while waiting for MCE, got %+v", completeCondition)
+	}
+}
+
+// TestMCEUpgradeWaitCondition unit tests the extracted helper in isolation, independent of a
+// live client or the rest of calculateStatus.
+func TestMCEUpgradeWaitCondition(t *testing.T) {
+	tests := []struct {
+		name            string
+		compliance      *operatorsv1.MCEVersionComplianceStatus
+		isCommunityMode bool
+		wantNil         bool
+		wantMessage     string
+	}{
+		{
+			name:       "nil compliance returns nil",
+			compliance: nil,
+			wantNil:    true,
+		},
+		{
+			name:       "compliant MCE returns nil",
+			compliance: &operatorsv1.MCEVersionComplianceStatus{IsCompliant: true, CurrentVersion: "5.0.0"},
+			wantNil:    true,
+		},
+		{
+			name:            "non-compliant MCE in production mode",
+			compliance:      &operatorsv1.MCEVersionComplianceStatus{IsCompliant: false, CurrentVersion: "4.9.0"},
+			isCommunityMode: false,
+			wantMessage: fmt.Sprintf(
+				"Waiting for MultiClusterEngine to upgrade to %s (current: 4.9.0)", version.RequiredMCEVersion),
+		},
+		{
+			name:            "non-compliant MCE in community mode",
+			compliance:      &operatorsv1.MCEVersionComplianceStatus{IsCompliant: false, CurrentVersion: "0.9.0"},
+			isCommunityMode: true,
+			wantMessage: fmt.Sprintf(
+				"Waiting for MultiClusterEngine to upgrade to %s (current: 0.9.0)", version.RequiredCommunityMCEVersion),
+		},
+		{
+			name:            "non-compliant MCE with no current version reports 'none'",
+			compliance:      &operatorsv1.MCEVersionComplianceStatus{IsCompliant: false, CurrentVersion: ""},
+			isCommunityMode: false,
+			wantMessage: fmt.Sprintf(
+				"Waiting for MultiClusterEngine to upgrade to %s (current: none)", version.RequiredMCEVersion),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := mceUpgradeWaitCondition(tt.compliance, tt.isCommunityMode)
+			if tt.wantNil {
+				if got != nil {
+					t.Errorf("Expected nil condition, got %+v", got)
+				}
+				return
+			}
+			if got == nil {
+				t.Fatal("Expected a non-nil condition, got nil")
+			}
+			if got.Type != operatorsv1.Progressing {
+				t.Errorf("Expected condition type %s, got %s", operatorsv1.Progressing, got.Type)
+			}
+			if got.Reason != WaitingForMCEUpgradeReason {
+				t.Errorf("Expected condition reason %s, got %s", WaitingForMCEUpgradeReason, got.Reason)
+			}
+			if got.Message != tt.wantMessage {
+				t.Errorf("Expected message %q, got %q", tt.wantMessage, got.Message)
+			}
+		})
 	}
 }
 
