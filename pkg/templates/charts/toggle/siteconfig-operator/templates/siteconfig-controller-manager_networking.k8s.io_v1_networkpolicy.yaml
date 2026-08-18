@@ -33,6 +33,8 @@ spec:
     to:
     - ipBlock:
         cidr: 0.0.0.0/0
+    - ipBlock:
+        cidr: ::/0
   - ports:
     - port: 443
       protocol: TCP
@@ -41,6 +43,10 @@ spec:
         cidr: 0.0.0.0/0
         except:
         - 169.254.169.254/32
+    - ipBlock:
+        cidr: ::/0
+        except:
+        - fd00:ec2::254/128
   ingress:
   - from:
     - podSelector: {}
