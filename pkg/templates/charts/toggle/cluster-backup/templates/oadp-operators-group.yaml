@@ -5,7 +5,6 @@
 # All resources will be installed under the open-cluster-management-backup namespace
 
 {{- if .Values.hubconfig.clusterSTSEnabled }}
-{{- /* STS-enabled clusters: store config in ConfigMap */ -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:

@@ -72,8 +72,8 @@ package main
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=create;get;list;watch;update;delete
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=delete;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=delete;patch;update;watch
-//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
-//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;delete;patch
@@ -426,6 +426,8 @@ package main
 //+kubebuilder:rbac:groups=imageregistry.open-cluster-management.io,resources=managedclusterimageregistries,verbs=get;list;watch
 //+kubebuilder:rbac:groups=imageregistry.open-cluster-management.io,resources=managedclusterimageregistries;managedclusterimageregistries/status,verbs=get;list;watch
 //+kubebuilder:rbac:groups=imageregistry.open-cluster-management.io,resources=managedclusterimageregistries;managedclusterimageregistries/status,verbs=get;list;watch
+//+kubebuilder:rbac:groups=imageregistry.open-cluster-management.io,resources=managedclusterimageregistries;managedclusterimageregistries/status;managedclusterimageregistries/finalizers,verbs=get;list;watch;update;patch
+//+kubebuilder:rbac:groups=imageregistry.open-cluster-management.io,resources=managedclusterimageregistries;managedclusterimageregistries/status;managedclusterimageregistries/finalizers,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups=integreatly.org,resources=grafanas;grafanas/status;grafanas/finalizers;grafanadashboards;grafanadashboards/status;grafanadatasources;grafanadatasources/status,verbs=get;list;create;update;delete;deletecollection;watch
 //+kubebuilder:rbac:groups=integreatly.org,resources=grafanas;grafanas/status;grafanas/finalizers;grafanadashboards;grafanadashboards/status;grafanadatasources;grafanadatasources/status,verbs=get;list;create;update;delete;deletecollection;watch
 //+kubebuilder:rbac:groups=internal.open-cluster-management.io,resources=managedclusterinfos,verbs=list;watch
@@ -466,6 +468,8 @@ package main
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=create;delete;patch;update
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=create;delete;patch;update
+//+kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=get;list;watch;create;update;delete
+//+kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=get;list;watch;create;update;delete
 //+kubebuilder:rbac:groups=oadp.openshift.io,resources=dataprotectionapplications,verbs=get;list;watch
 //+kubebuilder:rbac:groups=oadp.openshift.io,resources=dataprotectionapplications,verbs=get;list;watch
 //+kubebuilder:rbac:groups=oauth.openshift.io,resources=oauthclients,verbs=create;delete;get;list;patch;update;watch
@@ -558,8 +562,8 @@ package main
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;list;watch
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes;routes/custom-host;routes/status,verbs=get;list;create;update;delete;deletecollection;watch;create
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes;routes/custom-host;routes/status,verbs=get;list;create;update;delete;deletecollection;watch;create
-//+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=collectorconfigs,verbs=create;get;list;patch;update;watch
-//+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=collectorconfigs,verbs=create;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=collectorconfigs,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=collectorconfigs,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=collectorconfigs/status;searches/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=collectorconfigs/status;searches/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=searches,verbs=get;list;patch;update;watch

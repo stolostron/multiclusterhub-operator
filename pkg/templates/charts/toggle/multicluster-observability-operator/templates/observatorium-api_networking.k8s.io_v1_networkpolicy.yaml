@@ -1,0 +1,22 @@
+{{- if .Values.global.networkPolicies.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: observatorium-api
+  namespace: '{{ default "open-cluster-management-observability" .Values.global.namespace }}'
+spec:
+  egress:
+  - {}
+  ingress:
+  - ports:
+    - port: 8081
+      protocol: TCP
+    - port: 8080
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: observatorium-api
+  policyTypes:
+  - Ingress
+  - Egress
+{{- end }}

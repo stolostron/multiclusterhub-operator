@@ -72,7 +72,7 @@ spec:
                   compliance that should be fulfilled before applying the policies to the managed clusters.
                 items:
                   description: >-
-                    Each PolicyDependency defines an object reference which must be in a certain compliance
+                    PolicyDependency defines an object reference which must be in a certain compliance
                     state before the policy should be created.
                   oneOf:
                   - properties:
@@ -112,16 +112,16 @@ spec:
                         More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
                       type: string
                     name:
-                      description: Name is the name of the object that the policy
-                        depends on.
+                      description: Name is the name of the object that the policy depends on.
                       type: string
                     namespace:
-                      description: Namespace is the namespace of the object that the
-                        policy depends on (optional).
+                      description: Namespace is the namespace of the object that the policy depends on (optional).
                       type: string
                   required:
-                  - compliance
+                  - apiVersion
+                  - kind
                   - name
+                  - compliance
                   type: object
                 type: array
               disabled:
@@ -130,8 +130,7 @@ spec:
                   the policy is removed from managed clusters.
                 type: boolean
               hubTemplateOptions:
-                description: HubTemplateOptions changes the default behavior of hub
-                  templates.
+                description: HubTemplateOptions changes the default behavior of hub templates.
                 properties:
                   serviceAccountName:
                     description: >-
@@ -158,7 +157,7 @@ spec:
                         clusters.
                       items:
                         description: >-
-                          Each PolicyDependency defines an object reference which must be in a certain compliance
+                          PolicyDependency defines an object reference which must be in a certain compliance
                           state before the policy should be created.
                         oneOf:
                         - properties:
@@ -198,16 +197,16 @@ spec:
                               More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
                             type: string
                           name:
-                            description: Name is the name of the object that the policy
-                              depends on.
+                            description: Name is the name of the object that the policy depends on.
                             type: string
                           namespace:
-                            description: Namespace is the namespace of the object
-                              that the policy depends on (optional).
+                            description: Namespace is the namespace of the object that the policy depends on (optional).
                             type: string
                         required:
-                        - compliance
+                        - apiVersion
+                        - kind
                         - name
+                        - compliance
                         type: object
                       type: array
                     ignorePending:
@@ -217,8 +216,7 @@ spec:
                         "Pending" status.
                       type: boolean
                     objectDefinition:
-                      description: A Kubernetes object defining the policy to apply
-                        to a managed cluster
+                      description: A Kubernetes object defining the policy to apply to a managed cluster
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
                   required:
@@ -242,8 +240,7 @@ spec:
             - policy-templates
             type: object
           status:
-            description: PolicyStatus reports the observed status of the policy resulting
-              from its policy templates.
+            description: PolicyStatus reports the observed status of the policy resulting from its policy templates.
             properties:
               compliant:
                 description: >-
@@ -264,8 +261,7 @@ spec:
                     for a given policy template.
                   properties:
                     compliant:
-                      description: ComplianceState reports the observed status resulting
-                        from the definitions of the policy.
+                      description: ComplianceState reports the observed status resulting from the definitions of the policy.
                       enum:
                       - Compliant
                       - Pending
@@ -273,21 +269,17 @@ spec:
                       type: string
                     history:
                       items:
-                        description: ComplianceHistory reports a compliance message
-                          from a given time and event.
+                        description: ComplianceHistory reports a compliance message from a given time and event.
                         properties:
                           eventName:
-                            description: EventName is the name of the event attached
-                              to the message.
+                            description: EventName is the name of the event attached to the message.
                             type: string
                           lastTimestamp:
-                            description: LastTimestamp is the timestamp of the event
-                              that reported the message.
+                            description: LastTimestamp is the timestamp of the event that reported the message.
                             format: date-time
                             type: string
                           message:
-                            description: Message is the compliance message resulting
-                              from evaluating the policy resource.
+                            description: Message is the compliance message resulting from evaluating the policy resource.
                             type: string
                         type: object
                       type: array
@@ -301,19 +293,25 @@ spec:
                   Placement is a list of managed cluster placement resources bound to the policy. This status
                   field is only used in the root policy on the hub cluster.
                 items:
-                  description: Placement reports how and what managed cluster placement
-                    resources are attached to the policy.
+                  description: Placement reports how and what managed cluster placement resources are attached to the policy.
                   properties:
                     decisions:
-                      description: Decisions is the list of managed clusters returned
-                        by the placement resource for this binding.
+                      description: Decisions is the list of managed clusters returned by the placement resource for this binding.
                       items:
-                        description: PlacementDecision is the cluster name returned
-                          by the placement resource.
+                        description: PlacementDecision is the cluster name returned by the placement resource.
                         properties:
                           clusterName:
                             type: string
                           clusterNamespace:
+                            type: string
+                        type: object
+                      type: array
+                    exclusions:
+                      description: Exclusions lists managed clusters where the policy is excluded from propagation.
+                      items:
+                        description: PolicyExclusion reports a managed cluster excluded from propagation by a policy set exclusion.
+                        properties:
+                          clusterName:
                             type: string
                         type: object
                       type: array
@@ -354,13 +352,22 @@ spec:
                     clusternamespace:
                       type: string
                     compliant:
-                      description: ComplianceState reports the observed status resulting
-                        from the definitions of the policy.
+                      description: ComplianceState reports the observed status resulting from the definitions of the policy.
                       enum:
                       - Compliant
                       - Pending
                       - NonCompliant
                       type: string
+                    remainingBindings:
+                      items:
+                        description: >-
+                          RemainingBinding reports a placement binding that still places the policy on a managed cluster
+                          when the policy is excluded on a policy set.
+                        properties:
+                          placementBinding:
+                            type: string
+                        type: object
+                      type: array
                   type: object
                 type: array
             type: object

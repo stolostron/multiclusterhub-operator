@@ -1,0 +1,72 @@
+{{- if .Values.global.networkPolicies.enabled }}
+# Copyright Contributors to the Open Cluster Management project
+#
+# NetworkPolicy for governance-policy-propagator pods.
+#
+# Ingress:
+#   - Metrics collection on port 8443 from monitoring namespace (Prometheus)
+#   - Webhook validation on port 9443 (from Kubernetes API server)
+#
+# Egress:
+#   - DNS for name resolution (port 53 and 5353)
+#   - Kubernetes API server communication (port 443 and 6443)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: grc-policy-propagator-network-policy
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: grc
+    chart: grc-chart-{{ .Values.hubconfig.hubVersion }}
+    component: "ocm-policy-propagator"
+    release: grc
+    app.kubernetes.io/instance: grc
+    app.kubernetes.io/name: grc
+spec:
+  podSelector:
+    matchLabels:
+      app: grc
+      component: "ocm-policy-propagator"
+      release: grc
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Metrics ingress from multiple components on port 8443
+  - ports:
+    - protocol: TCP
+      port: 8443
+  # Webhook ingress from Kubernetes API server on port 9443
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          policy-group.network.openshift.io/host-network: ""
+    ports:
+    - protocol: TCP
+      port: 9443
+  egress:
+  # DNS egress for all pods (required for name resolution)
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 5353
+    - protocol: TCP
+      port: 5353
+  # Kubernetes API server egress
+  - ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 6443
+  # Insights metrics queries
+  - ports:
+    - protocol: TCP
+      port: 8443
+{{- end }}

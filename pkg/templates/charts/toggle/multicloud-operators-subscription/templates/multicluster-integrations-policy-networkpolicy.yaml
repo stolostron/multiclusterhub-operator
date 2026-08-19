@@ -1,0 +1,40 @@
+{{- if .Values.global.networkPolicies.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: multicluster-integrations-policy
+  namespace: '{{ .Values.global.namespace }}'
+spec:
+  egress:
+  - ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+    - port: 5353
+      protocol: UDP
+    - port: 5353
+      protocol: TCP
+  - ports:
+    - port: 443
+      protocol: TCP
+    - port: 6443
+      protocol: TCP
+  - ports:
+    - port: 4010
+      protocol: TCP
+  ingress:
+  - ports:
+    - port: 8386
+      protocol: TCP
+    - port: 8392
+      protocol: TCP
+    - port: 8383
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      name: multicluster-integrations
+  policyTypes:
+  - Ingress
+  - Egress
+{{- end }}

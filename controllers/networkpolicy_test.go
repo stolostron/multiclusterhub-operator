@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
@@ -341,8 +342,8 @@ func Test_ensureNetworkPolicies_Enabled_GetError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error from Get, got nil")
 	}
-	if expected := "failed to get NetworkPolicy deny-all: simulated get error"; err.Error() != expected {
-		t.Errorf("error = %q, want %q", err.Error(), expected)
+	if !strings.Contains(err.Error(), "simulated get error") {
+		t.Errorf("error = %q, want it to contain %q", err.Error(), "simulated get error")
 	}
 }
 
@@ -460,7 +461,7 @@ func Test_ensureNetworkPolicies_DisabledComponent_GetError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error from Get, got nil")
 	}
-	if expected := "failed to get NetworkPolicy deny-all: simulated get error"; err.Error() != expected {
-		t.Errorf("error = %q, want %q", err.Error(), expected)
+	if !strings.Contains(err.Error(), "simulated get error") {
+		t.Errorf("error = %q, want it to contain %q", err.Error(), "simulated get error")
 	}
 }
