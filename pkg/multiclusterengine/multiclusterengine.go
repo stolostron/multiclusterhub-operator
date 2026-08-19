@@ -129,6 +129,15 @@ func RenderMultiClusterEngine(existingMCE *mcev1.MultiClusterEngine, m *operator
 	copy.Spec.NodeSelector = m.Spec.NodeSelector
 	copy.Spec.LocalClusterName = m.Spec.LocalClusterName
 
+	// Sync NetworkPolicies configuration from MCH to MCE so that disabling/enabling
+	// NetworkPolicy deployment on the MCH resource is honored by MCE. MCH defaults
+	// to enabled (see controllers/config.go), so mirror that default here as well.
+	if m.Spec.NetworkPolicies != nil {
+		copy.Spec.NetworkPolicies = mcev1.NetworkPoliciesConfig{Enabled: m.Spec.NetworkPolicies.Enabled}
+	} else {
+		copy.Spec.NetworkPolicies = mcev1.NetworkPoliciesConfig{Enabled: true}
+	}
+
 	for _, component := range utils.GetMCEComponents(m) {
 		if component.Enabled {
 			copy.Enable(component.Name)
