@@ -20,6 +20,9 @@ spec:
       protocol: TCP
     - port: 6443
       protocol: TCP
+  - ports:
+    - port: 4010
+      protocol: TCP
   ingress:
   - ports:
     - port: 8386
