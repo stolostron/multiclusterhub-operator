@@ -43,25 +43,23 @@ spec:
           metadata:
             type: object
           spec:
-            description: PolicyAutomationSpec defines how and when automation is initiated
-              for the referenced policy.
+            description: PolicyAutomationSpec defines how and when automation is initiated for the referenced policy.
             properties:
               automationDef:
                 description: AutomationDef defines the automation to invoke.
                 properties:
                   extra_vars:
-                    description: ExtraVars is passed to the Ansible job at execution
-                      time and is a known Ansible entity.
+                    description: ExtraVars is passed to the Ansible job at execution time and is a known Ansible entity.
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                   jobTtl:
                     description: >-
                       JobTTL sets the time to live for the Kubernetes Job object after the Ansible job playbook run
                       has finished.
+                    minimum: 0
                     type: integer
                   name:
-                    description: Name of the Ansible Template to run in Ansible Automation
-                      Platform as a job.
+                    description: Name of the Ansible Template to run in Ansible Automation Platform as a job.
                     minLength: 1
                     type: string
                   policyViolationsLimit:
@@ -72,8 +70,7 @@ spec:
                     minimum: 0
                     type: integer
                   secret:
-                    description: TowerSecret is the name of the secret that contains
-                      the Ansible Automation Platform credential.
+                    description: TowerSecret is the name of the secret that contains the Ansible Automation Platform credential.
                     minLength: 1
                     type: string
                   type:
@@ -100,7 +97,7 @@ spec:
                 type: string
               mode:
                 description: >-
-                  Mode specifies how often automation is initiated. The supported values are "once", "everyEvent",
+                  PolicyAutomationMode specifies how often automation is initiated. The supported values are "once", "everyEvent",
                   and "disabled".
                 enum:
                 - once
@@ -108,12 +105,11 @@ spec:
                 - disabled
                 type: string
               policyRef:
-                description: PolicyRef is the name of the policy that this automation
-                  resource is bound to.
+                description: PolicyRef is the name of the policy that this automation resource is bound to.
+                minLength: 1
                 type: string
               rescanAfter:
-                description: RescanAfter is reserved for future use and should not
-                  be set.
+                description: RescanAfter is reserved for future use and should not be set.
                 type: string
             required:
             - automationDef
@@ -121,21 +117,17 @@ spec:
             - policyRef
             type: object
           status:
-            description: PolicyAutomationStatus defines the observed state of the
-              PolicyAutomation resource.
+            description: PolicyAutomationStatus defines the observed state of the PolicyAutomation resource.
             properties:
               clustersWithEvent:
                 additionalProperties:
-                  description: ClusterEvent shows the PolicyAutomation event on each
-                    target cluster.
+                  description: ClusterEvent shows the PolicyAutomation event on each target cluster.
                   properties:
                     automationStartTime:
-                      description: AutomationStartTime is the policy automation start
-                        time for everyEvent mode.
+                      description: AutomationStartTime is the policy automation start time for everyEvent mode.
                       type: string
                     eventTime:
-                      description: EventTime is the last policy compliance transition
-                        event time.
+                      description: EventTime is the last policy compliance transition event time.
                       type: string
                   required:
                   - automationStartTime
