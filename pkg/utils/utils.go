@@ -49,6 +49,12 @@ const (
 	// ClusterSubscriptionNamespace is the namespace for the open-cluster-management-backup subscription.
 	ClusterSubscriptionNamespace = "open-cluster-management-backup"
 
+	// ObservabilityNamespace is the namespace where MultiClusterObservability operand resources
+	// (e.g. Thanos, Alertmanager, Grafana, Observatorium) are deployed. This namespace is created
+	// by the multicluster-observability-operator, not by MCH, once a MultiClusterObservability CR
+	// instance exists.
+	ObservabilityNamespace = "open-cluster-management-observability"
+
 	// OpenShiftClusterMonitoringLabel is the label for OpenShift cluster monitoring.
 	OpenShiftClusterMonitoringLabel = "openshift.io/cluster-monitoring"
 

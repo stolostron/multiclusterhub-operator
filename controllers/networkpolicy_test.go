@@ -10,6 +10,8 @@ import (
 	"testing"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
+	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -74,6 +76,16 @@ func newTestReconcilerWithInterceptor(funcs interceptor.Funcs, objs ...client.Ob
 		CacheSpec: CacheSpec{
 			ImageOverrides:    getTestImageOverrides(),
 			TemplateOverrides: map[string]string{},
+		},
+	}
+}
+
+// namespaceForTest returns a Namespace object, used to simulate a namespace existing (or not) on
+// the cluster.
+func namespaceForTest(name string) *corev1.Namespace {
+	return &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
 		},
 	}
 }
@@ -463,5 +475,207 @@ func Test_ensureNetworkPolicies_DisabledComponent_GetError(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "simulated get error") {
 		t.Errorf("error = %q, want it to contain %q", err.Error(), "simulated get error")
+	}
+}
+
+// --- Observability namespace override tests (ACM-41654) ---
+//
+// Observability's operand NetworkPolicies (Thanos, Alertmanager, etc.) must be deployed to the
+// open-cluster-management-observability namespace rather than the MCH namespace, and only once
+// that namespace exists (it is created by the multicluster-observability-operator, not MCH, once
+// a MultiClusterObservability CR is created).
+
+func Test_namespaceExists_NotFound(t *testing.T) {
+	r := newTestReconciler()
+
+	exists, err := r.namespaceExists(context.TODO(), utils.ObservabilityNamespace)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	if exists {
+		t.Error("expected exists=false when namespace is not present")
+	}
+}
+
+func Test_namespaceExists_Found(t *testing.T) {
+	r := newTestReconciler(namespaceForTest(utils.ObservabilityNamespace))
+
+	exists, err := r.namespaceExists(context.TODO(), utils.ObservabilityNamespace)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	if !exists {
+		t.Error("expected exists=true when namespace is present")
+	}
+}
+
+func Test_namespaceExists_GetError(t *testing.T) {
+	r := newTestReconcilerWithInterceptor(interceptor.Funcs{
+		Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+			if _, ok := obj.(*corev1.Namespace); ok {
+				return fmt.Errorf("simulated get error")
+			}
+			return c.Get(ctx, key, obj, opts...)
+		},
+	})
+
+	_, err := r.namespaceExists(context.TODO(), utils.ObservabilityNamespace)
+	if err == nil {
+		t.Fatal("expected error from Get, got nil")
+	}
+	if !strings.Contains(err.Error(), "simulated get error") {
+		t.Errorf("error = %q, want it to contain %q", err.Error(), "simulated get error")
+	}
+}
+
+func Test_ensureNetworkPolicies_Observability_SkippedWithoutNamespace(t *testing.T) {
+	setChartEnv(t)
+	registerScheme()
+
+	r := newTestReconciler()
+	mch := newTestMCH("mch", "open-cluster-management", boolPtr(true),
+		operatorv1.ComponentConfig{Name: operatorv1.MultiClusterObservability, Enabled: true},
+	)
+
+	result, err := r.ensureNetworkPolicies(context.TODO(), mch, r.CacheSpec, false)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	// Missing the target namespace is not an error condition that needs an explicit requeue -
+	// MCH already requeues periodically, and this is just skipped until the namespace shows up.
+	if result != (ctrl.Result{}) {
+		t.Errorf("expected empty result while observability namespace is missing, got: %v", result)
+	}
+
+	npList := &networkingv1.NetworkPolicyList{}
+	if err := r.Client.List(context.TODO(), npList); err != nil {
+		t.Fatalf("failed to list NPs: %v", err)
+	}
+	if len(npList.Items) != 0 {
+		t.Errorf("expected no NetworkPolicies to be created before the observability namespace exists, got %d", len(npList.Items))
+	}
+}
+
+func Test_ensureNetworkPolicies_Observability_CreatesInObservabilityNamespace(t *testing.T) {
+	setChartEnv(t)
+	registerScheme()
+
+	r := newTestReconciler(namespaceForTest(utils.ObservabilityNamespace))
+	mch := newTestMCH("mch", "open-cluster-management", boolPtr(true),
+		operatorv1.ComponentConfig{Name: operatorv1.MultiClusterObservability, Enabled: true},
+	)
+
+	result, err := r.ensureNetworkPolicies(context.TODO(), mch, r.CacheSpec, false)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	if result != (ctrl.Result{}) {
+		t.Fatalf("expected empty result once the observability namespace exists, got: %v", result)
+	}
+
+	// NetworkPolicies must land in the observability namespace...
+	obsNPs := &networkingv1.NetworkPolicyList{}
+	if err := r.Client.List(context.TODO(), obsNPs, client.InNamespace(utils.ObservabilityNamespace)); err != nil {
+		t.Fatalf("failed to list NPs: %v", err)
+	}
+	if len(obsNPs.Items) == 0 {
+		t.Fatal("expected NetworkPolicies to be created in the observability namespace, got 0")
+	}
+
+	found := false
+	for _, np := range obsNPs.Items {
+		if np.Name == "thanos-query" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("expected thanos-query NetworkPolicy to be created in the observability namespace")
+	}
+
+	// ...and NOT in the MCH namespace.
+	mchNPs := &networkingv1.NetworkPolicyList{}
+	if err := r.Client.List(context.TODO(), mchNPs, client.InNamespace("open-cluster-management")); err != nil {
+		t.Fatalf("failed to list NPs: %v", err)
+	}
+	if len(mchNPs.Items) != 0 {
+		t.Errorf("expected no Observability NetworkPolicies in the MCH namespace, got %d", len(mchNPs.Items))
+	}
+}
+
+func Test_ensureNetworkPolicies_Observability_DisabledComponent_DeletesFromObservabilityNamespace(t *testing.T) {
+	setChartEnv(t)
+	registerScheme()
+
+	existingNP := mchNetworkPolicy("thanos-query", utils.ObservabilityNamespace, "mch", "open-cluster-management")
+	r := newTestReconciler(existingNP)
+	mch := newTestMCH("mch", "open-cluster-management", boolPtr(true),
+		operatorv1.ComponentConfig{Name: operatorv1.MultiClusterObservability, Enabled: false},
+	)
+
+	result, err := r.ensureNetworkPolicies(context.TODO(), mch, r.CacheSpec, false)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	if result != (ctrl.Result{}) {
+		t.Fatalf("expected empty result, got: %v", result)
+	}
+
+	npList := &networkingv1.NetworkPolicyList{}
+	if err := r.Client.List(context.TODO(), npList, client.InNamespace(utils.ObservabilityNamespace)); err != nil {
+		t.Fatalf("failed to list NPs: %v", err)
+	}
+	if len(npList.Items) != 0 {
+		t.Errorf("expected thanos-query NetworkPolicy to be deleted from the observability namespace, got %d", len(npList.Items))
+	}
+}
+
+func Test_ensureNetworkPolicies_Disabled_DeletesAcrossNamespaces(t *testing.T) {
+	// Global disable must clean up NetworkPolicies regardless of which namespace they were
+	// deployed to (e.g. Observability's, which differs from the MCH namespace).
+	npInMCHNamespace := mchNetworkPolicy("np-one", "open-cluster-management", "mch", "open-cluster-management")
+	npInObsNamespace := mchNetworkPolicy("thanos-query", utils.ObservabilityNamespace, "mch", "open-cluster-management")
+
+	r := newTestReconciler(npInMCHNamespace, npInObsNamespace)
+	mch := newTestMCH("mch", "open-cluster-management", boolPtr(false))
+
+	result, err := r.ensureNetworkPolicies(context.TODO(), mch, r.CacheSpec, false)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	if result != (ctrl.Result{}) {
+		t.Fatalf("expected empty result, got: %v", result)
+	}
+
+	npList := &networkingv1.NetworkPolicyList{}
+	if err := r.Client.List(context.TODO(), npList); err != nil {
+		t.Fatalf("failed to list NPs: %v", err)
+	}
+	if len(npList.Items) != 0 {
+		t.Errorf("expected all MCH-created NetworkPolicies to be deleted across namespaces, got %d", len(npList.Items))
+	}
+}
+
+func Test_networkPolicyNamespaceOverride(t *testing.T) {
+	if ns, ok := networkPolicyNamespaceOverride(operatorv1.MultiClusterObservability); !ok || ns != utils.ObservabilityNamespace {
+		t.Errorf("expected override %q for %s, got %q (ok=%v)", utils.ObservabilityNamespace, operatorv1.MultiClusterObservability, ns, ok)
+	}
+
+	if ns, ok := networkPolicyNamespaceOverride(operatorv1.MTVIntegrations); ok {
+		t.Errorf("expected no override for %s, got %q", operatorv1.MTVIntegrations, ns)
+	}
+}
+
+func Test_isNetworkPolicyOverrideNamespace(t *testing.T) {
+	if !isNetworkPolicyOverrideNamespace(utils.ObservabilityNamespace) {
+		t.Errorf("expected %q to be recognized as a NetworkPolicy override namespace", utils.ObservabilityNamespace)
+	}
+
+	if isNetworkPolicyOverrideNamespace("some-unrelated-namespace") {
+		t.Error("expected unrelated namespace to not be recognized as a NetworkPolicy override namespace")
+	}
+
+	// The component key itself must not be mistaken for a namespace value.
+	if isNetworkPolicyOverrideNamespace(operatorv1.MultiClusterObservability) {
+		t.Errorf("expected component key %q to not match as a namespace value", operatorv1.MultiClusterObservability)
 	}
 }
