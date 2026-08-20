@@ -104,10 +104,6 @@ spec:
           value: '{{ .Values.global.imageOverrides.search_collector }}'
         - name: API_IMAGE
           value: '{{ .Values.global.imageOverrides.search_v2_api }}'
-        - name: OPERATOR_ORG
-          value: '{{ .Values.org }}'
-        - name: OPERATOR_CHART
-          value: '{{ .Chart.Name }}'
         image: '{{ .Values.global.imageOverrides.search_v2_operator }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         livenessProbe:
