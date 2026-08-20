@@ -200,36 +200,47 @@ func (r *MultiClusterHubReconciler) calculateStatus(ctx context.Context, hub *op
 	if reportMCEWait {
 		SetHubCondition(&status, *waitingForMCECond)
 		RemoveHubCondition(&status, operatorsv1.Complete)
-	} else if successful {
-		// don't label as complete until component pruning succeeds
-		if !hubPruning(status) && !utils.IsPaused(hub) {
-			available := NewHubCondition(operatorsv1.Complete, metav1.ConditionTrue, ComponentsAvailableReason, "All hub components ready.")
-			SetHubCondition(&status, *available)
-			RemoveHubCondition(&status, operatorsv1.Progressing)
-		} else if hubPruning(status) && !utils.IsPaused(hub) {
-			// All components successful but pruning condition exists - pruning must be complete
-			// Set AllOldComponentsRemovedReason so hubPruning() returns false on next reconcile
-			complete := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, AllOldComponentsRemovedReason, "All old resources pruned")
-			SetHubCondition(&status, *complete)
-			log.Info("Component pruning complete - all resources successfully removed")
-		} else {
-			// only add unavailable status if complete status already present
-			if HubConditionPresent(status, operatorsv1.Complete) {
-				unavailable := NewHubCondition(operatorsv1.Complete, metav1.ConditionFalse, OldComponentNotRemovedReason, "Not all components successfully pruned.")
-				SetHubCondition(&status, *unavailable)
-			}
-		}
 	} else {
-		// hub is progressing unless otherwise specified
-		if !HubConditionPresent(status, operatorsv1.Progressing) {
-			progressing := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, ReconcileReason, "Hub is reconciling.")
-			SetHubCondition(&status, *progressing)
+		// MCE wait no longer applies (MCE is compliant, paused, or a unit test). Clear any
+		// lingering WaitingForMCEUpgrade condition so it doesn't block the normal
+		// progressing/complete logic below via the Type-only HubConditionPresent check, and
+		// so `oc get mch` doesn't keep reporting a stale "waiting for MCE" message once MCE
+		// has caught up but the hub hasn't finished reconciling other components yet.
+		if waiting := GetHubCondition(status, operatorsv1.Progressing); waiting != nil && waiting.Reason == WaitingForMCEUpgradeReason {
+			RemoveHubCondition(&status, operatorsv1.Progressing)
 		}
 
-		// only add unavailable status if complete status already present
-		if HubConditionPresent(status, operatorsv1.Complete) {
-			unavailable := NewHubCondition(operatorsv1.Complete, metav1.ConditionFalse, ComponentsUnavailableReason, "Not all hub components ready.")
-			SetHubCondition(&status, *unavailable)
+		if successful {
+			// don't label as complete until component pruning succeeds
+			if !hubPruning(status) && !utils.IsPaused(hub) {
+				available := NewHubCondition(operatorsv1.Complete, metav1.ConditionTrue, ComponentsAvailableReason, "All hub components ready.")
+				SetHubCondition(&status, *available)
+				RemoveHubCondition(&status, operatorsv1.Progressing)
+			} else if hubPruning(status) && !utils.IsPaused(hub) {
+				// All components successful but pruning condition exists - pruning must be complete
+				// Set AllOldComponentsRemovedReason so hubPruning() returns false on next reconcile
+				complete := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, AllOldComponentsRemovedReason, "All old resources pruned")
+				SetHubCondition(&status, *complete)
+				log.Info("Component pruning complete - all resources successfully removed")
+			} else {
+				// only add unavailable status if complete status already present
+				if HubConditionPresent(status, operatorsv1.Complete) {
+					unavailable := NewHubCondition(operatorsv1.Complete, metav1.ConditionFalse, OldComponentNotRemovedReason, "Not all components successfully pruned.")
+					SetHubCondition(&status, *unavailable)
+				}
+			}
+		} else {
+			// hub is progressing unless otherwise specified
+			if !HubConditionPresent(status, operatorsv1.Progressing) {
+				progressing := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, ReconcileReason, "Hub is reconciling.")
+				SetHubCondition(&status, *progressing)
+			}
+
+			// only add unavailable status if complete status already present
+			if HubConditionPresent(status, operatorsv1.Complete) {
+				unavailable := NewHubCondition(operatorsv1.Complete, metav1.ConditionFalse, ComponentsUnavailableReason, "Not all hub components ready.")
+				SetHubCondition(&status, *unavailable)
+			}
 		}
 	}
 

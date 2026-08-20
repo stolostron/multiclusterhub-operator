@@ -607,6 +607,97 @@ func TestCalculateStatus_WaitingForMCEUpgrade(t *testing.T) {
 	}
 }
 
+// TestCalculateStatus_ClearsStaleMCEWaitConditionWhenReconciling verifies that once MCE becomes
+// compliant, a previously-set WaitingForMCEUpgrade condition is cleared even if the hub hasn't
+// finished reconciling its other components yet (i.e. calculateStatus takes the generic "hub is
+// reconciling" branch, not the fully-successful branch). Without this fix, the stale condition
+// would linger -- via the Type-only HubConditionPresent(Progressing) check -- until the hub
+// reached full Running, or indefinitely if some other component never became ready.
+func TestCalculateStatus_ClearsStaleMCEWaitConditionWhenReconciling(t *testing.T) {
+	registerScheme()
+	ctx := context.TODO()
+
+	// This test suite defaults to community mode, so 0.10.0 satisfies RequiredCommunityMCEVersion
+	// (see TestCalculateMCEVersionCompliance) -- MCE is compliant.
+	mce := &mcev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "multiclusterengine",
+			Labels: map[string]string{
+				multiclusterengineutils.MCEManagedByLabel: "true",
+			},
+		},
+		Status: mcev1.MultiClusterEngineStatus{
+			CurrentVersion: "0.10.0",
+			Conditions: []mcev1.MultiClusterEngineCondition{
+				{
+					Type:    mcev1.MultiClusterEngineAvailable,
+					Status:  metav1.ConditionTrue,
+					Reason:  "Available",
+					Message: "MCE is available",
+				},
+			},
+		},
+	}
+	if err := recon.Client.Create(ctx, mce); err != nil {
+		t.Fatalf("failed to create MCE: %v", err)
+	}
+	defer func() {
+		if err := recon.Client.Delete(ctx, mce); err != nil {
+			t.Errorf("failed to delete MCE: %v", err)
+		}
+	}()
+
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "multiclusterhub",
+			Namespace: "open-cluster-management",
+		},
+		Spec: operatorsv1.MultiClusterHubSpec{
+			DisableHubSelfManagement: true, // Disable local-cluster requirement
+		},
+		Status: operatorsv1.MultiClusterHubStatus{
+			CurrentVersion: version.Version,
+			// Simulates a condition set by a prior reconcile while MCE was still non-compliant.
+			HubConditions: []operatorsv1.HubCondition{
+				{
+					Type:    operatorsv1.Progressing,
+					Status:  metav1.ConditionTrue,
+					Reason:  WaitingForMCEUpgradeReason,
+					Message: "Waiting for MultiClusterEngine to upgrade to 0.10.0 (current: none)",
+				},
+			},
+		},
+	}
+
+	// Deliberately omit the "mce" entry from allCRs (and pass empty allDeps), and pass
+	// ocpConsole=true so the always-Available console fallback isn't injected either. With no
+	// components enabled on this bare hub, the resulting component map is empty, so
+	// allComponentsSuccessful() returns false, keeping the hub NOT fully successful. This
+	// exercises the generic "hub is reconciling" branch rather than the fully-successful
+	// branch, which already clears Progressing on its own (see
+	// TestCalculateStatus_RemovesStaleProgressingCondition).
+	allDeps := []*appsv1.Deployment{}
+	allCRs := map[string]*unstructured.Unstructured{}
+
+	newStatus := recon.calculateStatus(ctx, hub, allDeps, allCRs, true, false)
+
+	if newStatus.Phase == operatorsv1.HubWaitingForMCE {
+		t.Errorf("Expected phase not to be %s once MCE is compliant, got %s", operatorsv1.HubWaitingForMCE, newStatus.Phase)
+	}
+
+	if waiting := GetHubCondition(newStatus, operatorsv1.Progressing); waiting != nil && waiting.Reason == WaitingForMCEUpgradeReason {
+		t.Errorf("Expected stale WaitingForMCEUpgrade condition to be cleared, but it's still present with message %q", waiting.Message)
+	}
+
+	reconciling := GetHubCondition(newStatus, operatorsv1.Progressing)
+	if reconciling == nil {
+		t.Fatal("Expected a Progressing condition describing hub reconciliation to replace the cleared MCE-wait condition, got none")
+	}
+	if reconciling.Reason != ReconcileReason {
+		t.Errorf("Expected condition reason %s, got %s", ReconcileReason, reconciling.Reason)
+	}
+}
+
 // TestMCEUpgradeWaitCondition unit tests the extracted helper in isolation, independent of a
 // live client or the rest of calculateStatus.
 func TestMCEUpgradeWaitCondition(t *testing.T) {
