@@ -22,8 +22,6 @@ spec:
     spec:
       containers:
         - name: acm-cli-downloads
-          args:
-            - --secure=true
           image: "{{ .Values.global.imageOverrides.acm_cli }}"
           imagePullPolicy: "{{ .Values.global.pullPolicy }}"
           resources:
@@ -34,23 +32,19 @@ spec:
               memory: "128Mi"
               cpu: "50m"
           ports:
-            - containerPort: 8443
+            - containerPort: 8080
               name: downloads
               protocol: TCP
-          volumeMounts:
-            - mountPath: "/var/run/acm-cli-cert"
-              name: acm-cli-cert
-              readOnly: true
           livenessProbe:
             httpGet:
               port: downloads
-              scheme: HTTPS
+              scheme: HTTP
             initialDelaySeconds: 5
             periodSeconds: 5
           readinessProbe:
             httpGet:
               port: downloads
-              scheme: HTTPS
+              scheme: HTTP
             initialDelaySeconds: 5
             periodSeconds: 5
           securityContext:
@@ -61,10 +55,6 @@ spec:
             capabilities:
               drop:
               - ALL
-      volumes:
-        - name: acm-cli-cert
-          secret:
-            secretName: acm-cli-cert
       automountServiceAccountToken: false
       hostNetwork: false
       hostPID: false
