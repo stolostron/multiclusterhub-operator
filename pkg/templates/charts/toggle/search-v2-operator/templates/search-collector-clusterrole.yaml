@@ -1,0 +1,34 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: '{{ .Values.org }}:{{ .Chart.Name }}:search-collector'
+rules:
+# Watch every resource in the cluster for inventory collection.
+# This wildcard rule also covers configmaps (allow/deny filter) and
+# collectorconfigs (hot-reload), so separate rules for those are not needed.
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - get
+  - list
+  - watch
+# Update CollectorConfig status — the operator reconcile loop writes the
+# collector's sync status back via collectorconfigs/status.
+- apiGroups:
+  - search.open-cluster-management.io
+  resources:
+  - collectorconfigs/status
+  verbs:
+  - patch
+  - update
+# Manage the addon heartbeat lease.
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - create
+  - update
