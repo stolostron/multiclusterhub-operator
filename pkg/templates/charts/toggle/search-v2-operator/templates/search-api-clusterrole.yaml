@@ -1,0 +1,59 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: '{{ .Values.org }}:{{ .Chart.Name }}:search-api'
+rules:
+# User-extra impersonation — required to forward the full user identity
+# (credential ID, node name, pod name, etc.) through the Kubernetes API server
+# when executing SelfSubjectRulesReviews on behalf of the end user.
+- apiGroups:
+  - authentication.k8s.io
+  - authorization.k8s.io
+  resources:
+  - uids
+  - userextras/authentication.kubernetes.io/credential-id
+  - userextras/authentication.kubernetes.io/node-name
+  - userextras/authentication.kubernetes.io/node-uid
+  - userextras/authentication.kubernetes.io/pod-name
+  - userextras/authentication.kubernetes.io/pod-uid
+  verbs:
+  - impersonate
+# Principal impersonation — required to issue requests as the authenticated user.
+- apiGroups:
+  - ''
+  resources:
+  - users
+  - serviceaccounts
+  - groups
+  verbs:
+  - impersonate
+# Secret and Service access — required by search-api to manage its mTLS certs.
+- apiGroups:
+  - ''
+  resources:
+  - secrets
+  - services
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch
+# TokenReview — required to authenticate the end user's bearer token before
+# impersonating them for RBAC-filtered query results.
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+# Authorization reviews — required to evaluate per-user RBAC rules for
+# filtering search results to resources the requesting user may access.
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - selfsubjectaccessreviews
+  - selfsubjectrulesreviews
+  verbs:
+  - create
