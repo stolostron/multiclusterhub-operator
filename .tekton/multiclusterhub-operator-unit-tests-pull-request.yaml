@@ -1,10 +1,23 @@
 # Copyright Contributors to the Open Cluster Management project
 #
 # Standalone Pipelines-as-Code check that runs `make test` (Go unit tests)
-# on every PR. This is intentionally NOT wired into the Konflux
-# Application/Component/Snapshot machinery (no appstudio.openshift.io/*
-# labels) -- it is a plain PR check, same role Prow's `make unit-tests`
-# job plays today, just running on Tekton instead.
+# on every PR. It is intentionally NOT a `pipelines.appstudio.openshift.io/
+# type: build` pipeline and isn't triggered by/tied to a Snapshot, so it
+# does not participate in Konflux's Snapshot/Release gating -- it's a
+# plain PR check, same role Prow's `make unit-tests` job plays today, just
+# running on Tekton instead.
+#
+# It does carry `appstudio.openshift.io/application`/`component` labels
+# (pointing at the existing release-acm-51 Application/Component for this
+# repo) purely so the Konflux UI can resolve it. Without those labels the
+# UI's GithubRedirect component (src/components/GithubRedirect/
+# GithubRedirect.tsx in konflux-ci/konflux-ui) can never build a redirect
+# URL and gets stuck on a permanent "Redirecting to pipeline run..."
+# spinner -- `shouldRedirect = application && !error` never becomes true
+# if `application` is undefined. This mislabels the check's actual branch
+# coverage a bit (it also runs on release-5.2 and main, not just
+# release-5.1), but that's a cosmetic tradeoff for being able to view it
+# in the UI at all.
 #
 # Diagnostic notes (see PR #3893 for the prior attempt, which hung for 2
 # hours because its task tried to curl/dnf install/go install ...@latest
@@ -44,6 +57,8 @@ metadata:
     pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && (target_branch == "main" || target_branch == "release-5.1" || target_branch == "release-5.2")
   creationTimestamp: null
   labels:
+    appstudio.openshift.io/application: release-acm-51
+    appstudio.openshift.io/component: multiclusterhub-operator-acm-51
     pipelines.appstudio.openshift.io/type: test
   name: multiclusterhub-operator-unit-tests
   namespace: crt-redhat-acm-tenant
