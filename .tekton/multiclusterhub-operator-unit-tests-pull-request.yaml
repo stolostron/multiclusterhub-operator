@@ -25,6 +25,12 @@
 # setup-envtest + kubebuilder envtest assets into build/Dockerfile.test.konflux
 # and swap the `image:` below to that pre-built image, so `make test` needs
 # zero runtime network access.
+#
+#   4. Explicit `computeResources` below: without it, Tekton injected a
+#      2Gi memory limit and `go vet ./...` got OOMKilled (exitCode 137)
+#      ~70s in -- not a timeout, a plain resource limit. GOFLAGS=-p=2
+#      also caps parallel compile workers so peak memory isn't driven up
+#      by this node's CPU count.
 apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
@@ -72,6 +78,13 @@ spec:
             - name: run-unit-tests
               image: registry.redhat.io/ubi9/go-toolset:1.26
               workingDir: /workspace
+              computeResources:
+                requests:
+                  cpu: "1"
+                  memory: 2Gi
+                limits:
+                  cpu: "2"
+                  memory: 6Gi
               env:
                 - name: GIT_URL
                   value: $(params.git-url)
@@ -83,6 +96,8 @@ spec:
                   value: /tmp/go
                 - name: GOCACHE
                   value: /tmp/go-cache
+                - name: GOFLAGS
+                  value: -p=2
               script: |
                 #!/bin/bash
                 set -uo pipefail
