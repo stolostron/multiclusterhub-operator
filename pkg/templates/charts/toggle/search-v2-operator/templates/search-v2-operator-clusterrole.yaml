@@ -13,16 +13,13 @@ rules:
 - apiGroups:
   - ''
   resources:
-  - groups
   - secrets
   - serviceaccounts
   - services
-  - users
   verbs:
   - create
   - delete
   - get
-  - impersonate
   - list
   - patch
   - update
@@ -81,18 +78,6 @@ rules:
   - tokenreviews
   verbs:
   - create
-- apiGroups:
-  - authentication.k8s.io
-  - authorization.k8s.io
-  resources:
-  - uids
-  - userextras/authentication.kubernetes.io/credential-id
-  - userextras/authentication.kubernetes.io/node-name
-  - userextras/authentication.kubernetes.io/node-uid
-  - userextras/authentication.kubernetes.io/pod-name
-  - userextras/authentication.kubernetes.io/pod-uid
-  verbs:
-  - impersonate
 - apiGroups:
   - authentication.open-cluster-management.io
   resources:
@@ -175,7 +160,6 @@ rules:
   - rbac.authorization.k8s.io
   resources:
   - clusterrolebindings
-  - clusterroles
   - rolebindings
   - roles
   verbs:
@@ -184,6 +168,25 @@ rules:
   - get
   - list
   - update
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterroles
+  verbs:
+  - bind
+  - create
+  - delete
+  - get
+  - list
+  - update
+- apiGroups:
+  - rbac.open-cluster-management.io
+  resources:
+  - clusterpermissions
+  verbs:
+  - create
+  - delete
+  - get
 - apiGroups:
   - search.open-cluster-management.io
   resources:
