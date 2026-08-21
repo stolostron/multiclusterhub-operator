@@ -386,6 +386,25 @@ func TestRenderMultiClusterEngine(t *testing.T) {
 		g.Expect(got.Annotations["imageRepository"]).To(gomega.Equal(mch.Annotations["mch-imageRepository"]), "Override annotations should be updated")
 	})
 
+	t.Run("NetworkPolicies defaults to enabled when MCH does not specify", func(t *testing.T) {
+		g.Expect(mch.Spec.NetworkPolicies).To(gomega.BeNil(), "test setup: MCH should not specify NetworkPolicies")
+		g.Expect(got.Spec.NetworkPolicies.Enabled).To(gomega.BeTrue(), "NetworkPolicies should default to enabled")
+	})
+
+	// MCH explicitly disables NetworkPolicies
+	mch.Spec.NetworkPolicies = &operatorv1.NetworkPoliciesConfig{Enabled: false}
+	got = RenderMultiClusterEngine(existingMCE, mch)
+	t.Run("NetworkPolicies disabled on MCH is synced to MCE", func(t *testing.T) {
+		g.Expect(got.Spec.NetworkPolicies.Enabled).To(gomega.BeFalse(), "MCE should inherit MCH's disabled NetworkPolicies setting")
+	})
+
+	// MCH explicitly enables NetworkPolicies
+	mch.Spec.NetworkPolicies = &operatorv1.NetworkPoliciesConfig{Enabled: true}
+	got = RenderMultiClusterEngine(existingMCE, mch)
+	t.Run("NetworkPolicies enabled on MCH is synced to MCE", func(t *testing.T) {
+		g.Expect(got.Spec.NetworkPolicies.Enabled).To(gomega.BeTrue(), "MCE should inherit MCH's enabled NetworkPolicies setting")
+	})
+
 	// Annotation on MCE but not MCH
 	existingMCE.Annotations["imageRepository"] = "quay.io"
 	mch.SetAnnotations(map[string]string{})
