@@ -1,0 +1,44 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: '{{ .Values.org }}:{{ .Chart.Name }}:search-api'
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  - authorization.k8s.io
+  resources:
+  - uids
+  - userextras/authentication.kubernetes.io/credential-id
+  - userextras/authentication.kubernetes.io/node-name
+  - userextras/authentication.kubernetes.io/node-uid
+  - userextras/authentication.kubernetes.io/pod-name
+  - userextras/authentication.kubernetes.io/pod-uid
+  verbs:
+  - impersonate
+- apiGroups:
+  - ''
+  resources:
+  - users
+  - serviceaccounts
+  - groups
+  verbs:
+  - impersonate
+- apiGroups:
+  - ''
+  resources:
+  - secrets
+  verbs:
+  - get
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - selfsubjectaccessreviews
+  - selfsubjectrulesreviews
+  verbs:
+  - create
