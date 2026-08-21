@@ -7,25 +7,44 @@
 # tests, with zero network access required at test-run time.
 #
 # The Konflux tenant restricts general internet egress from Task pods, so
-# every dependency (Go toolchain, setup-envtest, and the kubebuilder envtest
-# K8s binaries) must be baked in here at image-build time instead of
-# downloaded when the unit-test PipelineRun executes.
+# every dependency (setup-envtest and the kubebuilder envtest K8s binaries)
+# must be baked in here at image-build time instead of downloaded when the
+# unit-test PipelineRun executes.
+#
+# Base image: registry.redhat.io/ubi9/go-toolset, not
+# brew.registry.redhat.io/rh-osbs/openshift-golang-builder (used by the
+# product build in build/Dockerfile.rhtap). The brew.registry.redhat.io
+# credential only authenticates within the officially blessed Konflux
+# build pipeline; a generic custom Task pod using the same service
+# account gets ImagePullBackOff/unauthorized against it. go-toolset
+# already ships git/make/go, matching go.mod's `go 1.26.3`.
 #
 # NOTE: the envtest versions below must be kept in sync with go.mod:
-#   - setup-envtest version   <- sigs.k8s.io/controller-runtime version
-#   - K8s envtest assets      <- k8s.io/api version
+#   - ENVTEST_VERSION     <- sigs.k8s.io/controller-runtime version
+#   - ENVTEST_K8S_VERSION <- k8s.io/api version
 # See the ENVTEST_VERSION/ENVTEST_K8S_VERSION derivation in the Makefile.
 
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.26
+FROM registry.redhat.io/ubi9/go-toolset:1.26
 
-RUN microdnf install -y git make jq findutils && microdnf clean all
+# go-toolset runs as a non-root, OpenShift-arbitrary UID by default;
+# microdnf needs root to install packages.
+USER 0
 
-# Pin to the controller-runtime/k8s.io versions declared in go.mod so the
-# pre-fetched envtest binaries match what `make test` expects at runtime.
+RUN microdnf install -y jq findutils && microdnf clean all
+
 ARG ENVTEST_VERSION=release-0.23
 ARG ENVTEST_K8S_VERSION=1.35
 
+ENV GOPATH=/opt/app-root/go
+ENV PATH=${GOPATH}/bin:${PATH}
+
 RUN go install sigs.k8s.io/controller-runtime/tools/setup-envtest@${ENVTEST_VERSION} \
-    && setup-envtest use ${ENVTEST_K8S_VERSION} -p path
+    && setup-envtest use ${ENVTEST_K8S_VERSION} -p path \
+    && chgrp -R 0 /opt/app-root && chmod -R g=u /opt/app-root
 
 WORKDIR /workspace
+
+# Revert to the image's default non-root, OpenShift-compatible user.
+# (Konflux/OpenShift will typically reassign an arbitrary UID at runtime
+# regardless, but keep the image itself well-behaved.)
+USER 1001
