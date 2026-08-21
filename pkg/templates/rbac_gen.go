@@ -20,7 +20,6 @@ package main
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 //+kubebuilder:rbac:groups="",resources=events;secrets;configmaps;serviceaccounts;services,verbs=create;delete;get;list;patch;update;watch
-//+kubebuilder:rbac:groups="",resources=groups;secrets;serviceaccounts;services;users,verbs=create;delete;get;impersonate;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=create;delete;get;list;patch;update
 //+kubebuilder:rbac:groups="",resources=namespaces;serviceaccounts,verbs=create;get;list;watch;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=pods,verbs=get
@@ -34,13 +33,17 @@ package main
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=create;get;list;watch;delete
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=delete;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;create
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=secrets;serviceaccounts;services,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=serviceaccounts/token,verbs=create
 //+kubebuilder:rbac:groups="",resources=services,verbs=list
+//+kubebuilder:rbac:groups="",resources=users;serviceaccounts;groups,verbs=impersonate
 //+kubebuilder:rbac:groups="";events.k8s.io,resources=events,verbs=create;patch;update
 //+kubebuilder:rbac:groups=*,resources=*,verbs=*
 //+kubebuilder:rbac:groups=*,resources=*,verbs=*
+//+kubebuilder:rbac:groups=*,resources=*,verbs=get;list;watch
 //+kubebuilder:rbac:groups=*,resources=*,verbs=get;list;watch
 //+kubebuilder:rbac:groups=*,resources=*,verbs=get;list;watch
 //+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=addondeploymentconfigs,verbs=get;list;watch
@@ -109,9 +112,11 @@ package main
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
+//+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 //+kubebuilder:rbac:groups=authentication.k8s.io;authorization.k8s.io,resources=uids;userextras/authentication.kubernetes.io/credential-id;userextras/authentication.kubernetes.io/node-name;userextras/authentication.kubernetes.io/node-uid;userextras/authentication.kubernetes.io/pod-name;userextras/authentication.kubernetes.io/pod-uid,verbs=impersonate
 //+kubebuilder:rbac:groups=authentication.open-cluster-management.io,resources=managedserviceaccounts,verbs=create;delete;get
 //+kubebuilder:rbac:groups=authentication.open-cluster-management.io,resources=managedserviceaccounts,verbs=get;list;watch
+//+kubebuilder:rbac:groups=authorization.k8s.io,resources=selfsubjectaccessreviews;selfsubjectrulesreviews,verbs=create
 //+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
 //+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
 //+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
@@ -161,6 +166,7 @@ package main
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=create;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=create;get;list;patch;update;watch;delete
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=delete;get;list;watch;create;update;patch
+//+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;create;update
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;patch;update;watch
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;delete
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;patch
@@ -228,7 +234,8 @@ package main
 //+kubebuilder:rbac:groups=proxy.open-cluster-management.io,resources=clusterstatuses/aggregator,verbs=create
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=*,verbs=*
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=delete;get;patch;update
-//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings;clusterroles;rolebindings;roles,verbs=create;delete;get;list;update
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings;rolebindings;roles,verbs=create;delete;get;list;update
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=bind;create;delete;get;list;update
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=create;get;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=delete;get;patch;update
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings,verbs=create
@@ -247,6 +254,7 @@ package main
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=create
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=delete;get;list;update;watch
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes;routes/custom-host;routes/status,verbs=get;list;create;update;delete;deletecollection;watch;create
+//+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=collectorconfigs/status,verbs=patch;update
 //+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=searches,verbs=get;list;patch;update;watch
 //+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=searches,verbs=list;watch
 //+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=searches/finalizers,verbs=update
