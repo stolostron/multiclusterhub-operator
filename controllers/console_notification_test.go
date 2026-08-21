@@ -14,16 +14,16 @@ import (
 )
 
 func TestMCEComplianceBannerText_Ahead(t *testing.T) {
-	got := mceComplianceBannerText("5.1.0", "stable-5.0")
-	expected := "WARNING: ACM in unexpected configuration: MCE 5.1.0 is ahead of the expected stable-5.0 channel."
+	got := mceComplianceBannerText("5.2.0", "stable-5.1")
+	expected := "WARNING: ACM in unexpected configuration: MCE 5.2.0 is ahead of the expected stable-5.1 channel."
 	if got != expected {
 		t.Errorf("mceComplianceBannerText() = %q, want %q", got, expected)
 	}
 }
 
 func TestMCEComplianceBannerText_Behind(t *testing.T) {
-	got := mceComplianceBannerText("2.17.0", "stable-5.0")
-	expected := "WARNING: ACM in unexpected configuration: MCE 2.17.0 is behind the expected stable-5.0 channel."
+	got := mceComplianceBannerText("2.17.0", "stable-5.1")
+	expected := "WARNING: ACM in unexpected configuration: MCE 2.17.0 is behind the expected stable-5.1 channel."
 	if got != expected {
 		t.Errorf("mceComplianceBannerText() = %q, want %q", got, expected)
 	}
@@ -40,10 +40,10 @@ func TestEnsureMCEComplianceBanner_NonCompliant(t *testing.T) {
 	}
 
 	compliance := &operatorsv1.MCEVersionComplianceStatus{
-		RequiredChannel: "stable-5.0",
-		CurrentVersion:  "5.1.0",
+		RequiredChannel: "stable-5.1",
+		CurrentVersion:  "5.2.0",
 		IsCompliant:     false,
-		Message:         "MCE version 5.1.0 does not meet channel stable-5.0 requirements",
+		Message:         "MCE version 5.2.0 does not meet channel stable-5.1 requirements",
 	}
 
 	ctx := context.TODO()
@@ -62,7 +62,7 @@ func TestEnsureMCEComplianceBanner_NonCompliant(t *testing.T) {
 		_ = recon.Client.Delete(ctx, notification)
 	})
 
-	expectedText := mceComplianceBannerText("5.1.0", "stable-5.0")
+	expectedText := mceComplianceBannerText("5.2.0", "stable-5.1")
 	if notification.Spec.Text != expectedText {
 		t.Errorf("banner text = %q, want %q", notification.Spec.Text, expectedText)
 	}
@@ -128,10 +128,10 @@ func TestEnsureMCEComplianceBanner_Compliant_RemovesBanner(t *testing.T) {
 	})
 
 	compliance := &operatorsv1.MCEVersionComplianceStatus{
-		RequiredChannel: "stable-5.0",
-		CurrentVersion:  "5.0.0",
+		RequiredChannel: "stable-5.1",
+		CurrentVersion:  "5.1.0",
 		IsCompliant:     true,
-		Message:         "MCE version 5.0.0 meets channel stable-5.0 requirements",
+		Message:         "MCE version 5.1.0 meets channel stable-5.1 requirements",
 	}
 
 	err := recon.ensureMCEComplianceBanner(ctx, hub, compliance)
@@ -175,7 +175,7 @@ func TestEnsureMCEComplianceBanner_NoVersion_NoBanner(t *testing.T) {
 	}
 
 	compliance := &operatorsv1.MCEVersionComplianceStatus{
-		RequiredChannel: "stable-5.0",
+		RequiredChannel: "stable-5.1",
 		CurrentVersion:  "",
 		IsCompliant:     false,
 		Message:         "MCE not yet installed",
@@ -213,7 +213,7 @@ func TestEnsureMCEComplianceBanner_UpdatesExistingBanner(t *testing.T) {
 			},
 		},
 		Spec: consolev1.ConsoleNotificationSpec{
-			Text:            mceComplianceBannerText("5.1.0", "stable-5.0"),
+			Text:            mceComplianceBannerText("5.2.0", "stable-5.1"),
 			Location:        consolev1.BannerTop,
 			BackgroundColor: bannerBackgroundColor,
 			Color:           bannerTextColor,
@@ -229,10 +229,10 @@ func TestEnsureMCEComplianceBanner_UpdatesExistingBanner(t *testing.T) {
 	})
 
 	newCompliance := &operatorsv1.MCEVersionComplianceStatus{
-		RequiredChannel: "stable-5.0",
-		CurrentVersion:  "5.2.0",
+		RequiredChannel: "stable-5.1",
+		CurrentVersion:  "5.3.0",
 		IsCompliant:     false,
-		Message:         "MCE version 5.2.0 does not meet channel stable-5.0 requirements",
+		Message:         "MCE version 5.3.0 does not meet channel stable-5.1 requirements",
 	}
 
 	err := recon.ensureMCEComplianceBanner(ctx, hub, newCompliance)
@@ -246,7 +246,7 @@ func TestEnsureMCEComplianceBanner_UpdatesExistingBanner(t *testing.T) {
 		t.Fatalf("failed to get ConsoleNotification: %v", err)
 	}
 
-	expectedText := mceComplianceBannerText("5.2.0", "stable-5.0")
+	expectedText := mceComplianceBannerText("5.3.0", "stable-5.1")
 	if notification.Spec.Text != expectedText {
 		t.Errorf("updated banner text = %q, want %q", notification.Spec.Text, expectedText)
 	}

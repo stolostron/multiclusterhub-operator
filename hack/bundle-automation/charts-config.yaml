@@ -1,8 +1,8 @@
-acm-release-version: '5.0'
+acm-release-version: '5.1'
 components:
   - repo_name: "mtv-integrations"
     github_ref: "https://github.com/stolostron/mtv-integrations.git"
-    branch: "release-5.0"
+    branch: "release-5.1"
     charts:
       - name: "mtv-integrations"
         chart-path: "charts"
