@@ -10,6 +10,8 @@ rules:
   - configmaps
   - endpoints
   - events
+  - secrets
+  - services
   - services/proxy
   verbs:
   - create
@@ -26,14 +28,7 @@ rules:
   - groups
   - users
   verbs:
-  - create
-  - delete
-  - get
   - impersonate
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - ""
   resources:
@@ -60,9 +55,7 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - secrets
   - serviceaccounts
-  - services
   verbs:
   - create
   - delete
@@ -719,6 +712,13 @@ rules:
 - apiGroups:
   - authorization.k8s.io
   resources:
+  - selfsubjectaccessreviews
+  - selfsubjectrulesreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
   - subjectaccessreviews
   verbs:
   - create
@@ -1207,9 +1207,21 @@ rules:
   - rbac.authorization.k8s.io
   resources:
   - clusterrolebindings
-  - clusterroles
   - rolebindings
   verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterroles
+  verbs:
+  - bind
   - create
   - delete
   - get
@@ -1271,6 +1283,13 @@ rules:
   - list
   - update
   - watch
+- apiGroups:
+  - search.open-cluster-management.io
+  resources:
+  - collectorconfigs/status
+  verbs:
+  - patch
+  - update
 - apiGroups:
   - search.open-cluster-management.io
   resources:
