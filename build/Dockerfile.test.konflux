@@ -1,0 +1,50 @@
+# Copyright Contributors to the Open Cluster Management project
+#
+# Purpose-built image for running `make test` (Go unit tests) as a Konflux
+# Pipelines-as-Code PR check. Unlike build/Dockerfile.test.prow (which
+# packages the ginkgo-based functional test suite for Prow), this image
+# only needs to run `go test` via the operator's own envtest-backed unit
+# tests, with zero network access required at test-run time.
+#
+# The Konflux tenant restricts general internet egress from Task pods, so
+# every dependency (setup-envtest and the kubebuilder envtest K8s binaries)
+# must be baked in here at image-build time instead of downloaded when the
+# unit-test PipelineRun executes.
+#
+# Base image: registry.redhat.io/ubi9/go-toolset, not
+# brew.registry.redhat.io/rh-osbs/openshift-golang-builder (used by the
+# product build in build/Dockerfile.rhtap). The brew.registry.redhat.io
+# credential only authenticates within the officially blessed Konflux
+# build pipeline; a generic custom Task pod using the same service
+# account gets ImagePullBackOff/unauthorized against it. go-toolset
+# already ships git/make/go, matching go.mod's `go 1.26.3`.
+#
+# NOTE: the envtest versions below must be kept in sync with go.mod:
+#   - ENVTEST_VERSION     <- sigs.k8s.io/controller-runtime version
+#   - ENVTEST_K8S_VERSION <- k8s.io/api version
+# See the ENVTEST_VERSION/ENVTEST_K8S_VERSION derivation in the Makefile.
+
+FROM registry.redhat.io/ubi9/go-toolset:1.26
+
+# go-toolset runs as a non-root, OpenShift-arbitrary UID by default;
+# microdnf needs root to install packages.
+USER 0
+
+RUN microdnf install -y jq findutils && microdnf clean all
+
+ARG ENVTEST_VERSION=release-0.23
+ARG ENVTEST_K8S_VERSION=1.35
+
+ENV GOPATH=/opt/app-root/go
+ENV PATH=${GOPATH}/bin:${PATH}
+
+RUN go install sigs.k8s.io/controller-runtime/tools/setup-envtest@${ENVTEST_VERSION} \
+    && setup-envtest use ${ENVTEST_K8S_VERSION} -p path \
+    && chgrp -R 0 /opt/app-root && chmod -R g=u /opt/app-root
+
+WORKDIR /workspace
+
+# Revert to the image's default non-root, OpenShift-compatible user.
+# (Konflux/OpenShift will typically reassign an arbitrary UID at runtime
+# regardless, but keep the image itself well-behaved.)
+USER 1001
