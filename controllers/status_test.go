@@ -14,12 +14,16 @@ import (
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
+	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 var replicas int32 = 1
@@ -190,6 +194,39 @@ func TestSetHubCondition(t *testing.T) {
 		}
 		if ltt := &m.Status.HubConditions[0].LastTransitionTime; !ltt.Equal(&old2.LastTransitionTime) {
 			t.Errorf("AddCondition() expected lastTransitionTime of %v, got %v", old2.LastTransitionTime, ltt)
+		}
+	})
+
+	// Regression test: many call sites (e.g. every stage of finalization) reuse the same
+	// Reason across an evolving sequence of more specific Messages, e.g.
+	// reconcile.go sets Terminating/DeletionTimestampPresent with a generic message the
+	// moment deletion starts, and cleanupMultiClusterEngine later tries to refine it to name
+	// MCE specifically, using the SAME reason. Bailing out on Status+Reason alone (without
+	// also checking Message) would silently drop that refinement, freezing the condition at
+	// whatever message was set first.
+	t.Run("Refines message when only Message differs (same Status and Reason)", func(t *testing.T) {
+		m := &operatorsv1.MultiClusterHub{}
+		generic := operatorsv1.HubCondition{
+			Type:    operatorsv1.Terminating,
+			Status:  metav1.ConditionTrue,
+			Reason:  DeleteTimestampReason,
+			Message: "Multiclusterhub is being cleaned up.",
+		}
+		specific := operatorsv1.HubCondition{
+			Type:    operatorsv1.Terminating,
+			Status:  metav1.ConditionTrue,
+			Reason:  DeleteTimestampReason,
+			Message: "Waiting for MultiClusterEngine multiclusterengine to terminate",
+		}
+
+		SetHubCondition(&m.Status, generic)
+		SetHubCondition(&m.Status, specific)
+
+		if len(m.Status.HubConditions) != 1 {
+			t.Fatalf("expected exactly 1 condition, got %d", len(m.Status.HubConditions))
+		}
+		if got := m.Status.HubConditions[0].Message; got != specific.Message {
+			t.Errorf("expected message to refine to %q, got %q (message got silently dropped)", specific.Message, got)
 		}
 	})
 }
@@ -515,6 +552,271 @@ func TestCalculateStatus_RemovesStaleProgressingCondition(t *testing.T) {
 		if phase != operatorsv1.HubRunning {
 			t.Errorf("Expected phase to be HubRunning after fix, got %v", phase)
 		}
+	}
+}
+
+// Test_calculateStatus_PreservesSpecificProgressingReason verifies that
+// calculateStatus does NOT downgrade an already-present, specific Progressing
+// reason (e.g. WaitingForMCEReason) to a generic message while the hub is
+// still not successful. Regression test for a bug where the "else" branch
+// unconditionally rewrote any existing WaitingForMCEReason condition to a
+// generic "Waiting for components to become ready." message on the very same
+// reconcile it was set, making the specific reason effectively unobservable.
+func Test_calculateStatus_PreservesSpecificProgressingReason(t *testing.T) {
+	registerScheme()
+	ctx := context.TODO()
+
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-mch-preserve-progress",
+			Namespace: "open-cluster-management",
+		},
+		Spec: operatorsv1.MultiClusterHubSpec{
+			DisableHubSelfManagement: true,
+		},
+		Status: operatorsv1.MultiClusterHubStatus{
+			HubConditions: []operatorsv1.HubCondition{
+				{
+					Type:    operatorsv1.Progressing,
+					Status:  metav1.ConditionTrue,
+					Reason:  WaitingForMCEReason,
+					Message: "Waiting for MultiClusterEngine multiclusterengine to report version",
+				},
+			},
+		},
+	}
+
+	// ocpConsole=true so no components are tracked (DisableHubSelfManagement leaves the
+	// component list otherwise empty), guaranteeing allComponentsSuccessful() is false here.
+	newStatus := recon.calculateStatus(ctx, hub, []*appsv1.Deployment{},
+		map[string]*unstructured.Unstructured{}, true, false)
+
+	condition := GetHubCondition(newStatus, operatorsv1.Progressing)
+	if condition == nil {
+		t.Fatal("expected Progressing condition to remain present")
+	}
+	if condition.Reason != WaitingForMCEReason {
+		t.Errorf("expected specific WaitingForMCE reason to be preserved, got reason %q (message: %q)",
+			condition.Reason, condition.Message)
+	}
+	if condition.Message != "Waiting for MultiClusterEngine multiclusterengine to report version" {
+		t.Errorf("expected original message to be preserved, got %q", condition.Message)
+	}
+}
+
+// Test_calculateStatus_SetsCompleteFalse_OnFreshInstall verifies that a
+// Complete condition is set to False from the very first reconcile of a
+// fresh install (not just once a Complete condition already existed from a
+// prior success), so consumers always have a stable Complete condition to
+// observe instead of its absence.
+func Test_calculateStatus_SetsCompleteFalse_OnFreshInstall(t *testing.T) {
+	registerScheme()
+	ctx := context.TODO()
+
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-mch-fresh-install",
+			Namespace: "open-cluster-management",
+		},
+		Spec: operatorsv1.MultiClusterHubSpec{
+			DisableHubSelfManagement: true,
+		},
+	}
+
+	// ocpConsole=true so no components are tracked (DisableHubSelfManagement leaves the
+	// component list otherwise empty), guaranteeing allComponentsSuccessful() is false here.
+	newStatus := recon.calculateStatus(ctx, hub, []*appsv1.Deployment{},
+		map[string]*unstructured.Unstructured{}, true, false)
+
+	condition := GetHubCondition(newStatus, operatorsv1.Complete)
+	if condition == nil {
+		t.Fatal("expected Complete condition to be present even on a fresh install with no prior Complete condition")
+	}
+	if condition.Status != metav1.ConditionFalse {
+		t.Errorf("expected Complete status False, got %v", condition.Status)
+	}
+	if condition.Reason != ComponentsUnavailableReason {
+		t.Errorf("expected reason %q, got %q", ComponentsUnavailableReason, condition.Reason)
+	}
+}
+
+// Test_calculateStatus_NoCompleteCondition_WhenPaused verifies that a paused
+// hub does not get a Complete:False condition added, mirroring the existing
+// pause handling in the successful branch.
+func Test_calculateStatus_NoCompleteCondition_WhenPaused(t *testing.T) {
+	registerScheme()
+	ctx := context.TODO()
+
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-mch-paused",
+			Namespace: "open-cluster-management",
+			Annotations: map[string]string{
+				utils.AnnotationMCHPause: "true",
+			},
+		},
+		Spec: operatorsv1.MultiClusterHubSpec{
+			DisableHubSelfManagement: true,
+		},
+	}
+
+	newStatus := recon.calculateStatus(ctx, hub, []*appsv1.Deployment{},
+		map[string]*unstructured.Unstructured{}, true, false)
+
+	if condition := GetHubCondition(newStatus, operatorsv1.Complete); condition != nil {
+		t.Errorf("expected no Complete condition while paused, got: %+v", condition)
+	}
+}
+
+// Test_calculateStatus_SkipsComponentTracking_WhenBeingDeleted verifies that
+// while the hub is marked for deletion, calculateStatus doesn't recompute
+// install-oriented component tracking or Progressing/Complete conditions
+// (which would otherwise produce misleading messages like "component is now
+// available" for something mid-termination, or a contradictory
+// "Not all hub components ready." alongside the accurate Terminating
+// condition finalization already set) — it just reports the phase and
+// otherwise leaves the existing status untouched. It also verifies that any
+// stale Progressing/Complete conditions left over from before deletion
+// started (e.g. "Complete: True, All hub components ready." from when the
+// hub was last Running) are stripped, rather than left sitting there
+// actively wrong during active teardown.
+func Test_calculateStatus_SkipsComponentTracking_WhenBeingDeleted(t *testing.T) {
+	registerScheme()
+	ctx := context.TODO()
+
+	now := metav1.Now()
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              "test-mch-deleting",
+			Namespace:         "open-cluster-management",
+			DeletionTimestamp: &now,
+			Finalizers:        []string{"test.io/keep-alive"},
+		},
+		Status: operatorsv1.MultiClusterHubStatus{
+			CurrentVersion: "5.0.0",
+			HubConditions: []operatorsv1.HubCondition{
+				// Stale, left over from before deletion started.
+				{
+					Type:    operatorsv1.Complete,
+					Status:  metav1.ConditionTrue,
+					Reason:  ComponentsAvailableReason,
+					Message: "All hub components ready.",
+				},
+				{
+					Type:    operatorsv1.Terminating,
+					Status:  metav1.ConditionTrue,
+					Reason:  DeleteTimestampReason,
+					Message: "Waiting for MultiClusterEngine multiclusterengine to terminate",
+				},
+			},
+		},
+	}
+
+	newStatus := recon.calculateStatus(ctx, hub, []*appsv1.Deployment{},
+		map[string]*unstructured.Unstructured{}, true, false)
+
+	if newStatus.Phase != operatorsv1.HubUninstalling {
+		t.Errorf("expected phase %q, got %q", operatorsv1.HubUninstalling, newStatus.Phase)
+	}
+	if len(newStatus.Components) != 0 {
+		t.Errorf("expected no component tracking during deletion, got %d components", len(newStatus.Components))
+	}
+	if condition := GetHubCondition(newStatus, operatorsv1.Progressing); condition != nil {
+		t.Errorf("expected no Progressing condition to be computed during deletion, got: %+v", condition)
+	}
+	if condition := GetHubCondition(newStatus, operatorsv1.Complete); condition != nil {
+		t.Errorf("expected no Complete condition to be computed during deletion, got: %+v", condition)
+	}
+	terminating := GetHubCondition(newStatus, operatorsv1.Terminating)
+	if terminating == nil {
+		t.Fatal("expected the existing Terminating condition to be preserved")
+	}
+	if terminating.Message != "Waiting for MultiClusterEngine multiclusterengine to terminate" {
+		t.Errorf("expected existing Terminating message to be preserved unchanged, got %q", terminating.Message)
+	}
+}
+
+// Test_syncHubStatus_HandlesNotFound verifies that when the MultiClusterHub
+// object no longer exists by the time syncHubStatus tries to persist its
+// computed status (e.g. its last finalizer was just removed, triggering
+// immediate garbage collection), the resulting NotFound error from
+// Status().Update() is treated as expected/benign rather than surfaced as a
+// reconciler error.
+func Test_syncHubStatus_HandlesNotFound(t *testing.T) {
+	registerScheme()
+	r := newTestReconciler() // empty client: hub was never created server-side
+
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-mch-notfound",
+			Namespace: "open-cluster-management",
+		},
+		Spec: operatorsv1.MultiClusterHubSpec{
+			DisableHubSelfManagement: true,
+		},
+	}
+	original := hub.Status.DeepCopy()
+
+	// Mutate in-memory status so it differs from `original`, forcing syncHubStatus
+	// past the "status hasn't changed" shortcut and into the actual Update() call.
+	hub.Status.HubConditions = []operatorsv1.HubCondition{
+		{Type: operatorsv1.Terminating, Status: metav1.ConditionTrue, Reason: DeleteTimestampReason},
+	}
+
+	result, err := r.syncHubStatus(context.TODO(), hub, original, []*appsv1.Deployment{},
+		map[string]*unstructured.Unstructured{}, true, false)
+	if err != nil {
+		t.Fatalf("expected no error when MultiClusterHub no longer exists, got: %v", err)
+	}
+	if result != (reconcile.Result{}) {
+		t.Errorf("expected empty result, got: %+v", result)
+	}
+}
+
+// Test_syncHubStatus_SkipsUpdate_WhenStatusUnchanged is a regression test for
+// a bug where the "status hasn't changed" shortcut compared m.Status (a
+// MultiClusterHubStatus value) against original (a *MultiClusterHubStatus
+// pointer) via reflect.DeepEqual. Because the two arguments had different
+// types, DeepEqual always returned false regardless of content, so every
+// single reconcile performed a full Status().Update() even when nothing had
+// changed. This verifies the shortcut now actually triggers (no Update call)
+// when the freshly computed status matches what's already there.
+func Test_syncHubStatus_SkipsUpdate_WhenStatusUnchanged(t *testing.T) {
+	registerScheme()
+
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-mch-unchanged",
+			Namespace: "open-cluster-management",
+		},
+		Spec: operatorsv1.MultiClusterHubSpec{
+			DisableHubSelfManagement: true,
+		},
+	}
+
+	// Seed hub.Status with exactly what calculateStatus() would compute for it, so the
+	// upcoming syncHubStatus call's freshly recomputed status matches what's already there.
+	seedReconciler := newTestReconciler()
+	hub.Status = seedReconciler.calculateStatus(context.TODO(), hub, []*appsv1.Deployment{},
+		map[string]*unstructured.Unstructured{}, true, false)
+	original := hub.Status.DeepCopy()
+
+	updateCalled := false
+	r := newTestReconcilerWithInterceptor(interceptor.Funcs{
+		SubResourceUpdate: func(ctx context.Context, c client.Client, subResourceName string, obj client.Object,
+			opts ...client.SubResourceUpdateOption) error {
+			updateCalled = true
+			return c.SubResource(subResourceName).Update(ctx, obj, opts...)
+		},
+	})
+
+	_, err := r.syncHubStatus(context.TODO(), hub, original, []*appsv1.Deployment{},
+		map[string]*unstructured.Unstructured{}, true, false)
+	if err != nil {
+		t.Fatalf("syncHubStatus() unexpected error: %v", err)
+	}
+	if updateCalled {
+		t.Error("expected Status().Update() to be skipped since nothing changed, but it was called")
 	}
 }
 
