@@ -191,6 +191,12 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 		log.V(2).Info("No component config found", "Component", component)
 	}
 
+	// Get previously tracked managed resources before applying new templates
+	oldManagedResources, err := r.getManagedResources(ctx, m, component)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	// Applies all templates
 	for _, template := range templates {
 		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
@@ -208,6 +214,22 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 		if err != nil {
 			return result, err
 		}
+	}
+
+	// All templates applied successfully — now prune orphaned resources and update registry
+	newManagedResources := buildManagedResources(templates)
+	if len(oldManagedResources) > 0 {
+		orphans := findOrphanedResources(oldManagedResources, newManagedResources)
+		if len(orphans) > 0 {
+			log.Info("Pruning orphaned resources", "Component", component, "Count", len(orphans))
+			if err := r.pruneOrphanedResources(ctx, m, orphans); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	}
+
+	if err := r.updateManagedResources(ctx, m, component, newManagedResources); err != nil {
+		return ctrl.Result{}, err
 	}
 
 	switch component {
