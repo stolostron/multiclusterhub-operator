@@ -12,6 +12,8 @@ rules:
   - events
   - namespaces
   - pods
+  - secrets
+  - services
   - services/proxy
   verbs:
   - create
@@ -26,16 +28,10 @@ rules:
   - ""
   resources:
   - groups
+  - uids
   - users
   verbs:
-  - create
-  - delete
-  - get
   - impersonate
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - ""
   resources:
@@ -60,9 +56,7 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - secrets
   - serviceaccounts
-  - services
   verbs:
   - create
   - delete
@@ -413,13 +407,6 @@ rules:
   - patch
 - apiGroups:
   - ""
-  - authentication.k8s.io
-  resources:
-  - uids
-  verbs:
-  - impersonate
-- apiGroups:
-  - ""
   - events.k8s.io
   resources:
   - events
@@ -727,6 +714,12 @@ rules:
   - create
 - apiGroups:
   - authentication.k8s.io
+  resources:
+  - uids
+  verbs:
+  - impersonate
+- apiGroups:
+  - authentication.k8s.io
   - authorization.k8s.io
   resources:
   - uids
@@ -749,6 +742,13 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - selfsubjectaccessreviews
+  - selfsubjectrulesreviews
+  verbs:
+  - create
 - apiGroups:
   - authorization.k8s.io
   resources:
@@ -1470,9 +1470,21 @@ rules:
   - rbac.authorization.k8s.io
   resources:
   - clusterrolebindings
-  - clusterroles
   - rolebindings
   verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterroles
+  verbs:
+  - bind
   - create
   - delete
   - get
