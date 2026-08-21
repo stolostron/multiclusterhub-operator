@@ -1,0 +1,31 @@
+# Copyright Contributors to the Open Cluster Management project
+#
+# Purpose-built image for running `make test` (Go unit tests) as a Konflux
+# Pipelines-as-Code PR check. Unlike build/Dockerfile.test.prow (which
+# packages the ginkgo-based functional test suite for Prow), this image
+# only needs to run `go test` via the operator's own envtest-backed unit
+# tests, with zero network access required at test-run time.
+#
+# The Konflux tenant restricts general internet egress from Task pods, so
+# every dependency (Go toolchain, setup-envtest, and the kubebuilder envtest
+# K8s binaries) must be baked in here at image-build time instead of
+# downloaded when the unit-test PipelineRun executes.
+#
+# NOTE: the envtest versions below must be kept in sync with go.mod:
+#   - setup-envtest version   <- sigs.k8s.io/controller-runtime version
+#   - K8s envtest assets      <- k8s.io/api version
+# See the ENVTEST_VERSION/ENVTEST_K8S_VERSION derivation in the Makefile.
+
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.26
+
+RUN microdnf install -y git make jq findutils && microdnf clean all
+
+# Pin to the controller-runtime/k8s.io versions declared in go.mod so the
+# pre-fetched envtest binaries match what `make test` expects at runtime.
+ARG ENVTEST_VERSION=release-0.23
+ARG ENVTEST_K8S_VERSION=1.35
+
+RUN go install sigs.k8s.io/controller-runtime/tools/setup-envtest@${ENVTEST_VERSION} \
+    && setup-envtest use ${ENVTEST_K8S_VERSION} -p path
+
+WORKDIR /workspace

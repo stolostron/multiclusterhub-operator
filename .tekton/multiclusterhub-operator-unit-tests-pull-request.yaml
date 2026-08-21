@@ -1,0 +1,126 @@
+# Copyright Contributors to the Open Cluster Management project
+#
+# Standalone Pipelines-as-Code check that runs `make test` (Go unit tests)
+# on every PR. This is intentionally NOT wired into the Konflux
+# Application/Component/Snapshot machinery (no appstudio.openshift.io/*
+# labels) -- it is a plain PR check, same role Prow's `make unit-tests`
+# job plays today, just running on Tekton instead.
+#
+# Diagnostic note (see PR #3893 for the prior attempt): this tenant
+# restricts general internet egress from Task pods. That PR's task tried
+# to `curl`/`dnf install`/`go install ...@latest` at runtime and hung for
+# 2 hours before failing. This version:
+#   1. Bounds every network-dependent step with `timeout`, so a blocked
+#      egress path fails in seconds/minutes, not hours.
+#   2. Runs an explicit reachability probe first and logs a clear,
+#      actionable message if egress is blocked.
+#   3. Uses the same builder image already proven pullable in this tenant
+#      (brew.registry.redhat.io/rh-osbs/openshift-golang-builder), so an
+#      image-pull failure can't be confused with a network-egress failure.
+#
+# If the reachability probe fails, the long-term fix is to pre-bake Go +
+# setup-envtest + kubebuilder envtest assets into build/Dockerfile.test.konflux
+# and swap the `image:` below to that pre-built image, so `make test` needs
+# zero runtime network access.
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  annotations:
+    build.appstudio.openshift.io/repo: https://github.com/stolostron/multiclusterhub-operator?rev={{revision}}
+    build.appstudio.redhat.com/commit_sha: '{{revision}}'
+    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
+    build.appstudio.redhat.com/target_branch: '{{target_branch}}'
+    pipelinesascode.tekton.dev/cancel-in-progress: "true"
+    pipelinesascode.tekton.dev/max-keep-runs: "3"
+    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && (target_branch == "main" || target_branch == "release-5.1" || target_branch == "release-5.2")
+  creationTimestamp: null
+  labels:
+    pipelines.appstudio.openshift.io/type: test
+  name: multiclusterhub-operator-unit-tests
+  namespace: crt-redhat-acm-tenant
+spec:
+  params:
+  - name: git-url
+    value: '{{source_url}}'
+  - name: revision
+    value: '{{revision}}'
+  timeouts:
+    pipeline: "20m"
+  pipelineSpec:
+    params:
+      - name: git-url
+        type: string
+      - name: revision
+        type: string
+    tasks:
+      - name: unit-test
+        params:
+          - name: git-url
+            value: $(params.git-url)
+          - name: revision
+            value: $(params.revision)
+        taskSpec:
+          params:
+            - name: git-url
+              type: string
+            - name: revision
+              type: string
+          steps:
+            - name: run-unit-tests
+              image: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.26
+              workingDir: /workspace
+              env:
+                - name: GIT_URL
+                  value: $(params.git-url)
+                - name: REVISION
+                  value: $(params.revision)
+              script: |
+                #!/bin/bash
+                set -uo pipefail
+
+                echo "===== Installing OS packages ====="
+                if ! timeout 90 microdnf install -y git make curl; then
+                  echo "microdnf install failed or timed out after 90s."
+                  exit 1
+                fi
+
+                echo "===== Network reachability check ====="
+                # make test transitively needs GOPROXY (proxy.golang.org, for
+                # controller-gen/setup-envtest) and Google Cloud Storage (for
+                # kubebuilder envtest K8s binaries). Probe both with a short
+                # timeout so a blocked egress path is obvious in seconds.
+                NETWORK_OK=true
+                if ! curl --max-time 8 -sfo /dev/null https://proxy.golang.org; then
+                  echo "WARNING: proxy.golang.org not reachable within 8s."
+                  NETWORK_OK=false
+                fi
+                if ! curl --max-time 8 -sfo /dev/null https://storage.googleapis.com; then
+                  echo "WARNING: storage.googleapis.com not reachable within 8s."
+                  NETWORK_OK=false
+                fi
+                if [ "${NETWORK_OK}" = "true" ]; then
+                  echo "Network egress appears open."
+                else
+                  echo "This tenant likely restricts general internet egress from Task pods."
+                  echo "Next step: pre-bake Go/setup-envtest/kubebuilder assets into"
+                  echo "build/Dockerfile.test.konflux and point this pipeline at that image"
+                  echo "instead of installing dependencies at runtime."
+                fi
+
+                echo "===== Cloning ${GIT_URL}@${REVISION} ====="
+                git clone --quiet "${GIT_URL}" src
+                cd src
+                git checkout --quiet "${REVISION}"
+
+                echo "===== Running unit tests: make test ====="
+                # Bounded to 10m so a stuck download fails fast instead of
+                # hanging for hours (see PR #3893, which hung for 2h).
+                if timeout 600 env OPERATOR_VERSION=9.9.9 make test; then
+                  echo "Unit tests passed."
+                else
+                  echo "make test failed or timed out after 10m."
+                  exit 1
+                fi
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-multiclusterhub-operator-acm-51
+status: {}
