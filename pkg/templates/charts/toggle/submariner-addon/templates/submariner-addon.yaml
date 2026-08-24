@@ -70,6 +70,9 @@ spec:
             scheme: HTTP
           initialDelaySeconds: 2
         resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
           requests:
             cpu: 100m
             memory: 128Mi
@@ -84,6 +87,9 @@ spec:
         volumeMounts:
         - mountPath: /tmp
           name: tmp
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
       hostIPC: false
       hostNetwork: false
       hostPID: false
@@ -115,3 +121,8 @@ spec:
       volumes:
       - emptyDir: {}
         name: tmp
+      - name: cert
+        secret:
+          defaultMode: 420
+          optional: false
+          secretName: submariner-addon-webhook-cert
