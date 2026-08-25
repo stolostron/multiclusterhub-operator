@@ -159,6 +159,9 @@ func (r *MultiClusterHubReconciler) syncHubStatus(ctx context.Context, m *operat
 	}
 }
 
+// calculateStatus derives the full MultiClusterHubStatus (components, conditions, and phase) from
+// the current set of component deployments/custom resources and MultiClusterEngine version
+// compliance. It does not mutate the cluster; callers are responsible for persisting the result.
 func (r *MultiClusterHubReconciler) calculateStatus(ctx context.Context, hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deployment,
 	allCRs map[string]*unstructured.Unstructured, ocpConsole, isSTSEnabled bool) operatorsv1.MultiClusterHubStatus {
 
@@ -718,9 +721,14 @@ func NewHubCondition(condType operatorsv1.HubConditionType, status metav1.Condit
 }
 
 // SetHubCondition sets the status condition. It either overwrites the existing one or creates a new one.
+// A condition is treated as unchanged (a no-op) only when Type, Status, Reason, AND Message all
+// match the existing condition. Message is included so that conditions whose message varies
+// independently of their reason (e.g. WaitingForMCEUpgrade, which embeds the live current MCE
+// version) get updated on every reconcile instead of freezing at their first-observed message.
 func SetHubCondition(status *operatorsv1.MultiClusterHubStatus, condition operatorsv1.HubCondition) {
 	currentCond := GetHubCondition(*status, condition.Type)
-	if currentCond != nil && currentCond.Status == condition.Status && currentCond.Reason == condition.Reason {
+	if currentCond != nil && currentCond.Status == condition.Status &&
+		currentCond.Reason == condition.Reason && currentCond.Message == condition.Message {
 		return
 	}
 	// Do not update lastTransitionTime if the status of the condition doesn't change.

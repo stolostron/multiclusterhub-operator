@@ -193,6 +193,43 @@ func TestSetHubCondition(t *testing.T) {
 			t.Errorf("AddCondition() expected lastTransitionTime of %v, got %v", old2.LastTransitionTime, ltt)
 		}
 	})
+
+	t.Run("Updates message when type, status, and reason are unchanged", func(t *testing.T) {
+		// Regression test: a condition whose Message varies independently of its Reason (e.g.
+		// WaitingForMCEUpgrade, which embeds the live current MCE version) must not freeze at
+		// its first-observed message on subsequent reconciles.
+		m := &operatorsv1.MultiClusterHub{}
+		firstMessage := operatorsv1.HubCondition{
+			Type:               operatorsv1.Progressing,
+			Reason:             WaitingForMCEUpgradeReason,
+			Status:             metav1.ConditionTrue,
+			Message:            "Waiting for MultiClusterEngine to upgrade to 5.0.0 (current: none)",
+			LastTransitionTime: metav1.NewTime(time.Date(2020, 5, 29, 0, 0, 0, 0, time.UTC)),
+		}
+		updatedMessage := operatorsv1.HubCondition{
+			Type:               operatorsv1.Progressing,
+			Reason:             WaitingForMCEUpgradeReason,
+			Status:             metav1.ConditionTrue,
+			Message:            "Waiting for MultiClusterEngine to upgrade to 5.0.0 (current: 2.17.1)",
+			LastTransitionTime: metav1.NewTime(time.Date(2020, 5, 29, 0, 1, 0, 0, time.UTC)),
+		}
+		SetHubCondition(&m.Status, firstMessage)
+		SetHubCondition(&m.Status, updatedMessage)
+
+		if len(m.Status.HubConditions) != 1 {
+			t.Fatalf("expected 1 hub condition, got %d", len(m.Status.HubConditions))
+		}
+		got := m.Status.HubConditions[0]
+		if got.Message != updatedMessage.Message {
+			t.Errorf("expected message to update to %q, got %q", updatedMessage.Message, got.Message)
+		}
+		// Status did not change, so LastTransitionTime should still be preserved from the
+		// original condition even though Message changed.
+		if !got.LastTransitionTime.Equal(&firstMessage.LastTransitionTime) {
+			t.Errorf("expected lastTransitionTime to be preserved at %v, got %v",
+				firstMessage.LastTransitionTime, got.LastTransitionTime)
+		}
+	})
 }
 
 func TestGetHubCondition(t *testing.T) {
