@@ -48,6 +48,8 @@ package main
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=create;delete;get;list;patch;update
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=namespaces;serviceaccounts,verbs=create;get;list;watch;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=namespaces;serviceaccounts,verbs=create;get;list;watch;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch
@@ -312,6 +314,8 @@ package main
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=manageclusters,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;watch
+//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;watch
