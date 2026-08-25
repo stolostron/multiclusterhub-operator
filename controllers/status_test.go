@@ -466,7 +466,7 @@ func TestCalculateStatus_RemovesStaleProgressingCondition(t *testing.T) {
 			},
 		},
 		Status: mcev1.MultiClusterEngineStatus{
-			CurrentVersion: "1.0.0",
+			CurrentVersion: version.RequiredCommunityMCEVersion,
 			Conditions: []mcev1.MultiClusterEngineCondition{
 				{
 					Type:    mcev1.MultiClusterEngineAvailable,
@@ -634,7 +634,8 @@ func TestCalculateStatus_WaitingForMCEUpgrade(t *testing.T) {
 	if waitingCondition.Reason != WaitingForMCEUpgradeReason {
 		t.Errorf("Expected condition reason %s, got %s", WaitingForMCEUpgradeReason, waitingCondition.Reason)
 	}
-	wantMessage := "Waiting for MultiClusterEngine to upgrade to 1.0.0 (current: 0.9.0)"
+	wantMessage := fmt.Sprintf(
+		"Waiting for MultiClusterEngine to upgrade to %s (current: 0.9.0)", version.RequiredCommunityMCEVersion)
 	if waitingCondition.Message != wantMessage {
 		t.Errorf("Expected condition message %q, got %q", wantMessage, waitingCondition.Message)
 	}
@@ -654,7 +655,7 @@ func TestCalculateStatus_ClearsStaleMCEWaitConditionWhenReconciling(t *testing.T
 	registerScheme()
 	ctx := context.TODO()
 
-	// This test suite defaults to community mode, so 1.0.0 satisfies RequiredCommunityMCEVersion
+	// This test suite defaults to community mode, so RequiredCommunityMCEVersion satisfies itself
 	// (see TestCalculateMCEVersionCompliance) -- MCE is compliant.
 	mce := &mcev1.MultiClusterEngine{
 		ObjectMeta: metav1.ObjectMeta{
@@ -664,7 +665,7 @@ func TestCalculateStatus_ClearsStaleMCEWaitConditionWhenReconciling(t *testing.T
 			},
 		},
 		Status: mcev1.MultiClusterEngineStatus{
-			CurrentVersion: "1.0.0",
+			CurrentVersion: version.RequiredCommunityMCEVersion,
 			Conditions: []mcev1.MultiClusterEngineCondition{
 				{
 					Type:    mcev1.MultiClusterEngineAvailable,
@@ -697,10 +698,11 @@ func TestCalculateStatus_ClearsStaleMCEWaitConditionWhenReconciling(t *testing.T
 			// Simulates a condition set by a prior reconcile while MCE was still non-compliant.
 			HubConditions: []operatorsv1.HubCondition{
 				{
-					Type:    operatorsv1.Progressing,
-					Status:  metav1.ConditionTrue,
-					Reason:  WaitingForMCEUpgradeReason,
-					Message: "Waiting for MultiClusterEngine to upgrade to 1.0.0 (current: none)",
+					Type:   operatorsv1.Progressing,
+					Status: metav1.ConditionTrue,
+					Reason: WaitingForMCEUpgradeReason,
+					Message: fmt.Sprintf(
+						"Waiting for MultiClusterEngine to upgrade to %s (current: none)", version.RequiredCommunityMCEVersion),
 				},
 			},
 		},
