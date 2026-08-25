@@ -11,4 +11,4 @@ external-images:
   replace: registry.redhat.io/rhel9/postgresql-16@sha256:4a8176d682b613c3cc6eebf1b225ac51f7b7e26bba75c95bc0181c74dc869057
 - name: volsync-rhel9
   search: image-registry.openshift-image-registry.svc:5000/open-cluster-management/volsync-rhel9:latest
-  replace: registry.redhat.io/rhacm2/volsync-rhel9@sha256:733870190383a7c1310d861a0e5250589f517513250c2cac4fa20be0056a2747
+  replace: registry.stage.redhat.io/rhacm2/volsync-rhel9:v0.17
