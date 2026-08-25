@@ -1,49 +1,12 @@
 # Copyright Contributors to the Open Cluster Management project
 #
-# Standalone Pipelines-as-Code check that runs `make test` (Go unit tests)
-# on every PR. It is intentionally NOT a `pipelines.appstudio.openshift.io/
-# type: build` pipeline and isn't triggered by/tied to a Snapshot, so it
-# does not participate in Konflux's Snapshot/Release gating -- it's a
-# plain PR check, same role Prow's `make unit-tests` job plays today, just
-# running on Tekton instead.
+# Standalone Pipelines-as-Code PR check that runs `make test` (Go unit
+# tests) on every PR to main/release-5.1/release-5.2. This is a plain PR
+# check (not tied to Konflux Snapshot/Release gating), equivalent to
+# Prow's `make unit-tests` job.
 #
-# It does carry `appstudio.openshift.io/application`/`component` labels
-# (pointing at the existing release-acm-51 Application/Component for this
-# repo) purely so the Konflux UI can resolve it. Without those labels the
-# UI's GithubRedirect component (src/components/GithubRedirect/
-# GithubRedirect.tsx in konflux-ci/konflux-ui) can never build a redirect
-# URL and gets stuck on a permanent "Redirecting to pipeline run..."
-# spinner -- `shouldRedirect = application && !error` never becomes true
-# if `application` is undefined. This mislabels the check's actual branch
-# coverage a bit (it also runs on release-5.2 and main, not just
-# release-5.1), but that's a cosmetic tradeoff for being able to view it
-# in the UI at all.
-#
-# Diagnostic notes (see PR #3893 for the prior attempt, which hung for 2
-# hours because its task tried to curl/dnf install/go install ...@latest
-# at runtime and never returned):
-#   1. Every network-dependent step is bounded with `timeout`, so a
-#      blocked/slow path fails in seconds/minutes, not hours.
-#   2. An explicit reachability probe runs first and logs a clear,
-#      actionable message either way.
-#   3. Uses registry.redhat.io/ubi9/go-toolset, which this tenant's
-#      service account can actually authenticate against. An earlier
-#      version of this file used the same brew.registry.redhat.io image
-#      the product build pulls, on the assumption that pull access would
-#      carry over -- it didn't: that credential only authenticates within
-#      the officially blessed build pipeline, not a generic custom Task,
-#      and failed fast with a clear ImagePullBackOff/unauthorized error.
-#
-# If the reachability probe fails, the long-term fix is to pre-bake Go +
-# setup-envtest + kubebuilder envtest assets into build/Dockerfile.test.konflux
-# and swap the `image:` below to that pre-built image, so `make test` needs
-# zero runtime network access.
-#
-#   4. Explicit `computeResources` below: without it, Tekton injected a
-#      2Gi memory limit and `go vet ./...` got OOMKilled (exitCode 137)
-#      ~70s in -- not a timeout, a plain resource limit. GOFLAGS=-p=2
-#      also caps parallel compile workers so peak memory isn't driven up
-#      by this node's CPU count.
+# The appstudio.openshift.io/* labels are required for UI resolution
+# only; they don't affect the check's actual scope or gating behavior.
 apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
@@ -119,9 +82,7 @@ spec:
                 mkdir -p "${HOME}"
 
                 echo "===== Checking required tools ====="
-                # This image runs as a non-root, OpenShift-arbitrary UID, so
-                # we can't `microdnf install` anything missing here --
-                # go-toolset already ships git/make/go, so just verify.
+                # go-toolset already ships git/make/go; just verify they exist.
                 for tool in git make go; do
                   if ! command -v "${tool}" >/dev/null 2>&1; then
                     echo "Required tool '${tool}' not found in this image."
@@ -133,12 +94,8 @@ spec:
                 echo "go:   $(go version)"
 
                 echo "===== Network reachability check ====="
-                # make test transitively needs GOPROXY (proxy.golang.org,
-                # for controller-gen/setup-envtest) and Google Cloud
-                # Storage (for kubebuilder envtest K8s binaries). Probe
-                # both with a short timeout (plain /dev/tcp, no curl
-                # dependency) so a blocked egress path is obvious in
-                # seconds, not hours.
+                # Probe GOPROXY and GCS (required by make test's dependency
+                # chain) with short timeouts so blocked egress fails fast.
                 NETWORK_OK=true
                 if ! timeout 8 bash -c 'exec 3<>/dev/tcp/proxy.golang.org/443' 2>/dev/null; then
                   echo "WARNING: proxy.golang.org:443 not reachable within 8s."
@@ -152,9 +109,6 @@ spec:
                   echo "Network egress appears open."
                 else
                   echo "This tenant likely restricts general internet egress from Task pods."
-                  echo "Next step: pre-bake Go/setup-envtest/kubebuilder assets into"
-                  echo "build/Dockerfile.test.konflux and point this pipeline at that image"
-                  echo "instead of installing dependencies at runtime."
                 fi
 
                 echo "===== Cloning ${GIT_URL}@${REVISION} ====="
@@ -163,8 +117,7 @@ spec:
                 git checkout --quiet "${REVISION}"
 
                 echo "===== Running unit tests: make test ====="
-                # Bounded to 10m so a stuck download fails fast instead of
-                # hanging for hours (see PR #3893, which hung for 2h).
+                # Timeout 10m so a stuck download fails fast, not hangs for hours.
                 if timeout 600 env OPERATOR_VERSION=9.9.9 make test; then
                   echo "Unit tests passed."
                 else
