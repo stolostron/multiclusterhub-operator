@@ -22,6 +22,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"reflect"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/helpers"
@@ -169,7 +170,7 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 						log.Error(err, "Failed to detect container changes", "Name", template.GetName())
 
 					} else if containersChanged {
-						log.Info("Container set changed (added/removed) - using Update instead of Patch",
+						log.Info("Container set or port configuration changed - using Update instead of Patch",
 							"Kind", template.GetKind(), "Name", template.GetName())
 						useUpdate = true
 					}
@@ -374,9 +375,15 @@ func (r *MultiClusterHubReconciler) logAndSetCondition(err error, message string
 	return ctrl.Result{}, wrappedError
 }
 
-// detectContainerChanges checks if containers have been added or removed between existing and desired deployments.
-// Returns true if the container set differs (by name or count), indicating Update should be used instead of Patch.
-// Server-side apply cannot remove elements from arrays, so we must use Update when containers are removed.
+// detectContainerChanges checks if containers have been added, removed, or had their port
+// configuration changed between existing and desired deployments. Returns true if Update should be
+// used instead of Patch.
+//
+// Server-side apply cannot remove elements from arrays, so Update is required when containers are
+// removed. Similarly, a container's port configuration (containerPort/name/protocol) cannot be
+// changed via a strategic merge patch: Kubernetes merges the ports list by name instead of replacing
+// it, so renaming or renumbering a port (e.g. 8443 "downloads" -> 8080 "downloads") would otherwise
+// result in two entries with the same name, which fails API validation.
 func (r *MultiClusterHubReconciler) detectContainerChanges(existing, desired *unstructured.Unstructured) (bool, error) {
 	// Get existing containers
 	existingContainers, found, err := unstructured.NestedSlice(existing.Object,
@@ -407,59 +414,58 @@ func (r *MultiClusterHubReconciler) detectContainerChanges(existing, desired *un
 		return true, nil
 	}
 
-	// Build set of existing container names
-	existingNames := make(map[string]bool)
+	// Build a lookup of existing containers by name
+	existingByName := make(map[string]map[string]interface{})
 	for _, c := range existingContainers {
 		container, ok := c.(map[string]interface{})
 		if !ok {
 			continue
 		}
 		if name, ok := container["name"].(string); ok {
-			existingNames[name] = true
+			existingByName[name] = container
 		}
 	}
 
-	// Check if all desired containers exist in current deployment
-	for _, c := range desiredContainers {
-		container, ok := c.(map[string]interface{})
-		if !ok {
-			continue
-		}
-		if name, ok := container["name"].(string); ok {
-			if !existingNames[name] {
-				log.Info("New container detected in desired spec",
-					"Deployment", existing.GetName(),
-					"Container", name)
-				return true, nil
-			}
-		}
-	}
-
-	// Build set of desired container names
+	// Check if all desired containers exist in current deployment, and whether the port
+	// configuration has changed for containers that exist in both.
 	desiredNames := make(map[string]bool)
 	for _, c := range desiredContainers {
-		container, ok := c.(map[string]interface{})
+		desiredContainer, ok := c.(map[string]interface{})
 		if !ok {
 			continue
 		}
-		if name, ok := container["name"].(string); ok {
-			desiredNames[name] = true
+
+		name, ok := desiredContainer["name"].(string)
+		if !ok {
+			continue
+		}
+		desiredNames[name] = true
+
+		existingContainer, found := existingByName[name]
+		if !found {
+			log.Info("New container detected in desired spec",
+				"Deployment", existing.GetName(),
+				"Container", name)
+			return true, nil
+		}
+
+		if !reflect.DeepEqual(existingContainer["ports"], desiredContainer["ports"]) {
+			log.Info("Container port configuration changed",
+				"Deployment", existing.GetName(),
+				"Container", name,
+				"Existing", existingContainer["ports"],
+				"Desired", desiredContainer["ports"])
+			return true, nil
 		}
 	}
 
 	// Check if any existing containers are missing from desired (removed containers)
-	for _, c := range existingContainers {
-		container, ok := c.(map[string]interface{})
-		if !ok {
-			continue
-		}
-		if name, ok := container["name"].(string); ok {
-			if !desiredNames[name] {
-				log.Info("Container removed in desired spec",
-					"Deployment", existing.GetName(),
-					"Container", name)
-				return true, nil
-			}
+	for name := range existingByName {
+		if !desiredNames[name] {
+			log.Info("Container removed in desired spec",
+				"Deployment", existing.GetName(),
+				"Container", name)
+			return true, nil
 		}
 	}
 

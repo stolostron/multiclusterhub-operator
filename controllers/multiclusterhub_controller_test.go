@@ -2455,6 +2455,365 @@ func Test_detectContainerChanges(t *testing.T) {
 			want:    false,
 			wantErr: false,
 		},
+		{
+			name: "should detect no changes when ports are identical",
+			existing: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "container1",
+										"ports": []interface{}{
+											map[string]interface{}{
+												"containerPort": int64(8080),
+												"name":          "downloads",
+												"protocol":      "TCP",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "container1",
+										"ports": []interface{}{
+											map[string]interface{}{
+												"containerPort": int64(8080),
+												"name":          "downloads",
+												"protocol":      "TCP",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want:    false,
+			wantErr: false,
+		},
+		{
+			name: "should detect when containerPort changes with the same name (acm-cli-downloads 2.17 -> 5.0)",
+			existing: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "acm-cli-downloads",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "acm-cli-downloads",
+										"ports": []interface{}{
+											map[string]interface{}{
+												"containerPort": int64(8443),
+												"name":          "downloads",
+												"protocol":      "TCP",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "acm-cli-downloads",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "acm-cli-downloads",
+										"ports": []interface{}{
+											map[string]interface{}{
+												"containerPort": int64(8080),
+												"name":          "downloads",
+												"protocol":      "TCP",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name: "should detect when port name changes",
+			existing: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "container1",
+										"ports": []interface{}{
+											map[string]interface{}{
+												"containerPort": int64(8080),
+												"name":          "old-port",
+												"protocol":      "TCP",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "container1",
+										"ports": []interface{}{
+											map[string]interface{}{
+												"containerPort": int64(8080),
+												"name":          "new-port",
+												"protocol":      "TCP",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name: "should detect when protocol changes",
+			existing: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "container1",
+										"ports": []interface{}{
+											map[string]interface{}{
+												"containerPort": int64(8080),
+												"name":          "downloads",
+												"protocol":      "TCP",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "container1",
+										"ports": []interface{}{
+											map[string]interface{}{
+												"containerPort": int64(8080),
+												"name":          "downloads",
+												"protocol":      "UDP",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name: "should detect when port count changes on an existing container",
+			existing: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "container1",
+										"ports": []interface{}{
+											map[string]interface{}{
+												"containerPort": int64(8080),
+												"name":          "downloads",
+												"protocol":      "TCP",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "container1",
+										"ports": []interface{}{
+											map[string]interface{}{
+												"containerPort": int64(8080),
+												"name":          "downloads",
+												"protocol":      "TCP",
+											},
+											map[string]interface{}{
+												"containerPort": int64(9090),
+												"name":          "metrics",
+												"protocol":      "TCP",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name: "should handle no ports field on either container",
+			existing: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name":  "container1",
+										"image": "image1:v1",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name":  "container1",
+										"image": "image1:v2",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want:    false,
+			wantErr: false,
+		},
 	}
 
 	registerScheme()
