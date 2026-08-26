@@ -2578,7 +2578,7 @@ func Test_detectContainerChanges(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "should detect when port name changes",
+			name: "should not detect change when only port name differs",
 			existing: &unstructured.Unstructured{
 				Object: map[string]interface{}{
 					"apiVersion": "apps/v1",
@@ -2635,11 +2635,11 @@ func Test_detectContainerChanges(t *testing.T) {
 					},
 				},
 			},
-			want:    true,
+			want:    false,
 			wantErr: false,
 		},
 		{
-			name: "should detect when protocol changes",
+			name: "should not detect change when only protocol differs",
 			existing: &unstructured.Unstructured{
 				Object: map[string]interface{}{
 					"apiVersion": "apps/v1",
@@ -2696,7 +2696,70 @@ func Test_detectContainerChanges(t *testing.T) {
 					},
 				},
 			},
-			want:    true,
+			want:    false,
+			wantErr: false,
+		},
+		{
+			// Regression test: multicluster-operators-hub-subscription's port is defined without
+			// an explicit protocol in the desired template, but Kubernetes defaults an existing
+			// pod's port to protocol "TCP" on the cluster. That difference alone must not trigger
+			// an Update, since containerPort (the only thing that can break via strategic merge)
+			// is unchanged.
+			name: "should not detect change when desired port omits protocol defaulted by Kubernetes",
+			existing: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "multicluster-operators-hub-subscription",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "multicluster-operators-hub-subscription",
+										"ports": []interface{}{
+											map[string]interface{}{
+												"containerPort": int64(8443),
+												"protocol":      "TCP",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "multicluster-operators-hub-subscription",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "multicluster-operators-hub-subscription",
+										"ports": []interface{}{
+											map[string]interface{}{
+												"containerPort": int64(8443),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want:    false,
 			wantErr: false,
 		},
 		{
