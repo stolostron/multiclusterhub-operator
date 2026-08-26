@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"sort"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/helpers"
@@ -375,15 +376,17 @@ func (r *MultiClusterHubReconciler) logAndSetCondition(err error, message string
 	return ctrl.Result{}, wrappedError
 }
 
-// detectContainerChanges checks if containers have been added, removed, or had their port
-// configuration changed between existing and desired deployments. Returns true if Update should be
-// used instead of Patch.
+// detectContainerChanges checks if containers have been added, removed, or had their exposed port
+// numbers changed between existing and desired deployments. Returns true if Update should be used
+// instead of Patch.
 //
 // Server-side apply cannot remove elements from arrays, so Update is required when containers are
-// removed. Similarly, a container's port configuration (containerPort/name/protocol) cannot be
-// changed via a strategic merge patch: Kubernetes merges the ports list by name instead of replacing
-// it, so renaming or renumbering a port (e.g. 8443 "downloads" -> 8080 "downloads") would otherwise
-// result in two entries with the same name, which fails API validation.
+// removed. Similarly, a container's containerPort cannot be changed via a strategic merge patch:
+// Kubernetes merges the ports list by name instead of replacing it, so renumbering a port while
+// keeping the same name (e.g. 8443 "downloads" -> 8080 "downloads") would otherwise result in two
+// entries with the same name, which fails API validation. Only the port *number* is compared here;
+// fields like protocol or name are metadata that Kubernetes/strategic-merge already reconciles
+// correctly on Patch and don't warrant the heavier-handed Update.
 func (r *MultiClusterHubReconciler) detectContainerChanges(existing, desired *unstructured.Unstructured) (bool, error) {
 	// Get existing containers
 	existingContainers, found, err := unstructured.NestedSlice(existing.Object,
@@ -449,12 +452,14 @@ func (r *MultiClusterHubReconciler) detectContainerChanges(existing, desired *un
 			return true, nil
 		}
 
-		if !reflect.DeepEqual(existingContainer["ports"], desiredContainer["ports"]) {
-			log.Info("Container port configuration changed",
+		existingPorts := containerPortNumbers(existingContainer["ports"])
+		desiredPorts := containerPortNumbers(desiredContainer["ports"])
+		if !reflect.DeepEqual(existingPorts, desiredPorts) {
+			log.Info("Container port number changed",
 				"Deployment", existing.GetName(),
 				"Container", name,
-				"Existing", existingContainer["ports"],
-				"Desired", desiredContainer["ports"])
+				"Existing", existingPorts,
+				"Desired", desiredPorts)
 			return true, nil
 		}
 	}
@@ -471,4 +476,42 @@ func (r *MultiClusterHubReconciler) detectContainerChanges(existing, desired *un
 
 	// No container changes detected
 	return false, nil
+}
+
+// containerPortNumbers extracts the sorted, multiset of containerPort values declared in a
+// container's ports list. Other port fields (name, protocol, hostPort) are intentionally ignored:
+// they are metadata that a strategic merge patch reconciles correctly on its own, so differences in
+// those fields alone shouldn't force an Update. Numeric types are coerced to int64 since decoded
+// unstructured content may represent numbers as float64, int64, or int depending on the source.
+func containerPortNumbers(ports interface{}) []int64 {
+	portsSlice, ok := ports.([]interface{})
+	if !ok {
+		return nil
+	}
+
+	numbers := make([]int64, 0, len(portsSlice))
+	for _, p := range portsSlice {
+		port, ok := p.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		var containerPort int64
+		switch v := port["containerPort"].(type) {
+		case int64:
+			containerPort = v
+		case int32:
+			containerPort = int64(v)
+		case int:
+			containerPort = int64(v)
+		case float64:
+			containerPort = int64(v)
+		default:
+			continue
+		}
+		numbers = append(numbers, containerPort)
+	}
+
+	sort.Slice(numbers, func(i, j int) bool { return numbers[i] < numbers[j] })
+	return numbers
 }
