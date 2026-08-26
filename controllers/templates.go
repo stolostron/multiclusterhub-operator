@@ -483,10 +483,17 @@ func (r *MultiClusterHubReconciler) detectContainerChanges(existing, desired *un
 // they are metadata that a strategic merge patch reconciles correctly on its own, so differences in
 // those fields alone shouldn't force an Update. Numeric types are coerced to int64 since decoded
 // unstructured content may represent numbers as float64, int64, or int depending on the source.
+//
+// Always returns a non-nil slice, even when ports is absent. corev1.Container's Ports field has
+// `json:"ports,omitempty"`, so a live Deployment fetched from the API omits the "ports" key
+// entirely once it has zero ports, while a chart template that explicitly declares `ports: []`
+// decodes to a present-but-empty slice. Without normalizing both cases to the same (non-nil)
+// value here, reflect.DeepEqual(nil, []int64{}) in detectContainerChanges would report them as
+// different, causing a spurious Update on every reconcile.
 func containerPortNumbers(ports interface{}) []int64 {
 	portsSlice, ok := ports.([]interface{})
 	if !ok {
-		return nil
+		return []int64{}
 	}
 
 	numbers := make([]int64, 0, len(portsSlice))

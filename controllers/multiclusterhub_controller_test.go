@@ -2877,6 +2877,60 @@ func Test_detectContainerChanges(t *testing.T) {
 			want:    false,
 			wantErr: false,
 		},
+		{
+			// Regression test: multicluster-role-assignment-controller's "manager" container
+			// declares `ports: []` explicitly in its chart template, which decodes to a present
+			// but empty slice. The live Deployment, however, omits the "ports" key entirely once
+			// fetched from the API, since corev1.Container.Ports has `json:"ports,omitempty"` and
+			// drops zero-length slices during serialization. That asymmetry alone must not trigger
+			// an Update.
+			name: "should not detect change when existing has no ports field and desired has an explicit empty ports array",
+			existing: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "multicluster-role-assignment-controller",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "manager",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "multicluster-role-assignment-controller",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name":  "manager",
+										"ports": []interface{}{},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want:    false,
+			wantErr: false,
+		},
 	}
 
 	registerScheme()
