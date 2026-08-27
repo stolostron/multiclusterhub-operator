@@ -258,6 +258,7 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole, isSTSEn
 		nn = append(nn, types.NamespacedName{Name: "multicluster-operators-hub-subscription", Namespace: m.Namespace})
 		nn = append(nn, types.NamespacedName{Name: "multicluster-operators-standalone-subscription", Namespace: m.Namespace})
 		nn = append(nn, types.NamespacedName{Name: "multicluster-operators-subscription-report", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "multicluster-integrations", Namespace: m.Namespace})
 	}
 	if m.Enabled(operatorsv1.ClusterLifecycle) {
 		nn = append(nn, types.NamespacedName{Name: "klusterlet-addon-controller-v2", Namespace: m.Namespace})
