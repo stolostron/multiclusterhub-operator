@@ -19,6 +19,16 @@ metadata:
     certified: "false"
     createdAt: "2026-08-11T21:49:10Z"
     description: Open management of Openshift and Kubernetes clusters
+    features.operators.openshift.io/cnf: "false"
+    features.operators.openshift.io/cni: "false"
+    features.operators.openshift.io/csi: "false"
+    features.operators.openshift.io/disconnected: "true"
+    features.operators.openshift.io/fips-compliant: "true"
+    features.operators.openshift.io/proxy-aware: "true"
+    features.operators.openshift.io/tls-profiles: "false"
+    features.operators.openshift.io/token-auth-aws: "false"
+    features.operators.openshift.io/token-auth-azure: "false"
+    features.operators.openshift.io/token-auth-gcp: "false"
     operators.operatorframework.io/builder: operator-sdk-v1.42.3
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
     repository: https://github.com/open-cluster-management/multiclusterhub-operator
@@ -1879,7 +1889,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.namespace
-                image: quay.io/stolostron/multiclusterhub-operator:0.0.1
+                image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multiclusterhub-operator:latest
                 imagePullPolicy: IfNotPresent
                 livenessProbe:
                   httpGet:
