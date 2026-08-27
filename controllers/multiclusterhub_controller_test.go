@@ -2455,6 +2455,482 @@ func Test_detectContainerChanges(t *testing.T) {
 			want:    false,
 			wantErr: false,
 		},
+		{
+			name: "should detect no changes when ports are identical",
+			existing: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "container1",
+										"ports": []interface{}{
+											map[string]interface{}{
+												"containerPort": int64(8080),
+												"name":          "downloads",
+												"protocol":      "TCP",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "container1",
+										"ports": []interface{}{
+											map[string]interface{}{
+												"containerPort": int64(8080),
+												"name":          "downloads",
+												"protocol":      "TCP",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want:    false,
+			wantErr: false,
+		},
+		{
+			name: "should detect when containerPort changes with the same name (acm-cli-downloads 2.17 -> 5.0)",
+			existing: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "acm-cli-downloads",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "acm-cli-downloads",
+										"ports": []interface{}{
+											map[string]interface{}{
+												"containerPort": int64(8443),
+												"name":          "downloads",
+												"protocol":      "TCP",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "acm-cli-downloads",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "acm-cli-downloads",
+										"ports": []interface{}{
+											map[string]interface{}{
+												"containerPort": int64(8080),
+												"name":          "downloads",
+												"protocol":      "TCP",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name: "should not detect change when only port name differs",
+			existing: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "container1",
+										"ports": []interface{}{
+											map[string]interface{}{
+												"containerPort": int64(8080),
+												"name":          "old-port",
+												"protocol":      "TCP",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "container1",
+										"ports": []interface{}{
+											map[string]interface{}{
+												"containerPort": int64(8080),
+												"name":          "new-port",
+												"protocol":      "TCP",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want:    false,
+			wantErr: false,
+		},
+		{
+			name: "should not detect change when only protocol differs",
+			existing: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "container1",
+										"ports": []interface{}{
+											map[string]interface{}{
+												"containerPort": int64(8080),
+												"name":          "downloads",
+												"protocol":      "TCP",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "container1",
+										"ports": []interface{}{
+											map[string]interface{}{
+												"containerPort": int64(8080),
+												"name":          "downloads",
+												"protocol":      "UDP",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want:    false,
+			wantErr: false,
+		},
+		{
+			// Regression test: multicluster-operators-hub-subscription's port is defined without
+			// an explicit protocol in the desired template, but Kubernetes defaults an existing
+			// pod's port to protocol "TCP" on the cluster. That difference alone must not trigger
+			// an Update, since containerPort (the only thing that can break via strategic merge)
+			// is unchanged.
+			name: "should not detect change when desired port omits protocol defaulted by Kubernetes",
+			existing: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "multicluster-operators-hub-subscription",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "multicluster-operators-hub-subscription",
+										"ports": []interface{}{
+											map[string]interface{}{
+												"containerPort": int64(8443),
+												"protocol":      "TCP",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "multicluster-operators-hub-subscription",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "multicluster-operators-hub-subscription",
+										"ports": []interface{}{
+											map[string]interface{}{
+												"containerPort": int64(8443),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want:    false,
+			wantErr: false,
+		},
+		{
+			name: "should detect when port count changes on an existing container",
+			existing: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "container1",
+										"ports": []interface{}{
+											map[string]interface{}{
+												"containerPort": int64(8080),
+												"name":          "downloads",
+												"protocol":      "TCP",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "container1",
+										"ports": []interface{}{
+											map[string]interface{}{
+												"containerPort": int64(8080),
+												"name":          "downloads",
+												"protocol":      "TCP",
+											},
+											map[string]interface{}{
+												"containerPort": int64(9090),
+												"name":          "metrics",
+												"protocol":      "TCP",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name: "should handle no ports field on either container",
+			existing: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name":  "container1",
+										"image": "image1:v1",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name":  "container1",
+										"image": "image1:v2",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want:    false,
+			wantErr: false,
+		},
+		{
+			// Regression test: multicluster-role-assignment-controller's "manager" container
+			// declares `ports: []` explicitly in its chart template, which decodes to a present
+			// but empty slice. The live Deployment, however, omits the "ports" key entirely once
+			// fetched from the API, since corev1.Container.Ports has `json:"ports,omitempty"` and
+			// drops zero-length slices during serialization. That asymmetry alone must not trigger
+			// an Update.
+			name: "should not detect change when existing has no ports field and desired has an explicit empty ports array",
+			existing: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "multicluster-role-assignment-controller",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "manager",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "multicluster-role-assignment-controller",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name":  "manager",
+										"ports": []interface{}{},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want:    false,
+			wantErr: false,
+		},
 	}
 
 	registerScheme()
