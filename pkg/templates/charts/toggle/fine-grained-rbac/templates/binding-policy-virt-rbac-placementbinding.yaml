@@ -17,3 +17,6 @@ subjects:
 - apiGroup: policy.open-cluster-management.io
   kind: Policy
   name: policy-virt-oauth
+- apiGroup: policy.open-cluster-management.io
+  kind: Policy
+  name: policy-hcp-clusterroles
