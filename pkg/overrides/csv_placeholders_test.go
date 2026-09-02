@@ -4,6 +4,7 @@
 package overrides
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -46,33 +47,8 @@ func TestBundleCSVHasARTPlaceholders(t *testing.T) {
 		t.Errorf("relatedImages count %d != OPERAND_IMAGE count %d", len(related), len(operandEnv))
 	}
 
-	envByDummy := map[string]string{}
-	for key, dummy := range operandEnv {
-		envByDummy[dummy] = key
-		if _, ok := related[key]; !ok {
-			t.Errorf("relatedImages missing name %q (from OPERAND_IMAGE_%s)", key, strings.ToUpper(key))
-		} else if related[key] != dummy {
-			t.Errorf("relatedImages[%s]=%s, want %s", key, related[key], dummy)
-		}
-	}
-
-	for _, dummy := range operandDummies {
-		if _, ok := envByDummy[dummy]; !ok {
-			t.Errorf("CSV is missing OPERAND_IMAGE env for dummy pullspec %s", dummy)
-		}
-	}
-
-	for key, dummy := range operandEnv {
-		found := false
-		for _, refDummy := range operandDummies {
-			if dummy == refDummy {
-				found = true
-				break
-			}
-		}
-		if !found {
-			t.Errorf("OPERAND_IMAGE_%s value %s is not an image-references dummy", strings.ToUpper(key), dummy)
-		}
+	for _, err := range validateOperandIdentity(operandEnv, related, operandDummies) {
+		t.Error(err)
 	}
 
 	helmKeys := helmImageOverrideKeys(t, filepath.Join(root, "pkg", "templates"))
@@ -81,6 +57,138 @@ func TestBundleCSVHasARTPlaceholders(t *testing.T) {
 			t.Errorf("helm imageOverrides.%s has no OPERAND_IMAGE_%s in the CSV", key, strings.ToUpper(key))
 		}
 	}
+}
+
+func TestValidateOperandIdentityRejectsSwappedPullspecs(t *testing.T) {
+	cliDummy := "image-registry.example/open-cluster-management/acm-cli-rhel9:latest"
+	consoleDummy := "image-registry.example/open-cluster-management/console-rhel9:latest"
+	operandDummies := map[string]string{
+		"acm-cli-rhel9": cliDummy,
+		"console-rhel9": consoleDummy,
+	}
+	// Same pullspecs, swapped across OPERAND_IMAGE keys and relatedImages.
+	operandEnv := map[string]string{
+		"acm_cli": consoleDummy,
+		"console": cliDummy,
+	}
+	related := map[string]string{
+		"acm_cli": consoleDummy,
+		"console": cliDummy,
+	}
+
+	errs := validateOperandIdentity(operandEnv, related, operandDummies)
+	if len(errs) == 0 {
+		t.Fatal("swapped OPERAND_IMAGE pullspecs passed validation; component identity must be checked")
+	}
+}
+
+func TestValidateOperandIdentityAcceptsMatchingKeys(t *testing.T) {
+	cliDummy := "image-registry.example/open-cluster-management/acm-cli-rhel9:latest"
+	consoleDummy := "image-registry.example/open-cluster-management/console-rhel9:latest"
+	operandDummies := map[string]string{
+		"acm-cli-rhel9": cliDummy,
+		"console-rhel9": consoleDummy,
+	}
+	operandEnv := map[string]string{
+		"acm_cli": cliDummy,
+		"console": consoleDummy,
+	}
+	related := map[string]string{
+		"acm_cli": cliDummy,
+		"console": consoleDummy,
+	}
+
+	if errs := validateOperandIdentity(operandEnv, related, operandDummies); len(errs) != 0 {
+		t.Fatalf("expected matching component identity to pass, got %v", errs)
+	}
+}
+
+func TestComponentKeyFromImageRefName(t *testing.T) {
+	tests := []struct {
+		name string
+		key  string
+	}{
+		{"acm-cli-rhel9", "acm_cli"},
+		{"acm-must-gather-rhel9", "acm_must_gather"},
+		{"acm-grafana-rhel9", "grafana"},
+		{"acm-prometheus-rhel9", "prometheus_operator"},
+		{"acm-search-v2-rhel9", "search_v2_operator"},
+		{"acm-siteconfig-rhel9", "siteconfig_operator"},
+		{"cluster-backup-rhel9-operator", "cluster_backup_controller"},
+		{"obo-prometheus-rhel9-operator", "obo_prometheus_rhel9_operator"},
+		{"endpoint-monitoring-rhel9-operator", "endpoint_monitoring_operator"},
+		{"observatorium-rhel9-operator", "observatorium_operator"},
+		{"configmap_reloader", "configmap_reloader"},
+		{"postgresql_16", "postgresql_16"},
+		{"console-rhel9", "console"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := componentKeyFromImageRefName(tt.name); got != tt.key {
+				t.Errorf("componentKeyFromImageRefName(%q)=%q, want %q", tt.name, got, tt.key)
+			}
+		})
+	}
+}
+
+// imageRefComponentKeys maps image-references tag names whose delivery-repo
+// spelling does not match the extras image-key used as the OPERAND_IMAGE
+// suffix, relatedImages name, and helm imageOverrides key.
+var imageRefComponentKeys = map[string]string{
+	"acm-cli-rhel9":                 "acm_cli",
+	"acm-must-gather-rhel9":         "acm_must_gather",
+	"acm-prometheus-rhel9":          "prometheus_operator",
+	"acm-search-v2-rhel9":           "search_v2_operator",
+	"acm-siteconfig-rhel9":          "siteconfig_operator",
+	"cluster-backup-rhel9-operator": "cluster_backup_controller",
+	"obo-prometheus-rhel9-operator": "obo_prometheus_rhel9_operator",
+}
+
+// componentKeyFromImageRefName maps an image-references tag name to the
+// component key produced by parseEnvVarByPrefix for OPERAND_IMAGE_*.
+func componentKeyFromImageRefName(name string) string {
+	if key, ok := imageRefComponentKeys[name]; ok {
+		return key
+	}
+	s := strings.ReplaceAll(name, "-rhel9-", "-")
+	s = strings.TrimSuffix(s, "-rhel9")
+	s = strings.ReplaceAll(s, "-", "_")
+	return strings.TrimPrefix(s, "acm_")
+}
+
+// validateOperandIdentity checks OPERAND_IMAGE env and relatedImages against
+// image-references by component key, not just pullspec membership.
+func validateOperandIdentity(operandEnv, related, operandDummies map[string]string) []string {
+	var errs []string
+	seenKeys := map[string]string{}
+	for name, dummy := range operandDummies {
+		key := componentKeyFromImageRefName(name)
+		if prev, ok := seenKeys[key]; ok {
+			errs = append(errs, fmt.Sprintf("image-references %q and %q both map to component key %q", prev, name, key))
+		}
+		seenKeys[key] = name
+
+		envDummy, ok := operandEnv[key]
+		if !ok {
+			errs = append(errs, fmt.Sprintf("CSV is missing OPERAND_IMAGE_%s for image-references %s", strings.ToUpper(key), name))
+		} else if envDummy != dummy {
+			errs = append(errs, fmt.Sprintf("OPERAND_IMAGE_%s=%s, want image-references dummy %s (%s)", strings.ToUpper(key), envDummy, dummy, name))
+		}
+
+		relatedDummy, ok := related[key]
+		if !ok {
+			errs = append(errs, fmt.Sprintf("relatedImages missing name %q (from image-references %s)", key, name))
+		} else if relatedDummy != dummy {
+			errs = append(errs, fmt.Sprintf("relatedImages[%s]=%s, want %s (image-references %s)", key, relatedDummy, dummy, name))
+		}
+	}
+
+	for key := range operandEnv {
+		if _, ok := seenKeys[key]; !ok {
+			errs = append(errs, fmt.Sprintf("OPERAND_IMAGE_%s is not mapped from any image-references tag", strings.ToUpper(key)))
+		}
+	}
+	return errs
 }
 
 func repoRoot(t *testing.T) string {
