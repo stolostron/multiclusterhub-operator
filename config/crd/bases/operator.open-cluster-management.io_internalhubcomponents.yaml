@@ -36,6 +36,29 @@ spec:
           metadata:
             type: object
           spec:
+            properties:
+              managedResources:
+                items:
+                  properties:
+                    group:
+                      type: string
+                    kind:
+                      type: string
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    scope:
+                      type: string
+                    version:
+                      type: string
+                  required:
+                  - kind
+                  - name
+                  - scope
+                  - version
+                  type: object
+                type: array
             type: object
         type: object
     served: true
