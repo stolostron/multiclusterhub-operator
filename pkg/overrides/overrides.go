@@ -114,7 +114,7 @@ func GetOverridesFromConfigmap(k8sClient client.Client, overrides map[string]str
 		objectType = "template"
 	}
 
-	logf.Info(fmt.Sprintf("Overriding %s from configmap: %s/%s", objectType, namespace, configmapName))
+	logf.Info("Overriding from configmap", "type", objectType, "configmap", configmapName, "namespace", namespace)
 
 	configmap := &corev1.ConfigMap{}
 	err := k8sClient.Get(context.TODO(), types.NamespacedName{
@@ -169,10 +169,6 @@ func GetOverridesFromEnv(prefix string) map[string]string {
 		if key != "" && value != "" {
 			overrides[key] = value
 		}
-	}
-
-	if len(overrides) > 0 {
-		logf.Info(fmt.Sprintf("Found overrides from environment variables set by %s prefix", prefix))
 	}
 
 	return overrides

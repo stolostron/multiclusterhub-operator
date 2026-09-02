@@ -93,9 +93,9 @@ func parseProbeConfigFromAnnotations(mch *v1.MultiClusterHub) *ProbeConfig {
 	if val, ok := mch.Annotations[utils.AnnotationProbeTimeoutSeconds]; ok {
 		timeout, err := strconv.ParseInt(val, 10, 32)
 		if err != nil {
-			log.Info(fmt.Sprintf("Invalid probe-timeout-seconds annotation value %q: %v", val, err))
+			log.Info("Invalid probe-timeout-seconds annotation value", "value", val, "error", err)
 		} else if timeout <= 0 {
-			log.Info(fmt.Sprintf("Invalid probe-timeout-seconds annotation value %q: must be positive", val))
+			log.Info("Invalid probe-timeout-seconds annotation value, must be positive", "value", val)
 		} else {
 			timeout32 := int32(timeout)
 			config.TimeoutSeconds = &timeout32
@@ -106,9 +106,9 @@ func parseProbeConfigFromAnnotations(mch *v1.MultiClusterHub) *ProbeConfig {
 	if val, ok := mch.Annotations[utils.AnnotationProbeFailureThreshold]; ok {
 		threshold, err := strconv.ParseInt(val, 10, 32)
 		if err != nil {
-			log.Info(fmt.Sprintf("Invalid probe-failure-threshold annotation value %q: %v", val, err))
+			log.Info("Invalid probe-failure-threshold annotation value", "value", val, "error", err)
 		} else if threshold <= 0 {
-			log.Info(fmt.Sprintf("Invalid probe-failure-threshold annotation value %q: must be positive", val))
+			log.Info("Invalid probe-failure-threshold annotation value, must be positive", "value", val)
 		} else {
 			threshold32 := int32(threshold)
 			config.FailureThreshold = &threshold32
@@ -119,9 +119,9 @@ func parseProbeConfigFromAnnotations(mch *v1.MultiClusterHub) *ProbeConfig {
 	if val, ok := mch.Annotations[utils.AnnotationProbeSuccessThreshold]; ok {
 		threshold, err := strconv.ParseInt(val, 10, 32)
 		if err != nil {
-			log.Info(fmt.Sprintf("Invalid probe-success-threshold annotation value %q: %v", val, err))
+			log.Info("Invalid probe-success-threshold annotation value", "value", val, "error", err)
 		} else if threshold <= 0 {
-			log.Info(fmt.Sprintf("Invalid probe-success-threshold annotation value %q: must be positive", val))
+			log.Info("Invalid probe-success-threshold annotation value, must be positive", "value", val)
 		} else {
 			threshold32 := int32(threshold)
 			config.SuccessThreshold = &threshold32
@@ -217,7 +217,7 @@ func RenderCRDs(crdDir string, mch *v1.MultiClusterHub) ([]*unstructured.Unstruc
 	// Read CRD files
 	err := filepath.Walk(crdDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			fmt.Println(err.Error())
+			log.Error(err, "Failed to walk CRD directory", "path", path)
 			return err
 		}
 		crd := &unstructured.Unstructured{}
@@ -231,7 +231,7 @@ func RenderCRDs(crdDir string, mch *v1.MultiClusterHub) ([]*unstructured.Unstruc
 		}
 
 		if err = yaml.Unmarshal(bytesFile, crd); err != nil {
-			errs = append(errs, fmt.Errorf("%s - error unmarshalling file to unstructured: %v", info.Name(), err.Error()))
+			errs = append(errs, fmt.Errorf("%s - error unmarshalling file to unstructured: %w", info.Name(), err))
 		}
 		if mch != nil {
 			_, conversion, _ := unstructured.NestedMap(crd.Object, "spec", "conversion", "webhook", "clientConfig", "service")
@@ -274,9 +274,6 @@ func RenderCharts(chartDir string, mch *v1.MultiClusterHub, images map[string]st
 		chartPath := filepath.Join(chartDir, chart.Name())
 		chartTemplates, errs := renderTemplates(chartPath, mch, images, tpl, isSTSEnabled, olmVersion)
 		if len(errs) > 0 {
-			for _, err := range errs {
-				log.Info(err.Error())
-			}
 			return nil, errs
 		}
 		templates = append(templates, chartTemplates...)
@@ -300,9 +297,6 @@ func RenderChart(chartPath string, mch *v1.MultiClusterHub, images map[string]st
 
 	chartTemplates, errs := renderTemplates(chartPath, mch, images, templates, isSTSEnabled, olmVersion)
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
 		return nil, errs
 	}
 
@@ -318,7 +312,7 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 
 	chart, err := loader.Load(chartPath)
 	if err != nil {
-		log.Info("error loading chart")
+		log.Error(err, "Failed to load chart", "path", chartPath)
 		return nil, append(errs, err)
 	}
 
@@ -331,13 +325,13 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 
 	vals, err := valuesYaml.ToValues()
 	if err != nil {
-		log.Info(fmt.Sprintf("error rendering chart: %s", chart.Name()))
+		log.Error(err, "Failed to render chart", "chart", chart.Name())
 		return nil, append(errs, err)
 	}
 
 	rawTemplates, err := helmEngine.Render(chart, chartutil.Values{"Values": vals.AsMap()})
 	if err != nil {
-		log.Info(fmt.Sprintf("error rendering chart: %s", chart.Name()))
+		log.Error(err, "Failed to render chart", "chart", chart.Name())
 		return nil, append(errs, err)
 	}
 
@@ -502,7 +496,7 @@ func parseOADPClusterExtensionAnnotation(m *v1.MultiClusterHub) *OADPClusterExte
 	overrides := &OADPClusterExtensionOverrides{}
 	err := json.Unmarshal([]byte(oadpAnnotationOverrides), overrides)
 	if err != nil {
-		log.Info(fmt.Sprintf("Failed to unmarshal OADP ClusterExtension annotation: %s. Error: %v", oadpAnnotationOverrides, err))
+		log.Error(err, "Failed to unmarshal OADP ClusterExtension annotation", "annotation", oadpAnnotationOverrides)
 		return nil
 	}
 	return overrides
@@ -519,7 +513,7 @@ func parseOADPAnnotation(m *v1.MultiClusterHub) *subv1alpha1.SubscriptionSpec {
 	}
 
 	if err := json.Unmarshal([]byte(oadpSpec), sub); err != nil {
-		log.Info(fmt.Sprintf("Failed to unmarshal OADP annotation: %s.", oadpSpec))
+		log.Error(err, "Failed to unmarshal OADP annotation", "annotation", oadpSpec)
 	}
 	return sub
 }

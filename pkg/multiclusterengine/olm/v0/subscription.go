@@ -179,7 +179,7 @@ func FindAndManageMCESubscription(ctx context.Context, k8sClient client.Client, 
 
 	// if label doesn't work find it via .spec.name (it's package)
 	// we can't assume it's name or namespace
-	log.Log.WithName("reconcile").Info("Failed to find subscription via label")
+	log.Log.WithName("reconcile").Info("MCE Subscription not found by label, falling back to list")
 	wholeList := &subv1alpha1.SubscriptionList{}
 	err = k8sClient.List(ctx, wholeList)
 	if err != nil {

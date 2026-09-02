@@ -138,7 +138,7 @@ func FindAndManageMCEClusterExtension(ctx context.Context, k8sClient client.Clie
 	}
 
 	// If label doesn't work, find by package name
-	log.Info("Failed to find ClusterExtension via label, searching by package name")
+	log.Info("ClusterExtension not found by label, falling back to package name search")
 	ceList := &ocv1.ClusterExtensionList{}
 	if err := k8sClient.List(ctx, ceList); err != nil {
 		return nil, err

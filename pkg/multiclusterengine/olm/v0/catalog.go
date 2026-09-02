@@ -80,7 +80,7 @@ func findHighestPriorityCatalogSource(k8sClient client.Client, pkgs []olmapi.Pac
 
 		if err := k8sClient.Get(context.TODO(), nn, cs); err != nil {
 			// Log the error and continue to the next iteration
-			log.Error(err, fmt.Sprintf("failed to retrieve catalog source %s/%s", nn.Namespace, nn.Name))
+			log.Error(err, "Failed to retrieve CatalogSource", "name", nn.Name, "namespace", nn.Namespace)
 			continue
 		}
 
@@ -101,8 +101,8 @@ func findHighestPriorityCatalogSource(k8sClient client.Client, pkgs []olmapi.Pac
 
 	case 1:
 		catalogSource := highestPriorityCatalogSources[0]
-		log.V(2).Info(fmt.Sprintf("Using catalog source %v/%v with the highest priority: %v",
-			catalogSource.Namespace, catalogSource.Name, catalogSource.Spec.Priority))
+		log.V(2).Info("Using CatalogSource with highest priority",
+			"name", catalogSource.Name, "namespace", catalogSource.Namespace, "priority", catalogSource.Spec.Priority)
 		return catalogSource, nil
 
 	default:
@@ -131,7 +131,8 @@ func filterPackageManifests(pkgManifests []olmapi.PackageManifest, desiredChanne
 				versionString := c.CurrentCSVDesc.Version.String()
 				v, err := semver.NewVersion(versionString)
 				if err != nil {
-					log.Log.WithName("reconcile").Info("failed to parse version from packagemanifest", "catalogsource", p.Status.CatalogSource)
+					log.Log.WithName("reconcile").Info("Failed to parse version from PackageManifest",
+						"catalogSource", p.Status.CatalogSource, "version", versionString, "error", err)
 					continue
 				}
 				if len(filtered) == 0 {

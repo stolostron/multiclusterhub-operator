@@ -22,6 +22,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"reflect"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/overrides"
@@ -47,7 +48,9 @@ import (
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Request) (retQueue ctrl.Result, retError error) {
 	r.Log = log
-	r.Log.Info("Reconciling MultiClusterHub")
+	r.Log.Info("Reconciling MultiClusterHub",
+		"name", req.Name,
+		"namespace", req.Namespace)
 
 	// Fetch the MultiClusterHub instance
 	multiClusterHub := &operatorv1.MultiClusterHub{}
@@ -103,7 +106,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	ocpConsole, err := r.CheckConsole(ctx)
 	if err != nil {
-		r.Log.Error(err, "error finding OCP Console")
+		r.Log.Error(err, "Failed to check OCP console status")
 		return ctrl.Result{}, err
 	}
 
@@ -119,7 +122,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	defer func() {
 		statusQueue, statusError := r.syncHubStatus(ctx, multiClusterHub, originalStatus, allDeploys, allCRs, ocpConsole, stsEnabled)
 		if statusError != nil {
-			r.Log.Error(retError, "Error updating status")
+			r.Log.Error(statusError, "Failed to update MultiClusterHub status")
 		}
 		if empty := (reconcile.Result{}); retQueue == empty {
 			retQueue = statusQueue
@@ -139,13 +142,16 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	// Check if no image overrides were found using either prefix.
 	if len(imageOverrides) == 0 {
-		r.Log.Error(err, "Could not get map of image overrides")
+		r.Log.Error(fmt.Errorf("no image overrides found from environment"),
+			"Image overrides unavailable, operator cannot determine component images",
+			"operandPrefix", overrides.OperandImagePrefix,
+			"osbsPrefix", overrides.OSBSImagePrefix)
 		return ctrl.Result{}, nil
 	}
 
 	// Apply image repository override from annotation if present.
 	if imageRepo := utils.GetImageRepository(multiClusterHub); imageRepo != "" {
-		r.Log.Info(fmt.Sprintf("Overriding Image Repository from annotation: %s", imageRepo))
+		r.Log.Info("Overriding image repository from annotation", "repository", imageRepo)
 		imageOverrides = utils.OverrideImageRepository(imageOverrides, imageRepo)
 	}
 
@@ -154,14 +160,17 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		imageOverrides, err = overrides.GetOverridesFromConfigmap(r.Client, imageOverrides,
 			multiClusterHub.GetNamespace(), ioConfigmapName, false)
 		if err != nil {
-			r.Log.Error(err, fmt.Sprintf("Failed to find image override configmap: %s/%s",
-				multiClusterHub.GetNamespace(), ioConfigmapName))
+			r.Log.Error(err, "Failed to find image override configmap",
+				"configmap", ioConfigmapName, "namespace", multiClusterHub.GetNamespace())
 
 			return ctrl.Result{}, err
 		}
 	}
 
 	// Update cache with image overrides and related information.
+	if !reflect.DeepEqual(r.CacheSpec.ImageOverrides, imageOverrides) {
+		r.Log.Info("Updated image overrides", "count", len(imageOverrides))
+	}
 	r.CacheSpec.ImageOverrides = imageOverrides
 	r.CacheSpec.ManifestVersion = version.Version
 	r.CacheSpec.ImageRepository = utils.GetImageRepository(multiClusterHub)
@@ -175,14 +184,16 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		templateOverrides, err = overrides.GetOverridesFromConfigmap(r.Client, templateOverrides,
 			multiClusterHub.GetNamespace(), toConfigmapName, true)
 		if err != nil {
-			r.Log.Error(err, fmt.Sprintf("Failed to find template override configmap: %s/%s",
-				multiClusterHub.GetNamespace(), toConfigmapName))
+			r.Log.Error(err, "Failed to find template override configmap",
+				"configmap", toConfigmapName, "namespace", multiClusterHub.GetNamespace())
 
 			return ctrl.Result{}, err
 		}
 	}
 
-	// Update cache with template overrides and related information.
+	if !reflect.DeepEqual(r.CacheSpec.TemplateOverrides, templateOverrides) {
+		r.Log.Info("Updated template overrides", "count", len(templateOverrides))
+	}
 	r.CacheSpec.TemplateOverrides = templateOverrides
 	r.CacheSpec.TemplateOverridesCM = utils.GetTemplateOverridesConfigmapName(multiClusterHub)
 
@@ -199,7 +210,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		Get the default storage class name and store it as an environment variable for components that need it.
 	*/
 	if result, err = r.SetDefaultStorageClassName(ctx, multiClusterHub); err != nil {
-		r.Log.Error(err, "failed to set the default StorageClass name")
+		r.Log.Error(err, "Failed to set default StorageClass name")
 		return ctrl.Result{}, err
 	}
 
@@ -215,8 +226,9 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			// logic fails, don't remove the finalizer so
 			// that we can retry during the next reconciliation.
 			if err := r.finalizeHub(r.Log, multiClusterHub, ocpConsole, stsEnabled); err != nil {
-				// Logging err and returning nil to ensure 45 second wait
-				r.Log.Info(fmt.Sprintf("Finalizing: %s", err.Error()))
+				r.Log.Info("Hub finalization incomplete, will retry",
+					"reason", err.Error(),
+					"requeueAfter", resyncPeriod.String())
 				return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 			}
 
@@ -240,21 +252,23 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	*/
 	_, err = r.ensureOpenShiftNamespaceLabel(ctx, multiClusterHub)
 	if err != nil {
-		r.Log.Error(err, "Failed to add to %s label to namespace: %s", utils.OpenShiftClusterMonitoringLabel,
-			multiClusterHub.GetNamespace())
+		r.Log.Error(err, "Failed to add monitoring label to namespace",
+			"label", utils.OpenShiftClusterMonitoringLabel,
+			"namespace", multiClusterHub.GetNamespace())
 		return ctrl.Result{}, err
 	}
 
 	err = r.maintainImageManifestConfigmap(multiClusterHub)
 	if err != nil {
-		r.Log.Error(err, "Error storing image manifests in configmap")
+		r.Log.Error(err, "Failed to store image manifests in configmap")
 		return ctrl.Result{}, err
 	}
 
 	// Do not reconcile objects if this instance of mch is labeled "paused"
 	updatePausedCondition(multiClusterHub)
 	if utils.IsPaused(multiClusterHub) {
-		r.Log.Info("MultiClusterHub reconciliation is paused. Nothing more to do.")
+		r.Log.Info("Reconciliation paused, remove the mch-pause label to resume",
+			"name", multiClusterHub.GetName())
 		return ctrl.Result{}, nil
 	}
 
@@ -297,11 +311,10 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	if utils.ProxyEnvVarsAreSet() {
-		r.Log.Info(
-			fmt.Sprintf("Proxy configuration environment variables are set. HTTP_PROXY: %s, HTTPS_PROXY: %s, NO_PROXY: %s",
-				os.Getenv("HTTP_PROXY"), os.Getenv("HTTPS_PROXY"), os.Getenv("NO_PROXY"),
-			),
-		)
+		r.Log.Info("Proxy configuration detected",
+			"httpProxy", os.Getenv("HTTP_PROXY"),
+			"httpsProxy", os.Getenv("HTTPS_PROXY"),
+			"noProxy", os.Getenv("NO_PROXY"))
 	}
 
 	result, err = r.ensurePullSecretCreated(multiClusterHub, multiClusterHub.GetNamespace())
@@ -430,6 +443,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
 
-	logf.Log.Info("Reconcile completed. Requeuing after " + utils.ShortRefreshInterval.String())
+	logf.Log.Info("Reconcile completed", "requeueAfter", utils.ShortRefreshInterval.String())
 	return ctrl.Result{RequeueAfter: utils.ShortRefreshInterval}, nil
 }

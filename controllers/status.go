@@ -144,11 +144,11 @@ func (r *MultiClusterHubReconciler) syncHubStatus(ctx context.Context, m *operat
 	if err != nil {
 		if errors.IsConflict(err) {
 			// Error from object being modified is normal behavior and should not be treated like an error
-			r.Log.Info("Failed to update status", "Reason", "Object has been modified")
+			r.Log.Info("Failed to update status", "reason", "Object has been modified")
 			return reconcile.Result{RequeueAfter: resyncPeriod}, nil
 		}
 
-		r.Log.Error(err, fmt.Sprintf("Failed to update %s/%s status ", m.Namespace, m.Name))
+		r.Log.Error(err, "Failed to update MultiClusterHub status", "name", m.Name, "namespace", m.Namespace)
 		return reconcile.Result{}, err
 	}
 
@@ -641,7 +641,7 @@ func allComponentsSuccessful(components map[string]operatorsv1.StatusCondition) 
 			// Check if the component's availability status has changed since the last reconciliation.
 			if prevStatus, exists := prevAvailability[val.Name]; !exists || prevStatus {
 				// Log the information about the newly unavailable component
-				log.Info("The component is not yet available.", "Kind", val.Kind, "Name", val.Name, "Reason", val.Reason)
+				log.Info("Component not yet available", "kind", val.Kind, "name", val.Name, "reason", val.Reason)
 			}
 
 			// Update the previous availability status for this component
@@ -651,7 +651,7 @@ func allComponentsSuccessful(components map[string]operatorsv1.StatusCondition) 
 			// Check if the component's availability status has changed since the last reconciliation
 			if prevStatus, exists := prevAvailability[val.Name]; !exists || !prevStatus {
 				// Log the information about the newly available component
-				log.Info("The component is now available.", "Kind", val.Kind, "Name", val.Name)
+				log.Info("Component now available", "kind", val.Kind, "name", val.Name)
 			}
 
 			// Update the previous availability status for this component

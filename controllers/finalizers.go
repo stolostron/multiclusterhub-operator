@@ -38,14 +38,14 @@ func (r *MultiClusterHubReconciler) cleanupClusterRoles(reqLogger logr.Logger, m
 
 	if err != nil {
 		if errors.IsNotFound(err) {
-			reqLogger.Info("No matching clusterroles to finalize. Continuing.")
+			reqLogger.Info("No matching ClusterRoles to finalize")
 			return nil
 		}
-		reqLogger.Error(err, "Error while deleting clusterroles")
+		reqLogger.Error(err, "Failed to delete ClusterRoles")
 		return err
 	}
 
-	reqLogger.Info("Clusterroles finalized")
+	reqLogger.Info("ClusterRoles finalized")
 	return nil
 }
 
@@ -56,14 +56,14 @@ func (r *MultiClusterHubReconciler) cleanupClusterRoleBindings(reqLogger logr.Lo
 	})
 	if err != nil {
 		if errors.IsNotFound(err) {
-			reqLogger.Info("No matching clusterrolebindings to finalize. Continuing.")
+			reqLogger.Info("No matching ClusterRoleBindings to finalize")
 			return nil
 		}
-		reqLogger.Error(err, "Error while deleting clusterrolebindings")
+		reqLogger.Error(err, "Failed to delete ClusterRoleBindings")
 		return err
 	}
 
-	reqLogger.Info("Clusterrolebindings finalized")
+	reqLogger.Info("ClusterRoleBindings finalized")
 	return nil
 }
 
@@ -85,7 +85,7 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 		if err != nil && (!errors.IsNotFound(err) || !errors.IsGone(err)) {
 			return err
 		}
-		return fmt.Errorf("MCE has not yet been terminated")
+		return fmt.Errorf("MultiClusterEngine %s has not yet been terminated", mce.GetName())
 	}
 
 	if utils.IsUnitTest() {
@@ -115,7 +115,7 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 			// Check if still exists
 			err = r.Client.Get(ctx, types.NamespacedName{Name: mceCE.Name}, mceCE)
 			if err == nil {
-				return fmt.Errorf("ClusterExtension has not yet been terminated")
+				return fmt.Errorf("ClusterExtension %s has not yet been terminated", mceCE.Name)
 			}
 		}
 
@@ -150,7 +150,7 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 					types.NamespacedName{Name: csv.GetName(), Namespace: namespace},
 					csv)
 				if err == nil {
-					return fmt.Errorf("CSV has not yet been terminated")
+					return fmt.Errorf("CSV %s has not yet been terminated", csv.GetName())
 				}
 			}
 
@@ -163,7 +163,7 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 				if err != nil && !errors.IsNotFound(err) {
 					return err
 				}
-				return fmt.Errorf("subscription has not yet been terminated")
+				return fmt.Errorf("Subscription %s has not yet been terminated", mceSub.Name)
 			}
 		}
 
@@ -183,7 +183,7 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 			if err != nil && !errors.IsNotFound(err) {
 				return err
 			}
-			return fmt.Errorf("namespace has not yet been terminated")
+			return fmt.Errorf("namespace %s has not yet been terminated", multiclusterengine.Namespace().Name)
 		}
 	} else {
 		r.Log.Info("MCE shares namespace with MCH; skipping namespace termination")
@@ -201,7 +201,7 @@ func (r *MultiClusterHubReconciler) cleanupNamespaces(reqLogger logr.Logger, m *
 		if err != nil && !errors.IsNotFound(err) {
 			return err
 		}
-		return fmt.Errorf("namespace has not yet been terminated")
+		return fmt.Errorf("namespace %s has not yet been terminated", utils.ClusterSubscriptionNamespace)
 	}
 
 	return nil
@@ -228,13 +228,13 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 
 	err := r.Client.List(context.TODO(), appSubList, installerLabels)
 	if err != nil && !errors.IsNotFound(err) {
-		reqLogger.Error(err, "Error while listing appsubs")
+		reqLogger.Error(err, "Failed to list Subscriptions", "labels", installerLabels)
 		return err
 	}
 
 	err = r.Client.List(context.TODO(), helmReleaseList, installerLabels)
 	if err != nil && !errors.IsNotFound(err) {
-		reqLogger.Error(err, "Error while listing helmreleases")
+		reqLogger.Error(err, "Failed to list HelmReleases", "labels", installerLabels)
 		return err
 	}
 
@@ -256,17 +256,17 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 			}, helmRelease)
 			if err != nil {
 				if errors.IsNotFound(err) {
-					reqLogger.Info(fmt.Sprintf("Unable to locate helmrelease: %s", helmReleaseName))
+					reqLogger.Info("Unable to locate HelmRelease", "name", helmReleaseName)
 					continue
 				}
-				reqLogger.Error(err, fmt.Sprintf("Error getting helmrelease: %s", helmReleaseName))
+				reqLogger.Error(err, "Failed to get HelmRelease", "name", helmReleaseName)
 				return err
 			}
 
 			utils.AddInstallerLabel(helmRelease, m.GetName(), m.GetNamespace())
 			err = r.Client.Update(context.TODO(), helmRelease)
 			if err != nil {
-				reqLogger.Error(err, fmt.Sprintf("Error updating helmrelease: %s", helmReleaseName))
+				reqLogger.Error(err, "Failed to update HelmRelease", "name", helmReleaseName)
 				return err
 			}
 		}
@@ -277,20 +277,24 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 		for i, appsub := range appSubList.Items {
 			err = r.Client.Delete(context.TODO(), &appSubList.Items[i])
 			if err != nil {
-				reqLogger.Error(err, fmt.Sprintf("Error terminating sub: %s", appsub.GetName()))
+				reqLogger.Error(err, "Failed to terminate Subscription", "name", appsub.GetName())
 				return err
 			}
 		}
 	}
 
 	if len(appSubList.Items) != 0 || len(helmReleaseList.Items) != 0 {
-		reqLogger.Info("Waiting for helmreleases to be terminated")
-		waiting := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, HelmReleaseTerminatingReason, "Waiting for helmreleases to terminate.")
+		reqLogger.Info("Waiting for sub-components to terminate before finalization",
+			"subscriptionCount", len(appSubList.Items),
+			"helmReleaseCount", len(helmReleaseList.Items))
+		msg := fmt.Sprintf("Waiting for %d Subscriptions and %d HelmReleases to terminate",
+			len(appSubList.Items), len(helmReleaseList.Items))
+		waiting := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, HelmReleaseTerminatingReason, msg)
 		SetHubCondition(&m.Status, *waiting)
-		return fmt.Errorf("waiting for helmreleases to be terminated")
+		return fmt.Errorf("%s", msg)
 	}
 
-	reqLogger.Info("All helmreleases have been terminated")
+	reqLogger.Info("All HelmReleases have been terminated")
 	return nil
 }
 

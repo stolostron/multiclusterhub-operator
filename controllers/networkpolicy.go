@@ -173,9 +173,8 @@ func (r *MultiClusterHubReconciler) ensureNetworkPolicies(ctx context.Context, m
 			isSTSEnabled, r.OLMVersion)
 
 		if len(errs) > 0 {
-			// Rendering errors indicate real chart failures - log and requeue
 			for _, err := range errs {
-				log.Info(err.Error())
+				log.Error(err, "Failed to render network policy chart", "component", component)
 			}
 			return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 		}
