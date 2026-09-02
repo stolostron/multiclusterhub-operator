@@ -33,7 +33,7 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
     repository: https://github.com/open-cluster-management/multiclusterhub-operator
     support: The Open Cluster Management Project
-  name: multiclusterhub-operator.v0.0.1
+  name: multiclusterhub-operator.v5.0.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -1889,6 +1889,10 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.namespace
+                - name: OPERATOR_VERSION
+                  value: "5.0.0"
+                - name: OPERATOR_PACKAGE
+                  value: advanced-cluster-management
                 image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multiclusterhub-operator:latest
                 imagePullPolicy: IfNotPresent
                 livenessProbe:
@@ -1989,4 +1993,4 @@ spec:
   maturity: alpha
   provider:
     name: Redhat
-  version: 0.0.1
+  version: 5.0.0
