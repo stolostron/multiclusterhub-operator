@@ -3,7 +3,6 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   name: submariner-addon-broker-validator
-  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
   annotations:
     service.beta.openshift.io/inject-cabundle: "true"
 webhooks:
@@ -11,7 +10,7 @@ webhooks:
     clientConfig:
       service:
         name: submariner-addon-webhook
-        namespace: open-cluster-management
+        namespace: {{ default "open-cluster-management" .Values.global.namespace }}'
         path: /validate
     rules:
       - operations: ["CREATE", "UPDATE", "DELETE"]
