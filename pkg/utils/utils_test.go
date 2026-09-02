@@ -208,7 +208,8 @@ var _ = Describe("utility functions", func() {
 			mch := resources.EmptyMCH()
 			mch.Enable(mchv1.Appsub)
 			d := GetDeploymentsForStatus(&mch, true, false)
-			Expect(len(d)).To(Equal(5))
+			Expect(len(d)).To(Equal(6))
+			Expect(containsDeployment(d, "multicluster-integrations", resources.MulticlusterhubNamespace)).To(BeTrue())
 		})
 		It("gets deployments for status with console enabled", func() {
 			mch := resources.EmptyMCH()
@@ -707,7 +708,7 @@ func Test_GetDeploymentsForStatus(t *testing.T) {
 			name:       "should get deployment status for MCH components",
 			mch:        resources.EmptyMCH(),
 			stsEnabled: false,
-			want:       21,
+			want:       22,
 		},
 		{
 			name: "should get deployment status for MCH components with STS enabled",
@@ -724,7 +725,7 @@ func Test_GetDeploymentsForStatus(t *testing.T) {
 				},
 			},
 			stsEnabled: true,
-			want:       22,
+			want:       23,
 			mustNotContain: []types.NamespacedName{
 				{Name: "openshift-adp-controller-manager", Namespace: ClusterSubscriptionNamespace},
 			},
@@ -744,7 +745,7 @@ func Test_GetDeploymentsForStatus(t *testing.T) {
 				},
 			},
 			stsEnabled: false,
-			want:       23,
+			want:       24,
 			mustContain: []types.NamespacedName{
 				{Name: "openshift-adp-controller-manager", Namespace: ClusterSubscriptionNamespace},
 			},
