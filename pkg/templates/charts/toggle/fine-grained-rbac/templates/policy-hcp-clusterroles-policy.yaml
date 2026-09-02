@@ -1,0 +1,50 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  annotations:
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
+    policy.open-cluster-management.io/description: ""
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+  labels:
+    open-cluster-management.io/policy-hcp: hcp-rbac
+    velero.io/exclude-from-backup: 'true'
+  name: policy-hcp-clusterroles
+  namespace: open-cluster-management-global-set
+spec:
+  disabled: false
+  policy-templates:
+  - objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: policy-hcp-clusterroles
+      spec:
+        object-templates-raw: |
+          {{ `{{- $hcpAdmin := lookup "rbac.authorization.k8s.io/v1" "ClusterRole" "" "hypershift-admin" -}}` }}
+          {{ `{{- if $hcpAdmin }}` }}
+          - complianceType: musthave
+            objectDefinition:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRole
+              metadata:
+                name: hypershift-admin
+                labels:
+                  rbac.open-cluster-management.io/filter: hcp-clusterroles
+                  clusterview.open-cluster-management.io/discoverable: "true"
+          {{ `{{- end }}` }}
+          {{ `{{- $hcpReader := lookup "rbac.authorization.k8s.io/v1" "ClusterRole" "" "hypershift-reader" -}}` }}
+          {{ `{{- if $hcpReader }}` }}
+          - complianceType: musthave
+            objectDefinition:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRole
+              metadata:
+                name: hypershift-reader
+                labels:
+                  rbac.open-cluster-management.io/filter: hcp-clusterroles
+                  clusterview.open-cluster-management.io/discoverable: "true"
+          {{ `{{- end }}` }}
+        remediationAction: enforce
+        severity: medium
+  remediationAction: enforce

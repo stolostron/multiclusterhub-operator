@@ -576,3 +576,114 @@ spec:
               - get
               - list
               - watch
+        - apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRole
+          metadata:
+            labels:
+              rbac.open-cluster-management.io/filter: hcp-clusterroles
+              clusterview.open-cluster-management.io/discoverable: "true"
+            name: acm-hcp-hosting:view
+          rules:
+            - apiGroups:
+              - hypershift.openshift.io
+              resources:
+              - hostedclusters
+              - hostedclusters/status
+              - nodepools
+              - nodepools/status
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - ""
+              resources:
+              - namespaces
+              - configmaps
+              - events
+              - pods
+              - services
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - events.k8s.io
+              resources:
+              - events
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - cluster.open-cluster-management.io
+              resources:
+              - managedclusters
+              verbs:
+              - get
+              - list
+              - watch
+        - apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRole
+          metadata:
+            labels:
+              rbac.open-cluster-management.io/filter: hcp-clusterroles
+              clusterview.open-cluster-management.io/discoverable: "true"
+            name: acm-hcp-hosting:admin
+          rules:
+            - apiGroups:
+              - hypershift.openshift.io
+              resources:
+              - hostedclusters
+              - hostedclusters/status
+              - hostedclusters/finalizers
+              - nodepools
+              - nodepools/status
+              verbs:
+              - get
+              - list
+              - watch
+              - create
+              - update
+              - patch
+              - delete
+            - apiGroups:
+              - ""
+              resources:
+              - secrets
+              - configmaps
+              - services
+              verbs:
+              - get
+              - list
+              - watch
+              - create
+              - update
+              - patch
+              - delete
+            - apiGroups:
+              - ""
+              resources:
+              - namespaces
+              - events
+              - pods
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - events.k8s.io
+              resources:
+              - events
+              verbs:
+              - get
+              - list
+              - watch
+            - apiGroups:
+              - cluster.open-cluster-management.io
+              resources:
+              - managedclusters
+              verbs:
+              - get
+              - list
+              - watch
