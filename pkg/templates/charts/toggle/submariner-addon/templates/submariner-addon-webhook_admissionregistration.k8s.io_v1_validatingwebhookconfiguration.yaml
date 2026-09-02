@@ -10,7 +10,7 @@ webhooks:
     clientConfig:
       service:
         name: submariner-addon-webhook
-        namespace: {{ default "open-cluster-management" .Values.global.namespace }}'
+        namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
         path: /validate
     rules:
       - operations: ["CREATE", "UPDATE", "DELETE"]
