@@ -1889,6 +1889,104 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.namespace
+                - name: OPERAND_IMAGE_ACM_CLI
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-cli-rhel9:latest
+                - name: OPERAND_IMAGE_ACM_MUST_GATHER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-must-gather-rhel9:latest
+                - name: OPERAND_IMAGE_CERT_POLICY_CONTROLLER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/cert-policy-controller-rhel9:latest
+                - name: OPERAND_IMAGE_CLUSTER_BACKUP_CONTROLLER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/cluster-backup-rhel9-operator:latest
+                - name: OPERAND_IMAGE_CONFIG_POLICY_CONTROLLER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/config-policy-controller-rhel9:latest
+                - name: OPERAND_IMAGE_CONSOLE
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/console-rhel9:latest
+                - name: OPERAND_IMAGE_ENDPOINT_MONITORING_OPERATOR
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/endpoint-monitoring-rhel9-operator:latest
+                - name: OPERAND_IMAGE_GOVERNANCE_POLICY_ADDON_CONTROLLER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-governance-policy-addon-controller-rhel9:latest
+                - name: OPERAND_IMAGE_GOVERNANCE_POLICY_FRAMEWORK_ADDON
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-governance-policy-framework-addon-rhel9:latest
+                - name: OPERAND_IMAGE_GOVERNANCE_POLICY_PROPAGATOR
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/governance-policy-propagator-rhel9:latest
+                - name: OPERAND_IMAGE_GRAFANA
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-grafana-rhel9:latest
+                - name: OPERAND_IMAGE_GRAFANA_DASHBOARD_LOADER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/grafana-dashboard-loader-rhel9:latest
+                - name: OPERAND_IMAGE_INSIGHTS_CLIENT
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/insights-client-rhel9:latest
+                - name: OPERAND_IMAGE_INSIGHTS_METRICS
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/insights-metrics-rhel9:latest
+                - name: OPERAND_IMAGE_KLUSTERLET_ADDON_CONTROLLER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/klusterlet-addon-controller-rhel9:latest
+                - name: OPERAND_IMAGE_KUBE_RBAC_PROXY
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/kube-rbac-proxy-rhel9:latest
+                - name: OPERAND_IMAGE_KUBE_STATE_METRICS
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/kube-state-metrics-rhel9:latest
+                - name: OPERAND_IMAGE_MEMCACHED_EXPORTER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/memcached-exporter-rhel9:latest
+                - name: OPERAND_IMAGE_METRICS_COLLECTOR
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/metrics-collector-rhel9:latest
+                - name: OPERAND_IMAGE_MTV_INTEGRATIONS
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/mtv-integrations-rhel9:latest
+                - name: OPERAND_IMAGE_MULTICLOUD_INTEGRATIONS
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicloud-integrations-rhel9:latest
+                - name: OPERAND_IMAGE_MULTICLUSTER_OBSERVABILITY_ADDON
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-multicluster-observability-addon-rhel9:latest
+                - name: OPERAND_IMAGE_MULTICLUSTER_OBSERVABILITY_OPERATOR
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-observability-rhel9-operator:latest
+                - name: OPERAND_IMAGE_MULTICLUSTER_OPERATORS_APPLICATION
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-operators-application-rhel9:latest
+                - name: OPERAND_IMAGE_MULTICLUSTER_OPERATORS_CHANNEL
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-operators-channel-rhel9:latest
+                - name: OPERAND_IMAGE_MULTICLUSTER_OPERATORS_SUBSCRIPTION
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-operators-subscription-rhel9:latest
+                - name: OPERAND_IMAGE_MULTICLUSTER_ROLE_ASSIGNMENT
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-role-assignment-rhel9:latest
+                - name: OPERAND_IMAGE_NODE_EXPORTER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/node-exporter-rhel9:latest
+                - name: OPERAND_IMAGE_OBO_PROMETHEUS_RHEL9_OPERATOR
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/obo-prometheus-rhel9-operator:latest
+                - name: OPERAND_IMAGE_OBSERVATORIUM
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/observatorium-rhel9:latest
+                - name: OPERAND_IMAGE_OBSERVATORIUM_OPERATOR
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/observatorium-rhel9-operator:latest
+                - name: OPERAND_IMAGE_PROMETHEUS
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/prometheus-rhel9:latest
+                - name: OPERAND_IMAGE_PROMETHEUS_ALERTMANAGER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/prometheus-alertmanager-rhel9:latest
+                - name: OPERAND_IMAGE_PROMETHEUS_CONFIG_RELOADER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-prometheus-config-reloader-rhel9:latest
+                - name: OPERAND_IMAGE_PROMETHEUS_OPERATOR
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-prometheus-rhel9:latest
+                - name: OPERAND_IMAGE_RBAC_QUERY_PROXY
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/rbac-query-proxy-rhel9:latest
+                - name: OPERAND_IMAGE_SEARCH_COLLECTOR
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/search-collector-rhel9:latest
+                - name: OPERAND_IMAGE_SEARCH_INDEXER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-search-indexer-rhel9:latest
+                - name: OPERAND_IMAGE_SEARCH_V2_API
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-search-v2-api-rhel9:latest
+                - name: OPERAND_IMAGE_SEARCH_V2_OPERATOR
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-search-v2-rhel9:latest
+                - name: OPERAND_IMAGE_SITECONFIG_OPERATOR
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-siteconfig-rhel9:latest
+                - name: OPERAND_IMAGE_SUBMARINER_ADDON
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/submariner-addon-rhel9:latest
+                - name: OPERAND_IMAGE_THANOS
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/thanos-rhel9:latest
+                - name: OPERAND_IMAGE_THANOS_RECEIVE_CONTROLLER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/thanos-receive-controller-rhel9:latest
+                - name: OPERAND_IMAGE_VOLSYNC_ADDON_CONTROLLER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-volsync-addon-controller-rhel9:latest
+                - name: OPERAND_IMAGE_CONFIGMAP_RELOADER
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/configmap_reloader:latest
+                - name: OPERAND_IMAGE_POSTGRESQL_16
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/postgresql_16:latest
+                - name: OPERAND_IMAGE_MEMCACHED
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/memcached:latest
+                - name: OPERAND_IMAGE_VOLSYNC
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/volsync-rhel9:latest
                 - name: OPERATOR_VERSION
                   value: "5.0.0"
                 - name: OPERATOR_PACKAGE
@@ -1993,4 +2091,103 @@ spec:
   maturity: alpha
   provider:
     name: Redhat
+  relatedImages:
+  - name: acm_cli
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-cli-rhel9:latest
+  - name: acm_must_gather
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-must-gather-rhel9:latest
+  - name: cert_policy_controller
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/cert-policy-controller-rhel9:latest
+  - name: cluster_backup_controller
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/cluster-backup-rhel9-operator:latest
+  - name: config_policy_controller
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/config-policy-controller-rhel9:latest
+  - name: console
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/console-rhel9:latest
+  - name: endpoint_monitoring_operator
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/endpoint-monitoring-rhel9-operator:latest
+  - name: governance_policy_addon_controller
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-governance-policy-addon-controller-rhel9:latest
+  - name: governance_policy_framework_addon
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-governance-policy-framework-addon-rhel9:latest
+  - name: governance_policy_propagator
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/governance-policy-propagator-rhel9:latest
+  - name: grafana
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-grafana-rhel9:latest
+  - name: grafana_dashboard_loader
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/grafana-dashboard-loader-rhel9:latest
+  - name: insights_client
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/insights-client-rhel9:latest
+  - name: insights_metrics
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/insights-metrics-rhel9:latest
+  - name: klusterlet_addon_controller
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/klusterlet-addon-controller-rhel9:latest
+  - name: kube_rbac_proxy
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/kube-rbac-proxy-rhel9:latest
+  - name: kube_state_metrics
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/kube-state-metrics-rhel9:latest
+  - name: memcached_exporter
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/memcached-exporter-rhel9:latest
+  - name: metrics_collector
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/metrics-collector-rhel9:latest
+  - name: mtv_integrations
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/mtv-integrations-rhel9:latest
+  - name: multicloud_integrations
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicloud-integrations-rhel9:latest
+  - name: multicluster_observability_addon
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-multicluster-observability-addon-rhel9:latest
+  - name: multicluster_observability_operator
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-observability-rhel9-operator:latest
+  - name: multicluster_operators_application
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-operators-application-rhel9:latest
+  - name: multicluster_operators_channel
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-operators-channel-rhel9:latest
+  - name: multicluster_operators_subscription
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-operators-subscription-rhel9:latest
+  - name: multicluster_role_assignment
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multicluster-role-assignment-rhel9:latest
+  - name: node_exporter
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/node-exporter-rhel9:latest
+  - name: obo_prometheus_rhel9_operator
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/obo-prometheus-rhel9-operator:latest
+  - name: observatorium
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/observatorium-rhel9:latest
+  - name: observatorium_operator
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/observatorium-rhel9-operator:latest
+  - name: prometheus
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/prometheus-rhel9:latest
+  - name: prometheus_alertmanager
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/prometheus-alertmanager-rhel9:latest
+  - name: prometheus_config_reloader
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-prometheus-config-reloader-rhel9:latest
+  - name: prometheus_operator
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-prometheus-rhel9:latest
+  - name: rbac_query_proxy
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/rbac-query-proxy-rhel9:latest
+  - name: search_collector
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/search-collector-rhel9:latest
+  - name: search_indexer
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-search-indexer-rhel9:latest
+  - name: search_v2_api
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-search-v2-api-rhel9:latest
+  - name: search_v2_operator
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-search-v2-rhel9:latest
+  - name: siteconfig_operator
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-siteconfig-rhel9:latest
+  - name: submariner_addon
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/submariner-addon-rhel9:latest
+  - name: thanos
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/thanos-rhel9:latest
+  - name: thanos_receive_controller
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/thanos-receive-controller-rhel9:latest
+  - name: volsync_addon_controller
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-volsync-addon-controller-rhel9:latest
+  - name: configmap_reloader
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/configmap_reloader:latest
+  - name: postgresql_16
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/postgresql_16:latest
+  - name: memcached
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/memcached:latest
+  - name: volsync
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/volsync-rhel9:latest
   version: 5.0.0
