@@ -156,6 +156,9 @@ const (
 	HubUninstalling    HubPhaseType = "Uninstalling"
 	HubUpdatingBlocked HubPhaseType = "UpdatingBlocked"
 	HubError           HubPhaseType = "Error"
+	// HubWaitingForMCE indicates the hub is blocked waiting for MultiClusterEngine to reach the
+	// version required by the current MCH release (either not yet installed or not yet upgraded).
+	HubWaitingForMCE HubPhaseType = "Waiting"
 )
 
 // MCEVersionComplianceStatus tracks MultiClusterEngine version compliance against required channel

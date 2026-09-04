@@ -48,6 +48,8 @@ package main
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=create;delete;get;list;patch;update
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=namespaces;serviceaccounts,verbs=create;get;list;watch;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=namespaces;serviceaccounts,verbs=create;get;list;watch;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch
@@ -318,6 +320,8 @@ package main
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;watch
+//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;watch
+//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;watch;patch;update
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;watch;patch;update
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;watch;update;patch
@@ -476,6 +480,8 @@ package main
 //+kubebuilder:rbac:groups=multicluster.x-k8s.io,resources=serviceimports,verbs=list;get;update;delete
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;create;update;delete;deletecollection;watch
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;create;update;delete;deletecollection;watch
+//+kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=create;delete;patch;update
