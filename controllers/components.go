@@ -249,10 +249,14 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 		return ctrl.Result{}, nil
 	}
 
-	// Capture the resources previously recorded for this component before removing the
+	// Snapshot the resources previously recorded for this component before removing the
 	// InternalHubComponent tracking CR below, so orphaned resources can still be identified and
-	// cleaned up (see managed_resources.go).
+	// cleaned up later in this function (see managed_resources.go).
 	oldManagedResources := r.getManagedResources(ctx, m, component)
+
+	if result, err := r.ensureNoInternalHubComponent(ctx, m, component); result != (ctrl.Result{}) || err != nil {
+		return result, err
+	}
 
 	chartLocation := r.fetchChartLocation(component)
 
@@ -339,9 +343,7 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 			return result, err
 		}
 	}
-
-	// Remove the InternalHubComponent tracking CR now that all resources have been cleaned up.
-	return r.ensureNoInternalHubComponent(ctx, m, component)
+	return ctrl.Result{}, nil
 }
 
 /*
