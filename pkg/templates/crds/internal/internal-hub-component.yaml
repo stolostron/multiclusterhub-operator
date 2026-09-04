@@ -19,6 +19,34 @@ spec:
           properties:
             spec:
               type: object
+              properties:
+                managedResources:
+                  description: >-
+                    ManagedResources tracks the resources currently rendered and applied for this
+                    component. It is refreshed on every reconcile and used to detect resources
+                    that were deployed by a previous version of the component's chart but are no
+                    longer part of its rendered templates, so they can be safely cleaned up during
+                    upgrades.
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - apiVersion
+                      - kind
+                      - name
+                    properties:
+                      apiVersion:
+                        description: APIVersion of the resource (e.g. "monitoring.coreos.com/v1").
+                        type: string
+                      kind:
+                        description: Kind of the resource (e.g. "ServiceMonitor").
+                        type: string
+                      name:
+                        description: Name of the resource.
+                        type: string
+                      namespace:
+                        description: Namespace of the resource. Empty for cluster-scoped resources.
+                        type: string
   # either Namespaced or Cluster
   scope: Namespaced
   names:

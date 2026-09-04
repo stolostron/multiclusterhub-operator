@@ -323,7 +323,34 @@ type InternalHubComponentList struct {
 	Items           []InternalHubComponent `json:"items"`
 }
 
-type InternalHubComponentSpec struct{}
+type InternalHubComponentSpec struct {
+	// ManagedResources tracks the resources currently rendered and applied for this component.
+	// It is refreshed on every reconcile and is used to detect resources that were deployed by a
+	// previous version of the component's chart but are no longer part of its rendered templates
+	// (for example, a resource removed from a Helm chart), so they can be safely cleaned up during
+	// upgrades. Resources are only removed if they still carry the installer ownership labels
+	// applied by this operator (see utils.AddInstallerLabel), so manually recreated resources are
+	// left untouched.
+	// +optional
+	ManagedResources []ManagedResource `json:"managedResources,omitempty"`
+}
+
+// ManagedResource identifies a resource that was rendered and applied as part of a component's
+// Helm chart templates.
+type ManagedResource struct {
+	// APIVersion of the resource (e.g. "monitoring.coreos.com/v1").
+	APIVersion string `json:"apiVersion"`
+
+	// Kind of the resource (e.g. "ServiceMonitor").
+	Kind string `json:"kind"`
+
+	// Name of the resource.
+	Name string `json:"name"`
+
+	// Namespace of the resource. Empty for cluster-scoped resources.
+	// +optional
+	Namespace string `json:"namespace,omitempty"`
+}
 
 func init() {
 	SchemeBuilder.Register(&MultiClusterHub{}, &MultiClusterHubList{})

@@ -36,6 +36,40 @@ spec:
           metadata:
             type: object
           spec:
+            properties:
+              managedResources:
+                description: |-
+                  ManagedResources tracks the resources currently rendered and applied for this component.
+                  It is refreshed on every reconcile and is used to detect resources that were deployed by a
+                  previous version of the component's chart but are no longer part of its rendered templates
+                  (for example, a resource removed from a Helm chart), so they can be safely cleaned up during
+                  upgrades. Resources are only removed if they still carry the installer ownership labels
+                  applied by this operator (see utils.AddInstallerLabel), so manually recreated resources are
+                  left untouched.
+                items:
+                  description: |-
+                    ManagedResource identifies a resource that was rendered and applied as part of a component's
+                    Helm chart templates.
+                  properties:
+                    apiVersion:
+                      description: APIVersion of the resource (e.g. "monitoring.coreos.com/v1").
+                      type: string
+                    kind:
+                      description: Kind of the resource (e.g. "ServiceMonitor").
+                      type: string
+                    name:
+                      description: Name of the resource.
+                      type: string
+                    namespace:
+                      description: Namespace of the resource. Empty for cluster-scoped
+                        resources.
+                      type: string
+                  required:
+                  - apiVersion
+                  - kind
+                  - name
+                  type: object
+                type: array
             type: object
         type: object
     served: true

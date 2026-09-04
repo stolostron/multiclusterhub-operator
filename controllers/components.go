@@ -168,6 +168,16 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
 
+	// Determine the resources this reconcile will deploy, and clean up any resources that were
+	// deployed by a previous version of this component's templates but are no longer rendered
+	// (e.g. a resource removed from the chart). See managed_resources.go.
+	newManagedResources := extractManagedResources(templates)
+	oldManagedResources := r.getManagedResources(ctx, m, component)
+	if result, err := r.cleanupOrphanedManagedResources(ctx, m, component, oldManagedResources,
+		newManagedResources); result != (ctrl.Result{}) || err != nil {
+		return result, err
+	}
+
 	// Apply overrides if available for the component
 	if componentConfig, found := r.getComponentConfig(m.Spec.Overrides.Components, component); found {
 		for _, template := range templates {
@@ -210,6 +220,12 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 		}
 	}
 
+	// Record the resources currently managed by this component so future reconciles can detect
+	// and clean up resources that are later removed from the chart.
+	if err := r.updateManagedResources(ctx, m, component, newManagedResources); err != nil {
+		return ctrl.Result{}, err
+	}
+
 	switch component {
 	case operatorv1.Console:
 		return r.addPluginToConsole(m)
@@ -232,6 +248,11 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 	if component == operatorv1.MCH || component == operatorv1.MultiClusterEngine {
 		return ctrl.Result{}, nil
 	}
+
+	// Snapshot the resources previously recorded for this component before removing the
+	// InternalHubComponent tracking CR below, so orphaned resources can still be identified and
+	// cleaned up later in this function (see managed_resources.go).
+	oldManagedResources := r.getManagedResources(ctx, m, component)
 
 	if result, err := r.ensureNoInternalHubComponent(ctx, m, component); result != (ctrl.Result{}) || err != nil {
 		return result, err
@@ -296,6 +317,15 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// Clean up any resources that were deployed by a previous version of this component's
+	// templates but are no longer rendered (e.g. a resource removed from the chart), in addition
+	// to the resources rendered below. See managed_resources.go.
+	newManagedResources := extractManagedResources(templates)
+	if result, err := r.cleanupOrphanedManagedResources(ctx, m, component, oldManagedResources,
+		newManagedResources); result != (ctrl.Result{}) || err != nil {
+		return result, err
 	}
 
 	// Deletes all templates
