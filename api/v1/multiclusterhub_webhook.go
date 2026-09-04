@@ -257,13 +257,18 @@ func (r *MultiClusterHub) ValidateUpdate(ctx context.Context, oldObj, newObj *Mu
 		list := &unstructured.UnstructuredList{}
 		list.SetGroupVersionKind(managedClusterGVK)
 		if err := Client.List(ctx, list); err != nil {
-			return warnings, fmt.Errorf("unable to list ManagedCluster: %v", err)
-		}
-
-		// Error if any of the ManagedClusters is the `local-cluster`
-		for _, managedCluster := range list.Items {
-			if managedCluster.GetName() == mcName || managedCluster.GetLabels()["local-cluster"] == "true" {
-				return warnings, fmt.Errorf("cannot update Spec.LocalClusterName while local-cluster is enabled")
+			// Tolerate the ManagedCluster CRD not being registered yet — e.g. during
+			// initial install, before MCE has installed and registered it. Absence of
+			// the CRD means there are no ManagedClusters to conflict with.
+			if !apimeta.IsNoMatchError(err) && !apierrors.IsNotFound(err) {
+				return warnings, fmt.Errorf("unable to list ManagedCluster: %v", err)
+			}
+		} else {
+			// Error if any of the ManagedClusters is the `local-cluster`
+			for _, managedCluster := range list.Items {
+				if managedCluster.GetName() == mcName || managedCluster.GetLabels()["local-cluster"] == "true" {
+					return warnings, fmt.Errorf("cannot update Spec.LocalClusterName while local-cluster is enabled")
+				}
 			}
 		}
 	}
