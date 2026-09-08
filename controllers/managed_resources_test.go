@@ -148,8 +148,8 @@ func TestGetAndUpdateManagedResources(t *testing.T) {
 	r := &MultiClusterHubReconciler{Client: fakeClient, Log: ctrl.Log.WithName("test")}
 
 	// No InternalHubComponent exists yet - should return nil without error.
-	if got := r.getManagedResources(context.TODO(), mch, "console"); got != nil {
-		t.Errorf("getManagedResources() with no CR = %v, want nil", got)
+	if got, err := r.getManagedResources(context.TODO(), mch, "console"); got != nil || err != nil {
+		t.Errorf("getManagedResources() with no CR = (%v, %v), want (nil, nil)", got, err)
 	}
 
 	// updateManagedResources should be a no-op (not an error) when the CR doesn't exist yet.
@@ -174,7 +174,10 @@ func TestGetAndUpdateManagedResources(t *testing.T) {
 		t.Fatalf("updateManagedResources() returned error: %v", err)
 	}
 
-	got := r.getManagedResources(context.TODO(), mch, "console")
+	got, err := r.getManagedResources(context.TODO(), mch, "console")
+	if err != nil {
+		t.Fatalf("getManagedResources() returned error: %v", err)
+	}
 	if !managedResourcesEqual(got, initial) {
 		t.Errorf("getManagedResources() = %v, want %v", got, initial)
 	}
@@ -192,7 +195,10 @@ func TestGetAndUpdateManagedResources(t *testing.T) {
 		t.Fatalf("updateManagedResources() returned error: %v", err)
 	}
 
-	got = r.getManagedResources(context.TODO(), mch, "console")
+	got, err = r.getManagedResources(context.TODO(), mch, "console")
+	if err != nil {
+		t.Fatalf("getManagedResources() returned error: %v", err)
+	}
 	if !managedResourcesEqual(got, updated) {
 		t.Errorf("getManagedResources() after update = %v, want %v", got, updated)
 	}
@@ -300,6 +306,43 @@ func TestCleanupOrphanedManagedResources(t *testing.T) {
 			},
 		},
 		{
+			// A chart bumping a resource's apiVersion (e.g. a CRD moving from v1beta1 to v1) must
+			// not be treated as that resource being removed from the chart: the underlying
+			// Kubernetes object is identified by group/kind/namespace/name, not apiVersion, so
+			// deleting it here would cause an unnecessary delete-then-recreate cycle instead of an
+			// in-place update via applyTemplate.
+			name:      "resource with only an apiVersion change is not treated as orphaned",
+			component: "example",
+			oldResources: []operatorv1.ManagedResource{
+				newManagedResource("example.com/v1beta1", "Widget", "my-widget", "open-cluster-management"),
+			},
+			newResources: []operatorv1.ManagedResource{
+				newManagedResource("example.com/v1", "Widget", "my-widget", "open-cluster-management"),
+			},
+			setupClient: func(t *testing.T) client.Client {
+				widget := &unstructured.Unstructured{}
+				widget.SetAPIVersion("example.com/v1beta1")
+				widget.SetKind("Widget")
+				widget.SetName("my-widget")
+				widget.SetNamespace("open-cluster-management")
+				widget.SetLabels(map[string]string{
+					"installer.name":      "mch",
+					"installer.namespace": "open-cluster-management",
+				})
+				return fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(widget).Build()
+			},
+			verify: func(t *testing.T, c client.Client) {
+				widget := &unstructured.Unstructured{}
+				widget.SetAPIVersion("example.com/v1beta1")
+				widget.SetKind("Widget")
+				err := c.Get(context.TODO(), types.NamespacedName{Name: "my-widget",
+					Namespace: "open-cluster-management"}, widget)
+				if err != nil {
+					t.Errorf("expected my-widget to survive a version-only chart change, got error: %v", err)
+				}
+			},
+		},
+		{
 			name:         "legacy console ServiceMonitor is cleaned up even with no tracked history (ACM-40355)",
 			component:    operatorv1.Console,
 			oldResources: nil, // Simulates an InternalHubComponent CR from before resource tracking existed.
@@ -385,5 +428,87 @@ func TestCleanupOrphanedManagedResources(t *testing.T) {
 				tt.verify(t, c)
 			}
 		})
+	}
+}
+
+// stuckFinalizerClient simulates a resource whose deletion is blocked by a finalizer (Delete
+// doesn't actually remove it; a subsequent Get returns it with a DeletionTimestamp), while
+// deletions of any other resource proceed normally. Used to verify that
+// cleanupOrphanedManagedResources is best-effort: it must still attempt (and succeed at) deleting
+// every other orphan candidate instead of stopping at the first one that needs a requeue.
+type stuckFinalizerClient struct {
+	client.Client
+	stuckName string
+	deleted   bool
+}
+
+func (c *stuckFinalizerClient) Get(ctx context.Context, key types.NamespacedName, obj client.Object,
+	opts ...client.GetOption) error {
+	if err := c.Client.Get(ctx, key, obj, opts...); err != nil {
+		return err
+	}
+	if key.Name == c.stuckName && c.deleted {
+		now := metav1.Now()
+		obj.SetDeletionTimestamp(&now)
+		obj.SetFinalizers([]string{"test-finalizer"})
+	}
+	return nil
+}
+
+func (c *stuckFinalizerClient) Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
+	if obj.GetName() == c.stuckName {
+		c.deleted = true
+		return nil // Don't actually delete - simulate a stuck finalizer.
+	}
+	return c.Client.Delete(ctx, obj, opts...)
+}
+
+func TestCleanupOrphanedManagedResources_BestEffort(t *testing.T) {
+	registerScheme()
+
+	mch := &operatorv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{Name: "mch", Namespace: "open-cluster-management"},
+	}
+
+	labels := map[string]string{
+		"installer.name":      "mch",
+		"installer.namespace": "open-cluster-management",
+	}
+	stuckDeploy := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{Name: "stuck-deploy", Namespace: "open-cluster-management", Labels: labels},
+	}
+	cleanDeploy := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{Name: "clean-deploy", Namespace: "open-cluster-management", Labels: labels},
+	}
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(stuckDeploy, cleanDeploy).Build()
+	c := &stuckFinalizerClient{Client: fakeClient, stuckName: "stuck-deploy"}
+	r := &MultiClusterHubReconciler{Client: c, Log: ctrl.Log.WithName("test")}
+
+	oldResources := []operatorv1.ManagedResource{
+		newManagedResource("apps/v1", "Deployment", "stuck-deploy", "open-cluster-management"),
+		newManagedResource("apps/v1", "Deployment", "clean-deploy", "open-cluster-management"),
+	}
+
+	result, err := r.cleanupOrphanedManagedResources(context.TODO(), mch, "example", oldResources, nil)
+	if err != nil {
+		t.Fatalf("cleanupOrphanedManagedResources() unexpected error: %v", err)
+	}
+	if result.RequeueAfter == 0 {
+		t.Errorf("cleanupOrphanedManagedResources() expected requeue due to stuck-deploy, got %v", result)
+	}
+
+	// The stuck resource should still exist (blocked on its finalizer)...
+	if err := c.Get(context.TODO(), types.NamespacedName{Name: "stuck-deploy", Namespace: "open-cluster-management"},
+		&appsv1.Deployment{}); err != nil {
+		t.Errorf("expected stuck-deploy to still exist pending finalizer removal, got error: %v", err)
+	}
+
+	// ...but clean-deploy must still have been deleted in the same pass, instead of being skipped
+	// because an earlier candidate needed a requeue.
+	err = c.Get(context.TODO(), types.NamespacedName{Name: "clean-deploy", Namespace: "open-cluster-management"},
+		&appsv1.Deployment{})
+	if err == nil {
+		t.Errorf("expected clean-deploy to be deleted even though stuck-deploy required a requeue")
 	}
 }

@@ -172,7 +172,10 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 	// deployed by a previous version of this component's templates but are no longer rendered
 	// (e.g. a resource removed from the chart). See managed_resources.go.
 	newManagedResources := extractManagedResources(templates)
-	oldManagedResources := r.getManagedResources(ctx, m, component)
+	oldManagedResources, err := r.getManagedResources(ctx, m, component)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 	if result, err := r.cleanupOrphanedManagedResources(ctx, m, component, oldManagedResources,
 		newManagedResources); result != (ctrl.Result{}) || err != nil {
 		return result, err
@@ -252,7 +255,10 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 	// Snapshot the resources previously recorded for this component before removing the
 	// InternalHubComponent tracking CR below, so orphaned resources can still be identified and
 	// cleaned up later in this function (see managed_resources.go).
-	oldManagedResources := r.getManagedResources(ctx, m, component)
+	oldManagedResources, err := r.getManagedResources(ctx, m, component)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	if result, err := r.ensureNoInternalHubComponent(ctx, m, component); result != (ctrl.Result{}) || err != nil {
 		return result, err

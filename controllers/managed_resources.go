@@ -1,26 +1,12 @@
 // Copyright Contributors to the Open Cluster Management project
 
-/*
-Copyright 2021.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package controllers
 
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 
@@ -61,9 +47,30 @@ var legacyManagedResources = map[string][]operatorv1.ManagedResource{
 	},
 }
 
-// managedResourceKey returns a string uniquely identifying a ManagedResource for set comparisons.
+// managedResourceKey returns a string uniquely identifying a ManagedResource, including its
+// APIVersion, for exact-match comparisons (see managedResourcesEqual).
 func managedResourceKey(resource operatorv1.ManagedResource) string {
 	return fmt.Sprintf("%s/%s/%s/%s", resource.APIVersion, resource.Kind, resource.Namespace, resource.Name)
+}
+
+// apiGroupFromAPIVersion extracts the API group from an apiVersion string (e.g. "apps/v1" ->
+// "apps", "v1" -> "" for the core group), ignoring the version component.
+func apiGroupFromAPIVersion(apiVersion string) string {
+	if idx := strings.Index(apiVersion, "/"); idx != -1 {
+		return apiVersion[:idx]
+	}
+	return ""
+}
+
+// managedResourceIdentityKey returns a version-independent identity for a ManagedResource (API
+// group + kind + namespace + name). Kubernetes objects are identified by group/kind/namespace/name;
+// the API version is just an alternate representation of the same underlying object. Using the
+// full APIVersion-sensitive key here would cause a pure version bump in a chart (e.g. a CRD moving
+// from v1beta1 to v1) to be misdetected as the resource being removed, triggering an unnecessary
+// delete-then-recreate cycle in cleanupOrphanedManagedResources instead of an in-place update.
+func managedResourceIdentityKey(resource operatorv1.ManagedResource) string {
+	return fmt.Sprintf("%s/%s/%s/%s", apiGroupFromAPIVersion(resource.APIVersion), resource.Kind,
+		resource.Namespace, resource.Name)
 }
 
 // extractManagedResources builds the list of resources represented by the given rendered
@@ -107,21 +114,23 @@ func managedResourcesEqual(a, b []operatorv1.ManagedResource) bool {
 }
 
 // getManagedResources returns the resources currently recorded on the component's
-// InternalHubComponent CR. It returns nil (without error) if the CR does not exist, since callers
-// treat "no tracked resources" as an empty diff baseline rather than a failure.
+// InternalHubComponent CR. It returns (nil, nil) if the CR does not exist, since callers treat "no
+// tracked resources" as an empty diff baseline rather than a failure. Any other error is returned
+// to the caller rather than swallowed, since silently treating a transient read failure as "no
+// history" could cause cleanupOrphanedManagedResources to miss real orphans, or worse, lose the
+// tracked history permanently if the caller goes on to delete the InternalHubComponent CR.
 func (r *MultiClusterHubReconciler) getManagedResources(ctx context.Context, m *operatorv1.MultiClusterHub,
-	component string) []operatorv1.ManagedResource {
+	component string) ([]operatorv1.ManagedResource, error) {
 
 	ihc := &operatorv1.InternalHubComponent{}
 	if err := r.Client.Get(ctx, types.NamespacedName{Name: component, Namespace: m.GetNamespace()}, ihc); err != nil {
-		if !errors.IsNotFound(err) {
-			log.Error(err, "failed to get InternalHubComponent while reading managed resources",
-				"Component", component, "Namespace", m.GetNamespace())
+		if errors.IsNotFound(err) {
+			return nil, nil
 		}
-		return nil
+		return nil, fmt.Errorf("failed to get InternalHubComponent %s/%s: %v", m.GetNamespace(), component, err)
 	}
 
-	return ihc.Spec.ManagedResources
+	return ihc.Spec.ManagedResources, nil
 }
 
 // updateManagedResources patches the component's InternalHubComponent CR with the current list of
@@ -158,12 +167,21 @@ func (r *MultiClusterHubReconciler) updateManagedResources(ctx context.Context, 
 // templates but are no longer rendered. Deletion is delegated to deleteTemplate, which only
 // removes resources that still carry this operator's installer ownership labels, so resources
 // that were manually recreated (and therefore lack those labels) are left untouched.
+//
+// This function is best-effort and does not stop at the first candidate that fails or needs a
+// requeue: on the disable path, ensureNoComponent must delete the InternalHubComponent tracking CR
+// promptly (other controllers watch for its removal as a signal), so this reconcile is the only
+// chance to use the resource history captured before that CR is gone. Stopping early would leave
+// every remaining candidate un-attempted, and a future reconcile would have no history left to
+// retry them with. Attempting every candidate in one pass instead means only a genuinely
+// finalizer-blocked resource is left for the caller to report/requeue on; unrelated candidates are
+// still cleaned up.
 func (r *MultiClusterHubReconciler) cleanupOrphanedManagedResources(ctx context.Context, m *operatorv1.MultiClusterHub,
 	component string, oldResources, newResources []operatorv1.ManagedResource) (ctrl.Result, error) {
 
 	current := make(map[string]struct{}, len(newResources))
 	for _, resource := range newResources {
-		current[managedResourceKey(resource)] = struct{}{}
+		current[managedResourceIdentityKey(resource)] = struct{}{}
 	}
 
 	// Merge in any known legacy resources for this component that predate resource tracking (see
@@ -177,9 +195,15 @@ func (r *MultiClusterHubReconciler) cleanupOrphanedManagedResources(ctx context.
 		orphanCandidates = append(orphanCandidates, legacy)
 	}
 
+	var (
+		firstErr     error
+		needsRequeue bool
+		requeueAfter time.Duration
+	)
+
 	seenCandidates := make(map[string]struct{}, len(orphanCandidates))
 	for _, resource := range orphanCandidates {
-		key := managedResourceKey(resource)
+		key := managedResourceIdentityKey(resource)
 		if _, alreadyHandled := seenCandidates[key]; alreadyHandled {
 			continue
 		}
@@ -199,10 +223,28 @@ func (r *MultiClusterHubReconciler) cleanupOrphanedManagedResources(ctx context.
 			"Component", component, "APIVersion", resource.APIVersion, "Kind", resource.Kind,
 			"Name", resource.Name, "Namespace", resource.Namespace)
 
-		if result, err := r.deleteTemplate(ctx, m, stub); result != (ctrl.Result{}) || err != nil {
-			return result, err
+		result, err := r.deleteTemplate(ctx, m, stub)
+		if err != nil {
+			log.Error(err, "failed to clean up orphaned managed resource; continuing with remaining resources",
+				"Component", component, "Kind", resource.Kind, "Name", resource.Name, "Namespace", resource.Namespace)
+			if firstErr == nil {
+				firstErr = err
+			}
+			continue
+		}
+		if result != (ctrl.Result{}) {
+			needsRequeue = true
+			if result.RequeueAfter > requeueAfter {
+				requeueAfter = result.RequeueAfter
+			}
 		}
 	}
 
+	if firstErr != nil {
+		return ctrl.Result{}, firstErr
+	}
+	if needsRequeue {
+		return ctrl.Result{RequeueAfter: requeueAfter}, nil
+	}
 	return ctrl.Result{}, nil
 }
