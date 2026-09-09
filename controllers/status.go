@@ -29,59 +29,73 @@ import (
 )
 
 const (
-	// AwaitingCRDCreationReason is added in a hub when a desired CRD has not been installed yet
-	AwaitingCRDCreationReason = "AwaitingCRDCreation"
 	// ComponentsAvailableReason is added in a hub when all desired components are
 	// installed successfully
 	ComponentsAvailableReason = "ComponentsAvailable"
+
 	// ComponentsUnavailableReason is added in a hub when one or more components are
 	// in an unready state
 	ComponentsUnavailableReason = "ComponentsUnavailable"
-	// ComponentUpdatingReason is added when the hub is actively updating a component resource
+
+	// ComponentsUpdatingReason is added when the hub is actively updating a component resource
 	ComponentsUpdatingReason = "UpdatingComponentResource"
+
 	// NewComponentReason is added when the hub creates a new install resource successfully
 	NewComponentReason = "NewResourceCreated"
+
 	// DeployFailedReason is added when the hub fails to deploy a resource
 	DeployFailedReason = "FailedDeployingComponent"
-	//ResourceBlockReason is added when there is an existing resource that prevents an upgrade from progressing
-	ResourceBlockReason = "BlockingUpgrade"
+
 	// OldComponentRemovedReason is added when the hub calls delete on an old resource
 	OldComponentRemovedReason = "OldResourceDeleted"
+
 	// OldComponentNotRemovedReason is added when a component the hub is trying to delete has not been removed successfully
 	OldComponentNotRemovedReason = "OldResourceDeleteFailed"
+
 	// AllOldComponentsRemovedReason is added when the hub successfully prunes all old resources
 	AllOldComponentsRemovedReason = "AllOldResourcesDeleted"
-	// CertManagerReason is added when the hub is waiting for cert manager CRDs to come up
-	CertManagerReason = "CertManagerInitializing"
+
 	// DeleteTimestampReason is added when the multiclusterhub has been targeted for delete
 	DeleteTimestampReason = "DeletionTimestampPresent"
+
 	// PausedReason is added when the multiclusterhub is paused
 	PausedReason = "MCHPaused"
+
 	// ResumedReason is added when the multiclusterhub is resumed
 	ResumedReason = "MCHResumed"
+
 	// ReconcileReason is added when the multiclusterhub is actively reconciling
 	ReconcileReason = "MCHReconciling"
+
 	// HelmReleaseTerminatingReason is added when the multiclusterhub is waiting for the removal
 	// of helm releases
 	HelmReleaseTerminatingReason = "HelmReleaseTerminating"
-	// ManagedClusterTerminatingReason is added when a managed cluster has been deleted and
-	// is waiting to be finalized
-	ManagedClusterTerminatingReason = "ManagedClusterTerminating"
-	// NamespaceTerminatingReason is added when a managed cluster's namespace has been deleted and
-	// is waiting to be finalized
-	NamespaceTerminatingReason = "ManagedClusterNamespaceTerminating"
+
 	// ResourceRenderReason is added when an error occurs while rendering a deployable resource
 	ResourceRenderReason = "FailedRenderingResource"
+
 	// CRDRenderReason is added when an error occurs while rendering a CRD
 	CRDRenderReason = "FailedRenderingCRD"
+
 	// RequirementsNotMetReason is when there is something missing or misconfigured
 	// that is preventing progress
 	RequirementsNotMetReason = "RequirementsNotMet"
+
 	// WaitingForMCEUpgradeReason is added when the hub is blocked waiting for MultiClusterEngine
 	// to reach the version required by the current MCH release
 	WaitingForMCEUpgradeReason = "WaitingForMCEUpgrade"
 
+	// FailedApplyingComponent is added when a component template fails to apply
 	FailedApplyingComponent = "FailedApplyingComponent"
+
+	// WaitingForMCEReason is added when the hub is waiting for MultiClusterEngine to be ready
+	WaitingForMCEReason = "WaitingForMCE"
+
+	// WaitingForNamespaceReason is added when the hub is waiting for a namespace to be created
+	WaitingForNamespaceReason = "WaitingForNamespace"
+
+	// ComponentNotReadyReason is added when a prerequisite component is not yet available
+	ComponentNotReadyReason = "ComponentNotReady"
 )
 
 var (
@@ -133,7 +147,7 @@ func (r *MultiClusterHubReconciler) syncHubStatus(ctx context.Context, m *operat
 		r.Log.Error(err, "Failed to reconcile MCE compliance ConsoleNotification banner")
 	}
 
-	if reflect.DeepEqual(m.Status, original) {
+	if reflect.DeepEqual(m.Status, *original) {
 		r.Log.Info("Status hasn't changed")
 		return reconcile.Result{}, nil
 	}
@@ -146,6 +160,14 @@ func (r *MultiClusterHubReconciler) syncHubStatus(ctx context.Context, m *operat
 			// Error from object being modified is normal behavior and should not be treated like an error
 			r.Log.Info("Failed to update status", "Reason", "Object has been modified")
 			return reconcile.Result{RequeueAfter: resyncPeriod}, nil
+		}
+
+		if errors.IsNotFound(err) {
+			// The object was deleted (e.g. its last finalizer was just removed by this same
+			// reconcile, which triggers immediate garbage collection). There's nothing left to
+			// update, and this isn't a real error.
+			r.Log.Info("Skipping status update, MultiClusterHub no longer exists", "name", m.Name, "namespace", m.Namespace)
+			return reconcile.Result{}, nil
 		}
 
 		r.Log.Error(err, fmt.Sprintf("Failed to update %s/%s status ", m.Namespace, m.Name))
@@ -164,6 +186,27 @@ func (r *MultiClusterHubReconciler) syncHubStatus(ctx context.Context, m *operat
 // compliance. It does not mutate the cluster; callers are responsible for persisting the result.
 func (r *MultiClusterHubReconciler) calculateStatus(ctx context.Context, hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deployment,
 	allCRs map[string]*unstructured.Unstructured, ocpConsole, isSTSEnabled bool) operatorsv1.MultiClusterHubStatus {
+
+	// While the hub is being deleted, the install-oriented component/version tracking below
+	// doesn't apply: components are intentionally being torn down, not rolled out, so
+	// re-evaluating "is this available" against them is actively misleading (e.g. logging
+	// "The component is now available" for a Subscription mid-termination, right before it
+	// disappears) and computing Progressing/Complete from it produces contradictory messages
+	// alongside the accurate Terminating condition finalization already sets. Preserve
+	// existing status as-is and just report the phase.
+	//
+	// Progressing/Complete are also removed rather than left stale: Terminating + Phase
+	// already fully describe the deletion state, so there's no information lost, and a
+	// leftover "Complete: True, All hub components ready." while actively tearing down would
+	// be actively wrong rather than merely uninformative. This mirrors the existing pattern
+	// of removing Progressing once Complete:True is set in the successful branch below.
+	if hub.GetDeletionTimestamp() != nil {
+		status := hub.Status.DeepCopy()
+		status.Phase = operatorsv1.HubUninstalling
+		RemoveHubCondition(status, operatorsv1.Progressing)
+		RemoveHubCondition(status, operatorsv1.Complete)
+		return *status
+	}
 
 	components := map[string]operatorsv1.StatusCondition{}
 	if paused := utils.IsPaused(hub); !paused {
@@ -239,8 +282,11 @@ func (r *MultiClusterHubReconciler) calculateStatus(ctx context.Context, hub *op
 				SetHubCondition(&status, *progressing)
 			}
 
-			// only add unavailable status if complete status already present
-			if HubConditionPresent(status, operatorsv1.Complete) {
+			// Always surface a Complete condition while not yet successful (and not paused), not
+			// just when one already existed. This gives consumers a stable, always-present
+			// Complete condition from the first reconcile (False while installing/updating, True
+			// once done) instead of an absence they have to interpret themselves.
+			if !utils.IsPaused(hub) {
 				unavailable := NewHubCondition(operatorsv1.Complete, metav1.ConditionFalse, ComponentsUnavailableReason, "Not all hub components ready.")
 				SetHubCondition(&status, *unavailable)
 			}
@@ -346,6 +392,23 @@ func latestDeployCondition(conditions []appsv1.DeploymentCondition) appsv1.Deplo
 		}
 	}
 	return latest
+}
+
+// latestMCECondition returns the most recently transitioned condition on the given
+// MultiClusterEngine, or nil if it has none. Used to surface MCE's own progress detail
+// (e.g. "Not all components available") while MCH is waiting on MCE to report a version,
+// instead of leaving that whole window opaque from the MCH's own status.
+func latestMCECondition(mce *mcev1.MultiClusterEngine) *mcev1.MultiClusterEngineCondition {
+	if mce == nil || len(mce.Status.Conditions) == 0 {
+		return nil
+	}
+	latest := mce.Status.Conditions[0]
+	for i := range mce.Status.Conditions {
+		if mce.Status.Conditions[i].LastTransitionTime.Time.After(latest.LastTransitionTime.Time) {
+			latest = mce.Status.Conditions[i]
+		}
+	}
+	return &latest
 }
 
 func progressingDeployCondition(conditions []appsv1.DeploymentCondition) appsv1.DeploymentCondition {
