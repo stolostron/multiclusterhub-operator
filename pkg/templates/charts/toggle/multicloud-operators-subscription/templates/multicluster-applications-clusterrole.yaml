@@ -82,6 +82,7 @@ rules:
   - configmaps
   - endpoints
   - events
+  - namespaces
   - secrets
   - serviceaccounts
   - services
