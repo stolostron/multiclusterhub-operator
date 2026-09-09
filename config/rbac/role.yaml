@@ -10,6 +10,7 @@ rules:
   - configmaps
   - endpoints
   - events
+  - namespaces
   - secrets
   - services
   - services/proxy
@@ -39,7 +40,6 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - namespaces
   - nodes
   - persistentvolumeclaims
   - pods
