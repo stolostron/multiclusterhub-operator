@@ -30,7 +30,7 @@ spec:
               metadata:
                 name: hypershift-admin
                 labels:
-                  rbac.open-cluster-management.io/filter: hcp-clusterroles
+                  rbac.open-cluster-management.io/filter: vm-clusterroles
                   clusterview.open-cluster-management.io/discoverable: "true"
           {{ `{{- end }}` }}
           {{ `{{- $hcpReader := lookup "rbac.authorization.k8s.io/v1" "ClusterRole" "" "hypershift-reader" -}}` }}
@@ -42,7 +42,7 @@ spec:
               metadata:
                 name: hypershift-reader
                 labels:
-                  rbac.open-cluster-management.io/filter: hcp-clusterroles
+                  rbac.open-cluster-management.io/filter: vm-clusterroles
                   clusterview.open-cluster-management.io/discoverable: "true"
           {{ `{{- end }}` }}
         remediationAction: enforce

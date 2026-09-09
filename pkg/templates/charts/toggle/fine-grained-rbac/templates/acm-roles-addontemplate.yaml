@@ -580,7 +580,7 @@ spec:
           kind: ClusterRole
           metadata:
             labels:
-              rbac.open-cluster-management.io/filter: hcp-clusterroles
+              rbac.open-cluster-management.io/filter: vm-clusterroles
               clusterview.open-cluster-management.io/discoverable: "true"
             name: acm-hcp-hosting:view
           rules:
@@ -627,7 +627,7 @@ spec:
           kind: ClusterRole
           metadata:
             labels:
-              rbac.open-cluster-management.io/filter: hcp-clusterroles
+              rbac.open-cluster-management.io/filter: vm-clusterroles
               clusterview.open-cluster-management.io/discoverable: "true"
             name: acm-hcp-hosting:admin
           rules:
