@@ -115,7 +115,7 @@ func Test_ValidMCEVersion(t *testing.T) {
 	}{
 		{
 			name:       "higher patch version",
-			mceVersion: "2.17.5",
+			mceVersion: "2.9.5",
 			wantErr:    false,
 		},
 		{
@@ -177,7 +177,7 @@ func Test_ValidCommunityMCEVersion(t *testing.T) {
 	}{
 		{
 			name:       "higher patch version",
-			mceVersion: "0.10.5",
+			mceVersion: "0.7.5",
 			wantErr:    false,
 		},
 		{
