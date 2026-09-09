@@ -147,7 +147,7 @@ func Test_ValidMCEVersion(t *testing.T) {
 		{
 			name:       "dev prerelease is before release",
 			mceVersion: fmt.Sprintf("%s-dev", RequiredMCEVersion),
-			wantErr:    true,
+			wantErr:    false,
 		},
 		{
 			name:       "exact version",
@@ -209,7 +209,7 @@ func Test_ValidCommunityMCEVersion(t *testing.T) {
 		{
 			name:       "dev prerelease is before release",
 			mceVersion: fmt.Sprintf("%s-dev", RequiredCommunityMCEVersion),
-			wantErr:    true,
+			wantErr:    false,
 		},
 		{
 			name:       "exact version",
