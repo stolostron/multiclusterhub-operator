@@ -1129,13 +1129,23 @@ func Test_syncHubStatus_HandlesNotFound(t *testing.T) {
 }
 
 // Test_syncHubStatus_SkipsUpdate_WhenStatusUnchanged is a regression test for
-// a bug where the "status hasn't changed" shortcut compared m.Status (a
-// MultiClusterHubStatus value) against original (a *MultiClusterHubStatus
-// pointer) via reflect.DeepEqual. Because the two arguments had different
-// types, DeepEqual always returned false regardless of content, so every
-// single reconcile performed a full Status().Update() even when nothing had
-// changed. This verifies the shortcut now actually triggers (no Update call)
-// when the freshly computed status matches what's already there.
+// two compounding bugs in the "status hasn't changed" shortcut:
+//  1. It compared m.Status (a MultiClusterHubStatus value) against original
+//     (a *MultiClusterHubStatus pointer) via reflect.DeepEqual without
+//     dereferencing. Because the two arguments had different types,
+//     DeepEqual always returned false regardless of content.
+//  2. Even after dereferencing, it compared the wrong operand: m.Status
+//     (which calculateStatus() never mutates) against original, instead of
+//     the freshly computed newStatus against original. Since almost all of
+//     the condition-setting in this codebase happens by mutating m.Status
+//     directly during Reconcile() (not via calculateStatus()'s return
+//     value), m.Status equals original in the common case, so the shortcut
+//     would trigger and silently skip persisting newStatus even when it
+//     legitimately differs (e.g. a component's availability or the overall
+//     phase changed).
+//
+// This verifies the shortcut now actually compares newStatus against
+// original, and correctly skips the Update() call only when they match.
 func Test_syncHubStatus_SkipsUpdate_WhenStatusUnchanged(t *testing.T) {
 	registerScheme()
 

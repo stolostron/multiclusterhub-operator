@@ -147,7 +147,7 @@ func (r *MultiClusterHubReconciler) syncHubStatus(ctx context.Context, m *operat
 		r.Log.Error(err, "Failed to reconcile MCE compliance ConsoleNotification banner")
 	}
 
-	if reflect.DeepEqual(m.Status, *original) {
+	if reflect.DeepEqual(newStatus, *original) {
 		r.Log.Info("Status hasn't changed")
 		return reconcile.Result{}, nil
 	}
