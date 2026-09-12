@@ -1,0 +1,129 @@
+# Copyright Contributors to the Open Cluster Management project
+#
+# Standalone Pipelines-as-Code PR check that runs `make test` (Go unit
+# tests) on every PR to main/release-5.1/release-5.2. This is a plain PR
+# check (not tied to Konflux Snapshot/Release gating), equivalent to
+# Prow's `make unit-tests` job.
+#
+# The appstudio.openshift.io/* labels are required for UI resolution
+# only; they don't affect the check's actual scope or gating behavior.
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  annotations:
+    build.appstudio.openshift.io/repo: https://github.com/stolostron/multiclusterhub-operator?rev={{revision}}
+    build.appstudio.redhat.com/commit_sha: '{{revision}}'
+    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
+    build.appstudio.redhat.com/target_branch: '{{target_branch}}'
+    pipelinesascode.tekton.dev/cancel-in-progress: "true"
+    pipelinesascode.tekton.dev/max-keep-runs: "3"
+    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && (target_branch == "main" || target_branch == "release-5.1" || target_branch == "release-5.2")
+  creationTimestamp: null
+  labels:
+    appstudio.openshift.io/application: release-acm-51
+    appstudio.openshift.io/component: multiclusterhub-operator-acm-51
+    pipelines.appstudio.openshift.io/type: test
+  name: multiclusterhub-operator-unit-tests
+  namespace: crt-redhat-acm-tenant
+spec:
+  params:
+  - name: git-url
+    value: '{{source_url}}'
+  - name: revision
+    value: '{{revision}}'
+  timeouts:
+    pipeline: "20m"
+  pipelineSpec:
+    params:
+      - name: git-url
+        type: string
+      - name: revision
+        type: string
+    tasks:
+      - name: unit-test
+        params:
+          - name: git-url
+            value: $(params.git-url)
+          - name: revision
+            value: $(params.revision)
+        taskSpec:
+          params:
+            - name: git-url
+              type: string
+            - name: revision
+              type: string
+          steps:
+            - name: run-unit-tests
+              image: registry.redhat.io/ubi9/go-toolset:1.26
+              workingDir: /workspace
+              computeResources:
+                requests:
+                  cpu: "1"
+                  memory: 2Gi
+                limits:
+                  cpu: "2"
+                  memory: 6Gi
+              env:
+                - name: GIT_URL
+                  value: $(params.git-url)
+                - name: REVISION
+                  value: $(params.revision)
+                - name: HOME
+                  value: /tmp/home
+                - name: GOPATH
+                  value: /tmp/go
+                - name: GOCACHE
+                  value: /tmp/go-cache
+                - name: GOFLAGS
+                  value: -p=2
+              script: |
+                #!/bin/bash
+                set -uo pipefail
+                mkdir -p "${HOME}"
+
+                echo "===== Checking required tools ====="
+                # go-toolset already ships git/make/go; just verify they exist.
+                for tool in git make go; do
+                  if ! command -v "${tool}" >/dev/null 2>&1; then
+                    echo "Required tool '${tool}' not found in this image."
+                    exit 1
+                  fi
+                done
+                echo "git:  $(git --version)"
+                echo "make: $(make --version | head -1)"
+                echo "go:   $(go version)"
+
+                echo "===== Network reachability check ====="
+                # Probe GOPROXY and GCS (required by make test's dependency
+                # chain) with short timeouts so blocked egress fails fast.
+                NETWORK_OK=true
+                if ! timeout 8 bash -c 'exec 3<>/dev/tcp/proxy.golang.org/443' 2>/dev/null; then
+                  echo "WARNING: proxy.golang.org:443 not reachable within 8s."
+                  NETWORK_OK=false
+                fi
+                if ! timeout 8 bash -c 'exec 3<>/dev/tcp/storage.googleapis.com/443' 2>/dev/null; then
+                  echo "WARNING: storage.googleapis.com:443 not reachable within 8s."
+                  NETWORK_OK=false
+                fi
+                if [ "${NETWORK_OK}" = "true" ]; then
+                  echo "Network egress appears open."
+                else
+                  echo "This tenant likely restricts general internet egress from Task pods."
+                fi
+
+                echo "===== Cloning ${GIT_URL}@${REVISION} ====="
+                git clone --quiet "${GIT_URL}" src
+                cd src
+                git checkout --quiet "${REVISION}"
+
+                echo "===== Running unit tests: make test ====="
+                # Timeout 10m so a stuck download fails fast, not hangs for hours.
+                if timeout 600 env OPERATOR_VERSION=9.9.9 make test; then
+                  echo "Unit tests passed."
+                else
+                  echo "make test failed or timed out after 10m."
+                  exit 1
+                fi
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-multiclusterhub-operator-acm-51
+status: {}
