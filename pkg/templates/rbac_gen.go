@@ -30,8 +30,6 @@ package main
 //+kubebuilder:rbac:groups="",resources=configmaps;secrets,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=configmaps;secrets;serviceaccounts;services;persistentvolumeclaims;pods;endpoints,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=configmaps;secrets;serviceaccounts;services;persistentvolumeclaims;pods;endpoints,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups="",resources=events,verbs=create;delete;get;list;patch;update;watch
-//+kubebuilder:rbac:groups="",resources=events,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
@@ -96,6 +94,8 @@ package main
 //+kubebuilder:rbac:groups="",resources=users;groups;uids;serviceaccounts,verbs=impersonate
 //+kubebuilder:rbac:groups="",resources=users;serviceaccounts;groups,verbs=impersonate
 //+kubebuilder:rbac:groups="",resources=users;serviceaccounts;groups,verbs=impersonate
+//+kubebuilder:rbac:groups="";events.k8s.io,resources=events,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups="";events.k8s.io,resources=events,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="";events.k8s.io,resources=events,verbs=create;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="";events.k8s.io,resources=events,verbs=create;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="";events.k8s.io,resources=events,verbs=create;patch;update
