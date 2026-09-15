@@ -412,6 +412,7 @@ rules:
   - events
   verbs:
   - create
+  - delete
   - get
   - list
   - patch
