@@ -24,12 +24,12 @@ import (
 
 const (
 	// Production MCE variables
-	MCEProdChannel          = "stable-5.0"
+	MCEProdChannel          = "stable-5.1"
 	MCEProdPackageName      = "multicluster-engine"
 	MCEProdOperandNamespace = "multicluster-engine"
 
 	// Community MCE variables
-	MCECommunityChannel          = "community-0.10"
+	MCECommunityChannel          = "community-1.1"
 	MCECommunityPackageName      = "stolostron-engine"
 	MCECommunityOperandNamespace = "stolostron-engine"
 

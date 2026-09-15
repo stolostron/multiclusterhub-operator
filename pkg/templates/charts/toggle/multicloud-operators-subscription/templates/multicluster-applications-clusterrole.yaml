@@ -202,3 +202,15 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - imageregistry.open-cluster-management.io
+  resources:
+  - managedclusterimageregistries
+  - managedclusterimageregistries/status
+  - managedclusterimageregistries/finalizers
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - patch

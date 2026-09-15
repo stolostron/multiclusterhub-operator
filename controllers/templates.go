@@ -22,6 +22,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"reflect"
+	"sort"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/helpers"
@@ -169,7 +171,7 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 						log.Error(err, "Failed to detect container changes", "Name", template.GetName())
 
 					} else if containersChanged {
-						log.Info("Container set changed (added/removed) - using Update instead of Patch",
+						log.Info("Container set or port configuration changed - using Update instead of Patch",
 							"Kind", template.GetKind(), "Name", template.GetName())
 						useUpdate = true
 					}
@@ -374,9 +376,17 @@ func (r *MultiClusterHubReconciler) logAndSetCondition(err error, message string
 	return ctrl.Result{}, wrappedError
 }
 
-// detectContainerChanges checks if containers have been added or removed between existing and desired deployments.
-// Returns true if the container set differs (by name or count), indicating Update should be used instead of Patch.
-// Server-side apply cannot remove elements from arrays, so we must use Update when containers are removed.
+// detectContainerChanges checks if containers have been added, removed, or had their exposed port
+// numbers changed between existing and desired deployments. Returns true if Update should be used
+// instead of Patch.
+//
+// Server-side apply cannot remove elements from arrays, so Update is required when containers are
+// removed. Similarly, a container's containerPort cannot be changed via a strategic merge patch:
+// Kubernetes merges the ports list by name instead of replacing it, so renumbering a port while
+// keeping the same name (e.g. 8443 "downloads" -> 8080 "downloads") would otherwise result in two
+// entries with the same name, which fails API validation. Only the port *number* is compared here;
+// fields like protocol or name are metadata that Kubernetes/strategic-merge already reconciles
+// correctly on Patch and don't warrant the heavier-handed Update.
 func (r *MultiClusterHubReconciler) detectContainerChanges(existing, desired *unstructured.Unstructured) (bool, error) {
 	// Get existing containers
 	existingContainers, found, err := unstructured.NestedSlice(existing.Object,
@@ -407,62 +417,108 @@ func (r *MultiClusterHubReconciler) detectContainerChanges(existing, desired *un
 		return true, nil
 	}
 
-	// Build set of existing container names
-	existingNames := make(map[string]bool)
+	// Build a lookup of existing containers by name
+	existingByName := make(map[string]map[string]interface{})
 	for _, c := range existingContainers {
 		container, ok := c.(map[string]interface{})
 		if !ok {
 			continue
 		}
 		if name, ok := container["name"].(string); ok {
-			existingNames[name] = true
+			existingByName[name] = container
 		}
 	}
 
-	// Check if all desired containers exist in current deployment
-	for _, c := range desiredContainers {
-		container, ok := c.(map[string]interface{})
-		if !ok {
-			continue
-		}
-		if name, ok := container["name"].(string); ok {
-			if !existingNames[name] {
-				log.Info("New container detected in desired spec",
-					"Deployment", existing.GetName(),
-					"Container", name)
-				return true, nil
-			}
-		}
-	}
-
-	// Build set of desired container names
+	// Check if all desired containers exist in current deployment, and whether the port
+	// configuration has changed for containers that exist in both.
 	desiredNames := make(map[string]bool)
 	for _, c := range desiredContainers {
-		container, ok := c.(map[string]interface{})
+		desiredContainer, ok := c.(map[string]interface{})
 		if !ok {
 			continue
 		}
-		if name, ok := container["name"].(string); ok {
-			desiredNames[name] = true
+
+		name, ok := desiredContainer["name"].(string)
+		if !ok {
+			continue
+		}
+		desiredNames[name] = true
+
+		existingContainer, found := existingByName[name]
+		if !found {
+			log.Info("New container detected in desired spec",
+				"Deployment", existing.GetName(),
+				"Container", name)
+			return true, nil
+		}
+
+		existingPorts := containerPortNumbers(existingContainer["ports"])
+		desiredPorts := containerPortNumbers(desiredContainer["ports"])
+		if !reflect.DeepEqual(existingPorts, desiredPorts) {
+			log.Info("Container port number changed",
+				"Deployment", existing.GetName(),
+				"Container", name,
+				"Existing", existingPorts,
+				"Desired", desiredPorts)
+			return true, nil
 		}
 	}
 
 	// Check if any existing containers are missing from desired (removed containers)
-	for _, c := range existingContainers {
-		container, ok := c.(map[string]interface{})
-		if !ok {
-			continue
-		}
-		if name, ok := container["name"].(string); ok {
-			if !desiredNames[name] {
-				log.Info("Container removed in desired spec",
-					"Deployment", existing.GetName(),
-					"Container", name)
-				return true, nil
-			}
+	for name := range existingByName {
+		if !desiredNames[name] {
+			log.Info("Container removed in desired spec",
+				"Deployment", existing.GetName(),
+				"Container", name)
+			return true, nil
 		}
 	}
 
 	// No container changes detected
 	return false, nil
+}
+
+// containerPortNumbers extracts the sorted, multiset of containerPort values declared in a
+// container's ports list. Other port fields (name, protocol, hostPort) are intentionally ignored:
+// they are metadata that a strategic merge patch reconciles correctly on its own, so differences in
+// those fields alone shouldn't force an Update. Numeric types are coerced to int64 since decoded
+// unstructured content may represent numbers as float64, int64, or int depending on the source.
+//
+// Always returns a non-nil slice, even when ports is absent. corev1.Container's Ports field has
+// `json:"ports,omitempty"`, so a live Deployment fetched from the API omits the "ports" key
+// entirely once it has zero ports, while a chart template that explicitly declares `ports: []`
+// decodes to a present-but-empty slice. Without normalizing both cases to the same (non-nil)
+// value here, reflect.DeepEqual(nil, []int64{}) in detectContainerChanges would report them as
+// different, causing a spurious Update on every reconcile.
+func containerPortNumbers(ports interface{}) []int64 {
+	portsSlice, ok := ports.([]interface{})
+	if !ok {
+		return []int64{}
+	}
+
+	numbers := make([]int64, 0, len(portsSlice))
+	for _, p := range portsSlice {
+		port, ok := p.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		var containerPort int64
+		switch v := port["containerPort"].(type) {
+		case int64:
+			containerPort = v
+		case int32:
+			containerPort = int64(v)
+		case int:
+			containerPort = int64(v)
+		case float64:
+			containerPort = int64(v)
+		default:
+			continue
+		}
+		numbers = append(numbers, containerPort)
+	}
+
+	sort.Slice(numbers, func(i, j int) bool { return numbers[i] < numbers[j] })
+	return numbers
 }

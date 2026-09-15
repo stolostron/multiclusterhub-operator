@@ -118,8 +118,9 @@ func (r *MultiClusterHubReconciler) removeMCEComplianceBanner(ctx context.Contex
 	return r.Client.Delete(ctx, notification)
 }
 
-func (r *MultiClusterHubReconciler) cleanupConsoleNotifications(_ logr.Logger, m *operatorsv1.MultiClusterHub) error {
-	return r.Client.DeleteAllOf(context.TODO(), &consolev1.ConsoleNotification{}, client.MatchingLabels{
+func (r *MultiClusterHubReconciler) cleanupConsoleNotifications(ctx context.Context, _ logr.Logger,
+	m *operatorsv1.MultiClusterHub) error {
+	return r.Client.DeleteAllOf(ctx, &consolev1.ConsoleNotification{}, client.MatchingLabels{
 		"installer.name":      m.GetName(),
 		"installer.namespace": m.GetNamespace(),
 	})

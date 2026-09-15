@@ -1,0 +1,55 @@
+# Copyright Contributors to the Open Cluster Management project
+#
+# NetworkPolicy for acm-cli-downloads pod.
+#
+# All requests (ingress and egress) are handled on port 8080 through the
+# Openshift ingress router.
+#
+{{- if .Values.global.networkPolicies.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: acm-cli-downloads-network-policy
+  labels:
+    app: console-chart-v2
+    chart: "console-chart-{{ .Values.hubconfig.hubVersion }}"
+    component: console
+    subcomponent: acm-cli-downloads
+spec:
+  podSelector:
+    matchLabels:
+      subcomponent: acm-cli-downloads
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              policy-group.network.openshift.io/ingress: ""
+      ports:
+        - protocol: TCP
+          port: 8080
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              policy-group.network.openshift.io/host-network: ""
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              policy-group.network.openshift.io/ingress: ""
+      ports:
+        - protocol: TCP
+          port: 8080
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              policy-group.network.openshift.io/host-network: ""
+      ports:
+        - protocol: TCP
+          port: 8080
+{{- end }}

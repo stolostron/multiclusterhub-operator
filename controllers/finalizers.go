@@ -30,8 +30,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func (r *MultiClusterHubReconciler) cleanupClusterRoles(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
-	err := r.Client.DeleteAllOf(context.TODO(), &rbacv1.ClusterRole{}, client.MatchingLabels{
+func (r *MultiClusterHubReconciler) cleanupClusterRoles(ctx context.Context, reqLogger logr.Logger,
+	m *operatorsv1.MultiClusterHub) error {
+	err := r.Client.DeleteAllOf(ctx, &rbacv1.ClusterRole{}, client.MatchingLabels{
 		"installer.name":      m.GetName(),
 		"installer.namespace": m.GetNamespace(),
 	})
@@ -49,8 +50,9 @@ func (r *MultiClusterHubReconciler) cleanupClusterRoles(reqLogger logr.Logger, m
 	return nil
 }
 
-func (r *MultiClusterHubReconciler) cleanupClusterRoleBindings(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
-	err := r.Client.DeleteAllOf(context.TODO(), &rbacv1.ClusterRoleBinding{}, client.MatchingLabels{
+func (r *MultiClusterHubReconciler) cleanupClusterRoleBindings(ctx context.Context, reqLogger logr.Logger,
+	m *operatorsv1.MultiClusterHub) error {
+	err := r.Client.DeleteAllOf(ctx, &rbacv1.ClusterRoleBinding{}, client.MatchingLabels{
 		"installer.name":      m.GetName(),
 		"installer.namespace": m.GetNamespace(),
 	})
@@ -67,9 +69,8 @@ func (r *MultiClusterHubReconciler) cleanupClusterRoleBindings(reqLogger logr.Lo
 	return nil
 }
 
-func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m *operatorsv1.MultiClusterHub) error {
-	ctx := context.Background()
-
+func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(ctx context.Context, log logr.Logger,
+	m *operatorsv1.MultiClusterHub) error {
 	mce, err := multiclusterengineutils.GetManagedMCE(ctx, r.Client)
 	if err != nil && !apimeta.IsNoMatchError(err) {
 		return err
@@ -85,6 +86,10 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 		if err != nil && (!errors.IsNotFound(err) || !errors.IsGone(err)) {
 			return err
 		}
+		log.Info("Waiting for MultiClusterEngine to terminate", "name", mce.GetName())
+		condition := NewHubCondition(operatorsv1.Terminating, metav1.ConditionTrue, DeleteTimestampReason,
+			fmt.Sprintf("Waiting for MultiClusterEngine %s to terminate", mce.GetName()))
+		SetHubCondition(&m.Status, *condition)
 		return fmt.Errorf("MCE has not yet been terminated")
 	}
 
@@ -94,7 +99,8 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 
 	// Clean up OLM resources based on detected OLM version
 	operandNs := multiclusterengine.OperandNamespace()
-	if r.OLMVersion == "v1" {
+	switch r.OLMVersion {
+	case "v1":
 		// OLM v1 cleanup path (ClusterExtension + ServiceAccount)
 		mceCE, err := v1.GetManagedMCEClusterExtension(ctx, r.Client)
 		if err != nil {
@@ -115,6 +121,10 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 			// Check if still exists
 			err = r.Client.Get(ctx, types.NamespacedName{Name: mceCE.Name}, mceCE)
 			if err == nil {
+				log.Info("Waiting for ClusterExtension to terminate", "name", mceCE.Name)
+				condition := NewHubCondition(operatorsv1.Terminating, metav1.ConditionTrue, DeleteTimestampReason,
+					fmt.Sprintf("Waiting for ClusterExtension %s to terminate", mceCE.Name))
+				SetHubCondition(&m.Status, *condition)
 				return fmt.Errorf("ClusterExtension has not yet been terminated")
 			}
 		}
@@ -126,7 +136,7 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 			return err
 		}
 
-	} else if r.OLMVersion == "v0" {
+	case "v0":
 		// OLM v0 cleanup path (Subscription + CSV + OperatorGroup)
 		mceSub, err := v0.GetManagedMCESubscription(ctx, r.Client)
 		if err != nil {
@@ -150,6 +160,10 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 					types.NamespacedName{Name: csv.GetName(), Namespace: namespace},
 					csv)
 				if err == nil {
+					log.Info("Waiting for CSV to terminate", "name", csv.GetName(), "namespace", namespace)
+					condition := NewHubCondition(operatorsv1.Terminating, metav1.ConditionTrue, DeleteTimestampReason,
+						fmt.Sprintf("Waiting for CSV %s to terminate", csv.GetName()))
+					SetHubCondition(&m.Status, *condition)
 					return fmt.Errorf("CSV has not yet been terminated")
 				}
 			}
@@ -163,6 +177,10 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 				if err != nil && !errors.IsNotFound(err) {
 					return err
 				}
+				log.Info("Waiting for Subscription to terminate", "name", mceSub.Name, "namespace", namespace)
+				condition := NewHubCondition(operatorsv1.Terminating, metav1.ConditionTrue, DeleteTimestampReason,
+					fmt.Sprintf("Waiting for Subscription %s to terminate", mceSub.Name))
+				SetHubCondition(&m.Status, *condition)
 				return fmt.Errorf("subscription has not yet been terminated")
 			}
 		}
@@ -179,10 +197,15 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 	err = r.Client.Get(ctx, types.NamespacedName{Name: multiclusterengine.Namespace().Name}, mceNamespace)
 	if m.Namespace != multiclusterengine.Namespace().Name {
 		if err == nil {
+			nsName := multiclusterengine.Namespace().Name
 			err = r.Client.Delete(ctx, multiclusterengine.Namespace())
 			if err != nil && !errors.IsNotFound(err) {
 				return err
 			}
+			log.Info("Waiting for MCE namespace to terminate", "namespace", nsName)
+			condition := NewHubCondition(operatorsv1.Terminating, metav1.ConditionTrue, DeleteTimestampReason,
+				fmt.Sprintf("Waiting for namespace %s to terminate", nsName))
+			SetHubCondition(&m.Status, *condition)
 			return fmt.Errorf("namespace has not yet been terminated")
 		}
 	} else {
@@ -192,21 +215,51 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(log logr.Logger, m
 	log.Info("MultiClusterEngine finalized")
 	return nil
 }
-func (r *MultiClusterHubReconciler) cleanupNamespaces(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
-	ctx := context.Background()
+func (r *MultiClusterHubReconciler) cleanupNamespaces(ctx context.Context, reqLogger logr.Logger,
+	m *operatorsv1.MultiClusterHub) error {
 	clusterBackupNamespace := &corev1.Namespace{}
 	err := r.Client.Get(ctx, types.NamespacedName{Name: utils.ClusterSubscriptionNamespace}, clusterBackupNamespace)
-	if err == nil {
-		err = r.Client.Delete(ctx, clusterBackupNamespace)
-		if err != nil && !errors.IsNotFound(err) {
-			return err
-		}
-		return fmt.Errorf("namespace has not yet been terminated")
+	if errors.IsNotFound(err) {
+		return nil
+	}
+	if err != nil {
+		// A real lookup failure (e.g. API server hiccup, RBAC issue) is not the same as
+		// "namespace doesn't exist" — return it instead of silently treating it as success,
+		// which would let finalization proceed as if the backup namespace were gone.
+		return err
 	}
 
-	return nil
+	err = r.Client.Delete(ctx, clusterBackupNamespace)
+	if errors.IsNotFound(err) {
+		// Already gone (e.g. deleted concurrently between the Get above and this
+		// Delete) — nothing left to wait for.
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	msg := fmt.Sprintf("Waiting for namespace %s to terminate", utils.ClusterSubscriptionNamespace)
+	if clusterBackupNamespace.Status.Phase == corev1.NamespaceTerminating {
+		for _, c := range clusterBackupNamespace.Status.Conditions {
+			if c.Type == corev1.NamespaceDeletionContentFailure && c.Status == corev1.ConditionTrue {
+				msg = fmt.Sprintf("Namespace %s stuck terminating: %s",
+					utils.ClusterSubscriptionNamespace, c.Message)
+				break
+			}
+		}
+	}
+
+	reqLogger.Info("Waiting for namespace to terminate",
+		"namespace", utils.ClusterSubscriptionNamespace,
+		"phase", clusterBackupNamespace.Status.Phase)
+	condition := NewHubCondition(operatorsv1.Terminating, metav1.ConditionTrue, DeleteTimestampReason, msg)
+	SetHubCondition(&m.Status, *condition)
+
+	return fmt.Errorf("namespace has not yet been terminated")
 }
-func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
+func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(ctx context.Context, reqLogger logr.Logger,
+	m *operatorsv1.MultiClusterHub) error {
 	installerLabels := client.MatchingLabels{
 		"installer.name":      m.GetName(),
 		"installer.namespace": m.GetNamespace(),
@@ -226,13 +279,13 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 		Version: "v1",
 	})
 
-	err := r.Client.List(context.TODO(), appSubList, installerLabels)
+	err := r.Client.List(ctx, appSubList, installerLabels)
 	if err != nil && !errors.IsNotFound(err) {
 		reqLogger.Error(err, "Error while listing appsubs")
 		return err
 	}
 
-	err = r.Client.List(context.TODO(), helmReleaseList, installerLabels)
+	err = r.Client.List(ctx, helmReleaseList, installerLabels)
 	if err != nil && !errors.IsNotFound(err) {
 		reqLogger.Error(err, "Error while listing helmreleases")
 		return err
@@ -250,7 +303,7 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 				Version: "v1",
 			})
 
-			err = r.Client.Get(context.TODO(), types.NamespacedName{
+			err = r.Client.Get(ctx, types.NamespacedName{
 				Name:      helmReleaseName,
 				Namespace: appsub.GetNamespace(),
 			}, helmRelease)
@@ -264,7 +317,7 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 			}
 
 			utils.AddInstallerLabel(helmRelease, m.GetName(), m.GetNamespace())
-			err = r.Client.Update(context.TODO(), helmRelease)
+			err = r.Client.Update(ctx, helmRelease)
 			if err != nil {
 				reqLogger.Error(err, fmt.Sprintf("Error updating helmrelease: %s", helmReleaseName))
 				return err
@@ -275,7 +328,7 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 	if len(appSubList.Items) > 0 {
 		reqLogger.Info("Terminating App Subscriptions")
 		for i, appsub := range appSubList.Items {
-			err = r.Client.Delete(context.TODO(), &appSubList.Items[i])
+			err = r.Client.Delete(ctx, &appSubList.Items[i])
 			if err != nil {
 				reqLogger.Error(err, fmt.Sprintf("Error terminating sub: %s", appsub.GetName()))
 				return err
@@ -294,9 +347,8 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(reqLogger logr.Logge
 	return nil
 }
 
-func (r *MultiClusterHubReconciler) orphanOwnedMultiClusterEngine(reqLogger logr.Logger, m *operatorsv1.MultiClusterHub) error {
-	ctx := context.Background()
-
+func (r *MultiClusterHubReconciler) orphanOwnedMultiClusterEngine(ctx context.Context, reqLogger logr.Logger,
+	m *operatorsv1.MultiClusterHub) error {
 	mce, err := multiclusterengineutils.GetManagedMCE(ctx, r.Client)
 	if mce == nil {
 		// MCE does not exist

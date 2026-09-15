@@ -307,6 +307,68 @@ spec:
               volumes:
               - emptyDir: {}
                 name: tmp-volume
+      - apiVersion: networking.k8s.io/v1
+        kind: NetworkPolicy
+        metadata:
+          labels:
+            apps.open-cluster-management.io/gitopsaddon: 'true'
+          name: gitops-addon-policy
+          namespace: open-cluster-management-agent-addon
+        spec:
+          egress:
+          - ports:
+            - port: 53
+              protocol: UDP
+            - port: 53
+              protocol: TCP
+            - port: 5353
+              protocol: UDP
+            - port: 5353
+              protocol: TCP
+          - ports:
+            - port: 443
+              protocol: TCP
+            - port: 6443
+              protocol: TCP
+          ingress:
+          - ports:
+            - port: 8387
+              protocol: TCP
+          podSelector:
+            matchLabels:
+              app: gitops-addon
+          policyTypes:
+          - Ingress
+          - Egress
+      - apiVersion: networking.k8s.io/v1
+        kind: NetworkPolicy
+        metadata:
+          labels:
+            apps.open-cluster-management.io/gitopsaddon: 'true'
+          name: gitops-addon-cleanup-policy
+          namespace: open-cluster-management-agent-addon
+        spec:
+          egress:
+          - ports:
+            - port: 53
+              protocol: UDP
+            - port: 53
+              protocol: TCP
+            - port: 5353
+              protocol: UDP
+            - port: 5353
+              protocol: TCP
+          - ports:
+            - port: 443
+              protocol: TCP
+            - port: 6443
+              protocol: TCP
+          podSelector:
+            matchLabels:
+              job-name: gitops-addon-cleanup
+          policyTypes:
+          - Ingress
+          - Egress
       - apiVersion: v1
         imagePullSecrets:
         - name: open-cluster-management-image-pull-credentials

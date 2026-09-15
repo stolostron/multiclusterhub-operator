@@ -49,6 +49,12 @@ const (
 	// ClusterSubscriptionNamespace is the namespace for the open-cluster-management-backup subscription.
 	ClusterSubscriptionNamespace = "open-cluster-management-backup"
 
+	// ObservabilityNamespace is the namespace where MultiClusterObservability operand resources
+	// (e.g. Thanos, Alertmanager, Grafana, Observatorium) are deployed. This namespace is created
+	// by the multicluster-observability-operator, not by MCH, once a MultiClusterObservability CR
+	// instance exists.
+	ObservabilityNamespace = "open-cluster-management-observability"
+
 	// OpenShiftClusterMonitoringLabel is the label for OpenShift cluster monitoring.
 	OpenShiftClusterMonitoringLabel = "openshift.io/cluster-monitoring"
 
@@ -252,6 +258,7 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole, isSTSEn
 		nn = append(nn, types.NamespacedName{Name: "multicluster-operators-hub-subscription", Namespace: m.Namespace})
 		nn = append(nn, types.NamespacedName{Name: "multicluster-operators-standalone-subscription", Namespace: m.Namespace})
 		nn = append(nn, types.NamespacedName{Name: "multicluster-operators-subscription-report", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "multicluster-integrations", Namespace: m.Namespace})
 	}
 	if m.Enabled(operatorsv1.ClusterLifecycle) {
 		nn = append(nn, types.NamespacedName{Name: "klusterlet-addon-controller-v2", Namespace: m.Namespace})

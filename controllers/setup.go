@@ -30,6 +30,7 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
@@ -174,6 +175,40 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) (controll
 					return []reconcile.Request{}
 				},
 			),
+		).
+		Watches(
+			&corev1.Namespace{},
+			handler.EnqueueRequestsFromMapFunc(
+				func(ctx context.Context, a client.Object) []reconcile.Request {
+					// Only namespaces used as NetworkPolicy overrides (e.g. the observability
+					// namespace) matter here; everything else should not trigger a reconcile.
+					if !isNetworkPolicyOverrideNamespace(a.GetName()) {
+						return []reconcile.Request{}
+					}
+
+					multiClusterHubList := &operatorv1.MultiClusterHubList{}
+					if err := r.Client.List(ctx, multiClusterHubList); err == nil && len(multiClusterHubList.Items) > 0 {
+						mch := multiClusterHubList.Items[0]
+						return []reconcile.Request{
+							{
+								NamespacedName: types.NamespacedName{
+									Name:      mch.GetName(),
+									Namespace: mch.GetNamespace(),
+								},
+							},
+						}
+					}
+					return []reconcile.Request{}
+				},
+			),
+			// Only react to namespace creation; updates/deletes of any namespace are irrelevant
+			// to this watch and would otherwise trigger unnecessary reconciles cluster-wide.
+			builder.WithPredicates(ctrlpredicate.Funcs{
+				CreateFunc:  func(e event.CreateEvent) bool { return true },
+				UpdateFunc:  func(e event.UpdateEvent) bool { return false },
+				DeleteFunc:  func(e event.DeleteEvent) bool { return false },
+				GenericFunc: func(e event.GenericEvent) bool { return false },
+			}),
 		).
 		Build(r)
 }

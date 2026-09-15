@@ -39,9 +39,9 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operatorv1.MultiClusterHub, ocpConsole,
-	isSTSEnabled bool) error {
-	if err := r.cleanupAppSubscriptions(reqLogger, m); err != nil {
+func (r *MultiClusterHubReconciler) finalizeHub(ctx context.Context, reqLogger logr.Logger,
+	m *operatorv1.MultiClusterHub, ocpConsole, isSTSEnabled bool) error {
+	if err := r.cleanupAppSubscriptions(ctx, reqLogger, m); err != nil {
 		return err
 	}
 
@@ -53,24 +53,41 @@ func (r *MultiClusterHubReconciler) finalizeHub(reqLogger logr.Logger, m *operat
 			continue
 		}
 
-		result, err := r.ensureNoComponent(context.TODO(), m, c, r.CacheSpec, isSTSEnabled)
-		if err != nil {
-			return err
-		}
+		result, err := r.ensureNoComponent(ctx, m, c, r.CacheSpec, isSTSEnabled)
+		if err != nil || result != (ctrl.Result{}) {
+			msg := fmt.Sprintf("Waiting for component %s to terminate", c)
+			if err != nil {
+				msg = fmt.Sprintf("%s: %s", msg, err.Error())
+			}
+			condition := NewHubCondition(operatorv1.Terminating, metav1.ConditionTrue, DeleteTimestampReason, msg)
+			SetHubCondition(&m.Status, *condition)
 
-		if result != (ctrl.Result{}) {
+			if err != nil {
+				reqLogger.Info("Component removal incomplete", "component", c, "reason", err.Error())
+				return err
+			}
+			reqLogger.Info("Component removal requires requeue", "component", c)
 			return errors.NewBadRequest(fmt.Sprintf("Requeue needed for component: %v", c))
 		}
 	}
 
-	cleanupFunctions := []func(reqLogger logr.Logger, m *operatorv1.MultiClusterHub) error{
-		r.cleanupNamespaces, r.cleanupClusterRoles, r.cleanupClusterRoleBindings,
-		r.cleanupMultiClusterEngine, r.orphanOwnedMultiClusterEngine,
-		r.cleanupConsoleNotifications,
+	type cleanupStep struct {
+		name string
+		fn   func(context.Context, logr.Logger, *operatorv1.MultiClusterHub) error
 	}
 
-	for _, cleanupFn := range cleanupFunctions {
-		if err := cleanupFn(reqLogger, m); err != nil {
+	steps := []cleanupStep{
+		{"Namespaces", r.cleanupNamespaces},
+		{"ClusterRoles", r.cleanupClusterRoles},
+		{"ClusterRoleBindings", r.cleanupClusterRoleBindings},
+		{"MultiClusterEngine", r.cleanupMultiClusterEngine},
+		{"OrphanMCE", r.orphanOwnedMultiClusterEngine},
+		{"ConsoleNotifications", r.cleanupConsoleNotifications},
+	}
+
+	for _, step := range steps {
+		if err := step.fn(ctx, reqLogger, m); err != nil {
+			reqLogger.Info("Finalization step incomplete", "step", step.name, "reason", err.Error())
 			return err
 		}
 	}
@@ -155,7 +172,7 @@ func (r *MultiClusterHubReconciler) deployResources(reqLogger logr.Logger, m *op
 		message := mergeErrors(errs)
 		err := fmt.Errorf("failed to render resources: %s", message)
 		reqLogger.Error(err, err.Error())
-		return CRDRenderReason, err
+		return ResourceRenderReason, err
 	}
 
 	for _, res := range resources {
