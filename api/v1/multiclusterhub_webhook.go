@@ -20,6 +20,7 @@ package v1
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -110,6 +111,15 @@ var (
 var (
 	mchlog = log.Log.WithName("multiclusterhub-resource")
 	Client client.Client
+
+	// DesiredMCEChannelFunc resolves the MCE channel this MultiClusterHub version wants to
+	// install/upgrade to. It is set by main.go at startup (to the equivalent of
+	// multiclusterengine.DesiredChannel) rather than imported directly, because
+	// pkg/multiclusterengine imports this package and a direct import would create an
+	// import cycle. If left nil (e.g. in contexts that don't wire it up),
+	// validateMCEChannelAnnotation skips validation rather than blocking on incomplete
+	// information.
+	DesiredMCEChannelFunc func() string
 )
 
 func (r *MultiClusterHub) SetupWebhookWithManager(mgr ctrl.Manager) error {
@@ -141,6 +151,12 @@ func (r *MultiClusterHub) ValidateCreate(ctx context.Context, obj *MultiClusterH
 
 	// Validate OLM version-specific annotations
 	if err := validateOLMAnnotations(ctx, obj); err != nil {
+		return warnings, err
+	}
+
+	// Validate MCE ClusterExtension channel annotation doesn't conflict with the channel
+	// this MultiClusterHub version requires
+	if err := validateMCEChannelAnnotation(obj); err != nil {
 		return warnings, err
 	}
 
@@ -213,6 +229,12 @@ func (r *MultiClusterHub) ValidateUpdate(ctx context.Context, oldObj, newObj *Mu
 
 	// Validate OLM version-specific annotations
 	if err := validateOLMAnnotations(ctx, newObj); err != nil {
+		return warnings, err
+	}
+
+	// Validate MCE ClusterExtension channel annotation doesn't conflict with the channel
+	// this MultiClusterHub version requires
+	if err := validateMCEChannelAnnotation(newObj); err != nil {
 		return warnings, err
 	}
 
@@ -443,6 +465,63 @@ func validateOLMAnnotations(ctx context.Context, mch *MultiClusterHub) error {
 	}
 
 	return nil
+}
+
+// mceChannelAnnotation is a minimal subset of olm/v1.ClusterExtensionOverrides used only to
+// read the "channels" field out of the MCE ClusterExtension annotation. We can't import
+// pkg/multiclusterengine/olm/v1 here (it imports this package, which would create an import
+// cycle), so we duplicate just the field we need instead of the whole override struct.
+type mceChannelAnnotation struct {
+	Channels []string `json:"channels,omitempty"`
+}
+
+// validateMCEChannelAnnotation blocks create/update if the MCE ClusterExtension annotation
+// pins channel(s) that conflict with the channel this MultiClusterHub version requires.
+// Without this check, an annotation that was valid when it was set (e.g. matching MCH 5.0's
+// channel) can silently become stale after MCH is upgraded (e.g. to 5.1), leaving MCE stuck
+// on the old channel with only a warning log to explain why (see ACM-34318). This surfaces
+// that conflict immediately, at admission time, instead of during reconciliation.
+func validateMCEChannelAnnotation(mch *MultiClusterHub) error {
+	annotations := mch.GetAnnotations()
+	if annotations == nil {
+		return nil
+	}
+
+	raw, ok := annotations[annotationMCEClusterExtensionSpec]
+	if !ok || raw == "" {
+		return nil
+	}
+
+	var override mceChannelAnnotation
+	if err := json.Unmarshal([]byte(raw), &override); err != nil {
+		// Malformed JSON is reported when the annotation is actually applied during
+		// reconciliation; avoid duplicating that error here.
+		return nil
+	}
+
+	if len(override.Channels) == 0 {
+		return nil
+	}
+
+	if DesiredMCEChannelFunc == nil {
+		// Desired channel resolver isn't wired up in this process; skip rather than block
+		// on incomplete information.
+		return nil
+	}
+	desiredChannel := DesiredMCEChannelFunc()
+
+	for _, ch := range override.Channels {
+		if ch == desiredChannel {
+			return nil
+		}
+	}
+
+	return fmt.Errorf(
+		"annotation %q pins MCE ClusterExtension channel(s) %v, which conflicts with channel %q "+
+			"required by this MultiClusterHub version; this will block MCE upgrades. "+
+			"Update the annotation to use channel %q or remove it",
+		annotationMCEClusterExtensionSpec, override.Channels, desiredChannel, desiredChannel,
+	)
 }
 
 // validateOLMAnnotationPair validates that a v0/v1 annotation pair matches the expected OLM version.
