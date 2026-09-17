@@ -153,7 +153,7 @@ func TestEnsureMCEComplianceBanner_UpdatesBanner(t *testing.T) {
 	hub := testHub()
 
 	if err := reconciler.ensureMCEComplianceBanner(ctx, hub, &operatorsv1.MCEVersionComplianceStatus{
-		RequiredChannel: "stable-2.14",
+		RequiredChannel: "stable-2.9",
 		CurrentVersion:  "5.0.0",
 	}); err != nil {
 		t.Fatalf("failed to create initial banner: %v", err)
@@ -162,7 +162,7 @@ func TestEnsureMCEComplianceBanner_UpdatesBanner(t *testing.T) {
 	hub.Name = "other-hub"
 	hub.Namespace = "other-namespace"
 	if err := reconciler.ensureMCEComplianceBanner(ctx, hub, &operatorsv1.MCEVersionComplianceStatus{
-		RequiredChannel: "stable-2.14",
+		RequiredChannel: "stable-2.9",
 		CurrentVersion:  "2.8.0",
 	}); err != nil {
 		t.Fatalf("ensureMCEComplianceBanner() error = %v", err)
