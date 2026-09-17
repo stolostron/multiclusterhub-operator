@@ -14,6 +14,8 @@ import (
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
+	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
@@ -117,12 +119,17 @@ func (r *MultiClusterHubReconciler) ComponentsAreRunning(m *operatorsv1.MultiClu
 }
 
 // syncHubStatus checks if the status is up-to-date and sync it if necessary
-func (r *MultiClusterHubReconciler) syncHubStatus(m *operatorsv1.MultiClusterHub,
+func (r *MultiClusterHubReconciler) syncHubStatus(ctx context.Context, m *operatorsv1.MultiClusterHub,
 	original *operatorsv1.MultiClusterHubStatus, allDeps []*appsv1.Deployment,
 	allCRs map[string]*unstructured.Unstructured, ocpConsole, isSTSEnabled bool) (reconcile.Result, error) {
 
-	newStatus := calculateStatus(m, allDeps, allCRs, ocpConsole, isSTSEnabled)
-	if reflect.DeepEqual(m.Status, original) {
+	newStatus := r.calculateStatus(ctx, m, allDeps, allCRs, ocpConsole, isSTSEnabled)
+
+	if err := r.ensureMCEComplianceBanner(ctx, m, newStatus.MCEVersionCompliance); err != nil {
+		r.Log.Error(err, "Failed to reconcile MCE compliance ConsoleNotification banner")
+	}
+
+	if reflect.DeepEqual(newStatus, *original) {
 		r.Log.Info("Status hasn't changed")
 		return reconcile.Result{}, nil
 	}
@@ -148,7 +155,7 @@ func (r *MultiClusterHubReconciler) syncHubStatus(m *operatorsv1.MultiClusterHub
 	}
 }
 
-func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deployment,
+func (r *MultiClusterHubReconciler) calculateStatus(ctx context.Context, hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deployment,
 	allCRs map[string]*unstructured.Unstructured, ocpConsole, isSTSEnabled bool) operatorsv1.MultiClusterHubStatus {
 
 	components := map[string]operatorsv1.StatusCondition{}
@@ -156,10 +163,13 @@ func calculateStatus(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deploym
 		components = getComponentStatuses(hub, allDeps, allCRs, ocpConsole, isSTSEnabled)
 	}
 
+	mceVersionCompliance := r.calculateMCEVersionCompliance(ctx)
+
 	status := operatorsv1.MultiClusterHubStatus{
-		CurrentVersion: hub.Status.CurrentVersion,
-		DesiredVersion: version.Version,
-		Components:     components,
+		CurrentVersion:       hub.Status.CurrentVersion,
+		DesiredVersion:       version.Version,
+		Components:           components,
+		MCEVersionCompliance: mceVersionCompliance,
 	}
 
 	// Set current version
@@ -677,5 +687,56 @@ func unknownStatus(name, kind string) operatorsv1.StatusCondition {
 		Reason:             "No conditions available",
 		Message:            "No conditions available",
 		Available:          false,
+	}
+}
+
+// calculateMCEVersionCompliance checks whether the current MCE version matches the required channel.
+func (r *MultiClusterHubReconciler) calculateMCEVersionCompliance(ctx context.Context) *operatorsv1.MCEVersionComplianceStatus {
+	requiredChannel := multiclusterengine.DesiredChannel()
+
+	existingMCE, err := multiclusterengineutils.GetManagedMCE(ctx, r.Client)
+	if err != nil {
+		return &operatorsv1.MCEVersionComplianceStatus{
+			RequiredChannel: requiredChannel,
+			IsCompliant:     false,
+			Message:         fmt.Sprintf("Unable to retrieve MCE: %v", err),
+		}
+	}
+
+	if existingMCE == nil {
+		return &operatorsv1.MCEVersionComplianceStatus{
+			RequiredChannel: requiredChannel,
+			IsCompliant:     false,
+			Message:         "MCE not yet installed",
+		}
+	}
+
+	currentVersion := existingMCE.Status.CurrentVersion
+	if currentVersion == "" {
+		return &operatorsv1.MCEVersionComplianceStatus{
+			RequiredChannel: requiredChannel,
+			IsCompliant:     false,
+			Message:         "MCE version not yet available - installation in progress",
+		}
+	}
+
+	var validationErr error
+	if utils.IsCommunityMode() {
+		validationErr = version.ValidCommunityMCEVersion(currentVersion)
+	} else {
+		validationErr = version.ValidMCEVersion(currentVersion)
+	}
+
+	isCompliant := validationErr == nil
+	message := fmt.Sprintf("MCE version %s does not meet channel %s requirements", currentVersion, requiredChannel)
+	if isCompliant {
+		message = fmt.Sprintf("MCE version %s meets channel %s requirements", currentVersion, requiredChannel)
+	}
+
+	return &operatorsv1.MCEVersionComplianceStatus{
+		RequiredChannel: requiredChannel,
+		CurrentVersion:  currentVersion,
+		IsCompliant:     isCompliant,
+		Message:         message,
 	}
 }

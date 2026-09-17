@@ -1,0 +1,123 @@
+// Copyright Contributors to the Open Cluster Management project
+
+package controllers
+
+import (
+	"context"
+	"fmt"
+
+	semver "github.com/Masterminds/semver/v3"
+	"github.com/go-logr/logr"
+	consolev1 "github.com/openshift/api/console/v1"
+	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/version"
+
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	mceComplianceBannerName = "acm-mce-version-compliance"
+	bannerBackgroundColor   = "var(--pf-v6-c-banner--m-danger--BackgroundColor, var(--pf-v5-c-banner--m-red--BackgroundColor))"
+	bannerTextColor         = "var(--pf-v6-c-banner--m-danger--Color, var(--pf-v5-global--Color--100))"
+	bannerSupportLinkHref   = "https://access.redhat.com/support"
+	bannerSupportLinkText   = "Contact Red Hat Support"
+)
+
+func mceComplianceBannerText(currentVersion, requiredChannel string) string {
+	direction := "does not match"
+	current, errCurrent := semver.NewVersion(currentVersion)
+	required, errRequired := semver.NewVersion(version.RequiredMCEVersion)
+	if errCurrent == nil && errRequired == nil {
+		if current.GreaterThan(required) {
+			direction = "is ahead of"
+		} else {
+			direction = "is behind"
+		}
+	}
+
+	return fmt.Sprintf(
+		"WARNING: ACM in unexpected configuration: MCE %s %s the expected %s channel.",
+		currentVersion, direction, requiredChannel,
+	)
+}
+
+func (r *MultiClusterHubReconciler) ensureMCEComplianceBanner(ctx context.Context,
+	hub *operatorsv1.MultiClusterHub,
+	compliance *operatorsv1.MCEVersionComplianceStatus) error {
+	if compliance == nil || compliance.IsCompliant || compliance.CurrentVersion == "" {
+		return r.removeMCEComplianceBanner(ctx)
+	}
+
+	desired := &consolev1.ConsoleNotification{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: mceComplianceBannerName,
+			Labels: map[string]string{
+				"installer.name":      hub.GetName(),
+				"installer.namespace": hub.GetNamespace(),
+			},
+		},
+		Spec: consolev1.ConsoleNotificationSpec{
+			Text:            mceComplianceBannerText(compliance.CurrentVersion, compliance.RequiredChannel),
+			Location:        consolev1.BannerTop,
+			BackgroundColor: bannerBackgroundColor,
+			Color:           bannerTextColor,
+			Link: &consolev1.Link{
+				Text: bannerSupportLinkText,
+				Href: bannerSupportLinkHref,
+			},
+		},
+	}
+
+	existing := &consolev1.ConsoleNotification{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: mceComplianceBannerName}, existing)
+	if errors.IsNotFound(err) {
+		log.Info("Creating MCE compliance ConsoleNotification banner")
+		if err := r.Client.Create(ctx, desired); err != nil {
+			return fmt.Errorf("failed to create ConsoleNotification %s: %w", mceComplianceBannerName, err)
+		}
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("failed to get ConsoleNotification %s: %w", mceComplianceBannerName, err)
+	}
+
+	linkChanged := existing.Spec.Link == nil || existing.Spec.Link.Text != desired.Spec.Link.Text ||
+		existing.Spec.Link.Href != desired.Spec.Link.Href
+	labelsChanged := existing.Labels["installer.name"] != desired.Labels["installer.name"] ||
+		existing.Labels["installer.namespace"] != desired.Labels["installer.namespace"]
+	if existing.Spec.Text != desired.Spec.Text ||
+		existing.Spec.BackgroundColor != desired.Spec.BackgroundColor ||
+		existing.Spec.Color != desired.Spec.Color ||
+		existing.Spec.Location != desired.Spec.Location || linkChanged || labelsChanged {
+		patch := client.MergeFrom(existing.DeepCopy())
+		existing.Spec = desired.Spec
+		existing.Labels = desired.Labels
+		log.Info("Updating MCE compliance ConsoleNotification banner")
+		if err := r.Client.Patch(ctx, existing, patch); err != nil {
+			return fmt.Errorf("failed to patch ConsoleNotification %s: %w", mceComplianceBannerName, err)
+		}
+	}
+
+	return nil
+}
+
+func (r *MultiClusterHubReconciler) removeMCEComplianceBanner(ctx context.Context) error {
+	notification := &consolev1.ConsoleNotification{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: mceComplianceBannerName}, notification)
+	if errors.IsNotFound(err) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("failed to get ConsoleNotification %s: %w", mceComplianceBannerName, err)
+	}
+
+	log.Info("Removing MCE compliance ConsoleNotification banner")
+	return r.Client.Delete(ctx, notification)
+}
+
+func (r *MultiClusterHubReconciler) cleanupConsoleNotifications(_ logr.Logger, _ *operatorsv1.MultiClusterHub) error {
+	return r.removeMCEComplianceBanner(context.TODO())
+}

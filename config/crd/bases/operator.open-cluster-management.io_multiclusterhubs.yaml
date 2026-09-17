@@ -453,6 +453,27 @@ spec:
               desiredVersion:
                 description: DesiredVersion indicates the desired version
                 type: string
+              mceVersionCompliance:
+                description: MCEVersionCompliance tracks whether the MCE version meets
+                  the required channel version.
+                properties:
+                  currentVersion:
+                    description: CurrentVersion is the version reported by MCE.
+                    type: string
+                  isCompliant:
+                    description: IsCompliant indicates whether the current MCE version
+                      meets the required channel.
+                    type: boolean
+                  message:
+                    description: Message describes the compliance result.
+                    type: string
+                  requiredChannel:
+                    description: RequiredChannel is the channel version that MCE should
+                      meet.
+                    type: string
+                required:
+                - isCompliant
+                type: object
               phase:
                 description: Represents the running phase of the MultiClusterHub
                 type: string

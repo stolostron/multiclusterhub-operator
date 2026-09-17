@@ -484,7 +484,7 @@ func TestCalculateStatus_RemovesStaleProgressingCondition(t *testing.T) {
 	}
 
 	// Call calculateStatus - this should trigger the fix at line 187
-	newStatus := calculateStatus(hub, allDeps, allCRs, false, false)
+	newStatus := recon.calculateStatus(ctx, hub, allDeps, allCRs, false, false)
 
 	// Verify that the stale Progressing condition has been removed
 	if HubConditionPresent(newStatus, operatorsv1.Progressing) {
