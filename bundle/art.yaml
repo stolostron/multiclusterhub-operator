@@ -1,6 +1,6 @@
 ---
 updates:
-- file: "manifests/multiclusterhub-operator.clusterserviceversion.yaml"
+- file: "manifests/advanced-cluster-management.clusterserviceversion.yaml"
   update_list:
   - search: "5.0.0"
     replace: "5.0.0"
