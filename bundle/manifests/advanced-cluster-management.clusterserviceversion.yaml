@@ -2,41 +2,75 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: |-
-      [
-        {
-          "apiVersion": "operator.open-cluster-management.io/v1",
-          "kind": "MultiClusterHub",
-          "metadata": {
-            "name": "multiclusterhub",
-            "namespace": "open-cluster-management"
-          },
-          "spec": {}
-        }
-      ]
-    capabilities: Basic Install
+    alm-examples: '[{"apiVersion": "operator.open-cluster-management.io/v1", "kind": "MultiClusterHub", "metadata": {"name": "multiclusterhub", "namespace": "open-cluster-management"}, "spec": {}}]'
+    capabilities: Seamless Upgrades
     categories: Integration & Delivery
-    certified: "false"
-    createdAt: "2026-08-11T21:49:10Z"
-    description: Open management of Openshift and Kubernetes clusters
-    features.operators.openshift.io/cnf: "false"
-    features.operators.openshift.io/cni: "false"
-    features.operators.openshift.io/csi: "false"
-    features.operators.openshift.io/disconnected: "true"
-    features.operators.openshift.io/fips-compliant: "true"
-    features.operators.openshift.io/proxy-aware: "true"
-    features.operators.openshift.io/tls-profiles: "false"
-    features.operators.openshift.io/token-auth-aws: "false"
-    features.operators.openshift.io/token-auth-azure: "false"
-    features.operators.openshift.io/token-auth-gcp: "false"
-    operators.operatorframework.io/builder: operator-sdk-v1.42.3
-    operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
+    certified: 'true'
+    support: Red Hat
+    createdAt: '2026-09-17T12:27:09Z'
+    description: Advanced provisioning and management of OpenShift and Kubernetes clusters
+    operatorframework.io/suggested-namespace: open-cluster-management
+    operatorframework.io/initialization-resource: '{"apiVersion":"operator.open-cluster-management.io/v1", "kind":"MultiClusterHub","metadata":{"name":"multiclusterhub","namespace":"open-cluster-management"}, "spec": {}}'
+    operators.openshift.io/valid-subscription: '["OpenShift Platform Plus", "Red Hat Advanced Cluster Management for Kubernetes"]'
+    operators.openshift.io/infrastructure-features: '["disconnected", "proxy-aware", "fips"]'
     repository: https://github.com/open-cluster-management/multiclusterhub-operator
-    support: The Open Cluster Management Project
-  name: multiclusterhub-operator.v5.0.0
+    features.operators.openshift.io/cnf: 'false'
+    features.operators.openshift.io/cni: 'false'
+    features.operators.openshift.io/csi: 'false'
+    features.operators.openshift.io/disconnected: 'true'
+    features.operators.openshift.io/proxy-aware: 'true'
+    features.operators.openshift.io/fips-compliant: 'true'
+    features.operators.openshift.io/tls-profiles: 'false'
+    features.operators.openshift.io/token-auth-aws: 'false'
+    features.operators.openshift.io/token-auth-azure: 'false'
+    features.operators.openshift.io/token-auth-gcp: 'false'
+    olm.properties: '[{"type": "olm.maxOpenShiftVersion", "value": "5.1"}]'
+    olm.skipRange: '>=2.17.0-0 <5.0.0'
+    operators.openshift.io/must-gather-image: registry.redhat.io/rhacm2/acm-must-gather-rhel9@sha256:0e6cc4dc6d9fef6c3dfc4206320bce4a9ced7a10fd97eeea5f281eddcdef85af
+  name: advanced-cluster-management.v5.0.0
   namespace: placeholder
+  labels:
+    operatorframework.io/arch.amd64: supported
+    operatorframework.io/arch.ppc64le: supported
+    operatorframework.io/arch.s390x: supported
+    operatorframework.io/arch.arm64: supported
+    operatorframework.io/os.linux: supported
 spec:
-  apiservicedefinitions: {}
+  displayName: Advanced Cluster Management for Kubernetes
+  version: 5.0.0
+  provider:
+    name: Red Hat
+  maintainers:
+  - email: acm-contact@redhat.com
+    name: Red Hat
+  maturity: stable
+  description: "Red Hat Advanced Cluster Management for Kubernetes provides the multicluster hub, a central management console for managing multiple Kubernetes-based clusters across data centers, public clouds, and private clouds. You can use the hub to create Red Hat OpenShift Container Platform clusters on selected providers, or import existing Kubernetes-based clusters. After the clusters are managed, you can set compliance requirements to ensure that the clusters maintain the specified security requirements. You can also deploy business applications across your clusters.\n\n## How to install\nUse of this Red Hat product requires a licensing and subscription agreement.\n\nInstall the Red Hat Advanced Cluster Management for Kubernetes operator by following instructions presented when you click the `Install` button. After installing the operator, create an instance of the `MultiClusterHub` resource to install the hub.\n\nNote that if you will be using the hub to manage non-OpenShift 4.x clusters, you will need to create a Kubernetes `Secret` resource containing your OpenShift pull secret and specify this `Secret` in the `MultiClusterHub` resource, as described in the install documentation.\n### Special considerations for disconnected network environments\nIf you are installing Red Hat Advanced Cluster Management for Kubernetes in a disconnected network environment, there are some special install and upgrade requirements.\n#### Include multicluster engine for Kubernetes in mirrored catalog\nInstalling an OLM operator in a disconnected network environment involves the use of a local mirrored operator catalog and image registry. Red Hat Advanced Cluster Management for Kubernetes requires (and automatically installs) the multicluster engine for Kuberenetes operator so this operator package is needed in your local mirrored operator catalog in addition to the one for Red Hat Advanced Cluster Management for Kubernetes.\n\nif you are using a full mirror of the Red Hat operators catalog, no special action is needed when creating the mirror catalog.\n\nIf you are using a filtered (rather than full) mirror of the OLM catalog, be sure to include both the `advanced-cluster-management` **and** `multicluster-engine` packages in your mirrored catalog when creating it.\n#### Add annotation to MultiClusterHub resource\nIf you are installing or upgrading to a Red Hat Advanced Cluster Management for Kubernetes release prior to release 2.7, an `mce-subscription-spec` annotation is required in the instance of the `MultiClusterHub` resource you create to set up your hub. This annotation identifies the catalog source for your local mirrored operator catalog and is required when installing releases prior to release 2.7 regardless of whether your local mirrored operator catalog is a full mirror or a filtered one.\n\nThe `mce-subscription-spec` annotation is not usually needed, and thus can usually be omitted, when installing or upgrading to release 2.7 or a later release. Starting with release 2.7, the Red Hat Advanced Cluster Management for Kubernetes operator is able to automatically determine the catalog source to use in typical scenarios.\n\nThe following is an example of the `mce-subscription-spec` annotation:\n\n```\n apiVersion: operator.open-cluster-management.io/v1\n kind: MultiClusterHub\n metadata:\n \tannotations:\n \t\tinstaller.open-cluster-management.io/mce-subscription-spec: '{\"source\": \"my-catalog-source\"}'\n spec: {}\n\n```\n\nReplace `my-catalog-source` with the name of your catalog source.\n\nIf you are creating the `MultiClusterHub` resource using the OperatorHub UI, switch to the YAML view for the resource in order to insert the annotation.\n### Where to find more installation information\nYou can find additional installation guidance in the [install documentation](https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_management_for_kubernetes/5.0/html/install/index). "
+  icon:
+  - base64data: PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJ1dWlkLWFiOGQwMDJmLWM2NGYtNDQ3ZC05MzVhLTI0ZDc0YTNiNjUxZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMzggMzgiPjx0aXRsZT5SZWQgSGF0IEFkdmFuY2VkIENsdXN0ZXIgTWFuYWdlbWVudCBmb3IgS3ViZXJuZXRlcyBpY29uPC90aXRsZT4KPGRlc2M+UkhBQ00sIG1hbmFnZW1lbnQsIGVkZ2U8L2Rlc2M+CjxtZXRhZGF0YT48P3hwYWNrZXQgYmVnaW49Iu+7vyIgaWQ9Ilc1TTBNcENlaGlIenJlU3pOVGN6a2M5ZCI/Pgo8eDp4bXBtZXRhIHhtbG5zOng9ImFkb2JlOm5zOm1ldGEvIiB4OnhtcHRrPSJBZG9iZSBYTVAgQ29yZSA4LjAtYzAwMSAxLjAwMDAwMCwgMDAwMC8wMC8wMC0wMDowMDowMCAgICAgICAgIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIgogICAgICAgICAgICB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iCiAgICAgICAgICAgIHhtbG5zOmNxPSJodHRwOi8vd3d3LmRheS5jb20vamNyL2NxLzEuMCIKICAgICAgICAgICAgeG1sbnM6eG1wUmlnaHRzPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvcmlnaHRzLyI+CiAgICAgICAgIDx4bXA6cmhjYy1lZmZlY3RpdmUtb24+MjAyNC0wMy0wMVQxNToyNjozMC4yMDhaPC94bXA6cmhjYy1lZmZlY3RpdmUtb24+CiAgICAgICAgIDx4bXA6cmhjYy1tZXRhZGF0YS1jb21wbGV0ZS1tb2RlcmF0b3I+cGVuZGluZzwveG1wOnJoY2MtbWV0YWRhdGEtY29tcGxldGUtbW9kZXJhdG9yPgogICAgICAgICA8eG1wOnJoY2MtdHJhbnNsYXRpb24taWQ+VFJBNjZlYzAzNzktYjJmYi00Y2JkLTllMzctYzhhOTk3ZjBmN2QwPC94bXA6cmhjYy10cmFuc2xhdGlvbi1pZD4KICAgICAgICAgPHhtcDpicmFuZC1jb250ZW50LXR5cGU+SWNvbjwveG1wOmJyYW5kLWNvbnRlbnQtdHlwZT4KICAgICAgICAgPHhtcDpDcmVhdGVEYXRlPjIwMjQtMDMtMDFUMTU6MjY6MzAuMjA4WjwveG1wOkNyZWF0ZURhdGU+CiAgICAgICAgIDx4bXA6cmhjYy1lZmZlY3RpdmUtb24tc2V0LW9uLXVwbG9hZD50cnVlPC94bXA6cmhjYy1lZmZlY3RpdmUtb24tc2V0LW9uLXVwbG9hZD4KICAgICAgICAgPHhtcDpyaGNjLW1ldGFkYXRhLWNvbXBsZXRlLXVwbG9hZGVyPnBlbmRpbmc8L3htcDpyaGNjLW1ldGFkYXRhLWNvbXBsZXRlLXVwbG9hZGVyPgogICAgICAgICA8eG1wOnJoY2MtZmlsZS1sYXN0LW1vZGlmaWVkPjIwMjQtMDMtMjFUMDA6NDA6MjkuNjI5WjwveG1wOnJoY2MtZmlsZS1sYXN0LW1vZGlmaWVkPgogICAgICAgICA8eG1wOnJoY2MtYXVkaWVuY2U+cmhjYy1hdWRpZW5jZTppbnRlcm5hbDwveG1wOnJoY2MtYXVkaWVuY2U+CiAgICAgICAgIDx4bXA6cmhjYy1yaWdodHMtcmVzdHJpY3RlZD5ubzwveG1wOnJoY2MtcmlnaHRzLXJlc3RyaWN0ZWQ+CiAgICAgICAgIDx4bXA6YnJhbmQtY29udGVudC1zdWJ0eXBlPlRlY2hub2xvZ3kgaWNvbjwveG1wOmJyYW5kLWNvbnRlbnQtc3VidHlwZT4KICAgICAgICAgPHhtcDpyaGNjLWRlcml2YXRpdmUtaWQ+REVSNjZlYzAzNzktYjJmYi00Y2JkLTllMzctYzhhOTk3ZjBmN2QwPC94bXA6cmhjYy1kZXJpdmF0aXZlLWlkPgogICAgICAgICA8eG1wOmJyYW5kLWxvZ28tY29sb3I+U3RhbmRhcmQ8L3htcDpicmFuZC1sb2dvLWNvbG9yPgogICAgICAgICA8eG1wOnJoY2Mtbm90aWZ5LXBvcnRhbC1zdWJzY3JpYmVycy1vbi1jaGFuZ2U+eWVzPC94bXA6cmhjYy1ub3RpZnktcG9ydGFsLXN1YnNjcmliZXJzLW9uLWNoYW5nZT4KICAgICAgICAgPHhtcDpyaGNjLXByb2R1Y3Q+CiAgICAgICAgICAgIDxyZGY6QmFnPgogICAgICAgICAgICAgICA8cmRmOmxpPnJoY2MtcHJvZHVjdDpyZWQtaGF0LWFkdmFuY2VkLWNsdXN0ZXItbWFuYWdlbWVudC1mb3Ita3ViZXJuZXRlczwvcmRmOmxpPgogICAgICAgICAgICA8L3JkZjpCYWc+CiAgICAgICAgIDwveG1wOnJoY2MtcHJvZHVjdD4KICAgICAgICAgPHhtcDpicmFuZC1zdWJ0eXBlPgogICAgICAgICAgICA8cmRmOkJhZz4KICAgICAgICAgICAgICAgPHJkZjpsaT5UZWNobm9sb2d5IGljb248L3JkZjpsaT4KICAgICAgICAgICAgPC9yZGY6QmFnPgogICAgICAgICA8L3htcDpicmFuZC1zdWJ0eXBlPgogICAgICAgICA8ZGM6Zm9ybWF0PmltYWdlL3N2Zyt4bWw8L2RjOmZvcm1hdD4KICAgICAgICAgPGRjOm1vZGlmaWVkPjIwMjQtMDUtMTBUMTQ6MDE6MTIuNjc3WjwvZGM6bW9kaWZpZWQ+CiAgICAgICAgIDxkYzp0aXRsZT4KICAgICAgICAgICAgPHJkZjpBbHQ+CiAgICAgICAgICAgICAgIDxyZGY6bGkgeG1sOmxhbmc9IngtZGVmYXVsdCI+UmVkIEhhdCBBZHZhbmNlZCBDbHVzdGVyIE1hbmFnZW1lbnQgZm9yIEt1YmVybmV0ZXMgaWNvbjwvcmRmOmxpPgogICAgICAgICAgICA8L3JkZjpBbHQ+CiAgICAgICAgIDwvZGM6dGl0bGU+CiAgICAgICAgIDxkYzpkZXNjcmlwdGlvbj4KICAgICAgICAgICAgPHJkZjpBbHQ+CiAgICAgICAgICAgICAgIDxyZGY6bGkgeG1sOmxhbmc9IngtZGVmYXVsdCI+UkhBQ00sIG1hbmFnZW1lbnQsIGVkZ2U8L3JkZjpsaT4KICAgICAgICAgICAgPC9yZGY6QWx0PgogICAgICAgICA8L2RjOmRlc2NyaXB0aW9uPgogICAgICAgICA8Y3E6bGFzdFJlcGxpY2F0aW9uQWN0aW9uX3NjZW5lNz5BY3RpdmF0ZTwvY3E6bGFzdFJlcGxpY2F0aW9uQWN0aW9uX3NjZW5lNz4KICAgICAgICAgPGNxOmxhc3RSZXBsaWNhdGlvbkFjdGlvbl9wdWJsaXNoPkFjdGl2YXRlPC9jcTpsYXN0UmVwbGljYXRpb25BY3Rpb25fcHVibGlzaD4KICAgICAgICAgPGNxOmxhc3RSZXBsaWNhdGVkX3B1Ymxpc2g+MjAyNC0wNS0xMFQxNDowMToxNC4xMDBaPC9jcTpsYXN0UmVwbGljYXRlZF9wdWJsaXNoPgogICAgICAgICA8Y3E6bGFzdFJlcGxpY2F0ZWRCeT53b3JrZmxvdy1wcm9jZXNzLXNlcnZpY2U8L2NxOmxhc3RSZXBsaWNhdGVkQnk+CiAgICAgICAgIDxjcTpsYXN0UmVwbGljYXRpb25BY3Rpb24+QWN0aXZhdGU8L2NxOmxhc3RSZXBsaWNhdGlvbkFjdGlvbj4KICAgICAgICAgPGNxOmxhc3RSZXBsaWNhdGVkQnlfcHVibGlzaD53b3JrZmxvdy1wcm9jZXNzLXNlcnZpY2U8L2NxOmxhc3RSZXBsaWNhdGVkQnlfcHVibGlzaD4KICAgICAgICAgPGNxOmlzRGVsaXZlcmVkPmZhbHNlPC9jcTppc0RlbGl2ZXJlZD4KICAgICAgICAgPGNxOmxhc3RSZXBsaWNhdGVkPjIwMjQtMDUtMTBUMTQ6MDE6MTQuMTAwWjwvY3E6bGFzdFJlcGxpY2F0ZWQ+CiAgICAgICAgIDxjcTpsYXN0UmVwbGljYXRlZEJ5X3NjZW5lNz53b3JrZmxvdy1wcm9jZXNzLXNlcnZpY2U8L2NxOmxhc3RSZXBsaWNhdGVkQnlfc2NlbmU3PgogICAgICAgICA8Y3E6bGFzdFJlcGxpY2F0ZWRfc2NlbmU3PjIwMjQtMDUtMTBUMTQ6MDE6MTQuMTAwWjwvY3E6bGFzdFJlcGxpY2F0ZWRfc2NlbmU3PgogICAgICAgICA8eG1wUmlnaHRzOlVzYWdlVGVybXM+CiAgICAgICAgICAgIDxyZGY6QWx0PgogICAgICAgICAgICAgICA8cmRmOmxpIHhtbDpsYW5nPSJ4LWRlZmF1bHQiPlVzZSB0ZWNobm9sb2d5IGljb25zIHRvIHJlcHJlc2VudCBSZWQgSGF0IHByb2R1Y3RzIGFuZCBjb21wb25lbnRzLiBEbyBub3QgcmVtb3ZlIHRoZSBpY29uIGZyb20gdGhlIGJvdW5kaW5nIHNoYXBlLjwvcmRmOmxpPgogICAgICAgICAgICA8L3JkZjpBbHQ+CiAgICAgICAgIDwveG1wUmlnaHRzOlVzYWdlVGVybXM+CiAgICAgIDwvcmRmOkRlc2NyaXB0aW9uPgogICA8L3JkZjpSREY+CjwveDp4bXBtZXRhPgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgCjw/eHBhY2tldCBlbmQ9InciPz48L21ldGFkYXRhPgo8ZGVmcz48c3R5bGU+LnV1aWQtZDM1NmQ4ZGItMWE5ZC00MjA1LWEyMmEtYmRkMmRlMGQyMDFke2ZpbGw6I2UwMDt9LnV1aWQtNjVmNTcxZmUtNmJiNC00YTFjLTlkMGEtMGNhNDcyMjI5NDFhe2ZpbGw6I2ZmZjt9LnV1aWQtNDAwMGY4YzctM2NjZS00ZDdhLWEwZTUtYzIyNDExYjliYzQze2ZpbGw6IzRkNGQ0ZDt9PC9zdHlsZT48L2RlZnM+PHJlY3QgeD0iMSIgeT0iMSIgd2lkdGg9IjM2IiBoZWlnaHQ9IjM2IiByeD0iOSIgcnk9IjkiLz48cGF0aCBjbGFzcz0idXVpZC00MDAwZjhjNy0zY2NlLTRkN2EtYTBlNS1jMjI0MTFiOWJjNDMiIGQ9Im0yOCwyLjI1YzQuMjczMzgsMCw3Ljc1LDMuNDc2NjQsNy43NSw3Ljc1djE4YzAsNC4yNzMzNi0zLjQ3NjYyLDcuNzUtNy43NSw3Ljc1SDEwYy00LjI3MzM4LDAtNy43NS0zLjQ3NjY0LTcuNzUtNy43NVYxMGMwLTQuMjczMzYsMy40NzY2Mi03Ljc1LDcuNzUtNy43NWgxOG0wLTEuMjVIMTBDNS4wMjk0MiwxLDEsNS4wMjk0MywxLDEwdjE4YzAsNC45NzA1Niw0LjAyOTQyLDksOSw5aDE4YzQuOTcwNTgsMCw5LTQuMDI5NDQsOS05VjEwYzAtNC45NzA1Ny00LjAyOTQyLTktOS05aDBaIi8+PHBhdGggY2xhc3M9InV1aWQtZDM1NmQ4ZGItMWE5ZC00MjA1LWEyMmEtYmRkMmRlMGQyMDFkIiBkPSJtMjEuMzQ4NjMsMTguMzM2OTFjLTIuNzUyOTMsMC00Ljk5MjE5LTIuMjM5MjYtNC45OTIxOS00Ljk5MjE5LDAtMS41ODQ5Ni43Mjc1NC0zLjA0MDUzLDEuOTk2MDktMy45OTMxNi4xMjMwNS0uMDkzMjYuMjU0ODgtLjE4MjYyLjM5MDYyLS4yNjU2Mi4xMzM3OS0uMDgyNTIuMjczNDQtLjE1OTE4LjQxNjk5LS4yMjkuNjg1NTUtLjMzNDk2LDEuNDIxODgtLjUwNDM5LDIuMTg4NDgtLjUwNDM5LDIuNzUyOTMsMCw0Ljk5MjE5LDIuMjM5MjYsNC45OTIxOSw0Ljk5MjE5cy0yLjIzOTI2LDQuOTkyMTktNC45OTIxOSw0Ljk5MjE5Wm0wLTguNzM0MzhjLS41NzUyLDAtMS4xMjY5NS4xMjY5NS0xLjYzOTY1LjM3NzQ0LS4xMDY0NS4wNTIyNS0uMjEwOTQuMTA5MzgtLjMxMTUyLjE3MTM5LS4xMDI1NC4wNjI1LS4xOTkyMi4xMjc0NC0uMjkxOTkuMTk4MjQtLjk1MzEyLjcxNTgyLTEuNDk5MDIsMS44MDcxMy0xLjQ5OTAyLDIuOTk1MTIsMCwyLjA2MzQ4LDEuNjc4NzEsMy43NDIxOSwzLjc0MjE5LDMuNzQyMTlzMy43NDIxOS0xLjY3ODcxLDMuNzQyMTktMy43NDIxOS0xLjY3ODcxLTMuNzQyMTktMy43NDIxOS0zLjc0MjE5WiIvPjxwYXRoIGNsYXNzPSJ1dWlkLWQzNTZkOGRiLTFhOWQtNDIwNS1hMjJhLWJkZDJkZTBkMjAxZCIgZD0ibTEyLjUxMjcsMjQuNzYwNzRjLTIuNzUyOTMsMC00Ljk5MjE5LTIuMjM5MjYtNC45OTIxOS00Ljk5MjE5LDAtMS41ODQ5Ni43Mjc1NC0zLjA0MDUzLDEuOTk2MDktMy45OTMxNi4xMjU5OC0uMDk0NzMuMjU1ODYtLjE4MjYyLjM5MDYyLS4yNjU2Mi4xMzM3OS0uMDgyNTIuMjczNDQtLjE1OTE4LjQxNjk5LS4yMjkuNjg1NTUtLjMzNDk2LDEuNDIxODgtLjUwNDM5LDIuMTg4NDgtLjUwNDM5LDIuNzUyOTMsMCw0Ljk5MjE5LDIuMjM5MjYsNC45OTIxOSw0Ljk5MjE5cy0yLjIzOTI2LDQuOTkyMTktNC45OTIxOSw0Ljk5MjE5Wm0wLTguNzM0MzhjLS41NzUyMiwwLTEuMTI2OTUuMTI2OTUtMS42Mzk2NS4zNzc0NC0uMTA2NDUuMDUyMjUtLjIxMDk0LjEwOTM4LS4zMTE1Mi4xNzEzOS0uMTAzNTIuMDYyNS0uMjAwMi4xMjg5MS0uMjkzOTUuMTk5NzEtLjk1MTE3LjcxNDM2LTEuNDk3MDcsMS44MDU2Ni0xLjQ5NzA3LDIuOTkzNjUsMCwyLjA2MzQ4LDEuNjc4NzEsMy43NDIxOSwzLjc0MjE5LDMuNzQyMTlzMy43NDIxOS0xLjY3ODcxLDMuNzQyMTktMy43NDIxOS0xLjY3ODcxLTMuNzQyMTktMy43NDIxOS0zLjc0MjE5WiIvPjxwYXRoIGNsYXNzPSJ1dWlkLWQzNTZkOGRiLTFhOWQtNDIwNS1hMjJhLWJkZDJkZTBkMjAxZCIgZD0ibTIyLjQ4NzMsMjkuMjAxNjZjLTIuNzUyOTMsMC00Ljk5MjE5LTIuMjM5MjYtNC45OTIxOS00Ljk5MjE5LDAtMS41ODQ5Ni43Mjc1NC0zLjA0MDUzLDEuOTk2MDktMy45OTMxNi4xMjQwMi0uMDk0MjQuMjU0ODgtLjE4MzExLjM4OTY1LS4yNjU2MnMuMjc1MzktLjE1OTY3LjQxOTkyLS4yMjk5OGMuNjgwNjYtLjMzMzUsMS40MTc5Ny0uNTAzNDIsMi4xODY1Mi0uNTAzNDIsMi43NTI5MywwLDQuOTkyMTksMi4yMzkyNiw0Ljk5MjE5LDQuOTkyMTlzLTIuMjM5MjYsNC45OTIxOS00Ljk5MjE5LDQuOTkyMTlabTAtOC43MzQzOGMtLjU3NzE1LDAtMS4xMjc5My4xMjY5NS0xLjYzODY3LjM3NzQ0LS4xMTAzNS4wNTI3My0uMjEzODcuMTA5MzgtLjMxMzQ4LjE3MTM5LS4xMDE1Ni4wNjIwMS0uMTk5MjIuMTI4NDItLjI5Mjk3LjE5ODczLS45NTExNy43MTUzMy0xLjQ5NzA3LDEuODA2NjQtMS40OTcwNywyLjk5NDYzLDAsMi4wNjM0OCwxLjY3ODcxLDMuNzQyMTksMy43NDIxOSwzLjc0MjE5czMuNzQyMTktMS42Nzg3MSwzLjc0MjE5LTMuNzQyMTktMS42Nzg3MS0zLjc0MjE5LTMuNzQyMTktMy43NDIxOVoiLz48cGF0aCBjbGFzcz0idXVpZC02NWY1NzFmZS02YmI0LTRhMWMtOWQwYS0wY2E0NzIyMjk0MWEiIGQ9Im0xOC4yMjk0OSwyOS45Nzk5OGMwLS4zNTAxLjI4MDI3LS42MzAzNy42MjAxMi0uNjMwMzdoMGMuMzUwNTksMCwuNjI5ODguMjgwMjcuNjI5ODguNjMwMzdoMGMwLC4zMzk4NC0uMjc5My42MTk2My0uNjI5ODguNjE5NjNoMGMtLjMzOTg0LDAtLjYyMDEyLS4yNzk3OS0uNjIwMTItLjYxOTYzWm0tMS40Nzk0OS40Mjk2OWMtLjMzOTg0LS4wNjAwNi0uNTYwNTUtLjM3OTg4LS41LS43MTk3M2gwYy4wNTk1Ny0uMzQwMzMuMzg5NjUtLjU3MDMxLjcyOTQ5LS41MTAyNWgwYy4zMzk4NC4wNzAzMS41NjA1NS4zOTAxNC41LjcyOTk4aDBjLS4wNDk4LjMwMDI5LS4zMTkzNC41MTAyNS0uNjA5MzguNTEwMjVoMGMtLjA0MDA0LDAtLjA4MDA4LDAtLjEyMDEyLS4wMTAyNVptLTIuMDMwMjctLjU2OTgyYy0uMzIwMzEtLjEyMDEyLS40Nzk0OS0uNDc5OTgtLjM2MDM1LS43OTk4aDBjLjEyMDEyLS4zMjAzMS40ODA0Ny0uNDc5OTguODAwNzgtLjM2MDM1aDBjLjMzMDA4LjEyMDEyLjQ4OTI2LjQ3OTk4LjM3MDEyLjgwMDI5aDBjLS4xMDA1OS4yNS0uMzQwODIuNDA5NjctLjU5MDgyLjQwOTY3aDBjLS4wNjkzNCwwLS4xNDk0MS0uMDIwMDItLjIxOTczLS4wNDk4Wm0tMS45MDAzOS0uOTE5OTJjLS4yODkwNi0uMTgwMTgtLjM3OTg4LS41NzAzMS0uMjA5OTYtLjg1OTg2aDBjLjE4MDY2LS4yOTAwNC41NzAzMS0uMzkwMTQuODYwMzUtLjIxMDQ1aDBjLjI5OTguMTgwMTguMzg5NjUuNTYwMDYuMjA5OTYuODYwMzVoMGMtLjEyMDEyLjE4OTk0LS4zMjAzMS4yOTk4LS41MzAyNy4yOTk4aDBjLS4xMDkzOCwwLS4yMjk0OS0uMDI5NzktLjMzMDA4LS4wODk4NFptLTEuNjg5NDUtMS4yNjAyNWgwYy0uMjU5NzctLjIyOTk4LS4yODAyNy0uNjE5NjMtLjA0OTgtLjg3OTg4aDBjLjIyOTQ5LS4yNTk3Ny42MjAxMi0uMjc5NzkuODc5ODgtLjA0OThoMGMuMjU5NzcuMjI5OTguMjgwMjcuNjE5NjMuMDQ5OC44Nzk4OGgwYy0uMTIwMTIuMTQwMTQtLjI5OTguMjA5OTYtLjQ2OTczLjIwOTk2aDBjLS4xNTAzOSwwLS4yOTk4LS4wNDk4LS40MTAxNi0uMTYwMTZaIi8+PHBhdGggY2xhc3M9InV1aWQtNjVmNTcxZmUtNmJiNC00YTFjLTlkMGEtMGNhNDcyMjI5NDFhIiBkPSJtMjkuNjM5NjUsMjEuMjM5NzVjLS4zMzk4NC0uMDQ5OC0uNTgwMDgtLjM3MDEyLS41MzAyNy0uNzA5OTZoLjAxMDc0Yy4wNDk4LS4zMzk4NC4zNTkzOC0uNTY5ODIuNzA5OTYtLjUyMDAyaDBjLjMzOTg0LjA1MDI5LjU2OTM0LjM3MDEyLjUxOTUzLjcwOTk2aDBjLS4wNDk4LjMxMDA2LS4zMDk1Ny41MzAyNy0uNjA5MzguNTMwMjdoMGMtLjA0MDA0LDAtLjA3MDMxLDAtLjEwMDU5LS4wMTAyNVptLS40MTk5Mi0yLjU4OTg0Yy0uMDA5NzctLjM1MDEuMjU5NzctLjYyOTg4LjYxMDM1LS42NDk5aDBjLjM0OTYxLDAsLjYyOTg4LjI3MDAyLjYzOTY1LjYwOTg2aDBjLjAwOTc3LjM1MDEtLjI1OTc3LjY0MDE0LS41OTk2MS42NDAxNGgtLjAyMDUxYy0uMzM5ODQsMC0uNjIwMTItLjI2MDI1LS42Mjk4OC0uNjAwMVptLS4yMTk3My0xLjg3MDEyaDBjLS4wODAwOC0uMzM5ODQuMTM5NjUtLjY2OTkyLjQ3OTQ5LS43Mzk3NWgwYy4zMzAwOC0uMDgwMDguNjY5OTIuMTM5NjUuNzQwMjMuNDc5OThoMGMuMDcwMzEuMzI5NTktLjEzOTY1LjY2OTkyLS40Nzk0OS43Mzk3NWgwYy0uMDUwNzguMDEwMjUtLjA5MDgyLjAxMDI1LS4xMzA4Ni4wMTAyNWgwYy0uMjkwMDQsMC0uNTQ5OC0uMjAwMi0uNjA5MzgtLjQ5MDIzWm0tLjU3MDMxLTEuNzk5OGguMDA5NzdjLS4xMzk2NS0uMzIwMzEuMDEwNzQtLjY4MDE4LjMzMDA4LS44MTAwNmgwYy4zMjAzMS0uMTQwMTQuNjgwNjYuMDA5NzcuODIwMzEuMzMwMDhoMGMuMTI5ODguMzE5ODItLjAyMDUxLjY4OTk0LS4zMzk4NC44MTk4MmgwYy0uMDgwMDguMDI5NzktLjE2MDE2LjA0OTgtLjI0MDIzLjA0OThoMGMtLjI0MDIzLDAtLjQ3OTQ5LS4xNDk5LS41ODAwOC0uMzg5NjVabS0uODc5ODgtMS42NjAxNmMtLjE5MDQzLS4yOTAwNC0uMTEwMzUtLjY4MDE4LjE3OTY5LS44NzAxMmgwYy4yOTAwNC0uMTc5NjkuNjgwNjYtLjEwMDEuODcwMTIuMTg5OTRoMGMuMTkwNDMuMjkwMDQuMTEwMzUuNjcwNDEtLjE3OTY5Ljg2MDM1aDBjLS4xMTAzNS4wNjk4Mi0uMjMwNDcuMDk5NjEtLjMzOTg0LjA5OTYxaDBjLS4yMDk5NiwwLS40MTAxNi0uMDk5NjEtLjUzMDI3LS4yNzk3OVoiLz48cGF0aCBjbGFzcz0idXVpZC02NWY1NzFmZS02YmI0LTRhMWMtOWQwYS0wY2E0NzIyMjk0MWEiIGQ9Im05LjI5MDA0LDEzLjVjLS4yOTAwNC0uMTg5OTQtLjM3MDEyLS41ODAwOC0uMTgwNjYtLjg2MDM1aDBjLjE5MDQzLS4yOTAwNC41NzAzMS0uMzY5NjMuODYwMzUtLjE4OTk0aDBjLjI5MDA0LjE4OTk0LjM3MDEyLjU4MDA4LjE5MDQzLjg3MDEyaDBjLS4xMjAxMi4xODAxOC0uMzIwMzEuMjc5NzktLjUzMDI3LjI3OTc5aDBjLS4xMTAzNSwwLS4yMzA0Ny0uMDI5NzktLjMzOTg0LS4wOTk2MVptMS4xNDk0MS0xLjY0MDE0Yy0uMjUtLjIyOTk4LS4yNTk3Ny0uNjI5ODgtLjAxOTUzLS44Nzk4OGgwYy4yMjk0OS0uMjUuNjI5ODgtLjI2MDI1Ljg3OTg4LS4wMjAwMmgwYy4yNS4yMzk3NS4yNTk3Ny42Mjk4OC4wMTk1My44Nzk4OGguMDEwNzRjLS4xMjk4OC4xMjk4OC0uMjkwMDQuMjAwMi0uNDU5OTYuMjAwMmgwYy0uMTUwMzksMC0uMzEwNTUtLjA2MDA2LS40MzA2Ni0uMTgwMThabTEuNDMwNjYtMS4zOTk5Yy0uMjA5OTYtLjI4MDI3LS4xNTAzOS0uNjY5OTIuMTI5ODgtLjg3MDEyaDBjLjI4MDI3LS4yMDk5Ni42Njk5Mi0uMTQ5OS44Nzk4OC4xMjk4OGgwYy4yMDAyLjI4MDI3LjEzOTY1LjY2OTkyLS4xMzk2NS44Nzk4OHYtLjAwOTc3Yy0uMTEwMzUuMDg5ODQtLjI0MDIzLjEyOTg4LS4zNzAxMi4xMjk4OGgwYy0uMTkwNDMsMC0uMzc5ODgtLjA4OTg0LS41LS4yNTk3N1ptMS42NDk0MS0xLjEyMDEyYy0uMTQ5NDEtLjMxMDA2LS4wMTk1My0uNjg5OTQuMjkwMDQtLjgzOTg0aDBjLjMxMDU1LS4xNTAzOS42OTA0My0uMDIwMDIuODM5ODQuMjkwMDRoMGMuMTQwNjIuMzA5NTcuMDEwNzQuNjg5OTQtLjI5OTguODM5ODRoMGMtLjA4MDA4LjA0MDA0LS4xNzk2OS4wNjAwNi0uMjY5NTMuMDYwMDZoMGMtLjIzMDQ3LDAtLjQ1MDItLjEyOTg4LS41NjA1NS0uMzUwMVptMS44MzAwOC0uODEwMDZjLS4wODk4NC0uMzMwMDguMTAwNTktLjY4MDE4LjQ0MDQzLS43NzAwMmgwYy4zMzAwOC0uMDg5ODQuNjY5OTIuMTA5ODYuNzY5NTMuNDM5OTRoMGMuMDg5ODQuMzMwMDgtLjEwOTM4LjY4MDE4LS40Mzk0NS43NzAwMmgwYy0uMDYwNTUuMDEwMjUtLjExMDM1LjAyMDAyLS4xNjk5Mi4wMjAwMmgwYy0uMjcwNTEsMC0uNTIwNTEtLjE3OTY5LS42MDA1OS0uNDU5OTZaIi8+PC9zdmc+
+    mediatype: image/svg+xml
+  keywords:
+  - acm
+  - advanced-cluster-management
+  - install
+  - multiclusterhub
+  - rhacm
+  labels:
+    app: advanced-cluster-management
+  links:
+  - name: Documentation
+    url: https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_management_for_kubernetes/5.0/
+  selector:
+    matchLabels:
+      app: advanced-cluster-management
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
   customresourcedefinitions:
     owned:
     - description: |-
@@ -48,8 +82,7 @@ spec:
       kind: MultiClusterHub
       name: multiclusterhubs.operator.open-cluster-management.io
       specDescriptors:
-      - description: 'Specifies deployment replication for improved availability.
-          Options are: Basic and High (default)'
+      - description: 'Specifies deployment replication for improved availability. Options are: Basic and High (default)'
         displayName: Availability Configuration
         path: availabilityConfig
         x-descriptors:
@@ -68,8 +101,7 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: Override pull secret for accessing MultiClusterHub operand and
-          endpoint images
+      - description: Override pull secret for accessing MultiClusterHub operand and endpoint images
         displayName: Image Pull Secret
         path: imagePullSecret
         x-descriptors:
@@ -91,26 +123,18 @@ spec:
         path: overrides
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: 'Provides optional configuration for components, the list of
-          which can be found here: https://github.com/stolostron/multiclusterhub-operator/tree/main/docs/available-components.md'
+      - description: 'Provides optional configuration for components, the list of which can be found here: https://github.com/stolostron/multiclusterhub-operator/tree/main/docs/available-components.md'
         displayName: Component Configuration
         path: overrides.components
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
       version: v1
-  description: 'The Open Cluster Management Hub operator installs and maintains an
-    instance of the OCM hub, a central management console for managing OpenShift and
-    Kubernetes clusters. '
-  displayName: Open Cluster Management Hub
-  icon:
-  - base64data: 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
-    mediatype: image/jpeg
   install:
     spec:
       clusterPermissions:
       - rules:
         - apiGroups:
-          - ""
+          - ''
           resources:
           - configmaps
           - endpoints
@@ -128,7 +152,7 @@ spec:
           - update
           - watch
         - apiGroups:
-          - ""
+          - ''
           resources:
           - groups
           - users
@@ -142,14 +166,14 @@ spec:
           - update
           - watch
         - apiGroups:
-          - ""
+          - ''
           resources:
           - jobs
           verbs:
           - list
           - watch
         - apiGroups:
-          - ""
+          - ''
           resources:
           - nodes
           - persistentvolumeclaims
@@ -163,7 +187,7 @@ spec:
           - update
           - watch
         - apiGroups:
-          - ""
+          - ''
           resources:
           - secrets
           - serviceaccounts
@@ -179,13 +203,13 @@ spec:
           - update
           - watch
         - apiGroups:
-          - ""
+          - ''
           resources:
           - serviceaccounts/token
           verbs:
           - create
         - apiGroups:
-          - ""
+          - ''
           - action.open-cluster-management.io
           - addon.open-cluster-management.io
           - agent.open-cluster-management.io
@@ -310,7 +334,7 @@ spec:
           - update
           - watch
         - apiGroups:
-          - ""
+          - ''
           - admissionregistration.k8s.io
           - apiextensions.k8s.io
           - apiregistration.k8s.io
@@ -354,7 +378,7 @@ spec:
           verbs:
           - get
         - apiGroups:
-          - ""
+          - ''
           - admissionregistration.k8s.io
           - apiextensions.k8s.io
           - apiregistration.k8s.io
@@ -390,7 +414,7 @@ spec:
           - create
           - update
         - apiGroups:
-          - ""
+          - ''
           - admissionregistration.k8s.io
           - apiregistration.k8s.io
           - apps
@@ -432,7 +456,7 @@ spec:
           verbs:
           - list
         - apiGroups:
-          - ""
+          - ''
           - admissionregistration.k8s.io
           - apiregistration.k8s.io
           - apps
@@ -469,7 +493,7 @@ spec:
           - list
           - watch
         - apiGroups:
-          - ""
+          - ''
           - admissionregistration.k8s.io
           - apps
           - apps.open-cluster-management.io
@@ -491,7 +515,7 @@ spec:
           verbs:
           - update
         - apiGroups:
-          - ""
+          - ''
           - apiextensions.k8s.io
           - apiregistration.k8s.io
           - apps
@@ -505,7 +529,7 @@ spec:
           verbs:
           - delete
         - apiGroups:
-          - ""
+          - ''
           - apps
           resources:
           - deployments
@@ -517,14 +541,14 @@ spec:
           - get
           - patch
         - apiGroups:
-          - ""
+          - ''
           - authentication.k8s.io
           resources:
           - uids
           verbs:
           - impersonate
         - apiGroups:
-          - ""
+          - ''
           - events.k8s.io
           resources:
           - events
@@ -1988,7 +2012,7 @@ spec:
                 - name: OPERAND_IMAGE_VOLSYNC
                   value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/volsync-rhel9:latest
                 - name: OPERATOR_VERSION
-                  value: "5.0.0"
+                  value: 5.0.0
                 - name: OPERATOR_PACKAGE
                   value: advanced-cluster-management
                 image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multiclusterhub-operator:latest
@@ -2038,7 +2062,7 @@ spec:
       permissions:
       - rules:
         - apiGroups:
-          - ""
+          - ''
           resources:
           - configmaps
           verbs:
@@ -2062,7 +2086,7 @@ spec:
           - patch
           - delete
         - apiGroups:
-          - ""
+          - ''
           resources:
           - events
           verbs:
@@ -2070,27 +2094,6 @@ spec:
           - patch
         serviceAccountName: multiclusterhub-operator
     strategy: deployment
-  installModes:
-  - supported: true
-    type: OwnNamespace
-  - supported: true
-    type: SingleNamespace
-  - supported: false
-    type: MultiNamespace
-  - supported: true
-    type: AllNamespaces
-  keywords:
-  - multiclusterhub
-  - install
-  links:
-  - name: Open Cluster Management
-    url: https://open-cluster-management.io/
-  maintainers:
-  - email: ocm-dev@open-cluster-management.io
-    name: Open Cluster Management Project team
-  maturity: alpha
-  provider:
-    name: Redhat
   relatedImages:
   - name: acm_cli
     image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-cli-rhel9:latest
@@ -2190,4 +2193,3 @@ spec:
     image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/memcached:latest
   - name: volsync
     image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/volsync-rhel9:latest
-  version: 5.0.0
