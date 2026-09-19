@@ -57,6 +57,26 @@ jobs:
             cp workflow/OWNERS ./OWNERS
             rm -rf workflow
 
+      - name: Render Pull Request body
+        run: |
+          {
+            echo "- **Workflow run:** [${GITHUB_RUN_ID}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})"
+            echo "- **Event:** ${GITHUB_EVENT_NAME}"
+            echo "- **Branch:** ${{ matrix.branch }}"
+          } > /tmp/trigger.txt
+
+          {
+            echo '```'
+            git diff --stat OWNERS || echo "No changes detected"
+            echo '```'
+          } > /tmp/diffstat.txt
+
+          python3 hack/scripts/render_pr_body.py \
+            --template .github/PULL_REQUEST_TEMPLATE/automated-owners-resync.md \
+            --output /tmp/pr-body.md \
+            --set-file TRIGGER=/tmp/trigger.txt \
+            --set-file DIFFSTAT=/tmp/diffstat.txt
+
       - name: Send Slack Message on Failure
         if: ${{ failure() }}
         env:
@@ -80,6 +100,7 @@ jobs:
           title: "Resync OWNERS [${{ matrix.branch }}]"
           committer: GitHub <noreply@github.com>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+          body-path: /tmp/pr-body.md
           labels: |
             do-not-merge/hold
             ok-to-test
