@@ -16,24 +16,25 @@ const MCH = "multiclusterhub-operator"
 
 // Component related to MultiClusterHub (MCH)
 const (
-	Appsub                    string = "app-lifecycle"
-	ClusterBackup             string = "cluster-backup"
-	ClusterLifecycle          string = "cluster-lifecycle"
-	Console                   string = "console"
-	MTVIntegrationsPreview    string = "cnv-mtv-integrations-preview"
-	MTVIntegrations           string = "cnv-mtv-integrations"
-	FineGrainedRbac           string = "fine-grained-rbac"
-	FineGrainedRbacPreview    string = "fine-grained-rbac-preview"
-	GRC                       string = "grc"
-	Insights                  string = "insights"
-	ManagementIngress         string = "management-ingress"
-	MultiClusterEngine        string = "multicluster-engine"
-	MultiClusterObservability string = "multicluster-observability"
-	Repo                      string = "multiclusterhub-repo"
-	Search                    string = "search"
-	SiteConfig                string = "siteconfig"
-	SubmarinerAddon           string = "submariner-addon"
-	Volsync                   string = "volsync"
+	Appsub                         string = "app-lifecycle"
+	ClusterBackup                  string = "cluster-backup"
+	ClusterLifecycle               string = "cluster-lifecycle"
+	Console                        string = "console"
+	DynamicScoringFrameworkPreview string = "dynamic-scoring-framework-preview"
+	MTVIntegrationsPreview         string = "cnv-mtv-integrations-preview"
+	MTVIntegrations                string = "cnv-mtv-integrations"
+	FineGrainedRbac                string = "fine-grained-rbac"
+	FineGrainedRbacPreview         string = "fine-grained-rbac-preview"
+	GRC                            string = "grc"
+	Insights                       string = "insights"
+	ManagementIngress              string = "management-ingress"
+	MultiClusterEngine             string = "multicluster-engine"
+	MultiClusterObservability      string = "multicluster-observability"
+	Repo                           string = "multiclusterhub-repo"
+	Search                         string = "search"
+	SiteConfig                     string = "siteconfig"
+	SubmarinerAddon                string = "submariner-addon"
+	Volsync                        string = "volsync"
 )
 
 // Component related to MultiCluster Engine (MCE)
@@ -68,6 +69,7 @@ var MCHComponents = []string{
 	ClusterBackup,
 	ClusterLifecycle,
 	Console,
+	DynamicScoringFrameworkPreview,
 	FineGrainedRbac,
 	MTVIntegrations,
 	GRC,
@@ -181,6 +183,7 @@ It is expected to be used to get a list of components that are disabled by defau
 func GetDefaultDisabledComponents() ([]string, error) {
 	defaultDisabledComponents := []string{
 		ClusterBackup,
+		DynamicScoringFrameworkPreview,
 		FineGrainedRbac,
 		SiteConfig,
 		MTVIntegrations,

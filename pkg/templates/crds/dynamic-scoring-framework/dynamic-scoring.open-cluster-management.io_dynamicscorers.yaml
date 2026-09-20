@@ -1,0 +1,320 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.18.0
+  name: dynamicscorers.dynamic-scoring.open-cluster-management.io
+spec:
+  group: dynamic-scoring.open-cluster-management.io
+  names:
+    kind: DynamicScorer
+    listKind: DynamicScorerList
+    plural: dynamicscorers
+    singular: dynamicscorer
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: DynamicScorer is the Schema for the dynamicscorers API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DynamicScorerSpec defines the desired state of DynamicScorer.
+            properties:
+              configSyncMode:
+                description: |-
+                  ConfigSyncMode determines how the Dynamic Scoring Agent synchronizes its configuration.
+                  Full mode means the agent fetches the complete configuration from the specified ConfigURL,
+                  while None mode indicates that no configuration synchronization is performed.
+                enum:
+                - Full
+                - None
+                type: string
+              configURL:
+                description: ConfigURL specifies the URL from which the Dynamic Scoring
+                  Agent fetches its configuration.
+                type: string
+              description:
+                description: Description provides a brief explanation of the Dynamic
+                  Scorer's purpose.
+                type: string
+              location:
+                description: |-
+                  Location indicates whether the Dynamic Scorer is hosted within the cluster (`Internal`)
+                  or outside the cluster (`External`).
+                enum:
+                - Internal
+                - External
+                type: string
+              scoreDestination:
+                description: |-
+                  ScoreDestination specifies where the Dynamic Scoring Agent should send the computed scores.
+                  For example, `AddOnPlacementScore` indicates the scores should be sent to the AddOnPlacementScore API.
+                enum:
+                - AddOnPlacementScore
+                - None
+                type: string
+              scoreDimensionFormat:
+                description: |-
+                  ScoreDimensionFormat defines the format of the score dimension used by the Dynamic Scoring Agent.
+                  Score dimensions categorize calculated scores by the AddOnPlacementScore value name.
+                  Some reserved placeholders are available.
+                  Example placeholders: ${cluster}, ${node}, ${device}, ${namespace}, ${app}, ${pod}, ${container}, ${meta}, ${scoreName}
+                  Example format: "resource-usage-${cluster}-${namespace}-${app}"
+                type: string
+              scoring:
+                description: Scoring defines the scoring API configuration for the
+                  Dynamic Scoring Agent to obtain scores.
+                properties:
+                  auth:
+                    description: |-
+                      Auth specifies the authentication configuration used by the Dynamic Scoring Agent to call the scoring API.
+                      This field is optional and ignored when empty.
+                    properties:
+                      tokenSecretRef:
+                        description: TokenSecretRef specifies the reference to the
+                          Kubernetes Secret that contains the authentication token.
+                        properties:
+                          key:
+                            description: The key within the Kubernetes Secret that
+                              contains the authentication token.
+                            type: string
+                          name:
+                            description: The name of the Kubernetes Secret that contains
+                              the authentication token.
+                            type: string
+                        required:
+                        - key
+                        - name
+                        type: object
+                    required:
+                    - tokenSecretRef
+                    type: object
+                  host:
+                    description: |-
+                      Host specifies the host used by the Dynamic Scoring Agent to call the scoring API.
+                      For example, if the agent calls the scoring API at https://your-scorer.local/score,
+                      https://your-scorer.local should be specified.
+                    type: string
+                  params:
+                    description: |-
+                      Params specifies the scoring parameters used by the Dynamic Scoring Agent to call the scoring API.
+                      e.g., interval
+                    properties:
+                      interval:
+                        description: |-
+                          The interval in seconds for scoring.
+                          Note: This interval is also used for config synchronization.
+                        type: integer
+                      name:
+                        description: The name of the score.
+                        type: string
+                    required:
+                    - interval
+                    - name
+                    type: object
+                  path:
+                    description: |-
+                      Path specifies the path used by the Dynamic Scoring Agent to call the scoring API.
+                      For example, if the agent calls the scoring API at https://your-scorer.local/score,
+                      /score should be specified.
+                      If not specified, the default value is `/score`.
+                    type: string
+                type: object
+              source:
+                description: Source defines the data source configuration for the
+                  Dynamic Scoring Agent to fetch metrics.
+                properties:
+                  auth:
+                    description: |-
+                      Auth specifies the authentication configuration used by the Dynamic Scoring Agent to retrieve the data source.
+                      This field is optional and ignored when empty or when `Type` is `None`.
+                    properties:
+                      tokenSecretRef:
+                        description: TokenSecretRef specifies the reference to the
+                          Kubernetes Secret that contains the authentication token.
+                        properties:
+                          key:
+                            description: The key within the Kubernetes Secret that
+                              contains the authentication token.
+                            type: string
+                          name:
+                            description: The name of the Kubernetes Secret that contains
+                              the authentication token.
+                            type: string
+                        required:
+                        - key
+                        - name
+                        type: object
+                    required:
+                    - tokenSecretRef
+                    type: object
+                  host:
+                    description: |-
+                      Host specifies the host used by the Dynamic Scoring Agent to retrieve data from the source.
+                      For example, if the agent retrieves data from https://your-prometheus.local/api/v1/query_range,
+                      https://your-prometheus.local should be specified.
+                      This field is ignored when `Type` is `None`.
+                    type: string
+                  params:
+                    description: |-
+                      Params specifies the query parameters used by the Dynamic Scoring Agent to query the data source.
+                      This field is ignored when `Type` is `None`.
+                    properties:
+                      query:
+                        description: |-
+                          The Prometheus query string.
+                          To query multiple time series, join queries with semicolons.
+                        type: string
+                      range:
+                        description: The time range in seconds for the query.
+                        type: integer
+                      step:
+                        description: The query resolution step width in seconds.
+                        type: integer
+                    required:
+                    - query
+                    - range
+                    - step
+                    type: object
+                  path:
+                    description: |-
+                      Path specifies the path used by the Dynamic Scoring Agent to retrieve data from the source.
+                      For example, if the agent retrieves data from https://your-prometheus.local/api/v1/query_range,
+                      /api/v1/query_range should be specified.
+                      This field is ignored when `Type` is `None`.
+                    type: string
+                  type:
+                    description: Type specifies the source type (e.g., Prometheus,
+                      None).
+                    enum:
+                    - Prometheus
+                    - None
+                    type: string
+                type: object
+            required:
+            - configSyncMode
+            - configURL
+            - description
+            type: object
+          status:
+            description: DynamicScorerStatus defines the observed state of DynamicScorer.
+            properties:
+              healthStatus:
+                description: ScorerHealthStatus represents the health status of a
+                  scorer.
+                enum:
+                - Active
+                - Inactive
+                - Unknown
+                type: string
+              lastSyncedConfig:
+                description: LastSyncedConfig holds the last configuration successfully
+                  synced by the Dynamic Scoring Agent.
+                properties:
+                  description:
+                    type: string
+                  name:
+                    type: string
+                  scoring:
+                    properties:
+                      host:
+                        description: |-
+                          The hostname or IP address of the scoring endpoint.
+                          e.g. `http://scoring-api.scoring.svc.cluster.local:8080`
+                        type: string
+                      params:
+                        properties:
+                          interval:
+                            description: |-
+                              The interval in seconds for scoring.
+                              Note: This interval is also used for config synchronization.
+                            type: integer
+                          name:
+                            description: The name of the score.
+                            type: string
+                        required:
+                        - interval
+                        - name
+                        type: object
+                      path:
+                        description: |-
+                          The API path of the scoring endpoint.
+                          e.g. `/api/v1/score`
+                        type: string
+                    required:
+                    - params
+                    - path
+                    type: object
+                  source:
+                    description: |-
+                      SourceConfig represents the source configuration.
+                      If the `Type` is `Prometheus`, the `Host` should be the Prometheus server URL.
+                    properties:
+                      host:
+                        description: |-
+                          The hostname or IP address of the source.
+                          e.g. `http://prometheus-server.monitoring.svc.cluster.local:9090`
+                        type: string
+                      params:
+                        properties:
+                          query:
+                            description: |-
+                              The Prometheus query string.
+                              To query multiple time series, join queries with semicolons.
+                            type: string
+                          range:
+                            description: The time range in seconds for the query.
+                            type: integer
+                          step:
+                            description: The query resolution step width in seconds.
+                            type: integer
+                        required:
+                        - query
+                        - range
+                        - step
+                        type: object
+                      path:
+                        description: |-
+                          The API path of the source.
+                          e.g. `/api/v1/query_range` for Prometheus
+                        type: string
+                      type:
+                        description: SourceType represents the type of the source.
+                        type: string
+                    required:
+                    - params
+                    - path
+                    type: object
+                required:
+                - description
+                - name
+                - scoring
+                - source
+                type: object
+            required:
+            - healthStatus
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
