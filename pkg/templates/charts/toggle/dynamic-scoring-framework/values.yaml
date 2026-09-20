@@ -1,0 +1,19 @@
+global:
+  apiUrl: ''
+  baseDomain: ''
+  imageOverrides:
+    dynamic_scoring_addon: ''
+    dynamic_scoring_controller: ''
+  namespace: default
+  olmVersion: v0
+  pullSecret: null
+  templateOverrides: {}
+hubconfig:
+  clusterSTSEnabled: false
+  nodeSelector: null
+  ocpVersion: 4.12.0
+  probeConfig: null
+  proxyConfigs: {}
+  replicaCount: 1
+  tolerations: []
+org: open-cluster-management

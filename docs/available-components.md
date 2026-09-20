@@ -9,6 +9,7 @@
 | cluster-permission |  Automatically distributes RBAC resources to managed clusters and manage the lifecycle of those resources. | True |
 | cnv-mtv-integrations | Enables Migration Toolkit for Virtualization (MTV) integrations to facilitate virtual machine migration workflows between clusters. | False |
 | console | Enables {product-title-short} web console plug-in. | True |
+| dynamic-scoring-framework-preview | Framework used for dynamic scoring. | False |
 | fine-grained-rbac | Provides fine-grained RBAC policies for managing permissions on virtualization resources across managed clusters. | False |
 | grc | Enables the security enhancement for you to define policies for your clusters. | True |
 | insights | Identifies existing or potential problems in your clusters. | True |

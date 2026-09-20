@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/name: dynamic-scoring-framework
+  name: '{{ .Values.org }}:{{ .Chart.Name }}:dynamic-scoring-framework'
+  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: '{{ .Values.org }}:{{ .Chart.Name }}:dynamic-scoring-framework'
+subjects:
+- kind: ServiceAccount
+  name: dynamic-scoring-framework-controller
+  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'

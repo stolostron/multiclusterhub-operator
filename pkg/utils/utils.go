@@ -96,6 +96,9 @@ const (
 
 	// FineGrainedRbacChartLocation is the location of the Fine Grained RBAC chart.
 	FineGrainedRbacChartLocation = "/charts/toggle/fine-grained-rbac"
+
+	// DynamicScoringFrameworkChartLocation is the location of the Dynamic Scoring Framework chart.
+	DynamicScoringFrameworkChartLocation = "/charts/toggle/dynamic-scoring-framework"
 )
 
 const (
@@ -292,6 +295,10 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole, isSTSEn
 	}
 	if m.Enabled(operatorsv1.MTVIntegrations) {
 		nn = append(nn, types.NamespacedName{Name: "mtv-integrations-controller", Namespace: m.Namespace})
+	}
+	if m.Enabled(operatorsv1.DynamicScoringFrameworkPreview) {
+		nn = append(nn, types.NamespacedName{Name: "dynamic-scoring-framework-controller", Namespace: m.Namespace})
+		nn = append(nn, types.NamespacedName{Name: "dynamic-scoring-addon-controller", Namespace: m.Namespace})
 	}
 
 	return nn

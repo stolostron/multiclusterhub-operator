@@ -474,6 +474,27 @@ func Test_GetDeploymentsForStatus(t *testing.T) {
 				{Name: "openshift-adp-controller-manager", Namespace: ClusterSubscriptionNamespace},
 			},
 		},
+		{
+			name: "should get deployment status for MCH components with dynamic-scoring-framework-preview enabled",
+			mch: mchv1.MultiClusterHub{
+				Spec: mchv1.MultiClusterHubSpec{
+					Overrides: &mchv1.Overrides{
+						Components: []mchv1.ComponentConfig{
+							{
+								Name:    mchv1.DynamicScoringFrameworkPreview,
+								Enabled: true,
+							},
+						},
+					},
+				},
+			},
+			stsEnabled: false,
+			want:       23,
+			mustContain: []types.NamespacedName{
+				{Name: "dynamic-scoring-framework-controller", Namespace: ""},
+				{Name: "dynamic-scoring-addon-controller", Namespace: ""},
+			},
+		},
 	}
 
 	for _, tt := range tests {

@@ -1,5 +1,16 @@
 acm-release-version: '5.1'
 components:
+  - repo_name: "dynamic-scoring-framework"
+    github_ref: "https://github.com/stolostron/dynamic-scoring-framework.git"
+    branch: "release-5.1"
+    charts:
+      - name: "dynamic-scoring-framework"
+        chart-path: "charts/dynamic-scoring-framework"
+        always-or-toggle: "toggle"
+        imageMappings:
+          dynamic-scoring-addon: dynamic_scoring_addon
+          dynamic-scoring-controller: dynamic_scoring_controller
+        updateChartVersion: true # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.6 -> 2.6
   - repo_name: "mtv-integrations"
     github_ref: "https://github.com/stolostron/mtv-integrations.git"
     branch: "release-5.1"

@@ -47,6 +47,9 @@ func (r *MultiClusterHubReconciler) fetchChartLocation(component string) string 
 	case operatorv1.Console:
 		return utils.ConsoleChartLocation
 
+	case operatorv1.DynamicScoringFrameworkPreview:
+		return utils.DynamicScoringFrameworkChartLocation
+
 	case operatorv1.FineGrainedRbac:
 		return utils.FineGrainedRbacChartLocation
 

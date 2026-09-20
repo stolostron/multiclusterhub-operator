@@ -1,0 +1,12 @@
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: AddOnDeploymentConfig
+metadata:
+  name: dynamic-scoring-addon-config-aarch64
+  namespace: '{{ .Values.global.namespace }}'
+spec:
+  agentInstallNamespace: dynamic-scoring
+  customizedVariables:
+  - name: Image
+    value: quay.io/open-cluster-management/dynamic-scoring-addon:latest-aarch64
+  - name: ImagePullSecrets
+    value: '["hub-registry-secret"]'
