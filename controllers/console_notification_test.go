@@ -35,8 +35,8 @@ func TestMCEComplianceBannerText_Behind(t *testing.T) {
 // --- OCP banner text tests ---
 
 func TestOCPComplianceBannerText(t *testing.T) {
-	got := ocpComplianceBannerText("4.18.0", "4.19.0")
-	expected := "WARNING: ACM in unexpected configuration: OCP 4.18.0 is below the minimum supported version 4.19.0."
+	got := ocpComplianceBannerText("4.19.0", "4.20.0")
+	expected := "WARNING: ACM in unexpected configuration: OCP 4.19.0 is below the minimum supported version 4.20.0."
 	if got != expected {
 		t.Errorf("ocpComplianceBannerText() = %q, want %q", got, expected)
 	}
@@ -294,7 +294,7 @@ func TestEnsureOCPComplianceBanner_BelowMinimum(t *testing.T) {
 		},
 	}
 
-	err := recon.ensureOCPComplianceBanner(ctx, hub, "4.18.0")
+	err := recon.ensureOCPComplianceBanner(ctx, hub, "4.19.0")
 	if err != nil {
 		t.Fatalf("ensureOCPComplianceBanner() error = %v", err)
 	}
@@ -308,7 +308,7 @@ func TestEnsureOCPComplianceBanner_BelowMinimum(t *testing.T) {
 		_ = recon.Client.Delete(ctx, notification)
 	})
 
-	expectedText := ocpComplianceBannerText("4.18.0", version.MinimumOCPVersion)
+	expectedText := ocpComplianceBannerText("4.19.0", version.MinimumOCPVersion)
 	if notification.Spec.Text != expectedText {
 		t.Errorf("banner text = %q, want %q", notification.Spec.Text, expectedText)
 	}
@@ -360,7 +360,7 @@ func TestEnsureOCPComplianceBanner_MeetsMinimum_RemovesBanner(t *testing.T) {
 	})
 
 	// OCP version meets minimum — banner should be removed
-	err := recon.ensureOCPComplianceBanner(ctx, hub, "4.19.0")
+	err := recon.ensureOCPComplianceBanner(ctx, hub, "4.20.0")
 	if err != nil {
 		t.Fatalf("ensureOCPComplianceBanner() error = %v", err)
 	}
@@ -416,7 +416,7 @@ func TestEnsureOCPComplianceBanner_UpdatesExistingBanner(t *testing.T) {
 			},
 		},
 		Spec: consolev1.ConsoleNotificationSpec{
-			Text:            ocpComplianceBannerText("4.17.0", version.MinimumOCPVersion),
+			Text:            ocpComplianceBannerText("4.18.0", version.MinimumOCPVersion),
 			Location:        consolev1.BannerTop,
 			BackgroundColor: bannerBackgroundColor,
 			Color:           bannerTextColor,
@@ -432,7 +432,7 @@ func TestEnsureOCPComplianceBanner_UpdatesExistingBanner(t *testing.T) {
 	})
 
 	// Update with different OCP version (still below minimum)
-	err := recon.ensureOCPComplianceBanner(ctx, hub, "4.18.0")
+	err := recon.ensureOCPComplianceBanner(ctx, hub, "4.19.0")
 	if err != nil {
 		t.Fatalf("ensureOCPComplianceBanner() error = %v", err)
 	}
@@ -443,7 +443,7 @@ func TestEnsureOCPComplianceBanner_UpdatesExistingBanner(t *testing.T) {
 		t.Fatalf("failed to get ConsoleNotification: %v", err)
 	}
 
-	expectedText := ocpComplianceBannerText("4.18.0", version.MinimumOCPVersion)
+	expectedText := ocpComplianceBannerText("4.19.0", version.MinimumOCPVersion)
 	if notification.Spec.Text != expectedText {
 		t.Errorf("updated banner text = %q, want %q", notification.Spec.Text, expectedText)
 	}
