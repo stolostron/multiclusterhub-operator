@@ -1060,6 +1060,7 @@ func Test_ComponentsAreRunning(t *testing.T) {
 
 func TestCalculateMCEVersionCompliance(t *testing.T) {
 	registerScheme()
+	t.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
 
 	tests := []struct {
 		name            string
@@ -1100,7 +1101,7 @@ func TestCalculateMCEVersionCompliance(t *testing.T) {
 			expectCompliant: false,
 		},
 		{
-			name:      "MCE with valid version",
+			name:      "MCE with exact required version",
 			createMCE: true,
 			mce: &mcev1.MultiClusterEngine{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1120,6 +1121,81 @@ func TestCalculateMCEVersionCompliance(t *testing.T) {
 				Message:         "MCE version 2.17.0 meets channel stable-2.17 requirements",
 			},
 			expectCompliant: true,
+		},
+		{
+			name:      "MCE with higher patch version",
+			createMCE: true,
+			mce: &mcev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multiclusterengine",
+					Labels: map[string]string{
+						multiclusterengineutils.MCEManagedByLabel: "true",
+					},
+				},
+				Status: mcev1.MultiClusterEngineStatus{CurrentVersion: "2.17.5"},
+			},
+			expectedStatus:  &operatorsv1.MCEVersionComplianceStatus{CurrentVersion: "2.17.5"},
+			expectCompliant: true,
+		},
+		{
+			name:      "MCE with matching patch prerelease",
+			createMCE: true,
+			mce: &mcev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multiclusterengine",
+					Labels: map[string]string{
+						multiclusterengineutils.MCEManagedByLabel: "true",
+					},
+				},
+				Status: mcev1.MultiClusterEngineStatus{CurrentVersion: "2.17.0-123"},
+			},
+			expectedStatus:  &operatorsv1.MCEVersionComplianceStatus{CurrentVersion: "2.17.0-123"},
+			expectCompliant: true,
+		},
+		{
+			name:      "MCE with higher minor version",
+			createMCE: true,
+			mce: &mcev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multiclusterengine",
+					Labels: map[string]string{
+						multiclusterengineutils.MCEManagedByLabel: "true",
+					},
+				},
+				Status: mcev1.MultiClusterEngineStatus{CurrentVersion: "2.18.0"},
+			},
+			expectedStatus:  &operatorsv1.MCEVersionComplianceStatus{CurrentVersion: "2.18.0"},
+			expectCompliant: false,
+		},
+		{
+			name:      "MCE with higher major version",
+			createMCE: true,
+			mce: &mcev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multiclusterengine",
+					Labels: map[string]string{
+						multiclusterengineutils.MCEManagedByLabel: "true",
+					},
+				},
+				Status: mcev1.MultiClusterEngineStatus{CurrentVersion: "3.0.0"},
+			},
+			expectedStatus:  &operatorsv1.MCEVersionComplianceStatus{CurrentVersion: "3.0.0"},
+			expectCompliant: false,
+		},
+		{
+			name:      "MCE below required version",
+			createMCE: true,
+			mce: &mcev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multiclusterengine",
+					Labels: map[string]string{
+						multiclusterengineutils.MCEManagedByLabel: "true",
+					},
+				},
+				Status: mcev1.MultiClusterEngineStatus{CurrentVersion: "2.16.99"},
+			},
+			expectedStatus:  &operatorsv1.MCEVersionComplianceStatus{CurrentVersion: "2.16.99"},
+			expectCompliant: false,
 		},
 	}
 
