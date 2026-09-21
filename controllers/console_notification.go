@@ -135,10 +135,17 @@ func (r *MultiClusterHubReconciler) ensureBanner(ctx context.Context, name strin
 		return fmt.Errorf("failed to get ConsoleNotification %s: %w", name, err)
 	}
 
+	linkChanged := (existing.Spec.Link == nil) != (desired.Spec.Link == nil)
+	if !linkChanged && existing.Spec.Link != nil && desired.Spec.Link != nil {
+		linkChanged = existing.Spec.Link.Text != desired.Spec.Link.Text ||
+			existing.Spec.Link.Href != desired.Spec.Link.Href
+	}
+	labelsChanged := existing.Labels["installer.name"] != desired.Labels["installer.name"] ||
+		existing.Labels["installer.namespace"] != desired.Labels["installer.namespace"]
 	if existing.Spec.Text != desired.Spec.Text ||
 		existing.Spec.BackgroundColor != desired.Spec.BackgroundColor ||
 		existing.Spec.Color != desired.Spec.Color ||
-		existing.Spec.Location != desired.Spec.Location {
+		existing.Spec.Location != desired.Spec.Location || linkChanged || labelsChanged {
 		patch := client.MergeFrom(existing.DeepCopy())
 		existing.Spec = desired.Spec
 		existing.Labels = desired.Labels
@@ -166,9 +173,9 @@ func (r *MultiClusterHubReconciler) removeBanner(ctx context.Context, name strin
 	return r.Client.Delete(ctx, notification)
 }
 
-func (r *MultiClusterHubReconciler) cleanupConsoleNotifications(_ logr.Logger, m *operatorsv1.MultiClusterHub) error {
-	return r.Client.DeleteAllOf(context.TODO(), &consolev1.ConsoleNotification{}, client.MatchingLabels{
-		"installer.name":      m.GetName(),
-		"installer.namespace": m.GetNamespace(),
-	})
+func (r *MultiClusterHubReconciler) cleanupConsoleNotifications(_ logr.Logger, _ *operatorsv1.MultiClusterHub) error {
+	if err := r.removeBanner(context.TODO(), mceComplianceBannerName); err != nil {
+		return err
+	}
+	return r.removeBanner(context.TODO(), ocpComplianceBannerName)
 }

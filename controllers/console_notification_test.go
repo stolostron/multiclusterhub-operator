@@ -265,6 +265,10 @@ func TestEnsureMCEComplianceBanner_UpdatesExistingBanner(t *testing.T) {
 	if notification.Spec.Text != expectedText {
 		t.Errorf("updated banner text = %q, want %q", notification.Spec.Text, expectedText)
 	}
+	if notification.Spec.Link == nil || notification.Spec.Link.Href != bannerSupportLinkHref ||
+		notification.Spec.Link.Text != bannerSupportLinkText {
+		t.Errorf("updated banner link = %#v, want support link", notification.Spec.Link)
+	}
 }
 
 func TestRemoveBanner_NoExistingBanner(t *testing.T) {
@@ -442,5 +446,34 @@ func TestEnsureOCPComplianceBanner_UpdatesExistingBanner(t *testing.T) {
 	expectedText := ocpComplianceBannerText("4.18.0", version.MinimumOCPVersion)
 	if notification.Spec.Text != expectedText {
 		t.Errorf("updated banner text = %q, want %q", notification.Spec.Text, expectedText)
+	}
+}
+
+func TestCleanupConsoleNotifications(t *testing.T) {
+	registerScheme()
+	ctx := context.TODO()
+
+	for _, name := range []string{mceComplianceBannerName, ocpComplianceBannerName} {
+		notification := &consolev1.ConsoleNotification{
+			ObjectMeta: metav1.ObjectMeta{Name: name},
+			Spec: consolev1.ConsoleNotificationSpec{
+				Text:     "warning",
+				Location: consolev1.BannerTop,
+			},
+		}
+		if err := recon.Client.Create(ctx, notification); err != nil {
+			t.Fatalf("failed to create %s: %v", name, err)
+		}
+	}
+
+	if err := recon.cleanupConsoleNotifications(log, &operatorsv1.MultiClusterHub{}); err != nil {
+		t.Fatalf("cleanupConsoleNotifications() error = %v", err)
+	}
+
+	for _, name := range []string{mceComplianceBannerName, ocpComplianceBannerName} {
+		notification := &consolev1.ConsoleNotification{}
+		if err := recon.Client.Get(ctx, types.NamespacedName{Name: name}, notification); err == nil {
+			t.Errorf("expected %s to be deleted", name)
+		}
 	}
 }
