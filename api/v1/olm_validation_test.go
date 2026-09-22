@@ -153,6 +153,111 @@ func TestValidateOLMAnnotations(t *testing.T) {
 	}
 }
 
+func TestValidateMCEChannelAnnotation(t *testing.T) {
+	tests := []struct {
+		name           string
+		annotations    map[string]string
+		desiredChannel func() string
+		wantErr        bool
+		errContains    string
+	}{
+		{
+			name:           "No annotations - valid",
+			annotations:    nil,
+			desiredChannel: func() string { return "stable-5.1" },
+			wantErr:        false,
+		},
+		{
+			name:           "Annotation present but no channels field - valid",
+			annotations:    map[string]string{annotationMCEClusterExtensionSpec: `{"version":"5.1.0"}`},
+			desiredChannel: func() string { return "stable-5.1" },
+			wantErr:        false,
+		},
+		{
+			name:           "Annotation channel matches desired channel - valid",
+			annotations:    map[string]string{annotationMCEClusterExtensionSpec: `{"channels":["stable-5.1"]}`},
+			desiredChannel: func() string { return "stable-5.1" },
+			wantErr:        false,
+		},
+		{
+			name:           "Annotation channel conflicts with desired channel - invalid",
+			annotations:    map[string]string{annotationMCEClusterExtensionSpec: `{"channels":["stable-5.0"]}`},
+			desiredChannel: func() string { return "stable-5.1" },
+			wantErr:        true,
+			errContains:    `channel(s) [stable-5.0], which conflicts with channel "stable-5.1"`,
+		},
+		{
+			name: "Multiple annotation channels, one matches - valid",
+			annotations: map[string]string{
+				annotationMCEClusterExtensionSpec: `{"channels":["stable-5.0","stable-5.1"]}`,
+			},
+			desiredChannel: func() string { return "stable-5.1" },
+			wantErr:        false,
+		},
+		{
+			name: "Multiple annotation channels, none match - invalid",
+			annotations: map[string]string{
+				annotationMCEClusterExtensionSpec: `{"channels":["stable-5.0","stable-5.2"]}`,
+			},
+			desiredChannel: func() string { return "stable-5.1" },
+			wantErr:        true,
+			errContains:    "conflicts with channel",
+		},
+		{
+			name:           "Malformed JSON annotation - skipped, not blocked here",
+			annotations:    map[string]string{annotationMCEClusterExtensionSpec: `{not valid json`},
+			desiredChannel: func() string { return "stable-5.1" },
+			wantErr:        false,
+		},
+		{
+			name:           "DesiredMCEChannelFunc unset - skip validation",
+			annotations:    map[string]string{annotationMCEClusterExtensionSpec: `{"channels":["stable-5.0"]}`},
+			desiredChannel: nil,
+			wantErr:        false,
+		},
+	}
+
+	origFunc := DesiredMCEChannelFunc
+	defer func() { DesiredMCEChannelFunc = origFunc }()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			DesiredMCEChannelFunc = tt.desiredChannel
+
+			mch := &MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        "test-mch",
+					Namespace:   "default",
+					Annotations: tt.annotations,
+				},
+			}
+
+			err := validateMCEChannelAnnotation(mch)
+
+			if tt.wantErr {
+				if err == nil {
+					t.Fatalf("validateMCEChannelAnnotation() expected error but got none")
+				}
+				if tt.errContains != "" {
+					errMsg := err.Error()
+					found := false
+					for i := 0; i <= len(errMsg)-len(tt.errContains); i++ {
+						if errMsg[i:i+len(tt.errContains)] == tt.errContains {
+							found = true
+							break
+						}
+					}
+					if !found {
+						t.Errorf("validateMCEChannelAnnotation() error = %v, want error containing %q", err, tt.errContains)
+					}
+				}
+			} else if err != nil {
+				t.Errorf("validateMCEChannelAnnotation() unexpected error: %v", err)
+			}
+		})
+	}
+}
+
 func TestDetectOLMVersion(t *testing.T) {
 	tests := []struct {
 		name       string

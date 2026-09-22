@@ -43,6 +43,7 @@ import (
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/controllers"
+	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
@@ -358,6 +359,10 @@ func main() {
 			setupLog.Error(err, "unable to ensure webhook", "webhook", "MultiClusterHub")
 			os.Exit(1)
 		}
+
+		// Wired up here (rather than imported directly by api/v1) to avoid an import cycle:
+		// pkg/multiclusterengine imports api/v1.
+		operatorv1.DesiredMCEChannelFunc = multiclusterengine.DesiredChannel
 
 		if err = (&operatorv1.MultiClusterHub{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "MultiClusterHub")
