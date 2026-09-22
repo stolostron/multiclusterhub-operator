@@ -68,12 +68,12 @@ func Test_ValidOCPVersion(t *testing.T) {
 		},
 		{
 			name:       "below min",
-			ocpVersion: "4.9.99",
+			ocpVersion: "4.19.99",
 			wantErr:    true,
 		},
 		{
 			name:       "below min ignored",
-			ocpVersion: "4.9.99",
+			ocpVersion: "4.19.99",
 			envVar:     "DISABLE_OCP_MIN_VERSION",
 			wantErr:    false,
 		},

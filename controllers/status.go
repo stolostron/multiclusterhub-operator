@@ -125,6 +125,20 @@ func (r *MultiClusterHubReconciler) syncHubStatus(ctx context.Context, m *operat
 	allCRs map[string]*unstructured.Unstructured, ocpConsole, isSTSEnabled bool) (reconcile.Result, error) {
 
 	newStatus := r.calculateStatus(ctx, m, allDeps, allCRs, ocpConsole, isSTSEnabled)
+
+	if err := r.ensureMCEComplianceBanner(ctx, m, newStatus.MCEVersionCompliance); err != nil {
+		r.Log.Error(err, "Failed to reconcile MCE compliance ConsoleNotification banner")
+	}
+
+	ocpVersion, err := r.getClusterVersion(ctx)
+	if err != nil {
+		r.Log.Error(err, "Failed to get OCP version for compliance banner check")
+	} else {
+		if err := r.ensureOCPComplianceBanner(ctx, m, ocpVersion); err != nil {
+			r.Log.Error(err, "Failed to reconcile OCP compliance ConsoleNotification banner")
+		}
+	}
+
 	if reflect.DeepEqual(m.Status, original) {
 		r.Log.Info("Status hasn't changed")
 		return reconcile.Result{}, nil
@@ -132,7 +146,7 @@ func (r *MultiClusterHubReconciler) syncHubStatus(ctx context.Context, m *operat
 
 	newHub := m
 	newHub.Status = newStatus
-	err := r.Client.Status().Update(context.TODO(), newHub)
+	err = r.Client.Status().Update(context.TODO(), newHub)
 	if err != nil {
 		if errors.IsConflict(err) {
 			// Error from object being modified is normal behavior and should not be treated like an error
