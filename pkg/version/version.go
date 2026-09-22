@@ -63,7 +63,7 @@ func ValidMCEVersion(mceVersion string) error {
 	if _, exists := os.LookupEnv("DISABLE_MCE_MIN_VERSION"); exists {
 		return nil
 	}
-	return validVersion(mceVersion, RequiredMCEVersion)
+	return validPatchVersion(mceVersion, RequiredMCEVersion)
 }
 
 // ValidCommunityMCEVersion returns an error if MCE does not satisfy the minimum version requirement
@@ -72,7 +72,7 @@ func ValidCommunityMCEVersion(mceVersion string) error {
 	if _, exists := os.LookupEnv("DISABLE_MCE_MIN_VERSION"); exists {
 		return nil
 	}
-	return validVersion(mceVersion, RequiredCommunityMCEVersion)
+	return validPatchVersion(mceVersion, RequiredCommunityMCEVersion)
 }
 
 // ValidOCPVersion returns an error if ocpVersion does not satisfy the minimum OCP version requirement
@@ -94,6 +94,32 @@ func validVersion(have, required string) error {
 		return err
 	}
 	if !aboveMinVersion.Check(currentVersion) {
+		return fmt.Errorf("version %s did not meet minimum version requirement of %s", have, required)
+	}
+	return nil
+}
+
+// validPatchVersion requires the same major.minor as required and an equal or higher patch.
+// Pre-release builds of the required patch are valid because they are shipped build artifacts.
+func validPatchVersion(have, required string) error {
+	requiredVersion, err := semver.NewVersion(required)
+	if err != nil {
+		return err
+	}
+	currentVersion, err := semver.NewVersion(have)
+	if err != nil {
+		return err
+	}
+	if currentVersion.Major() != requiredVersion.Major() || currentVersion.Minor() != requiredVersion.Minor() {
+		return fmt.Errorf("version %s does not match required major.minor %d.%d",
+			have, requiredVersion.Major(), requiredVersion.Minor())
+	}
+	aboveMinPatch, err := semver.NewConstraint(fmt.Sprintf(">= %d.%d.%d-0",
+		requiredVersion.Major(), requiredVersion.Minor(), requiredVersion.Patch()))
+	if err != nil {
+		return err
+	}
+	if !aboveMinPatch.Check(currentVersion) {
 		return fmt.Errorf("version %s did not meet minimum version requirement of %s", have, required)
 	}
 	return nil
