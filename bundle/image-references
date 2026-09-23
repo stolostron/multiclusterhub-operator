@@ -195,46 +195,6 @@ spec:
     from:
       kind: DockerImage
       name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/configmap_reloader:latest
-  - name: flightctl_api
-    from:
-      kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_api:latest
-  - name: flightctl_ocp_ui
-    from:
-      kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_ocp_ui:latest
-  - name: flightctl_periodic
-    from:
-      kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_periodic:latest
-  - name: flightctl_ui
-    from:
-      kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_ui:latest
-  - name: flightctl_worker
-    from:
-      kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_worker:latest
-  - name: flightctl_cli_artifacts
-    from:
-      kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_cli_artifacts:latest
-  - name: flightctl_alert_exporter
-    from:
-      kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_alert_exporter:latest
-  - name: flightctl_alertmanager_proxy
-    from:
-      kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_alertmanager_proxy:latest
-  - name: flightctl_db_setup
-    from:
-      kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_db_setup:latest
-  - name: flightctl_userinfo_proxy
-    from:
-      kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/flightctl_userinfo_proxy:latest
   - name: ubi_minimal
     from:
       kind: DockerImage
