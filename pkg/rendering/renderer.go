@@ -65,6 +65,22 @@ const (
 	defaultOADPCatalogSourceNamespace = "openshift-marketplace"
 )
 
+// defaults for the MTV subscription referenced by the mtv-operator AddOnTemplate workload manifest
+const (
+	// defaultMTVChannel specifies the MTV channel that the mtv-operator AddOnTemplate subscribes to by default.
+	defaultMTVChannel = "release-v5.0"
+
+	// defaultMTVPackageName is the name of the MTV operator package subscribed to by the AddOnTemplate.
+	defaultMTVPackageName = "mtv-operator"
+
+	// defaultMTVSubscriptionNamespace is the namespace the MTV subscription is created in on the managed cluster.
+	defaultMTVSubscriptionNamespace = "openshift-mtv"
+
+	// defaultMTVUpgradeApproval defines the default upgrade approval policy for the MTV subscription.
+	// Supported values are: "Automatic" or "Manual".
+	defaultMTVUpgradeApproval = "Automatic"
+)
+
 var log = logf.Log.WithName("reconcile")
 
 func convertTolerations(tols []corev1.Toleration) []Toleration {
@@ -452,6 +468,8 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 	values.Global.MinOADPChannel = defaultOADPChannel
 	values.Global.MinOADPStableChannel = defaultOADPStableChannel
 
+	values.Global.MTVChannel, values.Global.MTVPackageName, values.Global.MTVNamespace, values.Global.MTVUpgradeApproval = GetMTVConfig(mch)
+
 	// NetworkPolicies configuration - default enabled to true
 	networkPoliciesEnabled := true
 	if mch.Spec.NetworkPolicies != nil {
@@ -568,4 +586,38 @@ func GetOADPConfig(m *v1.MultiClusterHub) (string, string, subv1alpha1.Approval,
 	}
 
 	return name, channel, installPlan, source, sourceNamespace, startingCSV
+}
+
+/*
+parseMTVAnnotation unmarshals the MTV subscription annotation from a MultiClusterHub.
+Returns an empty SubscriptionSpec if no annotation is present or if unmarshaling fails.
+The annotation key is installer.open-cluster-management.io/mtv-subscription-spec.
+*/
+func parseMTVAnnotation(m *v1.MultiClusterHub) *subv1alpha1.SubscriptionSpec {
+	sub := &subv1alpha1.SubscriptionSpec{}
+	mtvSpec := utils.GetMTVAnnotationOverrides(m)
+	if mtvSpec == "" {
+		return sub
+	}
+
+	if err := json.Unmarshal([]byte(mtvSpec), sub); err != nil {
+		log.Info(fmt.Sprintf("Failed to unmarshal MTV annotation: %s.", mtvSpec))
+	}
+	return sub
+}
+
+/*
+GetMTVConfig resolves the MTV subscription fields used by the mtv-operator AddOnTemplate.
+Any field left empty in the mtv-subscription-spec annotation falls back to the
+shipped default, so a partial override is safe.
+*/
+func GetMTVConfig(m *v1.MultiClusterHub) (channel, packageName, namespace, upgradeApproval string) {
+	sub := parseMTVAnnotation(m)
+
+	channel = valueOrDefault(sub.Channel, defaultMTVChannel)
+	packageName = valueOrDefault(sub.Package, defaultMTVPackageName)
+	namespace = valueOrDefault(sub.CatalogSourceNamespace, defaultMTVSubscriptionNamespace)
+	upgradeApproval = valueOrDefault(string(sub.InstallPlanApproval), defaultMTVUpgradeApproval)
+
+	return channel, packageName, namespace, upgradeApproval
 }

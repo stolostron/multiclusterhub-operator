@@ -29,10 +29,10 @@ spec:
             - openshift-mtv
           remediationAction: enforce
           subscription:
-            channel: release-v5.0
-            name: mtv-operator
-            namespace: openshift-mtv
-          upgradeApproval: Automatic
+            channel: {{ .Values.global.mtvChannel }}
+            name: {{ .Values.global.mtvPackageName }}
+            namespace: {{ .Values.global.mtvNamespace }}
+          upgradeApproval: {{ .Values.global.mtvUpgradeApproval }}
       - apiVersion: forklift.konveyor.io/v1beta1
         kind: ForkliftController
         metadata:

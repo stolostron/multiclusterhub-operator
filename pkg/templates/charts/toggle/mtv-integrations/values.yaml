@@ -3,6 +3,10 @@ global:
   baseDomain: ''
   imageOverrides:
     mtv_integrations: ''
+  mtvChannel: release-v5.0
+  mtvNamespace: openshift-mtv
+  mtvPackageName: mtv-operator
+  mtvUpgradeApproval: Automatic
   namespace: default
   networkPolicies:
     enabled: true

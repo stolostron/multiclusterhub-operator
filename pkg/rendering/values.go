@@ -34,6 +34,10 @@ type Global struct {
 	StartingCSV          string               `json:"startingCSV" structs:"startingCSV"`
 	OLMVersion           string               `json:"olmVersion" structs:"olmVersion"`         // "v0" or "v1" - detected at runtime by main.go detectOLMVersion
 	OADPOLMVersion       string               `json:"oadpOlmVersion" structs:"oadpOlmVersion"` // forced to v0 until OADP ships OLM v1-ready bundles
+	MTVChannel           string               `json:"mtvChannel" structs:"mtvChannel"`
+	MTVPackageName       string               `json:"mtvPackageName" structs:"mtvPackageName"`
+	MTVNamespace         string               `json:"mtvNamespace" structs:"mtvNamespace"`
+	MTVUpgradeApproval   string               `json:"mtvUpgradeApproval" structs:"mtvUpgradeApproval"`
 	NetworkPolicies      NetworkPoliciesValue `json:"networkPolicies" structs:"networkPolicies"`
 }
 

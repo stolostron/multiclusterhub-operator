@@ -485,6 +485,99 @@ func TestOADPAnnotation(t *testing.T) {
 
 }
 
+func TestMTVAnnotation(t *testing.T) {
+	mtv := `{"channel": "release-v2.11", "installPlanApproval": "Manual", "name": "mtv-operator2", "sourceNamespace": "openshift-mtv2"}`
+	mch := &v1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "test",
+			Annotations: map[string]string{
+				"installer.open-cluster-management.io/mtv-subscription-spec": mtv,
+			},
+		},
+	}
+
+	channel, packageName, namespace, upgradeApproval := GetMTVConfig(mch)
+
+	if channel != "release-v2.11" {
+		t.Errorf("MTV AddOnTemplate missing override for channel, got %s", channel)
+	}
+
+	if packageName != "mtv-operator2" {
+		t.Errorf("MTV AddOnTemplate missing override for name, got %s", packageName)
+	}
+
+	if namespace != "openshift-mtv2" {
+		t.Errorf("MTV AddOnTemplate missing override for namespace, got %s", namespace)
+	}
+
+	if upgradeApproval != "Manual" {
+		t.Errorf("MTV AddOnTemplate missing override for upgrade approval, got %s", upgradeApproval)
+	}
+
+	// A partial override must fall back to the shipped defaults for unset fields.
+	mch = &v1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "test",
+			Annotations: map[string]string{
+				"installer.open-cluster-management.io/mtv-subscription-spec": `{"channel": "release-v2.10"}`,
+			},
+		},
+	}
+
+	channel, packageName, namespace, upgradeApproval = GetMTVConfig(mch)
+
+	if channel != "release-v2.10" {
+		t.Errorf("MTV AddOnTemplate partial override lost channel, got %s", channel)
+	}
+	if packageName != defaultMTVPackageName {
+		t.Errorf("MTV AddOnTemplate partial override should keep default name, got %s", packageName)
+	}
+	if namespace != defaultMTVSubscriptionNamespace {
+		t.Errorf("MTV AddOnTemplate partial override should keep default namespace, got %s", namespace)
+	}
+	if upgradeApproval != defaultMTVUpgradeApproval {
+		t.Errorf("MTV AddOnTemplate partial override should keep default upgrade approval, got %s", upgradeApproval)
+	}
+
+	// No annotation at all must return the defaults.
+	mch = &v1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "test",
+		},
+	}
+
+	channel, packageName, namespace, upgradeApproval = GetMTVConfig(mch)
+
+	if channel != defaultMTVChannel {
+		t.Errorf("MTV AddOnTemplate default channel is %s, got %s", defaultMTVChannel, channel)
+	}
+	if packageName != defaultMTVPackageName {
+		t.Errorf("MTV AddOnTemplate default name is %s, got %s", defaultMTVPackageName, packageName)
+	}
+	if namespace != defaultMTVSubscriptionNamespace {
+		t.Errorf("MTV AddOnTemplate default namespace is %s, got %s", defaultMTVSubscriptionNamespace, namespace)
+	}
+	if upgradeApproval != defaultMTVUpgradeApproval {
+		t.Errorf("MTV AddOnTemplate default upgrade approval is %s, got %s", defaultMTVUpgradeApproval, upgradeApproval)
+	}
+
+	// Malformed JSON must not panic and must fall back to the defaults.
+	mch = &v1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "test",
+			Annotations: map[string]string{
+				"installer.open-cluster-management.io/mtv-subscription-spec": "not-json",
+			},
+		},
+	}
+
+	channel, _, _, _ = GetMTVConfig(mch)
+
+	if channel != defaultMTVChannel {
+		t.Errorf("MTV AddOnTemplate malformed annotation should keep default channel, got %s", channel)
+	}
+}
+
 func TestRenderChartOLMv1(t *testing.T) {
 	os.Setenv("DIRECTORY_OVERRIDE", "../templates")
 	os.Setenv("ACM_HUB_OCP_VERSION", "5.0.0")

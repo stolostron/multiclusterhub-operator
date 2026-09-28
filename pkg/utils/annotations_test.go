@@ -261,6 +261,47 @@ func Test_GetOADPAnnotationOverrides(t *testing.T) {
 	})
 }
 
+func Test_GetMTVAnnotationOverrides(t *testing.T) {
+	t.Run("Get MTV annotation overrides for MCH", func(t *testing.T) {
+		mch := &operatorsv1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
+				AnnotationMTVSubscriptionSpec: "mtv-sub",
+			}},
+		}
+		want := "mtv-sub"
+		if got := GetMTVAnnotationOverrides(mch); got != want {
+			t.Errorf("GetMTVAnnotationOverrides(mch) = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("Get MTV annotation overrides for MCH without annotation", func(t *testing.T) {
+		mch := &operatorsv1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{},
+		}
+		want := ""
+		if got := GetMTVAnnotationOverrides(mch); got != want {
+			t.Errorf("GetMTVAnnotationOverrides(mch) = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("MTV annotation change triggers a re-render", func(t *testing.T) {
+		oldAnnotations := map[string]string{
+			AnnotationMTVSubscriptionSpec: `{"channel": "release-v5.0"}`,
+		}
+		newAnnotations := map[string]string{
+			AnnotationMTVSubscriptionSpec: `{"channel": "release-v2.12"}`,
+		}
+		if AnnotationsMatch(oldAnnotations, newAnnotations) {
+			t.Error("AnnotationsMatch(old, new) = true, want false when the MTV subscription spec changes")
+		}
+		if !AnnotationsMatch(oldAnnotations, map[string]string{
+			AnnotationMTVSubscriptionSpec: `{"channel": "release-v5.0"}`,
+		}) {
+			t.Error("AnnotationsMatch(old, new) = false, want true when the MTV subscription spec is unchanged")
+		}
+	})
+}
+
 func Test_GetDefaultStorageClassOverride(t *testing.T) {
 	t.Run("Get Default storage class annotation override for MCH", func(t *testing.T) {
 		mch := &operatorsv1.MultiClusterHub{
