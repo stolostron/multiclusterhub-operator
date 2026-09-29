@@ -1,6 +1,6 @@
 module github.com/stolostron/multiclusterhub-operator
 
-go 1.26.3
+go 1.26.7
 
 require (
 	github.com/Masterminds/semver/v3 v3.5.0
@@ -15,7 +15,7 @@ require (
 	github.com/operator-framework/operator-lifecycle-manager v0.43.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.0
-	github.com/stolostron/backplane-operator v0.0.0-20260721224254-b16f694b49ea
+	github.com/stolostron/backplane-operator v0.0.0-20260924160628-d9c7ac3ba678
 	github.com/stolostron/search-v2-operator v0.0.0-20250818191351-8d847101bcdd
 	go.uber.org/zap v1.28.0
 	helm.sh/helm/v3 v3.20.2
