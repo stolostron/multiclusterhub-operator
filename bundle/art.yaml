@@ -1,6 +1,6 @@
 ---
 updates:
-- file: "manifests/advanced-cluster-management.clusterserviceversion.yaml"
+- file: "manifests/multiclusterhub-operator.clusterserviceversion.yaml"
   update_list:
   - search: "2.17.0"
     replace: "2.17.0"
