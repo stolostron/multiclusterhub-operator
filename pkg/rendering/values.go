@@ -13,32 +13,55 @@ type Values struct {
 }
 
 type Global struct {
-	ImageOverrides       map[string]string    `json:"imageOverrides" structs:"imageOverrides"`
-	TemplateOverrides    map[string]string    `json:"templateOverrides" structs:"templateOverrides"`
-	PullPolicy           string               `json:"pullPolicy" structs:"pullPolicy"`
-	PullSecret           string               `json:"pullSecret" structs:"pullSecret"`
-	Namespace            string               `json:"namespace" structs:"namespace"`
-	ImageRepository      string               `json:"imageRepository" structs:"namespace"`
-	Name                 string               `json:"name" structs:"name"`
-	Channel              string               `json:"channel" structs:"channel"`
-	MinOADPChannel       string               `json:"minOADPChannel" structs:"minOADPChannel"`
-	MinOADPStableChannel string               `json:"MinOADPStableChannel" structs:"MinOADPStableChannel"`
-	InstallPlanApproval  subv1alpha1.Approval `json:"installPlanApproval" structs:"installPlanApproval"`
-	Source               string               `json:"source" structs:"source"`
-	SourceNamespace      string               `json:"sourceNamespace" structs:"sourceNamespace"`
-	APIUrl               string               `json:"apiUrl" structs:"apiUrl"`
-	Target               string               `json:"target" structs:"target"`
-	BaseDomain           string               `json:"baseDomain" structs:"baseDomain"`
-	DeployOnOCP          bool                 `json:"deployOnOCP" structs:"deployOnOCP"`
-	StorageClassName     string               `json:"storageClassName" structs:"storageClassName"`
-	StartingCSV          string               `json:"startingCSV" structs:"startingCSV"`
-	OLMVersion           string               `json:"olmVersion" structs:"olmVersion"`         // "v0" or "v1" - detected at runtime by main.go detectOLMVersion
-	OADPOLMVersion       string               `json:"oadpOlmVersion" structs:"oadpOlmVersion"` // forced to v0 until OADP ships OLM v1-ready bundles
-	MTVChannel           string               `json:"mtvChannel" structs:"mtvChannel"`
-	MTVPackageName       string               `json:"mtvPackageName" structs:"mtvPackageName"`
-	MTVNamespace         string               `json:"mtvNamespace" structs:"mtvNamespace"`
-	MTVUpgradeApproval   string               `json:"mtvUpgradeApproval" structs:"mtvUpgradeApproval"`
-	NetworkPolicies      NetworkPoliciesValue `json:"networkPolicies" structs:"networkPolicies"`
+	ImageOverrides                 map[string]string    `json:"imageOverrides" structs:"imageOverrides"`
+	TemplateOverrides              map[string]string    `json:"templateOverrides" structs:"templateOverrides"`
+	PullPolicy                     string               `json:"pullPolicy" structs:"pullPolicy"`
+	PullSecret                     string               `json:"pullSecret" structs:"pullSecret"`
+	Namespace                      string               `json:"namespace" structs:"namespace"`
+	ImageRepository                string               `json:"imageRepository" structs:"namespace"`
+	Name                           string               `json:"name" structs:"name"`
+	Channel                        string               `json:"channel" structs:"channel"`
+	MinOADPChannel                 string               `json:"minOADPChannel" structs:"minOADPChannel"`
+	MinOADPStableChannel           string               `json:"MinOADPStableChannel" structs:"MinOADPStableChannel"`
+	InstallPlanApproval            subv1alpha1.Approval `json:"installPlanApproval" structs:"installPlanApproval"`
+	Source                         string               `json:"source" structs:"source"`
+	SourceNamespace                string               `json:"sourceNamespace" structs:"sourceNamespace"`
+	APIUrl                         string               `json:"apiUrl" structs:"apiUrl"`
+	Target                         string               `json:"target" structs:"target"`
+	BaseDomain                     string               `json:"baseDomain" structs:"baseDomain"`
+	DeployOnOCP                    bool                 `json:"deployOnOCP" structs:"deployOnOCP"`
+	StorageClassName               string               `json:"storageClassName" structs:"storageClassName"`
+	StartingCSV                    string               `json:"startingCSV" structs:"startingCSV"`
+	OLMVersion                     string               `json:"olmVersion" structs:"olmVersion"`         // "v0" or "v1" - detected at runtime by main.go detectOLMVersion
+	OADPOLMVersion                 string               `json:"oadpOlmVersion" structs:"oadpOlmVersion"` // forced to v0 until OADP ships OLM v1-ready bundles
+	MTVOperator                    OperatorPolicyValue  `json:"mtvOperator" structs:"mtvOperator"`
+	KubevirtHyperconvergedOperator OperatorPolicyValue  `json:"kubevirtHyperconvergedOperator" structs:"kubevirtHyperconvergedOperator"`
+	NetworkPolicies                NetworkPoliciesValue `json:"networkPolicies" structs:"networkPolicies"`
+}
+
+// OperatorPolicyValue mirrors a templated OperatorPolicy block of the
+// mtv-integrations chart values.yaml. The outer key is derived from the
+// OperatorPolicy name by the chart generator, so the Go field name has to stay
+// in step with what generate-charts.py produces.
+type OperatorPolicyValue struct {
+	Subscription    OperatorPolicySubscriptionValue `json:"subscription" structs:"subscription"`
+	UpgradeApproval string                          `json:"upgradeApproval" structs:"upgradeApproval"`
+}
+
+// OperatorPolicySubscriptionValue mirrors an OperatorPolicy subscription block.
+//
+// The catalog fields are deliberately left at their zero value when the
+// annotation does not set them. Leaving them empty is what lets the policy
+// controller inherit the catalog and CSV already resolved on the managed
+// cluster, so an empty string is a valid unset marker rather than a missing
+// value.
+type OperatorPolicySubscriptionValue struct {
+	Channel         string `json:"channel" structs:"channel"`
+	Name            string `json:"name" structs:"name"`
+	Namespace       string `json:"namespace" structs:"namespace"`
+	Source          string `json:"source" structs:"source"`
+	SourceNamespace string `json:"sourceNamespace" structs:"sourceNamespace"`
+	StartingCSV     string `json:"startingCSV" structs:"startingCSV"`
 }
 
 type NetworkPoliciesValue struct {

@@ -81,6 +81,22 @@ const (
 	defaultMTVUpgradeApproval = "Automatic"
 )
 
+// defaults for the CNV subscription referenced by the kubevirt-hyperconverged AddOnTemplate workload manifest
+const (
+	// defaultCNVChannel specifies the CNV channel that the kubevirt-hyperconverged AddOnTemplate subscribes to by default.
+	defaultCNVChannel = "stable"
+
+	// defaultCNVPackageName is the name of the CNV operator package subscribed to by the AddOnTemplate.
+	defaultCNVPackageName = "kubevirt-hyperconverged"
+
+	// defaultCNVSubscriptionNamespace is the namespace the CNV subscription is created in on the managed cluster.
+	defaultCNVSubscriptionNamespace = "openshift-cnv"
+
+	// defaultCNVUpgradeApproval defines the default upgrade approval policy for the CNV subscription.
+	// Supported values are: "Automatic" or "Manual".
+	defaultCNVUpgradeApproval = "Automatic"
+)
+
 var log = logf.Log.WithName("reconcile")
 
 func convertTolerations(tols []corev1.Toleration) []Toleration {
@@ -468,7 +484,8 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 	values.Global.MinOADPChannel = defaultOADPChannel
 	values.Global.MinOADPStableChannel = defaultOADPStableChannel
 
-	values.Global.MTVChannel, values.Global.MTVPackageName, values.Global.MTVNamespace, values.Global.MTVUpgradeApproval = GetMTVConfig(mch)
+	values.Global.MTVOperator = GetMTVConfig(mch)
+	values.Global.KubevirtHyperconvergedOperator = GetCNVConfig(mch)
 
 	// NetworkPolicies configuration - default enabled to true
 	networkPoliciesEnabled := true
@@ -607,17 +624,80 @@ func parseMTVAnnotation(m *v1.MultiClusterHub) *subv1alpha1.SubscriptionSpec {
 }
 
 /*
+parseCNVAnnotation unmarshals the CNV subscription annotation from a MultiClusterHub.
+Returns an empty SubscriptionSpec if no annotation is present or if unmarshaling fails.
+The annotation key is installer.open-cluster-management.io/cnv-subscription-spec.
+*/
+func parseCNVAnnotation(m *v1.MultiClusterHub) *subv1alpha1.SubscriptionSpec {
+	sub := &subv1alpha1.SubscriptionSpec{}
+	cnvSpec := utils.GetCNVAnnotationOverrides(m)
+	if cnvSpec == "" {
+		return sub
+	}
+
+	if err := json.Unmarshal([]byte(cnvSpec), sub); err != nil {
+		log.Info(fmt.Sprintf("Failed to unmarshal CNV annotation: %s.", cnvSpec))
+	}
+	return sub
+}
+
+/*
+operatorPolicyValue maps a parsed subscription annotation onto the chart values
+block for an embedded OperatorPolicy, falling back to the shipped defaults for
+the fields the annotation leaves unset.
+*/
+func operatorPolicyValue(sub *subv1alpha1.SubscriptionSpec, defaults operatorPolicyDefaults) OperatorPolicyValue {
+	return OperatorPolicyValue{
+		Subscription: OperatorPolicySubscriptionValue{
+			Channel:   valueOrDefault(sub.Channel, defaults.channel),
+			Name:      valueOrDefault(sub.Package, defaults.packageName),
+			Namespace: defaults.namespace,
+			// The catalog fields are passed through untouched rather than
+			// defaulted: leaving them empty is what lets the OperatorPolicy
+			// controller inherit the catalog/CSV already resolved on the
+			// managed cluster.
+			Source:          sub.CatalogSource,
+			SourceNamespace: sub.CatalogSourceNamespace,
+			StartingCSV:     sub.StartingCSV,
+		},
+		UpgradeApproval: valueOrDefault(string(sub.InstallPlanApproval), defaults.upgradeApproval),
+	}
+}
+
+// operatorPolicyDefaults holds the values shipped in the chart for the fields
+// that are not simply "inherit whatever is on the cluster".
+type operatorPolicyDefaults struct {
+	channel         string
+	packageName     string
+	namespace       string
+	upgradeApproval string
+}
+
+/*
 GetMTVConfig resolves the MTV subscription fields used by the mtv-operator AddOnTemplate.
 Any field left empty in the mtv-subscription-spec annotation falls back to the
 shipped default, so a partial override is safe.
 */
-func GetMTVConfig(m *v1.MultiClusterHub) (channel, packageName, namespace, upgradeApproval string) {
-	sub := parseMTVAnnotation(m)
+func GetMTVConfig(m *v1.MultiClusterHub) OperatorPolicyValue {
+	return operatorPolicyValue(parseMTVAnnotation(m), operatorPolicyDefaults{
+		channel:         defaultMTVChannel,
+		packageName:     defaultMTVPackageName,
+		namespace:       defaultMTVSubscriptionNamespace,
+		upgradeApproval: defaultMTVUpgradeApproval,
+	})
+}
 
-	channel = valueOrDefault(sub.Channel, defaultMTVChannel)
-	packageName = valueOrDefault(sub.Package, defaultMTVPackageName)
-	namespace = valueOrDefault(sub.CatalogSourceNamespace, defaultMTVSubscriptionNamespace)
-	upgradeApproval = valueOrDefault(string(sub.InstallPlanApproval), defaultMTVUpgradeApproval)
-
-	return channel, packageName, namespace, upgradeApproval
+/*
+GetCNVConfig resolves the CNV subscription fields used by the
+kubevirt-hyperconverged AddOnTemplate. Any field left empty in the
+cnv-subscription-spec annotation falls back to the shipped default, so a partial
+override is safe.
+*/
+func GetCNVConfig(m *v1.MultiClusterHub) OperatorPolicyValue {
+	return operatorPolicyValue(parseCNVAnnotation(m), operatorPolicyDefaults{
+		channel:         defaultCNVChannel,
+		packageName:     defaultCNVPackageName,
+		namespace:       defaultCNVSubscriptionNamespace,
+		upgradeApproval: defaultCNVUpgradeApproval,
+	})
 }

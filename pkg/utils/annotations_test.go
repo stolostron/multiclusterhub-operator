@@ -302,6 +302,47 @@ func Test_GetMTVAnnotationOverrides(t *testing.T) {
 	})
 }
 
+func Test_GetCNVAnnotationOverrides(t *testing.T) {
+	t.Run("Get CNV annotation overrides for MCH", func(t *testing.T) {
+		mch := &operatorsv1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
+				AnnotationCNVSubscriptionSpec: "cnv-sub",
+			}},
+		}
+		want := "cnv-sub"
+		if got := GetCNVAnnotationOverrides(mch); got != want {
+			t.Errorf("GetCNVAnnotationOverrides(mch) = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("Get CNV annotation overrides for MCH without annotation", func(t *testing.T) {
+		mch := &operatorsv1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{}},
+		}
+		want := ""
+		if got := GetCNVAnnotationOverrides(mch); got != want {
+			t.Errorf("GetCNVAnnotationOverrides(mch) = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("CNV annotation change triggers a re-render", func(t *testing.T) {
+		oldAnnotations := map[string]string{
+			AnnotationCNVSubscriptionSpec: `{"channel": "stable"}`,
+		}
+		newAnnotations := map[string]string{
+			AnnotationCNVSubscriptionSpec: `{"channel": "stable-1.16"}`,
+		}
+		if AnnotationsMatch(oldAnnotations, newAnnotations) {
+			t.Error("AnnotationsMatch(old, new) = true, want false when the CNV subscription spec changes")
+		}
+		if !AnnotationsMatch(oldAnnotations, map[string]string{
+			AnnotationCNVSubscriptionSpec: `{"channel": "stable"}`,
+		}) {
+			t.Error("AnnotationsMatch(old, new) = false, want true when the CNV subscription spec is unchanged")
+		}
+	})
+}
+
 func Test_GetDefaultStorageClassOverride(t *testing.T) {
 	t.Run("Get Default storage class annotation override for MCH", func(t *testing.T) {
 		mch := &operatorsv1.MultiClusterHub{
