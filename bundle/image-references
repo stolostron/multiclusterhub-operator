@@ -19,10 +19,6 @@ spec:
     from:
       kind: DockerImage
       name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/cluster-backup-rhel9-operator:latest
-  - name: acm-cluster-permission-rhel9
-    from:
-      kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-cluster-permission-rhel9:latest
   - name: config-policy-controller-rhel9
     from:
       kind: DockerImage
