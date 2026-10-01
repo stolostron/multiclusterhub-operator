@@ -232,7 +232,7 @@ func TestNewMultiClusterEngine(t *testing.T) {
 					NodeSelector:       nil,
 					AvailabilityConfig: mcev1.HAHigh,
 					TargetNamespace:    OperandNamespace(),
-					NetworkPolicies:    mcev1.NetworkPoliciesConfig{Enabled: true},
+					NetworkPolicies:    &mcev1.NetworkPoliciesConfig{Enabled: true},
 					Overrides: &mcev1.Overrides{
 						Components: []mcev1.ComponentConfig{
 							{Name: operatorv1.MCELocalCluster, Enabled: true},
@@ -294,7 +294,7 @@ func TestNewMultiClusterEngine(t *testing.T) {
 					},
 					AvailabilityConfig: mcev1.HABasic,
 					TargetNamespace:    OperandNamespace(),
-					NetworkPolicies:    mcev1.NetworkPoliciesConfig{Enabled: true},
+					NetworkPolicies:    &mcev1.NetworkPoliciesConfig{Enabled: true},
 					Overrides: &mcev1.Overrides{
 						ImagePullPolicy: corev1.PullNever,
 						Components: []mcev1.ComponentConfig{
