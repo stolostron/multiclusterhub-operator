@@ -28,4 +28,4 @@ external-images:
   replace: "registry.redhat.io/openshift4/ose-kube-rbac-proxy-rhel9:v4.18.0-202603262350.p2.g5a14ea9.assembly.stream.el9"
 - name: volsync
   search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/volsync:latest"
-  replace: "registry.redhat.io/rhacm2/volsync-rhel9:v0.15"
+  replace: "registry.redhat.io/rhacm2/volsync-rhel9:v0.16"
