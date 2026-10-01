@@ -29,7 +29,6 @@ import (
 	admissionregistration "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
@@ -37,7 +36,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -91,26 +89,33 @@ var (
 
 func (r *MultiClusterHub) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	Client = mgr.GetClient()
-	return ctrl.NewWebhookManagedBy(mgr).For(r).Complete()
+	// controller-runtime v0.21+ no longer auto-detects Defaulter/Validator
+	// implementations from the type passed to NewWebhookManagedBy, so both must
+	// be wired explicitly or no webhook is registered at all.
+	return ctrl.NewWebhookManagedBy(mgr, &MultiClusterHub{}).
+		WithDefaulter(&MultiClusterHub{}).
+		WithValidator(&MultiClusterHub{}).
+		Complete()
 }
 
-var _ webhook.Defaulter = &MultiClusterHub{}
+var _ admission.Defaulter[*MultiClusterHub] = &MultiClusterHub{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *MultiClusterHub) Default() {
-	mchlog.Info("default", "name", r.Name)
+// Default implements admission.Defaulter so a webhook will be registered for the type
+func (r *MultiClusterHub) Default(_ context.Context, obj *MultiClusterHub) error {
+	mchlog.Info("default", "name", obj.Name)
+	return nil
 }
 
 //+kubebuilder:webhook:name=multiclusterhub-operator-validating-webhook,path=/validate-operator-open-cluster-management-io-v1-multiclusterhub,mutating=false,failurePolicy=fail,sideEffects=None,groups=operator.open-cluster-management.io,resources=multiclusterhubs,verbs=create;update;delete,versions=v1,name=multiclusterhub.validating-webhook.open-cluster-management.io,admissionReviewVersions={v1,v1beta1}
 
-var _ webhook.Validator = &MultiClusterHub{}
+var _ admission.Validator[*MultiClusterHub] = &MultiClusterHub{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *MultiClusterHub) ValidateCreate() (admission.Warnings, error) {
-	mchlog.Info("validate create", "Name", r.Name, "Namespace", r.Namespace)
+// ValidateCreate implements admission.Validator so a webhook will be registered for the type
+func (r *MultiClusterHub) ValidateCreate(ctx context.Context, obj *MultiClusterHub) (admission.Warnings, error) {
+	mchlog.Info("validate create", "Name", obj.Name, "Namespace", obj.Namespace)
 
 	multiClusterHubList := &MultiClusterHubList{}
-	if err := Client.List(context.Background(), multiClusterHubList); err != nil {
+	if err := Client.List(ctx, multiClusterHubList); err != nil {
 		return nil, fmt.Errorf("unable to list MultiClusterHubs: %s", err)
 	}
 
@@ -120,13 +125,13 @@ func (r *MultiClusterHub) ValidateCreate() (admission.Warnings, error) {
 		return nil, fmt.Errorf("MultiClusterHub in Standalone mode already exists: `%s`", existingMCH.GetName())
 	}
 
-	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
+	if (obj.Spec.AvailabilityConfig != HABasic) && (obj.Spec.AvailabilityConfig != HAHigh) && (obj.Spec.AvailabilityConfig != "") {
 		return nil, fmt.Errorf("invalid AvailabilityConfig given")
 	}
 
 	// Validate components
-	if r.Spec.Overrides != nil {
-		for _, c := range r.Spec.Overrides.Components {
+	if obj.Spec.Overrides != nil {
+		for _, c := range obj.Spec.Overrides.Components {
 			if !ValidComponent(c, MCHComponents) {
 				return nil, fmt.Errorf("invalid component config: %s is not a known component", c.Name)
 			}
@@ -134,19 +139,19 @@ func (r *MultiClusterHub) ValidateCreate() (admission.Warnings, error) {
 	}
 
 	// validate local-cluster name length
-	if err := validateLocalClusterNameLength(r.Spec.LocalClusterName); err != nil {
+	if err := validateLocalClusterNameLength(obj.Spec.LocalClusterName); err != nil {
 		return nil, err
 	}
 
 	// If MCE CR exists, then spec.localClusterName must match
 	mceList := &mcev1.MultiClusterEngineList{}
 	// If installing ACM standalone, then MCE will fail to list. This is expected
-	if err := Client.List(context.Background(), mceList); errors.Is(err, errors.New("no matches for kind \"MultiClusterEngine\" in version \"multicluster.openshift.io/v1\"")) {
+	if err := Client.List(ctx, mceList); errors.Is(err, errors.New("no matches for kind \"MultiClusterEngine\" in version \"multicluster.openshift.io/v1\"")) {
 		return nil, err
 	}
 	if len(mceList.Items) == 1 {
 		mce := mceList.Items[0]
-		if mce.Spec.LocalClusterName != r.Spec.LocalClusterName {
+		if mce.Spec.LocalClusterName != obj.Spec.LocalClusterName {
 			return nil, fmt.Errorf("Spec.LocalClusterName does not match MCE Spec.LocalClusterName: %s", mce.Spec.LocalClusterName)
 		}
 	}
@@ -161,27 +166,25 @@ func validateLocalClusterNameLength(name string) (err error) {
 	return nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
-	mchlog.Info("validate update", "Name", r.Name, "Namespace", r.Namespace)
+// ValidateUpdate implements admission.Validator so a webhook will be registered for the type
+func (r *MultiClusterHub) ValidateUpdate(ctx context.Context, old, new *MultiClusterHub) (admission.Warnings, error) {
+	mchlog.Info("validate update", "Name", new.Name, "Namespace", new.Namespace)
 
-	oldMCH := old.(*MultiClusterHub)
-
-	if oldMCH.Spec.SeparateCertificateManagement != r.Spec.SeparateCertificateManagement {
+	if old.Spec.SeparateCertificateManagement != new.Spec.SeparateCertificateManagement {
 		return nil, fmt.Errorf("updating SeparateCertificateManagement is forbidden")
 	}
 
-	if !reflect.DeepEqual(oldMCH.Spec.Hive, r.Spec.Hive) {
+	if !reflect.DeepEqual(old.Spec.Hive, new.Spec.Hive) {
 		return nil, fmt.Errorf("hive updates are forbidden")
 	}
 
-	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
+	if (new.Spec.AvailabilityConfig != HABasic) && (new.Spec.AvailabilityConfig != HAHigh) && (new.Spec.AvailabilityConfig != "") {
 		return nil, fmt.Errorf("invalid AvailabilityConfig given")
 	}
 
 	// Validate components
-	if r.Spec.Overrides != nil {
-		for _, c := range r.Spec.Overrides.Components {
+	if new.Spec.Overrides != nil {
+		for _, c := range new.Spec.Overrides.Components {
 			if !ValidComponent(c, MCHComponents) {
 				return nil, fmt.Errorf("invalid componentconfig: %s is not a known component", c.Name)
 			}
@@ -190,18 +193,17 @@ func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) (admission.Warnings
 
 	// Block changing localClusterName if ManagdCluster with label `local-cluster = true` exists
 	// if the Spec.LocalClusterName field has changed
-	if oldMCH.Spec.LocalClusterName != r.Spec.LocalClusterName {
-		if err := validateLocalClusterNameLength(r.Spec.LocalClusterName); err != nil {
+	if old.Spec.LocalClusterName != new.Spec.LocalClusterName {
+		if err := validateLocalClusterNameLength(new.Spec.LocalClusterName); err != nil {
 			return nil, err
 		}
 
-		ctx := context.Background()
 		managedClusterGVK := schema.GroupVersionKind{
 			Group:   "cluster.open-cluster-management.io",
 			Version: "v1",
 			Kind:    "ManagedClusterList",
 		}
-		mcName := oldMCH.Spec.LocalClusterName
+		mcName := old.Spec.LocalClusterName
 
 		// list ManagedClusters
 		list := &unstructured.UnstructuredList{}
@@ -223,9 +225,9 @@ func (r *MultiClusterHub) ValidateUpdate(old runtime.Object) (admission.Warnings
 
 var cfg *rest.Config
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *MultiClusterHub) ValidateDelete() (admission.Warnings, error) {
-	mchlog.Info("validate delete", "Name", r.Name, "Namespace", r.Namespace)
+// ValidateDelete implements admission.Validator so a webhook will be registered for the type
+func (r *MultiClusterHub) ValidateDelete(ctx context.Context, obj *MultiClusterHub) (admission.Warnings, error) {
+	mchlog.Info("validate delete", "Name", obj.Name, "Namespace", obj.Namespace)
 
 	if val, ok := os.LookupEnv("ENV_TEST"); !ok || val == "false" {
 		var err error
@@ -248,7 +250,7 @@ func (r *MultiClusterHub) ValidateDelete() (admission.Warnings, error) {
 			Kind:    "ManagedClusterList",
 		},
 		ExceptionTotal:  1,
-		NameExceptions:  []string{r.Spec.LocalClusterName},
+		NameExceptions:  []string{obj.Spec.LocalClusterName},
 		LabelExceptions: map[string]string{"local-cluster": "true"},
 	})
 	for _, resource := range tmpBlockDeletionResources {
@@ -259,7 +261,7 @@ func (r *MultiClusterHub) ValidateDelete() (admission.Warnings, error) {
 			continue
 		}
 		// List all resources
-		if err := Client.List(context.Background(), list); err != nil {
+		if err := Client.List(ctx, list); err != nil {
 			return nil, fmt.Errorf("unable to list %s: %s", resource.Name, err)
 		}
 		// If there are any unexpected resources, deny deletion
