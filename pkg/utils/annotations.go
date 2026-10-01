@@ -74,6 +74,18 @@ var (
 	AnnotationOADPClusterExtensionSpec = "installer.open-cluster-management.io/oadp-clusterextension-spec"
 
 	/*
+		AnnotationMTVSubscriptionSpec is an annotation used in multiclusterhub to override the MTV subscription
+		referenced by the mtv-operator AddOnTemplate workload manifest.
+	*/
+	AnnotationMTVSubscriptionSpec = "installer.open-cluster-management.io/mtv-subscription-spec"
+
+	/*
+		AnnotationCNVSubscriptionSpec is an annotation used in multiclusterhub to override the CNV subscription
+		referenced by the kubevirt-hyperconverged AddOnTemplate workload manifest.
+	*/
+	AnnotationCNVSubscriptionSpec = "installer.open-cluster-management.io/cnv-subscription-spec"
+
+	/*
 		AnnotationReleaseVersion is an annotation used to indicate the release version that should be applied to all
 		resources managed by the MCH operator.
 	*/
@@ -244,6 +256,12 @@ func AnnotationsMatch(old, new map[string]string) bool {
 	if !getAnnotationOrDefaultForMap(old, new, AnnotationOADPClusterExtensionSpec, "") {
 		return false
 	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationMTVSubscriptionSpec, "") {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationCNVSubscriptionSpec, "") {
+		return false
+	}
 	if !getAnnotationOrDefaultForMap(old, new, AnnotationResourceAdoptionPolicy, "") {
 		return false
 	}
@@ -268,6 +286,8 @@ func AnnotationsMatch(old, new map[string]string) bool {
 		AnnotationMCEClusterExtensionSpec:    true,
 		AnnotationOADPSubscriptionSpec:       true,
 		AnnotationOADPClusterExtensionSpec:   true,
+		AnnotationMTVSubscriptionSpec:        true,
+		AnnotationCNVSubscriptionSpec:        true,
 		AnnotationResourceAdoptionPolicy:     true,
 		AnnotationProbeTimeoutSeconds:        true,
 		AnnotationProbeFailureThreshold:      true,
@@ -405,6 +425,22 @@ or an empty string if not set.
 */
 func GetOADPClusterExtensionAnnotationOverrides(instance *operatorsv1.MultiClusterHub) string {
 	return getAnnotation(instance, AnnotationOADPClusterExtensionSpec)
+}
+
+/*
+GetMTVAnnotationOverrides returns the MTV subscription spec annotation value,
+or an empty string if not set.
+*/
+func GetMTVAnnotationOverrides(instance *operatorsv1.MultiClusterHub) string {
+	return getAnnotation(instance, AnnotationMTVSubscriptionSpec)
+}
+
+/*
+GetCNVAnnotationOverrides returns the CNV subscription spec annotation value,
+or an empty string if not set.
+*/
+func GetCNVAnnotationOverrides(instance *operatorsv1.MultiClusterHub) string {
+	return getAnnotation(instance, AnnotationCNVSubscriptionSpec)
 }
 
 /*
