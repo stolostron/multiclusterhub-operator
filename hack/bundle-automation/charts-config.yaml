@@ -20,3 +20,11 @@ components:
           - "LIVE_NETWORK_KEY"
           - "LIVE_NETWORK_VALUE"
         auto-install-for-all-clusters: true
+        # CNV and MTV declare channel/name/namespace but not source,
+        # sourceNamespace or startingCSV. Request them so the operator can
+        # override them; each is seeded empty, which the OperatorPolicy
+        # controller reads as "inherit the default" Subscription value.
+        operatorPolicySubscriptionFields:
+          - "source"
+          - "sourceNamespace"
+          - "startingCSV"

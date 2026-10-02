@@ -219,6 +219,92 @@ Setting OADP annotation via CLI
 oc annotate mch multiclusterhub installer.open-cluster-management.io/oadp-subscription-spec='{"channel":"stable-1.0","installPlanApproval":"Automatic","name":"redhat-oadp-operator","source":"redhat-operators","sourceNamespace":"openshift-marketplace","startingCSV": "oadp-operator.v1.0.2"}'
 ```
 
+### Overriding MTV Operator Subscription
+
+The MTV operator is deployed by the `mtv-integrations` chart. The subscription referenced by the
+`mtv-operator` AddOnTemplate can be overridden by providing the following annotation on the MCH
+resource. One or many parameters can be provided from the ones listed in the
+`installer.open-cluster-management.io/mtv-subscription-spec` annotation below.
+
+Any field left out falls back to the shipped default, so a partial override is safe.
+
+| Field                | Default            | Description                                                                 |
+| -------------------- | ------------------ | --------------------------------------------------------------------------- |
+| `channel`            | `release-v2.12`    | Channel of the `mtv-operator` package. Depends on the OCP version of the managed cluster. |
+| `name`               | `mtv-operator`     | Name of the MTV operator package.                                            |
+| `source`             | _(unset)_          | Catalog the subscription resolves from. Unset leaves this unpinned so the policy controller can inherit the catalog on the managed cluster. |
+| `sourceNamespace`    | _(unset)_          | Namespace of that catalog. Unset leaves this unpinned so the policy controller can inherit the catalog on the managed cluster. |
+| `startingCSV`        | _(unset)_          | Pin an exact operator version. Unset lets the policy controller pick the resolved version. |
+| `installPlanApproval`| `Automatic`        | Upgrade approval policy. Supported values are `Automatic` or `Manual`.       |
+
+> **Note:** `sourceNamespace` is the namespace of the *catalog*, not the namespace the subscription is
+> created in. The subscription is always created in `openshift-mtv`, which is fixed and not overridable.
+
+```yaml
+apiVersion: operator.open-cluster-management.io/v1
+kind: MultiClusterHub
+metadata:
+  annotations:
+    installer.open-cluster-management.io/mtv-subscription-spec: '{"channel": "release-v2.12","installPlanApproval":
+      "Automatic","name": "mtv-operator"}'
+  name: multiclusterhub
+spec: {}
+```
+
+Setting the MTV annotation via CLI
+
+```bash
+oc annotate mch multiclusterhub installer.open-cluster-management.io/mtv-subscription-spec='{"channel":"release-v2.11","installPlanApproval":"Automatic","name":"mtv-operator","source":"redhat-operators","sourceNamespace":"openshift-marketplace"}'
+```
+
+> **Note:** the AddOnTemplate marks the `mtv-operator` OperatorPolicy with
+> `updateStrategy: CreateOnly`, so an existing OperatorPolicy will not be updated in place when this
+> annotation changes. Delete the existing `mtv-operator` OperatorPolicy on the managed cluster so the
+> new subscription is created.
+
+### Overriding CNV Operator Subscription
+
+The CNV operator is deployed by the same `mtv-integrations` chart. The subscription referenced by the
+`kubevirt-hyperconverged` AddOnTemplate can be overridden by providing the following annotation on the
+MCH resource. One or many parameters can be provided from the ones listed in the
+`installer.open-cluster-management.io/cnv-subscription-spec` annotation below.
+
+Any field left out falls back to the shipped default, so a partial override is safe. This annotation is
+independent of the MTV one.
+
+| Field                | Default                   | Description                                                                 |
+| -------------------- | ------------------------- | --------------------------------------------------------------------------- |
+| `channel`            | `stable`                  | Channel of the `kubevirt-hyperconverged` package.                            |
+| `name`               | `kubevirt-hyperconverged` | Name of the CNV operator package.                                            |
+| `source`             | _(unset)_                 | Catalog the subscription resolves from. Unset leaves this unpinned so the policy controller can inherit the catalog on the managed cluster. |
+| `sourceNamespace`    | _(unset)_                 | Namespace of that catalog. Unset leaves this unpinned so the policy controller can inherit the catalog on the managed cluster. |
+| `startingCSV`        | _(unset)_                 | Pin an exact operator version. Unset lets the policy controller pick the resolved version. |
+| `installPlanApproval`| `Automatic`               | Upgrade approval policy. Supported values are `Automatic` or `Manual`.       |
+
+> **Note:** the subscription is always created in `openshift-cnv`, which is fixed and not overridable.
+
+```yaml
+apiVersion: operator.open-cluster-management.io/v1
+kind: MultiClusterHub
+metadata:
+  annotations:
+    installer.open-cluster-management.io/cnv-subscription-spec: '{"channel": "stable","installPlanApproval":
+      "Automatic","name": "kubevirt-hyperconverged"}'
+  name: multiclusterhub
+spec: {}
+```
+
+Setting the CNV annotation via CLI
+
+```bash
+oc annotate mch multiclusterhub installer.open-cluster-management.io/cnv-subscription-spec='{"channel":"stable-1.16","installPlanApproval":"Automatic","name":"kubevirt-hyperconverged","source":"redhat-operators","sourceNamespace":"openshift-marketplace"}'
+```
+
+> **Note:** the AddOnTemplate marks the `kubevirt-hyperconverged` OperatorPolicy with
+> `updateStrategy: CreateOnly`, so an existing OperatorPolicy will not be updated in place when this
+> annotation changes. Delete the existing `kubevirt-hyperconverged` OperatorPolicy on the managed cluster
+> so the new subscription is created.
+
 ### Ignore OCP Version Requirement
 
 The operator defines a minimum version of OCP it can run in to avoid unexpected behavior. If the OCP environment is below this threshold then the MCH instance will report failure early on. This requirement can be ignored in the following two ways

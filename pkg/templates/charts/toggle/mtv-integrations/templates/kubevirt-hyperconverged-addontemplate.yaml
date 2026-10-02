@@ -80,10 +80,13 @@ spec:
             - openshift-cnv
           remediationAction: enforce
           subscription:
-            channel: stable
-            name: kubevirt-hyperconverged
-            namespace: openshift-cnv
-          upgradeApproval: Automatic
+            channel: '{{ .Values.global.kubevirtHyperconvergedOperator.subscription.channel }}'
+            name: '{{ .Values.global.kubevirtHyperconvergedOperator.subscription.name }}'
+            namespace: '{{ .Values.global.kubevirtHyperconvergedOperator.subscription.namespace }}'
+            source: '{{ .Values.global.kubevirtHyperconvergedOperator.subscription.source }}'
+            sourceNamespace: '{{ .Values.global.kubevirtHyperconvergedOperator.subscription.sourceNamespace }}'
+            startingCSV: '{{ .Values.global.kubevirtHyperconvergedOperator.subscription.startingCSV }}'
+          upgradeApproval: '{{ .Values.global.kubevirtHyperconvergedOperator.upgradeApproval }}'
       - apiVersion: hco.kubevirt.io/v1
         kind: HyperConverged
         metadata:
