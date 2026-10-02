@@ -3,6 +3,24 @@ global:
   baseDomain: ''
   imageOverrides:
     mtv_integrations: ''
+  kubevirtHyperconvergedOperator:
+    subscription:
+      channel: stable
+      name: kubevirt-hyperconverged
+      namespace: openshift-cnv
+      source: ''
+      sourceNamespace: ''
+      startingCSV: ''
+    upgradeApproval: Automatic
+  mtvOperator:
+    subscription:
+      channel: release-v2.12
+      name: mtv-operator
+      namespace: openshift-mtv
+      source: ''
+      sourceNamespace: ''
+      startingCSV: ''
+    upgradeApproval: Automatic
   namespace: default
   networkPolicies:
     enabled: true
