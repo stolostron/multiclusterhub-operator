@@ -1,11 +1,14 @@
 apiVersion: v2
-name: dynamic-scoring-framework
+appVersion: 0.1.0
 description: A Helm chart for Open Cluster Management Dynamic Scoring Framework Addon
-category: "Development"
-keywords:
-  - acm
-  - addon-scoring
+home: https://github.com/open-cluster-management-io/dynamic-scoring-framework
+maintainers:
+- email: open-cluster-management@googlegroups.com
+  name: KA-Takeuchi
+- email: rjung@redhat.com
+  name: rjung
+name: dynamic-scoring-framework
+sources:
+- https://github.com/open-cluster-management-io/dynamic-scoring-framework
 type: application
-version: 5.1.0
-appVersion: 5.1.0
-verified: "RHACM"
+version: '5.1'

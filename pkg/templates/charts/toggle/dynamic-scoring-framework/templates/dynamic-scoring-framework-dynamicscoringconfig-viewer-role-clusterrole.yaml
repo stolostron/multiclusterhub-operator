@@ -3,7 +3,7 @@ kind: ClusterRole
 metadata:
   labels:
     app.kubernetes.io/name: dynamic-scoring-framework
-  name: '{{ .Values.org }}:{{ .Chart.Name }}:dynamic-scoring-framework'
+  name: dynamic-scoring-framework-dynamicscoringconfig-viewer-role
 rules:
 - apiGroups:
   - dynamic-scoring.open-cluster-management.io

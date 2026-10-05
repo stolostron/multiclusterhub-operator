@@ -3,12 +3,12 @@ kind: ClusterRoleBinding
 metadata:
   labels:
     app.kubernetes.io/name: dynamic-scoring-framework
-  name: '{{ .Values.org }}:{{ .Chart.Name }}:dynamic-scoring-framework'
+  name: dynamic-scoring-framework-manager-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: '{{ .Values.org }}:{{ .Chart.Name }}:dynamic-scoring-framework'
+  name: dynamic-scoring-framework-manager-role
 subjects:
 - kind: ServiceAccount
   name: dynamic-scoring-framework-controller
-  namespace: '{{ .Values.global.namespace }}'
+  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'

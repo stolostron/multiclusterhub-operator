@@ -5,6 +5,8 @@ global:
     dynamic_scoring_addon: ''
     dynamic_scoring_controller: ''
   namespace: default
+  networkPolicies:
+    enabled: true
   olmVersion: v0
   pullSecret: null
   templateOverrides: {}

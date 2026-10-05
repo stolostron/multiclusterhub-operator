@@ -41,6 +41,10 @@ spec:
         - /dynamic-scoring-addon
         - controller
         env:
+{{- if .Values.global.pullSecret }}
+        - name: AGENT_IMAGE_PULL_SECRET
+          value: {{ .Values.global.pullSecret }}
+{{- end }}
 {{- if .Values.hubconfig.proxyConfigs }}
         - name: HTTP_PROXY
           value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
@@ -74,11 +78,9 @@ spec:
 {{- end }}
       securityContext:
         runAsNonRoot: true
-{{- if .Values.global.deployOnOCP }}
 {{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
         seccompProfile:
           type: RuntimeDefault
-{{- end }}
 {{- end }}
       serviceAccountName: dynamic-scoring-addon-sa
 {{- with .Values.hubconfig.tolerations }}

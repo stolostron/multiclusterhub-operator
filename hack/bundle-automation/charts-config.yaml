@@ -11,6 +11,9 @@ components:
           dynamic-scoring-addon: dynamic_scoring_addon
           dynamic-scoring-controller: dynamic_scoring_controller
         updateChartVersion: true # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.6 -> 2.6
+        inclusions:
+          - "pullSecretOverride"
+        skipRBACOverrides: true
   - repo_name: "mtv-integrations"
     github_ref: "https://github.com/stolostron/mtv-integrations.git"
     branch: "release-5.1"
