@@ -7,6 +7,6 @@ spec:
   agentInstallNamespace: dynamic-scoring
   customizedVariables:
   - name: Image
-    value: quay.io/open-cluster-management/dynamic-scoring-addon:latest-aarch64
+    value: '{{ .Values.global.imageOverrides.dynamic_scoring_addon }}'
   - name: ImagePullSecrets
     value: '["hub-registry-secret"]'
