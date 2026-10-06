@@ -1,0 +1,12 @@
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: AddOnDeploymentConfig
+metadata:
+  name: dynamic-scoring-addon-config-aarch64
+  namespace: '{{ .Values.global.namespace }}'
+spec:
+  agentInstallNamespace: dynamic-scoring
+  customizedVariables:
+  - name: Image
+    value: '{{ .Values.global.imageOverrides.dynamic_scoring_addon }}'
+  - name: ImagePullSecrets
+    value: '["hub-registry-secret"]'

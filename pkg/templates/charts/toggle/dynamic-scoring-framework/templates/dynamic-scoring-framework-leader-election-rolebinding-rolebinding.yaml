@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/name: dynamic-scoring-framework
+  name: dynamic-scoring-framework-leader-election-rolebinding
+  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: dynamic-scoring-framework-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: dynamic-scoring-framework-controller
+  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'

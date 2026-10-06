@@ -809,6 +809,7 @@ rules:
 - apiGroups:
   - cluster.open-cluster-management.io
   resources:
+  - addonplacementscores
   - backupschedules
   - backupschedules/finalizers
   - backupschedules/status
@@ -824,6 +825,13 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - addonplacementscores/status
+  verbs:
+  - patch
+  - update
 - apiGroups:
   - cluster.open-cluster-management.io
   resources:
@@ -997,6 +1005,29 @@ rules:
   verbs:
   - list
   - watch
+- apiGroups:
+  - dynamic-scoring.open-cluster-management.io
+  resources:
+  - dynamicscorers
+  - dynamicscoringconfigs
+  verbs:
+  - '*'
+- apiGroups:
+  - dynamic-scoring.open-cluster-management.io
+  resources:
+  - dynamicscorers/finalizers
+  - dynamicscoringconfigs/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - dynamic-scoring.open-cluster-management.io
+  resources:
+  - dynamicscorers/status
+  - dynamicscoringconfigs/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - extensions.hive.openshift.io
   resources:
