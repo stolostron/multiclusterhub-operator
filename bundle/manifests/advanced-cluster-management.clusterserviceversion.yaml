@@ -23,7 +23,8 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
     repository: https://github.com/open-cluster-management/multiclusterhub-operator
     support: The Open Cluster Management Project
-  name: advanced-cluster-management.v2.17.0
+    olm.skipRange: '>=2.16.0 <2.17.3'
+  name: advanced-cluster-management.v2.17.3
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -1791,6 +1792,8 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.namespace
+                - name: OPERATOR_VERSION
+                  value: "2.17.3"
                 image: quay.io/stolostron/multiclusterhub-operator:0.0.1
                 imagePullPolicy: IfNotPresent
                 livenessProbe:
@@ -1891,4 +1894,4 @@ spec:
   maturity: alpha
   provider:
     name: Redhat
-  version: 2.17.0
+  version: 2.17.3
