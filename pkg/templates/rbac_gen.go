@@ -402,6 +402,8 @@ package main
 //+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers,verbs=get;list;watch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers,verbs=get;list;watch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers,verbs=get;list;watch
+//+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers,verbs=get;list;watch
+//+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers,verbs=get;list;watch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers,verbs=list;get;watch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers,verbs=list;get;watch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers;infrastructures;infrastructures/status,verbs=get;list;watch
