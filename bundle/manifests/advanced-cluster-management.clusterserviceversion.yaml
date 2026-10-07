@@ -23,7 +23,7 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
     repository: https://github.com/open-cluster-management/multiclusterhub-operator
     support: The Open Cluster Management Project
-  name: multiclusterhub-operator.v0.0.1
+  name: advanced-cluster-management.v0.0.1
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
