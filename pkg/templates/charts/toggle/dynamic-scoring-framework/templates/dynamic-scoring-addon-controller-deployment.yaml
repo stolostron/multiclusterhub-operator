@@ -64,7 +64,9 @@ spec:
           privileged: false
           readOnlyRootFilesystem: true
           runAsNonRoot: true
-        volumeMounts: []
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp
       hostIPC: false
       hostNetwork: false
       hostPID: false
@@ -93,4 +95,6 @@ spec:
         {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
         {{- end }}
 {{- end }}
-      volumes: []
+      volumes:
+      - name: tmp
+        emptyDir: {}
