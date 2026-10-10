@@ -11,14 +11,14 @@ spec:
     - configs:
       - group: addon.open-cluster-management.io
         name: dynamic-scoring-addon-config
-        namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
+        namespace: open-cluster-management
         resource: addondeploymentconfigs
       name: dynamic-scoring-placement
       namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
     - configs:
       - group: addon.open-cluster-management.io
         name: dynamic-scoring-addon-config-aarch64
-        namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
+        namespace: open-cluster-management
         resource: addondeploymentconfigs
       name: dynamic-scoring-placement-aarch64
       namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
