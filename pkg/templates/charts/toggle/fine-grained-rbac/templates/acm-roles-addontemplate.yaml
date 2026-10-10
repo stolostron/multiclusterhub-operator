@@ -128,9 +128,13 @@ spec:
               - get
               - list
               - watch
+            # migrations.kubevirt.io:view — keep in sync with kubevirt/kubevirt-migration-operator pkg/resources/cluster/rbac.go (getViewPolicyRules)
             - apiGroups:
               - migrations.kubevirt.io
               resources:
+              - virtualmachinestoragemigrations
+              - virtualmachinestoragemigrationplans
+              - multinamespacevirtualmachinestoragemigrations
               - multinamespacevirtualmachinestoragemigrationplans
               verbs:
               - get
@@ -286,14 +290,23 @@ spec:
               - update
               - patch
               - delete
+            # migrations.kubevirt.io:storagemigrate + storagemigrate-multins — sync with rbac.go (getStorageMigrate*PolicyRules)
             - apiGroups:
               - migrations.kubevirt.io
               resources:
+              - virtualmachinestoragemigrations
+              - virtualmachinestoragemigrationplans
+              - multinamespacevirtualmachinestoragemigrations
               - multinamespacevirtualmachinestoragemigrationplans
               verbs:
               - get
               - list
               - watch
+              - create
+              - update
+              - patch
+              - delete
+              - deletecollection
             - apiGroups:
               - observability.open-cluster-management.io
               resources:
