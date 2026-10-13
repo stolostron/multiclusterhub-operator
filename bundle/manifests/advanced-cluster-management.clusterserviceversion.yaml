@@ -1907,7 +1907,7 @@ spec:
                 - name: OPERAND_IMAGE_VOLSYNC
                   value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/volsync:latest
                 - name: OPERATOR_VERSION
-                  value: "0.0.1"
+                  value: "2.14.7"
                 - name: OPERATOR_PACKAGE
                   value: advanced-cluster-management
                 image: quay.io/stolostron/multiclusterhub-operator:0.0.1
