@@ -430,3 +430,24 @@ rules:
   - list
   - watch
   - delete
+- apiGroups:
+  - operators.coreos.com
+  resources:
+  - operatorgroups
+  - subscriptions
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cert-manager.io
+  resources:
+  - issuers
+  - certificates
+  - clusterissuers
+  verbs:
+  - create
+  - get
+  - list
+  - watch
