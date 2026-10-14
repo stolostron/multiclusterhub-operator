@@ -131,6 +131,9 @@ spec:
             - apiGroups:
               - migrations.kubevirt.io
               resources:
+              - virtualmachinestoragemigrations
+              - virtualmachinestoragemigrationplans
+              - multinamespacevirtualmachinestoragemigrations
               - multinamespacevirtualmachinestoragemigrationplans
               verbs:
               - get
@@ -289,11 +292,19 @@ spec:
             - apiGroups:
               - migrations.kubevirt.io
               resources:
+              - virtualmachinestoragemigrations
+              - virtualmachinestoragemigrationplans
+              - multinamespacevirtualmachinestoragemigrations
               - multinamespacevirtualmachinestoragemigrationplans
               verbs:
               - get
               - list
               - watch
+              - create
+              - update
+              - patch
+              - delete
+              - deletecollection
             - apiGroups:
               - observability.open-cluster-management.io
               resources:
