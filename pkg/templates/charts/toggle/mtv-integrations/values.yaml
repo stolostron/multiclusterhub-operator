@@ -14,7 +14,7 @@ global:
     upgradeApproval: Automatic
   mtvOperator:
     subscription:
-      channel: release-v2.12
+      channel: release-v5.0
       name: mtv-operator
       namespace: openshift-mtv
       source: ''
