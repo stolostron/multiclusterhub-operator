@@ -78,7 +78,7 @@ def _repo_path(registry: str) -> str:
 def _quay_tag_url(registry: str, tag: str) -> str:
     """Build clickable Quay URL for a specific tag."""
     repo = _repo_path(registry)
-    return f"https://quay.io/repository/{repo}?tab=tags&tag={tag}"
+    return f"https://quay.io/repository/{repo}?tab=tags&filter_tag_name={tag}"
 
 
 def _quay_repo_url(registry: str) -> str:
@@ -383,20 +383,37 @@ def build_train_message_blocks(
         # Header with :label: emoji
         header_text = f"{header_prefix} :label: *{product.upper()} Image Tag Changed!*"
         
-        # Previous → New NVR lines (from reference OCP variant)
-        prev_nvr = ref_result.get("prev_nvr") or "(none)"
-        new_nvr = ref_result.get("nvr") or "(unknown)"
-        nvr_lines = f"Previous: `{prev_nvr}`\nNew:      `{new_nvr}`"
+        # Use first RESULT_NEW variant for display when reference OCP didn't change
+        display_result = ref_result
+        if ref_result["status"] != RESULT_NEW:
+            new_result = next((r for r in results if r["status"] == RESULT_NEW), None)
+            if new_result:
+                display_result = new_result
         
-        # Floating tag line (reference OCP tag)
-        floating_tag = f"{product}-{train_version}__v{reference_ocp}__{image_suffix}"
-        floating_tag_line = f"Floating Tag: `{floating_tag}`"
+        # Previous → New NVR lines
+        prev_nvr = display_result.get("prev_nvr") or "(none)"
+        new_nvr = display_result.get("nvr") or "(unknown)"
+        nvr_lines = f"> Previous: `{prev_nvr}`\n> New: `{new_nvr}`"
         
-        # Build Details section
-        commit_id = ref_result.get("commit_id")
-        source_repo = ref_result.get("source_repo")
-        build_date = ref_result.get("build_date") or "(unknown)"
-        digest = ref_result.get("digest") or "(unknown)"
+        # Supported OCP versions (with warnings for missing/error)
+        ocp_parts = []
+        for r in sorted(results, key=lambda x: x["ocp"]):
+            if r["status"] == RESULT_MISSING:
+                ocp_parts.append(f"{r['ocp']} :warning:")
+            elif r["status"] == RESULT_ERROR:
+                ocp_parts.append(f"{r['ocp']} :x:")
+            else:
+                ocp_parts.append(r["ocp"])
+        supported_ocp = f"> Supported OCP versions: {' · '.join(ocp_parts)}"
+        
+        # Supported tag pattern
+        tag_pattern = f"> Supported tag pattern: `{product}-{train_version}__vX.Y__{image_suffix}`"
+        
+        # Build Details (from display_result)
+        commit_id = display_result.get("commit_id")
+        source_repo = display_result.get("source_repo")
+        build_date = display_result.get("build_date") or "(unknown)"
+        digest = display_result.get("digest") or "(unknown)"
         
         if commit_id and source_repo:
             short_commit = commit_id[:7]
@@ -405,55 +422,25 @@ def build_train_message_blocks(
             commit_link = "(unknown)"
         
         build_details = (
-            f"*Build Details:*\n"
-            f"• Commit: {commit_link}\n"
-            f"• Built On: `{build_date}`\n"
-            f"• Digest: `{digest}`"
+            f"> *Build Details*\n"
+            f"> • Commit: {commit_link}\n"
+            f"> • Built On: `{build_date}`\n"
+            f"> • Digest: `{digest}`"
         )
         
-        # Image builds by OCP (clickable Quay links + timestamps)
-        build_items = []
-        for r in sorted(results, key=lambda x: x["ocp"]):
-            ocp = r["ocp"]
-            status = r["status"]
-            
-            if status == RESULT_MISSING:
-                build_items.append(f"{ocp} :warning:")
-            elif status == RESULT_ERROR:
-                build_items.append(f"{ocp} :x:")
-            else:
-                # Extract timestamp from NVR
-                nvr = r.get("nvr") or ""
-                timestamp = ""
-                for part in nvr.split('-'):
-                    if len(part) >= 14 and part[:14].isdigit():
-                        timestamp = part[:14]
-                        break
-                
-                # Build clickable Quay tag link
-                tag = f"{product}-{train_version}__v{ocp}__{image_suffix}"
-                tag_url = _quay_tag_url(registry, tag)
-                ocp_link = f"<{tag_url}|{ocp}>"
-                
-                if timestamp:
-                    build_items.append(f"{ocp_link} {timestamp}")
-                else:
-                    build_items.append(f"{ocp_link} (unknown)")
+        # Registry link (to display variant's tag)
+        display_ocp = display_result.get("ocp", reference_ocp)
+        display_tag = f"{product}-{train_version}__v{display_ocp}__{image_suffix}"
+        registry_url = _quay_tag_url(registry, display_tag)
+        registry_line = f"> Registry: <{registry_url}|View image in Quay.io>"
         
-        builds_line = "*Image builds by OCP:*\n" + " · ".join(build_items)
+        # Combine into single section
+        body_parts = [nvr_lines, supported_ocp, tag_pattern, build_details, registry_line]
+        body_text = "\n".join(body_parts)
+        full_text = header_text + "\n" + body_text
         
-        # Registry link (to reference OCP tag page)
-        registry_url = _quay_tag_url(registry, floating_tag)
-        registry_line = f"• Registry: <{registry_url}|Quay.io Image Link>"
-        
-        # Build blocks
         blocks: list[dict] = [
-            {"type": "section", "text": {"type": "mrkdwn", "text": header_text}},
-            {"type": "section", "text": {"type": "mrkdwn", "text": nvr_lines}},
-            {"type": "section", "text": {"type": "mrkdwn", "text": floating_tag_line}},
-            {"type": "section", "text": {"type": "mrkdwn", "text": build_details}},
-            {"type": "section", "text": {"type": "mrkdwn", "text": builds_line}},
-            {"type": "section", "text": {"type": "mrkdwn", "text": registry_line}},
+            {"type": "section", "text": {"type": "mrkdwn", "text": full_text}},
         ]
         
         return blocks
@@ -840,7 +827,7 @@ def cmd_monitor(cfg: dict, args: argparse.Namespace) -> int:
     for train_version, results, reference_ocp, train_mention in train_results:
         blocks = build_train_message_blocks(
             product, train_version, results, train_mention,
-            registry, image_suffix, reference_ocp
+            registry, image_suffix, reference_ocp,
         )
         if blocks:
             if not post_slack(webhook_url, blocks, args.dry_run, args.skip_notifications):
