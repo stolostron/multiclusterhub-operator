@@ -20,6 +20,7 @@ hack/bundle-automation/tmp/
 
 test/function_tests/results
 hack/bundle-automation/__pycache__
+tools/art-monitor/__pycache__
 
 bin/*
 !bin/image-manifests
