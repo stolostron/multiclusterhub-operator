@@ -1,0 +1,6 @@
+---
+packageName: advanced-cluster-management
+channels:
+- name: release-2.11
+  currentCSV: advanced-cluster-management.v2.11.14
+defaultChannel: release-2.11
