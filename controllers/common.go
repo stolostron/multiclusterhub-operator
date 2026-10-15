@@ -36,8 +36,6 @@ import (
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 
-	// TODO: remove this when .spec.HubSize is back
-	mceutils "github.com/stolostron/backplane-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
@@ -192,7 +190,7 @@ func (r *MultiClusterHubReconciler) ensureMultiClusterEngineCR(ctx context.Conte
 	if mceannotations == nil {
 		mceannotations = map[string]string{}
 	}
-	mceannotations[mceutils.AnnotationHubSize] = string(utils.GetHubSize(m))
+	mceannotations["installer.multicluster.openshift.io/hub-size"] = string(utils.GetHubSize(m))
 
 	// TODO: put this back later
 	// mce.Spec.HubSize = mcev1.HubSize(m.Spec.HubSize)
