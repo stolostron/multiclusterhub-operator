@@ -68,7 +68,7 @@ const (
 // defaults for the MTV subscription referenced by the mtv-operator AddOnTemplate workload manifest
 const (
 	// defaultMTVChannel specifies the MTV channel that the mtv-operator AddOnTemplate subscribes to by default.
-	defaultMTVChannel = "release-v2.12"
+	defaultMTVChannel = "release-v5.0"
 
 	// defaultMTVPackageName is the name of the MTV operator package subscribed to by the AddOnTemplate.
 	defaultMTVPackageName = "mtv-operator"
