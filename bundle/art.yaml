@@ -7,13 +7,13 @@ updates:
 external-images:
 - name: configmap_reloader
   search: image-registry.openshift-image-registry.svc:5000/open-cluster-management/configmap_reloader:latest
-  replace: registry.redhat.io/openshift4/ose-configmap-reloader-rhel9@sha256:118dce6a653958e9d2387a55874c916d038810b80e800c27ff1cce041c7d6714
+  replace: registry.redhat.io/openshift4/ose-configmap-reloader-rhel9@sha256:f48161ae44130d3baa884e1643ef6c460fef30e198154de2f410eb2df52a8a86
 - name: memcached
   search: image-registry.openshift-image-registry.svc:5000/open-cluster-management/memcached:latest
-  replace: registry.redhat.io/rhel9/memcached@sha256:389f774a0fae49584bc29583a0eb82164c9a0b38ff36383ada018920f7940e92
+  replace: registry.redhat.io/rhel9/memcached@sha256:434cfe79c149a4b5dc825736c652276e4c4665b056ba891018f6280ffca975bf
 - name: postgresql_16
   search: image-registry.openshift-image-registry.svc:5000/open-cluster-management/postgresql_16:latest
-  replace: registry.redhat.io/rhel9/postgresql-16@sha256:b436f5e004c36a377d270f586506922bca48698c50295a4521e5dcb24b24bbf6
+  replace: registry.redhat.io/rhel9/postgresql-16@sha256:e95701f24727460ed8d287ef49c623678f51c9c0357949c56bbff9a1653009d7
 - name: volsync-rhel9
   search: image-registry.openshift-image-registry.svc:5000/open-cluster-management/volsync-rhel9:latest
-  replace: registry.stage.redhat.io/rhacm2/volsync-rhel9:v0.17
+  replace: registry.redhat.io/rhacm2/volsync-rhel9:v0.17
