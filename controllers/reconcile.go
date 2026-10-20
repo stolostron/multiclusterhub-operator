@@ -68,6 +68,14 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
+	// Remove the metric series as soon as deletion is observed. Several return paths
+	// below (annotation migration, upgradeable check, listing deployments and custom
+	// resources, console lookup, STS detection) run before syncHubStatus is deferred,
+	// so cleanup there alone can be skipped while a finalizer keeps the object around.
+	if multiClusterHub.GetDeletionTimestamp() != nil {
+		mchmetrics.DeleteMCHMetrics(multiClusterHub.Namespace, multiClusterHub.Name)
+	}
+
 	// Migrate deprecated annotations to current equivalents
 	if utils.MigrateDeprecatedAnnotations(multiClusterHub) {
 		r.Log.Info("Migrating deprecated annotations to current equivalents")
