@@ -15,6 +15,7 @@ import (
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	mchmetrics "github.com/stolostron/multiclusterhub-operator/pkg/metrics"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
@@ -142,6 +143,14 @@ func (r *MultiClusterHubReconciler) syncHubStatus(ctx context.Context, m *operat
 	allCRs map[string]*unstructured.Unstructured, ocpConsole, isSTSEnabled bool) (reconcile.Result, error) {
 
 	newStatus := r.calculateStatus(ctx, m, allDeps, allCRs, ocpConsole, isSTSEnabled)
+
+	// Publish the phase before the early return below so the metric is populated on
+	// the first reconcile after an operator restart, when the status is unchanged.
+	if m.GetDeletionTimestamp() != nil {
+		mchmetrics.DeleteMCHPhase(m.Namespace, m.Name)
+	} else {
+		mchmetrics.SetMCHPhase(m.Namespace, m.Name, newStatus.Phase)
+	}
 
 	if err := r.ensureMCEComplianceBanner(ctx, m, newStatus.MCEVersionCompliance); err != nil {
 		r.Log.Error(err, "Failed to reconcile MCE compliance ConsoleNotification banner")

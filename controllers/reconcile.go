@@ -24,6 +24,7 @@ import (
 	"os"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	mchmetrics "github.com/stolostron/multiclusterhub-operator/pkg/metrics"
 	"github.com/stolostron/multiclusterhub-operator/pkg/overrides"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
@@ -57,6 +58,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
+			mchmetrics.DeleteMCHPhase(req.Namespace, req.Name)
 			// Return and don't requeue
 			r.Log.Info("MultiClusterHub resource not found. Ignoring since object must be deleted")
 			return ctrl.Result{}, nil
