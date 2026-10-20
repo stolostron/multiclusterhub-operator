@@ -17,7 +17,7 @@ func phaseValue(namespace, name string, phase operatorsv1.HubPhaseType) float64 
 
 func TestSetMCHPhaseReportsExactlyOneActivePhase(t *testing.T) {
 	const namespace, name = "phase-active", "multiclusterhub"
-	t.Cleanup(func() { DeleteMCHPhase(namespace, name) })
+	t.Cleanup(func() { DeleteMCHMetrics(namespace, name) })
 
 	for _, active := range allHubPhases {
 		SetMCHPhase(namespace, name, active)
@@ -36,7 +36,7 @@ func TestSetMCHPhaseReportsExactlyOneActivePhase(t *testing.T) {
 
 func TestSetMCHPhaseFollowsTransitions(t *testing.T) {
 	const namespace, name = "phase-transition", "multiclusterhub"
-	t.Cleanup(func() { DeleteMCHPhase(namespace, name) })
+	t.Cleanup(func() { DeleteMCHMetrics(namespace, name) })
 
 	SetMCHPhase(namespace, name, operatorsv1.HubInstalling)
 	if got := phaseValue(namespace, name, operatorsv1.HubInstalling); got != 1 {
@@ -55,7 +55,7 @@ func TestSetMCHPhaseFollowsTransitions(t *testing.T) {
 func TestSetMCHPhaseReportsUnknownPhase(t *testing.T) {
 	const namespace, name = "phase-unknown", "multiclusterhub"
 	const unknown = operatorsv1.HubPhaseType("SomeFuturePhase")
-	t.Cleanup(func() { DeleteMCHPhase(namespace, name) })
+	t.Cleanup(func() { DeleteMCHMetrics(namespace, name) })
 
 	SetMCHPhase(namespace, name, unknown)
 
@@ -65,13 +65,38 @@ func TestSetMCHPhaseReportsUnknownPhase(t *testing.T) {
 	if got := phaseValue(namespace, name, operatorsv1.HubRunning); got != 0 {
 		t.Fatalf("Running = %v, want 0", got)
 	}
+
+	SetMCHPhase(namespace, name, operatorsv1.HubRunning)
+	if got := phaseValue(namespace, name, unknown); got != 0 {
+		t.Fatalf("unknown phase = %v after transition, want 0", got)
+	}
+	if got := phaseValue(namespace, name, operatorsv1.HubRunning); got != 1 {
+		t.Fatalf("Running = %v after transition, want 1", got)
+	}
+}
+
+func TestSetMCHPhaseReplacesUnknownPhase(t *testing.T) {
+	const namespace, name = "phase-unknown-replace", "multiclusterhub"
+	const firstUnknown = operatorsv1.HubPhaseType("SomeFuturePhase")
+	const secondUnknown = operatorsv1.HubPhaseType("AnotherFuturePhase")
+	t.Cleanup(func() { DeleteMCHMetrics(namespace, name) })
+
+	SetMCHPhase(namespace, name, firstUnknown)
+	SetMCHPhase(namespace, name, secondUnknown)
+
+	if got := phaseValue(namespace, name, firstUnknown); got != 0 {
+		t.Fatalf("first unknown phase = %v after transition, want 0", got)
+	}
+	if got := phaseValue(namespace, name, secondUnknown); got != 1 {
+		t.Fatalf("second unknown phase = %v, want 1", got)
+	}
 }
 
 func TestSetMCHPhaseIsolatesHubInstances(t *testing.T) {
 	const name = "multiclusterhub"
 	t.Cleanup(func() {
-		DeleteMCHPhase("hub-one", name)
-		DeleteMCHPhase("hub-two", name)
+		DeleteMCHMetrics("hub-one", name)
+		DeleteMCHMetrics("hub-two", name)
 	})
 
 	SetMCHPhase("hub-one", name, operatorsv1.HubRunning)
@@ -84,14 +109,14 @@ func TestSetMCHPhaseIsolatesHubInstances(t *testing.T) {
 		t.Fatalf("hub-two Running = %v, want 0", got)
 	}
 
-	DeleteMCHPhase("hub-one", name)
+	DeleteMCHMetrics("hub-one", name)
 
 	if got := phaseValue("hub-two", name, operatorsv1.HubError); got != 1 {
 		t.Fatalf("hub-two Error = %v after deleting hub-one, want 1", got)
 	}
 }
 
-func TestDeleteMCHPhaseRemovesSeries(t *testing.T) {
+func TestDeleteMCHMetricsRemovesSeries(t *testing.T) {
 	const namespace, name = "phase-delete", "multiclusterhub"
 
 	SetMCHPhase(namespace, name, operatorsv1.HubRunning)
@@ -99,7 +124,7 @@ func TestDeleteMCHPhaseRemovesSeries(t *testing.T) {
 		t.Fatalf("series count = %d, want %d", count, len(allHubPhases))
 	}
 
-	DeleteMCHPhase(namespace, name)
+	DeleteMCHMetrics(namespace, name)
 	if count := testutil.CollectAndCount(mchPhase, mchPhaseMetricName); count != 0 {
 		t.Fatalf("series count = %d after delete, want 0", count)
 	}

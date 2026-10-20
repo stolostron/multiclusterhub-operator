@@ -144,12 +144,11 @@ func (r *MultiClusterHubReconciler) syncHubStatus(ctx context.Context, m *operat
 
 	newStatus := r.calculateStatus(ctx, m, allDeps, allCRs, ocpConsole, isSTSEnabled)
 
-	// Publish the phase before the early return below so the metric is populated on
-	// the first reconcile after an operator restart, when the status is unchanged.
+	// Remove the metric series as soon as the hub is being torn down; the phase is
+	// not republished from this point on. Otherwise the phase is published either in
+	// the unchanged-status early return below or after the status update succeeds.
 	if m.GetDeletionTimestamp() != nil {
-		mchmetrics.DeleteMCHPhase(m.Namespace, m.Name)
-	} else {
-		mchmetrics.SetMCHPhase(m.Namespace, m.Name, newStatus.Phase)
+		mchmetrics.DeleteMCHMetrics(m.Namespace, m.Name)
 	}
 
 	if err := r.ensureMCEComplianceBanner(ctx, m, newStatus.MCEVersionCompliance); err != nil {
@@ -157,6 +156,9 @@ func (r *MultiClusterHubReconciler) syncHubStatus(ctx context.Context, m *operat
 	}
 
 	if reflect.DeepEqual(newStatus, *original) {
+		if m.GetDeletionTimestamp() == nil {
+			mchmetrics.SetMCHPhase(m.Namespace, m.Name, newStatus.Phase)
+		}
 		r.Log.Info("Status hasn't changed")
 		return reconcile.Result{}, nil
 	}
@@ -175,12 +177,19 @@ func (r *MultiClusterHubReconciler) syncHubStatus(ctx context.Context, m *operat
 			// The object was deleted (e.g. its last finalizer was just removed by this same
 			// reconcile, which triggers immediate garbage collection). There's nothing left to
 			// update, and this isn't a real error.
+			mchmetrics.DeleteMCHMetrics(m.Namespace, m.Name)
 			r.Log.Info("Skipping status update, MultiClusterHub no longer exists", "name", m.Name, "namespace", m.Namespace)
 			return reconcile.Result{}, nil
 		}
 
 		r.Log.Error(err, fmt.Sprintf("Failed to update %s/%s status ", m.Namespace, m.Name))
 		return reconcile.Result{}, err
+	}
+
+	// Only publish a changed phase after the API server has accepted it, so the
+	// metric never reports a phase that the MultiClusterHub status does not hold.
+	if m.GetDeletionTimestamp() == nil {
+		mchmetrics.SetMCHPhase(m.Namespace, m.Name, newStatus.Phase)
 	}
 
 	if m.Status.Phase != operatorsv1.HubRunning {
