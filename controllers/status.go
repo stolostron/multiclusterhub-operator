@@ -137,7 +137,10 @@ func (r *MultiClusterHubReconciler) ComponentsAreRunning(m *operatorsv1.MultiClu
 	return allComponentsSuccessful(componentStatuses)
 }
 
-// syncHubStatus checks if the status is up-to-date and sync it if necessary
+// syncHubStatus calculates the MultiClusterHub status, persists it when it changed,
+// and keeps the MultiClusterHub metrics in sync. The phase gauge is published from
+// this single path so it always reflects what the API server holds, except while the
+// hub is being deleted, when its series are removed instead.
 func (r *MultiClusterHubReconciler) syncHubStatus(ctx context.Context, m *operatorsv1.MultiClusterHub,
 	original *operatorsv1.MultiClusterHubStatus, allDeps []*appsv1.Deployment,
 	allCRs map[string]*unstructured.Unstructured, ocpConsole, isSTSEnabled bool) (reconcile.Result, error) {
@@ -156,6 +159,9 @@ func (r *MultiClusterHubReconciler) syncHubStatus(ctx context.Context, m *operat
 	}
 
 	if reflect.DeepEqual(newStatus, *original) {
+		// The status is already persisted, so publish the calculated phase. This also
+		// populates the gauge on the first reconcile after an operator restart, when
+		// there is nothing to update.
 		if m.GetDeletionTimestamp() == nil {
 			mchmetrics.SetMCHPhase(m.Namespace, m.Name, newStatus.Phase)
 		}

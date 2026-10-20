@@ -35,6 +35,9 @@ var allHubPhases = []operatorsv1.HubPhaseType{
 	operatorsv1.HubWaitingForMCE,
 }
 
+// mchPhase is the acm_mch_phase gauge. Each MultiClusterHub has one series per
+// entry in allHubPhases, identified by the namespace, name, and phase labels;
+// exactly one of those series is 1 (the current phase) and the rest are 0.
 var mchPhase = prometheus.NewGaugeVec(
 	prometheus.GaugeOpts{
 		Name: mchPhaseMetricName,
