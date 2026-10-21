@@ -34,6 +34,26 @@ func TestSetMCHPhaseReportsExactlyOneActivePhase(t *testing.T) {
 	}
 }
 
+func TestSetMCHPhaseReportsChangeOnlyOnTransition(t *testing.T) {
+	const namespace, name = "phase-changed", "multiclusterhub"
+	t.Cleanup(func() { DeleteMCHMetrics(namespace, name) })
+
+	if changed := SetMCHPhase(namespace, name, operatorsv1.HubInstalling); !changed {
+		t.Fatal("first publish reported no change, want change")
+	}
+	if changed := SetMCHPhase(namespace, name, operatorsv1.HubInstalling); changed {
+		t.Fatal("republishing the same phase reported a change")
+	}
+	if changed := SetMCHPhase(namespace, name, operatorsv1.HubRunning); !changed {
+		t.Fatal("transition reported no change, want change")
+	}
+
+	DeleteMCHMetrics(namespace, name)
+	if changed := SetMCHPhase(namespace, name, operatorsv1.HubRunning); !changed {
+		t.Fatal("publish after delete reported no change, want change")
+	}
+}
+
 func TestSetMCHPhaseFollowsTransitions(t *testing.T) {
 	const namespace, name = "phase-transition", "multiclusterhub"
 	t.Cleanup(func() { DeleteMCHMetrics(namespace, name) })
@@ -120,12 +140,29 @@ func TestDeleteMCHMetricsRemovesSeries(t *testing.T) {
 	const namespace, name = "phase-delete", "multiclusterhub"
 
 	SetMCHPhase(namespace, name, operatorsv1.HubRunning)
-	if count := testutil.CollectAndCount(mchPhase, mchPhaseMetricName); count != len(allHubPhases) {
+	if count := testutil.CollectAndCount(mchPhase, PhaseMetricName); count != len(allHubPhases) {
 		t.Fatalf("series count = %d, want %d", count, len(allHubPhases))
 	}
 
 	DeleteMCHMetrics(namespace, name)
-	if count := testutil.CollectAndCount(mchPhase, mchPhaseMetricName); count != 0 {
+	if count := testutil.CollectAndCount(mchPhase, PhaseMetricName); count != 0 {
 		t.Fatalf("series count = %d after delete, want 0", count)
+	}
+}
+
+func TestDeleteMCHMetricsReportsWhetherSeriesExisted(t *testing.T) {
+	const namespace, name = "phase-delete-reported", "multiclusterhub"
+	t.Cleanup(func() { DeleteMCHMetrics(namespace, name) })
+
+	if removed := DeleteMCHMetrics(namespace, name); removed {
+		t.Fatal("delete reported a removal before anything was published")
+	}
+
+	SetMCHPhase(namespace, name, operatorsv1.HubRunning)
+	if removed := DeleteMCHMetrics(namespace, name); !removed {
+		t.Fatal("delete reported no removal after a phase was published")
+	}
+	if removed := DeleteMCHMetrics(namespace, name); removed {
+		t.Fatal("repeated delete reported a removal, want false")
 	}
 }

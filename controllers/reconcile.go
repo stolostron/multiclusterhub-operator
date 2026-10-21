@@ -24,7 +24,6 @@ import (
 	"os"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
-	mchmetrics "github.com/stolostron/multiclusterhub-operator/pkg/metrics"
 	"github.com/stolostron/multiclusterhub-operator/pkg/overrides"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
@@ -58,7 +57,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
-			mchmetrics.DeleteMCHMetrics(req.Namespace, req.Name)
+			r.deleteMCHMetrics(req.Namespace, req.Name, "multiclusterhub-not-found")
 			// Return and don't requeue
 			r.Log.Info("MultiClusterHub resource not found. Ignoring since object must be deleted")
 			return ctrl.Result{}, nil
@@ -73,7 +72,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	// resources, console lookup, STS detection) run before syncHubStatus is deferred,
 	// so cleanup there alone can be skipped while a finalizer keeps the object around.
 	if multiClusterHub.GetDeletionTimestamp() != nil {
-		mchmetrics.DeleteMCHMetrics(multiClusterHub.Namespace, multiClusterHub.Name)
+		r.deleteMCHMetrics(multiClusterHub.Namespace, multiClusterHub.Name, "deletion-timestamp")
 	}
 
 	// Migrate deprecated annotations to current equivalents

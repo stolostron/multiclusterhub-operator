@@ -17,8 +17,9 @@ import (
 	ctrlmetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
-// mchPhaseMetricName is the name of the MultiClusterHub phase gauge.
-const mchPhaseMetricName = "acm_mch_phase"
+// PhaseMetricName is the name of the MultiClusterHub phase gauge. It is exported
+// so callers can log the metric they publish.
+const PhaseMetricName = "acm_mch_phase"
 
 // allHubPhases lists every phase a MultiClusterHub can report. Publishing a
 // series for each phase (0 for inactive phases) lets consumers alert on a
@@ -40,7 +41,7 @@ var allHubPhases = []operatorsv1.HubPhaseType{
 // exactly one of those series is 1 (the current phase) and the rest are 0.
 var mchPhase = prometheus.NewGaugeVec(
 	prometheus.GaugeOpts{
-		Name: mchPhaseMetricName,
+		Name: PhaseMetricName,
 		Help: "Current phase of the MultiClusterHub. The active phase reports 1; all other phases report 0.",
 	},
 	[]string{"namespace", "name", "phase"},
@@ -54,17 +55,27 @@ var mchPhaseMu sync.Mutex
 // (namespace/name), so it can be removed on the next phase change.
 var unknownPhases = map[string]string{}
 
+// publishedPhases tracks the last phase published for each hub (namespace/name)
+// so SetMCHPhase can report whether the gauge actually changed. Callers use this
+// to log transitions (including the first publish after an operator restart)
+// without logging on every reconcile.
+var publishedPhases = map[string]string{}
+
 func init() {
 	ctrlmetrics.Registry.MustRegister(mchPhase)
 }
 
 // SetMCHPhase publishes the phase of the given MultiClusterHub, reporting 1 for
-// the active phase and 0 for every other known phase.
-func SetMCHPhase(namespace, name string, phase operatorsv1.HubPhaseType) {
+// the active phase and 0 for every other known phase. It reports whether the
+// active phase changed, so callers can log transitions instead of every update.
+func SetMCHPhase(namespace, name string, phase operatorsv1.HubPhaseType) bool {
 	mchPhaseMu.Lock()
 	defer mchPhaseMu.Unlock()
 
 	key := hubMetricKey(namespace, name)
+	changed := publishedPhases[key] != string(phase)
+	publishedPhases[key] = string(phase)
+
 	known := false
 	for _, candidate := range allHubPhases {
 		if candidate == phase {
@@ -80,7 +91,7 @@ func SetMCHPhase(namespace, name string, phase operatorsv1.HubPhaseType) {
 			mchPhase.DeleteLabelValues(namespace, name, previous)
 			delete(unknownPhases, key)
 		}
-		return
+		return changed
 	}
 
 	// A phase added to the API but not to allHubPhases would otherwise leave every
@@ -91,21 +102,27 @@ func SetMCHPhase(namespace, name string, phase operatorsv1.HubPhaseType) {
 	}
 	unknownPhases[key] = string(phase)
 	mchPhase.WithLabelValues(namespace, name, string(phase)).Set(1)
+	return changed
 }
 
 // DeleteMCHMetrics removes every metric series belonging to the given
 // MultiClusterHub so that a deleted hub does not leave stale series behind.
 // All MultiClusterHub-scoped metrics must be cleaned up here so callers only
-// need a single entry point.
-func DeleteMCHMetrics(namespace, name string) {
+// need a single entry point. It reports whether any series were removed, so
+// callers can log cleanup once instead of on every teardown reconcile.
+func DeleteMCHMetrics(namespace, name string) bool {
 	mchPhaseMu.Lock()
 	defer mchPhaseMu.Unlock()
 
-	delete(unknownPhases, hubMetricKey(namespace, name))
+	key := hubMetricKey(namespace, name)
+	_, existed := publishedPhases[key]
+	delete(unknownPhases, key)
+	delete(publishedPhases, key)
 	mchPhase.DeletePartialMatch(prometheus.Labels{
 		"namespace": namespace,
 		"name":      name,
 	})
+	return existed
 }
 
 func hubMetricKey(namespace, name string) string {
