@@ -73,6 +73,12 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	// so cleanup there alone can be skipped while a finalizer keeps the object around.
 	if multiClusterHub.GetDeletionTimestamp() != nil {
 		r.deleteMCHMetrics(multiClusterHub.Namespace, multiClusterHub.Name, "deletion-timestamp")
+	} else if multiClusterHub.Status.Phase != "" {
+		// Republish the phase the API server already holds so the gauge survives an
+		// operator restart even when one of the fallible steps below returns early.
+		// syncHubStatus republishes after a successful status update, so this only
+		// logs again when the phase actually transitions.
+		r.publishMCHPhase(multiClusterHub, multiClusterHub.Status.Phase)
 	}
 
 	// Migrate deprecated annotations to current equivalents
