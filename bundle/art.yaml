@@ -13,7 +13,7 @@ external-images:
   replace: "registry.redhat.io/ubi9/ubi-minimal:9.7-1776104705"
 - name: origin_cli
   search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/origin_cli:latest"
-  replace: "registry.redhat.io/openshift4/ose-cli-rhel9:v4.16.0-202603262350.p2.g3a48fc2.assembly.stream.el9"
+  replace: "registry.redhat.io/openshift4/ose-cli-rhel9:v4.16.0-202610011108.p2.g33afbae.assembly.stream.el9"
 - name: redis_7_c9s
   search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/redis_7_c9s:latest"
   replace: "registry.redhat.io/rhel9/redis-7:9.7-1776341987"
@@ -25,7 +25,7 @@ external-images:
   replace: "registry.redhat.io/rhel9/memcached:9.7-1776355978"
 - name: ose_kube_rbac_proxy
   search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/ose_kube_rbac_proxy:latest"
-  replace: "registry.redhat.io/openshift4/ose-kube-rbac-proxy-rhel9:v4.16.0-202603262350.p2.g5a14ea9.assembly.stream.el9"
+  replace: "registry.redhat.io/openshift4/ose-kube-rbac-proxy-rhel9:v4.16.0-202610011108.p2.gc38f473.assembly.stream.el9"
 - name: volsync
   search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/volsync:latest"
   replace: "registry.redhat.io/rhacm2/volsync-rhel9:v0.15"
