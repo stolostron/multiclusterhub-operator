@@ -1,10 +1,11 @@
 # Codecov configuration
 # https://docs.codecov.com/docs/codecov-yaml
 #
-# This repository runs unit tests with `go test -coverprofile cover.out`
-# (see the `test` target in the Makefile). The thresholds below are advisory
-# while a baseline is established; remove `informational: true` once the
-# project and patch coverage numbers are stable.
+# The `test` target in the Makefile produces `cover.out`, but no step currently
+# uploads it: CI runs the shared Tekton build pipeline, which has no Codecov
+# upload task. Until that is wired, these status checks stay `informational` and
+# `if_not_found: success` so a missing report never fails a pull request.
+# Remove `informational: true` once uploads are confirmed.
 
 coverage:
   precision: 2
@@ -16,11 +17,13 @@ coverage:
       default:
         target: auto
         threshold: 1%
+        if_not_found: success
         informational: true
     patch:
       default:
         target: auto
         threshold: 5%
+        if_not_found: success
         informational: true
 
 comment:
@@ -32,4 +35,4 @@ ignore:
   - "**/*_test.go"
   - "test/**"
   - "vendor/**"
-  - "zz_generated.*"
+  - "**/zz_generated.*"
