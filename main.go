@@ -43,6 +43,7 @@ import (
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/controllers"
+	mchmetrics "github.com/stolostron/multiclusterhub-operator/pkg/metrics"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
@@ -382,6 +383,9 @@ func main() {
 
 	// go routine to check if mce exist, if it does add watch
 	go addMultiClusterEngineWatch(ctx, mgr, uncachedClient)
+
+	setupLog.Info("Registering MultiClusterHub metrics",
+		"metric", mchmetrics.PhaseMetricName, "labels", "namespace,name,phase", "metricsAddress", metricsAddr)
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {

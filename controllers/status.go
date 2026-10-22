@@ -15,6 +15,7 @@ import (
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	mchmetrics "github.com/stolostron/multiclusterhub-operator/pkg/metrics"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
@@ -136,18 +137,57 @@ func (r *MultiClusterHubReconciler) ComponentsAreRunning(m *operatorsv1.MultiClu
 	return allComponentsSuccessful(componentStatuses)
 }
 
-// syncHubStatus checks if the status is up-to-date and sync it if necessary
+// publishMCHPhase updates the acm_mch_phase metric for the hub and logs when the
+// published phase changes. Logging on change only keeps the operator log ready for
+// steady-state hubs quiet while still recording every transition, plus one line per
+// hub on the first reconcile after an operator restart.
+func (r *MultiClusterHubReconciler) publishMCHPhase(m *operatorsv1.MultiClusterHub, phase operatorsv1.HubPhaseType) {
+	if m.GetDeletionTimestamp() != nil {
+		return
+	}
+	if mchmetrics.SetMCHPhase(m.Namespace, m.Name, phase) {
+		r.Log.Info("Published MultiClusterHub phase metric",
+			"metric", mchmetrics.PhaseMetricName, "namespace", m.Namespace, "name", m.Name, "phase", phase)
+	}
+}
+
+// deleteMCHMetrics removes the metric series for a hub and logs the cleanup when
+// there was something to remove. Logging only on an actual removal keeps a slow
+// teardown, which reconciles repeatedly while finalizers run, from repeating the
+// line.
+func (r *MultiClusterHubReconciler) deleteMCHMetrics(namespace, name, reason string) {
+	if mchmetrics.DeleteMCHMetrics(namespace, name) {
+		r.Log.Info("Removed MultiClusterHub metric series",
+			"metric", mchmetrics.PhaseMetricName, "namespace", namespace, "name", name, "reason", reason)
+	}
+}
+
+// syncHubStatus calculates the MultiClusterHub status, persists it when it changed,
+// and keeps the MultiClusterHub metrics in sync. The phase gauge is published from
+// this single path so it always reflects what the API server holds, except while the
+// hub is being deleted, when its series are removed instead.
 func (r *MultiClusterHubReconciler) syncHubStatus(ctx context.Context, m *operatorsv1.MultiClusterHub,
 	original *operatorsv1.MultiClusterHubStatus, allDeps []*appsv1.Deployment,
 	allCRs map[string]*unstructured.Unstructured, ocpConsole, isSTSEnabled bool) (reconcile.Result, error) {
 
 	newStatus := r.calculateStatus(ctx, m, allDeps, allCRs, ocpConsole, isSTSEnabled)
 
+	// Remove the metric series as soon as the hub is being torn down; the phase is
+	// not republished from this point on. Otherwise the phase is published either in
+	// the unchanged-status early return below or after the status update succeeds.
+	if m.GetDeletionTimestamp() != nil {
+		r.deleteMCHMetrics(m.Namespace, m.Name, "deletion-timestamp")
+	}
+
 	if err := r.ensureMCEComplianceBanner(ctx, m, newStatus.MCEVersionCompliance); err != nil {
 		r.Log.Error(err, "Failed to reconcile MCE compliance ConsoleNotification banner")
 	}
 
 	if reflect.DeepEqual(newStatus, *original) {
+		// The status is already persisted, so publish the calculated phase. This also
+		// populates the gauge on the first reconcile after an operator restart, when
+		// there is nothing to update.
+		r.publishMCHPhase(m, newStatus.Phase)
 		r.Log.Info("Status hasn't changed")
 		return reconcile.Result{}, nil
 	}
@@ -166,6 +206,7 @@ func (r *MultiClusterHubReconciler) syncHubStatus(ctx context.Context, m *operat
 			// The object was deleted (e.g. its last finalizer was just removed by this same
 			// reconcile, which triggers immediate garbage collection). There's nothing left to
 			// update, and this isn't a real error.
+			r.deleteMCHMetrics(m.Namespace, m.Name, "multiclusterhub-no-longer-exists")
 			r.Log.Info("Skipping status update, MultiClusterHub no longer exists", "name", m.Name, "namespace", m.Namespace)
 			return reconcile.Result{}, nil
 		}
@@ -173,6 +214,10 @@ func (r *MultiClusterHubReconciler) syncHubStatus(ctx context.Context, m *operat
 		r.Log.Error(err, fmt.Sprintf("Failed to update %s/%s status ", m.Namespace, m.Name))
 		return reconcile.Result{}, err
 	}
+
+	// Only publish a changed phase after the API server has accepted it, so the
+	// metric never reports a phase that the MultiClusterHub status does not hold.
+	r.publishMCHPhase(m, newStatus.Phase)
 
 	if m.Status.Phase != operatorsv1.HubRunning {
 		return reconcile.Result{RequeueAfter: resyncPeriod}, nil
