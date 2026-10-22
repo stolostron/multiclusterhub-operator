@@ -4,12 +4,13 @@ metadata:
   labels:
     app: hub-subscription-metrics
   name: hub-subscription-metrics
+  namespace: '{{ .Values.global.namespace }}'
 spec:
   ports:
-    - name: metrics
-      port: 8381
-      protocol: TCP
-      targetPort: 8381
+  - name: metrics
+    port: 8381
+    protocol: TCP
+    targetPort: 8381
   selector:
     app: multicluster-operators-hub-subscription
   sessionAffinity: None

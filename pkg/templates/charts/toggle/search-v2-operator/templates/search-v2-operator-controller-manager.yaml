@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: search-v2-operator-controller-manager
+  namespace: '{{ .Values.global.namespace }}'
 spec:
   replicas: 1
   selector:

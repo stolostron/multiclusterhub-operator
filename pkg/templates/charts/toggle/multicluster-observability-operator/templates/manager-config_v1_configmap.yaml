@@ -15,3 +15,4 @@ data:
 kind: ConfigMap
 metadata:
   name: manager-config
+  namespace: '{{ .Values.global.namespace }}'

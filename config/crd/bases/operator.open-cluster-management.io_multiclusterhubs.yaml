@@ -89,8 +89,12 @@ spec:
                         referenced object inside the same namespace.
                       properties:
                         name:
+                          default: ""
                           description: |-
                             Name of the referent.
+                            This field is effectively required, but due to backwards compatibility is
+                            allowed to be empty. Instances of this type with an empty value here are
+                            almost certainly wrong.
                             More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                           type: string
                       type: object
@@ -136,8 +140,12 @@ spec:
                               Secret should have AWS keys named 'aws_access_key_id' and 'aws_secret_access_key'.
                             properties:
                               name:
+                                default: ""
                                 description: |-
                                   Name of the referent.
+                                  This field is effectively required, but due to backwards compatibility is
+                                  allowed to be empty. Instances of this type with an empty value here are
+                                  almost certainly wrong.
                                   More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                                 type: string
                             type: object
@@ -156,8 +164,12 @@ spec:
                               The credentials must specify the project to use.
                             properties:
                               name:
+                                default: ""
                                 description: |-
                                   Name of the referent.
+                                  This field is effectively required, but due to backwards compatibility is
+                                  allowed to be empty. Instances of this type with an empty value here are
+                                  almost certainly wrong.
                                   More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                                 type: string
                             type: object
@@ -181,8 +193,12 @@ spec:
                       a cluster deployment(if specified), with precedence given to the contents of the pull secret for the cluster deployment.
                     properties:
                       name:
+                        default: ""
                         description: |-
                           Name of the referent.
+                          This field is effectively required, but due to backwards compatibility is
+                          allowed to be empty. Instances of this type with an empty value here are
+                          almost certainly wrong.
                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                         type: string
                     type: object
@@ -261,9 +277,10 @@ spec:
                     operator:
                       description: |-
                         Operator represents a key's relationship to the value.
-                        Valid operators are Exists and Equal. Defaults to Equal.
+                        Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                         Exists is equivalent to wildcard for value, so that a pod can
                         tolerate all taints of a particular category.
+                        Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                       type: string
                     tolerationSeconds:
                       description: |-
