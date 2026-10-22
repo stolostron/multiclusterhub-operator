@@ -415,6 +415,35 @@ spec:
               - get
               - list
               - watch
+            # Required cluster-wide to load the OpenShift version for Compute migrations.
+            - apiGroups:
+              - config.openshift.io
+              resources:
+              - clusterversions
+              verbs:
+              - get
+              - list
+              - watch
+            # Required in the openshift-cnv namespace to display
+            # OpenShift Virtualization operator information.
+            - apiGroups:
+              - operators.coreos.com
+              resources:
+              - subscriptions
+              - clusterserviceversions
+              verbs:
+              - get
+              - list
+              - watch
+            # Required in the mtv-integrations namespace to display migration statuses.
+            - apiGroups:
+              - forklift.konveyor.io
+              resources:
+              - plans
+              verbs:
+              - get
+              - list
+              - watch
             - apiGroups:
               - observability.open-cluster-management.io
               resources:
@@ -598,6 +627,7 @@ spec:
               clusterview.open-cluster-management.io/discoverable: "true"
             name: acm-vm-cluster-migration:view
           rules:
+            # Required cluster-wide to load the OpenShift version for Compute migrations.
             - apiGroups:
               - config.openshift.io
               resources:
@@ -606,11 +636,22 @@ spec:
               - get
               - list
               - watch
+            # Required in the openshift-cnv namespace to display
+            # OpenShift Virtualization operator information.
             - apiGroups:
               - operators.coreos.com
               resources:
               - subscriptions
               - clusterserviceversions
+              verbs:
+              - get
+              - list
+              - watch
+            # Required in the mtv-integrations namespace to display migration statuses.
+            - apiGroups:
+              - forklift.konveyor.io
+              resources:
+              - plans
               verbs:
               - get
               - list
