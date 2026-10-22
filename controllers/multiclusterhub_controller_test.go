@@ -44,9 +44,11 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
@@ -398,6 +400,7 @@ var _ = Describe("MultiClusterHub controller", func() {
 				BindAddress: "0",
 			},
 			HealthProbeBindAddress: "0",
+			Controller:             config.Controller{SkipNameValidation: ptr.To(true)},
 		})
 		Expect(err).ToNot(HaveOccurred())
 		Expect(k8sManager).ToNot(BeNil())
@@ -416,8 +419,8 @@ var _ = Describe("MultiClusterHub controller", func() {
 		}
 		// Expect(reconciler.SetupWithManager(k8sManager)).Should(Succeed())
 		success, err := reconciler.SetupWithManager(k8sManager)
-		Expect(success).ToNot(BeNil())
 		Expect(err).ToNot(HaveOccurred())
+		Expect(success).ToNot(BeNil())
 
 		go func() {
 			// For explanation of GinkgoRecover in a go routine, see

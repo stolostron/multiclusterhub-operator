@@ -11,7 +11,6 @@ import (
 	olmversion "github.com/operator-framework/api/pkg/lib/version"
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
-	mceutils "github.com/stolostron/backplane-operator/pkg/utils"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -380,7 +379,7 @@ func TestNewMultiClusterEngine(t *testing.T) {
 						"installer.namespace":   "mch-ns",
 						utils.MCEManagedByLabel: "true",
 					},
-					Annotations: map[string]string{mceutils.AnnotationHubSize: string(mcev1.Large)},
+					Annotations: map[string]string{"installer.multicluster.openshift.io/hub-size": "Large"},
 				},
 				Spec: mcev1.MultiClusterEngineSpec{
 					ImagePullSecret: "",
