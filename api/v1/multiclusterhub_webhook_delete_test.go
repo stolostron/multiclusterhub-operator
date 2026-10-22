@@ -43,9 +43,15 @@ func TestShouldBlockAgentServiceConfig(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "other-mce",
 			Labels: map[string]string{
-				"installer.name":      "another-mch",
-				"installer.namespace": mch.GetNamespace(),
+				"installer.name":                          "another-mch",
+				"installer.namespace":                     mch.GetNamespace(),
+				multiclusterengineutils.MCEManagedByLabel: "true",
 			},
+		},
+	}
+	unmanagedMCE := &mcev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "unmanaged-mce",
 		},
 	}
 
@@ -72,6 +78,11 @@ func TestShouldBlockAgentServiceConfig(t *testing.T) {
 			name:    "MultiClusterEngine created by another MultiClusterHub",
 			objects: []client.Object{otherMCE},
 			want:    false,
+		},
+		{
+			name:    "unmanaged MultiClusterEngine",
+			objects: []client.Object{unmanagedMCE},
+			want:    true,
 		},
 		{
 			name:    "multiple MultiClusterEngines",

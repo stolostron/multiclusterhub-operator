@@ -367,8 +367,8 @@ func (r *MultiClusterHub) ValidateDelete(ctx context.Context, obj *MultiClusterH
 }
 
 // shouldBlockAgentServiceConfig returns false when the AgentServiceConfig belongs to an MCE
-// that this MultiClusterHub did not create. In that case MCH uninstall leaves the MCE in
-// place, so the AgentServiceConfig is not orphaned by removing the MultiClusterHub.
+// that MCH manages but did not create. In that case MCH uninstall leaves the MCE in place,
+// so the AgentServiceConfig is not orphaned by removing the MultiClusterHub.
 func shouldBlockAgentServiceConfig(ctx context.Context, c client.Client, mch *MultiClusterHub) (bool, error) {
 	mceList := &mcev1.MultiClusterEngineList{}
 	if err := c.List(ctx, mceList); err != nil {
@@ -379,9 +379,12 @@ func shouldBlockAgentServiceConfig(ctx context.Context, c client.Client, mch *Mu
 		return false, fmt.Errorf("unable to list MultiClusterEngine: %w", err)
 	}
 
-	if len(mceList.Items) == 1 &&
-		!multiclusterengineutils.MCECreatedByMCH(&mceList.Items[0], mch.GetName(), mch.GetNamespace()) {
-		return false, nil
+	if len(mceList.Items) == 1 {
+		mce := &mceList.Items[0]
+		managedByMCH := mce.GetLabels()[multiclusterengineutils.MCEManagedByLabel] == "true"
+		if managedByMCH && !multiclusterengineutils.MCECreatedByMCH(mce, mch.GetName(), mch.GetNamespace()) {
+			return false, nil
+		}
 	}
 
 	return true, nil
