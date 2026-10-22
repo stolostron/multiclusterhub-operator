@@ -255,9 +255,5 @@ func FindAndManageMCE(ctx context.Context, k8sClient client.Client) (*mcev1.Mult
 // MCECreatedByMCH returns true if the provided MCE was created by the multiclusterhub-operator (as indicated by installer labels).
 // A nil MCE will always return false
 func MCECreatedByMCH(mce *mcev1.MultiClusterEngine, m *operatorv1.MultiClusterHub) bool {
-	l := mce.GetLabels()
-	if l == nil {
-		return false
-	}
-	return l["installer.name"] == m.GetName() && l["installer.namespace"] == m.GetNamespace()
+	return multiclusterengineutils.MCECreatedByMCH(mce, m.GetName(), m.GetNamespace())
 }

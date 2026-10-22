@@ -25,6 +25,7 @@ import (
 	"os"
 
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
 	admissionregistration "k8s.io/api/admissionregistration/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -63,6 +64,8 @@ const (
 	deprecatedAnnotationImageRepo        = "mch-imageRepository"
 	deprecatedAnnotationKubeconfig       = "mch-kubeconfig"
 	deprecatedAnnotationMCHPause         = "mch-pause"
+
+	agentServiceConfigResource = "AgentServiceConfig"
 )
 
 type BlockDeletionResource struct {
@@ -96,7 +99,7 @@ var (
 			NameExceptions: []string{},
 		},
 		{
-			Name: "AgentServiceConfig",
+			Name: agentServiceConfigResource,
 			GVK: schema.GroupVersionKind{
 				Group:   "agent-install.openshift.io",
 				Version: "v1beta1",
@@ -336,6 +339,16 @@ func (r *MultiClusterHub) ValidateDelete(ctx context.Context, obj *MultiClusterH
 		}
 		// If there are any unexpected resources, deny deletion
 		if len(list.Items) > resource.ExceptionTotal {
+			if resource.Name == agentServiceConfigResource {
+				block, err := shouldBlockAgentServiceConfig(ctx, Client, obj)
+				if err != nil {
+					return nil, err
+				}
+				if !block {
+					mchlog.Info("allowing MultiClusterHub deletion because AgentServiceConfig belongs to a preexisting MultiClusterEngine")
+					continue
+				}
+			}
 			return nil, fmt.Errorf("cannot delete MultiClusterHub resource because %s resource(s) exist", resource.Name)
 		}
 		// if exception resources are present, check if they are the same as the exception resources
@@ -351,6 +364,27 @@ func (r *MultiClusterHub) ValidateDelete(ctx context.Context, obj *MultiClusterH
 		}
 	}
 	return nil, nil
+}
+
+// shouldBlockAgentServiceConfig returns false when the AgentServiceConfig belongs to an MCE
+// that this MultiClusterHub did not create. In that case MCH uninstall leaves the MCE in
+// place, so the AgentServiceConfig is not orphaned by removing the MultiClusterHub.
+func shouldBlockAgentServiceConfig(ctx context.Context, c client.Client, mch *MultiClusterHub) (bool, error) {
+	mceList := &mcev1.MultiClusterEngineList{}
+	if err := c.List(ctx, mceList); err != nil {
+		if apimeta.IsNoMatchError(err) || apierrors.IsNotFound(err) {
+			// The MCE API is unavailable, so MCE ownership cannot be established.
+			return true, nil
+		}
+		return false, fmt.Errorf("unable to list MultiClusterEngine: %w", err)
+	}
+
+	if len(mceList.Items) == 1 &&
+		!multiclusterengineutils.MCECreatedByMCH(&mceList.Items[0], mch.GetName(), mch.GetNamespace()) {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func hasIntersection(smallerMap map[string]string, largerMap map[string]string) bool {
