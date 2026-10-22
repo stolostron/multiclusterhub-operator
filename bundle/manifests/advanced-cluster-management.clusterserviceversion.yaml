@@ -22,6 +22,16 @@ metadata:
     operators.operatorframework.io/builder: operator-sdk-v1.34.1
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/open-cluster-management/multiclusterhub-operator
+    features.operators.openshift.io/cnf: "false"
+    features.operators.openshift.io/cni: "false"
+    features.operators.openshift.io/csi: "false"
+    features.operators.openshift.io/disconnected: "true"
+    features.operators.openshift.io/fips-compliant: "true"
+    features.operators.openshift.io/proxy-aware: "true"
+    features.operators.openshift.io/tls-profiles: "false"
+    features.operators.openshift.io/token-auth-aws: "false"
+    features.operators.openshift.io/token-auth-azure: "false"
+    features.operators.openshift.io/token-auth-gcp: "false"
     support: The Open Cluster Management Project
   name: advanced-cluster-management.v2.11.14
   namespace: placeholder
@@ -2062,7 +2072,7 @@ spec:
                   value: "2.11.14"
                 - name: OPERATOR_PACKAGE
                   value: advanced-cluster-management
-                image: quay.io/stolostron/multiclusterhub-operator:0.0.1
+                image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multiclusterhub-operator:latest
                 imagePullPolicy: IfNotPresent
                 livenessProbe:
                   httpGet:
