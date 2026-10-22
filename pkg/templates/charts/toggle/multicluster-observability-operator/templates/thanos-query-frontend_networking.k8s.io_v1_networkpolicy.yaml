@@ -1,0 +1,21 @@
+{{- if .Values.global.networkPolicies.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: thanos-query-frontend
+  namespace: '{{ default "open-cluster-management-observability" .Values.global.namespace }}'
+spec:
+  egress:
+  - {}
+  ingress:
+  - ports:
+    - port: 9090
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: thanos-query-frontend
+      app.kubernetes.io/part-of: observatorium
+  policyTypes:
+  - Ingress
+  - Egress
+{{- end }}

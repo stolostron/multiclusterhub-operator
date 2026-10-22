@@ -1,0 +1,16 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: acm-dr-virt-placement-binding
+  namespace: open-cluster-management-backup
+placementRef:
+  name: acm-dr-virt-placement
+  apiGroup: cluster.open-cluster-management.io
+  kind: Placement
+subjects:
+  - name: acm-dr-virt-backup-policyset
+    apiGroup: policy.open-cluster-management.io
+    kind: PolicySet
+  - name: acm-dr-virt-restore-policyset
+    apiGroup: policy.open-cluster-management.io
+    kind: PolicySet

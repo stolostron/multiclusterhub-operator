@@ -1,0 +1,9 @@
+chardet
+coloredlogs
+gitpython
+inquirer
+packaging
+pyyaml
+requests
+semver
+urllib3

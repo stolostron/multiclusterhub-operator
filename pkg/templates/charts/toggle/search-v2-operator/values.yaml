@@ -1,0 +1,25 @@
+global:
+  apiUrl: ''
+  baseDomain: ''
+  imageOverrides:
+    kube_rbac_proxy: ''
+    postgresql_16: ''
+    search_collector: ''
+    search_indexer: ''
+    search_v2_api: ''
+    search_v2_operator: ''
+  namespace: default
+  networkPolicies:
+    enabled: true
+  olmVersion: v0
+  pullSecret: null
+  templateOverrides: {}
+hubconfig:
+  clusterSTSEnabled: false
+  nodeSelector: null
+  ocpVersion: 4.12.0
+  probeConfig: null
+  proxyConfigs: {}
+  replicaCount: 1
+  tolerations: []
+org: open-cluster-management

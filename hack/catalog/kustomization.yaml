@@ -1,0 +1,10 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: open-cluster-management
+
+resources:
+- catalogsource.yaml
+- subscription.yaml

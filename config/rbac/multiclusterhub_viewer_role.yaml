@@ -1,0 +1,22 @@
+# Copyright Contributors to the Open Cluster Management project
+
+# permissions for end users to view multiclusterhubs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: multiclusterhub-viewer-role
+rules:
+- apiGroups:
+  - operator.open-cluster-management.io
+  resources:
+  - multiclusterhubs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - operator.open-cluster-management.io
+  resources:
+  - multiclusterhubs/status
+  verbs:
+  - get

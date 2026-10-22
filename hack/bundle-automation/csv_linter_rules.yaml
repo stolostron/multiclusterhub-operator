@@ -1,0 +1,33 @@
+disallowedFields:
+- spec.apiservicedefinitions
+- spec.webhookdefinitions
+noOpFields:
+- apiVersion
+- spec.annotations
+- spec.customresourcedefinitions
+- spec.description
+- spec.displayName
+- spec.icon
+- spec.installModes
+- spec.keywords
+- spec.labels
+- spec.links
+- spec.maintainers
+- spec.maturity
+- spec.minKubeVersion
+- spec.nativeAPIs
+- spec.provider
+- spec.replaces
+- spec.selector
+- spec.version
+- spec.skips
+- spec.relatedImages
+- spec.install.strategy
+requiredFields:
+- kind
+- metadata.name
+- metadata.annotations.description
+- spec.install.spec.clusterPermissions
+- spec.install.spec.deployments
+optionalFields:
+- spec.install.spec.permissions

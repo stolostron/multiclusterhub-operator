@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mtv-advisor-service
+  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
+spec:
+  ports:
+  - name: advisor-http
+    port: 8082
+    protocol: TCP
+    targetPort: advisor-http
+  selector:
+    app: mtv-integrations
+    component: ocm-mtv-integrations-ctrl

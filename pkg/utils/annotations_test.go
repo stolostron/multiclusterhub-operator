@@ -1,0 +1,475 @@
+// Copyright (c) 2020 Red Hat, Inc.
+// Copyright Contributors to the Open Cluster Management project
+
+package utils
+
+import (
+	"reflect"
+	"testing"
+
+	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+)
+
+func TestIsPaused(t *testing.T) {
+	t.Run("Unpaused MCH", func(t *testing.T) {
+		mch := &operatorsv1.MultiClusterHub{}
+		want := false
+		if got := IsPaused(mch); got != want {
+			t.Errorf("IsPaused() = %v, want %v", got, want)
+		}
+	})
+	t.Run("Paused MCH", func(t *testing.T) {
+		mch := &operatorsv1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{AnnotationMCHPause: "true"}},
+		}
+		want := true
+		if got := IsPaused(mch); got != want {
+			t.Errorf("IsPaused() = %v, want %v", got, want)
+		}
+	})
+	t.Run("Pause label false MCH", func(t *testing.T) {
+		mch := &operatorsv1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{AnnotationMCHPause: "false"}},
+		}
+		want := false
+		if got := IsPaused(mch); got != want {
+			t.Errorf("IsPaused() = %v, want %v", got, want)
+		}
+	})
+
+}
+
+func TestIsTemplateAnnotationTrue(t *testing.T) {
+	t.Run("Annotation true", func(t *testing.T) {
+		tst := &unstructured.Unstructured{}
+		want := false
+		if got := IsTemplateAnnotationTrue(tst, AnnotationEditable); got != want {
+			t.Errorf("IsTemplateAnnotationTrue() = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("Annotation true", func(t *testing.T) {
+		tst := &unstructured.Unstructured{}
+		tst.SetAnnotations(map[string]string{AnnotationEditable: "true"})
+		want := true
+		if got := IsTemplateAnnotationTrue(tst, AnnotationEditable); got != want {
+			t.Errorf("IsTemplateAnnotationTrue() = %v, want %v", got, want)
+		}
+	})
+
+}
+
+func Test_AnnotationMatch(t *testing.T) {
+	tests := []struct {
+		name string
+		new  map[string]string
+		old  map[string]string
+		want bool
+	}{
+		{
+			name: "Annotations should match",
+			new: map[string]string{
+				AnnotationMCHPause:         "false",
+				AnnotationImageRepo:        "sample-image-repo",
+				AnnotationImageOverridesCM: "sample-image-override",
+			},
+			old: map[string]string{
+				DeprecatedAnnotationMCHPause:         "false",
+				DeprecatedAnnotationImageRepo:        "sample-image-repo",
+				DeprecatedAnnotationImageOverridesCM: "sample-image-override",
+			},
+			want: true,
+		},
+		{
+			name: "Annotations should not match",
+			new: map[string]string{
+				AnnotationMCHPause:         "false",
+				AnnotationImageRepo:        "sample-image-repo",
+				AnnotationImageOverridesCM: "sample-image-override",
+			},
+			old: map[string]string{
+				DeprecatedAnnotationMCHPause:         "true",
+				DeprecatedAnnotationImageRepo:        "sample-image-repo",
+				DeprecatedAnnotationImageOverridesCM: "sample-image-override",
+			},
+			want: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := AnnotationsMatch(tt.old, tt.new); got != tt.want {
+				t.Errorf("AnnotationsMatch(old, new) = got: %v, want: %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getAnnotation(t *testing.T) {
+	type args struct {
+		instance *operatorsv1.MultiClusterHub
+		key      string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "Annotation does not exist",
+			args: args{
+				instance: &operatorsv1.MultiClusterHub{},
+				key:      "",
+			},
+			want: "",
+		},
+		{
+			name: "Annotation exists",
+			args: args{
+				instance: &operatorsv1.MultiClusterHub{
+					ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{"foo": "bar"}},
+				},
+				key: "foo",
+			},
+			want: "bar",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getAnnotation(tt.args.instance, tt.args.key); got != tt.want {
+				t.Errorf("getAnnotation() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_GetImageRepository(t *testing.T) {
+	t.Run("Get image repository for MCH", func(t *testing.T) {
+		mch := &operatorsv1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
+				AnnotationImageRepo: "quay.io/foo",
+			}},
+		}
+		want := "quay.io/foo"
+		if got := GetImageRepository(mch); got != want {
+			t.Errorf("GetImageRepository(mch) = %v, want %v", got, want)
+		}
+	})
+}
+
+func Test_GetImageOverridesConfigmapName(t *testing.T) {
+	t.Run("Get image overrides configmap name for MCH", func(t *testing.T) {
+		mch := &operatorsv1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
+				AnnotationImageOverridesCM: "image-override-cm",
+			}},
+		}
+		want := "image-override-cm"
+		if got := GetImageOverridesConfigmapName(mch); got != want {
+			t.Errorf("AnnotationImageOverridesCM(mch) = %v, want %v", got, want)
+		}
+	})
+}
+
+func Test_GetTemplateOverridesConfigmapName(t *testing.T) {
+	t.Run("Get template overrides configmap name for MCH", func(t *testing.T) {
+		mch := &operatorsv1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
+				AnnotationTemplateOverridesCM: "template-override-cm",
+			}},
+		}
+		want := "template-override-cm"
+		if got := GetTemplateOverridesConfigmapName(mch); got != want {
+			t.Errorf("GetTemplateOverridesConfigmapName() = %v, want %v", got, want)
+		}
+	})
+}
+
+func TestOverrideImageRepository(t *testing.T) {
+	tests := []struct {
+		ImageOverrides map[string]string
+		ImageRepo      string
+		Expected       map[string]string
+	}{
+		{
+			ImageOverrides: map[string]string{
+				"application_ui": "quay.io/stolostron/application-ui@sha256:c740fc7bac067f003145ab909504287360564016b7a4a51b7ad4987aca123ac1",
+				"console_api":    "quay.io/stolostron/console-api@sha256:3ef1043b4e61a09b07ff37f9ad8fc6e707af9813936cf2c0d52f2fa0e489c75f",
+				"rcm_controller": "quay.io/stolostron/rcm-controller@sha256:8fab4d788241bf364dbc1b8c1ea5ccf18d3145a640dbd456b0dc7ba204e36819",
+			},
+			ImageRepo: "quay.io:443/acm-d",
+			Expected: map[string]string{
+				"application_ui": "quay.io:443/acm-d/application-ui@sha256:c740fc7bac067f003145ab909504287360564016b7a4a51b7ad4987aca123ac1",
+				"console_api":    "quay.io:443/acm-d/console-api@sha256:3ef1043b4e61a09b07ff37f9ad8fc6e707af9813936cf2c0d52f2fa0e489c75f",
+				"rcm_controller": "quay.io:443/acm-d/rcm-controller@sha256:8fab4d788241bf364dbc1b8c1ea5ccf18d3145a640dbd456b0dc7ba204e36819",
+			},
+		},
+		{
+			ImageOverrides: map[string]string{},
+			ImageRepo:      "",
+			Expected:       map[string]string{},
+		},
+		{
+			ImageOverrides: map[string]string{
+				"application_ui": "registry.redhat.io/rhacm2/application-ui@sha256:d7b7b96d679dbbdace044a18cca56544faa65f66e593fc600c08c9f814e0ea6a",
+				"console_api":    "registry.redhat.io/rhacm2/console-api@sha256:d7b7b96d679dbbdace044a18cca56544faa65f66e593fc600c08c9f814e0ea6a",
+				"rcm_controller": "registry.redhat.io/rhacm2/rcm-controller@sha256:d7b7b96d679dbbdace044a18cca56544faa65f66e593fc600c08c9f814e0ea6a",
+			},
+			ImageRepo: "quay.io:443/acm-d",
+			Expected: map[string]string{
+				"application_ui": "quay.io:443/acm-d/application-ui@sha256:d7b7b96d679dbbdace044a18cca56544faa65f66e593fc600c08c9f814e0ea6a",
+				"console_api":    "quay.io:443/acm-d/console-api@sha256:d7b7b96d679dbbdace044a18cca56544faa65f66e593fc600c08c9f814e0ea6a",
+				"rcm_controller": "quay.io:443/acm-d/rcm-controller@sha256:d7b7b96d679dbbdace044a18cca56544faa65f66e593fc600c08c9f814e0ea6a",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		if !reflect.DeepEqual(OverrideImageRepository(tt.ImageOverrides, tt.ImageRepo), tt.Expected) {
+			t.Fatalf("ImageRepository override failure")
+		}
+	}
+}
+
+func Test_GetMCEAnnotationOverrides(t *testing.T) {
+	t.Run("Get MCE annotation overrides for MCH", func(t *testing.T) {
+		mch := &operatorsv1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
+				AnnotationMCESubscriptionSpec: "mce-sub",
+			}},
+		}
+		want := "mce-sub"
+		if got := GetMCEAnnotationOverrides(mch); got != want {
+			t.Errorf("GetMCEAnnotationOverrides(mch) = %v, want %v", got, want)
+		}
+	})
+}
+
+func Test_GetOADPAnnotationOverrides(t *testing.T) {
+	t.Run("Get OADP annotation overrides for MCH", func(t *testing.T) {
+		mch := &operatorsv1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
+				AnnotationOADPSubscriptionSpec: "odap-sub",
+			}},
+		}
+		want := "odap-sub"
+		if got := GetOADPAnnotationOverrides(mch); got != want {
+			t.Errorf("GetOADPAnnotationOverrides(mch) = %v, want %v", got, want)
+		}
+	})
+}
+
+func Test_GetMTVAnnotationOverrides(t *testing.T) {
+	t.Run("Get MTV annotation overrides for MCH", func(t *testing.T) {
+		mch := &operatorsv1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
+				AnnotationMTVSubscriptionSpec: "mtv-sub",
+			}},
+		}
+		want := "mtv-sub"
+		if got := GetMTVAnnotationOverrides(mch); got != want {
+			t.Errorf("GetMTVAnnotationOverrides(mch) = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("Get MTV annotation overrides for MCH without annotation", func(t *testing.T) {
+		mch := &operatorsv1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{},
+		}
+		want := ""
+		if got := GetMTVAnnotationOverrides(mch); got != want {
+			t.Errorf("GetMTVAnnotationOverrides(mch) = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("MTV annotation change triggers a re-render", func(t *testing.T) {
+		oldAnnotations := map[string]string{
+			AnnotationMTVSubscriptionSpec: `{"channel": "release-v5.0"}`,
+		}
+		newAnnotations := map[string]string{
+			AnnotationMTVSubscriptionSpec: `{"channel": "release-v2.12"}`,
+		}
+		if AnnotationsMatch(oldAnnotations, newAnnotations) {
+			t.Error("AnnotationsMatch(old, new) = true, want false when the MTV subscription spec changes")
+		}
+		if !AnnotationsMatch(oldAnnotations, map[string]string{
+			AnnotationMTVSubscriptionSpec: `{"channel": "release-v5.0"}`,
+		}) {
+			t.Error("AnnotationsMatch(old, new) = false, want true when the MTV subscription spec is unchanged")
+		}
+	})
+}
+
+func Test_GetCNVAnnotationOverrides(t *testing.T) {
+	t.Run("Get CNV annotation overrides for MCH", func(t *testing.T) {
+		mch := &operatorsv1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
+				AnnotationCNVSubscriptionSpec: "cnv-sub",
+			}},
+		}
+		want := "cnv-sub"
+		if got := GetCNVAnnotationOverrides(mch); got != want {
+			t.Errorf("GetCNVAnnotationOverrides(mch) = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("Get CNV annotation overrides for MCH without annotation", func(t *testing.T) {
+		mch := &operatorsv1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{}},
+		}
+		want := ""
+		if got := GetCNVAnnotationOverrides(mch); got != want {
+			t.Errorf("GetCNVAnnotationOverrides(mch) = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("CNV annotation change triggers a re-render", func(t *testing.T) {
+		oldAnnotations := map[string]string{
+			AnnotationCNVSubscriptionSpec: `{"channel": "stable"}`,
+		}
+		newAnnotations := map[string]string{
+			AnnotationCNVSubscriptionSpec: `{"channel": "stable-1.16"}`,
+		}
+		if AnnotationsMatch(oldAnnotations, newAnnotations) {
+			t.Error("AnnotationsMatch(old, new) = true, want false when the CNV subscription spec changes")
+		}
+		if !AnnotationsMatch(oldAnnotations, map[string]string{
+			AnnotationCNVSubscriptionSpec: `{"channel": "stable"}`,
+		}) {
+			t.Error("AnnotationsMatch(old, new) = false, want true when the CNV subscription spec is unchanged")
+		}
+	})
+}
+
+func Test_GetDefaultStorageClassOverride(t *testing.T) {
+	t.Run("Get Default storage class annotation override for MCH", func(t *testing.T) {
+		mch := &operatorsv1.MultiClusterHub{
+			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
+				AnnotationDefaultStorageClass: "gp3-csi",
+			}},
+		}
+		want := "gp3-csi"
+		if got := GetDefaultStorageClassOverride(mch); got != want {
+			t.Errorf("GetDefaultStorageClassOverride(mch) = %v, want %v", got, want)
+		}
+	})
+}
+
+func TestMigrateDeprecatedAnnotations(t *testing.T) {
+	tests := []struct {
+		name            string
+		annotations     map[string]string
+		wantModified    bool
+		wantAnnotations map[string]string
+	}{
+		{
+			name:            "No annotations",
+			annotations:     nil,
+			wantModified:    false,
+			wantAnnotations: nil,
+		},
+		{
+			name: "Only current annotations",
+			annotations: map[string]string{
+				AnnotationMCHPause:  "true",
+				AnnotationImageRepo: "quay.io/foo",
+			},
+			wantModified: false,
+			wantAnnotations: map[string]string{
+				AnnotationMCHPause:  "true",
+				AnnotationImageRepo: "quay.io/foo",
+			},
+		},
+		{
+			name: "Deprecated annotation migrated to current",
+			annotations: map[string]string{
+				DeprecatedAnnotationMCHPause:  "true",
+				DeprecatedAnnotationImageRepo: "quay.io/foo",
+			},
+			wantModified: true,
+			wantAnnotations: map[string]string{
+				AnnotationMCHPause:  "true",
+				AnnotationImageRepo: "quay.io/foo",
+			},
+		},
+		{
+			name: "Both exist - current preserved, deprecated removed",
+			annotations: map[string]string{
+				DeprecatedAnnotationMCHPause: "false",
+				AnnotationMCHPause:           "true",
+			},
+			wantModified: true,
+			wantAnnotations: map[string]string{
+				AnnotationMCHPause: "true",
+			},
+		},
+		{
+			name: "Mixed - some deprecated, some current",
+			annotations: map[string]string{
+				DeprecatedAnnotationKubeconfig: "my-secret",
+				AnnotationImageRepo:            "quay.io/foo",
+			},
+			wantModified: true,
+			wantAnnotations: map[string]string{
+				AnnotationKubeconfig: "my-secret",
+				AnnotationImageRepo:  "quay.io/foo",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mch := &operatorsv1.MultiClusterHub{}
+			if tt.annotations != nil {
+				mch.SetAnnotations(tt.annotations)
+			}
+
+			got := MigrateDeprecatedAnnotations(mch)
+			if got != tt.wantModified {
+				t.Errorf("MigrateDeprecatedAnnotations() = %v, want %v", got, tt.wantModified)
+			}
+
+			gotAnnotations := mch.GetAnnotations()
+			if !reflect.DeepEqual(gotAnnotations, tt.wantAnnotations) {
+				t.Errorf("annotations = %v, want %v", gotAnnotations, tt.wantAnnotations)
+			}
+		})
+	}
+}
+
+func TestShouldIgnoreOCPVersion(t *testing.T) {
+	tests := []struct {
+		name     string
+		instance *operatorsv1.MultiClusterHub
+		want     bool
+	}{
+		{
+			name: "Annotation set to ignore",
+			instance: &operatorsv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{AnnotationIgnoreOCPVersion: ""}},
+			},
+			want: true,
+		},
+		{
+			name:     "No annotations",
+			instance: &operatorsv1.MultiClusterHub{},
+			want:     false,
+		},
+		{
+			name: "Different annotations",
+			instance: &operatorsv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{AnnotationMCHPause: "true"}},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ShouldIgnoreOCPVersion(tt.instance); got != tt.want {
+				t.Errorf("ShouldIgnoreOCPVersion() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

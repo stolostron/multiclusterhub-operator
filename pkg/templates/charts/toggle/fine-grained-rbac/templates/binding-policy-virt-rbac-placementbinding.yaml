@@ -1,0 +1,22 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  labels:
+    open-cluster-management.io/policy-cnv: virt-rbac
+    velero.io/exclude-from-backup: 'true'
+  name: binding-policy-virt-rbac
+  namespace: open-cluster-management-global-set
+placementRef:
+  apiGroup: cluster.open-cluster-management.io
+  kind: Placement
+  name: placement-policy-virt-rbac
+subjects:
+- apiGroup: policy.open-cluster-management.io
+  kind: Policy
+  name: policy-virt-clusterroles
+- apiGroup: policy.open-cluster-management.io
+  kind: Policy
+  name: policy-virt-oauth
+- apiGroup: policy.open-cluster-management.io
+  kind: Policy
+  name: policy-hcp-clusterroles

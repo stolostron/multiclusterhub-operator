@@ -1,0 +1,12 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: observability.open-cluster-management.io/v1beta2
+kind: MultiClusterObservability
+metadata:
+  name: observability
+spec:
+  observabilityAddonSpec: {}
+  storageConfigObject:
+    metricObjectStorage:
+      name: thanos-object-storage
+      key: thanos.yaml

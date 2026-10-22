@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    service.beta.openshift.io/inject-cabundle: 'true'
+  name: mtv-integrations-service-ca
+  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'

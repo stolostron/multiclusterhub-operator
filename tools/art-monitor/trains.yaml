@@ -1,0 +1,33 @@
+# ACM trains configuration for ART FBC builds monitoring
+#
+# Future field ideas (not yet implemented):
+# - enabled: true/false - disable monitoring without deleting train
+# - notify_on: [new, stale, unchanged] - control notification triggers
+# - slack_channel: "#channel" - route to different channel
+# - eol_date: "YYYY-MM-DD" - end-of-life date for automatic archival
+# - labels: [dev, prod, z-stream] - arbitrary metadata
+
+product: acm
+registry: quay.io/redhat-user-workloads/ocp-art-tenant/art-fbc
+image_suffix: multiclusterhub-rhel9
+# mention: "S05L3R4SM89"  # Optional: default mention for all trains (can be overridden per train or via SLACK_TEAM_ID env var)
+# Accepts bare IDs (e.g., "S05L3R4SM89" auto-wrapped as "<!subteam^S05L3R4SM89>") or full syntax
+# Full syntax: "<@U0123ABCD>" (user) or "<!subteam^S0123ABCD>" (user group)
+# Precedence: SLACK_TEAM_ID env var > trains.yaml mention field > per-train override
+
+trains:
+  - version: "5.0"
+    ocp: "5.0"
+    # mention: "@someone-else"  # Optional: override default mention for this train
+
+  - version: "2.17"
+    ocp: "4.19"
+
+  - version: "2.16"
+    ocp: "4.18"
+
+  - version: "2.15"
+    ocp: "4.17"
+
+  - version: "2.14"
+    ocp: "4.16"

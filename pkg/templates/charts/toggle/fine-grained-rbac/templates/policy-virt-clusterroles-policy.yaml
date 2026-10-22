@@ -1,0 +1,62 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  annotations:
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
+    policy.open-cluster-management.io/description: ""
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+  labels:
+    open-cluster-management.io/policy-cnv: virt-rbac
+    velero.io/exclude-from-backup: 'true'
+  name: policy-virt-clusterroles
+  namespace: open-cluster-management-global-set
+spec:
+  disabled: false
+  policy-templates:
+  - objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: policy-virt-clusterroles
+      spec:
+        object-templates-raw: |
+          {{ `{{- $admin := lookup "rbac.authorization.k8s.io/v1" "ClusterRole" "" "kubevirt.io:admin" -}}` }}
+          {{ `{{- if $admin }}` }}
+          - complianceType: musthave
+            objectDefinition:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRole
+              metadata:
+                name: kubevirt.io:admin
+                labels:
+                  rbac.open-cluster-management.io/filter: vm-clusterroles
+                  clusterview.open-cluster-management.io/discoverable: "true"
+          {{ `{{- end }}` }}
+          {{ `{{- $edit := lookup "rbac.authorization.k8s.io/v1" "ClusterRole" "" "kubevirt.io:edit" -}}` }}
+          {{ `{{- if $edit }}` }}
+          - complianceType: musthave
+            objectDefinition:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRole
+              metadata:
+                name: kubevirt.io:edit
+                labels:
+                  rbac.open-cluster-management.io/filter: vm-clusterroles
+                  clusterview.open-cluster-management.io/discoverable: "true"
+          {{ `{{- end }}` }}
+          {{ `{{- $view := lookup "rbac.authorization.k8s.io/v1" "ClusterRole" "" "kubevirt.io:view" -}}` }}
+          {{ `{{- if $view }}` }}
+          - complianceType: musthave
+            objectDefinition:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRole
+              metadata:
+                name: kubevirt.io:view
+                labels:
+                  rbac.open-cluster-management.io/filter: vm-clusterroles
+                  clusterview.open-cluster-management.io/discoverable: "true"
+          {{ `{{- end }}` }}
+        remediationAction: enforce
+        severity: medium
+  remediationAction: enforce

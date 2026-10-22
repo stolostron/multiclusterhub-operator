@@ -1,0 +1,11 @@
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: ClusterManagementAddOn
+metadata:
+  name: governance-standalone-hub-templating
+spec:
+  addOnMeta:
+    description: Allows the config-policy-controller to resolve hub templates on the managed cluster.
+    displayName: Governance Standalone Hub Templating
+  supportedConfigs:
+    - group: addon.open-cluster-management.io
+      resource: addondeploymentconfigs

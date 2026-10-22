@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Red Hat, Inc.
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: v1
+appVersion: 2.14.0
+description: A Helm chart for ACM fine grained rbac
+category: "Development"
+keywords:
+  - acm
+  - rbac
+name: fine-grained-rbac
+verified: "RHACM"
+version: 2.14.0

@@ -1,0 +1,35 @@
+# Codecov configuration
+# https://docs.codecov.com/docs/codecov-yaml
+#
+# This repository runs unit tests with `go test -coverprofile cover.out`
+# (see the `test` target in the Makefile). The thresholds below are advisory
+# while a baseline is established; remove `informational: true` once the
+# project and patch coverage numbers are stable.
+
+coverage:
+  precision: 2
+  round: down
+  range: "60...100"
+
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+        informational: true
+    patch:
+      default:
+        target: auto
+        threshold: 5%
+        informational: true
+
+comment:
+  layout: "reach,diff,flags,files"
+  behavior: default
+  require_changes: true
+
+ignore:
+  - "**/*_test.go"
+  - "test/**"
+  - "vendor/**"
+  - "zz_generated.*"

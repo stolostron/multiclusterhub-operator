@@ -1,0 +1,18 @@
+{{- if .Values.global.networkPolicies.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: observability-observatorium-operator
+  namespace: '{{ default "open-cluster-management-observability" .Values.global.namespace }}'
+spec:
+  egress:
+  - {}
+  ingress: []
+  podSelector:
+    matchLabels:
+      control-plane: observatorium-operator
+      observability.open-cluster-management.io/name: observability
+  policyTypes:
+  - Ingress
+  - Egress
+{{- end }}

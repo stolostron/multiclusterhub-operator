@@ -1,0 +1,106 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    control-plane: multiclusterhub-operator
+  name: system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: multiclusterhub-operator
+  namespace: system
+  labels:
+    control-plane: multiclusterhub-operator
+spec:
+  selector:
+    matchLabels:
+      name: multiclusterhub-operator
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        name: multiclusterhub-operator
+        ocm-antiaffinity-selector: multiclusterhub-operator
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - multiclusterhub-operator
+              topologyKey: topology.kubernetes.io/zone
+            weight: 70
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - multiclusterhub-operator
+              topologyKey: kubernetes.io/hostname
+            weight: 35
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - command:
+        - multiclusterhub-operator
+        args:
+        - --leader-elect
+        image: controller:latest
+        imagePullPolicy: IfNotPresent
+        name: multiclusterhub-operator
+        securityContext:
+          allowPrivilegeEscalation: false
+          privileged: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        env:
+          - name: CRDS_PATH
+            value: "/usr/local/templates/crds"
+          - name: TEMPLATES_PATH
+            value: "/usr/local/templates"
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+        resources:
+          limits:
+            cpu: 100m
+            memory: 4Gi
+          requests:
+            memory: 256Mi
+            cpu: 100m
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
+      serviceAccountName: multiclusterhub-operator
+      terminationGracePeriodSeconds: 10
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: multiclusterhub-operator-webhook

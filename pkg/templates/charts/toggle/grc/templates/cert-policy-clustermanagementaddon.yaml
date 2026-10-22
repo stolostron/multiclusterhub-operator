@@ -1,0 +1,11 @@
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: ClusterManagementAddOn
+metadata:
+  name: cert-policy-controller
+spec:
+  addOnMeta:
+    description: Monitors certificate expiration based on distributed policies.
+    displayName: Certificate Policy Addon
+  supportedConfigs:
+    - group: addon.open-cluster-management.io
+      resource: addondeploymentconfigs

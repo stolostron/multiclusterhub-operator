@@ -1,0 +1,23 @@
+
+# Copyright (c) 2021 Red Hat, Inc.
+# Copyright Contributors to the Open Cluster Management project
+
+org: open-cluster-management
+global:
+  pullSecret: null
+  imageOverrides: {}
+  templateOverrides: {}
+  namespace: default
+  baseDomain: ''
+  apiUrl: ''
+  olmVersion: v0
+  networkPolicies:
+    enabled: true
+hubconfig:
+  clusterSTSEnabled: false
+  nodeSelector: null
+  replicaCount: 1
+  probeConfig: null
+  proxyConfigs: {}
+  tolerations: []
+  ocpVersion: 4.12.0

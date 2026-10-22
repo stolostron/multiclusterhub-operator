@@ -1,0 +1,171 @@
+{{- if .Values.global.networkPolicies.enabled }}
+# Copyright Contributors to the Open Cluster Management project
+# Network policies for the open-cluster-management-backup namespace.
+# Implements deny-by-default with explicit allow rules for required traffic.
+---
+# Default deny all ingress and egress
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all
+  namespace: open-cluster-management-backup
+  labels:
+    app: cluster-backup-chart
+    chart: cluster-backup-chart
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+---
+# Allow DNS egress for all pods (required for name resolution).
+# Port 5353 is needed because OVN-Kubernetes evaluates NetworkPolicy post-DNAT
+# and CoreDNS pods listen on 5353 while the DNS service exposes port 53.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: open-cluster-management-backup
+  labels:
+    app: cluster-backup-chart
+    chart: cluster-backup-chart
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 5353
+    - protocol: TCP
+      port: 5353
+---
+# Allow egress to Kubernetes API server for all pods
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-apiserver-egress
+  namespace: open-cluster-management-backup
+  labels:
+    app: cluster-backup-chart
+    chart: cluster-backup-chart
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+  - ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 6443
+---
+# Allow egress to object storage for Velero and node-agent.
+# No port restriction because customers use varied storage endpoints
+# (AWS S3 on 443, MinIO on 9000, Ceph RGW on 8080, etc.)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-storage-egress
+  namespace: open-cluster-management-backup
+  labels:
+    app: cluster-backup-chart
+    chart: cluster-backup-chart
+spec:
+  podSelector:
+    matchExpressions:
+    - key: app.kubernetes.io/name
+      operator: In
+      values:
+      - velero
+      - node-agent
+  policyTypes:
+  - Egress
+  egress:
+  - {}
+---
+# Allow ingress to cluster-backup-operator webhook (port 9443)
+# from the Kubernetes API server for admission webhook calls.
+# API server runs on host-network; use the OpenShift-managed label.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-webhook-ingress
+  namespace: open-cluster-management-backup
+  labels:
+    app: cluster-backup-chart
+    chart: cluster-backup-chart
+spec:
+  podSelector:
+    matchLabels:
+      app: cluster-backup-chart
+      component: clusterbackup
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          policy-group.network.openshift.io/host-network: ""
+    ports:
+    - protocol: TCP
+      port: 9443
+---
+# Allow ingress for Velero metrics scraping (port 8085)
+# from monitoring/prometheus namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-velero-metrics-ingress
+  namespace: open-cluster-management-backup
+  labels:
+    app: cluster-backup-chart
+    chart: cluster-backup-chart
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: velero
+  policyTypes:
+  - Ingress
+  ingress:
+  - ports:
+    - protocol: TCP
+      port: 8085
+    from:
+    - namespaceSelector:
+        matchLabels:
+          network.openshift.io/policy-group: monitoring
+---
+# Allow ingress for OADP controller manager metrics (port 8443)
+# from monitoring/prometheus namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-oadp-metrics-ingress
+  namespace: open-cluster-management-backup
+  labels:
+    app: cluster-backup-chart
+    chart: cluster-backup-chart
+spec:
+  podSelector:
+    matchLabels:
+      control-plane: controller-manager
+  policyTypes:
+  - Ingress
+  ingress:
+  - ports:
+    - protocol: TCP
+      port: 8443
+    from:
+    - namespaceSelector:
+        matchLabels:
+          network.openshift.io/policy-group: monitoring
+{{- end }}

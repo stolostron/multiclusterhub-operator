@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    velero.io/exclude-from-backup: 'true'
+  name: policy-hub-oauth-clusterrolebinding
+  namespace: open-cluster-management-global-set
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: open-cluster-management:policy-hub-oauth
+subjects:
+- kind: ServiceAccount
+  name: policy-hub-oauth
+  namespace: open-cluster-management-global-set

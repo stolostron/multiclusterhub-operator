@@ -1,0 +1,12 @@
+apiVersion: policy.open-cluster-management.io/v1beta1
+kind: PolicySet
+metadata:
+  annotations:
+    "helm.sh/hook": pre-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation
+  name: acm-hub-backup
+  namespace: open-cluster-management-backup
+spec:
+  description: Validates the ACM Hub backup and restore configuration. This PolicySet applies to local hubs, global hubs, and managed clusters where the ACM Hub is installed.
+  policies:
+    - backup-restore-enabled

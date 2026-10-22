@@ -1,0 +1,15 @@
+# Copyright (c) 2021 Red Hat, Inc.
+# Copyright Contributors to the Open Cluster Management project
+
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .Values.org }}:{{ .Chart.Name }}:insights-client
+subjects:
+- kind: ServiceAccount
+  name: insights-client
+  namespace: {{ .Values.global.namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ .Values.org }}:{{ .Chart.Name }}:insights-client
+  apiGroup: rbac.authorization.k8s.io

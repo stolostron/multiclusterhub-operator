@@ -1,0 +1,44 @@
+acm-release-version: '5.1'
+components:
+  - repo_name: "dynamic-scoring-framework"
+    github_ref: "https://github.com/stolostron/dynamic-scoring-framework.git"
+    branch: "release-5.1"
+    charts:
+      - name: "dynamic-scoring-framework"
+        chart-path: "charts/dynamic-scoring-framework"
+        always-or-toggle: "toggle"
+        imageMappings:
+          dynamic-scoring-addon: dynamic_scoring_addon
+          dynamic-scoring-controller: dynamic_scoring_controller
+        updateChartVersion: true # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.6 -> 2.6
+        inclusions:
+          - "pullSecretOverride"
+        skipRBACOverrides: true
+  - repo_name: "mtv-integrations"
+    github_ref: "https://github.com/stolostron/mtv-integrations.git"
+    branch: "release-5.1"
+    charts:
+      - name: "mtv-integrations"
+        chart-path: "charts"
+        always-or-toggle: "toggle"
+        imageMappings:
+          mtv-integrations: mtv_integrations
+        inclusions:
+          - "pullSecretOverride"
+        skipRBACOverrides: true
+        updateChartVersion: true # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.6 -> 2.6
+        escape-template-variables:
+          - "CLUSTER_NAME"
+          - "HUB_KUBECONFIG"
+          - "INSTALL_NAMESPACE"
+          - "LIVE_NETWORK_KEY"
+          - "LIVE_NETWORK_VALUE"
+        auto-install-for-all-clusters: true
+        # CNV and MTV declare channel/name/namespace but not source,
+        # sourceNamespace or startingCSV. Request them so the operator can
+        # override them; each is seeded empty, which the OperatorPolicy
+        # controller reads as "inherit the default" Subscription value.
+        operatorPolicySubscriptionFields:
+          - "source"
+          - "sourceNamespace"
+          - "startingCSV"

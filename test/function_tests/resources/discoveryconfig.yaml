@@ -1,0 +1,10 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: discovery.open-cluster-management.io/v1
+kind: DiscoveryConfig
+metadata:
+  name: discoveryconfig
+spec:
+  credential: ocm-api-token
+  filters:
+    lastActive: 7

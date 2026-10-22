@@ -1,0 +1,41 @@
+{{- if .Values.global.networkPolicies.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: thanos-receive
+  namespace: '{{ default "open-cluster-management-observability" .Values.global.namespace }}'
+spec:
+  egress:
+  - {}
+  ingress:
+  - ports:
+    - port: 10902
+      protocol: TCP
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: open-cluster-management-observability
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-monitoring
+    ports:
+    - port: 10901
+      protocol: TCP
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/component: api
+          app.kubernetes.io/instance: observability
+          app.kubernetes.io/name: observatorium-api
+          app.kubernetes.io/part-of: observatorium
+    ports:
+    - port: 19291
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: thanos-receive
+      app.kubernetes.io/part-of: observatorium
+  policyTypes:
+  - Ingress
+  - Egress
+{{- end }}

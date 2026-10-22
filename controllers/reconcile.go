@@ -1,0 +1,490 @@
+// Copyright Contributors to the Open Cluster Management project
+
+/*
+Copyright 2021.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package controllers
+
+import (
+	"context"
+	"fmt"
+	"os"
+
+	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/overrides"
+	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
+	"github.com/stolostron/multiclusterhub-operator/pkg/version"
+
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+)
+
+// Reconcile is part of the main kubernetes reconciliation loop which aims to
+// move the current state of the cluster closer to the desired state.
+// TODO(user): Modify the Reconcile function to compare the state specified by
+// the MultiClusterHub object against the actual cluster state, and then
+// perform operations to make the cluster state reflect the state specified by
+// the user.
+//
+// For more details, check Reconcile and its Result here:
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
+func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Request) (retQueue ctrl.Result, retError error) {
+	r.Log = log
+	r.Log.Info("Reconciling MultiClusterHub")
+
+	// Fetch the MultiClusterHub instance
+	multiClusterHub := &operatorv1.MultiClusterHub{}
+	err := r.Client.Get(context.TODO(), req.NamespacedName, multiClusterHub)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// Request object not found, could have been deleted after reconcile request.
+			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
+			r.deleteMCHMetrics(req.Namespace, req.Name, "multiclusterhub-not-found")
+			// Return and don't requeue
+			r.Log.Info("MultiClusterHub resource not found. Ignoring since object must be deleted")
+			return ctrl.Result{}, nil
+		}
+		// Error reading the object - requeue the request.
+		r.Log.Error(err, "Failed to get MultiClusterHub CR")
+		return ctrl.Result{}, err
+	}
+
+	// Remove the metric series as soon as deletion is observed. Several return paths
+	// below (annotation migration, upgradeable check, listing deployments and custom
+	// resources, console lookup, STS detection) run before syncHubStatus is deferred,
+	// so cleanup there alone can be skipped while a finalizer keeps the object around.
+	if multiClusterHub.GetDeletionTimestamp() != nil {
+		r.deleteMCHMetrics(multiClusterHub.Namespace, multiClusterHub.Name, "deletion-timestamp")
+	} else if multiClusterHub.Status.Phase != "" {
+		// Republish the phase the API server already holds so the gauge survives an
+		// operator restart even when one of the fallible steps below returns early.
+		// syncHubStatus republishes after a successful status update, so this only
+		// logs again when the phase actually transitions.
+		r.publishMCHPhase(multiClusterHub, multiClusterHub.Status.Phase)
+	}
+
+	// Migrate deprecated annotations to current equivalents
+	if utils.MigrateDeprecatedAnnotations(multiClusterHub) {
+		r.Log.Info("Migrating deprecated annotations to current equivalents")
+		if err := r.Client.Update(ctx, multiClusterHub); err != nil {
+			r.Log.Error(err, "Failed to update MCH after annotation migration")
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	// Check to see if upgradeable (OLM v0 only)
+	var upgrade bool
+	if r.OLMVersion == "v0" {
+		var err error
+		upgrade, err = r.setOperatorUpgradeableStatus(ctx, multiClusterHub)
+		if err != nil {
+			r.Log.Error(err, "Unable to set operator condition")
+			return ctrl.Result{}, err
+		}
+	}
+
+	trackedNamespaces := utils.TrackedNamespaces(multiClusterHub)
+
+	allDeploys, err := r.listDeployments(trackedNamespaces)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	allCRs, err := r.listCustomResources()
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	ocpConsole, err := r.CheckConsole(ctx)
+	if err != nil {
+		r.Log.Error(err, "error finding OCP Console")
+		return ctrl.Result{}, err
+	}
+
+	/*
+	   In ACM 2.11, we need to determine if the operator is running in a STS enabled environment.
+	*/
+	stsEnabled, err := r.isSTSEnabled(ctx)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	originalStatus := multiClusterHub.Status.DeepCopy()
+
+	// Drop the failure condition from the previous pass after taking the snapshot so
+	// that clearing a stale condition is persisted even when nothing else changed.
+	// Otherwise a component that recovered would keep reporting ComponentFailure.
+	multiClusterHub.Status.HubConditions = filterOutConditionWithSubstring(multiClusterHub.Status.HubConditions,
+		string(operatorv1.ComponentFailure))
+
+	defer func() {
+		statusQueue, statusError := r.syncHubStatus(ctx, multiClusterHub, originalStatus, allDeploys, allCRs, ocpConsole, stsEnabled)
+		if statusError != nil {
+			r.Log.Error(statusError, "Error updating status")
+		}
+		if empty := (reconcile.Result{}); retQueue == empty {
+			retQueue = statusQueue
+		}
+		if retError == nil {
+			retError = statusError
+		}
+	}()
+
+	// Attempt to retrieve image overrides from environmental variables.
+	imageOverrides := overrides.GetOverridesFromEnv(overrides.OperandImagePrefix)
+
+	// If no overrides found using OperandImagePrefix, attempt to retrieve using OSBSImagePrefix.
+	if len(imageOverrides) == 0 {
+		imageOverrides = overrides.GetOverridesFromEnv(overrides.OSBSImagePrefix)
+	}
+
+	// Check if no image overrides were found using either prefix.
+	if len(imageOverrides) == 0 {
+		r.Log.Error(fmt.Errorf("no image overrides found from environment"), "Could not get map of image overrides")
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason,
+			"No image overrides found from environment variables")
+		SetHubCondition(&multiClusterHub.Status, *condition)
+		return ctrl.Result{}, fmt.Errorf("no image overrides found from environment")
+	}
+
+	// Apply image repository override from annotation if present.
+	if imageRepo := utils.GetImageRepository(multiClusterHub); imageRepo != "" {
+		r.Log.Info(fmt.Sprintf("Overriding Image Repository from annotation: %s", imageRepo))
+		imageOverrides = utils.OverrideImageRepository(imageOverrides, imageRepo)
+	}
+
+	// Check for developer overrides in configmap.
+	if ioConfigmapName := utils.GetImageOverridesConfigmapName(multiClusterHub); ioConfigmapName != "" {
+		imageOverrides, err = overrides.GetOverridesFromConfigmap(r.Client, imageOverrides,
+			multiClusterHub.GetNamespace(), ioConfigmapName, false)
+		if err != nil {
+			r.Log.Error(err, "Failed to find image override configmap",
+				"namespace", multiClusterHub.GetNamespace(), "configmap", ioConfigmapName)
+			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason,
+				fmt.Sprintf("Image override configmap %s/%s not found", multiClusterHub.GetNamespace(), ioConfigmapName))
+			SetHubCondition(&multiClusterHub.Status, *condition)
+			return ctrl.Result{}, err
+		}
+	}
+
+	// Update cache with image overrides and related information.
+	r.CacheSpec.ImageOverrides = imageOverrides
+	r.CacheSpec.ManifestVersion = version.Version
+	r.CacheSpec.ImageRepository = utils.GetImageRepository(multiClusterHub)
+	r.CacheSpec.ImageOverridesCM = utils.GetImageOverridesConfigmapName(multiClusterHub)
+
+	// Attempt to retrieve template overrides from environmental variables.
+	templateOverrides := overrides.GetOverridesFromEnv(overrides.TemplateOverridePrefix)
+
+	// Check for developer overrides in configmap
+	if toConfigmapName := utils.GetTemplateOverridesConfigmapName(multiClusterHub); toConfigmapName != "" {
+		templateOverrides, err = overrides.GetOverridesFromConfigmap(r.Client, templateOverrides,
+			multiClusterHub.GetNamespace(), toConfigmapName, true)
+		if err != nil {
+			r.Log.Error(err, "Failed to find template override configmap",
+				"namespace", multiClusterHub.GetNamespace(), "configmap", toConfigmapName)
+			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason,
+				fmt.Sprintf("Template override configmap %s/%s not found", multiClusterHub.GetNamespace(), toConfigmapName))
+			SetHubCondition(&multiClusterHub.Status, *condition)
+			return ctrl.Result{}, err
+		}
+	}
+
+	// Update cache with template overrides and related information.
+	r.CacheSpec.TemplateOverrides = templateOverrides
+	r.CacheSpec.TemplateOverridesCM = utils.GetTemplateOverridesConfigmapName(multiClusterHub)
+
+	var result ctrl.Result
+	result, err = r.setDefaults(multiClusterHub, ocpConsole)
+	if result != (ctrl.Result{}) {
+		return ctrl.Result{}, err
+	}
+	if err != nil {
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason,
+			fmt.Sprintf("Failed to set defaults: %s", err))
+		SetHubCondition(&multiClusterHub.Status, *condition)
+		return ctrl.Result{}, err
+	}
+
+	/*
+		Get the default storage class name and store it as an environment variable for components that need it.
+	*/
+	if result, err = r.SetDefaultStorageClassName(ctx, multiClusterHub); err != nil {
+		r.Log.Error(err, "Failed to set default StorageClass name")
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason,
+			fmt.Sprintf("Failed to set default StorageClass name: %s", err))
+		SetHubCondition(&multiClusterHub.Status, *condition)
+		return ctrl.Result{}, err
+	}
+
+	// Check if the multiClusterHub instance is marked to be deleted, which is
+	// indicated by the deletion timestamp being set.
+	isHubMarkedToBeDeleted := multiClusterHub.GetDeletionTimestamp() != nil
+	if isHubMarkedToBeDeleted {
+		// Snapshot the object BEFORE mutating its status below. This is used to compute a
+		// merge patch if finalization doesn't complete this reconcile. Capturing it after
+		// setting the Terminating condition would make the condition's addition invisible to
+		// the diff (both "before" and "after" would already have it), so the patch would never
+		// actually persist it to the API server.
+		beforeFinalization := multiClusterHub.DeepCopy()
+
+		terminating := NewHubCondition(operatorv1.Terminating, metav1.ConditionTrue, DeleteTimestampReason, "Multiclusterhub is being cleaned up.")
+		SetHubCondition(&multiClusterHub.Status, *terminating)
+
+		if controllerutil.ContainsFinalizer(multiClusterHub, hubFinalizer) {
+			// Run finalization logic. If the finalization
+			// logic fails, don't remove the finalizer so
+			// that we can retry during the next reconciliation.
+			if err := r.finalizeHub(ctx, r.Log, multiClusterHub, ocpConsole, stsEnabled); err != nil {
+				r.Log.Info("Hub finalization incomplete, will retry",
+					"reason", err.Error(),
+					"requeueAfter", resyncPeriod.String())
+
+				statusErr := r.Client.Status().Patch(ctx, multiClusterHub, client.MergeFrom(beforeFinalization))
+				if statusErr != nil {
+					r.Log.Error(statusErr, "Failed to update MCH status during finalization")
+				}
+
+				return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+			}
+
+			// Remove hubFinalizer. Once all finalizers have been
+			// removed, the object will be deleted.
+			controllerutil.RemoveFinalizer(multiClusterHub, hubFinalizer)
+
+			err := r.Client.Update(context.TODO(), multiClusterHub)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+
+		return ctrl.Result{}, nil
+	}
+
+	/*
+	   In ACM 2.9, we need to ensure that the openshift.io/cluster-monitoring is added to the same namespace as the
+	   MultiClusterHub to avoid conflicts with the openshift-* namespace when deploying PrometheusRules and
+	   ServiceMonitors in ACM.
+	*/
+	_, err = r.ensureOpenShiftNamespaceLabel(ctx, multiClusterHub)
+	if err != nil {
+		r.Log.Error(err, "Failed to add label to namespace",
+			"label", utils.OpenShiftClusterMonitoringLabel,
+			"namespace", multiClusterHub.GetNamespace())
+		msg := fmt.Sprintf("Failed to add %s label to namespace %s",
+			utils.OpenShiftClusterMonitoringLabel, multiClusterHub.GetNamespace())
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason, msg)
+		SetHubCondition(&multiClusterHub.Status, *condition)
+		return ctrl.Result{}, err
+	}
+
+	err = r.maintainImageManifestConfigmap(multiClusterHub)
+	if err != nil {
+		r.Log.Error(err, "Failed to store image manifests in configmap")
+		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason,
+			fmt.Sprintf("Failed to maintain image manifest configmap: %s", err))
+		SetHubCondition(&multiClusterHub.Status, *condition)
+		return ctrl.Result{}, err
+	}
+
+	// Do not reconcile objects if this instance of mch is labeled "paused"
+	updatePausedCondition(multiClusterHub)
+	if utils.IsPaused(multiClusterHub) {
+		r.Log.Info("MultiClusterHub reconciliation is paused. Nothing more to do.")
+		return ctrl.Result{}, nil
+	}
+
+	if !utils.ShouldIgnoreOCPVersion(multiClusterHub) {
+		currentOCPVersion, err := r.getClusterVersion(ctx)
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to detect clusterversion: %w", err)
+		}
+		if err := version.ValidOCPVersion(currentOCPVersion); err != nil {
+			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason,
+				fmt.Sprintf("OCP version requirement not met: %s", err.Error()))
+
+			SetHubCondition(&multiClusterHub.Status, *condition)
+			return ctrl.Result{}, err
+		}
+	}
+
+	// Install CRDs
+	var reason string
+	reason, err = r.installCRDs(r.Log, multiClusterHub)
+	if err != nil {
+		condition := NewHubCondition(
+			operatorv1.Progressing,
+			metav1.ConditionFalse,
+			reason,
+			fmt.Sprintf("Error installing CRDs: %s", err),
+		)
+		SetHubCondition(&multiClusterHub.Status, *condition)
+		return ctrl.Result{}, err
+	}
+
+	// Deploy appsub operator component
+	if multiClusterHub.Enabled(operatorv1.Appsub) {
+		result, err = r.ensureComponent(ctx, multiClusterHub, operatorv1.Appsub, r.CacheSpec, stsEnabled)
+	} else {
+		result, err = r.ensureNoComponent(ctx, multiClusterHub, operatorv1.Appsub, r.CacheSpec, stsEnabled)
+	}
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	if utils.ProxyEnvVarsAreSet() {
+		r.Log.Info(
+			fmt.Sprintf("Proxy configuration environment variables are set. HTTP_PROXY: %s, HTTPS_PROXY: %s, NO_PROXY: %s",
+				os.Getenv("HTTP_PROXY"), os.Getenv("HTTPS_PROXY"), os.Getenv("NO_PROXY"),
+			),
+		)
+	}
+
+	result, err = r.ensurePullSecretCreated(multiClusterHub, multiClusterHub.GetNamespace())
+	if err != nil {
+		condition := NewHubCondition(
+			operatorv1.Progressing,
+			metav1.ConditionFalse,
+			err.Error(),
+			fmt.Sprintf("Error fetching Pull Secret: %s", err),
+		)
+		SetHubCondition(&multiClusterHub.Status, *condition)
+		return result, fmt.Errorf("failed to find pullsecret: %s", err)
+	}
+
+	/*
+		In the ACM architectural design, MCH is responsible for deploying or adopting MCE. MCH is the "hub of the hub"
+		and the central point of management for the ACM deployment, while MCE is a critical component that provides
+		multi-cluster management capabilities. By having MCH deploy or adopt MCE, we ensure a streamlined and cohesive
+		deployment process where MCE must be deployed before any other components to ensure the necessary CRDs are
+		present for the other components to deploy successfully.
+	*/
+	result, err = r.ensureMultiClusterEngine(ctx, multiClusterHub)
+	if result != (ctrl.Result{}) || err != nil {
+		return result, err
+	}
+
+	result, err = r.ingressDomain(ctx)
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	result, err = r.openShiftApiUrl(ctx)
+	if err != nil {
+		return result, err
+	}
+
+	result, err = r.createTrustBundleConfigmap(ctx, multiClusterHub)
+	if err != nil {
+		return result, err
+	}
+
+	result, err = r.ensureComponentNamespaces(multiClusterHub)
+	if result != (ctrl.Result{}) || err != nil {
+		return result, err
+	}
+
+	/*
+		Ensure NetworkPolicies for ACM components. This implements a create-once pattern where
+		MCH creates initial NetworkPolicy resources with delegation annotations. Operand teams
+		then adopt and manage these policies. MCH does not continuously reconcile after creation.
+	*/
+	result, err = r.ensureNetworkPolicies(ctx, multiClusterHub, r.CacheSpec, stsEnabled)
+	if result != (ctrl.Result{}) || err != nil {
+		if err != nil {
+			r.Log.Error(err, "Failed to ensure NetworkPolicies")
+		}
+		return result, err
+	}
+
+	/*
+		Create the MCH operator's monitoring infrastructure. These resources enable Prometheus to collect
+		metrics from the operator for observability and alerting. The Service exposes the metrics endpoint,
+		and the ServiceMonitor tells Prometheus how to scrape it.
+	*/
+	result, err = r.createMetricsService(ctx, multiClusterHub)
+	if err != nil {
+		return result, err
+	}
+
+	result, err = r.createMetricsServiceMonitor(ctx, multiClusterHub)
+	if err != nil {
+		return result, err
+	}
+
+	// Deploy base resources (ClusterRoles)
+	reason, err = r.deployResources(r.Log, multiClusterHub)
+	if err != nil {
+		condition := NewHubCondition(
+			operatorv1.Progressing,
+			metav1.ConditionFalse,
+			reason,
+			fmt.Sprintf("Error deploying resources: %s", err),
+		)
+		SetHubCondition(&multiClusterHub.Status, *condition)
+		return ctrl.Result{}, err
+	}
+
+	// Prune components that have migrated from MCH to MCE (e.g., cluster-permission in 2.17).
+	// This must happen BEFORE waitForMCEReady to avoid deadlock: if MCE tries to create
+	// cluster-permission while MCH resources still exist, MCE will fail and never become ready.
+	// After pruning, the reconcile loop will delete MCH resources, allowing MCE to create fresh.
+	result, err = r.pruneMigratedComponents(ctx, multiClusterHub, stsEnabled)
+	if result != (ctrl.Result{}) || err != nil {
+		return result, err
+	}
+
+	result, err = r.waitForMCEReady(ctx, multiClusterHub)
+	if result != (ctrl.Result{}) || err != nil {
+		return result, err
+	}
+
+	if !multiClusterHub.Spec.DisableHubSelfManagement {
+		result, err = r.ensureKlusterletAddonConfig(multiClusterHub)
+		if result != (ctrl.Result{}) || err != nil {
+			return result, err
+		}
+	}
+
+	// Install the rest of the subscriptions in no particular order
+	for _, c := range operatorv1.MCHComponents {
+		// Skip components that have been migrated to MCE and pruned from MCH spec.
+		// These components must remain in MCHComponents for webhook validation but
+		// should not be reconciled once migrated.
+		if _, migrated := migratedComponentDeployments[c]; migrated && !multiClusterHub.ComponentPresent(c) {
+			continue
+		}
+
+		result, err = r.ensureComponentOrNoComponent(ctx, multiClusterHub, c, r.CacheSpec, ocpConsole, stsEnabled)
+
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+	}
+
+	if upgrade {
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	logf.Log.Info("Reconcile completed. Requeuing after " + utils.ShortRefreshInterval.String())
+	return ctrl.Result{RequeueAfter: utils.ShortRefreshInterval}, nil
+}

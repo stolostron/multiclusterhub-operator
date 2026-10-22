@@ -1,0 +1,484 @@
+// Copyright (c) 2020 Red Hat, Inc.
+// Copyright Contributors to the Open Cluster Management project
+
+package utils
+
+import (
+	"fmt"
+	"strings"
+
+	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+)
+
+var (
+	/*
+		AnnotationConfiguration is an annotation used in a resource's metadata to identify the configuration
+		last used to create it.
+	*/
+	AnnotationConfiguration = "installer.open-cluster-management.io/last-applied-configuration"
+
+	/*
+		AnnotationIgnoreOCPVersion is an annotation used to indicate the operator should not check the OpenShift
+		Container Platform (OCP) version before proceeding when set.
+	*/
+	AnnotationIgnoreOCPVersion           = "installer.open-cluster-management.io/ignore-ocp-version"
+	DeprecatedAnnotationIgnoreOCPVersion = "ignoreOCPVersion"
+
+	/*
+		AnnotationImageOverridesCM is an annotation used in multiclusterhub to specify a custom ConfigMap containing
+		image overrides.
+	*/
+	AnnotationImageOverridesCM           = "installer.open-cluster-management.io/image-overrides-configmap"
+	DeprecatedAnnotationImageOverridesCM = "mch-imageOverridesCM"
+
+	/*
+		AnnotationImageRepo is an annotation used in multiclusterhub to specify a custom image repository to use.
+	*/
+	AnnotationImageRepo           = "installer.open-cluster-management.io/image-repository"
+	DeprecatedAnnotationImageRepo = "mch-imageRepository"
+
+	/*
+		AnnotationKubeconfig is an annotation used to specify the secret name residing in target containing the
+		kubeconfig to access the remote cluster.
+	*/
+	AnnotationKubeconfig           = "installer.open-cluster-management.io/kubeconfig"
+	DeprecatedAnnotationKubeconfig = "mch-kubeconfig"
+
+	/*
+		AnnotationMCHPause is an annotation used in multiclusterhub to identify if the multiclusterhub is paused or not.
+	*/
+	AnnotationMCHPause           = "installer.open-cluster-management.io/pause"
+	DeprecatedAnnotationMCHPause = "mch-pause"
+
+	/*
+		AnnotationMCESubscriptionSpec is an annotation used in multiclusterhub to identify the subscription spec
+		last used to create the multiclustengine (OLM v0).
+	*/
+	AnnotationMCESubscriptionSpec = "installer.open-cluster-management.io/mce-subscription-spec"
+
+	/*
+		AnnotationMCEClusterExtensionSpec is an annotation used in multiclusterhub to identify the clusterextension spec
+		last used to create the multiclustengine (OLM v1).
+	*/
+	AnnotationMCEClusterExtensionSpec = "installer.open-cluster-management.io/mce-clusterextension-spec"
+
+	/*
+		AnnotationOADPSubscriptionSpec is an annotation used to override the OADP subscription used in cluster-backup (OLM v0).
+	*/
+	AnnotationOADPSubscriptionSpec = "installer.open-cluster-management.io/oadp-subscription-spec"
+
+	/*
+		AnnotationOADPClusterExtensionSpec is an annotation used to override the OADP ClusterExtension spec used in cluster-backup (OLM v1).
+	*/
+	AnnotationOADPClusterExtensionSpec = "installer.open-cluster-management.io/oadp-clusterextension-spec"
+
+	/*
+		AnnotationMTVSubscriptionSpec is an annotation used in multiclusterhub to override the MTV subscription
+		referenced by the mtv-operator AddOnTemplate workload manifest.
+	*/
+	AnnotationMTVSubscriptionSpec = "installer.open-cluster-management.io/mtv-subscription-spec"
+
+	/*
+		AnnotationCNVSubscriptionSpec is an annotation used in multiclusterhub to override the CNV subscription
+		referenced by the kubevirt-hyperconverged AddOnTemplate workload manifest.
+	*/
+	AnnotationCNVSubscriptionSpec = "installer.open-cluster-management.io/cnv-subscription-spec"
+
+	/*
+		AnnotationReleaseVersion is an annotation used to indicate the release version that should be applied to all
+		resources managed by the MCH operator.
+	*/
+	AnnotationReleaseVersion = "installer.open-cluster-management.io/release-version"
+
+	/*
+		AnnotationTemplateOverridesCM is an annotation used in multiclusterhub to specify a custom ConfigMap
+		containing resource template overrides.
+	*/
+	AnnotationTemplateOverridesCM = "installer.open-cluster-management.io/template-override-configmap"
+
+	/*
+		AnnotationDefaultStorageClass is an annotation used to set the default storage class name for multiclusterhub
+		operand resources to use.
+	*/
+	AnnotationDefaultStorageClass = "installer.open-cluster-management.io/default-storage-class"
+
+	/*
+		AnnotationKubeDefaultStorageClass is an annotation used in the cluster to determine the default storage class
+		resource.
+	*/
+	AnnotationKubeDefaultStorageClass = "storageclass.kubernetes.io/is-default-class"
+
+	/*
+		AnnotationFineGrainedRbac is an annotation used in the cluster to determine if fine grained rbac is enabled.
+	*/
+	AnnotationFineGrainedRbac = "fine-grained-rbac"
+
+	/*
+		AnnotationEditable is an annotation used on specific resources deployed by the hub to mark them as able
+		to be ended by customer without being overridden.
+	*/
+	AnnotationEditable = "installer.open-cluster-management.io/is-editable"
+
+	/*
+		AnnotationResourceAdoptionPolicy is an annotation used in multiclusterhub to control how the operator
+		handles existing resources without installer labels.
+		Valid values: "Strict" (default) - only manage labeled resources, "Adopt" - adopt unlabeled resources.
+	*/
+	AnnotationResourceAdoptionPolicy = "installer.open-cluster-management.io/resource-adoption-policy"
+
+	/*
+		AnnotationProbeTimeoutSeconds is an annotation used to configure probe timeout in seconds for exec probes
+		in components deployed by multiclusterhub.
+	*/
+	AnnotationProbeTimeoutSeconds = "installer.open-cluster-management.io/probe-timeout-seconds"
+
+	/*
+		AnnotationProbeFailureThreshold is an annotation used to configure probe failure threshold for exec probes
+		in components deployed by multiclusterhub.
+	*/
+	AnnotationProbeFailureThreshold = "installer.open-cluster-management.io/probe-failure-threshold"
+
+	/*
+		AnnotationProbeSuccessThreshold is an annotation used to configure probe success threshold for exec probes
+		in components deployed by multiclusterhub.
+	*/
+	AnnotationProbeSuccessThreshold = "installer.open-cluster-management.io/probe-success-threshold"
+)
+
+// DeprecatedAnnotationMap maps deprecated annotation keys to their current replacements.
+var DeprecatedAnnotationMap = map[string]string{
+	DeprecatedAnnotationMCHPause:         AnnotationMCHPause,
+	DeprecatedAnnotationImageOverridesCM: AnnotationImageOverridesCM,
+	DeprecatedAnnotationImageRepo:        AnnotationImageRepo,
+	DeprecatedAnnotationKubeconfig:       AnnotationKubeconfig,
+	DeprecatedAnnotationIgnoreOCPVersion: AnnotationIgnoreOCPVersion,
+}
+
+// MigrateDeprecatedAnnotations replaces deprecated annotation keys with their current equivalents.
+// If a deprecated key exists and the current key does not, the value is copied to the current key.
+// If both exist, the deprecated key is removed and the current key is preserved.
+// Returns true if any annotations were modified.
+func MigrateDeprecatedAnnotations(instance *operatorsv1.MultiClusterHub) bool {
+	annotations := instance.GetAnnotations()
+	if annotations == nil {
+		return false
+	}
+
+	modified := false
+	for deprecatedKey, currentKey := range DeprecatedAnnotationMap {
+		deprecatedVal, hasDeprecated := annotations[deprecatedKey]
+		if !hasDeprecated {
+			continue
+		}
+
+		if _, hasCurrent := annotations[currentKey]; !hasCurrent {
+			annotations[currentKey] = deprecatedVal
+		}
+		delete(annotations, deprecatedKey)
+		modified = true
+	}
+
+	if modified {
+		instance.SetAnnotations(annotations)
+	}
+	return modified
+}
+
+/*
+IsPaused checks if the MultiClusterHub instance is labeled as paused.
+It returns true if the instance is paused, otherwise false.
+*/
+func IsPaused(instance *operatorsv1.MultiClusterHub) bool {
+	return IsAnnotationTrue(instance, AnnotationMCHPause) || IsAnnotationTrue(instance, DeprecatedAnnotationMCHPause)
+}
+
+/*
+IsAnnotationTrue checks if a specific annotation key in the given instance is set to "true".
+*/
+func IsAnnotationTrue(instance *operatorsv1.MultiClusterHub, annotationKey string) bool {
+	a := instance.GetAnnotations()
+	if a == nil {
+		return false
+	}
+
+	value := strings.EqualFold(a[annotationKey], "true")
+	return value
+}
+
+/*
+IsAnnotationTrue checks if a specific annotation key in the given instance is set to "true".
+*/
+func IsTemplateAnnotationTrue(instance *unstructured.Unstructured, annotationKey string) bool {
+	a := instance.GetAnnotations()
+	if a == nil {
+		return false
+	}
+
+	value := strings.EqualFold(a[annotationKey], "true")
+	return value
+}
+
+/*
+AnnotationsMatch checks if all specified annotations in the 'old' map match the corresponding ones in the 'new' map.
+It returns true if all annotations match, otherwise false.
+This function:
+1. Checks if specific important annotations changed (explicit tracking)
+2. Checks if any annotation was added or removed (allows manual triggering)
+3. Ignores value changes to non-important annotations (reduces unnecessary reconciles)
+*/
+func AnnotationsMatch(old, new map[string]string) bool {
+	// First check if specific important annotations changed
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationMCHPause, DeprecatedAnnotationMCHPause) {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationImageRepo, DeprecatedAnnotationImageRepo) {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationImageOverridesCM, DeprecatedAnnotationImageOverridesCM) {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationKubeconfig, DeprecatedAnnotationKubeconfig) {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationTemplateOverridesCM, "") {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationMCESubscriptionSpec, "") {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationMCEClusterExtensionSpec, "") {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationOADPSubscriptionSpec, "") {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationOADPClusterExtensionSpec, "") {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationMTVSubscriptionSpec, "") {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationCNVSubscriptionSpec, "") {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationResourceAdoptionPolicy, "") {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationProbeTimeoutSeconds, "") {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationProbeFailureThreshold, "") {
+		return false
+	}
+	if !getAnnotationOrDefaultForMap(old, new, AnnotationProbeSuccessThreshold, "") {
+		return false
+	}
+
+	// Track which keys we've already checked semantically to avoid double-counting
+	checkedKeys := map[string]bool{
+		AnnotationMCHPause:                   true,
+		AnnotationImageRepo:                  true,
+		AnnotationImageOverridesCM:           true,
+		AnnotationKubeconfig:                 true,
+		AnnotationTemplateOverridesCM:        true,
+		AnnotationMCESubscriptionSpec:        true,
+		AnnotationMCEClusterExtensionSpec:    true,
+		AnnotationOADPSubscriptionSpec:       true,
+		AnnotationOADPClusterExtensionSpec:   true,
+		AnnotationMTVSubscriptionSpec:        true,
+		AnnotationCNVSubscriptionSpec:        true,
+		AnnotationResourceAdoptionPolicy:     true,
+		AnnotationProbeTimeoutSeconds:        true,
+		AnnotationProbeFailureThreshold:      true,
+		AnnotationProbeSuccessThreshold:      true,
+		DeprecatedAnnotationMCHPause:         true,
+		DeprecatedAnnotationImageRepo:        true,
+		DeprecatedAnnotationImageOverridesCM: true,
+		DeprecatedAnnotationKubeconfig:       true,
+	}
+
+	// Filter to only unchecked annotations
+	oldUnchecked := make(map[string]string)
+	for k, v := range old {
+		if !checkedKeys[k] {
+			oldUnchecked[k] = v
+		}
+	}
+	newUnchecked := make(map[string]string)
+	for k, v := range new {
+		if !checkedKeys[k] {
+			newUnchecked[k] = v
+		}
+	}
+
+	// Check if any unchecked annotation was added or removed (allows manual triggering)
+	// Don't check values, just keys - value changes to non-important annotations are ignored
+	if len(oldUnchecked) != len(newUnchecked) {
+		return false
+	}
+	for k := range oldUnchecked {
+		if _, exists := newUnchecked[k]; !exists {
+			return false
+		}
+	}
+
+	return true
+}
+
+/*
+GetAnnotation returns the annotation value for a given key from the instance's annotations,
+or an empty string if the annotation is not set.
+*/
+func getAnnotation(instance *operatorsv1.MultiClusterHub, key string) string {
+	a := instance.GetAnnotations()
+	if a == nil {
+		return ""
+	}
+
+	return a[key]
+}
+
+/*
+getAnnotationOrDefault retrieves the value of the primary annotation key,
+falling back to the deprecated key if the primary key is not set.
+*/
+func getAnnotationOrDefault(instance *operatorsv1.MultiClusterHub, primaryKey, deprecatedKey string) string {
+	primaryValue := getAnnotation(instance, primaryKey)
+	if primaryValue != "" {
+		return primaryValue
+	}
+
+	return getAnnotation(instance, deprecatedKey)
+}
+
+/*
+getAnnotationOrDefaultForMap checks if the annotation value from the 'old' map matches the one from the 'new' map,
+including deprecated annotations.
+*/
+func getAnnotationOrDefaultForMap(old, new map[string]string, primaryKey, deprecatedKey string) bool {
+	oldValue := old[primaryKey]
+
+	if oldValue == "" {
+		oldValue = old[deprecatedKey]
+	}
+
+	newValue := new[primaryKey]
+	if newValue == "" {
+		newValue = new[deprecatedKey]
+	}
+
+	return oldValue == newValue
+}
+
+/*
+GetDefaultStorageClassOverride returns the name of the storage class that MCH should use as the
+default override.
+*/
+func GetDefaultStorageClassOverride(instance *operatorsv1.MultiClusterHub) string {
+	return getAnnotation(instance, AnnotationDefaultStorageClass)
+}
+
+/*
+GetImageRepository returns the image repository annotation value,
+using the primary annotation key and falling back to the deprecated key if not set.
+*/
+func GetImageRepository(instance *operatorsv1.MultiClusterHub) string {
+	return getAnnotationOrDefault(instance, AnnotationImageRepo, DeprecatedAnnotationImageRepo)
+}
+
+/*
+GetImageOverridesConfigmapName returns the image overrides ConfigMap annotation value,
+using the primary annotation key and falling back to the deprecated key if not set.
+*/
+func GetImageOverridesConfigmapName(instance *operatorsv1.MultiClusterHub) string {
+	return getAnnotationOrDefault(instance, AnnotationImageOverridesCM, DeprecatedAnnotationImageOverridesCM)
+}
+
+/*
+GetMCEAnnotationOverrides returns the MulticlusterEngine subscription spec annotation value,
+or an empty string if not set.
+*/
+func GetMCEAnnotationOverrides(instance *operatorsv1.MultiClusterHub) string {
+	return getAnnotation(instance, AnnotationMCESubscriptionSpec)
+}
+
+/*
+GetMCEClusterExtensionAnnotationOverrides returns the MCE ClusterExtension spec annotation value (OLM v1),
+or an empty string if not set.
+*/
+func GetMCEClusterExtensionAnnotationOverrides(instance *operatorsv1.MultiClusterHub) string {
+	return getAnnotation(instance, AnnotationMCEClusterExtensionSpec)
+}
+
+/*
+GetOADPAnnotationOverrides returns the OADP subscription spec annotation value (OLM v0),
+or an empty string if not set.
+*/
+func GetOADPAnnotationOverrides(instance *operatorsv1.MultiClusterHub) string {
+	return getAnnotation(instance, AnnotationOADPSubscriptionSpec)
+}
+
+/*
+GetOADPClusterExtensionAnnotationOverrides returns the OADP ClusterExtension spec annotation value (OLM v1),
+or an empty string if not set.
+*/
+func GetOADPClusterExtensionAnnotationOverrides(instance *operatorsv1.MultiClusterHub) string {
+	return getAnnotation(instance, AnnotationOADPClusterExtensionSpec)
+}
+
+/*
+GetMTVAnnotationOverrides returns the MTV subscription spec annotation value,
+or an empty string if not set.
+*/
+func GetMTVAnnotationOverrides(instance *operatorsv1.MultiClusterHub) string {
+	return getAnnotation(instance, AnnotationMTVSubscriptionSpec)
+}
+
+/*
+GetCNVAnnotationOverrides returns the CNV subscription spec annotation value,
+or an empty string if not set.
+*/
+func GetCNVAnnotationOverrides(instance *operatorsv1.MultiClusterHub) string {
+	return getAnnotation(instance, AnnotationCNVSubscriptionSpec)
+}
+
+/*
+GetTemplateOverridesConfigmapName returns the template overrides ConfigMap annotation value,
+or an empty string if not set.
+*/
+func GetTemplateOverridesConfigmapName(instance *operatorsv1.MultiClusterHub) string {
+	return getAnnotation(instance, AnnotationTemplateOverridesCM)
+}
+
+/*
+HasAnnotation checks if a specific annotation key exists in the instance's annotations.
+*/
+func HasAnnotation(instance *operatorsv1.MultiClusterHub, annotationKey string) bool {
+	a := instance.GetAnnotations()
+	if a == nil {
+		return false
+	}
+
+	_, exists := a[annotationKey]
+	return exists
+}
+
+/*
+OverrideImageRepository modifies image references in a map to use a specified image repository.
+*/
+func OverrideImageRepository(imageOverrides map[string]string, imageRepo string) map[string]string {
+	for imageKey, imageRef := range imageOverrides {
+		image := strings.LastIndex(imageRef, "/")
+		imageOverrides[imageKey] = fmt.Sprintf("%s%s", imageRepo, imageRef[image:])
+	}
+	return imageOverrides
+}
+
+/*
+ShouldIgnoreOCPVersion checks if the instance is annotated to skip the minimum OCP version requirement.
+*/
+func ShouldIgnoreOCPVersion(instance *operatorsv1.MultiClusterHub) bool {
+	return HasAnnotation(instance, AnnotationIgnoreOCPVersion) ||
+		HasAnnotation(instance, DeprecatedAnnotationIgnoreOCPVersion)
+}

@@ -1,0 +1,12 @@
+apiVersion: policy.open-cluster-management.io/v1beta1
+kind: PolicySet
+metadata:
+  name: acm-dr-virt-backup-policyset
+  namespace: open-cluster-management-backup
+spec:
+  description: |
+    Backup virtualmachines.kubevirt.io resources on hub or OpenShift managed clusters, using OADP. 
+    Supports Container Storage Interface (CSI) and (CSI) with DataMover storage, File system and Volume snapshot options are not supported.
+  policies:
+    - acm-dr-virt-install
+    - acm-dr-virt-backup

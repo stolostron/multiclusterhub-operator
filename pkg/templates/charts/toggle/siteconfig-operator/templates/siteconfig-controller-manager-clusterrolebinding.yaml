@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: '{{ .Values.org }}:{{ .Chart.Name }}:siteconfig-controller-manager'
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: '{{ .Values.org }}:{{ .Chart.Name }}:siteconfig-controller-manager'
+subjects:
+- kind: ServiceAccount
+  name: siteconfig-controller-manager
+  namespace: '{{ .Values.global.namespace }}'

@@ -1,0 +1,13 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: mtv-advisor-route
+  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
+spec:
+  port:
+    targetPort: advisor-http
+  tls:
+    termination: edge
+  to:
+    kind: Service
+    name: mtv-advisor-service

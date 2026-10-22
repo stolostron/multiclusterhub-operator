@@ -1,0 +1,2310 @@
+// Copyright (c) 2020 Red Hat, Inc.
+// Copyright Contributors to the Open Cluster Management project
+
+package controllers
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"reflect"
+	"testing"
+	"time"
+
+	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	mcev1 "github.com/stolostron/backplane-operator/api/v1"
+	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	mchmetrics "github.com/stolostron/multiclusterhub-operator/pkg/metrics"
+	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
+	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
+	"github.com/stolostron/multiclusterhub-operator/pkg/version"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
+	ctrlmetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+)
+
+var replicas int32 = 1
+
+func Test_allComponentsSuccessful(t *testing.T) {
+	available := operatorsv1.StatusCondition{Type: "Available", Status: metav1.ConditionTrue, Available: true}
+	deployed := operatorsv1.StatusCondition{Type: "Available", Status: metav1.ConditionTrue, Available: true}
+	unavailable := operatorsv1.StatusCondition{Type: "Available", Status: metav1.ConditionFalse}
+	type args struct {
+		components map[string]operatorsv1.StatusCondition
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "Single available component",
+			args: args{
+				components: map[string]operatorsv1.StatusCondition{
+					"foo": available,
+					"bar": deployed,
+				},
+			},
+			want: true,
+		},
+		{
+			name: "Single unavailable component",
+			args: args{
+				components: map[string]operatorsv1.StatusCondition{
+					"foo": unavailable,
+					"bar": deployed,
+				},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := allComponentsSuccessful(tt.args.components); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("allComponentsSuccessful() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_latestDeployCondition(t *testing.T) {
+	b := `[
+		{
+			"lastTransitionTime": "2020-09-02T21:22:22Z",
+			"lastUpdateTime": "2020-09-02T21:22:22Z",
+			"message": "Deployment has minimum availability.",
+			"reason": "MinimumReplicasAvailable",
+			"status": "True",
+			"type": "Available"
+		},
+		{
+			"lastTransitionTime": "2020-09-03T14:23:47Z",
+			"lastUpdateTime": "2020-09-03T14:23:47Z",
+			"message": "ReplicaSet \"cluster-lifecycle-78c4bc769\" has timed out progressing.",
+			"reason": "ProgressDeadlineExceeded",
+			"status": "False",
+			"type": "Progressing"
+		}
+	]`
+	var bs []appsv1.DeploymentCondition
+	err := json.Unmarshal([]byte(b), &bs)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	first := appsv1.DeploymentCondition{
+		Type:               appsv1.DeploymentProgressing,
+		LastTransitionTime: metav1.NewTime(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
+	}
+	second := appsv1.DeploymentCondition{
+		Type:               appsv1.DeploymentAvailable,
+		LastTransitionTime: metav1.NewTime(time.Date(3000, 1, 1, 0, 0, 0, 0, time.UTC)),
+	}
+	type args struct {
+		conditions []appsv1.DeploymentCondition
+	}
+	tests := []struct {
+		name string
+		args args
+		want appsv1.DeploymentConditionType
+	}{
+		{
+			name: "Deployed after initialized",
+			args: args{
+				conditions: []appsv1.DeploymentCondition{
+					second,
+					first,
+				},
+			},
+			want: appsv1.DeploymentAvailable,
+		},
+		{
+			name: "Progressing after available",
+			args: args{
+				conditions: bs,
+			},
+			want: appsv1.DeploymentProgressing,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := latestDeployCondition(tt.args.conditions); got.Type != tt.want {
+				t.Errorf("latestDeployCondition() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+var (
+	old = operatorsv1.HubCondition{
+		Type:               operatorsv1.Progressing,
+		Reason:             "Working",
+		Status:             metav1.ConditionTrue,
+		LastTransitionTime: metav1.NewTime(time.Date(2020, 5, 29, 0, 0, 0, 0, time.UTC)),
+	}
+	old2 = operatorsv1.HubCondition{
+		Type:               operatorsv1.Complete,
+		Reason:             "EverythingRunning",
+		Status:             metav1.ConditionTrue,
+		LastTransitionTime: metav1.NewTime(time.Date(2020, 5, 29, 0, 0, 0, 0, time.UTC)),
+	}
+	new = operatorsv1.HubCondition{
+		Type:               operatorsv1.Progressing,
+		Reason:             "NotWorking",
+		Status:             metav1.ConditionFalse,
+		LastTransitionTime: metav1.NewTime(time.Date(2020, 5, 29, 0, 1, 0, 0, time.UTC)),
+	}
+	new2 = operatorsv1.HubCondition{
+		Type:               operatorsv1.Complete,
+		Reason:             "EverythingRunning",
+		Status:             metav1.ConditionTrue,
+		LastTransitionTime: metav1.NewTime(time.Date(2020, 5, 29, 0, 1, 0, 0, time.UTC)),
+	}
+)
+
+func TestSetHubCondition(t *testing.T) {
+	t.Run("Add single hubcondition", func(t *testing.T) {
+		m := &operatorsv1.MultiClusterHub{}
+		SetHubCondition(&m.Status, old)
+		if len(m.Status.HubConditions) < 1 {
+			t.Errorf("AddCondition() failed to add a HubCondition")
+		}
+	})
+
+	t.Run("No duplicate hubconditions", func(t *testing.T) {
+		m := &operatorsv1.MultiClusterHub{}
+		expected := 1
+		for i := 0; i < 2; i++ {
+			SetHubCondition(&m.Status, old)
+		}
+		if len(m.Status.HubConditions) != 1 {
+			t.Errorf("AddCondition() added duplicate hub conditions; expected %d, got %d", expected, len(m.Status.HubConditions))
+		}
+	})
+
+	t.Run("Retain last transition time", func(t *testing.T) {
+		m := &operatorsv1.MultiClusterHub{}
+		SetHubCondition(&m.Status, old2)
+		SetHubCondition(&m.Status, new2)
+		if len(m.Status.HubConditions) != 1 {
+			t.Errorf("AddCondition() too many hub conditions; expected %d, got %d", 1, len(m.Status.HubConditions))
+		}
+		if ltt := &m.Status.HubConditions[0].LastTransitionTime; !ltt.Equal(&old2.LastTransitionTime) {
+			t.Errorf("AddCondition() expected lastTransitionTime of %v, got %v", old2.LastTransitionTime, ltt)
+		}
+	})
+
+	t.Run("Updates message when type, status, and reason are unchanged", func(t *testing.T) {
+		// Regression test: a condition whose Message varies independently of its Reason (e.g.
+		// WaitingForMCEUpgrade, which embeds the live current MCE version) must not freeze at
+		// its first-observed message on subsequent reconciles.
+		m := &operatorsv1.MultiClusterHub{}
+		firstMessage := operatorsv1.HubCondition{
+			Type:               operatorsv1.Progressing,
+			Reason:             WaitingForMCEUpgradeReason,
+			Status:             metav1.ConditionTrue,
+			Message:            "Waiting for MultiClusterEngine to upgrade to 5.0.0 (current: none)",
+			LastTransitionTime: metav1.NewTime(time.Date(2020, 5, 29, 0, 0, 0, 0, time.UTC)),
+		}
+		updatedMessage := operatorsv1.HubCondition{
+			Type:               operatorsv1.Progressing,
+			Reason:             WaitingForMCEUpgradeReason,
+			Status:             metav1.ConditionTrue,
+			Message:            "Waiting for MultiClusterEngine to upgrade to 5.0.0 (current: 2.17.1)",
+			LastTransitionTime: metav1.NewTime(time.Date(2020, 5, 29, 0, 1, 0, 0, time.UTC)),
+		}
+		SetHubCondition(&m.Status, firstMessage)
+		SetHubCondition(&m.Status, updatedMessage)
+
+		if len(m.Status.HubConditions) != 1 {
+			t.Fatalf("expected 1 hub condition, got %d", len(m.Status.HubConditions))
+		}
+		got := m.Status.HubConditions[0]
+		if got.Message != updatedMessage.Message {
+			t.Errorf("expected message to update to %q, got %q", updatedMessage.Message, got.Message)
+		}
+		// Status did not change, so LastTransitionTime should still be preserved from the
+		// original condition even though Message changed.
+		if !got.LastTransitionTime.Equal(&firstMessage.LastTransitionTime) {
+			t.Errorf("expected lastTransitionTime to be preserved at %v, got %v",
+				firstMessage.LastTransitionTime, got.LastTransitionTime)
+		}
+	})
+
+	// Regression test: many call sites (e.g. every stage of finalization) reuse the same
+	// Reason across an evolving sequence of more specific Messages, e.g.
+	// reconcile.go sets Terminating/DeletionTimestampPresent with a generic message the
+	// moment deletion starts, and cleanupMultiClusterEngine later tries to refine it to name
+	// MCE specifically, using the SAME reason. Bailing out on Status+Reason alone (without
+	// also checking Message) would silently drop that refinement, freezing the condition at
+	// whatever message was set first.
+	t.Run("Refines message when only Message differs (same Status and Reason)", func(t *testing.T) {
+		m := &operatorsv1.MultiClusterHub{}
+		generic := operatorsv1.HubCondition{
+			Type:    operatorsv1.Terminating,
+			Status:  metav1.ConditionTrue,
+			Reason:  DeleteTimestampReason,
+			Message: "Multiclusterhub is being cleaned up.",
+		}
+		specific := operatorsv1.HubCondition{
+			Type:    operatorsv1.Terminating,
+			Status:  metav1.ConditionTrue,
+			Reason:  DeleteTimestampReason,
+			Message: "Waiting for MultiClusterEngine multiclusterengine to terminate",
+		}
+
+		SetHubCondition(&m.Status, generic)
+		SetHubCondition(&m.Status, specific)
+
+		if len(m.Status.HubConditions) != 1 {
+			t.Fatalf("expected exactly 1 condition, got %d", len(m.Status.HubConditions))
+		}
+		if got := m.Status.HubConditions[0].Message; got != specific.Message {
+			t.Errorf("expected message to refine to %q, got %q (message got silently dropped)", specific.Message, got)
+		}
+	})
+}
+
+func TestGetHubCondition(t *testing.T) {
+	testStatus := operatorsv1.MultiClusterHubStatus{
+		HubConditions: []operatorsv1.HubCondition{new},
+	}
+	tests := []struct {
+		name     string
+		status   operatorsv1.MultiClusterHubStatus
+		condType operatorsv1.HubConditionType
+		want     bool
+	}{
+		{
+			name:     "present",
+			status:   testStatus,
+			condType: operatorsv1.Progressing,
+			want:     true,
+		},
+		{
+			name:     "absent",
+			status:   testStatus,
+			condType: operatorsv1.Terminating,
+			want:     false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cond := GetHubCondition(tt.status, tt.condType)
+			exists := cond != nil
+			if exists != tt.want {
+				t.Errorf("%s: expected condition to exist: %t, got: %t", tt.name, tt.want, exists)
+			}
+		})
+	}
+}
+
+func TestFilterHubConditions(t *testing.T) {
+	testStatusExact := operatorsv1.MultiClusterHubStatus{
+		HubConditions: []operatorsv1.HubCondition{
+			{
+				Type: operatorsv1.Complete,
+			},
+		},
+	}
+
+	testStatusSubstring := operatorsv1.MultiClusterHubStatus{
+		HubConditions: []operatorsv1.HubCondition{
+			{
+				Type: operatorsv1.ComponentFailure + operatorsv1.HubConditionType(": ") + operatorsv1.HubConditionType("test-component"),
+			},
+		},
+	}
+
+	exactTests := []struct {
+		name     string
+		condType operatorsv1.HubConditionType
+		want     bool
+	}{
+		{
+			name:     "exact type filtered",
+			condType: operatorsv1.Complete,
+			want:     true,
+		},
+		{
+			name:     "exact type not filtered",
+			condType: operatorsv1.Blocked,
+			want:     false,
+		},
+	}
+
+	substringTests := []struct {
+		name      string
+		substring string
+		want      bool
+	}{
+		{
+			name:      "substring filtered",
+			substring: string(operatorsv1.ComponentFailure),
+			want:      true,
+		},
+		{
+			name:      "substring filtered",
+			substring: string(operatorsv1.Complete),
+			want:      false,
+		},
+	}
+
+	for _, tt := range exactTests {
+		t.Run(tt.name, func(t *testing.T) {
+			conditions := filterOutCondition(testStatusExact.HubConditions, tt.condType)
+			empty := len(conditions) == 0
+			if empty != tt.want {
+				t.Errorf("%s: expected condition to get filtered out: %t, got: %t", tt.name, tt.want, empty)
+			}
+		})
+	}
+
+	for _, tt := range substringTests {
+		t.Run(tt.name, func(t *testing.T) {
+			conditions := filterOutConditionWithSubstring(testStatusSubstring.HubConditions, tt.substring)
+			empty := len(conditions) == 0
+			if empty != tt.want {
+				t.Errorf("%s: expected condition to get filtered out: %t, got: %t", tt.name, tt.want, empty)
+			}
+		})
+	}
+}
+func TestHubConditionPresent(t *testing.T) {
+	testStatusExact := operatorsv1.MultiClusterHubStatus{
+		HubConditions: []operatorsv1.HubCondition{
+			{
+				Type: operatorsv1.Complete,
+			},
+		},
+	}
+
+	testStatusSubstring := operatorsv1.MultiClusterHubStatus{
+		HubConditions: []operatorsv1.HubCondition{
+			{
+				Type: operatorsv1.ComponentFailure + operatorsv1.HubConditionType(": ") + operatorsv1.HubConditionType("test-component"),
+			},
+		},
+	}
+
+	exactTests := []struct {
+		name     string
+		condType operatorsv1.HubConditionType
+		want     bool
+	}{
+		{
+			name:     "exact type present",
+			condType: operatorsv1.Complete,
+			want:     true,
+		},
+		{
+			name:     "exact type not present",
+			condType: operatorsv1.Blocked,
+			want:     false,
+		},
+	}
+
+	substringTests := []struct {
+		name      string
+		substring string
+		want      bool
+	}{
+		{
+			name:      "substring present",
+			substring: "test-component",
+			want:      true,
+		},
+		{
+			name:      "substring not present",
+			substring: "failure-component",
+			want:      false,
+		},
+	}
+	for _, tt := range exactTests {
+		t.Run(tt.name, func(t *testing.T) {
+			exists := HubConditionPresent(testStatusExact, tt.condType)
+			if exists != tt.want {
+				t.Errorf("%s: expected condition to exist: %t, got: %t", tt.name, tt.want, exists)
+			}
+		})
+	}
+
+	for _, tt := range substringTests {
+		t.Run(tt.name, func(t *testing.T) {
+			exists := HubConditionPresentWithSubstring(testStatusSubstring, tt.substring)
+			if exists != tt.want {
+				t.Errorf("%s: expected condition to exist: %t, got: %t", tt.name, tt.want, exists)
+			}
+		})
+	}
+}
+
+func TestRemoveHubCondition(t *testing.T) {
+	tests := []struct {
+		name     string
+		status   *operatorsv1.MultiClusterHubStatus
+		condType operatorsv1.HubConditionType
+		want     *operatorsv1.MultiClusterHubStatus
+	}{
+		{
+			name: "empty status",
+
+			status:   &operatorsv1.MultiClusterHubStatus{},
+			condType: operatorsv1.Progressing,
+
+			want: &operatorsv1.MultiClusterHubStatus{},
+		},
+		{
+			name: "remove conditions",
+
+			status:   &operatorsv1.MultiClusterHubStatus{HubConditions: []operatorsv1.HubCondition{new}},
+			condType: operatorsv1.Progressing,
+
+			want: &operatorsv1.MultiClusterHubStatus{},
+		},
+		{
+			name: "don't remove condition",
+
+			status:   &operatorsv1.MultiClusterHubStatus{HubConditions: []operatorsv1.HubCondition{new}},
+			condType: operatorsv1.Complete,
+
+			want: &operatorsv1.MultiClusterHubStatus{HubConditions: []operatorsv1.HubCondition{new}},
+		}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			RemoveHubCondition(tt.status, tt.condType)
+			if !reflect.DeepEqual(tt.status, tt.want) {
+				t.Errorf("latestHelmReleaseCondition() = %v, want %v", tt.status, tt.want)
+			}
+		})
+	}
+}
+
+func TestCalculateStatus_RemovesStaleProgressingCondition(t *testing.T) {
+	// This test directly calls calculateStatus() to verify the fix at status.go:187
+	// where RemoveHubCondition(&status, operatorsv1.Progressing) is called when
+	// all components are successful and hub is Complete.
+
+	registerScheme()
+	ctx := context.TODO()
+
+	// Create MCE for version compliance check. This test suite defaults to community mode
+	// (no OPERATOR_PACKAGE env var set), so the version must satisfy RequiredCommunityMCEVersion
+	// (see TestCalculateMCEVersionCompliance) for calculateStatus to consider MCE compliant.
+	mce := &mcev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "multiclusterengine",
+			Labels: map[string]string{
+				multiclusterengineutils.MCEManagedByLabel: "true",
+			},
+		},
+		Status: mcev1.MultiClusterEngineStatus{
+			CurrentVersion: version.RequiredCommunityMCEVersion,
+			Conditions: []mcev1.MultiClusterEngineCondition{
+				{
+					Type:    mcev1.MultiClusterEngineAvailable,
+					Status:  metav1.ConditionTrue,
+					Reason:  "Available",
+					Message: "MCE is available",
+				},
+			},
+		},
+	}
+
+	if err := recon.Client.Create(ctx, mce); err != nil {
+		t.Fatalf("failed to create MCE: %v", err)
+	}
+	defer func() {
+		if err := recon.Client.Delete(ctx, mce); err != nil {
+			t.Errorf("failed to delete MCE: %v", err)
+		}
+	}()
+
+	// Convert MCE to unstructured for allCRs map
+	mceUnstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(mce)
+	if err != nil {
+		t.Fatalf("failed to convert MCE to unstructured: %v", err)
+	}
+	mceUnstructured := &unstructured.Unstructured{Object: mceUnstructuredObj}
+
+	// Create hub with stale Progressing condition and minimal config
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "multiclusterhub",
+			Namespace: "open-cluster-management",
+		},
+		Spec: operatorsv1.MultiClusterHubSpec{
+			DisableHubSelfManagement: true, // Disable local-cluster requirement
+		},
+		Status: operatorsv1.MultiClusterHubStatus{
+			CurrentVersion: version.Version,
+			HubConditions: []operatorsv1.HubCondition{
+				{
+					Type:    operatorsv1.Progressing,
+					Status:  metav1.ConditionFalse,
+					Reason:  DeployFailedReason,
+					Message: "Stale progressing condition from previous failure",
+				},
+			},
+		},
+	}
+
+	// Prepare inputs for calculateStatus
+	// Empty deployments list - with DisableHubSelfManagement, only MCE is required
+	allDeps := []*appsv1.Deployment{}
+	allCRs := map[string]*unstructured.Unstructured{
+		"mce": mceUnstructured,
+	}
+
+	// Call calculateStatus - this should trigger the fix at line 187
+	newStatus := recon.calculateStatus(ctx, hub, allDeps, allCRs, false, false)
+
+	// Verify that the stale Progressing condition has been removed
+	if HubConditionPresent(newStatus, operatorsv1.Progressing) {
+		t.Error("Expected calculateStatus to remove stale Progressing condition, but it's still present")
+		for i, cond := range newStatus.HubConditions {
+			t.Logf("Condition[%d]: Type=%s, Status=%s, Reason=%s", i, cond.Type, cond.Status, cond.Reason)
+		}
+	}
+
+	// Verify Complete condition is set
+	completeCondition := GetHubCondition(newStatus, operatorsv1.Complete)
+	if completeCondition == nil {
+		t.Error("Expected Complete condition to be set by calculateStatus")
+		t.Logf("Components: %+v", newStatus.Components)
+		for name, comp := range newStatus.Components {
+			t.Logf("Component %s: Available=%v, Status=%s", name, comp.Available, comp.Status)
+		}
+	} else {
+		if completeCondition.Status != metav1.ConditionTrue {
+			t.Errorf("Expected Complete condition status to be True, got %v", completeCondition.Status)
+		}
+		if completeCondition.Reason != ComponentsAvailableReason {
+			t.Errorf("Expected Complete condition reason to be %s, got %s", ComponentsAvailableReason, completeCondition.Reason)
+		}
+
+		// Verify phase would be Running (not stuck in Pending)
+		phase := aggregatePhase(newStatus)
+		if phase != operatorsv1.HubRunning {
+			t.Errorf("Expected phase to be HubRunning after fix, got %v", phase)
+		}
+	}
+}
+
+// TestCalculateStatus_WaitingForMCEUpgrade verifies the fix for ACM-8659: when MCH's own
+// components are healthy but MultiClusterEngine has not reached the required version, `oc get
+// mch` should report a distinct Waiting phase and an actionable message instead of Running with
+// a generic "All hub components ready" message.
+func TestCalculateStatus_WaitingForMCEUpgrade(t *testing.T) {
+	registerScheme()
+	ctx := context.TODO()
+
+	// This test suite defaults to community mode (no OPERATOR_PACKAGE env var set), so use a
+	// version that satisfies neither RequiredCommunityMCEVersion nor RequiredMCEVersion.
+	mce := &mcev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "multiclusterengine",
+			Labels: map[string]string{
+				multiclusterengineutils.MCEManagedByLabel: "true",
+			},
+		},
+		Status: mcev1.MultiClusterEngineStatus{
+			CurrentVersion: "0.9.0",
+			Conditions: []mcev1.MultiClusterEngineCondition{
+				{
+					Type:    mcev1.MultiClusterEngineAvailable,
+					Status:  metav1.ConditionTrue,
+					Reason:  "Available",
+					Message: "MCE is available",
+				},
+			},
+		},
+	}
+
+	if err := recon.Client.Create(ctx, mce); err != nil {
+		t.Fatalf("failed to create MCE: %v", err)
+	}
+	defer func() {
+		if err := recon.Client.Delete(ctx, mce); err != nil {
+			t.Errorf("failed to delete MCE: %v", err)
+		}
+	}()
+
+	mceUnstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(mce)
+	if err != nil {
+		t.Fatalf("failed to convert MCE to unstructured: %v", err)
+	}
+	mceUnstructured := &unstructured.Unstructured{Object: mceUnstructuredObj}
+
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "multiclusterhub",
+			Namespace: "open-cluster-management",
+		},
+		Spec: operatorsv1.MultiClusterHubSpec{
+			DisableHubSelfManagement: true, // Disable local-cluster requirement
+		},
+		Status: operatorsv1.MultiClusterHubStatus{
+			CurrentVersion: version.Version,
+		},
+	}
+
+	allDeps := []*appsv1.Deployment{}
+	allCRs := map[string]*unstructured.Unstructured{
+		"mce": mceUnstructured,
+	}
+
+	newStatus := recon.calculateStatus(ctx, hub, allDeps, allCRs, false, false)
+
+	if newStatus.Phase != operatorsv1.HubWaitingForMCE {
+		t.Errorf("Expected phase to be %s, got %s", operatorsv1.HubWaitingForMCE, newStatus.Phase)
+	}
+
+	waitingCondition := GetHubCondition(newStatus, operatorsv1.Progressing)
+	if waitingCondition == nil {
+		t.Fatal("Expected a Progressing condition describing the MCE wait, got none")
+	}
+	if waitingCondition.Reason != WaitingForMCEUpgradeReason {
+		t.Errorf("Expected condition reason %s, got %s", WaitingForMCEUpgradeReason, waitingCondition.Reason)
+	}
+	wantMessage := fmt.Sprintf(
+		"Waiting for MultiClusterEngine to upgrade to %s (current: 0.9.0)", version.RequiredCommunityMCEVersion)
+	if waitingCondition.Message != wantMessage {
+		t.Errorf("Expected condition message %q, got %q", wantMessage, waitingCondition.Message)
+	}
+
+	if completeCondition := GetHubCondition(newStatus, operatorsv1.Complete); completeCondition != nil {
+		t.Errorf("Expected no Complete condition while waiting for MCE, got %+v", completeCondition)
+	}
+}
+
+// TestCalculateStatus_ClearsStaleMCEWaitConditionWhenReconciling verifies that once MCE becomes
+// compliant, a previously-set WaitingForMCEUpgrade condition is cleared even if the hub hasn't
+// finished reconciling its other components yet (i.e. calculateStatus takes the generic "hub is
+// reconciling" branch, not the fully-successful branch). Without this fix, the stale condition
+// would linger -- via the Type-only HubConditionPresent(Progressing) check -- until the hub
+// reached full Running, or indefinitely if some other component never became ready.
+func TestCalculateStatus_ClearsStaleMCEWaitConditionWhenReconciling(t *testing.T) {
+	registerScheme()
+	ctx := context.TODO()
+
+	// This test suite defaults to community mode, so RequiredCommunityMCEVersion satisfies itself
+	// (see TestCalculateMCEVersionCompliance) -- MCE is compliant.
+	mce := &mcev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "multiclusterengine",
+			Labels: map[string]string{
+				multiclusterengineutils.MCEManagedByLabel: "true",
+			},
+		},
+		Status: mcev1.MultiClusterEngineStatus{
+			CurrentVersion: version.RequiredCommunityMCEVersion,
+			Conditions: []mcev1.MultiClusterEngineCondition{
+				{
+					Type:    mcev1.MultiClusterEngineAvailable,
+					Status:  metav1.ConditionTrue,
+					Reason:  "Available",
+					Message: "MCE is available",
+				},
+			},
+		},
+	}
+	if err := recon.Client.Create(ctx, mce); err != nil {
+		t.Fatalf("failed to create MCE: %v", err)
+	}
+	defer func() {
+		if err := recon.Client.Delete(ctx, mce); err != nil {
+			t.Errorf("failed to delete MCE: %v", err)
+		}
+	}()
+
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "multiclusterhub",
+			Namespace: "open-cluster-management",
+		},
+		Spec: operatorsv1.MultiClusterHubSpec{
+			DisableHubSelfManagement: true, // Disable local-cluster requirement
+		},
+		Status: operatorsv1.MultiClusterHubStatus{
+			CurrentVersion: version.Version,
+			// Simulates a condition set by a prior reconcile while MCE was still non-compliant.
+			HubConditions: []operatorsv1.HubCondition{
+				{
+					Type:   operatorsv1.Progressing,
+					Status: metav1.ConditionTrue,
+					Reason: WaitingForMCEUpgradeReason,
+					Message: fmt.Sprintf(
+						"Waiting for MultiClusterEngine to upgrade to %s (current: none)", version.RequiredCommunityMCEVersion),
+				},
+			},
+		},
+	}
+
+	// Deliberately omit the "mce" entry from allCRs (and pass empty allDeps), and pass
+	// ocpConsole=true so the always-Available console fallback isn't injected either. With no
+	// components enabled on this bare hub, the resulting component map is empty, so
+	// allComponentsSuccessful() returns false, keeping the hub NOT fully successful. This
+	// exercises the generic "hub is reconciling" branch rather than the fully-successful
+	// branch, which already clears Progressing on its own (see
+	// TestCalculateStatus_RemovesStaleProgressingCondition).
+	allDeps := []*appsv1.Deployment{}
+	allCRs := map[string]*unstructured.Unstructured{}
+
+	newStatus := recon.calculateStatus(ctx, hub, allDeps, allCRs, true, false)
+
+	if newStatus.Phase == operatorsv1.HubWaitingForMCE {
+		t.Errorf("Expected phase not to be %s once MCE is compliant, got %s", operatorsv1.HubWaitingForMCE, newStatus.Phase)
+	}
+
+	if waiting := GetHubCondition(newStatus, operatorsv1.Progressing); waiting != nil && waiting.Reason == WaitingForMCEUpgradeReason {
+		t.Errorf("Expected stale WaitingForMCEUpgrade condition to be cleared, but it's still present with message %q", waiting.Message)
+	}
+
+	reconciling := GetHubCondition(newStatus, operatorsv1.Progressing)
+	if reconciling == nil {
+		t.Fatal("Expected a Progressing condition describing hub reconciliation to replace the cleared MCE-wait condition, got none")
+	}
+	if reconciling.Reason != ReconcileReason {
+		t.Errorf("Expected condition reason %s, got %s", ReconcileReason, reconciling.Reason)
+	}
+}
+
+// TestMCEUpgradeWaitCondition unit tests the extracted helper in isolation, independent of a
+// live client or the rest of calculateStatus.
+func TestMCEUpgradeWaitCondition(t *testing.T) {
+	tests := []struct {
+		name            string
+		compliance      *operatorsv1.MCEVersionComplianceStatus
+		isCommunityMode bool
+		wantNil         bool
+		wantMessage     string
+	}{
+		{
+			name:       "nil compliance returns nil",
+			compliance: nil,
+			wantNil:    true,
+		},
+		{
+			name:       "compliant MCE returns nil",
+			compliance: &operatorsv1.MCEVersionComplianceStatus{IsCompliant: true, CurrentVersion: "5.0.0"},
+			wantNil:    true,
+		},
+		{
+			name:            "non-compliant MCE in production mode",
+			compliance:      &operatorsv1.MCEVersionComplianceStatus{IsCompliant: false, CurrentVersion: "4.9.0"},
+			isCommunityMode: false,
+			wantMessage: fmt.Sprintf(
+				"Waiting for MultiClusterEngine to upgrade to %s (current: 4.9.0)", version.RequiredMCEVersion),
+		},
+		{
+			name:            "non-compliant MCE in community mode",
+			compliance:      &operatorsv1.MCEVersionComplianceStatus{IsCompliant: false, CurrentVersion: "0.9.0"},
+			isCommunityMode: true,
+			wantMessage: fmt.Sprintf(
+				"Waiting for MultiClusterEngine to upgrade to %s (current: 0.9.0)", version.RequiredCommunityMCEVersion),
+		},
+		{
+			name:            "non-compliant MCE with no current version reports 'none'",
+			compliance:      &operatorsv1.MCEVersionComplianceStatus{IsCompliant: false, CurrentVersion: ""},
+			isCommunityMode: false,
+			wantMessage: fmt.Sprintf(
+				"Waiting for MultiClusterEngine to upgrade to %s (current: none)", version.RequiredMCEVersion),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := mceUpgradeWaitCondition(tt.compliance, tt.isCommunityMode)
+			if tt.wantNil {
+				if got != nil {
+					t.Errorf("Expected nil condition, got %+v", got)
+				}
+				return
+			}
+			if got == nil {
+				t.Fatal("Expected a non-nil condition, got nil")
+			}
+			if got.Type != operatorsv1.Progressing {
+				t.Errorf("Expected condition type %s, got %s", operatorsv1.Progressing, got.Type)
+			}
+			if got.Reason != WaitingForMCEUpgradeReason {
+				t.Errorf("Expected condition reason %s, got %s", WaitingForMCEUpgradeReason, got.Reason)
+			}
+			if got.Message != tt.wantMessage {
+				t.Errorf("Expected message %q, got %q", tt.wantMessage, got.Message)
+			}
+		})
+	}
+}
+
+// Test_calculateStatus_PreservesSpecificProgressingReason verifies that
+// calculateStatus does NOT downgrade an already-present, specific Progressing
+// reason (e.g. WaitingForMCEReason) to a generic message while the hub is
+// still not successful. Regression test for a bug where the "else" branch
+// unconditionally rewrote any existing WaitingForMCEReason condition to a
+// generic "Waiting for components to become ready." message on the very same
+// reconcile it was set, making the specific reason effectively unobservable.
+//
+// MCE is seeded as version-compliant so the MCE-upgrade-wait branch (added by
+// ACM-8659, which takes priority over this logic when MCE hasn't reached the
+// required version) doesn't apply here — this test is specifically about the
+// "hub is otherwise still reconciling" branch not clobbering a more specific
+// reason already set by an earlier stage (e.g. waitForMCEReady itself, before
+// MCE reports a version at all).
+func Test_calculateStatus_PreservesSpecificProgressingReason(t *testing.T) {
+	registerScheme()
+	ctx := context.TODO()
+
+	mce := &mcev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "multiclusterengine",
+			Labels: map[string]string{
+				multiclusterengineutils.MCEManagedByLabel: "true",
+			},
+		},
+		Status: mcev1.MultiClusterEngineStatus{
+			CurrentVersion: version.RequiredCommunityMCEVersion,
+			Conditions: []mcev1.MultiClusterEngineCondition{
+				{
+					Type:    mcev1.MultiClusterEngineAvailable,
+					Status:  metav1.ConditionTrue,
+					Reason:  "Available",
+					Message: "MCE is available",
+				},
+			},
+		},
+	}
+	if err := recon.Client.Create(ctx, mce); err != nil {
+		t.Fatalf("failed to create MCE: %v", err)
+	}
+	defer func() {
+		if err := recon.Client.Delete(ctx, mce); err != nil {
+			t.Errorf("failed to delete MCE: %v", err)
+		}
+	}()
+
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-mch-preserve-progress",
+			Namespace: "open-cluster-management",
+		},
+		Spec: operatorsv1.MultiClusterHubSpec{
+			DisableHubSelfManagement: true,
+		},
+		Status: operatorsv1.MultiClusterHubStatus{
+			HubConditions: []operatorsv1.HubCondition{
+				{
+					Type:    operatorsv1.Progressing,
+					Status:  metav1.ConditionTrue,
+					Reason:  WaitingForMCEReason,
+					Message: "Waiting for MultiClusterEngine multiclusterengine to report version",
+				},
+			},
+		},
+	}
+
+	// ocpConsole=true so no components are tracked (DisableHubSelfManagement leaves the
+	// component list otherwise empty), guaranteeing allComponentsSuccessful() is false here.
+	newStatus := recon.calculateStatus(ctx, hub, []*appsv1.Deployment{},
+		map[string]*unstructured.Unstructured{}, true, false)
+
+	condition := GetHubCondition(newStatus, operatorsv1.Progressing)
+	if condition == nil {
+		t.Fatal("expected Progressing condition to remain present")
+	}
+	if condition.Reason != WaitingForMCEReason {
+		t.Errorf("expected specific WaitingForMCE reason to be preserved, got reason %q (message: %q)",
+			condition.Reason, condition.Message)
+	}
+	if condition.Message != "Waiting for MultiClusterEngine multiclusterengine to report version" {
+		t.Errorf("expected original message to be preserved, got %q", condition.Message)
+	}
+}
+
+// Test_calculateStatus_SetsCompleteFalse_OnFreshInstall verifies that a
+// Complete condition is set to False from the very first reconcile of a
+// fresh install (not just once a Complete condition already existed from a
+// prior success), so consumers always have a stable Complete condition to
+// observe instead of its absence.
+//
+// MCE is seeded as version-compliant so the MCE-upgrade-wait branch (added by
+// ACM-8659) doesn't take priority and remove the Complete condition before
+// this logic gets to run — this test is specifically about the "otherwise
+// still reconciling" branch always surfacing Complete:False.
+func Test_calculateStatus_SetsCompleteFalse_OnFreshInstall(t *testing.T) {
+	registerScheme()
+	ctx := context.TODO()
+
+	mce := &mcev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "multiclusterengine",
+			Labels: map[string]string{
+				multiclusterengineutils.MCEManagedByLabel: "true",
+			},
+		},
+		Status: mcev1.MultiClusterEngineStatus{
+			CurrentVersion: version.RequiredCommunityMCEVersion,
+			Conditions: []mcev1.MultiClusterEngineCondition{
+				{
+					Type:    mcev1.MultiClusterEngineAvailable,
+					Status:  metav1.ConditionTrue,
+					Reason:  "Available",
+					Message: "MCE is available",
+				},
+			},
+		},
+	}
+	if err := recon.Client.Create(ctx, mce); err != nil {
+		t.Fatalf("failed to create MCE: %v", err)
+	}
+	defer func() {
+		if err := recon.Client.Delete(ctx, mce); err != nil {
+			t.Errorf("failed to delete MCE: %v", err)
+		}
+	}()
+
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-mch-fresh-install",
+			Namespace: "open-cluster-management",
+		},
+		Spec: operatorsv1.MultiClusterHubSpec{
+			DisableHubSelfManagement: true,
+		},
+	}
+
+	// ocpConsole=true so no components are tracked (DisableHubSelfManagement leaves the
+	// component list otherwise empty), guaranteeing allComponentsSuccessful() is false here.
+	newStatus := recon.calculateStatus(ctx, hub, []*appsv1.Deployment{},
+		map[string]*unstructured.Unstructured{}, true, false)
+
+	condition := GetHubCondition(newStatus, operatorsv1.Complete)
+	if condition == nil {
+		t.Fatal("expected Complete condition to be present even on a fresh install with no prior Complete condition")
+	}
+	if condition.Status != metav1.ConditionFalse {
+		t.Errorf("expected Complete status False, got %v", condition.Status)
+	}
+	if condition.Reason != ComponentsUnavailableReason {
+		t.Errorf("expected reason %q, got %q", ComponentsUnavailableReason, condition.Reason)
+	}
+}
+
+// Test_calculateStatus_NoCompleteCondition_WhenPaused verifies that a paused
+// hub does not get a Complete:False condition added, mirroring the existing
+// pause handling in the successful branch.
+func Test_calculateStatus_NoCompleteCondition_WhenPaused(t *testing.T) {
+	registerScheme()
+	ctx := context.TODO()
+
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-mch-paused",
+			Namespace: "open-cluster-management",
+			Annotations: map[string]string{
+				utils.AnnotationMCHPause: "true",
+			},
+		},
+		Spec: operatorsv1.MultiClusterHubSpec{
+			DisableHubSelfManagement: true,
+		},
+	}
+
+	newStatus := recon.calculateStatus(ctx, hub, []*appsv1.Deployment{},
+		map[string]*unstructured.Unstructured{}, true, false)
+
+	if condition := GetHubCondition(newStatus, operatorsv1.Complete); condition != nil {
+		t.Errorf("expected no Complete condition while paused, got: %+v", condition)
+	}
+}
+
+// Test_calculateStatus_SkipsComponentTracking_WhenBeingDeleted verifies that
+// while the hub is marked for deletion, calculateStatus doesn't recompute
+// install-oriented component tracking or Progressing/Complete conditions
+// (which would otherwise produce misleading messages like "component is now
+// available" for something mid-termination, or a contradictory
+// "Not all hub components ready." alongside the accurate Terminating
+// condition finalization already set) — it just reports the phase and
+// otherwise leaves the existing status untouched. It also verifies that any
+// stale Progressing/Complete conditions left over from before deletion
+// started (e.g. "Complete: True, All hub components ready." from when the
+// hub was last Running) are stripped, rather than left sitting there
+// actively wrong during active teardown.
+func Test_calculateStatus_SkipsComponentTracking_WhenBeingDeleted(t *testing.T) {
+	registerScheme()
+	ctx := context.TODO()
+
+	now := metav1.Now()
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              "test-mch-deleting",
+			Namespace:         "open-cluster-management",
+			DeletionTimestamp: &now,
+			Finalizers:        []string{"test.io/keep-alive"},
+		},
+		Status: operatorsv1.MultiClusterHubStatus{
+			CurrentVersion: "5.0.0",
+			HubConditions: []operatorsv1.HubCondition{
+				// Stale, left over from before deletion started.
+				{
+					Type:    operatorsv1.Complete,
+					Status:  metav1.ConditionTrue,
+					Reason:  ComponentsAvailableReason,
+					Message: "All hub components ready.",
+				},
+				{
+					Type:    operatorsv1.Terminating,
+					Status:  metav1.ConditionTrue,
+					Reason:  DeleteTimestampReason,
+					Message: "Waiting for MultiClusterEngine multiclusterengine to terminate",
+				},
+			},
+		},
+	}
+
+	newStatus := recon.calculateStatus(ctx, hub, []*appsv1.Deployment{},
+		map[string]*unstructured.Unstructured{}, true, false)
+
+	if newStatus.Phase != operatorsv1.HubUninstalling {
+		t.Errorf("expected phase %q, got %q", operatorsv1.HubUninstalling, newStatus.Phase)
+	}
+	if len(newStatus.Components) != 0 {
+		t.Errorf("expected no component tracking during deletion, got %d components", len(newStatus.Components))
+	}
+	if condition := GetHubCondition(newStatus, operatorsv1.Progressing); condition != nil {
+		t.Errorf("expected no Progressing condition to be computed during deletion, got: %+v", condition)
+	}
+	if condition := GetHubCondition(newStatus, operatorsv1.Complete); condition != nil {
+		t.Errorf("expected no Complete condition to be computed during deletion, got: %+v", condition)
+	}
+	terminating := GetHubCondition(newStatus, operatorsv1.Terminating)
+	if terminating == nil {
+		t.Fatal("expected the existing Terminating condition to be preserved")
+	}
+	if terminating.Message != "Waiting for MultiClusterEngine multiclusterengine to terminate" {
+		t.Errorf("expected existing Terminating message to be preserved unchanged, got %q", terminating.Message)
+	}
+}
+
+// Test_syncHubStatus_HandlesNotFound verifies that when the MultiClusterHub
+// object no longer exists by the time syncHubStatus tries to persist its
+// computed status (e.g. its last finalizer was just removed, triggering
+// immediate garbage collection), the resulting NotFound error from
+// Status().Update() is treated as expected/benign rather than surfaced as a
+// reconciler error.
+func Test_syncHubStatus_HandlesNotFound(t *testing.T) {
+	registerScheme()
+	r := newTestReconciler() // empty client: hub was never created server-side
+
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-mch-notfound",
+			Namespace: "open-cluster-management",
+		},
+		Spec: operatorsv1.MultiClusterHubSpec{
+			DisableHubSelfManagement: true,
+		},
+	}
+	original := hub.Status.DeepCopy()
+
+	// Mutate in-memory status so it differs from `original`, forcing syncHubStatus
+	// past the "status hasn't changed" shortcut and into the actual Update() call.
+	hub.Status.HubConditions = []operatorsv1.HubCondition{
+		{Type: operatorsv1.Terminating, Status: metav1.ConditionTrue, Reason: DeleteTimestampReason},
+	}
+
+	result, err := r.syncHubStatus(context.TODO(), hub, original, []*appsv1.Deployment{},
+		map[string]*unstructured.Unstructured{}, true, false)
+	if err != nil {
+		t.Fatalf("expected no error when MultiClusterHub no longer exists, got: %v", err)
+	}
+	if result != (reconcile.Result{}) {
+		t.Errorf("expected empty result, got: %+v", result)
+	}
+}
+
+// Test_syncHubStatus_SkipsUpdate_WhenStatusUnchanged is a regression test for
+// two compounding bugs in the "status hasn't changed" shortcut:
+//  1. It compared m.Status (a MultiClusterHubStatus value) against original
+//     (a *MultiClusterHubStatus pointer) via reflect.DeepEqual without
+//     dereferencing. Because the two arguments had different types,
+//     DeepEqual always returned false regardless of content.
+//  2. Even after dereferencing, it compared the wrong operand: m.Status
+//     (which calculateStatus() never mutates) against original, instead of
+//     the freshly computed newStatus against original. Since almost all of
+//     the condition-setting in this codebase happens by mutating m.Status
+//     directly during Reconcile() (not via calculateStatus()'s return
+//     value), m.Status equals original in the common case, so the shortcut
+//     would trigger and silently skip persisting newStatus even when it
+//     legitimately differs (e.g. a component's availability or the overall
+//     phase changed).
+//
+// This verifies the shortcut now actually compares newStatus against
+// original, and correctly skips the Update() call only when they match.
+func Test_syncHubStatus_SkipsUpdate_WhenStatusUnchanged(t *testing.T) {
+	registerScheme()
+
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-mch-unchanged",
+			Namespace: "open-cluster-management",
+		},
+		Spec: operatorsv1.MultiClusterHubSpec{
+			DisableHubSelfManagement: true,
+		},
+	}
+
+	// Seed hub.Status with exactly what calculateStatus() would compute for it, so the
+	// upcoming syncHubStatus call's freshly recomputed status matches what's already there.
+	seedReconciler := newTestReconciler()
+	hub.Status = seedReconciler.calculateStatus(context.TODO(), hub, []*appsv1.Deployment{},
+		map[string]*unstructured.Unstructured{}, true, false)
+	original := hub.Status.DeepCopy()
+
+	updateCalled := false
+	r := newTestReconcilerWithInterceptor(interceptor.Funcs{
+		SubResourceUpdate: func(ctx context.Context, c client.Client, subResourceName string, obj client.Object,
+			opts ...client.SubResourceUpdateOption) error {
+			updateCalled = true
+			return c.SubResource(subResourceName).Update(ctx, obj, opts...)
+		},
+	})
+
+	_, err := r.syncHubStatus(context.TODO(), hub, original, []*appsv1.Deployment{},
+		map[string]*unstructured.Unstructured{}, true, false)
+	if err != nil {
+		t.Fatalf("syncHubStatus() unexpected error: %v", err)
+	}
+	if updateCalled {
+		t.Error("expected Status().Update() to be skipped since nothing changed, but it was called")
+	}
+}
+
+func Test_aggregatePhase(t *testing.T) {
+	available := operatorsv1.StatusCondition{Type: "Available", Status: metav1.ConditionTrue, Available: true}
+	unavailable := operatorsv1.StatusCondition{Type: "Available", Status: metav1.ConditionFalse}
+
+	tests := []struct {
+		name   string
+		status operatorsv1.MultiClusterHubStatus
+		want   operatorsv1.HubPhaseType
+	}{
+		{
+			name: "Running hub with previous version",
+			status: operatorsv1.MultiClusterHubStatus{
+				CurrentVersion: "1.0.0",
+				Components: map[string]operatorsv1.StatusCondition{
+					"foo": available,
+				},
+			},
+			want: operatorsv1.HubRunning,
+		},
+		{
+			name: "Running hub with current version",
+			status: operatorsv1.MultiClusterHubStatus{
+				CurrentVersion: version.Version,
+				Components: map[string]operatorsv1.StatusCondition{
+					"foo": available,
+				},
+			},
+			want: operatorsv1.HubRunning,
+		},
+		{
+			name: "Progressing hub with previous version",
+			status: operatorsv1.MultiClusterHubStatus{
+				CurrentVersion: "1.0.0",
+				Components: map[string]operatorsv1.StatusCondition{
+					"foo": unavailable,
+				},
+			},
+			want: operatorsv1.HubUpdating,
+		},
+		{
+			name: "Progressing hub with current version",
+			status: operatorsv1.MultiClusterHubStatus{
+				CurrentVersion: version.Version,
+				Components: map[string]operatorsv1.StatusCondition{
+					"foo": unavailable,
+				},
+			},
+			want: operatorsv1.HubPending,
+		},
+		{
+			name: "Progressing hub with no version",
+			status: operatorsv1.MultiClusterHubStatus{
+				CurrentVersion: "",
+				Components: map[string]operatorsv1.StatusCondition{
+					"foo": unavailable,
+				},
+			},
+			want: operatorsv1.HubInstalling,
+		},
+		{
+			name: "Running hub with no version",
+			status: operatorsv1.MultiClusterHubStatus{
+				CurrentVersion: "",
+				Components: map[string]operatorsv1.StatusCondition{
+					"foo": available,
+				},
+			},
+			want: operatorsv1.HubRunning,
+		},
+		{
+			name: "Running hub with paused",
+			status: operatorsv1.MultiClusterHubStatus{
+				CurrentVersion: "",
+				Components: map[string]operatorsv1.StatusCondition{
+					"foo": available,
+				},
+				HubConditions: []operatorsv1.HubCondition{
+					{
+						Message: "Multiclusterhub is paused",
+						Reason:  PausedReason,
+						Status:  metav1.ConditionUnknown,
+						Type:    operatorsv1.Progressing,
+					},
+				},
+			},
+			want: operatorsv1.HubPaused,
+		},
+		{
+			name: "Hub with stale Progressing condition (status=False) should return Pending without fix",
+			status: operatorsv1.MultiClusterHubStatus{
+				CurrentVersion: version.Version,
+				Components: map[string]operatorsv1.StatusCondition{
+					"foo": available,
+					"bar": available,
+				},
+				HubConditions: []operatorsv1.HubCondition{
+					{
+						Type:    operatorsv1.Progressing,
+						Status:  metav1.ConditionFalse,
+						Reason:  DeployFailedReason,
+						Message: "Stale progressing condition",
+					},
+				},
+			},
+			want: operatorsv1.HubPending,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := aggregatePhase(tt.status); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("aggregatePhase() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_mapCSV(t *testing.T) {
+	tests := []struct {
+		name string
+		csv  *olmv1alpha1.ClusterServiceVersion
+		want operatorsv1.StatusCondition
+	}{
+		{
+			name: "Successful install",
+			csv: &olmv1alpha1.ClusterServiceVersion{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "advanced-cluster-management.v2.11.0",
+				},
+				Status: olmv1alpha1.ClusterServiceVersionStatus{
+					Conditions: []olmv1alpha1.ClusterServiceVersionCondition{
+						{
+							Phase:   olmv1alpha1.CSVPhaseSucceeded,
+							Message: "Success",
+							Reason:  olmv1alpha1.CSVReasonInstallSuccessful,
+						},
+					},
+				},
+			},
+			want: operatorsv1.StatusCondition{
+				Name:      "advanced-cluster-management.v2.11.0",
+				Kind:      "ClusterServiceVersion",
+				Status:    metav1.ConditionTrue,
+				Reason:    "InstallSucceeded",
+				Message:   "Success",
+				Type:      "Available",
+				Available: true,
+			},
+		},
+		{
+			name: "No status reported",
+			csv: &olmv1alpha1.ClusterServiceVersion{
+				Status: olmv1alpha1.ClusterServiceVersionStatus{},
+			},
+			want: unknownStatus("advanced-cluster-management.v2.11.0", "ClusterServiceVersion"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			csv, err := runtime.DefaultUnstructuredConverter.ToUnstructured(tt.csv)
+			if err != nil {
+				t.Errorf("error converting csv: %v", err)
+			}
+			u := &unstructured.Unstructured{Object: csv}
+			got := mapCSV(u)
+
+			if got.Kind != tt.want.Kind {
+				t.Errorf("mapCSV() = %v, want %v", got, tt.want)
+			}
+			if string(got.Status) != string(tt.want.Status) {
+				t.Errorf("mapCSV() = %v, want %v", got, tt.want)
+			}
+			if got.Reason != tt.want.Reason {
+				t.Errorf("mapCSV() = %v, want %v", got, tt.want)
+			}
+			if got.Message != tt.want.Message {
+				t.Errorf("mapCSV() = %v, want %v", got, tt.want)
+			}
+			if got.Available != tt.want.Available {
+				t.Errorf("mapCSV() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_mapMCE(t *testing.T) {
+	tests := []struct {
+		name string
+		mce  *mcev1.MultiClusterEngine
+		want operatorsv1.StatusCondition
+	}{
+		{
+			name: "Successful install",
+			mce: &mcev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multicluster-engine.v2.6.0",
+				},
+				Status: mcev1.MultiClusterEngineStatus{
+					Conditions: []mcev1.MultiClusterEngineCondition{
+						{
+							Type:    mcev1.MultiClusterEngineAvailable,
+							Status:  metav1.ConditionTrue,
+							Reason:  "Available",
+							Message: "",
+						},
+					},
+				},
+			},
+			want: operatorsv1.StatusCondition{
+				Name:      "multicluster-engine.v2.6.0",
+				Kind:      "MultiClusterEngine",
+				Status:    metav1.ConditionTrue,
+				Reason:    "Available",
+				Message:   "",
+				Type:      "Available",
+				Available: true,
+			},
+		},
+		{
+			name: "No status reported",
+			mce: &mcev1.MultiClusterEngine{
+				Status: mcev1.MultiClusterEngineStatus{
+					Conditions: []mcev1.MultiClusterEngineCondition{},
+				},
+			},
+			want: unknownStatus("multicluster-engine.v2.6.0", "MultiClusterEngine"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mce, err := runtime.DefaultUnstructuredConverter.ToUnstructured(tt.mce)
+			if err != nil {
+				t.Errorf("error converting mce: %v", err)
+			}
+			u := &unstructured.Unstructured{Object: mce}
+			got := mapMultiClusterEngine(u)
+
+			if got.Kind != tt.want.Kind {
+				t.Errorf("mapMultiClusterEngine() = %v, want %v", got, tt.want)
+			}
+			if string(got.Status) != string(tt.want.Status) {
+				t.Errorf("mapMultiClusterEngine() = %v, want %v", got, tt.want)
+			}
+			if got.Reason != tt.want.Reason {
+				t.Errorf("mapMultiClusterEngine() = %v, want %v", got, tt.want)
+			}
+			if got.Message != tt.want.Message {
+				t.Errorf("mapMultiClusterEngine() = %v, want %v", got, tt.want)
+			}
+			if got.Available != tt.want.Available {
+				t.Errorf("mapMultiClusterEngine() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_mapSubscription(t *testing.T) {
+	tests := []struct {
+		name string
+		sub  *olmv1alpha1.Subscription
+		want operatorsv1.StatusCondition
+	}{
+		{
+			name: "Has installPlanRef",
+			sub: &olmv1alpha1.Subscription{
+				Spec: &olmv1alpha1.SubscriptionSpec{
+					InstallPlanApproval: olmv1alpha1.ApprovalManual,
+				},
+				Status: olmv1alpha1.SubscriptionStatus{
+					InstallPlanRef: &corev1.ObjectReference{
+						Kind:      "InstallPlan",
+						Name:      "test",
+						Namespace: "test",
+					},
+					State: olmv1alpha1.SubscriptionState("AtLatestKnown"),
+				},
+			},
+			want: operatorsv1.StatusCondition{
+				Kind:      "Subscription",
+				Status:    metav1.ConditionTrue,
+				Reason:    "AtLatestKnown",
+				Message:   "installPlanApproval: Manual. installPlan: test/test",
+				Type:      "Available",
+				Available: true,
+			},
+		},
+		{
+			name: "No status reported",
+			sub: &olmv1alpha1.Subscription{
+				Status: olmv1alpha1.SubscriptionStatus{},
+			},
+			want: unknownStatus("test", "Subscription"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sub, err := runtime.DefaultUnstructuredConverter.ToUnstructured(tt.sub)
+			if err != nil {
+				t.Errorf("error converting subscription: %v", err)
+			}
+			u := &unstructured.Unstructured{Object: sub}
+			got := mapSubscription(u)
+
+			if got.Kind != tt.want.Kind {
+				t.Errorf("mapSubscription() = %v, want %v", got, tt.want)
+			}
+			if string(got.Status) != string(tt.want.Status) {
+				t.Errorf("mapSubscription() = %v, want %v", got, tt.want)
+			}
+			if got.Reason != tt.want.Reason {
+				t.Errorf("mapSubscription() = %v, want %v", got, tt.want)
+			}
+			if got.Message != tt.want.Message {
+				t.Errorf("mapSubscription() = %v, want %v", got, tt.want)
+			}
+			if got.Available != tt.want.Available {
+				t.Errorf("mapSubscription() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getComponentStatuses(t *testing.T) {
+	mce := &mcev1.MultiClusterEngine{
+		Status: mcev1.MultiClusterEngineStatus{
+			Conditions: []mcev1.MultiClusterEngineCondition{
+				{
+					Type:    mcev1.MultiClusterEngineAvailable,
+					Status:  metav1.ConditionTrue,
+					Reason:  "Available",
+					Message: "",
+				},
+			},
+		},
+	}
+	mceU, err := runtime.DefaultUnstructuredConverter.ToUnstructured(mce)
+	if err != nil {
+		t.Errorf("error converting mce: %v", err)
+	}
+	mceUnstructured := &unstructured.Unstructured{Object: mceU}
+
+	type args struct {
+		hub     *operatorsv1.MultiClusterHub
+		allDeps []*appsv1.Deployment
+		allCRs  map[string]*unstructured.Unstructured
+	}
+	tests := []struct {
+		name string
+		args args
+		want map[string]operatorsv1.StatusCondition
+	}{
+		{
+			name: "1",
+			args: args{
+				hub: &operatorsv1.MultiClusterHub{
+					Spec: operatorsv1.MultiClusterHubSpec{
+						Overrides: &operatorsv1.Overrides{
+							Components: []operatorsv1.ComponentConfig{
+								{
+									Name:    "console",
+									Enabled: true,
+								},
+							},
+						},
+					},
+				},
+				allDeps: []*appsv1.Deployment{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: map[string]string{
+								"meta.helm.sh/release-name": "console-hr",
+							},
+						},
+						Status: appsv1.DeploymentStatus{
+							Conditions: []appsv1.DeploymentCondition{
+								{
+									Type:   appsv1.DeploymentAvailable,
+									Status: corev1.ConditionFalse,
+									Reason: "Available",
+								},
+							},
+						},
+					},
+				},
+				allCRs: map[string]*unstructured.Unstructured{
+					"mce": mceUnstructured,
+				},
+			},
+			want: map[string]operatorsv1.StatusCondition{
+				"local-cluster": unknownStatus("local-cluster", "Component"),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getComponentStatuses(tt.args.hub, tt.args.allDeps, tt.args.allCRs, true, false, ""); len(got) == 0 {
+				t.Errorf("getComponentStatuses() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_ComponentsAreRunning(t *testing.T) {
+	tests := []struct {
+		name   string
+		csv    olmv1alpha1.ClusterServiceVersion
+		deploy appsv1.Deployment
+		mce    mcev1.MultiClusterEngine
+		mch    operatorsv1.MultiClusterHub
+		ns     corev1.Namespace
+		ns2    corev1.Namespace
+		sub    olmv1alpha1.Subscription
+		want   bool
+	}{
+		{
+			name: "should ensure that components are not running",
+			csv: olmv1alpha1.ClusterServiceVersion{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multicluster-engine.v2.6.0",
+					Namespace: "multicluster-engine",
+				},
+			},
+			deploy: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "search-v2-operator",
+					Namespace: "ocm",
+				},
+				Spec: appsv1.DeploymentSpec{
+					Replicas: &replicas,
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "search-v2-operator",
+							Namespace: "ocm",
+						},
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "agent",
+									Image: "quay.io/stolostron/search-v2-operator:latest",
+								},
+							},
+						},
+					},
+				},
+			},
+			mce: mcev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multiclusterengine",
+					Labels: map[string]string{
+						multiclusterengineutils.MCEManagedByLabel: "true",
+					},
+				},
+				Spec: mcev1.MultiClusterEngineSpec{
+					TargetNamespace: "multicluster-engine",
+				},
+			},
+			mch: operatorsv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multiclusterhub",
+					Namespace: "ocm",
+				},
+			},
+			ns: corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "ocm",
+				},
+			},
+			ns2: corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multicluster-engine",
+				},
+			},
+			sub: olmv1alpha1.Subscription{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multicluster-engine",
+					Namespace: "multicluster-engine",
+					Labels: map[string]string{
+						multiclusterengineutils.MCEManagedByLabel: "true",
+					},
+				},
+				Spec: &olmv1alpha1.SubscriptionSpec{
+					Channel:                "stable-2.6",
+					InstallPlanApproval:    "Automatic",
+					CatalogSource:          "multiclusterengine-catalog",
+					CatalogSourceNamespace: "openshift-marketplace",
+					Package:                "multicluster-engine",
+				},
+				Status: olmv1alpha1.SubscriptionStatus{
+					CurrentCSV: "multicluster-engine.v2.6.0",
+				},
+			},
+			want: false,
+		},
+	}
+
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer func() {
+				if err := recon.Client.Delete(context.TODO(), &tt.ns); err != nil {
+					t.Errorf("failed to delete namespace: %v", err)
+				}
+				if err := recon.Client.Delete(context.TODO(), &tt.ns2); err != nil {
+					t.Errorf("failed to delete namespace: %v", err)
+				}
+				if err := recon.Client.Delete(context.TODO(), &tt.mce); err != nil {
+					t.Errorf("failed to delete multiclusterengine: %v", err)
+				}
+			}()
+
+			if err := recon.Client.Create(context.TODO(), &tt.ns); err != nil {
+				t.Errorf("failed to create namespace: %v", err)
+			}
+
+			if err := recon.Client.Create(context.TODO(), &tt.ns2); err != nil {
+				t.Errorf("failed to create namespace: %v", err)
+			}
+
+			if err := recon.Client.Create(context.TODO(), &tt.sub); err != nil {
+				t.Errorf("failed to create subscription: %v", err)
+			}
+
+			if err := recon.Client.Create(context.TODO(), &tt.csv); err != nil {
+				t.Errorf("failed to create clusterserviceversion: %v", err)
+			}
+
+			if err := recon.Client.Create(context.TODO(), &tt.mce); err != nil {
+				t.Errorf("failed to create multiclusterengine: %v", err)
+			}
+
+			if err := recon.Client.Create(context.TODO(), &tt.deploy); err != nil {
+				t.Errorf("failed to create deployment: %v", err)
+			}
+
+			if ok := recon.ComponentsAreRunning(&tt.mch, true, false); ok != tt.want {
+				t.Errorf("failed to ensure that components are running: %v", ok)
+			}
+		})
+	}
+}
+
+func TestCalculateMCEVersionCompliance(t *testing.T) {
+	registerScheme()
+
+	tests := []struct {
+		name            string
+		mce             *mcev1.MultiClusterEngine
+		createMCE       bool
+		expectedStatus  *operatorsv1.MCEVersionComplianceStatus
+		expectCompliant bool
+	}{
+		{
+			name:      "MCE not found",
+			createMCE: false,
+			expectedStatus: &operatorsv1.MCEVersionComplianceStatus{
+				RequiredChannel: "community-1.1",
+			},
+			expectCompliant: false,
+		},
+		{
+			name:      "MCE without current version",
+			createMCE: true,
+			mce: &mcev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multiclusterengine",
+					Labels: map[string]string{
+						multiclusterengineutils.MCEManagedByLabel: "true",
+					},
+				},
+				Status: mcev1.MultiClusterEngineStatus{},
+			},
+			expectedStatus: &operatorsv1.MCEVersionComplianceStatus{
+				RequiredChannel: "community-1.1",
+			},
+			expectCompliant: false,
+		},
+		{
+			name:      "MCE with exact required version",
+			createMCE: true,
+			mce: &mcev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multiclusterengine",
+					Labels: map[string]string{
+						multiclusterengineutils.MCEManagedByLabel: "true",
+					},
+				},
+				Status: mcev1.MultiClusterEngineStatus{
+					CurrentVersion: "1.1.0",
+				},
+			},
+			expectedStatus: &operatorsv1.MCEVersionComplianceStatus{
+				RequiredChannel: "community-1.1",
+				CurrentVersion:  "1.1.0",
+				IsCompliant:     true,
+				Message:         "MCE version 1.1.0 meets channel community-1.1 requirements",
+			},
+			expectCompliant: true,
+		},
+		{
+			name:      "MCE with higher patch version is compliant",
+			createMCE: true,
+			mce: &mcev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multiclusterengine",
+					Labels: map[string]string{
+						multiclusterengineutils.MCEManagedByLabel: "true",
+					},
+				},
+				Status: mcev1.MultiClusterEngineStatus{
+					CurrentVersion: "1.1.3",
+				},
+			},
+			expectedStatus: &operatorsv1.MCEVersionComplianceStatus{
+				RequiredChannel: "community-1.1",
+				CurrentVersion:  "1.1.3",
+				IsCompliant:     true,
+				Message:         "MCE version 1.1.3 meets channel community-1.1 requirements",
+			},
+			expectCompliant: true,
+		},
+		{
+			name:      "MCE with higher minor version is not compliant",
+			createMCE: true,
+			mce: &mcev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multiclusterengine",
+					Labels: map[string]string{
+						multiclusterengineutils.MCEManagedByLabel: "true",
+					},
+				},
+				Status: mcev1.MultiClusterEngineStatus{
+					CurrentVersion: "1.2.0",
+				},
+			},
+			expectedStatus: &operatorsv1.MCEVersionComplianceStatus{
+				RequiredChannel: "community-1.1",
+				CurrentVersion:  "1.2.0",
+				IsCompliant:     false,
+				Message:         "MCE version 1.2.0 does not meet channel community-1.1 requirements",
+			},
+			expectCompliant: false,
+		},
+		{
+			name:      "MCE with higher major version is not compliant",
+			createMCE: true,
+			mce: &mcev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multiclusterengine",
+					Labels: map[string]string{
+						multiclusterengineutils.MCEManagedByLabel: "true",
+					},
+				},
+				Status: mcev1.MultiClusterEngineStatus{
+					CurrentVersion: "2.0.0",
+				},
+			},
+			expectedStatus: &operatorsv1.MCEVersionComplianceStatus{
+				RequiredChannel: "community-1.1",
+				CurrentVersion:  "2.0.0",
+				IsCompliant:     false,
+				Message:         "MCE version 2.0.0 does not meet channel community-1.1 requirements",
+			},
+			expectCompliant: false,
+		},
+		{
+			name:      "MCE with lower version is not compliant",
+			createMCE: true,
+			mce: &mcev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multiclusterengine",
+					Labels: map[string]string{
+						multiclusterengineutils.MCEManagedByLabel: "true",
+					},
+				},
+				Status: mcev1.MultiClusterEngineStatus{
+					CurrentVersion: "0.9.0",
+				},
+			},
+			expectedStatus: &operatorsv1.MCEVersionComplianceStatus{
+				RequiredChannel: "community-1.1",
+				CurrentVersion:  "0.9.0",
+				IsCompliant:     false,
+				Message:         "MCE version 0.9.0 does not meet channel community-1.1 requirements",
+			},
+			expectCompliant: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.TODO()
+
+			// Create MCE if specified
+			if tt.createMCE && tt.mce != nil {
+				if err := recon.Client.Create(ctx, tt.mce); err != nil {
+					t.Fatalf("failed to create MCE: %v", err)
+				}
+				t.Cleanup(func() {
+					if err := recon.Client.Delete(ctx, tt.mce); err != nil {
+						t.Logf("cleanup: failed to delete MCE: %v", err)
+					}
+				})
+			}
+
+			// Test the function
+			result := recon.calculateMCEVersionCompliance(ctx)
+
+			// Verify required channel (this comes from the system)
+			if result.RequiredChannel == "" {
+				t.Errorf("RequiredChannel should not be empty")
+			}
+
+			// Verify current version
+			if result.CurrentVersion != tt.expectedStatus.CurrentVersion {
+				t.Errorf("CurrentVersion = %v, want %v", result.CurrentVersion, tt.expectedStatus.CurrentVersion)
+			}
+
+			// Verify compliance status
+			if result.IsCompliant != tt.expectCompliant {
+				t.Errorf("IsCompliant = %v, want %v", result.IsCompliant, tt.expectCompliant)
+			}
+
+			// Verify message is not empty
+			if result.Message == "" {
+				t.Errorf("Message should not be empty")
+			}
+		})
+	}
+}
+
+func Test_isMinorVersionWithinRange(t *testing.T) {
+	tests := []struct {
+		name       string
+		mceVersion string
+		mchVersion string
+		maxDiff    int
+		want       bool
+	}{
+		{
+			name:       "Exact same version",
+			mceVersion: "2.10.0",
+			mchVersion: "2.10.0",
+			maxDiff:    5,
+			want:       true,
+		},
+		{
+			name:       "MCE one minor version behind",
+			mceVersion: "2.9.0",
+			mchVersion: "2.10.0",
+			maxDiff:    5,
+			want:       true,
+		},
+		{
+			name:       "MCE exactly 5 minor versions behind",
+			mceVersion: "2.5.0",
+			mchVersion: "2.10.0",
+			maxDiff:    5,
+			want:       true,
+		},
+		{
+			name:       "MCE 6 minor versions behind - should fail",
+			mceVersion: "2.4.0",
+			mchVersion: "2.10.0",
+			maxDiff:    5,
+			want:       false,
+		},
+		{
+			name:       "MCE ahead of MCH - should pass",
+			mceVersion: "2.15.0",
+			mchVersion: "2.10.0",
+			maxDiff:    5,
+			want:       true,
+		},
+		{
+			name:       "Empty MCE version",
+			mceVersion: "",
+			mchVersion: "2.10.0",
+			maxDiff:    5,
+			want:       false,
+		},
+		{
+			name:       "Empty MCH version",
+			mceVersion: "2.10.0",
+			mchVersion: "",
+			maxDiff:    5,
+			want:       false,
+		},
+		{
+			name:       "Both empty versions",
+			mceVersion: "",
+			mchVersion: "",
+			maxDiff:    5,
+			want:       false,
+		},
+		{
+			name:       "Invalid MCE version format",
+			mceVersion: "invalid",
+			mchVersion: "2.10.0",
+			maxDiff:    5,
+			want:       false,
+		},
+		{
+			name:       "Invalid MCH version format",
+			mceVersion: "2.10.0",
+			mchVersion: "invalid",
+			maxDiff:    5,
+			want:       false,
+		},
+		{
+			name:       "Zero maxDiff - only exact match",
+			mceVersion: "2.10.0",
+			mchVersion: "2.10.0",
+			maxDiff:    0,
+			want:       true,
+		},
+		{
+			name:       "Zero maxDiff - MCE one behind",
+			mceVersion: "2.9.0",
+			mchVersion: "2.10.0",
+			maxDiff:    0,
+			want:       false,
+		},
+		{
+			name:       "Version with patch differences",
+			mceVersion: "2.10.5",
+			mchVersion: "2.10.0",
+			maxDiff:    5,
+			want:       true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isMinorVersionWithinRange(tt.mceVersion, tt.mchVersion, tt.maxDiff); got != tt.want {
+				t.Errorf("isMinorVersionWithinRange(%s, %s, %d) = %v, want %v",
+					tt.mceVersion, tt.mchVersion, tt.maxDiff, got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_mapClusterExtension(t *testing.T) {
+	tests := []struct {
+		name string
+		ce   *unstructured.Unstructured
+		want operatorsv1.StatusCondition
+	}{
+		{
+			name: "Nil ClusterExtension",
+			ce:   nil,
+			want: operatorsv1.StatusCondition{
+				Name:      "",
+				Kind:      "ClusterExtension",
+				Status:    metav1.ConditionUnknown,
+				Reason:    "No conditions available",
+				Message:   "No conditions available",
+				Type:      "Unknown",
+				Available: false,
+			},
+		},
+		{
+			name: "ClusterExtension with no status",
+			ce: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"metadata": map[string]interface{}{
+						"name": "test-ce",
+					},
+				},
+			},
+			want: operatorsv1.StatusCondition{
+				Name:      "test-ce",
+				Kind:      "ClusterExtension",
+				Status:    metav1.ConditionUnknown,
+				Reason:    "No conditions available",
+				Message:   "No conditions available",
+				Type:      "Unknown",
+				Available: false,
+			},
+		},
+		{
+			name: "ClusterExtension with empty conditions",
+			ce: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"metadata": map[string]interface{}{
+						"name": "test-ce",
+					},
+					"status": map[string]interface{}{
+						"conditions": []interface{}{},
+					},
+				},
+			},
+			want: operatorsv1.StatusCondition{
+				Name:      "test-ce",
+				Kind:      "ClusterExtension",
+				Status:    metav1.ConditionUnknown,
+				Reason:    "No conditions available",
+				Message:   "No conditions available",
+				Type:      "Unknown",
+				Available: false,
+			},
+		},
+		{
+			name: "ClusterExtension with Installed=True condition",
+			ce: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"metadata": map[string]interface{}{
+						"name": "multicluster-engine",
+					},
+					"status": map[string]interface{}{
+						"conditions": []interface{}{
+							map[string]interface{}{
+								"type":    "Installed",
+								"status":  "True",
+								"reason":  "InstallationSucceeded",
+								"message": "Successfully installed",
+							},
+						},
+					},
+				},
+			},
+			want: operatorsv1.StatusCondition{
+				Name:      "multicluster-engine",
+				Kind:      "ClusterExtension",
+				Status:    metav1.ConditionTrue,
+				Reason:    "InstallationSucceeded",
+				Message:   "Successfully installed",
+				Type:      "Available",
+				Available: true,
+			},
+		},
+		{
+			name: "ClusterExtension with Installed=False condition",
+			ce: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"metadata": map[string]interface{}{
+						"name": "multicluster-engine",
+					},
+					"status": map[string]interface{}{
+						"conditions": []interface{}{
+							map[string]interface{}{
+								"type":    "Installed",
+								"status":  "False",
+								"reason":  "InstallationFailed",
+								"message": "Installation failed: dependency error",
+							},
+						},
+					},
+				},
+			},
+			want: operatorsv1.StatusCondition{
+				Name:      "multicluster-engine",
+				Kind:      "ClusterExtension",
+				Status:    metav1.ConditionFalse,
+				Reason:    "InstallationFailed",
+				Message:   "Installation failed: dependency error",
+				Type:      "Available",
+				Available: false,
+			},
+		},
+		{
+			name: "ClusterExtension with bundle info",
+			ce: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"metadata": map[string]interface{}{
+						"name": "multicluster-engine",
+					},
+					"status": map[string]interface{}{
+						"conditions": []interface{}{
+							map[string]interface{}{
+								"type":    "Installed",
+								"status":  "True",
+								"reason":  "InstallationSucceeded",
+								"message": "Operator running",
+							},
+						},
+						"installedBundle": map[string]interface{}{
+							"name":    "multicluster-engine.v2.15.0",
+							"version": "2.15.0",
+						},
+					},
+				},
+			},
+			want: operatorsv1.StatusCondition{
+				Name:      "multicluster-engine",
+				Kind:      "ClusterExtension",
+				Status:    metav1.ConditionTrue,
+				Reason:    "InstallationSucceeded",
+				Message:   "Bundle: multicluster-engine.v2.15.0 (version: 2.15.0). Operator running",
+				Type:      "Available",
+				Available: true,
+			},
+		},
+		{
+			name: "ClusterExtension with no Installed condition - uses first condition",
+			ce: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"metadata": map[string]interface{}{
+						"name": "test-ce",
+					},
+					"status": map[string]interface{}{
+						"conditions": []interface{}{
+							map[string]interface{}{
+								"type":    "Progressing",
+								"status":  "True",
+								"reason":  "Installing",
+								"message": "Installation in progress",
+							},
+						},
+					},
+				},
+			},
+			want: operatorsv1.StatusCondition{
+				Name:      "test-ce",
+				Kind:      "ClusterExtension",
+				Status:    metav1.ConditionTrue,
+				Reason:    "Installing",
+				Message:   "Installation in progress",
+				Type:      "Available",
+				Available: true,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := mapClusterExtension(tt.ce)
+
+			// Compare fields (ignore timestamps)
+			if got.Name != tt.want.Name {
+				t.Errorf("mapClusterExtension() Name = %v, want %v", got.Name, tt.want.Name)
+			}
+			if got.Kind != tt.want.Kind {
+				t.Errorf("mapClusterExtension() Kind = %v, want %v", got.Kind, tt.want.Kind)
+			}
+			if got.Status != tt.want.Status {
+				t.Errorf("mapClusterExtension() Status = %v, want %v", got.Status, tt.want.Status)
+			}
+			if got.Reason != tt.want.Reason {
+				t.Errorf("mapClusterExtension() Reason = %v, want %v", got.Reason, tt.want.Reason)
+			}
+			if got.Message != tt.want.Message {
+				t.Errorf("mapClusterExtension() Message = %v, want %v", got.Message, tt.want.Message)
+			}
+			if got.Type != tt.want.Type {
+				t.Errorf("mapClusterExtension() Type = %v, want %v", got.Type, tt.want.Type)
+			}
+			if got.Available != tt.want.Available {
+				t.Errorf("mapClusterExtension() Available = %v, want %v", got.Available, tt.want.Available)
+			}
+		})
+	}
+}
+
+// mchPhaseValue gathers the acm_mch_phase gauge from the controller-runtime
+// registry and returns the value for one label set.
+func mchPhaseValue(t *testing.T, namespace, name, phase string) float64 {
+	t.Helper()
+
+	families, err := ctrlmetrics.Registry.Gather()
+	if err != nil {
+		t.Fatalf("gather metrics: %v", err)
+	}
+	for _, family := range families {
+		if family.GetName() != mchmetrics.PhaseMetricName {
+			continue
+		}
+		for _, metric := range family.GetMetric() {
+			labels := map[string]string{}
+			for _, label := range metric.GetLabel() {
+				labels[label.GetName()] = label.GetValue()
+			}
+			if labels["namespace"] == namespace && labels["name"] == name && labels["phase"] == phase {
+				return metric.GetGauge().GetValue()
+			}
+		}
+	}
+	return 0
+}
+
+// TestReconcile_PublishesPersistedPhaseBeforeFailing is a regression test for the
+// restart gap: the metric is process-local, so after a restart the gauge is empty
+// until a reconcile reaches syncHubStatus. Reconcile returns early when any of
+// its fallible steps fails (here listing deployments), and a hub that keeps
+// failing those steps would never expose the phase the API server already holds.
+func TestReconcile_PublishesPersistedPhaseBeforeFailing(t *testing.T) {
+	registerScheme()
+
+	const (
+		namespace = "open-cluster-management"
+		name      = "test-mch-phase-early-return"
+	)
+	t.Cleanup(func() { mchmetrics.DeleteMCHMetrics(namespace, name) })
+
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+		Spec: operatorsv1.MultiClusterHubSpec{
+			DisableHubSelfManagement: true,
+		},
+		Status: operatorsv1.MultiClusterHubStatus{Phase: operatorsv1.HubRunning},
+	}
+
+	r := newTestReconcilerWithInterceptor(interceptor.Funcs{
+		List: func(ctx context.Context, c client.WithWatch, list client.ObjectList, opts ...client.ListOption) error {
+			if _, ok := list.(*appsv1.DeploymentList); ok {
+				return fmt.Errorf("simulated list failure")
+			}
+			return c.List(ctx, list, opts...)
+		},
+	}, hub)
+
+	if _, err := r.Reconcile(context.TODO(), ctrl.Request{
+		NamespacedName: types.NamespacedName{Namespace: namespace, Name: name},
+	}); err == nil {
+		t.Fatal("expected Reconcile to fail while listing deployments")
+	}
+
+	if got := mchPhaseValue(t, namespace, name, string(operatorsv1.HubRunning)); got != 1 {
+		t.Errorf("expected persisted phase Running to be published as 1 before the failure, got %v", got)
+	}
+}

@@ -1,0 +1,36 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  annotations:
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
+    policy.open-cluster-management.io/description: "Validate the same authentication is configured for all clusters"
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+  labels:
+    open-cluster-management.io/policy-cnv: virt-rbac
+    velero.io/exclude-from-backup: 'true'
+  name: policy-virt-oauth
+  namespace: open-cluster-management-global-set
+spec:
+  disabled: false
+  hubTemplateOptions:
+    serviceAccountName: policy-hub-oauth
+  policy-templates:
+  - objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: configpolicy-virt-oauth
+      spec:
+        object-templates-raw: |
+          - complianceType: musthave
+            objectDefinition:
+              apiVersion: config.openshift.io/v1
+              kind: OAuth
+              metadata:
+                name: cluster
+              spec:
+                identityProviders: {{ `{{hub (lookup "config.openshift.io/v1" "OAuth" "" "cluster").spec.identityProviders | toJson hub}}` }}
+        remediationAction: inform
+        severity: medium
+  remediationAction: inform

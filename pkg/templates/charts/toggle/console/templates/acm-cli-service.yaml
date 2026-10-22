@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: console-chart-v2
+    chart: "console-chart-{{ .Values.hubconfig.hubVersion }}"
+    component: console
+    subcomponent: acm-cli-downloads
+    release: console
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/name: console-chart
+  name: acm-cli-downloads
+spec:
+  ports:
+    - name: downloads
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+  type: ClusterIP
+  internalTrafficPolicy: Cluster
+  sessionAffinity: None
+  selector:
+    subcomponent: acm-cli-downloads

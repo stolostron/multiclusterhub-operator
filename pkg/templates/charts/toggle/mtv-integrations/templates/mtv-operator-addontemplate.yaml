@@ -1,0 +1,53 @@
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: AddOnTemplate
+metadata:
+  name: mtv-operator
+spec:
+  addonName: mtv-operator
+  agentSpec:
+    manifestConfigs:
+    - resourceIdentifier:
+        group: policy.open-cluster-management.io
+        name: mtv-operator
+        namespace: open-cluster-management-policies
+        resource: operatorpolicies
+      updateStrategy:
+        type: CreateOnly
+    workload:
+      manifests:
+      - apiVersion: policy.open-cluster-management.io/v1beta1
+        kind: OperatorPolicy
+        metadata:
+          name: mtv-operator
+          namespace: open-cluster-management-policies
+        spec:
+          complianceType: musthave
+          operatorGroup:
+            name: openshift-mtv
+            namespace: openshift-mtv
+            targetNamespaces:
+            - openshift-mtv
+          remediationAction: enforce
+          subscription:
+            channel: '{{ .Values.global.mtvOperator.subscription.channel }}'
+            name: '{{ .Values.global.mtvOperator.subscription.name }}'
+            namespace: '{{ .Values.global.mtvOperator.subscription.namespace }}'
+            source: '{{ .Values.global.mtvOperator.subscription.source }}'
+            sourceNamespace: '{{ .Values.global.mtvOperator.subscription.sourceNamespace }}'
+            startingCSV: '{{ .Values.global.mtvOperator.subscription.startingCSV }}'
+          upgradeApproval: '{{ .Values.global.mtvOperator.upgradeApproval }}'
+      - apiVersion: forklift.konveyor.io/v1beta1
+        kind: ForkliftController
+        metadata:
+          name: forklift-controller
+          namespace: openshift-mtv
+        spec:
+          feature_ocp_live_migration: 'true'
+          feature_ui_plugin: 'true'
+          feature_validation: 'true'
+          feature_volume_populator: 'true'
+      - apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: mtv-integrations
+        spec: {}

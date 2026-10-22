@@ -1,0 +1,38 @@
+global:
+  apiUrl: ''
+  baseDomain: ''
+  imageOverrides:
+    mtv_integrations: ''
+  kubevirtHyperconvergedOperator:
+    subscription:
+      channel: stable
+      name: kubevirt-hyperconverged
+      namespace: openshift-cnv
+      source: ''
+      sourceNamespace: ''
+      startingCSV: ''
+    upgradeApproval: Automatic
+  mtvOperator:
+    subscription:
+      channel: release-v5.0
+      name: mtv-operator
+      namespace: openshift-mtv
+      source: ''
+      sourceNamespace: ''
+      startingCSV: ''
+    upgradeApproval: Automatic
+  namespace: default
+  networkPolicies:
+    enabled: true
+  olmVersion: v0
+  pullSecret: null
+  templateOverrides: {}
+hubconfig:
+  clusterSTSEnabled: false
+  nodeSelector: null
+  ocpVersion: 4.12.0
+  probeConfig: null
+  proxyConfigs: {}
+  replicaCount: 1
+  tolerations: []
+org: open-cluster-management

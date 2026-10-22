@@ -1,0 +1,23 @@
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: ClusterManagementAddOn
+metadata:
+  name: dynamic-scoring-framework
+spec:
+  addOnMeta:
+    description: Centralized scoring logic management and distribution agent for Open Cluster Management multi-cluster environments
+    displayName: dynamic-scoring-framework
+  installStrategy:
+    placements:
+    - name: global
+      namespace: open-cluster-management-global-set
+      rolloutStrategy:
+        type: All
+      configs:
+      - group: addon.open-cluster-management.io
+        name: dynamic-scoring-addon-config
+        namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
+        resource: addondeploymentconfigs
+    type: Placements
+  supportedConfigs:
+  - group: addon.open-cluster-management.io
+    resource: addondeploymentconfigs

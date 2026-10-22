@@ -1,0 +1,1035 @@
+// Copyright (c) 2021 Red Hat, Inc.
+// Copyright Contributors to the Open Cluster Management project
+
+package controllers
+
+import (
+	"context"
+	"fmt"
+	"reflect"
+	"sort"
+	"strings"
+
+	corev1 "k8s.io/api/core/v1"
+
+	mcev1 "github.com/stolostron/backplane-operator/api/v1"
+
+	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	mchmetrics "github.com/stolostron/multiclusterhub-operator/pkg/metrics"
+	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
+	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
+	"github.com/stolostron/multiclusterhub-operator/pkg/version"
+
+	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
+
+	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+)
+
+const (
+	// ComponentsAvailableReason is added in a hub when all desired components are
+	// installed successfully
+	ComponentsAvailableReason = "ComponentsAvailable"
+
+	// ComponentsUnavailableReason is added in a hub when one or more components are
+	// in an unready state
+	ComponentsUnavailableReason = "ComponentsUnavailable"
+
+	// ComponentsUpdatingReason is added when the hub is actively updating a component resource
+	ComponentsUpdatingReason = "UpdatingComponentResource"
+
+	// NewComponentReason is added when the hub creates a new install resource successfully
+	NewComponentReason = "NewResourceCreated"
+
+	// DeployFailedReason is added when the hub fails to deploy a resource
+	DeployFailedReason = "FailedDeployingComponent"
+
+	// OldComponentRemovedReason is added when the hub calls delete on an old resource
+	OldComponentRemovedReason = "OldResourceDeleted"
+
+	// OldComponentNotRemovedReason is added when a component the hub is trying to delete has not been removed successfully
+	OldComponentNotRemovedReason = "OldResourceDeleteFailed"
+
+	// AllOldComponentsRemovedReason is added when the hub successfully prunes all old resources
+	AllOldComponentsRemovedReason = "AllOldResourcesDeleted"
+
+	// DeleteTimestampReason is added when the multiclusterhub has been targeted for delete
+	DeleteTimestampReason = "DeletionTimestampPresent"
+
+	// PausedReason is added when the multiclusterhub is paused
+	PausedReason = "MCHPaused"
+
+	// ResumedReason is added when the multiclusterhub is resumed
+	ResumedReason = "MCHResumed"
+
+	// ReconcileReason is added when the multiclusterhub is actively reconciling
+	ReconcileReason = "MCHReconciling"
+
+	// HelmReleaseTerminatingReason is added when the multiclusterhub is waiting for the removal
+	// of helm releases
+	HelmReleaseTerminatingReason = "HelmReleaseTerminating"
+
+	// ResourceRenderReason is added when an error occurs while rendering a deployable resource
+	ResourceRenderReason = "FailedRenderingResource"
+
+	// CRDRenderReason is added when an error occurs while rendering a CRD
+	CRDRenderReason = "FailedRenderingCRD"
+
+	// RequirementsNotMetReason is when there is something missing or misconfigured
+	// that is preventing progress
+	RequirementsNotMetReason = "RequirementsNotMet"
+
+	// WaitingForMCEUpgradeReason is added when the hub is blocked waiting for MultiClusterEngine
+	// to reach the version required by the current MCH release
+	WaitingForMCEUpgradeReason = "WaitingForMCEUpgrade"
+
+	// FailedApplyingComponent is added when a component template fails to apply
+	FailedApplyingComponent = "FailedApplyingComponent"
+
+	// WaitingForMCEReason is added when the hub is waiting for MultiClusterEngine to be ready
+	WaitingForMCEReason = "WaitingForMCE"
+
+	// WaitingForNamespaceReason is added when the hub is waiting for a namespace to be created
+	WaitingForNamespaceReason = "WaitingForNamespace"
+
+	// ComponentNotReadyReason is added when a prerequisite component is not yet available
+	ComponentNotReadyReason = "ComponentNotReady"
+)
+
+var (
+	prevAvailability = make(map[string]bool)
+)
+
+func newComponentList(m *operatorsv1.MultiClusterHub, ocpConsole, isSTSEnabled bool, olmVersion string) map[string]operatorsv1.StatusCondition {
+	components := make(map[string]operatorsv1.StatusCondition)
+	for _, d := range utils.GetDeploymentsForStatus(m, ocpConsole, isSTSEnabled) {
+		components[d.Name] = unknownStatus(d.Name, "Deployment")
+	}
+
+	for _, cr := range utils.GetCustomResourcesForStatus(m, olmVersion) {
+		components[cr.Name] = unknownStatus(cr.Name, "Component")
+	}
+	return components
+}
+
+var consoleUnavailableStatus = operatorsv1.StatusCondition{
+	Type:               "Available",
+	Status:             metav1.ConditionFalse,
+	LastUpdateTime:     metav1.Now(),
+	LastTransitionTime: metav1.Now(),
+	Reason:             "OCP Console missing",
+	Message:            "The OCP Console must be enabled before using ACM Console",
+	Available:          true,
+}
+
+// ComponentsAreRunning ...
+func (r *MultiClusterHubReconciler) ComponentsAreRunning(m *operatorsv1.MultiClusterHub, ocpConsole, isSTSEnabled bool) bool {
+	trackedNamespaces := utils.TrackedNamespaces(m)
+
+	deployList, _ := r.listDeployments(trackedNamespaces)
+	crList, _ := r.listCustomResources()
+	componentStatuses := getComponentStatuses(m, deployList, crList, ocpConsole, isSTSEnabled, r.OLMVersion)
+
+	delete(componentStatuses, m.Spec.LocalClusterName)
+	return allComponentsSuccessful(componentStatuses)
+}
+
+// publishMCHPhase updates the acm_mch_phase metric for the hub and logs when the
+// published phase changes. Logging on change only keeps the operator log ready for
+// steady-state hubs quiet while still recording every transition, plus one line per
+// hub on the first reconcile after an operator restart.
+func (r *MultiClusterHubReconciler) publishMCHPhase(m *operatorsv1.MultiClusterHub, phase operatorsv1.HubPhaseType) {
+	if m.GetDeletionTimestamp() != nil {
+		return
+	}
+	if mchmetrics.SetMCHPhase(m.Namespace, m.Name, phase) {
+		r.Log.Info("Published MultiClusterHub phase metric",
+			"metric", mchmetrics.PhaseMetricName, "namespace", m.Namespace, "name", m.Name, "phase", phase)
+	}
+}
+
+// deleteMCHMetrics removes the metric series for a hub and logs the cleanup when
+// there was something to remove. Logging only on an actual removal keeps a slow
+// teardown, which reconciles repeatedly while finalizers run, from repeating the
+// line.
+func (r *MultiClusterHubReconciler) deleteMCHMetrics(namespace, name, reason string) {
+	if mchmetrics.DeleteMCHMetrics(namespace, name) {
+		r.Log.Info("Removed MultiClusterHub metric series",
+			"metric", mchmetrics.PhaseMetricName, "namespace", namespace, "name", name, "reason", reason)
+	}
+}
+
+// syncHubStatus calculates the MultiClusterHub status, persists it when it changed,
+// and keeps the MultiClusterHub metrics in sync. The phase gauge is published from
+// this single path so it always reflects what the API server holds, except while the
+// hub is being deleted, when its series are removed instead.
+func (r *MultiClusterHubReconciler) syncHubStatus(ctx context.Context, m *operatorsv1.MultiClusterHub,
+	original *operatorsv1.MultiClusterHubStatus, allDeps []*appsv1.Deployment,
+	allCRs map[string]*unstructured.Unstructured, ocpConsole, isSTSEnabled bool) (reconcile.Result, error) {
+
+	newStatus := r.calculateStatus(ctx, m, allDeps, allCRs, ocpConsole, isSTSEnabled)
+
+	// Remove the metric series as soon as the hub is being torn down; the phase is
+	// not republished from this point on. Otherwise the phase is published either in
+	// the unchanged-status early return below or after the status update succeeds.
+	if m.GetDeletionTimestamp() != nil {
+		r.deleteMCHMetrics(m.Namespace, m.Name, "deletion-timestamp")
+	}
+
+	if err := r.ensureMCEComplianceBanner(ctx, m, newStatus.MCEVersionCompliance); err != nil {
+		r.Log.Error(err, "Failed to reconcile MCE compliance ConsoleNotification banner")
+	}
+
+	if reflect.DeepEqual(newStatus, *original) {
+		// The status is already persisted, so publish the calculated phase. This also
+		// populates the gauge on the first reconcile after an operator restart, when
+		// there is nothing to update.
+		r.publishMCHPhase(m, newStatus.Phase)
+		r.Log.Info("Status hasn't changed")
+		return reconcile.Result{}, nil
+	}
+
+	newHub := m
+	newHub.Status = newStatus
+	err := r.Client.Status().Update(context.TODO(), newHub)
+	if err != nil {
+		if errors.IsConflict(err) {
+			// Error from object being modified is normal behavior and should not be treated like an error
+			r.Log.Info("Failed to update status", "Reason", "Object has been modified")
+			return reconcile.Result{RequeueAfter: resyncPeriod}, nil
+		}
+
+		if errors.IsNotFound(err) {
+			// The object was deleted (e.g. its last finalizer was just removed by this same
+			// reconcile, which triggers immediate garbage collection). There's nothing left to
+			// update, and this isn't a real error.
+			r.deleteMCHMetrics(m.Namespace, m.Name, "multiclusterhub-no-longer-exists")
+			r.Log.Info("Skipping status update, MultiClusterHub no longer exists", "name", m.Name, "namespace", m.Namespace)
+			return reconcile.Result{}, nil
+		}
+
+		r.Log.Error(err, fmt.Sprintf("Failed to update %s/%s status ", m.Namespace, m.Name))
+		return reconcile.Result{}, err
+	}
+
+	// Only publish a changed phase after the API server has accepted it, so the
+	// metric never reports a phase that the MultiClusterHub status does not hold.
+	r.publishMCHPhase(m, newStatus.Phase)
+
+	if m.Status.Phase != operatorsv1.HubRunning {
+		return reconcile.Result{RequeueAfter: resyncPeriod}, nil
+	} else {
+		return reconcile.Result{}, nil
+	}
+}
+
+// calculateStatus derives the full MultiClusterHubStatus (components, conditions, and phase) from
+// the current set of component deployments/custom resources and MultiClusterEngine version
+// compliance. It does not mutate the cluster; callers are responsible for persisting the result.
+func (r *MultiClusterHubReconciler) calculateStatus(ctx context.Context, hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deployment,
+	allCRs map[string]*unstructured.Unstructured, ocpConsole, isSTSEnabled bool) operatorsv1.MultiClusterHubStatus {
+
+	// While the hub is being deleted, the install-oriented component/version tracking below
+	// doesn't apply: components are intentionally being torn down, not rolled out, so
+	// re-evaluating "is this available" against them is actively misleading (e.g. logging
+	// "The component is now available" for a Subscription mid-termination, right before it
+	// disappears) and computing Progressing/Complete from it produces contradictory messages
+	// alongside the accurate Terminating condition finalization already sets. Preserve
+	// existing status as-is and just report the phase.
+	//
+	// Progressing/Complete are also removed rather than left stale: Terminating + Phase
+	// already fully describe the deletion state, so there's no information lost, and a
+	// leftover "Complete: True, All hub components ready." while actively tearing down would
+	// be actively wrong rather than merely uninformative. This mirrors the existing pattern
+	// of removing Progressing once Complete:True is set in the successful branch below.
+	if hub.GetDeletionTimestamp() != nil {
+		status := hub.Status.DeepCopy()
+		status.Phase = operatorsv1.HubUninstalling
+		RemoveHubCondition(status, operatorsv1.Progressing)
+		RemoveHubCondition(status, operatorsv1.Complete)
+		return *status
+	}
+
+	components := map[string]operatorsv1.StatusCondition{}
+	if paused := utils.IsPaused(hub); !paused {
+		components = getComponentStatuses(hub, allDeps, allCRs, ocpConsole, isSTSEnabled, r.OLMVersion)
+	}
+
+	// Calculate MCE version compliance
+	mceVersionCompliance := r.calculateMCEVersionCompliance(ctx)
+
+	status := operatorsv1.MultiClusterHubStatus{
+		CurrentVersion:       hub.Status.CurrentVersion,
+		DesiredVersion:       version.Version,
+		Components:           components,
+		MCEVersionCompliance: mceVersionCompliance,
+	}
+
+	// Set current version
+	successful := allComponentsSuccessful(components)
+	if successful && isMinorVersionWithinRange(mceVersionCompliance.CurrentVersion, version.Version, 5) {
+		status.CurrentVersion = version.Version
+	}
+
+	// Copy conditions one by one to not affect original object
+	conditions := hub.Status.HubConditions
+	status.HubConditions = append(status.HubConditions, conditions...)
+
+	// Determine if the hub should report that it's blocked waiting for MultiClusterEngine to
+	// reach the required version (either not yet installed or not yet upgraded). This takes
+	// priority over the normal successful/progressing conditions below so that `oc get mch`
+	// surfaces the true blocking condition instead of a generic Running/Installing/Updating
+	// message while reconciliation is silently stuck in waitForMCEReady. Skipped for unit tests
+	// (which don't run a real MCE) and paused hubs (whose own paused condition takes priority).
+	waitingForMCECond := mceUpgradeWaitCondition(mceVersionCompliance, utils.IsCommunityMode())
+	reportMCEWait := !utils.IsUnitTest() && !utils.IsPaused(hub) && waitingForMCECond != nil
+
+	// Update hub conditions
+	if reportMCEWait {
+		SetHubCondition(&status, *waitingForMCECond)
+		RemoveHubCondition(&status, operatorsv1.Complete)
+	} else {
+		// MCE wait no longer applies (MCE is compliant, paused, or a unit test). Clear any
+		// lingering WaitingForMCEUpgrade condition so it doesn't block the normal
+		// progressing/complete logic below via the Type-only HubConditionPresent check, and
+		// so `oc get mch` doesn't keep reporting a stale "waiting for MCE" message once MCE
+		// has caught up but the hub hasn't finished reconciling other components yet.
+		if waiting := GetHubCondition(status, operatorsv1.Progressing); waiting != nil && waiting.Reason == WaitingForMCEUpgradeReason {
+			RemoveHubCondition(&status, operatorsv1.Progressing)
+		}
+
+		if successful {
+			// don't label as complete until component pruning succeeds
+			if !hubPruning(status) && !utils.IsPaused(hub) {
+				available := NewHubCondition(operatorsv1.Complete, metav1.ConditionTrue, ComponentsAvailableReason, "All hub components ready.")
+				SetHubCondition(&status, *available)
+				RemoveHubCondition(&status, operatorsv1.Progressing)
+			} else if hubPruning(status) && !utils.IsPaused(hub) {
+				// All components successful but pruning condition exists - pruning must be complete
+				// Set AllOldComponentsRemovedReason so hubPruning() returns false on next reconcile
+				complete := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, AllOldComponentsRemovedReason, "All old resources pruned")
+				SetHubCondition(&status, *complete)
+				log.Info("Component pruning complete - all resources successfully removed")
+			} else {
+				// only add unavailable status if complete status already present
+				if HubConditionPresent(status, operatorsv1.Complete) {
+					unavailable := NewHubCondition(operatorsv1.Complete, metav1.ConditionFalse, OldComponentNotRemovedReason, "Not all components successfully pruned.")
+					SetHubCondition(&status, *unavailable)
+				}
+			}
+		} else {
+			// hub is progressing unless otherwise specified
+			if !HubConditionPresent(status, operatorsv1.Progressing) {
+				progressing := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, ReconcileReason, "Hub is reconciling.")
+				SetHubCondition(&status, *progressing)
+			}
+
+			// Always surface a Complete condition while not yet successful (and not paused), not
+			// just when one already existed. This gives consumers a stable, always-present
+			// Complete condition from the first reconcile (False while installing/updating, True
+			// once done) instead of an absence they have to interpret themselves.
+			if !utils.IsPaused(hub) {
+				unavailable := NewHubCondition(operatorsv1.Complete, metav1.ConditionFalse, ComponentsUnavailableReason, "Not all hub components ready.")
+				SetHubCondition(&status, *unavailable)
+			}
+		}
+	}
+
+	// Set overall phase
+	isHubMarkedToBeDeleted := hub.GetDeletionTimestamp() != nil
+	hasComponentFailure := HubConditionPresentWithSubstring(status, string(operatorsv1.ComponentFailure))
+	switch {
+	case isHubMarkedToBeDeleted:
+		// Hub cleaning up
+		status.Phase = operatorsv1.HubUninstalling
+	case hasComponentFailure:
+		status.Phase = operatorsv1.HubError
+	case reportMCEWait:
+		status.Phase = operatorsv1.HubWaitingForMCE
+	default:
+		status.Phase = aggregatePhase(status)
+	}
+
+	return status
+}
+
+// mceUpgradeWaitCondition returns a HubCondition describing that the hub is waiting for
+// MultiClusterEngine to reach the version required by the current MCH release, or nil if MCE
+// already satisfies that requirement (or compliance could not be determined, e.g. an error
+// reaching the API server). isCommunityMode selects which required version to quote in the
+// message.
+func mceUpgradeWaitCondition(
+	compliance *operatorsv1.MCEVersionComplianceStatus, isCommunityMode bool) *operatorsv1.HubCondition {
+	if compliance == nil || compliance.IsCompliant {
+		return nil
+	}
+
+	requiredVersion := version.RequiredMCEVersion
+	if isCommunityMode {
+		requiredVersion = version.RequiredCommunityMCEVersion
+	}
+
+	currentVersion := compliance.CurrentVersion
+	if currentVersion == "" {
+		currentVersion = "none"
+	}
+
+	message := fmt.Sprintf(
+		"Waiting for MultiClusterEngine to upgrade to %s (current: %s)", requiredVersion, currentVersion)
+	return NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, WaitingForMCEUpgradeReason, message)
+}
+
+// getComponentStatuses populates a complete list of the hub component statuses
+func getComponentStatuses(hub *operatorsv1.MultiClusterHub, allDeps []*appsv1.Deployment,
+	allCRs map[string]*unstructured.Unstructured, ocpConsole, isSTSEnabled bool, olmVersion string) map[string]operatorsv1.StatusCondition {
+	components := newComponentList(hub, ocpConsole, isSTSEnabled, olmVersion)
+
+	for _, d := range allDeps {
+		if _, ok := components[d.Name]; ok {
+			components[d.Name] = mapDeployment(d)
+		}
+	}
+
+	for key, cr := range allCRs {
+		if cr == nil {
+			continue
+		}
+		switch key {
+		case "mce-sub":
+			components["multicluster-engine-sub"] = mapSubscription(cr)
+		case "mce-csv":
+			components["multicluster-engine-csv"] = mapCSV(cr)
+		case "mce-clusterextension":
+			components["multicluster-engine-clusterextension"] = mapClusterExtension(cr)
+		case "mce":
+			components["multicluster-engine"] = mapMultiClusterEngine(cr)
+		}
+	}
+
+	if !ocpConsole {
+		components["console-chart-console-v2"] = consoleUnavailableStatus
+	}
+
+	return components
+}
+
+func successfulDeploy(d *appsv1.Deployment) bool {
+	for _, c := range d.Status.Conditions {
+		if c.Type == appsv1.DeploymentAvailable && c.Status == corev1.ConditionFalse {
+			return false
+		}
+	}
+
+	return d.Status.UnavailableReplicas <= 0
+}
+
+func latestDeployCondition(conditions []appsv1.DeploymentCondition) appsv1.DeploymentCondition {
+	if len(conditions) < 1 {
+		return appsv1.DeploymentCondition{}
+	}
+	latest := conditions[0]
+	for i := range conditions {
+		if conditions[i].LastTransitionTime.Time.After(latest.LastTransitionTime.Time) {
+			latest = conditions[i]
+		}
+	}
+	return latest
+}
+
+// latestMCECondition returns the most recently transitioned condition on the given
+// MultiClusterEngine, or nil if it has none. Used to surface MCE's own progress detail
+// (e.g. "Not all components available") while MCH is waiting on MCE to report a version,
+// instead of leaving that whole window opaque from the MCH's own status.
+func latestMCECondition(mce *mcev1.MultiClusterEngine) *mcev1.MultiClusterEngineCondition {
+	if mce == nil || len(mce.Status.Conditions) == 0 {
+		return nil
+	}
+	latest := mce.Status.Conditions[0]
+	for i := range mce.Status.Conditions {
+		if mce.Status.Conditions[i].LastTransitionTime.Time.After(latest.LastTransitionTime.Time) {
+			latest = mce.Status.Conditions[i]
+		}
+	}
+	return &latest
+}
+
+func progressingDeployCondition(conditions []appsv1.DeploymentCondition) appsv1.DeploymentCondition {
+	progressing := appsv1.DeploymentCondition{}
+	for i := range conditions {
+		if conditions[i].Type == appsv1.DeploymentProgressing {
+			progressing = conditions[i]
+		}
+	}
+	return progressing
+}
+
+func mapDeployment(ds *appsv1.Deployment) operatorsv1.StatusCondition {
+	if len(ds.Status.Conditions) < 1 {
+		return unknownStatus(ds.Name, ds.Kind)
+	}
+
+	dcs := latestDeployCondition(ds.Status.Conditions)
+	ret := operatorsv1.StatusCondition{
+		Name:               ds.Name,
+		Kind:               "Deployment",
+		Type:               string(dcs.Type),
+		Status:             metav1.ConditionStatus(string(dcs.Status)),
+		LastUpdateTime:     dcs.LastUpdateTime,
+		LastTransitionTime: dcs.LastTransitionTime,
+		Reason:             dcs.Reason,
+		Message:            dcs.Message,
+	}
+	if successfulDeploy(ds) {
+		ret.Available = true
+		ret.Message = ""
+	}
+
+	// Because our definition of success is different than the deployment's it is possible we indicate failure
+	// despite an available deployment present. To avoid confusion we should show a different status.
+	if dcs.Type == appsv1.DeploymentAvailable && dcs.Status == corev1.ConditionTrue && !ret.Available {
+		sub := progressingDeployCondition(ds.Status.Conditions)
+		ret = operatorsv1.StatusCondition{
+			Name:               ds.Name,
+			Kind:               "Deployment",
+			Type:               string(sub.Type),
+			Status:             metav1.ConditionStatus(string(sub.Status)),
+			LastUpdateTime:     sub.LastUpdateTime,
+			LastTransitionTime: sub.LastTransitionTime,
+			Reason:             sub.Reason,
+			Message:            sub.Message,
+			Available:          false,
+		}
+	}
+
+	return ret
+}
+
+func mapSubscription(sub *unstructured.Unstructured) operatorsv1.StatusCondition {
+	if sub == nil {
+		return unknownStatus("", "Subscription")
+	}
+
+	spec, ok := sub.Object["spec"].(map[string]interface{})
+	if !ok {
+		return unknownStatus(sub.GetName(), "Subscription")
+	}
+
+	status, ok := sub.Object["status"].(map[string]interface{})
+	if !ok {
+		return unknownStatus(sub.GetName(), "Subscription")
+	}
+
+	installPlanRef, ok := status["installPlanRef"].(map[string]interface{})
+	if !ok {
+		return unknownStatus(sub.GetName(), "Subscription")
+	}
+
+	componentStatus := "True"
+	reason, _ := status["state"].(string)
+	installPlanApproval, _ := spec["installPlanApproval"].(string)
+	installPlanNamespace, _ := installPlanRef["namespace"].(string)
+	installPlanName, _ := installPlanRef["name"].(string)
+
+	message := fmt.Sprintf("installPlanApproval: %s. installPlan: %s/%s",
+		installPlanApproval, installPlanNamespace, installPlanName)
+
+	/*
+		Based on the descriptions in the OLM Subscription CRD, the following holds true:
+		• InstalledCSV refers to the CSV that is currently installed by the Subscription.
+		• CurrentCSV refers to the CSV that the Subscription is in the process of upgrading to.
+	*/
+	if reason == "UpgradePending" {
+		currentCSV, _ := status["currentCSV"].(string)
+		installedCSV, _ := status["installedCSV"].(string)
+		message = fmt.Sprintf("Upgrade pending. Installed CSV: %s. Pending CSV: %s", installedCSV, currentCSV)
+	}
+
+	return operatorsv1.StatusCondition{
+		Name:               sub.GetName(),
+		Kind:               "Subscription",
+		Status:             metav1.ConditionStatus(componentStatus),
+		LastUpdateTime:     metav1.Now(),
+		LastTransitionTime: metav1.Now(),
+		Reason:             reason,
+		Message:            message,
+		Type:               "Available",
+		Available:          true,
+	}
+}
+
+func mapClusterExtension(ce *unstructured.Unstructured) operatorsv1.StatusCondition {
+	if ce == nil {
+		return unknownStatus("", "ClusterExtension")
+	}
+
+	status, ok := ce.Object["status"].(map[string]interface{})
+	if !ok {
+		return unknownStatus(ce.GetName(), "ClusterExtension")
+	}
+
+	// OLM v1 ClusterExtension uses conditions array
+	conditions, ok := status["conditions"].([]interface{})
+	if !ok || len(conditions) == 0 {
+		return unknownStatus(ce.GetName(), "ClusterExtension")
+	}
+
+	// Find "Installed" condition (primary indicator of success)
+	var installedCondition map[string]interface{}
+	for _, cond := range conditions {
+		condMap, ok := cond.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		condType, _ := condMap["type"].(string)
+		if condType == "Installed" {
+			installedCondition = condMap
+			break
+		}
+	}
+
+	if installedCondition == nil {
+		// Fallback to first condition if no "Installed" found
+		installedCondition, _ = conditions[0].(map[string]interface{})
+	}
+
+	componentStatus := "True"
+	reason, _ := installedCondition["reason"].(string)
+	message, _ := installedCondition["message"].(string)
+	condStatus, _ := installedCondition["status"].(string)
+
+	if condStatus != "True" {
+		componentStatus = condStatus
+	}
+
+	// Extract installed bundle info for additional context
+	installedBundle, _ := status["installedBundle"].(map[string]interface{})
+	bundleName, _ := installedBundle["name"].(string)
+	bundleVersion, _ := installedBundle["version"].(string)
+
+	if bundleName != "" {
+		if bundleVersion != "" {
+			message = fmt.Sprintf("Bundle: %s (version: %s). %s", bundleName, bundleVersion, message)
+		} else {
+			message = fmt.Sprintf("Bundle: %s. %s", bundleName, message)
+		}
+	}
+
+	return operatorsv1.StatusCondition{
+		Name:               ce.GetName(),
+		Kind:               "ClusterExtension",
+		Status:             metav1.ConditionStatus(componentStatus),
+		LastUpdateTime:     metav1.Now(),
+		LastTransitionTime: metav1.Now(),
+		Reason:             reason,
+		Message:            message,
+		Type:               "Available",
+		Available:          componentStatus == "True",
+	}
+}
+
+func mapMultiClusterEngine(mce *unstructured.Unstructured) operatorsv1.StatusCondition {
+	if mce == nil {
+		return unknownStatus("", "MultiClusterEngine")
+	}
+
+	status, ok := mce.Object["status"].(map[string]interface{})
+	if !ok {
+		return unknownStatus(mce.GetName(), "MultiClusterEngine")
+	}
+	conditions, ok := status["conditions"].([]interface{})
+	if !ok {
+		return unknownStatus(mce.GetName(), "MultiClusterEngine")
+	}
+
+	componentCondition := operatorsv1.StatusCondition{}
+
+	for _, condition := range conditions {
+		statusCondition, ok := condition.(map[string]interface{})
+		if !ok {
+			return unknownStatus(mce.GetName(), "MultiClusterEngine")
+		}
+
+		status, _ := statusCondition["status"].(string)
+		message, _ := statusCondition["message"].(string)
+		reason, _ := statusCondition["reason"].(string)
+		conditionType, _ := statusCondition["type"].(string)
+
+		componentCondition = operatorsv1.StatusCondition{
+			Name:               mce.GetName(),
+			Kind:               "MultiClusterEngine",
+			Status:             metav1.ConditionStatus(status),
+			LastUpdateTime:     metav1.Now(),
+			LastTransitionTime: metav1.Now(),
+			Reason:             reason,
+			Message:            message,
+			Type:               conditionType,
+			Available:          false,
+		}
+
+		// Return condition with Applied = true
+		if conditionType == string(mcev1.MultiClusterEngineAvailable) && status == "True" {
+			componentCondition.Available = true
+			return componentCondition
+		}
+	}
+
+	// If no condition with applied true, then return last condition in list
+	return componentCondition
+}
+
+func mapCSV(csv *unstructured.Unstructured) operatorsv1.StatusCondition {
+	if csv == nil {
+		return unknownStatus("", "ClusterServiceVersion")
+	}
+
+	status, ok := csv.Object["status"].(map[string]interface{})
+	if !ok {
+		return unknownStatus(csv.GetName(), "ClusterServiceVersion")
+	}
+	conditions, ok := status["conditions"].([]interface{})
+	if !ok {
+		return unknownStatus(csv.GetName(), "ClusterServiceVersion")
+	}
+
+	componentCondition := operatorsv1.StatusCondition{}
+
+	for _, condition := range conditions {
+		statusCondition, ok := condition.(map[string]interface{})
+		if !ok {
+			return unknownStatus(csv.GetName(), "ClusterServiceVersion")
+		}
+
+		phase, _ := statusCondition["phase"].(string)
+		message, _ := statusCondition["message"].(string)
+		reason, _ := statusCondition["reason"].(string)
+		status := "False"
+
+		if phase == "Succeeded" {
+			status = "True"
+		}
+
+		componentCondition = operatorsv1.StatusCondition{
+			Name:               csv.GetName(),
+			Kind:               "ClusterServiceVersion",
+			Status:             metav1.ConditionStatus(status),
+			LastUpdateTime:     metav1.Now(),
+			LastTransitionTime: metav1.Now(),
+			Reason:             reason,
+			Message:            message,
+			Type:               "Unavailable",
+			Available:          false,
+		}
+
+		// Return condition with Applied = true
+		if phase == "Succeeded" && reason == "InstallSucceeded" {
+			componentCondition.Type = "Available"
+			componentCondition.Available = true
+			return componentCondition
+		}
+	}
+
+	// If no condition with applied true, then return last condition in list
+	return componentCondition
+}
+
+// allComponentsSuccessful returns true if all components are successful, otherwise false
+func allComponentsSuccessful(components map[string]operatorsv1.StatusCondition) bool {
+	if len(components) == 0 {
+		return false
+	}
+
+	// Track availability status.
+	allAvailable := true
+
+	for _, val := range components {
+		if !val.Available {
+			// Check if the component's availability status has changed since the last reconciliation.
+			if prevStatus, exists := prevAvailability[val.Name]; !exists || prevStatus {
+				// Log the information about the newly unavailable component
+				log.Info("The component is not yet available.", "Kind", val.Kind, "Name", val.Name, "Reason", val.Reason)
+			}
+
+			// Update the previous availability status for this component
+			prevAvailability[val.Name] = false
+			allAvailable = false
+		} else {
+			// Check if the component's availability status has changed since the last reconciliation
+			if prevStatus, exists := prevAvailability[val.Name]; !exists || !prevStatus {
+				// Log the information about the newly available component
+				log.Info("The component is now available.", "Kind", val.Kind, "Name", val.Name)
+			}
+
+			// Update the previous availability status for this component
+			prevAvailability[val.Name] = true
+		}
+	}
+
+	// Return the overall availability status
+	return allAvailable
+}
+
+// aggregatePhase calculates overall HubPhaseType based on hub status. This does NOT account for
+// a hub in the process of deletion.
+func aggregatePhase(status operatorsv1.MultiClusterHubStatus) operatorsv1.HubPhaseType {
+	if utils.IsUnitTest() {
+		return operatorsv1.HubRunning
+	}
+
+	for _, condition := range status.HubConditions {
+		if condition.Reason == PausedReason {
+			return operatorsv1.HubPaused
+		}
+	}
+
+	phase := operatorsv1.HubPending
+	switch cv := status.CurrentVersion; {
+	case cv == "":
+		// Hub has not reached success for first time
+		phase = operatorsv1.HubInstalling
+
+	case cv != version.Version:
+		if HubConditionPresent(status, operatorsv1.Blocked) {
+			phase = operatorsv1.HubUpdatingBlocked
+		} else {
+			// Hub has not completed upgrade to newest version
+			phase = operatorsv1.HubUpdating
+		}
+	}
+
+	if hubDeployFailing(status) {
+		return phase
+	}
+
+	if successful := allComponentsSuccessful(status.Components); successful {
+		if hubPruning(status) {
+			// hub is in pruning phase
+			return operatorsv1.HubPending
+		}
+
+		// Hub running
+		return operatorsv1.HubRunning
+	}
+
+	return phase
+}
+
+// NewHubCondition creates a new hub condition.
+func NewHubCondition(condType operatorsv1.HubConditionType, status metav1.ConditionStatus, reason, message string) *operatorsv1.HubCondition {
+	return &operatorsv1.HubCondition{
+		Type:               condType,
+		Status:             status,
+		LastUpdateTime:     metav1.Now(),
+		LastTransitionTime: metav1.Now(),
+		Reason:             reason,
+		Message:            message,
+	}
+}
+
+// SetHubCondition sets the status condition. It either overwrites the existing one or creates a new one.
+// A condition is treated as unchanged (a no-op) only when Type, Status, Reason, AND Message all
+// match the existing condition. Message is included so that conditions whose message varies
+// independently of their reason (e.g. WaitingForMCEUpgrade, which embeds the live current MCE
+// version) get updated on every reconcile instead of freezing at their first-observed message.
+func SetHubCondition(status *operatorsv1.MultiClusterHubStatus, condition operatorsv1.HubCondition) {
+	currentCond := GetHubCondition(*status, condition.Type)
+	if currentCond != nil && currentCond.Status == condition.Status &&
+		currentCond.Reason == condition.Reason && currentCond.Message == condition.Message {
+		return
+	}
+	// Do not update lastTransitionTime if the status of the condition doesn't change.
+	if currentCond != nil && currentCond.Status == condition.Status {
+		condition.LastTransitionTime = currentCond.LastTransitionTime
+	}
+	newConditions := filterOutCondition(status.HubConditions, condition.Type)
+	newConditions = append(newConditions, condition)
+
+	// Sort conditions by lastTransitionTime so the most recently transitioned is always last
+	sort.Slice(newConditions, func(i, j int) bool {
+		return newConditions[i].LastTransitionTime.Before(&newConditions[j].LastTransitionTime)
+	})
+
+	status.HubConditions = newConditions
+}
+
+// RemoveCRDCondition removes the status condition.
+func RemoveHubCondition(status *operatorsv1.MultiClusterHubStatus, condType operatorsv1.HubConditionType) {
+	status.HubConditions = filterOutCondition(status.HubConditions, condType)
+}
+
+// GetHubCondition returns the condition you're looking for or nil.
+func GetHubCondition(status operatorsv1.MultiClusterHubStatus, condType operatorsv1.HubConditionType) *operatorsv1.HubCondition {
+	for i := range status.HubConditions {
+		c := status.HubConditions[i]
+		if c.Type == condType {
+			return &c
+		}
+	}
+	return nil
+}
+
+// hubPruning returns true when the status reports hub is in the process of pruning
+func hubPruning(status operatorsv1.MultiClusterHubStatus) bool {
+	progressingCondition := GetHubCondition(status, operatorsv1.Progressing)
+	if progressingCondition != nil {
+		if progressingCondition.Reason == OldComponentRemovedReason || progressingCondition.Reason == OldComponentNotRemovedReason {
+			return true
+		}
+	}
+	return false
+}
+
+func hubDeployFailing(status operatorsv1.MultiClusterHubStatus) bool {
+	progressingCondition := GetHubCondition(status, operatorsv1.Progressing)
+	if progressingCondition != nil {
+		if progressingCondition.Reason == DeployFailedReason {
+			return true
+		}
+	}
+	return false
+}
+
+// filterOutCondition returns a new slice of hub conditions without conditions with the provided type.
+func filterOutCondition(conditions []operatorsv1.HubCondition, condType operatorsv1.HubConditionType) []operatorsv1.HubCondition {
+	var newConditions []operatorsv1.HubCondition
+	for _, c := range conditions {
+		if c.Type == condType {
+			continue
+		}
+		newConditions = append(newConditions, c)
+	}
+	return newConditions
+}
+
+func filterOutConditionWithSubstring(conditions []operatorsv1.HubCondition, substring string) []operatorsv1.HubCondition {
+	var newConditions []operatorsv1.HubCondition
+	for _, c := range conditions {
+		if strings.Contains(string(c.Type), substring) {
+			continue
+		}
+		newConditions = append(newConditions, c)
+	}
+	return newConditions
+}
+
+// HubConditionPresent indicates if the condition is present and equal to the given status.
+func HubConditionPresent(status operatorsv1.MultiClusterHubStatus, conditionType operatorsv1.HubConditionType) bool {
+	for _, condition := range status.HubConditions {
+		if condition.Type == conditionType {
+			return true
+		}
+	}
+	return false
+}
+
+// Variant of `HubConditionPresent()` that checks for substring instead of exact match
+func HubConditionPresentWithSubstring(status operatorsv1.MultiClusterHubStatus, substring string) bool {
+	for _, condition := range status.HubConditions {
+		if strings.Contains(string(condition.Type), substring) {
+			return true
+		}
+	}
+	return false
+}
+
+func unknownStatus(name, kind string) operatorsv1.StatusCondition {
+	return operatorsv1.StatusCondition{
+		Name:               name,
+		Kind:               kind,
+		Type:               "Unknown",
+		Status:             metav1.ConditionUnknown,
+		LastUpdateTime:     metav1.Now(),
+		LastTransitionTime: metav1.Now(),
+		Reason:             "No conditions available",
+		Message:            "No conditions available",
+		Available:          false,
+	}
+}
+
+// calculateMCEVersionCompliance checks if the current MCE version meets or exceeds the required channel version
+func (r *MultiClusterHubReconciler) calculateMCEVersionCompliance(ctx context.Context) *operatorsv1.MCEVersionComplianceStatus {
+	requiredChannel := multiclusterengine.DesiredChannel()
+
+	// Get the MCE instance
+	existingMCE, err := multiclusterengineutils.GetManagedMCE(ctx, r.Client)
+	if err != nil {
+		return &operatorsv1.MCEVersionComplianceStatus{
+			RequiredChannel: requiredChannel,
+			CurrentVersion:  "",
+			IsCompliant:     false,
+			Message:         fmt.Sprintf("Unable to retrieve MCE: %v", err),
+		}
+	}
+
+	if existingMCE == nil {
+		return &operatorsv1.MCEVersionComplianceStatus{
+			RequiredChannel: requiredChannel,
+			CurrentVersion:  "",
+			IsCompliant:     false,
+			Message:         "MCE not yet installed",
+		}
+	}
+
+	currentVersion := existingMCE.Status.CurrentVersion
+
+	// If MCE doesn't have a current version yet, it's still installing
+	if currentVersion == "" {
+		return &operatorsv1.MCEVersionComplianceStatus{
+			RequiredChannel: requiredChannel,
+			CurrentVersion:  "",
+			IsCompliant:     false,
+			Message:         "MCE version not yet available - installation in progress",
+		}
+	}
+
+	// Check version compliance using the existing validation logic
+	var validationErr error
+	if utils.IsCommunityMode() {
+		validationErr = version.ValidCommunityMCEVersion(currentVersion)
+	} else {
+		validationErr = version.ValidMCEVersion(currentVersion)
+	}
+
+	isCompliant := validationErr == nil
+	var message string
+	if isCompliant {
+		message = fmt.Sprintf("MCE version %s meets channel %s requirements", currentVersion, requiredChannel)
+	} else {
+		message = fmt.Sprintf("MCE version %s does not meet channel %s requirements", currentVersion, requiredChannel)
+	}
+
+	return &operatorsv1.MCEVersionComplianceStatus{
+		RequiredChannel: requiredChannel,
+		CurrentVersion:  currentVersion,
+		IsCompliant:     isCompliant,
+		Message:         message,
+	}
+}
+
+// isMinorVersionWithinRange checks if the minor version of mceVersion is within maxDiff
+// of the minor version of mchVersion
+func isMinorVersionWithinRange(mceVersion, mchVersion string, maxDiff int) bool {
+	if mceVersion == "" || mchVersion == "" {
+		return false
+	}
+
+	var mceMajor, mceMinor, mcePatch int
+	var mchMajor, mchMinor, mchPatch int
+
+	// Parse MCE version (format: X.Y.Z)
+	_, err := fmt.Sscanf(mceVersion, "%d.%d.%d", &mceMajor, &mceMinor, &mcePatch)
+	if err != nil {
+		return false
+	}
+
+	// Parse MCH version (format: X.Y.Z)
+	_, err = fmt.Sscanf(mchVersion, "%d.%d.%d", &mchMajor, &mchMinor, &mchPatch)
+	if err != nil {
+		return false
+	}
+
+	// Check if MCE minor version is not more than maxDiff less than MCH minor version
+	return mchMinor-mceMinor <= maxDiff
+}

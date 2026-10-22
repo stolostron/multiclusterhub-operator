@@ -1,0 +1,205 @@
+// Copyright Contributors to the Open Cluster Management project
+
+/*
+Copyright 2021.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package controllers
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"path"
+	"path/filepath"
+
+	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	"github.com/stolostron/multiclusterhub-operator/pkg/deploying"
+	renderer "github.com/stolostron/multiclusterhub-operator/pkg/rendering"
+	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
+
+	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/yaml"
+)
+
+func (r *MultiClusterHubReconciler) finalizeHub(ctx context.Context, reqLogger logr.Logger,
+	m *operatorv1.MultiClusterHub, ocpConsole, isSTSEnabled bool) error {
+	if err := r.cleanupAppSubscriptions(ctx, reqLogger, m); err != nil {
+		return err
+	}
+
+	for _, c := range operatorv1.MCHComponents {
+		// Skip components that have been migrated to MCE - MCE owns their lifecycle now.
+		// This prevents attempting to render templates that may be missing image overrides
+		// in newer ACM versions where the component has been removed from MCH.
+		if _, migrated := migratedComponentDeployments[c]; migrated {
+			continue
+		}
+
+		result, err := r.ensureNoComponent(ctx, m, c, r.CacheSpec, isSTSEnabled)
+		if err != nil || result != (ctrl.Result{}) {
+			msg := fmt.Sprintf("Waiting for component %s to terminate", c)
+			if err != nil {
+				msg = fmt.Sprintf("%s: %s", msg, err.Error())
+			}
+			condition := NewHubCondition(operatorv1.Terminating, metav1.ConditionTrue, DeleteTimestampReason, msg)
+			SetHubCondition(&m.Status, *condition)
+
+			if err != nil {
+				reqLogger.Info("Component removal incomplete", "component", c, "reason", err.Error())
+				return err
+			}
+			reqLogger.Info("Component removal requires requeue", "component", c)
+			return errors.NewBadRequest(fmt.Sprintf("Requeue needed for component: %v", c))
+		}
+	}
+
+	type cleanupStep struct {
+		name string
+		fn   func(context.Context, logr.Logger, *operatorv1.MultiClusterHub) error
+	}
+
+	steps := []cleanupStep{
+		{"Namespaces", r.cleanupNamespaces},
+		{"ClusterRoles", r.cleanupClusterRoles},
+		{"ClusterRoleBindings", r.cleanupClusterRoleBindings},
+		{"MultiClusterEngine", r.cleanupMultiClusterEngine},
+		{"OrphanMCE", r.orphanOwnedMultiClusterEngine},
+		{"ConsoleNotifications", r.cleanupConsoleNotifications},
+	}
+
+	for _, step := range steps {
+		if err := step.fn(ctx, reqLogger, m); err != nil {
+			reqLogger.Info("Finalization step incomplete", "step", step.name, "reason", err.Error())
+			return err
+		}
+	}
+
+	reqLogger.Info("Successfully finalized multiClusterHub")
+	return nil
+}
+
+func (r *MultiClusterHubReconciler) installCRDs(reqLogger logr.Logger, m *operatorv1.MultiClusterHub) (string, error) {
+	crdDir, ok := os.LookupEnv(crdPathEnvVar)
+	if !ok {
+		err := fmt.Errorf("%s environment variable is required", crdPathEnvVar)
+		reqLogger.Error(err, err.Error())
+		return CRDRenderReason, err
+	}
+
+	crds, errs := renderer.RenderCRDs(crdDir, m)
+	if len(errs) > 0 {
+		message := mergeErrors(errs)
+		err := fmt.Errorf("failed to render CRD templates: %s", message)
+		reqLogger.Error(err, err.Error())
+		return CRDRenderReason, err
+	}
+
+	for _, crd := range crds {
+		utils.AddInstallerLabel(crd, m.GetName(), m.GetNamespace())
+		err, ok := deploying.Deploy(r.Client, crd)
+		if err != nil {
+			reqLogger.Error(err, "failed to deploy", "Kind", crd.GetKind(), "Name", crd.GetName())
+			return DeployFailedReason, err
+		}
+		if ok {
+			message := fmt.Sprintf("created new resource: %s %s", crd.GetKind(), crd.GetName())
+			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, message)
+			SetHubCondition(&m.Status, *condition)
+		}
+	}
+	return "", nil
+}
+
+func (r *MultiClusterHubReconciler) deployResources(reqLogger logr.Logger, m *operatorv1.MultiClusterHub) (string, error) {
+	resourceDir, ok := os.LookupEnv(templatesPathEnvVar)
+	if !ok {
+		err := fmt.Errorf("%s environment variable is required", templatesPathEnvVar)
+		reqLogger.Error(err, err.Error())
+		return ResourceRenderReason, err
+	}
+
+	resourceDir = path.Join(resourceDir, templatesKind, "base")
+	files, err := os.ReadDir(resourceDir)
+	if err != nil {
+		err := fmt.Errorf("unable to read resource files from %s : %s", resourceDir, err)
+		reqLogger.Error(err, err.Error())
+		return ResourceRenderReason, err
+	}
+
+	resources := make([]*unstructured.Unstructured, 0, len(files))
+	errs := make([]error, 0, len(files))
+	for _, file := range files {
+		fileName := file.Name()
+		if filepath.Ext(fileName) != ".yaml" {
+			continue
+		}
+
+		path := path.Join(resourceDir, fileName)
+		src, err := os.ReadFile(filepath.Clean(path)) // #nosec G304 (filepath cleaned)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("error reading file %s : %s", fileName, err))
+			continue
+		}
+
+		resource := &unstructured.Unstructured{}
+		if err = yaml.Unmarshal(src, resource); err != nil {
+			errs = append(errs, fmt.Errorf("error unmarshalling file %s to unstructured: %s", fileName, err))
+			continue
+		}
+
+		resources = append(resources, resource)
+	}
+
+	if len(errs) > 0 {
+		message := mergeErrors(errs)
+		err := fmt.Errorf("failed to render resources: %s", message)
+		reqLogger.Error(err, err.Error())
+		return ResourceRenderReason, err
+	}
+
+	for _, res := range resources {
+		if res.GetNamespace() == m.Namespace {
+			err := controllerutil.SetControllerReference(m, res, r.Scheme)
+			if err != nil {
+				r.Log.Error(
+					err,
+					fmt.Sprintf(
+						"Failed to set controller reference on %s %s/%s",
+						res.GetKind(), m.Namespace, res.GetName(),
+					),
+				)
+			}
+		}
+		err, ok := deploying.Deploy(r.Client, res)
+		if err != nil {
+			reqLogger.Error(err, "failed to deploy resource", "Kind", res.GetKind(), "Name", res.GetName())
+			return DeployFailedReason, err
+		}
+
+		if ok {
+			message := fmt.Sprintf("created new resource: %s %s", res.GetKind(), res.GetName())
+			condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, message)
+			SetHubCondition(&m.Status, *condition)
+		}
+	}
+
+	return "", nil
+}

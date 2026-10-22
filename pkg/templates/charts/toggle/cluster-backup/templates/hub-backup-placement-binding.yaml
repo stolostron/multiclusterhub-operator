@@ -1,0 +1,16 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  annotations:
+    "helm.sh/hook": pre-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation
+  name: acm-hub-backup
+  namespace: open-cluster-management-backup
+placementRef:
+  name: acm-hub-backup
+  apiGroup: cluster.open-cluster-management.io
+  kind: Placement
+subjects:
+  - name: acm-hub-backup
+    apiGroup: policy.open-cluster-management.io
+    kind: PolicySet

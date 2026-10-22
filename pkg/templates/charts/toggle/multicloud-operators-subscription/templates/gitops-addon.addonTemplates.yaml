@@ -1,0 +1,610 @@
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: AddOnTemplate
+metadata:
+  name: gitops-addon
+spec:
+  addonName: gitops-addon
+  agentSpec:
+    workload:
+      manifests:
+      - apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRole
+        metadata:
+          annotations:
+            addon.open-cluster-management.io/addon-pre-delete: ''
+          labels:
+            apps.open-cluster-management.io/gitopsaddon: 'true'
+          name: gitops-addon-cleanup
+        rules:
+        - apiGroups:
+          - ''
+          resources:
+          - namespaces
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - ''
+          resources:
+          - serviceaccounts
+          verbs:
+          - get
+          - list
+          - watch
+          - delete
+        - apiGroups:
+          - ''
+          resources:
+          - pods
+          verbs:
+          - get
+          - list
+          - watch
+          - delete
+        - apiGroups:
+          - ''
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - delete
+        - apiGroups:
+          - ''
+          resources:
+          - services
+          verbs:
+          - get
+          - list
+          - watch
+          - delete
+        - apiGroups:
+          - ''
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          verbs:
+          - get
+          - list
+          - watch
+          - delete
+        - apiGroups:
+          - apps
+          resources:
+          - statefulsets
+          verbs:
+          - get
+          - list
+          - watch
+          - delete
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - roles
+          - rolebindings
+          verbs:
+          - get
+          - list
+          - delete
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - clusterroles
+          - clusterrolebindings
+          verbs:
+          - get
+          - list
+          - delete
+        - apiGroups:
+          - argoproj.io
+          resources:
+          - argocds
+          verbs:
+          - get
+          - list
+          - watch
+          - delete
+          - patch
+        - apiGroups:
+          - operators.coreos.com
+          resources:
+          - subscriptions
+          verbs:
+          - get
+          - list
+          - delete
+        - apiGroups:
+          - operators.coreos.com
+          resources:
+          - clusterserviceversions
+          verbs:
+          - get
+          - list
+          - delete
+        - apiGroups:
+          - operators.coreos.com
+          resources:
+          - installplans
+          verbs:
+          - get
+          - list
+          - delete
+        - apiGroups:
+          - pipelines.openshift.io
+          resources:
+          - gitopsservices
+          verbs:
+          - get
+          - delete
+      - apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRoleBinding
+        metadata:
+          annotations:
+            addon.open-cluster-management.io/addon-pre-delete: ''
+          labels:
+            apps.open-cluster-management.io/gitopsaddon: 'true'
+          name: gitops-addon-cleanup
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: ClusterRole
+          name: gitops-addon-cleanup
+        subjects:
+        - kind: ServiceAccount
+          name: gitops-addon
+          namespace: open-cluster-management-agent-addon
+      - apiVersion: batch/v1
+        kind: Job
+        metadata:
+          annotations:
+            addon.open-cluster-management.io/addon-pre-delete: ''
+          labels:
+            apps.open-cluster-management.io/gitopsaddon: 'true'
+          name: gitops-addon-cleanup
+          namespace: open-cluster-management-agent-addon
+        spec:
+          activeDeadlineSeconds: 600
+          backoffLimit: 3
+          manualSelector: true
+          selector:
+            matchLabels:
+              job-name: gitops-addon-cleanup
+          template:
+            metadata:
+              labels:
+                job-name: gitops-addon-cleanup
+            spec:
+              containers:
+              - args:
+                - -cleanup
+                command:
+                - /usr/local/bin/gitopsaddon
+                env:
+                - name: ARGOCD_NAMESPACE
+                  value: '{{ `{{ARGOCD_NAMESPACE}}` }}'
+                - name: OLM_SUBSCRIPTION_ENABLED
+                  value: '{{ `{{OLM_SUBSCRIPTION_ENABLED}}` }}'
+                - name: OLM_SUBSCRIPTION_NAME
+                  value: '{{ `{{OLM_SUBSCRIPTION_NAME}}` }}'
+                - name: OLM_SUBSCRIPTION_NAMESPACE
+                  value: '{{ `{{OLM_SUBSCRIPTION_NAMESPACE}}` }}'
+                - name: OLM_SUBSCRIPTION_CHANNEL
+                  value: '{{ `{{OLM_SUBSCRIPTION_CHANNEL}}` }}'
+                - name: OLM_SUBSCRIPTION_SOURCE
+                  value: '{{ `{{OLM_SUBSCRIPTION_SOURCE}}` }}'
+                - name: OLM_SUBSCRIPTION_SOURCE_NAMESPACE
+                  value: '{{ `{{OLM_SUBSCRIPTION_SOURCE_NAMESPACE}}` }}'
+                - name: OLM_SUBSCRIPTION_INSTALL_PLAN_APPROVAL
+                  value: '{{ `{{OLM_SUBSCRIPTION_INSTALL_PLAN_APPROVAL}}` }}'
+                image: '{{ .Values.global.imageOverrides.multicloud_integrations }}'
+                imagePullPolicy: IfNotPresent
+                name: cleanup
+              restartPolicy: Never
+              serviceAccountName: gitops-addon
+      - apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          labels:
+            app: gitops-addon
+            apps.open-cluster-management.io/gitopsaddon: 'true'
+          name: gitops-addon
+          namespace: open-cluster-management-agent-addon
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: gitops-addon
+          template:
+            metadata:
+              annotations:
+                target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
+              labels:
+                app: gitops-addon
+            spec:
+              containers:
+              - command:
+                - /usr/local/bin/gitopsaddon
+                env:
+                - name: GITOPS_OPERATOR_IMAGE
+                  value: '{{ `{{GITOPS_OPERATOR_IMAGE}}` }}'
+                - name: ARGOCD_IMAGE
+                  value: '{{ `{{ARGOCD_IMAGE}}` }}'
+                - name: ARGOCD_REPOSERVER_IMAGE
+                  value: '{{ `{{ARGOCD_REPOSERVER_IMAGE}}` }}'
+                - name: ARGOCD_REDIS_IMAGE
+                  value: '{{ `{{ARGOCD_REDIS_IMAGE}}` }}'
+                - name: ARGOCD_REDIS_HA_IMAGE
+                  value: '{{ `{{ARGOCD_REDIS_HA_IMAGE}}` }}'
+                - name: ARGOCD_REDIS_HA_PROXY_IMAGE
+                  value: '{{ `{{ARGOCD_REDIS_HA_PROXY_IMAGE}}` }}'
+                - name: ARGOCD_DEX_IMAGE
+                  value: '{{ `{{ARGOCD_DEX_IMAGE}}` }}'
+                - name: BACKEND_IMAGE
+                  value: '{{ `{{BACKEND_IMAGE}}` }}'
+                - name: GITOPS_CONSOLE_PLUGIN_IMAGE
+                  value: '{{ `{{GITOPS_CONSOLE_PLUGIN_IMAGE}}` }}'
+                - name: ARGOCD_EXTENSION_IMAGE
+                  value: '{{ `{{ARGOCD_EXTENSION_IMAGE}}` }}'
+                - name: ARGO_ROLLOUTS_IMAGE
+                  value: '{{ `{{ARGO_ROLLOUTS_IMAGE}}` }}'
+                - name: ARGOCD_IMAGE_UPDATER_IMAGE
+                  value: '{{ `{{ARGOCD_IMAGE_UPDATER_IMAGE}}` }}'
+                - name: ARGOCD_AGENT_IMAGE
+                  value: '{{ `{{ARGOCD_AGENT_IMAGE}}` }}'
+                - name: HTTP_PROXY
+                  value: '{{ `{{HTTP_PROXY}}` }}'
+                - name: HTTPS_PROXY
+                  value: '{{ `{{HTTPS_PROXY}}` }}'
+                - name: NO_PROXY
+                  value: '{{ `{{NO_PROXY}}` }}'
+                - name: ARGOCD_AGENT_ENABLED
+                  value: '{{ `{{ARGOCD_AGENT_ENABLED}}` }}'
+                - name: ARGOCD_AGENT_SERVER_ADDRESS
+                  value: '{{ `{{ARGOCD_AGENT_SERVER_ADDRESS}}` }}'
+                - name: ARGOCD_AGENT_SERVER_PORT
+                  value: '{{ `{{ARGOCD_AGENT_SERVER_PORT}}` }}'
+                - name: ARGOCD_AGENT_MODE
+                  value: '{{ `{{ARGOCD_AGENT_MODE}}` }}'
+                - name: ARGOCD_NAMESPACE
+                  value: '{{ `{{ARGOCD_NAMESPACE}}` }}'
+                - name: OLM_SUBSCRIPTION_ENABLED
+                  value: '{{ `{{OLM_SUBSCRIPTION_ENABLED}}` }}'
+                - name: OLM_SUBSCRIPTION_NAME
+                  value: '{{ `{{OLM_SUBSCRIPTION_NAME}}` }}'
+                - name: OLM_SUBSCRIPTION_NAMESPACE
+                  value: '{{ `{{OLM_SUBSCRIPTION_NAMESPACE}}` }}'
+                - name: OLM_SUBSCRIPTION_CHANNEL
+                  value: '{{ `{{OLM_SUBSCRIPTION_CHANNEL}}` }}'
+                - name: OLM_SUBSCRIPTION_SOURCE
+                  value: '{{ `{{OLM_SUBSCRIPTION_SOURCE}}` }}'
+                - name: OLM_SUBSCRIPTION_SOURCE_NAMESPACE
+                  value: '{{ `{{OLM_SUBSCRIPTION_SOURCE_NAMESPACE}}` }}'
+                - name: OLM_SUBSCRIPTION_INSTALL_PLAN_APPROVAL
+                  value: '{{ `{{OLM_SUBSCRIPTION_INSTALL_PLAN_APPROVAL}}` }}'
+                image: '{{ .Values.global.imageOverrides.multicloud_integrations }}'
+                imagePullPolicy: IfNotPresent
+                name: gitops-addon
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                    - ALL
+                  readOnlyRootFilesystem: true
+                  runAsNonRoot: true
+                volumeMounts:
+                - mountPath: /tmp
+                  name: tmp-volume
+              serviceAccountName: gitops-addon
+              volumes:
+              - emptyDir: {}
+                name: tmp-volume
+      - apiVersion: networking.k8s.io/v1
+        kind: NetworkPolicy
+        metadata:
+          labels:
+            apps.open-cluster-management.io/gitopsaddon: 'true'
+          name: gitops-addon-policy
+          namespace: open-cluster-management-agent-addon
+        spec:
+          egress:
+          - ports:
+            - port: 53
+              protocol: UDP
+            - port: 53
+              protocol: TCP
+            - port: 5353
+              protocol: UDP
+            - port: 5353
+              protocol: TCP
+          - ports:
+            - port: 443
+              protocol: TCP
+            - port: 6443
+              protocol: TCP
+          ingress:
+          - ports:
+            - port: 8387
+              protocol: TCP
+          podSelector:
+            matchLabels:
+              app: gitops-addon
+          policyTypes:
+          - Ingress
+          - Egress
+      - apiVersion: networking.k8s.io/v1
+        kind: NetworkPolicy
+        metadata:
+          labels:
+            apps.open-cluster-management.io/gitopsaddon: 'true'
+          name: gitops-addon-cleanup-policy
+          namespace: open-cluster-management-agent-addon
+        spec:
+          egress:
+          - ports:
+            - port: 53
+              protocol: UDP
+            - port: 53
+              protocol: TCP
+            - port: 5353
+              protocol: UDP
+            - port: 5353
+              protocol: TCP
+          - ports:
+            - port: 443
+              protocol: TCP
+            - port: 6443
+              protocol: TCP
+          podSelector:
+            matchLabels:
+              job-name: gitops-addon-cleanup
+          policyTypes:
+          - Ingress
+          - Egress
+      - apiVersion: v1
+        imagePullSecrets:
+        - name: open-cluster-management-image-pull-credentials
+        kind: ServiceAccount
+        metadata:
+          labels:
+            apps.open-cluster-management.io/gitopsaddon: 'true'
+          name: gitops-addon
+          namespace: open-cluster-management-agent-addon
+      - apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRole
+        metadata:
+          labels:
+            apps.open-cluster-management.io/gitopsaddon: 'true'
+          name: gitops-addon
+        rules:
+        - apiGroups:
+          - ''
+          resources:
+          - namespaces
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+        - apiGroups:
+          - ''
+          resources:
+          - secrets
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ''
+          resources:
+          - serviceaccounts
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ''
+          resources:
+          - pods
+          verbs:
+          - get
+          - list
+          - watch
+          - delete
+        - apiGroups:
+          - ''
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ''
+          resources:
+          - services
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ''
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - apps
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - roles
+          - rolebindings
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+          - escalate
+          - bind
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - clusterroles
+          - clusterrolebindings
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+          - escalate
+          - bind
+        - apiGroups:
+          - apiextensions.k8s.io
+          resources:
+          - customresourcedefinitions
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+        - apiGroups:
+          - argoproj.io
+          resources:
+          - argocds
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - delete
+        - apiGroups:
+          - operators.coreos.com
+          resources:
+          - subscriptions
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - delete
+        - apiGroups:
+          - operators.coreos.com
+          resources:
+          - clusterserviceversions
+          verbs:
+          - get
+          - list
+          - delete
+        - apiGroups:
+          - operators.coreos.com
+          resources:
+          - operatorgroups
+          verbs:
+          - get
+          - list
+          - create
+        - apiGroups:
+          - pipelines.openshift.io
+          resources:
+          - gitopsservices
+          verbs:
+          - get
+          - delete
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
+          - managedclusters
+          verbs:
+          - list
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
+          - clusterclaims
+          verbs:
+          - get
+        - apiGroups:
+          - operator.open-cluster-management.io
+          resources:
+          - clustermanagers
+          verbs:
+          - list
+        - apiGroups:
+          - coordination.k8s.io
+          resources:
+          - leases
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+      - apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRoleBinding
+        metadata:
+          labels:
+            apps.open-cluster-management.io/gitopsaddon: 'true'
+          name: gitops-addon
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: ClusterRole
+          name: gitops-addon
+        subjects:
+        - kind: ServiceAccount
+          name: gitops-addon
+          namespace: open-cluster-management-agent-addon

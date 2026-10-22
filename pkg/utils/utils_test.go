@@ -1,0 +1,758 @@
+// Copyright (c) 2020 Red Hat, Inc.
+// Copyright Contributors to the Open Cluster Management project
+
+package utils
+
+import (
+	"context"
+	"crypto/tls"
+	"os"
+	"reflect"
+	"testing"
+
+	configv1 "github.com/openshift/api/config/v1"
+	mchv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	resources "github.com/stolostron/multiclusterhub-operator/test/unit-tests"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+)
+
+var _ = Describe("utility functions", func() {
+	Context("using label function", func() {
+		It("adds the installer labels to the object", func() {
+			By("creating an unstructured object with a label")
+			u := &unstructured.Unstructured{}
+			u.SetLabels(map[string]string{"mylabel": "myvalue"})
+
+			By("adding the installer labels")
+			name := "installer-name"
+			ns := "installer-ns"
+			AddInstallerLabel(u, name, ns)
+			l := u.GetLabels()
+			s, ok := l["installer.name"]
+			Expect(ok).To(BeTrue())
+			Expect(s).To(Equal(name))
+			s, ok = l["installer.namespace"]
+			Expect(ok).To(BeTrue())
+			Expect(s).To(Equal(ns))
+
+			By("ensuring existing labels are still present")
+			s, ok = l["mylabel"]
+			Expect(ok).To(BeTrue())
+			Expect(s).To(Equal("myvalue"))
+		})
+	})
+
+	Context("AvailabilityConfigIsValid function", func() {
+		It("returns true for a valid config", func() {
+			c := mchv1.HAHigh
+			Expect(mchv1.AvailabilityConfigIsValid(c)).To(BeTrue())
+		})
+		It("returns false for an invalid config", func() {
+			c := mchv1.AvailabilityType("invalid")
+			Expect(mchv1.AvailabilityConfigIsValid(c)).To(BeFalse())
+		})
+	})
+
+	Context("functions to get values based on MCH", func() {
+		It("gets test images", func() {
+			images := GetTestImages()
+			Expect(len(images)).To(BeNumerically(">", 0))
+		})
+		It("gets deployments", func() {
+			os.Setenv("OPERATOR_PACKAGE", "advanced-cluster-management")
+			mch := resources.EmptyMCH()
+			mch.Enable(mchv1.ClusterBackup)
+			d := GetDeployments(&mch)
+			Expect(len(d)).To(Equal(2))
+		})
+		It("gets deployments in Community Mode", func() {
+			os.Setenv("OPERATOR_PACKAGE", "stolostron")
+			mch := resources.EmptyMCH()
+			d := GetDeployments(&mch)
+			Expect(len(d)).To(Equal(0))
+		})
+		It("gets deployments for status with mcho-repo disabled", func() {
+			mch := resources.EmptyMCH()
+			d := GetDeploymentsForStatus(&mch, true, false)
+			Expect(len(d)).To(Equal(0))
+		})
+		It("gets deployments for status with insights enabled", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable("insights")
+			d := GetDeploymentsForStatus(&mch, true, false)
+			Expect(len(d)).To(Equal(2))
+		})
+		It("gets deployments for status with cluster-lifecycle enabled", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable(mchv1.ClusterLifecycle)
+			d := GetDeploymentsForStatus(&mch, true, false)
+			Expect(len(d)).To(Equal(1))
+		})
+		It("gets deployments for status with cluster-backkup enabled", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable(mchv1.ClusterBackup)
+		})
+		It("gets deployments for status with grc enabled", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable(mchv1.GRC)
+			d := GetDeploymentsForStatus(&mch, true, false)
+			Expect(len(d)).To(Equal(2))
+		})
+		It("gets deployments for status with app-lifecycle enabled", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable(mchv1.Appsub)
+			d := GetDeploymentsForStatus(&mch, true, false)
+			Expect(len(d)).To(Equal(6))
+			Expect(containsDeployment(d, "multicluster-integrations", resources.MulticlusterhubNamespace)).To(BeTrue())
+		})
+		It("gets deployments for status with console enabled", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable(mchv1.Console)
+			d := GetDeploymentsForStatus(&mch, true, false)
+			Expect(len(d)).To(Equal(2))
+			Expect(containsDeployment(d, "console-chart-console-v2", resources.MulticlusterhubNamespace)).To(BeTrue())
+			Expect(containsDeployment(d, "acm-cli-downloads", resources.MulticlusterhubNamespace)).To(BeTrue())
+		})
+		It("gets deployments for status with observability enabled", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable(mchv1.MultiClusterObservability)
+			d := GetDeploymentsForStatus(&mch, true, false)
+			Expect(len(d)).To(Equal(1))
+		})
+		It("gets deployments for status with volsync enabled", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable(mchv1.Volsync)
+			d := GetDeploymentsForStatus(&mch, true, false)
+			Expect(len(d)).To(Equal(1))
+		})
+		It("gets deployments for status with submariner-addon enabled", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable(mchv1.SubmarinerAddon)
+			d := GetDeploymentsForStatus(&mch, true, false)
+			Expect(len(d)).To(Equal(1))
+			Expect(containsDeployment(d, "submariner-addon", resources.MulticlusterhubNamespace)).To(BeTrue())
+		})
+		It("gets deployments for status with fine-grained-rbac enabled", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable(mchv1.FineGrainedRbac)
+			d := GetDeploymentsForStatus(&mch, true, false)
+			Expect(len(d)).To(Equal(1))
+			Expect(containsDeployment(d, "multicluster-role-assignment-controller", resources.MulticlusterhubNamespace)).To(BeTrue())
+		})
+		It("gets deployments for status with MTV integrations enabled", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable(mchv1.MTVIntegrations)
+			d := GetDeploymentsForStatus(&mch, true, false)
+			Expect(len(d)).To(Equal(1))
+			Expect(containsDeployment(d, "mtv-integrations-controller", resources.MulticlusterhubNamespace)).To(BeTrue())
+		})
+		It("Sets Default Component values", func() {
+			mch := resources.EmptyMCH()
+			updated, err := SetDefaultComponents(&mch)
+			Expect(updated).To(Equal(true))
+			Expect(err).To(BeNil())
+		})
+		It("Sets Default Component values", func() {
+			mch := resources.EmptyMCH()
+			updated, err := SetDefaultComponents(&mch)
+			Expect(updated).To(Equal(true))
+			Expect(err).To(BeNil())
+		})
+		It("gets custom resources for status with MCE disabled", func() {
+			mch := resources.EmptyMCH()
+			cr := GetCustomResourcesForStatus(&mch, "v0")
+			Expect(len(cr)).To(Equal(0))
+		})
+		It("gets custom resources for status with MCE enabled (OLM v0)", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable(mchv1.MultiClusterEngine)
+			cr := GetCustomResourcesForStatus(&mch, "v0")
+			Expect(len(cr)).To(Equal(3)) // mce-sub, mce-csv, mce
+		})
+		It("gets custom resources for status with MCE enabled (OLM v1)", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable(mchv1.MultiClusterEngine)
+			cr := GetCustomResourcesForStatus(&mch, "v1")
+			Expect(len(cr)).To(Equal(2)) // mce-clusterextension, mce
+		})
+		It("gets custom resources for status with MCE enabled (no OLM)", func() {
+			mch := resources.EmptyMCH()
+			mch.Enable(mchv1.MultiClusterEngine)
+			cr := GetCustomResourcesForStatus(&mch, "")
+			Expect(len(cr)).To(Equal(1)) // mce only
+		})
+		It("gets the default toleration", func() {
+			mch := resources.EmptyMCH()
+			t := GetTolerations(&mch)
+			Expect(len(t)).To(Equal(1))
+			Expect(string(t[0].Effect)).To(Equal("NoSchedule"))
+			Expect(string(t[0].Key)).To(Equal("node-role.kubernetes.io/infra"))
+			Expect(string(t[0].Operator)).To(Equal("Exists"))
+		})
+		It("checks if a string is in a slice of strings", func() {
+			s := []string{"alpha", "beta", "gamma"}
+			Expect(Contains(s, "beta")).To(BeTrue())
+			Expect(Contains(s, "delta")).To(BeFalse())
+		})
+		It("removes a string from a slice of strings", func() {
+			s := []string{"alpha", "beta", "gamma"}
+			s = RemoveString(s, "beta")
+			Expect(Contains(s, "beta")).To(BeFalse())
+			Expect(len(s)).To(Equal(2))
+			s = RemoveString(s, "delta")
+			Expect(len(s)).To(Equal(2))
+		})
+	})
+})
+
+func TestMchIsValid(t *testing.T) {
+	validMCH := &mchv1.MultiClusterHub{
+		TypeMeta:   metav1.TypeMeta{Kind: "MultiClusterHub"},
+		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
+		Spec: mchv1.MultiClusterHubSpec{
+			ImagePullSecret:    "test",
+			AvailabilityConfig: mchv1.HAHigh,
+		},
+	}
+
+	type args struct {
+		m *mchv1.MultiClusterHub
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			"Valid MCH with HAHigh",
+			args{validMCH},
+			true,
+		},
+		{
+			"Valid MCH with HABasic",
+			args{&mchv1.MultiClusterHub{
+				Spec: mchv1.MultiClusterHubSpec{
+					AvailabilityConfig: mchv1.HABasic,
+				},
+			}},
+			true,
+		},
+		{
+			"Invalid MCH with empty AvailabilityConfig",
+			args{&mchv1.MultiClusterHub{}},
+			false,
+		},
+		{
+			"Invalid MCH with invalid AvailabilityConfig",
+			args{&mchv1.MultiClusterHub{
+				Spec: mchv1.MultiClusterHubSpec{
+					AvailabilityConfig: mchv1.AvailabilityType("invalid"),
+				},
+			}},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := MchIsValid(tt.args.m); got != tt.want {
+				t.Errorf("MchIsValid() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetImagePullPolicy(t *testing.T) {
+	noPullPolicyMCH := &mchv1.MultiClusterHub{}
+	pullPolicyMCH := &mchv1.MultiClusterHub{
+		Spec: mchv1.MultiClusterHubSpec{
+			Overrides: &mchv1.Overrides{ImagePullPolicy: corev1.PullIfNotPresent},
+		},
+	}
+
+	t.Run("No pull policy set", func(t *testing.T) {
+		want := corev1.PullIfNotPresent
+		if got := GetImagePullPolicy(noPullPolicyMCH); got != want {
+			t.Errorf("GetImagePullPolicy() = %v, want %v", got, want)
+		}
+	})
+	t.Run("Pull policy set", func(t *testing.T) {
+		want := corev1.PullIfNotPresent
+		if got := GetImagePullPolicy(pullPolicyMCH); got != want {
+			t.Errorf("GetImagePullPolicy() = %v, want %v", got, want)
+		}
+	})
+}
+
+func TestDefaultReplicaCount(t *testing.T) {
+	mchDefault := &mchv1.MultiClusterHub{}
+	mchNonHA := &mchv1.MultiClusterHub{
+		Spec: mchv1.MultiClusterHubSpec{
+			AvailabilityConfig: mchv1.HABasic,
+		},
+	}
+	mchHA := &mchv1.MultiClusterHub{
+		Spec: mchv1.MultiClusterHubSpec{
+			AvailabilityConfig: mchv1.HAHigh,
+		},
+	}
+
+	t.Run("HA (by default)", func(t *testing.T) {
+		if got := DefaultReplicaCount(mchDefault); got != 2 {
+			t.Errorf("DefaultReplicaCount() = %v, want %v", got, 2)
+		}
+	})
+	t.Run("Non-HA", func(t *testing.T) {
+		if got := DefaultReplicaCount(mchNonHA); got != 1 {
+			t.Errorf("DefaultReplicaCount() = %v, want %v", got, 1)
+		}
+	})
+	t.Run("HA-mode replicas", func(t *testing.T) {
+		if got := DefaultReplicaCount(mchHA); got <= 1 {
+			t.Errorf("DefaultReplicaCount() = %v, but should return multiple replicas", got)
+		}
+	})
+}
+
+func TestTrackedNamespaces(t *testing.T) {
+	tests := []struct {
+		name string
+		mch  *mchv1.MultiClusterHub
+		want []string
+	}{
+		{
+			name: "Watching only in same namespace",
+			mch:  &mchv1.MultiClusterHub{ObjectMeta: metav1.ObjectMeta{Namespace: "test"}},
+			want: []string{"test"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := TrackedNamespaces(tt.mch); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("TrackedNamespaces() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_deduplicate(t *testing.T) {
+	tests := []struct {
+		name string
+		have []mchv1.ComponentConfig
+		want []mchv1.ComponentConfig
+	}{
+		{
+			name: "unique components",
+			have: []mchv1.ComponentConfig{
+				{Name: "component1", Enabled: true},
+				{Name: "component2", Enabled: true},
+			},
+			want: []mchv1.ComponentConfig{
+				{Name: "component1", Enabled: true},
+				{Name: "component2", Enabled: true},
+			},
+		},
+		{
+			name: "duplicate components",
+			have: []mchv1.ComponentConfig{
+				{Name: "component1", Enabled: false},
+				{Name: "component2", Enabled: true},
+				{Name: "component1", Enabled: true},
+			},
+			want: []mchv1.ComponentConfig{
+				{Name: "component1", Enabled: true},
+				{Name: "component2", Enabled: true},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := deduplicate(tt.have); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("deduplicate() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetMCEComponents(t *testing.T) {
+	mch := &mchv1.MultiClusterHub{}
+	mch.Spec.DisableHubSelfManagement = false
+	config := GetMCEComponents(mch)
+
+	found := false
+	for _, c := range config {
+		if c.Name != mchv1.MCELocalCluster {
+			continue
+		}
+		found = true
+		if !c.Enabled {
+			t.Errorf("GetMCEComponents() with DisableHubSelfManagement=false, expected 'local-cluster' to be enabled")
+		}
+	}
+	if !found {
+		t.Errorf("GetMCEComponents() with DisableHubSelfManagement=false, expected 'local-cluster' to be present")
+	}
+
+	mch.Spec.DisableHubSelfManagement = true
+	config = GetMCEComponents(mch)
+
+	found = false
+	for _, c := range config {
+		if c.Name != mchv1.MCELocalCluster {
+			continue
+		}
+		found = true
+		if c.Enabled {
+			t.Errorf("GetMCEComponents() with DisableHubSelfManagement=true, expected 'local-cluster' to be disabled")
+		}
+	}
+	if !found {
+		t.Errorf("GetMCEComponents() with DisableHubSelfManagement=true, expected 'local-cluster' to be present")
+	}
+}
+
+func Test_GetDeploymentsForStatus(t *testing.T) {
+	tests := []struct {
+		name           string
+		mch            mchv1.MultiClusterHub
+		stsEnabled     bool
+		want           int
+		mustContain    []types.NamespacedName
+		mustNotContain []types.NamespacedName
+	}{
+		{
+			name:       "should get deployment status for MCH components",
+			mch:        resources.EmptyMCH(),
+			stsEnabled: false,
+			want:       21,
+		},
+		{
+			name: "should get deployment status for MCH components with STS enabled",
+			mch: mchv1.MultiClusterHub{
+				Spec: mchv1.MultiClusterHubSpec{
+					Overrides: &mchv1.Overrides{
+						Components: []mchv1.ComponentConfig{
+							{
+								Name:    mchv1.ClusterBackup,
+								Enabled: true,
+							},
+						},
+					},
+				},
+			},
+			stsEnabled: true,
+			want:       22,
+			mustNotContain: []types.NamespacedName{
+				{Name: "openshift-adp-controller-manager", Namespace: ClusterSubscriptionNamespace},
+			},
+		},
+		{
+			name: "should get deployment status for MCH components with STS disabled",
+			mch: mchv1.MultiClusterHub{
+				Spec: mchv1.MultiClusterHubSpec{
+					Overrides: &mchv1.Overrides{
+						Components: []mchv1.ComponentConfig{
+							{
+								Name:    mchv1.ClusterBackup,
+								Enabled: true,
+							},
+						},
+					},
+				},
+			},
+			stsEnabled: false,
+			want:       23,
+			mustContain: []types.NamespacedName{
+				{Name: "openshift-adp-controller-manager", Namespace: ClusterSubscriptionNamespace},
+			},
+		},
+		{
+			name: "should get deployment status for MCH components with dynamic-scoring-framework-preview enabled",
+			mch: mchv1.MultiClusterHub{
+				Spec: mchv1.MultiClusterHubSpec{
+					Overrides: &mchv1.Overrides{
+						Components: []mchv1.ComponentConfig{
+							{
+								Name:    mchv1.DynamicScoringFrameworkPreview,
+								Enabled: true,
+							},
+						},
+					},
+				},
+			},
+			stsEnabled: false,
+			want:       23,
+			mustContain: []types.NamespacedName{
+				{Name: "dynamic-scoring-framework-controller", Namespace: ""},
+				{Name: "dynamic-scoring-addon-controller", Namespace: ""},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if _, err := SetDefaultComponents(&tt.mch); err != nil {
+				t.Errorf("failed to set default components: %v", err)
+			}
+
+			deployments := GetDeploymentsForStatus(&tt.mch, true, tt.stsEnabled)
+
+			// Check total count
+			if len(deployments) != tt.want {
+				t.Errorf("expected %v deployments, got %v", tt.want, len(deployments))
+			}
+
+			// Verify deployments that must be present
+			for _, d := range tt.mustContain {
+				if !containsDeployment(deployments, d.Name, d.Namespace) {
+					t.Errorf("missing deployment: %s/%s", d.Namespace, d.Name)
+				}
+			}
+
+			// Verify deployments that must not be present
+			for _, d := range tt.mustNotContain {
+				if containsDeployment(deployments, d.Name, d.Namespace) {
+					t.Errorf("unexpected deployment: %s/%s", d.Namespace, d.Name)
+				}
+			}
+		})
+	}
+}
+
+// containsDeployment checks if a deployment with the given name and namespace exists in the list
+func containsDeployment(deployments []types.NamespacedName, name, namespace string) bool {
+	for _, d := range deployments {
+		if d.Name == name && d.Namespace == namespace {
+			return true
+		}
+	}
+	return false
+}
+
+func TestConvertCipherSuites(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  []string
+		want   []uint16
+		wantOk bool
+	}{
+		{
+			name:   "TLS 1.2 ECDHE-RSA ciphers",
+			input:  []string{"ECDHE-RSA-AES128-GCM-SHA256", "ECDHE-RSA-AES256-GCM-SHA384"},
+			want:   []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384},
+			wantOk: true,
+		},
+		{
+			name:   "TLS 1.2 ECDHE-ECDSA ciphers",
+			input:  []string{"ECDHE-ECDSA-AES128-GCM-SHA256", "ECDHE-ECDSA-CHACHA20-POLY1305"},
+			want:   []uint16{tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256},
+			wantOk: true,
+		},
+		{
+			name:   "TLS 1.3 ciphers are filtered out",
+			input:  []string{"TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384", "ECDHE-RSA-AES128-GCM-SHA256"},
+			want:   []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256},
+			wantOk: true,
+		},
+		{
+			name:   "All TLS 1.3 ciphers filtered",
+			input:  []string{"TLS_AES_128_GCM_SHA256", "TLS_CHACHA20_POLY1305_SHA256"},
+			want:   []uint16{},
+			wantOk: true,
+		},
+		{
+			name:   "Unknown cipher silently ignored",
+			input:  []string{"UNKNOWN-CIPHER", "ECDHE-RSA-AES128-GCM-SHA256"},
+			want:   []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256},
+			wantOk: true,
+		},
+		{
+			name:   "Empty input",
+			input:  []string{},
+			want:   []uint16{},
+			wantOk: true,
+		},
+		{
+			name:   "CBC ciphers",
+			input:  []string{"ECDHE-RSA-AES128-SHA256", "AES128-SHA"},
+			want:   []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256, tls.TLS_RSA_WITH_AES_128_CBC_SHA},
+			wantOk: true,
+		},
+		{
+			name:   "DHE ciphers not supported (silently ignored)",
+			input:  []string{"DHE-RSA-AES128-GCM-SHA256", "ECDHE-RSA-AES128-GCM-SHA256"},
+			want:   []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256},
+			wantOk: true,
+		},
+		{
+			name:   "3DES cipher",
+			input:  []string{"DES-CBC3-SHA"},
+			want:   []uint16{tls.TLS_RSA_WITH_3DES_EDE_CBC_SHA},
+			wantOk: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ConvertCipherSuites(tt.input)
+
+			if len(got) != len(tt.want) {
+				t.Errorf("ConvertCipherSuites() returned %d ciphers, want %d", len(got), len(tt.want))
+				return
+			}
+
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Errorf("ConvertCipherSuites()[%d] = %v, want %v", i, got[i], tt.want[i])
+				}
+			}
+		})
+	}
+}
+
+func TestGetAPIServerTLSProfile(t *testing.T) {
+	// Create scheme with necessary types
+	scheme := runtime.NewScheme()
+	_ = configv1.AddToScheme(scheme)
+
+	tests := []struct {
+		name        string
+		apiServer   *configv1.APIServer
+		unitTest    bool
+		expectError bool
+		wantProfile *configv1.TLSProfileSpec
+	}{
+		{
+			name:        "unit test mode returns intermediate",
+			unitTest:    true,
+			expectError: false,
+			wantProfile: configv1.TLSProfiles[configv1.TLSProfileIntermediateType],
+		},
+		{
+			name: "nil TLS profile returns intermediate",
+			apiServer: &configv1.APIServer{
+				ObjectMeta: metav1.ObjectMeta{Name: "cluster"},
+				Spec:       configv1.APIServerSpec{},
+			},
+			expectError: false,
+			wantProfile: configv1.TLSProfiles[configv1.TLSProfileIntermediateType],
+		},
+		{
+			name: "old profile type",
+			apiServer: &configv1.APIServer{
+				ObjectMeta: metav1.ObjectMeta{Name: "cluster"},
+				Spec: configv1.APIServerSpec{
+					TLSSecurityProfile: &configv1.TLSSecurityProfile{
+						Type: configv1.TLSProfileOldType,
+					},
+				},
+			},
+			expectError: false,
+			wantProfile: configv1.TLSProfiles[configv1.TLSProfileOldType],
+		},
+		{
+			name: "intermediate profile type",
+			apiServer: &configv1.APIServer{
+				ObjectMeta: metav1.ObjectMeta{Name: "cluster"},
+				Spec: configv1.APIServerSpec{
+					TLSSecurityProfile: &configv1.TLSSecurityProfile{
+						Type: configv1.TLSProfileIntermediateType,
+					},
+				},
+			},
+			expectError: false,
+			wantProfile: configv1.TLSProfiles[configv1.TLSProfileIntermediateType],
+		},
+		{
+			name: "modern profile type",
+			apiServer: &configv1.APIServer{
+				ObjectMeta: metav1.ObjectMeta{Name: "cluster"},
+				Spec: configv1.APIServerSpec{
+					TLSSecurityProfile: &configv1.TLSSecurityProfile{
+						Type: configv1.TLSProfileModernType,
+					},
+				},
+			},
+			expectError: false,
+			wantProfile: configv1.TLSProfiles[configv1.TLSProfileModernType],
+		},
+		{
+			name: "custom profile type",
+			apiServer: &configv1.APIServer{
+				ObjectMeta: metav1.ObjectMeta{Name: "cluster"},
+				Spec: configv1.APIServerSpec{
+					TLSSecurityProfile: &configv1.TLSSecurityProfile{
+						Type: configv1.TLSProfileCustomType,
+						Custom: &configv1.CustomTLSProfile{
+							TLSProfileSpec: configv1.TLSProfileSpec{
+								Ciphers:       []string{"TLS_AES_128_GCM_SHA256"},
+								MinTLSVersion: configv1.VersionTLS13,
+							},
+						},
+					},
+				},
+			},
+			expectError: false,
+			wantProfile: &configv1.TLSProfileSpec{
+				Ciphers:       []string{"TLS_AES_128_GCM_SHA256"},
+				MinTLSVersion: configv1.VersionTLS13,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Set up environment for unit test mode
+			if tt.unitTest {
+				os.Setenv(UnitTestEnvVar, "true")
+				defer os.Unsetenv(UnitTestEnvVar)
+			} else {
+				os.Unsetenv(UnitTestEnvVar)
+			}
+
+			// Create fake client
+			var objs []runtime.Object
+			if tt.apiServer != nil {
+				objs = append(objs, tt.apiServer)
+			}
+			cl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(objs...).Build()
+
+			// Call function
+			got, err := GetAPIServerTLSProfile(context.Background(), cl)
+
+			// Check error expectation
+			if tt.expectError && err == nil {
+				t.Errorf("GetAPIServerTLSProfile() expected error but got none")
+				return
+			}
+			if !tt.expectError && err != nil {
+				t.Errorf("GetAPIServerTLSProfile() unexpected error: %v", err)
+				return
+			}
+
+			// Compare profiles
+			if !tt.expectError {
+				if got == nil {
+					t.Errorf("GetAPIServerTLSProfile() returned nil profile")
+					return
+				}
+				if got.MinTLSVersion != tt.wantProfile.MinTLSVersion {
+					t.Errorf("GetAPIServerTLSProfile() MinTLSVersion = %v, want %v",
+						got.MinTLSVersion, tt.wantProfile.MinTLSVersion)
+				}
+				if !reflect.DeepEqual(got.Ciphers, tt.wantProfile.Ciphers) {
+					t.Errorf("GetAPIServerTLSProfile() Ciphers = %v, want %v",
+						got.Ciphers, tt.wantProfile.Ciphers)
+				}
+			}
+		})
+	}
+}

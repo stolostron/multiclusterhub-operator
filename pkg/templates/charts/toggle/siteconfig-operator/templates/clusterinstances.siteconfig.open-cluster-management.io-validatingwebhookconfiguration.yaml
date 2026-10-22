@@ -1,0 +1,28 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    service.beta.openshift.io/inject-cabundle: 'true'
+  name: clusterinstances.siteconfig.open-cluster-management.io
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-clusterinstances-siteconfig-open-cluster-management-io
+      namespace: '{{ default "system" .Values.global.namespace }}'
+      path: /validate-siteconfig-open-cluster-management-io-v1alpha1-clusterinstance
+  failurePolicy: Fail
+  name: clusterinstances.siteconfig.open-cluster-management.io
+  rules:
+  - apiGroups:
+    - siteconfig.open-cluster-management.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+    resources:
+    - clusterinstances
+  sideEffects: None

@@ -1,0 +1,217 @@
+// go:build ignore
+// Copyright Contributors to the Open Cluster Management project
+
+// Package main generates RBAC manifests from embedded templates.
+//
+// This is a build-time tool that processes CRD files to generate
+// ClusterRole and ClusterRoleBinding manifests for the operator.
+package main
+
+import (
+	"fmt"
+	"os"
+	"sort"
+	"strings"
+	"text/template"
+
+	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	renderer "github.com/stolostron/multiclusterhub-operator/pkg/rendering"
+	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
+	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+)
+
+const (
+	chartsDir = "pkg/templates/charts/toggle"
+	crdsDir   = "pkg/templates/crds"
+)
+
+var resources = []string{
+	"APIService",
+	"ClusterManagementAddOn",
+	"ClusterRoleBinding",
+	"ClusterRole",
+	"ConfigMap",
+	"ConsoleCLIDownload",
+	"ConsolePlugin",
+	"ConsoleQuickStart",
+	"CustomResourceDefinition",
+	"Deployment",
+	"Job",
+	"NetworkPolicy",
+	"ManagedClusterSetBinding",
+	"ManagedProxyConfiguration",
+	"ManagedProxyServiceResolver",
+	"MulticlusterRoleAssignment",
+	"MutatingWebhookConfiguration",
+	"PersistentVolumeClaim",
+	"PlacementBinding",
+	"PlacementRule",
+	"Placement",
+	"Policy",
+	"PolicySet",
+	"PrometheusRule",
+	"Role",
+	"RoleBinding",
+	"Route",
+	"Secret",
+	"Service",
+	"ServiceAccount",
+	"ServiceMonitor",
+	"StatefulSet",
+	"ValidatingWebhookConfiguration",
+	"AddOnDeploymentConfig",
+	"AddOnTemplate",
+	"Subscription",
+	"OperatorGroup",
+	"ClusterExtension",
+	"ConfigMap",
+}
+
+func main() {
+	// os.Setenv("DIRECTORY_OVERRIDE", "../../.git")
+	// defer os.Unsetenv("DIRECTORY_OVERRIDE")
+	os.Setenv("ACM_HUB_OCP_VERSION", "4.12.0")
+
+	ctrl.SetLogger(zap.New(zap.ConsoleEncoder()))
+
+	testMCH := &operatorv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "testMultiClusterHub",
+		},
+	}
+
+	testImages := map[string]string{}
+	for _, v := range utils.GetTestImages() {
+		testImages[v] = "quay.io/test/test:Test"
+		fmt.Printf("%v = %v\n", v, testImages[v])
+	}
+
+	testTemplateOverrides := map[string]string{}
+	chartsDir := chartsDir
+
+	// Render charts for both OLM v0 and v1 to generate complete RBAC markers
+	var allTemplates []*unstructured.Unstructured
+	for _, olmVersion := range []string{"v0", "v1"} {
+		templates, errs := renderer.RenderCharts(chartsDir, testMCH, testImages, testTemplateOverrides, false, olmVersion)
+		if len(errs) > 0 {
+			panic(errs)
+		}
+		allTemplates = append(allTemplates, templates...)
+	}
+
+	if len(allTemplates) == 0 {
+		panic("No templates rendered")
+	}
+
+	for _, template := range allTemplates {
+		if template.GetKind() == "ClusterRole" {
+			clusterrole := &rbacv1.ClusterRole{}
+			err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, clusterrole)
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+
+	f, err := os.Create("pkg/templates/rbac_gen.go")
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		if err := f.Close(); err != nil {
+			panic(err)
+		}
+	}()
+
+	lines := []string{}
+	for _, template := range allTemplates {
+		if template.GetKind() == "ClusterRole" {
+			// Copy all permission defined in Clusterroles
+			// Duplicate permissions will be deduplicated by controller gen
+
+			clusterrole := &rbacv1.ClusterRole{}
+			err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, clusterrole)
+			if err != nil {
+				panic(err)
+			}
+
+			newlines := extractFromRules(clusterrole.Rules)
+			lines = append(lines, newlines...)
+
+		} else if template.GetKind() == "Role" {
+			role := &rbacv1.Role{}
+			err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, role)
+			if err != nil {
+				panic(err)
+			}
+
+			newlines := extractFromRules(role.Rules)
+			lines = append(lines, newlines...)
+
+		} else {
+			if template.GetKind() != "" {
+				// check that we have the permissions to apply this resource and
+				// error if not
+				apiGroup := template.GroupVersionKind().Group
+				resource := template.GetKind()
+
+				found := false
+				for _, k := range resources {
+					if k == resource {
+						found = true
+					}
+				}
+
+				if !found {
+					panic(fmt.Sprintf("resource %s/%s not accounted for in RBAC generation", apiGroup, resource))
+				}
+			}
+		}
+	}
+
+	sort.Strings(lines)
+
+	err = packageTemplate.Execute(f, struct {
+		Markers []string
+	}{
+		Markers: lines,
+	})
+
+	if err != nil {
+		panic(err)
+	}
+}
+
+func extractFromRules(rules []rbacv1.PolicyRule) []string {
+	lines := []string{}
+	for _, rule := range rules {
+		if len(rule.Resources) == 0 {
+			continue
+		}
+		for i, group := range rule.APIGroups {
+			if group == "" {
+				rule.APIGroups[i] = "\"\""
+			}
+		}
+		apiGroups := strings.Join(rule.APIGroups, ";")
+		resources := strings.Join(rule.Resources, ";")
+		verbs := strings.Join(rule.Verbs, ";")
+		line := fmt.Sprintf("//+kubebuilder:rbac:groups=%s,resources=%s,verbs=%s", apiGroups, resources, verbs)
+		lines = append(lines, line)
+	}
+	return lines
+}
+
+var packageTemplate = template.Must(template.New("").Parse(`// Code generated by go generate; DO NOT EDIT.
+
+package main
+{{ range .Markers }}
+{{.}}
+{{- end }}
+`))
