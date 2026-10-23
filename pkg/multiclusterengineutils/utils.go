@@ -17,6 +17,20 @@ import (
 // MCEManagedByLabel is the label used to mark resources managed by Multicluster Hub.
 const MCEManagedByLabel = "multiclusterhubs.operator.open-cluster-management.io/managed-by"
 
+// MCECreatedByMCH returns true if the provided MCE was created by the named MultiClusterHub,
+// as indicated by the installer labels. An MCE adopted by the MultiClusterHub only has the
+// managed-by label and is not considered created by it.
+func MCECreatedByMCH(mce *mcev1.MultiClusterEngine, name, namespace string) bool {
+	if mce == nil {
+		return false
+	}
+	labels := mce.GetLabels()
+	if labels == nil {
+		return false
+	}
+	return labels["installer.name"] == name && labels["installer.namespace"] == namespace
+}
+
 // Finds MCE by managed label. Returns nil if none found.
 func GetManagedMCE(ctx context.Context, k8sClient client.Client) (*mcev1.MultiClusterEngine, error) {
 	mceList := &mcev1.MultiClusterEngineList{}
