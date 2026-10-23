@@ -14,6 +14,7 @@ import (
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
+	mchmetrics "github.com/stolostron/multiclusterhub-operator/pkg/metrics"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengineutils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
@@ -22,8 +23,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
+	ctrlmetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -2234,5 +2238,73 @@ func Test_mapClusterExtension(t *testing.T) {
 				t.Errorf("mapClusterExtension() Available = %v, want %v", got.Available, tt.want.Available)
 			}
 		})
+	}
+}
+
+// mchPhaseValue gathers the acm_mch_phase gauge from the controller-runtime
+// registry and returns the value for one label set.
+func mchPhaseValue(t *testing.T, namespace, name, phase string) float64 {
+	t.Helper()
+
+	families, err := ctrlmetrics.Registry.Gather()
+	if err != nil {
+		t.Fatalf("gather metrics: %v", err)
+	}
+	for _, family := range families {
+		if family.GetName() != mchmetrics.PhaseMetricName {
+			continue
+		}
+		for _, metric := range family.GetMetric() {
+			labels := map[string]string{}
+			for _, label := range metric.GetLabel() {
+				labels[label.GetName()] = label.GetValue()
+			}
+			if labels["namespace"] == namespace && labels["name"] == name && labels["phase"] == phase {
+				return metric.GetGauge().GetValue()
+			}
+		}
+	}
+	return 0
+}
+
+// TestReconcile_PublishesPersistedPhaseBeforeFailing is a regression test for the
+// restart gap: the metric is process-local, so after a restart the gauge is empty
+// until a reconcile reaches syncHubStatus. Reconcile returns early when any of
+// its fallible steps fails (here listing deployments), and a hub that keeps
+// failing those steps would never expose the phase the API server already holds.
+func TestReconcile_PublishesPersistedPhaseBeforeFailing(t *testing.T) {
+	registerScheme()
+
+	const (
+		namespace = "open-cluster-management"
+		name      = "test-mch-phase-early-return"
+	)
+	t.Cleanup(func() { mchmetrics.DeleteMCHMetrics(namespace, name) })
+
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+		Spec: operatorsv1.MultiClusterHubSpec{
+			DisableHubSelfManagement: true,
+		},
+		Status: operatorsv1.MultiClusterHubStatus{Phase: operatorsv1.HubRunning},
+	}
+
+	r := newTestReconcilerWithInterceptor(interceptor.Funcs{
+		List: func(ctx context.Context, c client.WithWatch, list client.ObjectList, opts ...client.ListOption) error {
+			if _, ok := list.(*appsv1.DeploymentList); ok {
+				return fmt.Errorf("simulated list failure")
+			}
+			return c.List(ctx, list, opts...)
+		},
+	}, hub)
+
+	if _, err := r.Reconcile(context.TODO(), ctrl.Request{
+		NamespacedName: types.NamespacedName{Namespace: namespace, Name: name},
+	}); err == nil {
+		t.Fatal("expected Reconcile to fail while listing deployments")
+	}
+
+	if got := mchPhaseValue(t, namespace, name, string(operatorsv1.HubRunning)); got != 1 {
+		t.Errorf("expected persisted phase Running to be published as 1 before the failure, got %v", got)
 	}
 }

@@ -57,6 +57,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
+			r.deleteMCHMetrics(req.Namespace, req.Name, "multiclusterhub-not-found")
 			// Return and don't requeue
 			r.Log.Info("MultiClusterHub resource not found. Ignoring since object must be deleted")
 			return ctrl.Result{}, nil
@@ -64,6 +65,20 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		// Error reading the object - requeue the request.
 		r.Log.Error(err, "Failed to get MultiClusterHub CR")
 		return ctrl.Result{}, err
+	}
+
+	// Remove the metric series as soon as deletion is observed. Several return paths
+	// below (annotation migration, upgradeable check, listing deployments and custom
+	// resources, console lookup, STS detection) run before syncHubStatus is deferred,
+	// so cleanup there alone can be skipped while a finalizer keeps the object around.
+	if multiClusterHub.GetDeletionTimestamp() != nil {
+		r.deleteMCHMetrics(multiClusterHub.Namespace, multiClusterHub.Name, "deletion-timestamp")
+	} else if multiClusterHub.Status.Phase != "" {
+		// Republish the phase the API server already holds so the gauge survives an
+		// operator restart even when one of the fallible steps below returns early.
+		// syncHubStatus republishes after a successful status update, so this only
+		// logs again when the phase actually transitions.
+		r.publishMCHPhase(multiClusterHub, multiClusterHub.Status.Phase)
 	}
 
 	// Migrate deprecated annotations to current equivalents
@@ -75,9 +90,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 		return ctrl.Result{Requeue: true}, nil
 	}
-
-	multiClusterHub.Status.HubConditions = filterOutConditionWithSubstring(multiClusterHub.Status.HubConditions,
-		string(operatorv1.ComponentFailure))
 
 	// Check to see if upgradeable (OLM v0 only)
 	var upgrade bool
@@ -117,10 +129,17 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	originalStatus := multiClusterHub.Status.DeepCopy()
+
+	// Drop the failure condition from the previous pass after taking the snapshot so
+	// that clearing a stale condition is persisted even when nothing else changed.
+	// Otherwise a component that recovered would keep reporting ComponentFailure.
+	multiClusterHub.Status.HubConditions = filterOutConditionWithSubstring(multiClusterHub.Status.HubConditions,
+		string(operatorv1.ComponentFailure))
+
 	defer func() {
 		statusQueue, statusError := r.syncHubStatus(ctx, multiClusterHub, originalStatus, allDeploys, allCRs, ocpConsole, stsEnabled)
 		if statusError != nil {
-			r.Log.Error(retError, "Error updating status")
+			r.Log.Error(statusError, "Error updating status")
 		}
 		if empty := (reconcile.Result{}); retQueue == empty {
 			retQueue = statusQueue
