@@ -5,6 +5,9 @@ on:
     paths:
       - 'pkg/templates/charts/toggle/**/values.yaml'
 
+permissions:
+  contents: read
+
 jobs:
   validate:
     runs-on: ubuntu-latest
