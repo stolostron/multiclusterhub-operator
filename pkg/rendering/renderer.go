@@ -367,7 +367,19 @@ func renderTemplates(chartPath string, mch *v1.MultiClusterHub, images map[strin
 		return nil, append(errs, err)
 	}
 
-	rawTemplates, err := helmEngine.Render(chart, chartutil.Values{"Values": vals.AsMap()})
+	// Merge chart values.yaml defaults (base layer) with Go-injected overrides.
+	// CoalesceValues applies the following priority order:
+	//   1. Go-injected vals (highest) — runtime values from MCH spec, env vars, annotations
+	//   2. chart values.yaml defaults (lowest) — shipped defaults, fills gaps Go doesn't set
+	// This makes values.yaml the authoritative source for shipped defaults so chart
+	// maintainers can update defaults (e.g. MTV channel) without requiring a Go constant change.
+	coalesced, err := chartutil.CoalesceValues(chart, vals.AsMap())
+	if err != nil {
+		log.Info(fmt.Sprintf("error coalescing chart values: %s", chart.Name()))
+		return nil, append(errs, err)
+	}
+
+	rawTemplates, err := helmEngine.Render(chart, chartutil.Values{"Values": coalesced.AsMap()})
 	if err != nil {
 		log.Info(fmt.Sprintf("error rendering chart: %s", chart.Name()))
 		return nil, append(errs, err)
@@ -484,6 +496,9 @@ func injectValuesOverrides(values *Values, mch *v1.MultiClusterHub, images map[s
 	values.Global.MinOADPChannel = defaultOADPChannel
 	values.Global.MinOADPStableChannel = defaultOADPStableChannel
 
+	// MTV and CNV are only injected when an annotation override is present.
+	// When nil, the fields are omitted from the Go values map (omitempty) and
+	// CoalesceValues fills them from the chart's values.yaml defaults instead.
 	values.Global.MTVOperator = GetMTVConfig(mch)
 	values.Global.KubevirtHyperconvergedOperator = GetCNVConfig(mch)
 
@@ -607,16 +622,18 @@ func GetOADPConfig(m *v1.MultiClusterHub) (string, string, subv1alpha1.Approval,
 
 /*
 parseMTVAnnotation unmarshals the MTV subscription annotation from a MultiClusterHub.
-Returns an empty SubscriptionSpec if no annotation is present or if unmarshaling fails.
+Returns nil if no annotation is present so callers can distinguish "not set" from
+"set but empty". Returns an empty SubscriptionSpec (not nil) if unmarshaling fails,
+so partial annotations degrade gracefully.
 The annotation key is installer.open-cluster-management.io/mtv-subscription-spec.
 */
 func parseMTVAnnotation(m *v1.MultiClusterHub) *subv1alpha1.SubscriptionSpec {
-	sub := &subv1alpha1.SubscriptionSpec{}
 	mtvSpec := utils.GetMTVAnnotationOverrides(m)
 	if mtvSpec == "" {
-		return sub
+		return nil
 	}
 
+	sub := &subv1alpha1.SubscriptionSpec{}
 	if err := json.Unmarshal([]byte(mtvSpec), sub); err != nil {
 		log.Info(fmt.Sprintf("Failed to unmarshal MTV annotation: %s.", mtvSpec))
 	}
@@ -625,16 +642,18 @@ func parseMTVAnnotation(m *v1.MultiClusterHub) *subv1alpha1.SubscriptionSpec {
 
 /*
 parseCNVAnnotation unmarshals the CNV subscription annotation from a MultiClusterHub.
-Returns an empty SubscriptionSpec if no annotation is present or if unmarshaling fails.
+Returns nil if no annotation is present so callers can distinguish "not set" from
+"set but empty". Returns an empty SubscriptionSpec (not nil) if unmarshaling fails,
+so partial annotations degrade gracefully.
 The annotation key is installer.open-cluster-management.io/cnv-subscription-spec.
 */
 func parseCNVAnnotation(m *v1.MultiClusterHub) *subv1alpha1.SubscriptionSpec {
-	sub := &subv1alpha1.SubscriptionSpec{}
 	cnvSpec := utils.GetCNVAnnotationOverrides(m)
 	if cnvSpec == "" {
-		return sub
+		return nil
 	}
 
+	sub := &subv1alpha1.SubscriptionSpec{}
 	if err := json.Unmarshal([]byte(cnvSpec), sub); err != nil {
 		log.Info(fmt.Sprintf("Failed to unmarshal CNV annotation: %s.", cnvSpec))
 	}
@@ -643,8 +662,10 @@ func parseCNVAnnotation(m *v1.MultiClusterHub) *subv1alpha1.SubscriptionSpec {
 
 /*
 operatorPolicyValue maps a parsed subscription annotation onto the chart values
-block for an embedded OperatorPolicy, falling back to the shipped defaults for
-the fields the annotation leaves unset.
+block for an embedded OperatorPolicy. Any field left empty in the annotation falls
+back to the shipped Go default (itself a safety net for partial annotations —
+the full defaults live in values.yaml and are applied via CoalesceValues when
+no annotation is present at all).
 */
 func operatorPolicyValue(sub *subv1alpha1.SubscriptionSpec, defaults operatorPolicyDefaults) OperatorPolicyValue {
 	return OperatorPolicyValue{
@@ -664,8 +685,10 @@ func operatorPolicyValue(sub *subv1alpha1.SubscriptionSpec, defaults operatorPol
 	}
 }
 
-// operatorPolicyDefaults holds the values shipped in the chart for the fields
-// that are not simply "inherit whatever is on the cluster".
+// operatorPolicyDefaults holds fallback values used only when an annotation is
+// present but leaves individual fields unset (partial override). When no
+// annotation is present at all, values.yaml defaults are used instead via
+// CoalesceValues — these constants are not consulted in that path.
 type operatorPolicyDefaults struct {
 	channel         string
 	packageName     string
@@ -675,29 +698,51 @@ type operatorPolicyDefaults struct {
 
 /*
 GetMTVConfig resolves the MTV subscription fields used by the mtv-operator AddOnTemplate.
-Any field left empty in the mtv-subscription-spec annotation falls back to the
-shipped default, so a partial override is safe.
+
+Returns nil when no mtv-subscription-spec annotation is set — the caller omits the
+field entirely so CoalesceValues can apply the values.yaml defaults unchanged.
+
+When an annotation is present (even partially), the annotation fields take priority
+and any unset annotation fields fall back to the Go defaults below, which mirror
+the values.yaml shipped defaults and act as a safety net for partial overrides.
 */
-func GetMTVConfig(m *v1.MultiClusterHub) OperatorPolicyValue {
-	return operatorPolicyValue(parseMTVAnnotation(m), operatorPolicyDefaults{
+func GetMTVConfig(m *v1.MultiClusterHub) *OperatorPolicyValue {
+	sub := parseMTVAnnotation(m)
+	if sub == nil {
+		// No annotation — let values.yaml defaults flow through via CoalesceValues.
+		return nil
+	}
+	result := operatorPolicyValue(sub, operatorPolicyDefaults{
 		channel:         defaultMTVChannel,
 		packageName:     defaultMTVPackageName,
 		namespace:       defaultMTVSubscriptionNamespace,
 		upgradeApproval: defaultMTVUpgradeApproval,
 	})
+	return &result
 }
 
 /*
 GetCNVConfig resolves the CNV subscription fields used by the
-kubevirt-hyperconverged AddOnTemplate. Any field left empty in the
-cnv-subscription-spec annotation falls back to the shipped default, so a partial
-override is safe.
+kubevirt-hyperconverged AddOnTemplate.
+
+Returns nil when no cnv-subscription-spec annotation is set — the caller omits the
+field entirely so CoalesceValues can apply the values.yaml defaults unchanged.
+
+When an annotation is present (even partially), the annotation fields take priority
+and any unset annotation fields fall back to the Go defaults below, which mirror
+the values.yaml shipped defaults and act as a safety net for partial overrides.
 */
-func GetCNVConfig(m *v1.MultiClusterHub) OperatorPolicyValue {
-	return operatorPolicyValue(parseCNVAnnotation(m), operatorPolicyDefaults{
+func GetCNVConfig(m *v1.MultiClusterHub) *OperatorPolicyValue {
+	sub := parseCNVAnnotation(m)
+	if sub == nil {
+		// No annotation — let values.yaml defaults flow through via CoalesceValues.
+		return nil
+	}
+	result := operatorPolicyValue(sub, operatorPolicyDefaults{
 		channel:         defaultCNVChannel,
 		packageName:     defaultCNVPackageName,
 		namespace:       defaultCNVSubscriptionNamespace,
 		upgradeApproval: defaultCNVUpgradeApproval,
 	})
+	return &result
 }
