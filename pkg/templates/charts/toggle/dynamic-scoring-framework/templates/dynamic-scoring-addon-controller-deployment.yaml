@@ -53,6 +53,12 @@ spec:
         - name: NO_PROXY
           value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
 {{- end }}
+        - name: DYNAMIC_SCORING_ADDON_IMAGE
+          value: '{{ .Values.global.imageOverrides.dynamic_scoring_addon }}'
+        - name: DYNAMIC_SCORING_ADDON_IMAGE_PULL_SECRETS
+          value: '["open-cluster-management-image-pull-credentials","hub-registry-secret"]'
+        - name: DYNAMIC_SCORING_ADDON_NAMESPACE
+          value: dynamic-scoring
         image: '{{ .Values.global.imageOverrides.dynamic_scoring_addon }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         name: dynamic-scoring-addon-controller
@@ -64,9 +70,7 @@ spec:
           privileged: false
           readOnlyRootFilesystem: true
           runAsNonRoot: true
-        volumeMounts:
-        - mountPath: /tmp
-          name: tmp
+        volumeMounts: []
       hostIPC: false
       hostNetwork: false
       hostPID: false
@@ -95,6 +99,4 @@ spec:
         {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
         {{- end }}
 {{- end }}
-      volumes:
-      - name: tmp
-        emptyDir: {}
+      volumes: []
