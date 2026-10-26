@@ -227,6 +227,18 @@ def staleness_info(days: int) -> tuple[str, str]:
 # ---------------------------------------------------------------------------
 
 def load_state(state_path: Path) -> dict:
+    """Load state from a file or directory of per-train files.
+
+    If state_path is a directory, load all .json files in it and merge them
+    into a single dict keyed by the stem (e.g., state/mce-2.11.json → {"mce-2.11": {...}}).
+    If state_path is a file, load it as a monolithic state dict (legacy).
+    """
+    if state_path.is_dir():
+        merged: dict = {}
+        for f in sorted(state_path.glob("*.json")):
+            with f.open() as fh:
+                merged[f.stem] = json.load(fh)
+        return merged
     if state_path.exists():
         with state_path.open() as f:
             return json.load(f)
@@ -234,14 +246,30 @@ def load_state(state_path: Path) -> dict:
 
 
 def save_state(state_path: Path, state: dict, dry_run: bool) -> None:
+    """Save state to a file or directory of per-train files.
+
+    If state_path is a directory (or doesn't exist and has no extension),
+    write one JSON file per top-level key (e.g., mce-2.11 → state/mce-2.11.json).
+    If state_path is a file, write the monolithic dict (legacy).
+    """
     if dry_run:
         log.info("[dry-run] Would write state to %s", state_path)
         return
-    state_path.parent.mkdir(parents=True, exist_ok=True)
-    with state_path.open("w") as f:
-        json.dump(state, f, indent=2)
-        f.write("\n")
-    log.info("State saved → %s", state_path)
+    # Determine if we should use per-train files
+    if state_path.is_dir() or (not state_path.exists() and not state_path.suffix):
+        state_path.mkdir(parents=True, exist_ok=True)
+        for key, value in state.items():
+            train_file = state_path / f"{key}.json"
+            with train_file.open("w") as f:
+                json.dump(value, f, indent=2)
+                f.write("\n")
+            log.info("State saved → %s", train_file)
+    else:
+        state_path.parent.mkdir(parents=True, exist_ok=True)
+        with state_path.open("w") as f:
+            json.dump(state, f, indent=2)
+            f.write("\n")
+        log.info("State saved → %s", state_path)
 
 
 # ---------------------------------------------------------------------------
@@ -929,8 +957,8 @@ def main() -> None:
         help="Path to trains YAML config",
     )
     parser.add_argument(
-        "--state", default="tools/art-monitor/.state.json",
-        help="Path to state JSON file",
+        "--state", default="tools/art-monitor/state",
+        help="Path to state directory (per-train files) or JSON file (legacy monolithic)",
     )
     parser.add_argument(
         "--version",
