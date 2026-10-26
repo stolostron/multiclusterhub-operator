@@ -257,17 +257,10 @@ func TestRender(t *testing.T) {
 }
 
 func TestRenderCRDs(t *testing.T) {
-	os.Setenv("DIRECTORY_OVERRIDE", "../templates")
-	tests := []struct {
-		name   string
-		crdDir string
-		want   []error
-	}{
-		{
-			name:   "Render CRDs directory",
-			crdDir: crdsDir,
-		},
-	}
+	// realCRDsDir is relative to this test file (pkg/rendering/), pointing at
+	// the shipped CRD templates directory.
+	realCRDsDir := "../templates/crds"
+
 	mchNamespace := "default"
 	testMCH := &v1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
@@ -276,34 +269,68 @@ func TestRenderCRDs(t *testing.T) {
 		},
 		Spec: v1.MultiClusterHubSpec{},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, errs := RenderCRDs(tt.crdDir, testMCH)
-			if len(errs) > 1 {
-				t.Errorf("RenderCRDs() got = %v, want %v", errs, nil)
+
+	t.Run("renders CRDs from real directory with mch", func(t *testing.T) {
+		got, errs := RenderCRDs(realCRDsDir, testMCH)
+		if len(errs) > 0 {
+			t.Errorf("RenderCRDs() unexpected errors: %v", errs)
+		}
+		if len(got) == 0 {
+			t.Error("RenderCRDs() returned no CRDs, expected at least one")
+		}
+		for _, u := range got {
+			if u.GetKind() != "CustomResourceDefinition" {
+				t.Errorf("RenderCRDs() got Kind = %v, want CustomResourceDefinition", u.GetKind())
 			}
-
-			for _, u := range got {
-				kind := "CustomResourceDefinition"
-				apiVersion := "apiextensions.k8s.io/v1"
-				if u.GetKind() != kind {
-					t.Errorf("RenderCRDs() got Kind = %v, want Kind %v", errs, kind)
-				}
-
-				if u.GetAPIVersion() != apiVersion {
-					t.Errorf("RenderCRDs() got apiversion = %v, want apiversion %v", errs, apiVersion)
-				}
+			if u.GetAPIVersion() != "apiextensions.k8s.io/v1" {
+				t.Errorf("RenderCRDs() got APIVersion = %v, want apiextensions.k8s.io/v1", u.GetAPIVersion())
 			}
-		})
-	}
+		}
+	})
 
-	os.Setenv("CRD_OVERRIDE", "pkg/doesnotexist")
-	_, errs := RenderCRDs(crdsDir, testMCH)
-	if errs == nil {
-		t.Fatalf("Should have received an error")
-	}
-	os.Unsetenv("CRD_OVERRIDE")
+	t.Run("renders CRDs from real directory with nil mch", func(t *testing.T) {
+		got, errs := RenderCRDs(realCRDsDir, nil)
+		if len(errs) > 0 {
+			t.Errorf("RenderCRDs() unexpected errors: %v", errs)
+		}
+		if len(got) == 0 {
+			t.Error("RenderCRDs() returned no CRDs, expected at least one")
+		}
+	})
 
+	t.Run("returns error for non-existent directory", func(t *testing.T) {
+		_, errs := RenderCRDs("/does/not/exist", testMCH)
+		if len(errs) == 0 {
+			t.Error("RenderCRDs() expected error for non-existent directory, got none")
+		}
+	})
+
+	t.Run("renders CRDs from temp directory with invalid yaml", func(t *testing.T) {
+		dir := t.TempDir()
+		// Write a non-YAML file — should be skipped (not .yaml extension)
+		if err := os.WriteFile(dir+"/not-yaml.txt", []byte("not yaml"), 0600); err != nil {
+			t.Fatal(err)
+		}
+		// Write an invalid YAML file — should produce an unmarshal error
+		if err := os.WriteFile(dir+"/bad.yaml", []byte("{{invalid yaml{{"), 0600); err != nil {
+			t.Fatal(err)
+		}
+		_, errs := RenderCRDs(dir, testMCH)
+		if len(errs) == 0 {
+			t.Error("RenderCRDs() expected unmarshal error for invalid yaml, got none")
+		}
+	})
+
+	t.Run("renders CRDs from empty directory", func(t *testing.T) {
+		dir := t.TempDir()
+		got, errs := RenderCRDs(dir, testMCH)
+		if len(errs) > 0 {
+			t.Errorf("RenderCRDs() unexpected errors: %v", errs)
+		}
+		if len(got) != 0 {
+			t.Errorf("RenderCRDs() expected 0 CRDs from empty dir, got %d", len(got))
+		}
+	})
 }
 
 func TestOADPAnnotation(t *testing.T) {
