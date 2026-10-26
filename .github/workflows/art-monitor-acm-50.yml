@@ -71,7 +71,7 @@ jobs:
       - name: Monitor ART builds
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_ART_CHANNEL }}
-          SLACK_TEAM_ID: ${{ secrets.SLACK_TEAM_ID }}
+          SLACK_TEAM_ID: ${{ vars.SLACK_TEAM_ID }}
         run: ${{ steps.build-cmd.outputs.cmd }}
 
       - name: Create Pull Request for state updates
