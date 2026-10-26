@@ -460,8 +460,8 @@ def build_train_message_blocks(
         else:
             health_line = f"Last build was {date_str} ({worst_days} business days ago)"
         
-        # Add mention for red items
-        if level == "red" and mention:
+        # Add mention for orange/red items
+        if level in ("orange", "red") and mention:
             health_line += f" {mention}"
         
         # Build blocks
@@ -495,7 +495,7 @@ def build_ocp_footprint_blocks(
       • ACM 2.16 · `...` _(32b90d3)_
 
     Every OCP target is reported, showing the health status of all product trains
-    targeting that OCP version. Mention is appended only to 🔴 critical items.
+    targeting that OCP version. Mention is appended to 🟠 stale-alert and 🔴 critical items.
     Returns [] only when there are no trains at all.
     """
     quay_registry_url = "https://quay.io/repository/redhat-user-workloads/ocp-art-tenant/art-fbc"
@@ -628,7 +628,7 @@ def build_ocp_footprint_blocks(
                     if commit_link:
                         parts.append(f"_({commit_link})_")
                 
-                at = f" {mention}" if variant_level == "red" and mention else ""
+                at = f" {mention}" if variant_level in ("orange", "red") and mention else ""
                 bullets.append(" ".join(parts) + at)
         
         ocp_sections.append(f"{header}\n" + "\n".join(bullets))
