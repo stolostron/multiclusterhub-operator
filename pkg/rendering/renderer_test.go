@@ -497,6 +497,9 @@ func TestMTVAnnotation(t *testing.T) {
 	}
 
 	config := GetMTVConfig(mch)
+	if config == nil {
+		t.Fatal("GetMTVConfig returned nil for a valid annotation, expected non-nil override")
+	}
 
 	if config.Subscription.Channel != "release-v2.11" {
 		t.Errorf("MTV AddOnTemplate missing override for channel, got %s", config.Subscription.Channel)
@@ -529,7 +532,7 @@ func TestMTVAnnotation(t *testing.T) {
 		t.Errorf("MTV AddOnTemplate missing override for upgrade approval, got %s", config.UpgradeApproval)
 	}
 
-	// A partial override must fall back to the shipped defaults for unset fields.
+	// A partial override must fall back to the Go safety-net defaults for unset fields.
 	mch = &v1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "test",
@@ -540,6 +543,9 @@ func TestMTVAnnotation(t *testing.T) {
 	}
 
 	config = GetMTVConfig(mch)
+	if config == nil {
+		t.Fatal("GetMTVConfig returned nil for a partial annotation, expected non-nil override")
+	}
 
 	if config.Subscription.Channel != "release-v2.10" {
 		t.Errorf("MTV AddOnTemplate partial override lost channel, got %s", config.Subscription.Channel)
@@ -558,32 +564,18 @@ func TestMTVAnnotation(t *testing.T) {
 			config.Subscription.Source, config.Subscription.SourceNamespace, config.Subscription.StartingCSV)
 	}
 
-	// No annotation at all must return the defaults.
+	// No annotation at all must return nil — values.yaml defaults apply via CoalesceValues.
 	mch = &v1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "test",
 		},
 	}
 
-	config = GetMTVConfig(mch)
-
-	if config.Subscription.Channel != defaultMTVChannel {
-		t.Errorf("MTV AddOnTemplate default channel is %s, got %s", defaultMTVChannel, config.Subscription.Channel)
-	}
-	if config.Subscription.Name != defaultMTVPackageName {
-		t.Errorf("MTV AddOnTemplate default name is %s, got %s", defaultMTVPackageName, config.Subscription.Name)
-	}
-	if config.Subscription.Namespace != defaultMTVSubscriptionNamespace {
-		t.Errorf("MTV AddOnTemplate default namespace is %s, got %s", defaultMTVSubscriptionNamespace, config.Subscription.Namespace)
-	}
-	if config.UpgradeApproval != defaultMTVUpgradeApproval {
-		t.Errorf("MTV AddOnTemplate default upgrade approval is %s, got %s", defaultMTVUpgradeApproval, config.UpgradeApproval)
-	}
-	if config.Subscription.Source != "" {
-		t.Errorf("MTV default source should stay empty so the controller inherits, got %s", config.Subscription.Source)
+	if config := GetMTVConfig(mch); config != nil {
+		t.Errorf("GetMTVConfig with no annotation should return nil so values.yaml defaults apply, got %+v", config)
 	}
 
-	// Malformed JSON must not panic and must fall back to the defaults.
+	// Malformed JSON must not panic and must fall back to the Go safety-net defaults.
 	mch = &v1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "test",
@@ -594,7 +586,9 @@ func TestMTVAnnotation(t *testing.T) {
 	}
 
 	config = GetMTVConfig(mch)
-
+	if config == nil {
+		t.Fatal("GetMTVConfig returned nil for a malformed annotation, expected non-nil with defaults")
+	}
 	if config.Subscription.Channel != defaultMTVChannel {
 		t.Errorf("MTV AddOnTemplate malformed annotation should keep default channel, got %s", config.Subscription.Channel)
 	}
@@ -612,6 +606,9 @@ func TestCNVAnnotation(t *testing.T) {
 	}
 
 	config := GetCNVConfig(mch)
+	if config == nil {
+		t.Fatal("GetCNVConfig returned nil for a valid annotation, expected non-nil override")
+	}
 
 	if config.Subscription.Channel != "stable-1.16" {
 		t.Errorf("CNV AddOnTemplate missing override for channel, got %s", config.Subscription.Channel)
@@ -644,7 +641,7 @@ func TestCNVAnnotation(t *testing.T) {
 		t.Errorf("CNV AddOnTemplate missing override for upgrade approval, got %s", config.UpgradeApproval)
 	}
 
-	// A partial override must fall back to the shipped defaults for unset fields.
+	// A partial override must fall back to the Go safety-net defaults for unset fields.
 	mch = &v1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "test",
@@ -655,6 +652,9 @@ func TestCNVAnnotation(t *testing.T) {
 	}
 
 	config = GetCNVConfig(mch)
+	if config == nil {
+		t.Fatal("GetCNVConfig returned nil for a partial annotation, expected non-nil override")
+	}
 
 	if config.Subscription.Channel != "stable-1.15" {
 		t.Errorf("CNV AddOnTemplate partial override lost channel, got %s", config.Subscription.Channel)
@@ -673,29 +673,15 @@ func TestCNVAnnotation(t *testing.T) {
 			config.Subscription.Source, config.Subscription.SourceNamespace, config.Subscription.StartingCSV)
 	}
 
-	// No annotation at all must return the defaults.
+	// No annotation at all must return nil — values.yaml defaults apply via CoalesceValues.
 	mch = &v1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "test",
 		},
 	}
 
-	config = GetCNVConfig(mch)
-
-	if config.Subscription.Channel != defaultCNVChannel {
-		t.Errorf("CNV AddOnTemplate default channel is %s, got %s", defaultCNVChannel, config.Subscription.Channel)
-	}
-	if config.Subscription.Name != defaultCNVPackageName {
-		t.Errorf("CNV AddOnTemplate default name is %s, got %s", defaultCNVPackageName, config.Subscription.Name)
-	}
-	if config.Subscription.Namespace != defaultCNVSubscriptionNamespace {
-		t.Errorf("CNV AddOnTemplate default namespace is %s, got %s", defaultCNVSubscriptionNamespace, config.Subscription.Namespace)
-	}
-	if config.UpgradeApproval != defaultCNVUpgradeApproval {
-		t.Errorf("CNV AddOnTemplate default upgrade approval is %s, got %s", defaultCNVUpgradeApproval, config.UpgradeApproval)
-	}
-	if config.Subscription.Source != "" {
-		t.Errorf("CNV default source should stay empty so the controller inherits, got %s", config.Subscription.Source)
+	if config := GetCNVConfig(mch); config != nil {
+		t.Errorf("GetCNVConfig with no annotation should return nil so values.yaml defaults apply, got %+v", config)
 	}
 
 	// The two annotations must stay independent of each other.
@@ -709,14 +695,22 @@ func TestCNVAnnotation(t *testing.T) {
 		},
 	}
 
-	if config := GetCNVConfig(mch); config.Subscription.Channel != "stable-1.15" {
-		t.Errorf("CNV config was affected by the MTV annotation, got channel %s", config.Subscription.Channel)
+	if config := GetCNVConfig(mch); config == nil || config.Subscription.Channel != "stable-1.15" {
+		ch := ""
+		if config != nil {
+			ch = config.Subscription.Channel
+		}
+		t.Errorf("CNV config was affected by the MTV annotation, got channel %q", ch)
 	}
-	if config := GetMTVConfig(mch); config.Subscription.Channel != "release-v2.10" {
-		t.Errorf("MTV config was affected by the CNV annotation, got channel %s", config.Subscription.Channel)
+	if config := GetMTVConfig(mch); config == nil || config.Subscription.Channel != "release-v2.10" {
+		ch := ""
+		if config != nil {
+			ch = config.Subscription.Channel
+		}
+		t.Errorf("MTV config was affected by the CNV annotation, got channel %q", ch)
 	}
 
-	// Malformed JSON must not panic and must fall back to the defaults.
+	// Malformed JSON must not panic and must fall back to the Go safety-net defaults.
 	mch = &v1.MultiClusterHub{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "test",
@@ -727,9 +721,107 @@ func TestCNVAnnotation(t *testing.T) {
 	}
 
 	config = GetCNVConfig(mch)
-
+	if config == nil {
+		t.Fatal("GetCNVConfig returned nil for a malformed annotation, expected non-nil with defaults")
+	}
 	if config.Subscription.Channel != defaultCNVChannel {
 		t.Errorf("CNV AddOnTemplate malformed annotation should keep default channel, got %s", config.Subscription.Channel)
+	}
+}
+
+// TestMTVValuesYamlDefaults verifies that when no mtv-subscription-spec or
+// cnv-subscription-spec annotation is set, the rendered mtv-integrations chart
+// uses the channel and other subscription fields declared in the chart's
+// values.yaml — not any hardcoded Go constant. This is the core behaviour
+// guaranteed by the CoalesceValues integration: values.yaml is the single
+// source of truth for shipped defaults.
+func TestMTVValuesYamlDefaults(t *testing.T) {
+	os.Setenv("DIRECTORY_OVERRIDE", "../templates")
+	defer os.Unsetenv("DIRECTORY_OVERRIDE")
+	os.Setenv("ACM_HUB_OCP_VERSION", "4.18.0")
+	defer os.Unsetenv("ACM_HUB_OCP_VERSION")
+
+	mch := &v1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "testmch",
+			Namespace: "default",
+			// No mtv-subscription-spec or cnv-subscription-spec annotation —
+			// values.yaml must supply all subscription defaults.
+		},
+	}
+
+	testImages := map[string]string{}
+	for _, v := range utils.GetTestImages() {
+		testImages[v] = "quay.io/test/test:Test"
+	}
+
+	templates, errs := RenderChart(utils.MTVIntegrationsChartLocation, mch,
+		testImages, map[string]string{}, false, "v0")
+	if len(errs) > 0 {
+		t.Fatalf("Failed to render mtv-integrations with no annotation: %v", errs)
+	}
+
+	cases := []struct {
+		addonTemplate string
+		policy        string
+		wantChannel   string
+		wantName      string
+		wantNamespace string
+		wantUpgrade   string
+	}{
+		{
+			// values.yaml: global.mtvOperator.subscription.channel = release-v5.0
+			addonTemplate: "mtv-operator",
+			policy:        "mtv-operator",
+			wantChannel:   "release-v5.0",
+			wantName:      "mtv-operator",
+			wantNamespace: "openshift-mtv",
+			wantUpgrade:   "Automatic",
+		},
+		{
+			// values.yaml: global.kubevirtHyperconvergedOperator.subscription.channel = stable
+			addonTemplate: "kubevirt-hyperconverged",
+			policy:        "kubevirt-hyperconverged-operator",
+			wantChannel:   "stable",
+			wantName:      "kubevirt-hyperconverged",
+			wantNamespace: "openshift-cnv",
+			wantUpgrade:   "Automatic",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.policy, func(t *testing.T) {
+			policy := findWorkloadManifest(t, templates, "AddOnTemplate", tc.addonTemplate, "OperatorPolicy", tc.policy)
+			if policy == nil {
+				t.Errorf("no %s OperatorPolicy in the %s AddOnTemplate workload", tc.policy, tc.addonTemplate)
+				return
+			}
+
+			sub, ok, err := unstructured.NestedMap(policy.Object, "spec", "subscription")
+			if err != nil || !ok {
+				t.Fatalf("no spec.subscription in %s OperatorPolicy: %v", tc.policy, err)
+			}
+
+			got := map[string]string{
+				"channel":   stringOf(sub["channel"]),
+				"name":      stringOf(sub["name"]),
+				"namespace": stringOf(sub["namespace"]),
+			}
+			want := map[string]string{
+				"channel":   tc.wantChannel,
+				"name":      tc.wantName,
+				"namespace": tc.wantNamespace,
+			}
+			for k, w := range want {
+				if got[k] != w {
+					t.Errorf("%s subscription.%s = %q, want %q (from values.yaml)", tc.policy, k, got[k], w)
+				}
+			}
+
+			if u := stringOf(mustNested(t, policy.Object, "spec", "upgradeApproval")); u != tc.wantUpgrade {
+				t.Errorf("%s upgradeApproval = %q, want %q (from values.yaml)", tc.policy, u, tc.wantUpgrade)
+			}
+		})
 	}
 }
 
