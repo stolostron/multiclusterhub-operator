@@ -17,6 +17,7 @@ package renderer
 import (
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
@@ -246,24 +247,33 @@ func RenderCRDs(crdDir string, mch *v1.MultiClusterHub) ([]*unstructured.Unstruc
 	var crds []*unstructured.Unstructured
 	errs := []error{}
 
-	// Read CRD files
-	err := filepath.Walk(crdDir, func(path string, info os.FileInfo, err error) error {
+	// Use os.OpenRoot to open a handle rooted at crdDir. All walk and read
+	// operations go through root.FS(), which prevents symlinks from escaping
+	// the directory boundary (gosec G122).
+	root, err := os.OpenRoot(crdDir)
+	if err != nil {
+		return crds, append(errs, fmt.Errorf("error opening CRD directory %s: %v", crdDir, err))
+	}
+	defer root.Close()
+	rootFS := root.FS()
+
+	err = fs.WalkDir(rootFS, ".", func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			fmt.Println(err.Error())
 			return err
 		}
 		crd := &unstructured.Unstructured{}
-		if info == nil || info.IsDir() || filepath.Ext(path) != ".yaml" {
+		if d.IsDir() || filepath.Ext(p) != ".yaml" {
 			return nil
 		}
 
-		bytesFile, e := os.ReadFile(filepath.Clean(path))
+		bytesFile, e := fs.ReadFile(rootFS, p)
 		if e != nil {
-			errs = append(errs, fmt.Errorf("%s - error reading file: %v", info.Name(), err))
+			errs = append(errs, fmt.Errorf("%s - error reading file: %v", d.Name(), e))
 		}
 
 		if err = yaml.Unmarshal(bytesFile, crd); err != nil {
-			errs = append(errs, fmt.Errorf("%s - error unmarshalling file to unstructured: %v", info.Name(), err.Error()))
+			errs = append(errs, fmt.Errorf("%s - error unmarshalling file to unstructured: %v", d.Name(), err.Error()))
 		}
 		if mch != nil {
 			_, conversion, _ := unstructured.NestedMap(crd.Object, "spec", "conversion", "webhook", "clientConfig", "service")

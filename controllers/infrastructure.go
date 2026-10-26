@@ -246,7 +246,7 @@ func (r *MultiClusterHubReconciler) createMetricsServiceMonitor(ctx context.Cont
 			Spec: promv1.ServiceMonitorSpec{
 				Endpoints: []promv1.Endpoint{
 					{
-						BearerTokenFile: "/var/run/secrets/kubernetes.io/serviceaccount/token",
+						BearerTokenFile: "/var/run/secrets/kubernetes.io/serviceaccount/token", //nolint:gosec // G101: standard Kubernetes service account token path, not a hardcoded credential
 						BearerTokenSecret: &corev1.SecretKeySelector{
 							Key: "",
 						},
