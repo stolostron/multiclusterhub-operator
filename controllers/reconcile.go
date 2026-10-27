@@ -398,6 +398,14 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 
+	// Clean up deprecated resources from previous versions
+	deprecatedResources := r.GetDeprecatedResources(multiClusterHub)
+	for _, resource := range deprecatedResources {
+		if result, err := r.EnsureDeprecatedResourceCleanup(ctx, resource); (result != ctrl.Result{}) || err != nil {
+			return result, err
+		}
+	}
+
 	result, err = r.waitForMCEReady(ctx)
 	if result != (ctrl.Result{}) || err != nil {
 		return result, err

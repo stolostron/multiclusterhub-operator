@@ -8,11 +8,16 @@ import (
 	"testing"
 
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	monitorv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	operatorsv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -308,5 +313,100 @@ func TestGetInstallPlanApprovalFromSubscription(t *testing.T) {
 				t.Errorf("GetInstallPlanApprovalFromSubscription() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestEnsureDeprecatedResourceCleanup(t *testing.T) {
+	tests := []struct {
+		name string
+		mch  *operatorsv1.MultiClusterHub
+		want error
+	}{
+		{
+			name: "should ensure deprecated resources are cleaned up",
+			mch: &operatorsv1.MultiClusterHub{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multiclusterhub",
+					Namespace: "test-ns",
+				},
+			},
+			want: nil,
+		},
+	}
+
+	s := scheme.Scheme
+	_ = operatorsv1.AddToScheme(s)
+	_ = rbacv1.AddToScheme(s)
+	_ = monitorv1.AddToScheme(s)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(s).
+				Build()
+
+			reconciler := &MultiClusterHubReconciler{
+				Client: fakeClient,
+				Scheme: s,
+				Log:    clog.Log.WithName("test"),
+			}
+
+			for _, obj := range reconciler.GetDeprecatedResources(tt.mch) {
+				if err := fakeClient.Create(context.TODO(), obj); err != nil {
+					t.Errorf("Failed to create %v: %v", obj, err)
+				}
+
+				if _, err := reconciler.EnsureDeprecatedResourceCleanup(context.TODO(), obj); err != nil {
+					t.Errorf("EnsureDeprecatedResourceCleanup() = %v, want: %v", err, tt.want)
+				}
+
+				// Verify the resource was actually deleted from the cluster
+				check := obj.DeepCopyObject().(client.Object)
+				err := fakeClient.Get(context.TODO(), types.NamespacedName{
+					Name:      obj.GetName(),
+					Namespace: obj.GetNamespace(),
+				}, check)
+				if !apierrors.IsNotFound(err) {
+					t.Errorf("expected NotFound after cleanup, got: %v", err)
+				}
+			}
+		})
+	}
+}
+
+func TestGetDeprecatedResources(t *testing.T) {
+	mch := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "multiclusterhub",
+			Namespace: "test-ns",
+		},
+	}
+
+	s := runtime.NewScheme()
+	reconciler := &MultiClusterHubReconciler{
+		Scheme: s,
+		Log:    clog.Log.WithName("test"),
+	}
+
+	resources := reconciler.GetDeprecatedResources(mch)
+
+	expectedNames := []string{
+		"console-metrics-monitor",
+		"console-metrics-monitor",
+		"acm-console-prometheus-rules",
+		"console-monitor",
+	}
+
+	if len(resources) != len(expectedNames) {
+		t.Fatalf("GetDeprecatedResources() returned %d resources, want %d", len(resources), len(expectedNames))
+	}
+
+	for i, res := range resources {
+		if res.GetName() != expectedNames[i] {
+			t.Errorf("resource[%d] name = %q, want %q", i, res.GetName(), expectedNames[i])
+		}
+		if res.GetNamespace() != mch.Namespace {
+			t.Errorf("resource[%d] namespace = %q, want %q", i, res.GetNamespace(), mch.Namespace)
+		}
 	}
 }
