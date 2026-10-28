@@ -19,7 +19,7 @@ external-images:
   replace: "registry.redhat.io/rhel9/redis-7:9.7-1776341987"
 - name: postgresql_16
   search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/postgresql_16:latest"
-  replace: "registry.redhat.io/rhel8/postgresql-16:1-1776314494"
+  replace: "registry.redhat.io/rhel9/postgresql-16:1-1790037884"
 - name: memcached
   search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/memcached:latest"
   replace: "registry.redhat.io/rhel9/memcached:9.7-1776355978"
