@@ -18,6 +18,6 @@ hubconfig:
   nodeSelector: null
   replicaCount: 1
   probeConfig: null
-  proxyConfigs: {}
+  proxyConfigs: null
   tolerations: []
   ocpVersion: 4.12.0

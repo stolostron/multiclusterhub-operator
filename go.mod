@@ -16,7 +16,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.0
 	github.com/prometheus/client_golang v1.23.2
-	github.com/stolostron/backplane-operator v0.0.0-20261012153303-b5b2a509be19
+	github.com/stolostron/backplane-operator v0.0.0-20261026195344-873ac8eb9aaa
 	github.com/stolostron/search-v2-operator v0.0.0-20250818191351-8d847101bcdd
 	go.uber.org/zap v1.28.0
 	helm.sh/helm/v3 v3.20.2
@@ -67,7 +67,7 @@ require (
 	github.com/google/cel-go v0.29.2 // indirect
 	github.com/google/gnostic-models v0.7.1 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/pprof v0.0.0-20260926063103-aaccee046517 // indirect
+	github.com/google/pprof v0.0.0-20261016150608-1facf8f91b50 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/h2non/filetype v1.1.3 // indirect
 	github.com/h2non/go-is-svg v0.0.0-20160927212452-35e8c4b0612c // indirect
