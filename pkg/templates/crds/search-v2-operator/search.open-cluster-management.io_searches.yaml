@@ -17,7 +17,10 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Search is the schema for the searches API.
+        description: |-
+          Search configures the ACM Search service, including database storage,
+          replica counts, and resource limits for the collector, indexer, query API,
+          and database deployments.
         properties:
           apiVersion:
             description: |-
@@ -37,16 +40,17 @@ spec:
           metadata:
             type: object
           spec:
-            description: SearchSpec defines the desired state of Search.
+            description: |-
+              SearchSpec defines the configuration for the Search service components.
+              Most fields have production-ready defaults and do not need to be set.
             properties:
               availabilityConfig:
-                description: '[PLACEHOLDER, NOT IMPLEMENTED] Specifies deployment
-                  replication for improved availability. Options are: Basic and High
-                  (default)'
+                description: Not currently supported. Reserved for future use.
                 type: string
               dbConfig:
-                description: The config map name contains parameters to override default
-                  database parameters.
+                description: |-
+                  Name of a ConfigMap that overrides default PostgreSQL parameters for the
+                  Search database, such as connection limits and memory-related settings.
                 type: string
               dbStorage:
                 description: Storage configuration for the database.
@@ -56,10 +60,15 @@ spec:
                     - type: integer
                     - type: string
                     default: 10Gi
+                    description: |-
+                      Size of the PersistentVolumeClaim for the Search database.
+                      Example: "10Gi". Defaults to "10Gi".
                     pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                     x-kubernetes-int-or-string: true
                   storageClassName:
-                    description: name of the storage class
+                    description: |-
+                      Name of the StorageClass used to provision the database PVC.
+                      If not set, Search uses ephemeral emptyDir storage for the database.
                     type: string
                 type: object
               deployments:
@@ -232,7 +241,9 @@ spec:
                           type: object
                         type: array
                       imageOverride:
-                        description: Image_override
+                        description: |-
+                          Full image reference (registry/repository:tag) to override the default
+                          image for this Search component deployment.
                         type: string
                       replicaCount:
                         description: Number of pod instances for the deployment.
@@ -300,7 +311,9 @@ spec:
                         type: object
                     type: object
                   database:
-                    description: Configuration for the database.
+                    description: |-
+                      Configuration for the PostgreSQL database deployment (replicas, resources,
+                      image override, arguments, and environment variables).
                     properties:
                       arguments:
                         description: Container Arguments
@@ -466,7 +479,9 @@ spec:
                           type: object
                         type: array
                       imageOverride:
-                        description: Image_override
+                        description: |-
+                          Full image reference (registry/repository:tag) to override the default
+                          image for this Search component deployment.
                         type: string
                       replicaCount:
                         description: Number of pod instances for the deployment.
@@ -700,7 +715,9 @@ spec:
                           type: object
                         type: array
                       imageOverride:
-                        description: Image_override
+                        description: |-
+                          Full image reference (registry/repository:tag) to override the default
+                          image for this Search component deployment.
                         type: string
                       replicaCount:
                         description: Number of pod instances for the deployment.
@@ -768,7 +785,9 @@ spec:
                         type: object
                     type: object
                   queryapi:
-                    description: Configuration for Query API.
+                    description: |-
+                      Configuration for the Search query API deployment (replicas, resources,
+                      image override, arguments, and environment variables).
                     properties:
                       arguments:
                         description: Container Arguments
@@ -934,7 +953,9 @@ spec:
                           type: object
                         type: array
                       imageOverride:
-                        description: Image_override
+                        description: |-
+                          Full image reference (registry/repository:tag) to override the default
+                          image for this Search component deployment.
                         type: string
                       replicaCount:
                         description: Number of pod instances for the deployment.
@@ -1004,15 +1025,19 @@ spec:
                 type: object
               externalDBInstance:
                 description: |-
-                  [PLACEHOLDER, NOT IMPLEMENTED] Kubernetes secret name containing user provided db secret
+                  Not currently supported. Reserved for future use.
                   Secret should contain connection parameters [db_host, db_port, db_user, db_password, db_name, ca_cert]
                   Not supported for development preview.
                 type: string
               imagePullPolicy:
-                description: ImagePullPolicy
+                description: |-
+                  Kubernetes image pull policy for Search component images.
+                  One of: Always, Never, IfNotPresent.
                 type: string
               imagePullSecret:
-                description: ImagePullSecret
+                description: |-
+                  Name of an existing Secret of type kubernetes.io/dockerconfigjson used
+                  to pull Search component images from private registries.
                 type: string
               nodeSelector:
                 additionalProperties:
@@ -1065,7 +1090,9 @@ spec:
             description: SearchStatus defines the observed state of Search.
             properties:
               conditions:
-                description: Conditions
+                description: |-
+                  Conditions describing the current state of the Search deployment.
+                  Condition types include Ready and Degraded.
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.
