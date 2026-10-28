@@ -45,8 +45,14 @@ def normalizeDescriptionAnnotation(csv):
     operator-sdk v1.37+ no longer copies spec.description into the CSV
     description annotation, but both fields carry the same text.
     """
-    metadata = csv.get('metadata') or {}
-    annotations = metadata.setdefault('annotations', {})
+    metadata = csv.get('metadata')
+    if not isinstance(metadata, dict):
+        metadata = {}
+        csv['metadata'] = metadata
+    annotations = metadata.get('annotations')
+    if not isinstance(annotations, dict):
+        annotations = {}
+        metadata['annotations'] = annotations
     if annotations.get('description'):
         return
     description = (csv.get('spec') or {}).get('description')
@@ -55,6 +61,10 @@ def normalizeDescriptionAnnotation(csv):
 
 
 def validateCSV(csvPath):
+    """Lint the CSV at csvPath against hack/bundle-automation/csv_linter_rules.yaml.
+
+    Returns a list of error strings; an empty list means the CSV passed.
+    """
     errs = []
     # Load the CSV Linter rules
     with open("hack/bundle-automation/csv_linter_rules.yaml", 'r') as f:
