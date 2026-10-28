@@ -1,42 +1,42 @@
 {
   "4.22": {
     "tag": "acm-5.0__v4.22__multiclusterhub-rhel9",
-    "digest": "sha256:2b4720a3d9b16a7cf6522edfa54221a1887343d8e29211e0985ffdf55594022b",
-    "last_modified": "Mon, 26 Oct 2026 19:58:59 -0000",
-    "start_ts": 1793044739,
-    "nvr": "multiclusterhub-operator-fbc-5.0.0-20261026194323.ocp4.22",
-    "build_date": "2026-10-26T19:55:26Z",
+    "digest": "sha256:20cbd525b0f735fc80e84cf8b1024a117e95425f8fe2902c13de22a9b4a008da",
+    "last_modified": "Wed, 28 Oct 2026 07:34:51 -0000",
+    "start_ts": 1793172891,
+    "nvr": "multiclusterhub-operator-fbc-5.0.0-20261028072606.ocp4.22",
+    "build_date": "2026-10-28T07:31:01Z",
     "source_repo": "https://github.com/stolostron/multiclusterhub-operator",
-    "commit_id": "d0dfde0e685406787bd56ceafae6f67fbfe0e7ab"
+    "commit_id": "64b3fae98944ba3f0e5befc5cc3c8292174df45c"
   },
   "4.23": {
     "tag": "acm-5.0__v4.23__multiclusterhub-rhel9",
-    "digest": "sha256:d75f33d1ad98bdb5ff7d48546f49eee0cc7c64fa78b31b674a44d25199f3026a",
-    "last_modified": "Mon, 26 Oct 2026 19:55:43 -0000",
-    "start_ts": 1793044543,
-    "nvr": "multiclusterhub-operator-fbc-5.0.0-20261026194335.ocp4.23",
-    "build_date": "2026-10-26T19:51:38Z",
+    "digest": "sha256:498294a31ca9745b83de3fec0d694111f160c7130afc0418d27cae408b01f7c9",
+    "last_modified": "Wed, 28 Oct 2026 07:39:42 -0000",
+    "start_ts": 1793173182,
+    "nvr": "multiclusterhub-operator-fbc-5.0.0-20261028072335.ocp4.23",
+    "build_date": "2026-10-28T07:29:25Z",
     "source_repo": "https://github.com/stolostron/multiclusterhub-operator",
-    "commit_id": "d0dfde0e685406787bd56ceafae6f67fbfe0e7ab"
+    "commit_id": "64b3fae98944ba3f0e5befc5cc3c8292174df45c"
   },
   "5.0": {
     "tag": "acm-5.0__v5.0__multiclusterhub-rhel9",
-    "digest": "sha256:d476f3a06bafddc38493e3fd3d474923d9339584bb5540888f58ed6cad80e9c0",
-    "last_modified": "Mon, 26 Oct 2026 19:57:22 -0000",
-    "start_ts": 1793044642,
-    "nvr": "multiclusterhub-operator-fbc-5.0.0-20261026194347.ocp5.0",
-    "build_date": "2026-10-26T19:53:49Z",
+    "digest": "sha256:ca74471e47762a5c70c77ba7b6aae2797bdad874ff4268a3dd48efe49af3500d",
+    "last_modified": "Wed, 28 Oct 2026 07:38:40 -0000",
+    "start_ts": 1793173120,
+    "nvr": "multiclusterhub-operator-fbc-5.0.0-20261028072405.ocp5.0",
+    "build_date": "2026-10-28T07:29:24Z",
     "source_repo": "https://github.com/stolostron/multiclusterhub-operator",
-    "commit_id": "d0dfde0e685406787bd56ceafae6f67fbfe0e7ab"
+    "commit_id": "64b3fae98944ba3f0e5befc5cc3c8292174df45c"
   },
   "5.1": {
     "tag": "acm-5.0__v5.1__multiclusterhub-rhel9",
-    "digest": "sha256:c2958337b1902ca74e1307de8f8626352021925bd05677602d3cded1f95367f0",
-    "last_modified": "Mon, 26 Oct 2026 19:56:25 -0000",
-    "start_ts": 1793044585,
-    "nvr": "multiclusterhub-operator-fbc-5.0.0-20261026194355.ocp5.1",
-    "build_date": "2026-10-26T19:51:47Z",
+    "digest": "sha256:72bde0481aa9f58dd851a157b6f33905edea32064728fbf0e9d16f41bdb2112a",
+    "last_modified": "Wed, 28 Oct 2026 07:33:35 -0000",
+    "start_ts": 1793172815,
+    "nvr": "multiclusterhub-operator-fbc-5.0.0-20261028072425.ocp5.1",
+    "build_date": "2026-10-28T07:29:57Z",
     "source_repo": "https://github.com/stolostron/multiclusterhub-operator",
-    "commit_id": "d0dfde0e685406787bd56ceafae6f67fbfe0e7ab"
+    "commit_id": "64b3fae98944ba3f0e5befc5cc3c8292174df45c"
   }
 }
