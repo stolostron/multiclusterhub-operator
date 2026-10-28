@@ -19,6 +19,7 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	subv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	monitorv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	searchv2v1alpha1 "github.com/stolostron/search-v2-operator/api/v1alpha1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
@@ -26,6 +27,8 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -970,4 +973,101 @@ func (r *MultiClusterHubReconciler) GetInstallPlanApprovalFromSubscription(sub *
 		return subv1alpha1.ApprovalAutomatic // Default fallback
 	}
 	return sub.Spec.InstallPlanApproval
+}
+
+// GetDeprecatedResources returns a list of resources that were removed in newer versions and
+// must be cleaned up on upgrade to prevent stale resources from causing alerts.
+func (r *MultiClusterHubReconciler) GetDeprecatedResources(m *operatorv1.MultiClusterHub) []client.Object {
+	return []client.Object{
+		// Console monitoring resources removed in ACM 2.17
+		&rbacv1.Role{
+			TypeMeta:   metav1.TypeMeta{Kind: "Role"},
+			ObjectMeta: metav1.ObjectMeta{Name: "console-metrics-monitor", Namespace: m.Namespace},
+		},
+		&rbacv1.RoleBinding{
+			TypeMeta:   metav1.TypeMeta{Kind: "RoleBinding"},
+			ObjectMeta: metav1.ObjectMeta{Name: "console-metrics-monitor", Namespace: m.Namespace},
+		},
+		&monitorv1.PrometheusRule{
+			ObjectMeta: metav1.ObjectMeta{Name: "acm-console-prometheus-rules", Namespace: m.Namespace},
+		},
+		&monitorv1.ServiceMonitor{
+			ObjectMeta: metav1.ObjectMeta{Name: "console-monitor", Namespace: m.Namespace},
+		},
+	}
+}
+
+/*
+EnsureDeprecatedResourceCleanup ensures that a given Kubernetes resource is deleted if it exists.
+It first attempts to fetch the resource, logs if it is already being deleted, and then proceeds
+with deletion if necessary.
+
+Parameters:
+  - ctx: The context for managing request deadlines and cancellations.
+  - obj: The Kubernetes resource (client.Object) to check and delete.
+
+Returns:
+  - ctrl.Result: An empty result indicating no requeue is needed.
+  - error: Any error encountered while fetching or deleting the resource.
+*/
+func (r *MultiClusterHubReconciler) EnsureDeprecatedResourceCleanup(ctx context.Context, obj client.Object) (
+	ctrl.Result, error) {
+	/*
+	   Resources can be either namespace-scoped or cluster-scoped.
+	   To accommodate both cases, we first initialize `key` with only the resource name.
+	   If the resource is namespace-scoped, we then set the namespace accordingly.
+	*/
+	key := types.NamespacedName{Name: obj.GetName()}
+
+	// Only set the namespace if the resource is namespace-scoped
+	if obj.GetNamespace() != "" {
+		key.Namespace = obj.GetNamespace()
+	}
+
+	/*
+		Since we are disabling the cache for specific resources, some of the data in the object structure is dropped.
+		By converting the resource, we can get those fields back without needing to cache the resource kinds.
+	*/
+	resource := &unstructured.Unstructured{}
+	if err := r.Scheme.Convert(obj, resource, nil); err != nil {
+		r.Log.Error(err, "failed to convert unstructured object")
+	}
+
+	// Fetch the deprecated resource
+	if err := r.Client.Get(ctx, key, resource); err != nil {
+		// Resource not found, no cleanup needed
+		if errors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
+
+		// CRD does not exist (e.g., monitoring CRDs on non-OCP clusters), nothing to clean up
+		if apimeta.IsNoMatchError(err) {
+			return ctrl.Result{}, nil
+		}
+
+		r.Log.Error(err, "Failed to get resource", "Kind", resource.GetKind(),
+			"Name", resource.GetName(), "Namespace", resource.GetNamespace())
+		return ctrl.Result{}, err
+	}
+
+	// Check if resource is already marked for deletion
+	if resource.GetDeletionTimestamp() != nil {
+		r.Log.Info("Waiting for resource to be terminated", "Kind", resource.GetKind(),
+			"Name", resource.GetName(), "Namespace", resource.GetNamespace(),
+			"DeletionTimestamp", resource.GetDeletionTimestamp())
+
+		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+	}
+
+	// Delete the resource
+	r.Log.Info("Deleting deprecated resource", "Kind", resource.GetKind(), "Name", resource.GetName(),
+		"Namespace", resource.GetNamespace())
+
+	if err := r.Client.Delete(ctx, resource); err != nil {
+		r.Log.Error(err, "Failed to delete resource", "Kind", resource.GetKind(),
+			"Name", resource.GetName(), "Namespace", resource.GetNamespace())
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, nil
 }
