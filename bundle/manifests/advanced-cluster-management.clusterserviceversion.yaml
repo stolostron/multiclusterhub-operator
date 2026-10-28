@@ -1956,8 +1956,8 @@ spec:
                   value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/ubi_minimal:latest
                 - name: OPERAND_IMAGE_ORIGIN_CLI
                   value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/origin_cli:latest
-                - name: OPERAND_IMAGE_REDIS_7_C9S
-                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/redis_7_c9s:latest
+                - name: OPERAND_IMAGE_REDIS
+                  value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/redis:latest
                 - name: OPERAND_IMAGE_POSTGRESQL_16
                   value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/postgresql_16:latest
                 - name: OPERAND_IMAGE_MEMCACHED
@@ -2163,8 +2163,8 @@ spec:
     image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/ubi_minimal:latest
   - name: origin_cli
     image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/origin_cli:latest
-  - name: redis_7_c9s
-    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/redis_7_c9s:latest
+  - name: redis
+    image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/redis:latest
   - name: postgresql_16
     image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/postgresql_16:latest
   - name: memcached
