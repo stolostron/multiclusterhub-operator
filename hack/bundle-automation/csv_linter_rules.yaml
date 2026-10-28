@@ -1,6 +1,5 @@
 disallowedFields:
 - spec.apiservicedefinitions
-- spec.webhookdefinitions
 noOpFields:
 - apiVersion
 - spec.annotations
@@ -23,6 +22,7 @@ noOpFields:
 - spec.skips
 - spec.relatedImages
 - spec.install.strategy
+- spec.webhookdefinitions
 requiredFields:
 - kind
 - metadata.name

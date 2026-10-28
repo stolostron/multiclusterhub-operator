@@ -39,6 +39,21 @@ def validateFieldMapping(csv, ruleType, fieldMap):
     return errs
 
 
+def normalizeDescriptionAnnotation(csv):
+    """Fall back to spec.description when metadata.annotations.description is absent.
+
+    operator-sdk v1.37+ no longer copies spec.description into the CSV
+    description annotation, but both fields carry the same text.
+    """
+    metadata = csv.get('metadata') or {}
+    annotations = metadata.setdefault('annotations', {})
+    if annotations.get('description'):
+        return
+    description = (csv.get('spec') or {}).get('description')
+    if description:
+        annotations['description'] = description
+
+
 def validateCSV(csvPath):
     errs = []
     # Load the CSV Linter rules
@@ -47,7 +62,9 @@ def validateCSV(csvPath):
 
     with open(csvPath, 'r') as f:
         csv = yaml.safe_load(f)
-    
+
+    normalizeDescriptionAnnotation(csv)
+
     name = csv['metadata']['name']
 
     logging.info("Linting CSV: %s", name)
