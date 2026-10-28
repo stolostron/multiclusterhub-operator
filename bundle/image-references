@@ -231,10 +231,10 @@ spec:
     from:
       kind: DockerImage
       name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/origin_cli:latest
-  - name: redis_7_c9s
+  - name: redis
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/redis_7_c9s:latest
+      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/redis:latest
   - name: postgresql_16
     from:
       kind: DockerImage
