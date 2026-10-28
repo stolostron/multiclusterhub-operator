@@ -31,11 +31,12 @@ metadata:
     description: Advanced provisioning and management of OpenShift and Kubernetes clusters
     repository: https://github.com/open-cluster-management/multiclusterhub-operator
     support: Red Hat
-    olm.skipRange: '>=2.16.0 <2.17.4'
+    olm.skipRange: '>=2.15.0 <2.17.4'
     operatorframework.io/suggested-namespace: open-cluster-management
     operators.openshift.io/valid-subscription: '["OpenShift Platform Plus", "Red Hat Advanced Cluster Management for Kubernetes"]'
     operators.openshift.io/infrastructure-features: '["disconnected", "proxy-aware", "fips"]'
-    olm.properties: '[{"type": "olm.maxOpenShiftVersion", "value": "4.22"}]'
+    olm.properties: '[{"type": "olm.maxOpenShiftVersion", "value": "5.0"}]'
+    operators.openshift.io/must-gather-image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-must-gather-rhel9:latest
     operatorframework.io/initialization-resource: '{"apiVersion":"operator.open-cluster-management.io/v1", "kind":"MultiClusterHub","metadata":{"name":"multiclusterhub","namespace":"open-cluster-management"}, "spec": {}}'
   name: advanced-cluster-management.v2.17.4
   namespace: placeholder
@@ -1998,11 +1999,11 @@ spec:
   installModes:
   - supported: true
     type: OwnNamespace
-  - supported: true
+  - supported: false
     type: SingleNamespace
   - supported: false
     type: MultiNamespace
-  - supported: false
+  - supported: true
     type: AllNamespaces
   keywords:
   - acm
@@ -2016,6 +2017,7 @@ spec:
   maintainers:
   - email: acm-contact@redhat.com
     name: Red Hat
+  replaces: advanced-cluster-management.v2.17.3
   relatedImages:
   - name: acm_cli
     image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-cli-rhel9:latest
