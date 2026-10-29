@@ -5,9 +5,7 @@ metadata:
 spec:
   addOnConfiguration: {}
   addOnMeta:
-    description: >-
-      Collects cluster data to be indexed by search components on the hub
-      cluster.
+    description: Collects cluster data to be indexed by search components on the hub cluster.
     displayName: Search Collector
   installStrategy:
     type: Manual
