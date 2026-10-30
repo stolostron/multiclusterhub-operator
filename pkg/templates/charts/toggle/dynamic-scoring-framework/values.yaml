@@ -1,3 +1,5 @@
+# ACM override: MCH injects these values from its renderer instead of upstream hubSetting/spokeSetting values.
+# The renderer also assigns namespaces to namespaced resources unless a template explicitly sets one.
 global:
   apiUrl: ''
   baseDomain: ''

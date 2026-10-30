@@ -20,6 +20,7 @@ spec:
         control-plane: controller-manager
         ocm-antiaffinity-selector: dynamic-scoring-framework-controller
     spec:
+      # ACM addition: prefer spreading controller replicas across zones and nodes.
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -49,11 +50,8 @@ spec:
         command:
         - /manager
         env:
-{{- if .Values.global.pullSecret }}
-        - name: AGENT_IMAGE_PULL_SECRET
-          value: {{ .Values.global.pullSecret }}
-{{- end }}
 {{- if .Values.hubconfig.proxyConfigs }}
+        # ACM addition: support proxy-configured hub clusters.
         - name: HTTP_PROXY
           value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
         - name: HTTPS_PROXY
@@ -61,6 +59,7 @@ spec:
         - name: NO_PROXY
           value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
 {{- end }}
+        # ACM override: use the MCH related-image override and global pull policy.
         image: '{{ .Values.global.imageOverrides.dynamic_scoring_controller }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         livenessProbe:
@@ -92,27 +91,33 @@ spec:
           privileged: false
           readOnlyRootFilesystem: true
           runAsNonRoot: true
+        # ACM override: this chart does not expose upstream extra-volume settings.
         volumeMounts: []
+      # ACM addition: explicitly disable host namespace sharing.
       hostIPC: false
       hostNetwork: false
       hostPID: false
 {{- if .Values.global.pullSecret }}
+      # ACM addition: allow pulling images with the MCH pull secret.
       imagePullSecrets:
       - name: {{ .Values.global.pullSecret }}
 {{- end }}
 {{- with .Values.hubconfig.nodeSelector }}
+      # ACM addition: honor MCH node-selector configuration.
       nodeSelector:
 {{ toYaml . | indent 8 }}
 {{- end }}
       securityContext:
         runAsNonRoot: true
 {{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
+        # ACM override: gate seccompProfile by OCP version to match other MCH charts.
         seccompProfile:
           type: RuntimeDefault
 {{- end }}
       serviceAccountName: dynamic-scoring-framework-controller
       terminationGracePeriodSeconds: 10
 {{- with .Values.hubconfig.tolerations }}
+      # ACM addition: honor MCH toleration configuration.
       tolerations:
       {{- range . }}
       - {{ if .Key }} key: {{ .Key }} {{- end }}
@@ -122,4 +127,5 @@ spec:
         {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
         {{- end }}
 {{- end }}
+      # ACM override: this chart does not expose upstream extra-volume settings.
       volumes: []

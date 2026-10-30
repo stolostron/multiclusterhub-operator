@@ -15,6 +15,7 @@ spec:
         app: dynamic-scoring-addon-controller
         ocm-antiaffinity-selector: dynamic-scoring-addon-controller
     spec:
+      # ACM addition: prefer spreading addon-controller replicas across zones and nodes.
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -41,11 +42,16 @@ spec:
         - /dynamic-scoring-addon
         - controller
         env:
-{{- if .Values.global.pullSecret }}
-        - name: AGENT_IMAGE_PULL_SECRET
-          value: {{ .Values.global.pullSecret }}
-{{- end }}
+        # ACM addition: set DSF agent defaults here; user-created configs can override them.
+        - name: DYNAMIC_SCORING_ADDON_IMAGE
+          value: '{{ .Values.global.imageOverrides.dynamic_scoring_addon }}'
+        # ACM override: use upstream secret names; MCH pull-secret propagation supplies the first when configured.
+        - name: DYNAMIC_SCORING_ADDON_IMAGE_PULL_SECRETS
+          value: '["open-cluster-management-image-pull-credentials","hub-registry-secret"]'
+        - name: DYNAMIC_SCORING_ADDON_NAMESPACE
+          value: dynamic-scoring
 {{- if .Values.hubconfig.proxyConfigs }}
+        # ACM addition: support proxy-configured hub clusters.
         - name: HTTP_PROXY
           value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
         - name: HTTPS_PROXY
@@ -53,6 +59,7 @@ spec:
         - name: NO_PROXY
           value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
 {{- end }}
+        # ACM override: use the MCH related-image override and global pull policy.
         image: '{{ .Values.global.imageOverrides.dynamic_scoring_addon }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         name: dynamic-scoring-addon-controller
@@ -65,27 +72,33 @@ spec:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
         volumeMounts:
+        # ACM addition: writable temporary storage for the addon controller.
         - mountPath: /tmp
           name: tmp
+      # ACM addition: explicitly disable host namespace sharing.
       hostIPC: false
       hostNetwork: false
       hostPID: false
 {{- if .Values.global.pullSecret }}
+      # ACM addition: allow pulling images with the MCH pull secret.
       imagePullSecrets:
       - name: {{ .Values.global.pullSecret }}
 {{- end }}
 {{- with .Values.hubconfig.nodeSelector }}
+      # ACM addition: honor MCH node-selector configuration.
       nodeSelector:
 {{ toYaml . | indent 8 }}
 {{- end }}
       securityContext:
         runAsNonRoot: true
 {{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
+        # ACM override: gate seccompProfile by OCP version to match other MCH charts.
         seccompProfile:
           type: RuntimeDefault
 {{- end }}
       serviceAccountName: dynamic-scoring-addon-sa
 {{- with .Values.hubconfig.tolerations }}
+      # ACM addition: honor MCH toleration configuration.
       tolerations:
       {{- range . }}
       - {{ if .Key }} key: {{ .Key }} {{- end }}

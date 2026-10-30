@@ -9,4 +9,5 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: dynamic-scoring-addon-sa
+  # ACM override: bind in the MCH target namespace, defaulting to open-cluster-management.
   namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'

@@ -11,4 +11,5 @@ name: dynamic-scoring-framework
 sources:
 - https://github.com/open-cluster-management-io/dynamic-scoring-framework
 type: application
+# ACM override: retain MCH chart versioning; upstream chart version is 0.1.0.
 version: '5.1'
