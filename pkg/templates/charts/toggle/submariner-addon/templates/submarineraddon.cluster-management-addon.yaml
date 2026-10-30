@@ -2,7 +2,7 @@ apiVersion: addon.open-cluster-management.io/v1alpha1
 kind: ClusterManagementAddOn
 metadata:
   finalizers:
-    - submarineraddon.open-cluster-management.io/submariner-addon-cleanup
+  - submarineraddon.open-cluster-management.io/submariner-addon-cleanup
   name: submariner
 spec:
   addOnConfiguration: {}
@@ -10,6 +10,5 @@ spec:
     description: Submariner Addon for MultiCluster connectivity
     displayName: Submariner Addon
   supportedConfigs:
-    - group: addon.open-cluster-management.io
-      resource: addondeploymentconfigs
-
+  - group: addon.open-cluster-management.io
+    resource: addondeploymentconfigs
