@@ -151,6 +151,29 @@ func (r *MultiClusterHubReconciler) publishMCHPhase(m *operatorsv1.MultiClusterH
 	}
 }
 
+// publishMCHComponentMetrics updates the per-component health and enabled gauges
+// for the hub and logs when the published series change. Health series are derived
+// from the status components, which only lists enabled components, while the enabled
+// gauge covers every known component so a disabled one reports 0 instead of vanishing.
+func (r *MultiClusterHubReconciler) publishMCHComponentMetrics(m *operatorsv1.MultiClusterHub, components map[string]operatorsv1.StatusCondition) {
+	if m.GetDeletionTimestamp() != nil {
+		return
+	}
+
+	enabled := make(map[string]bool, len(operatorsv1.MCHComponents))
+	for _, component := range operatorsv1.MCHComponents {
+		enabled[component] = m.Enabled(component)
+	}
+
+	if mchmetrics.SetMCHComponentMetrics(m.Namespace, m.Name, components, enabled) {
+		r.Log.Info("Published MultiClusterHub component metrics",
+			"conditionMetric", mchmetrics.ComponentConditionMetricName,
+			"enabledMetric", mchmetrics.ComponentEnabledMetricName,
+			"namespace", m.Namespace, "name", m.Name,
+			"components", len(components), "knownComponents", len(enabled))
+	}
+}
+
 // deleteMCHMetrics removes the metric series for a hub and logs the cleanup when
 // there was something to remove. Logging only on an actual removal keeps a slow
 // teardown, which reconciles repeatedly while finalizers run, from repeating the
@@ -158,7 +181,7 @@ func (r *MultiClusterHubReconciler) publishMCHPhase(m *operatorsv1.MultiClusterH
 func (r *MultiClusterHubReconciler) deleteMCHMetrics(namespace, name, reason string) {
 	if mchmetrics.DeleteMCHMetrics(namespace, name) {
 		r.Log.Info("Removed MultiClusterHub metric series",
-			"metric", mchmetrics.PhaseMetricName, "namespace", namespace, "name", name, "reason", reason)
+			"namespace", namespace, "name", name, "reason", reason)
 	}
 }
 
@@ -188,6 +211,7 @@ func (r *MultiClusterHubReconciler) syncHubStatus(ctx context.Context, m *operat
 		// populates the gauge on the first reconcile after an operator restart, when
 		// there is nothing to update.
 		r.publishMCHPhase(m, newStatus.Phase)
+		r.publishMCHComponentMetrics(m, newStatus.Components)
 		r.Log.Info("Status hasn't changed")
 		return reconcile.Result{}, nil
 	}
@@ -218,6 +242,7 @@ func (r *MultiClusterHubReconciler) syncHubStatus(ctx context.Context, m *operat
 	// Only publish a changed phase after the API server has accepted it, so the
 	// metric never reports a phase that the MultiClusterHub status does not hold.
 	r.publishMCHPhase(m, newStatus.Phase)
+	r.publishMCHComponentMetrics(m, newStatus.Components)
 
 	if m.Status.Phase != operatorsv1.HubRunning {
 		return reconcile.Result{RequeueAfter: resyncPeriod}, nil
