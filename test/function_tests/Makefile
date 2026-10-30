@@ -9,6 +9,8 @@ SOURCE_NAME := "acm-custom-registry"
 ## Run the installer downstream functional tests
 ft-downstream-install:
 	docker run --network host \
+		--user "$(shell id -u):$(shell id -g)" \
+		--env GOCACHE=/tmp/gocache \
 		--env pullSecret=$(PULL_SECRET_NAME) \
 		--env source=$(SOURCE_NAME) \
 		--env channel=$(CHANNEL) \
@@ -22,6 +24,8 @@ ft-downstream-install:
 ## Run the uninstall functional tests
 ft-downstream-uninstall:
 	docker run --network host \
+		--user "$(shell id -u):$(shell id -g)" \
+		--env GOCACHE=/tmp/gocache \
 		--env pullSecret=$(PULL_SECRET_NAME) \
 		--env source=$(SOURCE_NAME) \
 		--env channel=$(CHANNEL) \
@@ -35,6 +39,8 @@ ft-downstream-uninstall:
 ## Run the uninstall functional tests
 ft-downstream-update:
 	docker run --network host \
+		--user "$(shell id -u):$(shell id -g)" \
+		--env GOCACHE=/tmp/gocache \
 		--env pullSecret=$(PULL_SECRET_NAME) \
 		--env source=$(SOURCE_NAME) \
 		--env channel=$(CHANNEL) \
@@ -49,6 +55,9 @@ ft-downstream-update:
 ## Run the installer downstream functional tests
 podman-ft-downstream-install:
 	podman run --network host \
+		--userns=keep-id \
+		--user "$(shell id -u)" \
+		--env GOCACHE=/tmp/gocache \
 		--env pullSecret=$(PULL_SECRET_NAME) \
 		--env source=$(SOURCE_NAME) \
 		--env channel=$(CHANNEL) \
@@ -62,6 +71,9 @@ podman-ft-downstream-install:
 ## Run the uninstall functional tests
 podman-ft-downstream-uninstall:
 	podman run --network host \
+		--userns=keep-id \
+		--user "$(shell id -u)" \
+		--env GOCACHE=/tmp/gocache \
 		--env pullSecret=$(PULL_SECRET_NAME) \
 		--env source=$(SOURCE_NAME) \
 		--env channel=$(CHANNEL) \
@@ -75,6 +87,9 @@ podman-ft-downstream-uninstall:
 ## Run the uninstall functional tests
 podman-ft-downstream-update:
 	podman run --network host \
+		--userns=keep-id \
+		--user "$(shell id -u)" \
+		--env GOCACHE=/tmp/gocache \
 		--env pullSecret=$(PULL_SECRET_NAME) \
 		--env source=$(SOURCE_NAME) \
 		--env channel=$(CHANNEL) \

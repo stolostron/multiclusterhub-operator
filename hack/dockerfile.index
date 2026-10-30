@@ -5,11 +5,11 @@ FROM quay.io/operator-framework/upstream-opm-builder:v1.20.0
 
 LABEL operators.operatorframework.io.index.database.v1=/database/index.db
 
-ADD database/index.db /database/index.db
+COPY database/index.db /database/index.db
 
 # WORKAROUND: Crcumvent permission denied error on OCP (interestingly, the
 # file didn't exist in the image, so maybe something is trying to create it?)
-ADD etc/nsswitch.conf /etc/nsswitch.conf
+COPY etc/nsswitch.conf /etc/nsswitch.conf
 
 EXPOSE 50051
 
