@@ -54,6 +54,12 @@ rules:
   - list
   - watch
 - apiGroups:
+  - search.open-cluster-management.io
+  resources:
+  - searches
+  verbs:
+  - list
+- apiGroups:
   - authentication.open-cluster-management.io
   resources:
   - managedserviceaccounts
