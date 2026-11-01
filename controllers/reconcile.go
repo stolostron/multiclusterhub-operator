@@ -79,6 +79,10 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		// syncHubStatus republishes after a successful status update, so this only
 		// logs again when the phase actually transitions.
 		r.publishMCHPhase(multiClusterHub, multiClusterHub.Status.Phase)
+		// Republish the component gauges from the persisted status for the same
+		// reason, so they are not missing between an operator restart and the next
+		// successful status sync.
+		r.publishMCHComponentMetrics(multiClusterHub, multiClusterHub.Status.Components)
 	}
 
 	// Migrate deprecated annotations to current equivalents
