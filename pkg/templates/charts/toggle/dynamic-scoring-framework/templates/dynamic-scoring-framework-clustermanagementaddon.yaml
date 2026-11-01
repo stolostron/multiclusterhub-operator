@@ -1,4 +1,4 @@
-apiVersion: addon.open-cluster-management.io/v1alpha1
+apiVersion: addon.open-cluster-management.io/v1beta1
 kind: ClusterManagementAddOn
 metadata:
   name: dynamic-scoring-framework
@@ -8,16 +8,17 @@ spec:
     displayName: dynamic-scoring-framework
   installStrategy:
     placements:
+    # ACM override: use one pre-existing global Placement instead of upstream's architecture-specific Placements.
     - name: global
       namespace: open-cluster-management-global-set
+      # ACM override: explicitly pin the rollout strategy to All.
       rolloutStrategy:
         type: All
+      # ACM addition: retain this reference for user-created AddOnDeploymentConfigs.
+      # The MCH chart does not create the config; environment variables provide defaults.
       configs:
       - group: addon.open-cluster-management.io
         name: dynamic-scoring-addon-config
         namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
         resource: addondeploymentconfigs
     type: Placements
-  supportedConfigs:
-  - group: addon.open-cluster-management.io
-    resource: addondeploymentconfigs
