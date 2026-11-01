@@ -678,6 +678,8 @@ package main
 //+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=collectorconfigs/status;searches/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=searches,verbs=get;list;patch;update;watch
 //+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=searches,verbs=get;list;patch;update;watch
+//+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=searches,verbs=list
+//+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=searches,verbs=list
 //+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=searches,verbs=list;watch
 //+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=searches,verbs=list;watch
 //+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=searches/finalizers,verbs=update
