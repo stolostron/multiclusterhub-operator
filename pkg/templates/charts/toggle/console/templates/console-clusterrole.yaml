@@ -91,6 +91,14 @@ rules:
   - jobs
   - namespaces
   - pods
+
+- verbs:
+  - get
+  - list
+  - watch
+  apiGroups:
+  - ''
+  resources:
   - secrets
 
 - verbs:
