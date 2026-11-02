@@ -163,6 +163,13 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 			}
 
 			if !utils.IsTemplateAnnotationTrue(template, utils.AnnotationEditable) {
+				if desiredStateMatches(existing, template) {
+					log.V(4).Info("Resource already matches desired state, skipping update",
+						"Kind", template.GetKind(), "Name", template.GetName(),
+						"Namespace", template.GetNamespace())
+					return ctrl.Result{}, nil
+				}
+
 				// Check if we need to use Update instead of Patch due to container changes
 				useUpdate := false
 				if existing.GetKind() == "Deployment" {

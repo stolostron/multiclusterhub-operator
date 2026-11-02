@@ -644,11 +644,12 @@ func Test_ensureMCEInstallation_SetsCondition_OnInvalidAnnotation_V0(t *testing.
 	}
 }
 
-// Test_ensureMCEInstallation_HandlesSubscriptionUpdateConflict_V0 verifies
+// Test_ensureMCEInstallation_ReturnsSubscriptionUpdateConflict_V0 verifies
 // that a resourceVersion conflict on the Subscription Update (e.g. racing
-// OLM's own controller writing status during CSV install) is retried
-// quietly instead of surfacing as a reconciler error.
-func Test_ensureMCEInstallation_HandlesSubscriptionUpdateConflict_V0(t *testing.T) {
+// OLM's own controller writing status during CSV install) is propagated to
+// controller-runtime so the key is requeued with backoff instead of waiting
+// for the next resync.
+func Test_ensureMCEInstallation_ReturnsSubscriptionUpdateConflict_V0(t *testing.T) {
 	registerScheme()
 	t.Setenv("POD_NAMESPACE", "test-ns")
 
@@ -694,29 +695,24 @@ func Test_ensureMCEInstallation_HandlesSubscriptionUpdateConflict_V0(t *testing.
 	}
 
 	result, err := r.ensureMCEInstallation(context.Background(), &mch)
-	if err != nil {
-		t.Fatalf("expected no error on conflict (should retry quietly), got: %v", err)
+	if err == nil {
+		t.Fatal("expected the conflict to be returned so controller-runtime backs off, got nil")
 	}
-	// Must be an empty result (not an explicit Requeue): ensureMultiClusterEngine treats any
-	// non-empty result as "stop here", so requesting a requeue on a benign, self-resolving
-	// conflict would block ensureMultiClusterEngineCR from running this cycle — starving MCE
-	// CR creation for as long as the Subscription keeps conflicting with OLM's own updates.
+	if !apierrors.IsConflict(err) {
+		t.Fatalf("expected a conflict error, got: %v", err)
+	}
 	if result != (ctrl.Result{}) {
 		t.Errorf("expected empty result so the reconcile can proceed to create the MCE CR this cycle, got %+v", result)
 	}
 }
 
 // Test_ensureMultiClusterEngine_CreatesCR_DespiteSubscriptionConflict is an
-// end-to-end regression test for a livelock: ensureMultiClusterEngine only
-// proceeds from ensureMCEInstallation to ensureMultiClusterEngineCR when
-// ensureMCEInstallation returns an empty ctrl.Result. An earlier version of
-// the Subscription-conflict fix returned ctrl.Result{Requeue: true} on every
-// conflict, which — since OLM concurrently updates the Subscription's status
-// throughout CSV install — could starve MCE CR creation for as long as the
-// conflict kept recurring (observed live as several minutes with no CR
-// created at all). This verifies the MCE CR is actually created on the very
-// reconcile that hits the conflict, not just that ensureMCEInstallation
-// alone returns cleanly.
+// end-to-end regression test for a livelock: ensureMultiClusterEngine must
+// still run ensureMultiClusterEngineCR even when ensureMCEInstallation fails
+// with a Subscription update conflict. The conflict is returned to
+// controller-runtime for backoff, but it must not starve MCE CR creation —
+// OLM concurrently updates the Subscription's status throughout CSV install,
+// so a conflict can recur on most reconciles for several minutes.
 func Test_ensureMultiClusterEngine_CreatesCR_DespiteSubscriptionConflict(t *testing.T) {
 	registerScheme()
 	t.Setenv("POD_NAMESPACE", "test-ns")
@@ -759,8 +755,10 @@ func Test_ensureMultiClusterEngine_CreatesCR_DespiteSubscriptionConflict(t *test
 		utils.AnnotationMCESubscriptionSpec: `{"source":"redhat-operators"}`,
 	}
 
-	if _, err := r.ensureMultiClusterEngine(context.Background(), &mch); err != nil {
-		t.Fatalf("ensureMultiClusterEngine() unexpected error: %v", err)
+	if _, err := r.ensureMultiClusterEngine(context.Background(), &mch); err == nil {
+		t.Fatal("expected the Subscription conflict to be returned for backoff, got nil")
+	} else if !apierrors.IsConflict(err) {
+		t.Fatalf("expected a conflict error, got: %v", err)
 	}
 
 	mceList := &mcev1.MultiClusterEngineList{}
@@ -803,12 +801,12 @@ func Test_ensureMCEClusterExtension_SetsCondition_OnInvalidAnnotation(t *testing
 	}
 }
 
-// Test_ensureMCEClusterExtension_HandlesUpdateConflict verifies that a
+// Test_ensureMCEClusterExtension_ReturnsUpdateConflict verifies that a
 // resourceVersion conflict on the ClusterExtension Update (e.g. racing OLM
-// v1's own controller writing status during bundle resolution) is retried
-// quietly instead of surfacing as a reconciler error, mirroring how the OLM
-// v0 Subscription path already handles this same class of conflict.
-func Test_ensureMCEClusterExtension_HandlesUpdateConflict(t *testing.T) {
+// v1's own controller writing status during bundle resolution) is propagated
+// to controller-runtime so the key is requeued with backoff, mirroring how
+// the OLM v0 Subscription path handles this same class of conflict.
+func Test_ensureMCEClusterExtension_ReturnsUpdateConflict(t *testing.T) {
 	registerScheme()
 
 	// Owned by a different MCH so CreatedByMCH() is false, skipping the
@@ -818,6 +816,8 @@ func Test_ensureMCEClusterExtension_HandlesUpdateConflict(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: "other-mch", Namespace: "other-ns"},
 	}
 	existingCE := v1.NewClusterExtension(otherMCH)
+	// Force a spec difference so the operator actually issues the update.
+	existingCE.Spec.Source.Catalog.Channels = []string{"stale-channel"}
 
 	r := newTestReconcilerWithInterceptor(interceptor.Funcs{
 		Update: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
@@ -833,12 +833,12 @@ func Test_ensureMCEClusterExtension_HandlesUpdateConflict(t *testing.T) {
 	mch.Name = "test-mch-ce-conflict"
 
 	result, err := r.ensureMCEClusterExtension(context.Background(), &mch)
-	if err != nil {
-		t.Fatalf("expected no error on conflict (should retry quietly), got: %v", err)
+	if err == nil {
+		t.Fatal("expected the conflict to be returned so controller-runtime backs off, got nil")
 	}
-	// Must be an empty result (not an explicit Requeue): ensureMultiClusterEngine treats any
-	// non-empty result as "stop here", so requesting a requeue on a benign, self-resolving
-	// conflict would block ensureMultiClusterEngineCR from running this cycle.
+	if !apierrors.IsConflict(err) {
+		t.Fatalf("expected a conflict error, got: %v", err)
+	}
 	if result != (ctrl.Result{}) {
 		t.Errorf("expected empty result so the reconcile can proceed to create the MCE CR this cycle, got %+v", result)
 	}
