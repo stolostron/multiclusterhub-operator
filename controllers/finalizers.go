@@ -93,11 +93,16 @@ func (r *MultiClusterHubReconciler) cleanupMultiClusterEngine(ctx context.Contex
 		if err != nil && !isNotFoundOrGone(err) {
 			return err
 		}
-		log.Info("Waiting for MultiClusterEngine to terminate", "name", mce.GetName())
-		condition := NewHubCondition(operatorsv1.Terminating, metav1.ConditionTrue, DeleteTimestampReason,
-			fmt.Sprintf("Waiting for MultiClusterEngine %s to terminate", mce.GetName()))
-		SetHubCondition(&m.Status, *condition)
-		return fmt.Errorf("MCE has not yet been terminated")
+		if err == nil {
+			// Delete accepted — MCE still needs time to terminate; requeue.
+			log.Info("Waiting for MultiClusterEngine to terminate", "name", mce.GetName())
+			condition := NewHubCondition(operatorsv1.Terminating, metav1.ConditionTrue, DeleteTimestampReason,
+				fmt.Sprintf("Waiting for MultiClusterEngine %s to terminate", mce.GetName()))
+			SetHubCondition(&m.Status, *condition)
+			return fmt.Errorf("MCE has not yet been terminated")
+		}
+		// NotFound/Gone — MCE is already absent, continue cleanup.
+		log.Info("MultiClusterEngine already removed", "name", mce.GetName())
 	}
 
 	if utils.IsUnitTest() {
