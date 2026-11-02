@@ -1,12 +1,11 @@
 FROM registry.ci.openshift.org/stolostron/builder:go1.26-linux AS builder
 
-# Install ginkgo from the module's pinned version (go.mod/go.sum enforce the exact version)
-# and yq with GONOSUMDB=off to enforce checksum verification for both tools
+# Install ginkgo and yq from go.mod/go.sum pinned versions (tools/tools.go enforces lock-file tracking)
 RUN GONOSUMDB=off go install github.com/onsi/ginkgo/v2/ginkgo && \
-    GONOSUMDB=off go install github.com/mikefarah/yq/v3@v3.0.0-20201202084205-8846255d1c37
+    GONOSUMDB=off go install github.com/mikefarah/yq/v3
 
 ENV KUBECONFIG "/opt/.kube/config"
-COPY . /src/github.com/stolostron/multiclusterhub-operator
+COPY . /src/github.com/stolostron/multiclusterhub-operator # NOSONAR - test-only image; full source tree required for function tests
 
 WORKDIR /src/github.com/stolostron/multiclusterhub-operator
 
