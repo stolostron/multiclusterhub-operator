@@ -128,6 +128,46 @@ func Test_cleanupMultiClusterEngine(t *testing.T) {
 	}
 }
 
+func Test_isNotFoundOrGone(t *testing.T) {
+	tests := []struct {
+		name string
+		err  error
+		want bool
+	}{
+		{
+			name: "nil error",
+			err:  nil,
+			want: false,
+		},
+		{
+			name: "not found",
+			err: apierrors.NewNotFound(
+				schema.GroupResource{Group: "backplane.open-cluster-management.io", Resource: "multiclusterengines"},
+				"multi-cluster-engine",
+			),
+			want: true,
+		},
+		{
+			name: "gone",
+			err:  apierrors.NewGone("object has been deleted"),
+			want: true,
+		},
+		{
+			name: "other error",
+			err:  fmt.Errorf("connection refused"),
+			want: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isNotFoundOrGone(tt.err); got != tt.want {
+				t.Errorf("isNotFoundOrGone(%v) = %v, want %v", tt.err, got, tt.want)
+			}
+		})
+	}
+}
+
 func Test_cleanupMultiClusterEngine_OLMv1(t *testing.T) {
 	registerScheme()
 
