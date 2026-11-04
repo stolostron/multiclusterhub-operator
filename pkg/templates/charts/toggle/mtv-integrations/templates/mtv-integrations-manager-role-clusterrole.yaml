@@ -24,6 +24,12 @@ rules:
   - patch
   - update
 - apiGroups:
+  - search.open-cluster-management.io
+  resources:
+  - searches
+  verbs:
+  - list
+- apiGroups:
   - clusterview.open-cluster-management.io
   resources:
   - managedclusters
