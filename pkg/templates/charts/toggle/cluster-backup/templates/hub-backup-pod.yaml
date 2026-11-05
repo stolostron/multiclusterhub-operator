@@ -68,26 +68,15 @@ spec:
           remediationAction: enforce
           severity: medium
           object-templates-raw: |
-            {{ `{{- range $ns := (lookup "v1" "Namespace" "" "" "cluster.open-cluster-management.io/managedCluster, cluster.open-cluster-management.io/managedCluster notin (local-cluster)").items }}` }}
-              {{ `{{- if (lookup "v1" "Secret" $ns.metadata.name "auto-import-account") }}` }}
+            {{ `{{- range $mc := (lookup "authentication.open-cluster-management.io/v1beta1" "ManagedServiceAccount" "" "" "authentication.open-cluster-management.io/is-managed-serviceaccount, authentication.open-cluster-management.io/is-managed-serviceaccount in (auto-import-account)").items }}` }}
+              {{ `{{- if (lookup "v1" "Secret" $mc.metadata.namespace $mc.metadata.name) }}` }}
             - complianceType: musthave
               objectDefinition:
                 kind: Secret
                 apiVersion: v1
                 metadata:
-                  name: auto-import-account
-                  namespace: {{ `{{ $ns.metadata.name }}` }}
-                  labels:
-                    cluster.open-cluster-management.io/backup: msa
-              {{ `{{- end }}` }}
-              {{ `{{- if (lookup "v1" "Secret" $ns.metadata.name "auto-import-account-pair") }}` }}
-            - complianceType: musthave
-              objectDefinition:
-                kind: Secret
-                apiVersion: v1
-                metadata:
-                  name: auto-import-account-pair
-                  namespace: {{ `{{ $ns.metadata.name }}` }}
+                  name: {{ `{{ $mc.metadata.name }}` }}
+                  namespace: {{ `{{ $mc.metadata.namespace }}` }}
                   labels:
                     cluster.open-cluster-management.io/backup: msa
               {{ `{{- end }}` }}
@@ -104,16 +93,14 @@ spec:
             {{ `{{- range $mce := (lookup "multicluster.openshift.io/v1" "MultiClusterEngine" "" "").items }}` }}
               {{ `{{- range $cmp := $mce.spec.overrides.components }}` }}
                 {{ `{{- if and (or (eq $cmp.name "managedserviceaccount-preview") (eq $cmp.name "managedserviceaccount")) (eq $cmp.enabled true) }}` }}
-                  {{ `{{- range $ns := (lookup "v1" "Namespace" "" "" "cluster.open-cluster-management.io/managedCluster, cluster.open-cluster-management.io/managedCluster notin (local-cluster)").items }}` }}
-                    {{ `{{- range $ms := (lookup "authentication.open-cluster-management.io/v1beta1" "ManagedServiceAccount" $ns.metadata.name "" "authentication.open-cluster-management.io/is-managed-serviceaccount, authentication.open-cluster-management.io/is-managed-serviceaccount in (auto-import-account)").items }}` }}
+                  {{ `{{- range $ms := (lookup "authentication.open-cluster-management.io/v1beta1" "ManagedServiceAccount" "" "" "authentication.open-cluster-management.io/is-managed-serviceaccount, authentication.open-cluster-management.io/is-managed-serviceaccount in (auto-import-account)").items }}` }}
             - complianceType: musthave
               objectDefinition:
                 kind: Secret
                 apiVersion: v1
                 metadata:
                   name: {{ `{{ $ms.metadata.name }}` }}
-                  namespace: {{ `{{ $ns.metadata.name }}` }}
-            {{ `{{- end }}` }}
+                  namespace: {{ `{{ $ms.metadata.namespace }}` }}
             {{ `{{- end }}` }}
             {{ `{{- end }}` }}
             {{ `{{- end }}` }}
