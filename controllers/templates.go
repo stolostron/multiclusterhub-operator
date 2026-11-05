@@ -26,7 +26,6 @@ import (
 	"sort"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
-	"github.com/stolostron/multiclusterhub-operator/pkg/helpers"
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 
 	pkgerrors "github.com/pkg/errors"
@@ -107,59 +106,6 @@ func (r *MultiClusterHubReconciler) applyTemplate(ctx context.Context, m *operat
 						template.GetName(), desiredVersion),
 				)
 				SetHubCondition(&m.Status, *condition)
-			}
-
-			/*
-				When a PersistentVolumeClaim (PVC) is created, we cannot patch the resource if there is a new storageClass available.
-				The user would need to delete the pre-existing PVC and allow MCH to recreate a new version with the
-				latest default storageClass version.
-			*/
-			if existing.GetKind() == "PersistentVolumeClaim" {
-				storageClassName, found, err := unstructured.NestedString(existing.Object, "spec", "storageClassName")
-				if err != nil {
-					log.Error(err, "failed to retrieve storageClassName from PVC", "Name", existing.GetName())
-					return ctrl.Result{}, err
-				}
-
-				if found && storageClassName != os.Getenv(helpers.DefaultStorageClassName) {
-					log.Info(
-						"To update the PVC with a new StorageClass, delete the existing PVC to allow it to be recreated.",
-						"Name", existing.GetName(), "CurrentStorageClass", storageClassName,
-						"NewStorageClass", os.Getenv(helpers.DefaultStorageClassName))
-					return ctrl.Result{}, nil
-				}
-			} else if existing.GetKind() == "StatefulSet" {
-				volumeClaimTemplates, found, err := unstructured.NestedSlice(existing.Object, "spec",
-					"volumeClaimTemplates")
-
-				if err != nil {
-					log.Error(err, "failed to retrieve volumeClaimTemplates from StatefulSet", "Name",
-						existing.GetName())
-					return ctrl.Result{}, err
-				}
-
-				if found {
-					// Loop through each volumeClaimTemplate to verify that the storage class name remains unchanged.
-					for i, volumeClaimTemplate := range volumeClaimTemplates {
-						// Extract the storageClassName from each volumeClaimTemplate
-						storageClassName, found, err := unstructured.NestedString(
-							volumeClaimTemplate.(map[string]interface{}), "spec", "storageClassName")
-
-						if err != nil {
-							log.Error(err, "failed to retrieve storageClassName from volumeClaimTemplate", "Index", i,
-								"Name", existing.GetName())
-							return ctrl.Result{}, err
-						}
-
-						if found && storageClassName != os.Getenv(helpers.DefaultStorageClassName) {
-							log.Info(
-								"To update the STS with a new StorageClass, delete the existing STS to allow it to be recreated.",
-								"Name", existing.GetName(), "CurrentStorageClass", storageClassName,
-								"NewStorageClass", os.Getenv(helpers.DefaultStorageClassName))
-							return ctrl.Result{}, nil
-						}
-					}
-				}
 			}
 
 			if !utils.IsTemplateAnnotationTrue(template, utils.AnnotationEditable) {
