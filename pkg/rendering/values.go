@@ -30,7 +30,6 @@ type Global struct {
 	Target               string               `json:"target" structs:"target"`
 	BaseDomain           string               `json:"baseDomain" structs:"baseDomain"`
 	DeployOnOCP          bool                 `json:"deployOnOCP" structs:"deployOnOCP"`
-	StorageClassName     string               `json:"storageClassName" structs:"storageClassName"`
 	StartingCSV          string               `json:"startingCSV" structs:"startingCSV"`
 	OLMVersion           string               `json:"olmVersion" structs:"olmVersion"`         // "v0" or "v1" - detected at runtime by main.go detectOLMVersion
 	OADPOLMVersion       string               `json:"oadpOlmVersion" structs:"oadpOlmVersion"` // forced to v0 until OADP ships OLM v1-ready bundles

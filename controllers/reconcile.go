@@ -225,17 +225,6 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	/*
-		Get the default storage class name and store it as an environment variable for components that need it.
-	*/
-	if result, err = r.SetDefaultStorageClassName(ctx, multiClusterHub); err != nil {
-		r.Log.Error(err, "Failed to set default StorageClass name")
-		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason,
-			fmt.Sprintf("Failed to set default StorageClass name: %s", err))
-		SetHubCondition(&multiClusterHub.Status, *condition)
-		return ctrl.Result{}, err
-	}
-
 	// Check if the multiClusterHub instance is marked to be deleted, which is
 	// indicated by the deletion timestamp being set.
 	isHubMarkedToBeDeleted := multiClusterHub.GetDeletionTimestamp() != nil
