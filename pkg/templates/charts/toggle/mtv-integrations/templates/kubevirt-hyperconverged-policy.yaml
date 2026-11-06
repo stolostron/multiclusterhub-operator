@@ -1,0 +1,66 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: kubevirt-hyperconverged
+  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
+  annotations:
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+    policy.open-cluster-management.io/description: Create HyperConverged from the addon ConfigurationPolicy after the HCO OperatorPolicy is compliant and the webhook has a ready endpoint, while preserving existing configuration on upgrade.
+spec:
+  dependencies:
+    - apiVersion: policy.open-cluster-management.io/v1beta1
+      kind: OperatorPolicy
+      name: kubevirt-hyperconverged-operator
+      namespace: open-cluster-management-policies
+      compliance: Compliant
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: kubevirt-hyperconverged
+        spec:
+          remediationAction: enforce
+          severity: low
+          evaluationInterval:
+            compliant: 1m
+          object-templates-raw: |
+            {{`{{ $existing := lookup "hco.kubevirt.io/v1" "HyperConverged" "openshift-cnv" "kubevirt-hyperconverged" }}`}}
+            {{`{{ if $existing }}`}}
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: hco.kubevirt.io/v1
+                kind: HyperConverged
+                metadata:
+                  name: kubevirt-hyperconverged
+                  namespace: openshift-cnv
+            {{`{{ else }}`}}
+            {{`{{ $webhookReady := false }}`}}
+            {{`{{ range $slice := (lookup "discovery.k8s.io/v1" "EndpointSlice" "openshift-cnv" "").items }}`}}
+            {{`{{ with $slice.metadata.labels }}`}}
+            {{`{{ if eq (index . "kubernetes.io/service-name") "hco-webhook-service" }}`}}
+            {{`{{ range $endpoint := $slice.endpoints }}`}}
+            {{`{{ with $endpoint.conditions }}`}}
+            {{`{{ if .ready }}`}}
+            {{`{{ $webhookReady = true }}`}}
+            {{`{{ end }}`}}
+            {{`{{ end }}`}}
+            {{`{{ end }}`}}
+            {{`{{ end }}`}}
+            {{`{{ end }}`}}
+            {{`{{ end }}`}}
+            {{`{{ if $webhookReady }}`}}
+            {{`{{ $config := lookup "policy.open-cluster-management.io/v1" "ConfigurationPolicy" "open-cluster-management-policies" "kubevirt-hyperconverged-config" }}`}}
+            {{`{{ if $config }}`}}
+            - complianceType: musthave
+              objectDefinition: {{`{{ (index (index $config.spec "object-templates") 0).objectDefinition | toJson }}`}}
+            {{`{{ else }}`}}
+            []
+            {{`{{ end }}`}}
+            {{`{{ else }}`}}
+            []
+            {{`{{ end }}`}}
+            {{`{{ end }}`}}
