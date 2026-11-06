@@ -101,7 +101,8 @@ spec:
             startingCSV: '{{ .Values.global.kubevirtHyperconvergedOperator.subscription.startingCSV }}'
           upgradeApproval: '{{ .Values.global.kubevirtHyperconvergedOperator.upgradeApproval }}'
       # Edit the HCO object below in this AddOnTemplate to customize fresh installs.
-      # The managed ConfigurationPolicy creates it after the operator is Compliant.
+      # The managed ConfigurationPolicy creates a missing HCO after the operator
+      # is Compliant, but leaves the spec of an existing HCO untouched.
       - apiVersion: policy.open-cluster-management.io/v1
         kind: ConfigurationPolicy
         metadata:
@@ -122,6 +123,7 @@ spec:
             {{ `{{HCO_TEMPLATE_START}}` }} end }}
             {{ `{{HCO_TEMPLATE_START}}` }} end }}
             {{ `{{HCO_TEMPLATE_START}}` }} if $operatorReady }}
+            {{ `{{HCO_TEMPLATE_START}}` }} $existingHCO := lookup "hco.kubevirt.io/v1" "HyperConverged" "openshift-cnv" "kubevirt-hyperconverged" }}
             - complianceType: musthave
               objectDefinition:
                 apiVersion: hco.kubevirt.io/v1
@@ -129,6 +131,7 @@ spec:
                 metadata:
                   name: kubevirt-hyperconverged
                   namespace: openshift-cnv
+            {{ `{{HCO_TEMPLATE_START}}` }} if not $existingHCO }}
                   annotations:
                     deployOVS: "false"
                 spec:
@@ -181,6 +184,7 @@ spec:
                       state: Disabled
                     - name: persistentReservation
                       state: Disabled
+            {{ `{{HCO_TEMPLATE_START}}` }} end }}
             {{ `{{HCO_TEMPLATE_START}}` }} else }}
             []
             {{ `{{HCO_TEMPLATE_START}}` }} end }}
