@@ -175,6 +175,9 @@ def prepare_and_execute(operation, operation_data, args, extra_args):
     if args.config:
         operations_args += ["--config", args.config]
 
+    if args.verbose_validation:
+        operations_args += ["--verbose-validation"]
+
     # Forward any pass-through args (e.g. --component-branch, --component-fork)
     # as individual list elements so values with whitespace survive intact.
     if extra_args:
@@ -255,9 +258,11 @@ if __name__ == "__main__":
     parser.add_argument("--pipeline-repo", help="Pipeline Repository name")
     parser.add_argument("--pipeline-branch", help="Pipeline Repository Branch name")
     parser.add_argument("--bundle", help="Path to bundle repo (acm-operator-bundle or mce-operator-bundle)")
+    parser.add_argument("--verbose-validation", dest="verbose_validation", action="store_true",
+                        help="Print a per-component checklist during config validation")
 
     # Set default values for unspecified arguments
-    parser.set_defaults(bundle=False, commit=False, lint=False)
+    parser.set_defaults(bundle=False, commit=False, lint=False, verbose_validation=False)
 
     # Parse command-line arguments, capturing any unrecognized arguments
     # (e.g. --component-branch, --component-fork) so they can be forwarded
