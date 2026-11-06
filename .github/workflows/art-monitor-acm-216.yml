@@ -75,6 +75,7 @@ jobs:
         run: ${{ steps.build-cmd.outputs.cmd }}
 
       - name: Create Pull Request for state updates
+        id: create-pr
         # Only open a PR when state may have changed (not in dry-run mode)
         if: ${{ inputs.dry_run != true }}
         uses: peter-evans/create-pull-request@v8
@@ -96,3 +97,21 @@ jobs:
             ok-to-test
             automated-pr
           reviewers: dislbenn
+
+      - name: Generate GitHub App token for merge
+        id: gen-merge-token
+        if: ${{ steps.create-pr.outputs.pull-request-number }}
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.WORKFLOW_BOT_APP_ID }}
+          private-key: ${{ secrets.WORKFLOW_BOT_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Auto-merge PR
+        if: ${{ steps.create-pr.outputs.pull-request-number }}
+        env:
+          GH_TOKEN: ${{ steps.gen-merge-token.outputs.token }}
+        run: |
+          PR_NUM="${{ steps.create-pr.outputs.pull-request-number }}"
+          echo "Auto-merging PR #${PR_NUM}"
+          gh pr merge "$PR_NUM" --squash --delete-branch
