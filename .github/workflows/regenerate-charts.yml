@@ -55,7 +55,7 @@ jobs:
             echo "branches=$ALL_BRANCHES" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          if ! printf '%s' "$ALL_BRANCHES" | grep -q "\"$REQUESTED\""; then
+          if ! printf '%s' "$ALL_BRANCHES" | jq -e --arg b "$REQUESTED" 'index($b) != null' > /dev/null; then
             echo "::error::Unknown branch '$REQUESTED'. Valid branches: $ALL_BRANCHES"
             exit 1
           fi
@@ -156,3 +156,21 @@ jobs:
             do-not-merge/hold
             ok-to-test
           reviewers: cameronmwall,dislbenn,ngraham20
+
+  notify:
+    needs: [prepare, build]
+    if: ${{ always() && (needs.prepare.result == 'failure' || needs.build.result == 'failure') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Slack Message on Failure
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          SLACK_MESSAGE=":exclamation: *GitHub Actions Job Failed* :exclamation:\n\n"
+          SLACK_MESSAGE+="Job Name: $GITHUB_WORKFLOW\n"
+          SLACK_MESSAGE+="Job URL: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID\n"
+          SLACK_MESSAGE+="Error Details: Your job failed. Please check the job logs for more information."
+
+          curl -X POST -H "Content-type: application/json" --data "{
+            \"text\": \"$SLACK_MESSAGE\"
+          }" $SLACK_WEBHOOK_URL
