@@ -13,9 +13,18 @@ spec:
         resource: operatorpolicies
       updateStrategy:
         type: CreateOnly
-    # Retain a read-only reference so the Work does not create or change the
-    # CR. An existing AppliedManifestWork owner reference needs a separate
-    # migration before the Work can be safely removed.
+    - resourceIdentifier:
+        group: policy.open-cluster-management.io
+        name: kubevirt-hyperconverged-config
+        namespace: open-cluster-management-policies
+        resource: configurationpolicies
+      updateStrategy:
+        type: CreateOnly
+    # Older ManifestWorks created HCO and can still own existing CRs. Keep this
+    # identity-only entry so updating the ManifestWork does not delete them.
+    # ReadOnly never creates or changes HCO; the ConfigurationPolicy below
+    # creates a missing CR after the OperatorPolicy reports Compliant.
+    # Deleting the entire ManifestWork can still delete an HCO it owns.
     - resourceIdentifier:
         group: hco.kubevirt.io
         name: kubevirt-hyperconverged
@@ -35,6 +44,7 @@ spec:
           - policy.open-cluster-management.io
           resources:
           - operatorpolicies
+          - configurationpolicies
           verbs:
           - get
           - list
@@ -90,79 +100,91 @@ spec:
             sourceNamespace: '{{ .Values.global.kubevirtHyperconvergedOperator.subscription.sourceNamespace }}'
             startingCSV: '{{ .Values.global.kubevirtHyperconvergedOperator.subscription.startingCSV }}'
           upgradeApproval: '{{ .Values.global.kubevirtHyperconvergedOperator.upgradeApproval }}'
-      # Customers can edit this inform-only policy in the AddOnTemplate to
-      # set the desired CR for a fresh install. The hub Policy reads it only
-      # after the operator and webhook are ready. It never enforces the CR.
+      # Edit the HCO object below in this AddOnTemplate to customize fresh installs.
+      # The managed ConfigurationPolicy creates it after the operator is Compliant.
       - apiVersion: policy.open-cluster-management.io/v1
         kind: ConfigurationPolicy
         metadata:
           name: kubevirt-hyperconverged-config
           namespace: open-cluster-management-policies
         spec:
-          remediationAction: inform
+          remediationAction: enforce
           severity: low
-          object-templates:
-          - complianceType: musthave
-            objectDefinition:
-              apiVersion: hco.kubevirt.io/v1
-              kind: HyperConverged
-              metadata:
-                name: kubevirt-hyperconverged
-                namespace: openshift-cnv
-                annotations:
-                  deployOVS: "false"
-              spec:
-                virtualization:
-                  virtualMachineOptions:
-                    disableFreePageReporting: false
-                    disableSerialConsoleLog: true
-                  higherWorkloadDensity:
-                    memoryOvercommitPercentage: 100
-                  liveMigrationConfig:
-                    allowAutoConverge: false
-                    allowPostCopy: false
-                    completionTimeoutPerGiB: 800
-                    parallelMigrationsPerCluster: 5
-                    parallelOutboundMigrationsPerNode: 2
-                    progressTimeout: 150
-                  workloadUpdateStrategy:
-                    batchEvictionInterval: 1m0s
-                    batchEvictionSize: 10
-                    workloadUpdateMethods:
-                    - LiveMigrate
-                  vmiCPUAllocationRatio: 10
-                security:
-                  certConfig:
-                    ca:
-                      duration: 48h0m0s
-                      renewBefore: 24h0m0s
-                    server:
-                      duration: 24h0m0s
-                      renewBefore: 12h0m0s
-                deployment:
-                  applicationAwareConfig:
-                    allowApplicationAwareClusterResourceQuota: false
-                    enable: false
-                    vmiCalcConfigName: DedicatedVirtualResources
-                  deployVmConsoleProxy: false
-                  uninstallStrategy: BlockUninstallIfWorkloadsExist
-                workloadSources:
-                  enableCommonBootImageImport: true
-                featureGates:
-                - name: decentralizedLiveMigration
-                  state: Enabled
-                - name: downwardMetrics
-                  state: Disabled
-                - name: disableMDevConfiguration
-                  state: Disabled
-                - name: deployKubeSecondaryDNS
-                  state: Disabled
-                - name: alignCPUs
-                  state: Disabled
-                - name: persistentReservation
-                  state: Disabled
-      # The dependent hub Policy creates a missing CR after the operator and
-      # webhook are ready. ReadOnly leaves any existing CR unchanged.
+          pruneObjectBehavior: None
+          evaluationInterval:
+            compliant: 1m
+          object-templates-raw: |
+            {{ `{{HCO_TEMPLATE_START}}` }} $operator := lookup "policy.open-cluster-management.io/v1beta1" "OperatorPolicy" "open-cluster-management-policies" "kubevirt-hyperconverged-operator" }}
+            {{ `{{HCO_TEMPLATE_START}}` }} $operatorReady := false }}
+            {{ `{{HCO_TEMPLATE_START}}` }} with $operator }}
+            {{ `{{HCO_TEMPLATE_START}}` }} if eq .status.compliant "Compliant" }}
+            {{ `{{HCO_TEMPLATE_START}}` }} $operatorReady = true }}
+            {{ `{{HCO_TEMPLATE_START}}` }} end }}
+            {{ `{{HCO_TEMPLATE_START}}` }} end }}
+            {{ `{{HCO_TEMPLATE_START}}` }} if $operatorReady }}
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: hco.kubevirt.io/v1
+                kind: HyperConverged
+                metadata:
+                  name: kubevirt-hyperconverged
+                  namespace: openshift-cnv
+                  annotations:
+                    deployOVS: "false"
+                spec:
+                  virtualization:
+                    virtualMachineOptions:
+                      disableFreePageReporting: false
+                      disableSerialConsoleLog: true
+                    higherWorkloadDensity:
+                      memoryOvercommitPercentage: 100
+                    liveMigrationConfig:
+                      allowAutoConverge: false
+                      allowPostCopy: false
+                      completionTimeoutPerGiB: 800
+                      parallelMigrationsPerCluster: 5
+                      parallelOutboundMigrationsPerNode: 2
+                      progressTimeout: 150
+                    workloadUpdateStrategy:
+                      batchEvictionInterval: 1m0s
+                      batchEvictionSize: 10
+                      workloadUpdateMethods:
+                        - LiveMigrate
+                    vmiCPUAllocationRatio: 10
+                  security:
+                    certConfig:
+                      ca:
+                        duration: 48h0m0s
+                        renewBefore: 24h0m0s
+                      server:
+                        duration: 24h0m0s
+                        renewBefore: 12h0m0s
+                  deployment:
+                    applicationAwareConfig:
+                      allowApplicationAwareClusterResourceQuota: false
+                      enable: false
+                      vmiCalcConfigName: DedicatedVirtualResources
+                    deployVmConsoleProxy: false
+                    uninstallStrategy: BlockUninstallIfWorkloadsExist
+                  workloadSources:
+                    enableCommonBootImageImport: true
+                  featureGates:
+                    - name: decentralizedLiveMigration
+                      state: Enabled
+                    - name: downwardMetrics
+                      state: Disabled
+                    - name: disableMDevConfiguration
+                      state: Disabled
+                    - name: deployKubeSecondaryDNS
+                      state: Disabled
+                    - name: alignCPUs
+                      state: Disabled
+                    - name: persistentReservation
+                      state: Disabled
+            {{ `{{HCO_TEMPLATE_START}}` }} else }}
+            []
+            {{ `{{HCO_TEMPLATE_START}}` }} end }}
+      # Identity only; the ConfigurationPolicy creates a missing HCO.
       - apiVersion: hco.kubevirt.io/v1
         kind: HyperConverged
         metadata:

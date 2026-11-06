@@ -1,0 +1,9 @@
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: AddOnDeploymentConfig
+metadata:
+  name: kubevirt-hyperconverged-template-values
+  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
+spec:
+  customizedVariables:
+  - name: HCO_TEMPLATE_START
+    value: {{ "{{" | quote }}
