@@ -14,6 +14,7 @@ components:
         inclusions:
           - "pullSecretOverride"
         skipRBACOverrides: true
+        escape-template-variables: []
   - repo_name: "mtv-integrations"
     github_ref: "https://github.com/stolostron/mtv-integrations.git"
     branch: "release-5.1"
