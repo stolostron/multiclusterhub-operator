@@ -43,6 +43,7 @@ import (
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/controllers"
+	"github.com/stolostron/multiclusterhub-operator/pkg/mcewatch"
 	mchmetrics "github.com/stolostron/multiclusterhub-operator/pkg/metrics"
 	"github.com/stolostron/multiclusterhub-operator/pkg/multiclusterengine"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
@@ -69,21 +70,16 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	"k8s.io/client-go/util/workqueue"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	//+kubebuilder:scaffold:imports
 )
@@ -381,8 +377,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	// go routine to check if mce exist, if it does add watch
-	go addMultiClusterEngineWatch(ctx, mgr, uncachedClient)
+	// Register the MCE watch as a manager Runnable so that it observes manager shutdown
+	// instead of leaking a goroutine for the lifetime of the process.
+	if err := mgr.Add(manager.RunnableFunc(func(ctx context.Context) error {
+		return mcewatch.Register(ctx, mgr, mchController, uncachedClient)
+	})); err != nil {
+		setupLog.Error(err, "unable to add MCE watch runnable")
+		os.Exit(1)
+	}
 
 	setupLog.Info("Registering MultiClusterHub metrics",
 		"metric", mchmetrics.PhaseMetricName, "labels", "namespace,name,phase", "metricsAddress", metricsAddr)
@@ -398,50 +400,6 @@ const (
 	ForceRunModeEnv = "OSDK_FORCE_RUN_MODE"
 	LocalRunMode    = "local"
 )
-
-func addMultiClusterEngineWatch(ctx context.Context, mgr ctrl.Manager, uncachedClient client.Client) {
-	for {
-		crd := &apixv1.CustomResourceDefinition{}
-		mceName := "multiclusterengines.multicluster.openshift.io"
-		err := uncachedClient.Get(ctx, types.NamespacedName{Name: mceName}, crd)
-		//crdKey := client.ObjectKey{Name: multiclusterengine.Namespace().GetObjectMeta().GetName()}
-		//err := uncachedClient.Get(ctx, crdKey, &mcev1.MultiClusterEngine{})
-		if err == nil {
-			err := mchController.Watch(source.Kind(mgr.GetCache(), &mcev1.MultiClusterEngine{},
-				handler.TypedFuncs[*mcev1.MultiClusterEngine, reconcile.Request]{
-					UpdateFunc: func(ctx context.Context, e event.TypedUpdateEvent[*mcev1.MultiClusterEngine], q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
-						labels := e.ObjectNew.GetLabels()
-						name := labels["installer.name"]
-						if name == "" {
-							name = labels["multiclusterhub.name"]
-						}
-						namespace := labels["installer.namespace"]
-						if namespace == "" {
-							namespace = labels["multiclusterhub.namespace"]
-						}
-						if name == "" || namespace == "" {
-							l := log.Log.WithName("mce")
-							l.Info(fmt.Sprintf("MCE updated but missing installer.name or installer.namespace labels. Current labels: %v", labels))
-							return
-						}
-						q.Add(
-							reconcile.Request{
-								NamespacedName: types.NamespacedName{
-									Name:      name,
-									Namespace: namespace,
-								},
-							},
-						)
-					},
-				}))
-			if err == nil {
-				setupLog.Info("mce watch added")
-				return
-			}
-		}
-		time.Sleep(30 * time.Second)
-	}
-}
 
 func isRunModeLocal() bool {
 	return os.Getenv(ForceRunModeEnv) == LocalRunMode
