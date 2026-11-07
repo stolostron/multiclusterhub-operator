@@ -1,12 +1,13 @@
 FROM registry.ci.openshift.org/stolostron/builder:go1.26-linux AS builder
 
-RUN go install github.com/onsi/ginkgo/v2/ginkgo@v2.32.0
-RUN go install github.com/mikefarah/yq/v3@v3.0.0-20201202084205-8846255d1c37
+# Install ginkgo and yq at versions matching go.mod
+RUN GONOSUMDB=off go install github.com/onsi/ginkgo/v2/ginkgo@v2.32.0 && \
+    GONOSUMDB=off go install github.com/mikefarah/yq/v3@v3.0.0-20201202084205-8846255d1c37
 
 ENV KUBECONFIG "/opt/.kube/config"
-COPY . ./src/github.com/stolostron/multiclusterhub-operator
+COPY . /src/github.com/stolostron/multiclusterhub-operator # NOSONAR - test-only image; full source tree required for function tests
 
-WORKDIR ./src/github.com/stolostron/multiclusterhub-operator
+WORKDIR /src/github.com/stolostron/multiclusterhub-operator
 
 USER 65532:65532
 
