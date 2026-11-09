@@ -213,9 +213,9 @@ func TestOverrideImageRepository(t *testing.T) {
 		},
 		{
 			ImageOverrides: map[string]string{
-				"application_ui": "registry.redhat.io/rhacm2/application-ui@sha256:d7b7b96d679dbbdace044a18cca56544faa65f66e593fc600c08c9f814e0ea6a",
-				"console_api":    "registry.redhat.io/rhacm2/console-api@sha256:d7b7b96d679dbbdace044a18cca56544faa65f66e593fc600c08c9f814e0ea6a",
-				"rcm_controller": "registry.redhat.io/rhacm2/rcm-controller@sha256:d7b7b96d679dbbdace044a18cca56544faa65f66e593fc600c08c9f814e0ea6a",
+				"application_ui": "registry.redhat.io/rhacm5/application-ui@sha256:d7b7b96d679dbbdace044a18cca56544faa65f66e593fc600c08c9f814e0ea6a",
+				"console_api":    "registry.redhat.io/rhacm5/console-api@sha256:d7b7b96d679dbbdace044a18cca56544faa65f66e593fc600c08c9f814e0ea6a",
+				"rcm_controller": "registry.redhat.io/rhacm5/rcm-controller@sha256:d7b7b96d679dbbdace044a18cca56544faa65f66e593fc600c08c9f814e0ea6a",
 			},
 			ImageRepo: "quay.io:443/acm-d",
 			Expected: map[string]string{

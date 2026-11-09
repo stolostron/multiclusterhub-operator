@@ -67,7 +67,7 @@ spec:
   repositoryDigestMirrors:
   - mirrors:
     - quay.io:443/acm-d
-    source: registry.redhat.io/rhacm2
+    source: registry.redhat.io/rhacm5
   - mirrors:
     - quay.io:443/acm-d
     source: registry.redhat.io/multicluster-engine
@@ -385,7 +385,7 @@ spec:
   repositoryDigestMirrors:
   - mirrors:
     - $REGISTRY_MIRROR
-    source: registry.redhat.io/rhacm2
+    source: registry.redhat.io/rhacm5
   - mirrors:
     - $REGISTRY_MIRROR
     source: registry.redhat.io/multicluster-engine
