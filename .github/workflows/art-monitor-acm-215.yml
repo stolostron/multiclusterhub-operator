@@ -17,6 +17,10 @@ on:
         type: boolean
         default: false
 
+concurrency:
+  group: art-acm-215-digest
+  cancel-in-progress: false
+
 defaults:
   run:
     shell: bash
@@ -105,6 +109,9 @@ jobs:
           app-id: ${{ vars.WORKFLOW_BOT_APP_ID }}
           private-key: ${{ secrets.WORKFLOW_BOT_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Auto-merge PR
         if: ${{ steps.create-pr.outputs.pull-request-number }}
@@ -112,5 +119,10 @@ jobs:
           GH_TOKEN: ${{ steps.gen-merge-token.outputs.token }}
         run: |
           PR_NUM="${{ steps.create-pr.outputs.pull-request-number }}"
-          echo "Auto-merging PR #${PR_NUM}"
-          gh pr merge "$PR_NUM" --squash --delete-branch
+          HEAD_SHA="${{ steps.create-pr.outputs.pull-request-head-sha }}"
+          echo "Queuing auto-merge for PR #${PR_NUM} at ${HEAD_SHA}"
+          # main requires the Prow status checks and the App token cannot
+          # bypass them, so queue the merge instead of an immediate merge
+          # that would be rejected. The branch is removed on merge by the
+          # repository delete_branch_on_merge setting.
+          gh pr merge "$PR_NUM" --auto --squash --match-head-commit "$HEAD_SHA"
