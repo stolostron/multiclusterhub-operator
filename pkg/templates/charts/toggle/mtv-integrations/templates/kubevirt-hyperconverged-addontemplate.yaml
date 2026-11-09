@@ -20,18 +20,6 @@ spec:
         resource: configurationpolicies
       updateStrategy:
         type: CreateOnly
-    # Older ManifestWorks created HCO and can still own existing CRs. Keep this
-    # identity-only entry so updating the ManifestWork does not delete them.
-    # ReadOnly never creates or changes HCO; the ConfigurationPolicy below
-    # creates a missing CR after the OperatorPolicy reports Compliant.
-    # Deleting the entire ManifestWork can still delete an HCO it owns.
-    - resourceIdentifier:
-        group: hco.kubevirt.io
-        name: kubevirt-hyperconverged
-        namespace: openshift-cnv
-        resource: hyperconvergeds
-      updateStrategy:
-        type: ReadOnly
     workload:
       manifests:
       - apiVersion: rbac.authorization.k8s.io/v1
@@ -188,12 +176,6 @@ spec:
             {{ `{{HCO_TEMPLATE_START}}` }} else }}
             []
             {{ `{{HCO_TEMPLATE_START}}` }} end }}
-      # Identity only; the ConfigurationPolicy creates a missing HCO.
-      - apiVersion: hco.kubevirt.io/v1
-        kind: HyperConverged
-        metadata:
-          name: kubevirt-hyperconverged
-          namespace: openshift-cnv
     deleteOption:
       propagationPolicy: SelectivelyOrphan
       selectivelyOrphans:
