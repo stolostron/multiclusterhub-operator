@@ -31,3 +31,9 @@ trains:
 
   - version: "2.14"
     ocp: "4.16"
+
+  - version: "2.13"
+    ocp: "4.15"
+
+  - version: "2.11"
+    ocp: "4.13"
