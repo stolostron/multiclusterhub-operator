@@ -125,18 +125,6 @@ var consoleUnavailableStatus = operatorsv1.StatusCondition{
 	Available:          true,
 }
 
-// ComponentsAreRunning ...
-func (r *MultiClusterHubReconciler) ComponentsAreRunning(m *operatorsv1.MultiClusterHub, ocpConsole, isSTSEnabled bool) bool {
-	trackedNamespaces := utils.TrackedNamespaces(m)
-
-	deployList, _ := r.listDeployments(trackedNamespaces)
-	crList, _ := r.listCustomResources()
-	componentStatuses := getComponentStatuses(m, deployList, crList, ocpConsole, isSTSEnabled, r.OLMVersion)
-
-	delete(componentStatuses, m.Spec.LocalClusterName)
-	return allComponentsSuccessful(componentStatuses)
-}
-
 // publishMCHPhase updates the acm_mch_phase metric for the hub and logs when the
 // published phase changes. Logging on change only keeps the operator log ready for
 // steady-state hubs quiet while still recording every transition, plus one line per
