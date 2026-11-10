@@ -643,6 +643,17 @@ func (r *MultiClusterHubReconciler) ensureMCEInstallation(ctx context.Context, m
 		return ctrl.Result{}, err
 	}
 
+	// Self-heal stale OLM state: if the Subscription references an installedCSV
+	// that no longer exists (e.g. finalizer teardown was interrupted), OLM will
+	// not reinstall the CSV on its own. Delete the orphaned Subscription and
+	// InstallPlans so the next reconcile creates a fresh Subscription and OLM
+	// can perform a clean install.
+	if mceSub != nil && v0.CreatedByMCH(mceSub, multiClusterHub) {
+		if result, err := r.healStaleOLMState(ctx, mceSub); result != (ctrl.Result{}) || err != nil {
+			return result, err
+		}
+	}
+
 	// Get sub config, catalogsource, and annotation overrides
 	subConfig, err := r.GetSubConfig()
 	if err != nil {
@@ -965,6 +976,59 @@ func (r *MultiClusterHubReconciler) GetCSVFromSubscription(sub *subv1alpha1.Subs
 	}
 
 	return csv, nil
+}
+
+// healStaleOLMState detects and recovers from an orphaned OLM state where the
+// MCE Subscription's installedCSV references a CSV that no longer exists. This
+// can happen when the MCH CR finalizer deletes the CSV but is interrupted before
+// it can also delete the Subscription (e.g. the finalizer is force-removed). In
+// this state OLM will not reinstall the CSV, so the operator must delete the
+// stale Subscription and its InstallPlans to allow a clean reinstall.
+//
+// Returns a non-empty Result when a cleanup was performed (caller should requeue).
+func (r *MultiClusterHubReconciler) healStaleOLMState(ctx context.Context, sub *subv1alpha1.Subscription) (ctrl.Result, error) {
+	installedCSV := sub.Status.InstalledCSV
+	if installedCSV == "" {
+		return ctrl.Result{}, nil
+	}
+
+	csv := &subv1alpha1.ClusterServiceVersion{}
+	err := r.Client.Get(ctx, types.NamespacedName{
+		Name:      installedCSV,
+		Namespace: sub.GetNamespace(),
+	}, csv)
+	if err == nil {
+		// CSV exists — no stale state.
+		return ctrl.Result{}, nil
+	}
+	if !errors.IsNotFound(err) {
+		return ctrl.Result{}, fmt.Errorf("checking CSV %s existence: %w", installedCSV, err)
+	}
+
+	// installedCSV is set but the CSV object is gone — orphaned state.
+	r.Log.Info("Detected stale OLM state: Subscription references a missing CSV, cleaning up",
+		"subscription", sub.Name, "namespace", sub.Namespace, "missingCSV", installedCSV)
+
+	// Delete all InstallPlans in the namespace (they reference the stale CSV).
+	installPlanList := &subv1alpha1.InstallPlanList{}
+	if err := r.Client.List(ctx, installPlanList, client.InNamespace(sub.GetNamespace())); err != nil {
+		return ctrl.Result{}, fmt.Errorf("listing InstallPlans for cleanup: %w", err)
+	}
+	for i := range installPlanList.Items {
+		if delErr := r.Client.Delete(ctx, &installPlanList.Items[i]); delErr != nil && !errors.IsNotFound(delErr) {
+			return ctrl.Result{}, fmt.Errorf("deleting stale InstallPlan %s: %w", installPlanList.Items[i].Name, delErr)
+		}
+		r.Log.Info("Deleted stale InstallPlan", "name", installPlanList.Items[i].Name)
+	}
+
+	// Delete the orphaned Subscription itself.
+	if err := r.Client.Delete(ctx, sub); err != nil && !errors.IsNotFound(err) {
+		return ctrl.Result{}, fmt.Errorf("deleting orphaned Subscription %s: %w", sub.Name, err)
+	}
+	r.Log.Info("Deleted orphaned MCE Subscription, will recreate on next reconcile",
+		"name", sub.Name, "namespace", sub.Namespace)
+
+	return ctrl.Result{Requeue: true}, nil
 }
 
 // mergeErrors combines errors into a single string
