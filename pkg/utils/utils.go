@@ -149,6 +149,9 @@ func GetImagePullPolicy(m *operatorsv1.MultiClusterHub) corev1.PullPolicy {
 	return m.Spec.Overrides.ImagePullPolicy
 }
 
+// IsUnitTest reports whether the UNIT_TEST environment variable is set to the
+// exact string "true". It returns false if the variable is unset, empty, or set
+// to any other value.
 func IsUnitTest() bool {
 	if unitTest, found := os.LookupEnv(UnitTestEnvVar); found {
 		if unitTest == "true" {
@@ -158,6 +161,9 @@ func IsUnitTest() bool {
 	return false
 }
 
+// GetTestImages returns a hard-coded list of image override key names used in
+// tests to verify that the operator's image override mechanism handles every
+// expected image reference.
 func GetTestImages() []string {
 	return []string{
 		"LIFECYCLE_BACKEND_E2E", "BAILER", "CERT_POLICY_CONTROLLER", "CLUSTER_BACKUP_CONTROLLER",
@@ -223,6 +229,10 @@ func OperatorNamespace() (string, error) {
 	return ns, nil
 }
 
+// GetDeployments returns the NamespacedNames of Deployments the operator manages
+// for m. The list includes entries for Volsync, Insights, and ClusterBackup only
+// when the corresponding component is enabled in the MultiClusterHub spec. An
+// empty slice is returned if none of these components are enabled.
 func GetDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	nn := []types.NamespacedName{}
 	if m.Enabled(operatorsv1.Volsync) {
@@ -239,6 +249,12 @@ func GetDeployments(m *operatorsv1.MultiClusterHub) []types.NamespacedName {
 	return nn
 }
 
+// GetDeploymentsForStatus returns the NamespacedNames of Deployments whose
+// availability is checked when computing the MultiClusterHub status. The list is
+// built from the enabled components in m. When ocpConsole is false the Console
+// deployment is excluded. When isSTSEnabled is true the
+// openshift-adp-controller-manager deployment is excluded from the ClusterBackup
+// entries.
 func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole, isSTSEnabled bool) []types.NamespacedName {
 	nn := []types.NamespacedName{}
 	if m.Enabled(operatorsv1.Insights) {
@@ -304,6 +320,12 @@ func GetDeploymentsForStatus(m *operatorsv1.MultiClusterHub, ocpConsole, isSTSEn
 	return nn
 }
 
+// GetCustomResourcesForStatus returns the NamespacedNames of custom resources
+// whose status is tracked for m. If the MultiClusterEngine component is
+// disabled, an empty slice is returned. Otherwise the list always includes the
+// multicluster-engine CR, plus OLM-version-specific entries: for olmVersion "v0"
+// the MCE Subscription and CSV are included, for "v1" the MCE ClusterExtension
+// is included, and for an empty string no OLM components are added.
 func GetCustomResourcesForStatus(m *operatorsv1.MultiClusterHub, olmVersion string) []types.NamespacedName {
 	if m.Enabled(operatorsv1.MultiClusterEngine) {
 		components := []types.NamespacedName{
@@ -330,6 +352,10 @@ func GetCustomResourcesForStatus(m *operatorsv1.MultiClusterHub, olmVersion stri
 	return []types.NamespacedName{}
 }
 
+// GetTolerations returns the tolerations from m.Spec.Tolerations. If the spec
+// contains no tolerations, it returns a single default toleration that allows
+// scheduling on infrastructure nodes (key node-role.kubernetes.io/infra, effect
+// NoSchedule, operator Exists).
 func GetTolerations(m *operatorsv1.MultiClusterHub) []corev1.Toleration {
 	if len(m.Spec.Tolerations) == 0 {
 		return []corev1.Toleration{
@@ -343,6 +369,10 @@ func GetTolerations(m *operatorsv1.MultiClusterHub) []corev1.Toleration {
 	return m.Spec.Tolerations
 }
 
+// RemoveString removes the first occurrence of r from s and returns the
+// resulting slice. If r is not found, s is returned unchanged. The returned
+// slice shares the backing array of s, so the removal shifts trailing elements
+// and may overwrite values visible through the original slice.
 func RemoveString(s []string, r string) []string {
 	for i, v := range s {
 		if v == r {
@@ -352,6 +382,8 @@ func RemoveString(s []string, r string) []string {
 	return s
 }
 
+// Contains reports whether s contains e, using a linear scan with string
+// equality. It returns false if s is nil or empty.
 func Contains(s []string, e string) bool {
 	for _, a := range s {
 		if a == e {

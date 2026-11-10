@@ -168,6 +168,11 @@ func parseProbeConfigFromAnnotations(mch *v1.MultiClusterHub) *ProbeConfig {
 	return &config
 }
 
+// MarshalJSON implements json.Marshaler for Toleration. It wraps string field
+// values that parse as numbers or booleans in single quotes (e.g., '123') so
+// that Helm's template engine treats them as strings rather than converting them
+// to numeric or boolean YAML types. The Operator and Effect typed fields receive
+// the same quoting treatment. The TolerationSeconds field is marshaled as-is.
 func (u *Toleration) MarshalJSON() ([]byte, error) {
 
 	v := reflect.ValueOf(u)
@@ -229,6 +234,9 @@ func (u *Toleration) MarshalJSON() ([]byte, error) {
 	})
 }
 
+// ToValues converts the receiver into Helm chartutil.Values by JSON-marshaling
+// the struct and parsing the result with chartutil.ReadValues. It returns an
+// error if either the marshaling or the parsing step fails.
 func (val *Values) ToValues() (chartutil.Values, error) {
 	inrec, err := json.Marshal(val)
 	if err != nil {
@@ -242,6 +250,12 @@ func (val *Values) ToValues() (chartutil.Values, error) {
 
 }
 
+// RenderCRDs walks crdDir for .yaml files and unmarshals each into an
+// unstructured.Unstructured. If mch is non-nil and a CRD contains a conversion
+// webhook with a service-based clientConfig, the service namespace is set to
+// mch.Namespace. The directory is opened with os.OpenRoot to prevent symlink
+// escapes. It returns the parsed CRDs and a slice of any errors encountered
+// during reading or unmarshaling individual files.
 func RenderCRDs(crdDir string, mch *v1.MultiClusterHub) ([]*unstructured.Unstructured, []error) {
 	var crds []*unstructured.Unstructured
 	errs := []error{}
@@ -610,6 +624,12 @@ func valueOrDefault(value, defaultValue string) string {
 	return defaultValue
 }
 
+// GetOADPConfig returns the OADP OLM subscription parameters derived from
+// annotations on m: package name, channel, install plan approval, catalog
+// source, catalog source namespace, and starting CSV (in that order). Any field
+// not specified in the annotation falls back to its built-in default. The
+// install plan approval defaults to the package-level defaultOADPInstallPlan
+// constant.
 func GetOADPConfig(m *v1.MultiClusterHub) (string, string, subv1alpha1.Approval, string, string, string) {
 	sub := parseOADPAnnotation(m)
 

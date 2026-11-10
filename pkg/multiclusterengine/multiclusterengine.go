@@ -100,6 +100,12 @@ func NewMultiClusterEngine(m *operatorv1.MultiClusterHub, targetNamespace string
 	return mce
 }
 
+// RenderMultiClusterEngine returns a deep copy of existingMCE with its spec
+// updated to match the desired state derived from m. The copy receives
+// propagated annotations, availability configuration, image pull secret,
+// tolerations, node selector, local cluster name, component enablement, and
+// image pull policy from the MultiClusterHub spec. The original existingMCE
+// is not modified.
 func RenderMultiClusterEngine(existingMCE *mcev1.MultiClusterEngine, m *operatorv1.MultiClusterHub) *mcev1.MultiClusterEngine {
 	copy := existingMCE.DeepCopy()
 
@@ -171,6 +177,9 @@ func RemoveSupportedAnnotations(mce *mcev1.MultiClusterEngine) map[string]string
 	return mceAnnotations
 }
 
+// Namespace returns a corev1.Namespace for the multicluster-engine operand
+// namespace (as returned by OperandNamespace) with the
+// openshift.io/cluster-monitoring label set to "true".
 func Namespace() *corev1.Namespace {
 	namespace := OperandNamespace()
 	return &corev1.Namespace{
