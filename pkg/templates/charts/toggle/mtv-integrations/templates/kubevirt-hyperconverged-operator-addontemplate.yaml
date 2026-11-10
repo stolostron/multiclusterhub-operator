@@ -69,10 +69,3 @@ spec:
             name: kubevirt-hyperconverged
             namespace: openshift-cnv
           upgradeApproval: Automatic
-  registration:
-  - customSigner:
-      signerName: open-cluster-management.io/kubevirt-hyperconverged-addon
-      signingCA:
-        name: kubevirt-hyperconverged-ca
-        namespace: openshift-cnv
-    type: CustomSigner
