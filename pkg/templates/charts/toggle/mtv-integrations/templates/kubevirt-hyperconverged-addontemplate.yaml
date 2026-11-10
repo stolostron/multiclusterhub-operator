@@ -131,10 +131,3 @@ spec:
               - LiveMigrate
           workloadSources:
             enableCommonBootImageImport: true
-  registration:
-  - customSigner:
-      signerName: open-cluster-management.io/kubevirt-hyperconverged-addon
-      signingCA:
-        name: kubevirt-hyperconverged-ca
-        namespace: openshift-cnv
-    type: CustomSigner
