@@ -132,10 +132,3 @@ spec:
             batchEvictionSize: 10
             workloadUpdateMethods:
             - LiveMigrate
-  registration:
-  - customSigner:
-      signerName: open-cluster-management.io/kubevirt-hyperconverged-addon
-      signingCA:
-        name: kubevirt-hyperconverged-ca
-        namespace: openshift-cnv
-    type: CustomSigner
