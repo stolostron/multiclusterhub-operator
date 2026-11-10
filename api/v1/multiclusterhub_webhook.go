@@ -125,6 +125,9 @@ var (
 	DesiredMCEChannelFunc func() string
 )
 
+// SetupWebhookWithManager registers the MultiClusterHub validating and defaulting
+// webhooks with mgr and stores the manager's client in the package-level Client
+// variable for use by webhook handlers.
 func (r *MultiClusterHub) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	Client = mgr.GetClient()
 	return builder.WebhookManagedBy(mgr, r).

@@ -386,6 +386,9 @@ func (r *MultiClusterHubReconciler) orphanOwnedMultiClusterEngine(ctx context.Co
 	return nil
 }
 
+// BackupNamespace returns a typed corev1.Namespace for the cluster backup
+// subscription namespace (ClusterSubscriptionNamespace). The returned object
+// includes TypeMeta but carries no labels or annotations.
 func BackupNamespace() *corev1.Namespace {
 	return &corev1.Namespace{
 		TypeMeta: metav1.TypeMeta{
@@ -398,6 +401,10 @@ func BackupNamespace() *corev1.Namespace {
 	}
 }
 
+// BackupNamespaceUnstructured returns an unstructured.Unstructured representing
+// the cluster backup subscription namespace (ClusterSubscriptionNamespace) with
+// its GroupVersionKind set to core/v1 Namespace. The returned object contains
+// only the GVK and name; no labels or annotations are set.
 func BackupNamespaceUnstructured() *unstructured.Unstructured {
 	u := &unstructured.Unstructured{}
 	u.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Kind: "Namespace", Version: "v1"})

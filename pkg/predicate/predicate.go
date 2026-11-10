@@ -66,14 +66,26 @@ func (InstallerLabelPredicate) Create(e event.CreateEvent) bool {
 	labels := e.Object.GetLabels()
 	return hasInstallerLabels(labels)
 }
+
+// Update returns true if the new object in e carries both the installer.name
+// and installer.namespace labels, causing the controller to reconcile the
+// update event.
 func (InstallerLabelPredicate) Update(e event.UpdateEvent) bool {
 	labels := e.ObjectNew.GetLabels()
 	return hasInstallerLabels(labels)
 }
+
+// Generic returns true if the object in e carries both the installer.name and
+// installer.namespace labels, causing the controller to reconcile the generic
+// event.
 func (InstallerLabelPredicate) Generic(e event.GenericEvent) bool {
 	labels := e.Object.GetLabels()
 	return hasInstallerLabels(labels)
 }
+
+// Delete returns true if the deleted object in e carries both the installer.name
+// and installer.namespace labels, causing the controller to reconcile the delete
+// event.
 func (InstallerLabelPredicate) Delete(e event.DeleteEvent) bool {
 	labels := e.Object.GetLabels()
 	return hasInstallerLabels(labels)
