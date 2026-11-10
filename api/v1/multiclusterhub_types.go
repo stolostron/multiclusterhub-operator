@@ -179,6 +179,13 @@ type MCEVersionComplianceStatus struct {
 // MultiClusterHubStatus defines the observed state of MultiClusterHub
 type MultiClusterHubStatus struct {
 
+	// ObservedGeneration is the most recent generation observed by the controller.
+	// It corresponds to the MultiClusterHub's generation, which is updated on mutation
+	// by the API Server. When this equals metadata.generation, the status reflects the
+	// latest desired spec.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+
 	// Represents the running phase of the MultiClusterHub
 	// +optional
 	Phase HubPhaseType `json:"phase"`

@@ -324,6 +324,14 @@ spec:
                       meet or exceed
                     type: string
                 type: object
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the most recent generation observed by the controller.
+                  It corresponds to the MultiClusterHub's generation, which is updated on mutation
+                  by the API Server. When this equals metadata.generation, the status reflects the
+                  latest desired spec.
+                format: int64
+                type: integer
               phase:
                 description: Represents the running phase of the MultiClusterHub
                 type: string
