@@ -361,6 +361,7 @@ func main() {
 		Scheme:          mgr.GetScheme(),
 		UncachedClient:  uncachedClient,
 		Log:             ctrl.Log.WithName("Controller").WithName("Multiclusterhub"),
+		Recorder:        mgr.GetEventRecorderFor("multiclusterhub-controller"),
 		UpgradeableCond: upgradeableCondition,
 		OLMVersion:      olmVersion,
 	}

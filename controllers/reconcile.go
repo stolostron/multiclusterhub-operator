@@ -28,6 +28,7 @@ import (
 	utils "github.com/stolostron/multiclusterhub-operator/pkg/utils"
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -481,6 +482,8 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
 	}
 
+	r.Recorder.Event(multiClusterHub, corev1.EventTypeNormal, "ReconcileComplete",
+		"All components reconciled successfully")
 	logf.Log.Info("Reconcile completed. Requeuing after " + utils.ShortRefreshInterval.String())
 	return ctrl.Result{RequeueAfter: utils.ShortRefreshInterval}, nil
 }

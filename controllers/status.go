@@ -260,6 +260,7 @@ func (r *MultiClusterHubReconciler) calculateStatus(ctx context.Context, hub *op
 	// of removing Progressing once Complete:True is set in the successful branch below.
 	if hub.GetDeletionTimestamp() != nil {
 		status := hub.Status.DeepCopy()
+		status.ObservedGeneration = hub.Generation
 		status.Phase = operatorsv1.HubUninstalling
 		RemoveHubCondition(status, operatorsv1.Progressing)
 		RemoveHubCondition(status, operatorsv1.Complete)
@@ -275,6 +276,7 @@ func (r *MultiClusterHubReconciler) calculateStatus(ctx context.Context, hub *op
 	mceVersionCompliance := r.calculateMCEVersionCompliance(ctx)
 
 	status := operatorsv1.MultiClusterHubStatus{
+		ObservedGeneration:   hub.Generation,
 		CurrentVersion:       hub.Status.CurrentVersion,
 		DesiredVersion:       version.Version,
 		Components:           components,
