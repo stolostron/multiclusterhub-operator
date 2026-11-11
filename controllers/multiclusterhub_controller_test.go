@@ -980,8 +980,8 @@ var _ = Describe("MultiClusterHub controller", func() {
 
 			By("Ensuring No Unregistered Component")
 			result, err = reconciler.ensureNoComponent(ctx, mch, "unknown", testCacheSpec, false)
-			Expect(result).To(Equal(ctrl.Result{RequeueAfter: resyncPeriod}))
-			Expect(err).To(BeNil())
+			Expect(result).To(Equal(ctrl.Result{}))
+			Expect(err).ToNot(BeNil())
 
 			By("Ensuring No OpenShift Cluster Monitoring Labels")
 			mch2 := &operatorv1.MultiClusterHub{

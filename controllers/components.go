@@ -20,6 +20,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	operatorv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
@@ -28,6 +29,7 @@ import (
 	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -165,10 +167,18 @@ func (r *MultiClusterHubReconciler) ensureComponent(ctx context.Context, m *oper
 		isSTSEnabled, r.OLMVersion)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+		renderErr := fmt.Errorf("failed to render chart for %s: %w", component, errors.Join(errs...))
+		log.Error(renderErr, "Template render failed", "component", component)
+
+		condType := fmt.Sprintf("%v: %v", operatorv1.ComponentFailure, component)
+		SetHubCondition(&m.Status, *NewHubCondition(
+			operatorv1.HubConditionType(condType),
+			metav1.ConditionTrue,
+			ResourceRenderReason,
+			renderErr.Error(),
+		))
+
+		return ctrl.Result{}, renderErr
 	}
 
 	// Apply overrides if available for the component
@@ -295,10 +305,18 @@ func (r *MultiClusterHubReconciler) ensureNoComponent(ctx context.Context, m *op
 		isSTSEnabled, r.OLMVersion)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: resyncPeriod}, nil
+		renderErr := fmt.Errorf("failed to render chart for removal of %s: %w", component, errors.Join(errs...))
+		log.Error(renderErr, "Template render failed during removal", "component", component)
+
+		condType := fmt.Sprintf("%v: %v", operatorv1.ComponentFailure, component)
+		SetHubCondition(&m.Status, *NewHubCondition(
+			operatorv1.HubConditionType(condType),
+			metav1.ConditionTrue,
+			ResourceRenderReason,
+			renderErr.Error(),
+		))
+
+		return ctrl.Result{}, renderErr
 	}
 
 	// Deletes all templates

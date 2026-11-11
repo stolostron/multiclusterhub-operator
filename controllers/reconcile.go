@@ -340,7 +340,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	} else {
 		result, err = r.ensureNoComponent(ctx, multiClusterHub, operatorv1.Appsub, r.CacheSpec, stsEnabled)
 	}
-	if result != (ctrl.Result{}) {
+	if result != (ctrl.Result{}) || err != nil {
 		return result, err
 	}
 
@@ -477,7 +477,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 		result, err = r.ensureComponentOrNoComponent(ctx, multiClusterHub, c, r.CacheSpec, ocpConsole, stsEnabled)
 
-		if result != (ctrl.Result{}) {
+		if result != (ctrl.Result{}) || err != nil {
 			return result, err
 		}
 	}
