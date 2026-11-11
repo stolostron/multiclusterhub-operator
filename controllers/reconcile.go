@@ -39,20 +39,15 @@ import (
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the MultiClusterHub object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Request) (retQueue ctrl.Result, retError error) {
-	r.Log = log
 	r.Log.Info("Reconciling MultiClusterHub")
 
 	// Fetch the MultiClusterHub instance
 	multiClusterHub := &operatorv1.MultiClusterHub{}
-	err := r.Client.Get(context.TODO(), req.NamespacedName, multiClusterHub)
+	err := r.Client.Get(ctx, req.NamespacedName, multiClusterHub)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -264,7 +259,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			// removed, the object will be deleted.
 			controllerutil.RemoveFinalizer(multiClusterHub, hubFinalizer)
 
-			err := r.Client.Update(context.TODO(), multiClusterHub)
+			err := r.Client.Update(ctx, multiClusterHub)
 			if err != nil {
 				return ctrl.Result{}, err
 			}
