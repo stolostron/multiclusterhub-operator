@@ -183,10 +183,10 @@ spec:
     from:
       kind: DockerImage
       name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/redis_7_c9s:latest
-  - name: postgresql_16
+  - name: postgresql_13
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/postgresql_16:latest
+      name: image-registry.openshift-image-registry.svc:5000/open-cluster-management/postgresql_13:latest
   - name: memcached
     from:
       kind: DockerImage
