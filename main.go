@@ -60,6 +60,7 @@ import (
 	olmapi "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 
 	admissionregistration "k8s.io/api/admissionregistration/v1"
+	coordinationv1 "k8s.io/api/coordination/v1"
 	networking "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	storagev1 "k8s.io/api/storage/v1"
@@ -87,6 +88,12 @@ import (
 const (
 	crdName            = "multiclusterhubs.operator.open-cluster-management.io"
 	OperatorVersionEnv = "OPERATOR_VERSION"
+
+	// leaderElectionID is the current leader-election Lease name.
+	leaderElectionID = "multiclusterhub-operator-lock"
+	// legacyLeaderElectionID is the old Lease name (typo: "multicloudhub").
+	// Cleaned up on startup to avoid an orphaned Lease after upgrade.
+	legacyLeaderElectionID = "multicloudhub-operator-lock"
 )
 
 var (
@@ -166,7 +173,7 @@ func main() {
 		"The duration the clients should wait between attempting acquisition and renewal "+
 		"of a leadership. This is only applicable if leader election is enabled.")
 	opts := zap.Options{
-		Development: true,
+		Development: os.Getenv("OPERATOR_DEV_MODE") == "true",
 		TimeEncoder: zapcore.ISO8601TimeEncoder,
 	}
 	opts.BindFlags(flag.CommandLine)
@@ -204,7 +211,7 @@ func main() {
 		},
 		HealthProbeBindAddress:  probeAddr,
 		LeaderElection:          enableLeaderElection,
-		LeaderElectionID:        "multicloudhub-operator-lock",
+		LeaderElectionID:        leaderElectionID,
 		LeaderElectionNamespace: ns,
 		LeaseDuration:           &leaseDuration,
 		RenewDeadline:           &renewDeadline,
@@ -269,6 +276,20 @@ func main() {
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
+	}
+
+	// Clean up the legacy leader-election Lease left behind by older releases that
+	// used a misspelled ID ("multicloudhub-operator-lock"). Without this, the old
+	// Lease object would remain orphaned in the namespace indefinitely after upgrade.
+	legacyLease := &coordinationv1.Lease{}
+	legacyLease.Name = legacyLeaderElectionID
+	legacyLease.Namespace = ns
+	if err := uncachedClient.Delete(ctx, legacyLease); err != nil {
+		if !errors.IsNotFound(err) {
+			setupLog.Error(err, "failed to delete legacy leader-election Lease", "name", legacyLeaderElectionID)
+		}
+	} else {
+		setupLog.Info("Deleted legacy leader-election Lease", "name", legacyLeaderElectionID)
 	}
 
 	// Detect OLM version (v0, v1, or none)
