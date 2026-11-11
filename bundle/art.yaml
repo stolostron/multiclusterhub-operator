@@ -1,15 +1,4 @@
 ---
-updates:
-- file: "manifests/multiclusterhub-operator.clusterserviceversion.yaml"
-  update_list:
-  - search: "name: multiclusterhub-operator.v0.0.1"
-    replace: "name: advanced-cluster-management.v{FULL_VER}"
-  - search: "  version: 0.0.1"
-    replace: "  version: {FULL_VER}"
-- file: "acm-operator.package.yaml"
-  update_list:
-  - search: "currentCSV: advanced-cluster-management.v{MAJOR}.{MINOR}.0"
-    replace: "currentCSV: advanced-cluster-management.v{FULL_VER}"
 external-images:
 - name: configmap_reloader
   search: image-registry.openshift-image-registry.svc:5000/open-cluster-management/configmap_reloader:latest
