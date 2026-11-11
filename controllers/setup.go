@@ -104,14 +104,21 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) (controll
 		).
 		Watches(
 			&appsv1.Deployment{},
-			handler.EnqueueRequestForOwner(
-				mgr.GetScheme(), mgr.GetRESTMapper(), &operatorv1.MultiClusterHub{}, handler.OnlyControllerOwner(),
-			),
+			handler.EnqueueRequestsFromMapFunc(deploymentReconcileRequests),
 			builder.WithPredicates(
-				ctrlpredicate.Or(
-					ctrlpredicate.GenerationChangedPredicate{},
-					ctrlpredicate.LabelChangedPredicate{},
-					ctrlpredicate.AnnotationChangedPredicate{},
+				ctrlpredicate.And(
+					ctrlpredicate.Or(
+						predicate.InstallerLabelPredicate{},
+						ctrlpredicate.NewPredicateFuncs(func(obj client.Object) bool {
+							owner := metav1.GetControllerOf(obj)
+							return owner != nil && owner.Kind == "MultiClusterHub"
+						}),
+					),
+					ctrlpredicate.Or(
+						ctrlpredicate.GenerationChangedPredicate{},
+						ctrlpredicate.LabelChangedPredicate{},
+						ctrlpredicate.AnnotationChangedPredicate{},
+					),
 				),
 			),
 		).
@@ -131,30 +138,6 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) (controll
 				},
 			},
 			builder.WithPredicates(predicate.DeletePredicate{}),
-		).
-		Watches(&appsv1.Deployment{},
-			handler.EnqueueRequestsFromMapFunc(
-				func(ctx context.Context, a client.Object) []reconcile.Request {
-					return []reconcile.Request{
-						{
-							NamespacedName: types.NamespacedName{
-								Name:      a.GetLabels()["installer.name"],
-								Namespace: a.GetLabels()["installer.namespace"],
-							},
-						},
-					}
-				},
-			),
-			builder.WithPredicates(
-				ctrlpredicate.And(
-					predicate.InstallerLabelPredicate{},
-					ctrlpredicate.Or(
-						ctrlpredicate.GenerationChangedPredicate{},
-						ctrlpredicate.LabelChangedPredicate{},
-						ctrlpredicate.AnnotationChangedPredicate{},
-					),
-				),
-			),
 		).
 		Watches(
 			&configv1.ClusterVersion{},
@@ -211,4 +194,31 @@ func (r *MultiClusterHubReconciler) SetupWithManager(mgr ctrl.Manager) (controll
 			}),
 		).
 		Build(r)
+}
+
+// deploymentReconcileRequests maps a Deployment event to the MultiClusterHub reconciles it
+// affects. Deployments controlled by a MultiClusterHub are enqueued through their controller
+// owner reference, while Deployments carrying installer labels (for example MCE-owned
+// components) are enqueued through those labels. This replaces the two separate Deployment
+// watches that previously double-enqueued the same events.
+func deploymentReconcileRequests(_ context.Context, obj client.Object) []reconcile.Request {
+	requests := make([]reconcile.Request, 0, 2)
+
+	labels := obj.GetLabels()
+	if name, namespace := labels["installer.name"], labels["installer.namespace"]; name != "" && namespace != "" {
+		requests = append(requests, reconcile.Request{
+			NamespacedName: types.NamespacedName{Name: name, Namespace: namespace},
+		})
+	}
+
+	if owner := metav1.GetControllerOf(obj); owner != nil && owner.Kind == "MultiClusterHub" {
+		request := reconcile.Request{
+			NamespacedName: types.NamespacedName{Name: owner.Name, Namespace: obj.GetNamespace()},
+		}
+		if len(requests) == 0 || requests[0] != request {
+			requests = append(requests, request)
+		}
+	}
+
+	return requests
 }

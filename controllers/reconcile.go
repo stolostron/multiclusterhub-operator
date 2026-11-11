@@ -40,20 +40,15 @@ import (
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the MultiClusterHub object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Request) (retQueue ctrl.Result, retError error) {
-	r.Log = log
 	r.Log.Info("Reconciling MultiClusterHub")
 
 	// Fetch the MultiClusterHub instance
 	multiClusterHub := &operatorv1.MultiClusterHub{}
-	err := r.Client.Get(context.TODO(), req.NamespacedName, multiClusterHub)
+	err := r.Client.Get(ctx, req.NamespacedName, multiClusterHub)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -80,6 +75,10 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		// syncHubStatus republishes after a successful status update, so this only
 		// logs again when the phase actually transitions.
 		r.publishMCHPhase(multiClusterHub, multiClusterHub.Status.Phase)
+		// Republish the component gauges from the persisted status for the same
+		// reason, so they are not missing between an operator restart and the next
+		// successful status sync.
+		r.publishMCHComponentMetrics(multiClusterHub, multiClusterHub.Status.Components)
 	}
 
 	// Migrate deprecated annotations to current equivalents
@@ -261,7 +260,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			// removed, the object will be deleted.
 			controllerutil.RemoveFinalizer(multiClusterHub, hubFinalizer)
 
-			err := r.Client.Update(context.TODO(), multiClusterHub)
+			err := r.Client.Update(ctx, multiClusterHub)
 			if err != nil {
 				return ctrl.Result{}, err
 			}
@@ -337,7 +336,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	} else {
 		result, err = r.ensureNoComponent(ctx, multiClusterHub, operatorv1.Appsub, r.CacheSpec, stsEnabled)
 	}
-	if result != (ctrl.Result{}) {
+	if result != (ctrl.Result{}) || err != nil {
 		return result, err
 	}
 
@@ -474,12 +473,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 		result, err = r.ensureComponentOrNoComponent(ctx, multiClusterHub, c, r.CacheSpec, ocpConsole, stsEnabled)
 
-		if err != nil {
-			r.Recorder.Eventf(multiClusterHub, corev1.EventTypeWarning, "ComponentFailure",
-				"Failed to reconcile component %s: %v", c, err)
-		}
-
-		if result != (ctrl.Result{}) {
+		if result != (ctrl.Result{}) || err != nil {
 			return result, err
 		}
 	}
