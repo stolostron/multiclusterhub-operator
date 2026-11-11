@@ -31,14 +31,14 @@ metadata:
     description: Advanced provisioning and management of OpenShift and Kubernetes clusters
     repository: https://github.com/open-cluster-management/multiclusterhub-operator
     support: Red Hat
-    olm.skipRange: '>=2.15.0 <2.17.4'
+    olm.skipRange: '>=2.15.0 <2.17.5'
     operatorframework.io/suggested-namespace: open-cluster-management
     operators.openshift.io/valid-subscription: '["OpenShift Platform Plus", "Red Hat Advanced Cluster Management for Kubernetes"]'
     operators.openshift.io/infrastructure-features: '["disconnected", "proxy-aware", "fips"]'
     olm.properties: '[{"type": "olm.maxOpenShiftVersion", "value": "5.0"}]'
     operators.openshift.io/must-gather-image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-must-gather-rhel9:latest
     operatorframework.io/initialization-resource: '{"apiVersion":"operator.open-cluster-management.io/v1", "kind":"MultiClusterHub","metadata":{"name":"multiclusterhub","namespace":"open-cluster-management"}, "spec": {}}'
-  name: advanced-cluster-management.v2.17.4
+  name: advanced-cluster-management.v2.17.5
   namespace: placeholder
   labels:
     operatorframework.io/arch.amd64: supported
@@ -1914,7 +1914,7 @@ spec:
                 - name: OPERAND_IMAGE_VOLSYNC
                   value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/volsync:latest
                 - name: OPERATOR_VERSION
-                  value: "2.17.4"
+                  value: "2.17.5"
                 - name: OPERATOR_PACKAGE
                   value: advanced-cluster-management
                 image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multiclusterhub-operator:latest
@@ -2128,4 +2128,4 @@ spec:
   maturity: stable
   provider:
     name: Red Hat
-  version: 2.17.4
+  version: 2.17.5
