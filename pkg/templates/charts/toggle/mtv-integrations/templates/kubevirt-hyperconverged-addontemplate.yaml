@@ -5,12 +5,27 @@ metadata:
 spec:
   addonName: kubevirt-hyperconverged
   agentSpec:
+    deleteOption:
+      propagationPolicy: SelectivelyOrphan
+      selectivelyOrphans:
+        orphaningRules:
+        - group: hco.kubevirt.io
+          name: kubevirt-hyperconverged
+          namespace: openshift-cnv
+          resource: hyperconvergeds
     manifestConfigs:
     - resourceIdentifier:
-        group: hco.kubevirt.io
-        name: kubevirt-hyperconverged
-        namespace: openshift-cnv
-        resource: hyperconvergeds
+        group: policy.open-cluster-management.io
+        name: kubevirt-hyperconverged-operator
+        namespace: open-cluster-management-policies
+        resource: operatorpolicies
+      updateStrategy:
+        type: CreateOnly
+    - resourceIdentifier:
+        group: policy.open-cluster-management.io
+        name: kubevirt-hyperconverged-config
+        namespace: open-cluster-management-policies
+        resource: configurationpolicies
       updateStrategy:
         type: CreateOnly
     workload:
@@ -25,6 +40,7 @@ spec:
           - policy.open-cluster-management.io
           resources:
           - operatorpolicies
+          - configurationpolicies
           verbs:
           - get
           - list
@@ -77,58 +93,86 @@ spec:
             name: kubevirt-hyperconverged
             namespace: openshift-cnv
           upgradeApproval: Automatic
-      - apiVersion: hco.kubevirt.io/v1beta1
-        kind: HyperConverged
+      - apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
         metadata:
-          annotations:
-            deployOVS: 'false'
-          name: kubevirt-hyperconverged
-          namespace: openshift-cnv
+          name: kubevirt-hyperconverged-config
+          namespace: open-cluster-management-policies
         spec:
-          applicationAwareConfig:
-            allowApplicationAwareClusterResourceQuota: false
-            vmiCalcConfigName: DedicatedVirtualResources
-          certConfig:
-            ca:
-              duration: 48h0m0s
-              renewBefore: 24h0m0s
-            server:
-              duration: 24h0m0s
-              renewBefore: 12h0m0s
-          featureGates:
-            alignCPUs: false
-            autoResourceLimits: false
-            decentralizedLiveMigration: true
-            deployKubeSecondaryDNS: false
-            deployKubevirtIpamController: false
-            deployTektonTaskResources: false
-            deployVmConsoleProxy: false
-            disableMDevConfiguration: false
-            downwardMetrics: false
-            enableApplicationAwareQuota: false
-            enableCommonBootImageImport: true
-            enableManagedTenantQuota: false
-            nonRoot: true
-            persistentReservation: false
-            primaryUserDefinedNetworkBinding: false
-            withHostPassthroughCPU: false
-          higherWorkloadDensity:
-            memoryOvercommitPercentage: 100
-          liveMigrationConfig:
-            allowAutoConverge: false
-            allowPostCopy: false
-            completionTimeoutPerGiB: 800
-            parallelMigrationsPerCluster: 5
-            parallelOutboundMigrationsPerNode: 2
-            progressTimeout: 150
-          resourceRequirements:
-            vmiCPUAllocationRatio: 10
-          uninstallStrategy: BlockUninstallIfWorkloadsExist
-          virtualMachineOptions:
-            disableFreePageReporting: false
-            disableSerialConsoleLog: true
-          workloadUpdateStrategy:
-            batchEvictionInterval: 1m0s
-            batchEvictionSize: 10
-            workloadUpdateMethods:
-            - LiveMigrate
+          evaluationInterval:
+            compliant: 1m
+          object-templates-raw: |
+            {{ `{{HCO_TEMPLATE_START}}` }} $operator := lookup "policy.open-cluster-management.io/v1beta1" "OperatorPolicy" "open-cluster-management-policies" "kubevirt-hyperconverged-operator" }}
+            {{ `{{HCO_TEMPLATE_START}}` }} $operatorReady := false }}
+            {{ `{{HCO_TEMPLATE_START}}` }} with $operator }}
+            {{ `{{HCO_TEMPLATE_START}}` }} if eq .status.compliant "Compliant" }}
+            {{ `{{HCO_TEMPLATE_START}}` }} $operatorReady = true }}
+            {{ `{{HCO_TEMPLATE_START}}` }} end }}
+            {{ `{{HCO_TEMPLATE_START}}` }} end }}
+            {{ `{{HCO_TEMPLATE_START}}` }} if $operatorReady }}
+            {{ `{{HCO_TEMPLATE_START}}` }} $existingHCO := lookup "hco.kubevirt.io/v1beta1" "HyperConverged" "openshift-cnv" "kubevirt-hyperconverged" }}
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: hco.kubevirt.io/v1beta1
+                kind: HyperConverged
+                metadata:
+                  name: kubevirt-hyperconverged
+                  namespace: openshift-cnv
+            {{ `{{HCO_TEMPLATE_START}}` }} if not $existingHCO }}
+                  annotations:
+                    deployOVS: "false"
+                spec:
+                  virtualMachineOptions:
+                    disableFreePageReporting: false
+                    disableSerialConsoleLog: true
+                  higherWorkloadDensity:
+                    memoryOvercommitPercentage: 100
+                  liveMigrationConfig:
+                    allowAutoConverge: false
+                    allowPostCopy: false
+                    completionTimeoutPerGiB: 800
+                    parallelMigrationsPerCluster: 5
+                    parallelOutboundMigrationsPerNode: 2
+                    progressTimeout: 150
+                  certConfig:
+                    ca:
+                      duration: 48h0m0s
+                      renewBefore: 24h0m0s
+                    server:
+                      duration: 24h0m0s
+                      renewBefore: 12h0m0s
+                  applicationAwareConfig:
+                    allowApplicationAwareClusterResourceQuota: false
+                    vmiCalcConfigName: DedicatedVirtualResources
+                  featureGates:
+                    decentralizedLiveMigration: true
+                    deployTektonTaskResources: false
+                    enableCommonBootImageImport: true
+                    withHostPassthroughCPU: false
+                    downwardMetrics: false
+                    disableMDevConfiguration: false
+                    enableApplicationAwareQuota: false
+                    deployKubeSecondaryDNS: false
+                    nonRoot: true
+                    alignCPUs: false
+                    enableManagedTenantQuota: false
+                    primaryUserDefinedNetworkBinding: false
+                    deployVmConsoleProxy: false
+                    persistentReservation: false
+                    autoResourceLimits: false
+                    deployKubevirtIpamController: false
+                  workloadUpdateStrategy:
+                    batchEvictionInterval: 1m0s
+                    batchEvictionSize: 10
+                    workloadUpdateMethods:
+                      - LiveMigrate
+                  uninstallStrategy: BlockUninstallIfWorkloadsExist
+                  resourceRequirements:
+                    vmiCPUAllocationRatio: 10
+            {{ `{{HCO_TEMPLATE_START}}` }} end }}
+            {{ `{{HCO_TEMPLATE_START}}` }} else }}
+            []
+            {{ `{{HCO_TEMPLATE_START}}` }} end }}
+          pruneObjectBehavior: None
+          remediationAction: enforce
+          severity: low

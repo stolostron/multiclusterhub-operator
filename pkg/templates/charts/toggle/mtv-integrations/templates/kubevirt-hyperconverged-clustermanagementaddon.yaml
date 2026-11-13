@@ -12,6 +12,10 @@ spec:
   - group: addon.open-cluster-management.io
     name: kubevirt-hyperconverged
     resource: addontemplates
+  - group: addon.open-cluster-management.io
+    name: kubevirt-hyperconverged-template-values
+    namespace: '{{ .Values.global.namespace }}'
+    resource: addondeploymentconfigs
   installStrategy:
     placements:
     - name: openshift-cnv
